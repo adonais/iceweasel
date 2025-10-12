@@ -64,7 +64,7 @@ class HTMLLabelAccessible : public HyperTextAccessible {
   virtual ~HTMLLabelAccessible() {}
   virtual ENameValueFlag NativeName(nsString& aName) const override;
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
+                                   AttrModType aModType,
                                    const nsAttrValue* aOldValue,
                                    uint64_t aOldState) override;
 };
@@ -84,7 +84,7 @@ class HTMLOutputAccessible : public HyperTextAccessible {
   virtual Relation RelationByType(RelationType aType) const override;
 
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
+                                   AttrModType aModType,
                                    const nsAttrValue* aOldValue,
                                    uint64_t aOldState) override;
 

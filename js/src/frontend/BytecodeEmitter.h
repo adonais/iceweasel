@@ -49,6 +49,7 @@
 namespace js {
 
 class FrontendContext;
+struct ConstantCompareOperand;
 
 namespace frontend {
 

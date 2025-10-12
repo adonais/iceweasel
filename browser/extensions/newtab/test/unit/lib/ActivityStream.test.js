@@ -102,22 +102,6 @@ describe("ActivityStream", () => {
       const [, , action] = as.store.init.firstCall.args;
       assert.equal(action.type, "UNINIT");
     });
-    it("should clear old default discoverystream config pref", () => {
-      sandbox.stub(global.Services.prefs, "prefHasUserValue").returns(true);
-      sandbox
-        .stub(global.Services.prefs, "getStringPref")
-        .returns(
-          `{"api_key_pref":"extensions.pocket.oAuthConsumerKey","enabled":false,"show_spocs":true,"layout_endpoint":"https://getpocket.cdn.mozilla.net/v3/newtab/layout?version=1&consumer_key=$apiKey&layout_variant=basic"}`
-        );
-      sandbox.stub(global.Services.prefs, "clearUserPref");
-
-      as.init();
-
-      assert.calledWith(
-        global.Services.prefs.clearUserPref,
-        "browser.newtabpage.activity-stream.discoverystream.config"
-      );
-    });
     it("should call addObserver for the app locales", () => {
       sandbox.stub(global.Services.obs, "addObserver");
       as.init();

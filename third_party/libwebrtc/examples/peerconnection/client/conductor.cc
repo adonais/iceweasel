@@ -18,12 +18,13 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/nullability.h"
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/audio_options.h"
-#include "api/create_peerconnection_factory.h"
 #include "api/enable_media.h"
+#include "api/environment/environment.h"
 #include "api/jsep.h"
 #include "api/make_ref_counted.h"
 #include "api/media_stream_interface.h"
@@ -32,7 +33,6 @@
 #include "api/rtp_receiver_interface.h"
 #include "api/rtp_sender_interface.h"
 #include "api/scoped_refptr.h"
-#include "api/task_queue/default_task_queue_factory.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/create_frame_generator.h"
 #include "api/video/video_frame.h"
@@ -59,6 +59,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/json.h"
+#include "rtc_base/thread.h"
 #include "system_wrappers/include/clock.h"
 #include "test/frame_generator_capturer.h"
 #include "test/platform_video_capturer.h"
@@ -140,8 +141,14 @@ class CapturerTrackSource : public webrtc::VideoTrackSource {
 
 }  // namespace
 
-Conductor::Conductor(PeerConnectionClient* client, MainWindow* main_wnd)
-    : peer_id_(-1), loopback_(false), client_(client), main_wnd_(main_wnd) {
+Conductor::Conductor(const webrtc::Environment& env,
+                     PeerConnectionClient* absl_nonnull client,
+                     MainWindow* absl_nonnull main_wnd)
+    : peer_id_(-1),
+      loopback_(false),
+      env_(env),
+      client_(client),
+      main_wnd_(main_wnd) {
   client_->RegisterObserver(this);
   main_wnd->RegisterObserver(this);
 }
@@ -170,7 +177,7 @@ bool Conductor::InitializePeerConnection() {
 
   webrtc::PeerConnectionFactoryDependencies deps;
   deps.signaling_thread = signaling_thread_.get();
-  deps.task_queue_factory = webrtc::CreateDefaultTaskQueueFactory(),
+  deps.env = env_,
   deps.audio_encoder_factory = webrtc::CreateBuiltinAudioEncoderFactory();
   deps.audio_decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
   deps.video_encoder_factory =
@@ -186,7 +193,6 @@ bool Conductor::InitializePeerConnection() {
           webrtc::OpenH264DecoderTemplateAdapter,
           webrtc::Dav1dDecoderTemplateAdapter>>();
   webrtc::EnableMedia(deps);
-  task_queue_factory_ = deps.task_queue_factory.get();
   peer_connection_factory_ =
       webrtc::CreateModularPeerConnectionFactory(std::move(deps));
 
@@ -337,7 +343,7 @@ void Conductor::OnPeerDisconnected(int id) {
   RTC_LOG(LS_INFO) << __FUNCTION__;
   if (id == peer_id_) {
     RTC_LOG(LS_INFO) << "Our peer disconnected";
-    main_wnd_->QueueUIThreadCallback(PEER_CONNECTION_CLOSED, NULL);
+    main_wnd_->QueueUIThreadCallback(PEER_CONNECTION_CLOSED, nullptr);
   } else {
     // Refresh the list if we're showing it.
     if (main_wnd_->current_ui() == MainWindow::LIST_PEERS)
@@ -454,7 +460,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
 
 void Conductor::OnMessageSent(int err) {
   // Process the next pending message if any.
-  main_wnd_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, NULL);
+  main_wnd_->QueueUIThreadCallback(SEND_MESSAGE_TO_PEER, nullptr);
 }
 
 void Conductor::OnServerConnectionFailure() {
@@ -514,7 +520,7 @@ void Conductor::AddTracks() {
   }
 
   webrtc::scoped_refptr<CapturerTrackSource> video_device =
-      CapturerTrackSource::Create(*task_queue_factory_);
+      CapturerTrackSource::Create(env_.task_queue_factory());
   if (video_device) {
     webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_(
         peer_connection_factory_->CreateVideoTrack(video_device, kVideoLabel));

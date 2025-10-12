@@ -127,7 +127,7 @@ function cleanText(sourceLanguage, sourceText) {
 addEventListener("message", handleInitializationMessage);
 
 async function handleInitializationMessage({ data }) {
-  const startTime = performance.now();
+  const startTime = ChromeUtils.now();
   if (data.type !== "initialize") {
     console.error(
       "The TranslationEngine worker received a message before it was initialized."
@@ -455,7 +455,7 @@ class Engine {
    *   An object containing the translated text and the inference time (in ms).
    */
   #syncTranslate(sourceText, isHTML, innerWindowId) {
-    const startTime = performance.now();
+    const startTime = ChromeUtils.now();
     let response;
     const { messages, options } = BergamotUtils.getTranslationArgs(
       this.bergamot,
@@ -496,7 +496,7 @@ class Engine {
         `Translated ${sourceText.length} code units.`
       );
 
-      const endTime = performance.now();
+      const endTime = ChromeUtils.now();
       const targetText = responses.get(0).getTranslatedText();
       return { targetText, inferenceMilliseconds: endTime - startTime };
     } finally {
@@ -842,7 +842,7 @@ class WorkQueue {
         // The work was already cancelled.
         break;
       }
-      const now = performance.now();
+      const now = ChromeUtils.now();
 
       if (lastTimeout === null) {
         lastTimeout = now;
@@ -853,7 +853,7 @@ class WorkQueue {
         // promise queue from the event loop.
         await new Promise(resolve => setTimeout(resolve, 0));
         addProfilerMarker();
-        lastTimeout = performance.now();
+        lastTimeout = ChromeUtils.now();
       }
 
       // Check this between every `await`.

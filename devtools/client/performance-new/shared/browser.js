@@ -98,7 +98,7 @@ async function openProfilerTab({ profilerViewMode, defaultPanel }) {
   // Note that when running from the browser toolbox, there won't be the browser window,
   // but only the browser toolbox document.
   const win =
-    Services.wm.getMostRecentWindow("navigator:browser") ||
+    Services.wm.getMostRecentBrowserWindow() ||
     Services.wm.getMostRecentWindow("devtools:toolbox");
   if (!win) {
     throw new Error("No browser window");
@@ -171,7 +171,7 @@ function openFilePickerForObjdir(window, objdirs, changeObjdirs) {
  * @param {number} columnOneBased
  */
 async function openScriptInDebugger(tabId, scriptUrl, line, columnOneBased) {
-  const win = Services.wm.getMostRecentWindow("navigator:browser");
+  const win = Services.wm.getMostRecentBrowserWindow();
 
   // Iterate through all tabs in the current window and find the tab that we want.
   const foundTab = win.gBrowser.tabs.find(

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?><!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<resources xmlns:moz="http://schemas.android.com/apk/res-auto" xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="pref_key_make_default_browser" translatable="false">pref_key_make_default_browser</string>
     <string name="pref_key_search_settings" translatable="false">pref_key_search_settings</string>
     <string name="pref_key_search_engine" translatable="false">pref_key_search_engine</string>
@@ -68,7 +68,6 @@
     <string name="pref_key_install_pwa_opened" translatable="false">pref_key_install_pwa_opened</string>
     <string name="pref_key_install_pwa_visits" translatable="false">pref_key_install_pwa_visits</string>
     <string name="pref_key_times_app_opened" translatable="false">pref_key_times_app_opened</string>
-    <string name="pref_key_last_review_prompt_shown_time" translatable="false">pref_key_last_review_prompt_shown_time</string>
     <string name="pref_key_custom_review_prompt_enabled" translatable="false">pref_key_custom_review_prompt_enabled</string>
     <string name="pref_key_last_browse_activity_time" translatable="false">pref_key_last_browse_activity_time</string>
     <string name="pref_key_last_cfr_shown_time" translatable="false">pref_key_last_cfr_shown_time</string>
@@ -84,10 +83,15 @@
     <string name="pref_key_show_first_time_translation" translatable="false">pref_key_show_first_time_translation</string>
     <string name="pref_key_translations_offer" translatable="false">pref_key_translations_offer</string>
     <string name="pref_key_terms_accepted" translatable="false">pref_key_terms_accepted</string>
+    <string name="pref_key_terms_prompt_enabled" translatable="false">pref_key_terms_prompt_enabled</string>
+    <string name="pref_key_terms_prompt_displayed_count" translatable="false">pref_key_terms_prompt_displayed_count</string>
     <string name="pref_key_terms_last_prompt_time" translatable="false">pref_key_terms_last_prompt_time</string>
     <string name="pref_key_terms_postponed" translatable="false">pref_key_terms_postponed</string>
     <string name="pref_key_debug_terms_trigger_time" translatable="false">pref_key_debug_terms_trigger_time</string>
+    <string name="pref_key_terms_clicked_link" translatable="false">pref_key_terms_clicked_link</string>
+    <string name="pref_key_terms_clicked_remind_me_later" translatable="false">pref_key_terms_clicked_remind_me_later</string>
     <string name="pref_key_should_show_marketing_onboarding" translatable="false">pref_key_should_show_marketing_onboarding</string>
+    <string name="pref_key_use_onboarding_redesign" translatable="false">pref_key_use_onboarding_redesign</string>
     <string name="pref_key_crash_pull_never_show_again" translatable="false">pref_key_crash_pull_never_show_again</string>
     <string name="pref_key_crash_pull_dont_show_before" translatable="false">pref_key_crash_pull_dont_show_before</string>
 
@@ -168,7 +172,6 @@
 
     <!-- App icon settings-->
     <string name="pref_key_app_icon">pref_key_app_icon</string>
-    <string name="pref_key_selected_app_icon">pref_key_selected_app_icon</string>
     <string name="pref_key_app_icon_selection_enabled" translatable="false">pref_key_app_icon_selection_enabled</string>
 
     <!-- Menu -->
@@ -424,6 +427,7 @@
     <string name="pref_key_enable_homepage_searchbar" translatable="false">pref_key_enable_homepage_searchbar</string>
     <string name="pref_key_enable_menu_redesign" translatable="false">pref_key_enable_menu_redesign</string>
     <string name="pref_key_enable_homepage_as_new_tab" translatable="false">pref_key_enable_homepage_as_new_tab</string>
+    <string name="pref_key_enable_discover_more_stories" translatable="false">pref_key_enable_discover_more_stories</string>
     <string name="pref_key_enable_unified_trust_panel" translatable="false">pref_key_enable_unified_trust_panel</string>
     <string name="pref_key_enable_trending_searches" translatable="false">pref_key_enable_trending_searches</string>
     <string name="pref_key_enable_recent_searches" translatable="false">pref_key_enable_recent_searches</string>
@@ -431,7 +435,10 @@
     <string name="pref_key_enable_composable_toolbar" translatable="false">pref_key_enable_composable_toolbar</string>"
     <string name="pref_key_enable_toolbar_redesign" translatable="false">pref_key_enable_toolbar_redesign</string>"
     <string name="pref_key_enable_address_sync" translatable="false">pref_key_enable_address_sync</string>"
+    <string name="pref_key_enable_simple_toolbar_customization">pref_key_enable_simple_toolbar_customization</string>
+    <string name="pref_key_enable_expanded_toolbar_customization">pref_key_enable_expanded_toolbar_customization</string>
     <string name="pref_key_enable_lna_blocking_enabled" translatable="false">pref_key_enable_lna_blocking_enabled</string>
+    <string name="pref_key_enable_isolated_process" translatable="false">pref_key_enable_isolated_process</string>
 
     <!-- Logins -->
     <string name="pref_key_enable_compose_logins" translatable="false">pref_key_enable_compose_logins</string>
@@ -466,7 +473,7 @@
     <string name="pref_key_desktop_browsing" translatable="false">pref_key_desktop_browsing</string>
 
     <!-- Crash reporting -->
-    <string name="pref_key_crash_reporting_cutoff_date" translatable="false">pref_key_crash_reporting_cutoff_date</string>
+    <string name="pref_key_crash_reporting_cutoff_date" translatable="false">pref_key_crash_reporting_cutoff_date_2025_09_08</string>
     <string name="pref_key_crash_reporting_deferred_until" translatable="false">pref_key_crash_reporting_deferred_until</string>
     <string name="pref_key_use_new_crash_reporter" translatable="false">pref_key_use_new_crash_reporter</string>
 

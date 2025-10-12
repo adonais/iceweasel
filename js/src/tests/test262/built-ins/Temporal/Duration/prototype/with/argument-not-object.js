@@ -4,7 +4,7 @@
 
 /*---
 esid: sec-temporal.duration.prototype.with
-description: Passing a primitive other than string to with() throws
+description: Passing a primitive to with() throws
 features: [Symbol, Temporal]
 ---*/
 
@@ -13,11 +13,10 @@ assert.throws(TypeError, () => instance.with(undefined), "undefined");
 assert.throws(TypeError, () => instance.with(null), "null");
 assert.throws(TypeError, () => instance.with(true), "boolean");
 assert.throws(TypeError, () => instance.with(""), "empty string");
+assert.throws(TypeError, () => instance.with("P1D"), "duration string");
+assert.throws(TypeError, () => instance.with("string"), "string");
 assert.throws(TypeError, () => instance.with(Symbol()), "Symbol");
 assert.throws(TypeError, () => instance.with(7), "number");
 assert.throws(TypeError, () => instance.with(7n), "bigint");
-assert.throws(TypeError, () => instance.with([]), "array");
-assert.throws(TypeError, () => instance.with(() => {}), "function");
-assert.throws(TypeError, () => instance.with("string"), "string");
 
 reportCompare(0, 0);

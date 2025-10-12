@@ -111,8 +111,6 @@ enum class GCAbortReason {
   _(ArrayBufferContents)                   \
   _(StringContents)                        \
   _(ScriptPrivateData)                     \
-  _(MapObjectData)                         \
-  _(ScopeData)                             \
   _(WeakMapObject)                         \
   _(ShapeSetForAdd)                        \
   _(PropMapChildren)                       \

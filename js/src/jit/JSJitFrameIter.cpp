@@ -537,7 +537,7 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
 
   MOZ_ASSERT(entry->isIon() || entry->isIonIC() || entry->isBaseline() ||
              entry->isBaselineInterpreter() || entry->isDummy() ||
-             entry->isSelfHostedShared());
+             entry->isRealmIndependentShared());
 
   // Treat dummy lookups as an empty frame sequence.
   if (entry->isDummy()) {
@@ -579,7 +579,7 @@ bool JSJitProfilingFrameIterator::tryInitWithTable(JitcodeGlobalTable* table,
     return true;
   }
 
-  if (entry->isSelfHostedShared()) {
+  if (entry->isRealmIndependentShared()) {
     // Shared entries don't track who the callee is, so we can't check
     // lastProfilingCallSite
     type_ = FrameType::BaselineJS;

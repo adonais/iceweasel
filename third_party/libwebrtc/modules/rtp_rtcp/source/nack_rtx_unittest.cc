@@ -67,7 +67,7 @@ class VerifyingMediaStream : public RtpPacketSinkInterface {
   std::list<uint16_t> sequence_numbers_;
 };
 
-class RtxLoopBackTransport : public webrtc::Transport {
+class RtxLoopBackTransport : public Transport {
  public:
   explicit RtxLoopBackTransport(uint32_t rtx_ssrc)
       : count_(0),
@@ -76,7 +76,7 @@ class RtxLoopBackTransport : public webrtc::Transport {
         consecutive_drop_end_(0),
         rtx_ssrc_(rtx_ssrc),
         count_rtx_ssrc_(0),
-        module_(NULL) {}
+        module_(nullptr) {}
 
   void SetSendModule(RtpRtcpInterface* rtpRtcpModule) {
     module_ = rtpRtcpModule;
@@ -115,7 +115,8 @@ class RtxLoopBackTransport : public webrtc::Transport {
     return true;
   }
 
-  bool SendRtcp(ArrayView<const uint8_t> data) override {
+  bool SendRtcp(ArrayView<const uint8_t> data,
+                const PacketOptions& /* options */) override {
     module_->IncomingRtcpPacket(data);
     return true;
   }

@@ -128,10 +128,12 @@ run-sequentially = "hardcoded ports"
 ["test_content_signing.js"]
 
 ["test_crlite_filters.js"]
+run-if = ["debug"] # Requires hard-coded debug-only data
 run-sequentially = "hardcoded ports"
 tags = "remote-settings psm"
 
 ["test_crlite_preexisting.js"]
+run-if = ["debug"] # Requires hard-coded debug-only data
 
 ["test_ct.js"]
 run-if = ["debug"] # Requires hard-coded debug-only data

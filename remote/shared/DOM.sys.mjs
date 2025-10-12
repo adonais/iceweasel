@@ -1035,14 +1035,14 @@ dom.getPointerInteractablePaintTree = function (el) {
 dom.isKeyboardInteractable = () => true;
 
 /**
- * Attempts to scroll into view |el|.
+ * Attempts to scroll `el` into view.
  *
  * @param {DOMElement} el
  *     Element to scroll into view.
  */
 dom.scrollIntoView = function (el) {
   if (el.scrollIntoView) {
-    el.scrollIntoView({ block: "end", inline: "nearest" });
+    el.scrollIntoView({ behavior: "instant", block: "end", inline: "nearest" });
   }
 };
 

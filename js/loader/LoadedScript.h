@@ -55,17 +55,6 @@ class LoadContextBase;
 // exposed to the memory reporter such that sharing might be accounted for
 // properly.
 class LoadedScript : public nsIMemoryReporter {
- private:
-  ScriptKind mKind;
-
- protected:
-  mozilla::dom::ReferrerPolicy mReferrerPolicy;
-
- private:
-  RefPtr<ScriptFetchOptions> mFetchOptions;
-  nsCOMPtr<nsIURI> mURI;
-  nsCOMPtr<nsIURI> mBaseURL;
-
  protected:
   LoadedScript(ScriptKind aKind, mozilla::dom::ReferrerPolicy aReferrerPolicy,
                ScriptFetchOptions* aFetchOptions, nsIURI* aURI);
@@ -257,6 +246,22 @@ class LoadedScript : public nsIMemoryReporter {
   // Determine whether the mScriptData or mScriptBytecode is used.
   DataType mDataType;
 
+ private:
+  ScriptKind mKind;
+
+ protected:
+  mozilla::dom::ReferrerPolicy mReferrerPolicy;
+
+ public:
+  // Offset of the bytecode in mScriptBytecode.
+  uint32_t mBytecodeOffset;
+
+ private:
+  RefPtr<ScriptFetchOptions> mFetchOptions;
+  nsCOMPtr<nsIURI> mURI;
+  nsCOMPtr<nsIURI> mBaseURL;
+
+ public:
   // Holds script source data for non-inline scripts.
   mozilla::Maybe<
       Variant<ScriptTextBuffer<char16_t>, ScriptTextBuffer<Utf8Unit>>>
@@ -270,7 +275,6 @@ class LoadedScript : public nsIMemoryReporter {
   // scripts. The data is laid out according to ScriptBytecodeDataLayout
   // or, if compression is enabled, ScriptBytecodeCompressedDataLayout.
   TranscodeBuffer mScriptBytecode;
-  uint32_t mBytecodeOffset;  // Offset of the bytecode in mScriptBytecode
 
   RefPtr<Stencil> mStencil;
 };

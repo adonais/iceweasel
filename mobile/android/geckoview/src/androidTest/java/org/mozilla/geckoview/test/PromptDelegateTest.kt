@@ -16,6 +16,7 @@ import org.hamcrest.Matchers.isEmptyOrNullString
 import org.hamcrest.Matchers.notNullValue
 import org.hamcrest.Matchers.nullValue
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.AllowOrDeny
@@ -767,6 +768,7 @@ class PromptDelegateTest : BaseSessionTest(
         )
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @WithDisplay(width = 100, height = 100)
     @Test
     fun dateTest() {

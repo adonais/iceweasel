@@ -142,17 +142,18 @@ SERVO_ARC_TYPE(StyleSheetContents, mozilla::StyleStylesheetContents)
 #undef SERVO_LOCKED_ARC_TYPE
 #undef SERVO_ARC_TYPE
 
-#define SERVO_BOXED_TYPE(name_, type_)                                        \
-  namespace mozilla {                                                         \
-  struct Style##type_;                                                        \
-  }                                                                           \
-  extern "C" void Servo_##name_##_Drop(mozilla::Style##type_*);               \
-  namespace mozilla {                                                         \
-  template <>                                                                 \
-  class DefaultDelete<Style##type_> {                                         \
-   public:                                                                    \
-    void operator()(Style##type_* aPtr) const { Servo_##name_##_Drop(aPtr); } \
-  };                                                                          \
+#define SERVO_BOXED_TYPE(name_, type_)                          \
+  namespace mozilla {                                           \
+  struct Style##type_;                                          \
+  }                                                             \
+  extern "C" void Servo_##name_##_Drop(mozilla::Style##type_*); \
+  namespace std {                                               \
+  template <>                                                   \
+  struct default_delete<mozilla::Style##type_> {                \
+    void operator()(mozilla::Style##type_* aPtr) const {        \
+      Servo_##name_##_Drop(aPtr);                               \
+    }                                                           \
+  };                                                            \
   }
 #include "mozilla/ServoBoxedTypeList.h"
 #undef SERVO_BOXED_TYPE

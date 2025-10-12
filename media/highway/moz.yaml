@@ -20,11 +20,11 @@ origin:
 
   # Human-readable identifier for this version/release
   # Generally "version NNN", "tag SSS", "bookmark SSS"
-  release: 58b52a717469e62b2d9b8eaa2f5dddb44d4a4cbf (2024-02-18T00:29:12Z).
+  release: 1.3.0 (2025-08-14T00:25:53-07:00).
 
   # Revision to pull in
   # Must be a long or short commit SHA (long preferred)
-  revision: 58b52a717469e62b2d9b8eaa2f5dddb44d4a4cbf
+  revision: 1.3.0
 
   # The package's license, where possible using the mnemonic from
   # https://spdx.org/licenses/
@@ -34,10 +34,23 @@ origin:
 
   license-file: LICENSE
 
+updatebot:
+    maintainer-phab: tnikkel
+    maintainer-bz: tnikkel@gmail.com
+    tasks:
+      - type: vendoring
+        enabled: True
+        frequency: release
+
 vendoring:
   url: https://github.com/google/highway
   source-hosting: github
   vendor-directory: third_party/highway
+  tracking: tag
 
   exclude:
     - g3doc/
+    - hwy/tests
+
+  patches:
+    - "*.patch"

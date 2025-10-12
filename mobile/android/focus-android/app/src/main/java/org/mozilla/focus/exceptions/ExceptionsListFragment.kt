@@ -10,12 +10,12 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.TextView
+import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -275,6 +275,7 @@ open class ExceptionsListFragment : BaseSettingsLikeFragment(), CoroutineScope {
         val handleView: View = itemView.findViewById(R.id.handleView)
 
         companion object {
+            @LayoutRes
             val LAYOUT_ID = R.layout.item_custom_domain
         }
 
@@ -300,11 +301,9 @@ open class ExceptionsListFragment : BaseSettingsLikeFragment(), CoroutineScope {
             }
 
             handleView.isVisible = isSelectionMode
-            handleView.setOnTouchListener { _, event ->
-                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                    itemTouchHelper.startDrag(this)
-                }
-                false
+            handleView.setOnLongClickListener {
+                itemTouchHelper.startDrag(this)
+                true
             }
 
             if (isSelectionMode) {

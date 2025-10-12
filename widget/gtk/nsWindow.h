@@ -331,7 +331,9 @@ class nsWindow final : public nsBaseWidget {
   //  it should load correct values.
   // Set aRefreshScreen to false if we operate on hidden window
   // or if we're going to repaint.
-  void RefreshScale(bool aRefreshScreen);
+  // aForceRefresh is used when fractional scale is changed but
+  // ceiled scale is kept.
+  void RefreshScale(bool aRefreshScreen, bool aForceRefresh = false);
 
   static guint32 sLastButtonPressTime;
 

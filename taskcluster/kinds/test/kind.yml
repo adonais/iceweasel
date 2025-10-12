@@ -38,7 +38,6 @@ tasks-from:
     - firefox-ui.yml
     - marionette.yml
     - misc.yml
-    - mochitest.yml
     - reftest.yml
     - talos.yml
     - web-platform.yml
@@ -86,6 +85,13 @@ task-defaults:
                 android-em-7.*:
                     - android-system-image-x86_64-linux
                     - android-avd-x86_64-linux
+                    - android-emulator-linux
+                    - linux64-minidump-stackwalk
+                    - linux64-fix-stacks
+                    - linux64-hostutils
+                android-em-14.*:
+                    - android34-system-image-x86_64-linux
+                    - android34-avd-x86_64-linux
                     - android-emulator-linux
                     - linux64-minidump-stackwalk
                     - linux64-fix-stacks

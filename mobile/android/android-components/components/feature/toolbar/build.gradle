@@ -26,28 +26,27 @@ android {
 
 dependencies {
     api project(':components:concept-toolbar')
-    implementation project(':components:feature-session')
-    implementation project(':components:browser-state')
+
     implementation project(':components:browser-domains')
+    implementation project(':components:browser-state')
     implementation project(':components:concept-engine')
     implementation project(':components:concept-storage')
+    implementation project(':components:feature-session')
     implementation project(':components:lib-publicsuffixlist')
-    implementation project(':components:support-utils')
     implementation project(':components:support-ktx')
+    implementation project(':components:support-utils')
     implementation project(':components:ui-icons')
 
     implementation libs.androidx.core.ktx
-
-    implementation libs.kotlin.coroutines
+    implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
+    testImplementation testFixtures(project(':components:concept-toolbar'))
 
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
-    testImplementation libs.testing.coroutines
-    testImplementation testFixtures(project(':components:concept-toolbar'))
-
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

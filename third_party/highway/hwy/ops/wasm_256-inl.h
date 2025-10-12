@@ -62,6 +62,9 @@ class Vec256 {
 
 template <typename T>
 struct Mask256 {
+  using PrivateT = T;                                  // only for DFromM
+  static constexpr size_t kPrivateN = 32 / sizeof(T);  // only for DFromM
+
   Mask128<T> m0;
   Mask128<T> m1;
 };
@@ -214,7 +217,8 @@ HWY_API Vec256<T> SaturatedSub(Vec256<T> a, const Vec256<T> b) {
   return a;
 }
 
-template <typename T>
+template <typename T, HWY_IF_UNSIGNED(T),
+          HWY_IF_T_SIZE_ONE_OF(T, (1 << 1) | (1 << 2))>
 HWY_API Vec256<T> AverageRound(Vec256<T> a, const Vec256<T> b) {
   a.v0 = AverageRound(a.v0, b.v0);
   a.v1 = AverageRound(a.v1, b.v1);
@@ -245,12 +249,17 @@ HWY_API Vec256<T> ShiftRight(Vec256<T> v) {
 }
 
 // ------------------------------ RotateRight (ShiftRight, Or)
-template <int kBits, typename T>
+template <int kBits, typename T, HWY_IF_NOT_FLOAT_NOR_SPECIAL(T)>
 HWY_API Vec256<T> RotateRight(const Vec256<T> v) {
+  const DFromV<decltype(v)> d;
+  const RebindToUnsigned<decltype(d)> du;
+
   constexpr size_t kSizeInBits = sizeof(T) * 8;
   static_assert(0 <= kBits && kBits < kSizeInBits, "Invalid shift count");
   if (kBits == 0) return v;
-  return Or(ShiftRight<kBits>(v), ShiftLeft<kSizeInBits - kBits>(v));
+
+  return Or(BitCast(d, ShiftRight<kBits>(BitCast(du, v))),
+            ShiftLeft<HWY_MIN(kSizeInBits - 1, kSizeInBits - kBits)>(v));
 }
 
 // ------------------------------ Shift lanes by same variable #bits
@@ -316,8 +325,9 @@ HWY_API Vec256<MakeWide<T>> MulEven(Vec256<T> a, const Vec256<T> b) {
   ret.v1 = MulEven(a.v1, b.v1);
   return ret;
 }
-HWY_API Vec256<uint64_t> MulEven(Vec256<uint64_t> a, const Vec256<uint64_t> b) {
-  Vec256<uint64_t> ret;
+template <class T, HWY_IF_UI64(T)>
+HWY_API Vec256<T> MulEven(Vec256<T> a, const Vec256<T> b) {
+  Vec256<T> ret;
   ret.v0 = MulEven(a.v0, b.v0);
   ret.v1 = MulEven(a.v1, b.v1);
   return ret;
@@ -331,8 +341,9 @@ HWY_API Vec256<MakeWide<T>> MulOdd(Vec256<T> a, const Vec256<T> b) {
   ret.v1 = MulOdd(a.v1, b.v1);
   return ret;
 }
-HWY_API Vec256<uint64_t> MulOdd(Vec256<uint64_t> a, const Vec256<uint64_t> b) {
-  Vec256<uint64_t> ret;
+template <class T, HWY_IF_UI64(T)>
+HWY_API Vec256<T> MulOdd(Vec256<T> a, const Vec256<T> b) {
+  Vec256<T> ret;
   ret.v0 = MulOdd(a.v0, b.v0);
   ret.v1 = MulOdd(a.v1, b.v1);
   return ret;
@@ -362,37 +373,31 @@ HWY_API Vec256<T> operator/(Vec256<T> a, const Vec256<T> b) {
   return a;
 }
 
-// Approximate reciprocal
-HWY_API Vec256<float> ApproximateReciprocal(const Vec256<float> v) {
-  const Vec256<float> one = Set(Full256<float>(), 1.0f);
-  return one / v;
-}
-
 // ------------------------------ Floating-point multiply-add variants
 
-HWY_API Vec256<float> MulAdd(Vec256<float> mul, Vec256<float> x,
-                             Vec256<float> add) {
+template <class T, HWY_IF_FLOAT3264(T)>
+HWY_API Vec256<T> MulAdd(Vec256<T> mul, Vec256<T> x, Vec256<T> add) {
   mul.v0 = MulAdd(mul.v0, x.v0, add.v0);
   mul.v1 = MulAdd(mul.v1, x.v1, add.v1);
   return mul;
 }
 
-HWY_API Vec256<float> NegMulAdd(Vec256<float> mul, Vec256<float> x,
-                                Vec256<float> add) {
+template <class T, HWY_IF_FLOAT3264(T)>
+HWY_API Vec256<T> NegMulAdd(Vec256<T> mul, Vec256<T> x, Vec256<T> add) {
   mul.v0 = NegMulAdd(mul.v0, x.v0, add.v0);
   mul.v1 = NegMulAdd(mul.v1, x.v1, add.v1);
   return mul;
 }
 
-HWY_API Vec256<float> MulSub(Vec256<float> mul, Vec256<float> x,
-                             Vec256<float> sub) {
+template <class T, HWY_IF_FLOAT3264(T)>
+HWY_API Vec256<T> MulSub(Vec256<T> mul, Vec256<T> x, Vec256<T> sub) {
   mul.v0 = MulSub(mul.v0, x.v0, sub.v0);
   mul.v1 = MulSub(mul.v1, x.v1, sub.v1);
   return mul;
 }
 
-HWY_API Vec256<float> NegMulSub(Vec256<float> mul, Vec256<float> x,
-                                Vec256<float> sub) {
+template <class T, HWY_IF_FLOAT3264(T)>
+HWY_API Vec256<T> NegMulSub(Vec256<T> mul, Vec256<T> x, Vec256<T> sub) {
   mul.v0 = NegMulSub(mul.v0, x.v0, sub.v0);
   mul.v1 = NegMulSub(mul.v1, x.v1, sub.v1);
   return mul;
@@ -407,38 +412,35 @@ HWY_API Vec256<T> Sqrt(Vec256<T> v) {
   return v;
 }
 
-// Approximate reciprocal square root
-HWY_API Vec256<float> ApproximateReciprocalSqrt(const Vec256<float> v) {
-  // TODO(eustas): find cheaper a way to calculate this.
-  const Vec256<float> one = Set(Full256<float>(), 1.0f);
-  return one / Sqrt(v);
-}
-
 // ------------------------------ Floating-point rounding
 
 // Toward nearest integer, ties to even
-HWY_API Vec256<float> Round(Vec256<float> v) {
+template <class T, HWY_IF_FLOAT3264(T)>
+HWY_API Vec256<T> Round(Vec256<T> v) {
   v.v0 = Round(v.v0);
   v.v1 = Round(v.v1);
   return v;
 }
 
 // Toward zero, aka truncate
-HWY_API Vec256<float> Trunc(Vec256<float> v) {
+template <class T, HWY_IF_FLOAT3264(T)>
+HWY_API Vec256<T> Trunc(Vec256<T> v) {
   v.v0 = Trunc(v.v0);
   v.v1 = Trunc(v.v1);
   return v;
 }
 
 // Toward +infinity, aka ceiling
-HWY_API Vec256<float> Ceil(Vec256<float> v) {
+template <class T, HWY_IF_FLOAT3264(T)>
+HWY_API Vec256<T> Ceil(Vec256<T> v) {
   v.v0 = Ceil(v.v0);
   v.v1 = Ceil(v.v1);
   return v;
 }
 
 // Toward -infinity, aka floor
-HWY_API Vec256<float> Floor(Vec256<float> v) {
+template <class T, HWY_IF_FLOAT3264(T)>
+HWY_API Vec256<T> Floor(Vec256<T> v) {
   v.v0 = Floor(v.v0);
   v.v1 = Floor(v.v1);
   return v;
@@ -658,6 +660,14 @@ HWY_API Vec256<T> VecFromMask(D d, Mask256<T> m) {
   return v;
 }
 
+template <class D, HWY_IF_V_SIZE_D(D, 32)>
+HWY_API uint64_t BitsFromMask(D d, MFromD<D> m) {
+  const Half<decltype(d)> dh;
+  const uint64_t lo = BitsFromMask(dh, m.m0);
+  const uint64_t hi = BitsFromMask(dh, m.m1);
+  return (hi << Lanes(dh)) | lo;
+}
+
 // mask ? yes : no
 template <typename T>
 HWY_API Vec256<T> IfThenElse(Mask256<T> mask, Vec256<T> yes, Vec256<T> no) {
@@ -683,11 +693,6 @@ HWY_API Vec256<T> IfNegativeThenElse(Vec256<T> v, Vec256<T> yes, Vec256<T> no) {
   v.v0 = IfNegativeThenElse(v.v0, yes.v0, no.v0);
   v.v1 = IfNegativeThenElse(v.v1, yes.v1, no.v1);
   return v;
-}
-
-template <typename T, HWY_IF_FLOAT(T)>
-HWY_API Vec256<T> ZeroIfNegative(Vec256<T> v) {
-  return IfThenZeroElse(v < Zero(DFromV<decltype(v)>()), v);
 }
 
 // ------------------------------ Mask logical
@@ -1368,6 +1373,24 @@ HWY_API Vec256<T> OddEven(Vec256<T> a, const Vec256<T> b) {
   return a;
 }
 
+// ------------------------------ InterleaveEven
+template <class D, HWY_IF_V_SIZE_D(D, 32)>
+HWY_API VFromD<D> InterleaveEven(D d, VFromD<D> a, VFromD<D> b) {
+  const Half<decltype(d)> dh;
+  a.v0 = InterleaveEven(dh, a.v0, b.v0);
+  a.v1 = InterleaveEven(dh, a.v1, b.v1);
+  return a;
+}
+
+// ------------------------------ InterleaveOdd
+template <class D, HWY_IF_V_SIZE_D(D, 32)>
+HWY_API VFromD<D> InterleaveOdd(D d, VFromD<D> a, VFromD<D> b) {
+  const Half<decltype(d)> dh;
+  a.v0 = InterleaveOdd(dh, a.v0, b.v0);
+  a.v1 = InterleaveOdd(dh, a.v1, b.v1);
+  return a;
+}
+
 // ------------------------------ OddEvenBlocks
 template <typename T>
 HWY_API Vec256<T> OddEvenBlocks(Vec256<T> odd, Vec256<T> even) {
@@ -1381,6 +1404,23 @@ HWY_API Vec256<T> SwapAdjacentBlocks(Vec256<T> v) {
   Vec256<T> ret;
   ret.v0 = v.v1;  // swapped order
   ret.v1 = v.v0;
+  return ret;
+}
+
+// ------------------------------ InterleaveEvenBlocks
+template <class D, class V = VFromD<D>, HWY_IF_V_SIZE_D(D, 32)>
+HWY_API V InterleaveEvenBlocks(D, V a, V b) {
+  V ret;
+  ret.v0 = a.v0;
+  ret.v1 = b.v0;
+  return ret;
+}
+// ------------------------------ InterleaveOddBlocks
+template <class D, class V = VFromD<D>, HWY_IF_V_SIZE_D(D, 32)>
+HWY_API V InterleaveOddBlocks(D, V a, V b) {
+  V ret;
+  ret.v0 = a.v1;
+  ret.v1 = b.v1;
   return ret;
 }
 
@@ -1864,12 +1904,12 @@ HWY_API Vec128<float16_t> DemoteTo(D d16, Vec256<float> v) {
   return Combine(d16, hi, lo);
 }
 
-template <class D, HWY_IF_BF16_D(D)>
-HWY_API Vec128<bfloat16_t> DemoteTo(D dbf16, Vec256<float> v) {
-  const Half<decltype(dbf16)> dbf16h;
-  const Vec64<bfloat16_t> lo = DemoteTo(dbf16h, v.v0);
-  const Vec64<bfloat16_t> hi = DemoteTo(dbf16h, v.v1);
-  return Combine(dbf16, hi, lo);
+template <class D, HWY_IF_F32_D(D)>
+HWY_API Vec128<float> DemoteTo(D df32, Vec256<double> v) {
+  const Half<decltype(df32)> df32h;
+  const Vec64<float> lo = DemoteTo(df32h, v.v0);
+  const Vec64<float> hi = DemoteTo(df32h, v.v1);
+  return Combine(df32, hi, lo);
 }
 
 // For already range-limited input [0, 255].
@@ -1924,13 +1964,6 @@ HWY_API Vec128<uint8_t> TruncateTo(D /* tag */, Vec256<uint16_t> v) {
 }
 
 // ------------------------------ ReorderDemote2To
-template <class DBF16, HWY_IF_BF16_D(DBF16)>
-HWY_API Vec256<bfloat16_t> ReorderDemote2To(DBF16 dbf16, Vec256<float> a,
-                                            Vec256<float> b) {
-  const RebindToUnsigned<decltype(dbf16)> du16;
-  return BitCast(dbf16, ConcatOdd(du16, BitCast(du16, b), BitCast(du16, a)));
-}
-
 template <class DN, typename V, HWY_IF_V_SIZE_D(DN, 32),
           HWY_IF_NOT_FLOAT_NOR_SPECIAL(TFromD<DN>), HWY_IF_SIGNED_V(V),
           HWY_IF_T_SIZE_ONE_OF_D(DN, (1 << 1) | (1 << 2) | (1 << 4)),
@@ -1966,8 +1999,9 @@ HWY_API Vec256<TTo> ConvertTo(DTo d, const Vec256<TFrom> v) {
   return ret;
 }
 
-HWY_API Vec256<int32_t> NearestInt(const Vec256<float> v) {
-  return ConvertTo(Full256<int32_t>(), Round(v));
+template <typename T, HWY_IF_FLOAT3264(T)>
+HWY_API Vec256<MakeSigned<T>> NearestInt(const Vec256<T> v) {
+  return ConvertTo(Full256<MakeSigned<T>>(), Round(v));
 }
 
 // ================================================== MISC

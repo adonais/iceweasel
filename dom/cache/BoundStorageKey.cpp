@@ -214,9 +214,9 @@ void BoundStorageKeyCacheStorage::RunRequest(EntryType&& aEntry) {
   MOZ_ASSERT(mActor);
   MOZ_ASSERT(mCacheStorageChild);
 
-  // AutoChildOpArgs args(this, aEntry.mArgs, 1);
-  // RefPtr<CacheStoragePromise> p{aEntry.mPromise.forget()};
-  // mCacheStorageChild->ExecuteOp(mGlobal, p, this, args.SendAsOpArgs());
+  AutoChildOpArgs args(this, aEntry.mArgs, 1);
+  RefPtr<CacheStoragePromise> p{aEntry.mPromise.forget()};
+  mCacheStorageChild->ExecuteOp(mGlobal, p, this, args.SendAsOpArgs());
 }
 
 auto BoundStorageKeyCacheStorage::Open(const nsAString& aKey, ErrorResult& aRv)

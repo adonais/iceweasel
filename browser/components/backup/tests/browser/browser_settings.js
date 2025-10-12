@@ -349,6 +349,8 @@ add_task(async function test_last_backup_info_and_location() {
     await stateUpdated;
 
     await IOUtils.remove(TEST_NEW_BACKUP_PARENT_PATH);
+    await SpecialPowers.popPrefEnv();
     sandbox.restore();
   });
+  await SpecialPowers.popPrefEnv();
 });

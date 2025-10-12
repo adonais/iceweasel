@@ -41,8 +41,6 @@ add_setup(async function () {
  * Tests that starting the service gets a started event.
  */
 add_task(async function test_IPProtectionService_start() {
-  IPProtectionService.init();
-
   let sandbox = sinon.createSandbox();
   sandbox.stub(IPProtectionService.guardian, "fetchProxyPass").returns({
     status: 200,
@@ -52,6 +50,8 @@ add_task(async function test_IPProtectionService_start() {
       asBearerToken: () => "Bearer hello world",
     },
   });
+
+  await IPProtectionService.init();
 
   Assert.ok(
     !IPProtectionService.isActive,
@@ -102,7 +102,7 @@ add_task(async function test_IPProtectionService_stop() {
 
   // Simulate signing in to the account
   IPProtectionService.isActive = true;
-  IPProtectionService.activatedAt = Cu.now();
+  IPProtectionService.activatedAt = ChromeUtils.now();
 
   let stoppedEventPromise = waitForEvent(
     IPProtectionService,

@@ -646,6 +646,38 @@ void MacroAssembler::sqrtDouble(FloatRegister src, FloatRegister dest) {
   ma_vsqrt(src, dest);
 }
 
+void MacroAssembler::min32(Register lhs, Register rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::min32(Register lhs, Imm32 rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::max32(Register lhs, Register rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::max32(Register lhs, Imm32 rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::minPtr(Register lhs, Register rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::minPtr(Register lhs, ImmWord rhs, Register dest) {
+  minMax32(lhs, Imm32(rhs.value), dest, /* isMax = */ false);
+}
+
+void MacroAssembler::maxPtr(Register lhs, Register rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
+  minMax32(lhs, Imm32(rhs.value), dest, /* isMax = */ true);
+}
+
 void MacroAssembler::minFloat32(FloatRegister other, FloatRegister srcDest,
                                 bool handleNaN) {
   minMaxFloat32(srcDest, other, handleNaN, false);
@@ -1427,13 +1459,13 @@ void MacroAssembler::branch16(Condition cond, const Address& lhs, Imm32 rhs,
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Register rhs,
-                              Label* label, LhsHighBitsAreClean) {
+                              Label* label) {
   ma_cmp(lhs, rhs);
   ma_b(label, cond);
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Imm32 rhs,
-                              Label* label, LhsHighBitsAreClean) {
+                              Label* label) {
   ScratchRegisterScope scratch(*this);
 
   ma_cmp(lhs, rhs, scratch);

@@ -24,7 +24,8 @@ TASK_CONFIG_TESTS = {
     ],
     "chemspill-prio": [
         ([], None),
-        (["--chemspill-prio"], {"try_task_config": {"chemspill-prio": True}}),
+        (["--chemspill"], {"try_task_config": {"priority": "low"}}),
+        (["--chemspill-priority"], {"try_task_config": {"priority": "low"}}),
     ],
     "env": [
         ([], None),
@@ -49,6 +50,16 @@ TASK_CONFIG_TESTS = {
                 "try_task_config": {
                     "env": {
                         "MOZHARNESS_TEST_PATHS": '{"xpcshell": ["dom/indexedDB/test"]}'
+                    }
+                }
+            },
+        ),
+        (
+            ["dom/indexedDB/test/test_add_put.html", "--allow-testfile-path"],
+            {
+                "try_task_config": {
+                    "env": {
+                        "MOZHARNESS_TEST_PATHS": '{"xpcshell": ["dom/indexedDB/test/test_add_put.html"]}'
                     }
                 }
             },
@@ -115,7 +126,7 @@ TASK_CONFIG_TESTS = {
 
 @pytest.fixture
 def config_patch_resolver(patch_resolver):
-    def inner(paths):
+    def inner(paths, allow_testfile_path):
         patch_resolver(
             [], [{"flavor": "xpcshell", "srcdir_relpath": path} for path in paths]
         )

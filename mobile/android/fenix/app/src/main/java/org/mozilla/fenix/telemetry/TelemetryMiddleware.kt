@@ -24,7 +24,7 @@ import mozilla.components.concept.engine.translate.TranslationOperation
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.telemetry.glean.internal.TimerId
+import mozilla.telemetry.glean.GleanTimerId
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.GleanMetrics.Addons
@@ -49,8 +49,8 @@ private const val PROGRESS_COMPLETE = 100
  * @param metrics [MetricController] to pass events that have been mapped from actions.
  * @param crashReporting An instance of [CrashReporting] to report caught exceptions.
  * @param nimbusSearchEngine The Nimbus search engine.
- * @param searchState Map that stores the [TabSessionState.id] & [TimerId].
- * @param timerId The [TimerId] for the [Metrics.searchPageLoadTime].
+ * @param searchState Map that stores the [TabSessionState.id] & [GleanTimerId].
+ * @param timerId The [GleanTimerId] for the [Metrics.searchPageLoadTime].
  */
 class TelemetryMiddleware(
     private val context: Context,
@@ -58,8 +58,8 @@ class TelemetryMiddleware(
     private val metrics: MetricController,
     private val crashReporting: CrashReporting? = null,
     private val nimbusSearchEngine: String = FxNimbus.features.searchExtraParams.value().searchEngine,
-    private val searchState: MutableMap<String, TimerId> = mutableMapOf(),
-    private val timerId: TimerId = Metrics.searchPageLoadTime.start(),
+    private val searchState: MutableMap<String, GleanTimerId> = mutableMapOf(),
+    private val timerId: GleanTimerId = Metrics.searchPageLoadTime.start(),
 ) : Middleware<BrowserState, BrowserAction> {
 
     private val logger = Logger("TelemetryMiddleware")

@@ -9,7 +9,7 @@ if [ ! -d "${VSPATH}/${VCDIR}" ]; then
     VCDIR=VC/Tools/MSVC/14.39.33519
 fi
 if [ ! -d "${VSPATH}/${VCDIR}" ]; then
-    VCDIR=VC/Tools/MSVC/14.41.34120
+    VCDIR=VC/Tools/MSVC/14.44.35207
 fi
 SDKDIR="Windows Kits/10"
 SDK_VERSION=10.0.17134.0

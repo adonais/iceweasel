@@ -421,18 +421,6 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
     //         now the running execution context. (Implicit)
     Rooted<GlobalObject*> evalRealmGlobal(cx, evalRealm->maybeGlobal());
     AutoRealm ar(cx, evalRealmGlobal);
-
-    // Not Speced: Get referencing private to pass to importHook.
-    RootedScript script(cx);
-    const char* filename;
-    uint32_t lineno;
-    uint32_t pcOffset;
-    bool mutedErrors;
-    DescribeScriptedCallerForCompilation(cx, &script, &filename, &lineno,
-                                         &pcOffset, &mutedErrors);
-
-    MOZ_ASSERT(script);
-
     Rooted<JSAtom*> specifierAtom(cx, AtomizeString(cx, specifierString));
     if (!specifierAtom) {
       if (!RejectPromiseWithPendingError(cx, promise)) {
@@ -454,7 +442,7 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
     // Step 7. Perform ! HostLoadImportedModule(referrer, specifierString,
     // EMPTY, innerCapability).
     Rooted<Value> payload(cx, ObjectValue(*promise));
-    if (!js::HostLoadImportedModule(cx, script, moduleRequest,
+    if (!js::HostLoadImportedModule(cx, nullptr, moduleRequest,
                                     JS::UndefinedHandleValue, payload)) {
       if (!RejectPromiseWithPendingError(cx, promise)) {
         return nullptr;

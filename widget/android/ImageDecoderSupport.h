@@ -5,6 +5,8 @@
 #ifndef ImageDecoderSupport_h__
 #define ImageDecoderSupport_h__
 
+#include "imgINotificationObserver.h"
+
 #include "mozilla/java/ImageDecoderNatives.h"
 
 class imgIContainerCallback;

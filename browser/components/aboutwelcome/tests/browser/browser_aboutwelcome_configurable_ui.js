@@ -955,3 +955,65 @@ add_task(async function test_aboutwelcome_single_select_icon_styles() {
   await doExperimentCleanup();
   browser.closeBrowser();
 });
+
+/**
+ * Test configurability of secondary_button_top
+ */
+add_task(async function test_secondary_button_top_configuration() {
+  const secondaryTopContent = makeTestContent(`TEST_SECONDARY_TOP_CONTENT`, {
+    secondary_button_top: [
+      {
+        label: {
+          raw: "test button 1",
+        },
+        action: {
+          navigate: true,
+        },
+      },
+      {
+        label: {
+          raw: "test button 2",
+        },
+        action: {
+          navigate: true,
+        },
+      },
+    ],
+  });
+
+  let screens = [secondaryTopContent];
+
+  let doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "aboutwelcome",
+    value: { enabled: true, screens },
+  });
+
+  let browser = await openAboutWelcome();
+
+  await test_screen_content(
+    browser,
+    "render the secondary top buttons in a container",
+    // Expected selectors:
+    [
+      ".secondary-buttons-top-container",
+      "#secondary_button_0",
+      "#secondary_button_1",
+    ]
+  );
+
+  // Ensure container has appropriate styles
+  await test_element_styles(
+    browser,
+    ".secondary-buttons-top-container",
+    // Expected styles:
+    {
+      display: "flex",
+      "flex-direction": "row-reverse",
+      position: "fixed",
+      top: "10px",
+    }
+  );
+
+  await doExperimentCleanup();
+  browser.closeBrowser();
+});

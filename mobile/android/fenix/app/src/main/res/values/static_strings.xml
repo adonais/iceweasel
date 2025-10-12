@@ -77,6 +77,8 @@
     <string name="preferences_debug_settings_compose_logins" translatable="false">Enable Compose Logins</string>
     <!-- Label for enabling Homepage as a New Tab -->
     <string name="preferences_debug_settings_homepage_as_new_tab" translatable="false">Enable Homepage as a New Tab</string>
+    <!-- Label for enabling Discover more stories -->
+    <string name="preferences_debug_settings_discover_more_stories" translatable="false">Enable Discover More Stories</string>
     <!-- Label for enabling the menu redesign -->
     <string name="preferences_debug_settings_menu_redesign" translatable="false">Enable Menu Redesign</string>
     <!-- Label for enabling Firefox Suggest -->
@@ -85,6 +87,10 @@
     <string name="preferences_debug_settings_composable_toolbar" translatable="false">Enable Composable Toolbar</string>
     <!-- Label for enabling the redesigned toolbar options -->
     <string name="preferences_debug_settings_toolbar_redesign" translatable="false">Enable Redesigned Toolbar Options</string>
+    <!-- Label for enabling the redesigned simple toolbar -->
+    <string name="preferences_debug_settings_simple_toolbar_customization">Enable simple toolbar customization</string>
+    <!-- Label for enabling the redesigned expanded toolbar -->
+    <string name="preferences_debug_settings_expanded_toolbar_customization">Enable expanded toolbar customization</string>
     <!-- Label for a longer description of the redesigned toolbar depending on the composable toolbar feature -->
     <string name="preferences_debug_settings_toolbar_redesign_summary" translatable="false">This needs the Composable Toolbar feature enabled</string>
     <!-- Label for toggling Remote Crash Pull -->
@@ -120,8 +126,13 @@
     <!-- Label for enabling LNA blocking -->
     <string name="preferences_debug_settings_enable_lna_blocking" translatable="false">Enable LNA blocking</string>
 
+    <!-- Label for enabling isolated content processes in secret settings. -->
+    <string name="preferences_debug_settings_isolated_process" translatable="false">Enable Isolated Content Process (requires restart)</string>
+
     <!-- A secret menu option in the tabs tray for making a tab inactive for testing. -->
     <string name="inactive_tabs_menu_item">Make inactive</string>
+    <!-- A secret menu option in the tabs tray for making a tab inactive for testing. -->
+    <string name="inactive_tabs_menu_item_2">Make tabs inactive</string>
 
     <!-- Content description (not visible, for screen readers etc.) used to announce [LinkTextView]. -->
     <string name="link_text_view_type_announcement" translatable="false">link</string>
@@ -137,6 +148,9 @@
     <string name="preferences_start_profiler">Start Profiler</string>
     <string name="profiler_stop">Stop Profiler</string>
 
+
+    <string name="profiler_active_notification" translatable="false">Profiler active</string>
+    <string name="profiler_notification_text" translatable="false">Profiling is active. Tap to stop profiler</string>
     <string name="profiler_settings_title">Profiler Settings</string>
     <string name="profiler_filter_firefox">Firefox</string>
     <string name="profiler_running">Profiler is currently running</string>
@@ -232,6 +246,10 @@
     <string name="crash_debug_deferral_button">Reset deferral settings</string>
     <!-- Subtitle warning text for crash button -->
     <string name="crash_debug_crash_app_warning">This will crash the app to start crash reporting flow. Please also ensure that the crash report option is set to "Ask before sending" in the data collections settings if you want the dialog to pop up.</string>
+    <!-- Subtitle warning text for crash button -->
+    <string name="crash_debug_startup_crash_warning">This will set the flag that a startup crash was detected and crash the app to enter the startup crash flow on next startup.</string>
+    <!-- Button text to set app to crash during next startup -->
+    <string name="crash_debug_crash_on_next_startup">Set startup crash flag and crash app</string>
     <!-- Timer text for deferral period %s is the timer string -->
     <string name="crash_debug_deferral_timer">Current deferral period: %s</string>
 </resources>

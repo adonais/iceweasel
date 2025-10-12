@@ -34,7 +34,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/Services.h"
-#include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/StaticPrefs_clipboard.h"
 #include "mozilla/TimeStamp.h"
 #include "GRefPtr.h"
 #include "WidgetUtilsGtk.h"
@@ -318,7 +318,8 @@ nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
   }
 
   // Try to exclude private data from clipboard history.
-  if (aTransferable->GetIsPrivateData()) {
+  if (!StaticPrefs::clipboard_copyPrivateDataToClipboardCloudOrHistory() &&
+      aTransferable->GetIsPrivateData()) {
     GdkAtom atom = gdk_atom_intern(kKDEPasswordManagerHintMime, FALSE);
     gtk_target_list_add(list, atom, 0, 0);
   }
@@ -1277,7 +1278,8 @@ void nsClipboard::SelectionGetEvent(GtkClipboard* aClipboard,
     return;
   }
 
-  if (selectionTarget == gdk_atom_intern(kKDEPasswordManagerHintMime, FALSE)) {
+  if (!StaticPrefs::clipboard_copyPrivateDataToClipboardCloudOrHistory() &&
+      selectionTarget == gdk_atom_intern(kKDEPasswordManagerHintMime, FALSE)) {
     if (!trans->GetIsPrivateData()) {
       MOZ_CLIPBOARD_LOG(
           "  requested %s, but the data isn't actually private!\n",

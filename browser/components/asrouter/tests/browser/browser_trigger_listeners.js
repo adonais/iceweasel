@@ -556,6 +556,36 @@ add_task(async function test_onSearchTrigger() {
   BrowserTestUtils.removeTab(tab);
 });
 
+add_task(async function test_selectableProfilesUpdated_remote_vs_local() {
+  const handlerStub = sinon.stub();
+  const trigger = ASRouterTriggerListeners.get("selectableProfilesUpdated");
+  trigger.uninit();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.discovery.enabled", false]],
+  });
+
+  trigger.init(handlerStub);
+
+  // Send remote notification with tracked pref change, which should trigger firing
+  Services.prefs.setBoolPref("browser.discovery.enabled", true);
+  Services.obs.notifyObservers(null, "sps-profiles-updated", "remote");
+  Assert.ok(
+    handlerStub.calledOnce,
+    "Fired on remote when tracked pref changed"
+  );
+  Assert.deepEqual(handlerStub.firstCall.args[1].param, { type: "remote" });
+
+  // Send local notification with tracked pref change, which should not trigger firing
+  handlerStub.resetHistory();
+  Services.prefs.setBoolPref("browser.discovery.enabled", false);
+  Services.obs.notifyObservers(null, "sps-profiles-updated", "local");
+  Assert.ok(handlerStub.notCalled, "Did not fire on local");
+
+  trigger.uninit();
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function test_elementClicked_trigger() {
   const handlerStub = sinon.stub();
   const xulElButtonId = "PanelUI-menu-button";

@@ -11,6 +11,7 @@
 
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
+#include "mozilla/Try.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/NavigatorLogin.h"
 #include "mozilla/glean/AntitrackingMetrics.h"
@@ -70,6 +71,7 @@
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/FlowMarkers.h"
 #include "mozilla/Components.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPrefs_security.h"
@@ -372,7 +374,7 @@ CookieObserver::Observe(nsISupports* aSubject, const char* aTopic,
 void MaybeInitializeCookieProcessingGuard(
     nsHttpChannel* aChannel, CookieServiceParent::CookieProcessingGuard& aGuard,
     RefPtr<CookieObserver>& aCookieObserver,
-    RefPtr<HttpChannelParent>& aHttpChannelParent) {
+    RefPtr<HttpChannelParent>& aHttpChannelParent, uint32_t aHttpStatus) {
   nsCOMPtr<nsIParentChannel> parentChannel;
   NS_QueryNotificationCallbacks(aChannel, parentChannel);
   aHttpChannelParent = do_QueryObject(parentChannel);
@@ -392,6 +394,13 @@ void MaybeInitializeCookieProcessingGuard(
   CookieServiceParent* cookieServiceParent =
       static_cast<CookieServiceParent*>(csParent);
   if (!cookieServiceParent) {
+    return;
+  }
+
+  // on redirect we don't want to use processing guard
+  // because it will prevent cookies from being set in the
+  // content process that originated the request
+  if (nsHttpChannel::IsRedirectStatus(aHttpStatus)) {
     return;
   }
 
@@ -528,12 +537,9 @@ void nsHttpChannel::ReleaseMainThreadOnlyReferences() {
 
 nsresult nsHttpChannel::Init(nsIURI* uri, uint32_t caps, nsProxyInfo* proxyInfo,
                              uint32_t proxyResolveFlags, nsIURI* proxyURI,
-                             uint64_t channelId,
-                             ExtContentPolicyType aContentPolicyType,
-                             nsILoadInfo* aLoadInfo) {
-  nsresult rv =
-      HttpBaseChannel::Init(uri, caps, proxyInfo, proxyResolveFlags, proxyURI,
-                            channelId, aContentPolicyType, aLoadInfo);
+                             uint64_t channelId, nsILoadInfo* aLoadInfo) {
+  nsresult rv = HttpBaseChannel::Init(uri, caps, proxyInfo, proxyResolveFlags,
+                                      proxyURI, channelId, aLoadInfo);
   if (NS_FAILED(rv)) return rv;
 
   LOG1(("nsHttpChannel::Init [this=%p]\n", this));
@@ -575,6 +581,44 @@ nsHttpChannel::LogMimeTypeMismatch(const nsACString& aMessageName,
 //-----------------------------------------------------------------------------
 // nsHttpChannel <private>
 //-----------------------------------------------------------------------------
+
+void nsHttpChannel::AddStorageAccessHeadersToRequest() {
+  if (!StaticPrefs::dom_storage_access_enabled() ||
+      !StaticPrefs::dom_storage_access_headers_enabled()) {
+    return;
+  }
+
+  // check if request is eligible for storage-access
+  uint32_t cookiePolicy = 0;
+  if (mLoadInfo->GetCookiePolicy(&cookiePolicy) != NS_OK) {
+    return;
+  }
+  if (cookiePolicy != nsILoadInfo::SEC_COOKIES_INCLUDE) {
+    return;
+  }
+
+  // check whether we have storage-access permission set in channel
+  nsILoadInfo::StoragePermissionState storageAccess =
+      AntiTrackingUtils::GetStoragePermissionStateInParent(this);
+
+  switch (storageAccess) {
+    case nsILoadInfo::HasStoragePermission:
+    case nsILoadInfo::StoragePermissionAllowListed:
+      SetRequestHeader(nsHttp::Sec_Fetch_Storage_Access.val(), "active"_ns,
+                       false);
+      break;
+    case nsILoadInfo::InactiveStoragePermission:
+      SetRequestHeader(nsHttp::Sec_Fetch_Storage_Access.val(), "inactive"_ns,
+                       false);
+      break;
+    case nsILoadInfo::DisabledStoragePermission:
+      SetRequestHeader(nsHttp::Sec_Fetch_Storage_Access.val(), "none"_ns,
+                       false);
+      break;
+    case nsILoadInfo::NoStoragePermission:
+      break;
+  }
+}
 
 nsresult nsHttpChannel::PrepareToConnect() {
   LOG(("nsHttpChannel::PrepareToConnect [this=%p]\n", this));
@@ -1199,8 +1243,8 @@ nsresult nsHttpChannel::HandleOverrideResponse() {
     RefPtr<CookieObserver> cookieObserver;
 
     CookieServiceParent::CookieProcessingGuard cookieProcessingGuard;
-    MaybeInitializeCookieProcessingGuard(this, cookieProcessingGuard,
-                                         cookieObserver, httpParent);
+    MaybeInitializeCookieProcessingGuard(
+        this, cookieProcessingGuard, cookieObserver, httpParent, statusCode);
 
     // Handle Set-Cookie headers as if the response was from networking.
     CookieVisitor cookieVisitor(mResponseHead.get());
@@ -2064,6 +2108,18 @@ nsresult nsHttpChannel::InitTransaction() {
     parentAddressSpace = bc->GetCurrentIPAddressSpace();
   }
 
+  // Check if this is a top-level navigation load and grant LNA permissions
+  // to skip local network access verification for navigational loads
+  if (mLoadInfo && StaticPrefs::network_lna_allow_top_level_navigation()) {
+    ExtContentPolicyType contentPolicyType =
+        mLoadInfo->GetExternalContentPolicyType();
+    if (contentPolicyType == ExtContentPolicy::TYPE_DOCUMENT) {
+      // Grant permissions for top-level navigation loads
+      mLNAPermission.mLocalHostPermission = LNAPermission::Granted;
+      mLNAPermission.mLocalNetworkPermission = LNAPermission::Granted;
+    }
+  }
+
   rv = mTransaction->Init(
       mCaps, mConnectionInfo, &mRequestHead, mUploadStream, mReqContentLength,
       LoadUploadStreamHasHeaders(), GetCurrentSerialEventTarget(), callbacks,
@@ -2746,20 +2802,6 @@ nsresult nsHttpChannel::ProcessResponse(nsHttpConnectionInfo* aConnInfo) {
   }
 
   if (Telemetry::CanRecordPrereleaseData()) {
-    // how often do we see something like Alt-Svc: "443:quic,p=1"
-    // and Alt-Svc: "h3-****"
-    nsAutoCString alt_service;
-    Unused << mResponseHead->GetHeader(nsHttp::Alternate_Service, alt_service);
-    uint32_t saw_quic = 0;
-    if (!alt_service.IsEmpty()) {
-      if (strstr(alt_service.get(), "h3-")) {
-        saw_quic = 1;
-      } else if (strstr(alt_service.get(), "quic")) {
-        saw_quic = 2;
-      }
-    }
-    glean::http::saw_quic_alt_protocol.AccumulateSingleSample(saw_quic);
-
     // Gather data on various response status to monitor any increased frequency
     // of auth failures due to Bug 1896350
     switch (httpStatus) {
@@ -2855,16 +2897,18 @@ nsresult nsHttpChannel::ProcessResponse(nsHttpConnectionInfo* aConnInfo) {
   // We use GetReferringPage because mReferrerInfo may not be set at all(this is
   // especially useful in xpcshell tests, where we don't have an actual pageload
   // to get a referrer from).
-  nsCOMPtr<nsIURI> referrer = GetReferringPage();
-  if (!referrer && mReferrerInfo) {
-    referrer = mReferrerInfo->GetOriginalReferrer();
-  }
+  if (StaticPrefs::network_predictor_enabled()) {
+    nsCOMPtr<nsIURI> referrer = GetReferringPage();
+    if (!referrer && mReferrerInfo) {
+      referrer = mReferrerInfo->GetOriginalReferrer();
+    }
 
-  if (referrer) {
-    nsCOMPtr<nsILoadContextInfo> lci = GetLoadContextInfo(this);
-    mozilla::net::Predictor::UpdateCacheability(
-        referrer, mURI, httpStatus, mRequestHead, mResponseHead.get(), lci,
-        IsThirdPartyTrackingResource());
+    if (referrer) {
+      nsCOMPtr<nsILoadContextInfo> lci = GetLoadContextInfo(this);
+      mozilla::net::Predictor::UpdateCacheability(
+          referrer, mURI, httpStatus, mRequestHead, mResponseHead.get(), lci,
+          IsThirdPartyTrackingResource());
+    }
   }
 
   // Only allow 407 (authentication required) to continue
@@ -2937,7 +2981,8 @@ nsresult nsHttpChannel::ContinueProcessResponse1(
         // called, we shouldn't call SetCookieHeaders.
 
         MaybeInitializeCookieProcessingGuard(this, cookieProcessingGuard,
-                                             cookieObserver, httpParent);
+                                             cookieObserver, httpParent,
+                                             httpStatus);
       }
 
       CookieVisitor cookieVisitor(mResponseHead.get());
@@ -6655,6 +6700,24 @@ nsresult nsHttpChannel::CancelInternal(nsresult status) {
   mCanceled = true;
   mStatus = NS_FAILED(status) ? status : NS_ERROR_ABORT;
 
+  // If we're waiting for LNA permission result and the channel is being
+  // cancelled, we need to call OnPermissionPromptResult with permission denied
+  // to resume the channel properly
+  if (mWaitingForLNAPermission) {
+    LOG(
+        ("nsHttpChannel::CancelInternal [this=%p] cancelling while waiting for "
+         "LNA permission, denying permission",
+         this));
+    // Determine permission key dynamically from transaction
+    const nsACString& permissionKey =
+        (mTransaction && mTransaction->GetTargetIPAddressSpace() ==
+                             nsILoadInfo::IPAddressSpace::Local)
+            ? LOCAL_HOST_PERMISSION_KEY
+            : LOCAL_NETWORK_PERMISSION_KEY;
+    OnPermissionPromptResult(false, permissionKey);
+    return NS_OK;
+  }
+
   if (StaticPrefs::network_http_network_error_logging_enabled() &&
       LoadUsedNetwork() && !mReportedNEL) {
     if (nsCOMPtr<nsINetworkErrorLogging> nel =
@@ -7216,6 +7279,7 @@ nsresult nsHttpChannel::BeginConnect() {
   mRequestHead.SetHTTPS(isHttps);
   mRequestHead.SetOrigin(scheme, host, port);
 
+  AddStorageAccessHeadersToRequest();
   SetOriginHeader();
   SetDoNotTrack();
   SetGlobalPrivacyControl();
@@ -8191,6 +8255,7 @@ nsresult nsHttpChannel::ProcessLNAActions() {
   // Suspend to block any notification to the channel.
   // This will get resumed in
   // nsHttpChannel::OnPermissionPromptResult
+  mWaitingForLNAPermission = true;
   Suspend();
   auto permissionKey = mTransaction->GetTargetIPAddressSpace() ==
                                nsILoadInfo::IPAddressSpace::Local
@@ -8477,11 +8542,9 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
       };
 
       if (nsCOMPtr<nsIURI> fallbackURI = GetFallbackURI(mURI)) {
-        rv = StartRedirectChannelToURI(
-            fallbackURI,
-            nsIChannelEventSink::REDIRECT_INTERNAL |
-                nsIChannelEventSink::REDIRECT_TRANSPARENT,
-            passDomainCategory);
+        rv = StartRedirectChannelToURI(fallbackURI,
+                                       nsIChannelEventSink::REDIRECT_INTERNAL,
+                                       passDomainCategory);
         if (NS_SUCCEEDED(rv)) {
           nsCOMPtr<nsIObserverService> obsService =
               services::GetObserverService();
@@ -8546,6 +8609,7 @@ void nsHttpChannel::MaybeUpdateDocumentIPAddressSpaceFromCache() {
 
 nsresult nsHttpChannel::OnPermissionPromptResult(bool aGranted,
                                                  const nsACString& aType) {
+  mWaitingForLNAPermission = false;
   if (aGranted) {
     LOG(
         ("nsHttpChannel::OnPermissionPromptResult [this=%p] "
@@ -8600,6 +8664,12 @@ nsresult nsHttpChannel::OnPermissionPromptResult(bool aGranted,
     mLNAPermission.mLocalNetworkPermission = LNAPermission::Denied;
   }
 
+  if (!mSuspendCount) {
+    return ContinueOnStartRequest1(
+        nsresult::NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
+  }
+  // channel is suspended state. We will continue when the channel is
+  // resumed
   return CallOrWaitForResume([](auto* self) {
     return self->ContinueOnStartRequest1(
         nsresult::NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED);
@@ -8953,19 +9023,6 @@ static void RecordHTTPSUpgradeTelemetry(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
 static void RecordIPAddressSpaceTelemetry(bool aLoadSuccess, nsIURI* aURI,
                                           nsILoadInfo* aLoadInfo,
                                           NetAddr& aPeerAddr) {
-  bool isIpAddrAny = false;
-
-  if (NS_SUCCEEDED(gIOService->HostnameIsIPAddressAny(aURI, &isIpAddrAny)) &&
-      isIpAddrAny) {
-    if (aLoadSuccess) {
-      mozilla::glean::networking::http_ip_addr_any_hostnames.Get("sucess"_ns)
-          .Add(1);
-    } else {
-      mozilla::glean::networking::http_ip_addr_any_hostnames.Get("failure"_ns)
-          .Add(1);
-    }
-  }
-
   // if the load was not successful, then there is nothing to record here
   if (!aLoadSuccess) {
     return;
@@ -10858,7 +10915,7 @@ void nsHttpChannel::SetOriginHeader() {
     return;
   }
 
-  // Step 1. Let serializedOrigin be the result of byte-serializing a request
+  // Step 2. Let serializedOrigin be the result of byte-serializing a request
   // origin with request.
   nsAutoCString serializedOrigin;
   nsCOMPtr<nsIURI> uri;
@@ -10883,7 +10940,7 @@ void nsHttpChannel::SetOriginHeader() {
     }
   }
 
-  // Step 2. If request’s response tainting is "cors" or request’s mode is
+  // Step 3. If request’s response tainting is "cors" or request’s mode is
   // "websocket", then append (`Origin`, serializedOrigin) to request’s header
   // list.
   //
@@ -10894,13 +10951,27 @@ void nsHttpChannel::SetOriginHeader() {
     return;
   }
 
-  // Step 3. Otherwise, if request’s method is neither `GET` nor `HEAD`, then:
+  // Step 4. Otherwise, if request’s method is neither `GET` nor `HEAD`, then:
   if (mRequestHead.IsGet() || mRequestHead.IsHead()) {
-    return;
+    // Modified Step 4 in case storage-access-headers are enabled
+    if (!StaticPrefs::dom_storage_access_enabled() ||
+        !StaticPrefs::dom_storage_access_headers_enabled()) {
+      // proceed with unmodified fetch spec
+      return;
+    } else {
+      // the result of getting `Sec-Fetch-Storage-Access` from request’s header
+      // list is "inactive"
+      nsAutoCString storageAccess;
+      nsresult rv =
+          GetRequestHeader("Sec-Fetch-Storage-Access"_ns, storageAccess);
+      if (NS_FAILED(rv) || !storageAccess.EqualsLiteral("inactive")) {
+        return;
+      }
+    }
   }
 
   if (!serializedOrigin.EqualsLiteral("null")) {
-    // Step 3.1. (Implemented by ReferrerInfo::ShouldSetNullOriginHeader)
+    // Step 4.1. (Implemented by ReferrerInfo::ShouldSetNullOriginHeader)
     if (ReferrerInfo::ShouldSetNullOriginHeader(this, uri)) {
       serializedOrigin.AssignLiteral("null");
     } else if (StaticPrefs::network_http_sendOriginHeader() == 1) {
@@ -10914,7 +10985,7 @@ void nsHttpChannel::SetOriginHeader() {
     }
   }
 
-  // Step 3.2. Append (`Origin`, serializedOrigin) to request’s header list.
+  // Step 4.2. Append (`Origin`, serializedOrigin) to request’s header list.
   MOZ_ALWAYS_SUCCEEDS(mRequestHead.SetHeader(nsHttp::Origin, serializedOrigin,
                                              false /* merge */));
 }
@@ -10968,17 +11039,6 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
       gIOService->IncrementNetWonRequestNumber();
       glean::network::race_cache_bandwidth_race_network_win.Accumulate(
           mTransferSize);
-      if (mRaceDelay) {
-        glean::network::race_cache_with_network_usage
-            .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::
-                         eNetworkdelayedrace)
-            .Add();
-      } else {
-        glean::network::race_cache_with_network_usage
-            .EnumGet(
-                glean::network::RaceCacheWithNetworkUsageLabel::eNetworkrace)
-            .Add();
-      }
     } else {
       PROFILER_MARKER_TEXT(
           "RCWN", NETWORK, {},
@@ -10986,10 +11046,6 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
               "Cache won or was replaced, valid = %d, channel %p, URI %s",
               LoadCachedContentIsValid(), this, mSpec.get()));
       glean::network::race_cache_bandwidth_not_race.Accumulate(mTransferSize);
-      glean::network::race_cache_with_network_usage
-          .EnumGet(
-              glean::network::RaceCacheWithNetworkUsageLabel::eNetworknorace)
-          .Add();
     }
   } else {
     if (mRaceCacheWithNetwork || mRaceDelay) {
@@ -11000,21 +11056,8 @@ void nsHttpChannel::ReportRcwnStats(bool isFromNet) {
       gIOService->IncrementCacheWonRequestNumber();
       glean::network::race_cache_bandwidth_race_cache_win.Accumulate(
           mTransferSize);
-      if (mRaceDelay) {
-        glean::network::race_cache_with_network_usage
-            .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::
-                         eCachedelayedrace)
-            .Add();
-      } else {
-        glean::network::race_cache_with_network_usage
-            .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::eCacherace)
-            .Add();
-      }
     } else {
       glean::network::race_cache_bandwidth_not_race.Accumulate(mTransferSize);
-      glean::network::race_cache_with_network_usage
-          .EnumGet(glean::network::RaceCacheWithNetworkUsageLabel::eCachenorace)
-          .Add();
     }
   }
 
@@ -11599,14 +11642,12 @@ nsresult nsHttpChannel::RedirectToInterceptedChannel() {
       InterceptedHttpChannel::CreateForInterception(
           mChannelCreationTime, mChannelCreationTimestamp, mAsyncOpenTime);
 
-  ExtContentPolicyType type = mLoadInfo->GetExternalContentPolicyType();
-
   nsCOMPtr<nsILoadInfo> redirectLoadInfo =
       CloneLoadInfoForRedirect(mURI, nsIChannelEventSink::REDIRECT_INTERNAL);
 
   nsresult rv = intercepted->Init(
       mURI, mCaps, static_cast<nsProxyInfo*>(mProxyInfo.get()),
-      mProxyResolveFlags, mProxyURI, mChannelId, type, redirectLoadInfo);
+      mProxyResolveFlags, mProxyURI, mChannelId, redirectLoadInfo);
 
   rv = SetupReplacementChannel(mURI, intercepted, true,
                                nsIChannelEventSink::REDIRECT_INTERNAL);
@@ -11833,6 +11874,13 @@ NS_IMETHODIMP nsHttpChannel::SetResponseOverride(
     nsIReplacedHttpResponse* aReplacedHttpResponse) {
   mOverrideResponse = new nsMainThreadPtrHolder<nsIReplacedHttpResponse>(
       "nsIReplacedHttpResponse", aReplacedHttpResponse);
+
+  if (LoadRequireCORSPreflight()) {
+    // Bug 1986615, Bug 1940738, responses provided via setResponseOverride will
+    // be handled before the preflight can be sent, flag it as done.
+    StoreIsCorsPreflightDone(true);
+  }
+
   return NS_OK;
 }
 

@@ -12,6 +12,7 @@
 
 #include "gc/Barrier.h"
 #include "jit/InvalidationScriptSet.h"
+#include "jit/JitOptions.h"
 #include "js/SweepingAPI.h"
 #include "vm/PropertyInfo.h"
 
@@ -27,8 +28,8 @@
 // to be mutated) so that IC stubs can guard on this and return the constant
 // property value. In Warp, the guard becomes an invalidation dependency and the
 // property value is a constant in the MIR graph, enabling additional compiler
-// optimizations. ObjectFuse is currently only used for the global object, but
-// this will likely change in the future.
+// optimizations. ObjectFuse is currently used for the global object and the
+// global lexical environment.
 //
 // Each ObjectFuse has a generation counter. When the generation is bumped, IC
 // guards will fail and dependent Ion scripts that are affected by the operation
@@ -220,7 +221,8 @@ class ObjectFuse {
   }
 
   void handlePropertyValueChange(JSContext* cx, PropertyInfo prop);
-  void handlePropertyRemove(JSContext* cx, PropertyInfo prop);
+  void handlePropertyRemove(JSContext* cx, PropertyInfo prop,
+                            bool* wasTrackedProp);
   void handleTeleportingShadowedProperty(JSContext* cx, PropertyInfo prop);
   void handleTeleportingProtoMutation(JSContext* cx);
   void handleShadowedGlobalProperty(JSContext* cx, PropertyInfo prop);
@@ -279,6 +281,14 @@ class ObjectFuseMap {
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
+
+// ObjectFuses can have some performance overhead due to the Watchtower code for
+// property changes, so we only use them if we can take advantage of object
+// fuses with IC stubs. Note that we don't check this for the |addObjectFuse|
+// testing function.
+inline bool ShouldUseObjectFuses() {
+  return jit::IsBaselineInterpreterEnabled();
+}
 
 }  // namespace js
 

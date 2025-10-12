@@ -117,10 +117,6 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // away via browser chrome, then send a bounce event.
   ["events.bounce.maxSecondsFromLastSearch", 10],
 
-  // Whether we expand the font size when when the urlbar is
-  // focused.
-  ["experimental.expandTextOnFocus", false],
-
   // Whether the heuristic result is hidden.
   ["experimental.hideHeuristic", false],
 
@@ -523,6 +519,10 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Yelp suggestions are turned on.
   ["suggest.yelp", true],
 
+  // If `browser.urlbar.yelpRealtime.featureGate` is true, this controls whether
+  // Yelp realtime suggestions are turned on.
+  ["suggest.yelpRealtime", true],
+
   // Whether history results with the same title and URL excluding the ref
   // will be deduplicated.
   ["deduplication.enabled", true],
@@ -629,6 +629,18 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // The number of times the user has clicked the "Show less frequently" command
   // for Yelp suggestions.
   ["yelp.showLessFrequentlyCount", 0],
+
+  // Feature gate pref for Yelp realtime suggestions in the urlbar.
+  ["yelpRealtime.featureGate", false],
+
+  // The minimum prefix length of a Yelp keyword the user must type to trigger
+  // the suggestion. 0 means the min length should be taken from Nimbus or remote
+  // settings.
+  ["yelpRealtime.minKeywordLength", 0],
+
+  // The number of times the user has clicked the "Show less frequently" command
+  // for Yelp realtime suggestions.
+  ["yelpRealtime.showLessFrequentlyCount", 0],
 ]);
 
 // This is defined separately to PREF_URLBAR_DEFAULTS, to avoid re-indenting

@@ -15,6 +15,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellInlines.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/RelativeLuminanceUtils.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoCSSParser.h"
@@ -23,9 +24,9 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/BrowserParent.h"
-#include "mozilla/dom/CSS2PropertiesBinding.h"
 #include "mozilla/dom/CSSBinding.h"
 #include "mozilla/dom/CSSKeyframesRule.h"
+#include "mozilla/dom/CSSStylePropertiesBinding.h"
 #include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/CharacterData.h"
@@ -49,6 +50,7 @@
 #include "nsColor.h"
 #include "nsComputedDOMStyle.h"
 #include "nsContentList.h"
+#include "nsFieldSetFrame.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIContentInlines.h"
 #include "nsLayoutUtils.h"
@@ -321,7 +323,7 @@ class ReadOnlyInspectorDeclaration final : public nsDOMCSSDeclaration {
   css::Rule* GetParentRule() final { return nullptr; }
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) final {
-    return CSS2Properties_Binding::Wrap(aCx, this, aGivenProto);
+    return CSSStyleProperties_Binding::Wrap(aCx, this, aGivenProto);
   }
   // These ones are a bit sad, but matches e.g. nsComputedDOMStyle.
   nsresult SetCSSDeclaration(DeclarationBlock* aDecl,
@@ -760,6 +762,53 @@ void InspectorUtils::RgbToColorName(GlobalObject&, uint8_t aR, uint8_t aG,
   Servo_SlowRgbToColorName(aR, aG, aB, &aColorName);
 }
 
+void InspectorUtils::RgbToNearestColorName(GlobalObject&, float aR, float aG,
+                                           float aB,
+                                           InspectorNearestColor& aResult) {
+  bool exact = Servo_SlowRgbToNearestColorName(
+      aR, aG, aB, StyleColorSpace::Srgb, &aResult.mColorName);
+  aResult.mExact = exact;
+}
+
+/* static */
+void InspectorUtils::RgbToHsv(GlobalObject&, float aR, float aG, float aB,
+                              nsTArray<float>& aResult) {
+  StyleAbsoluteColor input{
+      .components = StyleColorComponents{aR, aG, aB},
+      .alpha = 1.0,
+      .color_space = StyleColorSpace::Srgb,
+  };
+  StyleAbsoluteColor result = input.ToColorSpace(StyleColorSpace::Hwb);
+  float h = result.components._0 / 360.0f;
+  float v = 1 - result.components._2 / 100.0f;
+  float s = 0;
+  if (v != 0.0) {
+    s = 1 - (result.components._1 / 100.0f) / v;
+  }
+  aResult = {h, s, v};
+}
+
+/* static */
+void InspectorUtils::HsvToRgb(GlobalObject&, float aH, float aS, float aV,
+                              nsTArray<float>& aResult) {
+  float h = aH * 360;
+  float w = aV * (1 - aS) * 100;
+  float b = (1 - aV) * 100;
+  StyleAbsoluteColor input{
+      .components = StyleColorComponents{h, w, b},
+      .alpha = 1.0,
+      .color_space = StyleColorSpace::Hwb,
+  };
+  StyleAbsoluteColor result = input.ToColorSpace(StyleColorSpace::Srgb);
+  aResult = {result.components._0, result.components._1, result.components._2};
+}
+
+/* static */
+float InspectorUtils::RelativeLuminance(GlobalObject&, float aR, float aG,
+                                        float aB) {
+  return RelativeLuminanceUtils::Compute(aR, aG, aB);
+}
+
 /* static */
 void InspectorUtils::ColorToRGBA(GlobalObject& aGlobal,
                                  const nsACString& aColorString,
@@ -1004,6 +1053,37 @@ Element* InspectorUtils::ContainingBlockOf(GlobalObject&, Element& aElement) {
     return nullptr;
   }
   return Element::FromNodeOrNull(cb->GetContent());
+}
+
+bool InspectorUtils::IsBlockContainer(GlobalObject&, Element& aElement) {
+  nsIFrame* frame = aElement.GetPrimaryFrame(FlushType::Frames);
+  if (!frame) {
+    return false;
+  }
+
+  // For fieldset elements, we need to check the inner frame.
+  if (nsFieldSetFrame* fieldsetFrame = do_QueryFrame(frame)) {
+    frame = fieldsetFrame->GetInner();
+  }
+
+  if (frame->IsBlockFrameOrSubclass()) {
+    return true;
+  }
+  // ScrollContainerFrame::GetContentInsertionFrame() jumps across the block and
+  // returns the ruby inside (because it calls GetContentInsertionFrame on its
+  // own). So we have to account for that here.
+  if (auto* sc = frame->GetScrollTargetFrame()) {
+    if (sc->GetScrolledFrame()->IsBlockFrameOrSubclass()) {
+      return true;
+    }
+  }
+  if (nsIFrame* inner = frame->GetContentInsertionFrame()) {
+    if (inner->IsBlockFrameOrSubclass()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 void InspectorUtils::GetBlockLineCounts(GlobalObject& aGlobal,

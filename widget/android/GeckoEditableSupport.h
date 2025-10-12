@@ -6,6 +6,7 @@
 #ifndef mozilla_widget_GeckoEditableSupport_h
 #define mozilla_widget_GeckoEditableSupport_h
 
+#include "GeckoViewSupport.h"
 #include "nsAppShell.h"
 #include "nsIWidget.h"
 #include "nsTArray.h"

@@ -81,7 +81,7 @@ const SUGGEST_PREFS = Object.freeze({
       FR: [["fr"], SETTINGS_UI.OFFLINE_ONLY],
       GB: [EN_LOCALES, SETTINGS_UI.OFFLINE_ONLY],
       IT: [["it"], SETTINGS_UI.OFFLINE_ONLY],
-      US: [EN_LOCALES, SETTINGS_UI.FULL],
+      US: [EN_LOCALES, SETTINGS_UI.OFFLINE_ONLY],
     },
   },
   "suggest.quicksuggest.nonsponsored": {
@@ -179,6 +179,8 @@ const FEATURES = {
     "resource:///modules/urlbar/private/WeatherSuggestions.sys.mjs",
   WikipediaSuggestions:
     "resource:///modules/urlbar/private/WikipediaSuggestions.sys.mjs",
+  YelpRealtimeSuggestions:
+    "resource:///modules/urlbar/private/YelpRealtimeSuggestions.sys.mjs",
   YelpSuggestions: "resource:///modules/urlbar/private/YelpSuggestions.sys.mjs",
 };
 
@@ -884,7 +886,7 @@ class _QuickSuggest {
    * @returns {number}
    */
   get MIGRATION_VERSION() {
-    return 2;
+    return 3;
   }
 
   /**
@@ -983,6 +985,12 @@ class _QuickSuggest {
       ) {
         lazy.UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
       }
+    }
+  }
+
+  _migrateFirefoxSuggestPrefsTo_3() {
+    if (lazy.UrlbarPrefs.get("quicksuggest.dataCollection.enabled")) {
+      lazy.UrlbarPrefs.set("quicksuggest.settingsUi", SETTINGS_UI.FULL);
     }
   }
 

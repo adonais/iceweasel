@@ -975,13 +975,12 @@ namespace jit {
 
 bool OptimizeMIR(MIRGenerator* mir) {
   MIRGraph& graph = mir->graph();
-  GraphSpewer& gs = mir->graphSpewer();
 
   if (mir->shouldCancel("Start")) {
     return false;
   }
 
-  gs.spewPass("BuildSSA");
+  mir->spewPass("BuildSSA");
   AssertBasicGraphCoherency(graph);
 
   if (JitSpewEnabled(JitSpew_MIRExpressions)) {
@@ -995,7 +994,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!PruneUnusedBranches(mir, graph)) {
       return false;
     }
-    gs.spewPass("Prune Unused Branches");
+    mir->spewPass("Prune Unused Branches");
     AssertBasicGraphCoherency(graph);
 
     if (mir->shouldCancel("Prune Unused Branches")) {
@@ -1008,7 +1007,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!FoldEmptyBlocks(graph, &dummy)) {
       return false;
     }
-    gs.spewPass("Fold Empty Blocks");
+    mir->spewPass("Fold Empty Blocks");
     AssertBasicGraphCoherency(graph);
 
     if (mir->shouldCancel("Fold Empty Blocks")) {
@@ -1022,7 +1021,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!EliminateTriviallyDeadResumePointOperands(mir, graph)) {
       return false;
     }
-    gs.spewPass("Eliminate trivially dead resume point operands");
+    mir->spewPass("Eliminate trivially dead resume point operands");
     AssertBasicGraphCoherency(graph);
 
     if (mir->shouldCancel("Eliminate trivially dead resume point operands")) {
@@ -1034,7 +1033,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!FoldTests(graph)) {
       return false;
     }
-    gs.spewPass("Fold Tests");
+    mir->spewPass("Fold Tests");
     AssertBasicGraphCoherency(graph);
 
     if (mir->shouldCancel("Fold Tests")) {
@@ -1046,7 +1045,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!SplitCriticalEdges(graph)) {
       return false;
     }
-    gs.spewPass("Split Critical Edges");
+    mir->spewPass("Split Critical Edges");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("Split Critical Edges")) {
@@ -1056,7 +1055,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
 
   {
     RenumberBlocks(graph);
-    gs.spewPass("Renumber Blocks");
+    mir->spewPass("Renumber Blocks");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("Renumber Blocks")) {
@@ -1086,7 +1085,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!EliminatePhis(mir, graph, observability)) {
       return false;
     }
-    gs.spewPass("Eliminate phis");
+    mir->spewPass("Eliminate phis");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("Eliminate phis")) {
@@ -1108,7 +1107,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!OptimizeIteratorIndices(mir, graph)) {
       return false;
     }
-    gs.spewPass("Iterator Indices");
+    mir->spewPass("Iterator Indices");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("Iterator Indices")) {
@@ -1122,7 +1121,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!ScalarReplacement(mir, graph)) {
       return false;
     }
-    gs.spewPass("Scalar Replacement");
+    mir->spewPass("Scalar Replacement");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("Scalar Replacement")) {
@@ -1134,7 +1133,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!ApplyTypeInformation(mir, graph)) {
       return false;
     }
-    gs.spewPass("Apply types");
+    mir->spewPass("Apply types");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("Apply types")) {
@@ -1146,7 +1145,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!TrackWasmRefTypes(graph)) {
       return false;
     }
-    gs.spewPass("Track Wasm ref types");
+    mir->spewPass("Track Wasm ref types");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("Track Wasm ref types")) {
@@ -1159,7 +1158,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!ama.analyze()) {
       return false;
     }
-    gs.spewPass("Alignment Mask Analysis");
+    mir->spewPass("Alignment Mask Analysis");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("Alignment Mask Analysis")) {
@@ -1182,7 +1181,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
         return false;
       }
 
-      gs.spewPass("Alias analysis");
+      mir->spewPass("Alias analysis");
       AssertExtendedGraphCoherency(graph);
 
       if (mir->shouldCancel("Alias analysis")) {
@@ -1198,7 +1197,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
         return false;
       }
 
-      gs.spewPass("Eliminate dead resume point operands");
+      mir->spewPass("Eliminate dead resume point operands");
       AssertExtendedGraphCoherency(graph);
 
       if (mir->shouldCancel("Eliminate dead resume point operands")) {
@@ -1212,7 +1211,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!gvn.run(ValueNumberer::UpdateAliasAnalysis)) {
       return false;
     }
-    gs.spewPass("GVN");
+    mir->spewPass("GVN");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("GVN")) {
@@ -1225,7 +1224,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!BranchHinting(mir, graph)) {
       return false;
     }
-    gs.spewPass("BranchHinting");
+    mir->spewPass("BranchHinting");
     AssertBasicGraphCoherency(graph);
 
     if (mir->shouldCancel("BranchHinting")) {
@@ -1241,7 +1240,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!LICM(mir, graph)) {
       return false;
     }
-    gs.spewPass("LICM");
+    mir->spewPass("LICM");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("LICM")) {
@@ -1255,7 +1254,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!r.addBetaNodes()) {
       return false;
     }
-    gs.spewPass("Beta");
+    mir->spewPass("Beta");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("RA Beta")) {
@@ -1265,7 +1264,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!r.analyze() || !r.addRangeAssertions()) {
       return false;
     }
-    gs.spewPass("Range Analysis");
+    mir->spewPass("Range Analysis");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("Range Analysis")) {
@@ -1275,7 +1274,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!r.removeBetaNodes()) {
       return false;
     }
-    gs.spewPass("De-Beta");
+    mir->spewPass("De-Beta");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("RA De-Beta")) {
@@ -1287,7 +1286,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
       if (!r.prepareForUCE(&shouldRunUCE)) {
         return false;
       }
-      gs.spewPass("RA check UCE");
+      mir->spewPass("RA check UCE");
       AssertExtendedGraphCoherency(graph);
 
       if (mir->shouldCancel("RA check UCE")) {
@@ -1298,7 +1297,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
         if (!gvn.run(ValueNumberer::DontUpdateAliasAnalysis)) {
           return false;
         }
-        gs.spewPass("UCE After RA");
+        mir->spewPass("UCE After RA");
         AssertExtendedGraphCoherency(graph);
 
         if (mir->shouldCancel("UCE After RA")) {
@@ -1311,7 +1310,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
       if (!r.truncate()) {
         return false;
       }
-      gs.spewPass("Truncate Doubles");
+      mir->spewPass("Truncate Doubles");
       AssertExtendedGraphCoherency(graph);
 
       if (mir->shouldCancel("Truncate Doubles")) {
@@ -1325,7 +1324,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!Sink(mir, graph)) {
       return false;
     }
-    gs.spewPass("Sink");
+    mir->spewPass("Sink");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("Sink")) {
@@ -1339,7 +1338,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!r.removeUnnecessaryBitops()) {
       return false;
     }
-    gs.spewPass("Remove Unnecessary Bitops");
+    mir->spewPass("Remove Unnecessary Bitops");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("Remove Unnecessary Bitops")) {
@@ -1352,7 +1351,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!FoldLinearArithConstants(mir, graph)) {
       return false;
     }
-    gs.spewPass("Fold Linear Arithmetic Constants");
+    mir->spewPass("Fold Linear Arithmetic Constants");
     AssertBasicGraphCoherency(graph);
 
     if (mir->shouldCancel("Fold Linear Arithmetic Constants")) {
@@ -1367,7 +1366,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!eaa.analyze()) {
       return false;
     }
-    gs.spewPass("Effective Address Analysis");
+    mir->spewPass("Effective Address Analysis");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("Effective Address Analysis")) {
@@ -1381,7 +1380,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!EliminateBoundsChecks(mir, graph)) {
       return false;
     }
-    gs.spewPass("Redundant Bounds Check Elimination");
+    mir->spewPass("Redundant Bounds Check Elimination");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("BCE")) {
@@ -1393,7 +1392,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!EliminateDeadCode(mir, graph)) {
       return false;
     }
-    gs.spewPass("DCE");
+    mir->spewPass("DCE");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("DCE")) {
@@ -1416,7 +1415,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!ReorderInstructions(mir, graph)) {
       return false;
     }
-    gs.spewPass("Reordering");
+    mir->spewPass("Reordering");
 
     AssertExtendedGraphCoherency(graph);
 
@@ -1431,7 +1430,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!MakeLoopsContiguous(graph)) {
       return false;
     }
-    gs.spewPass("Make loops contiguous");
+    mir->spewPass("Make loops contiguous");
     AssertExtendedGraphCoherency(graph);
 
     if (mir->shouldCancel("Make loops contiguous")) {
@@ -1448,7 +1447,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
       return false;
     }
 
-    gs.spewPass("Unroll loops");
+    mir->spewPass("Unroll loops");
 
     AssertExtendedGraphCoherency(graph);
 
@@ -1489,7 +1488,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   // dominator tree.
   if (!mir->compilingWasm() && graph.osrBlock()) {
     graph.removeFakeLoopPredecessors();
-    gs.spewPass("Remove fake loop predecessors");
+    mir->spewPass("Remove fake loop predecessors");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("Remove fake loop predecessors")) {
@@ -1505,7 +1504,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!edgeCaseAnalysis.analyzeLate()) {
       return false;
     }
-    gs.spewPass("Edge Case Analysis (Late)");
+    mir->spewPass("Edge Case Analysis (Late)");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("Edge Case Analysis (Late)")) {
@@ -1521,7 +1520,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!EliminateRedundantChecks(graph)) {
       return false;
     }
-    gs.spewPass("Bounds Check Elimination");
+    mir->spewPass("Bounds Check Elimination");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("Bounds Check Elimination")) {
@@ -1533,7 +1532,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!EliminateRedundantShapeGuards(graph)) {
       return false;
     }
-    gs.spewPass("Shape Guard Elimination");
+    mir->spewPass("Shape Guard Elimination");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("Shape Guard Elimination")) {
@@ -1548,7 +1547,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!EliminateRedundantGCBarriers(graph)) {
       return false;
     }
-    gs.spewPass("GC Barrier Elimination");
+    mir->spewPass("GC Barrier Elimination");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("GC Barrier Elimination")) {
@@ -1560,7 +1559,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!FoldLoadsWithUnbox(mir, graph)) {
       return false;
     }
-    gs.spewPass("FoldLoadsWithUnbox");
+    mir->spewPass("FoldLoadsWithUnbox");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("FoldLoadsWithUnbox")) {
@@ -1572,7 +1571,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
     if (!AddKeepAliveInstructions(graph)) {
       return false;
     }
-    gs.spewPass("Add KeepAlive Instructions");
+    mir->spewPass("Add KeepAlive Instructions");
     AssertGraphCoherency(graph);
 
     if (mir->shouldCancel("Add KeepAlive Instructions")) {
@@ -1593,7 +1592,6 @@ bool OptimizeMIR(MIRGenerator* mir) {
 
 LIRGraph* GenerateLIR(MIRGenerator* mir) {
   MIRGraph& graph = mir->graph();
-  GraphSpewer& gs = mir->graphSpewer();
 
   LIRGraph* lir = mir->alloc().lifoAlloc()->new_<LIRGraph>(&graph);
   if (!lir || !lir->init()) {
@@ -1605,7 +1603,7 @@ LIRGraph* GenerateLIR(MIRGenerator* mir) {
     if (!lirgen.generate()) {
       return nullptr;
     }
-    gs.spewPass("Generate LIR");
+    mir->spewPass("Generate LIR");
 
     if (mir->shouldCancel("Generate LIR")) {
       return nullptr;
@@ -1628,7 +1626,7 @@ LIRGraph* GenerateLIR(MIRGenerator* mir) {
       if (!regalloc.go()) {
         return nullptr;
       }
-      gs.spewPass("Allocate Registers [Backtracking]");
+      mir->spewPass("Allocate Registers [Backtracking]", &regalloc);
       break;
     }
     case RegisterAllocator_Simple: {
@@ -1636,7 +1634,7 @@ LIRGraph* GenerateLIR(MIRGenerator* mir) {
       if (!regalloc.go()) {
         return nullptr;
       }
-      gs.spewPass("Allocate Registers [Simple]");
+      mir->spewPass("Allocate Registers [Simple]");
       break;
     }
     default:
@@ -1708,7 +1706,7 @@ static AbortReasonOr<WarpSnapshot*> CreateWarpSnapshot(JSContext* cx,
   // Suppress GC during compilation.
   gc::AutoSuppressGC suppressGC(cx);
 
-  SpewBeginFunction(mirGen, script);
+  mirGen->spewBeginFunction(script);
 
   WarpOracle oracle(cx, *mirGen, script);
 
@@ -1841,7 +1839,7 @@ static AbortReason IonCompile(JSContext* cx, HandleScript script,
     AutoLockHelperThreadState lock;
     if (!StartOffThreadIonCompile(task, lock)) {
       JitSpew(JitSpew_IonAbort, "Unable to start off-thread ion compilation.");
-      mirGen->graphSpewer().endFunction();
+      mirGen->spewEndFunction();
       return AbortReason::Alloc;
     }
 

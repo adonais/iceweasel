@@ -18,6 +18,8 @@
 #include "nsString.h"
 #include "js/PropertyAndElement.h"  // JS_Enumerate, JS_GetElement, JS_GetProperty, JS_GetPropertyById, JS_HasOwnProperty, JS_SetUCProperty
 
+#import <Accessibility/Accessibility.h>
+
 #import "mozAccessible.h"
 
 using namespace mozilla::a11y;
@@ -322,6 +324,14 @@ nsresult xpcAccessibleMacInterface::NSObjectToJsValue(
     return nsContentUtils::WrapNative(
         aCx, obj, &NS_GET_IID(nsIAccessibleMacInterface), aResult);
   } else {
+    if (@available(macOS 11.0, *)) {
+      if ([aObj isKindOfClass:[AXCustomContent class]]) {
+        // This is an AXCustomContent. Convert it to a single item dictionary.
+        AXCustomContent* customContent = (AXCustomContent*)aObj;
+        return NSObjectToJsValue(
+            @{[customContent label] : [customContent value]}, aCx, aResult);
+      }
+    }
     // If this is any other kind of NSObject, just wrap it and return it.
     // It will be opaque and immutable on the JS side, but it can be
     // brought back to us in an argument.

@@ -434,7 +434,7 @@
     This string is shown when the user has clicked a link that needs to be opened in a different app.
     %2$s is the external app name, %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
   -->
-  <string name="external_app_prompt">您可以离开 %1$s，用 %2$s 打开此链接。</string>
+  <string name="external_app_prompt">您可以离开 %1$s，用“%2$s”打开此链接。</string>
   <!-- This text is the title of a dialog shown if no app could be found for a custom link protocol. -->
   <string name="external_app_prompt_no_app_title">寻找可以打开此链接的应用</string>
   <!--

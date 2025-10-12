@@ -149,7 +149,7 @@ bool KeyEventHandler::TryConvertToKeyboardShortcut(
 
   NS_LossyConvertUTF16toASCII commandText(mCommand);
   KeyboardScrollAction action;
-  if (!nsGlobalWindowCommands::FindScrollCommand(commandText.get(), &action)) {
+  if (!nsGlobalWindowCommands::FindScrollCommand(commandText, &action)) {
     // This action doesn't represent a scroll so we need to create a dispatch
     // to content keyboard shortcut so APZ handles this command correctly
     *aOut = KeyboardShortcut(eventType, keyCode, charCode, modifiers,
@@ -391,27 +391,15 @@ already_AddRefed<nsIController> KeyEventHandler::GetController(
   // This code should have no special knowledge of what objects might have
   // controllers.
   nsCOMPtr<nsIControllers> controllers;
-
   if (nsIContent* targetContent = nsIContent::FromEventTarget(aTarget)) {
-    RefPtr<nsXULElement> xulElement = nsXULElement::FromNode(targetContent);
-    if (xulElement) {
-      controllers = xulElement->GetControllers(IgnoreErrors());
-    }
-
-    if (!controllers) {
-      dom::HTMLTextAreaElement* htmlTextArea =
-          dom::HTMLTextAreaElement::FromNode(targetContent);
-      if (htmlTextArea) {
-        htmlTextArea->GetControllers(getter_AddRefs(controllers));
-      }
-    }
-
-    if (!controllers) {
-      dom::HTMLInputElement* htmlInputElement =
-          dom::HTMLInputElement::FromNode(targetContent);
-      if (htmlInputElement) {
-        htmlInputElement->GetControllers(getter_AddRefs(controllers));
-      }
+    if (auto* xulElement = nsXULElement::FromNode(targetContent)) {
+      controllers = xulElement->GetExtantControllers();
+    } else if (auto* htmlTextArea =
+                   dom::HTMLTextAreaElement::FromNode(targetContent)) {
+      htmlTextArea->GetControllers(getter_AddRefs(controllers));
+    } else if (auto* htmlInput =
+                   dom::HTMLInputElement::FromNode(targetContent)) {
+      htmlInput->GetControllers(getter_AddRefs(controllers));
     }
   }
 

@@ -203,36 +203,13 @@ def set_treeherder_machine_platform(config, tasks):
         if "android" in task["test-platform"] and "pgo/opt" in task["test-platform"]:
             platform_new = task["test-platform"].replace("-pgo/opt", "/pgo")
             task["treeherder-machine-platform"] = platform_new
-        elif "android-em-7.0-x86_64-qr" in task["test-platform"]:
-            task["treeherder-machine-platform"] = task["test-platform"].replace(
-                ".", "-"
-            )
-        elif "android-em-7.0-x86_64-shippable-qr" in task["test-platform"]:
-            task["treeherder-machine-platform"] = task["test-platform"].replace(
-                ".", "-"
-            )
-        elif "android-em-7.0-x86_64-lite-qr" in task["test-platform"]:
-            task["treeherder-machine-platform"] = task["test-platform"].replace(
-                ".", "-"
-            )
-        elif "android-em-7.0-x86_64-shippable-lite-qr" in task["test-platform"]:
-            task["treeherder-machine-platform"] = task["test-platform"].replace(
-                ".", "-"
-            )
-        elif "android-em-7.0-x86-qr" in task["test-platform"]:
+        elif "android-em-7.0-x86" in task["test-platform"]:
             task["treeherder-machine-platform"] = task["test-platform"].replace(
                 ".", "-"
             )
         elif "android-hw" in task["test-platform"]:
             task["treeherder-machine-platform"] = task["test-platform"]
-        elif "android-em-7.0-x86_64" in task["test-platform"]:
-            task["treeherder-machine-platform"] = task["test-platform"].replace(
-                ".", "-"
-            )
-        elif "android-em-7.0-x86" in task["test-platform"]:
-            task["treeherder-machine-platform"] = task["test-platform"].replace(
-                ".", "-"
-            )
+
         # Bug 1602863 - must separately define linux64/asan and linux1804-64/asan
         # otherwise causes an exception during taskgraph generation about
         # duplicate treeherder platform/symbol.
@@ -770,6 +747,14 @@ def handle_tier(config, tasks):
                 "android-em-7.0-x86_64-shippable-lite-qr/opt",
                 "android-em-7.0-x86_64-lite-qr/debug",
                 "android-em-7.0-x86_64-lite-qr/opt",
+                "android-em-14-x86_64-shippable/opt",
+                "android-em-14-x86_64/opt",
+                "android-em-14-x86_64-shippable-lite/opt",
+                "android-em-14-x86_64-lite/opt",
+                "android-em-14-x86_64/debug",
+                "android-em-14-x86_64/debug-isolated-process",
+                "android-em-14-x86-shippable/opt",
+                "android-em-14-x86/opt",
             ]:
                 task["tier"] = 1
             else:
@@ -1170,5 +1155,22 @@ def enable_parallel_marking_in_tsan_tests(config, tasks):
                 extra_options.append(
                     "--setpref=javascript.options.mem.gc_parallel_marking=true"
                 )
+
+        yield task
+
+
+@transforms.add
+def set_webgpu_ignore_blocklist(config, tasks):
+    """
+    Ignore the WebGPU blocklist on Linux because CI's Mesa is old
+
+    See <https://bugzilla.mozilla.org/show_bug.cgi?id=1985348>
+    """
+    for task in tasks:
+        if "web-platform-tests-webgpu" in task["test-name"] and task[
+            "test-platform"
+        ].startswith("linux"):
+            extra_options = task["mozharness"].setdefault("extra-options", [])
+            extra_options.append("--setpref=gfx.webgpu.ignore-blocklist=true")
 
         yield task

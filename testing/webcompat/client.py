@@ -1500,14 +1500,6 @@ class Client:
                 with_scrollbar == without_scrollbar
             ), "scrollbar does not cover any text"
 
-    async def test_nicescroll_breaks_scrolling(self, url):
-        await self.navigate(url)
-        return self.execute_script(
-            """
-              return document.querySelector("html").style.overflow == "hidden"
-          """
-        )
-
     def test_for_fastclick(self, element):
         # FastClick cancels touchend, breaking default actions on Fenix.
         # It instead fires a mousedown or click, which we can detect.

@@ -161,9 +161,9 @@ macro_rules! test_has {
         let storage = if $storage.is_empty() {
             None
         } else {
-            Some($storage.to_utf8())
+            Some($storage.to_utf8().into_owned())
         };
-        $metric.test_get_value(storage.as_deref()).is_some()
+        $metric.test_get_value(storage).is_some()
     }};
 }
 
@@ -178,9 +178,9 @@ macro_rules! test_get {
         let storage = if $storage.is_empty() {
             None
         } else {
-            Some($storage.to_utf8())
+            Some($storage.to_utf8().into_owned())
         };
-        $metric.test_get_value(storage.as_deref()).unwrap()
+        $metric.test_get_value(storage).unwrap()
     }};
 }
 

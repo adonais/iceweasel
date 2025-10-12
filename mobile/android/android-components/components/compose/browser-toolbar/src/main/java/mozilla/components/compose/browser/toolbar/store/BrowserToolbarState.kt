@@ -95,6 +95,7 @@ data class DisplayState(
  * @property query The text the user is editing in "edit" mode.
  * @property hint The hint to show in the edit toolbar.
  * @property isQueryPrefilled Whether [query] is prefilled and not user entered.
+ * @property isQueryPrivate Whether queries should be done in private / incognito mode.
  * @property editActionsStart List of [Action]s to be displayed at the start of the URL of
  * the edit toolbar.
  * @property editActionsEnd List of [Action]s to be displayed at the end of the URL of
@@ -104,6 +105,7 @@ data class EditState(
     val query: String = "",
     @param:StringRes val hint: Int = R.string.mozac_browser_toolbar_search_hint,
     val isQueryPrefilled: Boolean = false,
+    val isQueryPrivate: Boolean = false,
     val autocompleteProviders: List<AutocompleteProvider> = emptyList(),
     val editActionsStart: List<Action> = emptyList(),
     val editActionsEnd: List<Action> = emptyList(),

@@ -248,8 +248,9 @@ menu-bookmarks-mobile =
 
 ## Profiles Menu
 
-menu-profiles =
+menu-profiles-menu =
     .label = Profiles
+    .accesskey = P
 menu-profiles-manage-profiles =
     .label = Manage Profiles
 menu-profiles-new-profile =

@@ -27,6 +27,9 @@ policies:
     expires: never
     unit: enterprise policies
     telemetry_mirror: POLICIES_COUNT
+    lifetime: application
+    no_lint:
+      - GIFFT_NON_PING_LIFETIME
 
   is_enterprise:
     type: boolean
@@ -43,3 +46,9 @@ policies:
       - mkaply@mozilla.com
     expires: never
     telemetry_mirror: POLICIES_IS_ENTERPRISE
+    send_in_pings:
+      - metrics
+      - events
+    lifetime: application
+    no_lint:
+      - GIFFT_NON_PING_LIFETIME

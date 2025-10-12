@@ -113,7 +113,6 @@ skip-if = [
 
 ["browser_tab_descriptor_fission.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && asan", # Bug 1966872
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1966872
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && asan", # Bug 1966872
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1966872
@@ -212,6 +211,7 @@ skip-if = [
 ["browser_toolbox_options_enable_serviceworkers_testing.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1986611
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
@@ -296,6 +296,8 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_toolbox_view_source_03.js"]
 
 ["browser_toolbox_view_source_style_editor_fallback.js"]
+
+["browser_toolbox_visibility.js"]
 
 ["browser_toolbox_watchedByDevTools.js"]
 

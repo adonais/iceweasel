@@ -536,98 +536,6 @@ function _parseModifiers(aEvent, aWindow = window) {
 }
 
 /**
- * Synthesize a mouse event on a target. The actual client point is determined
- * by taking the aTarget's client box and offseting it by aOffsetX and
- * aOffsetY. This allows mouse clicks to be simulated by calling this method.
- *
- * aEvent is an object which may contain the properties:
- *   `shiftKey`, `ctrlKey`, `altKey`, `metaKey`, `accessKey`, `clickCount`,
- *   `button`, `type`.
- *   For valid `type`s see nsIDOMWindowUtils' `sendMouseEvent`.
- *
- * If the type is specified, an mouse event of that type is fired. Otherwise,
- * a mousedown followed by a mouseup is performed.
- *
- * aWindow is optional, and defaults to the current window object.
- *
- * Returns whether the event had preventDefault() called on it.
- */
-function synthesizeMouse(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
-  var rect = aTarget.getBoundingClientRect();
-  return synthesizeMouseAtPoint(
-    rect.left + aOffsetX,
-    rect.top + aOffsetY,
-    aEvent,
-    aWindow
-  );
-}
-
-/**
- * Synthesize one or more touches on aTarget. aTarget can be either Element
- * or Array of Elements.  aOffsetX, aOffsetY, aEvent.id, aEvent.rx, aEvent.ry,
- * aEvent.angle, aEvent.force, aEvent.tiltX, aEvent.tiltY and aEvent.twist can
- * be either number or array of numbers (can be mixed).  If you specify array
- * to synthesize a multi-touch, you need to specify same length arrays.  If
- * you don't specify array to them, same values (or computed default values for
- * aEvent.id) are used for all touches.
- *
- * @param {Element | Element[]} aTarget - The target element which you specify
- * relative offset from its top-left.
- * @param {number | number[]} aOffsetX - The relative offset from left of aTarget.
- * @param {number | number[]} aOffsetY - The relative offset from top of aTarget.
- * @param {TouchEventData} aEvent - Details of the touch event to dispatch
- * @param {DOMWindow} [aWindow=window] - DOM window used to dispatch the event.
- *
- * @returns true if and only if aEvent.type is specified and default of the
- * event is prevented.
- */
-function synthesizeTouch(
-  aTarget,
-  aOffsetX,
-  aOffsetY,
-  aEvent = {},
-  aWindow = window
-) {
-  let rectX, rectY;
-  if (Array.isArray(aTarget)) {
-    let lastTarget, lastTargetRect;
-    aTarget.forEach(target => {
-      const rect =
-        target == lastTarget ? lastTargetRect : target.getBoundingClientRect();
-      rectX.push(rect.left);
-      rectY.push(rect.top);
-      lastTarget = target;
-      lastTargetRect = rect;
-    });
-  } else {
-    const rect = aTarget.getBoundingClientRect();
-    rectX = [rect.left];
-    rectY = [rect.top];
-  }
-  const offsetX = (() => {
-    if (Array.isArray(aOffsetX)) {
-      let ret = [];
-      aOffsetX.forEach((value, index) => {
-        ret.push(value + rectX[Math.min(index, rectX.length - 1)]);
-      });
-      return ret;
-    }
-    return aOffsetX + rectX[0];
-  })();
-  const offsetY = (() => {
-    if (Array.isArray(aOffsetY)) {
-      let ret = [];
-      aOffsetY.forEach((value, index) => {
-        ret.push(value + rectY[Math.min(index, rectY.length - 1)]);
-      });
-      return ret;
-    }
-    return aOffsetY + rectY[0];
-  })();
-  return synthesizeTouchAtPoint(offsetX, offsetY, aEvent, aWindow);
-}
-
-/**
  * Return the drag service.  Note that if we're in the headless mode, this
  * may return null because the service may be never instantiated (e.g., on
  * Linux).
@@ -712,27 +620,111 @@ function _maybeSynthesizeDragOver(left, top, aEvent, aWindow) {
   return true;
 }
 
-/*
- * Synthesize a mouse event at a particular point in aWindow.
+/**
+ * @typedef {Object} MouseEventData
  *
- * aEvent is an object which may contain the properties:
- *   `shiftKey`, `ctrlKey`, `altKey`, `metaKey`, `accessKey`, `clickCount`,
- *   `button`, `type`.
- *   For valid `type`s see nsIDOMWindowUtils' `sendMouseEvent`.
+ * @property {string} [accessKey] - The character or key associated with
+ *     the access key event. Typically a single character used to activate a UI
+ *     element via keyboard shortcuts (e.g., Alt + accessKey).
+ * @property {boolean} [altKey] - If set to `true`, the Alt key will be
+ *     considered pressed.
+ * @property {boolean} [asyncEnabled] - If `true`, the event is
+ *     dispatched to the parent process through APZ, without being injected
+ *     into the OS event queue.
+ * @property {number} [button=0] - Button to synthesize.
+ * @property {number} [buttons] - Indicates which mouse buttons are pressed
+ *     when a mouse event is triggered.
+ * @property {number} [clickCount=1] - Number of clicks that have to be performed.
+ * @property {boolean} [ctrlKey] - If set to `true`, the Ctrl key will
+ *     be considered pressed.
+ * @property {number} [id] - A unique identifier for the pointer causing the event.
+ * @property {number} [inputSource] - Input source, see MouseEvent for values.
+ *     Defaults to MouseEvent.MOZ_SOURCE_MOUSE.
+ * @property {boolean} [isSynthesized] - Controls Event.isSynthesized value that
+ *     helps identifying test related events
+ * @property {boolean} [isWidgetEventSynthesized] - Controls WidgetMouseEvent.mReason value.
+ * @property {boolean} [metaKey] - If set to `true`, the Meta key will
+ *     be considered pressed.
+ * @property {number} [pressure=0] - Touch input pressure (0.0 -> 1.0).
+ * @property {boolean} [shiftKey] - If set to `true`, the Shift key will
+ *     be considered pressed.
+ * @property {string} [type] - Event type to synthesize. If not specified
+ *     a `mousedown` followed by a `mouseup` are performed.
  *
- * If the type is specified, an mouse event of that type is fired. Otherwise,
- * a mousedown followed by a mouseup is performed.
- *
- * aWindow is optional, and defaults to the current window object.
+ * @see nsIDOMWindowUtils.sendMouseEvent
  */
-function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window) {
+
+/**
+ * Synthesize a mouse event on a target.
+ *
+ * The actual client point is determined by taking the aTarget's client box
+ * and offsetting it by aOffsetX and aOffsetY.
+ *
+ * Note that additional events may be fired as a result of this call. For
+ * instance, typically a click event will be fired as a result of a
+ * mousedown and mouseup in sequence.
+ *
+ * @param {Element} aTarget - DOM element to dispatch the event on.
+ * @param {number} aOffsetX - X offset in CSS pixels from the element’s left edge.
+ * @param {number} aOffsetY - Y offset in CSS pixels from the element’s top edge.
+ * @param {MouseEventData} aEvent - Details of the mouse event to dispatch.
+ * @param {DOMWindow} [aWindow=window] - DOM window used to dispatch the event.
+ * @param {Function} [aCallback] - A callback function that is invoked when the
+ *                                 mouse event is dispatched.
+ *
+ * @returns {boolean} Whether the event had preventDefault() called on it.
+ */
+function synthesizeMouse(
+  aTarget,
+  aOffsetX,
+  aOffsetY,
+  aEvent,
+  aWindow,
+  aCallback
+) {
+  var rect = aTarget.getBoundingClientRect();
+  return synthesizeMouseAtPoint(
+    rect.left + aOffsetX,
+    rect.top + aOffsetY,
+    aEvent,
+    aWindow,
+    aCallback
+  );
+}
+
+/*
+ * Synthesize a mouse event in `aWindow` at a point.
+ *
+ * `nsIDOMWindowUtils.sendMouseEvent` takes floats for the coordinates.
+ * Therefore, don't round or truncate the values.
+ *
+ * Note that additional events may be fired as a result of this call. For
+ * instance, typically a click event will be fired as a result of a
+ * mousedown and mouseup in sequence.
+ *
+ * @param {number} aLeft - Floating-point value for the X offset in CSS pixels.
+ * @param {number} aTop - Floating-point value for the Y offset in CSS pixels.
+ * @param {MouseEventData} aEvent - Details of the mouse event to dispatch.
+ * @param {DOMWindow} [aWindow=window] - DOM window used to dispatch the event.
+ * @param {Function} [aCallback] - A callback function that is invoked when the
+ *                                 mouse event is dispatched.
+ *
+ * @returns {boolean} Whether the event had preventDefault() called on it.
+ */
+function synthesizeMouseAtPoint(
+  aLeft,
+  aTop,
+  aEvent,
+  aWindow = window,
+  aCallback
+) {
   if (aEvent.allowToHandleDragDrop) {
     if (aEvent.type == "mouseup" || !aEvent.type) {
-      if (_maybeEndDragSession(left, top, aEvent, aWindow)) {
+      if (_maybeEndDragSession(aLeft, aTop, aEvent, aWindow)) {
         return false;
       }
     } else if (aEvent.type == "mousemove") {
-      if (_maybeSynthesizeDragOver(left, top, aEvent, aWindow)) {
+      if (_maybeSynthesizeDragOver(aLeft, aTop, aEvent, aWindow)) {
         return false;
       }
     }
@@ -766,35 +758,112 @@ function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window) {
         : utils.DEFAULT_MOUSE_POINTER_ID;
     }
 
-    // FYI: nsIDOMWindowUtils.sendMouseEvent takes floats for the coordinates.
+    // FYI: Window.synthesizeMouseEvent takes floats for the coordinates.
     // Therefore, don't round/truncate the fractional values.
-    var isDOMEventSynthesized =
+    const isDOMEventSynthesized =
       "isSynthesized" in aEvent ? aEvent.isSynthesized : true;
-    var isWidgetEventSynthesized =
+    const isWidgetEventSynthesized =
       "isWidgetEventSynthesized" in aEvent
         ? aEvent.isWidgetEventSynthesized
         : false;
+    const isAsyncEnabled =
+      "asyncEnabled" in aEvent ? aEvent.asyncEnabled : false;
+
+    // The following blocks check for the existence of synthesizeMouseEvent on
+    // the Window wrapper, which was added in 144 via bug 1977774. As EventUtils
+    // is used by mochitest-browser, and is part of the newtab train-hop
+    // compatibility testing mechanism, we need to ensure that this is still
+    // compatible with 143 and 142. We fallback to the old nsIDOMWindowUtils
+    // mechanism if we cannot find the synthesizeMouseEvent on the Window.
+    //
+    // This newtab train-hop compatibility shim can be removed once Firefox 144
+    // makes it to the release channel (bug 1983936).
+
     if ("type" in aEvent && aEvent.type) {
-      defaultPrevented = utils.sendMouseEvent(
-        aEvent.type,
-        left,
-        top,
-        button,
-        clickCount,
-        modifiers,
-        false,
-        pressure,
-        inputSource,
-        isDOMEventSynthesized,
-        isWidgetEventSynthesized,
-        computeButtons(aEvent, utils),
-        id
+      if (_EU_maybeWrap(aWindow).synthesizeMouseEvent) {
+        defaultPrevented = _EU_maybeWrap(aWindow).synthesizeMouseEvent(
+          aEvent.type,
+          aLeft,
+          aTop,
+          {
+            identifier: id,
+            button,
+            buttons: aEvent.buttons,
+            clickCount,
+            modifiers,
+            pressure,
+            inputSource,
+          },
+          {
+            isDOMEventSynthesized,
+            isWidgetEventSynthesized,
+            isAsyncEnabled,
+          },
+          aCallback
+        );
+      } else {
+        defaultPrevented = utils.sendMouseEvent(
+          aEvent.type,
+          aLeft,
+          aTop,
+          button,
+          clickCount,
+          modifiers,
+          false,
+          pressure,
+          inputSource,
+          isDOMEventSynthesized,
+          isWidgetEventSynthesized,
+          computeButtons(aEvent, utils),
+          id
+        );
+      }
+    } else if (_EU_maybeWrap(aWindow).synthesizeMouseEvent) {
+      _EU_maybeWrap(aWindow).synthesizeMouseEvent(
+        "mousedown",
+        aLeft,
+        aTop,
+        {
+          identifier: id,
+          button,
+          buttons: aEvent.buttons,
+          clickCount,
+          modifiers,
+          pressure,
+          inputSource,
+        },
+        {
+          isDOMEventSynthesized,
+          isWidgetEventSynthesized,
+          isAsyncEnabled,
+        },
+        aCallback
+      );
+      _EU_maybeWrap(aWindow).synthesizeMouseEvent(
+        "mouseup",
+        aLeft,
+        aTop,
+        {
+          identifier: id,
+          button,
+          buttons: aEvent.buttons,
+          clickCount,
+          modifiers,
+          pressure,
+          inputSource,
+        },
+        {
+          isDOMEventSynthesized,
+          isWidgetEventSynthesized,
+          isAsyncEnabled,
+        },
+        aCallback
       );
     } else {
       utils.sendMouseEvent(
         "mousedown",
-        left,
-        top,
+        aLeft,
+        aTop,
         button,
         clickCount,
         modifiers,
@@ -808,8 +877,8 @@ function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window) {
       );
       utils.sendMouseEvent(
         "mouseup",
-        left,
-        top,
+        aLeft,
+        aTop,
         button,
         clickCount,
         modifiers,
@@ -825,6 +894,34 @@ function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window) {
   }
 
   return defaultPrevented;
+}
+
+/*
+ * Synthesize a mouse event at the center of `aTarget`.
+ *
+ * Note that additional events may be fired as a result of this call. For
+ * instance, typically a click event will be fired as a result of a
+ * mousedown and mouseup in sequence.
+ *
+ * @param {Element} aTarget - DOM element to dispatch the event on.
+ * @param {MouseEventData} aEvent - Details of the mouse event to dispatch.
+ * @param {DOMWindow} [aWindow=window] - DOM window used to dispatch the event.
+ * @param {Function} [aCallback] - A callback function that is invoked when the
+ *                                 mouse event is dispatched.
+ *
+ * @returns {boolean} Whether the event had preventDefault() called on it.
+ */
+function synthesizeMouseAtCenter(aTarget, aEvent, aWindow, aCallback) {
+  var rect = aTarget.getBoundingClientRect();
+
+  return synthesizeMouse(
+    aTarget,
+    rect.width / 2,
+    rect.height / 2,
+    aEvent,
+    aWindow,
+    aCallback
+  );
 }
 
 /**
@@ -845,6 +942,71 @@ function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window) {
  * @property {number | number[]} [aEvent.tiltY] - The Y tilt of the touch
  * @property {number | number[]} [aEvent.twist] - The twist of the touch
  */
+
+/**
+ * Synthesize one or more touches on aTarget. aTarget can be either Element
+ * or Array of Elements.  aOffsetX, aOffsetY, aEvent.id, aEvent.rx, aEvent.ry,
+ * aEvent.angle, aEvent.force, aEvent.tiltX, aEvent.tiltY and aEvent.twist can
+ * be either number or array of numbers (can be mixed).  If you specify array
+ * to synthesize a multi-touch, you need to specify same length arrays.  If
+ * you don't specify array to them, same values (or computed default values for
+ * aEvent.id) are used for all touches.
+ *
+ * @param {Element | Element[]} aTarget - The target element which you specify
+ * relative offset from its top-left.
+ * @param {number | number[]} aOffsetX - The relative offset from left of aTarget.
+ * @param {number | number[]} aOffsetY - The relative offset from top of aTarget.
+ * @param {TouchEventData} aEvent - Details of the touch event to dispatch
+ * @param {DOMWindow} [aWindow=window] - DOM window used to dispatch the event.
+ *
+ * @returns true if and only if aEvent.type is specified and default of the
+ * event is prevented.
+ */
+function synthesizeTouch(
+  aTarget,
+  aOffsetX,
+  aOffsetY,
+  aEvent = {},
+  aWindow = window
+) {
+  let rectX, rectY;
+  if (Array.isArray(aTarget)) {
+    let lastTarget, lastTargetRect;
+    aTarget.forEach(target => {
+      const rect =
+        target == lastTarget ? lastTargetRect : target.getBoundingClientRect();
+      rectX.push(rect.left);
+      rectY.push(rect.top);
+      lastTarget = target;
+      lastTargetRect = rect;
+    });
+  } else {
+    const rect = aTarget.getBoundingClientRect();
+    rectX = [rect.left];
+    rectY = [rect.top];
+  }
+  const offsetX = (() => {
+    if (Array.isArray(aOffsetX)) {
+      let ret = [];
+      aOffsetX.forEach((value, index) => {
+        ret.push(value + rectX[Math.min(index, rectX.length - 1)]);
+      });
+      return ret;
+    }
+    return aOffsetX + rectX[0];
+  })();
+  const offsetY = (() => {
+    if (Array.isArray(aOffsetY)) {
+      let ret = [];
+      aOffsetY.forEach((value, index) => {
+        ret.push(value + rectY[Math.min(index, rectY.length - 1)]);
+      });
+      return ret;
+    }
+    return aOffsetY + rectY[0];
+  })();
+  return synthesizeTouchAtPoint(offsetX, offsetY, aEvent, aWindow);
+}
 
 /**
  * Synthesize one or more touches at the points. aLeft, aTop, aEvent.id,
@@ -971,18 +1133,6 @@ function synthesizeTouchAtPoint(aLeft, aTop, aEvent = {}, aWindow = window) {
   utils[sender]("touchstart", ...args);
   utils[sender]("touchend", ...args);
   return false;
-}
-
-// Call synthesizeMouse with coordinates at the center of aTarget.
-function synthesizeMouseAtCenter(aTarget, aEvent, aWindow) {
-  var rect = aTarget.getBoundingClientRect();
-  return synthesizeMouse(
-    aTarget,
-    rect.width / 2,
-    rect.height / 2,
-    aEvent,
-    aWindow
-  );
 }
 
 /**

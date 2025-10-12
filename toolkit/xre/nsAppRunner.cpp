@@ -271,7 +271,6 @@
 #  include "DBusService.h"
 #endif
 
-extern uint32_t gRestartMode;
 extern void InstallSignalHandlers(const char* ProgramName);
 
 #define FILE_COMPATIBILITY_INFO "compatibility.ini"_ns
@@ -2316,7 +2315,11 @@ static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
   Unused << aPref;
   Unused << aData;
 
+  RefPtr<nsToolkitProfileService> mProfileSvc;
+  mProfileSvc = NS_GetToolkitProfileService();
+
   bool shouldBeEnabled =
+      !mProfileSvc->HasShowProfileSelector() &&
       Preferences::GetBool(kPrefPreXulSkeletonUI, false) &&
       Preferences::GetBool(kPrefBrowserStartupBlankWindow, false) &&
       LookAndFeel::DrawInTitlebar();
@@ -2341,6 +2344,31 @@ static void ReflectSkeletonUIPrefToRegistry(const char* aPref, void* aData) {
   }
 }
 
+class ShowProfileSelectorObserver final : public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  ShowProfileSelectorObserver() {}
+
+ protected:
+  ~ShowProfileSelectorObserver() {}
+};
+
+NS_IMPL_ISUPPORTS(ShowProfileSelectorObserver, nsIObserver);
+
+NS_IMETHODIMP
+ShowProfileSelectorObserver::Observe(nsISupports* aSubject, const char* aTopic,
+                                     const char16_t* aData) {
+  Unused << aSubject;
+  Unused << aData;
+  if (!strcmp(aTopic, "profile-show-selector-changed")) {
+    ReflectSkeletonUIPrefToRegistry(nullptr, nullptr);
+  }
+
+  return NS_OK;
+}
+
 static void SetupSkeletonUIPrefs() {
   ReflectSkeletonUIPrefToRegistry(nullptr, nullptr);
   Preferences::RegisterCallback(&ReflectSkeletonUIPrefToRegistry,
@@ -2351,6 +2379,10 @@ static void SetupSkeletonUIPrefs() {
   Preferences::RegisterCallback(
       &ReflectSkeletonUIPrefToRegistry,
       nsDependentCString(StaticPrefs::GetPrefName_browser_tabs_inTitlebar()));
+  nsCOMPtr<nsIObserverService> obsService =
+      mozilla::services::GetObserverService();
+  nsCOMPtr<nsIObserver> obs = new ShowProfileSelectorObserver();
+  obsService->AddObserver(obs, "profile-show-selector-changed", false);
 }
 
 #  if defined(MOZ_LAUNCHER_PROCESS)
@@ -5840,10 +5872,7 @@ nsresult XREMain::XRE_mainRun() {
     // If we're on Linux, we now have information about the OS capabilities
     // available to us.
     SandboxInfo sandboxInfo = SandboxInfo::Get();
-    glean::sandbox::has_user_namespaces
-        .EnumGet(static_cast<glean::sandbox::HasUserNamespacesLabel>(
-            sandboxInfo.Test(SandboxInfo::kHasUserNamespaces)))
-        .Add();
+    // If we need telemetry probes for sandboxInfo bits, they can go here.
 
     CrashReporter::RecordAnnotationU32(
         CrashReporter::Annotation::ContentSandboxCapabilities,
@@ -6371,9 +6400,7 @@ void SetupErrorHandling(const char* progname) {
   SetProcessDEPPolicyFunc _SetProcessDEPPolicy =
       (SetProcessDEPPolicyFunc)GetProcAddress(kernel32, "SetProcessDEPPolicy");
   if (_SetProcessDEPPolicy) _SetProcessDEPPolicy(PROCESS_DEP_ENABLE);
-#endif
 
-#ifdef XP_WIN
   // Suppress the "DLL Foo could not be found" dialog, such that if dependent
   // libraries (such as GDI+) are not preset, we gracefully fail to load those
   // XPCOM components, instead of being ungraceful.

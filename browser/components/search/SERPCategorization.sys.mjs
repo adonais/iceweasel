@@ -1097,7 +1097,7 @@ class DomainToCategoriesMap {
     }
 
     let fileContents = [];
-    let start = Cu.now();
+    let start = ChromeUtils.now();
     for (let record of recordsMatchingRegion) {
       let fetchedAttachment;
       // Downloading attachments can fail.
@@ -1659,7 +1659,7 @@ export class DomainToCategoriesStore {
    *   something wrong with the file contents.
    */
   async #insert(fileContents, version, isDefault) {
-    let start = Cu.now();
+    let start = ChromeUtils.now();
     await this.#connection.executeTransaction(async () => {
       lazy.logConsole.debug("Insert into domain_to_categories table.");
       for (let fileContent of fileContents) {

@@ -133,6 +133,7 @@ add_task(async function test_link_contextmenu() {
     "context-sep-sendlinktodevice",
     "context-searchselect",
     ...(expectTranslateSelection ? ["context-translate-selection"] : []),
+    "context-ask-chat",
     "frame-sep",
     ...(expectInspectAccessibility ? ["context-inspect-a11y"] : []),
     "context-inspect",

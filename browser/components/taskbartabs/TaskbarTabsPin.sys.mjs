@@ -81,6 +81,15 @@ export const TaskbarTabsPin = {
       Glean.webApp.unpin.record({ result: e.name ?? "Unknown exception" });
     }
   },
+
+  /**
+   * Gets a Localization object to use when creating shortcuts.
+   *
+   * @returns {Localization} An object to access localized strings.
+   */
+  _getLocalization() {
+    return new Localization(["branding/brand.ftl", "browser/taskbartabs.ftl"]);
+  },
 };
 
 /**
@@ -162,61 +171,21 @@ async function createShortcut(aTaskbarTab, aFileIcon, aRegistry) {
  * and relative path of the shortcut.
  */
 async function generateShortcutInfo(aTaskbarTab) {
-  const l10n = new Localization([
-    "branding/brand.ftl",
-    "browser/taskbartabs.ftl",
-  ]);
+  const l10n = TaskbarTabsPin._getLocalization();
 
-  let humanName = generateName(aTaskbarTab);
-  let basename = sanitizeFilename(humanName);
+  let basename = sanitizeFilename(aTaskbarTab.name + ".lnk");
   let dirname = await l10n.formatValue("taskbar-tab-shortcut-folder");
   dirname = sanitizeFilename(dirname, { allowDirectoryNames: true });
 
   const description = await l10n.formatValue(
     "taskbar-tab-shortcut-description",
-    { name: humanName }
+    { name: aTaskbarTab.name }
   );
 
   return {
     description,
-    relativePath: dirname + "\\" + basename + ".lnk",
+    relativePath: dirname + "\\" + basename,
   };
-}
-
-/**
- * Generates a name for the Taskbar Tab appropriate for user facing UI.
- *
- * @param {TaskbarTab} aTaskbarTab - The Taskbar Tab to generate a name for.
- * @returns {string} A name suitable for user facing UI.
- */
-function generateName(aTaskbarTab) {
-  // https://www.subdomain.example.co.uk/test
-  let uri = Services.io.newURI(aTaskbarTab.startUrl);
-
-  // ["www", "subdomain", "example", "co", "uk"]
-  let hostParts = uri.host.split(".");
-
-  // ["subdomain", "example", "co", "uk"]
-  if (hostParts[0] === "www") {
-    hostParts.shift();
-  }
-
-  let suffixDomainCount = Services.eTLD
-    .getKnownPublicSuffix(uri)
-    .split(".").length;
-
-  // ["subdomain", "example"]
-  hostParts.splice(-suffixDomainCount);
-
-  let name = hostParts
-    // ["example", "subdomain"]
-    .reverse()
-    // ["Example", "Subdomain"]
-    .map(s => s.charAt(0).toUpperCase() + s.slice(1))
-    // "Example Subdomain"
-    .join(" ");
-
-  return name;
 }
 
 /**
@@ -224,7 +193,8 @@ function generateName(aTaskbarTab) {
  * (e.g. DOS devices) with others, or replacing invalid characters (e.g. asterisks on
  * Windows) with underscores.
  *
- * @param {string} aWantedName - The name to validate and sanitize.
+ * @param {string} aWantedName - The name to validate and sanitize. Make sure
+ * that aWantedName has an extension if it will be saved with one.
  * @param {object} aOptions - Options to affect the sanitization.
  * @param {boolean} aOptions.allowDirectoryNames - Indicates that the name will be used
  * as a directory. If so, the validation rules may be slightly more lax.
@@ -235,7 +205,9 @@ function sanitizeFilename(aWantedName, { allowDirectoryNames = false } = {}) {
 
   let flags =
     Ci.nsIMIMEService.VALIDATE_SANITIZE_ONLY |
-    Ci.nsIMIMEService.VALIDATE_DONT_COLLAPSE_WHITESPACE;
+    Ci.nsIMIMEService.VALIDATE_DONT_COLLAPSE_WHITESPACE |
+    // Don't add .download to the name if it ends with .lnk.
+    Ci.nsIMIMEService.VALIDATE_ALLOW_INVALID_FILENAMES;
 
   if (allowDirectoryNames) {
     flags |= Ci.nsIMIMEService.VALIDATE_ALLOW_DIRECTORY_NAMES;

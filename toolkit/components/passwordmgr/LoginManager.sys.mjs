@@ -499,4 +499,12 @@ LoginManager.prototype = {
       origin
     );
   },
+
+  /**
+   * For migration purposes, asynchronously reencrypt all logins in the
+   * background.
+   */
+  reencryptAllLogins() {
+    return this._storage.reencryptAllLogins();
+  },
 }; // end of LoginManager implementation

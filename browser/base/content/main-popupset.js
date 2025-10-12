@@ -505,7 +505,7 @@ document.addEventListener(
           gBrowser.createTooltip(event);
           break;
         case "dynamic-shortcut-tooltip":
-          UpdateDynamicShortcutTooltipText(event.target);
+          DynamicShortcutTooltip.updateText(event.target);
           break;
         case "SyncedTabsOpenSelectedInContainerTabMenu":
           createUserContextMenu(event, { isContextMenu: true });

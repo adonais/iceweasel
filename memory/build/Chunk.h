@@ -166,7 +166,11 @@ struct arena_chunk_t {
 
   // Number of dirty pages that may be purged, the header is never counted
   // here.
-  size_t mNumDirty = 0;
+  uint16_t mNumDirty = 0;
+
+  // This will point to the page index of the first run that may have dirty
+  // pages.
+  uint16_t mDirtyRunHint;
 
   bool mIsPurging = false;
   bool mDying = false;
@@ -174,7 +178,7 @@ struct arena_chunk_t {
   // Map of pages within chunk that keeps track of free/large/small.
   arena_chunk_map_t mPageMap[];  // Dynamically sized.
 
-  explicit arena_chunk_t(arena_t* aArena) : mArena(aArena) {}
+  explicit arena_chunk_t(arena_t* aArena);
 
   bool IsEmpty();
 };

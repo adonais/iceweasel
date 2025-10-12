@@ -34,13 +34,11 @@ class MOZ_RAII AutoChangeNumberListNotifier : public mozAutoDocUpdate {
       : mozAutoDocUpdate(aValue->Element()->GetComposedDoc(), true),
         mValue(aValue) {
     MOZ_ASSERT(mValue, "Expecting non-null value");
-    mEmptyOrOldValue =
-        mValue->Element()->WillChangeNumberList(mValue->AttrEnum(), *this);
+    mValue->Element()->WillChangeNumberList(mValue->AttrEnum(), *this);
   }
 
   ~AutoChangeNumberListNotifier() {
-    mValue->Element()->DidChangeNumberList(mValue->AttrEnum(), mEmptyOrOldValue,
-                                           *this);
+    mValue->Element()->DidChangeNumberList(mValue->AttrEnum(), *this);
     if (mValue->IsAnimating()) {
       mValue->Element()->AnimationNeedsResample();
     }
@@ -48,7 +46,6 @@ class MOZ_RAII AutoChangeNumberListNotifier : public mozAutoDocUpdate {
 
  private:
   T* const mValue;
-  nsAttrValue mEmptyOrOldValue;
 };
 
 /**

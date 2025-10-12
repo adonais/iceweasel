@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.home.recentsyncedtabs.view
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -67,7 +66,6 @@ private const val THUMBNAIL_SIZE = 108
  * @param onSeeAllSyncedTabsButtonClick Invoked when user clicks on the "See all" button in the synced tab card.
  * @param onRemoveSyncedTab Invoked when user clicks on the "Remove" dropdown menu option.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Suppress("LongMethod")
 @Composable
 fun RecentSyncedTab(

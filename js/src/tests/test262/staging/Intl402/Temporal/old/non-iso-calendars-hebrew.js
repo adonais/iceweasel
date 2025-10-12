@@ -40,12 +40,16 @@ compareFormatToPartsSnapshot("0001-01-01T00:00Z", {
 var fromWithCases = {
   year2000: {
     year: 5760,
+    eraYear: 5760,
+    era: "am",
     month: 4,
     monthCode: "M04",
     day: 23
   },
   year1: {
     year: 3761,
+    eraYear: 3761,
+    era: "am",
     month: 4,
     monthCode: "M04",
     day: 18
@@ -119,6 +123,8 @@ var durationCases = {
     duration: { days: 280 },
     result: {
       year: 2000,
+      eraYear: 2000,
+      era: "am",
       month: 10,
       monthCode: "M10",
       day: 14,
@@ -133,6 +139,8 @@ var durationCases = {
     duration: { weeks: 40 },
     result: {
       year: 2000,
+      eraYear: 2000,
+      era: "am",
       month: 10,
       monthCode: "M10",
       day: 14,
@@ -147,6 +155,8 @@ var durationCases = {
     duration: { months: 6 },
     result: {
       year: 2001,
+      eraYear: 2001,
+      era: "am",
       month: 6,
       monthCode: "M05L",
       day: 1,
@@ -165,6 +175,8 @@ var durationCases = {
     },
     result: {
       year: 2001,
+      eraYear: 2001,
+      era: "am",
       month: 6,
       monthCode: "M05L",
       day: 18,

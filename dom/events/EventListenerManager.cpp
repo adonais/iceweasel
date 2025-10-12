@@ -21,7 +21,6 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/HalSensor.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/JSEventHandler.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -70,50 +69,6 @@ namespace mozilla {
 using namespace dom;
 using namespace hal;
 
-static uint32_t MutationBitForEventType(EventMessage aEventType) {
-  switch (aEventType) {
-    case eLegacySubtreeModified:
-      return NS_EVENT_BITS_MUTATION_SUBTREEMODIFIED;
-    case eLegacyNodeInserted:
-      return NS_EVENT_BITS_MUTATION_NODEINSERTED;
-    case eLegacyNodeRemoved:
-      return NS_EVENT_BITS_MUTATION_NODEREMOVED;
-    case eLegacyNodeRemovedFromDocument:
-      return NS_EVENT_BITS_MUTATION_NODEREMOVEDFROMDOCUMENT;
-    case eLegacyNodeInsertedIntoDocument:
-      return NS_EVENT_BITS_MUTATION_NODEINSERTEDINTODOCUMENT;
-    case eLegacyAttrModified:
-      return NS_EVENT_BITS_MUTATION_ATTRMODIFIED;
-    case eLegacyCharacterDataModified:
-      return NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED;
-    default:
-      break;
-  }
-  return 0;
-}
-
-static DeprecatedOperations DeprecatedMutationOperation(EventMessage aMessage) {
-  switch (aMessage) {
-    case eLegacySubtreeModified:
-      return DeprecatedOperations::eDOMSubtreeModified;
-    case eLegacyNodeInserted:
-      return DeprecatedOperations::eDOMNodeInserted;
-    case eLegacyNodeRemoved:
-      return DeprecatedOperations::eDOMNodeRemoved;
-    case eLegacyNodeRemovedFromDocument:
-      return DeprecatedOperations::eDOMNodeRemovedFromDocument;
-    case eLegacyNodeInsertedIntoDocument:
-      return DeprecatedOperations::eDOMNodeInsertedIntoDocument;
-    case eLegacyAttrModified:
-      return DeprecatedOperations::eDOMAttrModified;
-    case eLegacyCharacterDataModified:
-      return DeprecatedOperations::eDOMCharacterDataModified;
-    default:
-      MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE(
-          "aMessage restricted by switch in AddEventListenerInternal");
-  }
-}
-
 class ListenerMapEntryComparator {
  public:
   explicit ListenerMapEntryComparator(nsAtom* aTarget)
@@ -141,7 +96,6 @@ uint32_t EventListenerManager::sMainThreadCreatedCount = 0;
 
 EventListenerManagerBase::EventListenerManagerBase()
     : mMayHaveDOMActivateEventListener(false),
-      mMayHaveMutationListeners(false),
       mMayHaveCapturingListeners(false),
       mMayHaveSystemGroupListeners(false),
       mMayHaveTouchEventListener(false),
@@ -390,44 +344,6 @@ void EventListenerManager::AddEventListenerInternal(
           window->SetHasDOMActivateEventListeners();
         }
         break;
-      case eLegacySubtreeModified:
-      case eLegacyNodeInserted:
-      case eLegacyNodeRemoved:
-      case eLegacyNodeRemovedFromDocument:
-      case eLegacyNodeInsertedIntoDocument:
-      case eLegacyAttrModified:
-      case eLegacyCharacterDataModified: {
-        MOZ_ASSERT(!aFlags.mInSystemGroup,
-                   "Legacy mutation events shouldn't be handled by ourselves");
-        MOZ_ASSERT(listener->mListenerType != Listener::eNativeListener,
-                   "Legacy mutation events shouldn't be handled in C++ code");
-        DebugOnly<nsINode*> targetNode =
-            nsINode::FromEventTargetOrNull(mTarget);
-        // Legacy mutation events shouldn't be handled in chrome documents.
-        MOZ_ASSERT_IF(targetNode,
-                      !nsContentUtils::IsChromeDoc(targetNode->OwnerDoc()));
-        // Legacy mutation events shouldn't listen to mutations in native
-        // anonymous subtrees.
-        MOZ_ASSERT_IF(targetNode, !targetNode->IsInNativeAnonymousSubtree());
-        // For mutation listeners, we need to update the global bit on the DOM
-        // window. Otherwise we won't actually fire the mutation event.
-        mMayHaveMutationListeners = true;
-        // Go from our target to the nearest enclosing DOM window.
-        if (nsPIDOMWindowInner* window = GetInnerWindowForTarget()) {
-          if (Document* doc = window->GetExtantDoc()) {
-            doc->WarnOnceAbout(
-                DeprecatedMutationOperation(resolvedEventMessage));
-          }
-          // If resolvedEventMessage is eLegacySubtreeModified, we need to
-          // listen all mutations. nsContentUtils::HasMutationListeners relies
-          // on this.
-          window->SetMutationListeners(
-              (resolvedEventMessage == eLegacySubtreeModified)
-                  ? NS_EVENT_BITS_MUTATION_ALL
-                  : MutationBitForEventType(resolvedEventMessage));
-        }
-        break;
-      }
       case ePointerEnter:
       case ePointerLeave:
         mMayHavePointerEnterLeaveEventListener = true;
@@ -580,13 +496,6 @@ void EventListenerManager::AddEventListenerInternal(
         // XXX Use NS_ASSERTION here to print resolvedEventMessage since
         //     MOZ_ASSERT can take only string literal, not pointer to
         //     characters.
-        NS_ASSERTION(
-            resolvedEventMessage < eLegacyMutationEventFirst ||
-                resolvedEventMessage > eLegacyMutationEventLast,
-            nsPrintfCString("You added new mutation event, but it's not "
-                            "handled above, resolvedEventMessage=%s",
-                            ToChar(resolvedEventMessage))
-                .get());
         NS_ASSERTION(aTypeAtom != nsGkAtoms::onpointerenter,
                      nsPrintfCString("resolvedEventMessage=%s",
                                      ToChar(resolvedEventMessage))
@@ -1820,37 +1729,6 @@ void EventListenerManager::RemoveListenerForAllEvents(
   flags.mInSystemGroup = aSystemEventGroup;
   RemoveEventListenerInternal(EventListenerHolder(aDOMListener), nullptr, flags,
                               true);
-}
-
-bool EventListenerManager::HasMutationListeners() {
-  if (mMayHaveMutationListeners) {
-    for (const auto& entry : mListenerMap.mEntries) {
-      EventMessage message = GetEventMessage(entry.mTypeAtom);
-      if (message >= eLegacyMutationEventFirst &&
-          message <= eLegacyMutationEventLast) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
-
-uint32_t EventListenerManager::MutationListenerBits() {
-  uint32_t bits = 0;
-  if (mMayHaveMutationListeners) {
-    for (const auto& entry : mListenerMap.mEntries) {
-      EventMessage message = GetEventMessage(entry.mTypeAtom);
-      if (message >= eLegacyMutationEventFirst &&
-          message <= eLegacyMutationEventLast) {
-        if (message == eLegacySubtreeModified) {
-          return NS_EVENT_BITS_MUTATION_ALL;
-        }
-        bits |= MutationBitForEventType(message);
-      }
-    }
-  }
-  return bits;
 }
 
 bool EventListenerManager::HasListenersFor(const nsAString& aEventName) const {

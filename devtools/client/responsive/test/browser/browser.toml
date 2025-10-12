@@ -92,7 +92,10 @@ tags = "devtools webextensions"
 ["browser_eyedropper.js"]
 
 ["browser_eyedropper_update.js"]
-skip-if = ["os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan"]
+skip-if = [
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan",
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan",
+]
 
 ["browser_in_rdm_pane.js"]
 
@@ -176,6 +179,7 @@ skip-if = [
   "os == 'win'", # Bug 1977557 and Bug 1977558
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1980013
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && asan", # Bug 1980013
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1980013
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1980013
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && debug", # Bug 1980013
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && verify", # can be too slow in chaos mode to trigger dblclick events

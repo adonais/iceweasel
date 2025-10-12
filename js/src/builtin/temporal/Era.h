@@ -18,7 +18,6 @@
 #include "jstypes.h"
 
 #include "builtin/temporal/Calendar.h"
-#include "builtin/temporal/Crash.h"
 
 namespace js::temporal {
 
@@ -139,7 +138,7 @@ constexpr auto& CalendarEras(CalendarId id) {
     case CalendarId::Japanese:
       return eras::Japanese;
   }
-  JS_CONSTEXPR_CRASH("invalid calendar id");
+  MOZ_CRASH("invalid calendar id");
 }
 
 constexpr bool CalendarEraRelevant(CalendarId calendar) {
@@ -202,7 +201,7 @@ constexpr auto& CalendarEraNames(CalendarId calendar, EraCode era) {
                                       : eras::names::ROCInverse;
     }
   }
-  JS_CONSTEXPR_CRASH("invalid era");
+  MOZ_CRASH("invalid era");
 }
 
 constexpr auto CalendarEraName(CalendarId calendar, EraCode era) {
@@ -241,7 +240,7 @@ constexpr bool CalendarEraStartsAtYearBoundary(CalendarId id) {
     case CalendarId::Japanese:
       return false;
   }
-  JS_CONSTEXPR_CRASH("invalid calendar id");
+  MOZ_CRASH("invalid calendar id");
 }
 
 constexpr bool CalendarEraStartsAtYearBoundary(CalendarId id, EraCode era) {

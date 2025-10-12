@@ -16,6 +16,7 @@
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsGlobalWindowInner.h"
 #include "nsPIDOMWindow.h"
 
 namespace mozilla::dom {

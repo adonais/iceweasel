@@ -46,6 +46,10 @@ export class TestProcessActorChild extends JSProcessActorChild {
     return "TestProcessActorChild";
   }
 
+  async requestInputStream() {
+    return this.sendQuery("RequestInputStream");
+  }
+
   didDestroy() {
     Services.obs.notifyObservers(
       this,

@@ -27,7 +27,6 @@ android {
 }
 
 dependencies {
-    implementation project(':components:service-firefox-accounts')
     implementation project(':components:browser-icons')
     implementation project(':components:browser-state')
     implementation project(':components:browser-storage-sync')
@@ -35,22 +34,22 @@ dependencies {
     implementation project(':components:concept-engine')
     implementation project(':components:concept-toolbar')
     implementation project(':components:feature-session')
-    implementation project(':components:support-utils')
-    implementation project(':components:support-ktx')
+    implementation project(':components:service-firefox-accounts')
     implementation project(':components:support-base')
+    implementation project(':components:support-ktx')
+    implementation project(':components:support-utils')
 
-    implementation libs.androidx.work.runtime
     implementation libs.androidx.lifecycle.runtime
-
-    implementation libs.kotlin.coroutines
+    implementation libs.androidx.work.runtime
+    implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
 
     testImplementation libs.androidx.concurrent
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.work.testing
-    testImplementation libs.testing.coroutines
-    testImplementation libs.testing.robolectric
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

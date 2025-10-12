@@ -6,6 +6,9 @@ support-files = [
   "head.js"
 ]
 
+["browser_302_redirect_set_cookie_content_process.js"]
+support-files = ["redirect_with_cookie.sjs"]
+
 ["browser_3pcb_expection.js"]
 support-files = ["setFetchCookie.sjs"]
 

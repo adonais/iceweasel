@@ -14,7 +14,7 @@ Subject: Bug 1766646 - (fix) breakout Call::Stats and SharedModuleThread into
  create mode 100644 call/call_basic_stats.h
 
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 37f772471f..14b5835f47 100644
+index 0cf0e2fcf0..aaae7bb9a9 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -33,6 +33,12 @@ rtc_library("call_interfaces") {
@@ -31,7 +31,7 @@ index 37f772471f..14b5835f47 100644
    deps = [
      ":audio_sender_interface",
 diff --git a/call/call.cc b/call/call.cc
-index ace69e717a..7d3d8f81b7 100644
+index d6d0e4b2d3..bd3efab30c 100644
 --- a/call/call.cc
 +++ b/call/call.cc
 @@ -514,19 +514,6 @@ class Call final : public webrtc::Call,

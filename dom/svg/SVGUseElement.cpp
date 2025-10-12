@@ -213,7 +213,7 @@ void SVGUseElement::CharacterDataChanged(nsIContent* aContent,
 }
 
 void SVGUseElement::AttributeChanged(Element* aElement, int32_t aNamespaceID,
-                                     nsAtom* aAttribute, int32_t aModType,
+                                     nsAtom* aAttribute, AttrModType,
                                      const nsAttrValue* aOldValue) {
   if (nsContentUtils::IsInSameAnonymousTree(mReferencedElementTracker.get(),
                                             aElement)) {

@@ -14,7 +14,9 @@
     --attention-dot-color: light-dark(#2ac3a2, #54ffbd);
 
     /** Background Color **/
+    --background-color-box-info: light-dark(var(--color-gray-20), var(--color-gray-80));
     --background-color-canvas: light-dark(var(--color-white), var(--color-gray-90));
+    --table-row-background-color-alternate: light-dark(#f0f0f4, var(--color-gray-80)); /* TODO Bug 1821203 - Gray use needs to be consolidated */
 
     /** Border **/
     --border-color: light-dark(var(--color-gray-50), var(--color-gray-70));
@@ -49,9 +51,6 @@
 
     /** Page **/
     --page-main-content-width: 664px;
-
-    /** Table Row **/
-    --table-row-background-color-alternate: light-dark(#f0f0f4, var(--color-gray-80)); /* TODO Bug 1821203 - Gray use needs to be consolidated */
 
     /** Text **/
     --text-color: light-dark(var(--color-gray-100), var(--color-gray-05));

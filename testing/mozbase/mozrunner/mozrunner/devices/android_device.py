@@ -159,7 +159,7 @@ AVD_DICT = {
     ),
     "x86_64": AvdInfo(
         "Android x86_64",
-        "mozemulator-x86_64",
+        "mozemulator-android34-x86_64",
         [
             "-skip-adb-auth",
             "-verbose",
@@ -171,12 +171,12 @@ AVD_DICT = {
             "3072",
             "-cores",
             "4",
-            "-skin",
-            "800x1280",
             "-prop",
             "ro.test_harness=true",
             "-no-snapstorage",
             "-no-snapshot",
+            "-skin",
+            "1080x1920",
         ],
         True,
     ),

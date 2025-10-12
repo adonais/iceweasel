@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ext
 
 import android.graphics.Rect
-import android.os.Build
 import android.util.DisplayMetrics
 import android.view.View
 import android.view.WindowInsets
@@ -27,9 +26,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.R
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 class ViewTest {
@@ -86,12 +83,6 @@ class ViewTest {
         verify { parent.touchDelegate = null }
     }
 
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP, Build.VERSION_CODES.LOLLIPOP_MR1])
-    @Test
-    fun `getWindowInsets returns null below API 23`() {
-        assertEquals(null, view.getWindowInsets())
-    }
-
     @Test
     fun `getWindowInsets returns null when the system insets don't exist`() {
         every { view.rootWindowInsets } returns null
@@ -106,15 +97,6 @@ class ViewTest {
         assertEquals(WindowInsetsCompat.toWindowInsetsCompat(rootInsets), view.getWindowInsets())
     }
 
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP, Build.VERSION_CODES.LOLLIPOP_MR1])
-    @Test
-    fun `getKeyboardHeight accounts for status bar below API 23`() {
-        every { view.getWindowVisibleDisplayFrame() } returns Rect(0, 50, 1000, 500)
-        every { view.rootView.height } returns 1000
-
-        assertEquals(500, view.getKeyboardHeight())
-    }
-
     @Test
     fun `getKeyboardHeight accounts for status bar and navigation bar`() {
         val windowInsetsCompat: WindowInsetsCompat = mockk()
@@ -125,27 +107,6 @@ class ViewTest {
         every { windowInsetsCompat.bottom() } returns 50
 
         assertEquals(450, view.getKeyboardHeight())
-    }
-
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP, Build.VERSION_CODES.LOLLIPOP_MR1])
-    @Test
-    fun `isKeyboardVisible returns false when the keyboard height is less than or equal to the minimum threshold`() {
-        val threshold = testContext.resources.getDimensionPixelSize(R.dimen.minimum_keyboard_height)
-
-        every { view.getKeyboardHeight() } returns threshold - 1
-        assertEquals(false, view.isKeyboardVisible())
-
-        every { view.getKeyboardHeight() } returns threshold
-        assertEquals(false, view.isKeyboardVisible())
-    }
-
-    @Config(sdk = [Build.VERSION_CODES.LOLLIPOP, Build.VERSION_CODES.LOLLIPOP_MR1])
-    @Test
-    fun `isKeyboardVisible returns true when the keyboard height is greater than the minimum threshold`() {
-        val threshold = testContext.resources.getDimensionPixelSize(R.dimen.minimum_keyboard_height)
-        every { view.getKeyboardHeight() } returns threshold + 1
-
-        assertEquals(true, view.isKeyboardVisible())
     }
 
     @Test

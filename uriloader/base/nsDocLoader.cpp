@@ -429,7 +429,24 @@ nsDocLoader::OnStartRequest(nsIRequest* request) {
   // override, but here we don't want to do anything with them, so return early.
   if (loadFlags & nsIRequest::LOAD_BACKGROUND) {
     if (nsCOMPtr<nsIScriptChannel> scriptChannel = do_QueryInterface(request)) {
-      mIsLoadingJavascriptURI = scriptChannel->GetIsDocumentLoad();
+      if (scriptChannel->GetIsDocumentLoad()) {
+        RefPtr<Document> doc = do_GetInterface(GetAsSupports(this));
+        // https://html.spec.whatwg.org/#navigate-to-a-javascript:-url
+        // Step 7.1:
+        // If initialInsertion is true and targetNavigable's active document's
+        // is initial about:blank is true, then run the iframe load event
+        // steps given targetNavigable's container.
+        if (doc && doc->IsInitialDocument()) {
+          nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
+          MOZ_ASSERT(channel, "How can the request not be a channel?");
+
+          nsCOMPtr<nsILoadInfo> loadInfo;
+          channel->GetLoadInfo(getter_AddRefs(loadInfo));
+          if (loadInfo && loadInfo->GetOriginalFrameSrcLoad()) {
+            mIsLoadingJavascriptURI = true;
+          }
+        }
+      }
     }
     return NS_OK;
   }
@@ -538,34 +555,22 @@ nsDocLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   if (lf & nsIRequest::LOAD_BACKGROUND) {
     if (nsCOMPtr<nsIScriptChannel> scriptChannel =
             do_QueryInterface(aRequest)) {
-      if (mIsLoadingJavascriptURI && scriptChannel->GetIsDocumentLoad()) {
+      if (mIsLoadingJavascriptURI) {
+        MOZ_ASSERT(scriptChannel->GetIsDocumentLoad(),
+                   "This should be a document load");
         // If there is no valid execution result from javascript URL,
         // nsJSChannel stops further process. However, we might still need to
-        // file a load event per https://github.com/whatwg/html/issues/1895.
+        // file a load event per
+        // https://html.spec.whatwg.org/#navigate-to-a-javascript:-url.
         if (NS_FAILED(aStatus)) {
-          RefPtr<Document> doc = do_GetInterface(GetAsSupports(this));
-          // XXX: There's a difference between browsers — Blink fires the load
-          // event as long as the current document is an initial document,
-          // whereas WebKit seems to fire the load event only during the initial
-          // load and does not fire it for the top-level document.
-          // Our behavior aligns more closely with WebKit's.
-          if (doc && doc->IsInitialDocument()) {
-            nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
-            MOZ_ASSERT(channel, "How can the request not be a channel?");
-
-            nsCOMPtr<nsILoadInfo> loadInfo;
-            channel->GetLoadInfo(getter_AddRefs(loadInfo));
-            if (loadInfo && loadInfo->GetOriginalFrameSrcLoad()) {
-              DocLoaderIsEmpty(false);
-              return NS_OK;
-            }
-          }
+          DocLoaderIsEmpty(false);
+          return NS_OK;
         }
 
         // In the case where the execution result is valid, the result will be
         // placed into nsStringInputStream. nsJSChannel will then open the
         // nsInputSteamChannel as the "real" document channel to continue
-        // loading process. Since there will be a "real" documeht channel, we no
+        // loading process. Since there will be a "real" document channel, we no
         // longer need to track whether we are loading a javascipt URI.
         mIsLoadingJavascriptURI = false;
       }
@@ -834,6 +839,30 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
       }
     } else {
       MOZ_ASSERT(mDocumentOpenedButNotLoaded || mIsLoadingJavascriptURI);
+
+      if (mIsLoadingJavascriptURI) {
+        // Look for javascript channel to ensure the execute is finished.
+        nsCOMPtr<nsISimpleEnumerator> requests;
+        mLoadGroup->GetRequests(getter_AddRefs(requests));
+        bool hasMore = false;
+        while (NS_SUCCEEDED(requests->HasMoreElements(&hasMore)) && hasMore) {
+          nsCOMPtr<nsISupports> elem;
+          requests->GetNext(getter_AddRefs(elem));
+
+          nsCOMPtr<nsIScriptChannel> scriptChannel(do_QueryInterface(elem));
+          if (scriptChannel && scriptChannel->GetIsDocumentLoad()) {
+            if (nsCOMPtr<nsIRequest> request = do_QueryInterface(elem)) {
+              bool isPending = false;
+              request->IsPending(&isPending);
+              if (isPending) {
+                // Still waiting for the javascript: URL to finish executing.
+                return;
+              }
+            }
+          }
+        }
+      }
+
       mDocumentOpenedButNotLoaded = false;
       mIsLoadingJavascriptURI = false;
 
@@ -851,6 +880,7 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
           // Can "doc" or "window" ever come back null here?  Our state machine
           // is complicated enough I wouldn't bet against it...
           if (nsCOMPtr<Document> doc = do_GetInterface(GetAsSupports(this))) {
+            MOZ_ASSERT_IF(mIsLoadingJavascriptURI, doc->IsInitialDocument());
             doc->SetReadyStateInternal(Document::READYSTATE_COMPLETE,
                                        /* updateTimingInformation = */ false);
             doc->StopDocumentLoad();
@@ -858,8 +888,9 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
             nsCOMPtr<nsPIDOMWindowOuter> window = doc->GetWindow();
             if (window && !doc->SkipLoadEventAfterClose()) {
               MOZ_LOG(gDocLoaderLog, LogLevel::Debug,
-                      ("DocLoader:%p: Firing load event for document.open\n",
-                       this));
+                      ("DocLoader:%p: Firing load event for %s\n", this,
+                       mIsLoadingJavascriptURI ? "javascript URI"
+                                               : "document.open"));
 
               // This is a very cut-down version of
               // nsDocumentViewer::LoadComplete that doesn't do various things

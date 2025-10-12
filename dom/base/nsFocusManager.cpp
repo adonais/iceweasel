@@ -2684,10 +2684,10 @@ void nsFocusManager::Focus(
     // if the window isn't visible, for instance because it is a hidden tab,
     // update the current focus and scroll it into view but don't do anything
     // else
-    if (RefPtr elementToFocus = FlushAndCheckIfFocusable(aElement, aFlags)) {
-      aWindow->SetFocusedElement(elementToFocus, focusMethod);
+    if (aElement) {
+      aWindow->SetFocusedElement(aElement, focusMethod);
       if (aFocusChanged) {
-        ScrollIntoView(presShell, elementToFocus, aFlags);
+        ScrollIntoView(presShell, aElement, aFlags);
       }
     }
     return;
@@ -2725,11 +2725,11 @@ void nsFocusManager::Focus(
 
   if (aAdjustWidget && !sTestMode) {
     if (nsViewManager* vm = presShell->GetViewManager()) {
-      nsCOMPtr<nsIWidget> widget = vm->GetRootWidget();
-      if (widget)
+      if (nsCOMPtr<nsIWidget> widget = vm->GetRootWidget()) {
         widget->SetFocus(nsIWidget::Raise::No, aFlags & FLAG_NONSYSTEMCALLER
                                                    ? CallerType::NonSystem
                                                    : CallerType::System);
+      }
     }
   }
 
@@ -2762,17 +2762,15 @@ void nsFocusManager::Focus(
     }
   }
 
-  // check to ensure that the element is still focusable, and that nothing
-  // else was focused during the events above.
-  // Note that the focusing element may have already been moved to another
-  // document/window.  In that case, we should stop setting focus to it
-  // because setting focus to the new window would cause redirecting focus
-  // again and again.
-  RefPtr elementToFocus =
-      aElement && aElement->IsInComposedDoc() &&
-              aElement->GetComposedDoc() == aWindow->GetExtantDoc()
-          ? FlushAndCheckIfFocusable(aElement, aFlags)
-          : nullptr;
+  const RefPtr<Element> elementToFocus = [&]() -> Element* {
+    if (!aElement || !aElement->IsInComposedDoc() ||
+        aElement->GetComposedDoc() != aWindow->GetExtantDoc()) {
+      // Element moved documents, don't focus it to prevent redirecting focus to
+      // the wrong window.
+      return nullptr;
+    }
+    return aElement;
+  }();
   if (elementToFocus && !mFocusedElement &&
       GetFocusedBrowsingContext() == aWindow->GetBrowsingContext()) {
     mFocusedElement = elementToFocus;
@@ -3947,18 +3945,24 @@ static bool IsOpenPopoverWithInvoker(nsIContent* aContent) {
   return false;
 }
 
-static nsIContent* InvokerForPopoverShowingState(nsIContent* aContent) {
+static nsGenericHTMLElement* GetAssociatedPopoverFromInvoker(
+    nsIContent* aContent) {
   Element* invoker = Element::FromNode(aContent);
   if (!invoker) {
     return nullptr;
   }
+  nsGenericHTMLElement* popover = invoker->GetAssociatedPopover();
+  if (popover && popover->IsPopoverOpen()) {
+    MOZ_ASSERT(popover->GetPopoverData()->GetInvoker() == invoker);
+    return popover;
+  }
+  return nullptr;
+}
 
-  nsGenericHTMLElement* popover = invoker->GetEffectivePopoverTargetElement();
-  if (popover && popover->IsPopoverOpen() &&
-      popover->GetPopoverData()->GetInvoker() == invoker) {
+static nsIContent* InvokerForPopoverShowingState(nsIContent* aContent) {
+  if (aContent && GetAssociatedPopoverFromInvoker(aContent)) {
     return aContent;
   }
-
   return nullptr;
 }
 
@@ -4015,6 +4019,7 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
     nsIContent* aOriginalStartContent, bool aForward, int32_t aCurrentTabIndex,
     bool aIgnoreTabIndex, bool aForDocumentNavigation, bool aNavigateByKey,
     bool aSkipOwner, bool aReachedToEndForDocumentNavigation) {
+  MOZ_ASSERT(aOwner, "aOwner must not be null");
   MOZ_ASSERT(
       IsHostOrSlot(aOwner) || IsOpenPopoverWithInvoker(aOwner),
       "Scope owner should be host, slot or an open popover with invoker set.");
@@ -4260,7 +4265,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
     if (InvokerForPopoverShowingState(startContent)) {
       if (aForward) {
         RefPtr<nsIContent> popover =
-            startContent->GetEffectivePopoverTargetElement();
+            GetAssociatedPopoverFromInvoker(startContent);
         nsIContent* contentToFocus = GetNextTabbableContentInScope(
             popover, popover, aOriginalStartContent, aForward, 1,
             aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,
@@ -4446,7 +4451,7 @@ nsresult nsFocusManager::GetNextTabbableContent(
         if (tabIndex >= 0 &&
             (aIgnoreTabIndex || aCurrentTabIndex == tabIndex)) {
           RefPtr<nsIContent> popover =
-              currentContent->GetEffectivePopoverTargetElement();
+              GetAssociatedPopoverFromInvoker(currentContent);
           nsIContent* contentToFocus = GetNextTabbableContentInScope(
               popover, popover, aOriginalStartContent, aForward, 0,
               aIgnoreTabIndex, aForDocumentNavigation, aNavigateByKey,

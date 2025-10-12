@@ -290,7 +290,6 @@ class Perfherder(Layer):
         }
 
         allvals = []
-        alert_thresholds = []
         for subtest_res in subtests:
             measurement = subtest_res["name"]
             reps = subtest_res["replicates"]
@@ -302,17 +301,17 @@ class Perfherder(Layer):
                 continue
 
             # Gather extra settings specified from within a metric specification
+            subtest_alert_threshold = alert_threshold
             subtest_lower_is_better = lower_is_better
             subtest_unit = unit
             for met in metrics_info:
                 if met not in measurement:
                     continue
-
                 extra_options.extend(metrics_info[met].get("extraOptions", []))
-                alert_thresholds.append(
-                    metrics_info[met].get("alertThreshold", alert_threshold)
-                )
 
+                subtest_alert_threshold = metrics_info[met].get(
+                    "alertThreshold", alert_threshold
+                )
                 subtest_unit = metrics_info[met].get("unit", unit)
                 subtest_lower_is_better = metrics_info[met].get(
                     "lowerIsBetter", lower_is_better
@@ -332,6 +331,8 @@ class Perfherder(Layer):
                 "replicates": reps,
                 "value": extra_info.get("value"),
                 "unit": extra_info.get("unit") or subtest_unit,
+                "alertThreshold": extra_info.get("alert_threshold")
+                or subtest_alert_threshold,
             }
 
             # These two need to be done with if statements since they are boolean
@@ -362,15 +363,7 @@ class Perfherder(Layer):
                 + "only int/float data is accepted."
             )
 
-        alert_thresholds = list(set(alert_thresholds))
-        if len(alert_thresholds) > 1:
-            raise PerfherderValidDataError(
-                "Too many alertThreshold's were specified, expecting 1 but found "
-                + f"{len(alert_thresholds)}"
-            )
-        elif len(alert_thresholds) == 1:
-            suite["alertThreshold"] = alert_thresholds[0]
-
+        suite["alertThreshold"] = alert_threshold
         suite["extraOptions"] = list(set(suite["extraOptions"]))
 
         if has_callable_method(transformer_obj, "summary"):

@@ -787,20 +787,11 @@ std::tuple<void*, bool> js::Nursery::allocNurseryOrMallocBuffer(
   return {buffer, bool(buffer)};
 }
 
-std::tuple<void*, bool> js::Nursery::allocateBuffer(Zone* zone, size_t nbytes) {
+void* js::Nursery::allocateInternalBuffer(Zone* zone, size_t nbytes) {
   MOZ_ASSERT(nbytes > 0);
-  MOZ_ASSERT(nbytes <= SIZE_MAX - gc::CellAlignBytes);
-  nbytes = RoundUp(nbytes, gc::CellAlignBytes);
-
-  if (nbytes <= MaxNurseryBufferSize) {
-    void* buffer = allocate(nbytes);
-    if (buffer) {
-      return {buffer, false};
-    }
-  }
-
-  void* buffer = AllocBuffer(zone, nbytes, true);
-  return {buffer, bool(buffer)};
+  MOZ_ASSERT(nbytes <= MaxNurseryBufferSize);
+  MOZ_ASSERT(nbytes % CellAlignBytes == 0);
+  return allocate(nbytes);
 }
 
 void* js::Nursery::tryAllocateNurseryBuffer(JS::Zone* zone, size_t nbytes,
@@ -838,15 +829,26 @@ void* js::Nursery::allocateBuffer(Zone* zone, Cell* owner, size_t nbytes) {
   MOZ_ASSERT(owner);
   MOZ_ASSERT(zone == owner->zone());
   MOZ_ASSERT(nbytes > 0);
+  MOZ_ASSERT(nbytes <= SIZE_MAX - gc::CellAlignBytes);
+  nbytes = RoundUp(nbytes, gc::CellAlignBytes);
 
   if (!IsInsideNursery(owner)) {
     return AllocBuffer(zone, nbytes, false);
   }
 
-  auto [buffer, isExternal] = allocateBuffer(zone, nbytes);
-  if (isExternal) {
-    registerBuffer(buffer, nbytes);
+  if (nbytes <= MaxNurseryBufferSize) {
+    void* buffer = allocateInternalBuffer(zone, nbytes);
+    if (buffer) {
+      return buffer;
+    }
   }
+
+  void* buffer = AllocBuffer(zone, nbytes, true);
+  if (!buffer) {
+    return nullptr;
+  }
+
+  registerBuffer(buffer, nbytes);
   return buffer;
 }
 
@@ -956,11 +958,23 @@ void* js::Nursery::reallocateBuffer(Zone* zone, Cell* cell, void* oldBuffer,
   return newBuffer;
 }
 
-void js::Nursery::freeBuffer(void* buffer, size_t nbytes) {
-  if (!isInside(buffer)) {
-    removeMallocedBuffer(buffer, nbytes);
-    js_free(buffer);
+void Nursery::freeBuffer(JS::Zone* zone, gc::Cell* cell, void* buffer,
+                         size_t bytes) {
+  MOZ_ASSERT(IsBufferAlloc(buffer) || isInside(buffer));
+  MOZ_ASSERT_IF(!IsInsideNursery(cell), IsBufferAlloc(buffer));
+  MOZ_ASSERT_IF(!IsInsideNursery(cell), !IsNurseryOwned(zone, buffer));
+
+  if (!IsBufferAlloc(buffer)) {
+    // The nursery cannot make use of the returned space.
+    return;
   }
+
+  if (IsInsideNursery(cell)) {
+    MOZ_ASSERT(toSpace.mallocedBufferBytes >= bytes);
+    toSpace.mallocedBufferBytes -= bytes;
+  }
+
+  FreeBuffer(zone, buffer);
 }
 
 #ifdef DEBUG
@@ -1376,6 +1390,11 @@ inline bool js::Nursery::isUnderused() const {
 void js::Nursery::collect(JS::GCOptions options, JS::GCReason reason) {
   JSRuntime* rt = runtime();
   MOZ_ASSERT(!rt->mainContextFromOwnThread()->suppressGC);
+
+  {
+    AutoGCSession commitSession(gc, JS::HeapState::Idle);
+    rt->commitPendingWrapperPreservations();
+  }
 
   if (minorGCRequested()) {
     MOZ_ASSERT(position() == chunk(currentChunk()).end());
@@ -1941,7 +1960,8 @@ void js::Nursery::registerBuffer(void* buffer, size_t nbytes) {
  *    freed after nursery collection if it is malloced
  *  - memory accounting for the buffer needs to be updated
  */
-Nursery::WasBufferMoved js::Nursery::maybeMoveRawBufferOnPromotion(
+Nursery::WasBufferMoved
+js::Nursery::maybeMoveRawNurseryOrMallocBufferOnPromotion(
     void** bufferp, gc::Cell* owner, size_t bytesUsed, size_t bytesCapacity,
     MemoryUse use, arena_id_t arena) {
   MOZ_ASSERT(bytesUsed <= bytesCapacity);

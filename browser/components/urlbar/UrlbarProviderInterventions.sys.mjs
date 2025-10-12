@@ -431,8 +431,8 @@ function getPayloadForTip(tip) {
  * A provider that returns actionable tip results when the user is performing
  * a search related to those actions.
  */
-class ProviderInterventions extends UrlbarProvider {
-  #lazy = XPCOMUtils.declareLazy({
+export class UrlbarProviderInterventions extends UrlbarProvider {
+  static lazy = XPCOMUtils.declareLazy({
     // This object is used to match the user's queries to tips.
     queryScorer: () => {
       let queryScorer = new QueryScorer({
@@ -461,19 +461,10 @@ class ProviderInterventions extends UrlbarProvider {
   /**
    * Enum of the types of intervention tips.
    *
-   * @returns {{ NONE: string; CLEAR: string; REFRESH: string; UPDATE_ASK: string; UPDATE_CHECKING: string; UPDATE_REFRESH: string; UPDATE_RESTART: string; UPDATE_WEB: string; }}
+   * @returns {typeof TIPS}
    */
-  get TIP_TYPE() {
+  static get TIP_TYPE() {
     return TIPS;
-  }
-
-  /**
-   * Unique name for the provider, used by the context to filter on providers.
-   *
-   * @returns {string}
-   */
-  get name() {
-    return "UrlbarProviderInterventions";
   }
 
   /**
@@ -499,7 +490,9 @@ class ProviderInterventions extends UrlbarProvider {
       ) ||
       !EN_LOCALE_MATCH.test(Services.locale.appLocaleAsBCP47) ||
       !Services.policies.isAllowed("urlbarinterventions") ||
-      (await lazy.UrlbarProviderGlobalActions.isActive(queryContext))
+      (await this.queryInstance
+        .getProvider(lazy.UrlbarProviderGlobalActions.name)
+        ?.isActive())
     ) {
       return false;
     }
@@ -507,7 +500,9 @@ class ProviderInterventions extends UrlbarProvider {
     this.currentTip = TIPS.NONE;
 
     // Get the scores and the top score.
-    let docScores = this.#lazy.queryScorer.score(queryContext.searchString);
+    let docScores = UrlbarProviderInterventions.lazy.queryScorer.score(
+      queryContext.searchString
+    );
     let topDocScore = docScores[0];
 
     // Multiple docs may have the top score, so collect them all.
@@ -526,7 +521,11 @@ class ProviderInterventions extends UrlbarProvider {
     if (topDocIDs.has("update")) {
       this._setCurrentTipFromAppUpdaterStatus();
     } else if (topDocIDs.has("clear")) {
-      let window = lazy.BrowserWindowTracker.getTopWindow();
+      // bug 1983835 - should this only look for windows on the current
+      // workspace?
+      let window = lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      });
       if (!lazy.PrivateBrowsingUtils.isWindowPrivate(window)) {
         this.currentTip = TIPS.CLEAR;
       }
@@ -552,7 +551,7 @@ class ProviderInterventions extends UrlbarProvider {
     // This causes synchronous IO within the updater the first time it's called
     // (at least) so be careful not to do it the first time the urlbar is used.
     try {
-      this.checkForBrowserUpdate();
+      UrlbarProviderInterventions.checkForBrowserUpdate();
     } catch (ex) {
       return;
     }
@@ -710,6 +709,7 @@ class ProviderInterventions extends UrlbarProvider {
     }
   }
 
+  static _lastUpdateCheckTime;
   /**
    * Checks for app updates.
    *
@@ -717,13 +717,14 @@ class ProviderInterventions extends UrlbarProvider {
    *        already checked within the update-check period.  If true, we check
    *        regardless.
    */
-  checkForBrowserUpdate(force = false) {
+  static checkForBrowserUpdate(force = false) {
     if (
       force ||
-      !this._lastUpdateCheckTime ||
-      Date.now() - this._lastUpdateCheckTime >= UPDATE_CHECK_PERIOD_MS
+      !UrlbarProviderInterventions._lastUpdateCheckTime ||
+      Date.now() - UrlbarProviderInterventions._lastUpdateCheckTime >=
+        UPDATE_CHECK_PERIOD_MS
     ) {
-      this._lastUpdateCheckTime = Date.now();
+      UrlbarProviderInterventions._lastUpdateCheckTime = Date.now();
       lazy.appUpdater.check();
     }
   }
@@ -732,15 +733,13 @@ class ProviderInterventions extends UrlbarProvider {
    * Resets the provider's app updater state by making a new app updater.  This
    * is intended to be used by tests.
    */
-  resetAppUpdater() {
+  static resetAppUpdater() {
     // Reset only if the object has already been initialized.
     if (!Object.getOwnPropertyDescriptor(lazy, "appUpdater").get) {
       lazy.appUpdater = new lazy.AppUpdater();
     }
   }
 }
-
-export var UrlbarProviderInterventions = new ProviderInterventions();
 
 /**
  * Tip callbacks follow.

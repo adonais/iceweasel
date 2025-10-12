@@ -499,7 +499,9 @@ DownloadsViewUI.DownloadElementShell.prototype = {
   },
 
   get browserWindow() {
-    return lazy.BrowserWindowTracker.getTopWindow();
+    return lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
   },
 
   /**

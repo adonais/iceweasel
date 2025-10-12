@@ -1258,7 +1258,7 @@ var PlacesToolbarHelper = {
         menuitem.setAttribute("label", entry.name);
         menuitem.setAttribute(
           "image",
-          "page-icon:" + encodeURI(preferredURI.spec)
+          "page-icon:" + ChromeUtils.encodeURIForSrcset(preferredURI.spec)
         );
         menuitem.classList.add(
           "menuitem-iconic",

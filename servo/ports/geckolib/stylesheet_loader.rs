@@ -135,10 +135,7 @@ impl AsyncStylesheetParser {
         );
 
         unsafe {
-            bindings::Gecko_StyleSheet_FinishAsyncParse(
-                self.load_data.get(),
-                sheet.into(),
-            );
+            bindings::Gecko_StyleSheet_FinishAsyncParse(self.load_data.get(), sheet.into());
         }
     }
 }

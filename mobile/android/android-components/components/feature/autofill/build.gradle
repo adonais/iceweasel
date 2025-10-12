@@ -24,7 +24,6 @@ android {
 }
 
 dependencies {
-    implementation platform(libs.androidx.compose.bom)
     implementation project(':components:concept-fetch')
     implementation project(':components:concept-storage')
     implementation project(':components:lib-publicsuffixlist')
@@ -37,22 +36,21 @@ dependencies {
     implementation libs.androidx.annotation
     implementation libs.androidx.autofill
     implementation libs.androidx.biometric
+    implementation libs.androidx.core.ktx
     implementation libs.androidx.fragment
     implementation libs.androidx.lifecycle.runtime
-    implementation libs.androidx.recyclerview
-    implementation libs.androidx.core.ktx
     implementation libs.androidx.preferences
+    implementation libs.androidx.recyclerview
+    implementation libs.kotlinx.coroutines
 
-    implementation libs.kotlin.coroutines
-
-    testImplementation project(':components:support-test')
     testImplementation project(':components:lib-fetch-okhttp')
+    testImplementation project(':components:support-test')
 
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
-    testImplementation libs.testing.coroutines
-    testImplementation libs.testing.mockwebserver
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.mockwebserver
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

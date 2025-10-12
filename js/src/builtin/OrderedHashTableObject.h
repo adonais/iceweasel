@@ -49,7 +49,6 @@
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/TemplateLib.h"
 
 #include <memory>
 #include <tuple>
@@ -96,6 +95,7 @@ class OrderedHashTableObject : public NativeObject {
   };
 
   inline void* allocateCellBuffer(JSContext* cx, size_t numBytes);
+  inline void freeCellBuffer(JSContext* cx, void* data, size_t numBytes);
 
  public:
   static constexpr size_t offsetOfDataLength() {
@@ -572,8 +572,6 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
       return false;
     }
 
-    AddCellMemory(obj, numBytes, MemoryUse::MapObjectData);
-
     *hcsAlloc = cx->realm()->randomHashCodeScrambler();
 
     std::uninitialized_fill_n(tableAlloc, buckets, nullptr);
@@ -637,15 +635,6 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     setHashCodeScrambler(nullptr);
   }
 
-  void destroy(JS::GCContext* gcx) {
-    if (!hasInitializedSlots()) {
-      return;
-    }
-    if (Data* data = maybeData()) {
-      freeData(gcx, data, getDataLength(), getDataCapacity(), hashBuckets());
-    }
-  }
-
   void maybeMoveBufferOnPromotion(Nursery& nursery) {
     if (!hasAllocatedBuffer()) {
       return;
@@ -660,8 +649,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
     void* buf = oldData;
     Nursery::WasBufferMoved result =
-        nursery.maybeMoveNurseryOrMallocBufferOnPromotion(
-            &buf, obj, numBytes, MemoryUse::MapObjectData);
+        nursery.maybeMoveBufferOnPromotion(&buf, obj, numBytes);
     if (result == Nursery::BufferNotMoved) {
       return;
     }
@@ -697,10 +685,12 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
   }
 
   size_t sizeOfExcludingObject(mozilla::MallocSizeOf mallocSizeOf) const {
+    MOZ_ASSERT(obj->isTenured());  // Assumes data is not in the nursery.
+
     size_t size = 0;
     if (hasInitializedSlots() && hasAllocatedBuffer()) {
       // Note: this also includes the HashCodeScrambler and the hashTable array.
-      size += mallocSizeOf(getData());
+      size += gc::GetAllocSize(obj->zone(), getData());
     }
     return size;
   }
@@ -748,7 +738,6 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     return true;
   }
 
-#ifdef NIGHTLY_BUILD
   /*
    * If the table already contains an entry that matches |element|,
    * return that entry. Otherwise add a new entry.
@@ -778,7 +767,6 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     new (entry) Data(std::forward<ElementInput>(element), chain);
     return &entry->element;
   }
-#endif  // #ifdef NIGHTLY_BUILD
 
   /*
    * If the table contains an element matching l, remove it and return true.
@@ -974,6 +962,13 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
   void trace(JSTracer* trc) {
     Data* data = maybeData();
+    if (data) {
+      TraceBufferEdge(trc, obj, &data, "OrderedHashTable data");
+      if (data != maybeData()) {
+        setData(data);
+      }
+    }
+
     uint32_t dataLength = getDataLength();
     for (uint32_t i = 0; i < dataLength; i++) {
       if (!Ops::isEmpty(Ops::getKey(data[i].element))) {
@@ -1094,8 +1089,8 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     }
   }
 
-  void freeData(JS::GCContext* gcx, Data* data, uint32_t length,
-                uint32_t capacity, uint32_t hashBuckets) {
+  void freeData(JSContext* cx, Data* data, uint32_t length, uint32_t capacity,
+                uint32_t hashBuckets) {
     MOZ_ASSERT(data);
     MOZ_ASSERT(capacity > 0);
 
@@ -1104,14 +1099,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     size_t numBytes;
     MOZ_ALWAYS_TRUE(calcAllocSize(capacity, hashBuckets, &numBytes));
 
-    if (IsInsideNursery(obj)) {
-      if (gcx->runtime()->gc.nursery().isInside(data)) {
-        return;
-      }
-      gcx->runtime()->gc.nursery().removeMallocedBuffer(data, numBytes);
-    }
-
-    gcx->free_(obj, data, numBytes, MemoryUse::MapObjectData);
+    obj->freeCellBuffer(cx, data, numBytes);
   }
 
   Data* lookup(const Lookup& l, HashNumber h) const {
@@ -1249,10 +1237,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     }
     MOZ_ASSERT(wp == newData + getLiveCount());
 
-    freeData(obj->runtimeFromMainThread()->gcContext(), oldData, oldDataLength,
-             getDataCapacity(), hashBuckets());
-
-    AddCellMemory(obj, numBytes, MemoryUse::MapObjectData);
+    freeData(cx, oldData, oldDataLength, getDataCapacity(), hashBuckets());
 
     setHashTable(newHashTable);
     setData(newData);
@@ -1361,20 +1346,16 @@ class MOZ_STACK_CLASS OrderedHashMapImpl {
   bool remove(JSContext* cx, const Lookup& key) { return impl.remove(cx, key); }
   void clear(JSContext* cx) { impl.clear(cx); }
 
-  void destroy(JS::GCContext* gcx) { impl.destroy(gcx); }
-
   template <typename K, typename V>
   [[nodiscard]] bool put(JSContext* cx, K&& key, V&& value) {
     return impl.put(cx, Entry(std::forward<K>(key), std::forward<V>(value)));
   }
 
-#ifdef NIGHTLY_BUILD
   template <typename K, typename V>
   [[nodiscard]] Entry* getOrAdd(JSContext* cx, K&& key, V&& value) {
     return impl.getOrAdd(cx,
                          Entry(std::forward<K>(key), std::forward<V>(value)));
   }
-#endif  // #ifdef NIGHTLY_BUILD
 
 #ifdef DEBUG
   mozilla::Maybe<HashNumber> hash(const Lookup& key) const {
@@ -1480,8 +1461,6 @@ class MOZ_STACK_CLASS OrderedHashSetImpl {
     return impl.remove(cx, value);
   }
   void clear(JSContext* cx) { impl.clear(cx); }
-
-  void destroy(JS::GCContext* gcx) { impl.destroy(gcx); }
 
 #ifdef DEBUG
   mozilla::Maybe<HashNumber> hash(const Lookup& value) const {

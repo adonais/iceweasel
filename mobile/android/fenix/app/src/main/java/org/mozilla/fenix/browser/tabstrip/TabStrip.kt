@@ -6,7 +6,6 @@ package org.mozilla.fenix.browser.tabstrip
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -75,6 +74,7 @@ import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
 import org.mozilla.fenix.tabstray.browser.compose.detectListPressAndDrag
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.GleanMetrics.TabStrip as TabStripMetrics
 
 private val minTabStripItemWidth = 130.dp
@@ -200,7 +200,7 @@ private fun TabStripContent(
             if (showActionButtons) {
                 IconButton(onClick = onAddTabClick) {
                     Icon(
-                        painter = painterResource(R.drawable.mozac_ic_plus_24),
+                        painter = painterResource(iconsR.drawable.mozac_ic_plus_24),
                         tint = FirefoxTheme.colors.iconPrimary,
                         contentDescription = stringResource(R.string.add_tab),
                     )
@@ -223,7 +223,6 @@ private fun TabStripContent(
 // There is a bug with `BoxWithConstraints` where it flags the `BoxWithConstraintsScope` being unused
 // even though it's being used implicitly below via the `maxWidth` property of `BoxWithConstraintsScope`.
 @SuppressLint("UnusedBoxWithConstraintsScope")
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TabsList(
     state: TabStripState,
@@ -409,7 +408,7 @@ private fun TabItem(
                     },
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.mozac_ic_cross_20),
+                        painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
                         tint = if (state.isSelected) {
                             FirefoxTheme.colors.iconPrimary
                         } else {

@@ -1163,7 +1163,7 @@ export class TranslationsDocument {
           // The count of nodes that exited this observer's proximity.
           let exitedCount = 0;
 
-          const startTime = Cu.now();
+          const startTime = ChromeUtils.now();
           for (const { target, isIntersecting } of entries) {
             isIntersecting ? enteredCount++ : exitedCount++;
 
@@ -1220,7 +1220,7 @@ export class TranslationsDocument {
           // The count of nodes that exited this observer's proximity.
           let exitedCount = 0;
 
-          const startTime = Cu.now();
+          const startTime = ChromeUtils.now();
           for (const { target, isIntersecting } of entries) {
             if (isIntersecting) {
               // The target has entered the boundary, so we will enqueue it for translation.
@@ -1284,7 +1284,7 @@ export class TranslationsDocument {
           // The count of nodes that exited this observer's proximity.
           let exitedCount = 0;
 
-          const startTime = Cu.now();
+          const startTime = ChromeUtils.now();
           for (const { target, isIntersecting } of entries) {
             isIntersecting ? enteredCount++ : exitedCount++;
 
@@ -1339,7 +1339,7 @@ export class TranslationsDocument {
           // The count of nodes that exited this observer's proximity.
           let exitedCount = 0;
 
-          const startTime = Cu.now();
+          const startTime = ChromeUtils.now();
           for (const { target, isIntersecting } of entries) {
             if (isIntersecting) {
               // The target has entered the boundary, so we will enqueue it for translation.
@@ -1395,7 +1395,7 @@ export class TranslationsDocument {
       async mutationsList => {
         await this.#waitForFirstIntersectionObservations();
 
-        const startTime = Cu.now();
+        const startTime = ChromeUtils.now();
 
         // The count of attribute mutations in this observation.
         let attributeCount = 0;
@@ -1576,7 +1576,7 @@ export class TranslationsDocument {
     );
 
     const addRootElements = () => {
-      const startTime = Cu.now();
+      const startTime = ChromeUtils.now();
 
       this.#addRootElement(document.body);
       this.#addRootElement(document.head);
@@ -1923,7 +1923,7 @@ export class TranslationsDocument {
         const attributeElementCount = this.#elementsWithMutatedAttributes.size;
         let attributeRequestCount = 0;
 
-        const startTime = Cu.now();
+        const startTime = ChromeUtils.now();
 
         // Ensure the nodes are still alive.
         const liveNodes = [];
@@ -2430,7 +2430,7 @@ export class TranslationsDocument {
       return;
     }
 
-    const contentStartTime = Cu.now();
+    const contentStartTime = ChromeUtils.now();
     this.#subdivideNodeForContentTranslations(element);
     ChromeUtils.addProfilerMarker(
       "TranslationsDocument Add Root",
@@ -2438,7 +2438,7 @@ export class TranslationsDocument {
       `Subdivided new root "${node.nodeName}" for content translations`
     );
 
-    const attributeStartTime = Cu.now();
+    const attributeStartTime = ChromeUtils.now();
     this.#subdivideNodeForAttributeTranslations(element);
     ChromeUtils.addProfilerMarker(
       "TranslationsDocument Add Root",
@@ -2905,7 +2905,7 @@ export class TranslationsDocument {
     let detachedElementCount = 0;
     let updatedAttributeCount = 0;
 
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
 
     // Stop the mutations so that the updates won't trigger observations.
     this.#pauseMutationObserverAndThen(() => {
@@ -3217,7 +3217,7 @@ export class TranslationsDocument {
     let textNodeCount = 0;
     let elementCount = 0;
 
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
 
     // Stop the mutations so that the updates won't trigger observations.
     this.#pauseMutationObserverAndThen(() => {
@@ -3469,7 +3469,7 @@ export class TranslationsDocument {
    * callback without the need to explicitly bind `this` to the function object.
    */
   #handleScrollEvent = () => {
-    if (Cu.now() - this.#mostRecentScrollTimestamp < 100) {
+    if (ChromeUtils.now() - this.#mostRecentScrollTimestamp < 100) {
       // Scrolling can fire a lot of events in rapid succession, and computing the scrollY value can
       // trigger reflow, so we will limit how often we take the time to compute the scrollY value.
       // Scroll hints are critical to providing a smooth translation experience, but it's not the
@@ -3483,7 +3483,7 @@ export class TranslationsDocument {
       scrollY >= this.#previousScrollY ? "down" : "up";
 
     this.#previousScrollY = scrollY;
-    this.#mostRecentScrollTimestamp = Cu.now();
+    this.#mostRecentScrollTimestamp = ChromeUtils.now();
   };
 
   /**
@@ -3492,7 +3492,7 @@ export class TranslationsDocument {
    * @returns {boolean}
    */
   #hasUserScrolledRecently() {
-    return Cu.now() - this.#mostRecentScrollTimestamp < 200;
+    return ChromeUtils.now() - this.#mostRecentScrollTimestamp < 200;
   }
 
   /**
@@ -3672,7 +3672,7 @@ export class TranslationsDocument {
         let contentRequestCount = 0;
         let attributeRequestCount = 0;
 
-        const startTime = Cu.now();
+        const startTime = ChromeUtils.now();
 
         const {
           inViewportContentPriority,

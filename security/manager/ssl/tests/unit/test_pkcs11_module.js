@@ -9,11 +9,45 @@
 // Ensure that the appropriate initialization has happened.
 do_get_profile();
 
+var gPrompt = {
+  QueryInterface: ChromeUtils.generateQI(["nsIPrompt"]),
+
+  // This intentionally does not use arrow function syntax to avoid an issue
+  // where in the context of the arrow function, |this != gPrompt| due to
+  // how objects get wrapped when going across xpcom boundaries.
+  alert(_title, text) {
+    const EXPECTED_PROMPT_TEXT =
+      "Please authenticate to the token “Test PKCS11 Tokeñ 2 Label”. How to do so depends on the token (for example, using a fingerprint reader or entering a code with a keypad).";
+    equal(text, EXPECTED_PROMPT_TEXT, "expecting alert() to be called");
+  },
+
+  promptPassword() {
+    ok(false, "not expecting promptPassword() to be called");
+  },
+};
+
+const gPromptFactory = {
+  QueryInterface: ChromeUtils.generateQI(["nsIPromptFactory"]),
+  getPrompt: () => gPrompt,
+};
+
 const gModuleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].getService(
   Ci.nsIPKCS11ModuleDB
 );
 
+const gCertDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+  Ci.nsIX509CertDB
+);
+
 add_task(async function test_pkcs11_module() {
+  let promptFactoryCID = MockRegistrar.register(
+    "@mozilla.org/prompter;1",
+    gPromptFactory
+  );
+  registerCleanupFunction(() => {
+    MockRegistrar.unregister(promptFactoryCID);
+  });
+
   Services.fog.initializeFOG();
 
   equal(
@@ -40,6 +74,14 @@ add_task(async function test_pkcs11_module() {
     "PKCS11 Test Module",
     "pkcs11testmodule"
   );
+
+  let testClientCertificate = null;
+  for (const cert of gCertDB.getCerts()) {
+    if (cert.subjectName == "CN=client cert rsa") {
+      testClientCertificate = cert;
+    }
+  }
+  ok(testClientCertificate, "test module should expose rsa client certificate");
 
   // Check that listing the slots for the test module works.
   let testModuleSlotNames = Array.from(

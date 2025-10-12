@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -185,7 +184,6 @@ private fun WallpaperGroupHeading(
  * @param loadWallpaperResource Callback to handle loading a wallpaper bitmap. Only optional in the default case.
  * @param onSelectWallpaper Action to take when a new wallpaper is selected.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WallpaperThumbnails(
     wallpapers: List<Wallpaper>,

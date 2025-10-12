@@ -21,6 +21,7 @@
 #include "mozilla/Range.h"
 #include "mozilla/RefCounted.h"
 #include "mozilla/StaticPrefs_webgl.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BufferSourceBindingFwd.h"
 #include "mozilla/dom/ImageData.h"
 #include "mozilla/dom/TypedArray.h"
@@ -189,7 +190,9 @@ class ContextGenerationInfo final {
 //
 // where 'A -> B' means "A owns B"
 
-struct NotLostData final {
+struct NotLostData final : public SupportsWeakPtr, RefCounted<NotLostData> {
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(NotLostData)
+
   ClientWebGLContext& context;
   webgl::InitContextResult info;
 
@@ -213,7 +216,7 @@ class ObjectJS {
   friend ClientWebGLContext;
 
  public:
-  const std::weak_ptr<NotLostData> mGeneration;
+  const WeakPtr<NotLostData> mGeneration;
   const ObjectId mId;
 
  protected:
@@ -224,9 +227,8 @@ class ObjectJS {
 
  public:
   ClientWebGLContext* Context() const {
-    const auto locked = mGeneration.lock();
-    if (!locked) return nullptr;
-    return &(locked->context);
+    if (!mGeneration) return nullptr;
+    return &(mGeneration->context);
   }
 
   ClientWebGLContext* GetParentObject() const { return Context(); }
@@ -559,7 +561,7 @@ class WebGLUniformLocationJS final : public nsWrapperCache,
                                      public webgl::ObjectJS {
   friend class ClientWebGLContext;
 
-  const std::weak_ptr<webgl::LinkResult> mParent;
+  const WeakPtr<webgl::LinkResult> mParent;
   const uint32_t mLocation;
   const std::array<uint16_t, 3> mValidUploadElemTypes;
 
@@ -568,7 +570,7 @@ class WebGLUniformLocationJS final : public nsWrapperCache,
   NS_DECL_CYCLE_COLLECTION_NATIVE_WRAPPERCACHE_CLASS(WebGLUniformLocationJS)
 
   WebGLUniformLocationJS(const ClientWebGLContext& webgl,
-                         std::weak_ptr<webgl::LinkResult> parent, uint32_t loc,
+                         const WeakPtr<webgl::LinkResult>& parent, uint32_t loc,
                          GLenum elemType)
       : webgl::ObjectJS(&webgl),
         mParent(parent),
@@ -773,7 +775,7 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 
   const RefPtr<ClientWebGLExtensionLoseContext> mExtLoseContext;
 
-  mutable std::shared_ptr<webgl::NotLostData> mNotLost;
+  mutable RefPtr<webgl::NotLostData> mNotLost;
   mutable GLenum mNextError = 0;
   mutable webgl::LossStatus mLossStatus = webgl::LossStatus::Ready;
   mutable bool mAwaitingRestore = false;
@@ -850,7 +852,7 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   class FuncScope final {
    public:
     const ClientWebGLContext& mWebGL;
-    const std::shared_ptr<webgl::NotLostData> mKeepNotLostOrNull;
+    const RefPtr<webgl::NotLostData> mKeepNotLostOrNull;
     const char* const mFuncName;
 
     FuncScope(const ClientWebGLContext& webgl, const char* funcName)
@@ -888,7 +890,6 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
                     const Args&... args) const {
     MOZ_ASSERT(FuncName());
     nsCString text;
-    text.AppendPrintf("WebGL warning: %s: ", FuncName());
 
 #ifdef __clang__
 #  pragma clang diagnostic push
@@ -896,7 +897,9 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 #elif defined(__GNUC__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wformat-security"
+#  pragma GCC diagnostic ignored "-Wformat-overflow"
 #endif
+    text.AppendPrintf("WebGL warning: %s: ", FuncName());
     text.AppendPrintf(format, args...);
 #ifdef __clang__
 #  pragma clang diagnostic pop
@@ -2427,7 +2430,7 @@ inline bool webgl::ObjectJS::IsForContext(
     const ClientWebGLContext& context) const {
   const auto& notLost = context.mNotLost;
   if (!notLost) return false;
-  if (notLost.get() != mGeneration.lock().get()) return false;
+  if (notLost != mGeneration) return false;
   return true;
 }
 

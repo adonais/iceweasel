@@ -1173,10 +1173,10 @@ nsresult nsXREDirProvider::GetUserDataDirectory(nsIFile** aFile, bool aLocal) {
   } else {
     rv = GetUserDataDirectoryHome(getter_AddRefs(localDir), aLocal);
     NS_ENSURE_SUCCESS(rv, rv);
-  }
 
-  rv = AppendProfilePath(localDir, aLocal);
-  NS_ENSURE_SUCCESS(rv, rv);
+    rv = AppendProfilePath(localDir, aLocal);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   rv = EnsureDirectoryExists(localDir);
   NS_ENSURE_SUCCESS(rv, rv);

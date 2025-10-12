@@ -748,8 +748,7 @@ class OCSPExtensionTrustDomain : public TrustDomain {
   }
 
   pkix::Result CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
-                               const Input*, const Input*,
-                               const Input*) override {
+                               const Input*, const Input*) override {
     ADD_FAILURE();
     return pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
   }

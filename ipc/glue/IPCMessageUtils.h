@@ -185,6 +185,19 @@ static bool ReadParams(MessageReader* aReader, Ts&... aArgs) {
 
 } /* namespace IPC */
 
+#define DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(Type, Super)              \
+  template <>                                                            \
+  struct ParamTraits<Type> {                                             \
+    typedef Type paramType;                                              \
+    static void Write(MessageWriter* aWriter, const paramType& aParam) { \
+      WriteParam(aWriter, static_cast<const Super&>(aParam));            \
+    }                                                                    \
+                                                                         \
+    static bool Read(MessageReader* aReader, paramType* aResult) {       \
+      return ReadParam(aReader, static_cast<Super*>(aResult));           \
+    }                                                                    \
+  };
+
 #define DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(Type, Super, ...)  \
   template <>                                                                \
   struct ParamTraits<Type> {                                                 \

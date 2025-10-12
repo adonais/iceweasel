@@ -834,7 +834,7 @@ nsresult StartupCache::ResetStartupWriteTimerCheckingReadCount() {
   // Wait for the specified timeout, then write out the cache.
   mTimer->InitWithNamedFuncCallback(
       StartupCache::WriteTimeout, this, STARTUP_CACHE_WRITE_TIMEOUT * 1000,
-      nsITimer::TYPE_ONE_SHOT, "StartupCache::WriteTimeout");
+      nsITimer::TYPE_ONE_SHOT, "StartupCache::WriteTimeout"_ns);
   return NS_OK;
 }
 
@@ -855,7 +855,7 @@ nsresult StartupCache::ResetStartupWriteTimer() {
   // Wait for the specified timeout, then write out the cache.
   mTimer->InitWithNamedFuncCallback(
       StartupCache::WriteTimeout, this, STARTUP_CACHE_WRITE_TIMEOUT * 1000,
-      nsITimer::TYPE_ONE_SHOT, "StartupCache::WriteTimeout");
+      nsITimer::TYPE_ONE_SHOT, "StartupCache::WriteTimeout"_ns);
   return NS_OK;
 }
 

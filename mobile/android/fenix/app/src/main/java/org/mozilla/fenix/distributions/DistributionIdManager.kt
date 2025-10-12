@@ -130,10 +130,17 @@ class DistributionIdManager(
      * @param utmParams the UTM parameters from the google play install referrer response
      */
     fun updateDistributionIdFromUtmParams(utmParams: UTMParams) {
-        if (utmParams.campaign == VIVO_INDIA_UTM_CAMPAIGN) {
-            browserStoreProvider.updateDistributionId(Distribution.VIVO_002.id)
-            distributionSettings.saveDistributionId(Distribution.VIVO_002.id)
-            Metrics.distributionId.set(Distribution.VIVO_002.id)
+        when (utmParams.campaign) {
+            VIVO_INDIA_UTM_CAMPAIGN -> {
+                browserStoreProvider.updateDistributionId(Distribution.VIVO_002.id)
+                distributionSettings.saveDistributionId(Distribution.VIVO_002.id)
+                Metrics.distributionId.set(Distribution.VIVO_002.id)
+            }
+            Distribution.XIAOMI_001.id -> {
+                browserStoreProvider.updateDistributionId(Distribution.XIAOMI_001.id)
+                distributionSettings.saveDistributionId(Distribution.XIAOMI_001.id)
+                Metrics.distributionId.set(Distribution.XIAOMI_001.id)
+            }
         }
     }
 
@@ -153,6 +160,7 @@ class DistributionIdManager(
             Distribution.DT_002 -> true
             Distribution.DT_003 -> true
             Distribution.AURA_001 -> true
+            Distribution.XIAOMI_001 -> true
         }
     }
 
@@ -176,6 +184,7 @@ class DistributionIdManager(
         DT_002(id = "dt-002"),
         DT_003(id = "dt-003"),
         AURA_001(id = "aura-001"),
+        XIAOMI_001(id = "xiaomi-001"),
         ;
 
         companion object {

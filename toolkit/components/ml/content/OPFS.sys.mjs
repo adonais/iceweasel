@@ -166,12 +166,14 @@ export async function createResponseFromOPFSFile(filePath, headers) {
  * @param {string} params.savePath - OPFS path to save the file (e.g., "folder/file.txt").
  * @param {?function(ProgressAndStatusCallbackParams):void} [params.progressCallback] - Optional progress callback.
  * @param {boolean} [params.ignoreCachingErrors=false] - If true, all errors due to retrieving/saving from OPFS are ignored.
+ * @param {?AbortSignal} params.abortSignal - AbortSignal to cancel the download.
  * @returns {Promise<File>} The saved or existing file.
  */
 async function downloadToOPFSImpl({
   source,
   savePath,
   progressCallback,
+  abortSignal,
   ignoreCachingErrors = false,
 } = {}) {
   // Download and write file
@@ -192,11 +194,12 @@ async function downloadToOPFSImpl({
       mode: "siloed",
     });
 
-    await lazy.Progress.readResponseToWriter(
+    await lazy.Progress.readResponseToWriter({
       response,
       writableStream,
-      progressCallback
-    );
+      progressCallback,
+      abortSignal,
+    });
 
     fileObject = await fileHandle.getFile();
   } catch (err) {
@@ -249,6 +252,7 @@ async function maybeVerifyBlob(blob, expectedHash, expectedSize) {
  * @param {string} params.sha256Hash - Expected SHA-256 hash (hex).
  * @param {boolean} [params.deletePreviousVersions=false] - If true, deletes other entries in the parent directory after successful download.
  * @param {boolean} [params.ignoreCachingErrors=false] - If true, all errors due to retrieving/saving from OPFS are ignored.
+ * @param {?AbortSignal} params.abortSignal - AbortSignal to cancel the download.
  * @returns {Promise<File>} The saved or existing file.
  */
 async function downloadToOPFS({
@@ -260,6 +264,7 @@ async function downloadToOPFS({
   fileSize,
   deletePreviousVersions = false,
   ignoreCachingErrors = false,
+  abortSignal,
 } = {}) {
   let fileObject;
   let cacheWasUsed = false;
@@ -285,6 +290,7 @@ async function downloadToOPFS({
       savePath,
       progressCallback,
       ignoreCachingErrors,
+      abortSignal,
     });
   }
 
@@ -302,6 +308,7 @@ async function downloadToOPFS({
         skipIfExists: false, // Retrigger forced download.
         sha256Hash,
         fileSize,
+        abortSignal,
       });
     }
     throw new Error(message);

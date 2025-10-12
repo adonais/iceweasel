@@ -33,6 +33,9 @@ const perfSvc = {
 const DEFAULT_PROPS = {
   Prefs: { values: { featureConfig: {} } },
   TopSites: { initialized: true, rows: [] },
+  App: {
+    isForStartupCache: false,
+  },
   TopSitesRows: TOP_SITES_DEFAULT_ROWS,
   topSiteIconType: () => "no_image",
   dispatch() {},

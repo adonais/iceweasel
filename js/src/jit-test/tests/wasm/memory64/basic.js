@@ -2,7 +2,7 @@
 
 // Basic tests around creating and linking memories with i64 indices
 
-const MaxMemory64PagesValidation = 0x1_0000_0000_0000n; // from spec
+const MaxMemory64PagesValidation = BigInt(Math.pow(2, 37) - 1); // from spec
 const MaxTable64ElemsValidation = 0xFFFF_FFFF_FFFF_FFFFn; // from spec
 const MaxTableElemsRuntime = 10000000; // from WasmConstants.h
 const MaxUint32 = 0xFFFF_FFFF;

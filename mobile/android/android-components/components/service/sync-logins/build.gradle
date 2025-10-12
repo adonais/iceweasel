@@ -24,6 +24,10 @@ android {
 }
 
 dependencies {
+    // Types defined in concept-sync are part of this module's public API.
+    api project(':components:concept-sync')
+    api project(':components:lib-dataprotect')
+
     // Parts of this dependency are typealiase'd or are otherwise part of this module's public API.
     api (ComponentsDependencies.mozilla_appservices_logins) {
       // Use our own version of the Glean dependency,
@@ -32,15 +36,11 @@ dependencies {
     }
     api ComponentsDependencies.mozilla_appservices_sync15
 
-    // Types defined in concept-sync are part of this module's public API.
-    api project(':components:concept-sync')
-    api project(':components:lib-dataprotect')
-
     implementation project(':components:concept-storage')
     implementation project(':components:support-utils')
-    implementation libs.mozilla.glean
 
-    implementation libs.kotlin.coroutines
+    implementation libs.kotlinx.coroutines
+    implementation libs.mozilla.glean
 }
 
 apply from: '../../../android-lint.gradle'

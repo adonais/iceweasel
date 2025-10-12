@@ -116,6 +116,9 @@ void AccAttributes::StringFromValueAndName(nsAtom* aAttrName,
               "Hmm, should we have used a DeleteEntry() for this instead?");
           aValueString.Append(u"[ ]");
         }
+      },
+      [&aValueString](const WritingMode& val) {
+        aValueString.AppendPrintf("WritingModes: %x", val.GetBits());
       });
 }
 
@@ -222,6 +225,9 @@ void AccAttributes::CopyTo(AccAttributes* aDest) const {
           // We don't copy arrays.
           MOZ_ASSERT_UNREACHABLE(
               "Trying to copy an AccAttributes containing an array");
+        },
+        [&iter, &aDest](const WritingMode& val) {
+          aDest->mData.InsertOrUpdate(iter.Key(), AsVariant(val));
         });
   }
 }

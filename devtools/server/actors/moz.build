@@ -10,6 +10,7 @@ DIRS += [
     "compatibility",
     "descriptors",
     "emulation",
+    "events",
     "highlighters",
     "inspector",
     "network-monitor",

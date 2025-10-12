@@ -8,26 +8,20 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDirections
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.spyk
-import io.mockk.unmockkStatic
 import io.mockk.verify
-import mozilla.components.browser.state.selector.findTab
-import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.RuleChain
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.TabsTray
@@ -43,11 +37,8 @@ class NavigationInteractorTest {
     private val navController: NavController = mockk(relaxed = true)
     private val accountManager: FxaAccountManager = mockk(relaxed = true)
 
-    val coroutinesTestRule: MainCoroutineRule = MainCoroutineRule()
-    val gleanTestRule = FenixGleanTestRule(testContext)
-
     @get:Rule
-    val chain: RuleChain = RuleChain.outerRule(gleanTestRule).around(coroutinesTestRule)
+    val gleanTestRule = FenixGleanTestRule(testContext)
 
     @Before
     fun setup() {
@@ -135,7 +126,9 @@ class NavigationInteractorTest {
             ),
         )
         val tab: TabSessionState = mockk { every { content.private } returns true }
-        every { mockedStore.state } returns mockk()
+        every { mockedStore.state } returns mockk {
+            every { tabs } returns listOf(tab)
+        }
         every { mockedStore.state.downloads } returns mapOf(
             "1" to DownloadState(
                 "https://mozilla.org/download",
@@ -144,17 +137,10 @@ class NavigationInteractorTest {
                 status = DownloadState.Status.DOWNLOADING,
             ),
         )
-        try {
-            mockkStatic("mozilla.components.browser.state.selector.SelectorsKt")
-            every { mockedStore.state.findTab(any<String>()) } returns tab
-            every { mockedStore.state.getNormalOrPrivateTabs(any()) } returns listOf(tab)
 
-            controller.onCloseAllTabsClicked(true)
+        controller.onCloseAllTabsClicked(true)
 
-            assertTrue(showCancelledDownloadWarningInvoked)
-        } finally {
-            unmockkStatic("mozilla.components.browser.state.selector.SelectorsKt")
-        }
+        assertTrue(showCancelledDownloadWarningInvoked)
     }
 
     @Test

@@ -195,6 +195,7 @@ class BrowsingContextModule extends RootBiDiModule {
     this.#navigationListener = new lazy.NavigationListener(
       this.messageHandler.navigationManager
     );
+    this.#navigationListener.on("download-started", this.#onDownloadStarted);
     this.#navigationListener.on(
       "fragment-navigated",
       this.#onFragmentNavigated
@@ -1776,6 +1777,31 @@ class BrowsingContextModule extends RootBiDiModule {
         navigation: navigationId,
         url,
       };
+    } catch (e) {
+      // Get the current navigation object for the browsing context.
+      const navigation =
+        this.messageHandler.navigationManager.getNavigationForBrowsingContext(
+          webProgress.browsingContext
+        );
+
+      // NavigationError with isBindingAborted represent navigations aborted by
+      // another navigation. If the navigation was committed and matches the
+      // navigationId, consider the navigation as successful.
+      if (
+        e?.isNavigationError &&
+        e.isBindingAborted &&
+        navigation &&
+        navigation.committed &&
+        navigation.navigationId == navigationId
+      ) {
+        return {
+          navigation: navigationId,
+          url: navigation.url,
+        };
+      }
+
+      // Otherwise, bubble the error from the Navigation helper.
+      throw e;
     } finally {
       if (listener.isStarted) {
         listener.stop();
@@ -1950,6 +1976,28 @@ class BrowsingContextModule extends RootBiDiModule {
       this.#emitContextEventForBrowsingContext(
         browsingContext.id,
         "browsingContext.contextDestroyed",
+        browsingContextInfo
+      );
+    }
+  };
+
+  #onDownloadStarted = async (eventName, data) => {
+    if (this.#subscribedEvents.has("browsingContext.downloadWillBegin")) {
+      const { navigationId, navigableId, suggestedFilename, timestamp, url } =
+        data;
+
+      const browsingContextInfo = {
+        context: navigableId,
+        navigation: navigationId,
+        suggestedFilename,
+        timestamp,
+        url,
+      };
+
+      const context = this.#getBrowsingContext(navigableId);
+      this.#emitContextEventForBrowsingContext(
+        context.id,
+        "browsingContext.downloadWillBegin",
         browsingContextInfo
       );
     }
@@ -2132,6 +2180,7 @@ class BrowsingContextModule extends RootBiDiModule {
     this.#subscribedEvents.delete(event);
 
     const hasNavigationEvent =
+      this.#subscribedEvents.has("browsingContext.downloadWillBegin") ||
       this.#subscribedEvents.has("browsingContext.fragmentNavigated") ||
       this.#subscribedEvents.has("browsingContext.historyUpdated") ||
       this.#subscribedEvents.has("browsingContext.navigationFailed") ||
@@ -2162,6 +2211,7 @@ class BrowsingContextModule extends RootBiDiModule {
         this.#subscribedEvents.add(event);
         break;
       }
+      case "browsingContext.downloadWillBegin":
       case "browsingContext.fragmentNavigated":
       case "browsingContext.historyUpdated":
       case "browsingContext.navigationCommitted":
@@ -2187,6 +2237,7 @@ class BrowsingContextModule extends RootBiDiModule {
         this.#stopListeningToContextEvent(event);
         break;
       }
+      case "browsingContext.downloadWillBegin":
       case "browsingContext.fragmentNavigated":
       case "browsingContext.historyUpdated":
       case "browsingContext.navigationCommitted":
@@ -2333,6 +2384,7 @@ class BrowsingContextModule extends RootBiDiModule {
       "browsingContext.contextCreated",
       "browsingContext.contextDestroyed",
       "browsingContext.domContentLoaded",
+      "browsingContext.downloadWillBegin",
       "browsingContext.fragmentNavigated",
       "browsingContext.historyUpdated",
       "browsingContext.load",

@@ -151,6 +151,13 @@ interface nsILoginManager : nsISupports {
   void getAllLoginsWithCallback(in nsILoginSearchCallback aCallback);
 
   /**
+   * For migration purposes, asynchronously reencrypt all logins in the
+   * background. If a login is updated externally during that reencryption, that
+   * update will take priority and will not be overwritten.
+   */
+  Promise reencryptAllLogins();
+
+  /**
    * Obtain a list of all origins for which password saving is disabled.
    *
    * @return An array of origin strings. For example: ["https://www.site.com"].

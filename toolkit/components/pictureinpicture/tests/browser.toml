@@ -67,6 +67,8 @@ prefs = [
 
 ["browser_closeTab.js"]
 
+["browser_close_pip_with_shortcut.js"]
+
 ["browser_close_unpip_focus.js"]
 
 ["browser_conflictingPips.js"]

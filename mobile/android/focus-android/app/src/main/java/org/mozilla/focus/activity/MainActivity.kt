@@ -183,7 +183,7 @@ open class MainActivity : EdgeToEdgeActivity() {
     }
 
     private fun checkAndExitPiP() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode && intent != null) {
+        if (isInPictureInPictureMode && intent != null) {
             // Exit PiP mode
             moveTaskToBack(false)
             startActivity(Intent(this, this::class.java).setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))

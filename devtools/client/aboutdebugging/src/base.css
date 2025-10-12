@@ -116,8 +116,6 @@
   --micro-font-size: 11px;
   --monospace-font-family: monospace;
 
-  --card-shadow-blur-radius: var(--base-unit);
-
   /*
    * Variables particular to about:debugging
    */
@@ -324,7 +322,7 @@ Form controls
   padding-inline-end: calc(var(--base-unit) * 5);
 
   border: none;
-  border-radius: calc(var(--base-unit) / 2);
+  border-radius: var(--border-radius-xsmall);
 
   font-size: var(--button-font-size);
 }
@@ -401,7 +399,7 @@ Form controls
 .ghost-button {
   background: transparent;
   border: none;
-  border-radius: calc(var(--base-unit) / 2);
+  border-radius: var(--border-radius-xsmall);
   fill: var(--button-color);
   height: calc(var(--base-unit) * 6);
   padding: calc(var(--base-unit));
@@ -425,7 +423,7 @@ Form controls
   height: 100%;
 
   border: 1px solid var(--box-border-color);
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   color: var(--text-color);
   background-color: var(--box-background);
 }
@@ -440,7 +438,7 @@ Form controls
 */
 .badge {
   background: var(--grey-30);
-  border-radius: calc(var(--base-unit) / 2);
+  border-radius: var(--border-radius-xsmall);
   font-size: var(--micro-font-size);
   padding: var(--base-unit) calc(2 * var(--base-unit));
 }
@@ -466,7 +464,7 @@ Form controls
  */
 .card {
   background-color: var(--card-background-color); /* from common.inc.css */
-  border-radius: var(--card-shadow-blur-radius); /* from common.inc.css */
+  border-radius: var(--border-radius-small);
   box-shadow: 0 1px 4px var(--grey-90-a10); /* from common.inc.css */
   box-sizing: border-box;
   min-width: min-content;

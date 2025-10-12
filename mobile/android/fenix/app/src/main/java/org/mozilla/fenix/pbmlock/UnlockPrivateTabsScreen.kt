@@ -143,8 +143,6 @@ private fun Footer(onUnlockClicked: () -> Unit, onLeaveClicked: () -> Unit, show
             TextButton(
                 text = stringResource(R.string.pbm_authentication_leave_private_tabs),
                 onClick = onLeaveClicked,
-                textColor = FirefoxTheme.colors.textPrimary,
-                upperCaseText = false,
             )
         }
     }

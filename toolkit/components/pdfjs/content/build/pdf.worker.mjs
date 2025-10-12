@@ -21,9 +21,32 @@
  */
 
 /**
- * pdfjsVersion = 5.4.70
- * pdfjsBuild = f16e0b6da
+ * pdfjsVersion = 5.4.135
+ * pdfjsBuild = 5a10376e4
  */
+/******/ // The require scope
+/******/ var __webpack_require__ = {};
+/******/ 
+/************************************************************************/
+/******/ /* webpack/runtime/define property getters */
+/******/ (() => {
+/******/ 	// define getter functions for harmony exports
+/******/ 	__webpack_require__.d = (exports, definition) => {
+/******/ 		for(var key in definition) {
+/******/ 			if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 				Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 			}
+/******/ 		}
+/******/ 	};
+/******/ })();
+/******/ 
+/******/ /* webpack/runtime/hasOwnProperty shorthand */
+/******/ (() => {
+/******/ 	__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ })();
+/******/ 
+/************************************************************************/
+var __webpack_exports__ = {};
 
 ;// ./src/shared/util.js
 const isNodeJS = false;
@@ -513,6 +536,9 @@ class Util {
   static makeHexColor(r, g, b) {
     return `#${hexNumbers[r]}${hexNumbers[g]}${hexNumbers[b]}`;
   }
+  static domMatrixToTransform(dm) {
+    return [dm.a, dm.b, dm.c, dm.d, dm.e, dm.f];
+  }
   static scaleMinMax(transform, minMax) {
     let temp;
     if (transform[0]) {
@@ -559,6 +585,9 @@ class Util {
   }
   static transform(m1, m2) {
     return [m1[0] * m2[0] + m1[2] * m2[1], m1[1] * m2[0] + m1[3] * m2[1], m1[0] * m2[2] + m1[2] * m2[3], m1[1] * m2[2] + m1[3] * m2[3], m1[0] * m2[4] + m1[2] * m2[5] + m1[4], m1[1] * m2[4] + m1[3] * m2[5] + m1[5]];
+  }
+  static multiplyByDOMMatrix(m, md) {
+    return [m[0] * md.a + m[2] * md.b, m[1] * md.a + m[3] * md.b, m[0] * md.c + m[2] * md.d, m[1] * md.c + m[3] * md.d, m[0] * md.e + m[2] * md.f + m[4], m[1] * md.e + m[3] * md.f + m[5]];
   }
   static applyTransform(p, m, pos = 0) {
     const p0 = p[pos];
@@ -2673,9 +2702,7 @@ class IccColorSpace extends ColorSpace {
   #convertPixel;
   static #useWasm = true;
   static #wasmUrl = null;
-  static #finalizer = new FinalizationRegistry(transformer => {
-    qcms_drop_transformer(transformer);
-  });
+  static #finalizer = null;
   constructor(iccProfile, name, numComps) {
     if (!IccColorSpace.isUsable) {
       throw new Error("No ICC color space support");
@@ -2702,6 +2729,9 @@ class IccColorSpace extends ColorSpace {
     if (!this.#transformer) {
       throw new Error("Failed to create ICC color space");
     }
+    IccColorSpace.#finalizer ||= new FinalizationRegistry(transformer => {
+      qcms_drop_transformer(transformer);
+    });
     IccColorSpace.#finalizer.register(this, this.#transformer);
   }
   getRgbHex(src, srcOffset) {
@@ -32617,6 +32647,23 @@ class PartialEvaluator {
               args[0] = Math.abs(thickness);
               break;
             }
+          case OPS.setDash:
+            {
+              const dashPhase = args[1];
+              if (typeof dashPhase !== "number") {
+                warn(`Invalid setDash: ${dashPhase}`);
+                continue;
+              }
+              const dashArray = args[0];
+              if (!Array.isArray(dashArray)) {
+                warn(`Invalid setDash: ${dashArray}`);
+                continue;
+              }
+              if (dashArray.some(x => typeof x !== "number")) {
+                args[0] = dashArray.filter(x => typeof x === "number");
+              }
+              break;
+            }
           case OPS.moveTo:
           case OPS.lineTo:
           case OPS.curveTo:
@@ -49278,22 +49325,25 @@ class AnnotationFactory {
       return null;
     });
   }
-  static async create(xref, ref, annotationGlobals, idFactory, collectFields, orphanFields, pageRef) {
+  static async create(xref, ref, annotationGlobals, idFactory, collectFields, orphanFields, collectByType, pageRef) {
     const pageIndex = collectFields ? await this._getPageIndex(xref, ref, annotationGlobals.pdfManager) : null;
-    return annotationGlobals.pdfManager.ensure(this, "_create", [xref, ref, annotationGlobals, idFactory, collectFields, orphanFields, pageIndex, pageRef]);
+    return annotationGlobals.pdfManager.ensure(this, "_create", [xref, ref, annotationGlobals, idFactory, collectFields, orphanFields, collectByType, pageIndex, pageRef]);
   }
-  static _create(xref, ref, annotationGlobals, idFactory, collectFields = false, orphanFields = null, pageIndex = null, pageRef = null) {
+  static _create(xref, ref, annotationGlobals, idFactory, collectFields = false, orphanFields = null, collectByType = null, pageIndex = null, pageRef = null) {
     const dict = xref.fetchIfRef(ref);
     if (!(dict instanceof Dict)) {
       return undefined;
+    }
+    let subtype = dict.get("Subtype");
+    subtype = subtype instanceof Name ? subtype.name : null;
+    if (collectByType && !collectByType.has(AnnotationType[subtype.toUpperCase()])) {
+      return null;
     }
     const {
       acroForm,
       pdfManager
     } = annotationGlobals;
     const id = ref instanceof Ref ? ref.toString() : `annot_${idFactory.createObjId()}`;
-    let subtype = dict.get("Subtype");
-    subtype = subtype instanceof Name ? subtype.name : null;
     const parameters = {
       xref,
       ref,
@@ -54763,11 +54813,12 @@ class XRef {
       return this.topDict;
     }
     if (!trailerDicts.length) {
-      for (const [num, entry] of this.entries.entries()) {
-        if (!entry) {
+      for (const num in this.entries) {
+        if (!Object.hasOwn(this.entries, num)) {
           continue;
         }
-        const ref = Ref.get(num, entry.gen);
+        const entry = this.entries[num];
+        const ref = Ref.get(parseInt(num), entry.gen);
         let obj;
         try {
           obj = this.fetch(ref);
@@ -55049,6 +55100,7 @@ class XRef {
 
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
 class Page {
+  #areAnnotationsCached = false;
   #resourcesPromise = null;
   constructor({
     pdfManager,
@@ -55533,7 +55585,7 @@ class Page {
       const orphanFields = fieldObjects?.orphanFields;
       const annotationPromises = [];
       for (const annotationRef of annots) {
-        annotationPromises.push(AnnotationFactory.create(this.xref, annotationRef, annotationGlobals, this._localIdFactory, false, orphanFields, this.ref).catch(function (reason) {
+        annotationPromises.push(AnnotationFactory.create(this.xref, annotationRef, annotationGlobals, this._localIdFactory, false, orphanFields, null, this.ref).catch(function (reason) {
           warn(`_parsedAnnotations: "${reason}".`);
           return null;
         }));
@@ -55562,11 +55614,46 @@ class Page {
       }
       return sortedAnnotations;
     });
+    this.#areAnnotationsCached = true;
     return shadow(this, "_parsedAnnotations", promise);
   }
   get jsActions() {
     const actions = collectActions(this.xref, this.pageDict, PageActionEventType);
     return shadow(this, "jsActions", actions);
+  }
+  async collectAnnotationsByType(handler, task, types, promises, annotationGlobals) {
+    const {
+      pageIndex
+    } = this;
+    if (this.#areAnnotationsCached) {
+      const cachedAnnotations = await this._parsedAnnotations;
+      for (const {
+        data
+      } of cachedAnnotations) {
+        if (!types || types.has(data.annotationType)) {
+          data.pageIndex = pageIndex;
+          promises.push(Promise.resolve(data));
+        }
+      }
+      return;
+    }
+    const annots = await this.pdfManager.ensure(this, "annotations");
+    for (const annotationRef of annots) {
+      promises.push(AnnotationFactory.create(this.xref, annotationRef, annotationGlobals, this._localIdFactory, false, null, types, this.ref).then(async annotation => {
+        if (!annotation) {
+          return null;
+        }
+        annotation.data.pageIndex = pageIndex;
+        if (annotation.hasTextContent && annotation.viewable) {
+          const partialEvaluator = this.#createPartialEvaluator(handler);
+          await annotation.extractTextContent(partialEvaluator, task, [-Infinity, -Infinity, Infinity, Infinity]);
+        }
+        return annotation.data;
+      }).catch(function (reason) {
+        warn(`collectAnnotationsByType: "${reason}".`);
+        return null;
+      }));
+    }
   }
 }
 const PDF_HEADER_SIGNATURE = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d]);
@@ -56361,7 +56448,7 @@ class PDFDocument {
     if (!promises.has(name)) {
       promises.set(name, []);
     }
-    promises.get(name).push(AnnotationFactory.create(xref, fieldRef, annotationGlobals, null, true, orphanFields, null).then(annotation => annotation?.getFieldObject()).catch(function (reason) {
+    promises.get(name).push(AnnotationFactory.create(xref, fieldRef, annotationGlobals, null, true, orphanFields, null, null).then(annotation => annotation?.getFieldObject()).catch(function (reason) {
       warn(`#collectFieldObjects: "${reason}".`);
       return null;
     }));
@@ -57580,7 +57667,7 @@ class WorkerMessageHandler {
       docId,
       apiVersion
     } = docParams;
-    const workerVersion = "5.4.70";
+    const workerVersion = "5.4.135";
     if (apiVersion !== workerVersion) {
       throw new Error(`The API version "${apiVersion}" does not match ` + `the Worker version "${workerVersion}".`);
     }
@@ -57819,6 +57906,42 @@ class WorkerMessageHandler {
       pageIndex
     }) {
       return pdfManager.getPage(pageIndex).then(page => pdfManager.ensure(page, "jsActions"));
+    });
+    handler.on("GetAnnotationsByType", async function ({
+      types,
+      pageIndexesToSkip
+    }) {
+      const [numPages, annotationGlobals] = await Promise.all([pdfManager.ensureDoc("numPages"), pdfManager.ensureDoc("annotationGlobals")]);
+      if (!annotationGlobals) {
+        return null;
+      }
+      const pagePromises = [];
+      const annotationPromises = [];
+      let task = null;
+      try {
+        for (let i = 0, ii = numPages; i < ii; i++) {
+          if (pageIndexesToSkip?.has(i)) {
+            continue;
+          }
+          if (!task) {
+            task = new WorkerTask("GetAnnotationsByType");
+            startWorkerTask(task);
+          }
+          pagePromises.push(pdfManager.getPage(i).then(async page => {
+            if (!page) {
+              return [];
+            }
+            return page.collectAnnotationsByType(handler, task, types, annotationPromises, annotationGlobals) || [];
+          }));
+        }
+        await Promise.all(pagePromises);
+        const annotations = await Promise.all(annotationPromises);
+        return annotations.filter(a => !!a);
+      } finally {
+        if (task) {
+          finishWorkerTask(task);
+        }
+      }
     });
     handler.on("GetOutline", function (data) {
       return pdfManager.ensureCatalog("documentOutline");

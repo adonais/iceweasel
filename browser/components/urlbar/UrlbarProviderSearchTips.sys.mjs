@@ -84,10 +84,19 @@ const LAST_UPDATE_THRESHOLD_HOURS = 24;
 /**
  * A provider that sometimes returns a tip result when the user visits the
  * newtab page or their default search engine's homepage.
+ *
+ * This class supports only one instance.
  */
-class ProviderSearchTips extends UrlbarProvider {
+export class UrlbarProviderSearchTips extends UrlbarProvider {
+  /** @type {?UrlbarProviderSearchTips} */
+  static #instance = null;
+
   constructor() {
     super();
+    if (UrlbarProviderSearchTips.#instance) {
+      throw new Error("Can only have one instance of UrlbarProviderSearchTips");
+    }
+    UrlbarProviderSearchTips.#instance = this;
 
     // Whether we should disable tips for the current browser session, for
     // example because a tip was already shown.
@@ -114,23 +123,13 @@ class ProviderSearchTips extends UrlbarProvider {
    *
    * @returns {{ NONE: string; ONBOARD: string; REDIRECT: string; }}
    */
-  get TIP_TYPE() {
+  static get TIP_TYPE() {
     return TIPS;
   }
 
-  get PRIORITY() {
+  static get PRIORITY() {
     // Search tips are prioritized over the Places and top sites providers.
     return lazy.UrlbarProviderTopSites.PRIORITY + 1;
-  }
-
-  /**
-   * Unique name for the provider, used by the context to filter on providers.
-   * Not using a unique name will cause the newest registration to win.
-   *
-   * @returns {string}
-   */
-  get name() {
-    return "UrlbarProviderSearchTips";
   }
 
   /**
@@ -155,7 +154,7 @@ class ProviderSearchTips extends UrlbarProvider {
    * @returns {number} The provider's priority for the given query.
    */
   getPriority() {
-    return this.PRIORITY;
+    return UrlbarProviderSearchTips.PRIORITY;
   }
 
   /**
@@ -248,6 +247,29 @@ class ProviderSearchTips extends UrlbarProvider {
 
   /**
    * Called from `onLocationChange` in browser.js.
+   *
+   * @param {window} window
+   *  The browser window where the location change happened.
+   * @param {nsIURI} uri
+   *  The URI being navigated to.
+   * @param {nsIWebProgress} webProgress
+   *   The progress object, which can have event listeners added to it.
+   * @param {number} flags
+   *   Load flags. See nsIWebProgressListener.idl for possible values.
+   */
+  static async onLocationChange(window, uri, webProgress, flags) {
+    if (UrlbarProviderSearchTips.#instance) {
+      UrlbarProviderSearchTips.#instance.onLocationChange(
+        window,
+        uri,
+        webProgress,
+        flags
+      );
+    }
+  }
+
+  /**
+   * Called by the static function with the same name.
    *
    * @param {window} window
    *  The browser window where the location change happened.
@@ -497,5 +519,3 @@ async function isDefaultEngineHomepage(urlStr) {
 
   return homepageMatches.domainPath.test(urlStr);
 }
-
-export var UrlbarProviderSearchTips = new ProviderSearchTips();

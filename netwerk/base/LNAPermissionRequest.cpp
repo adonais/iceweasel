@@ -10,6 +10,7 @@
 #include "nsPIDOMWindow.h"
 #include "mozilla/Preferences.h"
 #include "nsContentUtils.h"
+#include "mozilla/glean/NetwerkMetrics.h"
 
 namespace mozilla::net {
 
@@ -90,6 +91,17 @@ nsresult LNAPermissionRequest::RequestPermission() {
 
   if (pr == PromptResult::Denied) {
     return Cancel();
+  }
+
+  // Record telemetry for permission prompts shown to users
+  if (mType.Equals(LOCAL_HOST_PERMISSION_KEY)) {
+    mozilla::glean::networking::local_network_access_prompts_shown
+        .Get("localhost"_ns)
+        .Add(1);
+  } else if (mType.Equals(LOCAL_NETWORK_PERMISSION_KEY)) {
+    mozilla::glean::networking::local_network_access_prompts_shown
+        .Get("local_network"_ns)
+        .Add(1);
   }
 
   if (NS_SUCCEEDED(

@@ -1154,7 +1154,10 @@ ConnectionData.prototype = Object.freeze({
    * longer than necessary.
    */
   _getTimeoutPromise() {
-    if (this._timeoutPromise && Cu.now() <= this._timeoutPromiseExpires) {
+    if (
+      this._timeoutPromise &&
+      ChromeUtils.now() <= this._timeoutPromiseExpires
+    ) {
       return this._timeoutPromise;
     }
     let timeoutPromise = new Promise((resolve, reject) => {
@@ -1172,7 +1175,7 @@ ConnectionData.prototype = Object.freeze({
     });
     this._timeoutPromise = timeoutPromise;
     this._timeoutPromiseExpires =
-      Cu.now() + Sqlite.TRANSACTIONS_TIMEOUT_MS * 0.2;
+      ChromeUtils.now() + Sqlite.TRANSACTIONS_TIMEOUT_MS * 0.2;
     return this._timeoutPromise;
   },
 
@@ -1283,7 +1286,7 @@ ConnectionData.prototype = Object.freeze({
  * @param options
  *        (Object) Parameters to control connection and open options.
  *
- * @return Promise<OpenedConnection>
+ * @return {Promise<OpenedConnection>}
  */
 function openConnection(options) {
   let logger = createLoggerWithPrefix("ConnectionOpener");
@@ -1493,7 +1496,7 @@ function openConnection(options) {
  * @param options
  *        (Object) Parameters to control connection and clone options.
  *
- * @return Promise<OpenedConnection>
+ * @return {Promise<OpenedConnection>}
  */
 function cloneStorageConnection(options) {
   let logger = createLoggerWithPrefix("ConnectionCloner");
@@ -1580,7 +1583,7 @@ function cloneStorageConnection(options) {
  * @param options
  *        (Object) Parameters to control connection and wrap options.
  *
- * @return Promise<OpenedConnection>
+ * @return {Promise<OpenedConnection>}
  */
 function wrapStorageConnection(options) {
   let logger = createLoggerWithPrefix("ConnectionWrapper");
@@ -1809,7 +1812,7 @@ OpenedConnection.prototype = {
    *        this parameter will be ignored and the clone will be as privileged as
    *        the original connection.
    *
-   * @return Promise<OpenedConnection>
+   * @return {Promise<OpenedConnection>}
    */
   clone(readOnly = false) {
     return this._connectionData.clone(readOnly);

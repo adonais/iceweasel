@@ -93,6 +93,7 @@ export class WeatherFeed {
           timeoutMs: 7000,
           otherParams: {
             request_type: "weather",
+            source: "newtab",
           },
         });
       } catch (error) {
@@ -192,6 +193,7 @@ export class WeatherFeed {
       timeoutMs: 7000,
       otherParams: {
         request_type: "location",
+        source: "newtab",
       },
     });
     const data = response?.[0];

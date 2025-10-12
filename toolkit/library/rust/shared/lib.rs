@@ -139,6 +139,7 @@ extern crate mime_guess_ffi;
 
 extern crate urlpattern;
 extern crate urlpattern_glue;
+extern crate uritemplate_glue;
 
 #[cfg(feature = "libz-rs-sys")]
 extern crate libz_rs_sys;

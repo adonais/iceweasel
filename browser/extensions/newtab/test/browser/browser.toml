@@ -17,7 +17,6 @@ prefs = [
   "browser.newtabpage.activity-stream.discoverystream.endpoints=data:",
   "browser.newtabpage.activity-stream.feeds.system.topstories=true",
   "browser.newtabpage.activity-stream.feeds.section.topstories=true",
-  "browser.newtabpage.activity-stream.feeds.section.topstories.options={\"provider_name\":\"\"}",
   "messaging-system.log=all",
 ]
 tags = "newtab"
@@ -25,6 +24,8 @@ tags = "newtab"
 ["browser_SmartShortcuts.js"]
 
 ["browser_TrendingSearch.js"]
+
+["browser_WallpaperThemeWorker.js"]
 
 ["browser_as_load_location.js"]
 

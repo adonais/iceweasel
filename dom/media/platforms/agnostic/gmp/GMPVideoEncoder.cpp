@@ -192,7 +192,7 @@ void GMPVideoEncoder::InitComplete(GMPVideoEncoderProxy* aGMP,
 
   GMP_LOG_DEBUG("[%p] GMPVideoEncoder::InitComplete -- encoder initialized",
                 this);
-  mInitPromise.Resolve(TrackInfo::TrackType::kVideoTrack, __func__);
+  mInitPromise.Resolve(true, __func__);
 }
 
 RefPtr<MediaDataEncoder::EncodePromise> GMPVideoEncoder::Encode(
@@ -269,6 +269,25 @@ RefPtr<MediaDataEncoder::EncodePromise> GMPVideoEncoder::Encode(
   RefPtr<EncodePromise::Private> promise = new EncodePromise::Private(__func__);
   mPendingEncodes.InsertOrUpdate(timestamp, promise);
   return promise.forget();
+}
+
+// TODO(Bug 1984936): For realtime mode, resolve the promise after the first
+// sample's result is available, then continue processing remaining samples.
+// This allows the caller to keep submitting new samples while the encoder
+// handles pending ones.
+RefPtr<MediaDataEncoder::EncodePromise> GMPVideoEncoder::Encode(
+    nsTArray<RefPtr<MediaData>>&& aSamples) {
+  MOZ_ASSERT(!aSamples.IsEmpty());
+  MOZ_ASSERT(IsOnGMPThread());
+
+  if (NS_WARN_IF(!IsInitialized())) {
+    return EncodePromise::CreateAndReject(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                                          __func__);
+  }
+
+  RefPtr<EncodePromise> promise = mEncodeBatchPromise.Ensure(__func__);
+  EncodeNextSample(std::move(aSamples), EncodedData());
+  return promise;
 }
 
 RefPtr<MediaDataEncoder::ReconfigurationPromise> GMPVideoEncoder::Reconfigure(
@@ -435,6 +454,9 @@ void GMPVideoEncoder::Teardown(const MediaResult& aResult,
   // Ensure we are kept alive at least until we return.
   RefPtr<GMPVideoEncoder> self(this);
 
+  mEncodeBatchPromise.RejectIfExists(aResult, aCallSite);
+  mEncodeBatchRequest.DisconnectIfExists();
+
   PendingEncodePromises pendingEncodes = std::move(mPendingEncodes);
   for (auto i = pendingEncodes.Iter(); !i.Done(); i.Next()) {
     i.Data()->Reject(aResult, aCallSite);
@@ -464,6 +486,45 @@ void GMPVideoEncoder::Terminated() {
   Teardown(
       MediaResult(NS_ERROR_DOM_MEDIA_ABORT_ERR, "Terminated GMP callback"_ns),
       __func__);
+}
+
+void GMPVideoEncoder::EncodeNextSample(
+    nsTArray<RefPtr<MediaData>>&& aInputs,
+    MediaDataEncoder::EncodedData&& aOutputs) {
+  MOZ_ASSERT(IsOnGMPThread());
+  MOZ_ASSERT(IsInitialized());
+  MOZ_ASSERT(!mEncodeBatchPromise.IsEmpty());
+  MOZ_ASSERT(!mEncodeBatchRequest.Exists());
+
+  if (aInputs.IsEmpty()) {
+    GMP_LOG_VERBOSE("[%p] All samples processed. Resolving the encode promise",
+                    this);
+    mEncodeBatchPromise.Resolve(std::move(aOutputs), __func__);
+    return;
+  }
+
+  GMP_LOG_VERBOSE("[%p] Processing next sample out of %zu remaining", this,
+                  aInputs.Length());
+  Encode(aInputs[0])
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [self = RefPtr{this}, inputs = std::move(aInputs),
+           outputs = std::move(aOutputs)](
+              MediaDataEncoder::EncodedData&& aData) mutable {
+            self->mEncodeBatchRequest.Complete();
+            inputs.RemoveElementAt(0);
+            outputs.AppendElements(aData);
+            self->EncodeNextSample(std::move(inputs), std::move(outputs));
+          },
+          [self = RefPtr{this}](const MediaResult& aError) {
+            self->mEncodeBatchRequest.Complete();
+            GMP_LOG_ERROR(
+                "[%p] GMPVideoEncoder::EncodeNextSample -- failed to encode: "
+                "%s",
+                self.get(), aError.Description().get());
+            self->mEncodeBatchPromise.Reject(aError, __func__);
+          })
+      ->Track(mEncodeBatchRequest);
 }
 
 }  // namespace mozilla

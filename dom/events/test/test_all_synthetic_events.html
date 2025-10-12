@@ -70,6 +70,10 @@ const kEventConstructors = {
                                                          return new ClipboardEvent(aName, aProps);
                                                        },
                                              },
+  CommandEvent:                              { create (aName, aProps) {
+                                                         return new CommandEvent(aName, aProps);
+                                                       },
+                                             },
   CompositionEvent:                          { create (aName, aProps) {
                                                          var e = document.createEvent("compositionevent");
                                                          e.initCompositionEvent(aName, aProps.bubbles, aProps.cancelable,

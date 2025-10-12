@@ -20,7 +20,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d0b311007c033e838
  11 files changed, 55 insertions(+), 10 deletions(-)
 
 diff --git a/audio/audio_receive_stream.cc b/audio/audio_receive_stream.cc
-index 344c4b4428..c0b1232e62 100644
+index 1c4d634729..a748c4f398 100644
 --- a/audio/audio_receive_stream.cc
 +++ b/audio/audio_receive_stream.cc
 @@ -57,6 +57,8 @@ std::string AudioReceiveStreamInterface::Config::Rtp::ToString() const {
@@ -42,30 +42,30 @@ index 344c4b4428..c0b1232e62 100644
  }  // namespace
  
 diff --git a/audio/channel_receive.cc b/audio/channel_receive.cc
-index cfbf843032..c4320657b7 100644
+index 832f86aaab..2f8ae83c03 100644
 --- a/audio/channel_receive.cc
 +++ b/audio/channel_receive.cc
 @@ -133,7 +133,8 @@ class ChannelReceive : public ChannelReceiveInterface,
                   std::optional<AudioCodecPairId> codec_pair_id,
                   scoped_refptr<FrameDecryptorInterface> frame_decryptor,
-                  const webrtc::CryptoOptions& crypto_options,
+                  const CryptoOptions& crypto_options,
 -                 scoped_refptr<FrameTransformerInterface> frame_transformer);
 +                 scoped_refptr<FrameTransformerInterface> frame_transformer,
 +                 RtcpEventObserver* rtcp_event_observer);
    ~ChannelReceive() override;
  
    void SetSink(AudioSinkInterface* sink) override;
-@@ -566,7 +567,8 @@ ChannelReceive::ChannelReceive(
+@@ -565,7 +566,8 @@ ChannelReceive::ChannelReceive(
      std::optional<AudioCodecPairId> codec_pair_id,
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
-     const webrtc::CryptoOptions& crypto_options,
+     const CryptoOptions& crypto_options,
 -    scoped_refptr<FrameTransformerInterface> frame_transformer)
 +    scoped_refptr<FrameTransformerInterface> frame_transformer,
 +    RtcpEventObserver* rtcp_event_observer)
      : env_(env),
        worker_thread_(TaskQueueBase::Current()),
        rtp_receive_statistics_(ReceiveStatistics::Create(&env_.clock())),
-@@ -601,6 +603,7 @@ ChannelReceive::ChannelReceive(
+@@ -600,6 +602,7 @@ ChannelReceive::ChannelReceive(
    configuration.local_media_ssrc = local_ssrc;
    configuration.rtcp_packet_type_counter_observer = this;
    configuration.non_sender_rtt_measurement = enable_non_sender_rtt;
@@ -73,10 +73,10 @@ index cfbf843032..c4320657b7 100644
  
    if (frame_transformer)
      InitFrameTransformerDelegate(std::move(frame_transformer));
-@@ -1190,13 +1193,14 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+@@ -1189,13 +1192,14 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
      std::optional<AudioCodecPairId> codec_pair_id,
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
-     const webrtc::CryptoOptions& crypto_options,
+     const CryptoOptions& crypto_options,
 -    scoped_refptr<FrameTransformerInterface> frame_transformer) {
 +    scoped_refptr<FrameTransformerInterface> frame_transformer,
 +    RtcpEventObserver* rtcp_event_observer) {
@@ -91,10 +91,10 @@ index cfbf843032..c4320657b7 100644
  
  }  // namespace voe
 diff --git a/audio/channel_receive.h b/audio/channel_receive.h
-index ee72187b7d..961e865dd5 100644
+index 6179c4f8f0..d2316adb12 100644
 --- a/audio/channel_receive.h
 +++ b/audio/channel_receive.h
-@@ -38,6 +38,7 @@
+@@ -39,6 +39,7 @@
  #include "call/rtp_packet_sink_interface.h"
  #include "call/syncable.h"
  #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
@@ -267,7 +267,7 @@ index 40836198de..d2304e87db 100644
  
      // DEPRECATED, transport_feedback_callback is no longer invoked by the RTP
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index d8058aa393..274423d3bb 100644
+index 9aa6b79551..5fb1f3114c 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -129,7 +129,8 @@ std::unique_ptr<ModuleRtpRtcpImpl2> CreateRtpRtcpModule(

@@ -224,7 +224,9 @@ export class MegalistViewModel {
     const reason = reasonMap[command.id];
     const osAuthForPw = lazy.LoginHelper.getOSAuthEnabled();
     const { isAuthorized } = await lazy.LoginHelper.requestReauth(
-      lazy.BrowserWindowTracker.getTopWindow().gBrowser,
+      lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      }).gBrowser,
       osAuthForPw,
       this.#authExpirationTime,
       command.OSAuthPromptMessage,

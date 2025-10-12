@@ -10,10 +10,6 @@
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
   <string name="content_description_menu">Cuɓe Goɗɗe</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Hurmin banngogol suturo</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Ñif banngagol suturo</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Yiilo walla naatnu ñiiɓirde</string>
   <!-- Placeholder text shown in search bar when using history search -->
@@ -154,12 +150,6 @@
   <string name="search_engine_suggestions_title">Yiylo %s</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">Yiylo beƴ e palal ñiiɓirɗe ngal</string>
-  <!--
-    Home onboarding
-
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
-  -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Tabbe maa ko canngoɗinaaɗe! Fuɗɗo ɗoon ɗo darnunu-ɗaa e kaɓirgol maa goɗngol.</string>
   <!--
     Search Widget
 
@@ -355,7 +345,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Sanngoɗin ngam daɗnude keɓe maa</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sanngoɗin ngam daɗnude keɓe maa</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Seŋo ngam seŋaade kadi</string>
   <!-- Preference for removing FxA account -->
@@ -542,9 +532,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Momtu aslol</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Aslol momtaama</string>
+  <string name="history_delete_multiple_items_snackbar">Aslol momtaama</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Momtaama %1$s</string>
+  <string name="history_delete_single_item_snackbar">Momtaama %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Momtu</string>
   <!--
@@ -717,12 +707,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d tabbere suɓaa</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Tabbe ndanndaama!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Leemannde danndaama!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Leemannde danndaama!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Tabbere danndaama!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Tabbere danndaama!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Uddu</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -751,7 +739,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Seŋo ngam yahdinde</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Sanngoɗin ngam daɗnude keɓe</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sanngoɗin ngam daɗnude keɓe</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Neldu to masiŋon kon fof</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -801,8 +789,6 @@
   <string name="tab_collection_dialog_message">Aɗa yenanaa yiɗde momtude %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Momtu</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Ñiiɓirde geese nattaama</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Ɗum ko jubbannde binndi. Waɗiraa ko ngam hollirde no binndi ɗii mbayata so a ɓeydii walla a ustii darnde alkule ɗee e ngol teeltol.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -855,9 +841,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Tabbe neldaama!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Tabbe neldaama!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Tabbere neldaama!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Tabbere neldaama!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Horiima neldude</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1036,12 +1022,6 @@
   <string name="search_engine_delete">Momtu</string>
   <!-- Text shown when a user leaves the name field empty -->
   <string name="search_add_custom_engine_error_empty_name">Naatnu innde yiylorde</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s Sosaa</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s danndaa</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Momtaama %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Yamirde ɗum:</string>
   <!-- First step for the allowing a permission -->

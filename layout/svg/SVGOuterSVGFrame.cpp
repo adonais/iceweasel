@@ -501,8 +501,7 @@ void SVGOuterSVGFrame::UnionChildOverflow(OverflowAreas& aOverflowAreas,
 // container methods
 
 nsresult SVGOuterSVGFrame::AttributeChanged(int32_t aNameSpaceID,
-                                            nsAtom* aAttribute,
-                                            int32_t aModType) {
+                                            nsAtom* aAttribute, AttrModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
       !HasAnyStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_NONDISPLAY)) {
     if (aAttribute == nsGkAtoms::viewBox ||

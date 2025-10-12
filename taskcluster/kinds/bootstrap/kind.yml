@@ -27,6 +27,11 @@ tasks:
         pre-commands:
             - apt-get update
             - apt-get install -y --no-install-recommends curl libcurl4 git python3-pip
+    debian14:
+        image: debian:forky
+        pre-commands:
+            - apt-get update
+            - apt-get install -y --no-install-recommends curl libcurl4 git python3-pip
     ubuntu2204:
         image: ubuntu:jammy
         pre-commands:
@@ -41,6 +46,20 @@ tasks:
             - apt-get install -y --no-install-recommends curl git python3-pip
     ubuntu2410:
         image: ubuntu:oracular
+        pre-commands:
+            - apt-get update
+            # For some reason, this is required, now.
+            - export DEBIAN_FRONTEND=noninteractive
+            - apt-get install -y --no-install-recommends curl git python3-pip
+    ubuntu2504:
+        image: ubuntu:plucky
+        pre-commands:
+            - apt-get update
+            # For some reason, this is required, now.
+            - export DEBIAN_FRONTEND=noninteractive
+            - apt-get install -y --no-install-recommends curl git python3-pip
+    ubuntu2510:
+        image: ubuntu:questing
         pre-commands:
             - apt-get update
             # For some reason, this is required, now.
@@ -72,6 +91,10 @@ tasks:
             - dnf install -y git python3-pip
     fedora42:
         image: fedora:42
+        pre-commands:
+            - dnf install -y git python3-pip awk
+    fedora43:
+        image: fedora:43
         pre-commands:
             - dnf install -y git python3-pip awk
     rockylinux8:

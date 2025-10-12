@@ -15,7 +15,6 @@ prefs = [
   "browser.newtabpage.activity-stream.feeds.system.topstories=true",
   "browser.newtabpage.activity-stream.feeds.section.topstories=true",
   "browser.newtabpage.activity-stream.feeds.system.topstories=true",
-  "browser.newtabpage.activity-stream.feeds.section.topstories.options={\"provider_name\":\"\"}",
   "browser.newtabpage.activity-stream.telemetry.structuredIngestion=false",
   "browser.newtabpage.activity-stream.discoverystream.endpoints=https://example.com",
   "dom.ipc.processPrelaunch.delayMs=0",
@@ -38,6 +37,7 @@ tags = "newtab"
 ["browser_no_cache.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1952938
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan", # Bug 1952938
 ]
 
 ["browser_no_cache_on_SessionStartup_restore.js"]

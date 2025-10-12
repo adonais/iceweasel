@@ -153,6 +153,10 @@ class CacheKey {
   static constexpr nsStaticAtom* CssPosition = nsGkAtoms::position;
   // nsString, CacheDomain::NameAndDescription
   static constexpr nsStaticAtom* Description = nsGkAtoms::description;
+  // EDescriptionValueFlag, CacheDomain::NameAndDescription
+  // Returned by Accessible::Description.
+  static constexpr nsStaticAtom* DescriptionValueFlag =
+      nsGkAtoms::aria_description;
   // nsString, CacheDomain::Relations
   // The "name" DOM attribute.
   static constexpr nsStaticAtom* DOMName = nsGkAtoms::attributeName;
@@ -261,6 +265,8 @@ class CacheKey {
   // The list of Accessibles in the viewport used for hit testing and on-screen
   // determination.
   static constexpr nsStaticAtom* Viewport = nsGkAtoms::viewport;
+  // Computed writing mode
+  static constexpr nsStaticAtom* WritingMode = nsGkAtoms::writing_mode;
 };
 
 // Return true if the given cache domains are already active.

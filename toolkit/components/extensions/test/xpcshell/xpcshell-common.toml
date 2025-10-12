@@ -142,6 +142,8 @@ run-sequentially = "very high failure rate in parallel"
 
 ["test_ext_contentscript_css.js"]
 
+["test_ext_contentscript_css_origin.js"]
+
 ["test_ext_contentscript_dynamic_registration.js"]
 
 ["test_ext_contentscript_exporthelpers.js"]

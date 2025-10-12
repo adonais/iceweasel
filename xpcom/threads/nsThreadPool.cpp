@@ -8,6 +8,8 @@
 
 #include "nsCOMArray.h"
 #include "ThreadDelay.h"
+#include "nsIEventTarget.h"
+#include "nsIRunnable.h"
 #include "nsThreadManager.h"
 #include "nsThread.h"
 #include "nsThreadUtils.h"
@@ -137,114 +139,87 @@ void nsThreadPool::DebugLogPoolStatus(MutexAutoLock& aProofOfLock,
 }
 #endif
 
-nsresult nsThreadPool::PutEvent(nsIRunnable* aEvent) {
+nsresult nsThreadPool::PutEvent(nsIRunnable* aEvent,
+                                MutexAutoLock& aProofOfLock) {
   nsCOMPtr<nsIRunnable> event(aEvent);
-  return PutEvent(event.forget(), 0);
+  return PutEvent(event.forget(), NS_DISPATCH_NORMAL, aProofOfLock);
 }
 
 nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
-                                uint32_t aFlags) {
-  // Avoid spawning a new thread while holding the event queue lock...
+                                DispatchFlags aFlags,
+                                MutexAutoLock& aProofOfLock) {
+  // NOTE: To maintain existing behaviour, we never leak aEvent on error, even
+  // if NS_DISPATCH_FALLIBLE is not specified.
+  nsCOMPtr<nsIRunnable> event(aEvent);
 
-  bool spawnThread = false;
-  uint32_t stackSize = 0;
-  nsCString name;
-  {
-    MutexAutoLock lock(mMutex);
-
-    if (NS_WARN_IF(mShutdown)) {
-      return NS_ERROR_NOT_AVAILABLE;
-    }
-
-    nsCOMPtr<nsIRunnable> event(aEvent);
-    LogRunnable::LogDispatch(event);
-    mEvents.PutEvent(event.forget(), EventQueuePriority::Normal, lock);
-
-#ifdef DEBUG
-    DebugLogPoolStatus(lock, nullptr);
-#endif
-
-    // We've added the event to the queue, make sure a thread
-    // will wake up to handle it.
-    if (aFlags & NS_DISPATCH_AT_END) {
-      // If NS_DISPATCH_AT_END is set, this thread is about to
-      // become free to process the event, so we don't need to
-      // signal another thread.
-      MOZ_ASSERT(IsOnCurrentThreadInfallible(),
-                 "NS_DISPATCH_AT_END can only be set when "
-                 "dispatching from on the thread pool.");
-      LOG(("THRD-P(%p) put [%zd %d %d]: NS_DISPATCH_AT_END w/out Notify.\n",
-           this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
-    } else if (auto* mruThread = mMRUIdleThreads.getFirst()) {
-      // If we have an idle thread, wake it up and remove it
-      // from the idle list, so that future dispatches try
-      // to wake other threads.
-      mruThread->remove();
-      mruThread->mEventsAvailable.Notify();
-#ifdef DEBUG
-      mruThread->mNotifiedSince = TimeStamp::Now();
-#endif
-      LOG(("THRD-P(%p) put [%zd %d %d]: Notify idle thread via entry(%p).\n",
-           this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit,
-           mruThread));
-    } else if (mThreads.Count() < (int32_t)mThreadLimit) {
-      // Otherwise we want to start a new thread assuming we
-      // haven't hit the thread limit yet.
-      spawnThread = true;
-      LOG(("THRD-P(%p) put [%zd %d %d]: Spawn a new thread.\n", this,
-           mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
-    } else {
-      // If we have no thread available, just leave the event in the queue
-      // ready for the next thread about to become idle and pick it up.
-      LOG(("THRD-P(%p) put [%zd %d %d]: No idle or new thread available.\n",
-           this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
-    }
-
-    MOZ_ASSERT(spawnThread || mThreads.Count() > 0);
-    stackSize = mStackSize;
-    name = mName;
+  if (NS_WARN_IF(mShutdown)) {
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
-  auto delay = MakeScopeExit([&]() {
-    // Delay to encourage the receiving task to run before we do work.
-    DelayForChaosMode(ChaosFeature::TaskDispatching, 1000);
-  });
+  LogRunnable::LogDispatch(event);
+  mEvents.PutEvent(event.forget(), EventQueuePriority::Normal, aProofOfLock);
 
-  if (!spawnThread) {
+#ifdef DEBUG
+  DebugLogPoolStatus(aProofOfLock, nullptr);
+#endif
+
+  // We've added the event to the queue, make sure a thread
+  // will wake up to handle it.
+  if (aFlags & NS_DISPATCH_AT_END) {
+    // If NS_DISPATCH_AT_END is set, this thread is about to
+    // become free to process the event, so we don't need to
+    // signal another thread.
+    MOZ_ASSERT(IsOnCurrentThreadInfallible(),
+               "NS_DISPATCH_AT_END can only be set when "
+               "dispatching from on the thread pool.");
+    LOG(("THRD-P(%p) put [%zd %d %d]: NS_DISPATCH_AT_END w/out Notify.\n", this,
+         mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
     return NS_OK;
   }
 
+  if (auto* mruThread = mMRUIdleThreads.getFirst()) {
+    // If we have an idle thread, wake it up and remove it
+    // from the idle list, so that future dispatches try
+    // to wake other threads.
+    mruThread->remove();
+    mruThread->mEventsAvailable.Notify();
+#ifdef DEBUG
+    mruThread->mNotifiedSince = TimeStamp::Now();
+#endif
+    LOG(("THRD-P(%p) put [%zd %d %d]: Notify idle thread via entry(%p).\n",
+         this, mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit,
+         mruThread));
+    return NS_OK;
+  }
+  if (mThreads.Count() >= (int32_t)mThreadLimit) {
+    // If we have no thread available, just leave the event in the queue
+    // ready for the next thread about to become idle and pick it up.
+    LOG(("THRD-P(%p) put [%zd %d %d]: No idle or new thread available.\n", this,
+         mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
+    return NS_OK;
+  }
+
+  // HISTORIC NOTE: Previously we would unlock mMutex before starting a new
+  // thread here. Prior to bug 1510226, NS_NewNamedThread would block the
+  // calling thread waiting for the newly started thread to check in, meaning
+  // this operation could be quite slow. As NS_NewNamedThread no longer blocks,
+  // we no longer bother unlocking here, which greatly simplifies logic around
+  // nsThreadPool thread lifetimes.
   nsCOMPtr<nsIThread> thread;
   nsresult rv = NS_NewNamedThread(
-      mThreadNaming.GetNextThreadName(name), getter_AddRefs(thread), nullptr,
-      {.stackSize = stackSize, .blockDispatch = true});
+      mThreadNaming.GetNextThreadName(mName), getter_AddRefs(thread), this,
+      {.stackSize = mStackSize, .blockDispatch = true});
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  bool killThread = false;
-  {
-    MutexAutoLock lock(mMutex);
-    if (mShutdown) {
-      killThread = true;
-    } else if (mThreads.Count() < (int32_t)mThreadLimit) {
-      mThreads.AppendObject(thread);
-      if (mThreads.Count() >= (int32_t)mThreadLimit) {
-        mIsAPoolThreadFree = false;
-      }
-    } else {
-      // Someone else may have also been starting a thread
-      killThread = true;  // okay, we don't need this thread anymore
-    }
+  mThreads.AppendObject(thread);
+  if (mThreads.Count() >= (int32_t)mThreadLimit) {
+    mIsAPoolThreadFree = false;
   }
-  LOG(("THRD-P(%p) put [%p kill=%d]\n", this, thread.get(), killThread));
-  if (killThread) {
-    // We never dispatched any events to the thread, so we can shut it down
-    // asynchronously without worrying about anything.
-    ShutdownThread(thread);
-  } else {
-    thread->Dispatch(this, NS_DISPATCH_IGNORE_BLOCK_DISPATCH);
-  }
+
+  LOG(("THRD-P(%p) put [%zd %d %d]: Spawn a new thread.\n", this,
+       mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
 
   return NS_OK;
 }
@@ -262,8 +237,12 @@ void nsThreadPool::ShutdownThread(nsIThread* aThread) {
   // shutdown requires this thread have an event loop (and it may not, see bug
   // 10204784).  The simplest way to cover all cases is to asynchronously
   // shutdown aThread from the main thread.
-  SchedulerGroup::Dispatch(NewRunnableMethod(
-      "nsIThread::AsyncShutdown", aThread, &nsIThread::AsyncShutdown));
+  // NOTE: If this fails, it's OK, as XPCOM shutdown will already have destroyed
+  // the nsThread for us.
+  SchedulerGroup::Dispatch(
+      NewRunnableMethod("nsIThread::AsyncShutdown", aThread,
+                        &nsIThread::AsyncShutdown),
+      NS_DISPATCH_FALLIBLE);
 }
 
 NS_IMETHODIMP
@@ -475,24 +454,23 @@ nsThreadPool::Run() {
 }
 
 NS_IMETHODIMP
-nsThreadPool::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags) {
-  nsCOMPtr<nsIRunnable> event(aEvent);
-  return Dispatch(event.forget(), aFlags);
+nsThreadPool::DispatchFromScript(nsIRunnable* aEvent, DispatchFlags aFlags) {
+  return Dispatch(do_AddRef(aEvent), aFlags);
 }
 
 NS_IMETHODIMP
-nsThreadPool::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags) {
-  LOG(("THRD-P(%p) dispatch [%p %x]\n", this, /* XXX aEvent*/ nullptr, aFlags));
-
-  if (NS_WARN_IF(mShutdown)) {
-    nsCOMPtr<nsIRunnable> event(aEvent);
-    return NS_ERROR_NOT_AVAILABLE;
+nsThreadPool::Dispatch(already_AddRefed<nsIRunnable> aEvent,
+                       DispatchFlags aFlags) {
+  nsresult rv = NS_OK;
+  {
+    MutexAutoLock lock(mMutex);
+    rv = PutEvent(std::move(aEvent), aFlags, lock);
   }
 
-  NS_ASSERTION(aFlags == NS_DISPATCH_NORMAL || aFlags == NS_DISPATCH_AT_END,
-               "unexpected dispatch flags");
-  PutEvent(std::move(aEvent), aFlags);
-  return NS_OK;
+  // Delay to encourage the receiving task to run before we do work.
+  DelayForChaosMode(ChaosFeature::TaskDispatching, 1000);
+
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -572,7 +550,7 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
           }
         },
         aTimeoutMs, nsITimer::TYPE_ONE_SHOT,
-        "nsThreadPool::ShutdownWithTimeout");
+        "nsThreadPool::ShutdownWithTimeout"_ns);
   }
 
   // Start a counter and register a callback to decrement outstandingThreads

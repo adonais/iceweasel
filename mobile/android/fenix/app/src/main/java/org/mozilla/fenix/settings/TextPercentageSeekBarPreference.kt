@@ -44,6 +44,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.roundToInt
+import androidx.preference.R as preferenceR
 
 /**
  * Preference based on android.preference.SeekBarPreference but uses support preference as a base.
@@ -65,7 +66,7 @@ import kotlin.math.roundToInt
 class TextPercentageSeekBarPreference @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
-    defStyleAttr: Int = R.attr.seekBarPreferenceStyle,
+    defStyleAttr: Int = preferenceR.attr.seekBarPreferenceStyle,
     defStyleRes: Int = 0,
 ) : Preference(context, attrs, defStyleAttr, defStyleRes) {
     // synthetic access

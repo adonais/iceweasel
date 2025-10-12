@@ -128,8 +128,8 @@ class ICEntry {
     return offsetof(ICEntry, firstStub_);
   }
 
-  void trace(JSTracer* trc);
-  bool traceWeak(JSTracer* trc);
+  void trace(JSTracer* trc, ICFallbackStub* fallbackStub);
+  bool traceWeak(JSTracer* trc, ICFallbackStub* fallbackStub);
 };
 
 //

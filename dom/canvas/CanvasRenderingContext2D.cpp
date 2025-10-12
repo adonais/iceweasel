@@ -4525,7 +4525,7 @@ bool CanvasRenderingContext2D::SetFontInternalDisconnected(
 
   // TODO: Cache fontGroups in the Worker (use an nsFontCache?)
   gfxFontGroup* fontGroup =
-      new gfxFontGroup(nullptr,           // aPresContext
+      new gfxFontGroup(mOffscreenCanvas,  // aFontVisibilityProvider
                        list,              // aFontFamilyList
                        &fontStyle,        // aStyle
                        language,          // aLanguage
@@ -5311,7 +5311,7 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
   // prescontext; if not, we need to discard and re-create it.
   RefPtr<gfxFontGroup>& fontGroup = CurrentState().fontGroup;
   if (fontGroup) {
-    if (fontGroup->GetPresContext() != presContext) {
+    if (fontGroup->GetFontVisibilityProvider() != presContext) {
       fontGroup = nullptr;
     }
   }
@@ -5517,7 +5517,8 @@ static already_AddRefed<SourceSurface> ExtractSubrect(SourceSurface* aSurface,
   gfx::Rect roundedOutSourceRect = *aSourceRect;
   roundedOutSourceRect.RoundOut();
   gfx::IntRect roundedOutSourceRectInt;
-  if (!roundedOutSourceRect.ToIntRect(&roundedOutSourceRectInt)) {
+  if (!roundedOutSourceRect.ToIntRect(&roundedOutSourceRectInt) ||
+      roundedOutSourceRectInt.IsEmpty()) {
     RefPtr<SourceSurface> surface(aSurface);
     return surface.forget();
   }
@@ -5647,20 +5648,20 @@ static Matrix ComputeRotationMatrix(gfxFloat aRotatedWidth,
 
 // -
 
-Maybe<layers::SurfaceDescriptor> ValidSurfaceDescriptorForRemoteCanvas2d(
-    const layers::SurfaceDescriptor& sdConst) {
-  auto sd = sdConst;  // Copy, so we can mutate it.
-  if (sd.type() != layers::SurfaceDescriptor::TSurfaceDescriptorGPUVideo) {
-    return Nothing();
+bool ValidSurfaceDescriptorForRemoteCanvas2d(
+    const layers::SurfaceDescriptor& aSd,
+    Maybe<layers::SurfaceDescriptor>* aResultSd) {
+  if (aSd.type() != layers::SurfaceDescriptor::TSurfaceDescriptorGPUVideo) {
+    return false;
   }
 
-  auto& sdv = sd.get_SurfaceDescriptorGPUVideo();
+  const auto& sdv = aSd.get_SurfaceDescriptorGPUVideo();
   if (sdv.type() !=
       layers::SurfaceDescriptorGPUVideo::TSurfaceDescriptorRemoteDecoder) {
-    return Nothing();
+    return false;
   }
-  auto& sdrd = sdv.get_SurfaceDescriptorRemoteDecoder();
-  auto& subdesc = sdrd.subdesc();
+  const auto& sdrd = sdv.get_SurfaceDescriptorRemoteDecoder();
+  const auto& subdesc = sdrd.subdesc();
   switch (subdesc.type()) {
     case layers::RemoteDecoderVideoSubDescriptor::Tnull_t:
       break;
@@ -5669,7 +5670,7 @@ Maybe<layers::SurfaceDescriptor> ValidSurfaceDescriptorForRemoteCanvas2d(
         TSurfaceDescriptorMacIOSurface: {
       const auto& ssd = subdesc.get_SurfaceDescriptorMacIOSurface();
       if (ssd.gpuFence()) {
-        return Nothing();
+        return false;
       }
       break;
     }
@@ -5677,18 +5678,31 @@ Maybe<layers::SurfaceDescriptor> ValidSurfaceDescriptorForRemoteCanvas2d(
 #ifdef XP_WIN
     case layers::RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorD3D10: {
       if (!StaticPrefs::gfx_canvas_remote_use_draw_image_fast_path_d3d()) {
-        return Nothing();
+        return false;
       }
-      auto& ssd = subdesc.get_SurfaceDescriptorD3D10();
-      ssd.handle() =
-          nullptr;  // Not IPC-able, but it's just an optimization to have this.
-      break;
+      const auto& ssd = subdesc.get_SurfaceDescriptorD3D10();
+      if (aResultSd) {
+        *aResultSd = Some(aSd);
+        // Not IPC-able, but it's just an optimization to have this.
+        aResultSd->ref()
+            .get_SurfaceDescriptorGPUVideo()
+            .get_SurfaceDescriptorRemoteDecoder()
+            .subdesc()
+            .get_SurfaceDescriptorD3D10()
+            .handle() = nullptr;
+      } else if (ssd.handle()) {
+        return false;
+      }
+      return true;
     }
 #endif
     default:
-      return Nothing();
+      return false;
   }
-  return Some(sd);
+  if (aResultSd) {
+    *aResultSd = Some(aSd);
+  }
+  return true;
 }
 
 static Maybe<layers::SurfaceDescriptor>
@@ -5702,9 +5716,13 @@ MaybeGetSurfaceDescriptorForRemoteCanvas(
     return Nothing();
   }
 
-  const auto sd = aResult.mLayersImage->GetDesc();
-  if (!sd) return Nothing();
-  return ValidSurfaceDescriptorForRemoteCanvas2d(*sd);
+  if (const auto sd = aResult.mLayersImage->GetDesc()) {
+    Maybe<layers::SurfaceDescriptor> result;
+    if (ValidSurfaceDescriptorForRemoteCanvas2d(*sd, &result)) {
+      return result;
+    }
+  }
+  return Nothing();
 }
 
 // drawImage(in HTMLImageElement image, in float dx, in float dy);

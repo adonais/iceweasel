@@ -56,6 +56,10 @@
 #  include "XREShellData.h"
 #endif
 
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/java/GeckoThreadWrappers.h"
+#endif
+
 #ifdef XP_WIN
 #  include "mozilla/mscom/ProcessRuntime.h"
 #  include "mozilla/ScopeExit.h"
@@ -1375,6 +1379,12 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
       if (obs) {
         obs->Observe(nullptr, "quit-application-forced", nullptr);
       }
+
+#ifdef MOZ_WIDGET_ANDROID
+      MOZ_ASSERT(jni::IsAvailable());
+      java::GeckoThread::CheckAndSetState(java::GeckoThread::State::RUNNING(),
+                                          java::GeckoThread::State::EXITING());
+#endif
 
       JS_DropPrincipals(cx, gJSPrincipals);
       JS_SetAllNonReservedSlotsToUndefined(glob);

@@ -135,22 +135,21 @@ uint64_t BaselineInterpreterEntry::realmID() const {
   MOZ_CRASH("shouldn't be called for BaselineInterpreter entries");
 }
 
-void* SelfHostedSharedEntry::canonicalNativeAddrFor(void* ptr) const {
+void* RealmIndependentSharedEntry::canonicalNativeAddrFor(void* ptr) const {
   // TODO: We can't yet normalize Baseline addresses until we unify
   // BaselineScript's PCMappingEntries with JitcodeGlobalTable.
   return ptr;
 }
 
-bool SelfHostedSharedEntry::callStackAtAddr(void* ptr,
-                                            BytecodeLocationVector& results,
-                                            uint32_t* depth) const {
+bool RealmIndependentSharedEntry::callStackAtAddr(
+    void* ptr, BytecodeLocationVector& results, uint32_t* depth) const {
   JitSpew(JitSpew_Profiling,
           "Unexpected call - without a script, what can we do here?");
   return true;
 }
 
-uint32_t SelfHostedSharedEntry::callStackAtAddr(void* ptr, const char** results,
-                                                uint32_t maxResults) const {
+uint32_t RealmIndependentSharedEntry::callStackAtAddr(
+    void* ptr, const char** results, uint32_t maxResults) const {
   MOZ_ASSERT(containsPointer(ptr));
   MOZ_ASSERT(maxResults >= 1);
 
@@ -158,7 +157,7 @@ uint32_t SelfHostedSharedEntry::callStackAtAddr(void* ptr, const char** results,
   return 1;
 }
 
-uint64_t SelfHostedSharedEntry::realmID() const { return 0; }
+uint64_t RealmIndependentSharedEntry::realmID() const { return 0; }
 
 const JitcodeGlobalEntry* JitcodeGlobalTable::lookupForSampler(
     void* ptr, JSRuntime* rt, uint64_t samplePosInBuffer) {
@@ -199,7 +198,7 @@ JitcodeGlobalEntry* JitcodeGlobalTable::lookupInternal(void* ptr) {
 bool JitcodeGlobalTable::addEntry(UniqueJitcodeGlobalEntry entry) {
   MOZ_ASSERT(entry->isIon() || entry->isIonIC() || entry->isBaseline() ||
              entry->isBaselineInterpreter() || entry->isDummy() ||
-             entry->isSelfHostedShared());
+             entry->isRealmIndependentShared());
 
   // Assert the new entry does not have a code range that's equal to (or
   // contained in) one of the existing entries, because that would confuse the
@@ -343,8 +342,9 @@ uint32_t JitcodeGlobalEntry::callStackAtAddr(JSRuntime* rt, void* ptr,
       return asBaselineInterpreter().callStackAtAddr(ptr, results, maxResults);
     case Kind::Dummy:
       return asDummy().callStackAtAddr(rt, ptr, results, maxResults);
-    case Kind::SelfHostedShared:
-      return asSelfHostedShared().callStackAtAddr(ptr, results, maxResults);
+    case Kind::RealmIndependentShared:
+      return asRealmIndependentShared().callStackAtAddr(ptr, results,
+                                                        maxResults);
   }
   MOZ_CRASH("Invalid kind");
 }
@@ -359,8 +359,8 @@ uint64_t JitcodeGlobalEntry::realmID(JSRuntime* rt) const {
       return asBaseline().realmID();
     case Kind::Dummy:
       return asDummy().realmID();
-    case Kind::SelfHostedShared:
-      return asSelfHostedShared().realmID();
+    case Kind::RealmIndependentShared:
+      return asRealmIndependentShared().realmID();
     case Kind::BaselineInterpreter:
       break;
   }
@@ -380,8 +380,8 @@ void* JitcodeGlobalEntry::canonicalNativeAddrFor(JSRuntime* rt,
       return asBaseline().canonicalNativeAddrFor(ptr);
     case Kind::Dummy:
       return asDummy().canonicalNativeAddrFor(rt, ptr);
-    case Kind::SelfHostedShared:
-      return asSelfHostedShared().canonicalNativeAddrFor(ptr);
+    case Kind::RealmIndependentShared:
+      return asRealmIndependentShared().canonicalNativeAddrFor(ptr);
     case Kind::BaselineInterpreter:
       break;
   }
@@ -406,8 +406,8 @@ void JitcodeGlobalEntry::DestroyPolicy::operator()(JitcodeGlobalEntry* entry) {
     case JitcodeGlobalEntry::Kind::Dummy:
       js_delete(&entry->asDummy());
       break;
-    case JitcodeGlobalEntry::Kind::SelfHostedShared:
-      js_delete(&entry->asSelfHostedShared());
+    case JitcodeGlobalEntry::Kind::RealmIndependentShared:
+      js_delete(&entry->asRealmIndependentShared());
       break;
   }
 }
@@ -977,7 +977,7 @@ JS::ProfiledFrameHandle::frameKind() const {
   if (entry_.isBaseline()) {
     return JS::ProfilingFrameIterator::Frame_Baseline;
   }
-  if (entry_.isSelfHostedShared()) {
+  if (entry_.isRealmIndependentShared()) {
     return JS::ProfilingFrameIterator::Frame_Baseline;
   }
   return JS::ProfilingFrameIterator::Frame_Ion;

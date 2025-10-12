@@ -74,8 +74,71 @@ Cargo.lock to the HEAD version, run `git checkout -- Cargo.lock` or
 `hg revert Cargo.lock`.
 """
 
+# Some crates here would also be caught by the name prefix check,
+# but putting specific crates here allows for more granular advice
+# for what to use instead. Even more crates could have granular
+# advice here, but it's probably not worthwhile to provide granular
+# advice about crates whose vendoring is unlikely to be attempted,
+# such as the `rust_icu_` crates.
+PACKAGES_WE_DONT_WANT = {
+    "icu": "Use the specific ICU4X crate (crates whose name starts with icu_) instead of the metacrate.",
+    "rust_icu": "Use ICU4X (crates whose name starts with icu_) instead",
+    "unic": "Use ICU4X (crates whose name starts with icu_) instead",
+    "unicode-canonical-combining-class": "Use icu_normalizer instead",
+    "unicode-case-mapping": "Use icu_casemap instead",
+    "unicode-bidi-mirroring": "Use icu_properties instead",
+    "unicode-ccc": "Use icu_normalizer instead",
+    "unicode-general-category": "Use icu_properties instead",
+    "unicode-id": "Use icu_properties instead",
+    "unicode-id-start": "Use icu_properties instead",
+    # Impractical to require icu_properties instead of unicode-ident at this time.
+    #    "unicode-ident": "Use icu_properties instead",
+    "unicode-joining-type": "Use icu_properties instead",
+    "unicode-linebreak": "Use icu_segmenter instead",
+    # Exception until bug 1986265 is fixed.
+    #    "unicode-normalization": "Use icu_normalizer instead",
+    "unicode-properties": "Use icu_properties instead",
+    "unicode-script": "Use icu_properties instead",
+    "unicode-segmentation": "Use icu_segmenter instead",
+    "unicode-xid": "Use icu_properties instead",
+    "unicode_categories": "Use icu_properties instead",
+    "unicode_names": "Avoid including data for Unicode character names",
+    "unicode_names2": "Avoid including data for Unicode character names",
+    "feruca": "Use icu_collator instead",
+    "idna_mapping": "Make sure to use a version of idna_adapter that uses ICU4X",
+    "unic-bidi": "Use unicode-bidi instead",
+    "unic-idna": "Use idna instead",
+    "unic-normal": "Use icu_normalizer instead",
+    "unic-segment": "Use icu_segmenter instead",
+    "unic-ucd": "Use icu_properties instead",
+    "num-format": "Use icu_decimal instead",
+    "encoding": "Use encoding_rs instead",
+    # Impractical to require icu_casemap instead of unicase at this time.
+    #    "unicase": "Use icu_casemap instead",
+}
 
-PACKAGES_WE_DONT_WANT = {}
+PREFIXES_WE_DONT_WANT = {
+    "unicode-": "Use ICU4X (crates whose name starts with icu_) instead",
+    "unic-": "Use ICU4X (crates whose name starts with icu_) instead",
+    "rust_icu_": "Use ICU4X (crates whose name starts with icu_) instead",
+    "unicode_": "Use ICU4X (crates whose name starts with icu_) instead",
+}
+
+ALLOWED_DESPITE_PREFIX = {
+    "unicode-bidi",  # Out of scope for ICU4X; used with ICU4X data
+    "unicode-bidi-ffi",  # FFI for previous
+    "unicode-ident",  # Impractical to require icu_properties at this time
+    "unicode-normalization",  # Exception until bug 1986265 is fixed.
+    "unicode-width",  # icu_properties has the raw data but not the algorithm
+    "unic-char-property",  # Until https://github.com/denoland/rust-urlpattern/pull/67 is fixed
+    "unic-char-range",  # Until https://github.com/denoland/rust-urlpattern/pull/67 is fixed
+    "unic-common",  # Until https://github.com/denoland/rust-urlpattern/pull/67 is fixed
+    "unic-ucd-ident",  # Until https://github.com/denoland/rust-urlpattern/pull/67 is fixed
+    "unic-ucd-version",  # Until https://github.com/denoland/rust-urlpattern/pull/67 is fixed
+    "unic-langid",  # We want to migrate to icu_locale eventually
+    "unic-langid-ffi",  # FFI for previous
+    "unic-langid-impl",  # Implementation detail of unic-langid
+}
 
 PACKAGES_WE_ALWAYS_WANT_AN_OVERRIDE_OF = [
     "autocfg",
@@ -84,6 +147,16 @@ PACKAGES_WE_ALWAYS_WANT_AN_OVERRIDE_OF = [
     "windows",
     "windows-targets",
 ]
+
+
+def dont_want_package(name):
+    if reason := PACKAGES_WE_DONT_WANT.get(name):
+        return reason
+    if name in ALLOWED_DESPITE_PREFIX:
+        return None
+    for prefix, reason in PREFIXES_WE_DONT_WANT.items():
+        if name.startswith(prefix):
+            return reason
 
 
 class VendorRust(MozbuildObject):
@@ -266,6 +339,7 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
         ],
         "BSD-3-Clause": [
             "subtle",
+            "uritemplate-next",
         ],
     }
 
@@ -602,14 +676,14 @@ license file's hash.
                             "and comes from {source}.",
                         )
                         failed = True
-                elif package["name"] in PACKAGES_WE_DONT_WANT:
+                elif reason := dont_want_package(package["name"]):
                     self.log(
                         logging.ERROR,
                         "undesirable",
                         {
                             "crate": package["name"],
                             "version": package["version"],
-                            "reason": PACKAGES_WE_DONT_WANT[package["name"]],
+                            "reason": reason,
                         },
                         "Crate {crate} is not desirable: {reason}",
                     )

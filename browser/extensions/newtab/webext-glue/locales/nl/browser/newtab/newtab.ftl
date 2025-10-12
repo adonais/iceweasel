@@ -319,19 +319,32 @@ newtab-custom-pocket-subtitle = Uitzonderlijke inhoud, samengesteld door { -pock
 newtab-custom-stories-toggle =
     .label = Aanbevolen verhalen
     .description = Uitzonderlijke inhoud, verzameld door de { -brand-product-name }-familie
+newtab-custom-stories-personalized-toggle =
+    .label = Verhalen
+newtab-custom-stories-personalized-checkbox-label = Gepersonaliseerde verhalen op basis van uw activiteit
 newtab-custom-pocket-sponsored = Gesponsorde verhalen
 newtab-custom-pocket-show-recent-saves = Onlangs opgeslagen items tonen
 newtab-custom-recent-title = Recente activiteit
 newtab-custom-recent-subtitle = Een selectie van recente websites en inhoud
-newtab-custom-recent-toggle =
-    .label = Recente activiteit
-    .description = Een selectie van recente websites en inhoud
 newtab-custom-weather-toggle =
     .label = Weer
     .description = De weersverwachting van vandaag in een oogopslag
 newtab-custom-trending-search-toggle =
     .label = Trending zoekopdrachten
     .description = Populaire en veel gezochte onderwerpen
+newtab-custom-widget-weather-toggle =
+    .label = Weer
+newtab-custom-widget-trending-search-toggle =
+    .label = Trending zoekopdrachten
+newtab-custom-widget-lists-toggle =
+    .label = Lijsten
+newtab-custom-widget-timer-toggle =
+    .label = Timer
+newtab-custom-widget-section-title = Widgets
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Sluiten
+    .aria-label = Menu sluiten
 newtab-custom-close-button = Sluiten
 newtab-custom-settings = Meer instellingen beheren
 
@@ -344,6 +357,7 @@ newtab-wallpaper-custom-color = Kies een kleur
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = De afbeelding heeft de bestandsgroottelimiet van { $file_size } MB overschreden. Probeer een kleiner bestand te uploaden.
+newtab-wallpaper-error-upload-file-type = We konden uw bestand niet uploaden. Probeer het opnieuw met een afbeeldingsbestand.
 newtab-wallpaper-error-file-type = We konden uw bestand niet uploaden. Probeer het opnieuw met een ander bestandstype.
 newtab-wallpaper-light-red-panda = Rode panda
 newtab-wallpaper-light-mountain = Witte berg
@@ -449,7 +463,6 @@ newtab-weather-menu-change-location = Locatie wijzigen
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Locatie zoeken
     .aria-label = Locatie zoeken
-newtab-weather-change-location-search-input = Locatie zoeken
 newtab-weather-menu-weather-display = Weerweergave
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -596,8 +609,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Trending op Google
 newtab-trending-searches-show-trending =
     .title = Trending zoekopdrachten tonen
 newtab-trending-searches-hide-trending =
@@ -606,3 +617,76 @@ newtab-trending-searches-learn-more = Meer info
 newtab-trending-searches-dismiss = Trending zoekopdrachten verbergen
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Trending zoekopdrachten
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = De mogelijkheden zijn eindeloos. Voeg er een toe.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nieuw
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Voltooid ({ $number })
+newtab-widget-task-list-menu-copy = Kopiëren
+newtab-widget-lists-menu-edit = Lijstnaam bewerken
+newtab-widget-lists-menu-create = Een nieuwe lijst aanmaken
+newtab-widget-lists-menu-delete = Deze lijst verwijderen
+newtab-widget-lists-menu-copy = Lijst naar klembord kopiëren
+newtab-widget-lists-menu-hide = Alle lijsten verbergen
+newtab-widget-lists-menu-learn-more = Meer info
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Een item toevoegen
+newtab-widget-lists-input-error = Voeg tekst toe om een item toe te voegen.
+newtab-widget-lists-input-menu-open-link = Koppeling openen
+newtab-widget-lists-input-menu-move-up = Omhoog verplaatsen
+newtab-widget-lists-input-menu-move-down = Omlaag verplaatsen
+newtab-widget-lists-input-menu-delete = Verwijderen
+newtab-widget-lists-input-menu-edit = Bewerken
+newtab-widget-lists-name-label-default =
+    .label = Takenlijst
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Takenlijst
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Nieuwe lijst
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Timer
+newtab-widget-timer-notification-focus = De focustijd is om. Goed gedaan. Pauze?
+newtab-widget-timer-notification-break = Uw pauze is voorbij. Klaar om te focussen?
+newtab-widget-timer-notification-warning = Notificaties staan uit
+newtab-widget-timer-mode-focus =
+    .label = Focus
+newtab-widget-timer-mode-break =
+    .label = Pauze
+newtab-widget-timer-play =
+    .title = Afspelen
+newtab-widget-timer-pause =
+    .title = Pauzeren
+newtab-widget-timer-label-play =
+    .label = Afspelen
+newtab-widget-timer-label-pause =
+    .label = Pauzeren
+newtab-widget-timer-reset =
+    .title = Herinitialiseren
+newtab-widget-timer-menu-notifications = Notificaties uitschakelen
+newtab-widget-timer-menu-notifications-on = Notificaties inschakelen
+newtab-widget-timer-menu-hide = Timer verbergen
+newtab-widget-timer-menu-learn-more = Meer info
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Scrol voor meer
+newtab-widget-message-title = Blijf gefocust met lijsten en een ingebouwde timer
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Van snelle herinneringen tot dagelijkse to-do’s, en van focussessies tot lange pauzes – blijf bij de taak en op tijd.
+newtab-promo-card-title = { -brand-product-name } ondersteunen
+newtab-promo-card-body = Onze sponsors steunen onze missie om een beter web te bouwen
+newtab-promo-card-cta = Meer info
+newtab-promo-card-dismiss-button =
+    .title = Sluiten
+    .aria-label = Sluiten

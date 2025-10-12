@@ -145,9 +145,8 @@ struct FrameMessageMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormatSearchable("name", "Message Name",
-                                       MS::Format::UniqueString,
-                                       MS::Searchable::Searchable);
+    schema.AddKeyLabelFormat("name", "Message Name", MS::Format::UniqueString,
+                             MS::PayloadFlags::Searchable);
     schema.AddKeyLabelFormat("sync", "Sync", MS::Format::String);
     schema.SetTooltipLabel("FrameMessage - {marker.name}");
     schema.SetTableLabel("{marker.name} - {marker.data.name}");
@@ -539,7 +538,7 @@ void nsFrameMessageManager::SendSyncMessage(JSContext* aCx,
     return;
   }
 
-  nsTArray<StructuredCloneData> retval;
+  nsTArray<UniquePtr<StructuredCloneData>> retval;
 
   sSendingSyncMessage = true;
   bool ok = mCallback->DoSendBlockingMessage(aMessageName, data, &retval);
@@ -553,7 +552,7 @@ void nsFrameMessageManager::SendSyncMessage(JSContext* aCx,
   aResult.SetCapacity(len);
   for (uint32_t i = 0; i < len; ++i) {
     JS::Rooted<JS::Value> ret(aCx);
-    retval[i].Read(aCx, &ret, aError);
+    retval[i]->Read(aCx, &ret, aError);
     if (aError.Failed()) {
       MOZ_ASSERT(false, "Unable to read structured clone in SendMessage");
       return;
@@ -627,7 +626,7 @@ class MMListenerRemover {
 void nsFrameMessageManager::ReceiveMessage(
     nsISupports* aTarget, nsFrameLoader* aTargetFrameLoader, bool aTargetClosed,
     const nsAString& aMessage, bool aIsSync, StructuredCloneData* aCloneData,
-    nsTArray<StructuredCloneData>* aRetVal, ErrorResult& aError) {
+    nsTArray<UniquePtr<StructuredCloneData>>* aRetVal, ErrorResult& aError) {
   MOZ_ASSERT(aTarget);
   profiler_add_marker("ReceiveMessage", geckoprofiler::category::IPC, {},
                       FrameMessageMarker{}, aMessage, aIsSync);
@@ -788,9 +787,10 @@ void nsFrameMessageManager::ReceiveMessage(
       }
 
       if (aRetVal) {
-        StructuredCloneData* data = aRetVal->AppendElement();
-        data->InitScope(JS::StructuredCloneScope::DifferentProcess);
-        data->Write(cx, rval, aError);
+        UniquePtr<StructuredCloneData>* data =
+            aRetVal->AppendElement(MakeUnique<StructuredCloneData>());
+        (*data)->InitScope(JS::StructuredCloneScope::DifferentProcess);
+        (*data)->Write(cx, rval, aError);
         if (NS_WARN_IF(aError.Failed())) {
           aRetVal->RemoveLastElement();
           nsString msg = aMessage +
@@ -1451,9 +1451,9 @@ class ChildProcessMessageManagerCallback : public MessageManagerCallback {
     MOZ_COUNT_DTOR(ChildProcessMessageManagerCallback);
   }
 
-  bool DoSendBlockingMessage(const nsAString& aMessage,
-                             StructuredCloneData& aData,
-                             nsTArray<StructuredCloneData>* aRetVal) override {
+  bool DoSendBlockingMessage(
+      const nsAString& aMessage, StructuredCloneData& aData,
+      nsTArray<UniquePtr<StructuredCloneData>>* aRetVal) override {
     mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
     if (!cc) {
       return true;
@@ -1508,9 +1508,9 @@ class SameChildProcessMessageManagerCallback : public MessageManagerCallback {
     MOZ_COUNT_DTOR(SameChildProcessMessageManagerCallback);
   }
 
-  bool DoSendBlockingMessage(const nsAString& aMessage,
-                             StructuredCloneData& aData,
-                             nsTArray<StructuredCloneData>* aRetVal) override {
+  bool DoSendBlockingMessage(
+      const nsAString& aMessage, StructuredCloneData& aData,
+      nsTArray<UniquePtr<StructuredCloneData>>* aRetVal) override {
     SameProcessMessageQueue* queue = SameProcessMessageQueue::Get();
     queue->Flush();
 

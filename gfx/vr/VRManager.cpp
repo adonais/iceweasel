@@ -320,7 +320,7 @@ void VRManager::StartTasks() {
     mTaskTimer->InitWithNamedFuncCallback(
         TaskTimerCallback, this, mTaskInterval,
         nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP,
-        "VRManager::TaskTimerCallback");
+        "VRManager::TaskTimerCallback"_ns);
   }
 }
 

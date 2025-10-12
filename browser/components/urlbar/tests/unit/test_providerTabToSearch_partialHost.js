@@ -65,7 +65,7 @@ add_task(async function test() {
       matches: [
         makeSearchResult(context, {
           engineName: Services.search.defaultEngine.name,
-          providerName: "HeuristicFallback",
+          providerName: "UrlbarProviderHeuristicFallback",
           heuristic: true,
         }),
         makeSearchResult(context, {
@@ -74,7 +74,7 @@ add_task(async function test() {
           searchUrlDomainWithoutSuffix: "en.example.",
           providesSearchMode: true,
           query: "",
-          providerName: "TabToSearch",
+          providerName: "UrlbarProviderTabToSearch",
           satisfiesAutofillThreshold: true,
         }),
         makeBookmarkResult(context, {
@@ -108,7 +108,7 @@ add_task(async function test() {
       matches: [
         makeSearchResult(context, {
           engineName: Services.search.defaultEngine.name,
-          providerName: "HeuristicFallback",
+          providerName: "UrlbarProviderHeuristicFallback",
           heuristic: true,
         }),
         makeSearchResult(context, {
@@ -117,7 +117,7 @@ add_task(async function test() {
           searchUrlDomainWithoutSuffix: "www.it.mochi.",
           providesSearchMode: true,
           query: "",
-          providerName: "TabToSearch",
+          providerName: "UrlbarProviderTabToSearch",
           satisfiesAutofillThreshold: true,
         }),
         makeBookmarkResult(context, {
@@ -157,7 +157,7 @@ add_task(async function test() {
           uri: "https://foo.com/",
           title: "bookmark",
           heuristic: true,
-          providerName: "Autofill",
+          providerName: "UrlbarProviderAutofill",
         }),
         makeSearchResult(context, {
           engineName: "TestEngine3",
@@ -165,7 +165,7 @@ add_task(async function test() {
           searchUrlDomainWithoutSuffix: "search.foo.",
           providesSearchMode: true,
           query: "",
-          providerName: "TabToSearch",
+          providerName: "UrlbarProviderTabToSearch",
           satisfiesAutofillThreshold: true,
         }),
       ],
@@ -182,7 +182,7 @@ add_task(async function test() {
     let controller = UrlbarTestUtils.newMockController();
     await UrlbarProvidersManager.startQuery(context, controller);
     Assert.ok(context.results[0].heuristic, "Check heuristic result");
-    Assert.notEqual(context.results[0].providerName, "Autofill");
+    Assert.notEqual(context.results[0].providerName, "UrlbarProviderAutofill");
   }
 
   info("Tab-to-search is not shown when an unrelated site is autofilled.");
@@ -230,7 +230,7 @@ add_task(async function test() {
         uri: `${wwwUrl}/`,
         title: "Example",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
       // Note that tab-to-search is not shown.
       makeBookmarkResult(context, {
@@ -252,7 +252,7 @@ add_task(async function test() {
   let controller = UrlbarTestUtils.newMockController();
   await UrlbarProvidersManager.startQuery(context, controller);
   Assert.ok(context.results[0].heuristic, "Check heuristic result");
-  Assert.notEqual(context.results[0].providerName, "Autofill");
+  Assert.notEqual(context.results[0].providerName, "UrlbarProviderAutofill");
 
   await cleanupPlaces();
 });

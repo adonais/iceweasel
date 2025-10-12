@@ -140,11 +140,6 @@ sealed class AppAction : Action {
     data object DeleteAndQuitStarted : AppAction()
 
     /**
-     * Action dispatched when the current site's data has been cleared.
-     */
-    data object SiteDataCleared : AppAction()
-
-    /**
      * Action dispatched when the current tab has been closed.
      *
      * @property isPrivate Whether the closed tab was private or not.
@@ -403,11 +398,6 @@ sealed class AppAction : Action {
          * [ShortcutAction] dispatched when a shortcut is added.
          */
         data object ShortcutAdded : ShortcutAction()
-
-        /**
-         * [ShortcutAction] dispatched when a shortcut is removed.
-         */
-        data object ShortcutRemoved : ShortcutAction()
     }
 
     /**
@@ -763,5 +753,25 @@ sealed class AppAction : Action {
             val searchEngine: SearchEngine,
             val isUserSelected: Boolean,
         ) : SearchAction()
+    }
+
+    /**
+     * [AppAction]s related to menu notifications. These actions are used to manage
+     * the display and removal of notifications within the application's menu.
+     */
+    sealed class MenuNotification : AppAction() {
+        /**
+         * Dispatched to add a new notification to the menu.
+         *
+         * @property notification The [SupportedMenuNotifications] type to be displayed.
+         */
+        data class AddMenuNotification(val notification: SupportedMenuNotifications) : MenuNotification()
+
+        /**
+         * Dispatched to remove an existing notification from the menu.
+         *
+         * @property notification The [SupportedMenuNotifications] type to be removed.
+         */
+        data class RemoveMenuNotification(val notification: SupportedMenuNotifications) : MenuNotification()
     }
 }

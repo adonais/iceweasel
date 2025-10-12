@@ -12,6 +12,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
@@ -20,14 +21,19 @@ import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
+import mozilla.telemetry.glean.private.NoReasonCodes
+import mozilla.telemetry.glean.private.PingType
 import mozilla.telemetry.glean.testing.GleanTestRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.experiments.nimbus.internal.EnrolledExperiment
 import org.mozilla.fenix.GleanMetrics.BrokenSiteReport
 import org.mozilla.fenix.GleanMetrics.BrokenSiteReportBrowserInfo
 import org.mozilla.fenix.GleanMetrics.BrokenSiteReportBrowserInfoApp
@@ -56,11 +62,53 @@ class WebCompatReporterSubmissionMiddlewareTest {
     @get:Rule
     val gleanTestRule = GleanTestRule(testContext)
 
+    @Before
+    fun setUp() {
+        // TODO(bug 1934931): Glean currently does not re-register custom pings
+        // when the GleanTestRule automatically resets Glean after each test.
+        // We do it manually here for the tests to work.
+        val brokenSiteReport: PingType<NoReasonCodes> = PingType<NoReasonCodes>(
+            name = "broken-site-report",
+            includeClientId = false,
+            sendIfEmpty = false,
+            preciseTimestamps = true,
+            includeInfoSections = true,
+            enabled = true,
+            schedulesPings = listOf(),
+            reasonCodes = listOf(),
+            followsCollectionEnabled = true,
+            uploaderCapabilities = listOf(),
+        )
+    }
+
     @Test
     fun `GIVEN the URL is not changed WHEN WebCompatInfo is retrieved successfully THEN all report broken site pings are submitted`() = runTest {
-        val store = createStore()
+        val nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(
+            activeExperiments = listOf(
+                EnrolledExperiment(
+                    featureIds = listOf(),
+                    slug = "slug1",
+                    userFacingName = "",
+                    userFacingDescription = "",
+                    branchSlug = "",
+                ),
+                EnrolledExperiment(
+                    featureIds = listOf(),
+                    slug = "slug2",
+                    userFacingName = "",
+                    userFacingDescription = "",
+                    branchSlug = "",
+                ),
+            ),
+            experimentBranchLambda = { it },
+        )
 
-        Pings.brokenSiteReport.testBeforeNextSubmit {
+        val store = createStore(
+            enteredUrl = "https://www.mozilla.org",
+            nimbusExperimentsProvider = nimbusExperimentsProvider,
+        )
+
+        val job = Pings.brokenSiteReport.testBeforeNextSubmit {
             assertEquals(
                 "basic",
                 BrokenSiteReportTabInfoAntitracking.blockList.testGetValue(),
@@ -91,12 +139,38 @@ class WebCompatReporterSubmissionMiddlewareTest {
             )
 
             assertEquals(
-                BrokenSiteReportBrowserInfo.AddonsObject(),
+                buildJsonArray {
+                    addJsonObject {
+                        put("id", "id.temp")
+                        put("name", "name1")
+                        put("temporary", true)
+                        put("version", "version1")
+                    }
+
+                    addJsonObject {
+                        put("id", "id.perm")
+                        put("name", "name2")
+                        put("temporary", false)
+                        put("version", "version2")
+                    }
+                },
                 BrokenSiteReportBrowserInfo.addons.testGetValue(),
             )
 
             assertEquals(
-                BrokenSiteReportBrowserInfo.ExperimentsObject(),
+                buildJsonArray {
+                    addJsonObject {
+                        put("branch", "slug1")
+                        put("kind", "nimbusExperiment")
+                        put("slug", "slug1")
+                    }
+
+                    addJsonObject {
+                        put("branch", "slug2")
+                        put("kind", "nimbusExperiment")
+                        put("slug", "slug2")
+                    }
+                },
                 BrokenSiteReportBrowserInfo.experiments.testGetValue(),
             )
 
@@ -195,7 +269,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
 
             assertEquals(store.state.enteredUrl, BrokenSiteReport.url.testGetValue())
             assertEquals(
-                store.state.reason?.name,
+                store.state.reason?.name?.lowercase(),
                 BrokenSiteReport.breakageCategory.testGetValue(),
             )
             assertEquals(
@@ -205,8 +279,10 @@ class WebCompatReporterSubmissionMiddlewareTest {
         }
 
         store.dispatch(WebCompatReporterAction.SendReportClicked)
+        job.join()
     }
 
+    @Test
     fun `WHEN the report is sent successfully THEN appState is updated`() {
         val store = createStore()
 
@@ -217,9 +293,32 @@ class WebCompatReporterSubmissionMiddlewareTest {
 
     @Test
     fun `GIVEN the URL is changed WHEN WebCompatInfo is retrieved successfully THEN only non tab related report broken site pings are submitted`() = runTest {
-        val store = createStore()
+        val nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(
+            activeExperiments = listOf(
+                EnrolledExperiment(
+                    featureIds = listOf(),
+                    slug = "slug1",
+                    userFacingName = "",
+                    userFacingDescription = "",
+                    branchSlug = "",
+                ),
+                EnrolledExperiment(
+                    featureIds = listOf(),
+                    slug = "slug2",
+                    userFacingName = "",
+                    userFacingDescription = "",
+                    branchSlug = "",
+                ),
+            ),
+            experimentBranchLambda = { it },
+        )
 
-        Pings.brokenSiteReport.testBeforeNextSubmit {
+        val store = createStore(
+            enteredUrl = "https://example.com",
+            nimbusExperimentsProvider = nimbusExperimentsProvider,
+        )
+
+        val job = Pings.brokenSiteReport.testBeforeNextSubmit {
             assertNull(BrokenSiteReportTabInfoAntitracking.blockList.testGetValue())
             assertNull(BrokenSiteReportTabInfoAntitracking.btpHasPurgedSite.testGetValue())
             assertNull(BrokenSiteReportTabInfoAntitracking.etpCategory.testGetValue())
@@ -228,16 +327,39 @@ class WebCompatReporterSubmissionMiddlewareTest {
             assertNull(BrokenSiteReportTabInfoAntitracking.hasTrackingContentBlocked.testGetValue())
             assertNull(BrokenSiteReportTabInfoAntitracking.isPrivateBrowsing.testGetValue())
 
-            assertNull(BrokenSiteReportBrowserInfo.addons.testGetValue())
-            assertNull(BrokenSiteReportBrowserInfo.experiments.testGetValue())
-
             assertEquals(
-                BrokenSiteReportBrowserInfo.AddonsObject(),
+                buildJsonArray {
+                    addJsonObject {
+                        put("id", "id.temp")
+                        put("name", "name1")
+                        put("temporary", true)
+                        put("version", "version1")
+                    }
+
+                    addJsonObject {
+                        put("id", "id.perm")
+                        put("name", "name2")
+                        put("temporary", false)
+                        put("version", "version2")
+                    }
+                },
                 BrokenSiteReportBrowserInfo.addons.testGetValue(),
             )
 
             assertEquals(
-                BrokenSiteReportBrowserInfo.ExperimentsObject(),
+                buildJsonArray {
+                    addJsonObject {
+                        put("branch", "slug1")
+                        put("kind", "nimbusExperiment")
+                        put("slug", "slug1")
+                    }
+
+                    addJsonObject {
+                        put("branch", "slug2")
+                        put("kind", "nimbusExperiment")
+                        put("slug", "slug2")
+                    }
+                },
                 BrokenSiteReportBrowserInfo.experiments.testGetValue(),
             )
 
@@ -265,16 +387,6 @@ class WebCompatReporterSubmissionMiddlewareTest {
             assertEquals(
                 """[{"id":"monitor1"},{"id":"monitor2"},{"id":"monitor3"}]""",
                 BrokenSiteReportBrowserInfoGraphics.monitorsJson.testGetValue(),
-            )
-
-            assertEquals(
-                BrokenSiteReportBrowserInfo.AddonsObject(),
-                BrokenSiteReportBrowserInfo.addons.testGetValue(),
-            )
-
-            assertEquals(
-                BrokenSiteReportBrowserInfo.ExperimentsObject(),
-                BrokenSiteReportBrowserInfo.experiments.testGetValue(),
             )
 
             assertEquals(
@@ -330,7 +442,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
             assertNotEquals(store.state.tabUrl, BrokenSiteReport.url.testGetValue())
             assertEquals(store.state.enteredUrl, BrokenSiteReport.url.testGetValue())
             assertEquals(
-                store.state.reason?.name,
+                store.state.reason?.name?.lowercase(),
                 BrokenSiteReport.breakageCategory.testGetValue(),
             )
             assertEquals(
@@ -342,17 +454,34 @@ class WebCompatReporterSubmissionMiddlewareTest {
         }
 
         store.dispatch(WebCompatReporterAction.SendReportClicked)
+        job.join()
     }
 
     @Test
-    fun `WHEN WebCompatInfo is not retrieved successfully THEN only the form fields are submitted`() = runTest {
+    fun `GIVEN WebCompatInfo is not retrieved successfully THEN only the form fields and active experiments are submitted`() = runTest {
         val webCompatReporterRetrievalService = object : WebCompatReporterRetrievalService {
             override suspend fun retrieveInfo(): WebCompatInfoDto? = null
         }
 
-        val store = createStore(service = webCompatReporterRetrievalService)
+        val nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(
+            activeExperiments = listOf(
+                EnrolledExperiment(
+                    featureIds = listOf(),
+                    slug = "slug1",
+                    userFacingName = "",
+                    userFacingDescription = "",
+                    branchSlug = "",
+                ),
+            ),
+            experimentBranchLambda = { it },
+        )
 
-        Pings.brokenSiteReport.testBeforeNextSubmit {
+        val store = createStore(
+            service = webCompatReporterRetrievalService,
+            nimbusExperimentsProvider = nimbusExperimentsProvider,
+        )
+
+        val job = Pings.brokenSiteReport.testBeforeNextSubmit {
             assertNull(BrokenSiteReportTabInfoAntitracking.blockList.testGetValue())
             assertNull(BrokenSiteReportTabInfoAntitracking.btpHasPurgedSite.testGetValue())
             assertNull(BrokenSiteReportTabInfoAntitracking.etpCategory.testGetValue())
@@ -362,7 +491,6 @@ class WebCompatReporterSubmissionMiddlewareTest {
             assertNull(BrokenSiteReportTabInfoAntitracking.isPrivateBrowsing.testGetValue())
 
             assertNull(BrokenSiteReportBrowserInfo.addons.testGetValue())
-            assertNull(BrokenSiteReportBrowserInfo.experiments.testGetValue())
 
             assertNull(BrokenSiteReportBrowserInfoApp.defaultUseragentString.testGetValue())
 
@@ -393,7 +521,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
 
             assertEquals(store.state.enteredUrl, BrokenSiteReport.url.testGetValue())
             assertEquals(
-                store.state.reason?.name,
+                store.state.reason?.name?.lowercase(),
                 BrokenSiteReport.breakageCategory.testGetValue(),
             )
             assertEquals(
@@ -401,10 +529,46 @@ class WebCompatReporterSubmissionMiddlewareTest {
                 BrokenSiteReport.description.testGetValue(),
             )
 
+            assertEquals(
+                buildJsonArray {
+                    addJsonObject {
+                        put("branch", "slug1")
+                        put("kind", "nimbusExperiment")
+                        put("slug", "slug1")
+                    }
+                },
+                BrokenSiteReportBrowserInfo.experiments.testGetValue(),
+            )
+
             assertNull(BrokenSiteReportTabInfo.useragentString.testGetValue())
         }
 
         store.dispatch(WebCompatReporterAction.SendReportClicked)
+        job.join()
+    }
+
+    @Test
+    fun `GIVEN Nimbus has no active experiments WHEN submitting a report THEN the experiments metric is empty`() = runTest {
+        val nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(activeExperiments = emptyList())
+
+        val store = createStore(
+            service = FakeWebCompatReporterRetrievalService(),
+            nimbusExperimentsProvider = nimbusExperimentsProvider,
+        )
+
+        val job = Pings.brokenSiteReport.testBeforeNextSubmit {
+            val experiments = BrokenSiteReportBrowserInfo.experiments.testGetValue()
+
+            assertNotNull(experiments)
+
+            assertEquals(
+                buildJsonArray { },
+                experiments,
+            )
+        }
+
+        store.dispatch(WebCompatReporterAction.SendReportClicked)
+        job.join()
     }
 
     @Test
@@ -461,12 +625,14 @@ class WebCompatReporterSubmissionMiddlewareTest {
     }
 
     private fun createStore(
+        enteredUrl: String = "https://www.mozilla.org",
         service: WebCompatReporterRetrievalService = FakeWebCompatReporterRetrievalService(),
         webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender = FakeWebCompatReporterMoreInfoSender(),
+        nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(),
     ): WebCompatReporterStore {
         val engineSession: EngineSession = mock()
         val tab = createTab(
-            url = "https://www.mozilla.org",
+            url = "",
             id = "test-tab",
             engineSession = engineSession,
         )
@@ -479,8 +645,8 @@ class WebCompatReporterSubmissionMiddlewareTest {
 
         return WebCompatReporterStore(
             initialState = WebCompatReporterState(
-                tabUrl = "https://www.mozilla.org",
-                enteredUrl = "https://www.mozilla.org/en-US/firefox/new/",
+                tabUrl = "",
+                enteredUrl = enteredUrl,
                 reason = WebCompatReporterState.BrokenSiteReason.Slow,
                 problemDescription = "",
             ),
@@ -489,6 +655,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
                     browserStore = browserStore,
                     service = service,
                     webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
+                    nimbusExperimentsProvider = nimbusExperimentsProvider,
                 ),
             ),
         )
@@ -498,12 +665,14 @@ class WebCompatReporterSubmissionMiddlewareTest {
         browserStore: BrowserStore,
         service: WebCompatReporterRetrievalService,
         webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
+        nimbusExperimentsProvider: NimbusExperimentsProvider = FakeNimbusExperimentsProvider(),
     ) = WebCompatReporterSubmissionMiddleware(
         appStore = appStore,
         browserStore = browserStore,
         webCompatReporterRetrievalService = service,
         webCompatReporterMoreInfoSender = webCompatReporterMoreInfoSender,
         scope = coroutinesTestRule.scope,
+        nimbusExperimentsProvider = nimbusExperimentsProvider,
     )
 
     private class FakeWebCompatReporterRetrievalService : WebCompatReporterRetrievalService {
@@ -521,15 +690,21 @@ class WebCompatReporterSubmissionMiddlewareTest {
                 ),
                 browser = WebCompatInfoDto.WebCompatBrowserDto(
                     addons = listOf(
-                        WebCompatInfoDto.WebCompatBrowserDto.AddonDto(id = "id.temp", name = "name1", temporary = true, version = "version1"),
-                        WebCompatInfoDto.WebCompatBrowserDto.AddonDto(id = "id.perm", name = "name2", temporary = false, version = "version2"),
+                        WebCompatInfoDto.WebCompatBrowserDto.AddonDto(
+                            id = "id.temp",
+                            name = "name1",
+                            temporary = true,
+                            version = "version1",
+                        ),
+                        WebCompatInfoDto.WebCompatBrowserDto.AddonDto(
+                            id = "id.perm",
+                            name = "name2",
+                            temporary = false,
+                            version = "version2",
+                        ),
                     ),
                     app = WebCompatInfoDto.WebCompatBrowserDto.AppDto(
                         defaultUserAgent = "testDefaultUserAgent",
-                    ),
-                    experiments = listOf(
-                        WebCompatInfoDto.WebCompatBrowserDto.ExperimentDto(branch = "branch1", slug = "slug1", kind = "kind1"),
-                        WebCompatInfoDto.WebCompatBrowserDto.ExperimentDto(branch = "branch2", slug = "slug2", kind = "kind2"),
                     ),
                     graphics = WebCompatInfoDto.WebCompatBrowserDto.GraphicsDto(
                         devices = buildJsonArray {

@@ -39,9 +39,6 @@ function initStatisticsData() {
  */
 function Statistics() {
   return {
-    // Tracks when the statistics panel is open so we only process requests
-    // for the reducer then.
-    mutableStatisticsOpen: false,
     // This list of requests is used to help process the statistics data.
     // Changes to this list should not trigger updates.
     mutableRequests: [],
@@ -52,6 +49,9 @@ function Statistics() {
       emptyCacheData: initStatisticsData(),
       primedCacheData: initStatisticsData(),
     },
+    // Tracks when the statistics panel is open so we only process requests
+    // for the reducer then.
+    statisticsPanelOpen: false,
   };
 }
 
@@ -61,20 +61,20 @@ function Statistics() {
 function statisticsReducer(state = Statistics(), action) {
   switch (action.type) {
     case OPEN_STATISTICS: {
-      if (state.mutableStatisticsOpen !== action.open) {
-        state.mutableStatisticsOpen = action.open;
+      if (state.statisticsPanelOpen !== action.open) {
+        state.statisticsPanelOpen = action.open;
       }
       return state;
     }
     case ADD_REQUEST: {
-      if (!state.mutableStatisticsOpen) {
+      if (!state.statisticsPanelOpen) {
         return state;
       }
       return addRequest(state, action);
     }
 
     case UPDATE_REQUEST: {
-      if (!state.mutableStatisticsOpen) {
+      if (!state.statisticsPanelOpen) {
         return state;
       }
       const index = state.mutableRequests.findIndex(
@@ -96,7 +96,7 @@ function statisticsReducer(state = Statistics(), action) {
     case CLEAR_REQUESTS: {
       return {
         ...Statistics(),
-        mutableStatisticsOpen: state.mutableStatisticsOpen,
+        statisticsPanelOpen: state.statisticsPanelOpen,
       };
     }
 
@@ -155,13 +155,13 @@ function updateStatisticsData(state, request) {
   state.mutableUsedRequests.add(request.id);
 
   return {
-    mutableStatisticsOpen: state.mutableStatisticsOpen,
     mutableRequests: state.mutableRequests,
     mutableUsedRequests: state.mutableUsedRequests,
     statisticsData: {
       emptyCacheData: newEmptyCacheData,
       primedCacheData: newPrimedCacheData,
     },
+    statisticsPanelOpen: state.statisticsPanelOpen,
   };
 }
 

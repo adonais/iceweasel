@@ -536,6 +536,11 @@ class WindowManager {
     const { browsingContext } = data;
 
     const window = this.#getBrowsingContextWindow(browsingContext);
+    if (!window) {
+      // Short-lived iframes might already be disconnected from their parent
+      // window.
+      return;
+    }
     this.#clientWindowIds.set(browsingContext, this.getIdForWindow(window));
   };
 }

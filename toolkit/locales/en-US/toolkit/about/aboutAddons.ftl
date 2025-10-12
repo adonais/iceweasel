@@ -509,9 +509,10 @@ recent-updates-heading = Recent Updates
 release-notes-loading = Loading…
 release-notes-error = Sorry, but there was an error loading the release notes.
 
+addon-permissions-heading = Permissions
 addon-permissions-empty2 = This extension doesn’t require any permissions.
-addon-permissions-required = Required permissions for core functionality:
-addon-permissions-optional = Optional permissions for added functionality:
+addon-permissions-required-label = Required:
+addon-permissions-optional-label = Optional:
 addon-permissions-learnmore = Learn more about permissions
 
 recommended-extensions-heading = Recommended Extensions
@@ -595,8 +596,10 @@ plugins-widevine-description = This plugin enables playback of encrypted media i
 ## Headings for the Permissions tab in `about:addons` when the data collection
 ## feature is enabled.
 
-addon-permissions-required-data-collection = Required data collection:
-addon-permissions-optional-data-collection = Optional data collection:
+addon-permissions-data-collection-heading = Data Collection
+addon-permissions-data-collection-empty = The developer says this extension doesn’t require data collection.
+addon-data-collection-provided = Info provided by the extension developer
+addon-data-collection-learnmore = Learn more about data collection
 
 # Name of the Permissions tab in `about:addons` when the data collection feature is enabled.
 permissions-data-addon-button = Permissions and data

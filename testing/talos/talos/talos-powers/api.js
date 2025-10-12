@@ -181,7 +181,7 @@ TalosPowersService.prototype = {
    *        Marker name.
    */
   profilerSubtestStart(marker = null) {
-    profilerSubtestStartTime = Cu.now();
+    profilerSubtestStartTime = ChromeUtils.now();
 
     if (marker) {
       this.addInstantMarker(marker);

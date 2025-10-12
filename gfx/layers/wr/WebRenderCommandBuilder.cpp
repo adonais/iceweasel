@@ -2964,6 +2964,8 @@ bool WebRenderCommandBuilder::PushItemAsImage(
 
   wr::LayoutRect dest = wr::ToLayoutRect(imageRect);
   auto rendering = wr::ToImageRendering(aItem->Frame()->UsedImageRendering());
+  mHitTestInfoManager.ProcessItemAsImage(aItem, dest, aBuilder,
+                                         aDisplayListBuilder);
   aBuilder.PushImage(dest, dest, !aItem->BackfaceIsHidden(), false, rendering,
                      fallbackData->GetImageKey().value());
   return true;

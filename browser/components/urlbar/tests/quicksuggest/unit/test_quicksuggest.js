@@ -171,6 +171,7 @@ function expectedHttpResult() {
     blockId: suggestion.id,
     advertiser: suggestion.advertiser,
     categories: suggestion.serp_categories,
+    suggestedIndex: -1,
   });
 }
 
@@ -185,6 +186,7 @@ function expectedHttpsResult() {
     clickUrl: suggestion.click_url,
     blockId: suggestion.id,
     advertiser: suggestion.advertiser,
+    suggestedIndex: -1,
   });
 }
 
@@ -314,7 +316,7 @@ add_task(async function sponsoredOnly_sponsored() {
   });
   await check_results({
     context,
-    matches: [QuickSuggestTestUtils.ampResult()],
+    matches: [QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 })],
   });
 
   // The title should include the full keyword and em dash, and the part of the
@@ -359,7 +361,7 @@ add_task(async function both_sponsored() {
   });
   await check_results({
     context,
-    matches: [QuickSuggestTestUtils.ampResult()],
+    matches: [QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 })],
   });
 });
 
@@ -432,7 +434,7 @@ add_task(async function caseInsensitiveAndLeadingSpaces() {
   });
   await check_results({
     context,
-    matches: [QuickSuggestTestUtils.ampResult()],
+    matches: [QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 })],
   });
 });
 
@@ -457,7 +459,9 @@ add_task(async function emptySearchStringsAndSpaces() {
       matches: [],
     });
     Assert.ok(
-      !(await UrlbarProviderQuickSuggest.isActive(context)),
+      !(await UrlbarProvidersManager.getProvider(
+        UrlbarProviderQuickSuggest.name
+      ).isActive(context)),
       "Provider should not be active for search string: " + msg
     );
   }
@@ -753,6 +757,7 @@ add_task(async function maxResults() {
         keyword: "maxresults",
         title: "maxresults 0",
         url: "https://example.com/maxresults/0",
+        suggestedIndex: -1,
       }),
     ],
   });
@@ -788,6 +793,7 @@ add_task(async function manySuggestResults_visible() {
         keyword: "maxresults",
         title: "maxresults 0",
         url: "https://example.com/maxresults/0",
+        suggestedIndex: -1,
       }),
     ],
     expectedOtherResultsCount: UrlbarPrefs.get("maxRichResults") - 1,
@@ -813,6 +819,7 @@ add_task(async function manySuggestResults_hiddenExposures() {
         keyword: "maxresults",
         title: "maxresults " + index,
         url: "https://example.com/maxresults/" + index,
+        suggestedIndex: -1,
       }),
       exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
     });
@@ -873,8 +880,8 @@ async function doManySuggestResultsTest({
       isPrivate: false,
     }),
     matches: [
-      ...expectedSuggestResults,
       ...otherResults.slice(0, expectedOtherResultsCount),
+      ...expectedSuggestResults,
     ],
   });
 
@@ -1217,7 +1224,10 @@ add_task(async function dismissResult() {
 
   let tests = [
     // [suggestion, expected result]
-    [REMOTE_SETTINGS_RESULTS[0], QuickSuggestTestUtils.ampResult()],
+    [
+      REMOTE_SETTINGS_RESULTS[0],
+      QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
+    ],
     [REMOTE_SETTINGS_RESULTS[1], QuickSuggestTestUtils.wikipediaResult()],
     [REMOTE_SETTINGS_RESULTS[2], expectedHttpResult()],
     [REMOTE_SETTINGS_RESULTS[3], expectedHttpsResult()],
@@ -1446,7 +1456,7 @@ add_task(async function tabToSearch() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
         satisfiesAutofillThreshold: true,
       }),
       // Suggest best match
@@ -1619,6 +1629,7 @@ add_task(async function keywordLengthThreshold() {
               title: "Suggestion with 1-char keyword",
               url: "http://example.com/1-char-keyword",
               originalUrl: "http://example.com/1-char-keyword",
+              suggestedIndex: -1,
             }),
           ],
     });
@@ -1724,6 +1735,7 @@ add_task(async function ampTopPickCharThreshold() {
         });
       } else {
         expectedResult = QuickSuggestTestUtils.ampResult({
+          suggestedIndex: -1,
           keyword,
           fullKeyword,
           title: "AMP suggestion with full keyword and prefix keywords",
@@ -1786,6 +1798,7 @@ add_task(async function ampTopPickCharThreshold_zero() {
         fullKeyword,
         title: "AMP suggestion with full keyword and prefix keywords",
         url: "https://example.com/amp-full-keyword",
+        suggestedIndex: -1,
       });
     }
 
@@ -1940,7 +1953,7 @@ add_task(async function offline_amp_disabled() {
         providers: [UrlbarProviderQuickSuggest.name],
         isPrivate: false,
       }),
-      matches: [QuickSuggestTestUtils.ampResult()],
+      matches: [QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 })],
     });
 
     // Now disable the pref and try again.
@@ -2026,6 +2039,7 @@ add_task(async function online_amp_disabled() {
             icon: "https://example.com/amp-icon",
             iabCategory: "22 - Shopping",
             requestId: "request_id",
+            suggestedIndex: -1,
           }),
         ],
       });

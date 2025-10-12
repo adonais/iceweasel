@@ -1207,6 +1207,16 @@ export var Policies = {
           false // preserveAllowListSettings
         );
         ContentBlockingPrefs.matchCBCategory();
+        // We don't want to lock the new exceptions UI unless
+        // that policy was explicitly set.
+        if (param.Category == "strict") {
+          Services.prefs.unlockPref(
+            "privacy.trackingprotection.allow_list.baseline.enabled"
+          );
+          Services.prefs.unlockPref(
+            "privacy.trackingprotection.allow_list.convenience.enabled"
+          );
+        }
       }
     },
     onBeforeUIStartup(manager, param) {
@@ -1590,6 +1600,25 @@ export var Policies = {
           );
         }
       })();
+    },
+  },
+
+  GenerativeAI: {
+    onBeforeAddons(manager, param) {
+      const defaultValue = "Enabled" in param ? param.Enabled : undefined;
+
+      const features = [
+        ["Chatbot", "browser.ml.chat.enabled"],
+        ["LinkPreviews", "browser.ml.linkPreview.optin"],
+        ["TabGroups", "browser.tabs.groups.smart.userEnabled"],
+      ];
+
+      for (const [key, pref] of features) {
+        const value = key in param ? param[key] : defaultValue;
+        if (value !== undefined) {
+          PoliciesUtils.setDefaultPref(pref, value, param.Locked);
+        }
+      }
     },
   },
 
@@ -2097,6 +2126,7 @@ export var Policies = {
         "security.tls.hello_downgrade_check",
         "security.tls.version.enable-deprecated",
         "security.warn_submit_secure_to_insecure",
+        "security.webauthn.always_allow_direct_attestation",
       ];
       const blockedPrefs = [
         "app.update.channel",
@@ -2799,6 +2829,12 @@ export var Policies = {
   UseSystemPrintDialog: {
     onBeforeAddons(manager, param) {
       setAndLockPref("print.prefer_system_dialog", param);
+    },
+  },
+
+  VisualSearchEnabled: {
+    onBeforeAddons(manager, param) {
+      setAndLockPref("browser.search.visualSearch.featureGate", param);
     },
   },
 

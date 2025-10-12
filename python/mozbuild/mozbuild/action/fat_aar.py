@@ -30,7 +30,6 @@ def _download_zip(distdir, arch):
     jobs = {
         "arm64-v8a": "android-aarch64-opt",
         "armeabi-v7a": "android-arm-opt",
-        "x86": "android-x86-opt",
         "x86_64": "android-x86_64-opt",
     }
 
@@ -138,7 +137,7 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
     not_allowed = OrderedDict()
 
     def format_diffs(ds):
-        # Like '  armeabi-v7a, arm64-v8a -> XXX\n  x86, x86_64 -> YYY'.
+        # Like '  armeabi-v7a, arm64-v8a -> XXX\n  x86_64 -> YYY'.
         return "\n".join(
             sorted(
                 "  {archs} -> {fingerprint}".format(
@@ -180,7 +179,7 @@ def fat_aar(distdir, zip_paths, no_process=False, no_compatibility_check=False):
     return 0
 
 
-_ALL_ARCHS = ("armeabi-v7a", "arm64-v8a", "x86_64", "x86")
+_ALL_ARCHS = ("armeabi-v7a", "arm64-v8a", "x86_64")
 
 
 def main(argv):

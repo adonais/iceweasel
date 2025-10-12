@@ -446,9 +446,9 @@ bool ComputedStyle::HasAnchorPosReference() const {
     return aInset.HasAnchorPositioningFunction();
   }) || pos->mWidth.HasAnchorPositioningFunction() ||
          pos->mHeight.HasAnchorPositioningFunction() ||
+         pos->mMinWidth.HasAnchorPositioningFunction() ||
          pos->mMinHeight.HasAnchorPositioningFunction() ||
-         pos->mMinHeight.HasAnchorPositioningFunction() ||
-         pos->mMaxHeight.HasAnchorPositioningFunction() ||
+         pos->mMaxWidth.HasAnchorPositioningFunction() ||
          pos->mMaxHeight.HasAnchorPositioningFunction() ||
          StyleMargin()->mMargin.Any([](const ::mozilla::StyleMargin& aMargin) {
            return aMargin.HasAnchorPositioningFunction();

@@ -92,7 +92,7 @@
      * @return {*} An object containing the properties exported by the module.
      */
     return function require(baseURL, path) {
-      let startTime = performance.now();
+      let startTime = ChromeUtils.now();
       if (typeof path != "string") {
         throw new TypeError(
           "The argument to require() must be a string got " + path

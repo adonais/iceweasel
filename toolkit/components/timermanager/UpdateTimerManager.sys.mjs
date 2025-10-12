@@ -195,7 +195,7 @@ TimerManager.prototype = {
         function () {
           ChromeUtils.idleDispatch(() => {
             try {
-              let startTime = Cu.now();
+              let startTime = ChromeUtils.now();
               Cc[cid][method](Ci.nsITimerCallback).notify(timer);
               ChromeUtils.addProfilerMarker(
                 "UpdateTimer",
@@ -239,7 +239,7 @@ TimerManager.prototype = {
           if (timerData.callback && timerData.callback.notify) {
             ChromeUtils.idleDispatch(() => {
               try {
-                let startTime = Cu.now();
+                let startTime = ChromeUtils.now();
                 timerData.callback.notify(timer);
                 ChromeUtils.addProfilerMarker(
                   "UpdateTimer",

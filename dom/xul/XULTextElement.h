@@ -34,7 +34,7 @@ class XULTextElement final : public nsXULElement {
   }
 
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
-                                      int32_t aModType) const override;
+                                      AttrModType aModType) const override;
 
   NS_IMPL_FROMNODE_HELPER(XULTextElement,
                           IsAnyOfXULElements(nsGkAtoms::label,

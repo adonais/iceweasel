@@ -389,7 +389,7 @@ class gfxDWriteFontList final : public gfxPlatformFontList {
       nsTArray<mozilla::fontlist::Face::InitData>& aFaces,
       bool aLoadCmaps) const override;
 
-  gfxFontEntry* LookupLocalFont(nsPresContext* aPresContext,
+  gfxFontEntry* LookupLocalFont(FontVisibilityProvider* aFontVisibilityProvider,
                                 const nsACString& aFontName,
                                 WeightRange aWeightForEntry,
                                 StretchRange aStretchForEntry,
@@ -406,11 +406,11 @@ class gfxDWriteFontList final : public gfxPlatformFontList {
   bool UseGDIFontTableAccess() const;
 
   bool FindAndAddFamiliesLocked(
-      nsPresContext* aPresContext, mozilla::StyleGenericFontFamily aGeneric,
-      const nsACString& aFamily, nsTArray<FamilyAndGeneric>* aOutput,
-      FindFamiliesFlags aFlags, gfxFontStyle* aStyle = nullptr,
-      nsAtom* aLanguage = nullptr, gfxFloat aDevToCssSize = 1.0)
-      MOZ_REQUIRES(mLock) override;
+      FontVisibilityProvider* aFontVisibilityProvider,
+      mozilla::StyleGenericFontFamily aGeneric, const nsACString& aFamily,
+      nsTArray<FamilyAndGeneric>* aOutput, FindFamiliesFlags aFlags,
+      gfxFontStyle* aStyle = nullptr, nsAtom* aLanguage = nullptr,
+      gfxFloat aDevToCssSize = 1.0) MOZ_REQUIRES(mLock) override;
 
   gfxFloat GetForceGDIClassicMaxFontSize() {
     return mForceGDIClassicMaxFontSize;
@@ -422,19 +422,17 @@ class gfxDWriteFontList final : public gfxPlatformFontList {
                                       FontListSizes* aSizes) const;
 
  protected:
-  FontFamily GetDefaultFontForPlatform(nsPresContext* aPresContext,
-                                       const gfxFontStyle* aStyle,
-                                       nsAtom* aLanguage = nullptr)
+  FontFamily GetDefaultFontForPlatform(
+      FontVisibilityProvider* aFontVisibilityProvider,
+      const gfxFontStyle* aStyle, nsAtom* aLanguage = nullptr)
       MOZ_REQUIRES(mLock) override;
 
   // attempt to use platform-specific fallback for the given character,
   // return null if no usable result found
-  gfxFontEntry* PlatformGlobalFontFallback(nsPresContext* aPresContext,
-                                           const uint32_t aCh,
-                                           Script aRunScript,
-                                           const gfxFontStyle* aMatchStyle,
-                                           FontFamily& aMatchedFamily)
-      MOZ_REQUIRES(mLock) override;
+  gfxFontEntry* PlatformGlobalFontFallback(
+      FontVisibilityProvider* aFontVisibilityProvider, const uint32_t aCh,
+      Script aRunScript, const gfxFontStyle* aMatchStyle,
+      FontFamily& aMatchedFamily) MOZ_REQUIRES(mLock) override;
 
   nsTArray<std::pair<const char**, uint32_t>> GetFilteredPlatformFontLists()
       override;

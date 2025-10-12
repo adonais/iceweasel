@@ -195,6 +195,15 @@ namespace JS {
 
 // Serialize the Stencil into the transcode buffer.
 // This fails if the stencil contains asm.js.
+//
+// If the `buffer` isn't empty, the start of the `buffer` should meet
+// JS::IsTranscodingBytecodeAligned, and the length should meet
+// JS::IsTranscodingBytecodeOffsetAligned.
+//
+// NOTE: As long as IsTranscodingBytecodeOffsetAligned is met, that means
+//       there's JS::BytecodeOffsetAlignment+extra bytes in the buffer,
+//       IsTranscodingBytecodeAligned should be guaranteed to meet by
+//       malloc, used by MallocAllocPolicy in mozilla::Vector.
 extern JS_PUBLIC_API TranscodeResult EncodeStencil(JSContext* cx,
                                                    Stencil* stencil,
                                                    TranscodeBuffer& buffer);
@@ -223,30 +232,17 @@ extern JS_PUBLIC_API bool StartCollectingDelazifications(
     JSContext* cx, JS::Handle<JSObject*> module, Stencil* stencil,
     bool& alreadyStarted);
 
-// Finish collecting delazifications and retrieve the result.
+// Finish collecting delazifications and retrieve the result as a JS::Stencil
+// that reflects the delazification from the execution.
 //
-// With |buffer| out-parameter, the result is encoded and appended to the
-// buffer. If failed, the content of |buffer| would be undefined.
-//
-// If the `buffer` isn't empty, the start of the `buffer` should meet
-// JS::IsTranscodingBytecodeAligned, and the length should meet
-// JS::IsTranscodingBytecodeOffsetAligned.
-//
-// NOTE: As long as IsTranscodingBytecodeOffsetAligned is met, that means
-//       there's JS::BytecodeOffsetAlignment+extra bytes in the buffer,
-//       IsTranscodingBytecodeAligned should be guaranteed to meet by
-//       malloc, used by MallocAllocPolicy in mozilla::Vector.
+// The returned stencil is the same thing as what is passed to
+// JS::StartCollectingDelazifications.
 extern JS_PUBLIC_API bool FinishCollectingDelazifications(
-    JSContext* cx, Handle<JSScript*> script, TranscodeBuffer& buffer);
+    JSContext* cx, Handle<JSScript*> script, JS::Stencil** stencilOut);
 
 // Similar to |JS::FinishCollectingDelazifications|, but receives module obect.
 extern JS_PUBLIC_API bool FinishCollectingDelazifications(
-    JSContext* cx, Handle<JSObject*> module, TranscodeBuffer& buffer);
-
-// Instead of transcoding to a buffer, return the JS::Stencil that reflects
-// the delazification from the execution.
-extern JS_PUBLIC_API bool FinishCollectingDelazifications(
-    JSContext* cx, Handle<JSScript*> script, JS::Stencil** stencilOut);
+    JSContext* cx, Handle<JSObject*> module, JS::Stencil** stencilOut);
 
 extern JS_PUBLIC_API void AbortCollectingDelazifications(
     Handle<JSScript*> script);

@@ -140,10 +140,10 @@ object SettingsSelectors {
         groups = listOf("generalSettingsSection"),
     )
 
-    val SYNC_AND_SAVE_YOUR_DATA_BUTTON = Selector(
+    val SIGN_IN_BUTTON = Selector(
         strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
-        value = "Sync and save your data",
-        description = "the Sync and save your data button",
+        value = "Sign in",
+        description = "the Sign in button",
         groups = listOf("requiredForPage"),
     )
 
@@ -188,7 +188,7 @@ object SettingsSelectors {
         OPEN_LINKS_IN_APPS_BUTTON,
         PRIVATE_BROWSING_BUTTON,
         TRANSLATIONS_BUTTON,
-        SYNC_AND_SAVE_YOUR_DATA_BUTTON,
+        SIGN_IN_BUTTON,
         NOTIFICATIONS_BUTTON,
         EXPERIMENTS_BUTTON,
         SITE_SETTINGS_BUTTON,

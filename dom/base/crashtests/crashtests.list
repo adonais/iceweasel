@@ -17,7 +17,6 @@ load 327695-1.html
 load 329481-1.xhtml
 load 336381-1.xhtml
 load 336715-1.xhtml
-load 338391-1.xhtml
 load 338674-1.xhtml
 load 340733-1.html
 load 343730-1.xhtml
@@ -107,7 +106,6 @@ load 628599-1.html
 load 637116.html
 load 637214-1.svg
 load 637214-2.svg
-pref(extensions.InstallTrigger.enabled,true) pref(extensions.InstallTriggerImpl.enabled,true) load 642022-1.html
 load 646184.html
 load 666869.html
 load 667336-1.html

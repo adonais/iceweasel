@@ -63,6 +63,7 @@ using mozilla::TimeStamp from "mozilla/TimeStamp.h";
 using mozilla::dom::NotificationDirection from "mozilla/dom/NotificationBinding.h";
 using mozilla::dom::UserNavigationInvolvement from "mozilla/dom/UserNavigationInvolvement.h";
 using mozilla::net::ClassificationFlags from "nsIClassifiedChannel.h";
+using mozilla::dom::ForceMediaDocument from "mozilla/dom/LoadURIOptionsBinding.h";
 
 namespace mozilla {
 namespace dom {
@@ -226,6 +227,7 @@ struct DocShellLoadStateInit
   bool AllowFocusMove;
   bool IsFromProcessingFrameAttributes;
   SchemelessInputType SchemelessInput;
+  ForceMediaDocument forceMediaDocument;
   HTTPSUpgradeTelemetryType HttpsUpgradeTelemetry;
 
   // Fields missing due to lack of need or serialization

@@ -84,6 +84,7 @@ class IPProtectionServiceSingleton extends EventTarget {
   /**@type {import("./IPPChannelFilter.sys.mjs").IPPChannelFilter | null} */
   connection = null;
   errors = [];
+  enrolling = null;
 
   guardian = null;
   #entitlement = null;
@@ -113,13 +114,13 @@ class IPProtectionServiceSingleton extends EventTarget {
       return;
     }
 
-    this.#addSignInStateObserver();
-    this.addVPNAddonObserver();
-    this.#addEligibilityListeners();
-
     this.#updateSignInStatus();
     this.#updateEligibility();
     this.#updateEnrollment(true /* onlyCached */);
+
+    this.#addSignInStateObserver();
+    this.addVPNAddonObserver();
+    this.#addEligibilityListeners();
 
     this.#inited = true;
   }
@@ -140,17 +141,13 @@ class IPProtectionServiceSingleton extends EventTarget {
 
     this.#removeEligibilityListeners();
 
+    this.resetAccount();
     this.isSignedIn = null;
-    this.isEnrolled = null;
     this.isEligible = null;
-    this.isEntitled = null;
-    this.hasUpgraded = null;
-    this.hasProxyPass = null;
     this.hasError = null;
 
-    this.#entitlement = null;
-    this.#pass = null;
     this.errors = [];
+    this.enrolling = null;
 
     this.#inited = false;
   }
@@ -162,6 +159,9 @@ class IPProtectionServiceSingleton extends EventTarget {
    * True if started by user action, false if system action
    */
   async start(userAction = true) {
+    // Wait for enrollment to finish.
+    await this.enrolling;
+
     // Retry enrollment if the previous attempt failed.
     if (this.hasError && !this.isEnrolled) {
       await this.#updateEnrollment();
@@ -218,7 +218,7 @@ class IPProtectionServiceSingleton extends EventTarget {
     this.connection.start();
 
     this.isActive = true;
-    this.activatedAt = Cu.now();
+    this.activatedAt = ChromeUtils.now();
 
     this.usageObserver.start();
     this.usageObserver.addIsolationKey(this.connection.isolationKey);
@@ -255,7 +255,7 @@ class IPProtectionServiceSingleton extends EventTarget {
   stop(userAction = true) {
     this.isActive = false;
 
-    let deactivatedAt = Cu.now();
+    let deactivatedAt = ChromeUtils.now();
     let sessionLength = deactivatedAt - this.activatedAt;
 
     Glean.ipprotection.toggled.record({
@@ -289,6 +289,36 @@ class IPProtectionServiceSingleton extends EventTarget {
     if (win) {
       win.gBrowser.reloadTab(win.gBrowser.selectedTab);
     }
+  }
+
+  /**
+   * Enroll the current account if it meets all the criteria.
+   *
+   * @returns {Promise<void>}
+   */
+  async maybeEnroll() {
+    if (
+      !this.isSignedIn ||
+      !this.isEligible ||
+      this.isEnrolled ||
+      this.enrolling
+    ) {
+      return null;
+    }
+    return this.#enroll();
+  }
+
+  /**
+   * Reset the statuses, entitlement and pass that are set based on a FxA account.
+   */
+  resetAccount() {
+    this.isEnrolled = null;
+    this.isEntitled = null;
+    this.hasUpgraded = null;
+    this.hasProxyPass = null;
+
+    this.#entitlement = null;
+    this.#pass = null;
   }
 
   /**
@@ -497,7 +527,7 @@ class IPProtectionServiceSingleton extends EventTarget {
       if (this.isActive) {
         this.stop();
       }
-      this.hasUpgraded = false;
+      this.resetAccount();
       this.updateHasUpgradedStatus();
     }
   }
@@ -531,8 +561,7 @@ class IPProtectionServiceSingleton extends EventTarget {
    *
    * If no user is signed in, the enrolled pref will set to false.
    *
-   * If the user is not enrolled but meets the other conditions to use
-   * the VPN they will be enrolled now.
+   * If the user is already enrolled and is entitled to use the VPN, the widget will be shown.
    *
    * @param { boolean } onlyCached - if true only the cached clients will be checked.
    * @returns {Promise<void>}
@@ -540,25 +569,13 @@ class IPProtectionServiceSingleton extends EventTarget {
   async #updateEnrollment(onlyCached = false) {
     this.isEnrolled = await this.#isEnrolled(onlyCached);
 
-    if (this.isEnrolled) {
-      lazy.IPProtection.init();
-    } else if (
-      !this.isEnrolled &&
-      lazy.IPProtection.isInitialized &&
-      this.isEligible &&
-      this.isSignedIn
-    ) {
-      this.isEnrolled = await this.#enroll();
+    if (!this.isEnrolled) {
+      return;
     }
 
-    if (this.isEnrolled) {
-      await this.#updateEntitlement();
-    } else {
-      this.#entitlement = null;
-      this.#pass = null;
-      this.isEntitled = null;
-      this.hasUpgraded = null;
-      this.hasProxyPass = null;
+    await this.#updateEntitlement();
+    if (this.isEntitled) {
+      lazy.IPProtection.init();
     }
   }
 
@@ -593,11 +610,9 @@ class IPProtectionServiceSingleton extends EventTarget {
    * Enrolls a users FxA account to use the proxy if they are eligible and not already
    * enrolled then updates the enrollment status.
    *
-   * If they are enrolled, updates the enrollment status.
+   * If successful, updates the enrollment status and entitlement.
    *
-   * If the user is already enrolled, this will do nothing.
-   *
-   * @returns {Promise<boolean | null>}
+   * @returns {Promise<void>}
    */
   async #enroll() {
     let { isSignedIn, isEnrolled, isEligible } = this;
@@ -609,24 +624,37 @@ class IPProtectionServiceSingleton extends EventTarget {
       return null;
     }
 
-    let enrollment;
-    try {
-      enrollment = await this.guardian.enroll();
-    } catch (error) {
-      this.#dispatchError(error?.message);
+    if (this.enrolling) {
+      return this.enrolling;
     }
 
-    lazy.logConsole.debug(
-      "Guardian:",
-      enrollment?.ok ? "Enrolled" : "Enrollment Failed"
-    );
+    this.enrolling = this.guardian
+      .enroll()
+      .then(enrollment => {
+        let ok = enrollment?.ok;
 
-    if (enrollment?.ok) {
-      return true;
-    }
+        lazy.logConsole.debug(
+          "Guardian:",
+          ok ? "Enrolled" : "Enrollment Failed"
+        );
 
-    this.#dispatchError(enrollment?.error);
-    return false;
+        this.isEnrolled = !!ok;
+
+        if (!ok) {
+          this.#dispatchError(enrollment?.error || ERRORS.GENERIC);
+          return null;
+        }
+
+        return this.#updateEntitlement();
+      })
+      .catch(error => {
+        this.#dispatchError(error?.message);
+      })
+      .finally(() => {
+        this.enrolling = null;
+      });
+
+    return this.enrolling;
   }
 
   /**

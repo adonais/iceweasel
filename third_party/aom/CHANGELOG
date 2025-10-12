@@ -8,14 +8,25 @@
   this release and this change does not break ABI compatibility.
 
   - New Features
+    * New tuning mode AOM_TUNE_SSIMULACRA2 for the AOME_SET_TUNING codec
+      control (--tune=ssimulacra2) in all-intra mode. The feature detection
+      macro AOM_HAVE_TUNE_SSIMULACRA2, if defined, indicates that
+      AOM_TUNE_SSIMULACRA2 is available.
+      AOM_TUNE_SSIMULACRA2 was developed to maximize SSIMULACRA 2 scores.
+    * New codec control AV1E_SET_SCREEN_CONTENT_DETECTION_MODE
+      (--screen-detection-mode).
+      This codec control helps select between two screen detection modes:
+       - Mode 1: standard (default)
+       - Mode 2: anti-aliased text and graphics aware
     * New codec control AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS
       (--enable-adaptive-sharpness). When enabled, it modulates sharpness
       based on frame QP, which helps mitigate blocking artifacts in the
       low to medium quality range.
 
   - Compression Efficiency Improvements
-    * Variance Boost is now enabled for tuning mode AOM_TUNE_IQ at
-      speeds 8 and 9 (2-5% SSIMULACRA 2 BD-Rate gains)
+    * Variance Boost is now enabled for tuning modes AOM_TUNE_IQ and
+      AOM_TUNE_SSIMULACRA2 at speeds 8 and 9 (2-5% SSIMULACRA 2 BD-Rate
+      gains)
     * Several quality/time tradeoff improvements and bug fixes for all
       intra mode speeds 8 and 9.
       * Up to 6.9% SSIMULACRA 2 BD-Rate gains for speed 8

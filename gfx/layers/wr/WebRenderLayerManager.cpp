@@ -12,6 +12,7 @@
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/gfx/DrawEventRecorder.h"
+#include "mozilla/layers/APZTestData.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/TextureClient.h"
@@ -47,6 +48,7 @@ WebRenderLayerManager::WebRenderLayerManager(nsIWidget* aWidget)
       mDestroyed(false),
       mTarget(nullptr),
       mPaintSequenceNumber(0),
+      mApzTestData(new APZTestData),
       mWebRenderCommandBuilder(this) {
   MOZ_COUNT_CTOR(WebRenderLayerManager);
   mStateManager.mLayerManager = this;
@@ -249,7 +251,7 @@ bool WebRenderLayerManager::BeginTransaction(const nsCString& aURL) {
   // and the parent process expects unique sequence numbers.
   ++mPaintSequenceNumber;
   if (StaticPrefs::apz_test_logging_enabled()) {
-    mApzTestData.StartNewPaint(mPaintSequenceNumber);
+    mApzTestData->StartNewPaint(mPaintSequenceNumber);
   }
   return true;
 }
@@ -835,6 +837,20 @@ bool WebRenderLayerManager::AddPendingScrollUpdateForNextTransaction(
     const ScrollPositionUpdate& aUpdateInfo) {
   mPendingScrollUpdates.LookupOrInsert(aScrollId).AppendElement(aUpdateInfo);
   return true;
+}
+
+// See equivalent function in ClientLayerManager
+void WebRenderLayerManager::LogTestDataForCurrentPaint(
+    ScrollableLayerGuid::ViewID aScrollId, const std::string& aKey,
+    const std::string& aValue) {
+  MOZ_ASSERT(StaticPrefs::apz_test_logging_enabled(), "don't call me");
+  mApzTestData->LogTestDataForPaint(mPaintSequenceNumber, aScrollId, aKey,
+                                    aValue);
+}
+void WebRenderLayerManager::LogAdditionalTestData(const std::string& aKey,
+                                                  const std::string& aValue) {
+  MOZ_ASSERT(StaticPrefs::apz_test_logging_enabled(), "don't call me");
+  mApzTestData->RecordAdditionalData(aKey, aValue);
 }
 
 }  // namespace layers

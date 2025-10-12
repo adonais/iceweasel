@@ -63,9 +63,9 @@
 #include "rtc_base/string_encode.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/arch.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/sleep.h"
 #include "test/audio_decoder_proxy_factory.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -441,7 +441,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   // The send thread doesn't have to care about the current simulated time,
   // since only the AcmReceiver is using the clock.
   void CbSendImpl() {
-    SleepMs(1);
+    Thread::SleepMs(1);
     if (HasFatalFailure()) {
       // End the test early if a fatal failure (ASSERT_*) has occurred.
       test_complete_.Set();
@@ -454,7 +454,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   }
 
   void CbInsertPacketImpl() {
-    SleepMs(1);
+    Thread::SleepMs(1);
     {
       MutexLock lock(&mutex_);
       if (env_.clock().TimeInMilliseconds() < next_insert_packet_time_ms_) {
@@ -468,7 +468,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   }
 
   void CbPullAudioImpl() {
-    SleepMs(1);
+    Thread::SleepMs(1);
     {
       MutexLock lock(&mutex_);
       // Don't let the insert thread fall behind.
@@ -666,7 +666,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
     audio_source_.reset(new test::InputAudioFile(input_file_name));
     send_test_.reset(new test::AcmSendTestOldApi(audio_source_.get(),
                                                  source_rate, kTestDurationMs));
-    return send_test_.get() != NULL;
+    return send_test_.get() != nullptr;
   }
 
   // Registers a send codec in the test::AcmSendTest object. Returns true on
@@ -707,7 +707,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
     // output.
     test::AudioChecksum audio_checksum;
     const std::string output_file_name =
-        webrtc::test::OutputPath() +
+        test::OutputPath() +
         ::testing::UnitTest::GetInstance()
             ->current_test_info()
             ->test_case_name() +
@@ -758,7 +758,7 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
   std::unique_ptr<test::Packet> NextPacket() override {
     auto packet = send_test_->NextPacket();
     if (!packet)
-      return NULL;
+      return nullptr;
 
     VerifyPacket(packet.get());
     // TODO(henrik.lundin) Save the packet to file as well.
@@ -817,13 +817,12 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
   uint32_t last_timestamp_;
   std::unique_ptr<MessageDigest> payload_checksum_;
   const std::string kTestFileMono32kHz =
-      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+      test::ResourcePath("audio_coding/testfile32kHz", "pcm");
   const std::string kTestFileFakeStereo32kHz =
-      webrtc::test::ResourcePath("audio_coding/testfile_fake_stereo_32kHz",
-                                 "pcm");
-  const std::string kTestFileQuad48kHz = webrtc::test::ResourcePath(
-      "audio_coding/speech_4_channels_48k_one_second",
-      "wav");
+      test::ResourcePath("audio_coding/testfile_fake_stereo_32kHz", "pcm");
+  const std::string kTestFileQuad48kHz =
+      test::ResourcePath("audio_coding/speech_4_channels_48k_one_second",
+                         "wav");
 };
 
 class AcmSenderBitExactnessNewApi : public AcmSenderBitExactnessOldApi {};
@@ -1047,7 +1046,7 @@ class AcmSetBitRateTest : public ::testing::Test {
   // false.
   bool SetUpSender() {
     const std::string input_file_name =
-        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+        test::ResourcePath("audio_coding/testfile32kHz", "pcm");
     // Note that `audio_source_` will loop forever. The test duration is set
     // explicitly by `kTestDurationMs`.
     audio_source_.reset(new test::InputAudioFile(input_file_name));
@@ -1270,10 +1269,9 @@ TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
   EXPECT_CALL(*mock_encoder, EncodeImpl(_, _, _))
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(
-          &encoder,
-          static_cast<AudioEncoder::EncodedInfo (AudioEncoder::*)(
-              uint32_t, webrtc::ArrayView<const int16_t>, webrtc::Buffer*)>(
-              &AudioEncoderPcmU::Encode)));
+          &encoder, static_cast<AudioEncoder::EncodedInfo (AudioEncoder::*)(
+                        uint32_t, ArrayView<const int16_t>, Buffer*)>(
+                        &AudioEncoderPcmU::Encode)));
   ASSERT_TRUE(SetUpSender(kTestFileMono32kHz, 32000));
   ASSERT_NO_FATAL_FAILURE(
       SetUpTestExternalEncoder(std::move(mock_encoder), config.payload_type));
@@ -1310,7 +1308,7 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
     // Set up the receiver used to decode the packets and verify the decoded
     // output.
     const std::string output_file_name =
-        webrtc::test::OutputPath() +
+        test::OutputPath() +
         ::testing::UnitTest::GetInstance()
             ->current_test_info()
             ->test_case_name() +
@@ -1340,7 +1338,7 @@ class AcmSwitchingOutputFrequencyOldApi : public ::testing::Test,
     // "manually".
     if (num_packets_++ > kTestNumPackets) {
       EXPECT_TRUE(has_toggled_);
-      return NULL;  // Test ended.
+      return nullptr;  // Test ended.
     }
 
     // Get the next packet from the source.

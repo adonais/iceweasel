@@ -41,7 +41,7 @@ class TaskGraph:
 
     def __iter__(self):
         "Iterate over tasks in undefined order"
-        return iter(self.tasks.values())  # type: ignore
+        return iter(self.tasks.values())
 
     def to_json(self):
         "Return a JSON-able object representing the task graph, as documented"

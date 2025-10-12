@@ -11,8 +11,15 @@
                 android:name="org.mozilla.gecko.process.GeckoChildProcessServices$tab{{ id }}"
                 android:enabled="true"
                 android:exported="false"
-                android:isolatedProcess="{{ 'true' if MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS else 'false' }}"
+                android:isolatedProcess="false"
                 android:process=":tab{{ id }}">
+        </service>
+        <service
+                android:name="org.mozilla.gecko.process.GeckoChildProcessServices$isolatedTab{{ id }}"
+                android:enabled="true"
+                android:exported="false"
+                android:isolatedProcess="true"
+                android:process=":isolatedTab{{ id }}">
         </service>
     {% endfor %}
     </application>

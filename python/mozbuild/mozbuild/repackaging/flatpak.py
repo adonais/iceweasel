@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import datetime
 import glob
 import json
 import logging
@@ -14,6 +13,11 @@ import tempfile
 import zipfile
 from pathlib import Path
 from string import Template
+
+from mozbuild.repackaging.utils import (
+    application_ini_data_from_directory,
+    get_build_variables,
+)
 
 # When updating this, please make sure to keep in sync the script for symbol
 # scraping at
@@ -86,7 +90,7 @@ def repackage_flatpak(
     output,
     arch,
     version,
-    release_product,
+    product,
     release_type,
     flatpak_name,
     flatpak_branch,
@@ -139,24 +143,26 @@ def repackage_flatpak(
             log, ["tar", "xf", os.path.abspath(infile)], cwd=lib_dir, check=True
         )
 
-        if release_product == "firefox":
+        if product == "firefox":
             distribution_ini = lib_dir / "firefox" / "distribution" / "distribution.ini"
             distribution_ini.parent.mkdir(parents=True)
             _inject_flatpak_distribution_ini(log, distribution_ini)
 
-        date = datetime.date.today().strftime("%Y-%m-%d")
-        variables = {
-            "ARCH": arch,
-            "FREEDESKTOP_VERSION": FREEDESKTOP_VERSION,
-            "FIREFOX_BASEAPP_CHANNEL": FIREFOX_BASEAPP_CHANNEL,
-            "FLATPAK_BRANCH": flatpak_branch,
-            "VERSION": version,
-            "DATE": date,
-            "PKG_NAME": release_product,
-            "DBusActivatable": "false",
-            "Icon": flatpak_name,
-            "StartupWMClass": release_product,
-        }
+        application_ini_data = application_ini_data_from_directory(str(lib_dir))
+        variables = get_build_variables(application_ini_data, arch, version)
+        variables.update(
+            {
+                "FREEDESKTOP_VERSION": FREEDESKTOP_VERSION,
+                "FIREFOX_BASEAPP_CHANNEL": FIREFOX_BASEAPP_CHANNEL,
+                "FLATPAK_BRANCH": flatpak_branch,
+                "DATE": variables["TIMESTAMP"].strftime("%Y-%m-%d"),
+                # Override PKG_NAME since we use branches for beta vs release
+                "PKG_NAME": product,
+                "DBusActivatable": "false",
+                # Override Icon to match the flatpak's name
+                "Icon": flatpak_name,
+            }
+        )
         _render_flatpak_templates(template_dir, build_dir, variables)
 
         from fluent.runtime.fallback import FluentLocalization, FluentResourceLoader
@@ -166,7 +172,7 @@ def repackage_flatpak(
         desktop = generate_browser_desktop_entry(
             log,
             variables,
-            release_product,
+            product,
             release_type,
             FluentLocalization,
             FluentResourceLoader,
@@ -178,9 +184,9 @@ def repackage_flatpak(
             for line in desktop:
                 print(line, file=f)
 
-        if release_product == "firefox":
+        if product == "firefox":
             icon_path = "lib/firefox/browser/chrome/icons/default"
-        elif release_product == "thunderbird":
+        elif product == "thunderbird":
             icon_path = "lib/thunderbird/chrome/icons/default"
         else:
             raise NotImplementedError()
@@ -219,9 +225,7 @@ def repackage_flatpak(
             cwd=tmpdir,
         )
 
-        os.makedirs(
-            app_dir / f"lib/{release_product}/distribution/extensions", exist_ok=True
-        )
+        os.makedirs(app_dir / f"lib/{product}/distribution/extensions", exist_ok=True)
         for langpack in glob.iglob(langpack_pattern):
             manifest = _langpack_manifest(langpack)
             locale = manifest["langpack_id"]
@@ -234,7 +238,7 @@ def repackage_flatpak(
             )
             os.symlink(
                 f"/app/share/runtime/langpack/{lang}/{name}.xpi",
-                app_dir / f"lib/{release_product}/distribution/extensions/{name}.xpi",
+                app_dir / f"lib/{product}/distribution/extensions/{name}.xpi",
             )
 
         run_command(

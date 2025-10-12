@@ -37,7 +37,7 @@ private const val KEY_MESSAGE = "KEY_MESSAGE"
 private const val KEY_NEGATIVE_BUTTON_TEXT = "KEY_NEGATIVE_BUTTON_TEXT"
 private const val KEY_POSITIVE_BUTTON_BACKGROUND_COLOR = "KEY_POSITIVE_BUTTON_BACKGROUND_COLOR"
 private const val KEY_POSITIVE_BUTTON_TEXT_COLOR = "KEY_POSITIVE_BUTTON_TEXT_COLOR"
-private const val KEY_SHOULD_SHOW_LEARN_MORE_LINK = "KEY_SHOULD_SHOW_LEARN_MORE_LINK"
+private const val KEY_LEARN_MORE_LINK = "KEY_LEARN_MORE_LINK"
 private const val KEY_SHOULD_SHOW_DO_NOT_ASK_AGAIN_CHECKBOX = "KEY_SHOULD_SHOW_DO_NOT_ASK_AGAIN_CHECKBOX"
 private const val KEY_SHOULD_PRESELECT_DO_NOT_ASK_AGAIN_CHECKBOX = "KEY_SHOULD_PRESELECT_DO_NOT_ASK_AGAIN_CHECKBOX"
 
@@ -80,9 +80,8 @@ internal open class SitePermissionsDialogFragment : AppCompatDialogFragment() {
 
     internal val isNotificationRequest get() =
         safeArguments.getBoolean(KEY_IS_NOTIFICATION_REQUEST, false)
-
-    internal val shouldShowLearnMoreLink: Boolean get() =
-        safeArguments.getBoolean(KEY_SHOULD_SHOW_LEARN_MORE_LINK, false)
+    internal val learnMoreLink: String get() =
+        safeArguments.getString(KEY_LEARN_MORE_LINK, "")
     internal val shouldShowDoNotAskAgainCheckBox: Boolean get() =
         safeArguments.getBoolean(KEY_SHOULD_SHOW_DO_NOT_ASK_AGAIN_CHECKBOX, true)
     internal val shouldPreselectDoNotAskAgainCheckBox: Boolean get() =
@@ -160,13 +159,13 @@ internal open class SitePermissionsDialogFragment : AppCompatDialogFragment() {
                 text = it
             }
         }
-        if (shouldShowLearnMoreLink) {
+        if (learnMoreLink.isNotEmpty()) {
             rootView.findViewById<TextView>(R.id.learn_more).apply {
                 visibility = VISIBLE
                 isLongClickable = false
                 setOnClickListener {
                     dismiss()
-                    feature?.onLearnMorePress(permissionRequestId, sessionId)
+                    feature?.onLearnMorePress(permissionRequestId, sessionId, learnMoreLink)
                 }
             }
         }
@@ -254,7 +253,7 @@ internal open class SitePermissionsDialogFragment : AppCompatDialogFragment() {
             isNotificationRequest: Boolean = false,
             message: String? = null,
             negativeButtonText: String? = null,
-            shouldShowLearnMoreLink: Boolean = false,
+            learnMoreLink: String? = null,
         ): SitePermissionsDialogFragment {
             val fragment = SitePermissionsDialogFragment()
             val arguments = fragment.arguments ?: Bundle()
@@ -266,7 +265,7 @@ internal open class SitePermissionsDialogFragment : AppCompatDialogFragment() {
                 putString(KEY_MESSAGE, message)
                 putString(KEY_NEGATIVE_BUTTON_TEXT, negativeButtonText)
                 putString(KEY_PERMISSION_ID, permissionRequestId)
-                putBoolean(KEY_SHOULD_SHOW_LEARN_MORE_LINK, shouldShowLearnMoreLink)
+                putString(KEY_LEARN_MORE_LINK, learnMoreLink)
 
                 putBoolean(KEY_IS_NOTIFICATION_REQUEST, isNotificationRequest)
                 if (isNotificationRequest) {

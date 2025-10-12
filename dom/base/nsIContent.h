@@ -554,7 +554,7 @@ class nsIContent : public nsINode {
    * host content.  When the content is in designMode, this returns its body
    * element.  Also, when the content isn't editable, this returns null.
    */
-  mozilla::dom::Element* GetEditingHost();
+  mozilla::dom::Element* GetEditingHost() const;
 
   bool SupportsLangAttr() const {
     return IsHTMLElement() || IsSVGElement() || IsXULElement();

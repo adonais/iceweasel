@@ -4852,8 +4852,10 @@ void jit::UnmarkLoopBlocks(MIRGraph& graph, const MBasicBlock* header) {
 bool jit::FoldLoadsWithUnbox(const MIRGenerator* mir, MIRGraph& graph) {
   // This pass folds MLoadFixedSlot, MLoadDynamicSlot, MLoadElement instructions
   // followed by MUnbox into a single instruction. For LoadElement this allows
-  // us to fuse the hole check with the type check for the unbox.
+  // us to fuse the hole check with the type check for the unbox. It may also
+  // allow us to remove some GuardElementsArePacked nodes.
 
+  Vector<MInstruction*, 16, SystemAllocPolicy> optimizedElements;
   for (MBasicBlockIterator block(graph.begin()); block != graph.end();
        block++) {
     if (mir->shouldCancel("FoldLoadsWithUnbox")) {
@@ -4942,6 +4944,16 @@ bool jit::FoldLoadsWithUnbox(const MIRGenerator* mir, MIRGraph& graph) {
           MOZ_ASSERT(unbox->fallible());
           replacement = MLoadElementAndUnbox::New(
               graph.alloc(), loadIns->elements(), loadIns->index(), mode, type);
+          MOZ_ASSERT(!IsMagicType(type));
+          // FoldElementAndUnbox will implicitly check for holes by unboxing. We
+          // may be able to remove a GuardElementsArePacked check. Add this
+          // Elements to a list to check later (unless we just added it for
+          // a different load).
+          if ((optimizedElements.empty() ||
+               optimizedElements.back() != loadIns) &&
+              !optimizedElements.append(loadIns->elements()->toInstruction())) {
+            return false;
+          }
           break;
         }
         default:
@@ -4967,6 +4979,50 @@ bool jit::FoldLoadsWithUnbox(const MIRGenerator* mir, MIRGraph& graph) {
         block->discard(lexicalCheck);
       }
       block->discard(load);
+    }
+  }
+
+  // For each Elements that had a load folded with an unbox, check to see if
+  // there is a GuardElementsArePacked node that can be removed. It can't be
+  // removed if:
+  //     1. There is a loadElement/storeElement use that will not emit a
+  //        hole check.
+  //     2. There is another use that has not been allow-listed.
+  // It is safe to add additional operations to the allow list if they don't
+  // require a packed Elements array as input.
+  for (auto* elements : optimizedElements) {
+    bool canRemovePackedChecks = true;
+    Vector<MInstruction*, 4, SystemAllocPolicy> guards;
+    for (MUseDefIterator uses(elements); uses; uses++) {
+      MInstruction* use = uses.def()->toInstruction();
+      if (use->isGuardElementsArePacked()) {
+        if (!guards.append(use)) {
+          return false;
+        }
+      } else if (use->isLoadElement()) {
+        if (!use->toLoadElement()->needsHoleCheck()) {
+          canRemovePackedChecks = false;
+          break;
+        }
+      } else if (use->isStoreElement()) {
+        if (!use->toStoreElement()->needsHoleCheck()) {
+          canRemovePackedChecks = false;
+          break;
+        }
+      } else if (use->isLoadElementAndUnbox() || use->isInitializedLength() ||
+                 use->isArrayLength()) {
+        // These operations are not affected by the packed flag.
+        continue;
+      } else {
+        canRemovePackedChecks = false;
+        break;
+      }
+    }
+    if (!canRemovePackedChecks) {
+      continue;
+    }
+    for (auto* guard : guards) {
+      guard->block()->discard(guard);
     }
   }
 

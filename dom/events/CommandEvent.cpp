@@ -80,17 +80,9 @@ void CommandEvent::GetCommand(nsAString& aCommand) const {
 
 Element* CommandEvent::GetSource() {
   EventTarget* currentTarget = GetCurrentTarget();
-  if (currentTarget) {
-    nsINode* currentTargetNode = currentTarget->GetAsNode();
-    if (!currentTargetNode) {
-      return nullptr;
-    }
-    nsINode* retargeted = nsContentUtils::Retarget(
-        static_cast<nsINode*>(mSource), currentTargetNode);
-    return retargeted ? retargeted->AsElement() : nullptr;
-  }
-  MOZ_ASSERT(!mEvent->mFlags.mIsBeingDispatched);
-  return mSource;
+  nsINode* retargeted = nsContentUtils::Retarget(
+      mSource, currentTarget ? currentTarget->GetAsNode() : nullptr);
+  return retargeted ? retargeted->AsElement() : nullptr;
 }
 
 }  // namespace mozilla::dom

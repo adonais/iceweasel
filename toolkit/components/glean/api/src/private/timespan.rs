@@ -37,17 +37,17 @@ impl gecko_profiler::ProfilerMarker for TimespanMetricMarker {
         schema.set_table_label(
             "{marker.data.cat}.{marker.data.id}: {marker.data.val}{marker.data.stringval}",
         );
-        schema.add_key_label_format_searchable(
+        schema.add_key_label_format_with_flags(
             "cat",
             "Category",
             Format::UniqueString,
-            Searchable::Searchable,
+            PayloadFlags::Searchable,
         );
-        schema.add_key_label_format_searchable(
+        schema.add_key_label_format_with_flags(
             "id",
             "Metric",
             Format::UniqueString,
-            Searchable::Searchable,
+            PayloadFlags::Searchable,
         );
         schema.add_key_label_format("val", "Value", Format::Integer);
         schema.add_key_label_format("stringval", "Value", Format::String);
@@ -281,8 +281,19 @@ impl Timespan for TimespanMetric {
         }
     }
 
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<u64> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
+    pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
+        match self {
+            TimespanMetric::Parent { inner, .. } => inner.test_get_num_recorded_errors(error),
+            TimespanMetric::Child => {
+                panic!("Cannot get the number of recorded errors for timespan metric in non-main process!");
+            }
+        }
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<u64> for TimespanMetric {
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<u64> {
         match self {
             // Conversion is ok here:
             // Timespans are really tricky to set to excessive values with the pleasant APIs.
@@ -291,15 +302,6 @@ impl Timespan for TimespanMetric {
             }
             TimespanMetric::Child => {
                 panic!("Cannot get test value for in non-main process!");
-            }
-        }
-    }
-
-    pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
-        match self {
-            TimespanMetric::Parent { inner, .. } => inner.test_get_num_recorded_errors(error),
-            TimespanMetric::Child => {
-                panic!("Cannot get the number of recorded errors for timespan metric in non-main process!");
             }
         }
     }
@@ -333,7 +335,7 @@ mod test {
         // So let's cancel and make sure nothing blows up.
         metric.cancel();
 
-        assert_eq!(None, metric.test_get_value("test-ping"));
+        assert_eq!(None, metric.test_get_value(Some("test-ping".to_string())));
     }
 
     #[test]

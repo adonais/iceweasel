@@ -29,10 +29,10 @@ class TestStream : public ByteStream,
  public:
   TestStream(const uint8_t* aBuffer, size_t aSize)
       : mHighestSuccessfulEndOffset(0), mBuffer(aBuffer), mSize(aSize) {}
-  bool ReadAt(int64_t aOffset, void* aData, size_t aLength,
-              size_t* aBytesRead) override {
+  nsresult ReadAt(int64_t aOffset, void* aData, size_t aLength,
+                  size_t* aBytesRead) override {
     if (aOffset < 0 || aOffset > static_cast<int64_t>(mSize)) {
-      return false;
+      return NS_ERROR_DOM_MEDIA_RANGE_ERR;
     }
     // After the test, 0 <= aOffset <= mSize <= SIZE_MAX, so it's safe to cast
     // to size_t.
@@ -47,10 +47,10 @@ class TestStream : public ByteStream,
     if (mHighestSuccessfulEndOffset < offset + aLength) {
       mHighestSuccessfulEndOffset = offset + aLength;
     }
-    return true;
+    return NS_OK;
   }
-  bool CachedReadAt(int64_t aOffset, void* aData, size_t aLength,
-                    size_t* aBytesRead) override {
+  nsresult CachedReadAt(int64_t aOffset, void* aData, size_t aLength,
+                        size_t* aBytesRead) override {
     return ReadAt(aOffset, aData, aLength, aBytesRead);
   }
   bool Length(int64_t* aLength) override {
@@ -165,7 +165,7 @@ struct TestFileData {
   uint32_t mNumberAudioTracks;
   double mAudioDuration;  // For first audio track, -1 if N/A, in seconds.
   bool mHasCrypto;  // Note, MP4Metadata only considers pssh box for crypto.
-  uint64_t mMoofReachedOffset;  // or 0 for the end.
+  uint64_t mParsedOffset;  // or 0 for the end.
   bool mValidMoofForTrack1;
   bool mValidMoofForAllTracks;
   int8_t mAudioProfile;
@@ -239,8 +239,8 @@ static const TestFileData testFiles[] = {
      0.47746032, false, 0, false, false, 2},
     {"test_case_1388991.mp4", true, 0, false, -1, 0, 0, 1, 30.000181, false, 0,
      false, false, 2},
-    {"test_case_1410565.mp4", false, 0, false, 0, 0, 0, 0, 0, false, 955100,
-     false, false, 2},  // negative 'timescale'
+    {"test_case_1410565.mp4", false, 0, false, 0, 0, 0, 0, 0, false, 0, false,
+     false, 2},  // negative 'timescale'
     {"test_case_1513651-2-sample-description-entries.mp4", true, 1, true,
      9.843344, 400, 300, 0, -1, true, 0, false, false, 0},
     {"test_case_1519617-cenc-init-with-track_id-0.mp4", true, 1, true, 0, 1272,
@@ -449,11 +449,11 @@ TEST(MoofParser, test_case_mp4)
     EXPECT_EQ(tests[test].mValidMoofForAllTracks,
               parser.RebuildFragmentedIndex(byteRanges))
         << tests[test].mFilename;
-    if (tests[test].mMoofReachedOffset == 0) {
+    if (tests[test].mParsedOffset == 0) {
       EXPECT_EQ(buffer.Length(), parser.mOffset) << tests[test].mFilename;
       EXPECT_TRUE(parser.ReachedEnd()) << tests[test].mFilename;
     } else {
-      EXPECT_EQ(tests[test].mMoofReachedOffset, parser.mOffset)
+      EXPECT_EQ(tests[test].mParsedOffset, parser.mOffset)
           << tests[test].mFilename;
       EXPECT_FALSE(parser.ReachedEnd()) << tests[test].mFilename;
     }

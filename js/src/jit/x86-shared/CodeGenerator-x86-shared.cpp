@@ -1815,22 +1815,6 @@ void CodeGenerator::visitMathF(LMathF* math) {
   }
 }
 
-void CodeGenerator::visitNearbyInt(LNearbyInt* lir) {
-  FloatRegister input = ToFloatRegister(lir->input());
-  FloatRegister output = ToFloatRegister(lir->output());
-
-  RoundingMode roundingMode = lir->mir()->roundingMode();
-  masm.nearbyIntDouble(roundingMode, input, output);
-}
-
-void CodeGenerator::visitNearbyIntF(LNearbyIntF* lir) {
-  FloatRegister input = ToFloatRegister(lir->input());
-  FloatRegister output = ToFloatRegister(lir->output());
-
-  RoundingMode roundingMode = lir->mir()->roundingMode();
-  masm.nearbyIntFloat32(roundingMode, input, output);
-}
-
 void CodeGenerator::visitEffectiveAddress3(LEffectiveAddress3* ins) {
   const MEffectiveAddress3* mir = ins->mir();
   Register base = ToRegister(ins->base());

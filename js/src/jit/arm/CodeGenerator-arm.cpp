@@ -2742,10 +2742,6 @@ void CodeGenerator::visitWasmAtomicExchangeI64(LWasmAtomicExchangeI64* lir) {
   masm.wasmAtomicExchange64(lir->access(), addr, value, out);
 }
 
-void CodeGenerator::visitNearbyInt(LNearbyInt*) { MOZ_CRASH("NYI"); }
-
-void CodeGenerator::visitNearbyIntF(LNearbyIntF*) { MOZ_CRASH("NYI"); }
-
 void CodeGenerator::visitSimd128(LSimd128* ins) { MOZ_CRASH("No SIMD"); }
 
 void CodeGenerator::visitWasmTernarySimd128(LWasmTernarySimd128* ins) {

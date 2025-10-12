@@ -8,11 +8,9 @@ import android.app.Dialog
 import android.app.assist.AssistStructure
 import android.content.DialogInterface
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.service.autofill.Dataset
 import android.view.autofill.AutofillManager
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
@@ -35,7 +33,6 @@ import mozilla.components.ui.widgets.withCenterAlignedButtons
  * shown in situations where the authenticity of an application could not be confirmed automatically
  * with "Digital Asset Links".
  */
-@RequiresApi(Build.VERSION_CODES.O)
 abstract class AbstractAutofillConfirmActivity : FragmentActivity() {
     abstract val configuration: AutofillConfiguration
 
@@ -99,7 +96,6 @@ abstract class AbstractAutofillConfirmActivity : FragmentActivity() {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 internal class AutofillConfirmFragment : DialogFragment() {
     private val configuration: AutofillConfiguration
         get() = getConfirmActivity().configuration

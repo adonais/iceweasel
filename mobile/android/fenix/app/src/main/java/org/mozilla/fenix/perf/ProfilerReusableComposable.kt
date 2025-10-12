@@ -9,15 +9,19 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,7 +36,9 @@ import org.mozilla.fenix.compose.button.RadioButton
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
- * Dialogue top level card for the profiler.
+ * Top-level card container for profiler dialogs
+ *
+ * @param content The composable content to be displayed inside the card
  */
 @Composable
 fun ProfilerDialogueCard(content: @Composable () -> Unit) {
@@ -87,7 +93,9 @@ fun ProfilerLabeledRadioButton(
 }
 
 /**
- * Profiler Dialogue to display circular spinner when waiting.
+ * Loading dialog with circular progress indicator.
+ *
+ * @param message String resource ID for the message to display above the spinner
  */
 @Composable
 fun WaitForProfilerDialog(
@@ -133,6 +141,88 @@ private fun ProfilerLabeledRadioButtonPreview() {
                         selectedOption.value = text
                     },
                 )
+            }
+        }
+    }
+}
+
+/**
+ * Base dialog template with title, custom content area, and action buttons.
+ *
+ * @param titleText Title displayed at the top of the dialog
+ * @param negativeActionText Text for the left/negative action button
+ * @param onNegativeAction Callback invoked when the negative action button is clicked
+ * @param positiveActionText Text for the right/positive action button
+ * @param onPositiveAction Callback invoked when the positive action button is clicked
+ * @param modifier Optional modifier for the dialog container
+ * @param content Composable lambda defining the custom content between title and buttons
+ */
+@Composable
+fun BaseProfilerDialogContent(
+    titleText: String,
+    negativeActionText: String,
+    onNegativeAction: () -> Unit,
+    positiveActionText: String,
+    onPositiveAction: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ProfilerDialogueCard {
+        Column(
+            modifier = modifier.padding(16.dp),
+        ) {
+            Text(
+                text = titleText,
+                fontWeight = FontWeight.ExtraBold,
+                color = FirefoxTheme.colors.textPrimary,
+                fontSize = 20.sp,
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
+            content() // Unique content slot
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                TextButton(onClick = onNegativeAction) {
+                    Text(negativeActionText, color = FirefoxTheme.colors.textAccent)
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                TextButton(onClick = onPositiveAction) {
+                    Text(positiveActionText, color = FirefoxTheme.colors.textAccent)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Simple error dialog for displaying profiler-related error messages.
+ *
+ * @param errorMessage The error message text to display to the user
+ * @param onDismiss Callback invoked when the dismiss button is clicked
+ * @param dismissButtonText Text for the dismiss button, defaults to "Dismiss"
+ */
+@Composable
+fun ProfilerErrorDialog(
+    errorMessage: String,
+    onDismiss: () -> Unit,
+    dismissButtonText: String = "Dismiss",
+) {
+    ProfilerDialogueCard {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = errorMessage,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = FirefoxTheme.colors.textPrimary,
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
+            TextButton(onClick = onDismiss) {
+                Text(dismissButtonText, color = FirefoxTheme.colors.textAccent)
             }
         }
     }

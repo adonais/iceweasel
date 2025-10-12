@@ -670,7 +670,7 @@ nsIContent* nsContentList::Item(uint32_t aIndex) {
 }
 
 void nsContentList::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
-                                     nsAtom* aAttribute, int32_t aModType,
+                                     nsAtom* aAttribute, AttrModType,
                                      const nsAttrValue* aOldValue) {
   MOZ_ASSERT(aElement, "Must have a content node to work with");
 
@@ -1071,7 +1071,7 @@ JSObject* nsCachableElementsByNameNodeList::WrapObject(
 
 void nsCachableElementsByNameNodeList::AttributeChanged(
     Element* aElement, int32_t aNameSpaceID, nsAtom* aAttribute,
-    int32_t aModType, const nsAttrValue* aOldValue) {
+    AttrModType aModType, const nsAttrValue* aOldValue) {
   // No need to rebuild the list if the changed attribute is not the name
   // attribute.
   if (aAttribute != nsGkAtoms::name) {
@@ -1100,7 +1100,7 @@ JSObject* nsLabelsNodeList::WrapObject(JSContext* cx,
 }
 
 void nsLabelsNodeList::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
-                                        nsAtom* aAttribute, int32_t aModType,
+                                        nsAtom* aAttribute, AttrModType,
                                         const nsAttrValue* aOldValue) {
   MOZ_ASSERT(aElement, "Must have a content node to work with");
   if (mState == State::Dirty ||

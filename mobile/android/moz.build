@@ -64,7 +64,7 @@ GeneratedFile(
 )
 
 GeneratedFile(
-    "android-components/components/lib/crash/src/main/java/mozilla/components/lib/crash/service/CrashReport.java",
+    "android-components/components/lib/crash/src/main/java/mozilla/components/lib/crash/service/CrashReport.kt",
     script="/toolkit/crashreporter/generate_crash_reporter_sources.py",
     entry_point="emit_java",
 )

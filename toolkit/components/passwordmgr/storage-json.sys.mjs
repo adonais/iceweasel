@@ -97,6 +97,15 @@ export class LoginManagerStorage_json {
       }
       this._store = new lazy.LoginStore(jsonPath, backupPath);
 
+      // The ProfileDataUpgrader can possibly set this pref. As we don't know
+      // whether that has already happened, or will still happen, we need to add
+      // a pref observer.
+      Services.prefs.addObserver(
+        "signon.reencryptionNeeded",
+        this.#observeReencryptionNeeded.bind(this)
+      );
+      this.#observeReencryptionNeeded();
+
       return (async () => {
         // Load the data asynchronously.
         this.log(`Opening database at ${this._store.path}.`);
@@ -1071,6 +1080,126 @@ export class LoginManagerStorage_json {
     }
 
     return result;
+  }
+
+  reencryptionInProgress = false;
+
+  /**
+   * For migration purposes, asynchronously reencrypt all logins in the
+   * background.
+   */
+  async reencryptAllLogins() {
+    if (this.reencryptionInProgress) {
+      return;
+    }
+    this.reencryptionInProgress = true;
+    this._store.ensureDataReady();
+    Glean.pwmgr.migration.record({ value: "started" });
+
+    const encryptedLogins = structuredClone(
+      this._store.data.logins.filter(login => !this.loginIsDeleted(login.guid))
+    );
+    let encrypted = encryptedLogins.flatMap(
+      ({ encryptedUsername, encryptedPassword, encryptedUnknownFields }) => [
+        encryptedUsername,
+        encryptedPassword,
+        encryptedUnknownFields,
+      ]
+    );
+
+    // Calling decryptMany / encryptMany with an empty array would throw an
+    // error, so just don't do it if there are no logins.
+    if (encryptedLogins.length) {
+      const decrypted = await this._crypto
+        .decryptMany(encrypted)
+        .catch(error => {
+          Glean.pwmgr.migration.record({
+            value: "decryptionError",
+            error: error.name,
+          });
+          this.reencryptionInProgress = false;
+          throw error;
+        });
+      encrypted = await this._crypto.encryptMany(decrypted).catch(error => {
+        Glean.pwmgr.migration.record({
+          value: "encryptionError",
+          error: error.name,
+        });
+        this.reencryptionInProgress = false;
+        throw error;
+      });
+    }
+
+    for (let oldIndex = 0; oldIndex < encryptedLogins.length; oldIndex++) {
+      const oldLogin = encryptedLogins[oldIndex];
+      const newLogin = this._store.data.logins.find(
+        login => login.id === oldLogin.id
+      );
+
+      if (
+        !newLogin ||
+        newLogin.encryptedUsername != oldLogin.encryptedUsername ||
+        newLogin.encryptedPassword != oldLogin.encryptedPassword ||
+        newLogin.encryptedUnknownFields != oldLogin.encryptedUnknownFields
+      ) {
+        // This login has been changed or got deleted while we were
+        // asynchronously reencrypting the logins. As we shoudn't overwrite it
+        // and potentially loose the update, we will just skip it.
+        this.log(
+          `Login ${
+            oldLogin.guid
+          } changed during migration and doesn't need to be updated.`
+        );
+        continue;
+      }
+
+      newLogin.encryptedUsername = encrypted[oldIndex * 3];
+      newLogin.encryptedPassword = encrypted[oldIndex * 3 + 1];
+      newLogin.encryptedUnknownFields = encrypted[oldIndex * 3 + 2];
+    }
+
+    // Save the logins changed by us to disk if there are any
+    if (encryptedLogins.length) {
+      // This could throw if we are in shutdown phase and the store is already
+      // finalized. Thus, it is important we call this before clearing
+      // signon.reencryptionNeeded below, to make sure we will retry the
+      // reencryption on the next restart in case this fails.
+      this._store.saveSoon();
+    }
+
+    Services.prefs.clearUserPref("signon.reencryptionNeeded");
+    this.reencryptionInProgress = false;
+    if (this.addedLoginObserver) {
+      Services.obs.removeObserver(this, "passwordmgr-crypto-login");
+    }
+    Glean.pwmgr.migration.record({ value: "success" });
+  }
+
+  /**
+   * Pref observer for signon.reencryptionNeeded
+   */
+  #observeReencryptionNeeded() {
+    if (Services.prefs.getBoolPref("signon.reencryptionNeeded", false)) {
+      // Only reencrypt if user is logged in. Else, wait until the login has
+      // happened.
+      if (this.isLoggedIn) {
+        this.reencryptAllLogins();
+      } else if (!this.addedLoginObserver) {
+        Services.obs.addObserver(this, "passwordmgr-crypto-login");
+        this.addedLoginObserver = true;
+      }
+    }
+  }
+
+  observe(_, topic) {
+    // If we need to reencrypt, and weren't able to do so on startup because a
+    // primary password is set, we can retry doing so now.
+    if (
+      topic === "passwordmgr-crypto-login" &&
+      Services.prefs.getBoolPref("signon.reencryptionNeeded", false)
+    ) {
+      this.reencryptAllLogins();
+    }
   }
 }
 

@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">Àteras optziones</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Permite sa navigatzione privada</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Disativa sa navigatzione privada</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Navigatzione privada</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Chirca o inserta·nche un’indiritzu</string>
@@ -293,10 +289,6 @@
   <string name="browser_menu_new_private_tab">Ischeda privada noa</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Craes</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Passa a su situ mòbile</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Serra su pannellu de su menù printzipale</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">Serra su menù</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -343,8 +335,6 @@
   <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Bastat unu segundu. Modifica·ddu cando boles.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">Lestru, privadu e fatu pro tene.</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Iscarta</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss_promotion">Refuda sa proposta</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -439,10 +429,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Sincronizatzione de is ischedas tuas in cursu. Torra in ue fias in s’àteru dispositivu.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Serra</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -661,8 +649,7 @@
   <string name="preferences_https_only_title">Modalidade «isceti HTTPS»</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Imprea su blocu de ischermu pro cuare ischedas in sa navigatzione privada</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">Podes bìdere is ischedas a pustis de isblocare su dispositivu cun s’imprenta, cun sa cara o cun su PIN.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Podes bìdere is ischedas a pustis de isblocare su dispositivu cun s’imprenta, cun sa cara o cun su PIN.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Blocu de is avisos de testimòngios</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -732,7 +719,7 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Personaliza</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Intra pro sincronizare ischedas, sinnalibros, craes e àteru.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Intra pro sincronizare ischedas, sinnalibros, craes e àteru.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Contu de Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -924,6 +911,12 @@
   <string name="alternative_app_icon_option_light">Crara</string>
   <!-- Title for the "Dark" alternative app icon variant in the icon picker screen. -->
   <string name="alternative_app_icon_option_dark">Iscura</string>
+  <!-- Title for the "Red" alternative app icon variant in the icon picker screen. -->
+  <string name="alternative_app_icon_option_red">Ruju</string>
+  <!-- Title for the "Green" alternative app icon variant in the icon picker screen. -->
+  <string name="alternative_app_icon_option_green">Birde</string>
+  <!-- Title for the "Blue" alternative app icon variant in the icon picker screen. -->
+  <string name="alternative_app_icon_option_blue">Biaitu</string>
   <!-- Title for the "Purple" alternative app icon variant in the icon picker screen. -->
   <string name="alternative_app_icon_option_purple">Tanadu</string>
   <!-- Title for the "Purple Dark" alternative app icon variant in the icon picker screen. -->
@@ -948,6 +941,8 @@
   <string name="alternative_app_icon_option_momo">Momo</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo_subtitle">Creada dae @heyheymomodraws</string>
+  <!-- Title for the "Solid colors" group of alternative app icon variants in the icon picker screen. This group contains icons with flat, uniform color backgrounds. -->
+  <string name="alternative_app_icon_group_solid_colors">Colores uniformes</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_other">Àteras</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
@@ -1066,8 +1061,6 @@
   <string name="preferences_daily_usage_ping_title">Ping de impreu diàriu</string>
   <string name="preferences_daily_usage_ping_description">Custu agiudat a Mozilla a valutare is utentes ativos.</string>
   <string name="preferences_daily_usage_ping_learn_more">Àteras informatziones a subra de su ping de impreu diàriu</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Imbia informes de faddinas in automàticu</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">Informe imbiadu</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
@@ -1078,8 +1071,6 @@
   <string name="studies_data_category">Istùdios</string>
   <string name="technical_data_category">Datos tècnicos</string>
   <string name="crash_reporting_description">Is informes de faddinas nos agiudant a agatare e arrangiare is faddinas de su navigadore. Is informes podent incluire datos personale o sensìbiles.</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Àteras informatziones in pitzus de is informes de faddinas</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Istùdios</string>
   <!-- Summary for studies preferences -->
@@ -1089,7 +1080,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Sincroniza e sarva datos</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sincroniza e sarva datos</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Identìfica·ti pro torrare a connètere</string>
   <!-- Preference for removing FxA account -->
@@ -1384,9 +1375,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Cantzella sa cronologia</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Cronologia cantzellada</string>
+  <string name="history_delete_multiple_items_snackbar">Cronologia cantzellada</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s cantzelladu</string>
+  <string name="history_delete_single_item_snackbar">%1$s cantzelladu</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Cantzella</string>
   <!--
@@ -1566,8 +1557,6 @@
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Ite est chi non funtzionat?</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Sèbera una resone</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">Sèbera una resone</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_error">Sèbera una resone</string>
@@ -1582,9 +1571,9 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Imbia</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">Informe imbiadu</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Informe imbiadu</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">Serra</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Serra</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -1617,8 +1606,6 @@
   <string name="tab_crash_close">Serra s’ischeda</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Recùpera s’ischeda</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s s’est dèpidu torrare a aviare</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">%s s’est serradu. Boles imbiare un’informe?</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
@@ -1890,12 +1877,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ischeda sarvada</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Ischedas sarvadas.</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Colletzione sarvada.</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Colletzione sarvada.</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Ischeda sarvada.</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Ischeda sarvada.</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Serra</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1942,7 +1927,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Identìfica·ti a Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Sincroniza e sarva datos</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sincroniza e sarva datos</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Imbia a totu is dispositivos</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2045,8 +2030,6 @@
   <string name="tab_collection_dialog_message">Seguru chi boles cantzellare %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Cantzella</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL copiadu</string>
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Mannària de su caràtere</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
@@ -2125,9 +2108,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Ischedas imbiadas.</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Ischedas imbiadas.</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Ischeda imbiada.</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Ischeda imbiada.</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Impossìbile imbiare</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2426,6 +2409,8 @@
   <string name="login_details_navigate_back_button_content_description">Nàviga a coa</string>
   <!-- Edit text for the login detail menu edit button -->
   <string name="login_detail_menu_edit_button">Modifica</string>
+  <!-- Delete text for the login detail menu delete button -->
+  <string name="login_detail_menu_delete_button">Cantzella</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">Aberi su situ in su navigadore</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -2602,12 +2587,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Inserta una cadena de chirca</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Verìfica chi sa cadena de chirca currispondet a su formadu de esempru</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s creadu</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s sarvadu</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%1$s cantzelladu</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Pro ddu permìtere:</string>
   <!-- First step for the allowing a permission -->
@@ -3064,12 +3043,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">Seguru</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">Non seguru</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">Tene contu in custu situ</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">Sa connessione tua no est segura.</string>
@@ -3077,10 +3052,6 @@
   <string name="protection_panel_banner_not_protected_title">As disativadu is protetziones</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
   <string name="protection_panel_etp_toggle_label">Amparu megioradu contra sa sighidura</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Si ti paret chi custu situ no est funtzionende bene, proa a disativare is ainas de amparu.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Is ainas de amparu sunt disativadas. Ti cussigiamus de ddas ativare torra.</string>
   <!--
     Text for displaying the total number of trackers blocked in the protection panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3090,8 +3061,6 @@
   <string name="protection_panel_no_trackers_blocked">Nissuna sighidura agatada</string>
   <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
   <string name="protection_panel_etp_disabled_no_trackers_blocked">Is sighiduras non sunt blocadas</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">Cunfiguratziones de privadesa e riservadesa</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">Cunfiguratziones de riservadesa</string>
   <!-- Title text for the protection panel permissions section. -->

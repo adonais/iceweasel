@@ -7,26 +7,24 @@
 #include "mozilla/dom/XULTextElement.h"
 
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/XULTextElementBinding.h"
 #include "nsCOMPtr.h"
 #include "nsChangeHint.h"
 #include "nsIContent.h"
+#include "nsIMutationObserver.h"
 #include "nsPresContext.h"
 
 namespace mozilla::dom {
 
-nsChangeHint XULTextElement::GetAttributeChangeHint(const nsAtom* aAttribute,
-                                                    int32_t aModType) const {
+nsChangeHint XULTextElement::GetAttributeChangeHint(
+    const nsAtom* aAttribute, AttrModType aModType) const {
   const bool reframe = [&] {
     if (aAttribute == nsGkAtoms::value) {
       // If we have an accesskey we need to recompute our -moz-label-content.
       // Otherwise this is handled by either the attribute text node, or
       // nsTextBoxFrame for crop="center".
-      return aModType == MutationEvent_Binding::ADDITION ||
-             aModType == MutationEvent_Binding::REMOVAL ||
-             HasAttr(nsGkAtoms::accesskey);
+      return IsAdditionOrRemoval(aModType) || HasAttr(nsGkAtoms::accesskey);
     }
     if (aAttribute == nsGkAtoms::crop || aAttribute == nsGkAtoms::accesskey) {
       // value attr + crop="center" still uses nsTextBoxFrame. accesskey

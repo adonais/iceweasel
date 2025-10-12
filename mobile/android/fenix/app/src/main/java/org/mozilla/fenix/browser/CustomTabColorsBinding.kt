@@ -10,8 +10,7 @@ import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import mozilla.components.lib.state.helpers.AbstractBinding
-import mozilla.components.support.ktx.android.view.setNavigationBarTheme
-import mozilla.components.support.ktx.android.view.setStatusBarTheme
+import mozilla.components.support.ktx.android.view.setSystemBarsBackground
 import org.mozilla.fenix.browser.store.BrowserScreenState
 import org.mozilla.fenix.browser.store.BrowserScreenStore
 
@@ -31,8 +30,8 @@ class CustomTabColorsBinding(
             .collect {
                 val customColors = it.customTabColors ?: return@collect
                 updateTheme(
-                     statusBarColor = customColors.systemBarsColor,
-                     navigationBarColor = customColors.systemBarsColor,
+                     statusBarColor = customColors.statusBarColor,
+                     navigationBarColor = customColors.navigationBarColor,
                      navigationBarDividerColor = customColors.navigationBarDividerColor,
                 )
             }
@@ -44,12 +43,10 @@ class CustomTabColorsBinding(
         @ColorInt navigationBarColor: Int? = null,
         @ColorInt navigationBarDividerColor: Int? = null,
     ) {
-        if (statusBarColor != null) {
-            window?.setStatusBarTheme(statusBarColor)
-        }
-
-        if (navigationBarColor != null || navigationBarDividerColor != null) {
-            window?.setNavigationBarTheme(navigationBarColor, navigationBarDividerColor)
-        }
+        window?.setSystemBarsBackground(
+            statusBarColor = statusBarColor,
+            navigationBarColor = navigationBarColor,
+            navigationBarDividerColor = navigationBarDividerColor,
+        )
     }
 }

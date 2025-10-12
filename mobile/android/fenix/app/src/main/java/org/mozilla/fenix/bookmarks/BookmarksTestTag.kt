@@ -8,6 +8,9 @@ internal object BookmarksTestTag {
     // Add bookmark folder
     const val ADD_BOOKMARK_FOLDER_NAME_TEXT_FIELD = "bookmarks.add.folder.name.text.field"
 
+    // Bookmark toolbar
+    const val BOOKMARK_TOOLBAR = "bookmarks.toolbar"
+
     // Edit bookmarked item
     const val EDIT_BOOKMARK_ITEM_TITLE_TEXT_FIELD = "edit.bookmark.item.title.text.field"
     const val EDIT_BOOKMARK_ITEM_URL_TEXT_FIELD = "edit.bookmark.item.url.text.field"

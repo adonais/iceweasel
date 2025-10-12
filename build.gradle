@@ -16,17 +16,14 @@ buildscript {
     }
 
     dependencies {
-        classpath libs.tools.androidgradle
-        classpath libs.commons.exec
-        classpath libs.spotless
+        classpath libs.android.gradle.plugin
         classpath libs.tomlj
 
         // Used in mobile/android/fenix/app/build.gradle
+        classpath libs.androidx.benchmark.gradle
         classpath libs.androidx.navigation.safeargs
         classpath libs.osslicenses.plugin
-        classpath libs.tools.benchmarkgradle
-        classpath libs.glean.gradle.plugin
-        classpath "${ApplicationServicesConfig.groupId}:tooling-nimbus-gradle:${ApplicationServicesConfig.version}"
+        classpath libs.mozilla.glean.gradle.plugin
     }
 }
 
@@ -37,6 +34,7 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.ksp)
+    alias(libs.plugins.spotless)
 }
 
 def tryInt = { string ->
@@ -97,7 +95,7 @@ allprojects {
         topsrcdir = gradle.mozconfig.topsrcdir
         topobjdir = gradle.mozconfig.topobjdir
 
-        gleanVersion = libs.versions.mozilla.glean.get() // Verification done in verifyGleanVersion task
+        gleanVersion = libs.versions.glean.get() // Verification done in verifyGleanVersion task
 
         artifactSuffix = getArtifactSuffix()
         versionName = getVersionName()
@@ -110,7 +108,6 @@ allprojects {
         targetSdkVersion = tryInt(mozconfig.substs.ANDROID_TARGET_SDK)
         minSdkVersion = tryInt(mozconfig.substs.MOZ_ANDROID_MIN_SDK_VERSION)
         manifestPlaceholders = [
-            ANDROID_PACKAGE_NAME: mozconfig.substs.ANDROID_PACKAGE_NAME,
             ANDROID_TARGET_SDK: mozconfig.substs.ANDROID_TARGET_SDK,
             MOZ_ANDROID_MIN_SDK_VERSION: mozconfig.substs.MOZ_ANDROID_MIN_SDK_VERSION,
         ]
@@ -278,6 +275,10 @@ abstract class MachExec extends Exec {
             task.logger.lifecycle("Skipping task ${task.path} because: MOZILLA_OFFICIAL")
             return false
         }
+        if (mozconfig.substs.ENABLE_MOZSEARCH_PLUGIN) {
+            task.logger.lifecycle("Skipping task ${task.path} because: ENABLE_MOZSEARCH_PLUGIN")
+            return false
+        }
 
         // Multi-l10n builds set `AB_CD=multi`, which isn't a valid locale, and
         // `MOZ_CHROME_MULTILOCALE`.  To avoid failures, if Gradle is invoked with
@@ -333,11 +334,9 @@ task machStagePackage(type: MachExec) {
 
     workingDir "${topobjdir}"
 
-    // We'd prefer this to be a `mach` invocation, but `mach build
-    // mobile/android/installer/stage-package` doesn't work as expected.
-    commandLine mozconfig.substs.GMAKE
-    args '-C'
-    args "${topobjdir}/mobile/android/installer"
+    commandLine mozconfig.substs.PYTHON3
+    args "${topsrcdir}/mach"
+    args 'build'
     args 'stage-package'
 
     outputs.file "${topobjdir}/dist/geckoview/assets/omni.ja"
@@ -389,13 +388,13 @@ afterEvaluate {
                 if (details.requested.group == 'org.mozilla.telemetry'
                         && details.requested.name.contains('glean') ) {
                     def requested = details.requested.version.tokenize(".")
-                        def defined = libs.versions.mozilla.glean.get().tokenize(".")
+                        def defined = project.ext.gleanVersion.tokenize(".")
                         // Check the major version
                         if (requested[0] != defined[0]) {
                             throw new AssertionError("Cannot resolve to a single Glean version. Requested: ${details.requested.version}, A-C uses: ${libs.mozilla.glean}")
                         } else {
                             // Enforce that all (transitive) dependencies are using the defined Glean version
-                            details.useVersion libs.versions.mozilla.glean.get()
+                            details.useVersion project.ext.gleanVersion
                         }
                 }
             }
@@ -466,19 +465,7 @@ subprojects { project ->
                     include '**/*.kt'
                     exclude '**/thirdparty/**'
                 }
-                ktlint("${libs.versions.ktlint.get()}").editorConfigOverride([
-                        // Disable some of the new ktlint rules for GV code.
-                        'ktlint_standard_annotation'                 : 'disabled',
-                        'ktlint_standard_argument-list-wrapping'     : 'disabled',
-                        'ktlint_standard_class-signature'            : 'disabled',
-                        'ktlint_standard_enum-wrapping'              : 'disabled',
-                        'ktlint_standard_expression-operand-wrapping': 'disabled',
-                        'ktlint_standard_function-expression-body'   : 'disabled',
-                        'ktlint_standard_function-signature'         : 'disabled',
-                        'ktlint_standard_max-line-length'            : 'disabled',
-                        'ktlint_standard_property-naming'            : 'disabled',
-                        'ktlint_standard_statement-wrapping'         : 'disabled',
-                ])
+                ktlint("${libs.versions.ktlint.get()}").setEditorConfigPath("${topsrcdir}/mobile/android/geckoview/.editorconfig")
             }
         }
 

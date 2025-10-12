@@ -49,6 +49,7 @@ def get_excluded_files():
 # different regex handling for directory paths.
 def get_excluded_dirs():
     return [
+        "build_overrides",
         # Only the camera code under sdk/android/api/org/webrtc is used, so
         # we remove sdk/android and add back the specific files we want.
         "sdk/android",

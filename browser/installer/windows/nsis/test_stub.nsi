@@ -80,7 +80,7 @@ FunctionEnd
 ; For example, to test that $MyVariable is equal to "hello there", you would write:
 ; !insertmacro AssertEqual MyVariable "hello there"
 !macro AssertEqual _variableName _expectedValue
-    ${If} $${_variableName} != ${_expectedValue}
+    ${If} "$${_variableName}" != "${_expectedValue}" ; quoted to prevent numeric coercion (01 != 1)
         StrCpy $FailureMessage "At Line ${__LINE__}: Expected ${_variableName} of ${_expectedValue} , got $${_variableName}"
         SetErrors
         Return
@@ -121,6 +121,8 @@ Function .onInit
     !insertmacro UnitTest TestCanWriteToDirSuccess
 
     !insertmacro UnitTest TestCanWriteToDirFail
+
+    !insertmacro UnitTest TestUninstallRegKey
 
     ${If} $TestFailureCount = 0
         ; On success, write the success metric and jump to the end
@@ -249,6 +251,187 @@ Function TestCanWriteToDirFail
     !insertmacro AssertEqual CanWriteToInstallDir "false"
     !insertmacro AssertEqual ExitCode "${ERR_PREINSTALL_NOT_WRITABLE}"
     !insertmacro AssertEqual AbortInstallation "true"
+FunctionEnd
+
+!include postupdate_helper.nsh
+
+Function TestUninstallRegKey
+    Call CommonOnInit
+    Push $R0 ; We will locally use $R0, ensuring that we can restore it later.
+
+    Call findUninstallKey
+    Pop $R0
+    !insertmacro AssertEqual R0 ""
+
+    Call getModernUninstallKey
+    Pop $R0
+    !insertmacro AssertEqual R0 \
+        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal}"
+
+    Call getLegacyUninstallKey
+    Pop $R0
+    !insertmacro AssertEqual R0 \
+        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})"
+
+    ; Ensure that the getDefaultInstallDir function does not modify the
+    ; contents of $1.
+    Push $INSTDIR ; back up the original contents for later
+    Push $1
+    Call getDefaultInstallDir
+    Pop $INSTDIR ; discard the return value of getDefaultInstallDir
+    Pop $INSTDIR ; restore to original (see above)
+    !insertmacro AssertEqual INSTDIR "$1"
+
+    ; Later, we also want to check that none of the common registers have been
+    ; altered by calling functions. We save their contents on the stack for
+    ; that check.
+    Push "(0 $0, 1 $1, 2 $2, 3 $3, 4 $4, 5 $5, 6 $6, 7 $7, 8 $8, 9 $9)"
+
+    ; ----
+    ; Modify the INSTDIR in a way as if a user had chosen to add a version
+    ; number to the path
+    UserInfo::GetAccountType
+    Pop $INSTDIR
+
+    ${If} $INSTDIR == "User"
+        ${GetLocalAppDataFolder} $INSTDIR
+        StrCpy $INSTDIR "$INSTDIR\${BrandFullName} 123.0\" ; %LOCALAPPDATA%/${BrandFullName}
+    ${Else}
+        !ifdef HAVE_64BIT_BUILD
+          StrCpy $INSTDIR "$PROGRAMFILES64\${BrandFullNameInternal} 123.0\"
+        !else
+          StrCpy $INSTDIR "$PROGRAMFILES32\${BrandFullNameInternal} 123.0\"
+        !endif
+    ${EndIf}
+    Push ${buildNumWin10}
+    Call getUninstallKey
+    Pop $INSTDIR ; reuse INSTDIR for the return value
+    !insertmacro AssertEqual INSTDIR \
+        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})"
+    ClearErrors
+
+    ; ----
+    ; Modify the INSTDIR as if we wanted to install to
+    ; (like unelevated installations do it)
+    Push ${buildNumWin10}
+    Call getUninstallKey
+    Pop $INSTDIR ; reuse INSTDIR for the return value
+    !insertmacro AssertEqual INSTDIR \
+        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})"
+    ClearErrors
+
+    ; ----
+    ; An empty installation path should lead to the legacy uninstall key.
+    StrCpy $INSTDIR ""
+    Push ${buildNumWin10}
+    Call getUninstallKey
+    Pop $INSTDIR ; reuse INSTDIR for the return value
+    !insertmacro AssertEqual INSTDIR \
+        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})"
+    ClearErrors
+
+    ; ----
+    ; Modify the INSTDIR as if it was not touched by a user (use the default
+    ; settings), which under Windows 10 is a special case and the Uninstall
+    ; key should be rewritten, leaving the Version number out of it.
+    Call getDefaultInstallDir ; pushes the default directory on the stack
+    Pop $INSTDIR
+    Push ${buildNumWin10}
+    Call getUninstallKey
+    Pop $INSTDIR ; reuse INSTDIR for the return value
+    !insertmacro AssertEqual INSTDIR \
+        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal}"
+    ClearErrors
+
+    ; ----
+    ; The same test again, but this time simulate Windows 11. The path is
+    ; supposed to contain a version number. This restriction is expected to be
+    ; removed in the future.
+    Push ${buildNumWin11}
+    Call getUninstallKey
+    Pop $INSTDIR ; reuse INSTDIR for the return value
+    !insertmacro AssertEqual INSTDIR \
+        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})"
+    ClearErrors
+
+    ; ----
+    ; Special case: The maximal supported path length here is 1024 chars, in
+    ; which case the return value for the path comparison is an error value.
+    ; Since this error value will never match the default path name, we expect
+    ; the same return value as we would get with an unsupported OS version.
+    StrCpy $INSTDIR ""
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR--------------------------------------------------"
+    StrCpy $INSTDIR "$INSTDIR-----------------------" ; 1023 - chars
+
+    ; 1st test: Just a sanity check to see if the block above really has 1023
+    ; minus signs.
+    push $0 ; save $0
+    StrLen $0 $INSTDIR
+    !insertmacro AssertEqual 0 1023
+    Pop $0 ; restore $0
+
+    ; 2nd test: getNormalizedPath is supposed to return the error message
+    ; instead of a path.
+    push $0 ; save $0
+    ; test the one error case specifically that getNormalizedPath can return.
+    Push $INSTDIR ; Simulate Windows 10
+    Call getNormalizedPath
+    Pop $0
+
+    !insertmacro AssertEqual 0 \
+        "[!] GetFullPathNameW: Insufficient buffer memory."
+    ${IfNot} ${Errors}
+      StrCpy $FailureMessage "At Line ${__LINE__}. An error was expected. Is a SetError missing?"
+      SetErrors
+      Return
+    ${EndIf}
+    ClearErrors
+    Pop $0 ; restore $0
+
+    ; 3rd test: getUninstallKey should return the legacy uninstall key with
+    ; this buffer overflow.
+    push $0 ; save $0
+    Push 10240 ; Simulate Windows 10
+    Call getUninstallKey
+    Pop $0
+    !insertmacro AssertEqual 0  \
+        "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal} ${AppVersion} (${ARCH} ${AB_CD})"
+    ClearErrors
+    Pop $0 ; restore $0
+
+    ; ----
+    ; Make sure that after all the testing the common working registers still
+    ; have their original values. We are using $R0, because INSTDIR can have
+    ; `Function .onVerifyInstDir` attached to it and that can modify registers.
+    Pop $R0
+    ${If} "$R0" != "(0 $0, 1 $1, 2 $2, 3 $3, 4 $4, 5 $5, 6 $6, 7 $7, 8 $8, 9 $9)"
+      StrCpy $FailureMessage "At Line ${__LINE__}  Registers were changed, we expected $\n"
+      StrCpy $FailureMessage "$FailureMessage    '$R0' but received $\n"
+      StrCpy $FailureMessage "$FailureMessage    '(0 $0, 1 $1, 2 $2, 3 $3, 4 $4, 5 $5, 6 $6, 7 $7, 8 $8, 9 $9)'"
+      SetErrors
+      Return
+    ${EndIf}
+    Pop $INSTDIR
+    Pop $R0
 FunctionEnd
 
 Section

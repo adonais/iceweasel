@@ -1743,6 +1743,10 @@ void TrackBuffersManager::OnDemuxFailed(TrackType aTrack,
       }
       break;
     default:
+      // https://w3c.github.io/media-source/#sourcebuffer-segment-parser-loop
+      // 2. If the [[input buffer]] contains bytes that violate the
+      //    SourceBuffer byte stream format specification, then run the append
+      //    error algorithm and abort this algorithm.
       RejectProcessing(aError, __func__);
       break;
   }

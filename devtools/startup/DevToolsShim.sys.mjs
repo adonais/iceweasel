@@ -204,7 +204,7 @@ export const DevToolsShim = {
     // Record the timing at which this event started in order to compute later in
     // gDevTools.showToolbox, the complete time it takes to open the toolbox.
     // i.e. especially take `DevToolsStartup.initDevTools` into account.
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
 
     this.initDevTools("ContextMenu");
 
@@ -231,7 +231,7 @@ export const DevToolsShim = {
     // Record the timing at which this event started in order to compute later in
     // gDevTools.showToolbox, the complete time it takes to open the toolbox.
     // i.e. especially take `DevToolsStartup.initDevTools` into account.
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
 
     this.initDevTools("ContextMenu");
 
@@ -262,7 +262,7 @@ export const DevToolsShim = {
     }
 
     if (reason) {
-      const window = Services.wm.getMostRecentWindow("navigator:browser");
+      const window = Services.wm.getMostRecentBrowserWindow();
 
       this.telemetry.addEventProperty(
         window,

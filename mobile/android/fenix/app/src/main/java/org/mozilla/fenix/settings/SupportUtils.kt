@@ -68,6 +68,11 @@ object SupportUtils {
         MARKETING_DATA("mobile-marketing-data"),
         REQUESTED_CRASH_MINIDUMP("unsent-crash-reports-in-firefox-android"),
         TERMS_OF_USE("firefox-terms-of-use-faq"),
+
+        /**
+         * SUMO page for Local Network Access & Local Device Access permissions
+         */
+        LOCAL_NETWORK_AND_DEVICE_ACCESS("control-personal-device-local-network-permissions-firefox-android"),
     }
 
     enum class MozillaPage(internal val path: String) {

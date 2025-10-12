@@ -516,8 +516,6 @@ Arena* ArenaChunk::allocateArena(GCRuntime* gc, Zone* zone,
 
   updateCurrentChunkAfterAlloc(gc);
 
-  verify();
-
   return arena;
 }
 

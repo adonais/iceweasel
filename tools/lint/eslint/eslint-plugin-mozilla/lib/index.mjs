@@ -73,6 +73,9 @@ let plugin = {
     "no-browser-refs-in-toolkit": (
       await import("./rules/no-browser-refs-in-toolkit.mjs")
     ).default,
+    "no-newtab-refs-outside-newtab": (
+      await import("./rules/no-newtab-refs-outside-newtab.mjs")
+    ).default,
     "no-compare-against-boolean-literals": (
       await import("./rules/no-compare-against-boolean-literals.mjs")
     ).default,

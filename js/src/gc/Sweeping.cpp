@@ -793,12 +793,6 @@ bool Compartment::findSweepGroupEdges() {
 bool Zone::findSweepGroupEdges(Zone* atomsZone) {
   MOZ_ASSERT_IF(this != atomsZone, !isAtomsZone());
 
-#ifdef DEBUG
-  if (FinalizationObservers* observers = finalizationObservers()) {
-    observers->checkTables();
-  }
-#endif
-
   // Any zone may have a pointer to an atom in the atoms zone, and these aren't
   // in the cross compartment map.
   if (atomsZone->wasGCStarted() && !addSweepGroupEdgeTo(atomsZone)) {
@@ -1156,26 +1150,6 @@ void js::NotifyGCNukeWrapper(JSContext* cx, JSObject* wrapper) {
    * remember to mark it.
    */
   RemoveFromGrayList(wrapper);
-
-  /*
-   * Clean up WeakRef maps which might include this wrapper.
-   */
-  JSObject* target = UncheckedUnwrapWithoutExpose(wrapper);
-  if (target->is<WeakRefObject>()) {
-    WeakRefObject* weakRef = &target->as<WeakRefObject>();
-    if (weakRef->target()) {
-      cx->runtime()->gc.nukeWeakRefWrapper(wrapper, weakRef);
-    }
-  }
-
-  /*
-   * Clean up FinalizationRecord record objects which might be the target of
-   * this wrapper.
-   */
-  if (target->is<FinalizationRecordObject>()) {
-    auto* record = &target->as<FinalizationRecordObject>();
-    cx->runtime()->gc.nukeFinalizationRecordWrapper(wrapper, record);
-  }
 }
 
 enum {

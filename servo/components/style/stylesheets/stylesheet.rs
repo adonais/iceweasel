@@ -16,7 +16,7 @@ use crate::stylesheets::{CssRule, CssRules, Origin, UrlExtraData};
 use crate::use_counters::UseCounters;
 use crate::{Namespace, Prefix};
 use cssparser::{Parser, ParserInput, StyleSheetParser};
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 #[cfg(feature = "gecko")]
 use malloc_size_of::{MallocSizeOfOps, MallocUnconditionalShallowSizeOf};
 use parking_lot::RwLock;
@@ -158,8 +158,8 @@ impl StylesheetContents {
             return 0;
         }
         // Measurement of other fields may be added later.
-        self.rules.unconditional_shallow_size_of(ops) +
-            self.rules.read_with(guard).size_of(guard, ops)
+        self.rules.unconditional_shallow_size_of(ops)
+            + self.rules.read_with(guard).size_of(guard, ops)
     }
 }
 

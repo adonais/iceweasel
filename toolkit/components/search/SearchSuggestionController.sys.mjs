@@ -7,10 +7,18 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const DEFAULT_FORM_HISTORY_PARAM = "searchbar-history";
 const HTTP_OK = 200;
 const REMOTE_TIMEOUT_DEFAULT = 500;
+// If this value is updated, the labels for  the
+// `search.suggestions.ohttp.request_counter` metric should also be updated.
+const MAX_OHTTP_FAILURES_BEFORE_FALLBACK = 5;
+// Minimum of 2 hours once the fallback is activated.
+const MIN_DURATION_FOR_FALLBACK_MS = 2 * 60 * 60 * 1000;
 
 const lazy = XPCOMUtils.declareLazy({
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
+  // This is currently only used within experiment code.
+  // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
+  MerinoClient: "resource:///modules/MerinoClient.sys.mjs",
   logConsole: () =>
     console.createInstance({
       prefix: "SearchSuggestionController",
@@ -33,6 +41,14 @@ const lazy = XPCOMUtils.declareLazy({
     pref: "browser.search.suggest.timeout",
     default: REMOTE_TIMEOUT_DEFAULT,
   },
+  ohttpFeatureGateEnabled: {
+    pref: "browser.search.suggest.ohttp.featureGate",
+    default: false,
+  },
+  ohttpEnabled: {
+    pref: "browser.search.suggest.ohttp.enabled",
+    default: false,
+  },
 });
 
 /**
@@ -46,17 +62,47 @@ const lazy = XPCOMUtils.declareLazy({
  */
 
 /**
- * Generates an UUID.
- *
- * @returns {string}
- *   An UUID string, without leading or trailing braces.
+ * @import {MerinoClient} from "resource:///modules/MerinoClient.sys.mjs"
  */
-function uuid() {
-  return Services.uuid
-    .generateUUID()
-    .toString()
-    .slice(1, uuid.length - 1);
-}
+
+/**
+ * @typedef {object} SuggestionFetchOptions
+ * @property {string} searchString
+ *   The term to provide suggestions for.
+ * @property {boolean} inPrivateBrowsing
+ *   Whether the request is being made in the context of private browsing.
+ * @property {nsISearchEngine} engine
+ *   The search engine to use for suggestions.
+ * @property {number} [userContextId]
+ *   The userContextId of the selected tab.
+ * @property {boolean} [restrictToEngine]
+ *   Whether to restrict local historical suggestions to the ones registered
+ *   under the given engine.
+ * @property {boolean} [dedupeRemoteAndLocal]
+ *   Whether to remove remote suggestions that duplicate local suggestions.
+ * @property {boolean} [fetchTrending]
+ *   Whether we should fetch trending suggestions.
+ */
+
+/**
+ * @typedef {object} SuggestionExtraContext
+ * @property {boolean} awaitingLocalResults
+ *   Indicates if this request context is awaiting local results.
+ * @property {XMLHttpRequest} [request]
+ *   The request for this suggestion context.
+ * @property {number} gleanTimerId
+ *   The identifier of the Glean timer that is measuring latency of the request.
+ * @property {nsITimer} timer
+ *   A timer that is monitoring the connection for timeouts.
+ * @property {boolean} [aborted]
+ *   Set to true if the request is being aborted.
+ * @property {boolean} [errorWasReceived]
+ *   Set to true if there was an error on the request.
+ */
+
+/**
+ * @typedef {SuggestionExtraContext & SuggestionFetchOptions} SuggestionRequestContext
+ */
 
 /**
  * Represents a search suggestion.
@@ -160,11 +206,6 @@ class SearchSuggestionEntry {
   #description;
 }
 
-// Maps each engine name to a unique firstPartyDomain, so that requests to
-// different engines are isolated from each other and from normal browsing.
-// This is the same for all the controllers.
-var gFirstPartyDomains = new Map();
-
 /**
  *
  * The SearchSuggestionController class fetches search suggestions from two
@@ -219,6 +260,12 @@ export class SearchSuggestionController {
   }
 
   /**
+   * The maximum number of OHTTP failures before we'll fallback to direct HTTP.
+   */
+  static MAX_OHTTP_FAILURES_BEFORE_FALLBACK =
+    MAX_OHTTP_FAILURES_BEFORE_FALLBACK;
+
+  /**
    * The maximum number of local form history results to return. This limit is
    * only enforced if remote results are also returned.
    *
@@ -234,6 +281,12 @@ export class SearchSuggestionController {
    * @type {number}
    */
   maxRemoteResults = 10;
+
+  /**
+   * The identifier of the search engine that can currently be enabled for
+   * OHTTP. May be overridden for tests.
+   */
+  static oHTTPEngineId = "google";
 
   /**
    * The additional parameter used when searching form history.
@@ -252,15 +305,6 @@ export class SearchSuggestionController {
   formHistoryResult = null;
 
   /**
-   * Gets the firstPartyDomains Map, useful for tests.
-   *
-   * @returns {Map} firstPartyDomains mapped by engine names.
-   */
-  get firstPartyDomains() {
-    return gFirstPartyDomains;
-  }
-
-  /**
    * @typedef {object} FetchResult
    * @property {string} term
    * @property {FormHistoryResultType} [formHistoryResults]
@@ -274,35 +318,25 @@ export class SearchSuggestionController {
    * Fetch search suggestions from all of the providers. Fetches in progress
    * will be stopped and results from them will not be provided.
    *
-   * @param {string} searchTerm - the term to provide suggestions for
-   * @param {boolean} privateMode - whether the request is being made in the
-   *                                context of private browsing.
-   * @param {nsISearchEngine} engine - search engine for the suggestions.
-   * @param {number} userContextId - the userContextId of the selected tab.
-   * @param {boolean} restrictToEngine - whether to restrict local historical
-   *   suggestions to the ones registered under the given engine.
-   * @param {boolean} dedupeRemoteAndLocal - whether to remove remote
-   *   suggestions that dupe local suggestions
-   * @param {boolean} fetchTrending - Whether we should fetch trending suggestions.
-   *
+   * @param {SuggestionFetchOptions} options
    * @returns {Promise<FetchResult>}
    */
-  fetch(
-    searchTerm,
-    privateMode,
+  fetch({
+    searchString,
+    inPrivateBrowsing,
     engine,
     userContextId = 0,
     restrictToEngine = false,
     dedupeRemoteAndLocal = true,
-    fetchTrending = false
-  ) {
+    fetchTrending = false,
+  }) {
     // There is no smart filtering from previous results here (as there is when
     // looking through history/form data) because the result set returned by the
     // server is different for every typed value - e.g. "ocean breathes" does
     // not return a subset of the results returned for "ocean".
 
     lazy.logConsole.debug(
-      `SearchSuggestionController.fetch() called with searchTerm: ${searchTerm}`
+      `SearchSuggestionController.fetch() called with searchString: ${searchString}`
     );
 
     this.stop();
@@ -310,9 +344,9 @@ export class SearchSuggestionController {
     if (!Services.search.isInitialized) {
       throw new Error("Search not initialized yet (how did you get here?)");
     }
-    if (typeof privateMode === "undefined") {
+    if (typeof inPrivateBrowsing === "undefined") {
       throw new Error(
-        "The privateMode argument is required to avoid unintentional privacy leaks"
+        "The inPrivateBrowsing argument is required to avoid unintentional privacy leaks"
       );
     }
     if (!engine.getSubmission) {
@@ -327,40 +361,49 @@ export class SearchSuggestionController {
 
     // Array of promises to resolve before returning results.
     let promises = [];
-    let context = (this.#context = {
+    this.#context = {
       awaitingLocalResults: false,
       dedupeRemoteAndLocal,
       engine,
-      engineId: engine?.identifier || "other",
       fetchTrending,
-      privateMode,
-      request: null,
+      inPrivateBrowsing,
       restrictToEngine,
-      searchString: searchTerm,
-      telemetryHandled: false,
+      searchString,
       gleanTimerId: 0,
       timer: Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer),
       userContextId,
-    });
+    };
 
     // Fetch local results from Form History, if requested.
     if (this.maxLocalResults && !fetchTrending) {
-      context.awaitingLocalResults = true;
-      promises.push(this.#fetchFormHistory(context));
+      this.#context.awaitingLocalResults = true;
+      promises.push(this.#fetchFormHistory(this.#context));
     }
     // Fetch remote results from Search Service, if requested.
     if (
-      (searchTerm || fetchTrending) &&
+      (searchString || fetchTrending) &&
       lazy.suggestionsEnabled &&
-      (!privateMode || lazy.suggestionsInPrivateBrowsingEnabled) &&
+      (!inPrivateBrowsing || lazy.suggestionsInPrivateBrowsingEnabled) &&
       this.maxRemoteResults &&
       SearchSuggestionController.engineOffersSuggestions(engine, fetchTrending)
     ) {
-      promises.push(this.#fetchRemote(context));
+      promises.push(this.#fetchRemote(this.#context));
     }
 
+    /**
+     * Handles rejection of the promises, to log the result and ensure nothing
+     * is returned.
+     *
+     * @param {string|Error} reason
+     *   The reason for the rejection. May be an `Error` if a code error
+     *   occurred.
+     * @returns {null}
+     */
     function handleRejection(reason) {
-      if (reason.startsWith("HTTP request aborted")) {
+      if (
+        typeof reason == "string" &&
+        reason.startsWith("HTTP request aborted")
+      ) {
         lazy.logConsole.debug(reason);
         // Do nothing since this is normal.
         return null;
@@ -369,7 +412,7 @@ export class SearchSuggestionController {
       return null;
     }
     return Promise.all(promises).then(
-      results => this.#dedupeAndReturnResults(context, results),
+      results => this.#dedupeAndReturnResults(this.#context, results),
       handleRejection
     );
   }
@@ -383,14 +426,49 @@ export class SearchSuggestionController {
    */
   stop() {
     if (this.#context) {
-      this.#context.abort = true;
+      this.#context.aborted = true;
       this.#context.request?.abort();
     }
     this.#context = null;
   }
 
+  /**
+   * Should be called at the end of a search engagement (e.g. on blur / search
+   * complete), to reset the Merino session.
+   */
+  resetSession() {
+    this.#merino?.resetSession();
+  }
+
+  /**
+   * @type {SuggestionRequestContext}
+   */
   #context;
 
+  /**
+   * @type {MerinoClient}
+   *   The MerinoClient associated with any ObliviousHTTP requests.
+   */
+  #merino;
+
+  /**
+   * @type {number}
+   *   The count of failed OHTTP requests.
+   */
+  #ohttpFailedRequestCount = 0;
+
+  /**
+   * @type {?number}
+   *   The fractional number of milliseconds from process startup, see
+   *   ChromeUtils.now(). Exposed for tests.
+   */
+  _ohttpLastFailureTimeMs;
+
+  /**
+   * Fetches search suggestions from the form history.
+   *
+   * @param {SuggestionRequestContext} context
+   */
   async #fetchFormHistory(context) {
     // We don't cache these results as we assume that the in-memory SQL cache is
     // good enough in performance.
@@ -415,27 +493,47 @@ export class SearchSuggestionController {
   /**
    * Records per-engine telemetry after a search has finished.
    *
-   * @param {object} context
+   * @param {SuggestionRequestContext} context
    *   The search context.
+   * @param {boolean} usedOHTTP
+   *   True if OHTTP was used for the suggestion request.
    */
-  #reportTelemetryForEngine(context) {
-    if (!context.telemetryHandled) {
+  #reportTelemetryForEngine(context, usedOHTTP) {
+    // If the timer id has been reset, then we have already handled telemetry.
+    // This might occur in the context of an abort or or cancel.
+    if (context.gleanTimerId) {
+      let category = usedOHTTP
+        ? Glean.searchSuggestionsOhttp
+        : Glean.searchSuggestions;
+      let engineId = context.engine.isConfigEngine
+        ? context.engine.id
+        : "other";
       // Stop the latency stopwatch.
-      if (context.abort) {
-        Glean.search.suggestionsLatency[context.engineId].cancel(
-          context.gleanTimerId
-        );
+      if (context.aborted) {
+        category.latency[engineId].cancel(context.gleanTimerId);
       } else {
-        Glean.search.suggestionsLatency[context.engineId].stopAndAccumulate(
-          context.gleanTimerId
-        );
+        category.latency[engineId].stopAndAccumulate(context.gleanTimerId);
       }
       context.gleanTimerId = 0;
-      context.telemetryHandled = true;
-      if (context.engine.isConfigEngine) {
-        if (context.abort) {
+
+      if (usedOHTTP) {
+        if (context.aborted) {
+          Glean.searchSuggestionsOhttp.requestCounter
+            .get(engineId, "aborted")
+            .add(1);
+        } else if (context.errorWasReceived) {
+          Glean.searchSuggestionsOhttp.requestCounter
+            .get(engineId, "failed" + this.#ohttpFailedRequestCount)
+            .add(1);
+        } else {
+          Glean.searchSuggestionsOhttp.requestCounter
+            .get(engineId, "success")
+            .add(1);
+        }
+      } else if (context.engine.isConfigEngine) {
+        if (context.aborted) {
           Glean.searchSuggestions.abortedRequests[context.engine.id].add();
-        } else if (context.error) {
+        } else if (context.errorWasReceived) {
           Glean.searchSuggestions.failedRequests[context.engine.id].add();
         } else {
           Glean.searchSuggestions.successfulRequests[context.engine.id].add();
@@ -445,15 +543,63 @@ export class SearchSuggestionController {
   }
 
   /**
-   * Fetch suggestions from the search engine over the network.
+   * Fetch suggestions from the search engine over the network, using Oblivious
+   * HTTP or normal HTTP(s) as available.
    *
-   * @param {object} context
+   * @param {SuggestionRequestContext} context
    *   The search context.
    * @returns {Promise}
    *   Returns a promise that is resolved when the response is received, or
    *   rejected if there is an error.
    */
   #fetchRemote(context) {
+    let submission = context.engine.getSubmission(
+      context.searchString,
+      context.searchString
+        ? lazy.SearchUtils.URL_TYPE.SUGGEST_JSON
+        : lazy.SearchUtils.URL_TYPE.TRENDING_JSON
+    );
+
+    // Note: when we enable this for all engines, we need to make sure we have
+    // the capability for POST submissions handled.
+    if (
+      lazy.ohttpFeatureGateEnabled &&
+      lazy.ohttpEnabled &&
+      lazy.MerinoClient.hasOHTTPPrefs &&
+      context.engine.id == SearchSuggestionController.oHTTPEngineId
+    ) {
+      let expiredLastFailure =
+        ChromeUtils.now() - this._ohttpLastFailureTimeMs >
+        MIN_DURATION_FOR_FALLBACK_MS;
+      if (
+        this.#ohttpFailedRequestCount < MAX_OHTTP_FAILURES_BEFORE_FALLBACK ||
+        expiredLastFailure
+      ) {
+        if (expiredLastFailure) {
+          this.#ohttpFailedRequestCount = 0;
+        }
+        return this.#fetchRemoteObliviousHTTP(context, submission);
+      }
+      lazy.logConsole.debug(
+        "Maximum failures reached, falling back to direct HTTP"
+      );
+    }
+    return this.#fetchRemoteNormalHTTP(context, submission);
+  }
+
+  /**
+   * Fetch suggestions from the search engine over the network using normal
+   * HTTP(s).
+   *
+   * @param {SuggestionRequestContext} context
+   *   The search context.
+   * @param {nsISearchSubmission} submission
+   *   The submission URL and data for the search suggestion.
+   * @returns {Promise}
+   *   Returns a promise that is resolved when the response is received, or
+   *   rejected if there is an error.
+   */
+  #fetchRemoteNormalHTTP(context, submission) {
     let deferredResponse = Promise.withResolvers();
     let request = (context.request = new XMLHttpRequest());
     // Expect the response type to be JSON, so that the network layer will
@@ -461,41 +607,20 @@ export class SearchSuggestionController {
     // dictating how we process it.
     request.responseType = "json";
 
-    let submission = context.engine.getSubmission(
-      context.searchString,
-      context.searchString
-        ? lazy.SearchUtils.URL_TYPE.SUGGEST_JSON
-        : lazy.SearchUtils.URL_TYPE.TRENDING_JSON
-    );
     let method = submission.postData ? "POST" : "GET";
     request.open(method, submission.uri.spec, true);
     // Don't set or store cookies or on-disk cache.
     request.channel.loadFlags =
       Ci.nsIChannel.LOAD_ANONYMOUS | Ci.nsIChannel.INHIBIT_PERSISTENT_CACHING;
-    // Use a unique first-party domain for each engine, to isolate the
-    // suggestions requests.
-    if (!gFirstPartyDomains.has(context.engine.name)) {
-      // Use the engine identifier, or an uuid when not available, because the
-      // domain cannot contain invalid chars and the engine name may not be
-      // suitable. When using an uuid the firstPartyDomain of the same engine
-      // will differ across restarts, but that's acceptable for now.
-      // TODO (Bug 1511339): use a persistent unique identifier per engine.
-      gFirstPartyDomains.set(
-        context.engine.name,
-        `${context.engine.identifier || uuid()}.search.suggestions.mozilla`
-      );
-    }
 
     lazy.logConsole.debug(
       `HTTP request started for ${submission.uri.spec} by method ${method}`
     );
 
-    let firstPartyDomain = gFirstPartyDomains.get(context.engine.name);
-
     request.setOriginAttributes({
       userContextId: context.userContextId,
-      privateBrowsingId: context.privateMode ? 1 : 0,
-      firstPartyDomain,
+      privateBrowsingId: context.inPrivateBrowsing ? 1 : 0,
+      firstPartyDomain: `${context.engine.id}.search.suggestions.mozilla`,
     });
 
     request.mozBackgroundRequest = true; // suppress dialogs and fail silently
@@ -516,19 +641,40 @@ export class SearchSuggestionController {
 
     request.addEventListener("load", () => {
       context.timer.cancel();
-      this.#reportTelemetryForEngine(context);
-      if (!this.#context || context != this.#context || context.abort) {
+      this.#reportTelemetryForEngine(context, false);
+      if (!this.#context || context != this.#context || context.aborted) {
         deferredResponse.resolve(
           "Got HTTP response after the request was cancelled"
         );
         return;
       }
-      this.#onRemoteLoaded(context, deferredResponse);
+
+      let status;
+      try {
+        status = context.request.status;
+      } catch (e) {
+        // The XMLHttpRequest can throw NS_ERROR_NOT_AVAILABLE.
+        deferredResponse.resolve("Unknown HTTP status: " + e);
+        return;
+      }
+
+      if (status != HTTP_OK) {
+        deferredResponse.resolve(
+          "Non-200 status or empty HTTP response: " + status
+        );
+        return;
+      }
+
+      this.#onRemoteLoaded(
+        context,
+        context.request.response,
+        deferredResponse.resolve
+      );
     });
 
     request.addEventListener("error", () => {
-      this.#context.error = true;
-      this.#reportTelemetryForEngine(context);
+      this.#context.errorWasReceived = true;
+      this.#reportTelemetryForEngine(context, false);
       deferredResponse.resolve("HTTP error");
     });
 
@@ -536,7 +682,7 @@ export class SearchSuggestionController {
     // shouldn't return local or remote results for existing searches.
     request.addEventListener("abort", () => {
       context.timer.cancel();
-      this.#reportTelemetryForEngine(context);
+      this.#reportTelemetryForEngine(context, false);
       deferredResponse.reject(
         `HTTP request aborted for ${submission.uri.spec}}`
       );
@@ -549,39 +695,95 @@ export class SearchSuggestionController {
     }
 
     context.gleanTimerId =
-      Glean.search.suggestionsLatency[context.engineId].start();
+      Glean.searchSuggestions.latency[
+        context.engine.isConfigEngine ? context.engine.id : "other"
+      ].start();
 
     return deferredResponse.promise;
   }
 
   /**
-   * Called when the request completed successfully (thought the HTTP status
-   * could be anything) so we can handle the response data.
+   * Fetch suggestions from the search engine over the network using Oblivious
+   * HTTP.
    *
-   * @param {object} context
+   * POST submissions are not currently supported.
+   *
+   * @param {SuggestionRequestContext} context
    *   The search context.
-   * @param {PromiseWithResolvers} deferredResponse
-   *   The promise to resolve when a response is received.
+   * @param {nsISearchSubmission} submission
+   *   The submission URL and data for the search suggestion.
+   * @returns {Promise}
+   *   Returns a promise that is resolved when the response is received, or
+   *   rejected if there is an error.
    */
-  #onRemoteLoaded(context, deferredResponse) {
-    let status;
-    try {
-      status = context.request.status;
-    } catch (e) {
-      // The XMLHttpRequest can throw NS_ERROR_NOT_AVAILABLE.
-      deferredResponse.resolve("Unknown HTTP status: " + e);
-      return;
+  async #fetchRemoteObliviousHTTP(context, submission) {
+    if (!this.#merino) {
+      this.#merino = new lazy.MerinoClient("SearchSuggestions", {
+        allowOhttp: true,
+      });
     }
 
-    if (status != HTTP_OK) {
-      deferredResponse.resolve(
-        "Non-200 status or empty HTTP response: " + status
+    let submissionURL = URL.fromURI(submission.uri);
+
+    lazy.logConsole.debug(`OHTTP request started for ${submission.uri.spec}`);
+
+    context.gleanTimerId =
+      Glean.searchSuggestionsOhttp.latency[
+        context.engine.isConfigEngine ? context.engine.id : "other"
+      ].start();
+
+    let merinoSuggestions = await this.#merino.fetch({
+      query: context.searchString,
+      providers: ["google_suggest"],
+      timeoutMs: lazy.remoteTimeout,
+      otherParams: {
+        google_suggest_params: submissionURL.searchParams.toString(),
+      },
+    });
+
+    if (!this.#context || context != this.#context || context.aborted) {
+      this.#reportTelemetryForEngine(context, true);
+      return "Got OHTTP response after the request was cancelled";
+    }
+
+    // The last fetch status covers errors as well as "no_suggestions". Currently
+    // Merino will return no suggestions if it receives an error response from
+    // the search engine, hence we have to handle that case here as well.
+    // The suggestions list here is different from the search engine suggestions
+    // which are live within the specific provider record within `merinoSuggestions`.
+    if (this.#merino.lastFetchStatus != "success") {
+      this.#context.errorWasReceived = true;
+      this.#ohttpFailedRequestCount++;
+      this.#reportTelemetryForEngine(context, true);
+      this._ohttpLastFailureTimeMs = ChromeUtils.now();
+      return "No suggestions received from Merino, the search engine probably failed to respond";
+    }
+
+    this.#reportTelemetryForEngine(context, true);
+    this.#ohttpFailedRequestCount = 0;
+    this._ohttpLastFailureTimeMs = undefined;
+
+    return new Promise(resolve => {
+      this.#onRemoteLoaded(
+        context,
+        merinoSuggestions[0]?.custom_details?.google_suggest?.suggestions || [],
+        resolve
       );
-      return;
-    }
+    });
+  }
 
-    let serverResults = context.request.response;
-
+  /**
+   * Called when the request completed successfully so we can handle the
+   * response data.
+   *
+   * @param {SuggestionRequestContext} context
+   *   The search context.
+   * @param {object[]} serverResults
+   *   The results received from the server.
+   * @param {(value: any | PromiseLike<any>) => void} resolve
+   *   A promise resolver to resolve when a response is received.
+   */
+  #onRemoteLoaded(context, serverResults, resolve) {
     lazy.logConsole.debug("Remote results:", serverResults);
 
     try {
@@ -605,26 +807,24 @@ export class SearchSuggestionController {
           ))
       ) {
         // something is wrong here so drop remote results
-        deferredResponse.resolve(
+        resolve(
           "Unexpected response, searchString does not match remote response"
         );
         return;
       }
     } catch (ex) {
-      deferredResponse.resolve(
-        `Failed to parse the remote response string: ${ex}`
-      );
+      resolve(`Failed to parse the remote response string: ${ex}`);
       return;
     }
 
     // Remove the search string from the server results since it is no longer
     // needed.
     let results = serverResults.slice(1) || [];
-    deferredResponse.resolve({ result: results });
+    resolve({ result: results });
   }
 
   /**
-   * @param {object} context
+   * @param {SuggestionRequestContext} context
    *   The search context.
    * @param {{
    *   localResults?:FormHistoryResultType, result:SuggestionRemoteResult
@@ -633,7 +833,7 @@ export class SearchSuggestionController {
    * @returns {FetchResult?}
    */
   #dedupeAndReturnResults(context, suggestResults) {
-    if (context.abort) {
+    if (context.aborted) {
       return null;
     }
 

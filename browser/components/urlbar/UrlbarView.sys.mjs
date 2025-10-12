@@ -5,6 +5,10 @@
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+/**
+ * @import {ProvidersManager} from "UrlbarProvidersManager.sys.mjs"
+ */
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -15,16 +19,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarProviderGlobalActions:
-    "resource:///modules/UrlbarProviderGlobalActions.sys.mjs",
   UrlbarProviderQuickSuggest:
     "resource:///modules/UrlbarProviderQuickSuggest.sys.mjs",
-  UrlbarProviderQuickSuggestContextualOptIn:
-    "resource:///modules/UrlbarProviderQuickSuggestContextualOptIn.sys.mjs",
-  UrlbarProviderRecentSearches:
-    "resource:///modules/UrlbarProviderRecentSearches.sys.mjs",
   UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.sys.mjs",
-  UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.sys.mjs",
   UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
   UrlbarSearchOneOffs: "resource:///modules/UrlbarSearchOneOffs.sys.mjs",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
@@ -112,6 +109,9 @@ export class UrlbarView {
   }
 
   get oneOffSearchButtons() {
+    if (!this.input.isAddressbar) {
+      return null;
+    }
     if (!this.#oneOffSearchButtons) {
       this.#oneOffSearchButtons = new lazy.UrlbarSearchOneOffs(this);
       this.#oneOffSearchButtons.addEventListener(
@@ -210,6 +210,13 @@ export class UrlbarView {
     }
 
     return this.#selectedElement;
+  }
+
+  /**
+   * @returns {ProvidersManager}
+   */
+  get #providersManager() {
+    return this.controller.manager;
   }
 
   /**
@@ -345,7 +352,7 @@ export class UrlbarView {
       // global actions.
       if (
         this.#rows.children[index]?.result.providerName ==
-          lazy.UrlbarProviderGlobalActions.name &&
+          "UrlbarProviderGlobalActions" &&
         this.#rows.children.length > 2
       ) {
         index = index + (reverse ? -1 : 1);
@@ -365,7 +372,7 @@ export class UrlbarView {
     const isSkippableTabToSearchAnnounce = selectedElt => {
       let result = this.getResultFromElement(selectedElt);
       let skipAnnouncement =
-        result?.providerName == "TabToSearch" &&
+        result?.providerName == "UrlbarProviderTabToSearch" &&
         !this.#announceTabToSearchOnSelection &&
         lazy.UrlbarPrefs.get("accessibility.tabToSearch.announceResults");
       if (skipAnnouncement) {
@@ -759,7 +766,7 @@ export class UrlbarView {
     // Search mode is active.  If the one-offs should be shown, make sure they
     // are enabled and show the view.
     let openPanelInstance = (this.#openPanelInstance = {});
-    this.oneOffSearchButtons.willHide().then(willHide => {
+    this.oneOffSearchButtons?.willHide().then(willHide => {
       if (!willHide && openPanelInstance == this.#openPanelInstance) {
         this.oneOffSearchButtons.enable(true);
         this.#openPanel();
@@ -774,6 +781,16 @@ export class UrlbarView {
     if (!this.isOpen) {
       this.clear();
     }
+
+    // Set the actionmode atttribute if we are in actions search mode.
+    // We do this before updating the result rows so that there is no flicker
+    // after the actions are initially displayed.
+    if (
+      this.input.searchMode?.source == lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS
+    ) {
+      this.#rows.toggleAttribute("actionmode", true);
+    }
+
     this.#queryUpdatedResults = true;
     this.#updateResults();
 
@@ -790,7 +807,7 @@ export class UrlbarView {
       //  * The search string is empty
       //  * The search string starts with an `@` or a search restriction
       //    character
-      this.oneOffSearchButtons.enable(
+      this.oneOffSearchButtons?.enable(
         (firstResult.providerName != "UrlbarProviderSearchTips" ||
           queryContext.trimmedSearchString) &&
           queryContext.trimmedSearchString[0] != "@" &&
@@ -800,7 +817,7 @@ export class UrlbarView {
       );
     }
 
-    if (!this.#selectedElement && !this.oneOffSearchButtons.selectedButton) {
+    if (!this.#selectedElement && !this.oneOffSearchButtons?.selectedButton) {
       if (firstResult.heuristic) {
         // Select the heuristic result.  The heuristic may not be the first
         // result added, which is why we do this check here when each result is
@@ -831,7 +848,7 @@ export class UrlbarView {
     // a row.
     let secondResult = queryContext.results[1];
     if (
-      secondResult?.providerName == "TabToSearch" &&
+      secondResult?.providerName == "UrlbarProviderTabToSearch" &&
       lazy.UrlbarPrefs.get("accessibility.tabToSearch.announceResults") &&
       this.#previousTabToSearchEngine != secondResult.payload.engine
     ) {
@@ -850,7 +867,7 @@ export class UrlbarView {
 
     // If we update the selected element, a new unique ID is generated for it.
     // We need to ensure that aria-activedescendant reflects this new ID.
-    if (this.#selectedElement && !this.oneOffSearchButtons.selectedButton) {
+    if (this.#selectedElement && !this.oneOffSearchButtons?.selectedButton) {
       let aadID = this.input.inputField.getAttribute("aria-activedescendant");
       if (aadID && !this.document.getElementById(aadID)) {
         this.#setAccessibleFocus(this.#selectedElement);
@@ -1100,7 +1117,7 @@ export class UrlbarView {
    * but we want a connected #selectedElement usually. We don't use a WeakRef
    * because it would depend too much on GC timing.
    *
-   * @returns {DOMElement} the selected element.
+   * @returns {HTMLElement} the selected element.
    */
   get #selectedElement() {
     return this.#rawSelectedElement?.isConnected
@@ -1545,7 +1562,7 @@ export class UrlbarView {
 
   #createRowContentForDynamicType(item, result) {
     let { dynamicType } = result.payload;
-    let provider = lazy.UrlbarProvidersManager.getProvider(result.providerName);
+    let provider = this.#providersManager.getProvider(result.providerName);
     let viewTemplate =
       provider.getViewTemplate?.(result) ||
       UrlbarView.dynamicViewTemplatesByName.get(dynamicType);
@@ -1834,7 +1851,7 @@ export class UrlbarView {
   #updateRow(item, result) {
     let oldResult = item.result;
     let oldResultType = item.result?.type;
-    let provider = lazy.UrlbarProvidersManager.getProvider(result.providerName);
+    let provider = this.#providersManager.getProvider(result.providerName);
     item.result = result;
     item.removeAttribute("stale");
     item.id = getUniqueId("urlbarView-row-");
@@ -1961,11 +1978,11 @@ export class UrlbarView {
       item.setAttribute("type", "dynamic");
       this.#updateRowForDynamicType(item, result);
       return;
-    } else if (result.providerName == "TabToSearch") {
+    } else if (result.providerName == "UrlbarProviderTabToSearch") {
       item.setAttribute("type", "tabtosearch");
-    } else if (result.providerName == "SemanticHistorySearch") {
+    } else if (result.providerName == "UrlbarProviderSemanticHistorySearch") {
       item.setAttribute("type", "semantic-history");
-    } else if (result.providerName == "InputHistory") {
+    } else if (result.providerName == "UrlbarProviderInputHistory") {
       item.setAttribute("type", "adaptive-history");
     } else {
       item.setAttribute(
@@ -2056,7 +2073,7 @@ export class UrlbarView {
               });
             };
           }
-        } else if (result.providerName == "TabToSearch") {
+        } else if (result.providerName == "UrlbarProviderTabToSearch") {
           actionSetter = () => {
             this.#l10nCache.setElementL10n(action, {
               id: result.payload.isGeneralPurposeEngine
@@ -2124,7 +2141,10 @@ export class UrlbarView {
 
     this.#setRowSelectable(item, isRowSelectable);
 
-    action.toggleAttribute("slide-in", result.providerName == "TabToSearch");
+    action.toggleAttribute(
+      "slide-in",
+      result.providerName == "UrlbarProviderTabToSearch"
+    );
 
     item.toggleAttribute("pinned", !!result.payload.isPinned);
 
@@ -2278,7 +2298,7 @@ export class UrlbarView {
     }
 
     // Get the view update from the result's provider.
-    let provider = lazy.UrlbarProvidersManager.getProvider(result.providerName);
+    let provider = this.#providersManager.getProvider(result.providerName);
     let viewUpdate = await provider.getViewUpdate(result, idsByName);
     if (item.result != result) {
       return;
@@ -2427,11 +2447,6 @@ export class UrlbarView {
     } else {
       this.panel.setAttribute("noresults", "true");
     }
-
-    this.#rows.toggleAttribute(
-      "actionmode",
-      this.visibleResults[0]?.source == lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS
-    );
   }
 
   /**
@@ -2545,7 +2560,7 @@ export class UrlbarView {
       };
     }
 
-    if (row.result.providerName == lazy.UrlbarProviderRecentSearches.name) {
+    if (row.result.providerName == "UrlbarProviderRecentSearches") {
       return { id: "urlbar-group-recent-searches" };
     }
 
@@ -2574,9 +2589,8 @@ export class UrlbarView {
 
     // Show "Shortcuts" if there's another result before that group.
     if (
-      row.result.providerName == lazy.UrlbarProviderTopSites.name &&
-      this.#queryContext.results[0].providerName !=
-        lazy.UrlbarProviderTopSites.name
+      row.result.providerName == "UrlbarProviderTopSites" &&
+      this.#queryContext.results[0].providerName != "UrlbarProviderTopSites"
     ) {
       return { id: "urlbar-group-shortcuts" };
     }
@@ -2665,6 +2679,20 @@ export class UrlbarView {
     }
     this.#updateIndices();
 
+    // Reset actionmode if we left the actions search mode.
+    // We do this after updating the result rows to ensure the attribute stays
+    // active the entire time the actions list is visible.
+
+    // this.input.searchMode updates early, so only checking it would cause a
+    // flicker, and the first visible result's source being an action doesn't
+    // necessarily imply we are in actions mode, therefore we should check both.
+    if (
+      this.input.searchMode?.source != lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS &&
+      this.visibleResults[0]?.source != lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS
+    ) {
+      this.#rows.toggleAttribute("actionmode", false);
+    }
+
     // Accept tentative exposures. This is analogous to unhiding the
     // hypothetical non-stale hidden rows of hidden-exposure results.
     this.controller.engagementEvent.acceptTentativeExposures();
@@ -2712,9 +2740,7 @@ export class UrlbarView {
     }
 
     let result = row?.result;
-    let provider = lazy.UrlbarProvidersManager.getProvider(
-      result?.providerName
-    );
+    let provider = this.#providersManager.getProvider(result?.providerName);
     if (provider) {
       provider.tryMethod("onBeforeSelection", result, element);
     }
@@ -2965,7 +2991,7 @@ export class UrlbarView {
           },
         });
       } else if (
-        result.providerName == "TokenAliasEngines" &&
+        result.providerName == "UrlbarProviderTokenAliasEngines" &&
         lazy.UrlbarPrefs.getScotchBonnetPref(
           "searchRestrictKeywords.featureGate"
         )
@@ -3191,7 +3217,7 @@ export class UrlbarView {
   #enableOrDisableRowWrap() {
     let wrap = getBoundsWithoutFlushing(this.input.textbox).width < 650;
     this.#rows.toggleAttribute("wrap", wrap);
-    this.oneOffSearchButtons.container.toggleAttribute("wrap", wrap);
+    this.oneOffSearchButtons?.container.toggleAttribute("wrap", wrap);
   }
 
   /**
@@ -3398,9 +3424,12 @@ export class UrlbarView {
       return this.#resultMenuCommands.get(result);
     }
 
-    let commands = lazy.UrlbarProvidersManager.getProvider(
-      result.providerName
-    )?.tryMethod("getResultCommands", result);
+    /**
+     * @type {?UrlbarResultCommand[]}
+     */
+    let commands = this.#providersManager
+      .getProvider(result.providerName)
+      ?.tryMethod("getResultCommands", result);
     if (commands) {
       this.#resultMenuCommands.set(result, commands);
       return commands;
@@ -3437,7 +3466,14 @@ export class UrlbarView {
     return rv;
   }
 
-  #populateResultMenu({ menupopup = this.resultMenu, commands } = {}) {
+  /**
+   * Popuplates the result menu with commands.
+   *
+   * @param {object} options
+   * @param {XULTextElement} options.menupopup
+   * @param {UrlbarResultCommand[]} options.commands
+   */
+  #populateResultMenu({ menupopup = this.resultMenu, commands }) {
     menupopup.textContent = "";
     for (let data of commands) {
       if (data.children) {
@@ -3855,12 +3891,10 @@ class QueryContextCache {
       // for a moment.
       if (
         queryContext.results?.some(
-          r => r.providerName == lazy.UrlbarProviderTopSites.name
+          r => r.providerName == "UrlbarProviderTopSites"
         ) &&
         !queryContext.results.some(
-          r =>
-            r.providerName ==
-            lazy.UrlbarProviderQuickSuggestContextualOptIn.name
+          r => r.providerName == "UrlbarProviderQuickSuggestContextualOptIn"
         )
       ) {
         this.#topSitesContext = queryContext;

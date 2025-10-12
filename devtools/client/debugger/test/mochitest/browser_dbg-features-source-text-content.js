@@ -135,6 +135,7 @@ add_task(async function testSourceTextContent() {
     "slow-loading-script.js",
     "same-url.js",
     "new-function.js",
+    "iframe.html",
   ];
 
   // Load the document *once* the debugger is opened
@@ -361,6 +362,12 @@ add_task(async function testSourceTextContent() {
     2,
     "We loaded http-error-script.js twice, only before the debugger is opened"
   );
+
+  await reload(dbg, "index.html", ...waitForSources);
+
+  // Verify that iframe source content is fetch correctly after reload
+  await selectSource(dbg, "iframe.html");
+  is(getEditorContent(dbg), IFRAME_CONTENT);
 });
 
 /**

@@ -30,6 +30,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.pixelSizeFor
 import java.lang.ref.WeakReference
+import mozilla.components.browser.menu.R as menuR
 
 /**
  * Since Android 12 reading the clipboard triggers an OS notification.
@@ -71,7 +72,7 @@ object ToolbarPopupWindow {
             true,
         )
         popupWindow.elevation =
-            context.resources.getDimension(R.dimen.mozac_browser_menu_elevation)
+            context.resources.getDimension(menuR.dimen.mozac_browser_menu_elevation)
 
         // This is a workaround for SDK<23 to allow popup dismissal on outside or back button press
         // See: https://github.com/mozilla-mobile/fenix/issues/10027

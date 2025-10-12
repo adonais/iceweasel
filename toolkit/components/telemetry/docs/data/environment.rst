@@ -422,9 +422,7 @@ The following is a partial list of `collected preferences <https://searchfox.org
 
 - ``network.trr.strict_native_fallback``: Whether strict fallback mode is enabled for DoH mode 2. Defaults to true on Nightly, false elsewhere.
 
-- ``extensions.InstallTriggerImpl.enabled``: Whether the InstallTrigger implementation should be enabled (or hidden and none of its methods available).
-
-- ``extensions.InstallTrigger.enabled``: Whether the InstallTrigger implementation should be enabled (or completely hidden), separate from InstallTriggerImpl because InstallTrigger is improperly used also for UA detection.
+- ``extensions.InstallTrigger.enabled``: Whether the InstallTrigger property should be enabled (or completely hidden).
 
 - ``extensions.eventPages.enabled``: Whether non-persistent background pages (also known as Event pages) should be enabled for `"manifest_version": 2` extensions.
 

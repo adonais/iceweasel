@@ -274,5 +274,26 @@ TEST(UrlClassifierUtils, MakeUpdateRequestV5)
   // 1. The V5 list name "uws-4b"
   // 2. The decoded state for the above kTestState.
   ASSERT_TRUE(request.EqualsLiteral(
-      "CgZ1d3MtNGISGwoNCAMQBhgBIgMwMDEwARDHyhEaAhgJuW4h-A=="));
+      "&names=uws-4b&version=Cg0IAxAGGAEiAzAwMTABEMfKERoCGAm5biH4"));
+}
+
+TEST(UrlClassifierUtils, makeFindFullHashRequestV5)
+{
+  nsTArray<nsCString> hashPrefixes;
+  hashPrefixes.AppendElement("\xAA\xBB\xCC\xDD"_ns);
+  hashPrefixes.AppendElement("\xEE\xFF\x00\x11"_ns);
+  hashPrefixes.AppendElement("\x12\x34\x56\x78"_ns);
+  hashPrefixes.AppendElement("\xDE\xAD\xBE\xEF"_ns);
+  hashPrefixes.AppendElement("\xFE\xED\xFA\xCE"_ns);
+
+  nsCOMPtr<nsIUrlClassifierUtils> utils =
+      do_GetService("@mozilla.org/url-classifier/utils;1");
+
+  nsCString request;
+  nsresult rv = utils->MakeFindFullHashRequestV5(hashPrefixes, request);
+  EXPECT_EQ(rv, NS_OK);
+
+  ASSERT_TRUE(request.EqualsLiteral(
+      "hashPrefixes=qrvM3Q==&hashPrefixes=7v8AEQ==&hashPrefixes=EjRWeA==&"
+      "hashPrefixes=3q2+7w==&hashPrefixes=/u36zg=="));
 }

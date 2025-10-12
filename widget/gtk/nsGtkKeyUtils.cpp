@@ -1166,14 +1166,14 @@ void KeymapWrapper::InitInputEvent(WidgetInputEvent& aInputEvent,
              "CapsLock: %s, NumLock: %s, ScrollLock: %s })",
              keymapWrapper, aGdkModifierState, ToChar(aInputEvent.mMessage),
              aInputEvent.mModifiers,
-             GetBoolName(aInputEvent.mModifiers & MODIFIER_SHIFT),
-             GetBoolName(aInputEvent.mModifiers & MODIFIER_CONTROL),
-             GetBoolName(aInputEvent.mModifiers & MODIFIER_ALT),
-             GetBoolName(aInputEvent.mModifiers & MODIFIER_META),
-             GetBoolName(aInputEvent.mModifiers & MODIFIER_ALTGRAPH),
-             GetBoolName(aInputEvent.mModifiers & MODIFIER_CAPSLOCK),
-             GetBoolName(aInputEvent.mModifiers & MODIFIER_NUMLOCK),
-             GetBoolName(aInputEvent.mModifiers & MODIFIER_SCROLLLOCK)));
+             TrueOrFalse(aInputEvent.mModifiers & MODIFIER_SHIFT),
+             TrueOrFalse(aInputEvent.mModifiers & MODIFIER_CONTROL),
+             TrueOrFalse(aInputEvent.mModifiers & MODIFIER_ALT),
+             TrueOrFalse(aInputEvent.mModifiers & MODIFIER_META),
+             TrueOrFalse(aInputEvent.mModifiers & MODIFIER_ALTGRAPH),
+             TrueOrFalse(aInputEvent.mModifiers & MODIFIER_CAPSLOCK),
+             TrueOrFalse(aInputEvent.mModifiers & MODIFIER_NUMLOCK),
+             TrueOrFalse(aInputEvent.mModifiers & MODIFIER_SCROLLLOCK)));
   }
 
   switch (aInputEvent.mClass) {
@@ -1211,11 +1211,11 @@ void KeymapWrapper::InitInputEvent(WidgetInputEvent& aInputEvent,
          "aInputEvent.mButtons=0x%04X (Left: %s, Right: %s, Middle: %s, "
          "4th (BACK): %s, 5th (FORWARD): %s)",
          keymapWrapper, mouseEvent.mButtons,
-         GetBoolName(mouseEvent.mButtons & MouseButtonsFlag::ePrimaryFlag),
-         GetBoolName(mouseEvent.mButtons & MouseButtonsFlag::eSecondaryFlag),
-         GetBoolName(mouseEvent.mButtons & MouseButtonsFlag::eMiddleFlag),
-         GetBoolName(mouseEvent.mButtons & MouseButtonsFlag::e4thFlag),
-         GetBoolName(mouseEvent.mButtons & MouseButtonsFlag::e5thFlag)));
+         TrueOrFalse(mouseEvent.mButtons & MouseButtonsFlag::ePrimaryFlag),
+         TrueOrFalse(mouseEvent.mButtons & MouseButtonsFlag::eSecondaryFlag),
+         TrueOrFalse(mouseEvent.mButtons & MouseButtonsFlag::eMiddleFlag),
+         TrueOrFalse(mouseEvent.mButtons & MouseButtonsFlag::e4thFlag),
+         TrueOrFalse(mouseEvent.mButtons & MouseButtonsFlag::e5thFlag)));
   }
 }
 
@@ -1569,7 +1569,7 @@ void KeymapWrapper::HandleKeyPressEvent(nsWindow* aWindow,
                                                   : "GDK_KEY_RELEASE"),
            gdk_keyval_name(aGdkKeyEvent->keyval), aGdkKeyEvent->keyval,
            aGdkKeyEvent->state, aGdkKeyEvent->hardware_keycode,
-           aGdkKeyEvent->time, GetBoolName(aGdkKeyEvent->is_modifier)));
+           aGdkKeyEvent->time, TrueOrFalse(aGdkKeyEvent->is_modifier)));
 
   // if we are in the middle of composing text, XIM gets to see it
   // before mozilla does.
@@ -1774,7 +1774,7 @@ bool KeymapWrapper::HandleKeyReleaseEvent(nsWindow* aWindow,
                                                   : "GDK_KEY_RELEASE"),
            gdk_keyval_name(aGdkKeyEvent->keyval), aGdkKeyEvent->keyval,
            aGdkKeyEvent->state, aGdkKeyEvent->hardware_keycode,
-           aGdkKeyEvent->time, GetBoolName(aGdkKeyEvent->is_modifier)));
+           aGdkKeyEvent->time, TrueOrFalse(aGdkKeyEvent->is_modifier)));
 
   RefPtr<IMContextWrapper> imContext = aWindow->GetIMContext();
   if (imContext) {
@@ -1799,7 +1799,7 @@ bool KeymapWrapper::HandleKeyReleaseEvent(nsWindow* aWindow,
   MOZ_LOG(gKeyLog, LogLevel::Info,
           ("  HandleKeyReleaseEvent(), dispatched eKeyUp event "
            "(isCancelled=%s)",
-           GetBoolName(isCancelled)));
+           TrueOrFalse(isCancelled)));
   return true;
 }
 
@@ -2002,16 +2002,16 @@ void KeymapWrapper::InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
        "mKeyNameIndex=%s, mKeyValue=%s, mCodeNameIndex=%s, mCodeValue=%s, "
        "mLocation=%s, mIsRepeat=%s }",
        keymapWrapper, modifierState, ToChar(aKeyEvent.mMessage),
-       GetBoolName(aKeyEvent.IsShift()), GetBoolName(aKeyEvent.IsControl()),
-       GetBoolName(aKeyEvent.IsAlt()), GetBoolName(aKeyEvent.IsMeta()),
-       GetBoolName(aKeyEvent.IsAltGraph()), aKeyEvent.mKeyCode,
+       TrueOrFalse(aKeyEvent.IsShift()), TrueOrFalse(aKeyEvent.IsControl()),
+       TrueOrFalse(aKeyEvent.IsAlt()), TrueOrFalse(aKeyEvent.IsMeta()),
+       TrueOrFalse(aKeyEvent.IsAltGraph()), aKeyEvent.mKeyCode,
        GetCharacterCodeName(static_cast<char16_t>(aKeyEvent.mCharCode)).get(),
        ToString(aKeyEvent.mKeyNameIndex).get(),
        GetCharacterCodeNames(aKeyEvent.mKeyValue).get(),
        ToString(aKeyEvent.mCodeNameIndex).get(),
        GetCharacterCodeNames(aKeyEvent.mCodeValue).get(),
        GetKeyLocationName(aKeyEvent.mLocation).get(),
-       GetBoolName(aKeyEvent.mIsRepeat)));
+       TrueOrFalse(aKeyEvent.mIsRepeat)));
 }
 
 /* static */

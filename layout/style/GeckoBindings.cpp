@@ -8,6 +8,7 @@
 
 #include "mozilla/GeckoBindings.h"
 
+#include "AnchorPositioningUtils.h"
 #include "ChildIterator.h"
 #include "ErrorReporter.h"
 #include "gfxFontFeatures.h"
@@ -134,40 +135,21 @@ const nsINode* Gecko_GetFlattenedTreeParentNode(const nsINode* aNode) {
 }
 
 void Gecko_GetAnonymousContentForElement(const Element* aElement,
-                                         nsIContent** aStackBuffer,
-                                         size_t aStackBufferCap,
-                                         size_t* aStackBufferLen,
-                                         nsTArray<nsIContent*>* aExcessArray) {
+                                         nsTArray<nsIContent*>* aArray) {
   MOZ_ASSERT(aElement->MayHaveAnonymousChildren());
-  MOZ_ASSERT(*aStackBufferLen == 0);
-  MOZ_ASSERT(aStackBufferCap > 2, "We do unchecked appends for common pseudos");
   if (aElement->HasProperties()) {
     if (auto* marker = nsLayoutUtils::GetMarkerPseudo(aElement)) {
-      aStackBuffer[(*aStackBufferLen)++] = marker;
+      aArray->AppendElement(marker);
     }
     if (auto* before = nsLayoutUtils::GetBeforePseudo(aElement)) {
-      aStackBuffer[(*aStackBufferLen)++] = before;
+      aArray->AppendElement(before);
     }
     if (auto* after = nsLayoutUtils::GetAfterPseudo(aElement)) {
-      aStackBuffer[(*aStackBufferLen)++] = after;
+      aArray->AppendElement(after);
     }
   }
-  AutoTArray<nsIContent*, 5> elements;
   nsContentUtils::AppendNativeAnonymousChildren(
-      aElement, elements, nsIContent::eSkipDocumentLevelNativeAnonymousContent);
-  size_t nacChildren = elements.Length();
-  if (!nacChildren) {
-    return;  // Nothing else to do.
-  }
-
-  // If we fit in the stack buffer, copy there, otherwise use aExcessArray.
-  if (nacChildren <= aStackBufferCap - *aStackBufferLen) {
-    PodCopy(aStackBuffer + *aStackBufferLen, elements.Elements(), nacChildren);
-    *aStackBufferLen += nacChildren;
-  } else {
-    aExcessArray->SwapElements(elements);
-  }
-  MOZ_DIAGNOSTIC_ASSERT(*aStackBufferLen <= aStackBufferCap);
+      aElement, *aArray, nsIContent::eSkipDocumentLevelNativeAnonymousContent);
 }
 
 void Gecko_DestroyAnonymousContentList(nsTArray<nsIContent*>* aAnonContent) {
@@ -1841,22 +1823,6 @@ StyleFontFamilyList StyleFontFamilyList::WithOneUnquotedFamily(
   return WithNames(std::move(names));
 }
 
-// Find the aContainer's child that is the ancestor of aDescendant.
-static const nsIFrame* TraverseUpToContainerChild(const nsIFrame* aContainer,
-                                                  const nsIFrame* aDescendant) {
-  const auto* current = aDescendant;
-  while (true) {
-    const auto* parent = current->GetParent();
-    if (!parent) {
-      return nullptr;
-    }
-    if (parent == aContainer) {
-      return current;
-    }
-    current = parent;
-  }
-}
-
 static bool AnchorSideUsesCBWM(
     const StyleAnchorSideKeyword& aAnchorSideKeyword) {
   switch (aAnchorSideKeyword) {
@@ -1878,13 +1844,6 @@ static bool AnchorSideUsesCBWM(
   }
   return false;
 }
-
-struct AnchorPosInfo {
-  // Border-box of the anchor frame, offset against `mContainingBlock`'s padding
-  // box.
-  nsRect mRect;
-  const nsIFrame* mContainingBlock;
-};
 
 static const nsAtom* GetUsedAnchorName(const nsIFrame* aPositioned,
                                        const nsAtom* aAnchorName) {
@@ -1925,7 +1884,7 @@ static Maybe<AnchorPosInfo> GetAnchorPosRect(
 
   Maybe<AnchorPosResolutionData>* entry = nullptr;
   if (aReferencedAnchors) {
-    const auto result = aReferencedAnchors->Lookup(anchorName, true);
+    const auto result = aReferencedAnchors->InsertOrModify(anchorName, true);
     if (result.mAlreadyResolved) {
       MOZ_ASSERT(result.mEntry, "Entry exists but null?");
       return result.mEntry->map([&](const AnchorPosResolutionData& aData) {
@@ -1945,57 +1904,8 @@ static Maybe<AnchorPosInfo> GetAnchorPosRect(
     return Nothing{};
   }
 
-  auto rect = [&]() -> Maybe<nsRect> {
-    if (aCBRectIsvalid) {
-      const nsRect result = anchor->GetRectRelativeToSelf();
-      const auto offset = anchor->GetOffsetTo(containingBlock);
-      // Easy, just use the existing function.
-      return Some(result + offset);
-    }
-
-    // Ok, containing block doesn't have its rect fully resolved. Figure out
-    // rect relative to the child of containing block that is also the ancestor
-    // of the anchor, and manually compute the offset.
-    // TODO(dshin): This wouldn't handle anchor in a previous top layer.
-    const auto* containerChild =
-        TraverseUpToContainerChild(containingBlock, anchor);
-    if (!containerChild) {
-      return Nothing{};
-    }
-
-    if (anchor == containerChild) {
-      // Anchor is the direct child of anchor's CBWM.
-      return Some(anchor->GetRect());
-    }
-
-    // TODO(dshin): Already traversed up to find `containerChild`, and we're
-    // going to do it again here, which feels a little wasteful.
-    const nsRect rectToContainerChild = anchor->GetRectRelativeToSelf();
-    const auto offset = anchor->GetOffsetTo(containerChild);
-    return Some(rectToContainerChild + offset + containerChild->GetPosition());
-  }();
-  return rect.map([&](const nsRect& aRect) {
-    // We need to position the border box of the anchor within the abspos
-    // containing block's size - So the rectangle's size (i.e. Anchor size)
-    // stays the same, while "the outer rectangle" (i.e. The abspos cb size)
-    // "shrinks" by shifting the position.
-    const auto border = containingBlock->GetUsedBorder();
-    const nsPoint borderTopLeft{border.left, border.top};
-    const auto rect = aRect - borderTopLeft;
-    if (entry) {
-      // If a partially resolved entry exists, make sure that it matches what we
-      // have now.
-      MOZ_ASSERT_IF(*entry, entry->ref().mSize == rect.Size());
-      *entry = Some(AnchorPosResolutionData{
-          rect.Size(),
-          Some(rect.TopLeft()),
-      });
-    }
-    return AnchorPosInfo{
-        .mRect = rect,
-        .mContainingBlock = containingBlock,
-    };
-  });
+  return AnchorPositioningUtils::GetAnchorPosRect(containingBlock, anchor,
+                                                  aCBRectIsvalid, entry);
 }
 
 bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
@@ -2053,25 +1963,30 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
     return LogicalEdge::Start;
   }();
 
-  // Do we need to flip the computed offset by containing block's size?
-  const auto opposite =
-      propEdge != anchorEdge && propEdge != LogicalEdge::Start;
-  const auto size = logicalCBSize.Size(propAxis, wm);
-  const auto offset = anchorEdge == LogicalEdge::Start
-                          ? logicalAnchorRect.Start(propAxis, wm)
-                          : logicalAnchorRect.End(propAxis, wm);
-  const auto side = opposite ? size - offset : offset;
-  nscoord result = side;
+  nscoord result = [&]() {
+    // Offset to the desired anchor edge, from the containing block's start
+    // edge.
+    const auto anchorOffsetFromStartEdge =
+        anchorEdge == LogicalEdge::Start ? logicalAnchorRect.Start(propAxis, wm)
+                                         : logicalAnchorRect.End(propAxis, wm);
+    if (propEdge == LogicalEdge::Start) {
+      return anchorOffsetFromStartEdge;
+    }
+    // Need the offset from the end edge of the containing block.
+    const auto anchorOffsetFromEndEdge =
+        logicalCBSize.Size(propAxis, wm) - anchorOffsetFromStartEdge;
+    return anchorOffsetFromEndEdge;
+  }();
 
   // Apply the percentage value, with the percentage basis as the anchor
   // element's size in the relevant axis.
   if (aPercentage != 0.f) {
     const nscoord anchorSize = LogicalSize{wm, rect.Size()}.Size(propAxis, wm);
-    result = side + (opposite ? -1 : 1) *
-                        ((aPercentage != 1.f)
-                             ? NSToCoordRoundWithClamp(
-                                   aPercentage * static_cast<float>(anchorSize))
-                             : anchorSize);
+    result += (propEdge == LogicalEdge::End ? -1 : 1) *
+              ((aPercentage != 1.f)
+                   ? NSToCoordRoundWithClamp(aPercentage *
+                                             static_cast<float>(anchorSize))
+                   : anchorSize);
   }
   *aOut = Length::FromPixels(CSSPixel::FromAppUnits(result));
   return true;
@@ -2095,7 +2010,7 @@ bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
     Maybe<AnchorPosResolutionData>* entry = nullptr;
     if (aParams->mReferencedAnchors) {
       const auto result =
-          aParams->mReferencedAnchors->Lookup(anchorName, false);
+          aParams->mReferencedAnchors->InsertOrModify(anchorName, false);
       if (result.mAlreadyResolved) {
         MOZ_ASSERT(result.mEntry, "Entry exists but null?");
         return result.mEntry->map(

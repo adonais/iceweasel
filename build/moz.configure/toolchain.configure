@@ -1404,7 +1404,7 @@ host_multiarch_dir = multiarch_dir(host)
 
 
 def minimum_gcc_version():
-    return Version("8.1.0")
+    return Version("10.1.0")
 
 
 @template
@@ -1649,30 +1649,10 @@ def compiler(
                     flags.extend(("-isystem", os.path.join(sysroot.path, path)))
 
         if info.type == "clang-cl":
-            if info.version < "9.0.0":
-                raise FatalCheckError(
-                    "Only clang-cl 9.0 or newer is supported (found version %s)"
-                    % info.version
-                )
             if winsysroot and host.os != "WINNT":
                 overlay = os.path.join(winsysroot, "overlay.yaml")
                 if os.path.exists(overlay):
-                    overlay_flags = ["-Xclang", "-ivfsoverlay", "-Xclang", overlay]
-                    if info.version >= "16.0" or (
-                        # clang-cl 15 normally doesn't support the root-relative
-                        # overlay we use, but the bootstrapped clang-cl 15 is patched
-                        # to support it, so check we're using a patched version.
-                        info.version >= "15.0"
-                        and try_preprocess(
-                            configure_cache,
-                            [compiler] + flags + overlay_flags,
-                            language,
-                            "",
-                            onerror=lambda: False,
-                            wrapper=wrapper,
-                        )
-                    ):
-                        flags.extend(overlay_flags)
+                    flags.extend(["-Xclang", "-ivfsoverlay", "-Xclang", overlay])
 
         if (info.type, host_or_target.abi) in (
             ("clang", "msvc"),
@@ -1682,30 +1662,19 @@ def compiler(
 
         # If you want to bump the version check here ensure the version
         # is known for Xcode in get_compiler_info.
-        if info.type == "clang" and info.version < "8.0":
+        # This version can be no higher than the version used in
+        # src/bootstrap/src/core/build_steps/llvm.rs's check_llvm_version in the source
+        # code of the minimum supported Rust version.
+        if info.type in ("clang", "clang-cl") and info.version < "17.0":
             raise FatalCheckError(
-                "Only clang/llvm 8.0 or newer is supported (found version %s)."
-                % info.version
+                "Only %s 17.0 or newer is supported (found version %s)."
+                % (("clang/llvm" if info.type == "clang" else "clang-cl"), info.version)
             )
 
-        if host_or_target.kernel == "WASI":
-            if info.type != "clang":
-                raise FatalCheckError(
-                    "Only clang is supported for %s" % host_or_target.alias
-                )
-            if info.version < "8.0":
-                raise FatalCheckError(
-                    "Only clang/llvm 8.0 or newer is supported for %s (found version %s)."
-                    % (host_or_target.alias, info.version)
-                )
-
-        if host_or_target.os == "Android":
-            # Need at least clang 13 for compiler-rt/libunwind being the default.
-            if info.type == "clang" and info.version < "13.0":
-                raise FatalCheckError(
-                    "Only clang/llvm 13.0 or newer is supported for %s (found version %s)."
-                    % (host_or_target.alias, info.version)
-                )
+        if host_or_target.kernel == "WASI" and info.type != "clang":
+            raise FatalCheckError(
+                "Only clang is supported for %s" % host_or_target.alias
+            )
 
         if host_or_target.os == "WINNT" and info.type == "gcc":
             raise FatalCheckError(

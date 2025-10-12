@@ -8,6 +8,7 @@
 
 #include "HashStore.h"
 #include "chromium/safebrowsing.pb.h"
+#include "chromium/safebrowsing_v5.pb.h"
 
 namespace mozilla {
 namespace safebrowsing {
@@ -193,6 +194,33 @@ class ProtocolParserProtobuf final : public ProtocolParser {
 
   nsresult ProcessEncodedRemoval(TableUpdateV4& aTableUpdate,
                                  const ThreatEntrySet& aRemoval);
+};
+
+class ProtocolParserProtobufV5 final : public ProtocolParser {
+ public:
+  ProtocolParserProtobufV5();
+
+  virtual void SetCurrentTable(const nsACString& aTable) override;
+  virtual nsresult AppendStream(const nsACString& aData) override;
+  virtual void End() override;
+
+ private:
+  virtual ~ProtocolParserProtobufV5();
+
+  virtual RefPtr<TableUpdate> CreateTableUpdate(
+      const nsACString& aTableName) const override;
+
+  // Process a single hash list in the response.
+  nsresult ProcessOneResponse(const v5::HashList& aHashList,
+                              nsACString& aListName);
+
+  // Process the additions for a 4-byte encoded prefixes.
+  nsresult ProcessAddition4Bytes(TableUpdateV4& aTableUpdate,
+                                 const v5::RiceDeltaEncoded32Bit& aAddition);
+
+  // Process the removals for a encoded prefixes.
+  nsresult ProcessRemoval(TableUpdateV4& aTableUpdate,
+                          const v5::RiceDeltaEncoded32Bit& aRemoval);
 };
 
 }  // namespace safebrowsing

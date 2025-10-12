@@ -502,7 +502,8 @@ void nsVideoFrame::UpdatePosterSource(bool aNotify) {
 }
 
 nsresult nsVideoFrame::AttributeChanged(int32_t aNameSpaceID,
-                                        nsAtom* aAttribute, int32_t aModType) {
+                                        nsAtom* aAttribute,
+                                        AttrModType aModType) {
   if (aAttribute == nsGkAtoms::poster && HasVideoElement()) {
     UpdatePosterSource(true);
   }

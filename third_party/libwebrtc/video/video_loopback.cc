@@ -26,7 +26,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
-#include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/run_test.h"
 #include "test/test_flags.h"
@@ -443,9 +442,9 @@ int RunLoopbackTest(int argc, char* argv[]) {
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.
   const std::string field_trials = absl::GetFlag(FLAGS_force_fieldtrials);
-  webrtc::field_trial::InitFieldTrialsFromString(field_trials.c_str());
+  field_trial::InitFieldTrialsFromString(field_trials.c_str());
 
-  webrtc::test::RunTest(webrtc::Loopback);
+  test::RunTest(Loopback);
   return 0;
 }
 }  // namespace webrtc

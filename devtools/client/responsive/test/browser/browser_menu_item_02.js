@@ -25,7 +25,7 @@ addRDMTask(
 
         is(
           window1,
-          Services.wm.getMostRecentWindow("navigator:browser"),
+          Services.wm.getMostRecentBrowserWindow(),
           "The new window is the active one"
         );
 
@@ -49,7 +49,7 @@ addRDMTask(
 
     is(
       window,
-      Services.wm.getMostRecentWindow("navigator:browser"),
+      Services.wm.getMostRecentBrowserWindow(),
       "The original window is the active one"
     );
 

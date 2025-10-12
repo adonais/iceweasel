@@ -64,8 +64,10 @@ ChromeUtils.defineESModuleGetters(this, {
   PlacesTransactions: "resource://gre/modules/PlacesTransactions.sys.mjs",
   PlacesUIUtils: "moz-src:///browser/components/places/PlacesUIUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  PopupBlockerObserver: "resource:///modules/PopupBlockerObserver.sys.mjs",
+  PopupAndRedirectBlockerObserver:
+    "resource:///modules/PopupAndRedirectBlockerObserver.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  PrivateBrowsingUI: "moz-src:///browser/modules/PrivateBrowsingUI.sys.mjs",
   ProcessHangMonitor: "resource:///modules/ProcessHangMonitor.sys.mjs",
   ProfilesDatastoreService:
     "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs",
@@ -109,7 +111,6 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource:///modules/UrlbarProviderSearchTips.sys.mjs",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
   UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
-  UrlbarValueFormatter: "resource:///modules/UrlbarValueFormatter.sys.mjs",
   Weave: "resource://services-sync/main.sys.mjs",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.sys.mjs",
   webrtcUI: "resource:///modules/webrtcUI.sys.mjs",
@@ -368,6 +369,7 @@ ChromeUtils.defineLazyGetter(this, "gNavToolbox", () => {
 ChromeUtils.defineLazyGetter(this, "gURLBar", () => {
   let urlbar = new UrlbarInput({
     textbox: document.getElementById("urlbar"),
+    isAddressbar: true,
     eventTelemetryCategory: "urlbar",
   });
 
@@ -3242,71 +3244,72 @@ var gUIDensity = {
   },
 };
 
-const nodeToTooltipMap = {
-  "bookmarks-menu-button": "bookmarksMenuButton.tooltip",
-  "context-reload": "reloadButton.tooltip",
-  "context-stop": "stopButton.tooltip",
-  "downloads-button": "downloads.tooltip",
-  "fullscreen-button": "fullscreenButton.tooltip",
-  "appMenu-fullscreen-button2": "fullscreenButton.tooltip",
-  "new-window-button": "newWindowButton.tooltip",
-  "new-tab-button": "newTabButton.tooltip",
-  "tabs-newtab-button": "newTabButton.tooltip",
-  "reload-button": "reloadButton.tooltip",
-  "stop-button": "stopButton.tooltip",
-  "urlbar-zoom-button": "urlbar-zoom-button.tooltip",
-  "appMenu-zoomEnlarge-button2": "zoomEnlarge-button.tooltip",
-  "appMenu-zoomReset-button2": "zoomReset-button.tooltip",
-  "appMenu-zoomReduce-button2": "zoomReduce-button.tooltip",
-  "reader-mode-button": "reader-mode-button.tooltip",
-  "reader-mode-button-icon": "reader-mode-button.tooltip",
-  "vertical-tabs-newtab-button": "newTabButton.tooltip",
-};
-const nodeToShortcutMap = {
-  "bookmarks-menu-button": "manBookmarkKb",
-  "context-reload": "key_reload",
-  "context-stop": "key_stop",
-  "downloads-button": "key_openDownloads",
-  "fullscreen-button": "key_enterFullScreen",
-  "appMenu-fullscreen-button2": "key_enterFullScreen",
-  "new-window-button": "key_newNavigator",
-  "new-tab-button": "key_newNavigatorTab",
-  "tabs-newtab-button": "key_newNavigatorTab",
-  "reload-button": "key_reload",
-  "stop-button": "key_stop",
-  "urlbar-zoom-button": "key_fullZoomReset",
-  "appMenu-zoomEnlarge-button2": "key_fullZoomEnlarge",
-  "appMenu-zoomReset-button2": "key_fullZoomReset",
-  "appMenu-zoomReduce-button2": "key_fullZoomReduce",
-  "reader-mode-button": "key_toggleReaderMode",
-  "reader-mode-button-icon": "key_toggleReaderMode",
-  "vertical-tabs-newtab-button": "key_newNavigatorTab",
-};
+const DynamicShortcutTooltip = {
+  nodeToTooltipMap: {
+    "bookmarks-menu-button": "bookmarksMenuButton.tooltip",
+    "context-reload": "reloadButton.tooltip",
+    "context-stop": "stopButton.tooltip",
+    "downloads-button": "downloads.tooltip",
+    "fullscreen-button": "fullscreenButton.tooltip",
+    "appMenu-fullscreen-button2": "fullscreenButton.tooltip",
+    "new-window-button": "newWindowButton.tooltip",
+    "new-tab-button": "newTabButton.tooltip",
+    "tabs-newtab-button": "newTabButton.tooltip",
+    "reload-button": "reloadButton.tooltip",
+    "stop-button": "stopButton.tooltip",
+    "urlbar-zoom-button": "urlbar-zoom-button.tooltip",
+    "appMenu-zoomEnlarge-button2": "zoomEnlarge-button.tooltip",
+    "appMenu-zoomReset-button2": "zoomReset-button.tooltip",
+    "appMenu-zoomReduce-button2": "zoomReduce-button.tooltip",
+    "reader-mode-button": "reader-mode-button.tooltip",
+    "reader-mode-button-icon": "reader-mode-button.tooltip",
+    "vertical-tabs-newtab-button": "newTabButton.tooltip",
+  },
 
-const gDynamicTooltipCache = new Map();
-function GetDynamicShortcutTooltipText(nodeId) {
-  if (!gDynamicTooltipCache.has(nodeId) && nodeId in nodeToTooltipMap) {
-    let strId = nodeToTooltipMap[nodeId];
-    let args = [];
-    if (nodeId in nodeToShortcutMap) {
-      let shortcutId = nodeToShortcutMap[nodeId];
-      let shortcut = document.getElementById(shortcutId);
-      if (shortcut) {
-        args.push(ShortcutUtils.prettifyShortcut(shortcut));
+  nodeToShortcutMap: {
+    "bookmarks-menu-button": "manBookmarkKb",
+    "context-reload": "key_reload",
+    "context-stop": "key_stop",
+    "downloads-button": "key_openDownloads",
+    "fullscreen-button": "key_enterFullScreen",
+    "appMenu-fullscreen-button2": "key_enterFullScreen",
+    "new-window-button": "key_newNavigator",
+    "new-tab-button": "key_newNavigatorTab",
+    "tabs-newtab-button": "key_newNavigatorTab",
+    "reload-button": "key_reload",
+    "stop-button": "key_stop",
+    "urlbar-zoom-button": "key_fullZoomReset",
+    "appMenu-zoomEnlarge-button2": "key_fullZoomEnlarge",
+    "appMenu-zoomReset-button2": "key_fullZoomReset",
+    "appMenu-zoomReduce-button2": "key_fullZoomReduce",
+    "reader-mode-button": "key_toggleReaderMode",
+    "reader-mode-button-icon": "key_toggleReaderMode",
+    "vertical-tabs-newtab-button": "key_newNavigatorTab",
+  },
+
+  getText(nodeId) {
+    if (!this.cache.has(nodeId) && nodeId in this.nodeToTooltipMap) {
+      let strId = this.nodeToTooltipMap[nodeId];
+      let args = [];
+      if (nodeId in this.nodeToShortcutMap) {
+        let shortcutId = this.nodeToShortcutMap[nodeId];
+        let shortcut = document.getElementById(shortcutId);
+        if (shortcut) {
+          args.push(ShortcutUtils.prettifyShortcut(shortcut));
+        }
       }
+      this.cache.set(nodeId, gNavigatorBundle.getFormattedString(strId, args));
     }
-    gDynamicTooltipCache.set(
-      nodeId,
-      gNavigatorBundle.getFormattedString(strId, args)
-    );
-  }
-  return gDynamicTooltipCache.get(nodeId);
-}
+    return this.cache.get(nodeId);
+  },
 
-function UpdateDynamicShortcutTooltipText(aTooltip) {
-  let nodeId = aTooltip.triggerNode.id;
-  aTooltip.setAttribute("label", GetDynamicShortcutTooltipText(nodeId));
-}
+  updateText(aTooltip) {
+    let nodeId = aTooltip.triggerNode.id;
+    aTooltip.setAttribute("label", this.getText(nodeId));
+  },
+
+  cache: new Map(),
+};
 
 /*
  * - [ Dependencies ] ---------------------------------------------------------
@@ -3725,400 +3728,6 @@ var BrowserOffline = {
   },
 };
 
-var WebAuthnPromptHelper = {
-  _icon: "webauthn-notification-icon",
-  _topic: "webauthn-prompt",
-
-  // The current notification, if any. The U2F manager is a singleton, we will
-  // never allow more than one active request. And thus we'll never have more
-  // than one notification either.
-  _current: null,
-
-  // The current transaction ID. Will be checked when we're notified of the
-  // cancellation of an ongoing WebAuthhn request.
-  _tid: 0,
-
-  // Translation object
-  _l10n: null,
-
-  init() {
-    this._l10n = new Localization(["browser/webauthnDialog.ftl"], true);
-    Services.obs.addObserver(this, this._topic);
-  },
-
-  uninit() {
-    Services.obs.removeObserver(this, this._topic);
-  },
-
-  observe(aSubject, aTopic, aData) {
-    switch (aTopic) {
-      case "fullscreen-nav-toolbox":
-        // Prevent the navigation toolbox from being hidden while a WebAuthn
-        // prompt is visible.
-        if (aData == "hidden" && this._tid != 0) {
-          FullScreen.showNavToolbox();
-        }
-        return;
-      case "fullscreen-painted":
-        // Prevent DOM elements from going fullscreen while a WebAuthn
-        // prompt is shown.
-        if (this._tid != 0) {
-          FullScreen.exitDomFullScreen();
-        }
-        return;
-      case this._topic:
-        break;
-      default:
-        return;
-    }
-    // aTopic is equal to this._topic
-
-    let data = JSON.parse(aData);
-
-    // If we receive a cancel, it might be a WebAuthn prompt starting in another
-    // window, and the other window's browsing context will send out the
-    // cancellations, so any cancel action we get should prompt us to cancel.
-    if (data.prompt.type == "cancel") {
-      this.cancel(data);
-      return;
-    }
-
-    if (
-      data.browsingContextId !== gBrowser.selectedBrowser.browsingContext.id
-    ) {
-      // Must belong to some other window.
-      return;
-    }
-
-    let mgr = Cc["@mozilla.org/webauthn/service;1"].getService(
-      Ci.nsIWebAuthnService
-    );
-
-    if (data.prompt.type == "presence") {
-      this.presence_required(mgr, data);
-    } else if (data.prompt.type == "attestation-consent") {
-      this.attestation_consent(mgr, data);
-    } else if (data.prompt.type == "pin-required") {
-      this.pin_required(mgr, false, data);
-    } else if (data.prompt.type == "pin-invalid") {
-      this.pin_required(mgr, true, data);
-    } else if (data.prompt.type == "select-sign-result") {
-      this.select_sign_result(mgr, data);
-    } else if (data.prompt.type == "already-registered") {
-      this.show_info(
-        mgr,
-        data.origin,
-        data.tid,
-        "alreadyRegistered",
-        "webauthn.alreadyRegisteredPrompt"
-      );
-    } else if (data.prompt.type == "select-device") {
-      this.show_info(
-        mgr,
-        data.origin,
-        data.tid,
-        "selectDevice",
-        "webauthn.selectDevicePrompt"
-      );
-    } else if (data.prompt.type == "pin-auth-blocked") {
-      this.show_info(
-        mgr,
-        data.origin,
-        data.tid,
-        "pinAuthBlocked",
-        "webauthn.pinAuthBlockedPrompt"
-      );
-    } else if (data.prompt.type == "uv-blocked") {
-      this.show_info(
-        mgr,
-        data.origin,
-        data.tid,
-        "uvBlocked",
-        "webauthn.uvBlockedPrompt"
-      );
-    } else if (data.prompt.type == "uv-invalid") {
-      let retriesLeft = data.prompt.retries;
-      let dialogText;
-      if (retriesLeft === 0) {
-        // We can skip that because it will either be replaced
-        // by uv-blocked or by PIN-prompt
-        return;
-      } else if (retriesLeft == null || retriesLeft < 0) {
-        dialogText = this._l10n.formatValueSync(
-          "webauthn-uv-invalid-short-prompt"
-        );
-      } else {
-        dialogText = this._l10n.formatValueSync(
-          "webauthn-uv-invalid-long-prompt",
-          { retriesLeft }
-        );
-      }
-      let mainAction = this.buildCancelAction(mgr, data.tid);
-      this.show_formatted_msg(data.tid, "uvInvalid", dialogText, mainAction);
-    } else if (data.prompt.type == "device-blocked") {
-      this.show_info(
-        mgr,
-        data.origin,
-        data.tid,
-        "deviceBlocked",
-        "webauthn.deviceBlockedPrompt"
-      );
-    } else if (data.prompt.type == "pin-not-set") {
-      this.show_info(
-        mgr,
-        data.origin,
-        data.tid,
-        "pinNotSet",
-        "webauthn.pinNotSetPrompt"
-      );
-    }
-  },
-
-  prompt_for_password(origin, wasInvalid, retriesLeft, aPassword) {
-    this.reset();
-    let dialogText;
-    if (!wasInvalid) {
-      dialogText = this._l10n.formatValueSync("webauthn-pin-required-prompt");
-    } else if (retriesLeft == null || retriesLeft < 0 || retriesLeft > 3) {
-      // The token will need to be power cycled after three incorrect attempts,
-      // so we show a short error message that does not include retriesLeft. It
-      // would be confusing to display retriesLeft at this point, as the user
-      // will feel that they only get three attempts.
-      // We also only show the short prompt in the case the token doesn't
-      // support/send a retries-counter. Then we simply don't know how many are left.
-      dialogText = this._l10n.formatValueSync(
-        "webauthn-pin-invalid-short-prompt"
-      );
-    } else {
-      // The user is close to having their PIN permanently blocked. Show a more
-      // severe warning that includes the retriesLeft counter.
-      dialogText = this._l10n.formatValueSync(
-        "webauthn-pin-invalid-long-prompt",
-        { retriesLeft }
-      );
-    }
-
-    let res = Services.prompt.promptPasswordBC(
-      gBrowser.selectedBrowser.browsingContext,
-      Services.prompt.MODAL_TYPE_TAB,
-      origin,
-      dialogText,
-      aPassword
-    );
-    return res;
-  },
-
-  select_sign_result(mgr, { origin, tid, prompt: { entities } }) {
-    let unknownAccount = this._l10n.formatValueSync(
-      "webauthn-select-sign-result-unknown-account"
-    );
-    let secondaryActions = [];
-    for (let i = 0; i < entities.length; i++) {
-      let label = entities[i].name ?? unknownAccount;
-      secondaryActions.push({
-        label,
-        accessKey: i.toString(),
-        callback() {
-          mgr.selectionCallback(tid, i);
-        },
-      });
-    }
-    let mainAction = this.buildCancelAction(mgr, tid);
-    let options = { escAction: "buttoncommand" };
-    this.show(
-      tid,
-      "select-sign-result",
-      "webauthn.selectSignResultPrompt",
-      origin,
-      mainAction,
-      secondaryActions,
-      options
-    );
-  },
-
-  pin_required(mgr, wasInvalid, { origin, tid, prompt: { retries } }) {
-    let aPassword = Object.create(null); // create a "null" object
-    let res = this.prompt_for_password(origin, wasInvalid, retries, aPassword);
-    if (res) {
-      mgr.pinCallback(tid, aPassword.value);
-    } else {
-      mgr.cancel(tid);
-    }
-  },
-
-  presence_required(mgr, { origin, tid }) {
-    let mainAction = this.buildCancelAction(mgr, tid);
-    let options = { escAction: "buttoncommand" };
-    let secondaryActions = [];
-    let message = "webauthn.userPresencePrompt";
-    this.show(
-      tid,
-      "presence",
-      message,
-      origin,
-      mainAction,
-      secondaryActions,
-      options
-    );
-  },
-
-  attestation_consent(mgr, { origin, tid }) {
-    let mainAction = {
-      label: gNavigatorBundle.getString("webauthn.allow"),
-      accessKey: gNavigatorBundle.getString("webauthn.allow.accesskey"),
-      callback(_state) {
-        mgr.setHasAttestationConsent(tid, true);
-      },
-    };
-    let secondaryActions = [
-      {
-        label: gNavigatorBundle.getString("webauthn.block"),
-        accessKey: gNavigatorBundle.getString("webauthn.block.accesskey"),
-        callback(_state) {
-          mgr.setHasAttestationConsent(tid, false);
-        },
-      },
-    ];
-
-    let learnMoreURL =
-      Services.urlFormatter.formatURLPref("app.support.baseURL") +
-      "webauthn-direct-attestation";
-
-    let options = {
-      learnMoreURL,
-      hintText: "webauthn.registerDirectPromptHint",
-    };
-    this.show(
-      tid,
-      "register-direct",
-      "webauthn.registerDirectPrompt3",
-      origin,
-      mainAction,
-      secondaryActions,
-      options
-    );
-  },
-
-  show_info(mgr, origin, tid, id, stringId) {
-    let mainAction = this.buildCancelAction(mgr, tid);
-    this.show(tid, id, stringId, origin, mainAction);
-  },
-
-  show(
-    tid,
-    id,
-    stringId,
-    origin,
-    mainAction,
-    secondaryActions = [],
-    options = {}
-  ) {
-    let brandShortName = document
-      .getElementById("bundle_brand")
-      .getString("brandShortName");
-    let message = gNavigatorBundle.getFormattedString(stringId, [
-      "<>",
-      brandShortName,
-    ]);
-
-    try {
-      origin = Services.io.newURI(origin).asciiHost;
-    } catch (e) {
-      /* Might fail for arbitrary U2F RP IDs. */
-    }
-    options.name = origin;
-    this.show_formatted_msg(
-      tid,
-      id,
-      message,
-      mainAction,
-      secondaryActions,
-      options
-    );
-  },
-
-  show_formatted_msg(
-    tid,
-    id,
-    message,
-    mainAction,
-    secondaryActions = [],
-    options = {}
-  ) {
-    this.reset();
-    this._tid = tid;
-
-    // We need to prevent some fullscreen transitions while WebAuthn prompts
-    // are shown. The `fullscreen-painted` topic is notified when DOM elements
-    // go fullscreen.
-    Services.obs.addObserver(this, "fullscreen-painted");
-
-    // The `fullscreen-nav-toolbox` topic is notified when the nav toolbox is
-    // hidden.
-    Services.obs.addObserver(this, "fullscreen-nav-toolbox");
-
-    // Ensure that no DOM elements are already fullscreen.
-    FullScreen.exitDomFullScreen();
-
-    // Ensure that the nav toolbox is being shown.
-    if (window.fullScreen) {
-      FullScreen.showNavToolbox();
-    }
-
-    let brandShortName = document
-      .getElementById("bundle_brand")
-      .getString("brandShortName");
-    if (options.hintText) {
-      options.hintText = gNavigatorBundle.getFormattedString(options.hintText, [
-        brandShortName,
-      ]);
-    }
-
-    options.hideClose = true;
-    options.persistent = true;
-    options.eventCallback = event => {
-      if (event == "removed") {
-        Services.obs.removeObserver(this, "fullscreen-painted");
-        Services.obs.removeObserver(this, "fullscreen-nav-toolbox");
-        this._current = null;
-        this._tid = 0;
-      }
-    };
-
-    this._current = PopupNotifications.show(
-      gBrowser.selectedBrowser,
-      `webauthn-prompt-${id}`,
-      message,
-      this._icon,
-      mainAction,
-      secondaryActions,
-      options
-    );
-  },
-
-  cancel({ tid }) {
-    if (this._tid == tid) {
-      this.reset();
-    }
-  },
-
-  reset() {
-    if (this._current) {
-      this._current.remove();
-    }
-  },
-
-  buildCancelAction(mgr, tid) {
-    return {
-      label: gNavigatorBundle.getString("webauthn.cancel"),
-      accessKey: gNavigatorBundle.getString("webauthn.cancel.accesskey"),
-      callback() {
-        mgr.cancel(tid);
-      },
-    };
-  },
-};
-
 function CanCloseWindow() {
   // Avoid redundant calls to canClose from showing multiple
   // PermitUnload dialogs.
@@ -4355,65 +3964,6 @@ const gRemoteControl = {
     }
 
     return null;
-  },
-};
-
-// Note that this is also called from non-browser windows on OSX, which do
-// share menu items but not much else. See nonbrowser-mac.js.
-var gPrivateBrowsingUI = {
-  init: function PBUI_init() {
-    // Do nothing for normal windows
-    if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
-      return;
-    }
-
-    // Disable the Clear Recent History... menu item when in PB mode
-    // temporary fix until bug 463607 is fixed
-    document.getElementById("Tools:Sanitize").setAttribute("disabled", "true");
-
-    if (window.location.href != AppConstants.BROWSER_CHROME_URL) {
-      return;
-    }
-
-    // Adjust the window's title
-    let docElement = document.documentElement;
-    docElement.setAttribute(
-      "privatebrowsingmode",
-      PrivateBrowsingUtils.permanentPrivateBrowsing ? "permanent" : "temporary"
-    );
-
-    gBrowser.updateTitlebar();
-
-    if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
-      let hideNewWindowItem = (windowItem, privateWindowItem) => {
-        // In permanent browsing mode command "cmd_newNavigator" should act the
-        // same as "Tools:PrivateBrowsing".
-        // So we hide the redundant private window item. But we also rename the
-        // "new window" item to be "new private window".
-        // NOTE: We choose to hide privateWindowItem rather than windowItem so
-        // that we still show the "key" for "cmd_newNavigator" (Ctrl+N) rather
-        // than (Ctrl+Shift+P).
-        privateWindowItem.hidden = true;
-        windowItem.setAttribute(
-          "data-l10n-id",
-          privateWindowItem.getAttribute("data-l10n-id")
-        );
-      };
-
-      // Adjust the File menu items.
-      hideNewWindowItem(
-        document.getElementById("menu_newNavigator"),
-        document.getElementById("menu_newPrivateWindow")
-      );
-      // Adjust the App menu items.
-      hideNewWindowItem(
-        PanelMultiView.getViewNode(document, "appMenu-new-window-button2"),
-        PanelMultiView.getViewNode(
-          document,
-          "appMenu-new-private-window-button2"
-        )
-      );
-    }
   },
 };
 

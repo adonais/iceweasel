@@ -89,10 +89,13 @@ template <typename R, typename E, bool Exc>
 inline Result<R, E> WaitFor(const RefPtr<MozPromise<R, E, Exc>>& aPromise) {
   Maybe<R> success;
   Maybe<E> error;
+  // Use r-value reference for exclusive promises to support move-only types.
+  using RRef = typename std::conditional_t<Exc, R&&, const R&>;
+  using ERef = typename std::conditional_t<Exc, E&&, const E&>;
   aPromise->Then(
       GetCurrentSerialEventTarget(), __func__,
-      [&](R aResult) { success = Some(aResult); },
-      [&](E aError) { error = Some(aError); });
+      [&](RRef aResult) { success.emplace(std::forward<RRef>(aResult)); },
+      [&](ERef aError) { error.emplace(std::forward<ERef>(aError)); });
   SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
       "WaitFor(const RefPtr<MozPromise<R, E, Exc>>& aPromise)"_ns,
       [&] { return success.isSome() || error.isSome(); });

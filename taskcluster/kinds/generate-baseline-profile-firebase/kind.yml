@@ -19,7 +19,6 @@ task-defaults:
     attributes:
         build_platform: android
         build-type: debug
-        retrigger: true
     fetches:
         toolchain:
             - android-sdk-linux

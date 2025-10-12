@@ -17,9 +17,11 @@ use neqo_transport::{
     ConnectionEvent, ConnectionParameters, OutputBatch, RandomConnectionIdGenerator, StreamType,
 };
 use std::env;
+use tokio::task::LocalSet;
 
 use std::cell::RefCell;
 use std::io;
+use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::process::exit;
 use std::rc::Rc;
@@ -184,13 +186,13 @@ impl Http3TestServer {
 }
 
 impl HttpServer for Http3TestServer {
-    fn process_multiple(
+    fn process_multiple<'a>(
         &mut self,
-        dgram: Option<Datagram<&mut [u8]>>,
+        dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
         now: Instant,
-        max_datagrams: std::num::NonZeroUsize,
+        max_datagrams: NonZeroUsize,
     ) -> OutputBatch {
-        let output = self.server.process_multiple(dgram, now, max_datagrams);
+        let output = self.server.process_multiple(dgrams, now, max_datagrams);
 
         let output = if self.sessions_to_close.is_empty() && self.connections_to_close.is_empty() {
             output
@@ -706,13 +708,13 @@ impl ::std::fmt::Display for Server {
 }
 
 impl HttpServer for Server {
-    fn process_multiple(
+    fn process_multiple<'a>(
         &mut self,
-        dgram: Option<Datagram<&mut [u8]>>,
+        dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
         now: Instant,
-        max_datagrams: std::num::NonZeroUsize,
+        max_datagrams: NonZeroUsize,
     ) -> OutputBatch {
-        self.0.process_multiple(dgram, now, max_datagrams)
+        self.0.process_multiple(dgrams, now, max_datagrams)
     }
 
     fn process_events(&mut self, _now: Instant) {
@@ -947,13 +949,13 @@ impl Http3ProxyServer {
 }
 
 impl HttpServer for Http3ProxyServer {
-    fn process_multiple(
+    fn process_multiple<'a>(
         &mut self,
-        dgram: Option<Datagram<&mut [u8]>>,
+        dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
         now: Instant,
-        max_datagrams: std::num::NonZeroUsize,
+        max_datagrams: NonZeroUsize,
     ) -> OutputBatch {
-        let output = self.server.process_multiple(dgram, now, max_datagrams);
+        let output = self.server.process_multiple(dgrams, now, max_datagrams);
 
         #[cfg(not(target_os = "android"))]
         let output = if self.response_to_send.is_empty() {
@@ -1081,11 +1083,11 @@ impl ::std::fmt::Display for NonRespondingServer {
 }
 
 impl HttpServer for NonRespondingServer {
-    fn process_multiple(
+    fn process_multiple<'a>(
         &mut self,
-        _dgram: Option<Datagram<&mut [u8]>>,
+        _dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
         _now: Instant,
-        _max_datagrams: std::num::NonZeroUsize,
+        _max_datagrams: NonZeroUsize,
     ) -> OutputBatch {
         OutputBatch::None
     }
@@ -1096,19 +1098,13 @@ impl HttpServer for NonRespondingServer {
         false
     }
 }
-enum ServerType {
-    Http3,
-    Http3Fail,
-    Http3NoResponse,
-    Http3Ech,
-    Http3Proxy,
-}
 
-fn new_runner(
-    server_type: ServerType,
+fn spawn_server<S: HttpServer + 'static>(
+    server: S,
     port: u16,
-) -> Result<(SocketAddr, Option<Vec<u8>>, Runner), io::Error> {
-    let mut ech_config = None;
+    task_set: &LocalSet,
+    hosts: &mut Vec<SocketAddr>,
+) -> Result<(), io::Error> {
     let addr: SocketAddr = if cfg!(target_os = "windows") {
         format!("127.0.0.1:{}", port).parse().unwrap()
     } else {
@@ -1131,98 +1127,11 @@ fn new_runner(
         Ok(s) => s,
     };
 
-    let anti_replay = AntiReplay::new(Instant::now(), Duration::from_secs(10), 7, 14)
-        .expect("unable to setup anti-replay");
-    let cid_mgr = Rc::new(RefCell::new(RandomConnectionIdGenerator::new(10)));
+    task_set
+        .spawn_local(Runner::new(server, Box::new(Instant::now), vec![(local_addr, socket)]).run());
+    hosts.push(local_addr);
 
-    let server: Box<dyn HttpServer> = match server_type {
-        ServerType::Http3 => Box::new(Http3TestServer::new(
-            Http3Server::new(
-                Instant::now(),
-                &[" HTTP2 Test Cert"],
-                PROTOCOLS,
-                anti_replay,
-                cid_mgr,
-                Http3Parameters::default()
-                    .max_table_size_encoder(MAX_TABLE_SIZE)
-                    .max_table_size_decoder(MAX_TABLE_SIZE)
-                    .max_blocked_streams(MAX_BLOCKED_STREAMS)
-                    .webtransport(true)
-                    .connection_parameters(ConnectionParameters::default().datagram_size(1200)),
-                None,
-            )
-            .expect("We cannot make a server!"),
-        )),
-        ServerType::Http3Fail => Box::new(Server(
-            neqo_transport::server::Server::new(
-                Instant::now(),
-                &[" HTTP2 Test Cert"],
-                PROTOCOLS,
-                anti_replay,
-                Box::new(AllowZeroRtt {}),
-                cid_mgr,
-                ConnectionParameters::default(),
-            )
-            .expect("We cannot make a server!"),
-        )),
-        ServerType::Http3NoResponse => Box::new(NonRespondingServer::default()),
-        ServerType::Http3Ech => {
-            let mut server = Box::new(Http3TestServer::new(
-                Http3Server::new(
-                    Instant::now(),
-                    &[" HTTP2 Test Cert"],
-                    PROTOCOLS,
-                    anti_replay,
-                    cid_mgr,
-                    Http3Parameters::default()
-                        .max_table_size_encoder(MAX_TABLE_SIZE)
-                        .max_table_size_decoder(MAX_TABLE_SIZE)
-                        .max_blocked_streams(MAX_BLOCKED_STREAMS),
-                    None,
-                )
-                .expect("We cannot make a server!"),
-            ));
-            let ref mut unboxed_server = (*server).server;
-            let (sk, pk) = generate_ech_keys().unwrap();
-            unboxed_server
-                .enable_ech(ECH_CONFIG_ID, ECH_PUBLIC_NAME, &sk, &pk)
-                .expect("unable to enable ech");
-            ech_config = Some(Vec::from(unboxed_server.ech_config()));
-            server
-        }
-        ServerType::Http3Proxy => {
-            let server_config = if env::var("MOZ_HTTP3_MOCHITEST").is_ok() {
-                ("mochitest-cert", 8888)
-            } else {
-                (" HTTP2 Test Cert", -1)
-            };
-            let server = Box::new(Http3ProxyServer::new(
-                Http3Server::new(
-                    Instant::now(),
-                    &[server_config.0],
-                    PROTOCOLS,
-                    anti_replay,
-                    cid_mgr,
-                    Http3Parameters::default()
-                        .max_table_size_encoder(MAX_TABLE_SIZE)
-                        .max_table_size_decoder(MAX_TABLE_SIZE)
-                        .max_blocked_streams(MAX_BLOCKED_STREAMS)
-                        .webtransport(true)
-                        .connection_parameters(ConnectionParameters::default().datagram_size(1200)),
-                    None,
-                )
-                .expect("We cannot make a server!"),
-                server_config.1,
-            ));
-            server
-        }
-    };
-
-    Ok((
-        local_addr,
-        ech_config,
-        Runner::new(Box::new(Instant::now), server, vec![(local_addr, socket)]),
-    ))
+    Ok(())
 }
 
 #[tokio::main]
@@ -1253,30 +1162,120 @@ async fn main() -> Result<(), io::Error> {
 
     init_db(PathBuf::from(args[1].clone())).unwrap();
 
-    let local = tokio::task::LocalSet::new();
+    let local = LocalSet::new();
     let mut hosts = vec![];
-    let mut ech_config = None;
 
     let proxy_port = match env::var("MOZ_HTTP3_PROXY_PORT") {
         Ok(val) => val.parse::<u16>().unwrap(),
         _ => 0,
     };
 
-    for (server_type, port) in [
-        (ServerType::Http3, 0),
-        (ServerType::Http3Fail, 0),
-        (ServerType::Http3Ech, 0),
-        (ServerType::Http3Proxy, proxy_port),
-        (ServerType::Http3NoResponse, 0),
-    ] {
-        let (address, ech, runner) = new_runner(server_type, port)?;
-        hosts.push(address);
-        if let Some(ech) = ech {
-            ech_config = Some(ech);
-        }
+    let anti_replay = || {
+        AntiReplay::new(Instant::now(), Duration::from_secs(10), 7, 14)
+            .expect("unable to setup anti-replay")
+    };
+    let cid_mgr = Rc::new(RefCell::new(RandomConnectionIdGenerator::new(10)));
 
-        local.spawn_local(runner.run());
-    }
+    spawn_server(
+        Http3TestServer::new(
+            Http3Server::new(
+                Instant::now(),
+                &[" HTTP2 Test Cert"],
+                PROTOCOLS,
+                anti_replay(),
+                cid_mgr.clone(),
+                Http3Parameters::default()
+                    .max_table_size_encoder(MAX_TABLE_SIZE)
+                    .max_table_size_decoder(MAX_TABLE_SIZE)
+                    .max_blocked_streams(MAX_BLOCKED_STREAMS)
+                    .webtransport(true)
+                    .connection_parameters(ConnectionParameters::default().datagram_size(1200)),
+                None,
+            )
+            .expect("We cannot make a server!"),
+        ),
+        0,
+        &local,
+        &mut hosts,
+    )?;
+
+    spawn_server(
+        Server(
+            neqo_transport::server::Server::new(
+                Instant::now(),
+                &[" HTTP2 Test Cert"],
+                PROTOCOLS,
+                anti_replay(),
+                Box::new(AllowZeroRtt {}),
+                cid_mgr.clone(),
+                ConnectionParameters::default(),
+            )
+            .expect("We cannot make a server!"),
+        ),
+        0,
+        &local,
+        &mut hosts,
+    )?;
+
+    let ech_config = {
+        let mut server = Http3TestServer::new(
+            Http3Server::new(
+                Instant::now(),
+                &[" HTTP2 Test Cert"],
+                PROTOCOLS,
+                anti_replay(),
+                cid_mgr.clone(),
+                Http3Parameters::default()
+                    .max_table_size_encoder(MAX_TABLE_SIZE)
+                    .max_table_size_decoder(MAX_TABLE_SIZE)
+                    .max_blocked_streams(MAX_BLOCKED_STREAMS),
+                None,
+            )
+            .expect("We cannot make a server!"),
+        );
+        let (sk, pk) = generate_ech_keys().unwrap();
+        server
+            .server
+            .enable_ech(ECH_CONFIG_ID, ECH_PUBLIC_NAME, &sk, &pk)
+            .expect("unable to enable ech");
+        let ech_config = server.server.ech_config().to_vec();
+        spawn_server(server, 0, &local, &mut hosts)?;
+        ech_config
+    };
+
+    spawn_server(
+        {
+            let server_config = if env::var("MOZ_HTTP3_MOCHITEST").is_ok() {
+                ("mochitest-cert", 8888)
+            } else {
+                (" HTTP2 Test Cert", -1)
+            };
+            let server = Http3ProxyServer::new(
+                Http3Server::new(
+                    Instant::now(),
+                    &[server_config.0],
+                    PROTOCOLS,
+                    anti_replay(),
+                    cid_mgr,
+                    Http3Parameters::default()
+                        .max_table_size_encoder(MAX_TABLE_SIZE)
+                        .max_table_size_decoder(MAX_TABLE_SIZE)
+                        .max_blocked_streams(MAX_BLOCKED_STREAMS)
+                        .webtransport(true)
+                        .connection_parameters(ConnectionParameters::default().datagram_size(1200)),
+                    None,
+                )
+                .expect("We cannot make a server!"),
+                server_config.1,
+            );
+            server
+        },
+        proxy_port,
+        &local,
+        &mut hosts,
+    )?;
+
+    spawn_server(NonRespondingServer::default(), 0, &local, &mut hosts)?;
 
     // Note this is parsed by test runner.
     // https://searchfox.org/mozilla-central/rev/e69f323af80c357d287fb6314745e75c62eab92a/testing/mozbase/mozserve/mozserve/servers.py#116-121
@@ -1287,7 +1286,7 @@ async fn main() -> Result<(), io::Error> {
         hosts[2].port(),
         hosts[3].port(),
         hosts[4].port(),
-        BASE64_STANDARD.encode(&ech_config.unwrap())
+        BASE64_STANDARD.encode(ech_config)
     );
 
     local.await;

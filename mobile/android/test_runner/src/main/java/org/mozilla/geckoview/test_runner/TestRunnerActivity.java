@@ -24,6 +24,7 @@ import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.geckoview.AllowOrDeny;
+import org.mozilla.geckoview.BuildConfig;
 import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ExperimentDelegate;
 import org.mozilla.geckoview.GeckoDisplay;
@@ -447,13 +448,21 @@ public class TestRunnerActivity extends Activity {
               .updateUrl("http://mochi.test:8888/safebrowsing4-dummy/update")
               .build();
 
+      final ContentBlocking.SafeBrowsingProvider google5 =
+          ContentBlocking.SafeBrowsingProvider.from(
+                  ContentBlocking.GOOGLE_SAFE_BROWSING_V5_PROVIDER)
+              .getHashUrl("http://mochi.test:8888/safebrowsing5-dummy/gethash")
+              .updateUrl("http://mochi.test:8888/safebrowsing5-dummy/update")
+              .build();
+
       runtimeSettingsBuilder
           .consoleOutput(true)
           .contentBlocking(
               new ContentBlocking.Settings.Builder()
-                  .safeBrowsingProviders(google, googleLegacy)
+                  .safeBrowsingProviders(google, googleLegacy, google5)
                   .build())
-          .lowMemoryDetection(false); // Avoid unpredictability in tests
+          .lowMemoryDetection(false) // Avoid unpredictability in tests
+          .isolatedProcessEnabled(BuildConfig.MOZ_ANDROID_CONTENT_SERVICE_ISOLATED_PROCESS);
 
       sRuntime = GeckoRuntime.create(this, runtimeSettingsBuilder.build());
 

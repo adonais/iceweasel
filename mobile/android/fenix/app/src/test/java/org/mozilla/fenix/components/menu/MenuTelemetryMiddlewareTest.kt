@@ -10,7 +10,7 @@ import mozilla.components.feature.addons.Addon
 import mozilla.components.service.fxa.manager.AccountState
 import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.telemetry.glean.internal.CounterMetric
+import mozilla.telemetry.glean.private.CounterMetricType
 import mozilla.telemetry.glean.private.EventMetricType
 import mozilla.telemetry.glean.private.NoExtras
 import org.junit.Assert.assertEquals
@@ -617,7 +617,7 @@ class MenuTelemetryMiddlewareTest {
         assertEquals(1, event.testGetValue()!!.size)
     }
 
-    private fun assertTelemetryRecorded(event: CounterMetric) {
+    private fun assertTelemetryRecorded(event: CounterMetricType) {
         assertNotNull(event.testGetValue())
         assertEquals(1, event.testGetValue()!!)
     }

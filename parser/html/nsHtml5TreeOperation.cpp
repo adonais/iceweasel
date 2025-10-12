@@ -47,6 +47,12 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
+// If you are adding fields to a tree op and this static assert fails,
+// please consider reordering the fields to avoid excess padding or,
+// if that doesn't help, splitting a rare operation into multiple
+// tree ops before allowing the size of all operations to get larger.
+static_assert(sizeof(nsHtml5TreeOperation) <= 56);
+
 /**
  * Helper class that opens a notification batch if the current doc
  * is different from the executor doc.
@@ -348,7 +354,8 @@ void nsHtml5TreeOperation::Detach(nsIContent* aNode,
   nsCOMPtr<nsINode> parent = aNode->GetParentNode();
   if (parent) {
     nsHtml5OtherDocUpdate update(parent->OwnerDoc(), aBuilder->GetDocument());
-    parent->RemoveChildNode(aNode, true);
+    parent->RemoveChildNode(aNode, true, nullptr, nullptr,
+                            MutationEffectOnScript::KeepTrustWorthiness);
   }
 }
 
@@ -361,7 +368,8 @@ nsresult nsHtml5TreeOperation::AppendChildrenToNewParent(
   bool didAppend = false;
   while (aNode->HasChildren()) {
     nsCOMPtr<nsIContent> child = aNode->GetFirstChild();
-    aNode->RemoveChildNode(child, true);
+    aNode->RemoveChildNode(child, true, nullptr, nullptr,
+                           MutationEffectOnScript::KeepTrustWorthiness);
 
     ErrorResult rv;
     aParent->AppendChildTo(child, false, rv);
@@ -950,7 +958,8 @@ nsresult nsHtml5TreeOperation::Perform(nsHtml5TreeOpExecutor* aBuilder,
           *aOperation.mHost, aOperation.mShadowRootMode,
           aOperation.mShadowRootIsClonable,
           aOperation.mShadowRootIsSerializable,
-          aOperation.mShadowRootDelegatesFocus);
+          aOperation.mShadowRootDelegatesFocus,
+          aOperation.mShadowRootReferenceTarget);
       if (root) {
         *aOperation.mFragHandle = root;
         return NS_OK;

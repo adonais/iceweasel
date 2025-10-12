@@ -1022,7 +1022,7 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvSyncMessage(
       const nsAString& aMsg, const ClonedMessageData& aData,
-      nsTArray<StructuredCloneData>* aRetvals);
+      nsTArray<UniquePtr<StructuredCloneData>>* aRetvals);
 
   mozilla::ipc::IPCResult RecvAsyncMessage(const nsAString& aMsg,
                                            const ClonedMessageData& aData);
@@ -1294,8 +1294,9 @@ class ContentParent final : public PContentParent,
       ServiceWorkerShutdownState::Progress aProgress);
 
   mozilla::ipc::IPCResult RecvRawMessage(
-      const JSActorMessageMeta& aMeta, const Maybe<ClonedMessageData>& aData,
-      const Maybe<ClonedMessageData>& aStack);
+      const JSActorMessageMeta& aMeta,
+      const UniquePtr<ClonedMessageData>& aData,
+      const UniquePtr<ClonedMessageData>& aStack);
 
   mozilla::ipc::IPCResult RecvAbortOtherOrientationPendingPromises(
       const MaybeDiscarded<BrowsingContext>& aContext);
@@ -1315,6 +1316,12 @@ class ContentParent final : public PContentParent,
       const MaybeDiscarded<BrowsingContext>& aContext, int32_t aOffset,
       uint64_t aHistoryEpoch, bool aRequireUserInteraction,
       bool aUserActivation, HistoryGoResolver&& aResolveRequestedIndex);
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  mozilla::ipc::IPCResult RecvNavigationTraverse(
+      const MaybeDiscarded<BrowsingContext>& aContext, const nsID& aKey,
+      uint64_t aHistoryEpoch, bool aUserActivation,
+      NavigationTraverseResolver&& aResolveRequestedIndex);
 
   mozilla::ipc::IPCResult RecvSynchronizeLayoutHistoryState(
       const MaybeDiscarded<BrowsingContext>& aContext,

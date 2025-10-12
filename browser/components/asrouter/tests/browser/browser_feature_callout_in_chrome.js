@@ -1,6 +1,9 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
+const { ASRouterTriggerListeners } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/ASRouterTriggerListeners.sys.mjs"
+);
 const { CustomizableUITestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/CustomizableUITestUtils.sys.mjs"
 );
@@ -899,6 +902,42 @@ add_task(
 
     await BrowserTestUtils.closeWindow(win);
     sandbox.restore();
+    await ASRouter._updateMessageProviders();
+    await ASRouter.loadMessagesFromAllProviders();
+  }
+);
+
+add_task(
+  async function newtab_feature_callout_does_not_appear_if_newtab_disabled() {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.newtabpage.enabled", false]],
+    });
+    const sandbox = sinon.createSandbox();
+    const trigger = ASRouterTriggerListeners.get("newtabFeatureCalloutCheck");
+    const showFeatureCalloutTourSpy = sandbox.spy(
+      trigger,
+      "showFeatureCalloutTour"
+    );
+    const getMessagesStub = sandbox.stub(FeatureCalloutMessages, "getMessages");
+    const TEST_MESSAGES = [newtabTestMessage];
+    getMessagesStub.returns(TEST_MESSAGES);
+    await ASRouter._updateMessageProviders();
+    await ASRouter.loadMessagesFromAllProviders();
+
+    const win = await BrowserTestUtils.openNewBrowserWindow();
+    const tab1 = await BrowserTestUtils.openNewForegroundTab(
+      win.gBrowser,
+      "about:newtab"
+    );
+    tab1.focus();
+    ok(
+      showFeatureCalloutTourSpy.notCalled,
+      "Newtab feature callout not shown when newtab pref is disabled"
+    );
+
+    await BrowserTestUtils.closeWindow(win);
+    sandbox.restore();
+    await SpecialPowers.popPrefEnv();
     await ASRouter._updateMessageProviders();
     await ASRouter.loadMessagesFromAllProviders();
   }

@@ -4,40 +4,29 @@
 
 package org.mozilla.fenix.perf
 
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.annotation.StringRes
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.compose.content
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.perf.ProfilerUtils.handleProfileSave
 
 /**
- * Dialogue to stop the Gecko profiler without using ADB.
+ * Dialog fragment for stopping profiling sessions. The dialog uses the [ProfilerViewModel]
+ * to manage the state of the profiler.
  */
 class ProfilerStopDialogFragment : DialogFragment() {
 
@@ -48,36 +37,69 @@ class ProfilerStopDialogFragment : DialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ) = content {
-        StopProfilerCard()
+        StopProfilerScreen(profilerViewModel)
     }
 
-    private fun setProfilerState() {
-        profilerViewModel.setProfilerState(requireContext().components.core.engine.profiler!!.isProfilerActive())
+    override fun onDismiss(dialog: DialogInterface) {
+        profilerViewModel.resetUiState()
+        profilerViewModel.updateProfilerActiveStatus()
+        super.onDismiss(dialog)
+        if (activity is StopProfilerActivity) {
+            activity?.finish()
+        }
     }
 
     @Composable
-    private fun StopProfilerCard() {
-        val viewStateObserver = remember { mutableStateOf(CardState.UrlWarningState) }
+    private fun StopProfilerScreen(viewModel: ProfilerViewModel) {
+        val uiState by viewModel.uiState.collectAsState()
+        val context = LocalContext.current
+
+        LaunchedEffect(uiState) {
+            when (val state = uiState) {
+                is ProfilerUiState.ShowToast -> {
+                    Toast.makeText(
+                        context,
+                        context.getString(state.messageResId) + state.extra,
+                        Toast.LENGTH_LONG,
+                        ).show()
+                }
+                is ProfilerUiState.Finished -> {
+                    dismissAllowingStateLoss()
+                }
+                is ProfilerUiState.Error -> {
+                    Toast.makeText(
+                        context,
+                        context.getString(state.messageResId) + state.errorDetails,
+                        Toast.LENGTH_LONG,
+                        ).show()
+                    dismissAllowingStateLoss()
+                }
+                else -> {}
+            }
+        }
+
         Dialog(
             onDismissRequest = {
-                // In the waiting state, we do not want the users to be able to click away from the dialogue
-                // since the user needs to wait for the profiler data to be ready and we don't want to handle
-                // the process in the background.
-                if (viewStateObserver.value != CardState.WaitForProfilerGathering &&
-                    viewStateObserver.value != CardState.WaitForProfilerStop
-                ) {
+                // Prevent dismissal while gathering or stopping
+                if (uiState !is ProfilerUiState.Gathering && uiState !is ProfilerUiState.Stopping) {
                     this@ProfilerStopDialogFragment.dismiss()
                 }
             },
         ) {
-            when (viewStateObserver.value) {
-                CardState.UrlWarningState -> {
-                    UrlWarningCard(viewStateObserver)
+            when (uiState) {
+                is ProfilerUiState.Idle, is ProfilerUiState.Running -> {
+                    UrlWarningCard(
+                        onStopAndSave = { viewModel.stopProfilerAndSave() },
+                        onStopWithoutSaving = { viewModel.stopProfilerWithoutSaving() },
+                    )
                 }
-                CardState.WaitForProfilerGathering -> {
+                is ProfilerUiState.Gathering -> {
                     WaitForProfilerDialog(R.string.profiler_gathering)
                 }
-                CardState.WaitForProfilerStop -> {
+                is ProfilerUiState.Stopping -> {
+                    WaitForProfilerDialog(R.string.profiler_stopping)
+                }
+                else -> {
                     WaitForProfilerDialog(R.string.profiler_stopping)
                 }
             }
@@ -86,99 +108,21 @@ class ProfilerStopDialogFragment : DialogFragment() {
 
     @Composable
     private fun UrlWarningCard(
-        viewStateObserver: MutableState<CardState>,
+        onStopAndSave: () -> Unit,
+        onStopWithoutSaving: () -> Unit,
     ) {
-        ProfilerDialogueCard {
-            Column(modifier = Modifier.padding(8.dp)) {
-                Text(
-                    text = stringResource(R.string.profiler_url_warning),
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 20.sp,
-                    modifier = Modifier.padding(8.dp),
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = stringResource(R.string.profiler_url_warning_explained),
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(8.dp),
-                )
-                Spacer(modifier = Modifier.height(30.dp))
-                Row(
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    TextButton(
-                        onClick = {
-                            viewStateObserver.value = CardState.WaitForProfilerStop
-                            requireContext().components.core.engine.profiler?.stopProfiler(
-                                onSuccess = {
-                                    setProfilerState()
-                                    dismiss()
-                                },
-                                onError = {
-                                    setProfilerState()
-                                    dismiss()
-                                },
-                            )
-                        },
-                    ) {
-                        Text(stringResource(R.string.profiler_start_cancel))
-                    }
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    TextButton(
-                        onClick = {
-                            viewStateObserver.value = CardState.WaitForProfilerGathering
-                            stopProfiler()
-                        },
-                    ) {
-                        Text(stringResource(R.string.profiler_as_url))
-                    }
-                }
-            }
+        BaseProfilerDialogContent(
+            titleText = stringResource(R.string.profiler_url_warning),
+            negativeActionText = stringResource(R.string.profiler_start_cancel),
+            onNegativeAction = onStopWithoutSaving,
+            positiveActionText = stringResource(R.string.profiler_as_url),
+            onPositiveAction = onStopAndSave,
+        ) {
+            Text(
+                text = stringResource(R.string.profiler_url_warning_explained),
+                fontWeight = FontWeight.Medium,
+                fontSize = 15.sp,
+            )
         }
-    }
-
-    private fun stopProfiler() {
-        requireContext().components.core.engine.profiler!!.stopProfiler(
-            onSuccess = {
-                if (it != null) {
-                    handleProfileSave(
-                        requireContext(),
-                        it,
-                        ::displayToastAndDismiss,
-                    )
-                } else {
-                    displayToastAndDismiss(R.string.profiler_no_info)
-                }
-            },
-            onError = { error ->
-                if (error.message != null) {
-                    displayToastAndDismiss(R.string.profiler_error, " error: $error")
-                } else {
-                    displayToastAndDismiss(R.string.profiler_error)
-                }
-            },
-        )
-    }
-
-    private fun displayToastAndDismiss(@StringRes message: Int, extra: String = "") {
-        Toast.makeText(
-            context,
-            resources.getString(message) + extra,
-            Toast.LENGTH_LONG,
-        ).show()
-        setProfilerState()
-        dismiss()
-    }
-
-    /**
-     * State that represents which card to display within the Stop dialogue.
-     */
-    enum class CardState {
-        UrlWarningState,
-        WaitForProfilerGathering,
-        WaitForProfilerStop,
     }
 }

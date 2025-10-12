@@ -8,22 +8,22 @@ import os
 def toolchain_task_definitions():
     # triggers override of the `graph_config_schema` noqa
     import gecko_taskgraph  # noqa
-    from taskgraph.generator import load_tasks_for_kind
+    from taskgraph.generator import load_tasks_for_kinds
 
     # Don't import globally to allow this module being imported without
     # the taskgraph module being available (e.g. standalone js)
     params = {"level": os.environ.get("MOZ_SCM_LEVEL", "3"), "files_changed": []}
     root_dir = os.path.join(os.path.dirname(__file__), "..", "..", "..", "taskcluster")
-    toolchains = load_tasks_for_kind(params, "toolchain", root_dir=root_dir)
+    toolchains = load_tasks_for_kinds(params, ["fetch", "toolchain"], root_dir=root_dir)
     aliased = {}
     for t in toolchains.values():
-        aliases = t.attributes.get("toolchain-alias")
+        aliases = t.attributes.get(f"{t.kind}-alias")
         if not aliases:
             aliases = []
         if isinstance(aliases, str):
             aliases = [aliases]
         for alias in aliases:
-            aliased[f"toolchain-{alias}"] = t
+            aliased[f"{t.kind}-{alias}"] = t
     toolchains.update(aliased)
 
     return toolchains

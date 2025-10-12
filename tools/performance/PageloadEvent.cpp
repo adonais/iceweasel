@@ -26,17 +26,23 @@ namespace mozilla::performance::pageload_event {
 // We don't want to record an event for every page load, so instead we
 // randomly sample the events based on the channel.
 //
-// For nightly, 10% of page loads will be sent as page_load_domain pings, and
-// all other page loads will be sent using the default page_load ping.
+// For nightly and beta, 100% of page loads will be sent using the default
+// page_load ping, and 10% will be sent as page_load_domain pings.
 //
-// For release and beta, only 0.1% of page loads will be sent as
-// page_load_domain pings, and 10% of the other page loads will be sent using
-// the default ping.
-#ifdef NIGHTLY_BUILD
-static constexpr uint64_t kNormalSamplingInterval = 1;   // Every pageload.
-static constexpr uint64_t kDomainSamplingInterval = 10;  // Every 10 pageloads.
+// For release, 10% of page loads will be sent using the default ping,
+// and 0.1% will be sent as page_load_domain pings.
+
+// Normal sampling
+#ifdef EARLY_BETA_OR_EARLIER
+static constexpr uint64_t kNormalSamplingInterval = 1;  // Every pageload.
 #else
 static constexpr uint64_t kNormalSamplingInterval = 10;  // Every 10 pageloads.
+#endif
+
+// Domain sampling
+#ifdef NIGHTLY_BUILD
+static constexpr uint64_t kDomainSamplingInterval = 10;  // Every 10 pageloads.
+#else
 static constexpr uint64_t kDomainSamplingInterval =
     1000;  // Every 1000 pageloads.
 #endif

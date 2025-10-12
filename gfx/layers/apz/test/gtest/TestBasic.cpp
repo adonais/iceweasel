@@ -8,8 +8,7 @@
 #include "APZTestCommon.h"
 
 #include "InputUtils.h"
-
-static ScrollGenerationCounter sGenerationCounter;
+#include "mozilla/ScrollPositionUpdate.h"
 
 TEST_F(APZCBasicTester, Overzoom) {
   // the visible area of the document in CSS pixels is x=10 y=0 w=100 h=100
@@ -208,6 +207,8 @@ TEST_F(APZCBasicTester, Fling) {
 }
 
 #ifndef MOZ_WIDGET_ANDROID  // Maybe fails on Android
+static ScrollGenerationCounter sGenerationCounter;
+
 TEST_F(APZCBasicTester, ResumeInterruptedTouchDrag_Bug1592435) {
   // Start a touch-drag and scroll some amount, not lifting the finger.
   SCOPED_GFX_PREF_FLOAT("apz.touch_start_tolerance", 1.0f / 1000.0f);
@@ -457,7 +458,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     apzc->NotifyLayersUpdated(metadata, false, true);
 
     // Sample the smooth scroll animation until we get past y=500.
-    apzc->AssertStateIsSmoothScroll();
+    apzc->AssertInSmoothScroll();
     float y = 0;
     while (y < 500) {
       SampleAnimationOneFrame();
@@ -476,7 +477,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     // Verify the relative scroll was applied but didn't cancel the animation.
     float y2 = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
     ASSERT_EQ(y2, y - 400);
-    apzc->AssertStateIsSmoothScroll();
+    apzc->AssertInSmoothScroll();
 
     // Sample the animation again and check that it respected the relative
     // scroll.
@@ -515,7 +516,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
 
     // Send a wheel event to trigger smooth scrolling by 5 lines (= 500 pixels).
     SmoothWheel(apzc, ScreenIntPoint(50, 50), ScreenPoint(0, 5), mcc->Time());
-    apzc->AssertStateIsWheelScroll();
+    apzc->AssertInWheelScroll();
 
     // Sample the wheel scroll animation until we get past y=200.
     float y = 0;
@@ -538,7 +539,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     // destination of y=600.
     float y2 = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
     ASSERT_EQ(y2, y + 100);
-    apzc->AssertStateIsWheelScroll();
+    apzc->AssertInWheelScroll();
 
     // Sample the animation until we get past y=400.
     while (y < 400) {
@@ -576,7 +577,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
 
     // First wheel event, smooth scroll destination is y=500.
     SmoothWheel(apzc, ScreenIntPoint(50, 50), ScreenPoint(0, 5), mcc->Time());
-    apzc->AssertStateIsWheelScroll();
+    apzc->AssertInWheelScroll();
 
     // Sample until we get past y=200.
     float y = 0;
@@ -596,7 +597,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     apzc->NotifyLayersUpdated(metadata, false, true);
     float y2 = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
     ASSERT_EQ(y2, y + 1000);
-    apzc->AssertStateIsWheelScroll();
+    apzc->AssertInWheelScroll();
 
     // Sample until we get past y=1300.
     while (y < 1300) {
@@ -648,7 +649,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     TimeStamp futureTimeStamp = mcc->Time() + TimeDuration::FromSeconds(60);
     SmoothWheel(apzc, ScreenIntPoint(50, 50), ScreenPoint(0, 5),
                 futureTimeStamp);
-    apzc->AssertStateIsWheelScroll();
+    apzc->AssertInWheelScroll();
 
     // Sample the animation 10 frames (a shorter overall duration than the
     // timestamp skew).
@@ -888,4 +889,66 @@ TEST_F(APZCBasicTester, StartTolerance) {
   // Clean up by ending the touch gesture.
   mcc->AdvanceByMillis(1);
   TouchUp(apzc, {50, 90}, mcc->Time());
+}
+
+// A helper class for the ImmediatelyInterruptedSmoothScroll_Bug1984589
+// test below, which overrides APZCTreeManager::GetFrameTime() to
+// advance the time by 1ms every time GetFrameTime() is queried. This
+// is needed to reproduce the bug (specifically to ensure that in the
+// NotifyLayersUpdated call with two scroll updates, some time has
+// elapsed between the two updates).
+class APZCFrameTimeTester : public APZCBasicTester {
+  class FrameTimeAPZCTreeManager : public TestAPZCTreeManager {
+   public:
+    explicit FrameTimeAPZCTreeManager(MockContentControllerDelayed* aMcc)
+        : TestAPZCTreeManager(aMcc) {}
+
+   protected:
+    SampleTime GetFrameTime() override {
+      SampleTime result = mcc->GetSampleTime();
+      mcc->AdvanceByMillis(1);
+      return result;
+    }
+  };
+
+ protected:
+  TestAPZCTreeManager* CreateTreeManager() override {
+    return new FrameTimeAPZCTreeManager(mcc);
+  }
+};
+
+TEST_F(APZCFrameTimeTester, ImmediatelyInterruptedSmoothScroll_Bug1984589) {
+  // Set up a vertically scrollable scroll frame, with the starting scroll
+  // position at the bottom.
+  ScrollMetadata metadata;
+  FrameMetrics& metrics = metadata.GetMetrics();
+  metrics.SetScrollableRect(CSSRect(0, 0, 100, 1000));
+  metrics.SetLayoutViewport(CSSRect(0, 900, 100, 100));
+  metrics.SetZoom(CSSToParentLayerScale(1.0));
+  metrics.SetCompositionBounds(ParentLayerRect(0, 0, 100, 100));
+  metrics.SetVisualScrollOffset(CSSPoint(0, 900));
+  metrics.SetIsRootContent(true);
+  apzc->SetFrameMetrics(metrics);
+
+  // Simulate a main-thread transaction with two absolute scroll updates with
+  // SmoothMsd scroll mode: one that scrolls back to the top, and one that
+  // "interrupts" it by scrolling back to the bottom.
+  nsTArray<ScrollPositionUpdate> scrollUpdates;
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewSmoothScroll(
+      ScrollMode::SmoothMsd, ScrollOrigin::Other,
+      CSSPoint::ToAppUnits(CSSPoint(0, 0)), ScrollTriggeredByScript::Yes,
+      nullptr, ViewportType::Layout));
+  scrollUpdates.AppendElement(ScrollPositionUpdate::NewSmoothScroll(
+      ScrollMode::SmoothMsd, ScrollOrigin::Other,
+      CSSPoint::ToAppUnits(CSSPoint(0, 900)), ScrollTriggeredByScript::Yes,
+      nullptr, ViewportType::Layout));
+  metadata.SetScrollUpdates(scrollUpdates);
+  metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
+  apzc->NotifyLayersUpdated(metadata, false, true);
+
+  // Sample smooth scroll animations until they complete,
+  // and assert that at no point does the scroll position leave (0, 900).
+  do {
+    ASSERT_EQ(apzc->GetFrameMetrics().GetVisualScrollOffset().y, 900);
+  } while (SampleAnimationOneFrame());
 }

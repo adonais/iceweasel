@@ -322,6 +322,10 @@ nsresult nsOSHelperAppService::GetDefaultAppInfo(
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
+
+    LOG("AppInfo \"%s\" - Determined handler command: %s\n",
+        NS_ConvertUTF16toUTF8(aAppInfo).get(),
+        NS_ConvertUTF16toUTF8(handlerCommand).get());
   }
 
   // XXX FIXME: If this fails, the UI will display the full command
@@ -341,6 +345,18 @@ nsresult nsOSHelperAppService::GetDefaultAppInfo(
                                 friendlyName, &friendlyNameSize);
   if (SUCCEEDED(hr) && friendlyNameSize > 1) {
     aDefaultDescription.Assign(friendlyName, friendlyNameSize - 1);
+  }
+
+  if (MOZ_LOG_TEST(sLog, mozilla::LogLevel::Debug)) {
+    nsAutoString path;
+    if (*aDefaultApplication) {
+      (*aDefaultApplication)->GetPath(path);
+    }
+
+    LOG("AppInfo \"%s\" - default application (name: %s ; path: %s)\n",
+        NS_ConvertUTF16toUTF8(aAppInfo).get(),
+        NS_ConvertUTF16toUTF8(aDefaultDescription).get(),
+        NS_ConvertUTF16toUTF8(path).get());
   }
 
   return NS_OK;

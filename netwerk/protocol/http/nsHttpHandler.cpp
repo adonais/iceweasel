@@ -2077,9 +2077,8 @@ nsresult nsHttpHandler::SetupChannelInternal(
   uint32_t caps = mCapabilities;
 
   uint64_t channelId = NewChannelId();
-  nsresult rv = httpChannel->Init(
-      uri, caps, proxyInfo, proxyResolveFlags, proxyURI, channelId,
-      aLoadInfo->GetExternalContentPolicyType(), aLoadInfo);
+  nsresult rv = httpChannel->Init(uri, caps, proxyInfo, proxyResolveFlags,
+                                  proxyURI, channelId, aLoadInfo);
   if (NS_FAILED(rv)) return rv;
 
   httpChannel.forget(result);

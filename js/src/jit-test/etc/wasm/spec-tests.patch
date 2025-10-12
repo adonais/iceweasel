@@ -1115,3 +1115,20 @@ diff --git a/js/src/jit-test/tests/wasm/spec/threads/SB_atomic.wast.js b/js/src/
  // ./test/core/threads/SB_atomic.wast:5
  let $T1 = new Thread($Mem, "$Mem", `
  
+diff --git a/js/src/jit-test/tests/wasm/spec/spec/memory64.wast.js b/js/src/jit-test/tests/wasm/spec/spec/memory64.wast.js
+index f4ff1f322215..ee773659e1ed 100644
+--- a/js/src/jit-test/tests/wasm/spec/spec/memory64.wast.js
++++ b/js/src/jit-test/tests/wasm/spec/spec/memory64.wast.js
+@@ -28,10 +28,10 @@ let $2 = instantiate(`(module (memory i64 1 256))`);
+ let $3 = instantiate(`(module (memory i64 0 65536))`);
+
+ // ./test/core/memory64.wast:8
+-let _anon_7 = module(`(module (memory i64 0x1_0000_0000_0000))`);
++let _anon_7 = module(`(module (memory i64 137438953471))`);
+
+ // ./test/core/memory64.wast:9
+-let $4 = instantiate(`(module (memory i64 0 0x1_0000_0000_0000))`);
++let $4 = instantiate(`(module (memory i64 0 137438953471))`);
+
+ // ./test/core/memory64.wast:11
+ let $5 = instantiate(`(module (memory i64 (data)) (func (export "memsize") (result i64) (memory.size)))`);

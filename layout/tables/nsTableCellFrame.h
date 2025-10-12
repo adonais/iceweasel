@@ -68,7 +68,7 @@ class nsTableCellFrame : public nsContainerFrame,
 #endif
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   /** @see nsIFrame::DidSetComputedStyle */
   void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;

@@ -60,9 +60,9 @@ private class BreadcrumbList(val maxBreadCrumbs: Int) {
  * in on nightly was unexpectedly high. In order to avoid an unmanageable volume when we turned the
  * feature on in the Release channel, we decided to only send crashes that were as new as the feature
  * itself.
- * This timestamp is equivalent to October 28th, 2024 00:00:00 GMT
+ * This timestamp is equivalent to Mon Aug 18 2025 00:00:00 GMT+0000
  */
-private const val START_OF_134_NIGHTLY_TIMESTAMP = 1730073600000L
+private const val START_OF_144_NIGHTLY_TIMESTAMP = 1755475200000L
 
 /**
  *
@@ -154,7 +154,10 @@ class CrashReporter internal constructor(
     /**
      * Install this [CrashReporter] instance. At this point the component will be setup to collect crash reports.
      */
-    fun install(applicationContext: Context): CrashReporter {
+    fun install(
+        applicationContext: Context,
+        handleCaughtExceptionSideEffects: (() -> Unit)? = null,
+    ): CrashReporter {
         instance = this
 
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
@@ -162,6 +165,7 @@ class CrashReporter internal constructor(
             context = applicationContext,
             crashReporter = this,
             defaultExceptionHandler = defaultHandler,
+            handleCaughtException = handleCaughtExceptionSideEffects,
         )
         Thread.setDefaultUncaughtExceptionHandler(handler)
 
@@ -174,7 +178,7 @@ class CrashReporter internal constructor(
      * @param timestampMillis Timestamp in milliseconds to retrieve reports after. Defaults to the start
      * of the Fenix 134 cycle when this feature went live.
      */
-    suspend fun hasUnsentCrashReportsSince(timestampMillis: Long = START_OF_134_NIGHTLY_TIMESTAMP): Boolean {
+    suspend fun hasUnsentCrashReportsSince(timestampMillis: Long = START_OF_144_NIGHTLY_TIMESTAMP): Boolean {
         return database.crashDao().numberOfUnsentCrashesSince(timestampMillis) > 0
     }
 
@@ -185,7 +189,7 @@ class CrashReporter internal constructor(
      * @param timestampMillis Timestamp in milliseconds to retrieve reports after. Defaults to the start
      * of the Fenix 134 cycle when this feature went live.
      */
-    suspend fun unsentCrashReportsSince(timestampMillis: Long = START_OF_134_NIGHTLY_TIMESTAMP): List<Crash> {
+    suspend fun unsentCrashReportsSince(timestampMillis: Long = START_OF_144_NIGHTLY_TIMESTAMP): List<Crash> {
         return database.crashDao().getCrashesWithoutReportsSince(timestampMillis)
             .map { it.toCrash() }
     }

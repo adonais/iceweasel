@@ -7,12 +7,24 @@
 #ifndef AnchorPositioningUtils_h__
 #define AnchorPositioningUtils_h__
 
+#include "mozilla/Maybe.h"
+#include "nsRect.h"
+
+struct AnchorPosResolutionData;
+class nsAtom;
 class nsIFrame;
 
 template <class T>
 class nsTArray;
 
 namespace mozilla {
+
+struct AnchorPosInfo {
+  // Border-box of the anchor frame, offset against `mContainingBlock`'s padding
+  // box.
+  nsRect mRect;
+  const nsIFrame* mContainingBlock;
+};
 
 /**
  * AnchorPositioningUtils is a namespace class used for various anchor
@@ -26,8 +38,13 @@ struct AnchorPositioningUtils {
    * following https://drafts.csswg.org/css-anchor-position-1/#target
    */
   static nsIFrame* FindFirstAcceptableAnchor(
-      const nsIFrame* aPositionedFrame,
+      const nsAtom* aName, const nsIFrame* aPositionedFrame,
       const nsTArray<nsIFrame*>& aPossibleAnchorFrames);
+
+  static Maybe<AnchorPosInfo> GetAnchorPosRect(
+      const nsIFrame* aAbsoluteContainingBlock, const nsIFrame* aAnchor,
+      bool aCBRectIsvalid,
+      Maybe<AnchorPosResolutionData>* aReferencedAnchorsEntry);
 };
 
 }  // namespace mozilla

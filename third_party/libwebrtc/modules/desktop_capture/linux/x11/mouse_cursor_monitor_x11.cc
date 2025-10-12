@@ -70,7 +70,7 @@ MouseCursorMonitorX11::MouseCursorMonitorX11(
     const DesktopCaptureOptions& options,
     Window window)
     : x_display_(options.x_display()),
-      callback_(NULL),
+      callback_(nullptr),
       mode_(SHAPE_AND_POSITION),
       window_(window),
       have_xfixes_(false),
@@ -233,10 +233,10 @@ MouseCursorMonitor* MouseCursorMonitorX11::CreateForWindow(
     const DesktopCaptureOptions& options,
     WindowId window) {
   if (!options.x_display())
-    return NULL;
+    return nullptr;
   window = GetTopLevelWindow(options.x_display()->display(), window);
   if (window == None)
-    return NULL;
+    return nullptr;
   return new MouseCursorMonitorX11(options, window);
 }
 
@@ -244,7 +244,7 @@ MouseCursorMonitor* MouseCursorMonitorX11::CreateForScreen(
     const DesktopCaptureOptions& options,
     ScreenId screen) {
   if (!options.x_display())
-    return NULL;
+    return nullptr;
   return new MouseCursorMonitorX11(
       options, DefaultRootWindow(options.x_display()->display()));
 }

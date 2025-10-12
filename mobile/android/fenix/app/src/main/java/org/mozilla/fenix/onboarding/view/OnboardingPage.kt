@@ -37,6 +37,7 @@ import mozilla.components.compose.base.button.SecondaryButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The ratio of the image height to the parent height. This was determined from the designs in figma
@@ -99,7 +100,7 @@ fun OnboardingPage(
                     modifier = Modifier.align(Alignment.End),
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.mozac_ic_cross_24),
+                        painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
                         contentDescription = stringResource(R.string.onboarding_home_content_description_close_button),
                         tint = FirefoxTheme.colors.iconPrimary,
                     )
@@ -201,21 +202,19 @@ private fun OnboardingPagePreview() {
             pageState = OnboardingPageState(
                 imageRes = R.drawable.ic_notification_permission,
                 title = stringResource(
-                    id = R.string.onboarding_home_welcome_title_2,
-                    formatArgs = arrayOf(stringResource(R.string.app_name)),
+                    id = R.string.juno_onboarding_default_browser_title_nimbus_2,
                 ),
                 description = stringResource(
-                    id = R.string.onboarding_home_welcome_description,
-                    formatArgs = arrayOf(stringResource(R.string.app_name)),
+                    id = R.string.juno_onboarding_default_browser_description_nimbus_3,
                 ),
                 primaryButton = Action(
                     text = stringResource(
-                        id = R.string.onboarding_home_get_started_button,
+                        id = R.string.juno_onboarding_default_browser_positive_button,
                     ),
                     onClick = {},
                 ),
                 secondaryButton = Action(
-                    text = stringResource(id = R.string.onboarding_home_skip_button),
+                    text = stringResource(id = R.string.juno_onboarding_default_browser_negative_button),
                     onClick = {},
                 ),
                 onRecordImpressionEvent = {},

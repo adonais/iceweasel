@@ -187,8 +187,7 @@ class ClientAuthCertNonverifyingTrustDomain final : public TrustDomain {
       EndEntityOrCA endEntityOrCA, const pkix::CertID& certID, Time time,
       mozilla::pkix::Duration validityDuration,
       /*optional*/ const Input* stapledOCSPresponse,
-      /*optional*/ const Input* aiaExtension,
-      /*optional*/ const Input* sctExtension) override {
+      /*optional*/ const Input* aiaExtension) override {
     return pkix::Success;
   }
 

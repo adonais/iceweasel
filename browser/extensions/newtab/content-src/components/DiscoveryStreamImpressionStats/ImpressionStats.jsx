@@ -136,6 +136,7 @@ export class ImpressionStats extends React.PureComponent {
                     section: link.section,
                     section_position: link.section_position,
                     is_section_followed: link.is_section_followed,
+                    layout_name: link.sectionLayoutName,
                   }
                 : {}),
             })),

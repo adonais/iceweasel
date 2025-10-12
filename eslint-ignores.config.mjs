@@ -101,13 +101,13 @@ export default [
 
   // Ignore devtools files testing sourcemaps / code style
   "devtools/client/framework/test/code_*",
-  "devtools/client/inspector/markup/test/events_bundle.js",
+  "devtools/client/inspector/markup/test/events/events_bundle.js",
   "devtools/client/netmonitor/test/xhr_bundle.js",
   "devtools/client/webconsole/test/browser/code_bundle_nosource.js",
   "devtools/client/webconsole/test/browser/code_bundle_invalidmap.js",
   "devtools/client/webconsole/test/browser/test-autocomplete-mapped.js",
   "devtools/client/webconsole/test/browser/test-autocomplete-mapped.src.js",
-  "devtools/client/inspector/markup/test/shadowdom_open_debugger.min.js",
+  "devtools/client/inspector/markup/test/shadowdom/shadowdom_open_debugger.min.js",
   "devtools/client/webconsole/test/browser/test-click-function-to-source*.js",
   "devtools/client/webconsole/test/browser/test-external-script-errors.js",
   "devtools/client/webconsole/test/browser/test-mangled-function.*",
@@ -281,8 +281,9 @@ export default [
   "toolkit/mozapps/update/tests/data/xpcshellConstantsPP.js",
   "toolkit/modules/AppConstants.sys.mjs",
 
-  // Tests of ESLint command.
+  // ESLint tests.
   "tools/lint/test/files",
+  "tools/lint/eslint/eslint-plugin-mozilla/tests/globals-data/import-globals-from-invalid.js",
 
   // Uses special template formatting.
   "tools/tryselect/selectors/chooser/templates/chooser.html",
@@ -300,8 +301,4 @@ export default [
   // Test files for circular import in modules.
   "dom/base/test/jsmodules/import_circular.mjs",
   "dom/base/test/jsmodules/import_circular_1.mjs",
-
-  // Support for Import attributes is only available in ESLint v9.19
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=1944290
-  "netwerk/test/mochitests/test_import_json_module.mjs",
 ];

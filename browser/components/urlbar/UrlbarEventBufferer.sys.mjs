@@ -77,8 +77,8 @@ export class UrlbarEventBufferer {
     this._lastQuery = {
       // The time at which the current or last search was started. This is used
       // to check how much time passed while deferring the user's actions. Must
-      // be set using the monotonic Cu.now() helper.
-      startDate: Cu.now(),
+      // be set using the monotonic ChromeUtils.now() helper.
+      startDate: ChromeUtils.now(),
       // Status of the query; one of QUERY_STATUS.*
       status: QUERY_STATUS.UKNOWN,
       // The query context.
@@ -92,7 +92,7 @@ export class UrlbarEventBufferer {
   // UrlbarController listener methods.
   onQueryStarted(queryContext) {
     this._lastQuery = {
-      startDate: Cu.now(),
+      startDate: ChromeUtils.now(),
       status: QUERY_STATUS.RUNNING,
       context: queryContext,
     };
@@ -185,7 +185,7 @@ export class UrlbarEventBufferer {
     this._eventsQueue.push({ event, callback });
 
     if (!this._deferringTimeout) {
-      let elapsed = Cu.now() - this._lastQuery.startDate;
+      let elapsed = ChromeUtils.now() - this._lastQuery.startDate;
       let remaining = UrlbarEventBufferer.DEFERRING_TIMEOUT_MS - elapsed;
       this._deferringTimeout = lazy.setTimeout(
         () => {
@@ -268,7 +268,7 @@ export class UrlbarEventBufferer {
     // start of the search, we don't want to block the user's workflow anymore.
     if (
       this._lastQuery.startDate + UrlbarEventBufferer.DEFERRING_TIMEOUT_MS <=
-      Cu.now()
+      ChromeUtils.now()
     ) {
       return false;
     }

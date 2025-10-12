@@ -33,6 +33,10 @@ namespace InspectorUtils {
   sequence<PropertyPref> getCSSPropertyPrefs();
   [Throws] sequence<DOMString> getCSSValuesForProperty(UTF8String property);
   UTF8String rgbToColorName(octet r, octet g, octet b);
+  InspectorNearestColor rgbToNearestColorName(float r, float g, float b);
+  sequence<float> rgbToHsv(float r, float g, float b);
+  sequence<float> hsvToRgb(float h, float s, float v);
+  float relativeLuminance(float r, float g, float b);
   InspectorRGBATuple? colorToRGBA(UTF8String colorString);
   InspectorColorToResult? colorTo(UTF8String fromColor, UTF8String toColorSpace);
   boolean isValidCSSColor(UTF8String colorString);
@@ -82,6 +86,8 @@ namespace InspectorUtils {
   boolean isUsedColorSchemeDark(Element element);
 
   Element? containingBlockOf(Element element);
+
+  boolean isBlockContainer(Element element);
 
   // If the element is styled as display:block, returns an array of numbers giving
   // the number of lines in each fragment.
@@ -174,6 +180,11 @@ dictionary InspectorRGBATuple {
   double g = 0;
   double b = 0;
   double a = 1;
+};
+
+dictionary InspectorNearestColor {
+  required UTF8String colorName;
+  required boolean exact;
 };
 
 dictionary InspectorColorToResult {

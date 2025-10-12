@@ -79,6 +79,49 @@ def test_perfherder():
         assert "firstPaint" in subtest["name"]
 
 
+def test_perfherder_subtest_threshold():
+    options = {
+        "perfherder": True,
+        "perfherder-stats": True,
+        "perfherder-prefix": "",
+        "perfherder-metrics": [
+            metric_fields("name:firstPaint,alertThreshold:5.0"),
+            metric_fields("name:resource"),
+        ],
+        "perfherder-timestamp": 1.0,
+    }
+
+    metrics, metadata, env = setup_env(options)
+
+    with temp_file() as output:
+        env.set_arg("output", output)
+        with metrics as m, silence():
+            m(metadata)
+        output_file = metadata.get_output()
+        with open(output_file) as f:
+            output = json.loads(f.read())
+
+    # Check some metadata
+    assert output["application"]["name"] == "firefox"
+    assert output["framework"]["name"] == "mozperftest"
+    assert output["pushTimestamp"] == 1.0
+
+    # Check some numbers in our data
+    assert len(output["suites"]) == 1
+    assert len(output["suites"][0]["subtests"]) == 30
+    assert not any("value" in suite for suite in output["suites"])
+
+    # Check alert threshold settings
+    for suite in output["suites"]:
+        assert suite["alertThreshold"] == 2.0
+
+        for subtest in suite["subtests"]:
+            if "firstPaint" in subtest["name"]:
+                assert subtest["alertThreshold"] == 5.0
+            else:
+                assert subtest["alertThreshold"] == 2.0
+
+
 def test_perfherder_test_settings():
     options = {
         "perfherder": True,

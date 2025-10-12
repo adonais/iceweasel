@@ -7,13 +7,12 @@
 #ifndef mozilla_dom_workers_scriptloader_h__
 #define mozilla_dom_workers_scriptloader_h__
 
-#include "js/loader/ModuleLoadRequest.h"
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptLoadRequest.h"
+#include "js/loader/ScriptLoadRequestList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/WorkerBinding.h"
 #include "mozilla/dom/WorkerCommon.h"
-#include "mozilla/dom/WorkerLoadContext.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/workerinternals/WorkerModuleLoader.h"
 #include "nsIContentPolicy.h"
@@ -35,6 +34,7 @@ namespace dom {
 
 class ClientInfo;
 class Document;
+class ThreadSafeRequestHandle;
 struct WorkerLoadInfo;
 class WorkerPrivate;
 class SerializedStackHolder;
@@ -206,7 +206,8 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
 
   bool DispatchLoadScript(ScriptLoadRequest* aRequest);
 
-  bool DispatchLoadScripts();
+  bool DispatchLoadScripts(
+      nsTArray<RefPtr<ThreadSafeRequestHandle>>&& aLoadingList = {});
 
   void TryShutdown();
 

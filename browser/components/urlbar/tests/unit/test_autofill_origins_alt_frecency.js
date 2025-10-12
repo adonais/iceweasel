@@ -111,7 +111,7 @@ add_task(
           ),
           providesSearchMode: true,
           query: "",
-          providerName: "TabToSearch",
+          providerName: "UrlbarProviderTabToSearch",
         }),
       ],
     });

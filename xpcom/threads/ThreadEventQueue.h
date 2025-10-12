@@ -32,7 +32,7 @@ class ThreadEventQueue final : public SynchronizedEventQueue {
   explicit ThreadEventQueue(UniquePtr<EventQueue> aQueue,
                             bool aIsMainThread = false);
 
-  bool PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
+  bool PutEvent(RefPtr<nsIRunnable>& aEvent,
                 EventQueuePriority aPriority) final;
 
   already_AddRefed<nsIRunnable> GetEvent(
@@ -63,7 +63,7 @@ class ThreadEventQueue final : public SynchronizedEventQueue {
 
   virtual ~ThreadEventQueue();
 
-  bool PutEventInternal(already_AddRefed<nsIRunnable>&& aEvent,
+  bool PutEventInternal(RefPtr<nsIRunnable>& aEvent,
                         EventQueuePriority aPriority, NestedSink* aQueue);
 
   const UniquePtr<EventQueue> mBaseQueue MOZ_GUARDED_BY(mLock);

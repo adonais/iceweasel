@@ -90,7 +90,7 @@ void nsColorControlFrame::UpdateColor() {
 
 nsresult nsColorControlFrame::AttributeChanged(int32_t aNameSpaceID,
                                                nsAtom* aAttribute,
-                                               int32_t aModType) {
+                                               AttrModType aModType) {
   NS_ASSERTION(mColorContent, "The color div must exist");
 
   // If the value attribute is set, update the color box, but only if we're

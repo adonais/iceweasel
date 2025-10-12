@@ -41,6 +41,7 @@ import org.mozilla.fenix.components.appstate.setup.checklist.getSetupChecklistSu
 import org.mozilla.fenix.components.appstate.setup.checklist.getSetupChecklistTitle
 import org.mozilla.fenix.home.sessioncontrol.SetupChecklistInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 private val elevation = AcornLayout.AcornElevation.xLarge
 private val shapeChecklist = RoundedCornerShape(size = AcornLayout.AcornCorner.large)
@@ -160,21 +161,21 @@ private fun createPreviewTasks() = listOf(
 private fun setAsDefaultTaskPreview() = ChecklistItem.Task(
     type = ChecklistItem.Task.Type.SET_AS_DEFAULT,
     title = R.string.setup_checklist_task_default_browser,
-    icon = R.drawable.mozac_ic_web_extension_default_icon,
+    icon = iconsR.drawable.mozac_ic_web_extension_default_icon,
     isCompleted = false,
 )
 
 private fun webExtensionTaskPreview() = ChecklistItem.Task(
     type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
     title = R.string.setup_checklist_task_explore_extensions,
-    icon = R.drawable.mozac_ic_web_extension_default_icon,
+    icon = iconsR.drawable.mozac_ic_web_extension_default_icon,
     isCompleted = false,
 )
 
 private fun signInTaskPreview() = ChecklistItem.Task(
     type = ChecklistItem.Task.Type.SIGN_IN,
     title = R.string.setup_checklist_task_account_sync,
-    icon = R.drawable.mozac_ic_web_extension_default_icon,
+    icon = iconsR.drawable.mozac_ic_web_extension_default_icon,
     isCompleted = true,
 )
 
@@ -190,13 +191,13 @@ private fun createPreviewGroups() = listOf(
             ChecklistItem.Task(
                 type = ChecklistItem.Task.Type.SELECT_THEME,
                 title = R.string.setup_checklist_task_toolbar_selection,
-                icon = R.drawable.mozac_ic_web_extension_default_icon,
+                icon = iconsR.drawable.mozac_ic_web_extension_default_icon,
                 isCompleted = false,
             ),
             ChecklistItem.Task(
                 type = ChecklistItem.Task.Type.CHANGE_TOOLBAR_PLACEMENT,
                 title = R.string.setup_checklist_task_theme_selection,
-                icon = R.drawable.mozac_ic_web_extension_default_icon,
+                icon = iconsR.drawable.mozac_ic_web_extension_default_icon,
                 isCompleted = false,
             ),
         ),
@@ -208,13 +209,13 @@ private fun createPreviewGroups() = listOf(
             ChecklistItem.Task(
                 type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
                 title = R.string.setup_checklist_task_search_widget_2,
-                icon = R.drawable.mozac_ic_web_extension_default_icon,
+                icon = iconsR.drawable.mozac_ic_web_extension_default_icon,
                 isCompleted = false,
             ),
             ChecklistItem.Task(
                 type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
                 title = R.string.setup_checklist_task_explore_extensions,
-                icon = R.drawable.mozac_ic_web_extension_default_icon,
+                icon = iconsR.drawable.mozac_ic_web_extension_default_icon,
                 isCompleted = false,
             ),
         ),

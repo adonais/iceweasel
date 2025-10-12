@@ -9,6 +9,7 @@
 import os
 import re
 from dataclasses import dataclass
+from textwrap import dedent
 from typing import Callable
 
 from voluptuous import Extra, Optional, Required
@@ -23,27 +24,54 @@ from .base import TransformSequence
 
 CACHE_TYPE = "content.v1"
 
+#: Schema for fetch transforms
 FETCH_SCHEMA = Schema(
     {
-        # Name of the task.
-        Required("name"): str,
-        # Relative path (from config.path) to the file the task was defined
-        # in.
-        Optional("task-from"): str,
-        # Description of the task.
-        Required("description"): str,
+        Required(
+            "name",
+            description=dedent(
+                """
+                Name of the task.
+                """.lstrip()
+            ),
+        ): str,
+        Optional(
+            "task-from",
+            description=dedent(
+                """
+                Relative path (from config.path) to the file the task was defined
+                in.
+                """.lstrip()
+            ),
+        ): str,
+        Required(
+            "description",
+            description=dedent(
+                """
+                Description of the task.
+                """.lstrip()
+            ),
+        ): str,
         Optional("expires-after"): str,
         Optional("docker-image"): object,
         Optional(
             "fetch-alias",
-            description="An alias that can be used instead of the real fetch task name in "
-            "fetch stanzas for tasks.",
+            description=dedent(
+                """
+                An alias that can be used instead of the real fetch task name in
+                fetch stanzas for tasks.
+                """.lstrip()
+            ),
         ): str,
         Optional(
             "artifact-prefix",
-            description="The prefix of the taskcluster artifact being uploaded. "
-            "Defaults to `public/`; if it starts with something other than "
-            "`public/` the artifact will require scopes to access.",
+            description=dedent(
+                """
+                The prefix of the taskcluster artifact being uploaded.
+                Defaults to `public/`; if it starts with something other than
+                `public/` the artifact will require scopes to access.
+                """.lstrip()
+            ),
         ): str,
         Optional("attributes"): {str: object},
         Required("fetch"): {
@@ -52,7 +80,6 @@ FETCH_SCHEMA = Schema(
         },
     }
 )
-
 
 # define a collection of payload builders, depending on the worker implementation
 fetch_builders = {}

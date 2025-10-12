@@ -29,15 +29,15 @@ add_task(async function test_enabletrackingprotection_strict_preferences() {
     Services.prefs.prefIsLocked(
       "privacy.trackingprotection.allow_list.baseline.enabled"
     ),
-    true,
-    "Preference should be locked"
+    false,
+    "Preference should NOT be locked"
   );
   is(
     Services.prefs.prefIsLocked(
       "privacy.trackingprotection.allow_list.convenience.enabled"
     ),
-    true,
-    "Preference should be locked"
+    false,
+    "Preference should NOT be locked"
   );
   is(
     Services.prefs.getBoolPref(

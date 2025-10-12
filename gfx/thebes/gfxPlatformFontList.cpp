@@ -278,6 +278,9 @@ bool gfxPlatformFontList::Initialize(gfxPlatformFontList* aList) {
       StaticPrefs::gfx_font_list_omt_enabled_AtStartup() &&
       StaticPrefs::gfx_e10s_font_list_shared_AtStartup() &&
       !gfxPlatform::InSafeMode()) {
+    // We call nsRFPService::CalculateFontLocaleAllowlist so that it reads
+    // intl.accept_languages while we are still on the main thread.
+    nsRFPService::CalculateFontLocaleAllowlist();
     sInitFontListThread = PR_CreateThread(
         PR_USER_THREAD, InitFontListCallback, aList, PR_PRIORITY_NORMAL,
         PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
@@ -928,9 +931,9 @@ gfxFontEntry* gfxPlatformFontList::LookupInFaceNameLists(
 }
 
 gfxFontEntry* gfxPlatformFontList::LookupInSharedFaceNameList(
-    nsPresContext* aPresContext, const nsACString& aFaceName,
-    WeightRange aWeightForEntry, StretchRange aStretchForEntry,
-    SlantStyleRange aStyleForEntry) {
+    FontVisibilityProvider* aFontVisibilityProvider,
+    const nsACString& aFaceName, WeightRange aWeightForEntry,
+    StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) {
   nsAutoCString keyName(aFaceName);
   ToLowerCase(keyName);
   fontlist::FontList* list = SharedFontList();
@@ -951,11 +954,12 @@ gfxFontEntry* gfxPlatformFontList::LookupInSharedFaceNameList(
   if (!face || !family) {
     return nullptr;
   }
-  FontVisibility level =
-      aPresContext ? aPresContext->GetFontVisibility() : FontVisibility::User;
+  FontVisibility level = aFontVisibilityProvider
+                             ? aFontVisibilityProvider->GetFontVisibility()
+                             : FontVisibility::User;
   if (!IsVisibleToCSS(*family, level)) {
-    if (aPresContext) {
-      aPresContext->ReportBlockedFontFamily(*family);
+    if (aFontVisibilityProvider) {
+      aFontVisibilityProvider->ReportBlockedFontFamily(*family);
     }
     return nullptr;
   }
@@ -1104,12 +1108,13 @@ void gfxPlatformFontList::GetFontFamilyList(
 }
 
 already_AddRefed<gfxFont> gfxPlatformFontList::SystemFindFontForChar(
-    nsPresContext* aPresContext, uint32_t aCh, uint32_t aNextCh,
-    Script aRunScript, FontPresentation aPresentation,
+    FontVisibilityProvider* aFontVisibilityProvider, uint32_t aCh,
+    uint32_t aNextCh, Script aRunScript, FontPresentation aPresentation,
     const gfxFontStyle* aStyle, FontVisibility* aVisibility) {
   AutoLock lock(mLock);
-  FontVisibility level =
-      aPresContext ? aPresContext->GetFontVisibility() : FontVisibility::User;
+  FontVisibility level = aFontVisibilityProvider
+                             ? aFontVisibilityProvider->GetFontVisibility()
+                             : FontVisibility::User;
   MOZ_ASSERT(!mCodepointsWithNoFonts[level].test(aCh),
              "don't call for codepoints already known to be unsupported");
 
@@ -1145,8 +1150,8 @@ already_AddRefed<gfxFont> gfxPlatformFontList::SystemFindFontForChar(
   bool common = true;
   FontFamily fallbackFamily;
   RefPtr<gfxFont> candidate =
-      CommonFontFallback(aPresContext, aCh, aNextCh, aRunScript, aPresentation,
-                         aStyle, fallbackFamily);
+      CommonFontFallback(aFontVisibilityProvider, aCh, aNextCh, aRunScript,
+                         aPresentation, aStyle, fallbackFamily);
   RefPtr<gfxFont> font;
   if (candidate) {
     if (aPresentation == FontPresentation::Any) {
@@ -1164,7 +1169,7 @@ already_AddRefed<gfxFont> gfxPlatformFontList::SystemFindFontForChar(
   uint32_t cmapCount = 0;
   if (!font) {
     common = false;
-    font = GlobalFontFallback(aPresContext, aCh, aNextCh, aRunScript,
+    font = GlobalFontFallback(aFontVisibilityProvider, aCh, aNextCh, aRunScript,
                               aPresentation, aStyle, cmapCount, fallbackFamily);
     // If the font we found doesn't match the requested type, and we also found
     // a candidate above, prefer that one.
@@ -1216,15 +1221,16 @@ already_AddRefed<gfxFont> gfxPlatformFontList::SystemFindFontForChar(
 #define NUM_FALLBACK_FONTS 8
 
 already_AddRefed<gfxFont> gfxPlatformFontList::CommonFontFallback(
-    nsPresContext* aPresContext, uint32_t aCh, uint32_t aNextCh,
-    Script aRunScript, FontPresentation aPresentation,
+    FontVisibilityProvider* aFontVisibilityProvider, uint32_t aCh,
+    uint32_t aNextCh, Script aRunScript, FontPresentation aPresentation,
     const gfxFontStyle* aMatchStyle, FontFamily& aMatchedFamily) {
   AutoTArray<const char*, NUM_FALLBACK_FONTS> defaultFallbacks;
   gfxPlatform::GetPlatform()->GetCommonFallbackFonts(
       aCh, aRunScript, aPresentation, defaultFallbacks);
   GlobalFontMatch data(aCh, aNextCh, *aMatchStyle, aPresentation);
-  FontVisibility level =
-      aPresContext ? aPresContext->GetFontVisibility() : FontVisibility::User;
+  FontVisibility level = aFontVisibilityProvider
+                             ? aFontVisibilityProvider->GetFontVisibility()
+                             : FontVisibility::User;
 
   // If a color-emoji presentation is requested, we will check any font found
   // to see if it can provide this; if not, we'll remember it as a possible
@@ -1251,7 +1257,7 @@ already_AddRefed<gfxFont> gfxPlatformFontList::CommonFontFallback(
   if (SharedFontList()) {
     for (const auto name : defaultFallbacks) {
       fontlist::Family* family =
-          FindSharedFamily(aPresContext, nsDependentCString(name));
+          FindSharedFamily(aFontVisibilityProvider, nsDependentCString(name));
       if (!family || !IsVisibleToCSS(*family, level)) {
         continue;
       }
@@ -1294,18 +1300,19 @@ already_AddRefed<gfxFont> gfxPlatformFontList::CommonFontFallback(
 }
 
 already_AddRefed<gfxFont> gfxPlatformFontList::GlobalFontFallback(
-    nsPresContext* aPresContext, uint32_t aCh, uint32_t aNextCh,
-    Script aRunScript, FontPresentation aPresentation,
+    FontVisibilityProvider* aFontVisibilityProvider, uint32_t aCh,
+    uint32_t aNextCh, Script aRunScript, FontPresentation aPresentation,
     const gfxFontStyle* aMatchStyle, uint32_t& aCmapCount,
     FontFamily& aMatchedFamily) {
   bool useCmaps = IsFontFamilyWhitelistActive() ||
                   gfxPlatform::GetPlatform()->UseCmapsDuringSystemFallback();
-  FontVisibility level =
-      aPresContext ? aPresContext->GetFontVisibility() : FontVisibility::User;
+  FontVisibility level = aFontVisibilityProvider
+                             ? aFontVisibilityProvider->GetFontVisibility()
+                             : FontVisibility::User;
   if (!useCmaps) {
     // Allow platform-specific fallback code to try and find a usable font
-    gfxFontEntry* fe = PlatformGlobalFontFallback(aPresContext, aCh, aRunScript,
-                                                  aMatchStyle, aMatchedFamily);
+    gfxFontEntry* fe = PlatformGlobalFontFallback(
+        aFontVisibilityProvider, aCh, aRunScript, aMatchStyle, aMatchedFamily);
     if (fe) {
       if (aMatchedFamily.mShared) {
         if (IsVisibleToCSS(*aMatchedFamily.mShared, level)) {
@@ -1597,19 +1604,19 @@ gfxFontFamily* gfxPlatformFontList::CheckFamily(gfxFontFamily* aFamily) {
 }
 
 bool gfxPlatformFontList::FindAndAddFamilies(
-    nsPresContext* aPresContext, StyleGenericFontFamily aGeneric,
-    const nsACString& aFamily, nsTArray<FamilyAndGeneric>* aOutput,
-    FindFamiliesFlags aFlags, gfxFontStyle* aStyle, nsAtom* aLanguage,
-    gfxFloat aDevToCssSize) {
+    FontVisibilityProvider* aFontVisibilityProvider,
+    StyleGenericFontFamily aGeneric, const nsACString& aFamily,
+    nsTArray<FamilyAndGeneric>* aOutput, FindFamiliesFlags aFlags,
+    gfxFontStyle* aStyle, nsAtom* aLanguage, gfxFloat aDevToCssSize) {
   AutoLock lock(mLock);
 
 #ifdef DEBUG
   auto initialLength = aOutput->Length();
 #endif
 
-  bool didFind =
-      FindAndAddFamiliesLocked(aPresContext, aGeneric, aFamily, aOutput, aFlags,
-                               aStyle, aLanguage, aDevToCssSize);
+  bool didFind = FindAndAddFamiliesLocked(aFontVisibilityProvider, aGeneric,
+                                          aFamily, aOutput, aFlags, aStyle,
+                                          aLanguage, aDevToCssSize);
 #ifdef DEBUG
   auto finalLength = aOutput->Length();
   // Validate the expectation that the output-array grows if we return true,
@@ -1622,16 +1629,17 @@ bool gfxPlatformFontList::FindAndAddFamilies(
 }
 
 bool gfxPlatformFontList::FindAndAddFamiliesLocked(
-    nsPresContext* aPresContext, StyleGenericFontFamily aGeneric,
-    const nsACString& aFamily, nsTArray<FamilyAndGeneric>* aOutput,
-    FindFamiliesFlags aFlags, gfxFontStyle* aStyle, nsAtom* aLanguage,
-    gfxFloat aDevToCssSize) {
+    FontVisibilityProvider* aFontVisibilityProvider,
+    StyleGenericFontFamily aGeneric, const nsACString& aFamily,
+    nsTArray<FamilyAndGeneric>* aOutput, FindFamiliesFlags aFlags,
+    gfxFontStyle* aStyle, nsAtom* aLanguage, gfxFloat aDevToCssSize) {
   nsAutoCString key;
   GenerateFontListKey(aFamily, key);
 
   bool allowHidden = bool(aFlags & FindFamiliesFlags::eSearchHiddenFamilies);
   FontVisibility visibilityLevel =
-      aPresContext ? aPresContext->GetFontVisibility() : FontVisibility::User;
+      aFontVisibilityProvider ? aFontVisibilityProvider->GetFontVisibility()
+                              : FontVisibility::User;
 
   // If this font lookup is the result of resolving a CSS generic (not a direct
   // font-family request by the page), and RFP settings allow generics to be
@@ -1639,7 +1647,7 @@ bool gfxPlatformFontList::FindAndAddFamiliesLocked(
   // allow user-installed fonts to be used.
   if (visibilityLevel < FontVisibility::User &&
       aGeneric != StyleGenericFontFamily::None &&
-      !aPresContext->Document()->ShouldResistFingerprinting(
+      !aFontVisibilityProvider->ShouldResistFingerprinting(
           RFPTarget::FontVisibilityRestrictGenerics)) {
     visibilityLevel = FontVisibility::User;
   }
@@ -1689,8 +1697,8 @@ bool gfxPlatformFontList::FindAndAddFamiliesLocked(
         aOutput->AppendElement(FamilyAndGeneric(family, aGeneric));
         return true;
       }
-      if (aPresContext) {
-        aPresContext->ReportBlockedFontFamily(*family);
+      if (aFontVisibilityProvider) {
+        aFontVisibilityProvider->ReportBlockedFontFamily(*family);
       }
     }
     return false;
@@ -1704,8 +1712,8 @@ bool gfxPlatformFontList::FindAndAddFamiliesLocked(
     if (visible || (allowHidden && aFamily->IsHidden())) {
       return false;
     }
-    if (aPresContext) {
-      aPresContext->ReportBlockedFontFamily(*aFamily);
+    if (aFontVisibilityProvider) {
+      aFontVisibilityProvider->ReportBlockedFontFamily(*aFamily);
     }
     return true;
   };
@@ -1768,9 +1776,9 @@ bool gfxPlatformFontList::FindAndAddFamiliesLocked(
       }
     }
     if (index > 0) {
-      gfxFontFamily* base =
-          FindUnsharedFamily(aPresContext, Substring(aFamily, 0, index),
-                             FindFamiliesFlags::eNoSearchForLegacyFamilyNames);
+      gfxFontFamily* base = FindUnsharedFamily(
+          aFontVisibilityProvider, Substring(aFamily, 0, index),
+          FindFamiliesFlags::eNoSearchForLegacyFamilyNames);
       // If we found the "base" family name, and if it has members with
       // legacy names, this will add corresponding font-family entries to
       // the mOtherFamilyNames list; then retry the legacy-family search.
@@ -1801,16 +1809,16 @@ void gfxPlatformFontList::AddToMissedNames(const nsCString& aKey) {
 }
 
 fontlist::Family* gfxPlatformFontList::FindSharedFamily(
-    nsPresContext* aPresContext, const nsACString& aFamily,
+    FontVisibilityProvider* aFontVisibilityProvider, const nsACString& aFamily,
     FindFamiliesFlags aFlags, gfxFontStyle* aStyle, nsAtom* aLanguage,
     gfxFloat aDevToCss) {
   if (!SharedFontList()) {
     return nullptr;
   }
   AutoTArray<FamilyAndGeneric, 1> families;
-  if (!FindAndAddFamiliesLocked(aPresContext, StyleGenericFontFamily::None,
-                                aFamily, &families, aFlags, aStyle, aLanguage,
-                                aDevToCss) ||
+  if (!FindAndAddFamiliesLocked(
+          aFontVisibilityProvider, StyleGenericFontFamily::None, aFamily,
+          &families, aFlags, aStyle, aLanguage, aDevToCss) ||
       !families[0].mFamily.mShared) {
     return nullptr;
   }
@@ -1910,14 +1918,14 @@ bool gfxPlatformFontList::InitializeFamily(fontlist::Family* aFamily,
 }
 
 gfxFontEntry* gfxPlatformFontList::FindFontForFamily(
-    nsPresContext* aPresContext, const nsACString& aFamily,
+    FontVisibilityProvider* aFontVisibilityProvider, const nsACString& aFamily,
     const gfxFontStyle* aStyle) {
   AutoLock lock(mLock);
 
   nsAutoCString key;
   GenerateFontListKey(aFamily, key);
 
-  FontFamily family = FindFamily(aPresContext, key);
+  FontFamily family = FindFamily(aFontVisibilityProvider, key);
   if (family.IsNull()) {
     return nullptr;
   }
@@ -2103,19 +2111,20 @@ void gfxPlatformFontList::MaybeRemoveCmap(gfxCharacterMap* aCharMap) {
   }
 }
 
-static void GetSystemUIFontFamilies(const nsPresContext* aPresContext,
-                                    [[maybe_unused]] nsAtom* aLangGroup,
-                                    nsTArray<nsCString>& aFamilies) {
+static void GetSystemUIFontFamilies(
+    FontVisibilityProvider* aFontVisibilityProvider,
+    [[maybe_unused]] nsAtom* aLangGroup, nsTArray<nsCString>& aFamilies) {
   // TODO: On macOS, use CTCreateUIFontForLanguage or such thing (though the
   // code below ends up using [NSFont systemFontOfSize: 0.0].
   nsFont systemFont;
   gfxFontStyle fontStyle;
   nsAutoString systemFontName;
-  if (aPresContext ? aPresContext->Document()->ShouldResistFingerprinting(
-                         RFPTarget::FontVisibilityRestrictGenerics)
-                   : nsContentUtils::ShouldResistFingerprinting(
-                         "aPresContext not available",
-                         RFPTarget::FontVisibilityRestrictGenerics)) {
+  if (aFontVisibilityProvider
+          ? aFontVisibilityProvider->ShouldResistFingerprinting(
+                RFPTarget::FontVisibilityRestrictGenerics)
+          : nsContentUtils::ShouldResistFingerprinting(
+                "aFontVisibilityProvider not available",
+                RFPTarget::FontVisibilityRestrictGenerics)) {
 #if defined(XP_MACOSX) || defined(MOZ_WIDGET_UIKIT)
     *aFamilies.AppendElement() = "-apple-system"_ns;
     return;
@@ -2132,8 +2141,9 @@ static void GetSystemUIFontFamilies(const nsPresContext* aPresContext,
 }
 
 void gfxPlatformFontList::ResolveGenericFontNames(
-    nsPresContext* aPresContext, StyleGenericFontFamily aGenericType,
-    eFontPrefLang aPrefLang, PrefFontList* aGenericFamilies) {
+    FontVisibilityProvider* aFontVisibilityProvider,
+    StyleGenericFontFamily aGenericType, eFontPrefLang aPrefLang,
+    PrefFontList* aGenericFamilies) {
   const char* langGroupStr = GetPrefLangName(aPrefLang);
   const char* generic = GetGenericName(aGenericType);
 
@@ -2159,11 +2169,13 @@ void gfxPlatformFontList::ResolveGenericFontNames(
   MOZ_ASSERT(langGroup, "null lang group for pref lang");
 
   if (aGenericType == StyleGenericFontFamily::SystemUi) {
-    GetSystemUIFontFamilies(aPresContext, langGroup, genericFamilies);
+    GetSystemUIFontFamilies(aFontVisibilityProvider, langGroup,
+                            genericFamilies);
   }
 
-  GetFontFamiliesFromGenericFamilies(
-      aPresContext, aGenericType, genericFamilies, langGroup, aGenericFamilies);
+  GetFontFamiliesFromGenericFamilies(aFontVisibilityProvider, aGenericType,
+                                     genericFamilies, langGroup,
+                                     aGenericFamilies);
 
 #if 0  // dump out generic mappings
     printf("%s ===> ", NamePref(generic, langGroupStr).get());
@@ -2178,7 +2190,8 @@ void gfxPlatformFontList::ResolveGenericFontNames(
 }
 
 void gfxPlatformFontList::ResolveEmojiFontNames(
-    nsPresContext* aPresContext, PrefFontList* aGenericFamilies) {
+    FontVisibilityProvider* aFontVisibilityProvider,
+    PrefFontList* aGenericFamilies) {
   // emoji preference has no lang name
   AutoTArray<nsCString, 4> genericFamilies;
 
@@ -2188,20 +2201,21 @@ void gfxPlatformFontList::ResolveEmojiFontNames(
   }
 
   GetFontFamiliesFromGenericFamilies(
-      aPresContext, StyleGenericFontFamily::MozEmoji, genericFamilies, nullptr,
-      aGenericFamilies);
+      aFontVisibilityProvider, StyleGenericFontFamily::MozEmoji,
+      genericFamilies, nullptr, aGenericFamilies);
 }
 
 void gfxPlatformFontList::GetFontFamiliesFromGenericFamilies(
-    nsPresContext* aPresContext, StyleGenericFontFamily aGenericType,
+    FontVisibilityProvider* aFontVisibilityProvider,
+    StyleGenericFontFamily aGenericType,
     nsTArray<nsCString>& aGenericNameFamilies, nsAtom* aLangGroup,
     PrefFontList* aGenericFamilies) {
   // lookup and add platform fonts uniquely
   for (const nsCString& genericFamily : aGenericNameFamilies) {
     AutoTArray<FamilyAndGeneric, 10> families;
-    FindAndAddFamiliesLocked(aPresContext, aGenericType, genericFamily,
-                             &families, FindFamiliesFlags(0), nullptr,
-                             aLangGroup);
+    FindAndAddFamiliesLocked(aFontVisibilityProvider, aGenericType,
+                             genericFamily, &families, FindFamiliesFlags(0),
+                             nullptr, aLangGroup);
     for (const FamilyAndGeneric& f : families) {
       if (!aGenericFamilies->Contains(f.mFamily)) {
         aGenericFamilies->AppendElement(f.mFamily);
@@ -2212,15 +2226,15 @@ void gfxPlatformFontList::GetFontFamiliesFromGenericFamilies(
 
 gfxPlatformFontList::PrefFontList*
 gfxPlatformFontList::GetPrefFontsLangGroupLocked(
-    nsPresContext* aPresContext, StyleGenericFontFamily aGenericType,
-    eFontPrefLang aPrefLang) {
+    FontVisibilityProvider* aFontVisibilityProvider,
+    StyleGenericFontFamily aGenericType, eFontPrefLang aPrefLang) {
   if (aGenericType == StyleGenericFontFamily::MozEmoji ||
       aPrefLang == eFontPrefLang_Emoji) {
     // Emoji font has no lang
     PrefFontList* prefFonts = mEmojiPrefFont.get();
     if (MOZ_UNLIKELY(!prefFonts)) {
       prefFonts = new PrefFontList;
-      ResolveEmojiFontNames(aPresContext, prefFonts);
+      ResolveEmojiFontNames(aFontVisibilityProvider, prefFonts);
       mEmojiPrefFont.reset(prefFonts);
     }
     return prefFonts;
@@ -2230,15 +2244,17 @@ gfxPlatformFontList::GetPrefFontsLangGroupLocked(
   PrefFontList* prefFonts = mLangGroupPrefFonts[aPrefLang][index].get();
   if (MOZ_UNLIKELY(!prefFonts)) {
     prefFonts = new PrefFontList;
-    ResolveGenericFontNames(aPresContext, aGenericType, aPrefLang, prefFonts);
+    ResolveGenericFontNames(aFontVisibilityProvider, aGenericType, aPrefLang,
+                            prefFonts);
     mLangGroupPrefFonts[aPrefLang][index].reset(prefFonts);
   }
   return prefFonts;
 }
 
 void gfxPlatformFontList::AddGenericFonts(
-    nsPresContext* aPresContext, StyleGenericFontFamily aGenericType,
-    nsAtom* aLanguage, nsTArray<FamilyAndGeneric>& aFamilyList) {
+    FontVisibilityProvider* aFontVisibilityProvider,
+    StyleGenericFontFamily aGenericType, nsAtom* aLanguage,
+    nsTArray<FamilyAndGeneric>& aFamilyList) {
   AutoLock lock(mLock);
 
   // map lang ==> langGroup
@@ -2248,8 +2264,8 @@ void gfxPlatformFontList::AddGenericFonts(
   eFontPrefLang prefLang = GetFontPrefLangFor(langGroup);
 
   // lookup pref fonts
-  PrefFontList* prefFonts =
-      GetPrefFontsLangGroupLocked(aPresContext, aGenericType, prefLang);
+  PrefFontList* prefFonts = GetPrefFontsLangGroupLocked(aFontVisibilityProvider,
+                                                        aGenericType, prefLang);
 
   if (!prefFonts->IsEmpty()) {
     aFamilyList.SetCapacity(aFamilyList.Length() + prefFonts->Length());
@@ -2630,15 +2646,18 @@ StyleGenericFontFamily gfxPlatformFontList::GetDefaultGeneric(
   return StyleGenericFontFamily::Serif;
 }
 
-FontFamily gfxPlatformFontList::GetDefaultFont(nsPresContext* aPresContext,
-                                               const gfxFontStyle* aStyle) {
+FontFamily gfxPlatformFontList::GetDefaultFont(
+    FontVisibilityProvider* aFontVisibilityProvider,
+    const gfxFontStyle* aStyle) {
   AutoLock lock(mLock);
-  return GetDefaultFontLocked(aPresContext, aStyle);
+  return GetDefaultFontLocked(aFontVisibilityProvider, aStyle);
 }
 
 FontFamily gfxPlatformFontList::GetDefaultFontLocked(
-    nsPresContext* aPresContext, const gfxFontStyle* aStyle) {
-  FontFamily family = GetDefaultFontForPlatform(aPresContext, aStyle);
+    FontVisibilityProvider* aFontVisibilityProvider,
+    const gfxFontStyle* aStyle) {
+  FontFamily family =
+      GetDefaultFontForPlatform(aFontVisibilityProvider, aStyle);
   if (!family.IsNull()) {
     return family;
   }

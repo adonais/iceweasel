@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use crate::Pid;
-
 use nix::{
     errno::Errno,
     fcntl::{
@@ -12,26 +10,15 @@ use nix::{
         FdFlag, OFlag,
     },
     libc::{setsockopt, SOL_SOCKET, SO_NOSIGPIPE},
-    sys::socket::{socket, socketpair, AddressFamily, SockFlag, SockType, UnixAddr},
+    sys::socket::{socketpair, AddressFamily, SockFlag, SockType},
     Result,
 };
 use std::{
     mem::size_of,
     os::fd::{AsRawFd, BorrowedFd, OwnedFd},
-    path::PathBuf,
-    str::FromStr,
 };
 
 pub type ProcessHandle = ();
-
-pub(crate) fn unix_socket() -> Result<OwnedFd> {
-    socket(
-        AddressFamily::Unix,
-        SockType::Stream,
-        SockFlag::empty(),
-        None,
-    )
-}
 
 pub(crate) fn unix_socketpair() -> Result<(OwnedFd, OwnedFd)> {
     socketpair(
@@ -69,12 +56,4 @@ pub(crate) fn set_socket_default_flags(socket: BorrowedFd) -> Result<()> {
 
 pub(crate) fn set_socket_cloexec(socket: BorrowedFd) -> Result<()> {
     fcntl(socket, F_SETFD(FdFlag::FD_CLOEXEC)).map(|_res| ())
-}
-
-pub fn server_addr(pid: Pid) -> Result<UnixAddr> {
-    // macOS doesn't seem to support abstract paths as addresses for Unix
-    // protocol sockets, so this needs to be the path of an actual file.
-    let server_name = format!("/tmp/gecko-crash-helper-pipe.{pid:}");
-    let server_path = PathBuf::from_str(&server_name).unwrap();
-    UnixAddr::new(&server_path)
 }

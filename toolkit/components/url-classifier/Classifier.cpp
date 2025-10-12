@@ -93,7 +93,14 @@ nsresult Classifier::GetPrivateStoreDirectory(
   NS_ENSURE_SUCCESS(rv, rv);
 
   // Append the provider name to the root store directory.
-  rv = providerDirectory->AppendNative(aProvider);
+  if (aProvider.EqualsLiteral("google5")) {
+    // We reuse the google4 directory for google5 provider because both V4 and
+    // V5 share the same file format. Reusing the directory avoids the need to
+    // migrate the data between the two providers.
+    rv = providerDirectory->AppendNative("google4"_ns);
+  } else {
+    rv = providerDirectory->AppendNative(aProvider);
+  }
   NS_ENSURE_SUCCESS(rv, rv);
 
   // Ensure existence of the provider directory.

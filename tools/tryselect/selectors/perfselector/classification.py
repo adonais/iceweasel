@@ -637,7 +637,7 @@ class ClassificationProvider:
             },
             "Startup": {
                 "query": {
-                    Suites.PERFTEST.value: ["'startup !-test-"],
+                    Suites.PERFTEST.value: ["'startup !-test- !simple"],
                     Suites.TALOS.value: ["'sessionrestore | 'other !damp"],
                 },
                 "suites": [Suites.PERFTEST.value, Suites.TALOS.value],

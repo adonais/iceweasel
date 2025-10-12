@@ -25,7 +25,7 @@ inline already_AddRefed<DataSourceSurface> ConvertToB8G8R8A8_SIMD(
   RefPtr<DataSourceSurface> input = aSurface->GetDataSurface();
   DataSourceSurface::ScopedMap inputMap(input, DataSourceSurface::READ);
   DataSourceSurface::ScopedMap outputMap(output, DataSourceSurface::READ_WRITE);
-  uint8_t* inputData = inputMap.GetData();
+  const uint8_t* inputData = inputMap.GetData();
   uint8_t* outputData = outputMap.GetData();
   int32_t inputStride = inputMap.GetStride();
   int32_t outputStride = outputMap.GetStride();
@@ -105,7 +105,7 @@ inline already_AddRefed<DataSourceSurface> ConvertToB8G8R8A8_SIMD(
 }
 
 template <typename u8x16_t>
-inline void ExtractAlpha_SIMD(const IntSize& size, uint8_t* sourceData,
+inline void ExtractAlpha_SIMD(const IntSize& size, const uint8_t* sourceData,
                               int32_t sourceStride, uint8_t* alphaData,
                               int32_t alphaStride) {
   for (int32_t y = 0; y < size.height; y++) {
@@ -337,8 +337,8 @@ inline void ApplyBlending_SIMD(const DataSourceSurface::ScopedMap& aInputMap1,
                                const DataSourceSurface::ScopedMap& aInputMap2,
                                const DataSourceSurface::ScopedMap& aOutputMap,
                                const IntSize& aSize) {
-  uint8_t* source1Data = aInputMap1.GetData();
-  uint8_t* source2Data = aInputMap2.GetData();
+  const uint8_t* source1Data = aInputMap1.GetData();
+  const uint8_t* source2Data = aInputMap2.GetData();
   uint8_t* targetData = aOutputMap.GetData();
   int32_t targetStride = aOutputMap.GetStride();
   int32_t source1Stride = aInputMap1.GetStride();
@@ -440,7 +440,7 @@ static u8x16_t Morph8(u8x16_t a, u8x16_t b) {
 // it that are up to aRadius pixels away from it (horizontally).
 template <MorphologyOperator op, typename i16x8_t, typename u8x16_t>
 inline void ApplyMorphologyHorizontal_SIMD(
-    uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
+    const uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
     int32_t aDestStride, const IntRect& aDestRect, int32_t aRadius) {
   static_assert(
       op == MORPHOLOGY_OPERATOR_ERODE || op == MORPHOLOGY_OPERATOR_DILATE,
@@ -497,7 +497,7 @@ inline void ApplyMorphologyHorizontal_SIMD(
 
 template <typename i16x8_t, typename u8x16_t>
 inline void ApplyMorphologyHorizontal_SIMD(
-    uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
+    const uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
     int32_t aDestStride, const IntRect& aDestRect, int32_t aRadius,
     MorphologyOperator aOp) {
   if (aOp == MORPHOLOGY_OPERATOR_ERODE) {
@@ -514,7 +514,7 @@ inline void ApplyMorphologyHorizontal_SIMD(
 // it that are up to aRadius pixels away from it (vertically).
 template <MorphologyOperator op, typename i16x8_t, typename u8x16_t>
 static void ApplyMorphologyVertical_SIMD(
-    uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
+    const uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
     int32_t aDestStride, const IntRect& aDestRect, int32_t aRadius) {
   static_assert(
       op == MORPHOLOGY_OPERATOR_ERODE || op == MORPHOLOGY_OPERATOR_DILATE,
@@ -542,7 +542,7 @@ static void ApplyMorphologyVertical_SIMD(
 
 template <typename i16x8_t, typename u8x16_t>
 inline void ApplyMorphologyVertical_SIMD(
-    uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
+    const uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
     int32_t aDestStride, const IntRect& aDestRect, int32_t aRadius,
     MorphologyOperator aOp) {
   if (aOp == MORPHOLOGY_OPERATOR_ERODE) {
@@ -595,7 +595,7 @@ static already_AddRefed<DataSourceSurface> ApplyColorMatrix_SIMD(
   DataSourceSurface::ScopedMap inputMap(aInput, DataSourceSurface::READ);
   DataSourceSurface::ScopedMap outputMap(target, DataSourceSurface::READ_WRITE);
 
-  uint8_t* sourceData = inputMap.GetData();
+  const uint8_t* sourceData = inputMap.GetData();
   uint8_t* targetData = outputMap.GetData();
   int32_t sourceStride = inputMap.GetStride();
   int32_t targetStride = outputMap.GetStride();
@@ -813,7 +813,7 @@ static void ApplyComposition(DataSourceSurface* aSource,
   DataSourceSurface::ScopedMap input(aSource, DataSourceSurface::READ);
   DataSourceSurface::ScopedMap output(aDest, DataSourceSurface::READ_WRITE);
 
-  uint8_t* sourceData = input.GetData();
+  const uint8_t* sourceData = input.GetData();
   uint8_t* destData = output.GetData();
   uint32_t sourceStride = input.GetStride();
   uint32_t destStride = output.GetStride();
@@ -882,7 +882,7 @@ static void ApplyComposition_SIMD(DataSourceSurface* aSource,
 
 template <typename u8x16_t>
 static void SeparateColorChannels_SIMD(
-    const IntSize& size, uint8_t* sourceData, int32_t sourceStride,
+    const IntSize& size, const uint8_t* sourceData, int32_t sourceStride,
     uint8_t* channel0Data, uint8_t* channel1Data, uint8_t* channel2Data,
     uint8_t* channel3Data, int32_t channelStride) {
   for (int32_t y = 0; y < size.height; y++) {
@@ -954,8 +954,8 @@ static void SeparateColorChannels_SIMD(
 template <typename u8x16_t>
 static void CombineColorChannels_SIMD(
     const IntSize& size, int32_t resultStride, uint8_t* resultData,
-    int32_t channelStride, uint8_t* channel0Data, uint8_t* channel1Data,
-    uint8_t* channel2Data, uint8_t* channel3Data) {
+    int32_t channelStride, uint8_t* channel0Data, const uint8_t* channel1Data,
+    const uint8_t* channel2Data, const uint8_t* channel3Data) {
   for (int32_t y = 0; y < size.height; y++) {
     for (int32_t x = 0; x < size.width; x += 16) {
       // Process 16 pixels at a time.
@@ -1007,7 +1007,7 @@ template <typename i32x4_t, typename u16x8_t, typename u8x16_t>
 static void DoPremultiplicationCalculation_SIMD(const IntSize& aSize,
                                                 uint8_t* aTargetData,
                                                 int32_t aTargetStride,
-                                                uint8_t* aSourceData,
+                                                const uint8_t* aSourceData,
                                                 int32_t aSourceStride) {
   const u8x16_t alphaMask = simd::From8<u8x16_t>(0, 0, 0, 0xff, 0, 0, 0, 0xff,
                                                  0, 0, 0, 0xff, 0, 0, 0, 0xff);
@@ -1077,7 +1077,7 @@ template <typename u16x8_t, typename u8x16_t>
 static void DoUnpremultiplicationCalculation_SIMD(const IntSize& aSize,
                                                   uint8_t* aTargetData,
                                                   int32_t aTargetStride,
-                                                  uint8_t* aSourceData,
+                                                  const uint8_t* aSourceData,
                                                   int32_t aSourceStride) {
   for (int32_t y = 0; y < aSize.height; y++) {
     for (int32_t x = 0; x < aSize.width; x += 4) {
@@ -1119,7 +1119,7 @@ template <typename u16x8_t, typename u8x16_t>
 static void DoOpacityCalculation_SIMD(const IntSize& aSize,
                                       uint8_t* aTargetData,
                                       int32_t aTargetStride,
-                                      uint8_t* aSourceData,
+                                      const uint8_t* aSourceData,
                                       int32_t aSourceStride, Float aOpacity) {
   uint8_t alphaValue = uint8_t(roundf(255.f * aOpacity));
   u16x8_t alphaValues =
@@ -1216,8 +1216,8 @@ static void ApplyArithmeticCombine_SIMD(
     const DataSourceSurface::ScopedMap& aInputMap2,
     const DataSourceSurface::ScopedMap& aOutputMap, const IntSize& aSize,
     Float aK1, Float aK2, Float aK3, Float aK4) {
-  uint8_t* source1Data = aInputMap1.GetData();
-  uint8_t* source2Data = aInputMap2.GetData();
+  const uint8_t* source1Data = aInputMap1.GetData();
+  const uint8_t* source2Data = aInputMap2.GetData();
   uint8_t* targetData = aOutputMap.GetData();
   uint32_t source1Stride = aInputMap1.GetStride();
   uint32_t source2Stride = aInputMap2.GetStride();

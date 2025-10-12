@@ -71,8 +71,8 @@ class nsThreadManager : public nsIThreadManager {
   // specified.
   nsThread* CreateCurrentThread(mozilla::SynchronizedEventQueue* aQueue);
 
-  nsresult DispatchToBackgroundThread(nsIRunnable* aEvent,
-                                      uint32_t aDispatchFlags);
+  nsresult DispatchToBackgroundThread(
+      nsIRunnable* aEvent, nsIEventTarget::DispatchFlags aDispatchFlags);
 
   already_AddRefed<mozilla::TaskQueue> CreateBackgroundTaskQueue(
       const char* aName);

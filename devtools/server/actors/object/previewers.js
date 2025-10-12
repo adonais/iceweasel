@@ -1160,7 +1160,7 @@ previewers.Object = [
     const { safeRawObj, className } = objectActor;
     if (
       !safeRawObj ||
-      (className != "CSSStyleDeclaration" && className != "CSS2Properties") ||
+      (className != "CSSStyleDeclaration" && className != "CSSStyleProperties") ||
       isWorker
     ) {
       return false;

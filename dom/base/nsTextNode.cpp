@@ -111,7 +111,7 @@ nsresult nsTextNode::AppendTextForNormalize(const char16_t* aBuffer,
   CharacterDataChangeInfo::Details details = {
       CharacterDataChangeInfo::Details::eMerge, aNextSibling};
   return SetTextInternal(mBuffer.GetLength(), 0, aBuffer, aLength, aNotify,
-                         &details);
+                         MutationEffectOnScript::KeepTrustWorthiness, &details);
 }
 
 #ifdef MOZ_DOM_LIST
@@ -208,7 +208,7 @@ void nsAttributeTextNode::UnbindFromTree(UnbindContext& aContext) {
 
 void nsAttributeTextNode::AttributeChanged(Element* aElement,
                                            int32_t aNameSpaceID,
-                                           nsAtom* aAttribute, int32_t aModType,
+                                           nsAtom* aAttribute, AttrModType,
                                            const nsAttrValue* aOldValue) {
   if (aNameSpaceID == mNameSpaceID && aAttribute == mAttrName &&
       aElement == mGrandparent) {

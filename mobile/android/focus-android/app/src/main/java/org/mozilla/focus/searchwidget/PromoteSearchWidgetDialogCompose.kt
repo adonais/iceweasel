@@ -43,6 +43,7 @@ import org.mozilla.focus.R
 import org.mozilla.focus.ui.theme.FocusTheme
 import org.mozilla.focus.ui.theme.focusColors
 import org.mozilla.focus.ui.theme.focusTypography
+import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 @Preview
@@ -164,11 +165,7 @@ private fun ComponentAddWidgetButton(
         ),
     ) {
         Text(
-            text = AnnotatedString(
-                LocalContext.current.resources.getString(
-                    R.string.promote_search_widget_button_text,
-                ),
-            ),
+            text = AnnotatedString(stringResource(id = R.string.promote_search_widget_button_text)),
             color = PhotonColors.White,
         )
     }
@@ -193,7 +190,7 @@ private fun CloseButton(
             .padding(10.dp),
     ) {
         Icon(
-            painter = painterResource(R.drawable.mozac_ic_cross_24),
+            painter = painterResource(iconsR.drawable.mozac_ic_cross_24),
             contentDescription = stringResource(id = R.string.promote_search_widget_dialog_content_description),
             tint = focusColors.closeIcon,
         )

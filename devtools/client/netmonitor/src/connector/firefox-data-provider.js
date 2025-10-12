@@ -463,14 +463,7 @@ class FirefoxDataProvider {
 
     // This event is fired multiple times per request
     this.emitForTests(TEST_EVENTS.NETWORK_EVENT_UPDATED, resource.actor);
-    if (
-      // @backward-compat { version 142 } Trait to support backward
-      // compatibility with the old server which sends only one update.
-      // This can be removed after 142 is in release.
-      !this.commands.watcherFront.traits.multipleNetworkEventUpdates ||
-      (this.commands.watcherFront.traits.multipleNetworkEventUpdates &&
-        update.resourceUpdates.responseEndAvailable)
-    ) {
+    if (update.resourceUpdates.responseEndAvailable) {
       this.pendingRequests.delete(resource.actor);
       // The EVENTS.PAYLOAD_READY might be consumed by extensions.
       this.emit(EVENTS.PAYLOAD_READY, resource);

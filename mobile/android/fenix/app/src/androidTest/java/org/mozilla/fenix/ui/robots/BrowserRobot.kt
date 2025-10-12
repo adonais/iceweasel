@@ -12,6 +12,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.widget.TimePicker
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -19,11 +20,14 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.longClick
@@ -45,8 +49,11 @@ import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
 import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.concept.engine.utils.EngineReleaseChannel
+import mozilla.components.ui.tabcounter.TabCounterTestTags.NORMAL_TABS_COUNTER
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -84,6 +91,13 @@ import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SEND_BUTTON
 import java.time.LocalDate
+import mozilla.components.browser.errorpages.R as errorpagesR
+import mozilla.components.browser.toolbar.R as toolbarR
+import mozilla.components.feature.app.links.R as applinksR
+import mozilla.components.feature.contextmenu.R as contextmenuR
+import mozilla.components.feature.downloads.R as downloadsR
+import mozilla.components.feature.prompts.R as promptsR
+import mozilla.components.ui.tabcounter.R as tabcounterR
 
 class BrowserRobot {
     private lateinit var sessionLoadedIdlingResource: SessionLoadedIdlingResource
@@ -125,6 +139,13 @@ class BrowserRobot {
                 ),
             )
         }
+    }
+
+    fun verifyUrlWithComposableToolbar(composeTestRule: ComposeTestRule, url: String) {
+        Log.i(TAG, "verifyUrlWithComposableToolbar: Trying to verify $url")
+        composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL, useUnmergedTree = true)
+            .assertAny(hasText(url.replace("http://", ""), substring = true))
+        Log.i(TAG, "verifyUrlWithComposableToolbar: Verified $url")
     }
 
     fun verifyHelpUrl() {
@@ -284,7 +305,7 @@ class BrowserRobot {
     fun verifyTabCounter(numberOfOpenTabs: String) =
         onView(
             allOf(
-                withId(R.id.counter_text),
+                withId(tabcounterR.id.counter_text),
                 withText(numberOfOpenTabs),
                 withEffectiveVisibility(Visibility.VISIBLE),
             ),
@@ -467,6 +488,23 @@ class BrowserRobot {
         }
     }
 
+    fun swipeNavBarRightWithComposableToolbar(composeTestRule: ComposeTestRule, tabUrl: String) {
+        // failing to swipe on Firebase sometimes, so it tries again
+        try {
+            Log.i(TAG, "swipeNavBarRightWithComposableToolbar: Try block")
+            Log.i(TAG, "swipeNavBarRightWithComposableToolbar: Trying to perform swipe right action on navigation toolbar")
+            itemWithResId("$packageName:id/composable_toolbar").swipeRight(2)
+            Log.i(TAG, "swipeNavBarRightWithComposableToolbar: Performed swipe right action on navigation toolbar")
+            assertUIObjectIsGone(itemWithText(tabUrl))
+        } catch (e: AssertionError) {
+            Log.i(TAG, "swipeNavBarRightWithComposableToolbar: AssertionError caught, executing fallback methods")
+            Log.i(TAG, "swipeNavBarRightWithComposableToolbar: Trying to perform swipe right action on navigation toolbar")
+            itemWithResId("$packageName:id/composable_toolbar").swipeRight(2)
+            Log.i(TAG, "swipeNavBarRightWithComposableToolbar: Performed swipe right action on navigation toolbar")
+            assertUIObjectIsGone(itemWithText(tabUrl))
+        }
+    }
+
     fun swipeNavBarLeft(tabUrl: String) {
         // failing to swipe on Firebase sometimes, so it tries again
         try {
@@ -480,6 +518,23 @@ class BrowserRobot {
             Log.i(TAG, "swipeNavBarLeft: Trying to perform swipe left action on navigation toolbar")
             navURLBar().swipeLeft(2)
             Log.i(TAG, "swipeNavBarLeft: Performed swipe left action on navigation toolbar")
+            assertUIObjectIsGone(itemWithText(tabUrl))
+        }
+    }
+
+    fun swipeNavBarLeftWithComposableToolbar(composeTestRule: ComposeTestRule, tabUrl: String) {
+        // failing to swipe on Firebase sometimes, so it tries again
+        try {
+            Log.i(TAG, "swipeNavBarLeftWithComposableToolbar: Try block")
+            Log.i(TAG, "swipeNavBarLeftWithComposableToolbar: Trying to perform swipe left action on navigation toolbar")
+            itemWithResId("$packageName:id/composable_toolbar").swipeLeft(2)
+            Log.i(TAG, "swipeNavBarLeftWithComposableToolbar: Performed swipe left action on navigation toolbar")
+            assertUIObjectIsGone(itemWithText(tabUrl))
+        } catch (e: AssertionError) {
+            Log.i(TAG, "swipeNavBarLeftWithComposableToolbar: AssertionError caught, executing fallback methods")
+            Log.i(TAG, "swipeNavBarLeftWithComposableToolbar: Trying to perform swipe left action on navigation toolbar")
+            itemWithResId("$packageName:id/composable_toolbar").swipeLeft(2)
+            Log.i(TAG, "swipeNavBarLeftWithComposableToolbar: Performed swipe left action on navigation toolbar")
             assertUIObjectIsGone(itemWithText(tabUrl))
         }
     }
@@ -602,7 +657,7 @@ class BrowserRobot {
         Log.i(TAG, "fillAndSaveCreditCard: Waited for $waitingTime ms for $packageName window to be updated")
     }
 
-    fun clickNegativeSaveCreditCardPromptButton() = onView(withId(R.id.save_cancel)).inRoot(isDialog()).click()
+    fun clickNegativeSaveCreditCardPromptButton() = onView(withId(promptsR.id.save_cancel)).inRoot(isDialog()).click()
 
     fun verifyUpdateOrSaveCreditCardPromptExists(exists: Boolean) =
         assertUIObjectExists(
@@ -864,10 +919,15 @@ class BrowserRobot {
         assertUIObjectExists(
             itemWithResId("$packageName:id/parentPanel"),
             itemContainingText(
-                getStringResource(R.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name, appName),
+                getStringResource(
+                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name,
+                    appName,
+                ),
             ),
             itemContainingText(
-                getStringResource(R.string.mozac_feature_applinks_normal_confirm_dialog_message),
+                getStringResource(
+                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_message,
+                ),
             ),
         )
     }
@@ -878,7 +938,10 @@ class BrowserRobot {
                 Log.i(TAG, "verifyPrivateBrowsingOpenLinkInAnotherAppPrompt: Started try #$i")
                 assertUIObjectExists(
                     itemContainingText(
-                        getStringResource(R.string.mozac_feature_applinks_confirm_dialog_title_with_app_name, appName),
+                        getStringResource(
+                            applinksR.string.mozac_feature_applinks_confirm_dialog_title_with_app_name,
+                            appName,
+                        ),
                     ),
                     itemContainingText(url),
                 )
@@ -908,19 +971,31 @@ class BrowserRobot {
 
     fun verifyConnectionErrorMessage() =
         assertUIObjectExists(
-            itemContainingText(getStringResource(R.string.mozac_browser_errorpages_connection_failure_title)),
+            itemContainingText(
+                getStringResource(
+                    errorpagesR.string.mozac_browser_errorpages_connection_failure_title,
+                ),
+            ),
             itemWithResId("errorTryAgain"),
         )
 
     fun verifyAddressNotFoundErrorMessage() =
         assertUIObjectExists(
-            itemContainingText(getStringResource(R.string.mozac_browser_errorpages_unknown_host_title)),
+            itemContainingText(
+                getStringResource(
+                    errorpagesR.string.mozac_browser_errorpages_unknown_host_title,
+                ),
+            ),
             itemWithResId("errorTryAgain"),
         )
 
     fun verifyNoInternetConnectionErrorMessage() =
         assertUIObjectExists(
-            itemContainingText(getStringResource(R.string.mozac_browser_errorpages_no_internet_title_2)),
+            itemContainingText(
+                getStringResource(
+                    errorpagesR.string.mozac_browser_errorpages_no_internet_title_2,
+                ),
+            ),
             itemWithResId("errorTryAgain"),
         )
 
@@ -996,7 +1071,7 @@ class BrowserRobot {
 
     fun longClickToolbar() {
         Log.i(TAG, "longClickToolbar: Trying to long click the toolbar")
-        onView(withId(R.id.mozac_browser_toolbar_url_view)).perform(longClick())
+        onView(withId(toolbarR.id.mozac_browser_toolbar_url_view)).perform(longClick())
         Log.i(TAG, "longClickToolbar: Long clicked the toolbar")
     }
 
@@ -1010,7 +1085,7 @@ class BrowserRobot {
         assertUIObjectExists(
             itemWithResIdContainingText(
                 "$packageName:id/title",
-                getStringResource(R.string.mozac_feature_downloads_cancel_active_downloads_warning_content_title),
+                getStringResource(downloadsR.string.mozac_feature_downloads_cancel_active_downloads_warning_content_title),
             ),
             itemWithResIdContainingText(
                 "$packageName:id/body",
@@ -1018,11 +1093,11 @@ class BrowserRobot {
             ),
             itemWithResIdContainingText(
                 "$packageName:id/deny_button",
-                getStringResource(R.string.mozac_feature_downloads_cancel_active_private_downloads_deny),
+                getStringResource(downloadsR.string.mozac_feature_downloads_cancel_active_private_downloads_deny),
             ),
             itemWithResIdContainingText(
                 "$packageName:id/accept_button",
-                getStringResource(R.string.mozac_feature_downloads_cancel_active_downloads_accept),
+                getStringResource(downloadsR.string.mozac_feature_downloads_cancel_active_downloads_accept),
             ),
         )
     }
@@ -1031,7 +1106,7 @@ class BrowserRobot {
         Log.i(TAG, "clickStayInPrivateBrowsingPromptButton: Trying to click the \"STAY IN PRIVATE BROWSING\" prompt button")
         itemWithResIdContainingText(
             "$packageName:id/deny_button",
-            getStringResource(R.string.mozac_feature_downloads_cancel_active_private_downloads_deny),
+            getStringResource(downloadsR.string.mozac_feature_downloads_cancel_active_private_downloads_deny),
         ).click()
         Log.i(TAG, "clickStayInPrivateBrowsingPromptButton: Clicked the \"STAY IN PRIVATE BROWSING\" prompt button")
     }
@@ -1040,7 +1115,7 @@ class BrowserRobot {
         Log.i(TAG, "clickCancelPrivateDownloadsPromptButton: Trying to click the \"CANCEL DOWNLOADS\" prompt button")
         itemWithResIdContainingText(
             "$packageName:id/accept_button",
-            getStringResource(R.string.mozac_feature_downloads_cancel_active_downloads_accept),
+            getStringResource(downloadsR.string.mozac_feature_downloads_cancel_active_downloads_accept),
         ).click()
         Log.i(TAG, "clickCancelPrivateDownloadsPromptButton: Clicked the \"CANCEL DOWNLOADS\" prompt button")
         Log.i(TAG, "clickCancelPrivateDownloadsPromptButton: Waiting for $waitingTime ms for $packageName window to be updated")
@@ -1135,13 +1210,13 @@ class BrowserRobot {
             )
             Log.i(
                 TAG,
-                "verifyWebCompatReporterViewItems: Trying to verify that the \"Send more info\" link is displayed",
+                "verifyWebCompatReporterViewItems: Trying to verify that the \"Add more info\" link is displayed",
             )
-            composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_send_more_info))
+            composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_add_more_info))
                 .assertIsDisplayed()
             Log.i(
                 TAG,
-                "verifyWebCompatReporterViewItems: Verified that the \"Send more info\" link is displayed",
+                "verifyWebCompatReporterViewItems: Verified that the \"Add more info\" link is displayed",
             )
         }
         Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Cancel\" button is displayed")
@@ -1306,6 +1381,16 @@ class BrowserRobot {
             return ThreeDotMenuMainRobotCompose.Transition(composeTestRule)
         }
 
+        fun openThreeDotMenuWithComposableToolbar(composeTestRule: ComposeTestRule, interact: ThreeDotMenuMainRobotCompose.() -> Unit): ThreeDotMenuMainRobotCompose.Transition {
+            Log.i(TAG, "openThreeDotMenuWithComposableToolbar: Trying to click main menu button")
+            composeTestRule.onNodeWithContentDescription(getStringResource(R.string.content_description_menu)).performClick()
+            Log.i(TAG, "openThreeDotMenuWithComposableToolbar: Clicked main menu button")
+            assertUIObjectExists(itemWithResId("$packageName:id/design_bottom_sheet"))
+
+            ThreeDotMenuMainRobotCompose(composeTestRule).interact()
+            return ThreeDotMenuMainRobotCompose.Transition(composeTestRule)
+        }
+
         fun openNavigationToolbar(interact: NavigationToolbarRobot.() -> Unit): NavigationToolbarRobot.Transition {
             navURLBar().waitForExists(waitingTime)
             Log.i(TAG, "openNavigationToolbar: Trying to click the address bar.")
@@ -1317,6 +1402,18 @@ class BrowserRobot {
 
             NavigationToolbarRobot().interact()
             return NavigationToolbarRobot.Transition()
+        }
+
+        @OptIn(ExperimentalTestApi::class)
+        fun openSearchWithComposableToolbar(composeTestRule: ComposeTestRule, interact: SearchRobot.() -> Unit): SearchRobot.Transition {
+            composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_URL_BOX), waitingTime)
+            Log.i(TAG, "openSearchWithComposableToolbar: Trying to click navigation toolbar")
+            composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX).onLast().performClick()
+            Log.i(TAG, "openSearchWithComposableToolbar: Clicked navigation toolbar")
+            waitForAppWindowToBeUpdated()
+
+            SearchRobot().interact()
+            return SearchRobot.Transition()
         }
 
         fun openTabDrawer(composeTestRule: HomeActivityComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
@@ -1357,33 +1454,16 @@ class BrowserRobot {
             return TabDrawerRobot.Transition(composeTestRule)
         }
 
-        fun openTabDrawerFromRedesignedToolbar(composeTestRule: HomeActivityComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
-            for (i in 1..RETRY_COUNT) {
-                try {
-                    Log.i(TAG, "openTabDrawerFromRedesignedToolbar: Started try #$i")
-                    assertUIObjectExists(tabsCounterFromRedesignedToolbar())
-                    Log.i(TAG, "openTabDrawerFromRedesignedToolbar: Trying to click the tab counter button")
-                    tabsCounter().click()
-                    Log.i(TAG, "openTabDrawerFromRedesignedToolbar: Clicked the tab counter button")
-                    Log.i(TAG, "openTabDrawerFromRedesignedToolbar: Trying to verify the tabs tray exists")
-                    composeTestRule.onNodeWithTag(TabsTrayTestTag.TABS_TRAY).assertExists()
-                    Log.i(TAG, "openTabDrawer: Verified the tabs tray exists")
-
-                    break
-                } catch (e: AssertionError) {
-                    Log.i(TAG, "openTabDrawerFromRedesignedToolbar: AssertionError caught, executing fallback methods")
-                    if (i == RETRY_COUNT) {
-                        throw e
-                    } else {
-                        Log.i(TAG, "openTabDrawerFromRedesignedToolbar: Waiting for device to be idle")
-                        mDevice.waitForIdle()
-                        Log.i(TAG, "openTabDrawerFromRedesignedToolbar: Waited for device to be idle")
-                    }
-                }
-            }
-            Log.i(TAG, "openTabDrawerFromRedesignedToolbar: Trying to verify the tabs tray new tab FAB button exists")
+        fun openTabDrawerWithComposableToolbar(composeTestRule: HomeActivityComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
+            Log.i(TAG, "openTabDrawerWithComposableToolbar: Trying to click the tab counter button")
+            composeTestRule.onNodeWithTag(NORMAL_TABS_COUNTER).performClick()
+            Log.i(TAG, "openTabDrawerWithComposableToolbar: Clicked the tab counter button")
+            Log.i(TAG, "openTabDrawerWithComposableToolbar: Trying to verify the tabs tray exists")
+            composeTestRule.onNodeWithTag(TabsTrayTestTag.TABS_TRAY).assertExists()
+            Log.i(TAG, "openTabDrawerWithComposableToolbar: Verified the tabs tray exists")
+            Log.i(TAG, "openTabDrawer: Trying to verify the tabs tray new tab FAB button exists")
             composeTestRule.onNodeWithTag(TabsTrayTestTag.FAB).assertExists()
-            Log.i(TAG, "openTabDrawerFromRedesignedToolbar: Verified the tabs tray new tab FAB button exists")
+            Log.i(TAG, "openTabDrawer: Verified the tabs tray new tab FAB button exists")
 
             TabDrawerRobot(composeTestRule).interact()
             return TabDrawerRobot.Transition(composeTestRule)
@@ -1406,6 +1486,31 @@ class BrowserRobot {
             Log.i(TAG, "goToHomescreen: Waiting for home screen to exist")
             composeTestRule.waitUntilAtLeastOneExists(hasTestTag(HOMEPAGE))
             Log.i(TAG, "goToHomescreen: Waited for home screen to exist")
+
+            HomeScreenRobot().interact()
+            return HomeScreenRobot.Transition()
+        }
+
+        @OptIn(ExperimentalTestApi::class)
+        fun goToHomescreenWithComposableToolbar(composeTestRule: ComposeTestRule, isPrivateModeEnabled: Boolean = false, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
+            if (isPrivateModeEnabled) {
+                Log.i(TAG, "goToHomescreenWithComposableToolbar: Trying to click the \"New private tab\" button.")
+                composeTestRule.onNodeWithContentDescription("New private tab").performClick()
+                Log.i(TAG, "goToHomescreenWithComposableToolbar: Clicked the \"New private tab\" button.")
+            } else {
+                Log.i(TAG, "goToHomescreenWithComposableToolbar: Trying to click the \"New tab\" button.")
+                composeTestRule.onNodeWithContentDescription("New tab").performClick()
+                Log.i(TAG, "goToHomescreenWithComposableToolbar: Clicked the \"New tab\" button.")
+            }
+            Log.i(TAG, "goToHomescreenWithComposableToolbar: Trying to close the keyboard.")
+            closeSoftKeyboard()
+            Log.i(TAG, "goToHomescreenWithComposableToolbar: Closed the keyboard.")
+            Log.i(TAG, "goToHomescreenWithComposableToolbar: Waiting for home screen to exist")
+            composeTestRule.waitUntilAtLeastOneExists(hasTestTag(HOMEPAGE))
+            Log.i(TAG, "goToHomescreenWithComposableToolbar: Waited for home screen to exist")
+            Log.i(TAG, "goToHomescreenWithComposableToolbar: Trying to click the device back button")
+            mDevice.pressBack()
+            Log.i(TAG, "goToHomescreenWithComposableToolbar: Clicked the device back button")
 
             HomeScreenRobot().interact()
             return HomeScreenRobot.Transition()
@@ -1537,24 +1642,33 @@ class BrowserRobot {
             return SiteSecurityRobot.Transition()
         }
 
-        fun clickManageAddressButton(interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
+        fun openSiteSecuritySheetWithComposableToolbar(composeTestRule: ComposeTestRule, interact: SiteSecurityRobot.() -> Unit): SiteSecurityRobot.Transition {
+            Log.i(TAG, "openSiteSecuritySheetWithComposableToolbar: Trying to click the site security toolbar button and wait for $waitingTime ms for a new window")
+            composeTestRule.onNodeWithContentDescription(getStringResource(toolbarR.string.mozac_browser_toolbar_content_description_site_info)).performClick()
+            Log.i(TAG, "openSiteSecuritySheetWithComposableToolbar: Clicked the site security toolbar button and waited for $waitingTime ms for a new window")
+
+            SiteSecurityRobot().interact()
+            return SiteSecurityRobot.Transition()
+        }
+
+        fun clickManageAddressButton(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
             Log.i(TAG, "clickManageAddressButton: Trying to click the manage address button and wait for $waitingTime ms for a new window")
             itemWithResId("$packageName:id/manage_addresses")
                 .clickAndWaitForNewWindow(waitingTime)
             Log.i(TAG, "clickManageAddressButton: Clicked the manage address button and waited for $waitingTime ms for a new window")
 
-            SettingsSubMenuAutofillRobot().interact()
-            return SettingsSubMenuAutofillRobot.Transition()
+            SettingsSubMenuAutofillRobot(composeTestRule).interact()
+            return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
         }
 
-        fun clickManageCreditCardsButton(interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
+        fun clickManageCreditCardsButton(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
             Log.i(TAG, "clickManageCreditCardsButton: Trying to click the manage credit cards button and wait for $waitingTime ms for a new window")
             itemWithResId("$packageName:id/manage_credit_cards")
                 .clickAndWaitForNewWindow(waitingTime)
             Log.i(TAG, "clickManageCreditCardsButton: Clicked the manage credit cards button and waited for $waitingTime ms for a new window")
 
-            SettingsSubMenuAutofillRobot().interact()
-            return SettingsSubMenuAutofillRobot.Transition()
+            SettingsSubMenuAutofillRobot(composeTestRule).interact()
+            return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
         }
 
         fun clickOpenLinksInAppsGoToSettingsCFRButton(interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
@@ -1615,8 +1729,6 @@ private fun threeDotButton() = onView(withContentDescription("Menu"))
 
 private fun tabsCounter() =
     mDevice.findObject(By.res("$packageName:id/counter_root"))
-
-private fun tabsCounterFromRedesignedToolbar() = itemWithResId("$packageName:id/counter_box")
 
 private fun progressBar() =
     itemWithResId("$packageName:id/mozac_browser_toolbar_progress")
@@ -1743,24 +1855,24 @@ private fun contextMenuLinkUrl(linkUrl: String) =
 
 // Open link in new tab option
 private fun contextMenuOpenLinkInNewTab() =
-    itemContainingText(getStringResource(R.string.mozac_feature_contextmenu_open_link_in_new_tab))
+    itemContainingText(getStringResource(contextmenuR.string.mozac_feature_contextmenu_open_link_in_new_tab))
 
 // Open link in private tab option
 private fun contextMenuOpenLinkInPrivateTab() =
-    itemContainingText(getStringResource(R.string.mozac_feature_contextmenu_open_link_in_private_tab))
+    itemContainingText(getStringResource(contextmenuR.string.mozac_feature_contextmenu_open_link_in_private_tab))
 
 // Copy link option
 private fun contextMenuCopyLink() =
-    itemContainingText(getStringResource(R.string.mozac_feature_contextmenu_copy_link))
+    itemContainingText(getStringResource(contextmenuR.string.mozac_feature_contextmenu_copy_link))
 
 // Download link option
 private fun contextMenuDownloadLink() =
-    itemContainingText(getStringResource(R.string.mozac_feature_contextmenu_download_link))
+    itemContainingText(getStringResource(contextmenuR.string.mozac_feature_contextmenu_download_link))
 
 // Share link option
 private fun contextMenuShareLink() =
-    itemContainingText(getStringResource(R.string.mozac_feature_contextmenu_share_link))
+    itemContainingText(getStringResource(contextmenuR.string.mozac_feature_contextmenu_share_link))
 
 // Open in external app option
 private fun contextMenuOpenInExternalApp() =
-    itemContainingText(getStringResource(R.string.mozac_feature_contextmenu_open_link_in_external_app))
+    itemContainingText(getStringResource(contextmenuR.string.mozac_feature_contextmenu_open_link_in_external_app))

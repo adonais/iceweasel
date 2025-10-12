@@ -28,10 +28,10 @@ import androidx.preference.PreferenceViewHolder
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import org.mozilla.fenix.GleanMetrics.CustomizationSettings
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.iconpicker.AppIcon
 import org.mozilla.fenix.iconpicker.AppIconRepository
 import org.mozilla.fenix.iconpicker.DefaultAppIconRepository
+import org.mozilla.fenix.iconpicker.DefaultPackageManagerWrapper
 import org.mozilla.fenix.settings.CustomizationFragmentDirections
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -47,7 +47,10 @@ class AppIconPreference @JvmOverloads constructor(
 ) : Preference(context, attrs) {
 
     private val appIconRepository: AppIconRepository by lazy {
-        DefaultAppIconRepository(context.settings())
+        DefaultAppIconRepository(
+            packageManager = DefaultPackageManagerWrapper(context.packageManager),
+            packageName = context.packageName,
+        )
     }
 
     init {

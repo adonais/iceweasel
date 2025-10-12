@@ -280,7 +280,6 @@ class TestAPZCTreeManager : public APZCTreeManager {
 
   SampleTime GetFrameTime() override { return mcc->GetSampleTime(); }
 
- private:
   RefPtr<MockContentControllerDelayed> mcc;
 };
 
@@ -366,14 +365,14 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
     EXPECT_EQ(FLING, mState);
   }
 
-  void AssertStateIsSmoothScroll() const {
+  void AssertInSmoothScroll() const {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
-    EXPECT_EQ(SMOOTH_SCROLL, mState);
+    EXPECT_TRUE(InScrollAnimation(ScrollAnimationKind::Smooth));
   }
 
-  void AssertStateIsSmoothMsdScroll() const {
+  void AssertInSmoothMsdScroll() const {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
-    EXPECT_EQ(SMOOTHMSD_SCROLL, mState);
+    EXPECT_TRUE(InScrollAnimation(ScrollAnimationKind::SmoothMsd));
   }
 
   void AssertStateIsPanningLockedY() {
@@ -396,9 +395,9 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
     EXPECT_EQ(PAN_MOMENTUM, mState);
   }
 
-  void AssertStateIsWheelScroll() {
+  void AssertInWheelScroll() {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
-    EXPECT_EQ(WHEEL_SCROLL, mState);
+    EXPECT_TRUE(InScrollAnimation(ScrollAnimationKind::Wheel));
   }
 
   void AssertStateIsAutoscroll() {
@@ -469,7 +468,7 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
   }
 
   bool IsWheelScrollAnimationRunning() const {
-    return mState == PanZoomState::WHEEL_SCROLL;
+    return InScrollAnimation(ScrollAnimationKind::Wheel);
   }
 
  private:

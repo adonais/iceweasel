@@ -15,6 +15,7 @@
 #include "js/Exception.h"
 #include "js/SourceText.h"
 #include "js/TypeDecls.h"
+#include "js/loader/ModuleLoadRequest.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "mozilla/AntiTrackingUtils.h"
@@ -737,30 +738,19 @@ bool WorkerScriptLoader::DispatchLoadScript(ScriptLoadRequest* aRequest) {
       new ThreadSafeRequestHandle(aRequest, mSyncLoopTarget.get());
   scriptLoadList.AppendElement(handle.forget());
 
-  RefPtr<ScriptLoaderRunnable> runnable =
-      new ScriptLoaderRunnable(this, std::move(scriptLoadList));
-
-  RefPtr<StrongWorkerRef> workerRef = StrongWorkerRef::Create(
-      mWorkerRef->Private(), "WorkerScriptLoader::DispatchLoadScript",
-      [runnable]() {
-        NS_DispatchToMainThread(NewRunnableMethod(
-            "ScriptLoaderRunnable::CancelMainThreadWithBindingAborted",
-            runnable,
-            &ScriptLoaderRunnable::CancelMainThreadWithBindingAborted));
-      });
-
-  if (NS_FAILED(NS_DispatchToMainThread(runnable))) {
-    NS_ERROR("Failed to dispatch!");
-    mRv.Throw(NS_ERROR_FAILURE);
-    return false;
-  }
-  return true;
+  return DispatchLoadScripts(std::move(scriptLoadList));
 }
 
-bool WorkerScriptLoader::DispatchLoadScripts() {
-  mWorkerRef->Private()->AssertIsOnWorkerThread();
+bool WorkerScriptLoader::DispatchLoadScripts(
+    nsTArray<RefPtr<ThreadSafeRequestHandle>>&& aLoadingList) {
+  MOZ_ASSERT(mWorkerRef->Private()->IsOnWorkerThread());
 
-  nsTArray<RefPtr<ThreadSafeRequestHandle>> scriptLoadList = GetLoadingList();
+  nsTArray<RefPtr<ThreadSafeRequestHandle>> scriptLoadList =
+      std::move(aLoadingList);
+  if (!scriptLoadList.Length()) {
+    // Try to get a loading list if we were not passed one explcitly.
+    scriptLoadList = GetLoadingList();
+  }
 
   RefPtr<ScriptLoaderRunnable> runnable =
       new ScriptLoaderRunnable(this, std::move(scriptLoadList));
@@ -1141,8 +1131,8 @@ nsresult WorkerScriptLoader::FillCompileOptionsForRequest(
   aOptions->setMutedErrors(
       aRequest->GetWorkerLoadContext()->mMutedErrorFlag.value());
 
-  if (aRequest->mSourceMapURL) {
-    aOptions->setSourceMapURL(aRequest->mSourceMapURL->get());
+  if (aRequest->HasSourceMapURL()) {
+    aOptions->setSourceMapURL(aRequest->GetSourceMapURL().get());
   }
 
   return NS_OK;
@@ -1728,6 +1718,9 @@ bool ScriptExecutorRunnable::ProcessModuleScript(
 
   WorkerLoadContext* loadContext = request->GetWorkerLoadContext();
   ModuleLoadRequest* moduleRequest = request->AsModuleRequest();
+  if (aWorkerPrivate->GetReferrerPolicy() != ReferrerPolicy::_empty) {
+    moduleRequest->UpdateReferrerPolicy(aWorkerPrivate->GetReferrerPolicy());
+  }
 
   // DecreaseLoadingModuleRequestCount must be called before OnFetchComplete.
   // OnFetchComplete will call ProcessPendingRequests, and in

@@ -437,7 +437,7 @@ class GleanCrashReporterServiceTest {
 
         run {
             var pingReceived = false
-            GleanPings.crash.testBeforeNextSubmit { _ ->
+            val job = GleanPings.crash.testBeforeNextSubmit { _ ->
                 val date = GregorianCalendar().apply {
                     time = Date(12340000)
                 }
@@ -453,6 +453,8 @@ class GleanCrashReporterServiceTest {
             }
 
             GleanCrashReporterService(context)
+
+            job.join()
             assertTrue("Expected ping to be sent", pingReceived)
         }
     }
@@ -502,7 +504,7 @@ class GleanCrashReporterServiceTest {
 
         run {
             var pingReceived = false
-            GleanPings.crash.testBeforeNextSubmit { _ ->
+            val job = GleanPings.crash.testBeforeNextSubmit { _ ->
                 val date = GregorianCalendar().apply {
                     time = Date(12340000)
                 }
@@ -544,6 +546,8 @@ class GleanCrashReporterServiceTest {
             }
 
             GleanCrashReporterService(context)
+
+            job.join()
             assertTrue("Expected ping to be sent", pingReceived)
         }
     }
@@ -674,7 +678,7 @@ class GleanCrashReporterServiceTest {
 
         run {
             var pingReceived = false
-            GleanPings.crash.testBeforeNextSubmit { _ ->
+            val job = GleanPings.crash.testBeforeNextSubmit { _ ->
                 val date = GregorianCalendar().apply {
                     time = Date(12340000)
                 }
@@ -719,6 +723,8 @@ class GleanCrashReporterServiceTest {
             }
 
             GleanCrashReporterService(context)
+
+            job.join()
             assertTrue("Expected ping to be sent", pingReceived)
         }
     }
@@ -750,7 +756,7 @@ class GleanCrashReporterServiceTest {
 
         run {
             var pingReceived = false
-            GleanPings.crash.testBeforeNextSubmit { _ ->
+            val job = GleanPings.crash.testBeforeNextSubmit { _ ->
                 val date = GregorianCalendar().apply {
                     time = Date(12340000)
                 }
@@ -792,6 +798,8 @@ class GleanCrashReporterServiceTest {
             }
 
             GleanCrashReporterService(context)
+
+            job.join()
             assertTrue("Expected ping to be sent", pingReceived)
         }
     }
@@ -817,7 +825,7 @@ class GleanCrashReporterServiceTest {
 
         run {
             var pingReceived = false
-            GleanPings.crash.testBeforeNextSubmit { _ ->
+            val job = GleanPings.crash.testBeforeNextSubmit { _ ->
                 assertEquals("channel", GleanCrash.appChannel.testGetValue())
                 assertEquals("version", GleanCrash.appDisplayVersion.testGetValue())
                 assertEquals("buildid", GleanCrash.appBuild.testGetValue())
@@ -825,6 +833,8 @@ class GleanCrashReporterServiceTest {
             }
 
             GleanCrashReporterService(context, appChannel = "intentionally-different")
+
+            job.join()
             assertTrue("Expected ping to be sent", pingReceived)
         }
     }

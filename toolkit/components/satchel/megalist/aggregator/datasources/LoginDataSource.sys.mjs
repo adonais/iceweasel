@@ -413,7 +413,9 @@ export class LoginDataSource extends DataSourceBase {
     const { BrowserWindowTracker } = ChromeUtils.importESModule(
       "resource:///modules/BrowserWindowTracker.sys.mjs"
     );
-    const browsingContext = BrowserWindowTracker.getTopWindow().browsingContext;
+    const browsingContext = BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    }).browsingContext;
     let { result, path } = await this.openFilePickerDialog(
       title,
       buttonLabel,
@@ -489,7 +491,9 @@ export class LoginDataSource extends DataSourceBase {
     const { BrowserWindowTracker } = ChromeUtils.importESModule(
       "resource:///modules/BrowserWindowTracker.sys.mjs"
     );
-    const browser = BrowserWindowTracker.getTopWindow().gBrowser;
+    const browser = BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    }).gBrowser;
     try {
       lazy.MigrationUtils.showMigrationWizard(browser.ownerGlobal, {
         entrypoint: lazy.MigrationUtils.MIGRATION_ENTRYPOINTS.PASSWORDS,
@@ -552,7 +556,9 @@ export class LoginDataSource extends DataSourceBase {
     const { BrowserWindowTracker } = ChromeUtils.importESModule(
       "resource:///modules/BrowserWindowTracker.sys.mjs"
     );
-    const browsingContext = BrowserWindowTracker.getTopWindow().browsingContext;
+    const browsingContext = BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    }).browsingContext;
 
     const isOSAuthEnabled = LoginHelper.getOSAuthEnabled();
 
@@ -618,7 +624,9 @@ export class LoginDataSource extends DataSourceBase {
     const { BrowserWindowTracker } = ChromeUtils.importESModule(
       "resource:///modules/BrowserWindowTracker.sys.mjs"
     );
-    const browser = BrowserWindowTracker.getTopWindow().gBrowser;
+    const browser = BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    }).gBrowser;
     browser.ownerGlobal.switchToTabHavingURI(url, true, {
       ignoreFragment: "whenComparingAndReplace",
     });
@@ -633,7 +641,9 @@ export class LoginDataSource extends DataSourceBase {
     const { BrowserWindowTracker } = ChromeUtils.importESModule(
       "resource:///modules/BrowserWindowTracker.sys.mjs"
     );
-    const win = BrowserWindowTracker.getTopWindow();
+    const win = BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
 
     const { title, message, confirmButton } = await this.localizeStrings({
       title: titleL10n,

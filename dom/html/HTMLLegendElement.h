@@ -36,8 +36,8 @@ class HTMLLegendElement final : public nsGenericHTMLElement {
                               const nsAString& aValue,
                               nsIPrincipal* aMaybeScriptedPrincipal,
                               nsAttrValue& aResult) override;
-  virtual nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
-                                              int32_t aModType) const override;
+  virtual nsChangeHint GetAttributeChangeHint(
+      const nsAtom* aAttribute, AttrModType aModType) const override;
 
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 

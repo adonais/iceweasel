@@ -35,15 +35,14 @@ android {
 dependencies {
     implementation project(':components:lib-crash')
     implementation project(':components:lib-fetch-httpurlconnection')
-    implementation libs.mozilla.glean
     implementation project(':components:service-glean')
     implementation project(':components:support-base')
     implementation project(':components:support-utils')
 
-    implementation libs.kotlin.coroutines
-
     implementation libs.androidx.appcompat
     implementation libs.androidx.core.ktx
-    implementation libs.google.material
     implementation libs.androidx.recyclerview
+    implementation libs.google.material
+    implementation libs.kotlinx.coroutines
+    implementation libs.mozilla.glean
 }

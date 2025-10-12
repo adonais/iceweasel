@@ -10,4 +10,6 @@
   <string name="text_field_cross_trailing_icon_default_content_description">എഴുത്തു് വെടിപ്പാക്കുക</string>
   <!-- Announcement made by the screen reader when the progress bar is shown and a page is loading -->
   <string name="mozac_compose_base_progress_loading">ലഭ്യമാക്കുന്നു</string>
+  <!-- Content description for the dismiss icon of a Snackbar -->
+  <string name="mozac_compose_base_snackbar_dismiss_content_description">സന്ദേശം തള്ളിക്കളയുക</string>
 </resources>

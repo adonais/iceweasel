@@ -1727,8 +1727,8 @@ pub(crate) mod __glean_metric_maps {
     /// Panics if no object by the given metric ID could be found.
     pub(crate) fn object_test_get_value(metric_id: u32, ping_name: Option<String>) -> Option<String> {
         match metric_id {
-           19 => super::test_nested::an_object.test_get_value_as_str(ping_name.as_deref()),
-           47 => super::test2_nested::an_object.test_get_value_as_str(ping_name.as_deref()),
+           19 => super::test_nested::an_object.test_get_value_as_str(ping_name),
+           47 => super::test2_nested::an_object.test_get_value_as_str(ping_name),
            _ => panic!("No object for metric id {}", metric_id),
         }
     }
@@ -1864,10 +1864,10 @@ pub(crate) mod __glean_metric_maps {
     /// Panics if no event by the given metric ID could be found.
     pub(crate) fn event_test_get_value_wrapper(metric_id: u32, ping_name: Option<String>) -> Option<Vec<RecordedEvent>> {
         match metric_id {
-           21 => super::test_nested::event_metric.test_get_value(ping_name.as_deref()),
-           22 => super::test_nested::event_metric_with_extra.test_get_value(ping_name.as_deref()),
-           49 => super::test2_nested::event_metric.test_get_value(ping_name.as_deref()),
-           50 => super::test2_nested::event_metric_with_extra.test_get_value(ping_name.as_deref()),
+           21 => super::test_nested::event_metric.test_get_value(ping_name),
+           22 => super::test_nested::event_metric_with_extra.test_get_value(ping_name),
+           49 => super::test2_nested::event_metric.test_get_value(ping_name),
+           50 => super::test2_nested::event_metric_with_extra.test_get_value(ping_name),
            _ => panic!("No event for metric id {}", metric_id),
         }
     }

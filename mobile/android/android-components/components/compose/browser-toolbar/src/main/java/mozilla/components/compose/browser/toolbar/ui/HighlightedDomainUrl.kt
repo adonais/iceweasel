@@ -95,7 +95,7 @@ fun HighlightedDomainUrl(
         it.first + LTR_MARK_OFFSET to it.second + LTR_MARK_OFFSET
     }
 
-    val annotatedUrl = remember(url, registrableDomainIndexRange) {
+    val annotatedUrl = remember(url, registrableDomainIndexRange, fadedTextStyle, boldedTextStyle) {
         buildAnnotatedString {
             if (registrableDomainIndexRange != null) {
                 withStyle(style = fadedTextStyle.toSpanStyle()) {
@@ -121,11 +121,12 @@ fun HighlightedDomainUrl(
         maxLines = 1,
         modifier = modifier
             .focusTextIndexRange(
-                url, fadedTextStyle, registrableDomainIndexRange, fadeLength,
+                annotatedUrl.text, fadedTextStyle, registrableDomainIndexRange, fadeLength,
             ),
     )
 }
 
+@Suppress("LongMethod")
 private fun Modifier.focusTextIndexRange(
     text: String,
     textStyle: TextStyle,
@@ -152,10 +153,16 @@ private fun Modifier.focusTextIndexRange(
                 constraints = Constraints(maxWidth = it.width),
             ).also {
                 coroutineScope.launch {
-                    val index = (highlightRange?.second?.plus(END_SCROLL_OFFSET) ?: 0).coerceAtMost(text.lastIndex)
-                    val offset = it.getBoundingBox(index)
-                    // Ensure the end of [highlightRange] is shown to the end of the viewport.
-                    val endOffset = (offset.right - scrollState.viewportSize).toInt().coerceIn(0, scrollState.maxValue)
+                    val endOffset = when (highlightRange?.second == text.length) {
+                        true -> scrollState.maxValue
+                        else -> {
+                            val index = (highlightRange?.second?.plus(END_SCROLL_OFFSET) ?: 0)
+                                .coerceAtMost(text.lastIndex)
+                            val offset = it.getBoundingBox(index)
+                            // Ensure the end of [highlightRange] is shown to the end of the viewport.
+                            (offset.right - scrollState.viewportSize).toInt().coerceIn(0, scrollState.maxValue)
+                        }
+                    }
 
                     scrollState.scrollTo(endOffset)
                 }

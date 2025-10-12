@@ -51,12 +51,6 @@ skip-if(!this.hasOwnProperty("Intl")) include test262/intl402/jstests.list
 skip-if(!this.hasOwnProperty("Atomics")) include test262/built-ins/Atomics/jstests.list
 skip-if(!this.hasOwnProperty("SharedArrayBuffer")) include test262/built-ins/SharedArrayBuffer/jstests.list
 
-# https://bugzilla.mozilla.org/show_bug.cgi?id=1863140
-skip script test262/built-ins/FinalizationRegistry/prototype/register/return-undefined-register-symbol.js
-skip script test262/built-ins/FinalizationRegistry/prototype/unregister/unregister-symbol-token.js
-skip script test262/built-ins/WeakRef/returns-new-object-from-constructor-with-symbol-target.js
-skip script test262/built-ins/WeakRef/prototype/deref/return-symbol-target.js
-
 #####################################
 # Test262 tests disabled on browser #
 #####################################
@@ -728,6 +722,9 @@ skip-if(!xulRuntime.shell) script test262/language/module-code/top-level-await/a
 # Tests disabled due to invalid test expectations  #
 ####################################################
 
+# This test is lacking the feature "symbols-as-weakmap-keys", see https://github.com/tc39/test262/pull/4579
+skip script test262/built-ins/WeakMap/prototype/getOrInsertComputed/check-state-after-callback-fn-throws.js
+
 # These tests seem incorrect, see https://github.com/tc39/test262/pull/3907
 skip script test262/language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js
 skip script test262/language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js
@@ -948,10 +945,24 @@ skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-ethiopic.js
 skip script test262/staging/sm/Temporal/PlainDate/non-positive-era-year.js
 
 # Canonical era names have changed.
-skip script test262/intl402/Temporal/ZonedDateTime/from/canonicalize-era-codes.js 
+skip script test262/intl402/Temporal/ZonedDateTime/from/canonicalize-era-codes.js
 skip script test262/staging/Intl402/Temporal/old/japanese-before-era.js
 skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-gregory.js
 skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-islamicc.js
 skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-islamic-civil.js
 skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-islamic-tbla.js
 skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-islamic-umalqura.js
+skip script test262/staging/Intl402/Temporal/old/islamic-calendars-islamic.js
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-ethioaa.js
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-hebrew.js
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-buddhist.js
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-indian.js
+skip script test262/staging/Intl402/Temporal/old/non-iso-calendars-persian.js
+skip script test262/intl402/Temporal/PlainYearMonth/from/calendar-not-supporting-eras.js
+skip script test262/intl402/Temporal/PlainYearMonth/from/reference-day-chinese.js
+skip script test262/intl402/Temporal/PlainYearMonth/from/reference-day-hebrew.js
+skip script test262/intl402/Temporal/PlainDate/from/calendar-not-supporting-eras.js
+skip script test262/intl402/Temporal/PlainDateTime/from/calendar-not-supporting-eras.js
+
+# See https://bugzilla.mozilla.org/show_bug.cgi?id=1983837
+skip script test262/staging/top-level-await/tla-hang-entry.js

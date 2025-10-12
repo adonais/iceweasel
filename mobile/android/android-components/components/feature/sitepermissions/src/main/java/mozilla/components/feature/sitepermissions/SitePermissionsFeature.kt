@@ -80,10 +80,6 @@ import mozilla.components.ui.icons.R as iconsR
 
 internal const val PROMPT_FRAGMENT_TAG = "mozac_feature_sitepermissions_prompt_dialog"
 
-@VisibleForTesting
-internal const val STORAGE_ACCESS_DOCUMENTATION_URL =
-    "https://developer.mozilla.org/en-US/docs/Web/API/Storage_Access_API"
-
 /**
  * This feature will collect [PermissionRequest] from [ContentState] and display
  * suitable [SitePermissionsDialogFragment].
@@ -125,6 +121,14 @@ class SitePermissionsFeature(
         SelectOrAddUseCase(store)
     }
 
+    /**
+     * Provider that helps create the "learn more" url for a given permission.
+     *
+     * This provider is automatically unregistered when the lifecycle `onStop()` is called.
+     * As a result, it is recommended to set this in the corresponding `onStart()` lifecycle method.
+     */
+    var learnMoreUrlProvider: SitePermissionsLearnMoreUrlProvider? = null
+
     private val logger = Logger("SitePermissionsFeature")
 
     internal val ioCoroutineScope by lazy { coroutineScopeInitializer() }
@@ -148,6 +152,20 @@ class SitePermissionsFeature(
         setupPermissionRequestsCollector()
         setupAppPermissionRequestsCollector()
         setupLoadingCollector()
+        maybeSetUpDefaultLearnMoreUrlProvider()
+    }
+
+    /**
+     * Conditionally sets a default value for [learnMoreUrlProvider] in case nothing was set at the
+     * start.
+     *
+     * The [DefaultSitePermissionsLearnMoreUrlProvider] helps to preserve existing behavior for the
+     * [ContentCrossOriginStorageAccess] permission
+     */
+    private fun maybeSetUpDefaultLearnMoreUrlProvider() {
+        if (learnMoreUrlProvider == null) {
+            learnMoreUrlProvider = DefaultSitePermissionsLearnMoreUrlProvider()
+        }
     }
 
     @VisibleForTesting
@@ -245,6 +263,7 @@ class SitePermissionsFeature(
         appPermissionScope?.cancel()
         loadingScope?.cancel()
         storage.clearTemporaryPermissions()
+        learnMoreUrlProvider = null
     }
 
     /**
@@ -386,16 +405,16 @@ class SitePermissionsFeature(
     internal fun onLearnMorePress(
         permissionId: String,
         sessionId: String,
+        learnMoreLink: String,
     ) {
         findRequestedPermission(permissionId)?.let { permissionRequest ->
             consumePermissionRequest(permissionRequest, sessionId)
             onContentPermissionDeny(permissionRequest, false)
 
-            val permission = permissionRequest.permissions.first()
-            if (permission is ContentCrossOriginStorageAccess) {
+            if (learnMoreLink.isNotEmpty()) {
                 store.state.findTabOrCustomTabOrSelectedTab(sessionId)?.let {
                     selectOrAddUseCase.invoke(
-                        url = STORAGE_ACCESS_DOCUMENTATION_URL,
+                        url = learnMoreLink,
                         private = it.content.private,
                         source = SessionState.Source.Internal.TextSelection,
                     )
@@ -833,6 +852,7 @@ class SitePermissionsFeature(
         permission: Permission,
         origin: String,
     ): SitePermissionsDialogFragment {
+        val learnMoreLink = learnMoreUrlProvider?.getUrl(permission).orEmpty()
         return when (permission) {
             is ContentGeoLocation -> {
                 createSinglePermissionPrompt(
@@ -844,6 +864,7 @@ class SitePermissionsFeature(
                     showDoNotAskAgainCheckBox = shouldShowDoNotAskAgainCheckBox,
                     shouldSelectRememberChoice = dialogConfig?.shouldPreselectDoNotAskAgain
                         ?: DialogConfig.DEFAULT_PRESELECT_DO_NOT_ASK_AGAIN,
+                    learnMoreLink = learnMoreLink,
                 )
             }
             is ContentNotification -> {
@@ -856,6 +877,7 @@ class SitePermissionsFeature(
                     showDoNotAskAgainCheckBox = false,
                     shouldSelectRememberChoice = false,
                     isNotificationRequest = true,
+                    learnMoreLink = learnMoreLink,
                 )
             }
             is ContentAudioCapture, is ContentAudioMicrophone -> {
@@ -868,6 +890,7 @@ class SitePermissionsFeature(
                     showDoNotAskAgainCheckBox = shouldShowDoNotAskAgainCheckBox,
                     shouldSelectRememberChoice = dialogConfig?.shouldPreselectDoNotAskAgain
                         ?: DialogConfig.DEFAULT_PRESELECT_DO_NOT_ASK_AGAIN,
+                    learnMoreLink = learnMoreLink,
                 )
             }
             is ContentVideoCamera, is ContentVideoCapture -> {
@@ -880,6 +903,7 @@ class SitePermissionsFeature(
                     showDoNotAskAgainCheckBox = shouldShowDoNotAskAgainCheckBox,
                     shouldSelectRememberChoice = dialogConfig?.shouldPreselectDoNotAskAgain
                         ?: DialogConfig.DEFAULT_PRESELECT_DO_NOT_ASK_AGAIN,
+                    learnMoreLink = learnMoreLink,
                 )
             }
             is ContentPersistentStorage -> {
@@ -891,6 +915,7 @@ class SitePermissionsFeature(
                     iconsR.drawable.mozac_ic_storage_24,
                     showDoNotAskAgainCheckBox = false,
                     shouldSelectRememberChoice = true,
+                    learnMoreLink = learnMoreLink,
                 )
             }
             is ContentMediaKeySystemAccess -> {
@@ -902,6 +927,7 @@ class SitePermissionsFeature(
                     iconsR.drawable.mozac_ic_link_24,
                     showDoNotAskAgainCheckBox = false,
                     shouldSelectRememberChoice = true,
+                    learnMoreLink = learnMoreLink,
                 )
             }
             is ContentCrossOriginStorageAccess -> {
@@ -911,6 +937,7 @@ class SitePermissionsFeature(
                     permissionRequest = permissionRequest,
                     showDoNotAskAgainCheckBox = false,
                     shouldSelectRememberChoice = true,
+                    learnMoreLink = learnMoreLink,
                 )
             }
             is ContentLocalDeviceAccess -> {
@@ -921,9 +948,10 @@ class SitePermissionsFeature(
                     titleId = R.string.mozac_feature_sitepermissions_local_device_access_title,
                     iconId = iconsR.drawable.mozac_ic_device_desktop_24,
                     showDoNotAskAgainCheckBox = true,
-                    doNotAskAgainCheckBoxLabel = R.string.mozac_feature_sitepermissions_do_not_ask_again_on_this_site3,
+                    doNotAskAgainCheckBoxLabel = R.string.mozac_feature_sitepermissions_do_not_ask_again_on_this_site4,
                     shouldSelectRememberChoice = false,
                     negativeButtonResId = R.string.mozac_feature_sitepermissions_block,
+                    learnMoreLink = learnMoreLink,
                 )
             }
             is ContentLocalNetworkAccess -> {
@@ -934,9 +962,10 @@ class SitePermissionsFeature(
                     titleId = R.string.mozac_feature_sitepermissions_local_network_access_title,
                     iconId = iconsR.drawable.mozac_ic_router_24,
                     showDoNotAskAgainCheckBox = true,
-                    doNotAskAgainCheckBoxLabel = R.string.mozac_feature_sitepermissions_do_not_ask_again_on_this_site3,
+                    doNotAskAgainCheckBoxLabel = R.string.mozac_feature_sitepermissions_do_not_ask_again_on_this_site4,
                     shouldSelectRememberChoice = false,
                     negativeButtonResId = R.string.mozac_feature_sitepermissions_block,
+                    learnMoreLink = learnMoreLink,
                 )
             }
             else ->
@@ -968,6 +997,7 @@ class SitePermissionsFeature(
         shouldSelectRememberChoice: Boolean,
         isNotificationRequest: Boolean = false,
         @StringRes negativeButtonResId: Int? = null,
+        learnMoreLink: String? = null,
     ): SitePermissionsDialogFragment {
         val trimmedOrigin = trimOriginHttpsSchemeAndPort(origin)
         val title = context.getString(titleId, trimmedOrigin)
@@ -981,6 +1011,7 @@ class SitePermissionsFeature(
             titleIcon = iconId,
             permissionRequestId = permissionRequest.id,
             feature = this,
+            learnMoreLink = learnMoreLink,
             shouldShowDoNotAskAgainCheckBox = showDoNotAskAgainCheckBox,
             doNotAskAgainCheckBoxLabel = if (doNotAskAgainCheckBoxLabel != null) {
                 context.getString(doNotAskAgainCheckBoxLabel)
@@ -1000,6 +1031,7 @@ class SitePermissionsFeature(
         permissionRequest: PermissionRequest,
         showDoNotAskAgainCheckBox: Boolean,
         shouldSelectRememberChoice: Boolean,
+        learnMoreLink: String,
     ): SitePermissionsDialogFragment {
         val trimmedOrigin = trimOriginHttpsSchemeAndPort(origin)
         val currentSession = store.state.findTabOrCustomTabOrSelectedTab(sessionId)
@@ -1027,7 +1059,7 @@ class SitePermissionsFeature(
             shouldShowDoNotAskAgainCheckBox = showDoNotAskAgainCheckBox,
             isNotificationRequest = false,
             shouldSelectDoNotAskAgainCheckBox = shouldSelectRememberChoice,
-            shouldShowLearnMoreLink = true,
+            learnMoreLink = learnMoreLink,
         )
     }
 

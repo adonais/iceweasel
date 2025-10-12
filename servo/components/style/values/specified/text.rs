@@ -685,8 +685,8 @@ impl ToComputedValue for TextEmphasisStyle {
                     //
                     // Also should probably use WritingMode::is_vertical rather
                     // than the computed value of the `writing-mode` property.
-                    if context.style().get_inherited_box().clone_writing_mode() ==
-                        SpecifiedWritingMode::HorizontalTb
+                    if context.style().get_inherited_box().clone_writing_mode()
+                        == SpecifiedWritingMode::HorizontalTb
                     {
                         TextEmphasisShapeKeyword::Circle
                     } else {
@@ -1077,7 +1077,7 @@ impl Parse for TextDecorationTrim {
         if let Ok(start) = input.try_parse(|i| Length::parse(ctx, i)) {
             let end = input.try_parse(|i| Length::parse(ctx, i));
             let end = end.unwrap_or_else(|_| start.clone());
-            return Ok(TextDecorationTrim::Length{start, end});
+            return Ok(TextDecorationTrim::Length { start, end });
         }
         input.expect_ident_matching("auto")?;
         Ok(TextDecorationTrim::Auto)
@@ -1200,8 +1200,8 @@ impl Parse for RubyPosition {
             "under" => false,
         };
         // Parse alternate after
-        let alternate = alternate ||
-            input
+        let alternate = alternate
+            || input
                 .try_parse(|i| i.expect_ident_matching("alternate"))
                 .is_ok();
 
@@ -1263,7 +1263,8 @@ impl SpecifiedValueInfo for RubyPosition {
 #[css(bitflags(
     single = "normal,auto,no-autospace",
     // Bug 1980111: add 'replace' to 'mixed' in the future so that it parses correctly.
-    mixed = "ideograph-alpha,ideograph-numeric,punctuation,insert",
+    // Bug 1986500: add 'punctuation' to 'mixed' in the future so that it parses correctly.
+    mixed = "ideograph-alpha,ideograph-numeric,insert",
     // Bug 1980111: Uncomment 'validate_mixed' to support 'replace' value.
     // validate_mixed = "Self::validate_mixed_flags",
 ))]
@@ -1271,14 +1272,14 @@ impl SpecifiedValueInfo for RubyPosition {
 pub struct TextAutospace(u8);
 bitflags! {
     impl TextAutospace: u8 {
-        /// Same behavior as ideograph-alpha ideograph-numeric.
-        const NORMAL = 0;
+        /// No automatic space is inserted.
+        const NO_AUTOSPACE = 0;
 
         /// The user agent chooses a set of typographically high quality spacing values.
         const AUTO = 1 << 0;
 
-        /// No automatic space is inserted.
-        const NO_AUTOSPACE = 1 << 1;
+        /// Same behavior as ideograph-alpha ideograph-numeric.
+        const NORMAL = 1 << 1;
 
         /// 1/8ic space between ideographic characters and non-ideographic letters.
         const IDEOGRAPH_ALPHA = 1 << 2;
@@ -1286,8 +1287,10 @@ bitflags! {
         /// 1/8ic space between ideographic characters and non-ideographic decimal numerals.
         const IDEOGRAPH_NUMERIC = 1 << 3;
 
+        /* Bug 1986500: Uncomment the following to support the 'punctuation' value.
         /// Apply special spacing between letters and punctuation (French).
         const PUNCTUATION = 1 << 4;
+        */
 
         /// Auto-spacing is only inserted if no space character is present in the text.
         const INSERT = 1 << 5;

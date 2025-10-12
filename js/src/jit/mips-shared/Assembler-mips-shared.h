@@ -603,6 +603,9 @@ class Imm8 {
   static bool IsInSignedRange(int32_t imm) {
     return imm >= INT8_MIN && imm <= INT8_MAX;
   }
+  static bool IsInSignedRange(intptr_t imm) {
+    return imm >= INT8_MIN && imm <= INT8_MAX;
+  }
   static bool IsInUnsignedRange(uint32_t imm) { return imm <= UINT8_MAX; }
   static Imm8 Lower(Imm16 imm) { return Imm8(imm.decodeSigned() & 0xff); }
   static Imm8 Upper(Imm16 imm) {

@@ -231,6 +231,8 @@ class nsUrlClassifierDBServiceWorker final : public nsIUrlClassifierDBService {
   // The class that actually parses the update chunks.
   mozilla::UniquePtr<ProtocolParser> mProtocolParser;
 
+  nsCString mProvider;
+
   // Directory where to store the SB databases.
   nsCOMPtr<nsIFile> mCacheDir;
 

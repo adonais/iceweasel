@@ -365,7 +365,8 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
             if (rel.LowerCaseEqualsASCII("stylesheet")) {
               nsHtml5String url =
                   aAttributes->getValue(nsHtml5AttributeName::ATTR_HREF);
-              if (url) {
+              if (url &&
+                  !aAttributes->getValue(nsHtml5AttributeName::ATTR_DISABLED)) {
                 nsHtml5String charset =
                     aAttributes->getValue(nsHtml5AttributeName::ATTR_CHARSET);
                 nsHtml5String crossOrigin = aAttributes->getValue(
@@ -1742,7 +1743,8 @@ void nsHtml5TreeBuilder::setDocumentFragmentForTemplate(
 nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
     nsIContentHandle* aHost, nsIContentHandle* aTemplateNode,
     nsHtml5String aShadowRootMode, bool aShadowRootIsClonable,
-    bool aShadowRootIsSerializable, bool aShadowRootDelegatesFocus) {
+    bool aShadowRootIsSerializable, bool aShadowRootDelegatesFocus,
+    nsHtml5String aShadowRootReferenceTarget) {
   mozilla::dom::ShadowRootMode mode;
   if (aShadowRootMode.LowerCaseEqualsASCII("open")) {
     mode = mozilla::dom::ShadowRootMode::Open;
@@ -1752,10 +1754,14 @@ nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
     return nullptr;
   }
 
+  nsString shadowRootReferenceTarget;
+  aShadowRootReferenceTarget.ToString(shadowRootReferenceTarget);
+
   if (mBuilder) {
     nsIContent* root = nsContentUtils::AttachDeclarativeShadowRoot(
         static_cast<nsIContent*>(aHost), mode, aShadowRootIsClonable,
-        aShadowRootIsSerializable, aShadowRootDelegatesFocus);
+        aShadowRootIsSerializable, aShadowRootDelegatesFocus,
+        shadowRootReferenceTarget);
     if (!root) {
       nsContentUtils::LogSimpleConsoleError(
           u"Failed to attach Declarative Shadow DOM."_ns, "DOM"_ns,
@@ -1773,7 +1779,8 @@ nsIContentHandle* nsHtml5TreeBuilder::getShadowRootFromHost(
   nsIContentHandle* fragHandle = AllocateContentHandle();
   opGetShadowRootFromHost operation(
       aHost, fragHandle, aTemplateNode, mode, aShadowRootIsClonable,
-      aShadowRootIsSerializable, aShadowRootDelegatesFocus);
+      aShadowRootIsSerializable, aShadowRootDelegatesFocus,
+      shadowRootReferenceTarget);
   treeOp->Init(mozilla::AsVariant(operation));
   return fragHandle;
 }

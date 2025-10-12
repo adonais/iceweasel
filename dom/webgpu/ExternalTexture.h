@@ -58,9 +58,10 @@ class WebGPUParent;
 // by any external textures.
 //
 // [1] https://www.w3.org/TR/webgpu/#gpuexternaltexture
-class ExternalTexture : public ObjectBase,
-                        public ChildOf<Device>,
-                        public SupportsWeakPtr {
+class ExternalTexture final : public nsWrapperCache,
+                              public ObjectBase,
+                              public ChildOf<Device>,
+                              public SupportsWeakPtr {
  public:
   GPU_DECL_CYCLE_COLLECTION(ExternalTexture)
   GPU_DECL_JS_WRAP(ExternalTexture)
@@ -83,13 +84,12 @@ class ExternalTexture : public ObjectBase,
   void OnSubmit(uint64_t aSubmissionIndex);
   void OnSubmittedWorkDone(uint64_t aSubmissionIndex);
 
-  const RawId mId;
+  RefPtr<ExternalTextureSourceClient> Source() { return mSource; }
 
  private:
   explicit ExternalTexture(Device* const aParent, RawId aId,
                            RefPtr<ExternalTextureSourceClient> aSource);
   virtual ~ExternalTexture();
-  void Cleanup();
 
   // Destroys the external texture if it is no longer required, i.e. all
   // submitted work using the external texture has completed, and the external
@@ -151,7 +151,7 @@ class ExternalTextureCache : public SupportsWeakPtr {
 // reference. The source itself retains a strong reference to the layers::Image
 // it was imported from, which ensures that the decoder does not attempt to
 // reuse the image's underlying resources while the source is still in use.
-class ExternalTextureSourceClient {
+class ExternalTextureSourceClient final : public ObjectBase {
   NS_INLINE_DECL_REFCOUNTING(ExternalTextureSourceClient)
 
  public:
@@ -161,8 +161,6 @@ class ExternalTextureSourceClient {
   static already_AddRefed<ExternalTextureSourceClient> Create(
       Device* aDevice, ExternalTextureCache* aCache,
       const dom::OwningHTMLVideoElementOrVideoFrame& aSource, ErrorResult& aRv);
-
-  const RawId mId;
 
   // Hold a strong reference to the image as long as we are alive. If the
   // SurfaceDescriptor sent to the host was a SurfaceDescriptorGPUVideo, this
@@ -188,16 +186,12 @@ class ExternalTextureSourceClient {
       Device* aDevice, const dom::GPUExternalTextureDescriptor& aDesc);
 
  private:
-  ExternalTextureSourceClient(WebGPUChild* aBridge, RawId aId,
+  ExternalTextureSourceClient(WebGPUChild* aChild, RawId aId,
                               ExternalTextureCache* aCache,
                               const RefPtr<layers::Image>& aImage,
                               const std::array<RawId, 3>& aTextureIds,
                               const std::array<RawId, 3>& aViewIds);
-  ~ExternalTextureSourceClient();
-
-  // Used to free resources on the host side when we are destroyed, if the
-  // bridge is still valid.
-  const WeakPtr<WebGPUChild> mBridge;
+  virtual ~ExternalTextureSourceClient();
 
   // Pointer to the cache this source is stored in. If the cache is still
   // valid then the source *must* remove itself from the cache when it is
@@ -234,6 +228,12 @@ class ExternalTextureSourceHost {
   ffi::WGPUExternalTextureDescriptorFromSource GetExternalTextureDescriptor(
       ffi::WGPUPredefinedColorSpace aDestColorSpace) const;
 
+  // Called prior to submitting commands which read from this external texture
+  // source. This can be used to wait on a fence, for example. If this returns
+  // false, the commands must *not* be submitted.
+  bool OnBeforeQueueSubmit(WebGPUParent* aParent, RawId aDeviceId,
+                           RawId aQueueId);
+
  private:
   ExternalTextureSourceHost(Span<const RawId> aTextureIds,
                             Span<const RawId> aViewIds, gfx::IntSize aSize,
@@ -246,6 +246,18 @@ class ExternalTextureSourceHost {
       WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
       const ExternalTextureSourceDescriptor& aDesc,
       const layers::BufferDescriptor& aSd, uint8_t* aBuffer);
+  static ExternalTextureSourceHost CreateFromD3D10Desc(
+      WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
+      const ExternalTextureSourceDescriptor& aDesc,
+      const layers::SurfaceDescriptorD3D10& aSd, gfx::SurfaceFormat aFormat);
+  static ExternalTextureSourceHost CreateFromDXGIYCbCrDesc(
+      WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
+      const ExternalTextureSourceDescriptor& aDesc,
+      const layers::SurfaceDescriptorDXGIYCbCr& aSd);
+  static ExternalTextureSourceHost CreateFromMacIOSurfaceDesc(
+      WebGPUParent* aParent, RawId aDeviceId,
+      const ExternalTextureSourceDescriptor& aDesc,
+      const layers::SurfaceDescriptorMacIOSurface& aSd);
 
   // Creates an external texture source in an error state that will be
   // propagated to any external textures created from it.
@@ -264,6 +276,16 @@ class ExternalTextureSourceHost {
   const gfx::YUVRangedColorSpace mColorSpace;
   const std::array<float, 6> mSampleTransform;
   const std::array<float, 6> mLoadTransform;
+
+#ifdef XP_WIN
+  // ID used to obtain the texture's write fence from the
+  // CompositeProcessD3D11FencesHolderMap. The fence is created by the encoder,
+  // which will signal the fence with a value of FenceD3D11::mFenceValue when
+  // it has finished writing to the texture. We must therefore ensure we wait
+  // for the fence to reach this value prior to reading from the texture. A
+  // value of Nothing indicates that we do not need to wait at all.
+  Maybe<layers::CompositeProcessFencesHolderId> mFenceId;
+#endif
 };
 
 }  // namespace webgpu

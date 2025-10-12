@@ -18,8 +18,21 @@ import numpy as np
 from mozdevice import ADBDevice
 from mozperftest.profiler import ProfilingMediator
 
-PROD_FENIX = "fenix"
-PROD_CHRM = "chrome-m"
+"""
+homeview:
+~0.39 error indicates 1 icon has not loaded yet, anything with < 0.1 error indicates a completed startup with all 4 icons
+newssite(cvne):
+~0.14 error indicates a completed image with refresh icon not loaded yet, < 0.1 error indicates completed startup
+shopify (cvne):
+~0.14 error indicates a completed image with refresh icon not loaded yet, < 0.1 error indicates completed startup
+tab-restore:
+~1.4 error indicates a completed image with a loading bar not fully loaded yet, < 0.4 error indicates startup has completed
+"""
+ACCEPTABLE_ERROR = {
+    "homeview_startup": 0.1,
+    "cold_view_nav_end": 0.1,
+    "mobile_restore": 0.4,
+}
 BACKGROUND_TABS = [
     "https://www.google.com/search?q=toronto+weather",
     "https://en.m.wikipedia.org/wiki/Anemone_hepatica",
@@ -27,6 +40,8 @@ BACKGROUND_TABS = [
     "https://www.espn.com/nfl/game/_/gameId/401671793/chiefs-falcons",
 ]
 ITERATIONS = 5
+PROD_CHRM = "chrome-m"
+PROD_FENIX = "fenix"
 
 
 class ImageAnalzer:
@@ -34,6 +49,7 @@ class ImageAnalzer:
         self.video = None
         self.browser = browser
         self.test = test
+        self.acceptable_error = ACCEPTABLE_ERROR[test]
         self.test_url = test_url
         self.width = 0
         self.height = 0
@@ -43,19 +59,19 @@ class ImageAnalzer:
         self.profiler = ProfilingMediator()
         self.cpu_data = {"total": {"time": []}}
         if self.browser == PROD_FENIX:
-            self.intent = "org.mozilla.fenix/org.mozilla.fenix.IntentReceiverActivity"
+            self.package_and_activity = (
+                "org.mozilla.fenix/org.mozilla.fenix.IntentReceiverActivity"
+            )
         elif self.browser == PROD_CHRM:
-            self.intent = (
+            self.package_and_activity = (
                 "com.android.chrome/com.google.android.apps.chrome.IntentDispatcher"
             )
         else:
             raise Exception("Bad browser name")
-        self.nav_start_command = (
-            f"am start-activity -W -n {self.intent} -a "
-            f"android.intent.action.VIEW -d "
-        )
+        self.nav_start_command = f"am start-activity -W -n {self.package_and_activity} -a android.intent.action.VIEW -d "
         self.view_intent_command = (
-            f"am start-activity -W -n {self.intent} -a " f"android.intent.action.VIEW"
+            f"am start-activity -W -n {self.package_and_activity} -a "
+            f"android.intent.action.VIEW"
         )
 
         self.device.shell("mkdir -p /sdcard/Download")
@@ -68,9 +84,9 @@ class ImageAnalzer:
             self.device.shell(f"pm clear {self.package_name}")
         time.sleep(3)
         self.skip_onboarding()
-        self.device.shell(
-            f"pm grant {self.package_name} android.permission.POST_NOTIFICATIONS"
-        )  # enabling notifications
+        self.device.enable_notifications(
+            self.package_name
+        )  # enabling notifications for android
         if self.test != "homeview_startup":
             self.create_background_tabs()
         self.device.shell(f"am force-stop {self.package_name}")
@@ -148,8 +164,9 @@ class ImageAnalzer:
             raise Exception("Frame not read")
         # We crop out the top 100 pixels in each image as when we have --bug-report in the
         # screen-recording command it displays a timestamp which interferes with the image comparisons
+        # We crop out the right 20 pixels to remove the scroll bar as it interferes with startup accuracy
         if cropped:
-            return frame[100 : int(self.height), 0 : int(self.width)]
+            return frame[100 : int(self.height), 0 : int(self.width) - 20]
         return frame
 
     def error(self, img1, img2):
@@ -170,23 +187,26 @@ class ImageAnalzer:
         """
         final_frame_index = self.video.get(cv2.CAP_PROP_FRAME_COUNT) - 1
         final_frame = self.get_image(final_frame_index)
+        compare_to_end_frame = final_frame_index
+        diff = 0
 
-        lo = 0
-        hi = final_frame_index
+        while diff <= self.acceptable_error:
+            compare_to_end_frame -= 1
+            if compare_to_end_frame < 0:
+                raise Exception(
+                    "Could not find the initial pageload frame, all possible images compared"
+                )
+            diff = self.error(self.get_image(compare_to_end_frame), final_frame)
 
-        while lo < hi:
-            mid = (lo + hi) // 2
-            diff = self.error(self.get_image(mid), final_frame)
-            if diff <= 20:
-                hi = mid
-            else:
-                lo = mid + 1
+        compare_to_end_frame += 1
         save_image_location = pathlib.Path(
             os.environ["TESTING_DIR"],
-            f"vid{iteration}_{self.browser}_startup_done_frame_{lo}.jpg",
+            f"vid{iteration}_{self.browser}_startup_done.jpg",
         )
-        cv2.imwrite(save_image_location, self.get_image(lo, cropped=False))
-        return lo
+        cv2.imwrite(
+            save_image_location, self.get_image(compare_to_end_frame, cropped=False)
+        )
+        return compare_to_end_frame
 
     def get_time_from_frame_num(self, frame_num):
         self.video.set(cv2.CAP_PROP_POS_FRAMES, frame_num)

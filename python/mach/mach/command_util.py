@@ -123,6 +123,9 @@ MACH_COMMANDS = {
     "gifft": MachCommandReference(
         "toolkit/components/telemetry/build_scripts/mach_commands.py"
     ),
+    "gecko-trace": MachCommandReference(
+        "toolkit/components/gecko-trace/mach_commands.py"
+    ),
     "glean": MachCommandReference(
         "toolkit/components/glean/build_scripts/mach_commands.py"
     ),
@@ -297,7 +300,7 @@ class DecoratorVisitor(ast.NodeVisitor):
             kwarg_dict = {}
 
             for name, arg in zip(["command", "subcommand"], decorator.args):
-                kwarg_dict[name] = arg.s
+                kwarg_dict[name] = arg.value
 
             for keyword in decorator.keywords:
                 if keyword.arg not in relevant_kwargs:

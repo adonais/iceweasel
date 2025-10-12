@@ -1289,6 +1289,7 @@ export const NimbusTestUtils = {
   async waitForActiveEnrollments(expectedSlugs) {
     const profileId = ExperimentAPI.profileId;
 
+    await this.flushStore();
     await lazy.TestUtils.waitForCondition(async () => {
       const conn = await lazy.ProfilesDatastoreService.getConnection();
       const slugs = await conn
@@ -1312,6 +1313,7 @@ export const NimbusTestUtils = {
   async waitForInactiveEnrollment(slug) {
     const profileId = ExperimentAPI.profileId;
 
+    await this.flushStore();
     await lazy.TestUtils.waitForCondition(async () => {
       const conn = await lazy.ProfilesDatastoreService.getConnection();
       const result = await conn.execute(
@@ -1333,6 +1335,7 @@ export const NimbusTestUtils = {
   async waitForAllUnenrollments() {
     const profileId = ExperimentAPI.profileId;
 
+    await this.flushStore();
     await lazy.TestUtils.waitForCondition(async () => {
       const conn = await lazy.ProfilesDatastoreService.getConnection();
       const slugs = await conn

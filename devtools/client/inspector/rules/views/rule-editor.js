@@ -675,7 +675,9 @@ RuleEditor.prototype = {
       }
     }
 
-    if (focusedElSelector) {
+    // Set focus if the focus is still in the current document (avoid stealing
+    // the focus, see Bug 1911627).
+    if (this.doc.hasFocus() && focusedElSelector) {
       const elementToFocus = this.doc.querySelector(focusedElSelector);
       if (elementToFocus && this.element.contains(elementToFocus)) {
         // We need to wait for a tick for the focus to be properly set

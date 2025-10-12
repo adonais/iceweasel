@@ -81,8 +81,9 @@ const PREF_DRAGGABLE = "devtools.inspector.draggable_properties";
 const PREF_INPLACE_EDITOR_FOCUS_NEXT_ON_ENTER =
   "devtools.inspector.rule-view.focusNextOnEnter";
 const FILTER_CHANGED_TIMEOUT = 150;
-// Removes the flash-out class from an element after 1 second.
-const PROPERTY_FLASHING_DURATION = 1000;
+// Removes the flash-out class from an element after 1 second (100ms in tests so they
+// don't take too long to run).
+const PROPERTY_FLASHING_DURATION = flags.testing ? 100 : 1000;
 
 // This is used to parse user input when filtering.
 const FILTER_PROP_RE = /\s*([^:\s]*)\s*:\s*(.*?)\s*;?$/;
@@ -1086,7 +1087,7 @@ CssRuleView.prototype = {
     }
 
     const isProfilerActive = Services.profiler?.IsActive();
-    const startTime = isProfilerActive ? Cu.now() : null;
+    const startTime = isProfilerActive ? ChromeUtils.now() : null;
 
     this.pageStyle = element.inspectorFront.pageStyle;
     this.pageStyle.on("stylesheet-updated", this.refreshPanel);
@@ -2141,16 +2142,27 @@ CssRuleView.prototype = {
    *
    * @param  {String} name
    *         The property name to scroll to and highlight.
+   * @param  {Object} options
+   * @param  {Function|undefined} options.ruleValidator
+   *         An optional function that can be used to filter out rules we shouldn't look
+   *         into to find the property name. The function is called with a Rule object,
+   *         and the rule will be skipped if the function returns a falsy value.
    * @return {Boolean} true if the TextProperty name is found, and false otherwise.
    */
-  highlightProperty(name) {
+  highlightProperty(name, { ruleValidator } = {}) {
+    // First, let's clear any search we might have, as the property could be hidden
+    this._onClearSearch();
+
+    let scrollBehavior = "auto";
+    const hasRuleValidator = typeof ruleValidator === "function";
     for (const rule of this.rules) {
+      if (hasRuleValidator && !ruleValidator(rule)) {
+        continue;
+      }
       for (const textProp of rule.textProps) {
         if (textProp.overridden || textProp.invisible || !textProp.enabled) {
           continue;
         }
-
-        let scrollBehavior = "smooth";
 
         // First, search for a matching authored property.
         if (textProp.name === name) {
@@ -2209,6 +2221,30 @@ CssRuleView.prototype = {
         }
       }
     }
+    // If the property is a CSS variable and we didn't find its declaration, it might
+    // be a registered property
+    if (name.startsWith("--")) {
+      // Get a potential @property section
+      const propertyContainer = this.styleDocument.getElementById(
+        REGISTERED_PROPERTIES_CONTAINER_ID
+      );
+      if (propertyContainer) {
+        const propertyEl = propertyContainer.querySelector(
+          `[data-name="${name}"]`
+        );
+        if (propertyEl) {
+          const toggle = this.styleDocument.querySelector(
+            `[aria-controls="${REGISTERED_PROPERTIES_CONTAINER_ID}"]`
+          );
+          if (toggle.ariaExpanded === "false") {
+            this._toggleContainerVisibility(toggle, propertyContainer);
+          }
+
+          this._highlightElementInRule(null, propertyEl, scrollBehavior);
+        }
+        return true;
+      }
+    }
 
     return false;
   },
@@ -2221,9 +2257,13 @@ CssRuleView.prototype = {
    * @param {String} scrollBehavior
    */
   _highlightElementInRule(rule, element, scrollBehavior) {
-    this._scrollToElement(rule.editor.selectorText, element, scrollBehavior);
+    if (rule) {
+      this._scrollToElement(rule.editor.selectorText, element, scrollBehavior);
+    } else {
+      this._scrollToElement(element, null, scrollBehavior);
+    }
     this._flashElement(element).then(() =>
-      this.emitForTests("element-highlighted")
+      this.emitForTests("element-highlighted", element)
     );
   },
 

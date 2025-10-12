@@ -88,6 +88,14 @@ newtab-confirm-delete-history-p2 = Denne handling kan ikke fortrydes.
 
 newtab-topsite-sponsored = Sponsoreret
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (fastgjort)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -312,19 +320,32 @@ newtab-custom-pocket-subtitle = Interessant indhold udvalgt af { -pocket-brand-n
 newtab-custom-stories-toggle =
     .label = Anbefalede historier
     .description = Interessant indhold udvalgt af { -brand-product-name }-holdet
+newtab-custom-stories-personalized-toggle =
+    .label = Historier
+newtab-custom-stories-personalized-checkbox-label = Tilpassede historier baseret på din aktivitet
 newtab-custom-pocket-sponsored = Sponsorerede historier
 newtab-custom-pocket-show-recent-saves = Vis seneste gemte
 newtab-custom-recent-title = Seneste aktivitet
 newtab-custom-recent-subtitle = Et udvalg af seneste websteder og indhold
-newtab-custom-recent-toggle =
-    .label = Seneste aktivitet
-    .description = Et udvalg af seneste websteder og indhold
 newtab-custom-weather-toggle =
     .label = Vejr
     .description = Dagens vejrudsigt
 newtab-custom-trending-search-toggle =
     .label = Populære søgninger
     .description = Populære og ofte søgte emner
+newtab-custom-widget-weather-toggle =
+    .label = Vejr
+newtab-custom-widget-trending-search-toggle =
+    .label = Populære søgninger
+newtab-custom-widget-lists-toggle =
+    .label = Lister
+newtab-custom-widget-timer-toggle =
+    .label = Timer
+newtab-custom-widget-section-title = Widgets
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Luk
+    .aria-label = Luk menu
 newtab-custom-close-button = Luk
 newtab-custom-settings = Håndter flere indstillinger
 
@@ -337,6 +358,7 @@ newtab-wallpaper-custom-color = Vælg en farve
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Billedet overskrider grænsen for filstørrelse på { $file_size } MB. Prøv at uploade en mindre fil.
+newtab-wallpaper-error-upload-file-type = Vi kunne ikke uploade din fil. Prøv igen med en billedfil.
 newtab-wallpaper-error-file-type = Vi kunne ikke uploade din fil. Prøv igen med en anden filtype.
 newtab-wallpaper-light-red-panda = Rød panda
 newtab-wallpaper-light-mountain = Hvidt bjerg
@@ -442,7 +464,6 @@ newtab-weather-menu-change-location = Skift sted
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Søg efter sted
     .aria-label = Søg efter sted
-newtab-weather-change-location-search-input = Søg efter sted
 newtab-weather-menu-weather-display = Visning af vejr
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -543,6 +564,12 @@ newtab-custom-wallpaper-title = Nu kan du vælge din egen baggrund
 newtab-custom-wallpaper-subtitle = Upload din egen baggrund eller vælg en farve for at gøre { -brand-product-name } til din egen.
 newtab-custom-wallpaper-cta = Prøv det
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Vælg en baggrund for at gøre { -brand-product-name } til din egen
+newtab-new-user-custom-wallpaper-subtitle = Føl dig hjemme på alle nye faneblade med tilpassede baggrunde og farver.
+newtab-new-user-custom-wallpaper-cta = Prøv det nu
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Hent { -brand-product-name } til mobil
@@ -583,8 +610,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Populært på Google
 newtab-trending-searches-show-trending =
     .title = Vis populære søgninger
 newtab-trending-searches-hide-trending =
@@ -593,3 +618,76 @@ newtab-trending-searches-learn-more = Lær mere
 newtab-trending-searches-dismiss = Skjul populære søgninger
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Populære søgninger
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Mulighederne er uendelige. Tilføj en.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Ny
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Afsluttede ({ $number })
+newtab-widget-task-list-menu-copy = Kopier
+newtab-widget-lists-menu-edit = Rediger listens navn
+newtab-widget-lists-menu-create = Opret en ny liste
+newtab-widget-lists-menu-delete = Slet denne liste
+newtab-widget-lists-menu-copy = Kopier liste til udklipsholderen
+newtab-widget-lists-menu-hide = Skjul alle lister
+newtab-widget-lists-menu-learn-more = Læs mere
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Tilføj et element
+newtab-widget-lists-input-error = Inkluder tekst for at tilføje et element.
+newtab-widget-lists-input-menu-open-link = Åbn link
+newtab-widget-lists-input-menu-move-up = Flyt op
+newtab-widget-lists-input-menu-move-down = Flyt ned
+newtab-widget-lists-input-menu-delete = Slet
+newtab-widget-lists-input-menu-edit = Rediger
+newtab-widget-lists-name-label-default =
+    .label = Opgaveliste
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Opgaveliste
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Ny liste
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Timer
+newtab-widget-timer-notification-focus = Fokus-tiden er slut. Godt gået. Har du brug for en pause?
+newtab-widget-timer-notification-break = Pausen er slut. Klar til at tage fat igen?
+newtab-widget-timer-notification-warning = Notifikationer er slået fra
+newtab-widget-timer-mode-focus =
+    .label = Fokus
+newtab-widget-timer-mode-break =
+    .label = Pause
+newtab-widget-timer-play =
+    .title = Afspil
+newtab-widget-timer-pause =
+    .title = Pause
+newtab-widget-timer-label-play =
+    .label = Afspil
+newtab-widget-timer-label-pause =
+    .label = Pause
+newtab-widget-timer-reset =
+    .title = Nulstil
+newtab-widget-timer-menu-notifications = Slå notifikationer fra
+newtab-widget-timer-menu-notifications-on = Slå notifikationer til
+newtab-widget-timer-menu-hide = Skjul timer
+newtab-widget-timer-menu-learn-more = Læs mere
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Scroll for at se mere
+newtab-widget-message-title = Hold fokus med lister og den indbyggede timer
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Fra hurtige påmindelser til daglige opgaver — funktionen Fokus hjælper dig med at have styr på tingene og din tid.
+newtab-promo-card-title = Støt { -brand-product-name }
+newtab-promo-card-body = Vores sponsorer støtter vores mission om at bygge et bedre internet
+newtab-promo-card-cta = Lær mere
+newtab-promo-card-dismiss-button =
+    .title = Afvis
+    .aria-label = Afvis

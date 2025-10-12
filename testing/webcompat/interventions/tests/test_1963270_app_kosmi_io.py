@@ -12,7 +12,7 @@ LOCAL_FILE_CSS = "button i.file.video"
 
 
 async def is_local_file_option_shown(client, credentials, platform):
-    await client.navigate(URL, wait="none")
+    await client.navigate(URL)
     client.await_css(
         "button",
         condition="elem.innerText.replaceAll(' ', '').includes('Login')",

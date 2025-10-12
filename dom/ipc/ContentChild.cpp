@@ -658,7 +658,8 @@ NS_INTERFACE_MAP_BEGIN(ContentChild)
 NS_INTERFACE_MAP_END
 
 mozilla::ipc::IPCResult ContentChild::RecvSetXPCOMProcessAttributes(
-    XPCOMInitData&& aXPCOMInit, const StructuredCloneData& aInitialData,
+    XPCOMInitData&& aXPCOMInit,
+    const UniquePtr<StructuredCloneData>& aInitialData,
     FullLookAndFeel&& aLookAndFeelData, dom::SystemFontList&& aFontList,
     Maybe<mozilla::ipc::ReadOnlySharedMemoryHandle>&& aSharedUASheetHandle,
     const uintptr_t& aSharedUASheetAddress,
@@ -676,7 +677,7 @@ mozilla::ipc::IPCResult ContentChild::RecvSetXPCOMProcessAttributes(
   PerfStats::SetCollectionMask(aXPCOMInit.perfStatsMask());
   LookAndFeel::EnsureInit();
   InitSharedUASheets(std::move(aSharedUASheetHandle), aSharedUASheetAddress);
-  InitXPCOM(std::move(aXPCOMInit), aInitialData,
+  InitXPCOM(std::move(aXPCOMInit), *aInitialData,
             aIsReadyForBackgroundProcessing);
   InitGraphicsDeviceData(aXPCOMInit.contentDeviceData());
   RefPtr<net::ChildDNSService> dnsServiceChild =
@@ -2941,7 +2942,7 @@ void ContentChild::StartForceKillTimer() {
     NS_NewTimerWithFuncCallback(getter_AddRefs(mForceKillTimer),
                                 ContentChild::ForceKillTimerCallback, this,
                                 timeoutSecs * 1000, nsITimer::TYPE_ONE_SHOT,
-                                "dom::ContentChild::StartForceKillTimer");
+                                "dom::ContentChild::StartForceKillTimer"_ns);
     MOZ_ASSERT(mForceKillTimer);
   }
 }
@@ -4357,7 +4358,7 @@ mozilla::ipc::IPCResult ContentChild::RecvDispatchBeforeUnloadToSubtree(
     const mozilla::Maybe<SessionHistoryInfo>& aInfo,
     DispatchBeforeUnloadToSubtreeResolver&& aResolver) {
   if (aStartingAt.IsNullOrDiscarded()) {
-    aResolver(nsIDocumentViewer::eAllowNavigation);
+    aResolver(nsIDocumentViewer::eContinue);
   } else {
     DispatchBeforeUnloadToSubtree(aStartingAt.get(), aInfo, aResolver);
   }
@@ -4375,48 +4376,46 @@ mozilla::ipc::IPCResult ContentChild::RecvInitNextGenLocalStorageEnabled(
     BrowsingContext* aStartingAt,
     const mozilla::Maybe<SessionHistoryInfo>& aInfo,
     const DispatchBeforeUnloadToSubtreeResolver& aResolver) {
-  bool block = false;
   bool resolved = false;
 
-  aStartingAt->PreOrderWalk([&](const RefPtr<dom::BrowsingContext>&
-                                    aBC) MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
-    if (aBC->GetDocShell()) {
-      nsCOMPtr<nsIDocumentViewer> viewer;
-      aBC->GetDocShell()->GetDocViewer(getter_AddRefs(viewer));
-      if (viewer && viewer->DispatchBeforeUnload() ==
-                        nsIDocumentViewer::eRequestBlockNavigation) {
-        block = true;
-      } else if (aBC->IsTop() && aInfo) {
-        // https://html.spec.whatwg.org/#preventing-navigation:fire-a-traverse-navigate-event.
-        // If this is the top-level navigable and we've passed `aInfo`, we
-        // should perform #fire-a-traverse-navigate-event.
-        // #checking-if-unloading-is-canceled will block the navigation if the
-        // "navigate" event handler for the top level window's navigation object
-        // returns false.
-        if (RefPtr<nsPIDOMWindowInner> activeWindow =
-                nsDocShell::Cast(aBC->GetDocShell())->GetActiveWindow()) {
-          if (RefPtr navigation = activeWindow->Navigation()) {
-            if (AutoJSAPI jsapi; jsapi.Init(activeWindow)) {
-              // This should send the correct user involvment. See bug 1903552.
-              block = !navigation->FireTraverseNavigateEvent(jsapi.cx(), *aInfo,
-                                                             Nothing());
-            }
-          }
-        }
-      }
+  aStartingAt->PreOrderWalk(
+      [&](const RefPtr<dom::BrowsingContext>& aBC)
+          MOZ_CAN_RUN_SCRIPT_BOUNDARY_LAMBDA {
+            if (RefPtr docShell = nsDocShell::Cast(aBC->GetDocShell())) {
+              nsCOMPtr<nsIDocumentViewer> viewer;
+              docShell->GetDocViewer(getter_AddRefs(viewer));
+              nsIDocumentViewer::PermitUnloadResult finalStatus =
+                  nsIDocumentViewer::eContinue;
+              if (viewer) {
+                finalStatus = viewer->DispatchBeforeUnload();
+              }
 
-      if (!resolved && block) {
-        // Send our response as soon as we find any blocker, so that we can
-        // show the permit unload prompt as soon as possible, without giving
-        // subsequent handlers a chance to delay it.
-        aResolver(nsIDocumentViewer::eRequestBlockNavigation);
-        resolved = true;
-      }
-    }
-  });
+              if (finalStatus == nsIDocumentViewer::eContinue && aBC->IsTop() &&
+                  aInfo) {
+                // https://html.spec.whatwg.org/#preventing-navigation:fire-a-traverse-navigate-event.
+                // If this is the top-level navigable and we've passed `aInfo`,
+                // we should perform #fire-a-traverse-navigate-event.
+                // #checking-if-unloading-is-canceled will block the navigation
+                // if the "navigate" event handler for the top level window's
+                // navigation object returns false.
+                // This should send the correct user involvment. See bug
+                // 1903552.
+                finalStatus = docShell->MaybeFireTraversableTraverseHistory(
+                    *aInfo, Nothing());
+              }
+
+              if (!resolved && finalStatus != nsIDocumentViewer::eContinue) {
+                // Send our response as soon as we find any blocker, so that we
+                // can show the permit unload prompt as soon as possible,
+                // without giving subsequent handlers a chance to delay it.
+                aResolver(finalStatus);
+                resolved = true;
+              }
+            }
+          });
 
   if (!resolved) {
-    aResolver(nsIDocumentViewer::eAllowNavigation);
+    aResolver(nsIDocumentViewer::eContinue);
   }
 }
 
@@ -4574,17 +4573,17 @@ already_AddRefed<JSActor> ContentChild::InitJSActor(
   return actor.forget();
 }
 
-IPCResult ContentChild::RecvRawMessage(const JSActorMessageMeta& aMeta,
-                                       const Maybe<ClonedMessageData>& aData,
-                                       const Maybe<ClonedMessageData>& aStack) {
-  Maybe<StructuredCloneData> data;
+IPCResult ContentChild::RecvRawMessage(
+    const JSActorMessageMeta& aMeta, const UniquePtr<ClonedMessageData>& aData,
+    const UniquePtr<ClonedMessageData>& aStack) {
+  UniquePtr<StructuredCloneData> data;
   if (aData) {
-    data.emplace();
+    data = MakeUnique<StructuredCloneData>();
     data->BorrowFromClonedMessageData(*aData);
   }
-  Maybe<StructuredCloneData> stack;
+  UniquePtr<StructuredCloneData> stack;
   if (aStack) {
-    stack.emplace();
+    stack = MakeUnique<StructuredCloneData>();
     stack->BorrowFromClonedMessageData(*aStack);
   }
   ReceiveRawMessage(aMeta, std::move(data), std::move(stack));

@@ -28,7 +28,7 @@ import mozilla.components.support.base.android.Clock
 import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.telemetry.glean.internal.TimerId
+import mozilla.telemetry.glean.GleanTimerId
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -72,7 +72,7 @@ class TelemetryMiddlewareTest {
 
     private val clock = FakeClock()
     private val metrics: MetricController = mockk()
-    private val searchState: MutableMap<String, TimerId> = mutableMapOf()
+    private val searchState: MutableMap<String, GleanTimerId> = mutableMapOf()
     private val timerId = Metrics.searchPageLoadTime.start()
 
     @Before

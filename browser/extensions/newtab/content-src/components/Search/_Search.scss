@@ -371,7 +371,7 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
 }
 
 @media (height > 700px) {
-  body:not(.inline-onboarding) .fixed-search {
+  .fixed-search {
     .search-wrapper {
       $search-height: $search-height-new;
       $search-icon-size: 24px;

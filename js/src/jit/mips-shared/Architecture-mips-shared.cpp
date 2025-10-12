@@ -6,18 +6,19 @@
 
 #include "jit/mips-shared/Architecture-mips-shared.h"
 
-#include <fcntl.h>
-#include <unistd.h>
-
 #include "jit/FlushICache.h"  // js::jit::FlushICache
 #include "jit/mips64/Simulator-mips64.h"
 #include "jit/RegisterSets.h"
 
-#if defined(__linux__) && !defined(JS_SIMULATOR)
-#  include <sys/cachectl.h>
+#if defined(__linux__)
+#  include <fcntl.h>
+#  include <unistd.h>
+
+#  if !defined(JS_SIMULATOR)
+#    include <sys/cachectl.h>
+#  endif
 #endif
 
-#define HWCAP_MIPS (1 << 28)
 #define HWCAP_LOONGSON (1 << 27)
 #define HWCAP_R2 (1 << 26)
 #define HWCAP_FPU (1 << 0)
@@ -26,7 +27,7 @@ namespace js {
 namespace jit {
 
 static uint32_t get_mips_flags() {
-  uint32_t flags = HWCAP_MIPS;
+  uint32_t flags = 0;
 
 #if defined(JS_SIMULATOR_MIPS64)
   flags |= HWCAP_FPU;

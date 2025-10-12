@@ -7,10 +7,12 @@
   width: var(--newtab-card-width-medium);
   background: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
-  padding-block: var(--space-large);
-  max-height: var(--newtab-card-height);
+  padding-block-start: var(--space-medium);
+  height: var(--newtab-card-height);
   box-shadow: var(--box-shadow-card);
   position: relative;
+  display: flex;
+  flex-direction: column;
 
   .confetti-canvas {
     position: absolute;
@@ -23,7 +25,7 @@
   }
 
   .select-wrapper {
-    padding-inline: var(--space-large);
+    padding-inline: var(--space-medium);
     display: flex;
     justify-content: flex-start;
     position: relative;
@@ -50,7 +52,7 @@
 
   .add-task-container {
     margin-block: var(--space-small);
-    padding-inline: var(--space-large);
+    padding-inline: var(--space-medium);
     position: relative;
 
     .icon.icon-add {
@@ -89,6 +91,11 @@
     }
   }
 
+  // Height necessary to vertically center empty state
+  .task-list-wrapper {
+    height: 100%;
+  }
+
   fieldset {
     padding: 0 var(--space-medium);
     margin: 0 var(--space-xsmall);
@@ -104,8 +111,21 @@
     padding: var(--space-xsmall);
     display: flex;
     justify-content: space-between;
-    margin-block-end: var(--space-small);
     transition: opacity 300ms ease;
+
+    // Spacing between uncompleted task and "Completed" list
+    &.task-type-tasks {
+      &:last-of-type {
+        margin-block-end: var(--space-small);
+      }
+    }
+
+    // Spacing between "Completed" list title and first completed item
+    &.task-type-completed {
+      &:first-of-type {
+        margin-block-start: var(--space-small);
+      }
+    }
 
     @media (prefers-reduced-motion: no-preference) {
       &.exiting {
@@ -181,10 +201,23 @@
     }
   }
 
-  .empty-list-text {
-    height: var(--space-xlarge);
-    color: var(--text-color-deemphasized);
-    font-size: var(--font-size-small);
+  .empty-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-small);
+    height: 100%;
+    padding-block: var(--space-large);
+
+    @include wallpaper-contrast-fix;
+
+    .empty-list-text {
+      margin: 0;
+      text-align: center;
+      color: var(--text-color-deemphasized);
+      font-size: var(--font-size-small);
+    }
   }
 
   .completed-task-wrapper summary {

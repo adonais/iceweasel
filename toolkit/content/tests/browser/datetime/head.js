@@ -159,7 +159,8 @@ const BTN_MONTH_YEAR = "#month-year-label",
   MONTH_YEAR_VIEW = ".month-year-view",
   SPINNER_MONTH = "#spinner-month",
   SPINNER_YEAR = "#spinner-year",
-  WEEK_HEADER = ".week-header";
+  WEEK_HEADER = ".week-header",
+  TIMEPICKER = "#time-picker";
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "long",

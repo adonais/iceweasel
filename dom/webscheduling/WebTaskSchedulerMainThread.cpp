@@ -9,6 +9,7 @@
 
 #include "mozilla/dom/TimeoutManager.h"
 #include "nsContentUtils.h"
+#include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 

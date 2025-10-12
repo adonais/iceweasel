@@ -49,7 +49,7 @@ NS_QUERYFRAME_TAIL_INHERITING(SVGPaintServerFrame)
 
 nsresult SVGGradientFrame::AttributeChanged(int32_t aNameSpaceID,
                                             nsAtom* aAttribute,
-                                            int32_t aModType) {
+                                            AttrModType aModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
       (aAttribute == nsGkAtoms::gradientUnits ||
        aAttribute == nsGkAtoms::gradientTransform ||
@@ -429,7 +429,7 @@ void SVGLinearGradientFrame::Init(nsIContent* aContent,
 
 nsresult SVGLinearGradientFrame::AttributeChanged(int32_t aNameSpaceID,
                                                   nsAtom* aAttribute,
-                                                  int32_t aModType) {
+                                                  AttrModType aModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
       (aAttribute == nsGkAtoms::x1 || aAttribute == nsGkAtoms::y1 ||
        aAttribute == nsGkAtoms::x2 || aAttribute == nsGkAtoms::y2)) {
@@ -503,7 +503,7 @@ void SVGRadialGradientFrame::Init(nsIContent* aContent,
 
 nsresult SVGRadialGradientFrame::AttributeChanged(int32_t aNameSpaceID,
                                                   nsAtom* aAttribute,
-                                                  int32_t aModType) {
+                                                  AttrModType aModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
       (aAttribute == nsGkAtoms::r || aAttribute == nsGkAtoms::cx ||
        aAttribute == nsGkAtoms::cy || aAttribute == nsGkAtoms::fx ||

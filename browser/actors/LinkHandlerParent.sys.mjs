@@ -153,7 +153,7 @@ export class LinkHandlerParent extends JSWindowActorParent {
     }
 
     if (!isRichIcon) {
-      gBrowser.setIcon(tab, iconURL, originalURL, null, beforePageShow);
+      gBrowser.setIcon(tab, iconURL, originalURL, beforePageShow);
     }
   }
 }

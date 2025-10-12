@@ -94,7 +94,7 @@ StorageAccessPermissionRequest::MaybeDelayAutomaticGrants() {
           NS_RELEASE(promise);
         },
         promise, simulatedDelay, nsITimer::TYPE_ONE_SHOT,
-        "DelayedAllowAutoGrantCallback");
+        "DelayedAllowAutoGrantCallback"_ns);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       p->Reject(false, __func__);
     } else {

@@ -74,6 +74,7 @@ dictionary UniFFIScaffoldingCallResult {
 [Exposed=Window]
 callback interface UniFFICallbackHandler {
     Promise<UniFFIScaffoldingCallResult> callAsync(UniFFICallbackObjectHandle objectHandle, unsigned long methodIndex, UniFFIScaffoldingValue... args);
+    UniFFIScaffoldingCallResult callSync(UniFFICallbackObjectHandle objectHandle, unsigned long methodIndex, UniFFIScaffoldingValue... args);
     undefined destroy(UniFFICallbackObjectHandle objectHandle);
 };
 

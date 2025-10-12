@@ -788,6 +788,11 @@
             "description": "The list of CSS files to inject",
             "items": { "$ref": "ExtensionURL" }
           },
+          "css_origin": {
+            "$ref": "extensionTypes.CSSOrigin",
+            "default": "author",
+            "optional": true
+          },
           "js": {
             "type": "array",
             "optional": true,

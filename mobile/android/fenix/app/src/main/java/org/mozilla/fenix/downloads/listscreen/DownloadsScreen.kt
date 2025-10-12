@@ -6,7 +6,6 @@ package org.mozilla.fenix.downloads.listscreen
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,10 +21,15 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -48,19 +52,15 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.thenConditional
+import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.text.Text
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.button.FloatingActionButton
-import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.list.ExpandableListHeader
-import org.mozilla.fenix.compose.snackbar.AcornSnackbarHostState
-import org.mozilla.fenix.compose.snackbar.SnackbarHost
-import org.mozilla.fenix.compose.snackbar.SnackbarState
-import org.mozilla.fenix.downloads.listscreen.middleware.UndoDelayProvider
 import org.mozilla.fenix.downloads.listscreen.store.DownloadListItem
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
@@ -74,13 +74,12 @@ import org.mozilla.fenix.downloads.listscreen.ui.FileListItem
 import org.mozilla.fenix.downloads.listscreen.ui.Filters
 import org.mozilla.fenix.downloads.listscreen.ui.ToolbarConfig
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Downloads screen that displays the list of downloads.
  *
  * @param downloadsStore The [DownloadUIStore] used to manage and access the state of download items.
- * @param undoDelayProvider Provider for the undo delay duration when deleting items.
- *   This determines how long the undo snackbar will be visible.
  * @param onItemClick Callback invoked when a download item is clicked.
  * @param onNavigationIconClick Callback for the back button click in the toolbar.
  */
@@ -88,13 +87,13 @@ import org.mozilla.fenix.theme.FirefoxTheme
 @Composable
 fun DownloadsScreen(
     downloadsStore: DownloadUIStore,
-    undoDelayProvider: UndoDelayProvider,
     onItemClick: (FileItem) -> Unit,
     onNavigationIconClick: () -> Unit,
 ) {
     val uiState by downloadsStore.observeAsState(initialValue = downloadsStore.state) { it }
-    val snackbarHostState = remember { AcornSnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
     val context = LocalContext.current
     val toolbarConfig = getToolbarConfig(mode = uiState.mode)
 
@@ -117,7 +116,6 @@ fun DownloadsScreen(
                 )
                 showDeleteSnackbar(
                     selectedItems = (downloadsStore.state.mode.selectedItems.toSet()),
-                    undoDelayProvider = undoDelayProvider,
                     coroutineScope = coroutineScope,
                     snackbarHostState = snackbarHostState,
                     context = context,
@@ -163,7 +161,7 @@ fun DownloadsScreen(
                     if (!uiState.isSearchFieldVisible) {
                         IconButton(onClick = onNavigationIconClick) {
                             Icon(
-                                painter = painterResource(R.drawable.mozac_ic_back_24),
+                                painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                                 contentDescription = stringResource(R.string.download_navigate_back_description),
                                 tint = toolbarConfig.iconColor,
                             )
@@ -183,7 +181,6 @@ fun DownloadsScreen(
                                 )
                                 showDeleteSnackbar(
                                     selectedItems = setOf(item),
-                                    undoDelayProvider = undoDelayProvider,
                                     coroutineScope = coroutineScope,
                                     snackbarHostState = snackbarHostState,
                                     context = context,
@@ -202,7 +199,7 @@ fun DownloadsScreen(
         floatingActionButton = {
             if (uiState.isSearchIconVisible) {
                 FloatingActionButton(
-                    icon = painterResource(R.drawable.mozac_ic_search_24),
+                    icon = painterResource(iconsR.drawable.mozac_ic_search_24),
                     contentDescription = stringResource(R.string.download_search_placeholder),
                     onClick = { downloadsStore.dispatch(DownloadUIAction.SearchBarVisibilityRequest) },
                 )
@@ -211,7 +208,7 @@ fun DownloadsScreen(
         containerColor = FirefoxTheme.colors.layer1,
         snackbarHost = {
             SnackbarHost(
-                snackbarHostState = snackbarHostState,
+                hostState = snackbarHostState,
                 modifier = Modifier.imePadding(),
             )
         },
@@ -219,8 +216,12 @@ fun DownloadsScreen(
         DownloadsScreenContent(
             uiState = uiState,
             paddingValues = paddingValues,
+            listState = listState,
             onContentTypeSelected = {
                 downloadsStore.dispatch(DownloadUIAction.ContentTypeSelected(it))
+                coroutineScope.launch {
+                    listState.scrollToItem(0)
+                }
             },
             onItemClick = onItemClick,
             onSelectionChange = { item, isSelected ->
@@ -252,7 +253,6 @@ fun DownloadsScreen(
                     )
                     showDeleteSnackbar(
                         selectedItems = setOf(item),
-                        undoDelayProvider = undoDelayProvider,
                         coroutineScope = coroutineScope,
                         snackbarHostState = snackbarHostState,
                         context = context,
@@ -291,7 +291,7 @@ private fun ToolbarEditActions(
 
         IconButton(onClick = { showMenu = true }) {
             Icon(
-                painter = painterResource(R.drawable.mozac_ic_ellipsis_vertical_24),
+                painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
                 contentDescription = stringResource(
                     R.string.content_description_menu,
                 ),
@@ -333,6 +333,7 @@ private fun ToolbarEditActions(
  * Content of the screen below the toolbar.
  * @param uiState The UI state of the screen.
  * @param paddingValues The padding values of the screen.
+ * @param listState The state controlling and observing the scroll position of the downloads list.
  * @param onContentTypeSelected Callback invoked when a content type filter is selected.
  * @param onItemClick Invoked when a download item is clicked.
  * @param onSelectionChange Invoked when selection state of an item changed.
@@ -348,6 +349,7 @@ private fun ToolbarEditActions(
 private fun DownloadsScreenContent(
     uiState: DownloadUIState,
     paddingValues: PaddingValues,
+    listState: LazyListState,
     onContentTypeSelected: (FileItem.ContentTypeFilter) -> Unit,
     onItemClick: (FileItem) -> Unit,
     onSelectionChange: (FileItem, Boolean) -> Unit,
@@ -384,6 +386,7 @@ private fun DownloadsScreenContent(
             is DownloadUIState.ItemsState.Items -> DownloadsContent(
                 items = uiState.itemsState.items,
                 mode = uiState.mode,
+                listState = listState,
                 onClick = onItemClick,
                 onSelectionChange = onSelectionChange,
                 onPauseClick = onPauseClick,
@@ -400,10 +403,10 @@ private fun DownloadsScreenContent(
 
 @Composable
 @Suppress("LongParameterList")
-@OptIn(ExperimentalFoundationApi::class)
 private fun DownloadsContent(
     items: List<DownloadListItem>,
     mode: Mode,
+    listState: LazyListState,
     modifier: Modifier = Modifier,
     onClick: (FileItem) -> Unit,
     onSelectionChange: (FileItem, Boolean) -> Unit,
@@ -417,6 +420,7 @@ private fun DownloadsContent(
     val haptics = LocalHapticFeedback.current
 
     LazyColumn(
+        state = listState,
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -553,9 +557,9 @@ private fun getToolbarConfig(mode: Mode): ToolbarConfig {
                 R.string.download_multi_select_title,
                 mode.selectedItems.size,
             ),
-            backgroundColor = FirefoxTheme.colors.layerAccent,
-            textColor = FirefoxTheme.colors.textOnColorPrimary,
-            iconColor = FirefoxTheme.colors.iconOnColor,
+            backgroundColor = MaterialTheme.colorScheme.primary,
+            textColor = MaterialTheme.colorScheme.inverseOnSurface,
+            iconColor = MaterialTheme.colorScheme.inverseOnSurface,
         )
 
         is Mode.Normal -> ToolbarConfig(
@@ -569,22 +573,16 @@ private fun getToolbarConfig(mode: Mode): ToolbarConfig {
 
 private fun showDeleteSnackbar(
     selectedItems: Set<FileItem>,
-    undoDelayProvider: UndoDelayProvider,
     coroutineScope: CoroutineScope,
-    snackbarHostState: AcornSnackbarHostState,
+    snackbarHostState: SnackbarHostState,
     context: Context,
     undoAction: () -> Unit,
 ) {
     coroutineScope.launch {
-        snackbarHostState.showSnackbar(
-            snackbarState = SnackbarState(
-                message = getDeleteSnackBarMessage(selectedItems, context),
-                duration = SnackbarState.Duration.Custom(undoDelayProvider.undoDelay.toInt()),
-                action = Action(
-                    label = context.getString(R.string.download_undo_delete_snackbar_action),
-                    onClick = { undoAction.invoke() },
-                ),
-            ),
+        snackbarHostState.displaySnackbar(
+            message = getDeleteSnackBarMessage(selectedItems, context),
+            actionLabel = context.getString(R.string.download_undo_delete_snackbar_action),
+            onActionPerformed = { undoAction.invoke() },
         )
     }
 }
@@ -727,34 +725,29 @@ private fun DownloadsScreenPreviews(
     @PreviewParameter(DownloadsScreenPreviewModelParameterProvider::class) state: DownloadUIState,
 ) {
     val downloadsStore = remember { DownloadUIStore(initialState = state) }
-    val undoDelayProvider = object : UndoDelayProvider {
-        override val undoDelay: Long = 3000L
-    }
-    val snackbarHostState = remember { AcornSnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     FirefoxTheme {
         Box {
             DownloadsScreen(
                 downloadsStore = downloadsStore,
-                undoDelayProvider = undoDelayProvider,
                 onItemClick = {
                     scope.launch {
-                        snackbarHostState.showSnackbar(
-                            SnackbarState(message = "Item ${it.fileName} clicked"),
+                        snackbarHostState.displaySnackbar(
+                            message = "Item ${it.fileName} clicked",
                         )
                     }
                 },
                 onNavigationIconClick = {
                     scope.launch {
-                        snackbarHostState.showSnackbar(
-                            SnackbarState(message = "Navigation Icon clicked"),
+                        snackbarHostState.displaySnackbar(
+                            message = "Navigation Icon clicked",
                         )
                     }
                 },
             )
             SnackbarHost(
-                snackbarHostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter),
+                hostState = snackbarHostState,
             )
         }
     }

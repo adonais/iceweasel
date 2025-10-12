@@ -8,7 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -84,7 +83,6 @@ data class AcornLayout(
 
 private const val GRID_ITEMS = 200
 
-@OptIn(ExperimentalLayoutApi::class)
 @FlexibleWindowPreview
 @Composable
 private fun AcornLayoutPreview() {

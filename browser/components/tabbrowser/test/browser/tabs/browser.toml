@@ -64,6 +64,8 @@ tags = "vertical-tabs"
 
 ["browser_ctrlTab.js"]
 
+["browser_discarded_tab_move.js"]
+
 ["browser_dont_process_switch_204.js"]
 support-files = [
   "blank.html",
@@ -575,10 +577,15 @@ tags = "vertical-tabs"
 ["browser_tab_preview.js"]
 tags = "vertical-tabs"
 skip-if = [
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && vertical_tab", # Bug 1928146
+  "os == 'win' && os_version == '11.26100' && processor == 'x86' && debug", # Bug 1980036
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && debug", # Bug 1980036
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && asan", # Bug 1980036
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1928146 & Bug 1980036
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64' && vertical_tab", # Bug 1928146
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && vertical_tab", # Bug 1928146
 ]
+
+["browser_tab_splitview.js"]
 
 ["browser_tab_tooltips.js"]
 tags = "vertical-tabs"

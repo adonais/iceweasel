@@ -30,6 +30,7 @@
 #include <functional>
 
 class nsIFile;
+class nsIPrefOverrideMap;
 
 // The callback function will get passed the pref name which triggered the call
 // and the void* data which was passed to the registered callback function.
@@ -458,9 +459,11 @@ class Preferences final : public nsIPrefService,
 
   // Off main thread is only respected for the default aFile value (nullptr).
   nsresult SavePrefFileInternal(nsIFile* aFile, SaveMethod aSaveMethod);
+
   nsresult WritePrefFile(
       nsIFile* aFile, SaveMethod aSaveMethod,
-      UniquePtr<MozPromiseHolder<WritePrefFilePromise>> aPromise = nullptr);
+      UniquePtr<MozPromiseHolder<WritePrefFilePromise>> aPromise = nullptr,
+      const nsIPrefOverrideMap* aPrefOverrideMap = nullptr);
 
   nsresult ResetUserPrefs();
 

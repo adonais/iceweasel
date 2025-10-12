@@ -25,15 +25,15 @@ android {
 }
 
 dependencies {
-    implementation libs.androidx.appcompat
-
     implementation project(":components:support-base")
     implementation project(":components:support-utils")
+
+    implementation libs.androidx.appcompat
 
     testImplementation project(":components:support-test")
 
     testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

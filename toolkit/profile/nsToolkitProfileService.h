@@ -94,6 +94,7 @@ class nsToolkitProfileService final : public nsIToolkitProfileService {
                                 bool* aWasDefaultSelection);
   nsresult CreateResetProfile(nsIToolkitProfile** aNewProfile);
   nsresult ApplyResetProfile(nsIToolkitProfile* aOldProfile);
+  bool HasShowProfileSelector();
   void UpdateCurrentProfile();
   void CompleteStartup();
 

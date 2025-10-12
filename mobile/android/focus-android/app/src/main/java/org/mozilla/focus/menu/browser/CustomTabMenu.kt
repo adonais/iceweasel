@@ -21,6 +21,8 @@ import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
 import org.mozilla.focus.R
 import org.mozilla.focus.menu.ToolbarMenu
 import org.mozilla.focus.theme.resolveAttribute
+import androidx.appcompat.R as appcompatR
+import mozilla.components.ui.icons.R as iconsR
 
 class CustomTabMenu(
     private val context: Context,
@@ -42,7 +44,7 @@ class CustomTabMenu(
 
     override val menuToolbar by lazy {
         val back = BrowserMenuItemToolbar.TwoStateButton(
-            primaryImageResource = R.drawable.mozac_ic_back_24,
+            primaryImageResource = iconsR.drawable.mozac_ic_back_24,
             primaryContentDescription = context.getString(R.string.content_description_back),
             primaryImageTintResource = context.theme.resolveAttribute(R.attr.primaryText),
             isInPrimaryState = {
@@ -56,7 +58,7 @@ class CustomTabMenu(
         }
 
         val forward = BrowserMenuItemToolbar.TwoStateButton(
-            primaryImageResource = R.drawable.mozac_ic_forward_24,
+            primaryImageResource = iconsR.drawable.mozac_ic_forward_24,
             primaryContentDescription = context.getString(R.string.content_description_forward),
             primaryImageTintResource = context.theme.resolveAttribute(R.attr.primaryText),
             isInPrimaryState = {
@@ -70,13 +72,13 @@ class CustomTabMenu(
         }
 
         val refresh = BrowserMenuItemToolbar.TwoStateButton(
-            primaryImageResource = R.drawable.mozac_ic_arrow_clockwise_24,
+            primaryImageResource = iconsR.drawable.mozac_ic_arrow_clockwise_24,
             primaryContentDescription = context.getString(R.string.content_description_reload),
             primaryImageTintResource = context.theme.resolveAttribute(R.attr.primaryText),
             isInPrimaryState = {
                 selectedSession?.content?.loading == false
             },
-            secondaryImageResource = R.drawable.mozac_ic_stop,
+            secondaryImageResource = iconsR.drawable.mozac_ic_stop,
             secondaryContentDescription = context.getString(R.string.content_description_stop),
             secondaryImageTintResource = context.theme.resolveAttribute(R.attr.primaryText),
             disableInSecondaryState = false,
@@ -94,13 +96,13 @@ class CustomTabMenu(
     private val menuItems by lazy {
         val findInPage = BrowserMenuImageText(
             label = context.getString(R.string.find_in_page),
-            imageResource = R.drawable.mozac_ic_search_24,
+            imageResource = iconsR.drawable.mozac_ic_search_24,
         ) {
             onItemTapped.invoke(ToolbarMenu.CustomTabItem.FindInPage)
         }
 
         val desktopMode = BrowserMenuImageSwitch(
-            imageResource = R.drawable.mozac_ic_device_desktop_24,
+            imageResource = iconsR.drawable.mozac_ic_device_desktop_24,
             label = context.getString(R.string.preference_performance_request_desktop_site2),
             initialState = {
                 selectedSession?.content?.desktopMode != false
@@ -116,7 +118,7 @@ class CustomTabMenu(
 
         val addToHomescreen = BrowserMenuImageText(
             label = context.getString(R.string.menu_add_to_home_screen),
-            imageResource = R.drawable.mozac_ic_add_to_homescreen_24,
+            imageResource = iconsR.drawable.mozac_ic_add_to_homescreen_24,
         ) {
             onItemTapped.invoke(ToolbarMenu.CustomTabItem.AddToHomeScreen)
         }
@@ -155,7 +157,7 @@ class CustomTabMenu(
             ),
             textSize = CAPTION_TEXT_SIZE,
             textColorResource = context.theme.resolveAttribute(R.attr.secondaryText),
-            backgroundColorResource = context.theme.resolveAttribute(R.attr.colorPrimary),
+            backgroundColorResource = context.theme.resolveAttribute(appcompatR.attr.colorPrimary),
             textStyle = Typeface.NORMAL,
         )
 

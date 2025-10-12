@@ -157,7 +157,7 @@ bool IntegrityPolicyService::ShouldRequestBeBlocked(nsIURI* aContentLocation,
   // Our IntegrityPolicy struct contains both the enforcement and
   // report-only policies.
   RefPtr<IntegrityPolicy> policy = IntegrityPolicy::Cast(
-      PolicyContainer::Cast(policyContainer)->IntegrityPolicy());
+      PolicyContainer::Cast(policyContainer)->GetIntegrityPolicy());
   if (!policy) {
     // 7. If both policy and reportPolicy are empty integrity policy structs,
     // return "Allowed".

@@ -123,8 +123,7 @@ already_AddRefed<nsFormFillController> nsFormFillController::GetSingleton() {
 MOZ_CAN_RUN_SCRIPT_BOUNDARY
 void nsFormFillController::AttributeChanged(mozilla::dom::Element* aElement,
                                             int32_t aNameSpaceID,
-                                            nsAtom* aAttribute,
-                                            int32_t aModType,
+                                            nsAtom* aAttribute, AttrModType,
                                             const nsAttrValue* aOldValue) {
   if ((aAttribute == nsGkAtoms::type || aAttribute == nsGkAtoms::readonly ||
        aAttribute == nsGkAtoms::autocomplete) &&
@@ -194,23 +193,21 @@ void nsFormFillController::ContentWillBeRemoved(nsIContent* aChild,
 }
 
 void nsFormFillController::CharacterDataWillChange(
-    nsIContent* aContent, const CharacterDataChangeInfo&) {}
+    nsIContent*, const CharacterDataChangeInfo&) {}
 
 void nsFormFillController::CharacterDataChanged(
-    nsIContent* aContent, const CharacterDataChangeInfo&) {}
+    nsIContent*, const CharacterDataChangeInfo&) {}
 
-void nsFormFillController::AttributeWillChange(mozilla::dom::Element* aElement,
-                                               int32_t aNameSpaceID,
-                                               nsAtom* aAttribute,
-                                               int32_t aModType) {}
+void nsFormFillController::AttributeWillChange(mozilla::dom::Element*, int32_t,
+                                               nsAtom*, AttrModType) {}
 
-void nsFormFillController::ParentChainChanged(nsIContent* aContent) {}
+void nsFormFillController::ParentChainChanged(nsIContent*) {}
 
 void nsFormFillController::ARIAAttributeDefaultWillChange(
-    mozilla::dom::Element* aElement, nsAtom* aAttribute, int32_t aModType) {}
+    mozilla::dom::Element*, nsAtom*, AttrModType) {}
 
-void nsFormFillController::ARIAAttributeDefaultChanged(
-    mozilla::dom::Element* aElement, nsAtom* aAttribute, int32_t aModType) {}
+void nsFormFillController::ARIAAttributeDefaultChanged(mozilla::dom::Element*,
+                                                       nsAtom*, AttrModType) {}
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY
 void nsFormFillController::NodeWillBeDestroyed(nsINode* aNode) {
@@ -665,6 +662,9 @@ nsFormFillController::StopSearch() {
 
   return NS_OK;
 }
+
+NS_IMETHODIMP
+nsFormFillController::ResetSession() { return NS_OK; }
 
 ////////////////////////////////////////////////////////////////////////
 //// nsIFormFillCompleteObserver

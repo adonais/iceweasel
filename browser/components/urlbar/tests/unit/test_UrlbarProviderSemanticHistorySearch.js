@@ -49,7 +49,7 @@ add_task(async function setup() {
 });
 
 add_task(async function test_startQuery_adds_results() {
-  const provider = UrlbarProviderSemanticHistorySearch;
+  const provider = new UrlbarProviderSemanticHistorySearch();
 
   const queryContext = { searchString: "test page" };
 
@@ -101,7 +101,7 @@ add_task(async function test_startQuery_adds_results() {
 });
 
 add_task(async function test_isActive_conditions() {
-  const provider = UrlbarProviderSemanticHistorySearch;
+  const provider = new UrlbarProviderSemanticHistorySearch();
 
   // Stub canUseSemanticSearch to control the return value
   const canUseStub = sinon.stub(semanticManager, "canUseSemanticSearch");
@@ -190,7 +190,7 @@ add_task(async function test_switchTab() {
     false
   );
   await PlacesTestUtils.addVisits([url1, url2]);
-  const provider = UrlbarProviderSemanticHistorySearch;
+  const provider = new UrlbarProviderSemanticHistorySearch();
 
   // Trigger isActive() to initialize the semantic manager
   const queryContext = createContext("firefox", { isPrivate: false });

@@ -1462,6 +1462,7 @@ nsDefaultCommandLineHandler.prototype = {
     let allowPrivate = lazy.PrivateBrowsingUtils.permanentPrivateBrowsing;
     winForAction = lazy.BrowserWindowTracker.getTopWindow({
       private: allowPrivate,
+      allowFromInactiveWorkspace: true,
     });
 
     // Note: at time of writing `opaqueRelaunchData` was only used by the

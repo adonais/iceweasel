@@ -410,27 +410,6 @@
 #  define MOZ_INFALLIBLE_ALLOCATOR
 #endif
 
-/**
- * MOZ_MAYBE_UNUSED suppresses compiler warnings about functions that are
- * never called (in this build configuration, at least).
- *
- * Place this attribute at the very beginning of a function declaration. For
- * example, write
- *
- *   MOZ_MAYBE_UNUSED int foo();
- *
- * or
- *
- *   MOZ_MAYBE_UNUSED int foo() { return 42; }
- */
-#if defined(__GNUC__) || defined(__clang__)
-#  define MOZ_MAYBE_UNUSED __attribute__((__unused__))
-#elif defined(_MSC_VER)
-#  define MOZ_MAYBE_UNUSED __pragma(warning(suppress : 4505))
-#else
-#  define MOZ_MAYBE_UNUSED
-#endif
-
 /*
  * MOZ_NO_STACK_PROTECTOR, specified at the start of a function declaration,
  * indicates that the given function should *NOT* be instrumented to detect
@@ -514,6 +493,22 @@
 #  endif
 #else
 #  define MOZ_LIFETIME_CAPTURE_BY(x) /* nothing */
+#endif
+
+/**
+ * MOZ_STANDALONE_DEBUG causes complete debug information to be emitted
+ * for a record type when clang would otherwise try to elide some of it.
+ * This helps certain third party debugging tools introspect types.
+ * See: https://clang.llvm.org/docs/AttributeReference.html#standalone-debug
+ */
+#if defined(__clang__) && defined(__has_cpp_attribute)
+#  if __has_cpp_attribute(clang::standalone_debug)
+#    define MOZ_STANDALONE_DEBUG [[clang::standalone_debug]]
+#  else
+#    define MOZ_STANDALONE_DEBUG /* nothing */
+#  endif
+#else
+#  define MOZ_STANDALONE_DEBUG /* nothing */
 #endif
 
 #ifdef __cplusplus

@@ -67,7 +67,6 @@ add_task(async function test_newtab_tab_close_sends_ping() {
     Assert.ok(!Glean.topsites.sponsoredEnabled.testGetValue());
     Assert.ok(Glean.pocket.enabled.testGetValue());
     Assert.ok(Glean.pocket.sponsoredStoriesEnabled.testGetValue());
-    Assert.equal(false, Glean.pocket.isSignedIn.testGetValue());
   });
 
   BrowserTestUtils.removeTab(tab);
@@ -126,7 +125,6 @@ add_task(async function test_newtab_tab_nav_sends_ping() {
     Assert.ok(!Glean.topsites.sponsoredEnabled.testGetValue());
     Assert.ok(Glean.pocket.enabled.testGetValue());
     Assert.ok(Glean.pocket.sponsoredStoriesEnabled.testGetValue());
-    Assert.equal(false, Glean.pocket.isSignedIn.testGetValue());
   });
 
   BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:mozilla");

@@ -664,11 +664,10 @@ class LogModuleManager {
           using MS = MarkerSchema;
           MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
           schema.SetTableLabel("({marker.data.module}) {marker.data.name}");
-          schema.AddKeyLabelFormatSearchable("module", "Module",
-                                             MS::Format::String,
-                                             MS::Searchable::Searchable);
-          schema.AddKeyLabelFormatSearchable("name", "Name", MS::Format::String,
-                                             MS::Searchable::Searchable);
+          schema.AddKeyLabelFormat("module", "Module", MS::Format::String,
+                                   MS::PayloadFlags::Searchable);
+          schema.AddKeyLabelFormat("name", "Name", MS::Format::String,
+                                   MS::PayloadFlags::Searchable);
           return schema;
         }
       };

@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">אפשרויות נוספות</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">הפעלת גלישה פרטית</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">השבתת גלישה פרטית</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">גלישה פרטית</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">חיפוש או הכנסת כתובת</string>
@@ -293,10 +289,6 @@
   <string name="browser_menu_new_private_tab">לשונית פרטית חדשה</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">ססמאות</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">מעבר לתצוגה לניידים</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">סגירת התפריט הראשי</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">סגירת תפריט</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -341,8 +333,6 @@
   <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">לוקח כמה שניות. אפשר לשנות בכל עת.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">מהיר, פרטי ונוצר עבורך.</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">סגירה</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss_promotion">סגירת ההצעה</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -437,10 +427,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">הלשוניות שלך מסתנכרנות! אפשר להמשיך מאיפה שהפסקת משאר המכשירים שלך.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">סגירה</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -582,6 +570,30 @@
   <string name="onboarding_redesign_tou_body_three_link_text">ניהול הגדרות</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
   <string name="onboarding_redesign_tou_agree_and_continue_button_label">המשך</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">היכן ברצונך לראות את שורת הכתובת שלך?</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">המשך</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">עזרו לנו להצמיח את Firefox</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">שתפו כיצד גיליתם את Firefox וכי אתם משתמשים בו, עם שותפי הטכנולוגיה השיווקית של Mozilla. הנתונים האלה לעולם לא נמכרים.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">כיצד אנו משתמשים בנתונים</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">אישור</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title">קבלת הגנת מעקב אוטומטית כברירת מחדל</string>
+  <!-- Set to default browser onboarding redesign body. -->
+  <string name="onboarding_redesign_set_default_browser_body">הקשה אחת מסייעת לעצור חברות לרגל אחר הלחיצות שלך.</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">סנכרון בכל מקום בו Firefox משמש אותך</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body">קבלת סימניות, לשוניות וססמאות בכל מכשיר. הכל מוגן באמצעות הצפנה.</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button">התחלה בסנכרון</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">לא כעת</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">עזרו לנו להצמיח את Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -715,7 +727,8 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">שימוש בנעילת מסך כדי להסתיר לשוניות בגלישה פרטית</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">הצגת לשוניות באמצעות בטביעת האצבע שלך, קוד PIN או זיהוי פנים.</string>
+  <string name="preferences_pbm_lock_screen_summary_3">צפייה בלשוניות שלך באמצעות טביעת האצבע שלך, קוד PIN או זיהוי פנים. הפעלת אפשרות זו מונעת גם צילום ושיתוף מסך.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">הצגת לשוניות באמצעות בטביעת האצבע שלך, קוד PIN או זיהוי פנים.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">חוסם כרזות עוגיות</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -795,7 +808,9 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">התאמה אישית</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">יש להתחבר כדי לסנכרן את הלשוניות, הסימניות הססמאות ועוד.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">יש להתחבר כדי לסנכרן את הלשוניות, הסימניות הססמאות ועוד.</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">סנכרון לשוניות, סימניות, ססמאות ועוד.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">חשבון Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1167,12 +1182,8 @@
   <string name="preferences_daily_usage_ping_title">פינג שימוש יומי</string>
   <string name="preferences_daily_usage_ping_description">זה מסייע ל־Mozilla להעריך כמה יש משתמשים פעילים.</string>
   <string name="preferences_daily_usage_ping_learn_more">מידע נוסף על פינג שימוש יומי</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">שליחת דיווחי קריסה באופן אוטומטי</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">הדיווח נשלח</string>
-  <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">זה מסייע לנו לאבחן ולתקן בעיות בדפדפן. דיווחים עשויים לכלול נתונים אישיים או רגישים.</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
   <string name="preferences_crashes_learn_more">מידע נוסף על דיווחי קריסה</string>
   <!-- Title Headers for data collection settings screen -->
@@ -1192,8 +1203,6 @@
   <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">שתפו כיצד גיליתם את Firefox וכי אתם משתמשים בו, עם שותפי הטכנולוגיה השיווקית של Mozilla.</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">מידע נוסף על נתוני שיווק</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">מידע נוסף על דיווחי קריסה</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">מחקרים</string>
   <!-- Summary for studies preferences -->
@@ -1203,7 +1212,9 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">סנכרון ושמירת הנתונים שלך</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">סנכרון ושמירת הנתונים שלך</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">כניסה</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">יש להיכנס כדי להתחבר מחדש</string>
   <!-- Preference for removing FxA account -->
@@ -1352,6 +1363,8 @@
   <string name="close_tabs_after_one_month">אחרי חודש אחד</string>
   <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">סגירה אוטומטית של לשוניות פתוחות</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">סגירה</string>
   <!--
     Opening screen
 
@@ -1502,9 +1515,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">מחיקת היסטוריה</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">ההיסטוריה נמחקה</string>
+  <string name="history_delete_multiple_items_snackbar">ההיסטוריה נמחקה</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">נמחק %1$s</string>
+  <string name="history_delete_single_item_snackbar">נמחק %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">מחיקה</string>
   <!--
@@ -1675,8 +1688,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">דיווח על אתר שבור</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">ניתן לסייע להפוך את %1$s לטוב יותר עבור כולם. עובדי Mozilla משתמשים במידע שיישלח כדי לתקן בעיות באתרים.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">הדיווח שלך מסייע לנו להבין ולתקן בעיות ב־%1$s כדי לשפר אותו עבור כולם. מידע נוסף</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
@@ -1689,8 +1700,6 @@
   <string name="webcompat_reporter_url_error_invalid">נא להכניס כתובת חוקית</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">מה שבור או לא עובד?</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">בחירת סיבה</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">נא לבחור סיבה</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
@@ -1706,9 +1715,11 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">שליחה</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">הדיווח שלך נשלח</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">הדיווח שלך נשלח</string>
+  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
+  <string name="webcompat_reporter_success_snackbar_text_2">הדיווח נשלח</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">סגירה</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">סגירה</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">מה קרה? מה היה צריך לקרות?</string>
   <!--
@@ -1745,8 +1756,6 @@
   <string name="tab_crash_close">סגירת לשונית</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">שחזור לשונית</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">על %s היה להיות מופעל מחדש</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">‏%s קרס. לשלוח דיווח?</string>
   <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
@@ -1786,6 +1795,14 @@
   <string name="bookmark_add_folder">הוספת תיקייה</string>
   <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
   <string name="bookmark_saved_in_folder_snackbar">נשמר ב־״%s״</string>
+  <!-- Snackbar title describing failure to add a new folder -->
+  <string name="bookmark_error_add_folder">לא ניתן היה להוסיף תיקייה</string>
+  <!-- Snackbar title describing failure to edit an existing folder -->
+  <string name="bookmark_error_edit_folder">לא ניתן היה לערוך את התיקייה</string>
+  <!-- Snackbar title describing failure to select a new parent folder for a bookmark or folder -->
+  <string name="bookmark_error_select_folder">לא ניתן היה לשנות את תיקיית האב</string>
+  <!-- Snackbar title describing failure to edit a bookmark -->
+  <string name="bookmark_error_edit_bookmark">לא ניתן היה לערוך את הסימנייה</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">עריכה</string>
   <!-- Bookmark menu move button -->
@@ -1886,6 +1903,8 @@
   <string name="bookmark_close_button_content_description">סגירת סימניות</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">אין סימניות עדיין</string>
+  <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
+  <string name="bookmarks_folder_description">סימניות בתיקייה: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">ניתן לשמור אתרים תוך כדי גלישה. באפשרותך גם להתחבר כדי לקבל סימניות ממכשירים מסונכרנים אחרים.</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -2030,12 +2049,14 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">לשונית אחת נבחרה</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">הלשוניות נשמרו!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">האוסף נשמר!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">האוסף נשמר!</string>
+  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
+  <string name="create_collection_tabs_saved_new_collection_2">האוסף נשמר</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">הלשונית נשמרה!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">הלשונית נשמרה!</string>
+  <!-- Text shown in snackbar when one tab has been saved in a collection -->
+  <string name="create_collection_tab_saved_2">הלשונית נשמרה</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">סגירה</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -2082,7 +2103,9 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">התחברות אל Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">סנכרון ושמירת נתונים</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">סנכרון ושמירת נתונים</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">כניסה</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">שליחה לכל המכשירים</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2172,7 +2195,9 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">לשוניות שנסגרו: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">הסימניות נשמרו ב־״%s״!</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">הסימניות נשמרו ב־״%s״!</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in_2">הסימניות נשמרו ב־״%s״</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">נוסף לקיצורי הדרך!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -2200,8 +2225,6 @@
   <string name="tab_collection_dialog_message">האם ברצונך למחוק את %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">מחיקה</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">הקישור הועתק</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">זהו טקסט לדוגמה. זה כאן כדי להראות כיצד טקסט יוצג בעת הגדלה או הקטנת הגודל עם הגדרה זו.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2290,9 +2313,13 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">הלשוניות נשלחו!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">הלשוניות נשלחו!</string>
+  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
+  <string name="sync_sent_tabs_snackbar_2">הלשוניות נשלחו</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">הלשונית נשלחה!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">הלשונית נשלחה!</string>
+  <!-- Text shown in snackbar when one tab has been sent to device -->
+  <string name="sync_sent_tab_snackbar_2">הלשונית נשלחה</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">לא ניתן לשלוח</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2345,6 +2372,18 @@
   <string name="preference_enhanced_tracking_protection_allow_list_baseline">לאפשר ל־%1$s להחיל באופן אוטומטי חריגות הנדרשות כדי להימנע משבירה של אתרים.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience">להחיל באופן אוטומטי גם חריגות הנדרשות לתקן בעיות קלות ולהפוך תכונות נוחיות לזמינות.</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">האם ברצונך לכבות את התיקונים?</string>
+  <!-- Message for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">הגדרה זו מסייעת לתקן את בעיות האתרים הנפוצות ביותר. אם הגדרה זו תכובה, ייתכן שחלק מהאתרים לא יפעלו, ו־%1$s לא יוכל לסייע בפתרון בעיות אלו.</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">כיבוי התיקונים</string>
+  <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">להשאיר את התיקונים פעילים</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">מה נחסם על־ידי הגנת מעקב מחמירה</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2661,6 +2700,10 @@
   <string name="saved_login_hide_password">הסתרת ססמה</string>
   <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their passwords -->
   <string name="logins_biometric_prompt_message_2">יש לבטל את הנעילה כדי להציג את הססמאות השמורות שלך</string>
+  <!-- Button for unlocking logins on the biometric lock screen -->
+  <string name="logins_biometric_unlock_button">שחרור נעילה</string>
+  <!-- Button for leaving logins on the biometric lock screen -->
+  <string name="logins_biometric_leave_button">לעזוב</string>
   <!-- Title of warning dialog if users have no device authentication set up -->
   <string name="logins_warning_dialog_title_2">אבטחת הססמאות השמורות שלך</string>
   <!-- Message of warning dialog if users have no device authentication set up -->
@@ -2837,12 +2880,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">נא להקליד מחרוזת חיפוש</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">יש לבדוק שמחרוזת החיפוש תואמת לתבנית שבדוגמה</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">נוצר %s</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">נשמר %s</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">נמחק %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">כדי לאפשר את ההרשאה:</string>
   <!-- First step for the allowing a permission -->
@@ -2995,6 +3032,11 @@
     Title text displayed in the tabs tray when a tab has been unused for 14 days.
   -->
   <string name="inactive_tabs_title">לשוניות לא פעילות</string>
+  <!--
+    Text displayed in the tabs tray, indicating the number of inactive tabs.
+    %d is the number of inactive tabs.
+  -->
+  <string name="inactive_tabs_num_items">פריטים: %d</string>
   <!-- Content description for closing all inactive tabs -->
   <string name="inactive_tabs_delete_all">סגירת כל הלשוניות שאינן פעילות</string>
   <!-- Content description for expanding the inactive tabs section. -->
@@ -3338,12 +3380,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">מאובטח</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">לא מאובטח</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">יש להיזהר באתר זה</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">החיבור שלך אינו מאובטח.</string>
@@ -3368,11 +3406,7 @@
   <!-- Toggle if Enhanced Tracking Protection is turned off -->
   <string name="protection_panel_etp_toggle_off">כבוי</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">אם משהו נראה שבור באתר הזה, ניתן לנסות לכבות את ההגנות.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description_2">אם משהו נראה שבור באתר הזה, ניתן לנסות לכבות אותה.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">ההגנות כבויות. אנו מציעים להפעיל אותן מחדש.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description_2">מומלץ להפעיל את הגנת המעקב.</string>
   <!--
@@ -3384,8 +3418,6 @@
   <string name="protection_panel_no_trackers_blocked">לא נמצאו רכיבי מעקב</string>
   <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
   <string name="protection_panel_etp_disabled_no_trackers_blocked">רכיבי מעקב לא נחסמים</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">הגדרות פרטיות ואבטחה</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">הגדרות פרטיות</string>
   <!-- Title text for the protection panel permissions section. -->
@@ -3561,6 +3593,16 @@
   <string name="debug_drawer_add_new_address">הוספת כתובת חדשה עבור השפה הנבחרת</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">מחיקת כל הכתובות</string>
+  <!--
+    Debug drawer credit cards
+
+    The title of the credit cards feature in the Debug Drawer.
+  -->
+  <string name="debug_drawer_credit_cards_title">כרטיסי אשראי</string>
+  <!-- The title of the button in the debug drawer for adding a new credit card -->
+  <string name="debug_drawer_add_new_credit_card">הוספת כרטיס אשראי חדש</string>
+  <!-- The title of the button for deleting in the debug drawer all addresses. -->
+  <string name="debug_drawer_delete_all_credit_cards">מחיקת כל כרטיסי האשראי</string>
   <!--
     Debug drawer "contextual feature recommendation" (CFR) tools
 

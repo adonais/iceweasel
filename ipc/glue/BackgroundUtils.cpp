@@ -577,6 +577,7 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
       aLoadInfo->GetBrowserWouldUpgradeInsecureRequests(),
       aLoadInfo->GetForceAllowDataURI(),
       aLoadInfo->GetAllowInsecureRedirectToDataURI(),
+      aLoadInfo->GetForceMediaDocument(),
       aLoadInfo->GetSkipContentPolicyCheckForWebRequest(),
       aLoadInfo->GetOriginalFrameSrcLoad(),
       aLoadInfo->GetForceInheritPrincipalDropped(),
@@ -863,73 +864,26 @@ nsresult LoadInfoArgsToLoadInfo(const LoadInfoArgs& loadInfoArgs,
       policyContainerToInherit, triggeringRemoteType,
       loadInfoArgs.sandboxedNullPrincipalID(), clientInfo, reservedClientInfo,
       initialClientInfo, controller, loadInfoArgs.securityFlags(),
-      loadInfoArgs.sandboxFlags(), loadInfoArgs.triggeringSandboxFlags(),
-      loadInfoArgs.triggeringWindowId(), loadInfoArgs.triggeringStorageAccess(),
-      loadInfoArgs.triggeringFirstPartyClassificationFlags(),
-      loadInfoArgs.triggeringThirdPartyClassificationFlags(),
-      loadInfoArgs.contentPolicyType(),
+      loadInfoArgs.sandboxFlags(), loadInfoArgs.contentPolicyType(),
       static_cast<LoadTainting>(loadInfoArgs.tainting()),
-      loadInfoArgs.blockAllMixedContent(),
-      loadInfoArgs.upgradeInsecureRequests(),
-      loadInfoArgs.browserUpgradeInsecureRequests(),
-      loadInfoArgs.browserDidUpgradeInsecureRequests(),
-      loadInfoArgs.browserWouldUpgradeInsecureRequests(),
-      loadInfoArgs.forceAllowDataURI(),
-      loadInfoArgs.allowInsecureRedirectToDataURI(),
-      loadInfoArgs.skipContentPolicyCheckForWebRequest(),
-      loadInfoArgs.originalFrameSrcLoad(),
-      loadInfoArgs.forceInheritPrincipalDropped(), loadInfoArgs.innerWindowID(),
-      loadInfoArgs.browsingContextID(), loadInfoArgs.frameBrowsingContextID(),
-      loadInfoArgs.initialSecurityCheckDone(),
+
+#define DEFINE_ARGUMENT(_t, _n, name, _d) loadInfoArgs.name(),
+      LOADINFO_FOR_EACH_FIELD(DEFINE_ARGUMENT, LOADINFO_DUMMY_SETTER)
+#undef DEFINE_ARGUMENT
+
+          loadInfoArgs.initialSecurityCheckDone(),
       loadInfoArgs.isInThirdPartyContext(), isThirdPartyContextToTopWindow,
-      loadInfoArgs.isOn3PCBExceptionList(), loadInfoArgs.isFormSubmission(),
-      loadInfoArgs.isGETRequest(), loadInfoArgs.sendCSPViolationEvents(),
       loadInfoArgs.originAttributes(),
       std::move(redirectChainIncludingInternalRedirects),
       std::move(redirectChain), std::move(ancestorPrincipals),
       ancestorBrowsingContextIDs, loadInfoArgs.corsUnsafeHeaders(),
-      loadInfoArgs.forcePreflight(), loadInfoArgs.isPreflight(),
-      loadInfoArgs.loadTriggeredFromExternal(),
-      loadInfoArgs.serviceWorkerTaintingSynthesized(),
-      loadInfoArgs.documentHasUserInteracted(),
-      loadInfoArgs.allowListFutureDocumentsCreatedFromThisRedirectChain(),
-      loadInfoArgs.needForCheckingAntiTrackingHeuristic(),
-      loadInfoArgs.cspNonce(), loadInfoArgs.integrityMetadata(),
-      loadInfoArgs.skipContentSniffing(), loadInfoArgs.httpsOnlyStatus(),
-      loadInfoArgs.hstsStatus(), loadInfoArgs.hasValidUserGestureActivation(),
-      loadInfoArgs.textDirectiveUserActivation(),
+      loadInfoArgs.loadTriggeredFromExternal(), loadInfoArgs.cspNonce(),
+      loadInfoArgs.integrityMetadata(),
       // This function is only called for moving LoadInfo across processes.
       // Same-document navigation won't cross process boundaries.
-      /* aIsSameDocumentNavigation */ false,
-      loadInfoArgs.allowDeprecatedSystemRequests(),
-      loadInfoArgs.isInDevToolsContext(), loadInfoArgs.parserCreatedScript(),
-      loadInfoArgs.requestMode(), loadInfoArgs.storagePermission(),
-      loadInfoArgs.parentIPAddressSpace(), loadInfoArgs.ipAddressSpace(),
-      overriddenFingerprintingSettings, loadInfoArgs.isMetaRefresh(),
-      loadInfoArgs.requestBlockingReason(), loadingContext,
-      loadInfoArgs.loadingEmbedderPolicy(),
-      loadInfoArgs.originTrialCoepCredentiallessEnabledForTopLevel(),
-      loadInfoArgs.unstrippedURI(), interceptionInfo,
-      loadInfoArgs.hasInjectedCookieForCookieBannerHandling(),
-      loadInfoArgs.schemelessInput(), loadInfoArgs.httpsUpgradeTelemetry(),
-      loadInfoArgs.isNewWindowTarget(),
-      loadInfoArgs.userNavigationInvolvement());
-
-  if (loadInfoArgs.isFromProcessingFrameAttributes()) {
-    loadInfo->SetIsFromProcessingFrameAttributes();
-  }
-
-  if (loadInfoArgs.isMediaRequest()) {
-    loadInfo->SetIsMediaRequest(true);
-
-    if (loadInfoArgs.isMediaInitialRequest()) {
-      loadInfo->SetIsMediaInitialRequest(true);
-    }
-  }
-
-  if (loadInfoArgs.isFromObjectOrEmbed()) {
-    loadInfo->SetIsFromObjectOrEmbed(true);
-  }
+      /* aIsSameDocumentNavigation */ false, overriddenFingerprintingSettings,
+      loadingContext, loadInfoArgs.unstrippedURI(), interceptionInfo,
+      loadInfoArgs.schemelessInput(), loadInfoArgs.userNavigationInvolvement());
 
   loadInfo.forget(outLoadInfo);
   return NS_OK;

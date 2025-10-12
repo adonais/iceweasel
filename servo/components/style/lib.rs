@@ -49,7 +49,7 @@ extern crate malloc_size_of;
 extern crate malloc_size_of_derive;
 #[cfg(feature = "servo")]
 #[macro_use]
-extern crate markup5ever;
+extern crate web_atoms;
 #[allow(unused_extern_crates)]
 #[macro_use]
 extern crate matches;
@@ -78,11 +78,7 @@ extern crate to_shmem_derive;
 #[macro_use]
 mod macros;
 
-pub mod animation;
 pub mod applicable_declarations;
-#[allow(missing_docs)] // TODO.
-#[cfg(feature = "servo")]
-pub mod attr;
 pub mod author_styles;
 pub mod bezier;
 pub mod bloom;
@@ -97,8 +93,6 @@ pub mod data;
 pub mod dom;
 pub mod dom_apis;
 pub mod driver;
-#[cfg(feature = "servo")]
-mod encoding_support;
 pub mod error_reporting;
 pub mod font_face;
 pub mod font_metrics;
@@ -159,13 +153,13 @@ pub use stylo_atoms::Atom;
 
 #[cfg(feature = "servo")]
 #[allow(missing_docs)]
-pub type LocalName = crate::values::GenericAtomIdent<markup5ever::LocalNameStaticSet>;
+pub type LocalName = crate::values::GenericAtomIdent<web_atoms::LocalNameStaticSet>;
 #[cfg(feature = "servo")]
 #[allow(missing_docs)]
-pub type Namespace = crate::values::GenericAtomIdent<markup5ever::NamespaceStaticSet>;
+pub type Namespace = crate::values::GenericAtomIdent<web_atoms::NamespaceStaticSet>;
 #[cfg(feature = "servo")]
 #[allow(missing_docs)]
-pub type Prefix = crate::values::GenericAtomIdent<markup5ever::PrefixStaticSet>;
+pub type Prefix = crate::values::GenericAtomIdent<web_atoms::PrefixStaticSet>;
 
 pub use style_traits::arc_slice::ArcSlice;
 pub use style_traits::owned_slice::OwnedSlice;
@@ -184,6 +178,8 @@ pub mod gecko;
 #[cfg(feature = "servo")]
 #[allow(unsafe_code)]
 pub mod servo;
+#[cfg(feature = "servo")]
+pub use servo::{animation, attr};
 
 macro_rules! reexport_computed_values {
     ( $( { $name: ident } )+ ) => {

@@ -42,7 +42,7 @@ class nsVideoFrame : public nsContainerFrame,
                         const nsDisplayListSet& aLists) final;
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) final;
+                            AttrModType aModType) final;
 
   void OnVisibilityChange(
       Visibility aNewVisibility,

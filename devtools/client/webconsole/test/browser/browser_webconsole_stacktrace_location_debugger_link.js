@@ -20,11 +20,12 @@ add_task(async function () {
   const hud = await openNewTabAndConsole(TEST_URI);
   const toolbox = gDevTools.getToolboxForTab(gBrowser.selectedTab);
 
-  await testOpenFrameInDebugger(hud, toolbox, "console.trace()");
-  await testOpenFrameInDebugger(hud, toolbox, "myErrorObject");
+  await testOpenFrameInDebugger(hud, toolbox, "console.trace()", 3);
+  await testOpenFrameInDebugger(hud, toolbox, "myErrorObject", 3);
+  await testOpenFrameInDebugger(hud, toolbox, "customSourceURL", 4);
 });
 
-async function testOpenFrameInDebugger(hud, toolbox, text) {
+async function testOpenFrameInDebugger(hud, toolbox, text, frameCount) {
   info(`Testing message with text "${text}"`);
   const messageNode = await waitFor(() => findConsoleAPIMessage(hud, text));
   const framesNode = await waitFor(() => messageNode.querySelector(".frames"));
@@ -32,7 +33,7 @@ async function testOpenFrameInDebugger(hud, toolbox, text) {
   const frameNodes = framesNode.querySelectorAll(".frame");
   is(
     frameNodes.length,
-    3,
+    frameCount,
     "The message does have the expected number of frames in the stacktrace"
   );
 
@@ -57,7 +58,8 @@ async function checkMousedownOnNode(hud, toolbox, frameNode) {
   const dbg = toolbox.getPanel("jsdebugger");
   is(
     dbg._selectors.getSelectedSource(dbg._getState()).url,
-    url,
+    // The customSourceURL isn't resolved whereas it will be in the debugger
+    URL.parse(url).href,
     `Debugger is opened at expected source url (${url})`
   );
 }

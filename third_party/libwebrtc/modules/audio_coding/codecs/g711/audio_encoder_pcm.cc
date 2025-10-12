@@ -10,15 +10,23 @@
 
 #include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 
+#include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <utility>
 
+#include "api/array_view.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "api/units/time_delta.h"
 #include "modules/audio_coding/codecs/g711/g711_interface.h"
+#include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
 
 bool AudioEncoderPcm::Config::IsOk() const {
-  return (frame_size_ms % 10 == 0) && (num_channels >= 1);
+  return (frame_size_ms % 10 == 0) && (num_channels >= 1) &&
+         (num_channels <= AudioEncoder::kMaxNumberOfChannels);
 }
 
 AudioEncoderPcm::AudioEncoderPcm(const Config& config, int sample_rate_hz)

@@ -12,7 +12,7 @@
   appearance: none;
   margin: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   background-color: var(--button-background-color);
   color: var(--button-text-color);
   font-weight: 600;
@@ -96,7 +96,7 @@
   min-height: 32px;
   color: var(--button-text-color);
   background-color: var(--button-background-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 
   &:hover {
     background-color: var(--button-background-color-hover);

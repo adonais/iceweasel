@@ -12,7 +12,7 @@
 
 .sidebar-fixed-item__container {
   align-items: center;
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   display: grid;
   grid-template-columns: 34px 1fr;
   height: 100%;

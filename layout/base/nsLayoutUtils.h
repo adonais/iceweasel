@@ -1102,7 +1102,7 @@ class nsLayoutUtils {
    * smaller rect than necessary.
    */
   static nsRegion RoundedRectIntersectRect(const nsRect& aRoundedRect,
-                                           const nscoord aRadii[8],
+                                           const nsRectCornerRadii&,
                                            const nsRect& aContainedRect);
   static nsIntRegion RoundedRectIntersectIntRect(
       const nsIntRect& aRoundedRect, const RectCornerRadii& aCornerRadii,
@@ -1114,7 +1114,7 @@ class nsLayoutUtils {
    * enum HalfCorner constants in gfx/2d/Types.h). This is precise.
    */
   static bool RoundedRectIntersectsRect(const nsRect& aRoundedRect,
-                                        const nscoord aRadii[8],
+                                        const nsRectCornerRadii&,
                                         const nsRect& aTestRect);
 
   enum class PaintFrameFlags : uint32_t {

@@ -100,8 +100,6 @@ void CodeGenerator::visitAtomicExchangeTypedArrayElement64(
 void CodeGenerator::visitEffectiveAddress(LEffectiveAddress* ins) {
   MOZ_CRASH();
 }
-void CodeGenerator::visitNearbyInt(LNearbyInt*) { MOZ_CRASH(); }
-void CodeGenerator::visitNearbyIntF(LNearbyIntF*) { MOZ_CRASH(); }
 void CodeGenerator::visitWasmSelectI64(LWasmSelectI64* lir) { MOZ_CRASH(); }
 void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   MOZ_CRASH();

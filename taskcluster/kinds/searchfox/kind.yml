@@ -31,6 +31,10 @@ task-defaults:
     run:
         extra-config:
             max_build_output_timeout: 3600
+    worker-type: b-linux-gcp
+    worker:
+        env:
+            MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
 
 tasks:
     linux64-searchfox/debug:
@@ -39,7 +43,6 @@ tasks:
             job-name: linux64-searchfox-debug
         treeherder:
             platform: linux64/debug
-        worker-type: b-linux-gcp
         worker:
             max-run-time: 10800
             env:
@@ -72,7 +75,6 @@ tasks:
             job-name: macosx64-searchfox-debug
         treeherder:
             platform: osx-cross/debug
-        worker-type: b-linux-gcp
         worker:
             max-run-time: 10800
             env:
@@ -108,7 +110,6 @@ tasks:
             job-name: macosx64-aarch64-searchfox-debug
         treeherder:
             platform: osx-cross-aarch64/debug
-        worker-type: b-linux-gcp
         worker:
             max-run-time: 10800
             env:
@@ -147,7 +148,6 @@ tasks:
             job-name: ios-searchfox-debug
         treeherder:
             platform: ios/debug
-        worker-type: b-linux-gcp
         worker:
             max-run-time: 10800
             env:
@@ -188,7 +188,6 @@ tasks:
             job-name: win64-searchfox-debug
         treeherder:
             platform: windows2012-64/debug
-        worker-type: b-linux-gcp
         worker:
             max-run-time: 10800
             env:
@@ -221,10 +220,10 @@ tasks:
                 - sysroot-x86_64-linux-gnu
                 - sysroot-wasm32-wasi
                 - vs
-                - windows-rs
                 - dxc-x86_64-pc-windows-msvc
             fetch:
                 - upx-3.95-win
+                - windows-rs
 
     android-aarch64-searchfox/debug:
         description: "Android 5.0 AArch64 Debug Searchfox"
@@ -232,7 +231,6 @@ tasks:
             job-name: android-aarch64-searchfox-debug
         treeherder:
             platform: android-5-0-aarch64/debug
-        worker-type: b-linux-gcp
         worker:
             docker-image: {in-tree: android-build}
             max-run-time: 14400

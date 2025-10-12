@@ -318,7 +318,7 @@ nsresult nsPingListener::StartTimeout(DocGroup* aDocGroup) {
 
   return NS_NewTimerWithFuncCallback(
       getter_AddRefs(mTimer), OnPingTimeout, mLoadGroup, PING_TIMEOUT,
-      nsITimer::TYPE_ONE_SHOT, "nsPingListener::StartTimeout",
+      nsITimer::TYPE_ONE_SHOT, "nsPingListener::StartTimeout"_ns,
       GetMainThreadSerialEventTarget());
 }
 

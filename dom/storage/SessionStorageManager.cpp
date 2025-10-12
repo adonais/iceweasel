@@ -939,7 +939,7 @@ void BackgroundSessionStorageManager::MaybeScheduleSessionStoreUpdate() {
       },
       this, StaticPrefs::browser_sessionstore_interval(),
       nsITimer::TYPE_ONE_SHOT,
-      "BackgroundSessionStorageManager::DispatchSessionStoreUpdate");
+      "BackgroundSessionStorageManager::DispatchSessionStoreUpdate"_ns);
 
   if (result.isErr()) {
     return;

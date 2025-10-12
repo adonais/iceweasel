@@ -1,6 +1,5 @@
 [DEFAULT]
 support-files = [
-  "MutationEventChecker.js",
   "a_href_destination.svg",
   "a_href_helper_01.svg",
   "a_href_helper_02_03.svg",
@@ -80,8 +79,6 @@ support-files = [
 ["test_bug1426594.html"]
 
 ["test_dataTypes.html"]
-
-["test_dataTypesModEvents.html"]
 
 ["test_dynamic-move-under-mouse.html"]
 

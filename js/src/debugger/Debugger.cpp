@@ -3858,51 +3858,55 @@ bool DebugAPI::edgeIsInDebuggerWeakmap(JSRuntime* rt, JSObject* src,
       // the key from the source object and check everything matches.
       AbstractGeneratorObject* genObj = &frame->unwrappedGenerator();
       return frame->generatorScript() == &dst.as<BaseScript>() &&
-             dbg->generatorFrames.hasEntry(genObj, src);
+             dbg->generatorFrames.hasEntry(genObj, frame);
     }
     return dst.is<JSObject>() &&
            dst.as<JSObject>().is<AbstractGeneratorObject>() &&
            dbg->generatorFrames.hasEntry(
-               &dst.as<JSObject>().as<AbstractGeneratorObject>(), src);
+               &dst.as<JSObject>().as<AbstractGeneratorObject>(), frame);
   }
   if (src->is<DebuggerObject>()) {
-    Debugger* dbg = src->as<DebuggerObject>().owner();
+    DebuggerObject* dobj = &src->as<DebuggerObject>();
+    Debugger* dbg = dobj->owner();
     MOZ_ASSERT(RuntimeHasDebugger(rt, dbg));
     return dst.is<JSObject>() &&
-           dbg->objects.hasEntry(&dst.as<JSObject>(), src);
+           dbg->objects.hasEntry(&dst.as<JSObject>(), dobj);
   }
   if (src->is<DebuggerEnvironment>()) {
-    Debugger* dbg = src->as<DebuggerEnvironment>().owner();
+    DebuggerEnvironment* denv = &src->as<DebuggerEnvironment>();
+    Debugger* dbg = denv->owner();
     MOZ_ASSERT(RuntimeHasDebugger(rt, dbg));
     return dst.is<JSObject>() &&
-           dbg->environments.hasEntry(&dst.as<JSObject>(), src);
+           dbg->environments.hasEntry(&dst.as<JSObject>(), denv);
   }
   if (src->is<DebuggerScript>()) {
-    Debugger* dbg = src->as<DebuggerScript>().owner();
+    DebuggerScript* dscript = &src->as<DebuggerScript>();
+    Debugger* dbg = dscript->owner();
     MOZ_ASSERT(RuntimeHasDebugger(rt, dbg));
 
     return src->as<DebuggerScript>().getReferent().match(
         [=](BaseScript* script) {
           return dst.is<BaseScript>() && script == &dst.as<BaseScript>() &&
-                 dbg->scripts.hasEntry(script, src);
+                 dbg->scripts.hasEntry(script, dscript);
         },
         [=](WasmInstanceObject* instance) {
           return dst.is<JSObject>() && instance == &dst.as<JSObject>() &&
-                 dbg->wasmInstanceScripts.hasEntry(instance, src);
+                 dbg->wasmInstanceScripts.hasEntry(instance, dscript);
         });
   }
   if (src->is<DebuggerSource>()) {
-    Debugger* dbg = src->as<DebuggerSource>().owner();
+    DebuggerSource* dsource = &src->as<DebuggerSource>();
+    Debugger* dbg = dsource->owner();
     MOZ_ASSERT(RuntimeHasDebugger(rt, dbg));
 
     return src->as<DebuggerSource>().getReferent().match(
         [=](ScriptSourceObject* sso) {
           return dst.is<JSObject>() && sso == &dst.as<JSObject>() &&
-                 dbg->sources.hasEntry(sso, src);
+                 dbg->sources.hasEntry(sso, dsource);
         },
         [=](WasmInstanceObject* instance) {
           return dst.is<JSObject>() && instance == &dst.as<JSObject>() &&
-                 dbg->wasmInstanceSources.hasEntry(instance, src);
+                 dbg->wasmInstanceSources.hasEntry(instance, dsource);
         });
   }
   MOZ_ASSERT_UNREACHABLE("Unhandled cross-compartment edge");

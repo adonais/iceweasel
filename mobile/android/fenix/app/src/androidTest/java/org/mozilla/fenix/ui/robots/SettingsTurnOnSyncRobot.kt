@@ -48,7 +48,7 @@ class SettingsTurnOnSyncRobot {
         onView(
             allOf(
                 withParent(withId(R.id.navigationToolbar)),
-                withText(R.string.preferences_sync_2),
+                withText(R.string.preferences_sign_in),
             ),
         ).check(matches(isDisplayed()))
         Log.i(TAG, "verifyTurnOnSyncToolbarTitle: Verified that the \"Sync and save your data\" toolbar title is displayed")

@@ -763,7 +763,7 @@ void nsWindowMemoryReporter::AsyncCheckForGhostWindows() {
   NS_NewTimerWithFuncCallback(
       getter_AddRefs(mCheckTimer), CheckTimerFired, nullptr, timerDelay,
       nsITimer::TYPE_ONE_SHOT,
-      "nsWindowMemoryReporter::AsyncCheckForGhostWindows_timer");
+      "nsWindowMemoryReporter::AsyncCheckForGhostWindows_timer"_ns);
 }
 
 void nsWindowMemoryReporter::ObserveAfterMinimizeMemoryUsage() {

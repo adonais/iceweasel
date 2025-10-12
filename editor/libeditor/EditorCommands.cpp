@@ -37,43 +37,18 @@ using detail::Any;
  * mozilla::EditorCommand
  ******************************************************************************/
 
-NS_IMPL_ISUPPORTS(EditorCommand, nsIControllerCommand)
-
-NS_IMETHODIMP EditorCommand::IsCommandEnabled(const char* aCommandName,
-                                              nsISupports* aCommandRefCon,
-                                              bool* aIsEnabled) {
-  if (NS_WARN_IF(!aCommandName) || NS_WARN_IF(!aIsEnabled)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
+bool EditorCommand::IsCommandEnabled(const nsACString& aCommandName,
+                                     nsISupports* aCommandRefCon) {
   nsCOMPtr<nsIEditor> editor = do_QueryInterface(aCommandRefCon);
   EditorBase* editorBase = editor ? editor->AsEditorBase() : nullptr;
-  *aIsEnabled = IsCommandEnabled(GetInternalCommand(aCommandName),
-                                 MOZ_KnownLive(editorBase));
-  return NS_OK;
+  return IsCommandEnabled(GetInternalCommand(aCommandName),
+                          MOZ_KnownLive(editorBase));
 }
 
-NS_IMETHODIMP EditorCommand::DoCommand(const char* aCommandName,
-                                       nsISupports* aCommandRefCon) {
-  if (NS_WARN_IF(!aCommandName) || NS_WARN_IF(!aCommandRefCon)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  nsCOMPtr<nsIEditor> editor = do_QueryInterface(aCommandRefCon);
-  if (NS_WARN_IF(!editor)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  nsresult rv = DoCommand(GetInternalCommand(aCommandName),
-                          MOZ_KnownLive(*editor->AsEditorBase()), nullptr);
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rv),
-      "Failed to do command from nsIControllerCommand::DoCommand()");
-  return rv;
-}
-
-NS_IMETHODIMP EditorCommand::DoCommandParams(const char* aCommandName,
-                                             nsICommandParams* aParams,
-                                             nsISupports* aCommandRefCon) {
-  if (NS_WARN_IF(!aCommandName) || NS_WARN_IF(!aCommandRefCon)) {
+nsresult EditorCommand::DoCommand(const nsACString& aCommandName,
+                                  nsICommandParams* aParams,
+                                  nsISupports* aCommandRefCon) {
+  if (NS_WARN_IF(!aCommandRefCon)) {
     return NS_ERROR_INVALID_ARG;
   }
   nsCOMPtr<nsIEditor> editor = do_QueryInterface(aCommandRefCon);
@@ -233,29 +208,21 @@ NS_IMETHODIMP EditorCommand::DoCommandParams(const char* aCommandName,
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-NS_IMETHODIMP EditorCommand::GetCommandStateParams(
-    const char* aCommandName, nsICommandParams* aParams,
-    nsISupports* aCommandRefCon) {
-  if (NS_WARN_IF(!aCommandName) || NS_WARN_IF(!aParams)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-  nsCOMPtr<nsIEditor> editor = do_QueryInterface(aCommandRefCon);
-  if (editor) {
-    return GetCommandStateParams(GetInternalCommand(aCommandName),
-                                 MOZ_KnownLive(*aParams->AsCommandParams()),
-                                 MOZ_KnownLive(editor->AsEditorBase()),
-                                 nullptr);
+void EditorCommand::GetCommandStateParams(const nsACString& aCommandName,
+                                          nsICommandParams* aParams,
+                                          nsISupports* aCommandRefCon) {
+  MOZ_ASSERT(aParams);
+  if (nsCOMPtr<nsIEditor> editor = do_QueryInterface(aCommandRefCon)) {
+    GetCommandStateParams(GetInternalCommand(aCommandName),
+                          MOZ_KnownLive(*aParams->AsCommandParams()),
+                          MOZ_KnownLive(editor->AsEditorBase()), nullptr);
+    return;
   }
   nsCOMPtr<nsIEditingSession> editingSession =
       do_QueryInterface(aCommandRefCon);
-  if (editingSession) {
-    return GetCommandStateParams(GetInternalCommand(aCommandName),
-                                 MOZ_KnownLive(*aParams->AsCommandParams()),
-                                 nullptr, editingSession);
-  }
-  return GetCommandStateParams(GetInternalCommand(aCommandName),
-                               MOZ_KnownLive(*aParams->AsCommandParams()),
-                               nullptr, nullptr);
+  GetCommandStateParams(GetInternalCommand(aCommandName),
+                        MOZ_KnownLive(*aParams->AsCommandParams()), nullptr,
+                        editingSession);
 }
 
 /******************************************************************************

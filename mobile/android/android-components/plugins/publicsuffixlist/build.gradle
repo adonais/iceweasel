@@ -20,8 +20,8 @@ repositories {
 }
 
 dependencies {
-    implementation libs.thirdparty.okhttp
-    implementation libs.thirdparty.okio
+    implementation libs.okhttp
+    implementation libs.okio
 }
 
 gradlePlugin {

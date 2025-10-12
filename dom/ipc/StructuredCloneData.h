@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "nsIInputStream.h"
 #include "nsISupportsImpl.h"
@@ -140,19 +141,23 @@ class StructuredCloneData : public StructuredCloneHolder {
  public:
   StructuredCloneData();
 
+  // StructuredCloneData is a large data structure, so don't let it be
+  // implicitly copied.
   StructuredCloneData(const StructuredCloneData&) = delete;
+  StructuredCloneData& operator=(const StructuredCloneData& aOther) = delete;
 
-  StructuredCloneData(StructuredCloneData&& aOther);
+  // It would be safe to define a move operator for StructuredCloneData, unlike
+  // for the parent classes, but the large number of arrays for storing extra
+  // DOM data mean that it would fragile. Instead, use
+  // UniquePtr<StructuredCloneData> to pass around SCDs without copying.
+  StructuredCloneData(StructuredCloneData&& aOther) = delete;
+  StructuredCloneData& operator=(StructuredCloneData&& aOther) = delete;
 
   // Only DifferentProcess and UnknownDestination scopes are supported.
   StructuredCloneData(StructuredCloneScope aScope,
                       TransferringSupport aSupportsTransferring);
 
   ~StructuredCloneData();
-
-  StructuredCloneData& operator=(const StructuredCloneData& aOther) = delete;
-
-  StructuredCloneData& operator=(StructuredCloneData&& aOther);
 
   const nsTArray<RefPtr<BlobImpl>>& BlobImpls() const { return mBlobImplArray; }
 

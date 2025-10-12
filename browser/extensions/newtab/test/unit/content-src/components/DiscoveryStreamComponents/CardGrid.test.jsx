@@ -2,14 +2,12 @@ import {
   _CardGrid as CardGrid,
   // eslint-disable-next-line no-shadow
   IntersectionObserver,
-  OnboardingExperience,
 } from "content-src/components/DiscoveryStreamComponents/CardGrid/CardGrid";
 import { combineReducers, createStore } from "redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { Provider } from "react-redux";
 import { DSCard } from "content-src/components/DiscoveryStreamComponents/DSCard/DSCard";
 import { TopicsWidget } from "content-src/components/DiscoveryStreamComponents/TopicsWidget/TopicsWidget";
-import { actionCreators as ac } from "common/Actions.mjs";
 import React from "react";
 import { shallow, mount } from "enzyme";
 
@@ -280,85 +278,5 @@ describe("<IntersectionObserver>", () => {
       />
     );
     assert.calledOnce(onIntersecting);
-  });
-});
-
-describe("<OnboardingExperience>", () => {
-  let wrapper;
-  let fakeWindow;
-  let intersectEntries;
-  let dispatch;
-  let resizeCallback;
-
-  let fakeResizeObserver = class {
-    constructor(callback) {
-      resizeCallback = callback;
-    }
-
-    observe() {}
-
-    unobserve() {}
-
-    disconnect() {}
-  };
-
-  beforeEach(() => {
-    dispatch = sinon.stub();
-    intersectEntries = [{ isIntersecting: true, intersectionRatio: 1 }];
-    fakeWindow = {
-      ResizeObserver: fakeResizeObserver,
-      IntersectionObserver: buildIntersectionObserver(intersectEntries),
-      document: {
-        visibilityState: "visible",
-        addEventListener: () => {},
-        removeEventListener: () => {},
-      },
-    };
-    wrapper = mount(
-      <WrapWithProvider state={{}}>
-        <OnboardingExperience windowObj={fakeWindow} dispatch={dispatch} />
-      </WrapWithProvider>
-    ).find(OnboardingExperience);
-  });
-
-  it("should render a ds-onboarding", () => {
-    assert.ok(wrapper.exists());
-    assert.lengthOf(wrapper.find(".ds-onboarding"), 1);
-  });
-
-  it("should dismiss on dismiss click", () => {
-    wrapper.find(".ds-dismiss-button").simulate("click");
-
-    assert.calledWith(
-      dispatch,
-      ac.DiscoveryStreamUserEvent({
-        event: "BLOCK",
-        source: "POCKET_ONBOARDING",
-      })
-    );
-    assert.calledWith(
-      dispatch,
-      ac.SetPref("discoverystream.onboardingExperience.dismissed", true)
-    );
-    assert.equal(wrapper.getDOMNode().style["max-height"], "0px");
-    assert.equal(wrapper.getDOMNode().style.opacity, "0");
-  });
-
-  it("should update max-height on resize", () => {
-    sinon
-      .stub(wrapper.find(".ds-onboarding-ref").getDOMNode(), "offsetHeight")
-      .get(() => 123);
-    resizeCallback();
-    assert.equal(wrapper.getDOMNode().style["max-height"], "123px");
-  });
-
-  it("should fire intersection events", () => {
-    assert.calledWith(
-      dispatch,
-      ac.DiscoveryStreamUserEvent({
-        event: "IMPRESSION",
-        source: "POCKET_ONBOARDING",
-      })
-    );
   });
 });

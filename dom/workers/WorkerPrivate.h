@@ -9,6 +9,7 @@
 
 #include <bitset>
 
+#include "FontVisibilityProvider.h"
 #include "MainThreadUtils.h"
 #include "ScriptLoader.h"
 #include "js/ContextOptions.h"
@@ -147,7 +148,8 @@ nsString ComputeWorkerPrivateId();
 
 class WorkerPrivate final
     : public RelativeTimeline,
-      public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {
+      public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>>,
+      public FontVisibilityProvider {
  public:
   // Callback invoked on the parent thread when the worker's cancellation is
   // about to be requested.  This covers both calls to
@@ -234,6 +236,8 @@ class WorkerPrivate final
   };
 
   NS_INLINE_DECL_REFCOUNTING(WorkerPrivate)
+
+  FONT_VISIBILITY_PROVIDER_IMPL
 
   static already_AddRefed<WorkerPrivate> Constructor(
       JSContext* aCx, const nsAString& aScriptURL, bool aIsChromeWorker,
@@ -617,23 +621,26 @@ class WorkerPrivate final
   nsISerialEventTarget* MainThreadEventTargetForMessaging();
 
   nsresult DispatchToMainThreadForMessaging(
-      nsIRunnable* aRunnable, uint32_t aFlags = NS_DISPATCH_NORMAL);
+      nsIRunnable* aRunnable,
+      nsIEventTarget::DispatchFlags aFlags = NS_DISPATCH_NORMAL);
 
   nsresult DispatchToMainThreadForMessaging(
       already_AddRefed<nsIRunnable> aRunnable,
-      uint32_t aFlags = NS_DISPATCH_NORMAL);
+      nsIEventTarget::DispatchFlags aFlags = NS_DISPATCH_NORMAL);
 
   nsISerialEventTarget* MainThreadEventTarget();
 
-  nsresult DispatchToMainThread(nsIRunnable* aRunnable,
-                                uint32_t aFlags = NS_DISPATCH_NORMAL);
+  nsresult DispatchToMainThread(
+      nsIRunnable* aRunnable,
+      nsIEventTarget::DispatchFlags aFlags = NS_DISPATCH_NORMAL);
 
-  nsresult DispatchToMainThread(already_AddRefed<nsIRunnable> aRunnable,
-                                uint32_t aFlags = NS_DISPATCH_NORMAL);
+  nsresult DispatchToMainThread(
+      already_AddRefed<nsIRunnable> aRunnable,
+      nsIEventTarget::DispatchFlags aFlags = NS_DISPATCH_NORMAL);
 
   nsresult DispatchDebuggeeToMainThread(
       already_AddRefed<WorkerRunnable> aRunnable,
-      uint32_t aFlags = NS_DISPATCH_NORMAL);
+      nsIEventTarget::DispatchFlags aFlags = NS_DISPATCH_NORMAL);
 
   // Get an event target that will dispatch runnables as control runnables on
   // the worker thread.  Implement nsICancelableRunnable if you wish to take
@@ -1019,8 +1026,6 @@ class WorkerPrivate final
   bool IsThirdPartyContext() const { return mLoadInfo.mIsThirdPartyContext; }
 
   bool IsWatchedByDevTools() const { return mLoadInfo.mWatchedByDevTools; }
-
-  bool ShouldResistFingerprinting(RFPTarget aTarget) const;
 
   const Maybe<RFPTargetSet>& GetOverriddenFingerprintingSettings() const {
     return mLoadInfo.mOverriddenFingerprintingSettings;
@@ -1714,6 +1719,8 @@ class WorkerPrivate final
   bool hasNotifiedStorageKeyUsed{false};
 
   RefPtr<WorkerParentRef> mParentRef;
+
+  FontVisibility mFontVisibility;
 };
 
 class AutoSyncLoopHolder {

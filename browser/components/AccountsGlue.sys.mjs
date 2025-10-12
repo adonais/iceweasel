@@ -87,7 +87,11 @@ export const AccountsGlue = {
         this._onIncomingCloseTabCommand(subject);
         break;
       case "sync-ui-state:update": {
-        this._updateFxaBadges(lazy.BrowserWindowTracker.getTopWindow());
+        this._updateFxaBadges(
+          lazy.BrowserWindowTracker.getTopWindow({
+            allowFromInactiveWorkspace: true,
+          })
+        );
 
         if (lazy.CLIENT_ASSOCIATION_PING_ENABLED) {
           let fxaState = lazy.UIState.get();
@@ -478,8 +482,16 @@ export const AccountsGlue = {
   },
 
   // Open preferences even if there are no open windows.
-  _openPreferences(...args) {
+  async _openPreferences(...args) {
     let chromeWindow = lazy.BrowserWindowTracker.getTopWindow();
+    if (!chromeWindow && AppConstants.platform !== "macosx") {
+      // If we're not on macOS, there may be no windows open in this
+      // workspace, so open a new one. (the macOS case is handled below)
+      //
+      // This should get cleaned up in bug 1983081 since openPreferences()
+      // shouldn't require a window argument.
+      chromeWindow = await lazy.BrowserWindowTracker.promiseOpenWindow();
+    }
     if (chromeWindow) {
       chromeWindow.openPreferences(...args);
       return;

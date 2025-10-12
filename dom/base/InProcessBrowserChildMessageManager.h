@@ -75,7 +75,7 @@ class InProcessBrowserChildMessageManager final
    */
   virtual bool DoSendBlockingMessage(
       const nsAString& aMessage, StructuredCloneData& aData,
-      nsTArray<StructuredCloneData>* aRetVal) override;
+      nsTArray<UniquePtr<StructuredCloneData>>* aRetVal) override;
   virtual nsresult DoSendAsyncMessage(const nsAString& aMessage,
                                       StructuredCloneData& aData) override;
 

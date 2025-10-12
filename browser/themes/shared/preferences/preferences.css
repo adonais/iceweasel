@@ -621,7 +621,7 @@ html|dialog::backdrop,
 html|dialog,
 .dialogBox {
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--border-radius-medium);
   box-shadow: var(--box-shadow-popup);
 }
 
@@ -728,7 +728,7 @@ html|dialog,
 .fxaProfileImage {
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: var(--border-radius-circle);
   border: 1px solid transparent;
   list-style-image: url(chrome://browser/skin/fxa/avatar-color.svg);
   margin-inline-end: var(--space-xlarge);
@@ -984,10 +984,10 @@ dialog > .sync-engines-list + hbox {
 }
 
 .info-box-container {
-  background-color: var(--in-content-box-info-background);
+  background-color: var(--background-color-box-info);
   padding: 9px;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 }
 
 .info-box-container.smaller-font-size {
@@ -1305,12 +1305,12 @@ richlistitem .text-link:hover {
   min-height: 204px;
   margin-block: 10px 0;
   margin-inline-start: 30px;
-  background-color: var(--in-content-box-info-background);
+  background-color: var(--background-color-box-info);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-evenly;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 }
 
 @media (forced-colors) {
@@ -1327,7 +1327,7 @@ richlistitem .text-link:hover {
 }
 
 .qr-code-box-image {
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   padding: 2px;
   width: 80px;
   flex: 0 0 auto;
@@ -1407,7 +1407,7 @@ richlistitem .text-link:hover {
   border: 1px solid var(--in-content-box-border-color);
   background-color: var(--background-color-box);
   color: var(--text-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   overflow: clip;
 }
 
@@ -1429,7 +1429,7 @@ richlistitem .text-link:hover {
   margin: 0 auto;
 
   border: 1px solid var(--in-content-box-border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.2);
 
   transform: scaleX(1);
@@ -1456,7 +1456,7 @@ richlistitem .text-link:hover {
   overflow: auto;
   background-color: var(--background-color-box);
   border: 1px solid var(--in-content-box-border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   resize: vertical;
   margin: 4px 0;
 }

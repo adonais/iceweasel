@@ -170,7 +170,7 @@ fn enqueue<F: Fn() + 'static>(f: F) {
                     cocoa::NSArray(<cocoa::NSArray as NSArray_NSArrayCreation<
                         cocoa::NSRunLoopMode,
                     >>::arrayWithObjects_count_(
-                        objects.as_slice().as_ptr() as *const *mut u64,
+                        objects.as_slice().as_ptr() as *const *mut _,
                         objects
                             .as_slice()
                             .len()
@@ -1082,8 +1082,8 @@ fn render_element(
                             cocoa::NSAttributedStringKey,
                             cocoa::id,
                         >>::dictionaryWithObject_forKey_(
-                            cocoa::NSColor::placeholderTextColor().0 as u64,
-                            cocoa::NSForegroundColorAttributeName.0 as u64,
+                            std::mem::transmute(cocoa::NSColor::placeholderTextColor().0),
+                            std::mem::transmute(cocoa::NSForegroundColorAttributeName.0),
                         ),
                     );
                     let string = StrongRef::new(cocoa::NSAttributedString(

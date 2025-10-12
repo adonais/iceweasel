@@ -86,7 +86,9 @@ struct MappedInfo {
   MappedInfo(const MappedInfo&) = delete;
 };
 
-class Buffer final : public ObjectBase, public ChildOf<Device> {
+class Buffer final : public nsWrapperCache,
+                     public ObjectBase,
+                     public ChildOf<Device> {
  public:
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(Buffer)
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(Buffer)
@@ -105,8 +107,6 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   void Unmap(JSContext* aCx, ErrorResult& aRv);
   void Destroy(JSContext* aCx, ErrorResult& aRv);
 
-  const RawId mId;
-
   uint64_t Size() const { return mSize; }
   uint32_t Usage() const { return mUsage; }
   dom::GPUBufferMapState MapState() const;
@@ -120,12 +120,12 @@ class Buffer final : public ObjectBase, public ChildOf<Device> {
   Buffer(Device* const aParent, RawId aId, BufferAddress aSize, uint32_t aUsage,
          ipc::SharedMemoryMapping&& aShmem);
   virtual ~Buffer();
-  Device& GetDevice() { return *mParent; }
   void Cleanup();
   void UnmapArrayBuffers(JSContext* aCx, ErrorResult& aRv);
   void AbortMapRequest();
   void SetMapped(BufferAddress aOffset, BufferAddress aSize, bool aWritable);
 
+  bool mValid = true;
   // Note: we can't map a buffer with the size that don't fit into `size_t`
   // (which may be smaller than `BufferAddress`), but general not all buffers
   // are mapped.

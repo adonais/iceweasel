@@ -293,9 +293,6 @@ newtab-custom-pocket-sponsored = سپانسر تھیاں کہاݨیاں
 newtab-custom-pocket-show-recent-saves = حالیہ ہتھیکڑیاں ظاہر کرو
 newtab-custom-recent-title = حالیہ سرگرمی
 newtab-custom-recent-subtitle = حالیہ سائٹاں تے مواد دی ہک چوݨ
-newtab-custom-recent-toggle =
-    .label = حالیہ سرگرمی
-    .description = حالیہ سائٹاں تے مواد دی ہک چوݨ
 newtab-custom-weather-toggle =
     .label = موسم
     .description = اڄ دی پیش گوئی تے ہک نظر
@@ -385,7 +382,6 @@ newtab-weather-menu-change-location = مقام وٹاؤ
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = مقام ڳولو
     .aria-label = مقام ڳولو
-newtab-weather-change-location-search-input = مقام ڳولو
 newtab-weather-menu-weather-display = موسم دا ڈسپلے
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature

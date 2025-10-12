@@ -175,9 +175,6 @@ with Files("ImageDecoder.webidl"):
 with Files("InputEvent.webidl"):
     BUG_COMPONENT = ("Core", "DOM: UI Events & Focus Handling")
 
-with Files("InstallTrigger.webidl"):
-    BUG_COMPONENT = ("Toolkit", "Add-ons Manager")
-
 with Files("KeyAlgorithm.webidl"):
     BUG_COMPONENT = ("Core", "DOM: Security")
 
@@ -231,9 +228,6 @@ with Files("MIDI*"):
 
 with Files("Mouse*"):
     BUG_COMPONENT = ("Core", "DOM: UI Events & Focus Handling")
-
-with Files("MutationEvent.webidl"):
-    BUG_COMPONENT = ("Core", "DOM: Events")
 
 with Files("NavigationPreloadManager.webidl"):
     BUG_COMPONENT = ("Core", "DOM: Service Workers")
@@ -401,9 +395,9 @@ with Files("WebTransport*"):
     BUG_COMPONENT = ("Core", "Networking")
 
 GENERATED_WEBIDL_FILES = [
-    "CSS2Properties.webidl",
     "CSSPageDescriptors.webidl",
     "CSSPositionTryDescriptors.webidl",
+    "CSSStyleProperties.webidl",
 ]
 
 PREPROCESSED_WEBIDL_FILES = [
@@ -808,7 +802,6 @@ WEBIDL_FILES = [
     "MouseEvent.webidl",
     "MouseScrollEvent.webidl",
     "MozFrameLoaderOwner.webidl",
-    "MutationEvent.webidl",
     "MutationObserver.webidl",
     "NamedNodeMap.webidl",
     "NavigateEvent.webidl",
@@ -1115,6 +1108,12 @@ WEBIDL_FILES = [
     "XSLTProcessor.webidl",
 ]
 
+# Native llama.cpp for ml engine.
+if CONFIG["MOZ_WIDGET_TOOLKIT"] != "android":
+    WEBIDL_FILES += [
+        "LlamaRunner.webidl",
+    ]
+
 if CONFIG["MOZ_WEBRTC"]:
     WEBIDL_FILES += [
         "PeerConnectionImpl.webidl",
@@ -1199,10 +1198,6 @@ if CONFIG["MOZ_DEBUG"] and CONFIG["ENABLE_TESTS"]:
     XPCOM_MANIFESTS += [
         "components.conf",
     ]
-
-WEBIDL_FILES += [
-    "InstallTrigger.webidl",
-]
 
 if CONFIG["FUZZING"]:
     WEBIDL_FILES += [

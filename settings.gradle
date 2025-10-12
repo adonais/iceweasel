@@ -24,6 +24,7 @@ pluginManagement {
     includeBuild("${rootProject.projectDir.absolutePath}/mobile/android/android-components/plugins/publicsuffixlist")
     includeBuild("${rootProject.projectDir.absolutePath}/mobile/android/fenix/plugins/apksize")
     includeBuild("${rootProject.projectDir.absolutePath}/mobile/android/gradle/plugins/apilint")
+    includeBuild("${rootProject.projectDir.absolutePath}/mobile/android/gradle/plugins/nimbus-gradle-plugin")
 }
 
 plugins {

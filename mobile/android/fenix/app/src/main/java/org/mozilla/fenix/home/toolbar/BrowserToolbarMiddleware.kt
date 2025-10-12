@@ -52,6 +52,7 @@ import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ClipboardHandler
+import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -77,6 +78,7 @@ import org.mozilla.fenix.search.ext.searchEngineShortcuts
 import org.mozilla.fenix.tabstray.Page
 import mozilla.components.lib.state.Action as MVIAction
 import mozilla.components.ui.icons.R as iconsR
+import mozilla.components.ui.tabcounter.R as tabcounterR
 
 private const val TALL_SCREEN_HEIGHT_DP = 480
 
@@ -220,6 +222,7 @@ class BrowserToolbarMiddleware(
             }
 
             is OriginClicked -> {
+                Events.searchBarTapped.record(Events.SearchBarTappedExtra("HOME"))
                 appStore.dispatch(SearchStarted())
             }
             is PasteFromClipboardClicked -> {
@@ -376,8 +379,10 @@ class BrowserToolbarMiddleware(
                 Private -> listOf(
                     BrowserToolbarMenuButton(
                         icon = DrawableResIcon(iconsR.drawable.mozac_ic_plus_24),
-                        text = StringResText(R.string.mozac_browser_menu_new_tab),
-                        contentDescription = StringResContentDescription(R.string.mozac_browser_menu_new_tab),
+                        text = StringResText(tabcounterR.string.mozac_browser_menu_new_tab),
+                        contentDescription = StringResContentDescription(
+                            tabcounterR.string.mozac_browser_menu_new_tab,
+                        ),
                         onClick = AddNewTab(source),
                     ),
                 )
@@ -385,8 +390,10 @@ class BrowserToolbarMiddleware(
                 else -> listOf(
                     BrowserToolbarMenuButton(
                         icon = DrawableResIcon(iconsR.drawable.mozac_ic_private_mode_24),
-                        text = StringResText(R.string.mozac_browser_menu_new_private_tab),
-                        contentDescription = StringResContentDescription(R.string.mozac_browser_menu_new_private_tab),
+                        text = StringResText(tabcounterR.string.mozac_browser_menu_new_private_tab),
+                        contentDescription = StringResContentDescription(
+                            tabcounterR.string.mozac_browser_menu_new_private_tab,
+                        ),
                         onClick = AddNewPrivateTab(source),
                     ),
                 )
@@ -459,15 +466,9 @@ class BrowserToolbarMiddleware(
             val tabsCount = browserStore.state.getNormalOrPrivateTabs(isInPrivateMode).size
 
             val tabCounterDescription = if (isInPrivateMode) {
-                environment.context.getString(
-                    R.string.mozac_tab_counter_private,
-                    tabsCount.toString(),
-                )
+                environment.context.getString(tabcounterR.string.mozac_tab_counter_private, tabsCount.toString())
             } else {
-                environment.context.getString(
-                    R.string.mozac_tab_counter_open_tab_tray,
-                    tabsCount.toString(),
-                )
+                environment.context.getString(tabcounterR.string.mozac_tab_counter_open_tab_tray, tabsCount.toString())
             }
 
             TabCounterAction(
@@ -480,27 +481,27 @@ class BrowserToolbarMiddleware(
         }
 
         HomeToolbarAction.Menu -> ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_ellipsis_vertical_24,
+            drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             contentDescription = R.string.content_description_menu,
             onClick = MenuClicked(source),
         )
 
         HomeToolbarAction.FakeBookmark -> ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_bookmark_24,
+            drawableResId = iconsR.drawable.mozac_ic_bookmark_24,
             contentDescription = R.string.browser_menu_bookmark_this_page_2,
             state = ActionButton.State.DISABLED,
             onClick = FakeClicked,
         )
 
         HomeToolbarAction.FakeShare -> ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_share_android_24,
+            drawableResId = iconsR.drawable.mozac_ic_share_android_24,
             contentDescription = R.string.browser_menu_share,
             state = ActionButton.State.DISABLED,
             onClick = FakeClicked,
         )
 
         HomeToolbarAction.NewTab -> ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_plus_24,
+            drawableResId = iconsR.drawable.mozac_ic_plus_24,
             contentDescription = if (environment?.browsingModeManager?.mode == Private) {
                 R.string.home_screen_shortcut_open_new_private_tab_2
             } else {

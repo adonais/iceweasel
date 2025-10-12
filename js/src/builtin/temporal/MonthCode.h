@@ -19,7 +19,6 @@
 #include "jstypes.h"
 
 #include "builtin/temporal/Calendar.h"
-#include "builtin/temporal/Crash.h"
 
 namespace js::temporal {
 
@@ -251,7 +250,7 @@ constexpr auto& CalendarMonthCodes(CalendarId id) {
     case CalendarId::Hebrew:
       return monthcodes::Hebrew;
   }
-  JS_CONSTEXPR_CRASH("invalid calendar id");
+  MOZ_CRASH("invalid calendar id");
 }
 
 constexpr bool CalendarHasLeapMonths(CalendarId id) {
@@ -278,7 +277,7 @@ constexpr bool CalendarHasLeapMonths(CalendarId id) {
     case CalendarId::Hebrew:
       return true;
   }
-  JS_CONSTEXPR_CRASH("invalid calendar id");
+  MOZ_CRASH("invalid calendar id");
 }
 
 constexpr bool CalendarHasEpagomenalMonths(CalendarId id) {
@@ -305,7 +304,7 @@ constexpr bool CalendarHasEpagomenalMonths(CalendarId id) {
     case CalendarId::EthiopianAmeteAlem:
       return true;
   }
-  JS_CONSTEXPR_CRASH("invalid calendar id");
+  MOZ_CRASH("invalid calendar id");
 }
 
 constexpr int32_t CalendarMonthsPerYear(CalendarId id) {
@@ -374,7 +373,7 @@ constexpr std::pair<int32_t, int32_t> CalendarDaysInMonth(CalendarId id) {
     case CalendarId::Persian:
       return {29, 31};
   }
-  JS_CONSTEXPR_CRASH("invalid calendar id");
+  MOZ_CRASH("invalid calendar id");
 }
 
 // ISO8601 calendar.
@@ -487,7 +486,7 @@ constexpr std::pair<int32_t, int32_t> CalendarDaysInMonth(CalendarId id,
       return {29, 30};
     }
   }
-  JS_CONSTEXPR_CRASH("invalid calendar id");
+  MOZ_CRASH("invalid calendar id");
 }
 
 }  // namespace js::temporal

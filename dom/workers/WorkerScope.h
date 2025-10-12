@@ -79,6 +79,7 @@ class ServiceWorkerDescriptor;
 class ServiceWorkerRegistration;
 class ServiceWorkerRegistrationDescriptor;
 struct StructuredSerializeOptions;
+class TimeoutManager;
 class WorkerDocumentListener;
 class WorkerLocation;
 class WorkerNavigator;

@@ -949,7 +949,7 @@ function startup() {
   // so things like text selection can work properly.
   browser.focus();
 
-  InitializationTracker.onInitialized(performance.now());
+  InitializationTracker.onInitialized(ChromeUtils.now());
 }
 
 window.addEventListener("DOMContentLoaded", startup, { once: true });

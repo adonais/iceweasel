@@ -11,6 +11,7 @@ import android.widget.ImageView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.icons.generator.IconGenerator
 import mozilla.components.browser.icons.loader.MemoryInfoProvider
 import mozilla.components.concept.engine.manifest.Size
@@ -20,8 +21,6 @@ import mozilla.components.support.test.eq
 import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okio.buffer
@@ -31,7 +30,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
@@ -51,9 +49,6 @@ class BrowserIconsTest {
         override fun getAvailMem(): Long = availMem
     }
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
-
     @Before
     @After
     fun cleanUp() {
@@ -62,7 +57,7 @@ class BrowserIconsTest {
     }
 
     @Test
-    fun `Uses generator`() = runTestOnMain {
+    fun `Uses generator`() = runTest {
         val mockedIcon: Icon = mock()
 
         val generator: IconGenerator = mock()
@@ -83,7 +78,7 @@ class BrowserIconsTest {
     }
 
     @Test
-    fun `WHEN resources are provided THEN an icon will be downloaded from one of them`() = runTestOnMain {
+    fun `WHEN resources are provided THEN an icon will be downloaded from one of them`() = runTest {
         val server = MockWebServer()
 
         server.enqueue(
@@ -137,7 +132,7 @@ class BrowserIconsTest {
     }
 
     @Test
-    fun `WHEN icon is loaded twice THEN second load is delivered from memory cache`() = runTestOnMain {
+    fun `WHEN icon is loaded twice THEN second load is delivered from memory cache`() = runTest {
         val server = MockWebServer()
 
         server.enqueue(
@@ -184,7 +179,7 @@ class BrowserIconsTest {
     }
 
     @Test
-    fun `WHEN icon is loaded again and not in memory cache THEN second load is delivered from disk cache`() = runTestOnMain {
+    fun `WHEN icon is loaded again and not in memory cache THEN second load is delivered from disk cache`() = runTest {
         val server = MockWebServer()
 
         server.enqueue(

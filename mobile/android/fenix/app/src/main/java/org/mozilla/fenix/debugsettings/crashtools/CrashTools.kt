@@ -21,11 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.PrimaryButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
+import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 
@@ -34,6 +38,8 @@ private const val SECOND_IN_MILLISECOND = 1000L
 @Composable
 internal fun CrashTools(
     settings: Settings = components.settings,
+    canary: StartupCrashCanary =
+        StartupCrashCanary.build(LocalContext.current.applicationContext),
 ) {
     var now = System.currentTimeMillis()
     var genericDeferPeriod by remember { mutableLongStateOf(settings.crashReportDeferredUntil - now) }
@@ -73,7 +79,23 @@ internal fun CrashTools(
             text = stringResource(R.string.crash_debug_generic_crash_trigger),
             modifier = Modifier.fillMaxWidth(),
             onClick = {
-                throw ArithmeticException("Cannot divide by zero.")
+                throw ArithmeticException("Debug drawer triggered exception.")
+            },
+        )
+        Text(
+            text = stringResource(R.string.crash_debug_startup_crash_warning),
+            color = FirefoxTheme.colors.actionCritical,
+            style = FirefoxTheme.typography.subtitle2,
+        )
+        PrimaryButton(
+            text = stringResource(R.string.crash_debug_crash_on_next_startup),
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                CoroutineScope(Dispatchers.IO).launch {
+                    canary.createCanary()
+                }.invokeOnCompletion {
+                    throw ArithmeticException("Debug drawer triggered exception.")
+                }
             },
         )
     }

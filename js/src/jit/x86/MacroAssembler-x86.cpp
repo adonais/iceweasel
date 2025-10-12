@@ -686,6 +686,34 @@ const MacroAssembler& MacroAssemblerX86::asMasm() const {
   return *static_cast<const MacroAssembler*>(this);
 }
 
+void MacroAssemblerX86::minMax32(Register lhs, Register rhs, Register dest,
+                                 bool isMax) {
+  if (rhs == dest) {
+    std::swap(lhs, rhs);
+  }
+
+  auto cond = isMax ? Assembler::GreaterThan : Assembler::LessThan;
+  if (lhs != dest) {
+    movl(lhs, dest);
+  }
+  cmpl(lhs, rhs);
+  cmovCCl(cond, rhs, dest);
+}
+
+void MacroAssemblerX86::minMax32(Register lhs, Imm32 rhs, Register dest,
+                                 bool isMax) {
+  auto cond =
+      isMax ? Assembler::GreaterThanOrEqual : Assembler::LessThanOrEqual;
+  if (lhs != dest) {
+    movl(lhs, dest);
+  }
+  Label done;
+  cmpl(rhs, lhs);
+  j(cond, &done);
+  move32(rhs, dest);
+  bind(&done);
+}
+
 void MacroAssembler::subFromStackPtr(Imm32 imm32) {
   if (imm32.value) {
     // On windows, we cannot skip very far down the stack without touching the

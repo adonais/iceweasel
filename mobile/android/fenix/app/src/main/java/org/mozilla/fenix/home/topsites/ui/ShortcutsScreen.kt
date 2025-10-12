@@ -30,6 +30,7 @@ import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.home.topsites.store.ShortcutsState
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The shortcuts screen.
@@ -59,7 +60,7 @@ fun ShortcutsScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigationIconClick) {
                         Icon(
-                            painter = painterResource(R.drawable.mozac_ic_back_24),
+                            painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                             contentDescription = "",
                             tint = FirefoxTheme.colors.iconPrimary,
                         )

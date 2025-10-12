@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">Περισσότερες επιλογές</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Ενεργοποίηση ιδιωτικής περιήγησης</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Απενεργοποίηση ιδιωτικής περιήγησης</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Ιδιωτική περιήγηση</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Αναζήτηση όρου ή εισαγωγή διεύθυνσης</string>
@@ -293,10 +289,6 @@
   <string name="browser_menu_new_private_tab">Νέα ιδιωτική καρτέλα</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Κωδικοί πρόσβασης</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Εναλλαγή στην έκδοση κινητού</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Κλείσιμο φύλλου κύριου μενού</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">Κλείσιμο μενού</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -343,8 +335,6 @@
   <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Παίρνει λίγα δευτερόλεπτα. Αλλαγή ανά πάσα στιγμή.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">Γρήγορο, ιδιωτικό και φτιαγμένο για εσάς.</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Απόρριψη</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss_promotion">Απόρριψη προωθητικής ενέργειας</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -439,10 +429,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Οι καρτέλες σας συγχρονίζονται! Συνεχίστε από εκεί που σταματήσατε στην άλλη συσκευή σας.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Κλείσιμο</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -584,6 +572,30 @@
   <string name="onboarding_redesign_tou_body_three_link_text">Διαχείριση ρυθμίσεων</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
   <string name="onboarding_redesign_tou_agree_and_continue_button_label">Συνέχεια</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">Πού θέλετε η γραμμή διευθύνσεων σας;</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">Συνέχεια</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Βοηθήστε μας να αναπτύξουμε το Firefox</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Μοιραστείτε πώς ανακαλύψατε το Firefox και δηλώστε ότι το χρησιμοποιείτε στους συνεργάτες μάρκετινγκ της Mozilla. Αυτά τα δεδομένα δεν θα πωληθούν ποτέ.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">Πώς χρησιμοποιούμε τα δεδομένα</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">Επιβεβαίωση</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title">Λάβετε αυτόματη προστασία από καταγραφή από προεπιλογή</string>
+  <!-- Set to default browser onboarding redesign body. -->
+  <string name="onboarding_redesign_set_default_browser_body">Ένα πάτημα εμποδίζει τις εταιρείες να κατασκοπεύουν τα κλικ σας.</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Συγχρονισμός όπου κι αν χρησιμοποιείτε το Firefox</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body">Πάρτε τους σελιδοδείκτες, τις καρτέλες και τους κωδικούς πρόσβασής σας σε κάθε συσκευή. Όλα προστατεύονται με κρυπτογράφηση.</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button">Έναρξη συγχρονισμού</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">Όχι τώρα</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Βοηθήστε μας να αναπτύξουμε το Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -717,7 +729,8 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Χρήση κλειδώματος οθόνης για την απόκρυψη καρτελών στην ιδιωτική περιήγηση</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">Εμφανίστε τις καρτέλες με δαχτυλικό αποτύπωμα, αναγνώριση προσώπου ή PIN.</string>
+  <string name="preferences_pbm_lock_screen_summary_3">Δείτε τις καρτέλες σας με το δακτυλικό σας αποτύπωμα, ένα PIN ή με αναγνώριση προσώπου. Η ενεργοποίηση αυτής της λειτουργίας εμποδίζει επίσης την καταγραφή και τον διαμοιρασμό οθόνης.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Εμφανίστε τις καρτέλες με δαχτυλικό αποτύπωμα, αναγνώριση προσώπου ή PIN.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Αποκλεισμός μηνυμάτων για cookie</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -797,7 +810,9 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Προσαρμογή</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Συνδεθείτε για να συγχρονίσετε τις καρτέλες, τους σελιδοδείκτες, τους κωδικούς πρόσβασης και πολλά άλλα.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Συνδεθείτε για να συγχρονίσετε τις καρτέλες, τους σελιδοδείκτες, τους κωδικούς πρόσβασης και πολλά άλλα.</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">Συγχρονίστε τις καρτέλες, τους σελιδοδείκτες, τους κωδικούς πρόσβασής και πολλά άλλα.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Λογαριασμός Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1169,12 +1184,8 @@
   <string name="preferences_daily_usage_ping_title">Ping ημερήσιας χρήσης</string>
   <string name="preferences_daily_usage_ping_description">Αυτό βοηθά τη Mozilla να εκτιμήσει τους ενεργούς χρήστες.</string>
   <string name="preferences_daily_usage_ping_learn_more">Μάθετε περισσότερα σχετικά με το ping ημερήσιας χρήσης</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Αυτόματη αποστολή αναφορών κατάρρευσης</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">Η αναφορά απεστάλη</string>
-  <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">Αυτό μας βοηθάει να διαγνώσουμε και να επιλύσουμε προβλήματα με το πρόγραμμα περιήγησης. Οι αναφορές ενδέχεται να περιέχουν προσωπικά ή ευαίσθητα δεδομένα.</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
   <string name="preferences_crashes_learn_more">Μάθετε περισσότερα σχετικά με τις αναφορές καταρρεύσεων</string>
   <!-- Title Headers for data collection settings screen -->
@@ -1194,8 +1205,6 @@
   <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Μοιραστείτε πώς ανακαλύψατε το Firefox και δηλώστε ότι το χρησιμοποιείτε στους συνεργάτες μάρκετινγκ της Mozilla.</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">Μάθετε περισσότερα σχετικά με τα δεδομένα μάρκετινγκ</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Μάθετε περισσότερα σχετικά με τις αναφορές καταρρεύσεων</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Μελέτες</string>
   <!-- Summary for studies preferences -->
@@ -1205,7 +1214,9 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Συγχρονισμός δεδομένων</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Συγχρονισμός δεδομένων</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">Σύνδεση</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Συνδεθείτε για επανασύνδεση</string>
   <!-- Preference for removing FxA account -->
@@ -1354,6 +1365,8 @@
   <string name="close_tabs_after_one_month">Μετά από έναν μήνα</string>
   <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Αυτόματο κλείσιμο ανοικτών καρτελών</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">Κλείσιμο</string>
   <!--
     Opening screen
 
@@ -1504,9 +1517,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Διαγραφή ιστορικού</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Το ιστορικό διαγράφηκε</string>
+  <string name="history_delete_multiple_items_snackbar">Το ιστορικό διαγράφηκε</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Το «%1$s» διαγράφτηκε</string>
+  <string name="history_delete_single_item_snackbar">Το «%1$s» διαγράφτηκε</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Διαγραφή</string>
   <!--
@@ -1677,8 +1690,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">Αναφορά προβληματικού ιστοτόπου</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">Βοηθήστε μας να κάνουμε το %1$s καλύτερο για όλους. Οι υπάλληλοι της Mozilla χρησιμοποιούν τις πληροφορίες που στέλνετε για να διορθώσουν τα προβλήματα ιστοτόπων.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">Η αναφορά σας μας βοηθά να κατανοήσουμε και να διορθώσουμε ζητήματα στο %1$s, ώστε να το βελτιώσουμε για όλους. Μάθετε περισσότερα</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
@@ -1691,8 +1702,6 @@
   <string name="webcompat_reporter_url_error_invalid">Εισαγάγετε ένα έγκυρο URL</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Τι δεν λειτουργεί;</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Επιλέξτε λόγο</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">Επιλέξτε έναν λόγο</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
@@ -1708,9 +1717,11 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Αποστολή</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">Η αναφορά σας έχει σταλεί</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Η αναφορά σας έχει σταλεί</string>
+  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
+  <string name="webcompat_reporter_success_snackbar_text_2">Η αναφορά εστάλη</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">Κλείσιμο</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Κλείσιμο</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Τι συνέβη; Τι θα έπρεπε να έχει συμβεί;</string>
   <!--
@@ -1747,8 +1758,6 @@
   <string name="tab_crash_close">Κλείσιμο καρτέλας</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Επαναφορά καρτελών</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">Έπρεπε να γίνει επανεκκίνηση του %s</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">Το %s κατέρρευσε. Αποστολή αναφοράς;</string>
   <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
@@ -1788,6 +1797,14 @@
   <string name="bookmark_add_folder">Προσθήκη φακέλου</string>
   <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
   <string name="bookmark_saved_in_folder_snackbar">Αποθηκεύτηκε στο «%s»</string>
+  <!-- Snackbar title describing failure to add a new folder -->
+  <string name="bookmark_error_add_folder">Αδυναμία προσθήκης φακέλου</string>
+  <!-- Snackbar title describing failure to edit an existing folder -->
+  <string name="bookmark_error_edit_folder">Αδυναμία επεξεργασίας φακέλου</string>
+  <!-- Snackbar title describing failure to select a new parent folder for a bookmark or folder -->
+  <string name="bookmark_error_select_folder">Δεν ήταν δυνατή η αλλαγή του γονικού φακέλου</string>
+  <!-- Snackbar title describing failure to edit a bookmark -->
+  <string name="bookmark_error_edit_bookmark">Αδυναμία επεξεργασίας σελιδοδείκτη</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">ΕΠΕΞΕΡΓΑΣΙΑ</string>
   <!-- Bookmark menu move button -->
@@ -1888,6 +1905,8 @@
   <string name="bookmark_close_button_content_description">Κλείσιμο σελιδοδεικτών</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Δεν υπάρχει κανένας σελιδοδείκτης ακόμα</string>
+  <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
+  <string name="bookmarks_folder_description">Σελιδοδείκτες στον φάκελο: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">Αποθηκεύστε ιστοτόπους κατά την περιήγησή σας. Συνδεθείτε για να λάβετε σελιδοδείκτες από άλλες συγχρονισμένες συσκευές.</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -2032,12 +2051,14 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">Επιλέχθηκε %d καρτέλα</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Οι καρτέλες αποθηκεύτηκαν!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Η συλλογή αποθηκεύτηκε!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Η συλλογή αποθηκεύτηκε!</string>
+  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
+  <string name="create_collection_tabs_saved_new_collection_2">Η συλλογή αποθηκεύτηκε</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Η καρτέλα αποθηκεύτηκε!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Η καρτέλα αποθηκεύτηκε!</string>
+  <!-- Text shown in snackbar when one tab has been saved in a collection -->
+  <string name="create_collection_tab_saved_2">Η καρτέλα αποθηκεύτηκε</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Κλείσιμο</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -2084,7 +2105,9 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Σύνδεση στο Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Συγχρονισμός δεδομένων</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Συγχρονισμός δεδομένων</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">Σύνδεση</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Αποστολή σε όλες τις συσκευές</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2174,7 +2197,9 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Έκλεισαν %1$s καρτέλες</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">Οι σελιδοδείκτες αποθηκεύτηκαν στο «%s»!</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Οι σελιδοδείκτες αποθηκεύτηκαν στο «%s»!</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in_2">Οι σελιδοδείκτες αποθηκεύτηκαν στο «%s»</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Προστέθηκε στις συντομεύσεις!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -2202,8 +2227,6 @@
   <string name="tab_collection_dialog_message">Θέλετε σίγουρα να διαγράψετε το %1$s;</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Διαγραφή</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Το URL αντιγράφτηκε</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Δοκιμαστικό κείμενο. Σας δείχνει πώς φαίνεται το κείμενο για κάθε αυξομείωση μεγέθους που κάνετε με αυτήν τη ρύθμιση.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2292,9 +2315,13 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Οι καρτέλες απεστάλησαν!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Οι καρτέλες απεστάλησαν!</string>
+  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
+  <string name="sync_sent_tabs_snackbar_2">Οι καρτέλες απεστάλησαν</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Η καρτέλα απεστάλη!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Η καρτέλα απεστάλη!</string>
+  <!-- Text shown in snackbar when one tab has been sent to device -->
+  <string name="sync_sent_tab_snackbar_2">Η καρτέλα απεστάλη</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Δεν ήταν δυνατή η αποστολή</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2347,6 +2374,18 @@
   <string name="preference_enhanced_tracking_protection_allow_list_baseline">Να επιτρέπεται στο %1$s η αυτόματη εφαρμογή των απαιτούμενων εξαιρέσεων για την αποτροπή σημαντικών δυσλειτουργιών στους ιστοτόπους.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience">Να εμφαρμόζονται επίσης αυτόματα εξαιρέσεις που απαιτούνται μόνο για τη διόρθωση μικρών ζητημάτων και την ενεργοποίηση βολικών λειτουργιών.</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">Θέλετε σίγουρα να απενεργοποιήσετε τις διορθώσεις;</string>
+  <!-- Message for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">Αυτή η ρύθμιση συμβάλλει στη διόρθωση των πιο κοινών προβλημάτων των ιστοτόπων. Αν την απενεργοποιήσετε, ορισμένοι ιστότοποι ενδέχεται να μην λειτουργούν και το %1$s δεν θα μπορεί να βοηθήσει στην επίλυση αυτών των ζητημάτων.</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">Απενεργοποίηση διορθώσεων</string>
+  <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">Διατήρηση διορθώσεων</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">Τι αποκλείει η αυστηρή προστασία από καταγραφή</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2843,12 +2882,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Εισαγάγετε νήμα αναζήτησης</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Βεβαιωθείτε ότι το νήμα αναζήτησης συμφωνεί με τη μορφή του παραδείγματος</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Δημιουργήθηκε to %s</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Το %s αποθηκεύτηκε</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Το %s διαγράφηκε</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Για να επιτρέψετε την πρόσβαση:</string>
   <!-- First step for the allowing a permission -->
@@ -3001,6 +3034,11 @@
     Title text displayed in the tabs tray when a tab has been unused for 14 days.
   -->
   <string name="inactive_tabs_title">Ανενεργές καρτέλες</string>
+  <!--
+    Text displayed in the tabs tray, indicating the number of inactive tabs.
+    %d is the number of inactive tabs.
+  -->
+  <string name="inactive_tabs_num_items">Στοιχεία: %d</string>
   <!-- Content description for closing all inactive tabs -->
   <string name="inactive_tabs_delete_all">Κλείσιμο όλων των ανενεργών καρτελών</string>
   <!-- Content description for expanding the inactive tabs section. -->
@@ -3344,12 +3382,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">Ασφαλής</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">Μη ασφαλής</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">Να προσέχετε σε αυτόν τον ιστότοπο</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">Η σύνδεση δεν είναι ασφαλής.</string>
@@ -3374,11 +3408,7 @@
   <!-- Toggle if Enhanced Tracking Protection is turned off -->
   <string name="protection_panel_etp_toggle_off">Ανενεργή</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Αν κάτι δεν λειτουργεί σωστά σε αυτόν τον ιστότοπο, δοκιμάστε να απενεργοποιήσετε την προστασία.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description_2">Αν κάτι δεν λειτουργεί σωστά σε αυτόν τον ιστότοπο, δοκιμάστε να την απενεργοποιήσετε.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Η προστασία είναι ΑΝΕΝΕΡΓΗ. Προτείνουμε να την ενεργοποιήσετε ξανά.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description_2">Προτείνεται η ενεργοποίηση της προστασίας από καταγραφή.</string>
   <!--
@@ -3390,8 +3420,6 @@
   <string name="protection_panel_no_trackers_blocked">Δεν βρέθηκαν ιχνηλάτες</string>
   <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
   <string name="protection_panel_etp_disabled_no_trackers_blocked">Οι ιχνηλάτες δεν αποκλείονται</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">Ρυθμίσεις απορρήτου και ασφάλειας</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">Ρυθμίσεις απορρήτου</string>
   <!-- Title text for the protection panel permissions section. -->

@@ -3082,7 +3082,7 @@ void nsFrameLoader::ApplySandboxFlags(uint32_t sandboxFlags) {
 /* virtual */
 void nsFrameLoader::AttributeChanged(mozilla::dom::Element* aElement,
                                      int32_t aNameSpaceID, nsAtom* aAttribute,
-                                     int32_t aModType,
+                                     AttrModType,
                                      const nsAttrValue* aOldValue) {
   MOZ_ASSERT(mObservingOwnerContent);
 
@@ -3626,9 +3626,6 @@ void nsFrameLoader::SetWillChangeProcess() {
 }
 
 static mozilla::Result<bool, nsresult> BuildIDMismatchMemoryAndDisk() {
-  nsresult rv;
-  nsCOMPtr<nsIFile> file;
-
   if (const char* forceMismatch = PR_GetEnv("MOZ_FORCE_BUILDID_MISMATCH")) {
     if (forceMismatch[0] == '1') {
       NS_WARNING("Forcing a buildid mismatch");
@@ -3640,9 +3637,9 @@ static mozilla::Result<bool, nsresult> BuildIDMismatchMemoryAndDisk() {
   // Android packages on installation will stop existing instance, so we
   // cannot run into this problem.
   return false;
-#endif  // defined(ANDROID)
+#else
 
-#if defined(XP_WIN)
+#  if defined(XP_WIN)
   {
     // Windows Store packages cannot run into this problem.
     nsCOMPtr<nsIPropertyBag2> infoService =
@@ -3656,7 +3653,10 @@ static mozilla::Result<bool, nsresult> BuildIDMismatchMemoryAndDisk() {
       }
     }
   }
-#endif
+#  endif  // XP_WIN
+
+  nsresult rv;
+  nsCOMPtr<nsIFile> file;
 
   rv = NS_GetSpecialDirectory(NS_GRE_BIN_DIR, getter_AddRefs(file));
   MOZ_TRY(rv);
@@ -3674,6 +3674,7 @@ static mozilla::Result<bool, nsresult> BuildIDMismatchMemoryAndDisk() {
   MOZ_TRY(rv);
 
   return (installedBuildID != PlatformBuildID());
+#endif    // !ANDROID
 }
 
 void nsFrameLoader::MaybeNotifyCrashed(BrowsingContext* aBrowsingContext,

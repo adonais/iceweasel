@@ -311,4 +311,5 @@ private fun buildTestInteractor(
     override fun onNormalTabsFabClicked() {}
     override fun onPrivateTabsFabClicked() {}
     override fun onSyncedTabsFabClicked() {}
+    override fun onSignInClicked() {}
 }

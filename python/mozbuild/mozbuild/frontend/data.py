@@ -1357,7 +1357,8 @@ class GeneratedFile(ContextDerived):
             self.required_before_export = [
                 f
                 for f in self.outputs
-                if f.endswith(".java") or mozpath.match(f, "**/AndroidManifest*.xml")
+                if f.endswith((".java", ".kt"))
+                or mozpath.match(f, "**/AndroidManifest*.xml")
             ]
         else:
             self.required_before_export = False
@@ -1393,7 +1394,18 @@ class GeneratedFile(ContextDerived):
                 f
                 for f in self.outputs
                 if f.endswith(
-                    (".asm", ".c", ".cpp", ".inc", ".m", ".mm", ".def", "symverscript")
+                    (
+                        ".asm",
+                        ".c",
+                        ".cpp",
+                        ".inc",
+                        ".m",
+                        ".mm",
+                        ".def",
+                        ".s",
+                        ".S",
+                        "symverscript",
+                    )
                 )
             ]
         else:

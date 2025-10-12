@@ -39,6 +39,7 @@ class GeolocationTest : BaseSessionTest() {
     private lateinit var locManager: LocationManager
     private lateinit var mockGpsProvider: MockLocationProvider
     private lateinit var mockNetworkProvider: MockLocationProvider
+    private lateinit var mockFusedProvider: MockLocationProvider
 
     @get:Rule
     override val rules: RuleChain = RuleChain.outerRule(activityRule).around(sessionRule)
@@ -52,6 +53,7 @@ class GeolocationTest : BaseSessionTest() {
             locManager = activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
             mockGpsProvider = sessionRule.MockLocationProvider(locManager, LocationManager.GPS_PROVIDER, 0.0, 0.0, true)
             mockNetworkProvider = sessionRule.MockLocationProvider(locManager, LocationManager.NETWORK_PROVIDER, 0.0, 0.0, true)
+            mockFusedProvider = sessionRule.MockLocationProvider(locManager, LocationManager.FUSED_PROVIDER, 0.0, 0.0, true)
         }
     }
 
@@ -63,6 +65,7 @@ class GeolocationTest : BaseSessionTest() {
             }
             mockGpsProvider.removeMockLocationProvider()
             mockNetworkProvider.removeMockLocationProvider()
+            mockFusedProvider.removeMockLocationProvider()
         } catch (e: Exception) {
         }
     }
@@ -308,7 +311,7 @@ class GeolocationTest : BaseSessionTest() {
     }
 
     @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
-    @TimeoutMillis(6000) // increment timeout since a location is posted per 3 seconds
+    @TimeoutMillis(6000) // increment timeout since a location is posted per 2 seconds
     @Test
     fun startGeolocationOnBackground() {
         mainSession.loadTestPath(HELLO_HTML_PATH)
@@ -323,6 +326,7 @@ class GeolocationTest : BaseSessionTest() {
         val handled = GeckoResult<Void>()
         var result = false
         Handler(Looper.getMainLooper()).postDelayed({
+            mainSession.setActive(true)
             val promise =
                 mainSession.evaluatePromiseJS(
                     """

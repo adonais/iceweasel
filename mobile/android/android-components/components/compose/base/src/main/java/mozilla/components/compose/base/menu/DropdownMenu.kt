@@ -53,9 +53,9 @@ import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
 import mozilla.components.compose.base.theme.AcornTheme
-import mozilla.components.ui.icons.R
 import androidx.compose.material3.DropdownMenu as MaterialDropdownMenu
 import androidx.compose.material3.DropdownMenuItem as MaterialDropdownMenuItem
+import mozilla.components.ui.icons.R as iconsR
 
 private val MenuItemHeight = 48.dp
 private val ItemHorizontalSpaceBetween = 16.dp
@@ -196,7 +196,7 @@ private fun CheckableMenuItemContent(
 ) {
     if (item.isChecked) {
         Icon(
-            painter = painterResource(R.drawable.mozac_ic_checkmark_24),
+            painter = painterResource(iconsR.drawable.mozac_ic_checkmark_24),
             tint = AcornTheme.levelColors.iconPrimary,
             contentDescription = null,
         )
@@ -344,19 +344,19 @@ private val menuPreviewParameters by lazy {
             menuItems = listOf(
                 MenuItem.IconItem(
                     text = Text.String("Delete"),
-                    drawableRes = R.drawable.mozac_ic_delete_24,
+                    drawableRes = iconsR.drawable.mozac_ic_delete_24,
                     level = Level.Critical,
                     onClick = {},
                 ),
                 MenuItem.IconItem(
                     text = Text.String("Have a cookie!"),
-                    drawableRes = R.drawable.mozac_ic_cookies_24,
+                    drawableRes = iconsR.drawable.mozac_ic_cookies_24,
                     onClick = {},
                 ),
                 MenuItem.Divider,
                 MenuItem.IconItem(
                     text = Text.String("What's new"),
-                    drawableRes = R.drawable.mozac_ic_whats_new_24,
+                    drawableRes = iconsR.drawable.mozac_ic_whats_new_24,
                     onClick = {},
                 ),
             ),

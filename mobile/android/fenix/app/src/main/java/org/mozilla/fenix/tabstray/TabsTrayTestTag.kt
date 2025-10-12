@@ -16,6 +16,7 @@ internal object TabsTrayTestTag {
 
     const val SELECTION_COUNTER = "$BANNER_ROOT.selectionCounter"
     const val COLLECTIONS_BUTTON = "$BANNER_ROOT.collections"
+    const val SHARE_BUTTON = "$BANNER_ROOT.share"
 
     // Tabs Tray Banner three dot menu
     const val THREE_DOT_BUTTON = "$BANNER_ROOT.threeDotButton"
@@ -38,6 +39,7 @@ internal object TabsTrayTestTag {
 
     const val EMPTY_NORMAL_TABS_LIST = "$NORMAL_TABS_LIST.empty"
     const val EMPTY_PRIVATE_TABS_LIST = "$PRIVATE_TABS_LIST.empty"
+    const val UNAUTHENTICATED_SYNCED_TABS_PAGE = "$SYNCED_TABS_LIST.unauthenticated"
 
     // Tab items
     const val TAB_ITEM_ROOT = "$TABS_TRAY.tabItem"

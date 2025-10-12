@@ -61,6 +61,14 @@ requestLongerTimeout(10);
 add_setup(async function () {
   // Suggest needs to be initialized in order to dismiss a suggestion.
   await QuickSuggestTestUtils.ensureQuickSuggestInit();
+
+  // Set the default value of the preference to FULL, since that's what the
+  // test was originally written with.
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.quicksuggest.settingsUi", QuickSuggest.SETTINGS_UI.FULL],
+    ],
+  });
 });
 
 // The following tasks check the initial visibility of the Firefox Suggest UI

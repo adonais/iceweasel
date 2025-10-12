@@ -8,6 +8,9 @@
 newtab-page-title = Նոր ներդիր
 newtab-settings-button =
     .title = Հարմարեցրեք ձեր Նոր Ներդիր էջը
+newtab-customize-panel-icon-button =
+    .title = Հարմարեցնել այս էջը
+newtab-customize-panel-icon-button-label = Հարմարեցնել
 newtab-personalize-settings-icon-label =
     .title = Անհատականացնել նոր ներդիրը
     .aria-label = Կարգավորումներ
@@ -85,6 +88,14 @@ newtab-confirm-delete-history-p2 = Այս գործողությունը չի կա
 
 newtab-topsite-sponsored = Հովանավորված
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (ամրացված)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -120,12 +131,15 @@ newtab-menu-delete-pocket = Ջնջել { -pocket-brand-name }-ից
 newtab-menu-archive-pocket = Արխիվացնել { -pocket-brand-name }-ում
 newtab-menu-show-privacy-info = Մեր հովանավորները և ձեր գաղտնիությունը
 newtab-menu-about-fakespot = { -fakespot-brand-name }-ի մասին
+# Report is a verb (i.e. report issue with the content).
+newtab-menu-report = Զեկուցել
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Արգելափակել
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
 
+newtab-menu-manage-sponsored-content = Կառավարեք հովանավորված բովանդակությունը
 newtab-menu-report-this-ad = Հաղորդել այս գովազդի մասին
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
@@ -294,12 +308,18 @@ newtab-custom-pocket-sponsored = Հովանավորված պատմություն
 newtab-custom-pocket-show-recent-saves = Ցուցադրել վերջին պահումները
 newtab-custom-recent-title = Վերջին ակտիվություն
 newtab-custom-recent-subtitle = Վերջին կայքերի և բովանդակության ընտրում
-newtab-custom-recent-toggle =
-    .label = Վերջին ակտիվություն
-    .description = Վերջին կայքերի և բովանդակության ընտրում
 newtab-custom-weather-toggle =
     .label = Եղանակ
     .description = Այսօրվա կանխատեսումը մի հայացքով
+newtab-custom-widget-weather-toggle =
+    .label = Եղանակ
+newtab-custom-widget-trending-search-toggle =
+    .label = Թրենդային որոնումներ
+newtab-custom-widget-lists-toggle =
+    .label = Ցանկեր
+newtab-custom-widget-timer-toggle =
+    .label = ժամաչափ
+newtab-custom-widget-section-title = Վիջեթներ
 newtab-custom-close-button = Փակել
 newtab-custom-settings = Կառավարել լրացուցիչ կարգավորումները
 
@@ -352,6 +372,7 @@ newtab-wallpaper-abstract-purple = Մանուշակագույն ձևեր
 newtab-wallpaper-abstract-orange = Նարնջագույն ձևեր
 newtab-wallpaper-gradient-orange = Գրադիենտ նարնջագույն և վարդագույն
 newtab-wallpaper-abstract-blue-purple = Կապույտ և մանուշակագույն ձևեր
+newtab-wallpaper-abstract-white-curves = Սպիտակ՝ ստվերագծված կորերով
 
 ## Celestial
 
@@ -390,7 +411,6 @@ newtab-weather-menu-change-location = Փոխել գտնվելու վայրը
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Որոնել գտնվելու վայրը
     .aria-label = Որոնել գտնվելու վայրը
-newtab-weather-change-location-search-input = Որոնել գտնվելու վայրը
 newtab-weather-menu-weather-display = Եղանակի ցուցադրում
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -496,3 +516,71 @@ newtab-report-cancel = Չեղարկել
 newtab-report-submit = Ուղարկել
 newtab-toast-thanks-for-reporting =
     .message = Շնորհակալություն հայտնելու համար:
+
+## Strings for trending searches
+
+newtab-trending-searches-hide-trending =
+    .title = Թաքցնել թրենդային որոնումները
+newtab-trending-searches-learn-more = Իմանալ ավելին
+newtab-trending-searches-dismiss = Թաքցնել թրենդային որոնումները
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Թրենդային որոնումներ
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Հնարավորությունները անվերջ են։ Ավելացրեք մեկը։
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Նոր
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Ավարտված է ({ $number })
+newtab-widget-task-list-menu-copy = Պատճենել
+newtab-widget-lists-menu-edit = Խմբագրել ցանկի անունը
+newtab-widget-lists-menu-create = Ստեղծել նոր ցանկ
+newtab-widget-lists-menu-delete = Ջնջել այս ցանկը
+newtab-widget-lists-menu-copy = Պատճենել ցանկը սեղմատախտակին
+newtab-widget-lists-menu-hide = Թաքցնել բոլոր ցանկերը
+newtab-widget-lists-menu-learn-more = Իմանալ ավելին
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Ավելացնել միույթ
+newtab-widget-lists-input-error = Խնդրում ենք ներառել տեքստ՝ տարր ավելացնելու համար։
+newtab-widget-lists-input-menu-open-link = Բացել հղումը
+newtab-widget-lists-input-menu-move-up = Շարժել վերև
+newtab-widget-lists-input-menu-move-down = Շարժել ներքև
+newtab-widget-lists-input-menu-delete = Ջնջել
+newtab-widget-lists-input-menu-edit = Խմբագրել
+newtab-widget-lists-name-label-default =
+    .label = Առաջադրանքների ցանկ
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Առաջադրանքների ցանկ
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Նոր ցանկ
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = ժամաչափ
+newtab-widget-timer-mode-break =
+    .label = Ընդմիջում
+newtab-widget-timer-play =
+    .title = Նվագարկել
+newtab-widget-timer-pause =
+    .title = Դադար
+newtab-widget-timer-label-play =
+    .label = Նվագարկել
+newtab-widget-timer-label-pause =
+    .label = Դադար
+newtab-widget-timer-reset =
+    .title = Վերակայել
+newtab-widget-timer-menu-notifications = Անջատել ծանուցումները
+newtab-widget-timer-menu-notifications-on = Միացնել ծանուցումները
+newtab-widget-timer-menu-hide = Թաքցնել ժամաչափը
+newtab-widget-timer-menu-learn-more = Իմանալ ավելին
+newtab-promo-card-title = Աջակցել { -brand-product-name }-ին
+newtab-promo-card-cta = Իմանալ ավելին

@@ -20,7 +20,7 @@
   padding: 12px;
   background-color: var(--background-color-box);
   border: 1px solid var(--in-content-border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 }
 
 :host .arrow-box::before,

@@ -120,15 +120,8 @@ export const GenAI = {
     [
       "https://claude.ai/new",
       {
-        choiceIds: [
-          "genai-onboarding-claude-generate",
-          "genai-onboarding-claude-analyze",
-          "genai-onboarding-claude-price",
-        ],
         iconUrl: "chrome://browser/content/genai/assets/brands/claude.svg",
         id: "claude",
-        learnId: "genai-onboarding-claude-learn",
-        learnLink: "https://www.anthropic.com/claude",
         link1:
           "https://www.anthropic.com/legal/archive/6370fb23-12ed-41d9-a4a2-28866dee3105",
         link2:
@@ -144,15 +137,8 @@ export const GenAI = {
     [
       "https://chatgpt.com",
       {
-        choiceIds: [
-          "genai-onboarding-chatgpt-generate",
-          "genai-onboarding-chatgpt-analyze",
-          "genai-onboarding-chatgpt-price",
-        ],
         iconUrl: "chrome://browser/content/genai/assets/brands/chatgpt.svg",
         id: "chatgpt",
-        learnId: "genai-onboarding-chatgpt-learn",
-        learnLink: "https://help.openai.com/articles/6783457-what-is-chatgpt",
         link1: "https://openai.com/terms",
         link2: "https://openai.com/privacy",
         linksId: "genai-settings-chat-chatgpt-links",
@@ -164,15 +150,8 @@ export const GenAI = {
     [
       "https://copilot.microsoft.com/?form=MOZCMC",
       {
-        choiceIds: [
-          "genai-onboarding-copilot-generate",
-          "genai-onboarding-copilot-analyze",
-          "genai-onboarding-copilot-price",
-        ],
         iconUrl: "chrome://browser/content/genai/assets/brands/copilot.svg",
         id: "copilot",
-        learnId: "genai-onboarding-copilot-learn",
-        learnLink: "https://www.microsoft.com/microsoft-copilot/learn/",
         link1: "https://www.bing.com/new/termsofuse",
         link2: "https://go.microsoft.com/fwlink/?LinkId=521839",
         linksId: "genai-settings-chat-copilot-links",
@@ -184,16 +163,9 @@ export const GenAI = {
     [
       "https://gemini.google.com",
       {
-        choiceIds: [
-          "genai-onboarding-gemini-generate",
-          "genai-onboarding-gemini-analyze",
-          "genai-onboarding-gemini-price",
-        ],
         header: "X-Firefox-Gemini",
         iconUrl: "chrome://browser/content/genai/assets/brands/gemini.svg",
         id: "gemini",
-        learnId: "genai-onboarding-gemini-learn",
-        learnLink: "https://gemini.google.com/faq",
         link1: "https://policies.google.com/terms",
         link2: "https://policies.google.com/terms/generative-ai/use-policy",
         link3: "https://support.google.com/gemini?p=privacy_notice",
@@ -208,15 +180,8 @@ export const GenAI = {
     [
       "https://huggingface.co/chat",
       {
-        choiceIds: [
-          "genai-onboarding-huggingchat-generate",
-          "genai-onboarding-huggingchat-switch",
-          "genai-onboarding-huggingchat-price-2",
-        ],
         iconUrl: "chrome://browser/content/genai/assets/brands/huggingchat.svg",
         id: "huggingchat",
-        learnId: "genai-onboarding-huggingchat-learn",
-        learnLink: "https://huggingface.co/chat/privacy/",
         link1: "https://huggingface.co/chat/privacy",
         link2: "https://huggingface.co/privacy",
         linksId: "genai-settings-chat-huggingchat-links",
@@ -228,14 +193,8 @@ export const GenAI = {
     [
       "https://chat.mistral.ai/chat",
       {
-        choiceIds: [
-          "genai-onboarding-lechat-generate",
-          "genai-onboarding-lechat-price",
-        ],
         iconUrl: "chrome://browser/content/genai/assets/brands/lechat.svg",
         id: "lechat",
-        learnId: "genai-onboarding-lechat-learn",
-        learnLink: "https://help.mistral.ai/collections/272960-le-chat",
         link1: "https://mistral.ai/terms/#terms-of-service-le-chat",
         link2: "https://mistral.ai/terms/#privacy-policy",
         linksId: "genai-settings-chat-lechat-links",
@@ -394,14 +353,14 @@ export const GenAI = {
   async addAskChatItems(browser, extraContext, itemAdder, entry, cleanup) {
     // Prepare context used for both targeting and handling prompts
     const window = browser.ownerGlobal;
-    const tab = window.gBrowser.getTabForBrowser(browser);
+    const tab = window?.gBrowser?.getTabForBrowser(browser);
     const uri = browser.currentURI;
     const context = {
       ...extraContext,
       entry,
       provider: lazy.chatProvider,
       tabTitle: (tab?._labelIsContentTitle && tab?.label) || "",
-      url: uri.asciiHost + uri.filePath,
+      url: uri?.asciiHost + uri?.filePath,
       window,
     };
 
@@ -712,6 +671,13 @@ export const GenAI = {
     } = contextMenu;
 
     showItem(menu, false);
+
+    // DO NOT show menu when inside an extension panel
+    const uri = browser.browsingContext.currentURI.spec;
+    if (uri.startsWith("moz-extension:")) {
+      return;
+    }
+
     // Page feature can be shown without provider unless disabled via menu
     // or revamp sidebar excludes chatbot
     const isPageFeatureAllowed =

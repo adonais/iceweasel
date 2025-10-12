@@ -50,6 +50,7 @@ module.exports = {
     },
   ],
   addons: [
+    "@storybook/addon-themes",
     "@storybook/addon-links",
     {
       name: "@storybook/addon-essentials",

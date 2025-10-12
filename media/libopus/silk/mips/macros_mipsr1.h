@@ -29,7 +29,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #ifndef SILK_MACROS_MIPSR1_H__
 #define SILK_MACROS_MIPSR1_H__
 
-#define mips_clz(x) __builtin_clz(x)
+static inline int mips_clz(opus_uint32 x)
+{
+    return x ? __builtin_clz(x) : 32;
+}
 
 #undef silk_SMULWB
 static inline int silk_SMULWB(int a, int b)
@@ -75,9 +78,9 @@ static inline int silk_SMLAWW(int a, int b, int c)
 static inline opus_int32 silk_CLZ16(opus_int16 in16)
 {
     int re32;
-    opus_int32 in32 = (opus_int32 )in16;
+    opus_uint32 in32 = (opus_uint16)in16;
     re32 = mips_clz(in32);
-    re32-=16;
+    re32 -= 16;
     return re32;
 }
 

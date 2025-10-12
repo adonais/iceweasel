@@ -109,7 +109,7 @@ class HTMLFrameSetElement final : public nsGenericHTMLElement {
                       nsIPrincipal* aMaybeScriptedPrincipal,
                       nsAttrValue& aResult) override;
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
-                                      int32_t aModType) const override;
+                                      AttrModType aModType) const override;
 
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 

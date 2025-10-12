@@ -32,15 +32,6 @@ toolbarbutton {
   vertical-align: middle;
 }
 
-/* ::::: toolbarbutton menu ::::: */
-
-.toolbarbutton-combined-buttons-dropmarker {
-  appearance: none;
-  -moz-context-properties: fill;
-  fill: currentColor;
-  list-style-image: url("chrome://global/skin/icons/arrow-down-12.svg");
-}
-
 /* ::::: toolbarbutton badged ::::: */
 
 .toolbarbutton-badge {

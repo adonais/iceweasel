@@ -101,6 +101,7 @@ class MOZ_STACK_CLASS gfxVarsCollectUpdates;
   _(UseH264HwEncode, bool, false)                                  \
   _(UseHEVCHwDecode, bool, false)                                  \
   _(UseHEVCHwEncode, bool, false)                                  \
+  _(VP9HwDecodeIsAccelerated, bool, false)                         \
   _(HwDecodedVideoZeroCopy, bool, false)                           \
   _(UseWMFHWDWM, bool, false)                                      \
   _(UseDMABufSurfaceExport, bool, true)                            \

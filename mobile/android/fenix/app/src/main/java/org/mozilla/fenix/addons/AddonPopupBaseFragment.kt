@@ -41,6 +41,7 @@ import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.theme.ThemeManager
+import mozilla.components.feature.downloads.R as downloadsR
 
 /**
  * Provides shared functionality to our fragments for add-on settings and
@@ -124,23 +125,27 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
                                         contentSize.value,
                                     )
                                 getString(
-                                    R.string.mozac_feature_downloads_dialog_title_3,
+                                    downloadsR.string.mozac_feature_downloads_dialog_title_3,
                                     contentSizeInBytes,
                                 )
                             } else {
-                                getString(R.string.mozac_feature_downloads_dialog_title_with_unknown_size)
+                                getString(downloadsR.string.mozac_feature_downloads_dialog_title_with_unknown_size)
                             }
 
                             downloadDialog = AlertDialog.Builder(requireContext())
                                 .setTitle(title)
                                 .setMessage(filename.value)
-                                .setPositiveButton(R.string.mozac_feature_downloads_dialog_download) { dialog, _ ->
-                                    positiveAction.value.invoke()
-                                    dialog.dismiss()
+                                .setPositiveButton(
+                                    downloadsR.string.mozac_feature_downloads_dialog_download,
+                                ) { dialog, _ ->
+                                        positiveAction.value.invoke()
+                                        dialog.dismiss()
                                 }
-                                .setNegativeButton(R.string.mozac_feature_downloads_dialog_cancel) { dialog, _ ->
-                                    negativeAction.value.invoke()
-                                    dialog.dismiss()
+                                .setNegativeButton(
+                                    downloadsR.string.mozac_feature_downloads_dialog_cancel,
+                                ) { dialog, _ ->
+                                        negativeAction.value.invoke()
+                                        dialog.dismiss()
                                 }.setOnDismissListener {
                                     downloadDialog = null
                                     requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(

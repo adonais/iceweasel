@@ -121,8 +121,10 @@ var NonBrowserWindow = {
     // initialise the offline listener
     BrowserOffline.init();
 
-    // initialize the private browsing UI
-    gPrivateBrowsingUI.init();
+    // Initialize the private browsing UI only if window is private
+    if (PrivateBrowsingUtils.isWindowPrivate(window)) {
+      PrivateBrowsingUI.init(window);
+    }
   },
 
   shutdown() {

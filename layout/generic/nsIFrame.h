@@ -126,6 +126,8 @@ class nsStyleChangeList;
 class nsViewManager;
 class nsWindowSizes;
 
+enum class AttrModType : uint8_t;  // Defined by nsIMutationObserver.h
+
 struct CharacterDataChangeInfo;
 
 namespace mozilla {
@@ -177,6 +179,18 @@ enum class LayoutFrameType : uint8_t {
 #define FRAME_TYPE(ty_, ...) ty_,
 #include "mozilla/FrameTypeList.h"
 #undef FRAME_TYPE
+};
+
+// Stores ascent and descent metrics to be used for Ruby annotation positioning
+// (potentially different from line-box or font ascent and descent).
+struct RubyMetrics {
+  nscoord mAscent = 0;
+  nscoord mDescent = 0;
+
+  void CombineWith(const RubyMetrics& aOther) {
+    mAscent = std::max(mAscent, aOther.mAscent);
+    mDescent = std::max(mDescent, aOther.mDescent);
+  }
 };
 
 }  // namespace mozilla
@@ -1661,23 +1675,7 @@ class nsIFrame : public nsQueryFrame {
   static bool ComputeBorderRadii(const mozilla::BorderRadius&,
                                  const nsSize& aFrameSize,
                                  const nsSize& aBorderArea, Sides aSkipSides,
-                                 nscoord aRadii[8]);
-
-  /*
-   * Given a set of border radii for one box (e.g., border box), convert
-   * it to the equivalent set of radii for another box (e.g., in to
-   * padding box, out to outline box) by reducing radii or increasing
-   * nonzero radii as appropriate.
-   *
-   * Indices into aRadii are the enum HalfCorner constants in gfx/2d/Types.h
-   *
-   * Note that insetting the radii is lossy, since it can turn nonzero radii
-   * into zero, and re-adjusting does not inflate zero radii.
-   *
-   * Therefore, callers should always adjust directly from the original value
-   * coming from style.
-   */
-  static void AdjustBorderRadii(nscoord aRadii[8], const nsMargin& aOffsets);
+                                 nsRectCornerRadii&);
 
   /**
    * Fill in border radii for this frame.  Return whether any are nonzero.
@@ -1691,18 +1689,30 @@ class nsIFrame : public nsQueryFrame {
    */
   virtual bool GetBorderRadii(const nsSize& aFrameSize,
                               const nsSize& aBorderArea, Sides aSkipSides,
-                              nscoord aRadii[8]) const;
-  bool GetBorderRadii(nscoord aRadii[8]) const;
-  bool GetMarginBoxBorderRadii(nscoord aRadii[8]) const;
-  bool GetPaddingBoxBorderRadii(nscoord aRadii[8]) const;
-  bool GetContentBoxBorderRadii(nscoord aRadii[8]) const;
-  bool GetBoxBorderRadii(nscoord aRadii[8], const nsMargin& aOffset) const;
-  bool GetShapeBoxBorderRadii(nscoord aRadii[8]) const;
+                              nsRectCornerRadii&) const;
+  bool GetBorderRadii(nsRectCornerRadii&) const;
+  bool GetMarginBoxBorderRadii(nsRectCornerRadii&) const;
+  bool GetPaddingBoxBorderRadii(nsRectCornerRadii&) const;
+  bool GetContentBoxBorderRadii(nsRectCornerRadii&) const;
+  bool GetShapeBoxBorderRadii(nsRectCornerRadii&) const;
 
   /**
    * Returns one em unit, adjusted for font inflation if needed, in app units.
    */
   nscoord OneEmInAppUnits() const;
+
+  /**
+   * Returns the ascent/descent metrics to be used for CSS Ruby positioning
+   * (if the "normalize metrics" option is enabled). These are derived from the
+   * first available font's "trimmed ascent" and "trimmed descent", where any
+   * internal leading included in the font's metrics has been trimmed equally
+   * from top and bottom, such that the trimmed values total 1em.
+   *
+   * @param aRubyMetricsFactor scale to be applied to the em-normalized
+   * "trimmed" metrics, to adjust how tightly ruby annotations are positioned
+   * around the base text.
+   */
+  virtual mozilla::RubyMetrics RubyMetrics(float aRubyMetricsFactor) const;
 
   /**
    * `GetNaturalBaselineBOffset`, but determines the baseline sharing group
@@ -2580,10 +2590,10 @@ class nsIFrame : public nsQueryFrame {
    * @param aNameSpaceID the namespace of the attribute
    * @param aAttribute the atom name of the attribute
    * @param aModType Whether or not the attribute was added, changed, or
-   * removed. The constants are defined in MutationEvent.webidl.
+   * removed.
    */
   virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                    int32_t aModType);
+                                    AttrModType aModType);
 
   /**
    * When the element states of mContent change, this method is invoked on the
@@ -3206,7 +3216,7 @@ class nsIFrame : public nsQueryFrame {
    */
   bool ComputeOverflowClipRectRelativeToSelf(
       const mozilla::PhysicalAxes aClipAxes, nsRect& aOutRect,
-      nscoord aOutRadii[8]) const;
+      nsRectCornerRadii& aOutRadii) const;
 
   // Returns the applicable overflow-clip-margin values.
   nsSize OverflowClipMargin(mozilla::PhysicalAxes aClipAxes) const;
@@ -3728,13 +3738,6 @@ class nsIFrame : public nsQueryFrame {
    * Note that very few frames are, so default to false.
    */
   virtual bool IsFloatContainingBlock() const { return false; }
-
-  /**
-   * If this frame is absolute positioned, attempts to lookup and return the
-   * Archor Positioning anchor given by aAnchorSpec.
-   * https://drafts.csswg.org/css-anchor-position-1/#target
-   */
-  nsIFrame* FindAnchorPosAnchor(const nsAtom* aAnchorSpec) const;
 
   /**
    * Marks all display items created by this frame as needing a repaint,

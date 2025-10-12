@@ -102,7 +102,7 @@ private fun ProtectionPanelIcon(
                 )
                 .padding(all = ICON_PADDING),
             size = ICON_SIZE,
-            roundedCornerShape = INNER_ICON_SHAPE,
+            shape = INNER_ICON_SHAPE,
         )
     }
 }

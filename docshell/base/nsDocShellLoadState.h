@@ -11,6 +11,7 @@
 #include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/UserNavigationInvolvement.h"
+#include "mozilla/dom/LoadURIOptionsBinding.h"
 
 #include "nsIClassifiedChannel.h"
 #include "nsILoadInfo.h"
@@ -147,6 +148,10 @@ class nsDocShellLoadState final {
   bool NotifiedBeforeUnloadListeners() const;
 
   void SetNotifiedBeforeUnloadListeners(bool aNotifiedBeforeUnloadListeners);
+
+  bool ShouldNotForceReplaceInOnLoad() const;
+
+  void SetShouldNotForceReplaceInOnLoad(bool aShouldNotForceReplaceInOnLoad);
 
   bool ForceAllowDataURI() const;
 
@@ -359,6 +364,15 @@ class nsDocShellLoadState final {
     return mSchemelessInput;
   }
 
+  void SetForceMediaDocument(
+      mozilla::dom::ForceMediaDocument aForceMediaDocument) {
+    mForceMediaDocument = aForceMediaDocument;
+  }
+
+  mozilla::dom::ForceMediaDocument GetForceMediaDocument() const {
+    return mForceMediaDocument;
+  }
+
   void SetHttpsUpgradeTelemetry(
       nsILoadInfo::HTTPSUpgradeTelemetryType aHttpsUpgradeTelemetry) {
     mHttpsUpgradeTelemetry = aHttpsUpgradeTelemetry;
@@ -519,7 +533,13 @@ class nsDocShellLoadState final {
   // for a content docshell the load fails.
   bool mPrincipalIsExplicit;
 
+  // If this attribute is true, any potential unload listeners have been
+  // notified if applicable.
   bool mNotifiedBeforeUnloadListeners;
+
+  // If this attribute is true, navigations for subframes taking place inside of
+  // an onload handler will not be changed to replace loads.
+  bool mShouldNotForceReplaceInOnLoad;
 
   // Principal we're inheriting. If null, this means the principal should be
   // inherited from the current document. If set to NullPrincipal, the channel
@@ -680,6 +700,10 @@ class nsDocShellLoadState final {
   // if the address had an intentional protocol
   nsILoadInfo::SchemelessInputType mSchemelessInput =
       nsILoadInfo::SchemelessInputTypeUnset;
+
+  // If not None, force the load to result in a specific media document kind.
+  mozilla::dom::ForceMediaDocument mForceMediaDocument =
+      mozilla::dom::ForceMediaDocument::None;
 
   // Solely for the use of collecting Telemetry for HTTPS upgrades.
   nsILoadInfo::HTTPSUpgradeTelemetryType mHttpsUpgradeTelemetry =

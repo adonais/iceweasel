@@ -54,10 +54,6 @@ mozilla::LazyLogModule gKeyLog("KeyboardHandler");
   MOZ_LOG(MOZ_LOG_TEST(gIMELog, aLogLevel) ? gIMELog : gKeyLog, aLogLevel, \
           aArgs)
 
-static const char* OnOrOff(bool aBool) { return aBool ? "ON" : "off"; }
-
-static const char* TrueOrFalse(bool aBool) { return aBool ? "TRUE" : "FALSE"; }
-
 static const char* GetKeyNameForNativeKeyCode(unsigned short aNativeKeyCode) {
   switch (aNativeKeyCode) {
     case kVK_Escape:
@@ -3579,7 +3575,7 @@ void IMEInputHandler::ResetTimer() {
   }
   mTimer->InitWithNamedFuncCallback(FlushPendingMethods, this, 0,
                                     nsITimer::TYPE_ONE_SHOT,
-                                    "IMEInputHandler::FlushPendingMethods");
+                                    "IMEInputHandler::FlushPendingMethods"_ns);
 }
 
 void IMEInputHandler::ExecutePendingMethods() {

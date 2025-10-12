@@ -18,6 +18,7 @@ class FocusSnackbarDelegate(private val view: View) : SnackbarDelegate {
         duration: Int,
         isError: Boolean,
         action: Int,
+        withDismissAction: Boolean,
         listener: ((View) -> Unit)?,
     ) = show(
         snackBarParentView = snackBarParentView,
@@ -25,6 +26,7 @@ class FocusSnackbarDelegate(private val view: View) : SnackbarDelegate {
         subText = subText,
         duration = duration,
         action = if (action == 0) null else snackBarParentView.context.getString(action),
+        withDismissAction = withDismissAction,
         listener = listener,
     )
 
@@ -36,6 +38,7 @@ class FocusSnackbarDelegate(private val view: View) : SnackbarDelegate {
         duration: Int,
         isError: Boolean,
         action: String?,
+        withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ) {
         if (listener != null && action != null) {

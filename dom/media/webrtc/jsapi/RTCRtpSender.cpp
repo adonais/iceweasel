@@ -1879,21 +1879,22 @@ void RTCRtpSender::SyncToJsep(JsepTransceiver& aJsepTransceiver) const {
 template <typename CodecConfigT>
 CodecConfigT& findMatchingCodec(
     std::vector<CodecConfigT>& aCodecs,
-    const Sequence<RTCRtpEncodingParameters>& aParameters) {
+    Maybe<const RTCRtpEncodingParameters&> aParameters) {
   MOZ_ASSERT(aCodecs.size());
-  if (aParameters.Length()) {
-    const auto& encoding = aParameters[0];
-    if (encoding.mCodec.WasPassed()) {
-      for (auto& codec : aCodecs) {
-        if (encoding.mCodec.Value().mMimeType.EqualsIgnoreCase(
-                codec.MimeType())) {
-          return codec;
-        }
-      }
+
+  if (!aParameters || !aParameters->mCodec.WasPassed()) {
+    return aCodecs[0];
+  }
+
+  for (auto& codec : aCodecs) {
+    if (aParameters->mCodec.Value().mMimeType.EqualsIgnoreCase(
+            codec.MimeType())) {
+      return codec;
     }
   }
+
   return aCodecs[0];
-};
+}
 
 Maybe<RTCRtpSender::VideoConfig> RTCRtpSender::GetNewVideoConfig() {
   // It is possible for SDP to signal that there is a send track, but there not
@@ -1970,14 +1971,12 @@ Maybe<RTCRtpSender::VideoConfig> RTCRtpSender::GetNewVideoConfig() {
     return Nothing();
   }
 
-  newConfig.mVideoCodec =
-      Some(mPendingParameters
-               ? findMatchingCodec(configs, mPendingParameters->mEncodings)
-               : findMatchingCodec(configs, mParameters.mEncodings));
   // Spec says that we start using new parameters right away, _before_ we
   // update the parameters that are visible to JS (ie; mParameters).
-  const RTCRtpSendParameters& parameters =
-      mPendingParameters.isSome() ? *mPendingParameters : mParameters;
+  const auto& parameters = mPendingParameters.refOr(mParameters);
+  const auto& encodings = parameters.mEncodings;
+  newConfig.mVideoCodec = Some(findMatchingCodec(
+      configs, encodings.IsEmpty() ? Nothing() : SomeRef(encodings[0])));
   for (VideoCodecConfig::Encoding& conduitEncoding :
        newConfig.mVideoCodec->mEncodings) {
     for (const RTCRtpEncodingParameters& jsEncoding : parameters.mEncodings) {
@@ -2069,16 +2068,22 @@ Maybe<RTCRtpSender::AudioConfig> RTCRtpSender::GetNewAudioConfig() {
       return Nothing();
     }
 
+    const auto& parameters = mPendingParameters.refOr(mParameters);
+    const auto& encodings = parameters.mEncodings;
+    auto encoding = encodings.IsEmpty() ? Nothing() : SomeRef(encodings[0]);
+    AudioCodecConfig& sendCodec = findMatchingCodec(configs, encoding);
+
+    if (encoding) {
+      if (encoding->mMaxBitrate.WasPassed()) {
+        sendCodec.mEncodingConstraints.maxBitrateBps.emplace(
+            encoding->mMaxBitrate.Value());
+      }
+    }
+
     std::vector<AudioCodecConfig> dtmfConfigs;
     std::copy_if(
         configs.begin(), configs.end(), std::back_inserter(dtmfConfigs),
         [](const auto& value) { return value.mName == "telephone-event"; });
-
-    const AudioCodecConfig& sendCodec =
-        mPendingParameters
-            ? findMatchingCodec(configs, mPendingParameters->mEncodings)
-            : findMatchingCodec(configs, mParameters.mEncodings);
-
     if (!dtmfConfigs.empty()) {
       // There is at least one telephone-event codec.
       // We primarily choose the codec whose frequency matches the send codec.
@@ -2250,7 +2255,7 @@ void RTCRtpSender::SetTransform(RTCRtpScriptTransform* aTransform,
 }
 
 bool RTCRtpSender::GenerateKeyFrame(const Maybe<std::string>& aRid) {
-  if (!mTransform || !mPipeline || !mSenderTrack) {
+  if (!mTransform || !mPipeline) {
     return false;
   }
 

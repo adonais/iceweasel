@@ -13,7 +13,6 @@
 #include "NodeUbiReporting.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/AttrBinding.h"
 #include "mozilla/dom/Document.h"
@@ -195,7 +194,7 @@ void Attr::SetNodeValue(const nsAString& aNodeValue, ErrorResult& aError) {
 void Attr::GetNodeValueInternal(nsAString& aNodeValue) { GetValue(aNodeValue); }
 
 void Attr::SetNodeValueInternal(const nsAString& aNodeValue,
-                                ErrorResult& aError) {
+                                ErrorResult& aError, MutationEffectOnScript) {
   SetValueInternal(aNodeValue, aError);
 }
 
@@ -230,7 +229,7 @@ void Attr::GetTextContentInternal(nsAString& aTextContent,
 
 void Attr::SetTextContentInternal(const nsAString& aTextContent,
                                   nsIPrincipal* aSubjectPrincipal,
-                                  ErrorResult& aError) {
+                                  ErrorResult& aError, MutationEffectOnScript) {
   SetValueInternal(aTextContent, aError);
 }
 

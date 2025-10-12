@@ -1080,7 +1080,7 @@ foreach(aom_source_var ${aom_source_vars})
     endif()
   endforeach()
 
-  string(FIND "${aom_source_var}" "${AOM_ROOT}" aom_find_substring_index)
+  string(FIND "${${aom_source_var}}" "${AOM_ROOT}" aom_find_substring_index)
   if(NOT aom_find_substring_index EQUAL -1)
     file(APPEND "${libaom_srcs_gni_file}" "]\n")
   endif()

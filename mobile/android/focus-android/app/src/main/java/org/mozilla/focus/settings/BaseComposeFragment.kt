@@ -35,6 +35,7 @@ import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.ui.theme.FocusTheme
 import org.mozilla.focus.ui.theme.focusColors
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Fragment acting as a wrapper over a [Composable] which will be shown below a [TopAppBar].
@@ -140,7 +141,7 @@ private fun TopAppBar(
                 onClick = onNavigateUpClick,
             ) {
                 Icon(
-                    painterResource(id = R.drawable.mozac_ic_back_24),
+                    painterResource(id = iconsR.drawable.mozac_ic_back_24),
                     stringResource(R.string.go_back),
                     tint = focusColors.toolbarColor,
                 )

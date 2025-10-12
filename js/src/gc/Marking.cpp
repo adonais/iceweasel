@@ -1354,15 +1354,15 @@ bool GCMarker::markOneColor(SliceBudget& budget) {
   return false;
 }
 
-bool GCMarker::markCurrentColorInParallel(SliceBudget& budget) {
+bool GCMarker::markCurrentColorInParallel(ParallelMarkTask* task,
+                                          SliceBudget& budget) {
   MOZ_ASSERT(stack.elementsRangesAreValid);
 
 #if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
   _mm_prefetch((char *)&markColor_, _MM_HINT_T0);
 #endif
 
-  ParallelMarker::AtomicCount& waitingTaskCount =
-      parallelMarker_->waitingTaskCountRef();
+  ParallelMarkTask::AtomicCount& waitingTaskCount = task->waitingTaskCountRef();
 
   while (processMarkStackTop<MarkingOptions::ParallelMarking>(budget)) {
     if (stack.isEmpty()) {
@@ -1373,7 +1373,7 @@ bool GCMarker::markCurrentColorInParallel(SliceBudget& budget) {
     // combined with the slice budget check. Experiments with giving this its
     // own counter resulted in worse performance.
     if (waitingTaskCount && shouldDonateWork()) {
-      parallelMarker_->donateWorkFrom(this);
+      task->donateWork();
     }
   }
 
@@ -2354,18 +2354,13 @@ void GCMarker::setRootMarkingMode(bool newState) {
   }
 }
 
-void GCMarker::enterParallelMarkingMode(ParallelMarker* pm) {
-  MOZ_ASSERT(pm);
-  MOZ_ASSERT(!parallelMarker_);
+void GCMarker::enterParallelMarkingMode() {
   setMarkingStateAndTracer<ParallelMarkingTracer>(RegularMarking,
                                                   ParallelMarking);
-  parallelMarker_ = pm;
 }
 
 void GCMarker::leaveParallelMarkingMode() {
-  MOZ_ASSERT(parallelMarker_);
   setMarkingStateAndTracer<MarkingTracer>(ParallelMarking, RegularMarking);
-  parallelMarker_ = nullptr;
 }
 
 // It may not be worth the overhead of donating very few mark stack entries. For
@@ -2675,7 +2670,13 @@ static inline void CheckIsMarkedThing(T* thing) {
   // Allow any thread access to uncollected things.
   Zone* zone = thing->zoneFromAnyThread();
   if (thing->isPermanentAndMayBeShared()) {
-    MOZ_ASSERT(!zone->wasGCStarted());
+    // Shared things are not collected and should always be marked, except
+    // during shutdown when we've merged shared atoms back into the main atoms
+    // zone.
+    if (zone->wasGCStarted()) {
+      MOZ_ASSERT(!zone->runtimeFromAnyThread()->gc.maybeSharedAtomsZone());
+      return;
+    }
     MOZ_ASSERT(!zone->needsIncrementalBarrier());
     MOZ_ASSERT(thing->isMarkedBlack());
     return;

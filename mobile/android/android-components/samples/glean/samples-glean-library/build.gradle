@@ -14,7 +14,7 @@ buildscript {
         }
 
         dependencies {
-            classpath libs.glean.gradle.plugin
+            classpath libs.mozilla.glean.gradle.plugin
         }
     }
 }

@@ -7,6 +7,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/Services.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WidgetUtils.h"
@@ -45,6 +46,7 @@
 #include "nsXULAppAPI.h"
 #include "nsThreadUtils.h"
 
+#include "nsIObserverService.h"
 #include "nsIRunnable.h"
 #include "nsXREDirProvider.h"
 #include "nsAppRunner.h"
@@ -455,6 +457,10 @@ nsToolkitProfile::SetShowProfileSelector(bool aShowProfileSelector) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   mShowProfileSelector = aShowProfileSelector;
+#  ifdef XP_WIN
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  obs->NotifyObservers(nullptr, "profile-show-selector-changed", nullptr);
+#  endif
   return NS_OK;
 #else
   return NS_ERROR_FAILURE;
@@ -2753,6 +2759,15 @@ nsresult nsToolkitProfileService::GetLocalDirFromRootDir(nsIFile* aRootDir,
   localDir.forget(aResult);
 
   return NS_OK;
+}
+
+bool nsToolkitProfileService::HasShowProfileSelector() {
+  for (RefPtr<nsToolkitProfile> profile : mProfiles) {
+    if (profile->GetShowProfileSelector()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 already_AddRefed<nsToolkitProfileService> NS_GetToolkitProfileService() {

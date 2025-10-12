@@ -6,3 +6,5 @@ tags = "local"
 ["test_initialize_vertical_tabs.py"]
 
 ["test_last_used_sidebar_panel.py"]
+
+["test_sidebar_button_removal.py"]

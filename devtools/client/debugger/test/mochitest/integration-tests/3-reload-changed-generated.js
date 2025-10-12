@@ -136,6 +136,8 @@ addIntegrationTask(async function testReloadingChangedGeneratedSource(
     // Assert that it does not pause in commpressed files
     assertNotPaused(dbg);
   }
+
+  await selectSource(dbg, "original-with-no-update.js");
   await waitForBreakpoint(dbg, "original-with-no-update.js", 6);
   await assertBreakpoint(dbg, 6);
 

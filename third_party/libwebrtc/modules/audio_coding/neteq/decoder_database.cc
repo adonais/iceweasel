@@ -14,13 +14,22 @@
 
 #include <cstdint>
 #include <list>
-#include <type_traits>
+#include <map>
+#include <optional>
 #include <utility>
+#include <vector>
 
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_decoder.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_format.h"
 #include "api/environment/environment.h"
+#include "api/scoped_refptr.h"
+#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "modules/audio_coding/neteq/packet.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
@@ -179,7 +188,7 @@ const DecoderDatabase::DecoderInfo* DecoderDatabase::GetDecoderInfo(
   DecoderMap::const_iterator it = decoders_.find(rtp_payload_type);
   if (it == decoders_.end()) {
     // Decoder not found.
-    return NULL;
+    return nullptr;
   }
   return &it->second;
 }
@@ -212,7 +221,7 @@ int DecoderDatabase::SetActiveDecoder(uint8_t rtp_payload_type,
 AudioDecoder* DecoderDatabase::GetActiveDecoder() const {
   if (active_decoder_type_ < 0) {
     // No active decoder.
-    return NULL;
+    return nullptr;
   }
   return GetDecoder(active_decoder_type_);
 }
@@ -237,7 +246,7 @@ int DecoderDatabase::SetActiveCngDecoder(uint8_t rtp_payload_type) {
 ComfortNoiseDecoder* DecoderDatabase::GetActiveCngDecoder() const {
   if (active_cng_decoder_type_ < 0) {
     // No active CNG decoder.
-    return NULL;
+    return nullptr;
   }
   if (!active_cng_decoder_) {
     active_cng_decoder_.reset(new ComfortNoiseDecoder);

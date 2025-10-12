@@ -41,7 +41,7 @@ void MacroAssembler::clampDoubleToUint8(FloatRegister input, Register output) {
 }
 
 bool MacroAssemblerLOONG64Compat::buildOOLFakeExitFrame(void* fakeReturnAddr) {
-  asMasm().PushFrameDescriptor(FrameType::IonJS);  // descriptor_
+  asMasm().Push(FrameDescriptor(FrameType::IonJS));  // descriptor_
   asMasm().Push(ImmPtr(fakeReturnAddr));
   asMasm().Push(FramePointer);
   return true;
@@ -521,6 +521,20 @@ void MacroAssemblerLOONG64::ma_add_d(Register rd, Register rj, Imm32 imm) {
   }
 }
 
+void MacroAssemblerLOONG64::ma_add_d(Register rd, Register rj, ImmWord imm) {
+  if (is_intN(imm.value, 12)) {
+    as_addi_d(rd, rj, imm.value);
+  } else if (rd != rj) {
+    ma_li(rd, imm);
+    as_add_d(rd, rj, rd);
+  } else {
+    ScratchRegisterScope scratch(asMasm());
+    MOZ_ASSERT(rj != scratch);
+    ma_li(scratch, imm);
+    as_add_d(rd, rj, scratch);
+  }
+}
+
 void MacroAssemblerLOONG64::ma_add32TestOverflow(Register rd, Register rj,
                                                  Register rk, Label* overflow) {
   ScratchRegisterScope scratch(asMasm());
@@ -715,6 +729,16 @@ void MacroAssemblerLOONG64::ma_sub_d(Register rd, Register rj, Imm32 imm) {
   }
 }
 
+void MacroAssemblerLOONG64::ma_sub_d(Register rd, Register rj, ImmWord imm) {
+  if (is_intN(-imm.value, 12)) {
+    as_addi_d(rd, rj, -imm.value);
+  } else {
+    ScratchRegisterScope scratch(asMasm());
+    ma_li(scratch, imm);
+    as_sub_d(rd, rj, scratch);
+  }
+}
+
 void MacroAssemblerLOONG64::ma_sub32TestOverflow(Register rd, Register rj,
                                                  Register rk, Label* overflow) {
   ScratchRegisterScope scratch(asMasm());
@@ -762,6 +786,14 @@ void MacroAssemblerLOONG64::ma_subPtrTestOverflow(Register rd, Register rj,
 }
 
 void MacroAssemblerLOONG64::ma_mul_d(Register rd, Register rj, Imm32 imm) {
+  // li handles the relocation.
+  ScratchRegisterScope scratch(asMasm());
+  MOZ_ASSERT(rj != scratch);
+  ma_li(scratch, imm);
+  as_mul_d(rd, rj, scratch);
+}
+
+void MacroAssemblerLOONG64::ma_mul_d(Register rd, Register rj, ImmWord imm) {
   // li handles the relocation.
   ScratchRegisterScope scratch(asMasm());
   MOZ_ASSERT(rj != scratch);
@@ -2133,6 +2165,40 @@ void MacroAssemblerLOONG64::compareFloatingPoint(FloatFormat fmt,
   }
 }
 
+void MacroAssemblerLOONG64::minMaxPtr(Register lhs, Register rhs, Register dest,
+                                      bool isMax) {
+  ScratchRegisterScope scratch(asMasm());
+  SecondScratchRegisterScope scratch2(asMasm());
+
+  as_slt(scratch, rhs, lhs);
+  if (isMax) {
+    as_masknez(scratch2, rhs, scratch);
+    as_maskeqz(dest, lhs, scratch);
+  } else {
+    as_masknez(scratch2, lhs, scratch);
+    as_maskeqz(dest, rhs, scratch);
+  }
+  as_or(dest, dest, scratch2);
+}
+
+void MacroAssemblerLOONG64::minMaxPtr(Register lhs, ImmWord rhs, Register dest,
+                                      bool isMax) {
+  ScratchRegisterScope scratch(asMasm());
+  SecondScratchRegisterScope scratch2(asMasm());
+
+  ma_li(scratch2, rhs);
+
+  as_slt(scratch, scratch2, lhs);
+  if (isMax) {
+    as_masknez(scratch2, scratch2, scratch);
+    as_maskeqz(dest, lhs, scratch);
+  } else {
+    as_maskeqz(scratch2, scratch2, scratch);
+    as_masknez(dest, lhs, scratch);
+  }
+  as_or(dest, dest, scratch2);
+}
+
 void MacroAssemblerLOONG64::minMaxDouble(FloatRegister srcDest,
                                          FloatRegister second, bool handleNaN,
                                          bool isMax) {
@@ -3022,10 +3088,15 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
   MOZ_ASSERT(!rhs.isNaN());
-  ScratchRegisterScope scratch(asMasm());
-  MOZ_ASSERT(lhs.valueReg() != scratch);
-  moveValue(rhs, ValueOperand(scratch));
-  ma_b(lhs.valueReg(), scratch, label, cond);
+
+  if (!rhs.isGCThing()) {
+    ma_b(lhs.valueReg(), ImmWord(rhs.asRawBits()), label, cond);
+  } else {
+    ScratchRegisterScope scratch(asMasm());
+    MOZ_ASSERT(lhs.valueReg() != scratch);
+    moveValue(rhs, ValueOperand(scratch));
+    ma_b(lhs.valueReg(), scratch, label, cond);
+  }
 }
 
 void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
@@ -5270,6 +5341,46 @@ void MacroAssemblerLOONG64Compat::boxDouble(FloatRegister src,
 void MacroAssemblerLOONG64Compat::boxNonDouble(JSValueType type, Register src,
                                                const ValueOperand& dest) {
   boxValue(type, src, dest.valueReg());
+}
+
+void MacroAssemblerLOONG64Compat::boxNonDouble(Register type, Register src,
+                                               const ValueOperand& dest) {
+  boxValue(type, src, dest.valueReg());
+}
+
+void MacroAssemblerLOONG64Compat::boxValue(Register type, Register src,
+                                           Register dest) {
+  MOZ_ASSERT(src != dest);
+
+#ifdef DEBUG
+  // Ensure |src| is sign-extended.
+  Label check, done;
+  ma_b(type, Imm32(JSVAL_TYPE_INT32), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_BOOLEAN), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_NULL), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_UNDEFINED), &done, Assembler::NotEqual,
+       ShortJump);
+  {
+    bind(&check);
+
+    ScratchRegisterScope scratch(asMasm());
+    as_slli_w(scratch, src, 0);
+    ma_b(src, scratch, &done, Assembler::Equal, ShortJump);
+    breakpoint();
+  }
+  bind(&done);
+
+  // GCThing types aren't currently supported, because as_bstrins_d truncates
+  // payloads above UINT32_MAX.
+  Label ok;
+  ma_b(type, Imm32(JSVAL_TYPE_NULL), &ok, Assembler::BelowOrEqual, ShortJump);
+  breakpoint();
+  bind(&ok);
+#endif
+
+  ma_or(dest, type, Imm32(JSVAL_TAG_MAX_DOUBLE));
+  as_slli_d(dest, dest, JSVAL_TAG_SHIFT);
+  as_bstrins_d(dest, src, 31, 0);
 }
 
 void MacroAssemblerLOONG64Compat::loadConstantFloat32(float f,

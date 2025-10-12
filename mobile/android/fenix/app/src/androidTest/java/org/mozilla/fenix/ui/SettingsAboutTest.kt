@@ -48,7 +48,7 @@ class SettingsAboutTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/246966
     @Test
-    fun verifyRateOnGooglePlayButton() {
+    fun verifyRateOnGooglePlayButtonTest() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
@@ -60,19 +60,8 @@ class SettingsAboutTest : TestSetup() {
         }
     }
 
-    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/246961
     @Test
-    fun verifyAboutFirefoxMenuItems() {
-        homeScreen {
-        }.openThreeDotMenu {
-        }.openSettings {
-        }.openAboutFirefoxPreview {
-            verifyAboutFirefoxPreviewInfo()
-        }
-    }
-
-    @Test
-    fun verifyLibrariesListInReleaseBuilds() {
+    fun verifyLibrariesListInReleaseBuildsTest() {
         runWithCondition(!BuildConfig.DEBUG) {
             homeScreen {
             }.openThreeDotMenu {
@@ -81,6 +70,102 @@ class SettingsAboutTest : TestSetup() {
                 verifyLibrariesUsedLink()
                 verifyTheLibrariesListNotEmpty()
             }
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3132639
+    @Test
+    fun verifyAboutFirefoxMenuAppDetailsItemTest() {
+        homeScreen {
+        }.openThreeDotMenu {
+        }.openSettings {
+        }.openAboutFirefoxPreview {
+            verifyAboutToolbar()
+            verifyAboutFirefoxPreviewInfo()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3132640
+    @Test
+    fun verifyAboutFirefoxMenuWhatsNewInFirefoxItemTest() {
+        homeScreen {
+        }.openThreeDotMenu {
+        }.openSettings {
+        }.openAboutFirefoxPreview {
+            verifyAboutToolbar()
+            verifyWhatIsNewInFirefoxLink()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3132641
+    @Test
+    fun verifyAboutFirefoxMenuSupportItemTest() {
+        homeScreen {
+        }.openThreeDotMenu {
+        }.openSettings {
+        }.openAboutFirefoxPreview {
+            verifyAboutToolbar()
+            verifySupportLink()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3132642
+    @Test
+    fun verifyAboutFirefoxMenuCrashesItemTest() {
+        homeScreen {
+        }.openThreeDotMenu {
+        }.openSettings {
+        }.openAboutFirefoxPreview {
+            verifyAboutToolbar()
+            verifyCrashesLink()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3132643
+    @Test
+    fun verifyAboutFirefoxMenuPrivacyNoticeItemTest() {
+        homeScreen {
+        }.openThreeDotMenu {
+        }.openSettings {
+        }.openAboutFirefoxPreview {
+            verifyAboutToolbar()
+            verifyPrivacyNoticeLink()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3132644
+    @Test
+    fun verifyAboutFirefoxMenuKnowYourRightsItemTest() {
+        homeScreen {
+        }.openThreeDotMenu {
+        }.openSettings {
+        }.openAboutFirefoxPreview {
+            verifyAboutToolbar()
+            verifyKnowYourRightsLink()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3132645
+    @Test
+    fun verifyAboutFirefoxMenuLicensingInformationItemTest() {
+        homeScreen {
+        }.openThreeDotMenu {
+        }.openSettings {
+        }.openAboutFirefoxPreview {
+            verifyAboutToolbar()
+            verifyLicensingInformationLink()
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3132646
+    @Test
+    fun verifyAboutFirefoxMenuLibrariesThatWeUseItemTest() {
+        homeScreen {
+        }.openThreeDotMenu {
+        }.openSettings {
+        }.openAboutFirefoxPreview {
+            verifyAboutToolbar()
+            verifyLibrariesUsedLink()
         }
     }
 }

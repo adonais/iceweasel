@@ -204,6 +204,13 @@ inline void js::WasmInstanceScope::RuntimeData::trace(JSTracer* trc) {
 inline void js::Scope::traceChildren(JSTracer* trc) {
   TraceNullableEdge(trc, &environmentShape_, "scope env shape");
   TraceNullableEdge(trc, &enclosingScope_, "scope enclosing");
+  BaseScopeData* data = rawData();
+  if (data) {
+    TraceBufferEdge(trc, this, &data, "Scope data");
+    if (data != rawData()) {
+      setHeaderPtr(data);
+    }
+  }
   applyScopeDataTyped([trc](auto data) { data->trace(trc); });
 }
 
@@ -212,6 +219,9 @@ void js::GCMarker::eagerlyMarkChildren(Scope* scope) {
   do {
     if (Shape* shape = scope->environmentShape()) {
       markAndTraverseEdge<opts>(scope, shape);
+    }
+    if (BaseScopeData* data = scope->rawData()) {
+      MarkTenuredBuffer(scope->zone(), data);
     }
     mozilla::Span<AbstractBindingName<JSAtom>> names;
     switch (scope->kind()) {

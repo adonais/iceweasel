@@ -54,6 +54,3 @@ NS_EVENT_CLASS(Internal, SMILTimeEvent)
 // MiscEvents.h
 NS_EVENT_CLASS(Widget, CommandEvent)
 NS_EVENT_CLASS(Widget, ContentCommandEvent)
-
-// InternalMutationEvent.h (dom/events)
-NS_EVENT_CLASS(Internal, MutationEvent)

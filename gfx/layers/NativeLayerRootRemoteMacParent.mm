@@ -56,12 +56,19 @@ NativeLayerRootRemoteMacParent::RecvCommitNativeLayerCommands(
 
       case NativeLayerCommand::TCommandLayerInfo: {
         auto& layerInfo = command.get_CommandLayerInfo();
-        HandleLayerInfo(
-            layerInfo.ID(), layerInfo.SurfaceID(), layerInfo.IsDRM(),
-            layerInfo.IsHDR(), layerInfo.Position(), layerInfo.Size(),
-            layerInfo.DisplayRect(), layerInfo.ClipRect(),
-            layerInfo.RoundedClipRect(), layerInfo.Transform(),
-            layerInfo.SamplingFilter(), layerInfo.SurfaceIsFlipped());
+        HandleLayerInfo(layerInfo.ID(), layerInfo.Position(),
+                        layerInfo.DisplayRect(), layerInfo.ClipRect(),
+                        layerInfo.RoundedClipRect(), layerInfo.Transform(),
+                        layerInfo.SamplingFilter(),
+                        layerInfo.SurfaceIsFlipped());
+        break;
+      }
+
+      case NativeLayerCommand::TCommandChangedSurface: {
+        auto& changedSurface = command.get_CommandChangedSurface();
+        HandleChangedSurface(changedSurface.ID(), changedSurface.SurfaceID(),
+                             changedSurface.IsDRM(), changedSurface.IsHDR(),
+                             changedSurface.Size());
         break;
       }
 
@@ -119,13 +126,36 @@ void NativeLayerRootRemoteMacParent::HandleSetLayers(
 }
 
 void NativeLayerRootRemoteMacParent::HandleLayerInfo(
-    uint64_t aID, uint32_t aSurfaceID, bool aIsDRM, bool aIsHDR,
-    IntPoint aPosition, IntSize aSize, IntRect aDisplayRect,
+    uint64_t aID, IntPoint aPosition, IntRect aDisplayRect,
     Maybe<IntRect> aClipRect, Maybe<RoundedRect> aRoundedClipRect,
     Matrix4x4 aTransform, int8_t aSamplingFilter, bool aSurfaceIsFlipped) {
   auto entry = mKnownLayers.MaybeGet(aID);
   if (!entry) {
     gfxWarning() << "Got a LayerInfo for an unknown layer.";
+    return;
+  }
+
+  RefPtr<NativeLayerCA> layer = (*entry)->AsNativeLayerCA();
+  MOZ_ASSERT(layer, "All of our known layers should be NativeLayerCA.");
+
+  // Set the other properties of layer.
+  layer->SetPosition(aPosition);
+  layer->SetDisplayRect(aDisplayRect);
+  layer->SetClipRect(aClipRect);
+  layer->SetRoundedClipRect(aRoundedClipRect);
+  layer->SetTransform(aTransform);
+  layer->SetSamplingFilter(static_cast<gfx::SamplingFilter>(aSamplingFilter));
+  layer->SetSurfaceIsFlipped(aSurfaceIsFlipped);
+}
+
+void NativeLayerRootRemoteMacParent::HandleChangedSurface(uint64_t aID,
+                                                          uint32_t aSurfaceID,
+                                                          bool aIsDRM,
+                                                          bool aIsHDR,
+                                                          IntSize aSize) {
+  auto entry = mKnownLayers.MaybeGet(aID);
+  if (!entry) {
+    gfxWarning() << "Got a ChangedSurface for an unknown layer.";
     return;
   }
 
@@ -142,15 +172,6 @@ void NativeLayerRootRemoteMacParent::HandleLayerInfo(
         CFTypeRefPtr<IOSurfaceRef>::WrapUnderCreateRule(surfaceRef);
     layer->SetSurfaceToPresent(surface, aSize, aIsDRM, aIsHDR);
   }
-
-  // Set the other properties of layer.
-  layer->SetPosition(aPosition);
-  layer->SetDisplayRect(aDisplayRect);
-  layer->SetClipRect(aClipRect);
-  layer->SetRoundedClipRect(aRoundedClipRect);
-  layer->SetTransform(aTransform);
-  layer->SetSamplingFilter(static_cast<gfx::SamplingFilter>(aSamplingFilter));
-  layer->SetSurfaceIsFlipped(aSurfaceIsFlipped);
 }
 
 }  // namespace layers

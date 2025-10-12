@@ -78,6 +78,7 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.tabstrip.TabStrip
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.HomepageThumbnailIntegration
+import org.mozilla.fenix.components.QrScanFenixFeature
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.components.VoiceSearchFeature
 import org.mozilla.fenix.components.appstate.AppAction
@@ -87,7 +88,6 @@ import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.Microsurv
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction.CheckIfEligibleForReviewPrompt
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction.ReviewPromptShown
 import org.mozilla.fenix.components.appstate.AppState
-import org.mozilla.fenix.components.appstate.qrScanner.QrScannerBinding
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.toolbar.BottomToolbarContainerView
 import org.mozilla.fenix.compose.snackbar.Snackbar
@@ -159,6 +159,7 @@ import org.mozilla.fenix.snackbar.FenixSnackbarDelegate
 import org.mozilla.fenix.snackbar.SnackbarBinding
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.TabsTrayAccessPoint
+import org.mozilla.fenix.termsofuse.store.Surface
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.allowUndo
 import org.mozilla.fenix.utils.showAddSearchWidgetPromptIfSupported
@@ -254,9 +255,18 @@ class HomeFragment : Fragment() {
         ViewBoundFeatureWrapper<VoiceSearchFeature>()
     }
 
+    private val qrScanFenixFeature by lazy(LazyThreadSafetyMode.NONE) {
+        ViewBoundFeatureWrapper<QrScanFenixFeature>()
+    }
+
     private val voiceSearchLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             voiceSearchFeature.get()?.handleVoiceSearchResult(result.resultCode, result.data)
+        }
+
+    private val qrScanLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            qrScanFenixFeature.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -771,7 +781,8 @@ class HomeFragment : Fragment() {
                                     )
                                 }
                         } else {
-                            toolbarView.updateDividerVisibility(true)
+                            val showDivider = !requireContext().settings().enableHomepageSearchBar
+                            toolbarView.updateDividerVisibility(showDivider)
                         }
 
                         if (isToolbarAtTheBottom) {
@@ -790,9 +801,11 @@ class HomeFragment : Fragment() {
     private fun resetToolbarViewUI() {
         val elevation = requireContext().resources.getDimension(R.dimen.browser_fragment_toolbar_elevation)
         _binding?.homeLayout?.removeView(bottomToolbarContainerView.toolbarContainerView)
+        val showDivider = requireContext().isToolbarAtBottom() || !requireContext().settings().enableHomepageSearchBar
+
         updateToolbarViewUI(
             R.drawable.home_bottom_bar_background,
-            true,
+            showDivider,
             elevation,
         )
     }
@@ -864,21 +877,19 @@ class HomeFragment : Fragment() {
         observeSearchEngineNameChanges()
         observeWallpaperUpdates()
 
-        observePrivateModeLock(
-            viewLifecycleOwner = viewLifecycleOwner,
-            scope = viewLifecycleOwner.lifecycleScope,
-            appStore = requireComponents.appStore,
-            onPrivateModeLocked = {
-                findNavController().navigate(
-                    NavGraphDirections.actionGlobalUnlockPrivateTabsFragment(NavigationOrigin.HOME_PAGE),
-                )
-            },
-        )
+        observePrivateModeLock {
+            findNavController().navigate(
+                NavGraphDirections.actionGlobalUnlockPrivateTabsFragment(NavigationOrigin.HOME_PAGE),
+            )
+        }
 
         toolbarView.build(requireComponents.core.store.state, requireContext().settings().enableHomepageSearchBar)
         if (requireContext().settings().isTabStripEnabled) {
             initTabStrip()
         }
+
+        val showDivider = requireContext().isToolbarAtBottom() || !requireContext().settings().enableHomepageSearchBar
+        toolbarView.updateDividerVisibility(showDivider)
 
         consumeFrom(requireComponents.core.store) {
             toolbarView.updateTabCounter(it)
@@ -905,7 +916,15 @@ class HomeFragment : Fragment() {
         }
 
         if (requireContext().settings().shouldUseComposableToolbar) {
-            QrScannerBinding.register(this)
+            qrScanFenixFeature.set(
+                feature = QrScanFenixFeature(
+                    context = requireContext(),
+                    appStore = requireContext().components.appStore,
+                    qrScanActivityLauncher = qrScanLauncher,
+                ),
+                owner = viewLifecycleOwner,
+                view = binding.root,
+            )
         }
 
         (toolbarView as? HomeToolbarView)?.let {
@@ -1116,9 +1135,7 @@ class HomeFragment : Fragment() {
         awesomeBarComposable = null
         _binding = null
 
-        if (!requireContext().components.appStore.state.isPrivateScreenLocked) {
-            bundleArgs.clear()
-        }
+        bundleArgs.clear()
         lastAppliedWallpaperName = Wallpaper.DEFAULT
     }
 
@@ -1160,7 +1177,7 @@ class HomeFragment : Fragment() {
 
         if (requireComponents.termsOfUseManager.shouldShowTermsOfUsePromptOnHomepage()) {
             findNavController().navigate(
-                BrowserFragmentDirections.actionGlobalTermsOfUseDialog(),
+                BrowserFragmentDirections.actionGlobalTermsOfUseDialog(Surface.HOMEPAGE_NEW_TAB),
             )
         }
     }

@@ -156,33 +156,6 @@ impl Drop for ComputedValues {
 unsafe impl Sync for ComputedValues {}
 unsafe impl Send for ComputedValues {}
 
-impl Clone for ComputedValues {
-    fn clone(&self) -> Self {
-        unreachable!()
-    }
-}
-
-impl Clone for ComputedValuesInner {
-    fn clone(&self) -> Self {
-        ComputedValuesInner {
-            % for style_struct in data.style_structs:
-            ${style_struct.gecko_name}: Arc::into_raw(unsafe { Arc::from_raw_addrefed(self.${style_struct.name_lower}_ptr()) }) as *const _,
-            % endfor
-            custom_properties: self.custom_properties.clone(),
-            writing_mode: self.writing_mode.clone(),
-            flags: self.flags.clone(),
-            effective_zoom: self.effective_zoom,
-            rules: self.rules.clone(),
-            visited_style: if self.visited_style.is_null() {
-                ptr::null()
-            } else {
-                Arc::into_raw(unsafe { Arc::from_raw_addrefed(self.visited_style_ptr()) }) as *const _
-            },
-        }
-    }
-}
-
-
 impl Drop for ComputedValuesInner {
     fn drop(&mut self) {
         % for style_struct in data.style_structs:
@@ -280,23 +253,8 @@ impl ComputedValuesInner {
     }
 
     #[inline]
-    pub fn clone_${style_struct.name_lower}(&self) -> Arc<style_structs::${style_struct.name}> {
-        unsafe { Arc::from_raw_addrefed(self.${style_struct.name_lower}_ptr()) }
-    }
-    #[inline]
     pub fn get_${style_struct.name_lower}(&self) -> &style_structs::${style_struct.name} {
         unsafe { &*self.${style_struct.name_lower}_ptr() }
-    }
-
-    #[inline]
-    pub fn mutate_${style_struct.name_lower}(&mut self) -> &mut style_structs::${style_struct.name} {
-        unsafe {
-            let mut arc = Arc::from_raw(self.${style_struct.name_lower}_ptr());
-            let ptr = Arc::make_mut(&mut arc) as *mut _;
-            // Sound for the same reason _ptr() is sound.
-            self.${style_struct.gecko_name} = Arc::into_raw(arc) as *const _;
-            &mut *ptr
-        }
     }
     % endfor
 }

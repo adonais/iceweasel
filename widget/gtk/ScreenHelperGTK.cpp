@@ -26,6 +26,7 @@
 #include "nsTArray.h"
 #include "nsWindow.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_widget.h"
 
 struct wl_registry;
 
@@ -66,13 +67,69 @@ static uint32_t GetGTKPixelDepth() {
 
 static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
                                               bool aIsHDR) {
+  gint geometryScaleFactor =
+      ScreenHelperGTK::GetGTKMonitorScaleFactor(aMonitor);
   GdkScreen* defaultScreen = gdk_screen_get_default();
-  gint gdkScaleFactor = ScreenHelperGTK::GetGTKMonitorScaleFactor(aMonitor);
 
-  // gdk_screen_get_monitor_geometry / workarea returns application pixels
-  // (desktop pixels), so we need to convert it to device pixels with
-  // gdkScaleFactor.
-  gint geometryScaleFactor = gdkScaleFactor;
+  GdkRectangle workarea;
+  gdk_screen_get_monitor_workarea(defaultScreen, aMonitor, &workarea);
+  LayoutDeviceIntRect availRect(workarea.x * geometryScaleFactor,
+                                workarea.y * geometryScaleFactor,
+                                workarea.width * geometryScaleFactor,
+                                workarea.height * geometryScaleFactor);
+
+  LayoutDeviceIntRect rect;
+  DesktopToLayoutDeviceScale contentsScale(1.0);
+  CSSToLayoutDeviceScale defaultCssScale(geometryScaleFactor);
+  if (GdkIsX11Display()) {
+    GdkRectangle monitor;
+    gdk_screen_get_monitor_geometry(defaultScreen, aMonitor, &monitor);
+    rect = LayoutDeviceIntRect(monitor.x * geometryScaleFactor,
+                               monitor.y * geometryScaleFactor,
+                               monitor.width * geometryScaleFactor,
+                               monitor.height * geometryScaleFactor);
+  } else {
+    // Use per-monitor scaling factor in Wayland.
+    contentsScale.scale = geometryScaleFactor;
+
+#ifdef MOZ_WAYLAND
+    if (StaticPrefs::widget_wayland_fractional_scale_enabled()) {
+      // Check if we're using fractional scale (see Bug 1985720).
+      // In such case use workarea is already scaled by fractional scale factor.
+      nsWaylandDisplay::MonitorConfig* config =
+          WaylandDisplayGet()->GetMonitorConfig(workarea.x, workarea.y);
+      Unused << NS_WARN_IF(!config);
+      if (config && workarea.width > config->pixelWidth / geometryScaleFactor &&
+          workarea.height > config->pixelHeight / geometryScaleFactor) {
+        float fractionalScale = (float)config->pixelWidth / workarea.width;
+        LOG_SCREEN("Monitor %d uses fractional scale %f", aMonitor,
+                   fractionalScale);
+        availRect.width = config->pixelWidth;
+        availRect.height = config->pixelHeight;
+        defaultCssScale = CSSToLayoutDeviceScale(fractionalScale);
+        contentsScale.scale = fractionalScale;
+      }
+    }
+#endif
+    // Don't report screen shift in Wayland, see bug 1795066.
+    availRect.MoveTo(0, 0);
+    // We use Gtk workarea on Wayland as it matches our needs (Bug 1732682).
+    rect = availRect;
+  }
+
+  uint32_t pixelDepth = GetGTKPixelDepth();
+  if (pixelDepth == 32) {
+    // If a device uses 32 bits per pixel, it's still only using 8 bits
+    // per color component, which is what our callers want to know.
+    // (Some devices report 32 and some devices report 24.)
+    pixelDepth = 24;
+  }
+
+  float dpi = 96.0f;
+  gint heightMM = gdk_screen_get_monitor_height_mm(defaultScreen, aMonitor);
+  if (heightMM > 0) {
+    dpi = rect.height / (heightMM / MM_PER_INCH_FLOAT);
+  }
 
   gint refreshRate = [&] {
     // Since gtk 3.22
@@ -89,46 +146,6 @@ static already_AddRefed<Screen> MakeScreenGtk(unsigned int aMonitor,
     // Convert to Hz.
     return NSToIntRound(s_gdk_monitor_get_refresh_rate(monitor) / 1000.0f);
   }();
-
-  GdkRectangle workarea;
-  gdk_screen_get_monitor_workarea(defaultScreen, aMonitor, &workarea);
-  LayoutDeviceIntRect availRect(workarea.x * geometryScaleFactor,
-                                workarea.y * geometryScaleFactor,
-                                workarea.width * geometryScaleFactor,
-                                workarea.height * geometryScaleFactor);
-  LayoutDeviceIntRect rect;
-  DesktopToLayoutDeviceScale contentsScale(1.0);
-  if (GdkIsX11Display()) {
-    GdkRectangle monitor;
-    gdk_screen_get_monitor_geometry(defaultScreen, aMonitor, &monitor);
-    rect = LayoutDeviceIntRect(monitor.x * geometryScaleFactor,
-                               monitor.y * geometryScaleFactor,
-                               monitor.width * geometryScaleFactor,
-                               monitor.height * geometryScaleFactor);
-  } else {
-    // Don't report screen shift in Wayland, see bug 1795066.
-    availRect.MoveTo(0, 0);
-    // We use Gtk workarea on Wayland as it matches our needs (Bug 1732682).
-    rect = availRect;
-    // Use per-monitor scaling factor in Wayland.
-    contentsScale.scale = gdkScaleFactor;
-  }
-
-  uint32_t pixelDepth = GetGTKPixelDepth();
-  if (pixelDepth == 32) {
-    // If a device uses 32 bits per pixel, it's still only using 8 bits
-    // per color component, which is what our callers want to know.
-    // (Some devices report 32 and some devices report 24.)
-    pixelDepth = 24;
-  }
-
-  CSSToLayoutDeviceScale defaultCssScale(gdkScaleFactor);
-
-  float dpi = 96.0f;
-  gint heightMM = gdk_screen_get_monitor_height_mm(defaultScreen, aMonitor);
-  if (heightMM > 0) {
-    dpi = rect.height / (heightMM / MM_PER_INCH_FLOAT);
-  }
 
   LOG_SCREEN(
       "New monitor %d size [%d,%d -> %d x %d] depth %d scale %f CssScale %f  "
@@ -476,8 +493,10 @@ void WaylandMonitor::Finish() {
   LOG_SCREEN("WaylandMonitor::Finish() [%p]", this);
 
   MozClearPointer(mOutput, wp_color_management_output_v1_destroy);
+  MozClearPointer(mDescription, wp_image_description_v1_destroy);
 
-  // We need to wait with WaylandMonitor
+  // We need to wait with WaylandMonitor release until mOutput/mDescription
+  // are deleted.
   AddRef();
   static const struct wl_callback_listener listener{
       [](void* aData, struct wl_callback* callback, uint32_t time) {
@@ -486,8 +505,6 @@ void WaylandMonitor::Finish() {
       }};
   wl_callback_add_listener(wl_display_sync(WaylandDisplayGetWLDisplay()),
                            &listener, this);
-
-  MozClearPointer(mDescription, wp_image_description_v1_destroy);
   mScreenGetter = nullptr;
 }
 
@@ -621,8 +638,9 @@ ScreenGetterGtk::ScreenGetterGtk(int aSerial, bool aHDRInfoOnly)
     : mSerial(aSerial),
       mMonitorNum(gdk_screen_get_n_monitors(gdk_screen_get_default())),
       mHDRInfoOnly(aHDRInfoOnly) {
-  LOG_SCREEN("ScreenGetterGtk()::ScreenGetterGtk() [%p] monitor num %d", this,
-             mMonitorNum);
+  LOG_SCREEN(
+      "ScreenGetterGtk()::ScreenGetterGtk() [%p] HDR only [%d] monitor num %d",
+      this, aHDRInfoOnly, mMonitorNum);
 #ifdef MOZ_WAYLAND
   LOG_SCREEN("HDR Protocol %s",
              GdkIsWaylandDisplay() && WaylandDisplayGet()->IsHDREnabled()
@@ -666,6 +684,23 @@ gint ScreenHelperGTK::GetGTKMonitorScaleFactor(gint aMonitor) {
              : 1;
 }
 
+float ScreenHelperGTK::GetGTKMonitorFractionalScaleFactor(gint aMonitor) {
+#ifdef MOZ_WAYLAND
+  if (GdkIsWaylandDisplay()) {
+    auto& screens = widget::ScreenManager::GetSingleton().CurrentScreenList();
+    auto scale = (size_t)aMonitor < screens.Length()
+                     ? screens[aMonitor]->GetContentsScaleFactor()
+                     : 1.0f;
+    LOG_SCREEN(
+        "ScreenHelperGTK::GetGTKMonitorFractionalScaleFactor(%d) scale %f",
+        aMonitor, scale);
+    return scale;
+  }
+#endif
+  // Fractional scale is not supported on X11, fallback to ceiled one.
+  return GetGTKMonitorScaleFactor(aMonitor);
+}
+
 static void monitors_changed(GdkScreen* aScreen, gpointer unused) {
   LOG_SCREEN("Received monitors-changed event");
   ScreenHelperGTK::RequestRefreshScreens();
@@ -701,6 +736,16 @@ static GdkFilterReturn root_window_event_filter(GdkXEvent* aGdkXEvent,
 
   return GDK_FILTER_CONTINUE;
 }
+
+#ifdef MOZ_WAYLAND
+/* static */
+void ScreenHelperGTK::ScreensPrefChanged(const char* aPrefIgnored,
+                                         void* aDataIgnored) {
+  LOG_SCREEN("ScreenHelperGTK::ScreensPrefChanged()");
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
+  ScreenHelperGTK::RequestRefreshScreens();
+}
+#endif
 
 ScreenHelperGTK::ScreenHelperGTK() {
   LOG_SCREEN("ScreenHelperGTK::ScreenHelperGTK() created");
@@ -744,6 +789,10 @@ ScreenHelperGTK::ScreenHelperGTK() {
     LOG_SCREEN("ScreenHelperGTK() query HDR Wayland display");
     RequestRefreshScreens(/* aInitialRefresh */ true);
   }
+  Preferences::RegisterCallback(
+      ScreenHelperGTK::ScreensPrefChanged,
+      nsDependentCString(
+          StaticPrefs::GetPrefName_widget_wayland_fractional_scale_enabled()));
 #endif
 }
 

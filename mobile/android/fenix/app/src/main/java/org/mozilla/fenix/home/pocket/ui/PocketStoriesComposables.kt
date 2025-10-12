@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -27,7 +26,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -35,6 +33,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -47,6 +46,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.core.net.toUri
+import mozilla.components.compose.base.SelectableChip
+import mozilla.components.compose.base.SelectableChipColors
 import mozilla.components.compose.base.modifier.onShown
 import mozilla.components.compose.base.utils.inComposePreview
 import mozilla.components.service.pocket.PocketStory
@@ -57,8 +58,6 @@ import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.ITEM_WIDTH
 import org.mozilla.fenix.compose.ListItemTabSurface
-import org.mozilla.fenix.compose.SelectableChip
-import org.mozilla.fenix.compose.SelectableChipColors
 import org.mozilla.fenix.compose.TabSubtitleWithInterdot
 import org.mozilla.fenix.compose.eagerFlingBehavior
 import org.mozilla.fenix.ext.settings
@@ -81,7 +80,6 @@ private const val POCKET_STORIES_UTM_VALUE = "pocket-newtab-android"
  * @param backgroundColor The background [Color] of the story.
  * @param onStoryClick Callback for when the user taps on this story.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PocketStory(
     @PreviewParameter(PocketStoryProvider::class) story: PocketRecommendedStory,
@@ -148,7 +146,6 @@ fun PocketStory(
  * @param backgroundColor The background [Color] of the story.
  * @param onStoryClick Callback for when the user taps on this story.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PocketSponsoredStory(
     story: PocketSponsoredStory,
@@ -219,7 +216,6 @@ fun PocketSponsoredStory(
  * @param backgroundColor The background [Color] of the sponsored content.
  * @param onClick Callback for when the user taps on the sponsored content.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SponsoredContent(
     sponsoredContent: SponsoredContent,
@@ -283,7 +279,6 @@ fun SponsoredContent(
  * @param backgroundColor The background [Color] of the recommendation.
  * @param onClick Callback for when the user taps on the recommendation.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ContentRecommendation(
     recommendation: ContentRecommendation,
@@ -338,7 +333,6 @@ fun ContentRecommendation(
  * @param onStoryShown Callback for when a certain story is visible to the user.
  * @param onStoryClicked Callback for when the user taps on a recommended story.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Suppress("CyclomaticComplexMethod", "LongMethod")
 @Composable
 fun PocketStories(
@@ -356,7 +350,9 @@ fun PocketStories(
     val flingBehavior = eagerFlingBehavior(lazyRowState = listState)
 
     val configuration = LocalConfiguration.current
-    val screenWidth = configuration.screenWidthDp.dp
+    val screenWidth = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp()
+    }
 
     val endPadding =
         remember { mutableStateOf(endPadding(configuration, screenWidth, contentPadding)) }
@@ -536,7 +532,6 @@ private fun alignColumnToTitlePadding(screenWidth: Dp, contentPadding: Dp) =
  * @param categoryColors The color set defined by [SelectableChipColors] used to style Pocket categories.
  * @param onCategoryClick Callback for when the user taps a category.
  */
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun PocketStoriesCategories(
     categories: List<PocketRecommendedStoriesCategory>,

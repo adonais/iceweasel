@@ -12,8 +12,10 @@
 #include "js/TypeDecls.h"
 #include "js/Utility.h"  // JS::FreePolicy
 #include "js/loader/LoadedScript.h"
+#include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ScriptKind.h"
 #include "js/loader/ScriptLoadRequest.h"
+#include "js/loader/ScriptLoadRequestList.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
@@ -51,11 +53,9 @@ class SourceText;
 namespace loader {
 
 class LoadedScript;
-class ScriptLoaderInterface;
 class ModuleLoadRequest;
 class ModuleScript;
 class ScriptLoadRequest;
-class ScriptLoadRequestList;
 
 enum class ParserMetadata;
 
@@ -215,10 +215,14 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
    * In this case ScriptAvailable is guaranteed to be called at a later
    * point (as well as possibly ScriptEvaluated).
    *
-   * @param aElement The element representing the script to be loaded and
-   *        evaluated.
+   * @param aElement    The element representing the script to be loaded and
+   * evaluated.
+   * @param aSourceText For inline non-trusted script, the source text after
+   * application of the default Trusted Types policy, a void string otherwise.
+   * See https://html.spec.whatwg.org/#prepare-the-script-element
    */
-  bool ProcessScriptElement(nsIScriptElement* aElement);
+  bool ProcessScriptElement(nsIScriptElement* aElement,
+                            const nsAString& aSourceText);
 
   /**
    * Gets the currently executing script. This is useful if you want to
@@ -442,8 +446,8 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   mozilla::dom::DocGroup* GetDocGroup() const;
 
   /**
-   * Register the fact that we saw the load event, and that we need to save the
-   * bytecode at the next loop cycle unless new scripts are waiting in the
+   * Register the fact that we saw the load event, and that we need to perform
+   * the caching at the next loop cycle unless new scripts are waiting in the
    * pipeline.
    */
   void LoadEventFired();
@@ -451,7 +455,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   /**
    * Destroy and prevent the ScriptLoader or the ScriptLoadRequests from owning
    * any references to the JSScript or to the Request which might be used for
-   * caching the encoded bytecode.
+   * caching.
    */
   void Destroy();
 
@@ -469,10 +473,11 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   ~ScriptLoader();
 
   already_AddRefed<ScriptLoadRequest> CreateLoadRequest(
-      ScriptKind aKind, nsIURI* aURI, nsIScriptElement* aElement,
-      nsIPrincipal* aTriggeringPrincipal, mozilla::CORSMode aCORSMode,
-      const nsAString& aNonce, RequestPriority aRequestPriority,
-      const SRIMetadata& aIntegrity, ReferrerPolicy aReferrerPolicy,
+      JS::loader::ScriptKind aKind, nsIURI* aURI, nsIScriptElement* aElement,
+      const nsAString& aScriptContent, nsIPrincipal* aTriggeringPrincipal,
+      mozilla::CORSMode aCORSMode, const nsAString& aNonce,
+      RequestPriority aRequestPriority, const SRIMetadata& aIntegrity,
+      ReferrerPolicy aReferrerPolicy,
       JS::loader::ParserMetadata aParserMetadata,
       ScriptLoadRequestType aRequestType);
 
@@ -505,10 +510,13 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
    */
   void ContinueParserAsync(ScriptLoadRequest* aParserBlockingRequest);
 
-  bool ProcessExternalScript(nsIScriptElement* aElement, ScriptKind aScriptKind,
+  bool ProcessExternalScript(nsIScriptElement* aElement,
+                             JS::loader::ScriptKind aScriptKind,
                              nsIContent* aScriptContent);
 
-  bool ProcessInlineScript(nsIScriptElement* aElement, ScriptKind aScriptKind);
+  bool ProcessInlineScript(nsIScriptElement* aElement,
+                           JS::loader::ScriptKind aScriptKind,
+                           const nsAString& aSourceText);
 
   enum class CacheBehavior : uint8_t {
     DoNothing,
@@ -522,7 +530,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
                        RefPtr<JS::Stencil>& aStencil);
 
   JS::loader::ScriptLoadRequest* LookupPreloadRequest(
-      nsIScriptElement* aElement, ScriptKind aScriptKind,
+      nsIScriptElement* aElement, JS::loader::ScriptKind aScriptKind,
       const SRIMetadata& aSRIMetadata);
 
   void GetSRIMetadata(const nsAString& aIntegrityAttr,
@@ -706,54 +714,87 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   // and store the script into the request if necessary.
   //
   // This method must be called before executing the script.
-  void MaybePrepareForBytecodeEncodingBeforeExecute(
-      ScriptLoadRequest* aRequest, JS::Handle<JSScript*> aScript);
+  void MaybePrepareForCacheBeforeExecute(ScriptLoadRequest* aRequest,
+                                         JS::Handle<JSScript*> aScript);
 
-  // Queue the script load request for bytecode encoding if we decided to
-  // encode, or cleanup the script load request fields otherwise.
+  // Queue the script load request for caching if we decided to cache it, or
+  // cleanup the script load request fields otherwise.
   //
   // This method must be called after executing the script.
-  nsresult MaybePrepareForBytecodeEncodingAfterExecute(
-      ScriptLoadRequest* aRequest, nsresult aRv);
+  nsresult MaybePrepareForCacheAfterExecute(ScriptLoadRequest* aRequest,
+                                            nsresult aRv);
 
-  // Returns true if MaybePrepareForBytecodeEncodingAfterExecute is called
+  // Returns true if MaybePrepareForCacheAfterExecute is called
   // for given script load request.
-  bool IsAlreadyHandledForBytecodeEncodingPreparation(
-      ScriptLoadRequest* aRequest);
+  bool IsAlreadyHandledForCachePreparation(ScriptLoadRequest* aRequest);
 
-  void MaybePrepareModuleForBytecodeEncodingBeforeExecute(
+  void MaybePrepareModuleForCacheBeforeExecute(
       JSContext* aCx, ModuleLoadRequest* aRequest) override;
 
-  nsresult MaybePrepareModuleForBytecodeEncodingAfterExecute(
-      ModuleLoadRequest* aRequest, nsresult aRv) override;
+  nsresult MaybePrepareModuleForCacheAfterExecute(ModuleLoadRequest* aRequest,
+                                                  nsresult aRv) override;
 
   // Implements https://html.spec.whatwg.org/#run-a-classic-script
   nsresult EvaluateScript(nsIGlobalObject* aGlobalObject,
                           ScriptLoadRequest* aRequest);
 
   /**
-   * Queue the current script load request to be saved, when the page
-   * initialization ends. The page initialization end is defined as being the
-   * time when the load event got received, and when no more scripts are waiting
-   * to be executed.
+   * Register the script load request to be cached.
+   *
+   * The caller can call this at the same time instantiating the stencil,
+   * and also start collecting delazifications.
+   *
+   * The cache handling will be performed when the page initialization ends.
+   * The page initialization end is defined as being the time when the load
+   * event got received, and when no more scripts are waiting to be executed.
+   *
+   * The initial stencil and collected delazifications will be stored into
+   *   - the in-memory cache, and/or
+   *   - the necko cache
    */
-  void RegisterForBytecodeEncoding(ScriptLoadRequest* aRequest);
+  void RegisterForCache(ScriptLoadRequest* aRequest);
 
   /**
    * Check if all conditions are met, i-e that the onLoad event fired and that
    * no more script have to be processed.  If all conditions are met, queue an
-   * event to encode all the bytecode and save them on the cache.
+   * event to perform the cache handling, which does:
+   *   - finish collecting the delazifications
+   *   - optionally save to the necko cache
    */
-  void MaybeTriggerBytecodeEncoding() override;
+  void MaybeUpdateCache() override;
 
   /**
-   * Iterate over all script load request and save the bytecode of executed
-   * functions on the cache provided by the channel.
+   * Iterate over all script load request and perform the caching operations,
+   * which is:
+   *   - finish collecting delazifications
+   *   - encode and save it to the necko cache
    */
-  void EncodeBytecode();
-  void EncodeRequestBytecode(JSContext* aCx, ScriptLoadRequest* aRequest);
+  void UpdateCache();
 
-  void GiveUpBytecodeEncoding();
+  /**
+   * Finish collecting the delazifications and return the stencil.
+   */
+  already_AddRefed<JS::Stencil> FinishCollectingDelazifications(
+      JSContext* aCx, ScriptLoadRequest* aRequest);
+
+  /**
+   * Encode the stencils and save the bytecode to the necko cache.
+   */
+  void EncodeBytecodeAndSave(JSContext* aCx, ScriptLoadRequest* aRequest,
+                             nsCOMPtr<nsICacheInfoChannel>& aCacheInfo,
+                             nsCString& aMimeType,
+                             const JS::TranscodeBuffer& aSRI,
+                             JS::Stencil* aStencil);
+
+  /**
+   * Stop collecting delazifications for all requests.
+   * This should be used when the ScriptLoader is getting destroyed, or
+   * when it hits any critical error.
+   *
+   * The delazifications collected so far are reflected to the stencils,
+   * but they won't be encoded.
+   */
+  void GiveUpCaching();
 
   already_AddRefed<nsIGlobalObject> GetGlobalForRequest(
       ScriptLoadRequest* aRequest);
@@ -784,11 +825,14 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   void MaybeMoveToLoadedList(ScriptLoadRequest* aRequest);
 
-  // Check whether the bytecode for the request should be saved or not.
+  // Check whether the request should be saved to the following or not:
+  //   * in-memory cache as Stencil
+  //   * necko alternative stream as Stencil XDR
+  //
   // If the request is a non-top-level module request and it passed the
-  // condition, it's stored into mBytecodeEncodableDependencyModules in order
+  // condition, it's stored into mCacheableDependencyModules in order
   // to iterate over them later.
-  void CalculateBytecodeCacheFlag(ScriptLoadRequest* aRequest);
+  void CalculateCacheFlag(ScriptLoadRequest* aRequest);
 
   void RunScriptWhenSafe(ScriptLoadRequest* aRequest);
 
@@ -807,41 +851,41 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
 
   // Holds non-async, non-parser-created requests until it's evaluated or it
   // hits load error.
-  ScriptLoadRequestList mNonAsyncExternalScriptInsertedRequests;
+  JS::loader::ScriptLoadRequestList mNonAsyncExternalScriptInsertedRequests;
 
   // Holds async requests until it's loaded or it hits load error.
   // When they have been loaded they are moved to mLoadedAsyncRequests.
-  ScriptLoadRequestList mLoadingAsyncRequests;
+  JS::loader::ScriptLoadRequestList mLoadingAsyncRequests;
 
   // Holds async script requests and dynamic module import
   // requests, which are processed in the same way, until it's evaluated,
   // or it's passed to off-thread.
-  ScriptLoadRequestList mLoadedAsyncRequests;
+  JS::loader::ScriptLoadRequestList mLoadedAsyncRequests;
 
   // Holds non-async, parser-created, defer requests, until it's evaluated
   // or it hits load error.
-  ScriptLoadRequestList mDeferRequests;
+  JS::loader::ScriptLoadRequestList mDeferRequests;
 
   // Holds parser-created XSLT requests, until it's evaluated or it hits
   // load error.
-  ScriptLoadRequestList mXSLTRequests;
+  JS::loader::ScriptLoadRequestList mXSLTRequests;
 
   RefPtr<ScriptLoadRequest> mParserBlockingRequest;
 
   // Holds requests which is passed to off-thread compilation.
   // When the off-thread compilation finishes, the request is added back to
   // the original list if any.
-  ScriptLoadRequestList mOffThreadCompilingRequests;
+  JS::loader::ScriptLoadRequestList mOffThreadCompilingRequests;
 
-  // Holds non-top-level module requests which passed the bytecode encoding
-  // conditions, until it's queued to mBytecodeEncodingQueue.
+  // Holds non-top-level module requests which passed caching conditions, until
+  // it's queued to mCachingQueue.
   //
-  // TODO: Remove this and per-ScriptLoader encoding queue (bug 1902951).
-  ScriptLoadRequestList mBytecodeEncodableDependencyModules;
+  // TODO: Remove this and per-ScriptLoader caching queue (bug 1902951).
+  JS::loader::ScriptLoadRequestList mCacheableDependencyModules;
 
   // Holds already-evaluted requests that are holding a buffer which has to be
-  // saved on the cache, until it's encoded or the encoding is aborted.
-  ScriptLoadRequestList mBytecodeEncodingQueue;
+  // saved on the cache, until it's cached or the caching is aborted.
+  JS::loader::ScriptLoadRequestList mCachingQueue;
 
   // In mRequests, the additional information here is stored by the element.
   struct PreloadInfo {
@@ -881,7 +925,7 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   bool mDeferCheckpointReached;
   bool mBlockingDOMContentLoaded;
   bool mLoadEventFired;
-  bool mGiveUpEncoding;
+  bool mGiveUpCaching;
   bool mContinueParsingDocumentAfterCurrentScript;
 
   TimeDuration mMainThreadParseTime;

@@ -1,8 +1,7 @@
-diff --git a/third_party/highway/hwy/aligned_allocator.h b/third_party/highway/hwy/aligned_allocator.h
-index 7584318a75792..66f730820978f 100644
---- a/third_party/highway/hwy/aligned_allocator.h
-+++ b/third_party/highway/hwy/aligned_allocator.h
-@@ -30,6 +30,8 @@
+diff --git a/hwy/aligned_allocator.h b/hwy/aligned_allocator.h
+--- a/hwy/aligned_allocator.h
++++ b/hwy/aligned_allocator.h
+@@ -32,6 +32,8 @@
  #include "hwy/base.h"
  #include "hwy/per_target.h"
  
@@ -11,7 +10,7 @@ index 7584318a75792..66f730820978f 100644
  namespace hwy {
  
  // Minimum alignment of allocated memory for use in HWY_ASSUME_ALIGNED, which
-@@ -222,8 +224,8 @@ class Span {
+@@ -272,8 +274,8 @@ class Span {
    Span() = default;
    Span(T* data, size_t size) : size_(size), data_(data) {}
    template <typename U>
@@ -22,20 +21,19 @@ index 7584318a75792..66f730820978f 100644
  
    // Copies the contents of the initializer list to the span.
    Span<T>& operator=(std::initializer_list<const T> v) {
-diff --git a/third_party/highway/hwy/base.h b/third_party/highway/hwy/base.h
-index c289db7262bcb..0b81d6012314a 100644
---- a/third_party/highway/hwy/base.h
-+++ b/third_party/highway/hwy/base.h
-@@ -25,6 +25,8 @@
+diff --git a/hwy/base.h b/hwy/base.h
+--- a/hwy/base.h
++++ b/hwy/base.h
+@@ -33,6 +33,8 @@
  #include "hwy/detect_compiler_arch.h"
  #include "hwy/highway_export.h"
  
 +#include <mozilla/Attributes.h>
 +
- #if HWY_COMPILER_MSVC && defined(_MSVC_LANG) && _MSVC_LANG > __cplusplus
- #define HWY_CXX_LANG _MSVC_LANG
- #else
-@@ -1102,7 +1104,7 @@ struct alignas(2) float16_t {
+ // API version (https://semver.org/); keep in sync with CMakeLists.txt.
+ #define HWY_MAJOR 1
+ #define HWY_MINOR 3
+@@ -1283,7 +1285,7 @@ struct alignas(2) float16_t {
  #if HWY_HAVE_SCALAR_F16_TYPE
    // NEON vget/set_lane intrinsics and SVE `svaddv` could use explicit
    // float16_t(intrinsic()), but user code expects implicit conversions.
@@ -44,7 +42,7 @@ index c289db7262bcb..0b81d6012314a 100644
    constexpr operator Native() const noexcept { return native; }
  #endif
  
-@@ -1129,7 +1131,7 @@ struct alignas(2) float16_t {
+@@ -1310,7 +1312,7 @@ struct alignas(2) float16_t {
  #if HWY_HAVE_SCALAR_F16_OPERATORS || HWY_IDE
    template <typename T, hwy::EnableIf<!IsSame<RemoveCvRef<T>, float16_t>() &&
                                        IsConvertible<T, Native>()>* = nullptr>
@@ -53,10 +51,10 @@ index c289db7262bcb..0b81d6012314a 100644
        : native(static_cast<Native>(static_cast<T&&>(arg))) {}
  
    template <typename T, hwy::EnableIf<!IsSame<RemoveCvRef<T>, float16_t>() &&
-@@ -1572,7 +1574,7 @@ struct alignas(2) bfloat16_t {
+@@ -1769,7 +1771,7 @@ struct alignas(2) bfloat16_t {
  
  // Only enable implicit conversions if we have a native type.
- #if HWY_HAVE_SCALAR_BF16_TYPE
+ #if HWY_HAVE_SCALAR_BF16_TYPE || HWY_IDE
 -  constexpr bfloat16_t(Native arg) noexcept : native(arg) {}
 +  MOZ_IMPLICIT constexpr bfloat16_t(Native arg) noexcept : native(arg) {}
    constexpr operator Native() const noexcept { return native; }

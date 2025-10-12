@@ -10,29 +10,75 @@ import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 
 /**
- * [State] for the terms of use prompt
+ * The 'surface' that the prompt was displayed on, e.g. the homepage or the browser.
+ */
+enum class Surface {
+    HOMEPAGE_NEW_TAB,
+    BROWSER,
+    ;
+
+    val metricLabel = name.lowercase()
+}
+
+/**
+ * [State] for the terms of use prompt.
  */
 data object TermsOfUsePromptState : State
 
 /**
- * [Action] related to [TermsOfUsePromptStore]
+ * [Action] related to [TermsOfUsePromptStore].
  */
 sealed interface TermsOfUsePromptAction : Action {
-    /**
-     * Triggered when the user clicks accept
-     */
-    data object OnAcceptClicked : TermsOfUsePromptAction
 
     /**
-     * Triggered when the user clicks not now
+     * Triggered when the prompt has been displayed.
+     *
+     * @property surface The [Surface] that the prompt was displayed on.
      */
-    data object OnNotNowClicked : TermsOfUsePromptAction
+    data class OnImpression(val surface: Surface) : TermsOfUsePromptAction
+
+    /**
+     * Triggered when the user clicks `accept`.
+     *
+     * @property surface The [Surface] that the prompt was displayed on.
+     */
+    data class OnAcceptClicked(val surface: Surface) : TermsOfUsePromptAction
+
+    /**
+     * Triggered when the user clicks 'remind me later'.
+     *
+     * @property surface The [Surface] that the prompt was displayed on.
+     */
+    data class OnRemindMeLaterClicked(val surface: Surface) : TermsOfUsePromptAction
+
+    /**
+     * Triggered when the user clicks 'learn more'.
+     *
+     * @property surface The [Surface] that the prompt was displayed on.
+     */
+    data class OnLearnMoreClicked(val surface: Surface) : TermsOfUsePromptAction
+
+    /**
+     * Triggered when the user clicks 'privacy notice'.
+     *
+     * @property surface The [Surface] that the prompt was displayed on.
+     */
+    data class OnPrivacyNoticeClicked(val surface: Surface) : TermsOfUsePromptAction
+
+    /**
+     * Triggered when the user clicks 'terms of use'.
+     *
+     * @property surface The [Surface] that the prompt was displayed on.
+     */
+    data class OnTermsOfUseClicked(val surface: Surface) : TermsOfUsePromptAction
 
     /**
      * Triggered when the user closes the prompt by swiping, hitting back, or tapping the
-     * background scrim
+     * background scrim.
+     *
+     * @property surface The [Surface] that the prompt was displayed on.
      */
-    data object OnPromptManuallyDismissed : TermsOfUsePromptAction
+    data class OnPromptManuallyDismissed(val surface: Surface) : TermsOfUsePromptAction
 
     /**
      * Triggered when the prompt is dismissed for any reason.
@@ -41,7 +87,7 @@ sealed interface TermsOfUsePromptAction : Action {
 }
 
 /**
- * A [Store] that holds the [TermsOfUsePromptState]
+ * A [Store] that holds the [TermsOfUsePromptState].
  */
 class TermsOfUsePromptStore(
     middleware: List<Middleware<TermsOfUsePromptState, TermsOfUsePromptAction>>,

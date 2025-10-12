@@ -238,7 +238,7 @@ EXPORTS.mozilla.dom += [
     "MediaDevices.h",
     "MediaStreamError.h",
     "MediaStreamTrack.h",
-    "MPSCQueue.h",
+    "UnboundedMPSCQueue.h",
     "VideoPlaybackQuality.h",
     "VideoStreamTrack.h",
     "VideoTrack.h",
@@ -329,6 +329,9 @@ if CONFIG["OS_TARGET"] == "Linux":
 else:
     UNIFIED_SOURCES += ["UnderrunHandlerNoop.cpp"]
 
+if CONFIG["ENABLE_TESTS"] or CONFIG["FUZZING"]:
+    UNIFIED_SOURCES += ["MockCubeb.cpp"]
+
 # CubebUtils.cpp needs to be built separately due to what appears to be some kind
 # of compiler bug on Android 4.2 x86 opt. See bug 1408459.
 # DecoderTraits.cpp needs to be built separately because of Mac OS X headers.
@@ -399,10 +402,9 @@ if CONFIG["COMPILE_ENVIRONMENT"]:
         inputs=["/third_party/rust/audioipc2-server"],
     )
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += [
-        "test/rdd_process_xpcom",
-    ]
+TEST_DIRS += [
+    "test/rdd_process_xpcom",
+]
 
 if CONFIG["MOZ_SYSTEM_AV1"]:
     CXXFLAGS += CONFIG["MOZ_SYSTEM_LIBAOM_CFLAGS"]

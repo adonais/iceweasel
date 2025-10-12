@@ -278,7 +278,19 @@ bool ModuleLoader::dynamicImport(JSContext* cx, JS::HandleScript referrer,
   RootedValue referrerValue(cx);
   if (referrer) {
     referrerValue = PrivateGCThingValue(referrer);
+  } else {
+    RootedScript script(cx);
+    const char* filename;
+    uint32_t lineno;
+    uint32_t pcOffset;
+    bool mutedErrors;
+    DescribeScriptedCallerForCompilation(cx, &script, &filename, &lineno,
+                                         &pcOffset, &mutedErrors);
+    MOZ_ASSERT(script);
+    referrerValue = PrivateGCThingValue(script);
   }
+  MOZ_ASSERT(!referrerValue.isUndefined());
+
   if (!closure ||
       !JS_DefineProperty(cx, closure, "referrer", referrerValue,
                          JSPROP_ENUMERATE) ||

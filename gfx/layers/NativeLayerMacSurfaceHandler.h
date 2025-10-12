@@ -153,9 +153,6 @@ class NativeLayerMacSurfaceHandler {
   void DiscardBackbuffers();
 
   Maybe<SurfaceWithInvalidRegion> FrontSurface() { return mFrontSurface; }
-  Maybe<SurfaceWithInvalidRegion> InProgressSurface() {
-    return mInProgressSurface;
-  }
   std::vector<SurfaceWithInvalidRegionAndCheckCount> Surfaces() {
     return mSurfaces;
   }

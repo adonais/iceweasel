@@ -28,6 +28,13 @@ task-defaults:
         symbol: update-test(firefox)
     worker:
         max-run-time: 10800
+        artifacts:
+            - type: directory
+              path: update-test
+              name: public/update-test
+        env:
+            UPLOAD_DIR: .
+            VERSION_LOG_FILENAME: update-test-version-info.log
     run-on-projects: []
     index:
         product: firefox
@@ -37,15 +44,7 @@ task-defaults:
             ./mach update-test
 
 tasks:
-    update-test:
-        worker:
-            artifacts:
-                - type: directory
-                  path: update-test
-                  name: public/update-test
-            env:
-                UPLOAD_DIR: .
-                VERSION_LOG_FILENAME: update-test-version-info.log
+    update-test-locale-fx:
         os:
             - win11-64-24h2-source
             - win10-64-2009-source
@@ -53,7 +52,7 @@ tasks:
             - t-osx-1400-r8
             - t-osx-1015-r8
 
-    update-test-linux-docker:
+    update-test-linux-docker-locale-fx:
         worker-type: t-linux-docker
         worker:
             artifacts:
@@ -66,5 +65,56 @@ tasks:
         run:
             command: >-
                 . $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && ./mach update-test
+        os:
+            - ubuntu2404-test
+
+    update-test-source-version-fx:
+        os:
+            - win11-64-24h2-source
+            - win10-64-2009
+            - t-osx-1500-m4
+            - t-osx-1400-r8
+            - t-osx-1015-r8
+
+    update-test-linux-docker-source-version-fx:
+        worker-type: t-linux-docker
+        worker:
+            artifacts:
+                - type: directory
+                  path: /builds/worker/artifacts/update-test
+                  name: public/update-test
+            env:
+                UPLOAD_DIR: /builds/worker/artifacts
+                VERSION_LOG_FILENAME: update-test-version-info.log
+        run:
+            command: >-
+                . $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && ./mach update-test
+        os:
+            - ubuntu2404-test
+
+    update-test-fx-bkg:
+        run:
+            command: >-
+                ./mach update-test --test-type Background
+        os:
+            - win11-64-24h2-source
+            - win10-64-2009
+            - t-osx-1500-m4
+            - t-osx-1400-r8
+            - t-osx-1015-r8
+
+    update-test-linux-docker-fx-bkg:
+        worker-type: t-linux-docker
+        worker:
+            artifacts:
+                - type: directory
+                  path: /builds/worker/artifacts/update-test
+                  name: public/update-test
+            env:
+                UPLOAD_DIR: /builds/worker/artifacts
+                VERSION_LOG_FILENAME: update-test-version-info.log
+        run:
+            command: >-
+                . $HOME/scripts/xvfb.sh && start_xvfb '1600x1200x24' 0 && ./mach update-test --test-type Background
         os:
             - ubuntu2404-test

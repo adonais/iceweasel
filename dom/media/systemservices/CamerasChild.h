@@ -175,6 +175,8 @@ class CamerasChild final : public PCamerasChild {
   int ReleaseCapture(CaptureEngine aCapEngine, const int capture_id);
   int StartCapture(CaptureEngine aCapEngine, const int capture_id,
                    const webrtc::VideoCaptureCapability& capability,
+                   const NormalizedConstraints& constraints,
+                   const dom::VideoResizeModeEnum& resize_mode,
                    FrameRelay* func);
   int FocusOnSelectedSource(CaptureEngine aCapEngine, const int capture_id);
   int StopCapture(CaptureEngine aCapEngine, const int capture_id);

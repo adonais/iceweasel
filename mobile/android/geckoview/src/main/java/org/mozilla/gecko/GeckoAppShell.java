@@ -6,9 +6,9 @@
 package org.mozilla.gecko;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.ActivityManager;
 import android.app.Service;
+import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -16,6 +16,7 @@ import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -46,6 +47,7 @@ import android.os.Looper;
 import android.os.PowerManager;
 import android.os.Vibrator;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.Display;
@@ -55,6 +57,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.view.inputmethod.InputMethodSubtype;
 import android.webkit.MimeTypeMap;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.collection.SimpleArrayMap;
 import androidx.core.content.res.ResourcesCompat;
 import java.net.InetSocketAddress;
@@ -195,8 +198,6 @@ public class GeckoAppShell {
    */
   private static final int ADDITIONAL_SEARCH_HEADER_RAM_THRESHOLD_MEGABYTES = 1024;
 
-  private static int sDensityDpi;
-  private static Float sDensity;
   private static int sScreenDepth;
   private static boolean sUseMaxScreenDepth;
   private static Float sScreenRefreshRate;
@@ -245,6 +246,8 @@ public class GeckoAppShell {
   /* package */ static native void reportJavaCrash(Throwable exc, String stackTrace);
 
   private static Rect sScreenSizeOverride;
+  private static int sDensityDpiOverride;
+  private static Float sDensityOverride;
 
   @WrapForJNI(stubName = "NotifyObservers", dispatchTo = "gecko")
   private static native void nativeNotifyObservers(String topic, String data);
@@ -820,39 +823,39 @@ public class GeckoAppShell {
     if (dpi == null) {
       return;
     }
-    if (sDensityDpi != 0) {
+    if (sDensityDpiOverride != 0) {
       Log.e(LOGTAG, "Tried to override screen DPI after it's already been set");
       return;
     }
-    sDensityDpi = dpi;
+    sDensityDpiOverride = dpi;
   }
 
   @WrapForJNI(calledFrom = "gecko")
-  public static synchronized int getDpi() {
-    if (sDensityDpi == 0) {
-      sDensityDpi = getApplicationContext().getResources().getDisplayMetrics().densityDpi;
+  private static synchronized int getDpi() {
+    if (sDensityDpiOverride != 0) {
+      return sDensityDpiOverride;
     }
-    return sDensityDpi;
+    return sScreenCompat.getDensityDpi();
   }
 
   public static synchronized void setDisplayDensityOverride(@Nullable final Float density) {
     if (density == null) {
       return;
     }
-    if (sDensity != null) {
+    if (sDensityOverride != null) {
       Log.e(LOGTAG, "Tried to override screen density after it's already been set");
       return;
     }
-    sDensity = density;
+    sDensityOverride = density;
   }
 
   @WrapForJNI(calledFrom = "gecko")
   private static synchronized float getDensity() {
-    if (sDensity == null) {
-      sDensity = Float.valueOf(getApplicationContext().getResources().getDisplayMetrics().density);
+    if (sDensityOverride != null) {
+      return sDensityOverride;
     }
 
-    return sDensity;
+    return sScreenCompat.getDensity();
   }
 
   private static int sTotalRam;
@@ -1510,9 +1513,21 @@ public class GeckoAppShell {
     Rect getScreenSize();
 
     int getRotation();
+
+    int getDensityDpi();
+
+    float getDensity();
   }
 
   private static class JellyBeanMR1ScreenCompat implements ScreenCompat {
+    private int mDensityDpi = 0;
+    private Float mDensity = null;
+
+    private static DisplayMetrics getDisplayMetrics() {
+      return getApplicationContext().getResources().getDisplayMetrics();
+    }
+
+    @Override
     public Rect getScreenSize() {
       final WindowManager wm =
           (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
@@ -1522,14 +1537,31 @@ public class GeckoAppShell {
       return new Rect(0, 0, size.x, size.y);
     }
 
+    @Override
     public int getRotation() {
       final WindowManager wm =
           (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
       return wm.getDefaultDisplay().getRotation();
     }
+
+    @Override
+    public int getDensityDpi() {
+      if (mDensityDpi == 0) {
+        mDensityDpi = getDisplayMetrics().densityDpi;
+      }
+      return mDensityDpi;
+    }
+
+    @Override
+    public float getDensity() {
+      if (mDensity == null) {
+        mDensity = getDisplayMetrics().density;
+      }
+      return mDensity;
+    }
   }
 
-  @TargetApi(Build.VERSION_CODES.S)
+  @RequiresApi(Build.VERSION_CODES.S)
   private static class AndroidSScreenCompat implements ScreenCompat {
     @SuppressLint("StaticFieldLeak")
     private static Context sWindowContext;
@@ -1542,18 +1574,48 @@ public class GeckoAppShell {
         sWindowContext =
             getApplicationContext()
                 .createWindowContext(display, WindowManager.LayoutParams.TYPE_APPLICATION, null);
+        sWindowContext.registerComponentCallbacks(
+            new ComponentCallbacks() {
+              @Override
+              public void onConfigurationChanged(final Configuration newConfig) {
+                if (GeckoScreenOrientation.getInstance().update()) {
+                  // refreshScreenInfo is already called.
+                  return;
+                }
+                ScreenManagerHelper.refreshScreenInfo();
+              }
+
+              @Override
+              public void onLowMemory() {}
+            });
       }
       return sWindowContext;
     }
 
+    private static DisplayMetrics getDisplayMetrics() {
+      return getWindowContext().getResources().getDisplayMetrics();
+    }
+
+    @Override
     public Rect getScreenSize() {
       final WindowManager windowManager = getWindowContext().getSystemService(WindowManager.class);
       return windowManager.getCurrentWindowMetrics().getBounds();
     }
 
+    @Override
     public int getRotation() {
       final WindowManager windowManager = getWindowContext().getSystemService(WindowManager.class);
       return windowManager.getDefaultDisplay().getRotation();
+    }
+
+    @Override
+    public int getDensityDpi() {
+      return getDisplayMetrics().densityDpi;
+    }
+
+    @Override
+    public float getDensity() {
+      return getDisplayMetrics().density;
     }
   }
 

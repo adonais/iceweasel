@@ -3,7 +3,7 @@
  * workers must access resources using a different base path, so this is overridden in
  * `test_worker-worker.ts` and `standalone.ts`.
  */
-let baseResourcePath = './resources';
+let baseResourcePath = '/_mozilla/webgpu/resources';
 let crossOriginHost = '';
 
 function getAbsoluteBaseResourcePath(path: string) {

@@ -14,17 +14,35 @@ LOCAL_INCLUDES += [
 EXPORTS.libwebrtc_overrides.api += [
     "api/location.h",
 ]
+EXPORTS.libwebrtc_overrides.api.transport += [
+    "api/transport/network_control.h",
+]
 EXPORTS.libwebrtc_overrides.call += [
     "call/call_basic_stats.h",
+    "call/video_receive_stream.h",
+    "call/video_send_stream.h",
 ]
 EXPORTS.libwebrtc_overrides.common_audio += [
     "common_audio/intrin.h",
 ]
+EXPORTS.libwebrtc_overrides.modules.audio_processing.aec3 += [
+    "modules/audio_processing/aec3/matched_filter_lag_aggregator.h",
+]
+EXPORTS.libwebrtc_overrides.modules.desktop_capture += [
+    "modules/desktop_capture/desktop_capture_types.h",
+]
 EXPORTS.libwebrtc_overrides.modules.desktop_capture.linux.x11 += [
     "modules/desktop_capture/linux/x11/x_error_trap.h",
 ]
+EXPORTS.libwebrtc_overrides.modules.video_capture += [
+    "modules/video_capture/video_capture.h",
+]
 EXPORTS.libwebrtc_overrides.rtc_base += [
+    "rtc_base/logging.h",
     "rtc_base/trace_event.h",
+]
+EXPORTS.libwebrtc_overrides.rtc_base.containers += [
+    "rtc_base/containers/identity.h",
 ]
 EXPORTS.libwebrtc_overrides.X11.extensions += [
     "X11/extensions/Xrandr.h",

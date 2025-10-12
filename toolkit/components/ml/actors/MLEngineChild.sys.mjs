@@ -26,6 +26,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DEFAULT_ENGINE_ID: "chrome://global/content/ml/EngineProcess.sys.mjs",
   DEFAULT_MODELS: "chrome://global/content/ml/EngineProcess.sys.mjs",
   WASM_BACKENDS: "chrome://global/content/ml/EngineProcess.sys.mjs",
+  BACKENDS: "chrome://global/content/ml/EngineProcess.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "console", () => {
@@ -213,6 +214,17 @@ export class MLEngineChild extends JSProcessActorChild {
   }
 
   /**
+   * Selects the most appropriate backend for the current environment.
+   *
+   * @static
+   * @param {string} backend - Requested backend or an auto-select sentinel.
+   * @returns {Promise<string>} Resolved backend identifier.
+   */
+  chooseBestBackend(backend) {
+    return this.sendQuery("MLEngine:ChooseBestBackend", backend);
+  }
+
+  /**
    * Gets the inference options from RemoteSettings.
    *
    * @returns {Promise<object>}
@@ -255,18 +267,29 @@ export class MLEngineChild extends JSProcessActorChild {
     this.#engineDispatchers.delete(engineId);
     this.#engineStatuses.delete(engineId);
 
-    this.sendAsyncMessage("MLEngine:Removed", {
-      engineId,
-      shutdown: shutDownIfEmpty,
-      replacement,
-    });
+    try {
+      this.sendAsyncMessage("MLEngine:Removed", {
+        engineId,
+        shutdown: shutDownIfEmpty,
+        replacement,
+      });
+    } catch (error) {
+      lazy.console.error("Failed to send MLEngine:Removed", error);
+    }
 
     if (this.#engineDispatchers.size === 0 && shutDownIfEmpty) {
-      this.sendAsyncMessage("MLEngine:DestroyEngineProcess");
+      try {
+        this.sendAsyncMessage("MLEngine:DestroyEngineProcess");
+      } catch (error) {
+        lazy.console.error(
+          "Failed to send MLEngine:DestroyEngineProcess",
+          error
+        );
+      }
     }
   }
 
-  /**
+  /*
    * Collects information about the current status.
    */
   async getStatus() {
@@ -377,11 +400,22 @@ class EngineDispatcher {
     lazy.console.debug("Inference engine options:", mergedOptions);
     this.pipelineOptions = mergedOptions;
 
+    this.pipelineOptions.backend = await this.mlEngineChild.chooseBestBackend(
+      pipelineOptions.backend
+    );
+
+    // Retrigger validation
+    this.pipelineOptions = new lazy.PipelineOptions(this.pipelineOptions);
+
     // load the wasm if required.
     let wasm = null;
-    if (lazy.WASM_BACKENDS.includes(pipelineOptions.backend || "onnx")) {
+    if (
+      lazy.WASM_BACKENDS.includes(
+        this.pipelineOptions.backend || lazy.BACKENDS.onnx
+      )
+    ) {
       wasm = await this.mlEngineChild.getWasmArrayBuffer(
-        pipelineOptions.backend
+        this.pipelineOptions.backend
       );
     }
 
@@ -693,7 +727,7 @@ class InferenceEngine {
 
     /** @type {BasePromiseWorker} */
     const worker = new lazy.BasePromiseWorker(workerUrl, workerOptions, {
-      getModelFile: async (url, sessionId = "") =>
+      getModelFile: async ({ url, sessionId = "" } = {}) =>
         getModelFile({
           engineId: pipelineOptions.engineId,
           url,

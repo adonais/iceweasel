@@ -80,6 +80,10 @@
           ok(true, "clear() dispatches the search event if needed");
         }
       });
+
+      add_task(async function testMozInputTextSync() {
+        await testHelpers.verifyValueSync("moz-input-search");
+      });
     </script>
   </head>
   <body>

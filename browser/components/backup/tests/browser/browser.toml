@@ -18,6 +18,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1911904
 ]
 
+["browser_settings_create_backup.js"]
+
 ["browser_settings_enable_backup_encryption.js"]
 
 ["browser_settings_restore_from_backup.js"]

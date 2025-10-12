@@ -147,7 +147,7 @@ CanvasManagerParent::AllocPWebGPUParent() {
     return nullptr;
   }
 
-  return MakeAndAddRef<webgpu::WebGPUParent>();
+  return MakeAndAddRef<webgpu::WebGPUParent>(mContentId);
 }
 
 mozilla::ipc::IPCResult CanvasManagerParent::RecvInitialize(

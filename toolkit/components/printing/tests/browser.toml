@@ -37,6 +37,8 @@ support-files = ["longerArticle.html"]
 ["browser_preview_print_link_modulepreload.js"]
 support-files = ["file_link_modulepreload.html"]
 
+["browser_preview_tab_unload.js"]
+
 ["browser_print_bcg_id_overflow.js"]
 
 ["browser_print_context_menu.js"]

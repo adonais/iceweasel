@@ -614,6 +614,8 @@ void AllocateAndInitTypedArrayBuffer(JSContext* cx,
 void TraceCreateObject(JSObject* obj);
 #endif
 
+bool PreserveWrapper(JSContext* cx, JSObject* obj);
+
 bool DoStringToInt64(JSContext* cx, HandleString str, uint64_t* res);
 
 BigInt* CreateBigIntFromInt32(JSContext* cx, int32_t i32);

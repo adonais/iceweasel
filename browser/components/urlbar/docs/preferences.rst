@@ -229,9 +229,6 @@ browser.urlbar.unitConversion.enabled (boolean, default: false)
 browser.urlbar.unitConversion.suggestedIndex (integer, default: 1)
   The index where we show unit conversion results.
 
-browser.urlbar.experimental.expandTextOnFocus (boolean, default: false)
-  Whether we expand the font size when the urlbar is focused.
-
 browser.urlbar.keepPanelOpenDuringImeComposition (boolean, default: false)
   Whether the results panel should be kept open during IME composition. The
   panel may overlap with the IME compositor panel.

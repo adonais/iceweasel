@@ -19,7 +19,6 @@
 #include "NamespaceImports.h"
 
 #include "builtin/temporal/Calendar.h"
-#include "builtin/temporal/Crash.h"
 #include "builtin/temporal/Era.h"
 #include "builtin/temporal/Temporal.h"
 #include "builtin/temporal/TemporalParser.h"
@@ -167,7 +166,7 @@ static constexpr const char* ToCString(CalendarField field) {
     case CalendarField::TimeZone:
       return "timeZone";
   }
-  JS_CONSTEXPR_CRASH("invalid temporal field name");
+  MOZ_CRASH("invalid temporal field name");
 }
 
 static constexpr bool CalendarFieldsAreSorted() {

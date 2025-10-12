@@ -1337,7 +1337,7 @@ struct Lookup
     TRACE_DISPATCH (this, lookup_type);
     unsigned int count = get_subtable_count ();
     for (unsigned int i = 0; i < count; i++) {
-      typename context_t::return_t r = get_subtable<TSubTable> (i).dispatch (c, lookup_type, std::forward<Ts> (ds)...);
+      typename context_t::return_t r = get_subtable<TSubTable> (i).dispatch (c, lookup_type, ds...);
       if (c->stop_sublookup_iteration (r))
 	return_trace (r);
     }
@@ -1387,6 +1387,11 @@ struct Lookup
       {
         unsigned new_flag = lookupFlag;
         new_flag &= ~LookupFlag::UseMarkFilteringSet;
+        // https://github.com/harfbuzz/harfbuzz/issues/5499
+        // If we remove UseMarkFilteringSet flag because the set is now empty,
+        // we need to add IgnoreMarks flag, otherwise the lookup will not
+        // ignore any marks, which changes the behavior.
+        new_flag |= LookupFlag::IgnoreMarks;
         out->lookupFlag = new_flag;
       }
       else
@@ -2078,7 +2083,7 @@ struct ClassDef
     }
   }
   unsigned int get_class (hb_codepoint_t glyph_id,
-			  hb_ot_lookup_cache_t *cache) const
+			  hb_ot_layout_mapping_cache_t *cache) const
   {
     unsigned klass;
     if (cache && cache->get (glyph_id, &klass)) return klass;
@@ -3442,7 +3447,7 @@ struct ItemVariationStore
     for (unsigned i = 0; i < count; i++)
     {
       hb_inc_bimap_t *map = inner_maps.push ();
-      if (!c->propagate_error(inner_maps))
+      if (unlikely (!c->propagate_error(inner_maps)))
         return_trace(nullptr);
       auto &data = this+dataSets[i];
 

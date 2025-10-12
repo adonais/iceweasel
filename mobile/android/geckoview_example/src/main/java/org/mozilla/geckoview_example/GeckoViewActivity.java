@@ -163,17 +163,20 @@ class WebExtensionManager
   @Nullable
   @Override
   public GeckoResult<AllowOrDeny> onUpdatePrompt(
-      @NonNull WebExtension currentlyInstalled,
       @NonNull WebExtension updatedExtension,
       @NonNull String[] newPermissions,
-      @NonNull String[] newOrigins) {
+      @NonNull String[] newOrigins,
+      @NonNull String[] newDataCollectionPermissions) {
     return GeckoResult.allow();
   }
 
   @Nullable
   @Override
   public GeckoResult<AllowOrDeny> onOptionalPrompt(
-      final @NonNull WebExtension extension, final String[] permissions, final String[] origins) {
+      final @NonNull WebExtension extension,
+      final String[] permissions,
+      final String[] origins,
+      final String[] dataCollectionPermissions) {
     return GeckoResult.allow();
   }
 
@@ -1290,73 +1293,56 @@ public class GeckoViewActivity extends AppCompatActivity
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
     GeckoSession session = mTabSessionManager.getCurrentSession();
-    switch (item.getItemId()) {
-      case R.id.action_reload:
-        session.reload();
-        break;
-      case R.id.action_forward:
-        session.goForward();
-        break;
-      case R.id.action_tpe:
-        sGeckoRuntime
-            .getStorageController()
-            .setPermission(
-                mTrackingProtectionPermission,
-                mTrackingProtectionPermission.value == ContentPermission.VALUE_ALLOW
-                    ? ContentPermission.VALUE_DENY
-                    : ContentPermission.VALUE_ALLOW);
-        session.reload();
-        break;
-      case R.id.desktop_mode:
-        mDesktopMode = !mDesktopMode;
-        updateDesktopMode(session);
-        session.reload();
-        break;
-      case R.id.action_pb:
-        mUsePrivateBrowsing = !mUsePrivateBrowsing;
-        recreateSession();
-        break;
-      case R.id.collapse:
-        mCollapsed = !mCollapsed;
-        setViewVisibility(mGeckoView, !mCollapsed);
-        break;
-      case R.id.install_addon:
-        installAddon();
-        break;
-      case R.id.update_addon:
-        updateAddon();
-        break;
-      case R.id.settings:
-        openSettingsActivity();
-        break;
-      case R.id.action_new_tab:
-        createNewTab();
-        break;
-      case R.id.action_close_tab:
-        closeTab((TabSession) session);
-        break;
-      case R.id.save_pdf:
-        savePdf(session);
-        break;
-      case R.id.print_page:
-        printPage(session);
-        break;
-      case R.id.translate:
-        translate(session);
-        break;
-      case R.id.translate_restore:
-        translateRestore(session);
-        break;
-      case R.id.translate_manage:
-        translateManage();
-        break;
-      case R.id.webcompat_info:
-        webCompatInfo(session);
-        break;
-      default:
-        return super.onOptionsItemSelected(item);
-    }
+    int id = item.getItemId();
 
+    if (id == R.id.action_reload) {
+      session.reload();
+    } else if (id == R.id.action_forward) {
+      session.goForward();
+    } else if (id == R.id.action_tpe) {
+      sGeckoRuntime
+          .getStorageController()
+          .setPermission(
+              mTrackingProtectionPermission,
+              mTrackingProtectionPermission.value == ContentPermission.VALUE_ALLOW
+                  ? ContentPermission.VALUE_DENY
+                  : ContentPermission.VALUE_ALLOW);
+      session.reload();
+    } else if (id == R.id.desktop_mode) {
+      mDesktopMode = !mDesktopMode;
+      updateDesktopMode(session);
+      session.reload();
+    } else if (id == R.id.action_pb) {
+      mUsePrivateBrowsing = !mUsePrivateBrowsing;
+      recreateSession();
+    } else if (id == R.id.collapse) {
+      mCollapsed = !mCollapsed;
+      setViewVisibility(mGeckoView, !mCollapsed);
+    } else if (id == R.id.install_addon) {
+      installAddon();
+    } else if (id == R.id.update_addon) {
+      updateAddon();
+    } else if (id == R.id.settings) {
+      openSettingsActivity();
+    } else if (id == R.id.action_new_tab) {
+      createNewTab();
+    } else if (id == R.id.action_close_tab) {
+      closeTab((TabSession) session);
+    } else if (id == R.id.save_pdf) {
+      savePdf(session);
+    } else if (id == R.id.print_page) {
+      printPage(session);
+    } else if (id == R.id.translate) {
+      translate(session);
+    } else if (id == R.id.translate_restore) {
+      translateRestore(session);
+    } else if (id == R.id.translate_manage) {
+      translateManage();
+    } else if (id == R.id.webcompat_info) {
+      webCompatInfo(session);
+    } else {
+      return super.onOptionsItemSelected(item);
+    }
     return true;
   }
 

@@ -201,10 +201,10 @@ class BackupTest(MarionetteTestCase):
             script_args=[archivePath, recoveryCode, recoveryPath],
         )
 
-        print("Recovery name: %s" % newProfileName)
-        print("Recovery path: %s" % newProfilePath)
-        print("Expected clientID: %s" % expectedClientID)
-        print("Persisting fake OSKeyStore label: %s" % osKeyStoreLabel)
+        print(f"Recovery name: {newProfileName}")
+        print(f"Recovery path: {newProfilePath}")
+        print(f"Expected clientID: {expectedClientID}")
+        print(f"Persisting fake OSKeyStore label: {osKeyStoreLabel}")
 
         self.marionette.quit()
         originalProfile = self.marionette.instance.profile
@@ -333,7 +333,8 @@ class BackupTest(MarionetteTestCase):
           })().then(outerResolve);
         """
         )
-        self.assertEqual(cookiesLength, 1)
+        # Expect cookies to be removed from the backup.
+        self.assertEqual(cookiesLength, 0)
 
     def add_test_login(self):
         self.marionette.execute_async_script(

@@ -19,6 +19,7 @@ import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -192,6 +193,16 @@ class BrowserToolbarStoreTest {
         store.dispatch(ToolbarGravityUpdated(Bottom))
 
         assertEquals(Bottom, store.state.gravity)
+    }
+
+    @Test
+    fun `WHEN the private mode is updated THEN replace the old details with the new one`() {
+        val store = BrowserToolbarStore()
+        assertFalse(store.state.editState.isQueryPrivate)
+
+        store.dispatch(BrowserEditToolbarAction.PrivateModeUpdated(true))
+
+        assertEquals(true, store.state.editState.isQueryPrivate)
     }
 
     private fun fakeActionButton() = ActionButtonRes(

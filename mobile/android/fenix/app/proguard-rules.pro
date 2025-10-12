@@ -130,3 +130,10 @@
 -dontwarn java.beans.IntrospectionException
 -dontwarn java.beans.Introspector
 -dontwarn java.beans.PropertyDescriptor
+
+####################################################################################################
+# Add explicit keep rules for Nimbus RustBuffer and related structs to avoid
+# overly-aggressive optimization when R8 fullMode is enabled, leading to crashes.
+####################################################################################################
+-keepattributes RuntimeVisibleAnnotations,RuntimeInvisibleAnnotations,RuntimeVisibleTypeAnnotations,RuntimeInvisibleTypeAnnotations,AnnotationDefault,InnerClasses,EnclosingMethod,Signature
+-keep class org.mozilla.experiments.nimbus.internal.** { *; }

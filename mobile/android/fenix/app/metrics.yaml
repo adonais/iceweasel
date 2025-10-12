@@ -2127,6 +2127,226 @@ onboarding:
       tags:
         - Onboarding
 
+terms_of_use:
+  impression:
+    type: event
+    description: The Terms of Use prompt was displayed to the user.
+    extra_keys:
+      tou_version:
+        type: quantity
+        description: The Terms of Use version, e.g., 1, 2. No semantic versioning.
+        unit: version
+      surface:
+        type: string
+        description: The surface on which the Terms of Use prompt was displayed, e.g. Homescreen, Browser.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  impression_count:
+    type: counter
+    lifetime: application
+    description: Records the number of Terms of Use prompt impressions the user has had.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  accepted:
+    type: event
+    description: The user accepted the Terms of Use.
+    extra_keys:
+      tou_version:
+        type: quantity
+        description: The version of the Terms of Use the user accepted.
+        unit: version
+      surface:
+        type: string
+        description: The surface on which the Terms of Use prompt was displayed, e.g. Homescreen, Browser.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  version:
+    type: quantity
+    lifetime: application
+    description: The version of the Terms of Use the user accepted.
+    unit: version
+    send_in_pings:
+      - metrics
+    notification_emails:
+      - android-probes@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    expires: never
+
+  date:
+    type: datetime
+    lifetime: application
+    description: The timestamp when the user accepted the Terms of Use.
+    time_unit: millisecond
+    send_in_pings:
+      - metrics
+    notification_emails:
+      - android-probes@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    expires: never
+
+  remind_me_later_click:
+    type: event
+    description: The user clicked the 'remind me later' link on the Terms of Use prompt.
+    extra_keys:
+      tou_version:
+        type: quantity
+        description: The Terms of Use version, e.g., 1, 2. No semantic versioning.
+        unit: version
+      surface:
+        type: string
+        description: The surface on which the Terms of Use prompt was displayed, e.g. Homescreen, Browser.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  remind_me_later_count:
+    type: counter
+    lifetime: application
+    description: Records the number of times the user clicked 'remind me later' on the Terms of Use prompt.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  learn_more_click:
+    type: event
+    description: The user clicked the 'learn more' link on the Terms of Use prompt.
+    extra_keys:
+      tou_version:
+        type: quantity
+        description: The Terms of Use version, e.g., 1, 2. No semantic versioning.
+        unit: version
+      surface:
+        type: string
+        description: The surface on which the Terms of Use prompt was displayed, e.g. Homescreen, Browser.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  privacy_notice_click:
+    type: event
+    description: The user clicked the 'privacy notice' link on the Terms of Use prompt.
+    extra_keys:
+      tou_version:
+        type: quantity
+        description: The Terms of Use version, e.g., 1, 2. No semantic versioning.
+        unit: version
+      surface:
+        type: string
+        description: The surface on which the Terms of Use prompt was displayed, e.g. Homescreen, Browser.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  terms_of_use_click:
+    type: event
+    description: The user clicked the 'terms of use' link on the Terms of Use prompt.
+    extra_keys:
+      tou_version:
+        type: quantity
+        description: The Terms of Use version, e.g., 1, 2. No semantic versioning.
+        unit: version
+      surface:
+        type: string
+        description: The surface on which the Terms of Use prompt was displayed, e.g. Homescreen, Browser.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  dismiss:
+    type: event
+    description: The user dismissed the Terms of Use prompt.
+    extra_keys:
+      tou_version:
+        type: quantity
+        description: The Terms of Use version, e.g., 1, 2. No semantic versioning.
+        unit: version
+      surface:
+        type: string
+        description: The surface on which the Terms of Use prompt was displayed, e.g. Homescreen, Browser.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
+  dismiss_count:
+    type: counter
+    lifetime: application
+    description: Records the number of times the user dismissed the Terms of Use prompt.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1963720
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D260153
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+
 private_browsing_locked:
   feature_enabled:
     type: event
@@ -3773,6 +3993,48 @@ preferences:
       tags:
         - Search
         - Settings
+  show_sponsor_suggestions_enabled:
+    type: boolean
+    lifetime: application
+    description: |
+      Whether or not the user has sponsor search suggestions enabled
+      default: true
+    send_in_pings:
+      - metrics
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1987009
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D263806
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Search
+        - Settings
+  show_non_sponsor_suggestions_enabled:
+    type: boolean
+    lifetime: application
+    description: |
+      Whether or not the user has non sponsor search suggestions enabled
+      default: true
+    send_in_pings:
+      - metrics
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1987009
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D263806
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Search
+        - Settings
   remote_debugging_enabled:
     type: boolean
     lifetime: application
@@ -4203,6 +4465,25 @@ preferences:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+  isolated_content_processes_enabled:
+    type: boolean
+    lifetime: application
+    description: True when isolated content processes are enabled on the runtime.
+    send_in_pings:
+      - metrics
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1983811
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D263564
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Settings
+        - Performance
 
 search.default_engine:
   code:
@@ -4718,6 +4999,38 @@ bookmarks_management:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1953993
     data_reviews:
       - https://phabricator.services.mozilla.com/D243210
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Bookmarks
+  delete_snackbar_shown:
+    type: event
+    description: |
+      A delete snackbar was shown after a single bookmark deletion.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1991998
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267098
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Bookmarks
+  delete_snackbar_undo_clicked:
+    type: event
+    description: |
+      The user clicked the undo button in a bookmarks delete snackbar.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1991998
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267098
     data_sensitivity:
       - interaction
     notification_emails:
@@ -5559,6 +5872,32 @@ history:
       - https://github.com/mozilla-mobile/fenix/pull/23695
       - https://github.com/mozilla-mobile/fenix/pull/28709#issuecomment-1410276888
       - https://github.com/mozilla-mobile/firefox-android/pull/2597
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  delete_snackbar_shown:
+    type: event
+    description: |
+      A delete snackbar was shown after one or more history items were deleted.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1991998
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267124
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  delete_snackbar_undo_clicked:
+    type: event
+    description: |
+      The user clicked the undo button in a history delete snackbar.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1991998
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267124
     data_sensitivity:
       - interaction
     notification_emails:
@@ -12155,6 +12494,19 @@ fx_suggest:
     expires: never
     send_in_pings:
       - fx-suggest
+  query_count:
+    type: quantity
+    description: |
+      The number of suggestions returned from query.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1984499
+    data_reviews: []
+    expires: never
+    notification_emails:
+      - rmalicdem@mozilla.com
+    send_in_pings:
+      - fx-suggest-api
+    unit: integer
 debug_drawer:
   debug_drawer_enabled:
     type: boolean
@@ -12715,7 +13067,11 @@ nimbus_system:
           type: string
         user_accepted_tou:
           type: boolean
-        no_shortcuts_stories_mkt:
+        no_shortcuts_or_stories_opt_outs:
+          type: boolean
+        user_clicked_tou_prompt_link:
+          type: boolean
+        user_clicked_tou_prompt_remind_me_later:
           type: boolean
     description: |
       The Nimbus context object that is recorded to Glean
@@ -12723,10 +13079,14 @@ nimbus_system:
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1898552'
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1970135'
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1970165'
+      - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1981877'
+      - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1984639'
     data_reviews:
       - 'https://bugzilla.mozilla.org/show_bug.cgi?id=1898552#c3'
       - 'https://phabricator.services.mozilla.com/D258942'
       - 'https://phabricator.services.mozilla.com/D259407'
+      - 'https://phabricator.services.mozilla.com/D260845'
+      - 'https://phabricator.services.mozilla.com/D262139'
     data_sensitivity:
       - interaction
     notification_emails:
@@ -14014,6 +14374,30 @@ downloads:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1968735
     data_reviews:
       - https://phabricator.services.mozilla.com/D251698
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  delete_snackbar_shown:
+    type: event
+    description: A delete snackbar was shown after one or more downloads were deleted.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1991998
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267081
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  delete_snackbar_undo_clicked:
+    type: event
+    description: The user clicked the undo button in a downloads delete snackbar.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1991998
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267081
     data_sensitivity:
       - interaction
     notification_emails:

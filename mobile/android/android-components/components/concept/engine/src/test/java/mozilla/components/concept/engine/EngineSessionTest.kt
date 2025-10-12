@@ -976,6 +976,8 @@ open class DummyEngineSession : EngineSession() {
 
     override fun restoreState(state: EngineSessionState): Boolean { return false }
 
+    override fun flushSessionState() {}
+
     override fun loadUrl(
         url: String,
         parent: EngineSession?,

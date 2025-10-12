@@ -28,6 +28,7 @@ class JSONPrinter;
 
 class ArrayBufferViewObject;
 class AutoSetNewObjectMetadata;
+class FixedLengthTypedArrayObject;
 class WasmArrayRawBuffer;
 
 namespace wasm {
@@ -480,6 +481,9 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
 
   static ArrayBufferObject* createForContents(JSContext* cx, size_t nbytes,
                                               BufferContents contents);
+
+  static ArrayBufferObject* createFromTypedArrayMallocedElements(
+      JSContext* cx, Handle<FixedLengthTypedArrayObject*> tarray);
 
  protected:
   template <class ArrayBufferType>

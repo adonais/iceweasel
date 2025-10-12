@@ -1037,7 +1037,9 @@ export class FormAutofillParent extends JSWindowActorParent {
   async onAutoCompleteEntrySelected(message, data) {
     switch (message) {
       case "FormAutofill:OpenPreferences": {
-        const win = lazy.BrowserWindowTracker.getTopWindow();
+        const win = lazy.BrowserWindowTracker.getTopWindow({
+          allowFromInactiveWorkspace: true,
+        });
         win.openPreferences("privacy-form-autofill");
         break;
       }

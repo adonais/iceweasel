@@ -137,8 +137,7 @@ void nsMutationReceiver::Disconnect(bool aRemoveFromObserver) {
 
 void nsMutationReceiver::AttributeWillChange(Element* aElement,
                                              int32_t aNameSpaceID,
-                                             nsAtom* aAttribute,
-                                             int32_t aModType) {
+                                             nsAtom* aAttribute, AttrModType) {
   if (nsAutoMutationBatch::IsBatching() ||
       !ObservesAttr(RegisterTarget(), aElement, aNameSpaceID, aAttribute)) {
     return;

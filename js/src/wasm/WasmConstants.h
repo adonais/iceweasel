@@ -1147,7 +1147,7 @@ static const unsigned MaxSubTypingDepth = 63;
 static const unsigned MaxTags = 1000000;
 static const unsigned MaxFuncs = 1000000;
 static const unsigned MaxTables = 100000;
-static const unsigned MaxMemories = 100000;
+static const unsigned MaxMemories = 100;
 static const unsigned MaxImports = 1000000;
 static const unsigned MaxExports = 1000000;
 static const unsigned MaxGlobals = 1000000;
@@ -1163,11 +1163,16 @@ static const unsigned MaxParams = 1000;
 static const unsigned MaxResults = 1000;
 static const unsigned MaxStructFields = 10000;
 static const uint64_t MaxMemory32PagesValidation = uint64_t(1) << 16;
-static const uint64_t MaxMemory64PagesValidation = uint64_t(1) << 48;
+static const uint64_t MaxMemory64PagesValidation = (uint64_t(1) << 37) - 1;
 static const unsigned MaxStringBytes = 100000;
 static const unsigned MaxModuleBytes = 1024 * 1024 * 1024;
 static const unsigned MaxFunctionBytes = 7654321;
 static const unsigned MaxArrayNewFixedElements = 10000;
+
+// By spec, see
+// https://github.com/WebAssembly/spec/issues/1895#issuecomment-2895078022
+static_assert((PageSize * MaxMemory64PagesValidation) <=
+              (uint64_t(1) << 53) - 1);
 
 // Maximum payload size, in bytes, of a gc-proposal Array.  Puts it fairly
 // close to 2^31 without exposing us to potential danger at the signed-i32

@@ -10,6 +10,7 @@
 
 #include "audio/channel_receive_frame_transformer_delegate.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -92,6 +93,17 @@ class TransformableIncomingAudioFrame
     return std::nullopt;
   }
 
+  bool CanSetAudioLevel() const override { return true; }
+
+  void SetAudioLevel(std::optional<uint8_t> audio_level_dbov) override {
+    header_.extension.set_audio_level(
+        audio_level_dbov.has_value()
+            ? std::make_optional(webrtc::AudioLevel(
+                  /*voice_activity=*/true,
+                  std::min(*audio_level_dbov, static_cast<uint8_t>(127u))))
+            : std::nullopt);
+  }
+
   std::optional<Timestamp> ReceiveTime() const override {
     return receive_time_ == Timestamp::MinusInfinity()
                ? std::nullopt
@@ -100,7 +112,7 @@ class TransformableIncomingAudioFrame
 
   std::optional<Timestamp> CaptureTime() const override {
     if (header_.extension.absolute_capture_time) {
-      return Timestamp::Micros(UQ32x32ToInt64Us(
+      return Timestamp::Millis(UQ32x32ToInt64Ms(
           header_.extension.absolute_capture_time->absolute_capture_timestamp));
     }
     return std::nullopt;
@@ -110,8 +122,8 @@ class TransformableIncomingAudioFrame
     if (header_.extension.absolute_capture_time &&
         header_.extension.absolute_capture_time
             ->estimated_capture_clock_offset) {
-      return TimeDelta::Micros(
-          Q32x32ToInt64Us(*header_.extension.absolute_capture_time
+      return TimeDelta::Millis(
+          Q32x32ToInt64Ms(*header_.extension.absolute_capture_time
                                ->estimated_capture_clock_offset));
     }
     return std::nullopt;
@@ -199,6 +211,12 @@ void ChannelReceiveFrameTransformerDelegate::ReceiveFrame(
       header.extension.absolute_capture_time = AbsoluteCaptureTime();
       header.extension.absolute_capture_time->absolute_capture_timestamp =
           transformed_frame->AbsoluteCaptureTimestamp().value();
+    }
+    if (transformed_frame->AudioLevel().has_value()) {
+      // TODO(crbug.com/webrtc/419746427): Add support for voice activity in
+      // TransformableAudioFrameInterface.
+      header.extension.set_audio_level(AudioLevel(
+          /*voice_activity=*/true, *transformed_frame->AudioLevel()));
     }
   } else {
     auto* transformed_incoming_frame =

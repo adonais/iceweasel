@@ -45,8 +45,8 @@ XULButtonElement::~XULButtonElement() {
   KillMenuOpenTimer();
 }
 
-nsChangeHint XULButtonElement::GetAttributeChangeHint(const nsAtom* aAttribute,
-                                                      int32_t aModType) const {
+nsChangeHint XULButtonElement::GetAttributeChangeHint(
+    const nsAtom* aAttribute, AttrModType aModType) const {
   if (aAttribute == nsGkAtoms::type &&
       IsAnyOfXULElements(nsGkAtoms::button, nsGkAtoms::toolbarbutton)) {
     // type=menu switches to a menu frame.
@@ -317,10 +317,10 @@ void XULButtonElement::StartBlinking() {
               self->StopBlinking();
             },
             aClosure, kBlinkDelay, nsITimer::TYPE_ONE_SHOT,
-            "XULButtonElement::ContinueBlinking");
+            "XULButtonElement::ContinueBlinking"_ns);
       },
       this, kBlinkDelay, nsITimer::TYPE_ONE_SHOT,
-      "XULButtonElement::StartBlinking", GetMainThreadSerialEventTarget());
+      "XULButtonElement::StartBlinking"_ns, GetMainThreadSerialEventTarget());
 }
 
 void XULButtonElement::UnbindFromTree(UnbindContext& aContext) {
@@ -531,7 +531,7 @@ void XULButtonElement::PostHandleEventForMenus(
           self->OpenMenuPopup(false);
         },
         this, MenuOpenCloseDelay(), nsITimer::TYPE_ONE_SHOT,
-        "XULButtonElement::OpenMenu", GetMainThreadSerialEventTarget());
+        "XULButtonElement::OpenMenu"_ns, GetMainThreadSerialEventTarget());
   }
 }
 

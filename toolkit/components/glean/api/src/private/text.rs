@@ -111,29 +111,6 @@ impl glean::traits::Text for TextMetric {
 
     /// **Exported for test purposes.**
     ///
-    /// Gets the currently stored value as a string.
-    ///
-    /// This doesn't clear the stored value.
-    ///
-    /// # Arguments
-    ///
-    /// * `ping_name` - represents the optional name of the ping to retrieve the
-    ///   metric for. Defaults to the first value in `send_in_pings`.
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<std::string::String> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
-        match self {
-            TextMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            TextMetric::Child(_) => {
-                panic!("Cannot get test value for text metric in non-main process!")
-            }
-        }
-    }
-
-    /// **Exported for test purposes.**
-    ///
     /// Gets the number of recorded errors for the given metric and error type.
     ///
     /// # Arguments
@@ -155,6 +132,28 @@ impl glean::traits::Text for TextMetric {
     }
 }
 
+#[inherent]
+impl glean::TestGetValue<std::string::String> for TextMetric {
+    /// **Exported for test purposes.**
+    ///
+    /// Gets the currently stored value as a string.
+    ///
+    /// This doesn't clear the stored value.
+    ///
+    /// # Arguments
+    ///
+    /// * `ping_name` - represents the optional name of the ping to retrieve the
+    ///   metric for. Defaults to the first value in `send_in_pings`.
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<std::string::String> {
+        match self {
+            TextMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            TextMetric::Child(_) => {
+                panic!("Cannot get test value for text metric in non-main process!")
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::{common_test::*, ipc, metrics};
@@ -169,7 +168,7 @@ mod test {
 
         assert_eq!(
             "test_text_value",
-            metric.test_get_value("test-ping").unwrap()
+            metric.test_get_value(Some("test-ping".to_string())).unwrap()
         );
     }
 
@@ -197,7 +196,7 @@ mod test {
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
         assert!(
-            "test_parent_value" == parent_metric.test_get_value("test-ping").unwrap(),
+            "test_parent_value" == parent_metric.test_get_value(Some("test-ping".to_string())).unwrap(),
             "Text metrics should only work in the parent process"
         );
     }

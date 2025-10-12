@@ -340,9 +340,9 @@ async function setDownloadDir() {
 
 add_setup(async function test_common_initialize() {
   gDownloadDir = await setDownloadDir();
-  Services.prefs.setCharPref("browser.download.loglevel", "Debug");
+  Services.prefs.setCharPref("toolkit.download.loglevel", "Debug");
   registerCleanupFunction(function () {
-    Services.prefs.clearUserPref("browser.download.loglevel");
+    Services.prefs.clearUserPref("toolkit.download.loglevel");
   });
 });
 

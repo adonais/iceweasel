@@ -152,10 +152,12 @@ open class BaseSessionTest(
         const val INTERSECTION_OBSERVER_DESKTOP_HTML_PATH = "/assets/www/intersection-observer-desktop.html"
         const val BUG1909181_HTML_PATH = "/assets/www/bug1909181.html"
         const val BUG1912358_HTML_PATH = "/assets/www/bug1912358.html"
+        const val BUG1985669_HTML_PATH = "/assets/www/bug1985669.html"
         const val POSITION_STICKY_HTML_PATH = "/assets/www/position-sticky.html"
         const val POSITION_STICKY_ON_MAIN_THREAD_HTML_PATH = "/assets/www/position-sticky-on-main-thread.html"
         const val INTERACTIVE_WIDGET_HTML_PATH = "/assets/www/interactive-widget.html"
         const val INTERACTIVE_WIDGET_OVERLAYS_CONTENT_HTML_PATH = "/assets/www/interactive-widget-overlays-content.html"
+        const val VIEW_TRANSITION_SNAPSHOT_SIZE = "/assets/www/view-transition-snapshot-size.html"
 
         const val TEST_ENDPOINT = GeckoSessionTestRule.TEST_ENDPOINT
         const val TEST_HOST = GeckoSessionTestRule.TEST_HOST

@@ -88,18 +88,19 @@ tasks:
                 - linux64-minidump-stackwalk
 
     android-x86-shippable/opt:
-        description: "Android 5.0 x86 Profile Generation"
+        description: "Android x86 Profile Generation"
         shipping-phase: build
         shipping-product: fennec
         index:
             product: mobile
             job-name: android-x86-profile
         treeherder:
-            platform: android-5-0-x86-shippable/opt
+            platform: android-x86-shippable/opt
         worker-type: b-linux-kvm-gcp
         worker:
             chain-of-trust: true
             max-run-time: 2700
+            kvm: true  # for access to /dev/kvm for hw accel in the emulator
             docker-image: {in-tree: ubuntu2404-test}
             env:
                 WORKING_DIR: "/builds/worker"
@@ -117,7 +118,7 @@ tasks:
             options: [installer-path=/builds/worker/fetches/geckoview-test_runner.apk]
             config:
                 - android/android_common.py
-                - android/android-x86_64-profile-generation.py
+                - android/android-x86-profile-generation.py
                 - android/android_pgo.py
         run-on-projects: ['release']
         fetches:
@@ -126,22 +127,23 @@ tasks:
                 - linux64-minidump-stackwalk
                 - linux64-hostutils
                 - android-sdk-linux
-                - android-system-image-x86_64-linux
-                - android-avd-x86_64-linux
+                - android30-system-image-x86-linux
+                - android30-avd-x86-linux
 
     android-x86_64-shippable/opt:
-        description: "Android 5.0 x86_64 Profile Generation"
+        description: "Android x86_64 Profile Generation"
         shipping-phase: build
         shipping-product: fennec
         index:
             product: mobile
             job-name: android-x86_64-profile
         treeherder:
-            platform: android-5-0-x86_64-shippable/opt
+            platform: android-x86_64-shippable/opt
         worker-type: b-linux-kvm-gcp
         worker:
             chain-of-trust: true
             max-run-time: 2700
+            kvm: true  # for access to /dev/kvm for hw accel in the emulator
             docker-image: {in-tree: ubuntu2404-test}
             env:
                 WORKING_DIR: "/builds/worker"
@@ -168,18 +170,18 @@ tasks:
                 - linux64-minidump-stackwalk
                 - linux64-hostutils
                 - android-sdk-linux
-                - android-system-image-x86_64-linux
-                - android-avd-x86_64-linux
+                - android34-system-image-x86_64-linux
+                - android34-avd-x86_64-linux
 
     android-aarch64-shippable/opt:
-        description: "Android 5.0 Aarch64 Profile Generation"
+        description: "Android Aarch64 Profile Generation"
         shipping-phase: build
         shipping-product: fennec
         index:
             product: mobile
             job-name: android-aarch64-profile
         treeherder:
-            platform: android-5-0-aarch64-shippable/opt
+            platform: android-aarch64-shippable/opt
         worker-type: b-linux-kvm-gcp
         worker:
             chain-of-trust: true
@@ -211,18 +213,18 @@ tasks:
                 - linux64-minidump-stackwalk
                 - linux64-hostutils
                 - android-sdk-linux
-                - android31-system-image-x86_64-linux
-                - android31-avd-x86_64-linux
+                - android34-system-image-x86_64-linux
+                - android34-avd-x86_64-linux
 
     android-arm-shippable/opt:
-        description: "Android 5.0 ARM Profile Generation"
+        description: "Android ARM Profile Generation"
         shipping-phase: build
         shipping-product: fennec
         index:
             product: mobile
             job-name: android-arm-profile
         treeherder:
-            platform: android-5-0-armv7-shippable/opt
+            platform: android-armv7-shippable/opt
         worker-type: b-linux-kvm-gcp
         worker:
             chain-of-trust: true

@@ -30,6 +30,7 @@
 #include "mozilla/Span.h"
 #include "mozilla/TiedFields.h"
 #include "mozilla/TypedEnumBits.h"
+#include "mozilla/WeakPtr.h"
 #include "mozilla/dom/WebGLRenderingContextBinding.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/BuildConstants.h"
@@ -911,7 +912,10 @@ struct LinkActiveInfo final {
   std::vector<ActiveInfo> activeTfVaryings;
 };
 
-struct LinkResult final {
+struct LinkResult final : public SupportsWeakPtr {
+  LinkResult() {}
+  ~LinkResult() = default;
+
   bool pending = true;
   nsCString log;
   bool success = false;

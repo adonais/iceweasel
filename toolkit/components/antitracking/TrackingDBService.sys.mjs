@@ -134,6 +134,11 @@ TrackingDBService.prototype = {
   },
 
   async _initialize() {
+    if (Services.startup.shuttingDown) {
+      // Skip initialization once shutdown has begun
+      return;
+    }
+
     let db = await Sqlite.openConnection({ path: lazy.DB_PATH });
 
     try {

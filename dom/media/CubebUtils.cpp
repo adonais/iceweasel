@@ -46,6 +46,11 @@
 #include "audioipc2_server_ffi_generated.h"
 #include "mozilla/StaticPrefs_media.h"
 
+#if defined(ENABLE_TESTS) || defined(FUZZING)
+#  define ENABLE_MOCK_CUBEB 1
+#  include "MockCubeb.h"
+#endif
+
 #define AUDIOIPC_STACK_SIZE_DEFAULT (64 * 4096)
 
 #define PREF_VOLUME_SCALE "media.volume_scale"
@@ -59,6 +64,7 @@
 #define PREF_CUBEB_LOGGING_LEVEL "logging.cubeb"
 // Hidden pref used by tests to force failure to obtain cubeb context
 #define PREF_CUBEB_FORCE_NULL_CONTEXT "media.cubeb.force_null_context"
+#define PREF_CUBEB_FORCE_MOCK_CONTEXT "media.cubeb.force_mock_context"
 #define PREF_CUBEB_OUTPUT_VOICE_ROUTING "media.cubeb.output_voice_routing"
 #define PREF_CUBEB_SANDBOX "media.cubeb.sandbox"
 #define PREF_AUDIOIPC_STACK_SIZE "media.audioipc.stack_size"
@@ -297,6 +303,77 @@ void PrefChanged(const char* aPref, void* aClosure) {
             ("%s: %s", PREF_CUBEB_FORCE_NULL_CONTEXT,
              sCubebForceNullContext ? "true" : "false"));
   }
+#ifdef ENABLE_MOCK_CUBEB
+  else if (strcmp(aPref, PREF_CUBEB_FORCE_MOCK_CONTEXT) == 0) {
+    if (Preferences::GetBool(aPref, false)) {
+      MockCubeb* mock = new MockCubeb();
+      constexpr const char* kGroupIds[] = {"group_id_1", "group_id_2",
+                                           "group_id_3"};
+      {
+        constexpr size_t kNumDevices = 3;
+        constexpr const char* kDeviceIds[] = {"mock_input_1", "mock_input_2",
+                                              "mock_input_3"};
+        constexpr const char* kDeviceNames[] = {
+            "Fake Audio Input 1", "Fake Audio Input 2 (PREFERRED)",
+            "Fake Audio Input 3"};
+        for (size_t i = 0; i < kNumDevices; ++i) {
+          cubeb_device_info devinfo{
+              .devid = (cubeb_devid)(i + 1),
+              .device_id = kDeviceIds[i],
+              .friendly_name = kDeviceNames[i],
+              .group_id = kGroupIds[i],
+              .vendor_name = "Mozilla",
+              .type = CUBEB_DEVICE_TYPE_INPUT,
+              .state = CUBEB_DEVICE_STATE_ENABLED,
+              .preferred =
+                  i == 1 ? CUBEB_DEVICE_PREF_ALL : CUBEB_DEVICE_PREF_NONE,
+              .format = CUBEB_DEVICE_FMT_F32NE,
+              .default_format = CUBEB_DEVICE_FMT_F32NE,
+              .max_channels = 2,
+              .default_rate = 44100,
+              .max_rate = 44100,
+              .min_rate = 16000,
+              .latency_lo = 256,
+              .latency_hi = 1024,
+          };
+          mock->AddDevice(devinfo);
+        }
+      }
+
+      {
+        constexpr size_t kNumDevices = 2;
+        constexpr const char* kDeviceIds[] = {"mock_output_0", "mock_output_1"};
+        constexpr const char* kDeviceNames[] = {
+            "Fake Audio Output 1 (PREFERRED)", "Fake Audio Output 2"};
+        for (size_t i = 0; i < kNumDevices; ++i) {
+          cubeb_device_info devinfo{
+              .devid = (cubeb_devid)(i + 1),
+              .device_id = kDeviceIds[i],
+              .friendly_name = kDeviceNames[i],
+              .group_id = kGroupIds[i],
+              .vendor_name = "Mozilla",
+              .type = CUBEB_DEVICE_TYPE_OUTPUT,
+              .state = CUBEB_DEVICE_STATE_ENABLED,
+              .preferred =
+                  i == 0 ? CUBEB_DEVICE_PREF_ALL : CUBEB_DEVICE_PREF_NONE,
+              .format = CUBEB_DEVICE_FMT_F32NE,
+              .default_format = CUBEB_DEVICE_FMT_F32NE,
+              .max_channels = 2,
+              .default_rate = 44100,
+              .max_rate = 44100,
+              .min_rate = 16000,
+              .latency_lo = 256,
+              .latency_hi = 1024,
+          };
+          mock->AddDevice(devinfo);
+        }
+      }
+      ForceSetCubebContext(mock->AsCubebContext());
+    } else {
+      ForceUnsetCubebContext();
+    }
+  }
+#endif
 #ifdef MOZ_CUBEB_REMOTING
   else if (strcmp(aPref, PREF_CUBEB_SANDBOX) == 0) {
     StaticMutexAutoLock lock(sMutex);
@@ -348,6 +425,7 @@ RefPtr<CubebHandle> GetCubeb() {
   return GetCubebUnlocked();
 }
 
+#ifdef ENABLE_MOCK_CUBEB
 // This is only exported when running tests.
 void ForceSetCubebContext(cubeb* aCubebContext) {
   RefPtr<CubebHandle> oldHandle;  // For release without sMutex
@@ -356,6 +434,14 @@ void ForceSetCubebContext(cubeb* aCubebContext) {
   sCubebHandle = aCubebContext ? new CubebHandle(aCubebContext) : nullptr;
   sCubebState = CubebState::Initialized;
 }
+
+void ForceUnsetCubebContext() {
+  RefPtr<CubebHandle> oldHandle;  // For release without sMutex
+  StaticMutexAutoLock lock(sMutex);
+  oldHandle = sCubebHandle.forget();
+  sCubebState = CubebState::Uninitialized;
+}
+#endif
 
 void SetInCommunication(bool aInCommunication) {
 #ifdef MOZ_WIDGET_ANDROID
@@ -725,6 +811,7 @@ static const char* gInitCallbackPrefs[] = {
     PREF_CUBEB_BACKEND,
     PREF_CUBEB_FORCE_SAMPLE_RATE,
     PREF_CUBEB_FORCE_NULL_CONTEXT,
+    PREF_CUBEB_FORCE_MOCK_CONTEXT,
     PREF_CUBEB_SANDBOX,
     PREF_AUDIOIPC_STACK_SIZE,
     PREF_AUDIOIPC_SHM_AREA_SIZE,
@@ -989,3 +1076,5 @@ int32_t AndroidGetAudioOutputFramesPerBuffer() {
 
 }  // namespace CubebUtils
 }  // namespace mozilla
+
+#undef ENABLE_MOCK_CUBEB

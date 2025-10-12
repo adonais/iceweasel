@@ -31,9 +31,9 @@ notes = "This is the upstream code plus the ARM intrinsics workaround from qcms,
 audit-as-crates-io = true
 notes = "This is the upstream code plus a few local fixes, see bug 1685697."
 
-[policy."bindgen:0.69.4"]
+[policy."bindgen:0.72.0@git:9366e0af8da529c958b4cd4fcbe492d951c86f5c"]
 audit-as-crates-io = true
-notes = "This is the upstream code plus a fix for clang trunk. See bug 1894093."
+notes = "This is the upstream code not yet released"
 
 [policy.chardetng]
 audit-as-crates-io = true
@@ -91,6 +91,10 @@ notes = "Patched version of upstream"
 [policy.l10nregistry]
 dependency-criteria = { fluent-testing = "safe-to-run", tokio = "safe-to-run" }
 notes = "This crate has two testing-only dependencies which are specified as regular-but-optional rather than a dev-dependencies, because they need to be available to both benchmarks and integration tests."
+
+[policy.libcrux-traits]
+audit-as-crates-io = true
+notes = "Patched version of upstream to avoid unnecessary unused dependencies and conflicts."
 
 [policy.libudev-sys]
 audit-as-crates-io = false
@@ -224,6 +228,10 @@ notes = "This is a first-party crate which is entirely unrelated to the crates.i
 [policy.tabs]
 audit-as-crates-io = false
 notes = "This is a first-party crate, maintained by the appservices team, which is entirely unrelated to the crates.io package of the same name."
+
+[policy.thin-vec]
+audit-as-crates-io = true
+notes = "3rd-party crate with a mozilla-specific patch applied"
 
 [policy.to_shmem]
 audit-as-crates-io = true

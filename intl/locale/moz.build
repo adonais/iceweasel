@@ -70,8 +70,7 @@ RESOURCE_FILES += [
     "language.properties",
 ]
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["tests/gtest"]
+TEST_DIRS += ["tests/gtest"]
 
 if CONFIG["COMPILE_ENVIRONMENT"]:
     CbindgenHeader(

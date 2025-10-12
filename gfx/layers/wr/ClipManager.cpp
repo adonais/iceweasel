@@ -12,6 +12,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
+#include "mozilla/StaticPrefs_apz.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "nsDisplayList.h"
 #include "nsRefreshDriver.h"

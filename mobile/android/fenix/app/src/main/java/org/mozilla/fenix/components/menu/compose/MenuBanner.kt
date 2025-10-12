@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A full-width banner shown in the menu prompting the user to set Firefox as their default browser.
@@ -108,7 +109,7 @@ fun MenuBanner(
                     .semantics(mergeDescendants = true) {},
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.mozac_ic_cross_20),
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_cross_20),
                     contentDescription = stringResource(id = R.string.browser_menu_default_banner_dismiss_promotion),
                     modifier = Modifier
                         .padding(top = 8.dp, end = 12.dp)

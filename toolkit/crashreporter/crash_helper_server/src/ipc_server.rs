@@ -32,6 +32,7 @@ struct IPCConnection {
 }
 
 pub(crate) struct IPCServer {
+    #[cfg_attr(unix, allow(dead_code))]
     listener: IPCListener,
     connections: Vec<IPCConnection>,
 }

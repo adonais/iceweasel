@@ -42,7 +42,6 @@ task-defaults:
 firefox-ci:
     description: taskcluster/gecko_taskgraph unit tests
     always-target: false
-    python-version: [3]
     treeherder:
         symbol: ci
     run:
@@ -62,7 +61,6 @@ fog:
         - linux2404-64/opt
         - macosx1470-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: fp
     run:
@@ -79,7 +77,6 @@ mach:
         - linux2404-64/opt
         - macosx1470-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: mach
     run:
@@ -95,7 +92,6 @@ marionette-harness:
     platform:
         - linux2404-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: mnh
     run:
@@ -166,7 +162,6 @@ mozbase:
         - linux2404-64/opt
         - macosx1470-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: mb
     run:
@@ -178,7 +173,6 @@ mozbase:
 
 mozharness:
     description: mozharness integration tests
-    python-version: [3]
     treeherder:
         symbol: mh
     run:
@@ -230,7 +224,6 @@ mozlint:
 
 mozrelease:
     description: python/mozrelease unit tests
-    python-version: [3]
     treeherder:
         symbol: release
     run:
@@ -245,7 +238,6 @@ mozterm:
     platform:
         - linux2404-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: term
     run:
@@ -261,7 +253,6 @@ mozversioncontrol:
         - linux2404-64/opt
         - macosx1470-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: vcs
     run:
@@ -286,7 +277,6 @@ raptor:
         - linux2404-64/opt
         - macosx1470-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: rap
     run:
@@ -349,7 +339,6 @@ reftest-harness:
 
 taskgraph-tests:
     description: taskcluster/gecko_taskgraph unit tests
-    python-version: [3]
     treeherder:
         symbol: tg
     run:
@@ -366,7 +355,6 @@ tryselect:
     platform:
         - linux2404-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: try
     run:
@@ -381,14 +369,16 @@ tryselect:
             - 'tools/tryselect/**'
 
 mozbuild:
-    description: mozbuild unit tests
+    matrix:
+        python: ['3.9', '3.11']
+    description: mozbuild unit tests (python{matrix[python]})
     platform:
         - linux2404-64/opt
         - macosx1470-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
-        symbol: mbu
+        symbol: mbu{matrix[python]}
+    use-python: "{matrix[python]}"
     run:
         using: python-test
         subsuite: mozbuild
@@ -534,7 +524,6 @@ condprof:
         - linux2404-64/opt
         - macosx1470-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: condprof
     run:
@@ -562,7 +551,6 @@ skip-fails:
 talos:
     description: testing/talos unit tests
     platform: windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: tal
     run:
@@ -617,7 +605,6 @@ telemetry-python:
         - linux2404-64/opt
         - macosx1470-64/opt
         - windows11-64/opt
-    python-version: [3]
     treeherder:
         symbol: tp
     run:
@@ -640,7 +627,6 @@ webext:
     description: WebExtensions python utilities unit tests
     platform:
         - linux2404-64/opt
-    python-version: [3]
     treeherder:
         symbol: webext-py
         tier: 2
@@ -658,7 +644,6 @@ xpcom:
     description: xpcom unit tests
     platform:
         - linux2404-64/opt
-    python-version: [3]
     treeherder:
         symbol: xpcom
     run:

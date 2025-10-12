@@ -32,6 +32,7 @@ import mozilla.components.compose.base.button.PrimaryButton
 import mozilla.components.compose.base.modifier.dashedBorder
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Card for presenting placeholder information or CTAs.
@@ -97,7 +98,7 @@ private fun PlaceholderCardPreview() {
                                 modifier = Modifier.size(20.dp),
                             ) {
                                 Icon(
-                                    painter = painterResource(R.drawable.mozac_ic_cross_20),
+                                    painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
                                     contentDescription = stringResource(
                                         R.string.remove_home_collection_placeholder_content_description,
                                     ),

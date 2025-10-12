@@ -88,7 +88,9 @@ export var SearchUIUtils = {
    *   name of the application default engine to replaced the removed engine.
    */
   async removalOfSearchEngineNotificationBox(oldEngine, newEngine) {
-    let win = lazy.BrowserWindowTracker.getTopWindow();
+    let win = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
 
     let buttons = [
       {
@@ -144,7 +146,9 @@ export var SearchUIUtils = {
    *   Name of the new default engine.
    */
   async searchSettingsResetNotificationBox(newEngine) {
-    let win = lazy.BrowserWindowTracker.getTopWindow();
+    let win = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
 
     let buttons = [
       {

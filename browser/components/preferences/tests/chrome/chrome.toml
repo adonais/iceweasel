@@ -3,9 +3,13 @@ support-files = [
   "../../../../../toolkit/content/tests/widgets/lit-test-helpers.js",
 ]
 
+["test_nav_notice.html"]
+
 ["test_setting_control_checkbox.html"]
 
 ["test_setting_control_controlAttrs.html"]
+
+["test_setting_control_extension_controlled.html"]
 
 ["test_setting_control_options.html"]
 

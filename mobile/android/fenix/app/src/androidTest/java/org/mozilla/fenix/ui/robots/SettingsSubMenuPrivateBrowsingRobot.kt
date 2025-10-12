@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui.robots
 
-import android.os.Build
 import android.util.Log
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
@@ -102,14 +101,12 @@ class SettingsSubMenuPrivateBrowsingRobot {
         Log.i(TAG, "cancelPrivateShortcutAddition: Trying to click the \"Add private browsing shortcut\" button")
         addPrivateBrowsingShortcutButton().click()
         Log.i(TAG, "cancelPrivateShortcutAddition: Clicked the \"Add private browsing shortcut\" button")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Log.i(TAG, "cancelPrivateShortcutAddition: Waiting for $waitingTime ms until finding the \"Cancel\" button")
-            mDevice.wait(Until.findObject(By.textContains("CANCEL")), waitingTime)
-            Log.i(TAG, "cancelPrivateShortcutAddition: Waited for $waitingTime ms until the \"Cancel\" button was found")
-            Log.i(TAG, "cancelPrivateShortcutAddition: Trying to click the \"Cancel\" button")
-            cancelShortcutAdditionButton().click()
-            Log.i(TAG, "cancelPrivateShortcutAddition: Clicked the \"Cancel\" button")
-        }
+        Log.i(TAG, "cancelPrivateShortcutAddition: Waiting for $waitingTime ms until finding the \"Cancel\" button")
+        mDevice.wait(Until.findObject(By.textContains("CANCEL")), waitingTime)
+        Log.i(TAG, "cancelPrivateShortcutAddition: Waited for $waitingTime ms until the \"Cancel\" button was found")
+        Log.i(TAG, "cancelPrivateShortcutAddition: Trying to click the \"Cancel\" button")
+        cancelShortcutAdditionButton().click()
+        Log.i(TAG, "cancelPrivateShortcutAddition: Clicked the \"Cancel\" button")
     }
 
     fun addPrivateShortcutToHomescreen() {

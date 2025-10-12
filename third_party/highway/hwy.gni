@@ -2,6 +2,7 @@ _hwy = get_path_info("hwy", "abspath")
 
 hwy_public = [
   # Public
+  "$_hwy/abort.h",
   "$_hwy/aligned_allocator.h",
   "$_hwy/base.h",
   "$_hwy/cache_control.h",
@@ -31,9 +32,11 @@ hwy_public = [
   "$_hwy/ops/x86_128-inl.h",
   "$_hwy/ops/x86_256-inl.h",
   "$_hwy/ops/x86_512-inl.h",
+  "$_hwy/ops/x86_avx3-inl.h",
 ]
 
 hwy_sources = [
+  "$_hwy/abort.cc",
   "$_hwy/aligned_allocator.cc",
   "$_hwy/per_target.cc",
   "$_hwy/print.cc",

@@ -25,6 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/protections/ContentBlockingPrefs.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
+  DAPIncrementality: "resource://gre/modules/DAPIncrementality.sys.mjs",
   DAPTelemetrySender: "resource://gre/modules/DAPTelemetrySender.sys.mjs",
   DAPVisitCounter: "resource://gre/modules/DAPVisitCounter.sys.mjs",
   DefaultBrowserCheck:
@@ -246,7 +247,9 @@ BrowserGlue.prototype = {
       case "handle-xul-text-link": {
         let linkHandled = subject.QueryInterface(Ci.nsISupportsPRBool);
         if (!linkHandled.data) {
-          let win = lazy.BrowserWindowTracker.getTopWindow();
+          let win =
+            lazy.BrowserWindowTracker.getTopWindow() ??
+            (await lazy.BrowserWindowTracker.promiseOpenWindow());
           if (win) {
             data = JSON.parse(data);
             let where = lazy.BrowserUtils.whereToOpenLink(data);
@@ -277,7 +280,9 @@ BrowserGlue.prototype = {
         } catch (ex) {
           console.error(ex);
         }
-        let win = lazy.BrowserWindowTracker.getTopWindow();
+        let win = lazy.BrowserWindowTracker.getTopWindow({
+          allowFromInactiveWorkspace: true,
+        });
         lazy.BrowserSearchTelemetry.recordSearch(
           win.gBrowser.selectedBrowser,
           engine,
@@ -504,7 +509,9 @@ BrowserGlue.prototype = {
    *        why a profile reset is offered.
    */
   _resetProfileNotification(reason) {
-    let win = lazy.BrowserWindowTracker.getTopWindow();
+    let win = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
     if (!win) {
       return;
     }
@@ -562,7 +569,9 @@ BrowserGlue.prototype = {
   },
 
   _notifyUnsignedAddonsDisabled() {
-    let win = lazy.BrowserWindowTracker.getTopWindow();
+    let win = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
     if (!win) {
       return;
     }
@@ -597,7 +606,7 @@ BrowserGlue.prototype = {
   },
 
   _earlyBlankFirstPaint(cmdLine) {
-    let startTime = Cu.now();
+    let startTime = ChromeUtils.now();
 
     let shouldCreateWindow = isPrivateWindow => {
       if (cmdLine.findFlag("wait-for-jsdebugger", false) != -1) {
@@ -720,7 +729,7 @@ BrowserGlue.prototype = {
     win.stop();
 
     ChromeUtils.addProfilerMarker("earlyBlankFirstPaint", startTime);
-    win.openTime = Cu.now();
+    win.openTime = ChromeUtils.now();
 
     let { TelemetryTimestamps } = ChromeUtils.importESModule(
       "resource://gre/modules/TelemetryTimestamps.sys.mjs"
@@ -996,7 +1005,7 @@ BrowserGlue.prototype = {
         ChromeUtils.idleDispatch(
           async () => {
             if (!Services.startup.shuttingDown) {
-              let startTime = Cu.now();
+              let startTime = ChromeUtils.now();
               try {
                 await task.task();
               } catch (ex) {
@@ -1246,6 +1255,7 @@ BrowserGlue.prototype = {
         task: async () => {
           await lazy.DAPTelemetrySender.startup();
           await lazy.DAPVisitCounter.startup();
+          await lazy.DAPIncrementality.startup();
         },
       },
 
@@ -1336,7 +1346,7 @@ BrowserGlue.prototype = {
     for (let task of idleTasks) {
       ChromeUtils.idleDispatch(async () => {
         if (!Services.startup.shuttingDown) {
-          let startTime = Cu.now();
+          let startTime = ChromeUtils.now();
           try {
             await task();
           } catch (ex) {
@@ -1459,7 +1469,9 @@ BrowserGlue.prototype = {
       aQuitType = "quit";
     }
 
-    let win = lazy.BrowserWindowTracker.getTopWindow();
+    let win = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
 
     // Our prompt for quitting is most important, so replace others.
     win.gDialogBox.replaceDialogIfOpen();
@@ -1584,7 +1596,7 @@ BrowserGlue.prototype = {
     // Use an increasing number to keep track of the current state of the user's
     // profile, so we can move data around as needed as the browser evolves.
     // Completely unrelated to the current Firefox release number.
-    const APP_DATA_VERSION = 159;
+    const APP_DATA_VERSION = 160;
     const PREF = "browser.migration.version";
 
     let profileDataVersion = Services.prefs.getIntPref(PREF, -1);
@@ -1600,7 +1612,9 @@ BrowserGlue.prototype = {
 
   async _showUpgradeDialog() {
     const data = await lazy.OnboardingMessageProvider.getUpgradeMessage();
-    const { gBrowser } = lazy.BrowserWindowTracker.getTopWindow();
+    const { gBrowser } = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
 
     // We'll be adding a new tab open the tab-modal dialog in.
     let tab;
@@ -1700,7 +1714,9 @@ BrowserGlue.prototype = {
       /* isStartupCheck */ true
     );
     if (willPrompt) {
-      let win = lazy.BrowserWindowTracker.getTopWindow();
+      let win = lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      });
       let setToDefaultFeature = lazy.NimbusFeatures.setToDefaultPrompt;
 
       // Send exposure telemetry if user will see default prompt or experimental
@@ -1721,8 +1737,9 @@ BrowserGlue.prototype = {
 
     await lazy.ASRouter.waitForInitialized;
     lazy.ASRouter.sendTriggerMessage({
-      browser:
-        lazy.BrowserWindowTracker.getTopWindow()?.gBrowser.selectedBrowser,
+      browser: lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      })?.gBrowser.selectedBrowser,
       // triggerId and triggerContext
       id: "defaultBrowserCheck",
       context: { willShowDefaultPrompt: willPrompt, source: "startup" },
@@ -1733,7 +1750,9 @@ BrowserGlue.prototype = {
    * Open preferences even if there are no open windows.
    */
   _openPreferences(...args) {
-    let chromeWindow = lazy.BrowserWindowTracker.getTopWindow();
+    let chromeWindow = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
     if (chromeWindow) {
       chromeWindow.openPreferences(...args);
       return;

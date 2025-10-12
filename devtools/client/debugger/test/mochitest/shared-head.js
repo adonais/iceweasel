@@ -715,7 +715,7 @@ function assertFrameIsNotSelected(dbg, frameElement, expectedTitle) {
  */
 async function clearDebuggerPreferences(prefs = []) {
   resetSchemaVersion();
-  asyncStorage.clear();
+  await asyncStorage.clear();
   Services.prefs.clearUserPref("devtools.debugger.alphabetize-outline");
   Services.prefs.clearUserPref("devtools.debugger.pause-on-exceptions");
   Services.prefs.clearUserPref("devtools.debugger.pause-on-caught-exceptions");
@@ -940,11 +940,14 @@ async function selectSource(dbg, url, line, column) {
 }
 
 async function closeTab(dbg, url) {
-  await dbg.actions.closeTab(findSource(dbg, url));
+  const source = findSource(dbg, url);
+  await dbg.actions.closeTabForSource(source);
 }
 
 function countTabs(dbg) {
-  return findElement(dbg, "sourceTabs").children.length;
+  // The sourceTabs elements won't be rendered if there is no source.
+  const sourceTabs = findElement(dbg, "sourceTabs");
+  return sourceTabs ? sourceTabs.children.length : 0;
 }
 
 /**

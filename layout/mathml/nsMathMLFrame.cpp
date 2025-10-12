@@ -9,6 +9,7 @@
 #include "gfxContext.h"
 #include "gfxMathTable.h"
 #include "gfxUtils.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/dom/MathMLElement.h"
 #include "mozilla/gfx/2D.h"
 #include "nsCSSPseudoElements.h"
@@ -69,7 +70,8 @@ nsMathMLFrame::UpdatePresentationData(uint32_t aFlagsValues,
                    NS_MATHML_IS_DTLS_SET(aWhichFlags),
                "aWhichFlags should only be compression or dtls flag");
 
-  if (NS_MATHML_IS_COMPRESSED(aWhichFlags)) {
+  if (!StaticPrefs::mathml_math_shift_enabled() &&
+      NS_MATHML_IS_COMPRESSED(aWhichFlags)) {
     // updating the compression flag is allowed
     if (NS_MATHML_IS_COMPRESSED(aFlagsValues)) {
       // 'compressed' means 'prime' style in App. G, TeXbook

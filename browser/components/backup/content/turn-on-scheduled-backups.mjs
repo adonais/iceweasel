@@ -200,7 +200,7 @@ export default class TurnOnScheduledBackups extends MozLitElement {
         class="backup-location-filepicker-input"
         type="text"
         readonly
-        value=${filename}
+        .value=${filename}
         style=${`background-image: url(${iconURL})`}
       />
     `;
@@ -248,7 +248,7 @@ export default class TurnOnScheduledBackups extends MozLitElement {
             >
               <input
                 id="sensitive-data-checkbox-input"
-                value=${this._showPasswordOptions}
+                .value=${this._showPasswordOptions}
                 @click=${this.handleTogglePasswordOptions}
                 type="checkbox"
               />

@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const AUTOFILL_PROVIDERNAME = "Autofill";
-const PLACES_PROVIDERNAME = "Places";
+const AUTOFILL_PROVIDERNAME = "UrlbarProviderAutofill";
+const PLACES_PROVIDERNAME = "UrlbarProviderPlaces";
 
 testEngine_setup();
 

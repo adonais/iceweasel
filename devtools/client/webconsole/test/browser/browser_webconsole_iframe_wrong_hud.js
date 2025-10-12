@@ -25,6 +25,11 @@ add_task(async function () {
   const tab2 = await addTab(TEST_DUMMY_URI);
   await openConsole(gBrowser.selectedTab);
 
+  info(
+    "Select the first tab before reloading it in order to ensure renduring the console"
+  );
+  gBrowser.selectedTab = tab1;
+
   info("Reloading tab 1");
   await reloadBrowser({ browser: tab1.linkedBrowser });
 

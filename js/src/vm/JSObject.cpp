@@ -2198,10 +2198,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
          id == NameToId(cx->names().fromHex))) {
       return true;
     }
-    if (!JS::Prefs::experimental_promise_try() &&
-        id == NameToId(cx->names().try_)) {
-      return true;
-    }
     if (!JS::Prefs::experimental_error_iserror() &&
         id == NameToId(cx->names().isError)) {
       return true;

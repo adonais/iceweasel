@@ -46,7 +46,7 @@ add_task(async function () {
   const waitForPanel = waitForDOM(
     document,
     "#stack-trace-panel .frame-link",
-    6
+    3 // Note: This does not include the chrome frames
   );
   // Open the stack-trace tab for that request
   document.getElementById("stack-trace-tab").click();

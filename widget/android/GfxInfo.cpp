@@ -15,6 +15,7 @@
 #include "nsServiceManagerUtils.h"
 
 #include "mozilla/Preferences.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
 
 namespace mozilla {

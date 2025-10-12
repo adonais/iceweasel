@@ -278,6 +278,8 @@ class JitRuntime {
   void generateIonGenericCallArgumentsShift(MacroAssembler& masm, Register argc,
                                             Register curr, Register end,
                                             Register scratch, Label* done);
+  void generateIonGenericHandleUnderflow(MacroAssembler& masm,
+                                         bool isConstructing, Label* vmCall);
 
   JitCode* generateDebugTrapHandler(JSContext* cx, DebugTrapHandlerKind kind);
 

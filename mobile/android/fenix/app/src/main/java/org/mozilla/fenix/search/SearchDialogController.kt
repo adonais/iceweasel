@@ -7,7 +7,6 @@ package org.mozilla.fenix.search
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.text.SpannableString
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
@@ -322,17 +321,7 @@ class SearchDialogController(
                 dismissDialog?.invoke()
             }
             setPositiveButton(R.string.camera_permissions_needed_positive_button_text) { dialog: DialogInterface, _ ->
-                val intent: Intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                } else {
-                    SupportUtils.createCustomTabIntent(
-                        activity,
-                        SupportUtils.getSumoURLForTopic(
-                            activity,
-                            SupportUtils.SumoTopic.QR_CAMERA_ACCESS,
-                        ),
-                    )
-                }
+                val intent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                 val uri = Uri.fromParts("package", activity.packageName, null)
                 intent.data = uri
                 dialog.cancel()

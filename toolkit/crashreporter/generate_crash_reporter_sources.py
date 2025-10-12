@@ -241,7 +241,13 @@ def emit_header(output):
 
 
 def javadoc_sanitize(s):
-    return s.replace("<", "&lt;").replace(">", "&gt;").replace("@", "&#064;")
+    return (
+        s.replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("@", "&#064;")
+        # Kotlin supports nested comments, so change anything that looks like the start of a block comment.
+        .replace("/*", "/&#042;")
+    )
 
 
 def generate_class(template, package, klass, annotations):
@@ -261,19 +267,24 @@ def generate_class(template, package, klass, annotations):
 
 
 def derive_package_and_class(file_path):
-    """Determine the appropriate package and class name for a java file path."""
+    """
+    Determine the appropriate package and class name for a file path, and
+    return whether a kotlin source should be generated rather than java.
+    """
     path = file_path.split("src/main/java/", 1)[1]
     package_path, klass_path = path.rsplit("/", 1)
     package = package_path.replace("/", ".")
-    klass = klass_path.removesuffix(".java")
-    return package, klass
+    is_kotlin = klass_path.endswith(".kt")
+    klass = klass_path.removesuffix(".kt").removesuffix(".java")
+    return package, klass, is_kotlin
 
 
 def emit_java(output):
-    """Generate the CrashReporter java file."""
+    """Generate the CrashReporter Java/Kotlin file."""
 
-    package, klass = derive_package_and_class(output.name)
-    template = textwrap.dedent(
+    package, klass, is_kotlin = derive_package_and_class(output.name)
+
+    java_template = textwrap.dedent(
         """\
         package ${package};
 
@@ -314,6 +325,36 @@ def emit_java(output):
         }
         """
     )
+
+    kotlin_template = textwrap.dedent(
+        """\
+        package ${package}
+
+        import androidx.annotation.AnyThread
+
+        /**
+         * Constants used by the crash reporter. These are generated so that they
+         * are kept in sync with the other C++ and JS users.
+         */
+        internal class ${class} {
+            /** Crash Annotations */
+            @AnyThread
+            enum class Annotation private constructor (private val s: String, private val scope: String) {
+                ${enum};
+
+                public override fun toString() = s
+
+                /** @return Whether the annotation should be included in crash pings. */
+                public fun allowedInPing() = scope.equals("ping")
+
+                /** @return Whether the annotation should be included in crash reports. */
+                public fun allowedInReport() = allowedInPing() || scope.equals("report")
+            }
+        }
+        """
+    )
+
+    template = kotlin_template if is_kotlin else java_template
 
     annotations = read_annotations()
     generated_class = generate_class(template, package, klass, annotations)

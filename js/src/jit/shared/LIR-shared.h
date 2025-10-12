@@ -1070,6 +1070,14 @@ const char* LCompareI64AndBranch::extraName() const { return CodeName(jsop_); }
 
 const char* LCompareAndBranch::extraName() const { return CodeName(jsop_); }
 
+const char* LStrictConstantCompareInt32AndBranch::extraName() const {
+  return CodeName(cmpMir()->jsop());
+}
+
+const char* LStrictConstantCompareBooleanAndBranch::extraName() const {
+  return CodeName(cmpMir()->jsop());
+}
+
 const char* LMathFunctionD::extraName() const {
   return MMathFunction::FunctionName(mir()->function());
 }

@@ -47,6 +47,7 @@ import org.mozilla.fenix.ext.openSetDefaultBrowserOption
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.onboarding.redesign.view.OnboardingScreenRedesign
 import org.mozilla.fenix.onboarding.store.DefaultOnboardingPreferencesRepository
 import org.mozilla.fenix.onboarding.store.OnboardingPreferencesMiddleware
 import org.mozilla.fenix.onboarding.store.OnboardingStore
@@ -148,7 +149,11 @@ class OnboardingFragment : Fragment() {
         savedInstanceState: Bundle?,
     ) = content {
         FirefoxTheme {
-            ScreenContent()
+            if (requireContext().settings().useOnboardingRedesign) {
+                ScreenContentRedesign()
+            } else {
+                ScreenContent()
+            }
         }
     }
 
@@ -203,6 +208,104 @@ class OnboardingFragment : Fragment() {
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
         LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(pinAppWidgetReceiver)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @Composable
+    @Suppress("LongMethod")
+    private fun ScreenContentRedesign() {
+        OnboardingScreenRedesign(
+            pagesToDisplay = pagesToDisplay,
+            onMakeFirefoxDefaultClick = {
+                promptToSetAsDefaultBrowser()
+            },
+            onSkipDefaultClick = {
+                telemetryRecorder.onSkipSetToDefaultClick(
+                    pagesToDisplay.telemetrySequenceId(),
+                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.DEFAULT_BROWSER),
+                )
+            },
+            onSignInButtonClick = {
+                findNavController().nav(
+                    id = R.id.onboardingFragment,
+                    directions = OnboardingFragmentDirections.actionGlobalTurnOnSync(
+                        entrypoint = FenixFxAEntryPoint.NewUserOnboarding,
+                    ),
+                )
+                telemetryRecorder.onSyncSignInClick(
+                    sequenceId = pagesToDisplay.telemetrySequenceId(),
+                    sequencePosition = pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.SYNC_SIGN_IN),
+                )
+            },
+            onSkipSignInClick = {
+                telemetryRecorder.onSkipSignInClick(
+                    pagesToDisplay.telemetrySequenceId(),
+                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.SYNC_SIGN_IN),
+                )
+            },
+            onAddFirefoxWidgetClick = {
+                telemetryRecorder.onAddSearchWidgetClick(
+                    pagesToDisplay.telemetrySequenceId(),
+                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.ADD_SEARCH_WIDGET),
+                )
+                maybeShowAddSearchWidgetPrompt(requireActivity())
+            },
+            onSkipFirefoxWidgetClick = {
+                telemetryRecorder.onSkipAddWidgetClick(
+                    pagesToDisplay.telemetrySequenceId(),
+                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.ADD_SEARCH_WIDGET),
+                )
+            },
+            onFinish = {
+                onFinish(it)
+                enableSearchBarCFRForNewUser()
+            },
+            onImpression = {
+                telemetryRecorder.onImpression(
+                    sequenceId = pagesToDisplay.telemetrySequenceId(),
+                    pageType = it.type,
+                    sequencePosition = pagesToDisplay.sequencePosition(it.type),
+                )
+
+                defaultBrowserPromptManager.maybePromptToSetAsDefaultBrowser(
+                    pagesToDisplay = pagesToDisplay,
+                    currentCard = it,
+                )
+            },
+            onboardingStore = onboardingStore,
+            termsOfServiceEventHandler = termsOfServiceEventHandler,
+            onCustomizeToolbarClick = {
+                requireContext().settings().hasCompletedSetupStepToolbar = true
+
+                telemetryRecorder.onSelectToolbarPlacementClick(
+                    pagesToDisplay.telemetrySequenceId(),
+                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.TOOLBAR_PLACEMENT),
+                    onboardingStore.state.toolbarOptionSelected.id,
+                )
+            },
+            onMarketingDataLearnMoreClick = {
+                telemetryRecorder.onMarketingDataLearnMoreClick()
+
+                val url = SupportUtils.getSumoURLForTopic(
+                    requireContext(),
+                    SupportUtils.SumoTopic.MARKETING_DATA,
+                )
+                launchSandboxCustomTab(url)
+            },
+            onMarketingOptInToggle = { optIn ->
+                telemetryRecorder.onMarketingDataOptInToggled(optIn)
+            },
+            onMarketingDataContinueClick = { allowMarketingDataCollection ->
+                with(requireContext().settings()) {
+                    isMarketingTelemetryEnabled = allowMarketingDataCollection
+                    hasMadeMarketingTelemetrySelection = true
+                }
+                telemetryRecorder.onMarketingDataContinueClicked(allowMarketingDataCollection)
+            },
+            currentIndex = { index ->
+                removeMarketingFeature.withFeature { it.currentPageIndex = index }
+            },
+        )
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -285,6 +388,8 @@ class OnboardingFragment : Fragment() {
             onboardingStore = onboardingStore,
             termsOfServiceEventHandler = termsOfServiceEventHandler,
             onCustomizeToolbarClick = {
+                requireContext().settings().hasCompletedSetupStepToolbar = true
+
                 telemetryRecorder.onSelectToolbarPlacementClick(
                     pagesToDisplay.telemetrySequenceId(),
                     pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.TOOLBAR_PLACEMENT),
@@ -314,6 +419,8 @@ class OnboardingFragment : Fragment() {
                 removeMarketingFeature.withFeature { it.currentPageIndex = index }
             },
             onCustomizeThemeClick = {
+                requireContext().settings().hasCompletedSetupStepTheme = true
+
                 telemetryRecorder.onSelectThemeClick(
                     onboardingStore.state.themeOptionSelected.id,
                     pagesToDisplay.telemetrySequenceId(),

@@ -70,7 +70,9 @@ class RecordedNimbusContextTest {
                 put("device_manufacturer", Build.MANUFACTURER)
                 put("device_model", Build.MODEL)
                 put("user_accepted_tou", true)
-                put("no_shortcuts_stories_mkt", true)
+                put("no_shortcuts_or_stories_opt_outs", true)
+                put("user_clicked_tou_prompt_link", true)
+                put("user_clicked_tou_prompt_remind_me_later", true)
             },
             contextAsJson,
         )
@@ -79,7 +81,7 @@ class RecordedNimbusContextTest {
     @Test
     fun `GIVEN an instance of RecordedNimbusContext WHEN record called THEN the value recorded to Glean should match the expected value`() {
         var recordedValue: JsonElement? = null
-        Pings.nimbus.testBeforeNextSubmit {
+        val job = Pings.nimbus.testBeforeNextSubmit {
             recordedValue = GleanNimbus.recordedNimbusContext.testGetValue()
         }
 
@@ -91,6 +93,7 @@ class RecordedNimbusContextTest {
         )
         recordedContext.record()
 
+        job.join()
         assertNotNull(recordedValue)
         assertEquals(
             buildJsonObject {
@@ -113,7 +116,9 @@ class RecordedNimbusContextTest {
                 put("locale", "")
                 put("region", "US")
                 put("userAcceptedTou", true)
-                put("noShortcutsStoriesMkt", true)
+                put("noShortcutsOrStoriesOptOuts", true)
+                put("userClickedTouPromptLink", true)
+                put("userClickedTouPromptRemindMeLater", true)
             },
             recordedValue?.jsonObject,
         )

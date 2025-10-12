@@ -50,7 +50,7 @@ support-files = ["file_pdfjs_form.pdf"]
 support-files = ["file_pdfjs_hcm.pdf"]
 
 ["browser_pdfjs_highlight_telemetry.js"]
-skip-if = ["true"]
+run-if = ["!headless"]
 
 ["browser_pdfjs_jpeg2000.js"]
 support-files = ["file_pdfjs_jp2_image.pdf"]

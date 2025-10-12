@@ -25,8 +25,9 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
-void SortF16Desc(float16_t* HWY_RESTRICT keys, size_t num) {
+void SortF16Desc(float16_t* HWY_RESTRICT keys, const size_t num) {
 #if HWY_HAVE_FLOAT16
   return VQSortStatic(keys, num, SortDescending());
 #else
@@ -36,6 +37,31 @@ void SortF16Desc(float16_t* HWY_RESTRICT keys, size_t num) {
 #endif
 }
 
+void PartialSortF16Desc(float16_t* HWY_RESTRICT keys, const size_t num,
+                        const size_t k) {
+#if HWY_HAVE_FLOAT16
+  return VQPartialSortStatic(keys, num, k, SortDescending());
+#else
+  (void)keys;
+  (void)num;
+  (void)k;
+  HWY_ASSERT(0);
+#endif
+}
+
+void SelectF16Desc(float16_t* HWY_RESTRICT keys, const size_t num,
+                   const size_t k) {
+#if HWY_HAVE_FLOAT16
+  return VQSelectStatic(keys, num, k, SortDescending());
+#else
+  (void)keys;
+  (void)num;
+  (void)k;
+  HWY_ASSERT(0);
+#endif
+}
+
+}  // namespace
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -45,10 +71,27 @@ HWY_AFTER_NAMESPACE();
 namespace hwy {
 namespace {
 HWY_EXPORT(SortF16Desc);
+HWY_EXPORT(PartialSortF16Desc);
+HWY_EXPORT(SelectF16Desc);
 }  // namespace
 
-void VQSort(float16_t* HWY_RESTRICT keys, size_t n, SortDescending) {
+void VQSort(float16_t* HWY_RESTRICT keys, const size_t n, SortDescending) {
   HWY_DYNAMIC_DISPATCH(SortF16Desc)(keys, n);
+}
+
+void VQPartialSort(float16_t* HWY_RESTRICT keys, const size_t n, const size_t k,
+                   SortDescending) {
+  HWY_DYNAMIC_DISPATCH(PartialSortF16Desc)(keys, n, k);
+}
+
+void VQSelect(float16_t* HWY_RESTRICT keys, const size_t n, const size_t k,
+              SortDescending) {
+  HWY_DYNAMIC_DISPATCH(SelectF16Desc)(keys, n, k);
+}
+
+void Sorter::operator()(float16_t* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
 }
 
 }  // namespace hwy

@@ -49,7 +49,6 @@ skip-if = [
 
 ["browser_target_command_service_workers_navigation.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && asan", # Bug 1767781
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1872255
 ]
 

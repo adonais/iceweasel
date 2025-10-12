@@ -233,12 +233,14 @@ nscoord nsFontMetrics::EmHeight() const {
   return ROUND_TO_TWIPS(GetMetrics(this).emHeight);
 }
 
-nscoord nsFontMetrics::EmAscent() const {
-  return ROUND_TO_TWIPS(GetMetrics(this).emAscent);
+nscoord nsFontMetrics::TrimmedAscent() const {
+  const auto& m = GetMetrics(this);
+  return ROUND_TO_TWIPS(std::max(0.0, m.maxAscent - m.internalLeading / 2));
 }
 
-nscoord nsFontMetrics::EmDescent() const {
-  return ROUND_TO_TWIPS(GetMetrics(this).emDescent);
+nscoord nsFontMetrics::TrimmedDescent() const {
+  const auto& m = GetMetrics(this);
+  return ROUND_TO_TWIPS(std::max(0.0, m.maxDescent - m.internalLeading / 2));
 }
 
 nscoord nsFontMetrics::MaxHeight() const {
@@ -277,6 +279,19 @@ nscoord nsFontMetrics::SpaceWidth() const {
                      ? eVertical
                      : eHorizontal)
           .spaceWidth);
+}
+
+nscoord nsFontMetrics::InterScriptSpacingWidth() const {
+  const auto& m = GetMetrics(this);
+  // If there is no advance measure of the CJK water ideograph, use 1em instead.
+  // https://drafts.csswg.org/css-values-4/#ic
+  LayoutDeviceDoubleCoord ic =
+      m.ideographicWidth >= 0.0 ? m.ideographicWidth : m.emHeight;
+
+  // The inter-script spacing is defined as 1/8 of the CJK advance measure, i.e.
+  // 0.125ic: https://drafts.csswg.org/css-text-4/#inter-script-spacing
+  constexpr double kFraction = 0.125;
+  return LayoutDevicePixel::ToAppUnits(ic * kFraction, AppUnitsPerDevPixel());
 }
 
 int32_t nsFontMetrics::GetMaxStringLength() const {

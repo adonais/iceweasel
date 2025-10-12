@@ -502,7 +502,7 @@ class Dumper:
         self.s3_bucket = s3_bucket
         self.file_mapping = file_mapping or {}
         # Add a static mapping for Rust sources. Since Rust 1.30 official Rust builds map
-        # source paths to start with "/rust/<sha>/".
+        # source paths to start with "/rustc/<sha>/".
         rust_sha = buildconfig.substs["RUSTC_COMMIT"]
         rust_srcdir = "/rustc/" + rust_sha
         self.srcdirs.append(rust_srcdir)

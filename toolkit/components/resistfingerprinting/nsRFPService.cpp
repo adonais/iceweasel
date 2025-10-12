@@ -15,6 +15,7 @@
 #include <new>
 #include <type_traits>
 #include <utility>
+#include <mutex>
 
 #include "MainThreadUtils.h"
 #include "ScopedNSSTypes.h"
@@ -117,6 +118,7 @@ static mozilla::LazyLogModule gTimestamps("Timestamps");
 #define GLEAN_DATA_SUBMISSION_PREF "datareporting.healthreport.uploadEnabled"
 #define USER_CHARACTERISTICS_UUID_PREF \
   "toolkit.telemetry.user_characteristics_ping.uuid"
+#define INTL_ACCEPT_LANGUAGES_PREF "intl.accept_languages"
 
 #define RFP_TIMER_UNCONDITIONAL_VALUE 20
 #define LAST_PB_SESSION_EXITED_TOPIC "last-pb-context-exited"
@@ -169,6 +171,7 @@ NS_IMPL_ISUPPORTS(nsRFPService, nsIObserver, nsIRFPService)
 
 static StaticRefPtr<nsRFPService> sRFPService;
 static bool sInitialized = false;
+static inline StaticAutoPtr<nsTArray<nsCString>> sAllowedFonts;
 
 // Actually enabled fingerprinting protections.
 static StaticMutex sEnabledFingerprintingProtectionsMutex;
@@ -1061,6 +1064,11 @@ NS_IMETHODIMP nsRFPService::GetSpoofedUserAgentService(bool aDesktopMode,
 
 /* static */
 nsCString nsRFPService::GetSpoofedJSLocale() { return "en-US"_ns; }
+
+/* static */
+nsCString nsRFPService::GetSpoofedJSTimeZone() {
+  return "Atlantic/Reykjavik"_ns;
+}
 
 // ============================================================================
 // ============================================================================
@@ -2753,4 +2761,137 @@ uint32_t nsRFPService::CollapseMaxTouchPoints(uint32_t aMaxTouchPoints) {
   // collapse them all to 5. A minority of devices (mostly desktop devices)
   // will report uncommon values like 2, 3, 8, etc
   return 5;
+}
+
+/* static */
+void nsRFPService::CalculateFontLocaleAllowlist() {
+  static bool sAcceptLanguagesIsDirty = true;
+
+  enum MatchSetting : uint8_t { StartsWith, EndsWith, Exact };
+
+  struct LocaleMatchingRule {
+    const char* lang;
+    MatchSetting matchSetting;
+  };
+
+  struct FontInclusionRule {
+    const char* fontName;
+    const LocaleMatchingRule* langs;
+  };
+
+#define FONT_RULE(font, ...)                          \
+  []() -> FontInclusionRule {                         \
+    static const LocaleMatchingRule _langs[] = {      \
+        __VA_ARGS__, {nullptr, MatchSetting::Exact}}; \
+    return FontInclusionRule{font, _langs};           \
+  }(),
+
+  static const FontInclusionRule fontInclusionRules[] = {
+#define FontInclusionByLocaleRules
+
+#ifdef XP_WIN
+#  include "../../gfx/thebes/StandardFonts-win10.inc"
+#elif defined(XP_MACOSX)
+#  include "../../gfx/thebes/StandardFonts-macos.inc"
+#elif defined(XP_LINUX)
+#  include "../../gfx/thebes/StandardFonts-linux.inc"
+#elif defined(XP_ANDROID)
+#  include "../../gfx/thebes/StandardFonts-android.inc"
+#endif
+
+#undef FontInclusionByLocaleRules
+  };
+
+#undef FONT_RULE
+
+  static std::once_flag sOnce;
+  std::call_once(sOnce, []() {
+    Preferences::RegisterCallback(
+        [](const char*, void*) { sAcceptLanguagesIsDirty = true; },
+        INTL_ACCEPT_LANGUAGES_PREF);
+  });
+
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (sAcceptLanguagesIsDirty) {
+    if (!sAllowedFonts) {
+      sAllowedFonts = new nsTArray<nsCString>();
+      ClearOnShutdown(&sAllowedFonts);
+    } else {
+      sAllowedFonts->ClearAndRetainStorage();
+    }
+
+    nsAutoCString acceptLang;
+    nsresult rv = Preferences::GetLocalizedCString(INTL_ACCEPT_LANGUAGES_PREF,
+                                                   acceptLang);
+    NS_ENSURE_SUCCESS_VOID(rv);
+
+    ToLowerCase(acceptLang);
+
+    for (const nsDependentCSubstring& locale :
+         nsCCharSeparatedTokenizer(acceptLang, ',').ToRange()) {
+      for (const FontInclusionRule& fontRules : fontInclusionRules) {
+        for (const LocaleMatchingRule* localeRule = fontRules.langs;
+             localeRule->lang != nullptr; localeRule++) {
+          bool matched = false;
+          switch (localeRule->matchSetting) {
+            case MatchSetting::Exact: {
+              if (locale.Equals(localeRule->lang)) {
+                matched = true;
+              }
+              break;
+            }
+            case MatchSetting::StartsWith: {
+              if (StringBeginsWith(locale,
+                                   nsDependentCString(localeRule->lang))) {
+                matched = true;
+              }
+              break;
+            }
+            case MatchSetting::EndsWith: {
+              if (StringEndsWith(locale,
+                                 nsDependentCString(localeRule->lang))) {
+                matched = true;
+              }
+              break;
+            }
+            default: {
+              MOZ_ASSERT_UNREACHABLE("Unknown match setting");
+              break;
+            }
+          }
+          if (matched) {
+            sAllowedFonts->AppendElement(fontRules.fontName);
+            break;
+          }
+        }
+      }
+    }
+
+    sAcceptLanguagesIsDirty = false;
+  }
+}
+
+/* static */
+bool nsRFPService::FontIsAllowedByLocale(const nsACString& aName) {
+  if (NS_IsMainThread()) {
+    CalculateFontLocaleAllowlist();
+  } else {
+    NS_DispatchToMainThread(
+        NS_NewRunnableFunction("CalculateFontLocaleAllowlist",
+                               &nsRFPService::CalculateFontLocaleAllowlist));
+  }
+
+  if (!sAllowedFonts || sAllowedFonts->IsEmpty() || aName.IsEmpty()) {
+    return false;
+  }
+
+  // Check if the font is in the allowed list.
+  for (const nsCString& font : *sAllowedFonts) {
+    if (aName.Equals(font, nsCaseInsensitiveCStringComparator)) {
+      return true;
+    }
+  }
+
+  return false;
 }

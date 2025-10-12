@@ -64,7 +64,9 @@ class SyncedTabsInSidebar extends SidebarPage {
   }
 
   handleContextMenuEvent(e) {
-    this.triggerNode = this.findTriggerNode(e, "sidebar-tab-row");
+    this.triggerNode =
+      this.findTriggerNode(e, "sidebar-tab-row") ||
+      this.findTriggerNode(e, "moz-input-search");
     if (!this.triggerNode) {
       e.preventDefault();
       return;
@@ -318,17 +320,19 @@ class SyncedTabsInSidebar extends SidebarPage {
           data-l10n-attrs="heading"
           view="viewTabsSidebar"
         >
+          <moz-input-search
+            data-l10n-id="firefoxview-search-text-box-tabs"
+            data-l10n-attrs="placeholder"
+            @MozInputSearch:search=${this.onSearchQuery}
+          ></moz-input-search>
         </sidebar-panel-header>
-        <moz-input-search
-          data-l10n-id="firefoxview-search-text-box-tabs"
-          data-l10n-attrs="placeholder"
-          @MozInputSearch:search=${this.onSearchQuery}
-        ></moz-input-search>
-        ${when(
-          messageCard,
-          () => this.messageCardTemplate(messageCard),
-          () => html`${this.deviceListTemplate()}`
-        )}
+        <div class="sidebar-panel-scrollable-content">
+          ${when(
+            messageCard,
+            () => this.messageCardTemplate(messageCard),
+            () => html`${this.deviceListTemplate()}`
+          )}
+        </div>
       </div>
     `;
   }

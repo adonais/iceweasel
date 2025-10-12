@@ -21,18 +21,18 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "desktop_device_info.h"
 #include "libyuv/convert.h"
-#include "rtc_base/logging.h"
-#include "rtc_base/time_utils.h"
-#include "rtc_base/trace_event.h"
 #include "modules/desktop_capture/desktop_and_cursor_composer.h"
-#include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer_differ_wrapper.h"
+#include "modules/desktop_capture/desktop_frame.h"
 #include "modules/video_capture/video_capture.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/TimeStamp.h"
 #include "nsThreadUtils.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/time_utils.h"
+#include "rtc_base/trace_event.h"
 #include "tab_capturer.h"
 
 #ifdef XP_MACOSX
@@ -598,7 +598,7 @@ void DesktopCaptureImpl::CaptureFrameOnThread() {
   mCaptureTimer->InitHighResolutionWithNamedFuncCallback(
       &::CaptureFrameOnThread, this,
       std::max(timeUntilRequestedCapture, sleepTime), nsITimer::TYPE_ONE_SHOT,
-      "DesktopCaptureImpl::mCaptureTimer");
+      "DesktopCaptureImpl::mCaptureTimer"_ns);
 }
 
 mozilla::MediaEventSource<void>* DesktopCaptureImpl::CaptureEndedEvent() {

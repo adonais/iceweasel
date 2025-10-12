@@ -45,10 +45,7 @@ class MicrosurveyTest : TestSetup() {
             mDevice.pressBack()
         }
         surveyScreen {
-            verifyTheFirefoxLogo(composeTestRule)
-            verifyTheSurveyTitle(getStringResource(R.string.microsurvey_prompt_printing_title), composeTestRule)
-            verifyContinueSurveyButton(composeTestRule)
-            verifyHomeScreenSurveyCloseButton()
+            verifyThePrintSurveyPrompt(composeTestRule = composeTestRule, exists = true)
         }
     }
 
@@ -76,7 +73,7 @@ class MicrosurveyTest : TestSetup() {
         }.enterURLAndEnterToBrowser(testPage2.url) {
             mDevice.waitForIdle()
             surveyScreen {
-                verifyTheSurveyTitle(getStringResource(R.string.microsurvey_prompt_printing_title), composeTestRule)
+                verifyTheSurveyTitle(getStringResource(R.string.microsurvey_prompt_printing_title), composeTestRule, true)
             }
         }
     }
@@ -101,6 +98,30 @@ class MicrosurveyTest : TestSetup() {
             selectAnswer("Very satisfied", composeTestRule)
             clickSubmitButton(composeTestRule)
             verifySurveyCompletedScreen(composeTestRule)
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2809344
+    @Test
+    fun dismissTheSurveyPromptTest() {
+        val testPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+
+        navigationToolbar {
+        }.enterURLAndEnterToBrowser(testPage.url) {
+        }.openThreeDotMenu {
+        }.clickShareButton {
+        }.clickPrintButton {
+            mDevice.waitForIdle()
+            mDevice.pressBack()
+        }
+        surveyScreen {
+            verifyThePrintSurveyPrompt(composeTestRule = composeTestRule, exists = true)
+            clickOutsideTheSurveyPrompt()
+            verifyThePrintSurveyPrompt(composeTestRule = composeTestRule, exists = true)
+        }.clickHomeScreenSurveyCloseButton {
+        }
+        surveyScreen {
+            verifyThePrintSurveyPrompt(composeTestRule = composeTestRule, exists = false)
         }
     }
 }

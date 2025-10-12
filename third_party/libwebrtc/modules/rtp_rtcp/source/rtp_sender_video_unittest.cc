@@ -115,7 +115,7 @@ constexpr int kMaxPacketLength = 1500;
 constexpr Timestamp kStartTime = Timestamp::Millis(123456789);
 constexpr TimeDelta kDefaultExpectedRetransmissionTime = TimeDelta::Millis(125);
 
-class LoopbackTransportTest : public webrtc::Transport {
+class LoopbackTransportTest : public Transport {
  public:
   LoopbackTransportTest() {
     receivers_extensions_.Register<TransmissionOffset>(
@@ -147,7 +147,10 @@ class LoopbackTransportTest : public webrtc::Transport {
     EXPECT_TRUE(sent_packets_.back().Parse(data));
     return true;
   }
-  bool SendRtcp(ArrayView<const uint8_t> /* data */) override { return false; }
+  bool SendRtcp(ArrayView<const uint8_t> /* data */,
+                const PacketOptions& /* options */) override {
+    return false;
+  }
   const RtpPacketReceived& last_sent_packet() { return sent_packets_.back(); }
   int packets_sent() { return sent_packets_.size(); }
   const std::vector<RtpPacketReceived>& sent_packets() const {
@@ -1574,8 +1577,7 @@ class RtpSenderVideoWithFrameTransformerTest : public ::testing::Test {
 std::unique_ptr<EncodedImage> CreateDefaultEncodedImage() {
   const uint8_t data[] = {1, 2, 3, 4};
   auto encoded_image = std::make_unique<EncodedImage>();
-  encoded_image->SetEncodedData(
-      webrtc::EncodedImageBuffer::Create(data, sizeof(data)));
+  encoded_image->SetEncodedData(EncodedImageBuffer::Create(data, sizeof(data)));
   return encoded_image;
 }
 

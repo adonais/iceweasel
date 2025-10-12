@@ -221,7 +221,7 @@ void FilterNodeWebgl::Draw(DrawTargetWebgl* aDT, const Rect& aSourceRect,
 }
 
 already_AddRefed<SourceSurface> FilterNodeWebgl::DrawChild(
-    DrawTargetWebgl* aDT, const Rect& aSourceRect, IntPoint* aSurfaceOffset) {
+    DrawTargetWebgl* aDT, const Rect& aSourceRect, Point& aSurfaceOffset) {
   ResolveAllInputs(aDT);
 
   MOZ_ASSERT(mSoftwareFilter);
@@ -231,6 +231,7 @@ already_AddRefed<SourceSurface> FilterNodeWebgl::DrawChild(
     return nullptr;
   }
   swDT->DrawFilter(mSoftwareFilter, aSourceRect, Point(0, 0));
+  aSurfaceOffset = aSourceRect.TopLeft();
   return swDT->Snapshot();
 }
 
@@ -351,58 +352,15 @@ IntRect FilterNodeTransformWebgl::MapRectToSource(const IntRect& aRect,
   return MapInputRectToSource(IN_TRANSFORM_IN, intRect, aMax, aSourceNode);
 }
 
-void FilterNodeTransformWebgl::Draw(DrawTargetWebgl* aDT,
-                                    const Rect& aSourceRect,
-                                    const Point& aDestPoint,
-                                    const DrawOptions& aOptions) {
-  ResolveInputs(aDT, true);
-
-  uint32_t inputIdx = InputIndex(IN_TRANSFORM_IN);
-  if (inputIdx < NumberOfSetInputs()) {
-    if (mMatrix.IsTranslation()) {
-      if (RefPtr<FilterNodeWebgl> filter = mInputFilters[inputIdx]) {
-        filter->Draw(aDT, aSourceRect - mMatrix.GetTranslation(), aDestPoint,
-                     aOptions);
-      } else if (RefPtr<SourceSurface> surface = mInputSurfaces[inputIdx]) {
-        aDT->DrawSurface(surface, Rect(aDestPoint, aSourceRect.Size()),
-                         aSourceRect - mMatrix.GetTranslation(),
-                         DrawSurfaceOptions(mSamplingFilter), aOptions);
-      }
-    } else {
-      AutoRestoreTransform restore(aDT);
-      aDT->PushClipRect(Rect(aDestPoint, aSourceRect.Size()));
-      aDT->ConcatTransform(
-          mMatrix * Matrix::Translation(aDestPoint - aSourceRect.TopLeft()));
-      Matrix inv = mMatrix;
-      if (inv.Invert()) {
-        Rect invRect = inv.TransformBounds(aSourceRect);
-        if (RefPtr<FilterNodeWebgl> filter = mInputFilters[inputIdx]) {
-          if (RefPtr<SourceSurface> surface = filter->DrawChild(aDT, invRect)) {
-            Rect surfRect(surface->GetRect());
-            aDT->DrawSurface(surface, Rect(invRect.TopLeft(), surfRect.Size()),
-                             surfRect, DrawSurfaceOptions(mSamplingFilter),
-                             aOptions);
-          }
-        } else if (RefPtr<SourceSurface> surface = mInputSurfaces[inputIdx]) {
-          Rect surfRect = Rect(surface->GetRect()).Intersect(invRect);
-          aDT->DrawSurface(surface, surfRect, surfRect,
-                           DrawSurfaceOptions(mSamplingFilter), aOptions);
-        }
-      }
-      aDT->PopClip();
-    }
-  }
-}
-
 already_AddRefed<SourceSurface> FilterNodeTransformWebgl::DrawChild(
-    DrawTargetWebgl* aDT, const Rect& aSourceRect, IntPoint* aSurfaceOffset) {
+    DrawTargetWebgl* aDT, const Rect& aSourceRect, Point& aSurfaceOffset) {
   ResolveInputs(aDT, true);
 
   uint32_t inputIdx = InputIndex(IN_TRANSFORM_IN);
   if (inputIdx < NumberOfSetInputs()) {
-    if (aSurfaceOffset && mMatrix.IsIntegerTranslation()) {
+    if (mMatrix.IsIntegerTranslation()) {
       if (RefPtr<SourceSurface> surface = mInputSurfaces[inputIdx]) {
-        *aSurfaceOffset = RoundedToInt(mMatrix.GetTranslation());
+        aSurfaceOffset = mMatrix.GetTranslation().Round();
         return surface.forget();
       }
     }
@@ -512,21 +470,20 @@ void FilterNodeGaussianBlurWebgl::Draw(DrawTargetWebgl* aDT,
   uint32_t inputIdx = InputIndex(IN_GAUSSIAN_BLUR_IN);
   if (inputIdx < NumberOfSetInputs()) {
     bool success = false;
-    IntPoint surfaceOffset;
+    Point surfaceOffset;
     if (RefPtr<SourceSurface> surface =
             mInputFilters[inputIdx] ? mInputFilters[inputIdx]->DrawChild(
-                                          aDT, aSourceRect, &surfaceOffset)
+                                          aDT, aSourceRect, surfaceOffset)
                                     : mInputSurfaces[inputIdx]) {
       DeviceColor color =
           surface->GetFormat() == SurfaceFormat::A8 && mInputFilters[inputIdx]
               ? mInputFilters[inputIdx]->GetColor()
               : DeviceColor(1, 1, 1, 1);
       aDT->PushClipRect(Rect(aDestPoint, aSourceRect.Size()));
-      IntRect surfRect =
-          RoundedOut(Rect(surface->GetRect())
-                         .Intersect(aSourceRect - Point(surfaceOffset)));
+      IntRect surfRect = RoundedOut(
+          Rect(surface->GetRect()).Intersect(aSourceRect - surfaceOffset));
       Point destOffset =
-          Point(surfRect.TopLeft() + surfaceOffset) - aSourceRect.TopLeft();
+          Point(surfRect.TopLeft()) + surfaceOffset - aSourceRect.TopLeft();
       success = surfRect.IsEmpty() ||
                 aDT->BlurSurface(mStdDeviation, surface, surfRect,
                                  aDestPoint + destOffset, aOptions, color);

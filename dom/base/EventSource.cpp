@@ -30,9 +30,9 @@
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "nsComponentManagerUtils.h"
-#include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
+#include "nsGlobalWindowInner.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIAuthPrompt.h"
 #include "nsIAuthPrompt2.h"
@@ -1047,6 +1047,15 @@ nsresult EventSourceImpl::InitChannelAndRequestEventSource(
                        nullptr,     // loadGroup
                        nullptr,     // aCallbacks
                        loadFlags);  // aLoadFlags
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    auto workerRef = mWorkerRef.Lock();
+
+    if (*workerRef) {
+      nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+      loadInfo->SetIsInThirdPartyContext(
+          (*workerRef)->Private()->IsThirdPartyContext());
+    }
   }
 
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1832,17 +1841,19 @@ void EventSourceImpl::ReleaseWorkerRef() {
 // EventSourceImpl::nsIEventTarget
 //-----------------------------------------------------------------------------
 NS_IMETHODIMP
-EventSourceImpl::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags) {
+EventSourceImpl::DispatchFromScript(nsIRunnable* aEvent, DispatchFlags aFlags) {
   nsCOMPtr<nsIRunnable> event(aEvent);
   return Dispatch(event.forget(), aFlags);
 }
 
 NS_IMETHODIMP
 EventSourceImpl::Dispatch(already_AddRefed<nsIRunnable> aEvent,
-                          uint32_t aFlags) {
+                          DispatchFlags aFlags) {
+  // FIXME: This dispatch implementation has inconsistent leaking behaviour when
+  // `NS_DISPATCH_FALLIBLE` is not specified.
   nsCOMPtr<nsIRunnable> event_ref(aEvent);
   if (mIsMainThread) {
-    return NS_DispatchToMainThread(event_ref.forget());
+    return NS_DispatchToMainThread(event_ref.forget(), aFlags);
   }
 
   if (mIsShutDown) {

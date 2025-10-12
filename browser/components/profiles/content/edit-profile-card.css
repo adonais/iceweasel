@@ -14,15 +14,6 @@
   margin-block: 0;
 }
 
-#header-avatar {
-  -moz-context-properties: fill, stroke;
-
-  width: var(--header-avatar-size);
-  height: var(--header-avatar-size);
-  border-radius: var(--border-radius-circle);
-  border: var(--card-border);
-}
-
 .avatar-header-content {
   display: flex;
   flex-direction: column;

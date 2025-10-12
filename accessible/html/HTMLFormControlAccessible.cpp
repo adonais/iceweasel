@@ -41,7 +41,7 @@ role HTMLFormAccessible::NativeRole() const {
 
 void HTMLFormAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                              nsAtom* aAttribute,
-                                             int32_t aModType,
+                                             AttrModType aModType,
                                              const nsAttrValue* aOldValue,
                                              uint64_t aOldState) {
   HyperTextAccessible::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,
@@ -89,7 +89,7 @@ void HTMLRadioButtonAccessible::GetPositionAndSetSize(int32_t* aPosInSet,
 }
 
 void HTMLRadioButtonAccessible::DOMAttributeChanged(
-    int32_t aNameSpaceID, nsAtom* aAttribute, int32_t aModType,
+    int32_t aNameSpaceID, nsAtom* aAttribute, AttrModType aModType,
     const nsAttrValue* aOldValue, uint64_t aOldState) {
   if (aAttribute == nsGkAtoms::name) {
     // If our name changed, it's possible our MEMBER_OF relation
@@ -246,7 +246,7 @@ ENameValueFlag HTMLButtonAccessible::NativeName(nsString& aName) const {
 
 void HTMLButtonAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                                nsAtom* aAttribute,
-                                               int32_t aModType,
+                                               AttrModType aModType,
                                                const nsAttrValue* aOldValue,
                                                uint64_t aOldState) {
   HyperTextAccessible::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,
@@ -468,7 +468,7 @@ already_AddRefed<EditorBase> HTMLTextFieldAccessible::GetEditor() const {
 
 void HTMLTextFieldAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                                   nsAtom* aAttribute,
-                                                  int32_t aModType,
+                                                  AttrModType aModType,
                                                   const nsAttrValue* aOldValue,
                                                   uint64_t aOldState) {
   if (aAttribute == nsGkAtoms::placeholder) {
@@ -876,7 +876,7 @@ bool HTMLProgressAccessible::SetCurValue(double aValue) {
 
 void HTMLProgressAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                                  nsAtom* aAttribute,
-                                                 int32_t aModType,
+                                                 AttrModType aModType,
                                                  const nsAttrValue* aOldValue,
                                                  uint64_t aOldState) {
   LeafAccessible::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,
@@ -1036,7 +1036,7 @@ int32_t HTMLMeterAccessible::ValueRegion() const {
 
 void HTMLMeterAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
-                                              int32_t aModType,
+                                              AttrModType aModType,
                                               const nsAttrValue* aOldValue,
                                               uint64_t aOldState) {
   LeafAccessible::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,

@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color as ComposeColor
  */
 private const val LIGHT_GRAY_HEX = "#66FBFBFE"
 private const val DARK_GRAY_HEX = "#6615141A"
+private const val SECONDARY_COLOR_BACKGROUND_BLEND_RATIO = 0.25f
 
 object ColorUtils {
 
@@ -24,15 +25,24 @@ object ColorUtils {
      * Get text color (white or black) that is readable on top of the provided background color.
      */
     @JvmStatic
-    fun getReadableTextColor(@ColorInt backgroundColor: Int): Int {
+    @ColorInt fun getReadableTextColor(@ColorInt backgroundColor: Int): Int {
         return if (isDark(backgroundColor)) Color.WHITE else Color.BLACK
+    }
+
+    /**
+     * Get secondary color (light or dark) that is readable on top of the provided background color.
+     */
+    @JvmStatic
+    @ColorInt fun getSecondaryReadableTextColor(@ColorInt backgroundColor: Int): Int {
+        val primaryTextColor = getReadableTextColor(backgroundColor)
+        return ColorUtils.blendARGB(primaryTextColor, backgroundColor, SECONDARY_COLOR_BACKGROUND_BLEND_RATIO)
     }
 
     /**
      * Get disabled text color (light gray or dark gray) that is readable on top of the provided background color.
      */
     @JvmStatic
-    fun getDisabledReadableTextColor(@ColorInt backgroundColor: Int): Int {
+    @ColorInt fun getDisabledReadableTextColor(@ColorInt backgroundColor: Int): Int {
         return if (isDark(backgroundColor)) {
             LIGHT_GRAY_HEX.toColorInt()
         } else {
@@ -56,7 +66,7 @@ object ColorUtils {
     }
 
     @SuppressWarnings("MagicNumber")
-    private fun grayscaleFromRGB(@ColorInt color: Int): Int {
+    @ColorInt private fun grayscaleFromRGB(@ColorInt color: Int): Int {
         val red = Color.red(color)
         val green = Color.green(color)
         val blue = Color.blue(color)

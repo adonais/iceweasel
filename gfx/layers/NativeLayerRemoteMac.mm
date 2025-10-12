@@ -65,11 +65,9 @@ void NativeLayerRemoteMac::AttachExternalImage(
   MOZ_ASSERT(texture);
 
   auto externalImage = texture->GetSurface()->GetIOSurfaceRef();
-  bool changedExternalImage = (mExternalImage != externalImage);
   mExternalImage = externalImage;
 
   auto texSize = texture->GetSize(0);
-  bool changedSize = (mSize != texSize);
   mSize = texSize;
 
   auto displayRect = IntRect(IntPoint{}, mSize);
@@ -77,7 +75,6 @@ void NativeLayerRemoteMac::AttachExternalImage(
   mDisplayRect = displayRect;
 
   bool isDRM = aExternalImage->IsFromDRMSource();
-  bool changedIsDRM = (mIsDRM != isDRM);
   mIsDRM = isDRM;
 
   bool isHDR = false;
@@ -91,11 +88,10 @@ void NativeLayerRemoteMac::AttachExternalImage(
     // 10-bit color is a signifier of HDR.
     isHDR = true;
   }
-  bool changedIsHDR = (mIsHDR != isHDR);
   mIsHDR = isHDR;
 
-  mDirty |= (changedExternalImage || changedSize || changedDisplayRect ||
-             changedIsDRM || changedIsHDR);
+  mDirtyLayerInfo |= changedDisplayRect;
+  mDirtyChangedSurface = true;
 }
 
 GpuFence* NativeLayerRemoteMac::GetGpuFence() { return nullptr; }
@@ -109,7 +105,7 @@ IntSize NativeLayerRemoteMac::GetSize() {
 
 void NativeLayerRemoteMac::SetPosition(const IntPoint& aPosition) {
   if (mPosition != aPosition) {
-    mDirty = true;
+    mDirtyLayerInfo = true;
     mPosition = aPosition;
   }
 }
@@ -120,7 +116,7 @@ void NativeLayerRemoteMac::SetTransform(const Matrix4x4& aTransform) {
   MOZ_ASSERT(aTransform.IsRectilinear());
 
   if (mTransform != aTransform) {
-    mDirty = true;
+    mDirtyLayerInfo = true;
     mTransform = aTransform;
   }
 }
@@ -128,7 +124,7 @@ void NativeLayerRemoteMac::SetTransform(const Matrix4x4& aTransform) {
 void NativeLayerRemoteMac::SetSamplingFilter(
     gfx::SamplingFilter aSamplingFilter) {
   if (mSamplingFilter != aSamplingFilter) {
-    mDirty = true;
+    mDirtyLayerInfo = true;
     mSamplingFilter = aSamplingFilter;
   }
 }
@@ -151,7 +147,7 @@ bool NativeLayerRemoteMac::IsOpaque() { return mIsOpaque; }
 
 void NativeLayerRemoteMac::SetClipRect(const Maybe<gfx::IntRect>& aClipRect) {
   if (mClipRect != aClipRect) {
-    mDirty = true;
+    mDirtyLayerInfo = true;
     mClipRect = aClipRect;
   }
 }
@@ -161,7 +157,7 @@ Maybe<gfx::IntRect> NativeLayerRemoteMac::ClipRect() { return mClipRect; }
 void NativeLayerRemoteMac::SetRoundedClipRect(
     const Maybe<gfx::RoundedRect>& aRoundedClipRect) {
   if (mRoundedClipRect != aRoundedClipRect) {
-    mDirty = true;
+    mDirtyLayerInfo = true;
     mRoundedClipRect = aRoundedClipRect;
   }
 }
@@ -179,7 +175,7 @@ gfx::IntRect NativeLayerRemoteMac::CurrentSurfaceDisplayRect() {
 
 void NativeLayerRemoteMac::SetSurfaceIsFlipped(bool aIsFlipped) {
   if (SurfaceIsFlipped() != aIsFlipped) {
-    mDirty = true;
+    mDirtyLayerInfo = true;
     if (mSurfaceHandler) {
       mSurfaceHandler->SetSurfaceIsFlipped(aIsFlipped);
     } else {
@@ -222,12 +218,14 @@ Maybe<SurfaceWithInvalidRegion> NativeLayerRemoteMac::FrontSurface() {
 }
 
 void NativeLayerRemoteMac::NotifySurfaceReady() {
-  // No matter what, we get a new surface and so we are now dirty.
-  // We might also have a new display rect, but that is covered by
-  // the single flag, mDirty.
-  mDirty = true;
   MOZ_ASSERT(mSurfaceHandler);
-  mSurfaceHandler->NotifySurfaceReady();
+
+  // When we call the surface handler NotifySurfaceReady(), we get a
+  // return value indicating if the display rect has changed. Set our
+  // dirty flag (covering all non-surface changes) if that is true.
+  bool changedDisplayRect = mSurfaceHandler->NotifySurfaceReady();
+  mDirtyLayerInfo |= changedDisplayRect;
+  mDirtyChangedSurface = true;
 }
 
 void NativeLayerRemoteMac::DiscardBackbuffers() {
@@ -236,27 +234,31 @@ void NativeLayerRemoteMac::DiscardBackbuffers() {
 }
 
 void NativeLayerRemoteMac::FlushDirtyLayerInfoToCommandQueue() {
-  if (!mDirty) {
-    return;
-  }
-
   auto ID = reinterpret_cast<uint64_t>(this);
-  uint32_t surfaceID = 0;
-  auto surfaceWithInvalidRegion = FrontSurface();
-  if (surfaceWithInvalidRegion) {
-    // Get the unique ID for this IOSurfaceRef, which only works
-    // because kIOSurfaceIsGlobal was set to true when this
-    // IOSurface was created.
-    auto surfaceRef = surfaceWithInvalidRegion->mSurface.get();
-    surfaceID = IOSurfaceGetID(surfaceRef);
-  }
-  mCommandQueue->AppendCommand(mozilla::layers::CommandLayerInfo(
-      ID, surfaceID, IsDRM(), IsHDR(), GetPosition(), GetSize(),
-      CurrentSurfaceDisplayRect(), ClipRect(), RoundedClipRect(),
-      GetTransform(), static_cast<int8_t>(SamplingFilter()),
-      SurfaceIsFlipped()));
 
-  mDirty = false;
+  if (mDirtyChangedSurface) {
+    uint32_t surfaceID = 0;
+    auto surfaceWithInvalidRegion = FrontSurface();
+    if (surfaceWithInvalidRegion) {
+      // Get the unique ID for this IOSurfaceRef, which only works
+      // because kIOSurfaceIsGlobal was set to true when this
+      // IOSurface was created.
+      auto surfaceRef = surfaceWithInvalidRegion->mSurface.get();
+      surfaceID = IOSurfaceGetID(surfaceRef);
+    }
+
+    mCommandQueue->AppendCommand(mozilla::layers::CommandChangedSurface(
+        ID, surfaceID, IsDRM(), IsHDR(), GetSize()));
+    mDirtyChangedSurface = false;
+  }
+
+  if (mDirtyLayerInfo) {
+    mCommandQueue->AppendCommand(mozilla::layers::CommandLayerInfo(
+        ID, GetPosition(), CurrentSurfaceDisplayRect(), ClipRect(),
+        RoundedClipRect(), GetTransform(),
+        static_cast<int8_t>(SamplingFilter()), SurfaceIsFlipped()));
+    mDirtyLayerInfo = false;
+  }
 }
 
 }  // namespace layers

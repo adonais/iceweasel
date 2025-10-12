@@ -67,7 +67,6 @@
 #include "mozilla/dom/FragmentOrElement.h"
 #include "mozilla/dom/FromParser.h"
 #include "mozilla/dom/MouseEventBinding.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -911,14 +910,12 @@ nsXULElement::IsAttributeMapped(const nsAtom* aAttribute) const {
   return false;
 }
 
-nsIControllers* nsXULElement::GetControllers(ErrorResult& rv) {
-  if (!Controllers()) {
-    nsExtendedDOMSlots* slots = ExtendedDOMSlots();
-
+nsIControllers* nsXULElement::EnsureControllers() {
+  auto* slots = ExtendedDOMSlots();
+  if (!slots->mControllers) {
     slots->mControllers = new nsXULControllers();
   }
-
-  return Controllers();
+  return slots->mControllers;
 }
 
 void nsXULElement::Click(CallerType aCallerType) {

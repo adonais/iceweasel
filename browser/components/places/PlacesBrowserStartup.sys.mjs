@@ -311,7 +311,9 @@ export let PlacesBrowserStartup = {
    * Show the notificationBox for a locked places database.
    */
   async _showPlacesLockedNotificationBox() {
-    var win = lazy.BrowserWindowTracker.getTopWindow();
+    var win = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
     var buttons = [{ supportPage: "places-locked" }];
 
     var notifyBox = win.gBrowser.getNotificationBox();

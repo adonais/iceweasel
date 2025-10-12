@@ -102,9 +102,7 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
                     bool aOnlyExistingCachedResourcesAllowed);
 
   // Used to detect if the `is top-level` bit is set on a given module.
-  bool IsTopLevel() {
-    return mRequest->IsTopLevel() && (mKind == Kind::MainScript);
-  };
+  bool IsTopLevel();
 
   static Kind GetKind(bool isMainScript, bool isDebuggerScript) {
     if (isDebuggerScript) {
@@ -181,7 +179,7 @@ class ThreadSafeRequestHandle final {
 
   JS::loader::ScriptLoadRequest* GetRequest() const { return mRequest; }
 
-  WorkerLoadContext* GetContext() { return mRequest->GetWorkerLoadContext(); }
+  WorkerLoadContext* GetContext();
 
   bool IsEmpty() { return !mRequest; }
 

@@ -10,17 +10,33 @@
 
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
 
-#include <array>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/array_view.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "api/audio_codecs/audio_format.h"
+#include "api/audio_codecs/opus/audio_encoder_opus_config.h"
+#include "api/call/bitrate_allocation.h"
 #include "api/environment/environment_factory.h"
+#include "api/field_trials_view.h"
+#include "api/rtp_parameters.h"
+#include "api/units/data_rate.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "common_audio/mocks/mock_smoothing_filter.h"
+#include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
+#include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/fake_clock.h"
 #include "test/explicit_key_value_config.h"
@@ -614,7 +630,7 @@ TEST(AudioEncoderOpusTest, TestConfigFromParams) {
 }
 
 TEST(AudioEncoderOpusTest, TestConfigFromInvalidParams) {
-  const webrtc::SdpAudioFormat format("opus", 48000, 2);
+  const SdpAudioFormat format("opus", 48000, 2);
   const auto default_config = *AudioEncoderOpus::SdpToConfig(format);
 #if WEBRTC_OPUS_SUPPORT_120MS_PTIME
   const std::vector<int> default_supported_frame_lengths_ms({20, 40, 60, 120});
@@ -674,9 +690,8 @@ TEST(AudioEncoderOpusTest, GetFrameLenghtRange) {
       CreateConfigWithParameters({{"maxptime", "10"}, {"ptime", "10"}});
   std::unique_ptr<AudioEncoder> encoder = AudioEncoderOpus::MakeAudioEncoder(
       CreateEnvironment(), config, {.payload_type = kDefaultOpusPayloadType});
-  auto ptime = webrtc::TimeDelta::Millis(10);
-  std::optional<std::pair<webrtc::TimeDelta, webrtc::TimeDelta>> range = {
-      {ptime, ptime}};
+  auto ptime = TimeDelta::Millis(10);
+  std::optional<std::pair<TimeDelta, TimeDelta>> range = {{ptime, ptime}};
   EXPECT_EQ(encoder->GetFrameLengthRange(), range);
 }
 
@@ -769,7 +784,7 @@ TEST_P(AudioEncoderOpusTest, OpusFlagDtxAsNonSpeech) {
 
   // Open file containing speech and silence.
   const std::string kInputFileName =
-      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+      test::ResourcePath("audio_coding/testfile32kHz", "pcm");
   test::AudioLoop audio_loop;
   // Use the file as if it were sampled at our desired input rate.
   const size_t max_loop_length_samples =

@@ -691,6 +691,10 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
   config.crypto_options = configuration.crypto_options.has_value()
                               ? *configuration.crypto_options
                               : options_.crypto_options;
+
+  // Maybe enable PQC from FieldTrials
+  config.crypto_options.ephemeral_key_exchange_cipher_groups.Update(
+      &context_->env().field_trials());
   config.transport_observer = this;
   config.rtcp_handler = InitializeRtcpCallback();
   config.un_demuxable_packet_handler = InitializeUnDemuxablePacketHandler();
@@ -2502,9 +2506,16 @@ std::optional<std::string> PeerConnection::SetupDataChannelTransport_n(
   DataChannelTransportInterface* transport =
       transport_controller_->GetDataChannelTransport(*sctp_mid_n_);
   if (!transport) {
+#ifndef WEBRTC_HAVE_SCTP
+    RTC_LOG(LS_ERROR) << "Data channel transport is not available"
+                      << " as WebRTC has been compiled without SCTP support "
+                         "(WEBRTC_HAVE_SCTP), mid="
+                      << mid;
+#else
     RTC_LOG(LS_ERROR)
         << "Data channel transport is not available for data channels, mid="
         << mid;
+#endif
     sctp_mid_n_ = std::nullopt;
     return std::nullopt;
   }
@@ -2547,7 +2558,7 @@ bool PeerConnection::ValidateBundleSettings(
   for (ContentInfos::const_iterator citer = contents.begin();
        citer != contents.end(); ++citer) {
     const ContentInfo* content = (&*citer);
-    RTC_DCHECK(content != NULL);
+    RTC_DCHECK(content != nullptr);
     auto it = bundle_groups_by_mid.find(content->mid());
     if (it != bundle_groups_by_mid.end() &&
         !(content->rejected || content->bundle_only) &&

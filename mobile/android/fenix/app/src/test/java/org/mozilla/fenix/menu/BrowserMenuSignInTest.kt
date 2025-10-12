@@ -64,7 +64,7 @@ class BrowserMenuSignInTest {
         every { components.backgroundServices.syncStore.state.account } returns null
 
         assertEquals(
-            testContext.getString(org.mozilla.fenix.R.string.sync_menu_sync_and_save_data),
+            testContext.getString(org.mozilla.fenix.R.string.sync_menu_sign_in),
             BrowserMenuSignIn(R.color.black).getLabel(context),
         )
     }
@@ -75,7 +75,7 @@ class BrowserMenuSignInTest {
         every { components.backgroundServices.syncStore.state.account } returns account
 
         assertEquals(
-            testContext.getString(org.mozilla.fenix.R.string.sync_menu_sync_and_save_data),
+            testContext.getString(org.mozilla.fenix.R.string.sync_menu_sign_in),
             BrowserMenuSignIn(R.color.black).getLabel(context),
         )
     }

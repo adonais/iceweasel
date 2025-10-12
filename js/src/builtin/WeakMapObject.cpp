@@ -32,7 +32,7 @@ using namespace js;
     JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(is(args.thisv()));
 
-  if (!CanBeHeldWeakly(cx, args.get(0))) {
+  if (!CanBeHeldWeakly(args.get(0))) {
     args.rval().setBoolean(false);
     return true;
   }
@@ -68,7 +68,7 @@ bool WeakMapObject::hasObject(WeakMapObject* weakMap, JSObject* obj) {
     JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(WeakMapObject::is(args.thisv()));
 
-  if (!CanBeHeldWeakly(cx, args.get(0))) {
+  if (!CanBeHeldWeakly(args.get(0))) {
     args.rval().setUndefined();
     return true;
   }
@@ -110,7 +110,7 @@ void WeakMapObject::getObject(WeakMapObject* weakMap, JSObject* obj,
     JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(WeakMapObject::is(args.thisv()));
 
-  if (!CanBeHeldWeakly(cx, args.get(0))) {
+  if (!CanBeHeldWeakly(args.get(0))) {
     args.rval().setBoolean(false);
     return true;
   }
@@ -140,7 +140,7 @@ bool WeakMapObject::delete_(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 static bool EnsureValidWeakMapKey(JSContext* cx, Handle<Value> keyVal) {
-  if (MOZ_UNLIKELY(!CanBeHeldWeakly(cx, keyVal))) {
+  if (MOZ_UNLIKELY(!CanBeHeldWeakly(keyVal))) {
     unsigned errorNum = GetErrorNumber(true);
     ReportValueError(cx, errorNum, JSDVG_IGNORE_STACK, keyVal, nullptr);
     return false;
@@ -176,7 +176,6 @@ bool WeakMapObject::set(JSContext* cx, unsigned argc, Value* vp) {
                                                                           args);
 }
 
-#ifdef NIGHTLY_BUILD
 static bool GetOrAddWeakMapEntry(JSContext* cx, Handle<WeakMapObject*> mapObj,
                                  Handle<Value> key, Handle<Value> value,
                                  MutableHandleValue rval) {
@@ -217,7 +216,6 @@ bool WeakMapObject::getOrInsert(JSContext* cx, unsigned argc, Value* vp) {
   return CallNonGenericMethod<WeakMapObject::is,
                               WeakMapObject::getOrInsert_impl>(cx, args);
 }
-#endif  // #ifdef NIGHTLY_BUILD
 
 size_t WeakCollectionObject::sizeOfExcludingThis(
     mozilla::MallocSizeOf aMallocSizeOf) {
@@ -299,7 +297,7 @@ JS_PUBLIC_API bool JS::GetWeakMapEntry(JSContext* cx, HandleObject mapObj,
   cx->check(key);
   rval.setUndefined();
 
-  if (!CanBeHeldWeakly(cx, key)) {
+  if (!CanBeHeldWeakly(key)) {
     return true;
   }
 
@@ -460,10 +458,8 @@ const JSFunctionSpec WeakMapObject::methods[] = {
     JS_INLINABLE_FN("get", get, 1, 0, WeakMapGet),
     JS_FN("delete", delete_, 1, 0),
     JS_FN("set", set, 2, 0),
-#ifdef NIGHTLY_BUILD
     JS_FN("getOrInsert", getOrInsert, 2, 0),
     JS_SELF_HOSTED_FN("getOrInsertComputed", "WeakMapGetOrInsertComputed", 2,
                       0),
-#endif
     JS_FS_END,
 };

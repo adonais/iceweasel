@@ -446,6 +446,8 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "PushSubscriptionOptions",
   // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "RTCDataChannel", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "RTCEncodedAudioFrame", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "RTCEncodedVideoFrame", insecureContext: true },

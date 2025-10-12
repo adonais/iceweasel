@@ -7,8 +7,8 @@
   width: var(--newtab-card-width-medium);
   background: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
-  padding-block: var(--space-large);
-  max-height: var(--newtab-card-height);
+  padding-block: var(--space-medium);
+  height: var(--newtab-card-height);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -20,20 +20,49 @@
   margin-block-end: var(--space-medium);
   position: relative;
   width: 100%;
-  padding-inline: var(--space-large);
+  padding-inline: var(--space-medium);
 }
 
 // Align the context menu button to the right while keeping the Focus/Break button centered
 .focus-timer-tabs-buttons {
   display: flex;
-  gap: var(--space-small);
+  gap: var(--space-xxsmall);
   justify-content: center;
   flex-grow: 1;
-  margin-inline-start: calc(var(--space-xlarge) + var(--space-small));
+
+  moz-button {
+    flex-grow: 1;
+  }
+
+  moz-button:first-of-type {
+    &::part(button) {
+      border-end-end-radius: 0;
+      border-start-end-radius: 0;
+    }
+  }
+
+  moz-button:last-of-type {
+    &::part(button) {
+      border-start-start-radius: 0;
+      border-end-start-radius: 0;
+    }
+  }
 }
 
-.focus-timer-context-menu {
-  margin-inline-end: auto;
+.newtab-widget-timer-notification-title-wrapper {
+  display: flex;
+  justify-content: space-between;
+  // Alignment note: This matches alignment with the Lists widget "List name" select
+  align-items: center;
+  width: 100%;
+  padding-inline: var(--space-medium);
+  margin-block-end: var(--space-medium);
+
+  h3 {
+    font-size: var(--button-font-size);
+    font-weight: var(--font-weight-bold);
+    margin-block: 0;
+  }
 }
 
 // Make sure context menu is only visible as you hover over the Timer widget
@@ -53,84 +82,63 @@
   /* Colours for the main timer */
   --timer-red: var(--color-red-50);
   --timer-orange: var(--color-orange-30);
-  --timer-yellow: var(--color-yellow-20);
 
   /* Colours for the break timer */
   --timer-blue: var(--color-blue-20);
   --timer-violet: var(--color-violet-20);
-  --timer-violet-light: var(--color-violet-0);
 
   /* Complete timer */
   --timer-green: var(--color-green-20);
 
-  min-height: 0;
-  opacity: 0;
-  position: relative;
-  width: 162px;
-  overflow: hidden;
-  transition: min-height 0.8s ease, opacity 0.8s ease;
+  &.is-small {
+    min-height: 114px;
+    width: 114px;
 
-  &.visible {
-    opacity: 1;
-    min-height: 162px;
+    .progress-circle-label {
+      font-size: var(--font-size-xxlarge);
+    }
   }
 
+  min-height: 138px;
+  position: relative;
+  width: 138px;
+  overflow: hidden;
+  margin-block-end: var(--space-small);
+
   .progress-circle-background,
+  .progress-circle-background-break,
   .progress-circle,
   .progress-circle-complete {
     --thickness: var(--space-small);
 
-    border-radius: 50%; // stylelint-disable-line declaration-property-value-disallowed-list
+    border-radius: var(--border-radius-circle);
     inset: 0;
     mask: radial-gradient(farthest-side, transparent calc(100% - var(--thickness)), black calc(100% - var(--thickness)));  position: absolute;
   }
 
-  .progress-circle-background {
+  .progress-circle,
+  .progress-circle-complete {
     background-color: var(--border-color-interactive);
   }
 
   /* main timer colours */
-  .progress-circle,
-  .progress-circle-complete {
+  .progress-circle-background {
     background: conic-gradient(
-      rgba(232, 57, 92, 0%) 0deg,  // fade-in the progress bar
-      rgba(232, 57, 92, 100%) 30deg, // closest to the red below
-      var(--timer-red) 60deg,
-      var(--timer-orange) 180deg,
-      var(--timer-yellow) 360deg
+      var(--timer-orange) 0deg,
+      var(--timer-red) 150deg,
+      var(--timer-red) 210deg,
+      var(--timer-orange) 360deg
     );
-  }
-
-  .focus-hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .focus-visible {
-    opacity: 1;
-    transition: opacity 0.3s ease;
   }
 
   /* break timer colours */
-  .progress-circle-break {
-    clip-path: polygon(50% 50%);
+  .progress-circle-background-break {
     background: conic-gradient(
-      rgba(159, 201, 255, 0%) 0deg, // fade-in the progress bar
-      rgba(159, 201, 255, 100%) 30deg, // closest to the blue below
-      var(--timer-blue) 60deg,
-      var(--timer-violet) 180deg,
-      var(--timer-violet-light) 360deg
+      var(--timer-violet) 0deg,
+      var(--timer-blue) 150deg,
+      var(--timer-blue) 210deg,
+      var(--timer-violet) 360deg
     );
-  }
-
-  .break-hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .break-visible {
-    opacity: 1;
-    transition: opacity 0.3s ease;
   }
 
   /* timer turns green when complete */
@@ -145,11 +153,32 @@
     }
   }
 
+  .focus-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .focus-visible {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  .break-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .break-visible {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
   .progress-circle-label {
     align-items: center;
     color: var(--text-color);
     display: flex;
-    font-size: calc(2 * var(--font-size-xlarge));
+    // Bug 1880518 - Large font-size number (32px)
+    font-size: calc(var(--font-size-large) * 2);
     font-weight: var(--font-weight-bold);
     font-variant-numeric: tabular-nums;
     height: 100%;
@@ -169,48 +198,15 @@
   }
 }
 
-.set-timer-controls-wrapper {
+.focus-timer-controls {
   display: flex;
-
-  .set-timer-countdown {
-    font-size: calc(2 * var(--font-size-xlarge));
-    font-weight: var(--font-weight-bold);
-    font-variant-numeric: tabular-nums;
-    height: 100%;
-    margin-inline-end: var(--space-xlarge);
-    opacity: 1;
-    width: 125px;
-    transition: opacity 0.8s ease, width 0.8s ease;
-
-    &.hidden {
-      opacity: 0;
-      width: 0;
-      overflow: hidden;
-    }
-  }
-
-  .focus-timer-controls {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-
-    &.timer-running {
-      margin-block-start: var(--space-medium);
-    }
-  }
-
-  .focus-timer-controls>moz-button:last-child {
-    margin-inline-start: var(--space-medium);
-  }
-
-  .focus-timer-controls>moz-button::part(button) {
-    border-radius: 50%; // stylelint-disable-line declaration-property-value-disallowed-list
-    padding: calc(var(--space-large) + 0.5 * var(--space-xxsmall)); // 17px
-  }
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-medium);
 }
 
 .timer-notification-status {
   color: var(--text-color-deemphasized);
   font-size: var(--font-size-small);
-  margin-block: var(--space-xsmall) 0;
+  margin-block-start: var(--space-small);
 }

@@ -931,7 +931,10 @@ class MOZ_RAII CacheIRCompiler {
   }
   JSObject* weakObjectStubField(uint32_t offset) {
     MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
-    return (JSObject*)readStubWord(offset, StubField::Type::WeakObject);
+    JSObject* obj =
+        (JSObject*)readStubWord(offset, StubField::Type::WeakObject);
+    gc::ReadBarrier(obj);
+    return obj;
   }
   Value valueStubField(uint32_t offset) {
     MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
@@ -1047,6 +1050,7 @@ class MOZ_RAII AutoStubFrame {
 
   void enter(MacroAssembler& masm, Register scratch);
   void leave(MacroAssembler& masm);
+  void pushInlinedICScript(MacroAssembler& masm, Address icScriptAddr);
   void storeTracedValue(MacroAssembler& masm, ValueOperand val);
   void loadTracedValue(MacroAssembler& masm, uint8_t slotIndex,
                        ValueOperand result);

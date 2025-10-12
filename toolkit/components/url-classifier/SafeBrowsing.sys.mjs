@@ -407,11 +407,12 @@ export var SafeBrowsing = {
           "URL";
         break;
 
-      default:
+      default: {
         let err =
           "SafeBrowsing getReportURL() called with unknown kind: " + kind;
         console.error(err);
         throw err;
+      }
     }
 
     // The "Phish" reports are about submitting new phishing URLs to Google so
@@ -498,6 +499,26 @@ export var SafeBrowsing = {
     }
   },
 
+  // A helper function to check if the Google Safe Browsing API key is set.
+  checkGoogleSafeBrowsingKey() {
+    let googleSafebrowsingKey = Services.urlFormatter
+      .formatURL("%GOOGLE_SAFEBROWSING_API_KEY%")
+      .trim();
+
+    return (
+      googleSafebrowsingKey &&
+      googleSafebrowsingKey != "no-google-safebrowsing-api-key"
+    );
+  },
+
+  // A helper function to format a provider URL from a pref with the given
+  // client ID.
+  formatProviderURLFromPref(pref, clientID) {
+    let url = Services.urlFormatter.formatURLPref(pref);
+
+    return url.replace("SAFEBROWSING_ID", clientID);
+  },
+
   updateProviderURLs() {
     try {
       var clientID = Services.prefs.getCharPref("browser.safebrowsing.id");
@@ -536,23 +557,20 @@ export var SafeBrowsing = {
       if (provider == "test") {
         return; // skip
       }
-      let updateURL = Services.urlFormatter.formatURLPref(
-        "browser.safebrowsing.provider." + provider + ".updateURL"
+
+      let updateURL = this.formatProviderURLFromPref(
+        "browser.safebrowsing.provider." + provider + ".updateURL",
+        clientID
       );
-      let gethashURL = Services.urlFormatter.formatURLPref(
-        "browser.safebrowsing.provider." + provider + ".gethashURL"
+      let gethashURL = this.formatProviderURLFromPref(
+        "browser.safebrowsing.provider." + provider + ".gethashURL",
+        clientID
       );
-      updateURL = updateURL.replace("SAFEBROWSING_ID", clientID);
-      gethashURL = gethashURL.replace("SAFEBROWSING_ID", clientID);
 
       // Disable updates and gethash if the Google API key is missing.
-      let googleSafebrowsingKey = Services.urlFormatter
-        .formatURL("%GOOGLE_SAFEBROWSING_API_KEY%")
-        .trim();
       if (
         (provider == "google" || provider == "google4") &&
-        (!googleSafebrowsingKey ||
-          googleSafebrowsingKey == "no-google-safebrowsing-api-key")
+        !this.checkGoogleSafeBrowsingKey()
       ) {
         log(
           "Missing Google SafeBrowsing API key, clearing updateURL and gethashURL."
@@ -580,6 +598,44 @@ export var SafeBrowsing = {
         log("Update URL given but no lists managed for provider: " + provider);
       }
     }, this);
+
+    // If the Safe Browsing V5 is disabled, we will use V4 instead. This means
+    // that we will put the V5 lists to the V4 provider to instruct using
+    // Safe Browsing V4 for those tables.
+    if (
+      !Services.prefs.getBoolPref(
+        "browser.safebrowsing.provider.google5.enabled"
+      )
+    ) {
+      // Get the lists for Safe Browsing V5, skip if no lists are managed.
+      let v5Lists = getLists("browser.safebrowsing.provider.google5.lists");
+      if (!v5Lists) {
+        log("No lists managed for Safe Browsing V5.");
+        return;
+      }
+
+      // Indicate that the lists are managed by the Google v5 provider.
+      v5Lists.forEach(list => {
+        this.listToProvider[list] = "google4";
+      });
+
+      // Ensure that the V4 provider is present.
+      if (!this.providers.google4) {
+        this.providers.google4 = {
+          updateURL: this.formatProviderURLFromPref(
+            "browser.safebrowsing.provider.google4.updateURL",
+            clientID
+          ),
+          gethashURL: this.formatProviderURLFromPref(
+            "browser.safebrowsing.provider.google4.gethashURL",
+            clientID
+          ),
+        };
+      }
+
+      // Delete the V5 provider from the providers object.
+      delete this.providers.google5;
+    }
   },
 
   controlUpdateChecking() {

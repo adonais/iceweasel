@@ -360,6 +360,34 @@ add_task(async function test_moveTabIntoTaskbarTabReuse() {
     const found = TaskbarTabsUtils.getTaskbarTabIdFromWindow(move.window);
     is(found, move.taskbarTab.id, "Returned Taskbar Tab matches window");
     is(tt.id, move.taskbarTab.id, "Returned Taskbar Tab existed before");
+    await TaskbarTabs.removeTaskbarTab(tt.id);
     await BrowserTestUtils.closeWindow(move.window);
+  });
+});
+
+add_task(async function test_page_action_uses_manifest() {
+  const pageAction = window.document.getElementById("taskbar-tabs-button");
+  const url = "https://example.com/";
+  await BrowserTestUtils.withNewTab(url, async browser => {
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.document.body.innerHTML =
+        '<link rel="manifest" href="/manifest.webapp">';
+    });
+
+    const newWinPromise = BrowserTestUtils.waitForNewWindow();
+    pageAction.dispatchEvent(new PointerEvent("click"));
+    const win = await newWinPromise;
+
+    const uri = Services.io.newURI(url);
+    const tt = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
+    is(
+      await TaskbarTabsUtils.getTaskbarTabIdFromWindow(win),
+      tt.id,
+      "Page action created a Taskbar Tab"
+    );
+    is(tt.name, "Mochitest", "Manifest name was used");
+
+    await TaskbarTabs.removeTaskbarTab(tt.id);
+    await BrowserTestUtils.closeWindow(win);
   });
 });

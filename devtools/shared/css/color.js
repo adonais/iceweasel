@@ -531,66 +531,6 @@ function rgbToHwb([r, g, b]) {
   return [roundTo(hsl[0], 1), roundTo(white * 100, 1), roundTo(black * 100, 1)];
 }
 
-/**
- * Convert rgb value to CIE LAB colorspace (https://en.wikipedia.org/wiki/CIELAB_color_space).
- * Formula from http://www.easyrgb.com/en/math.php.
- *
- * @param {array} rgb
- *        Array of rgb values
- * @return {array}
- *         Array of lab values.
- */
-function rgbToLab([r, g, b]) {
-  // Convert rgb values to xyz coordinates.
-  r = r / 255;
-  g = g / 255;
-  b = b / 255;
-
-  r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-  g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-  b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-
-  r = r * 100;
-  g = g * 100;
-  b = b * 100;
-
-  let [x, y, z] = [
-    r * 0.4124 + g * 0.3576 + b * 0.1805,
-    r * 0.2126 + g * 0.7152 + b * 0.0722,
-    r * 0.0193 + g * 0.1192 + b * 0.9505,
-  ];
-
-  // Convert xyz coordinates to lab values.
-  // Divisors used are X_10, Y_10, Z_10 (CIE 1964) reference values for D65
-  // illuminant (Daylight, sRGB, Adobe-RGB) taken from http://www.easyrgb.com/en/math.php
-  x = x / 94.811;
-  y = y / 100;
-  z = z / 107.304;
-
-  x = x > 0.008856 ? Math.pow(x, 1 / 3) : 7.787 * x + 16 / 116;
-  y = y > 0.008856 ? Math.pow(y, 1 / 3) : 7.787 * y + 16 / 116;
-  z = z > 0.008856 ? Math.pow(z, 1 / 3) : 7.787 * z + 16 / 116;
-
-  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
-}
-
-/**
- * Calculates the CIE Delta-E value for two lab values (http://www.colorwiki.com/wiki/Delta_E%3a_The_Color_Difference#Delta-E_1976).
- * Formula from http://www.easyrgb.com/en/math.php.
- *
- * @param {array} lab1
- *        Array of lab values for the first color
- * @param {array} lab2
- *        Array of lab values for the second color
- * @return {Number}
- *         DeltaE value between the two colors
- */
-function calculateDeltaE([l1, a1, b1], [l2, a2, b2]) {
-  return Math.sqrt(
-    Math.pow(l1 - l2, 2) + Math.pow(a1 - a2, 2) + Math.pow(b1 - b2, 2)
-  );
-}
-
 function roundTo(number, digits) {
   const multiplier = Math.pow(10, digits);
   return Math.round(number * multiplier) / multiplier;
@@ -677,24 +617,6 @@ function hexToRGBA(name, highResolution) {
 }
 
 /**
- * Calculates the luminance of a rgba tuple based on the formula given in
- * https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
- *
- * @param {Array} rgba An array with [r,g,b,a] values.
- * @return {Number} The calculated luminance.
- */
-function calculateLuminance(rgba) {
-  for (let i = 0; i < 3; i++) {
-    rgba[i] /= 255;
-    rgba[i] =
-      rgba[i] < 0.03928
-        ? rgba[i] / 12.92
-        : Math.pow((rgba[i] + 0.055) / 1.055, 2.4);
-  }
-  return 0.2126 * rgba[0] + 0.7152 * rgba[1] + 0.0722 * rgba[2];
-}
-
-/**
  * Blend background and foreground colors takign alpha into account.
  * @param  {Array} foregroundColor
  *         An array with [r,g,b,a] values containing the foreground color.
@@ -720,6 +642,8 @@ function blendColors(foregroundColor, backgroundColor = [255, 255, 255, 1]) {
 }
 
 /**
+ * TODO: Replace with RelativeLuminanceUtils::ContrastRatio, see bug 1984999.
+ *
  * Calculates the contrast ratio of 2 rgba tuples based on the formula in
  * https://www.w3.org/TR/2008/REC-WCAG20-20081211/#visual-audio-contrast7
  *
@@ -737,8 +661,12 @@ function calculateContrastRatio(backgroundColor, textColor) {
   backgroundColor = blendColors(backgroundColor);
   textColor = blendColors(textColor, backgroundColor);
 
-  const backgroundLuminance = calculateLuminance(backgroundColor);
-  const textLuminance = calculateLuminance(textColor);
+  const backgroundLuminance = InspectorUtils.relativeLuminance(
+    ...backgroundColor.map(c => c / 255)
+  );
+  const textLuminance = InspectorUtils.relativeLuminance(
+    ...textColor.map(c => c / 255)
+  );
   const ratio = (textLuminance + 0.05) / (backgroundLuminance + 0.05);
 
   return ratio > 1.0 ? ratio : 1 / ratio;
@@ -755,11 +683,8 @@ module.exports.colorUtils = {
   CssColor,
   rgbToHsl,
   rgbToHwb,
-  rgbToLab,
   classifyColor,
   calculateContrastRatio,
-  calculateDeltaE,
-  calculateLuminance,
   blendColors,
   colorIsUppercase,
 };

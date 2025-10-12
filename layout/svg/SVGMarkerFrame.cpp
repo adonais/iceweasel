@@ -36,7 +36,7 @@ NS_IMPL_FRAMEARENA_HELPERS(SVGMarkerFrame)
 
 nsresult SVGMarkerFrame::AttributeChanged(int32_t aNameSpaceID,
                                           nsAtom* aAttribute,
-                                          int32_t aModType) {
+                                          AttrModType aModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
       (aAttribute == nsGkAtoms::markerUnits || aAttribute == nsGkAtoms::refX ||
        aAttribute == nsGkAtoms::refY || aAttribute == nsGkAtoms::markerWidth ||

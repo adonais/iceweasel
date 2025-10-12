@@ -19,26 +19,58 @@ Scalars
 browser.searchinit.secure_opensearch_engine_count
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  NOTE: This telemetry is no longer reported to legacy Telemetry. See changelog
+  below.
+
   Records the number of secure (i.e., using https) OpenSearch search
   engines a given user has installed.
+
+  Changelog
+    Firefox 144
+      Legacy ``browser.searchinit.secure_opensearch_engine_count`` telemetry
+      removed completely. (See bug 1984462)
 
 browser.searchinit.insecure_opensearch_engine_count
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  NOTE: This telemetry is no longer reported to legacy Telemetry. See changelog
+  below.
+
   Records the number of insecure (i.e., using http) OpenSearch search
   engines a given user has installed.
+
+  Changelog
+    Firefox 144
+      Legacy ``browser.searchinit.insecure_opensearch_engine_count`` telemetry
+      removed completely. (See bug 1984462)
 
 browser.searchinit.secure_opensearch_update_count
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  NOTE: This telemetry is no longer reported to legacy Telemetry. See changelog
+  below.
+
   Records the number of OpenSearch search engines with secure updates
   enabled (i.e., using https) a given user has installed.
+
+  Changelog
+    Firefox 144
+      Legacy ``browser.searchinit.secure_opensearch_update_count`` telemetry
+      removed completely. (See bug 1984462)
 
 browser.searchinit.insecure_opensearch_update_count
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+  NOTE: This telemetry is no longer reported to legacy Telemetry. See changelog
+  below.
+
   Records the number of OpenSearch search engines with insecure updates
   enabled (i.e., using http) a given user has installed.
+
+  Changelog
+    Firefox 144
+      Legacy ``browser.searchinit.insecure_opensearch_update_count`` telemetry
+      removed completely. (See bug 1984462)
 
 Keyed Scalars
 -------------

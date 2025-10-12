@@ -65,6 +65,10 @@ class BrowsingContextGroup;
   /* Whether this window has registered a "beforeunload" event           \
    * handler */                                                          \
   FIELD(NeedsBeforeUnload, bool)                                         \
+  /* Whether this window's navigation object has registered any          \
+   * event handlers or has ongoing or upcoming method trackers. Only     \
+   * valid for the top-level context. */                                 \
+  FIELD(NeedsTraverse, bool)                                             \
   /* Controls whether the WindowContext is currently considered to be    \
    * activated by a gesture */                                           \
   FIELD(UserActivationStateAndModifiers,                                 \
@@ -286,6 +290,9 @@ class WindowContext : public nsISupports, public nsWrapperCache {
               ContentParent* aSource);
 
   bool CanSet(FieldIndex<IDX_NeedsBeforeUnload>, const bool& aHasBeforeUnload,
+              ContentParent* aSource);
+
+  bool CanSet(FieldIndex<IDX_NeedsTraverse>, const bool& aNeedsTraverse,
               ContentParent* aSource);
 
   bool CanSet(FieldIndex<IDX_CookieBehavior>, const Maybe<uint32_t>& aValue,

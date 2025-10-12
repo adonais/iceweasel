@@ -19,6 +19,7 @@
 #include "jit/WarpCacheIRTranspiler.h"
 #include "jit/WarpSnapshot.h"
 #include "js/friend/ErrorMessages.h"  // JSMSG_BAD_CONST_ASSIGN
+#include "vm/ConstantCompareOperand.h"
 #include "vm/GeneratorObject.h"
 #include "vm/Interpreter.h"
 #include "vm/Opcodes.h"

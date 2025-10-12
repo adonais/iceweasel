@@ -77,6 +77,8 @@ internal sealed class BookmarksListSortOrder {
  * @property bookmarksSelectFolderState State representing the select folder subscreen, if visible.
  * @property bookmarksEditFolderState State representing the edit folder subscreen, if visible.
  * @property bookmarksMultiselectMoveState State representing multi-select moving.
+ * @property bookmarksDeletionSnackbarQueueCount State representing the number of queued deletions before a
+ * snack bar dismiss.
  * @property isLoading State representing if the initial load has completed.
  * @property isSearching State representing if currently in search mode.
  */
@@ -96,6 +98,7 @@ internal data class BookmarksState(
     val bookmarksSelectFolderState: BookmarksSelectFolderState?,
     val bookmarksEditFolderState: BookmarksEditFolderState?,
     val bookmarksMultiselectMoveState: MultiselectMoveState?,
+    val bookmarksDeletionSnackbarQueueCount: Int,
     val isLoading: Boolean,
     val isSearching: Boolean,
 ) : State {
@@ -120,6 +123,7 @@ internal data class BookmarksState(
             bookmarksSelectFolderState = null,
             bookmarksEditFolderState = null,
             bookmarksMultiselectMoveState = null,
+            bookmarksDeletionSnackbarQueueCount = 0,
             isLoading = true,
             isSearching = false,
         )

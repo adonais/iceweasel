@@ -2,20 +2,111 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import groovy.json.JsonBuilder
 import org.gradle.api.Plugin
 import org.gradle.api.flow.FlowAction
 import org.gradle.api.flow.FlowParameters
 import org.gradle.api.flow.FlowProviders
 import org.gradle.api.flow.FlowScope
 import org.gradle.api.initialization.Settings
+import org.gradle.api.invocation.Gradle
 import org.gradle.api.provider.Property
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
 import org.gradle.api.tasks.Input
+import org.gradle.build.event.BuildEventsListenerRegistry
+import org.gradle.internal.scopeids.id.BuildInvocationScopeId
 import org.gradle.kotlin.dsl.always
+import org.gradle.tooling.events.FinishEvent
+import org.gradle.tooling.events.OperationCompletionListener
+import org.gradle.tooling.events.task.TaskFailureResult
+import org.gradle.tooling.events.task.TaskFinishEvent
+import org.gradle.tooling.events.task.TaskSkippedResult
+import org.gradle.tooling.events.task.TaskSuccessResult
+import java.io.File
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Optional
+import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 
 // If you ever need to force a toolchain rebuild (taskcluster) then edit the following comment.
 // FORCE REBUILD 2024-05-02
+
+interface BuildMetricsServiceParameters : BuildServiceParameters {
+    val topobjdir: Property<String>
+    val fileSuffix: Property<String>
+}
+
+abstract class BuildMetricsService @Inject constructor(
+    private val parameters: BuildMetricsServiceParameters
+) : BuildService<BuildMetricsServiceParameters>, OperationCompletionListener, AutoCloseable {
+    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm-ss-SSS")
+    private val taskRecords = mutableListOf<Map<String, Any>>()
+
+    var invocationStart = 0L
+    var configStart = 0L
+    var configEnd = 0L
+
+    override fun onFinish(event: FinishEvent) {
+        if (event is TaskFinishEvent) {
+            val result = event.result
+            val startMs = result.startTime
+            val stopMs = result.endTime
+
+            val status = when (result) {
+                is TaskFailureResult -> "FAILED"
+                is TaskSkippedResult -> "SKIPPED"
+                is TaskSuccessResult -> when {
+                    result.isUpToDate -> "UP-TO-DATE"
+                    result.isFromCache -> "FROM-CACHE"
+                    else -> "EXECUTED"
+                }
+                else -> "UNKNOWN"
+            }
+
+            taskRecords += mapOf(
+                "path" to event.descriptor.taskPath,
+                "start" to dateFormatter.format(Instant.ofEpochMilli(startMs).atZone(ZoneId.systemDefault())),
+                "stop" to dateFormatter.format(Instant.ofEpochMilli(stopMs).atZone(ZoneId.systemDefault())),
+                "duration" to String.format("%.3f", (stopMs - startMs) / 1_000.0),
+                "status" to status
+            )
+        }
+    }
+
+    override fun close() {
+        val invocationEnd = System.currentTimeMillis()
+        val invocationDuration = String.format("%.3f", (invocationEnd - invocationStart) / 1_000.0)
+
+        val configStartFormatted = dateFormatter.format(Instant.ofEpochMilli(configStart).atZone(ZoneId.systemDefault()))
+        val configEndFormatted = dateFormatter.format(Instant.ofEpochMilli(configEnd).atZone(ZoneId.systemDefault()))
+        val configDuration = String.format("%.3f", (configEnd - configStart) / 1_000.0)
+
+        val content = mapOf(
+            "invocation" to mapOf(
+                "start" to dateFormatter.format(Instant.ofEpochMilli(invocationStart).atZone(ZoneId.systemDefault())),
+                "end" to dateFormatter.format(Instant.ofEpochMilli(invocationEnd).atZone(ZoneId.systemDefault())),
+                "duration" to invocationDuration
+            ),
+            "configPhase" to mapOf(
+                "start" to configStartFormatted,
+                "end" to configEndFormatted,
+                "duration" to configDuration
+            ),
+            "tasks" to taskRecords
+        )
+
+        val topobjdir = parameters.topobjdir.get()
+        val outputDir = File(topobjdir, "gradle/build/metrics").apply { mkdirs() }
+        val fileSuffix = parameters.fileSuffix.get()
+
+        File(outputDir, "build-metrics-$fileSuffix.json")
+            .writeText(JsonBuilder(content).toPrettyString())
+    }
+}
 
 /**
  * Print Gradle errors in such a way that Treeherder includes them in its "Failure Summary".  This
@@ -80,10 +171,67 @@ abstract class DependenciesPlugin : Plugin<Settings> {
     @get:Inject
     protected abstract val flowProviders: FlowProviders
 
+    @get:Inject
+    protected abstract val buildEventsListenerRegistry: BuildEventsListenerRegistry
+
+    @get:Inject
+    protected abstract val buildInvocationScopeId: BuildInvocationScopeId
+
+    companion object {
+        private val rootGradleBuild = AtomicReference<Gradle?>(null)
+        @Volatile
+        private var buildMetricsInitialized = false
+    }
+
     override fun apply(settings: Settings) {
         flowScope.always(LogGradleErrorForTreeHerder::class) {
             parameters.failure.set(flowProviders.buildWorkResult.map { result -> result.failure })
         }
+
+        // Initialize build metrics only if the buildMetrics property is set
+        settings.gradle.projectsEvaluated {
+            if (gradle.rootProject.hasProperty("buildMetrics")) {
+                initializeBuildMetrics(settings)
+            }
+        }
+    }
+
+    private fun initializeBuildMetrics(settings: Settings) {
+        val rootGradle = generateSequence(settings.gradle) { it.parent }.last()
+
+        // Only initialize the shared service once from the root gradle build
+        if (rootGradleBuild.compareAndSet(null, rootGradle)) {
+                rootGradle.taskGraph.whenReady {
+                    val provider = rootGradle.sharedServices.registrations.getByName("buildMetricsService")
+                    val service = provider.service.get() as BuildMetricsService
+
+                    service.invocationStart = System.currentTimeMillis()
+                    service.configStart = System.currentTimeMillis()
+                    service.configEnd = System.currentTimeMillis()
+            }
+        }
+
+        // Register a task listener for all builds
+        val buildMetricsProvider = rootGradle.sharedServices.registerIfAbsent(
+            "buildMetricsService",
+            BuildMetricsService::class.java
+        ) {
+            @Suppress("UNCHECKED_CAST")
+            val mozconfig = rootGradle.extensions.extraProperties["mozconfig"] as Map<String, Any>
+            val topobjdir = mozconfig["topobjdir"] as String
+            // If the buildMetricsFileSuffix property is set, it overrides
+            // the buildInvocationScopeId as the file suffix
+            val fileSuffix = rootGradle.rootProject
+                .findProperty("buildMetricsFileSuffix")
+                ?.toString()
+                ?: buildInvocationScopeId.id.toString()
+
+
+            parameters.topobjdir.set(topobjdir)
+            parameters.fileSuffix.set(fileSuffix)
+        }
+
+        buildEventsListenerRegistry.onTaskCompletion(buildMetricsProvider)
     }
 }
 

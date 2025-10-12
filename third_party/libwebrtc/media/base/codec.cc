@@ -110,9 +110,16 @@ Codec::Codec(Type type,
       name(name),
       clockrate(clockrate),
       bitrate(0),
-      channels(channels) {}
+      channels(channels) {
+  RTC_DCHECK_GT(clockrate, 0);
+}
 
-Codec::Codec(Type type) : Codec(type, kIdNotSet, "", 0) {}
+Codec::Codec(Type type)
+    : Codec(type,
+            kIdNotSet,
+            "",
+            type == Type::kVideo ? kDefaultVideoClockRateHz
+                                 : kDefaultAudioClockRateHz) {}
 
 Codec::Codec(const webrtc::SdpAudioFormat& c)
     : Codec(Type::kAudio, kIdNotSet, c.name, c.clockrate_hz, c.num_channels) {
@@ -285,7 +292,8 @@ std::string Codec::ToString() const {
 }
 
 Codec CreateAudioRtxCodec(int rtx_payload_type, int associated_payload_type) {
-  Codec rtx_codec = CreateAudioCodec(rtx_payload_type, kRtxCodecName, 0, 1);
+  Codec rtx_codec = CreateAudioCodec(rtx_payload_type, kRtxCodecName,
+                                     kDefaultAudioClockRateHz, 1);
   rtx_codec.SetParam(kCodecParamAssociatedPayloadType, associated_payload_type);
   return rtx_codec;
 }

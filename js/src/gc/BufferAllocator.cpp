@@ -723,6 +723,24 @@ bool BufferAllocator::IsBufferAlloc(void* alloc) {
   return chunk->getKind() == ChunkKind::Buffers;
 }
 
+#ifdef DEBUG
+bool BufferAllocator::hasAlloc(void* alloc) {
+  MOZ_ASSERT(IsBufferAlloc(alloc));
+
+  if (IsLargeAlloc(alloc)) {
+    MaybeLock lock;
+    if (needLockToAccessBufferMap()) {
+      lock.emplace(this);
+    }
+    auto ptr = largeAllocMap.ref().readonlyThreadsafeLookup(alloc);
+    return ptr.found();
+  }
+
+  BufferChunk* chunk = BufferChunk::from(alloc);
+  return chunk->zone == zone;
+}
+#endif
+
 size_t BufferAllocator::getAllocSize(void* alloc) {
   if (IsLargeAlloc(alloc)) {
     LargeBuffer* buffer = lookupLargeBuffer(alloc);
@@ -822,11 +840,16 @@ void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
                                                   bool ownerWasTenured) {
   MOZ_ASSERT(buffer->isNurseryOwned);
 
-  // The buffer metadata is held in a small buffer.
+  // The buffer metadata is held in a small buffer. Check whether it has already
+  // been marked.
   auto* region = SmallBufferRegion::from(buffer);
-  if (region->isNurseryOwned(buffer)) {
-    markSmallNurseryOwnedBuffer(buffer, ownerWasTenured);
+  MOZ_ASSERT(region->isNurseryOwned(buffer));
+  if (region->isMarked(buffer)) {
+    MOZ_ASSERT(!ownerWasTenured);
+    return;
   }
+
+  markSmallNurseryOwnedBuffer(buffer, ownerWasTenured);
 
   largeNurseryAllocsToSweep.ref().remove(buffer);
 
@@ -863,11 +886,19 @@ void BufferAllocator::traceEdge(JSTracer* trc, Cell* owner, void** bufferp,
 
   // TODO: This should be unified with the rest of the tracing system.
 
-  MOZ_ASSERT(owner);
   MOZ_ASSERT(bufferp);
 
   void* buffer = *bufferp;
   MOZ_ASSERT(buffer);
+
+  if (trc->isMarkingTracer() && !zone->isGCMarking()) {
+    return;
+  }
+
+  MOZ_ASSERT_IF(trc->isTenuringTracer(),
+                minorState.refNoCheck() == State::Marking);
+  MOZ_ASSERT_IF(trc->isMarkingTracer(),
+                majorState.refNoCheck() == State::Marking);
 
   if (!IsLargeAlloc(buffer) &&
       js::gc::detail::GetGCAddressChunkBase(buffer)->isNurseryChunk()) {
@@ -877,6 +908,7 @@ void BufferAllocator::traceEdge(JSTracer* trc, Cell* owner, void** bufferp,
   }
 
   MOZ_ASSERT(IsBufferAlloc(buffer));
+  MOZ_ASSERT_IF(isNurseryOwned(buffer), owner);
 
   if (IsLargeAlloc(buffer)) {
     traceLargeAlloc(trc, owner, bufferp, name);
@@ -936,18 +968,15 @@ void BufferAllocator::traceLargeAlloc(JSTracer* trc, Cell* owner, void** allocp,
   void* alloc = *allocp;
   LargeBuffer* buffer = lookupLargeBuffer(alloc);
 
-  // Trace small buffer that holds large buffer metadata.
-  traceSmallAlloc(trc, owner, reinterpret_cast<void**>(&buffer), "LargeBuffer");
-
   if (trc->isTenuringTracer()) {
-    if (isNurseryOwned(alloc)) {
+    if (buffer->isNurseryOwned) {
       markLargeNurseryOwnedBuffer(buffer, owner->isTenured());
     }
     return;
   }
 
   if (trc->isMarkingTracer()) {
-    if (!isNurseryOwned(alloc)) {
+    if (!buffer->isNurseryOwned) {
       markLargeTenuredBuffer(buffer);
     }
     return;

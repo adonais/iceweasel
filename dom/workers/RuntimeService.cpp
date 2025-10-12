@@ -45,6 +45,7 @@
 #include "mozilla/dom/RemoteWorkerChild.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/ShadowRealmGlobalScope.h"
+#include "mozilla/dom/TimeoutHandler.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/WorkerBinding.h"
 #include "mozilla/extensions/WebExtensionPolicy.h"
@@ -55,6 +56,7 @@
 #include "nsContentUtils.h"
 #include "nsCycleCollector.h"
 #include "nsDOMJSUtils.h"
+#include "nsGlobalWindowInner.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIObserverService.h"
 #include "nsIScriptContext.h"
@@ -1723,7 +1725,7 @@ void RuntimeService::Cleanup() {
           getter_AddRefs(timer),
           [self](nsITimer*) { self->DumpRunningWorkers(); },
           TimeDuration::FromSeconds(1), nsITimer::TYPE_ONE_SHOT,
-          "RuntimeService::WorkerShutdownDump");
+          "RuntimeService::WorkerShutdownDump"_ns);
       Unused << NS_WARN_IF(NS_FAILED(rv));
 
       // And make sure all their final messages have run and all their threads

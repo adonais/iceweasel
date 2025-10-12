@@ -88,7 +88,7 @@ class nsMathMLmpaddedFrame final : public nsMathMLContainerFrame {
   Attribute mVerticalOffset;
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) final;
+                            AttrModType aModType) final;
   void ParseAttribute(nsAtom* aAtom, Attribute& aAttribute);
   bool ParseAttribute(nsString& aString, Attribute& aAttribute);
 

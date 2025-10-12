@@ -279,6 +279,10 @@ class DebuggerPanel {
     sourceActorId,
     reason,
   }) {
+    // Resolve the URL in case this is an URL like http://example.org/./test.js
+    // as the frontend only supports final resolved URLs.
+    generatedURL = URL.parse(generatedURL)?.href || generatedURL;
+
     const generatedSource = sourceActorId
       ? this._selectors.getSourceByActorId(this._getState(), sourceActorId)
       : this._selectors.getSourceByURL(this._getState(), generatedURL);

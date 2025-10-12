@@ -31,6 +31,10 @@ elif CONFIG["OS_ARCH"] == "WINNT":
         "win/src/sandboxtarget",
     ]
 
+    TEST_DIRS += [
+        "win/gtest",
+    ]
+
     EXPORTS.mozilla.sandboxing += [
         "chromium-shim/sandbox/win/loggingCallbacks.h",
         "chromium-shim/sandbox/win/loggingTypes.h",

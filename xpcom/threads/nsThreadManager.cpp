@@ -154,11 +154,11 @@ BackgroundEventTarget::IsOnCurrentThread(bool* aValue) {
 
 NS_IMETHODIMP
 BackgroundEventTarget::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
-                                uint32_t aFlags) {
+                                DispatchFlags aFlags) {
   // Select the right destination and clear the special flag.
   bool mayBlock = bool(aFlags & NS_DISPATCH_EVENT_MAY_BLOCK);
   nsCOMPtr<nsIThreadPool>& pool = mayBlock ? mIOPool : mPool;
-  uint32_t flags = aFlags & ~NS_DISPATCH_EVENT_MAY_BLOCK;
+  DispatchFlags flags = aFlags & ~NS_DISPATCH_EVENT_MAY_BLOCK;
 
   // If an event is dispatched with NS_DISPATCH_AT_END, it is intended to run
   // on the same thread on the same pool it is dispatched from, but we might
@@ -174,7 +174,7 @@ BackgroundEventTarget::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
 
 NS_IMETHODIMP
 BackgroundEventTarget::DispatchFromScript(nsIRunnable* aRunnable,
-                                          uint32_t aFlags) {
+                                          DispatchFlags aFlags) {
   nsCOMPtr<nsIRunnable> runnable(aRunnable);
   return Dispatch(runnable.forget(), aFlags);
 }
@@ -530,8 +530,8 @@ nsThread* nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue) {
   return thread.get();  // reference held in TLS
 }
 
-nsresult nsThreadManager::DispatchToBackgroundThread(nsIRunnable* aEvent,
-                                                     uint32_t aDispatchFlags) {
+nsresult nsThreadManager::DispatchToBackgroundThread(
+    nsIRunnable* aEvent, nsIEventTarget::DispatchFlags aDispatchFlags) {
   RefPtr<BackgroundEventTarget> backgroundTarget;
   {
     OffTheBooksMutexAutoLock lock(mMutex);
@@ -768,9 +768,10 @@ nsThreadManager::DispatchToMainThread(nsIRunnable* aEvent, uint32_t aPriority,
   if (aArgc > 0 && aPriority != nsIRunnablePriority::PRIORITY_NORMAL) {
     nsCOMPtr<nsIRunnable> event(aEvent);
     return mMainThread->DispatchFromScript(
-        new PrioritizableRunnable(event.forget(), aPriority), 0);
+        new PrioritizableRunnable(event.forget(), aPriority),
+        NS_DISPATCH_FALLIBLE);
   }
-  return mMainThread->DispatchFromScript(aEvent, 0);
+  return mMainThread->DispatchFromScript(aEvent, NS_DISPATCH_FALLIBLE);
 }
 
 class AutoMicroTaskWrapperRunnable final : public Runnable {

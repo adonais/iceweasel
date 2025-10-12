@@ -38,7 +38,7 @@ add_task(async function test_signed_out_content() {
 
   let content = panelView.querySelector(lazy.IPProtectionPanel.CONTENT_TAGNAME);
 
-  content.state.isSignedIn = false;
+  content.state.isSignedOut = true;
   content.requestUpdate();
   await content.updateComplete;
 
@@ -90,7 +90,7 @@ add_task(async function test_signin_button() {
 
   let content = panelView.querySelector(lazy.IPProtectionPanel.CONTENT_TAGNAME);
 
-  content.state.isSignedIn = false;
+  content.state.isSignedOut = true;
   content.requestUpdate();
   await content.updateComplete;
 

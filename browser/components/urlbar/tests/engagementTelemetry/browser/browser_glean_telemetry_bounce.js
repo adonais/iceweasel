@@ -38,6 +38,9 @@ add_setup(async function () {
   });
 
   registerCleanupFunction(async function () {
+    Services.prefs.clearUserPref(
+      "browser.urlbar.quickactions.timesShownOnboardingLabel"
+    );
     await Services.search.setDefault(
       oldDefaultEngine,
       Ci.nsISearchService.CHANGE_REASON_UNKNOWN
@@ -56,7 +59,7 @@ const expected = {
   n_chars: "4",
   n_words: "1",
   engagement_type: "enter",
-  provider: "HeuristicFallback",
+  provider: "UrlbarProviderHeuristicFallback",
   threshold: "10",
 };
 
@@ -225,8 +228,8 @@ add_task(async function test_other_engagement() {
       {
         view_time: "1.2",
         selected_result: expected.selected_result,
-        results: expected.results,
-        n_results: expected.n_results,
+        results: "search_engine,action",
+        n_results: "2",
         interaction: expected.interaction,
         search_mode: expected.search_mode,
         search_engine_default_id: expected.search_engine_default_id,

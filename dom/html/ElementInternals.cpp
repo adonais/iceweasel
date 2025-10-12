@@ -14,13 +14,13 @@
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/HTMLElement.h"
 #include "mozilla/dom/HTMLFieldSetElement.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/dom/ValidityState.h"
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsGenericHTMLElement.h"
+#include "nsIMutationObserver.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -453,9 +453,8 @@ nsresult ElementInternals::SetAttr(nsAtom* aName, const nsAString& aValue) {
   Document* document = mTarget->GetComposedDoc();
   mozAutoDocUpdate updateBatch(document, true);
 
-  uint8_t modType = mAttrs.HasAttr(aName) ? MutationEvent_Binding::MODIFICATION
-                                          : MutationEvent_Binding::ADDITION;
-
+  const AttrModType modType =
+      mAttrs.HasAttr(aName) ? AttrModType::Modification : AttrModType::Addition;
   MutationObservers::NotifyARIAAttributeDefaultWillChange(mTarget, aName,
                                                           modType);
 

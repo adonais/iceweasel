@@ -17,6 +17,7 @@
 #include "ImageContainer.h"
 #include "ipc/EnumSerializer.h"
 #include "ipc/IPCMessageUtils.h"
+#include "mozilla/RelativeTo.h"
 #include "mozilla/ScrollSnapInfo.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ParamTraits_IsEnumCase.h"
@@ -552,6 +553,13 @@ struct ParamTraits<mozilla::ScrollTriggeredByScript>
           mozilla::ScrollTriggeredByScript::Yes> {};
 
 template <>
+struct ParamTraits<mozilla::ViewportType>
+    : public ContiguousEnumSerializerInclusive<mozilla::ViewportType,
+                                               mozilla::ViewportType::Layout,
+                                               mozilla::ViewportType::Visual> {
+};
+
+template <>
 struct ParamTraits<mozilla::ScrollPositionUpdate> {
   typedef mozilla::ScrollPositionUpdate paramType;
 
@@ -563,6 +571,7 @@ struct ParamTraits<mozilla::ScrollPositionUpdate> {
     WriteParam(aWriter, aParam.mDestination);
     WriteParam(aWriter, aParam.mSource);
     WriteParam(aWriter, aParam.mDelta);
+    WriteParam(aWriter, aParam.mViewportType);
     WriteParam(aWriter, aParam.mTriggeredByScript);
     WriteParam(aWriter, aParam.mSnapTargetIds);
   }
@@ -575,6 +584,7 @@ struct ParamTraits<mozilla::ScrollPositionUpdate> {
            ReadParam(aReader, &aResult->mDestination) &&
            ReadParam(aReader, &aResult->mSource) &&
            ReadParam(aReader, &aResult->mDelta) &&
+           ReadParam(aReader, &aResult->mViewportType) &&
            ReadParam(aReader, &aResult->mTriggeredByScript) &&
            ReadParam(aReader, &aResult->mSnapTargetIds);
   }

@@ -9,6 +9,7 @@ function markConstant(obj, key) {
 }
 function testGlobal() {
   var g = newGlobal({sameCompartmentAs: this, useWindowProxy: false});
+  addObjectFuse(g);
   assertEq(getObjectFuseState(g).generation, 0);
 
   // Ensure global variables are marked untracked or constant.

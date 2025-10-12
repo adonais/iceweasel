@@ -35,15 +35,15 @@ class MOZ_RAII AutoChangeIntegerPairNotifier {
 
     if (mDoSetAttr) {
       mUpdateBatch.emplace(aSVGElement->GetComposedDoc(), true);
-      mEmptyOrOldValue = mSVGElement->WillChangeIntegerPair(
-          mIntegerPair->mAttrEnum, mUpdateBatch.ref());
+      mSVGElement->WillChangeIntegerPair(mIntegerPair->mAttrEnum,
+                                         mUpdateBatch.ref());
     }
   }
 
   ~AutoChangeIntegerPairNotifier() {
     if (mDoSetAttr) {
       mSVGElement->DidChangeIntegerPair(mIntegerPair->mAttrEnum,
-                                        mEmptyOrOldValue, mUpdateBatch.ref());
+                                        mUpdateBatch.ref());
     }
     if (mIntegerPair->mIsAnimated) {
       mSVGElement->AnimationNeedsResample();
@@ -54,7 +54,6 @@ class MOZ_RAII AutoChangeIntegerPairNotifier {
   SVGAnimatedIntegerPair* const mIntegerPair;
   SVGElement* const mSVGElement;
   Maybe<mozAutoDocUpdate> mUpdateBatch;
-  nsAttrValue mEmptyOrOldValue;
   bool mDoSetAttr;
 };
 

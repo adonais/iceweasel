@@ -40,10 +40,8 @@ static const double kChipsHardLimitFactor = 1.2;
 namespace mozilla {
 namespace net {
 
-namespace {
-
 // comparator class for lastaccessed times of cookies.
-class CompareCookiesByAge {
+class CookieStorage::CompareCookiesByAge {
  public:
   static bool Equals(const CookieListIter& a, const CookieListIter& b) {
     return a.Cookie()->LastAccessed() == b.Cookie()->LastAccessed() &&
@@ -64,7 +62,7 @@ class CompareCookiesByAge {
 // Cookie comparator for the priority queue used in FindStaleCookies.
 // Note that the expired cookie has the highest priority.
 // Other non-expired cookies are sorted by their age.
-class CookieIterComparator {
+class CookieStorage::CookieIterComparator {
  private:
   int64_t mCurrentTime;
 
@@ -82,12 +80,12 @@ class CookieIterComparator {
       return false;
     }
 
-    return mozilla::net::CompareCookiesByAge::LessThan(lhs, rhs);
+    return CompareCookiesByAge::LessThan(lhs, rhs);
   }
 };
 
 // comparator class for sorting cookies by entry and index.
-class CompareCookiesByIndex {
+class CookieStorage::CompareCookiesByIndex {
  public:
   static bool Equals(const CookieListIter& a, const CookieListIter& b) {
     NS_ASSERTION(a.entry != b.entry || a.index != b.index,
@@ -104,8 +102,6 @@ class CompareCookiesByIndex {
     return a.index < b.index;
   }
 };
-
-}  // namespace
 
 // ---------------------------------------------------------------------------
 // CookieEntry
@@ -180,6 +176,20 @@ void CookieStorage::GetSessionCookies(
       }
     }
   }
+}
+
+// find an exact cookie specified by host, name, and path that hasn't expired.
+already_AddRefed<Cookie> CookieStorage::FindCookie(
+    const nsACString& aBaseDomain, const OriginAttributes& aOriginAttributes,
+    const nsACString& aHost, const nsACString& aName, const nsACString& aPath) {
+  CookieListIter iter{};
+
+  if (!FindCookie(aBaseDomain, aOriginAttributes, aHost, aName, aPath, iter)) {
+    return nullptr;
+  }
+
+  RefPtr<Cookie> cookie = iter.Cookie();
+  return cookie.forget();
 }
 
 // find an exact cookie specified by host, name, and path that hasn't expired.

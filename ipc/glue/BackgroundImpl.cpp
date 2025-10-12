@@ -946,7 +946,7 @@ void ParentImpl::ShutdownBackgroundThread() {
 
       MOZ_ALWAYS_SUCCEEDS(shutdownTimer->InitWithNamedFuncCallback(
           &ShutdownTimerCallback, &closure, kShutdownTimerDelayMS,
-          nsITimer::TYPE_ONE_SHOT, "ParentImpl::ShutdownTimerCallback"));
+          nsITimer::TYPE_ONE_SHOT, "ParentImpl::ShutdownTimerCallback"_ns));
 
       SpinEventLoopUntil("ParentImpl::ShutdownBackgroundThread"_ns,
                          [&]() { return !sLiveActorCount; });

@@ -77,7 +77,7 @@
 
 #viewButton {
   appearance: none;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   padding: 2px 4px;
   color: inherit;
 }

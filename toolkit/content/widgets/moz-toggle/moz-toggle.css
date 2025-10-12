@@ -156,7 +156,7 @@
 }
 
 @media not (forced-colors) {
-  :host([disabled]) .toggle-button {
+  :host(:state(disabled)) .toggle-button {
     opacity: 0.4;
   }
 }

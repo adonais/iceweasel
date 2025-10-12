@@ -20,6 +20,8 @@ support-files = ["topstories.json"]
 
 ["test_ListsFeed.js"]
 
+["test_LocalInferredRanking.js"]
+
 ["test_NewTabContentPing.js"]
 
 ["test_NewTabGleanUtils.js"]

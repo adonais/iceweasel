@@ -122,7 +122,7 @@ nsresult nsJARInputStream::InitDirectory(nsJAR* aJar, const char* aDir) {
     ++curr;
   }
   nsAutoCString pattern = escDirName + "?*~"_ns + escDirName + "?*/?*"_ns;
-  rv = mJar->mZip->FindInit(pattern.get(), getter_Transfers(find));
+  rv = mJar->mZip->FindInit(pattern.get(), mozilla::getter_Transfers(find));
   if (NS_FAILED(rv)) return rv;
 
   const char* name;

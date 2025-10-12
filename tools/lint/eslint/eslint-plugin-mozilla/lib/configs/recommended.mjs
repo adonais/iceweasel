@@ -342,6 +342,12 @@ const extraRules = [
     ],
     name: "mozilla/recommended/serviceworker",
   },
+  {
+    // This rule isn't needed for JSON files, so turn it off.
+    files: ["**/*.json"],
+    name: "mozilla/recommended/import-globals-off-for-json",
+    rules: { "mozilla/import-globals": "off" },
+  },
 ];
 
 export default [

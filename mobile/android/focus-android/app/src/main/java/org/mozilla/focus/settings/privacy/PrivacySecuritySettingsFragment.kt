@@ -5,7 +5,6 @@
 package org.mozilla.focus.settings.privacy
 
 import android.content.SharedPreferences
-import android.os.Build
 import android.os.Bundle
 import androidx.core.content.edit
 import androidx.preference.Preference
@@ -39,8 +38,8 @@ class PrivacySecuritySettingsFragment :
         biometricPreference?.summary =
             getString(R.string.preference_security_biometric_summary2, appName)
 
-        // Remove the biometric toggle if the software or hardware do not support it
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || !requireContext().canUseBiometricFeature()) {
+        // Remove the biometric toggle if not supported
+        if (!requireContext().canUseBiometricFeature()) {
             biometricPreference?.let { preferenceScreen.removePreference(it) }
         }
         if (!FocusNimbus.features.onboarding.value().isCfrEnabled ||

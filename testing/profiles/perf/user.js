@@ -32,6 +32,8 @@ user_pref("browser.safebrowsing.provider.google.gethashURL", "http://127.0.0.1/s
 user_pref("browser.safebrowsing.provider.google.updateURL", "http://127.0.0.1/safebrowsing-dummy/update");
 user_pref("browser.safebrowsing.provider.google4.gethashURL", "http://127.0.0.1/safebrowsing4-dummy/gethash");
 user_pref("browser.safebrowsing.provider.google4.updateURL", "http://127.0.0.1/safebrowsing4-dummy/update");
+user_pref("browser.safebrowsing.provider.google5.gethashURL", "http://127.0.0.1/safebrowsing5-dummy/gethash");
+user_pref("browser.safebrowsing.provider.google5.updateURL", "http://127.0.0.1/safebrowsing5-dummy/update");
 user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://127.0.0.1/safebrowsing-dummy/gethash");
 user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://127.0.0.1/safebrowsing-dummy/update");
 user_pref("browser.shell.checkDefaultBrowser", false);

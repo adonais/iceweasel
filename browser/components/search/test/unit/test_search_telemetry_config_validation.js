@@ -132,6 +132,17 @@ add_task(async function test_search_config_codes_in_search_telemetry() {
             `Should have the partner code ${variant.partnerCode} listed in the search telemetry 'taggedCodes'`
           );
         }
+
+        if (variant.subVariants) {
+          for (let subVariant of variant.subVariants) {
+            if ("partnerCode" in subVariant) {
+              Assert.ok(
+                telemetryEntry.taggedCodes.includes(subVariant.partnerCode),
+                `Should have the partner code ${subVariant.partnerCode} listed in the search telemetry 'taggedCodes'`
+              );
+            }
+          }
+        }
       }
     }
   }

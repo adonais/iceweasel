@@ -655,7 +655,6 @@ export class TabsPanel extends TabsListBase {
       label: tab.label,
       tooltiptext,
       image: !busy && tab.getAttribute("image"),
-      iconloadingprincipal: tab.getAttribute("iconloadingprincipal"),
     });
 
     this._setImageAttributes(row, tab);

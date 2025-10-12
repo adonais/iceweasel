@@ -2242,6 +2242,7 @@ addUiaTask(
 <textarea id="textarea">ab
 
 </textarea>
+<input id="empty">
   `,
   async function testTextRangeGetBoundingRectanglesCaret(browser, docAcc) {
     info("Focusing editable");
@@ -2386,6 +2387,29 @@ addUiaTask(
     );
     is(uiaRects[0], prevX, "x == prevX");
     Assert.greater(uiaRects[1], prevY, "y > prevY");
+
+    info("Focusing empty");
+    const empty = findAccessibleChildByID(docAcc, "empty", [nsIAccessibleText]);
+    moved = waitForEvent(EVENT_TEXT_CARET_MOVED, empty);
+    empty.takeFocus();
+    await moved;
+    await runPython(`
+      global text
+      empty = findUiaByDomId(doc, "empty")
+      text = getUiaPattern(empty, "Text")
+    `);
+    uiaRects = await runPython(
+      `text.GetSelection().GetElement(0).GetBoundingRectangles()`
+    );
+    const caretX = {};
+    const caretY = {};
+    const caretW = {};
+    const caretH = {};
+    empty.getCaretRect(caretX, caretY, caretW, caretH);
+    is(uiaRects[0], caretX.value, "x == caretX");
+    is(uiaRects[1], caretY.value, "y == caretY");
+    is(uiaRects[2], caretW.value, "w == caretW");
+    is(uiaRects[3], caretH.value, "h == caretH");
   },
   // The IA2 -> UIA proxy doesn't support this.
   { uiaEnabled: true, uiaDisabled: false }

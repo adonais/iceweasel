@@ -106,7 +106,7 @@ bool XULButtonAccessible::AttributeChangesState(nsAtom* aAttribute) {
 
 void XULButtonAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
-                                              int32_t aModType,
+                                              AttrModType aModType,
                                               const nsAttrValue* aOldValue,
                                               uint64_t aOldState) {
   AccessibleWrap::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,

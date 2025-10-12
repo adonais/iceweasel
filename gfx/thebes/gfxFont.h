@@ -51,6 +51,7 @@
 #include "gfxFontEntry.h"
 #include "gfxFontFeatures.h"
 
+class FontVisibilityProvider;
 class gfxContext;
 class gfxGraphiteShaper;
 class gfxHarfBuzzShaper;
@@ -362,7 +363,7 @@ class gfxFontCache final
         mWordCacheExpirationTimer->InitWithNamedFuncCallback(
             WordCacheExpirationTimerCallback, this,
             SHAPED_WORD_TIMEOUT_SECONDS * 1000, nsITimer::TYPE_REPEATING_SLACK,
-            "gfxFontCache::WordCacheExpiration");
+            "gfxFontCache::WordCacheExpiration"_ns);
         mTimerRunning = true;
       }
     }
@@ -1817,7 +1818,7 @@ class gfxFont {
   }
 
   template <typename T>
-  bool InitFakeSmallCapsRun(nsPresContext* aPresContext,
+  bool InitFakeSmallCapsRun(FontVisibilityProvider* aFontVisibilityProvider,
                             DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
                             const T* aText, uint32_t aOffset, uint32_t aLength,
                             FontMatchType aMatchType,

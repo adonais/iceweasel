@@ -1879,9 +1879,6 @@ void nsRange::CutContents(DocumentFragment** aFragment,
   }
   nsCOMPtr<nsINode> commonCloneAncestor = retval.get();
 
-  // Batch possible DOMSubtreeModified events.
-  mozAutoSubtreeModified subtree(mRoot ? mRoot->OwnerDoc() : nullptr, nullptr);
-
   // Save the range end points locally to avoid interference
   // of Range gravity during our edits!
 

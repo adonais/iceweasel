@@ -31,10 +31,7 @@ SPHINX_TREES["/toolkit/components/telemetry"] = "docs"
 with Files("docs/**"):
     SCHEDULES.exclusive = ["docs"]
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["tests/gtest"]
-
-TEST_DIRS += ["tests", "dap/ffi-gtest"]
+TEST_DIRS += ["tests/gtest", "tests", "dap/ffi-gtest"]
 
 XPCSHELL_TESTS_MANIFESTS += [
     "dap/tests/xpcshell/xpcshell.toml",
@@ -123,6 +120,7 @@ EXTRA_JS_MODULES += [
     "app/TelemetryTimestamps.sys.mjs",
     "app/TelemetryUtils.sys.mjs",
     "app/UsageReporting.sys.mjs",
+    "dap/DAPIncrementality.sys.mjs",
     "dap/DAPReportController.sys.mjs",
     "dap/DAPTelemetrySender.sys.mjs",
     "dap/DAPVisitCounter.sys.mjs",

@@ -304,23 +304,21 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
       .then(function (aList) {
         // Temporarily register a view that will get notified when the download we
         // are controlling becomes visible in the list of downloads.
-        aList
-          .addView({
-            onDownloadAdded(aDownload) {
-              aList.removeView(this).catch(do_report_unexpected_exception);
+        aList.addView({
+          onDownloadAdded(aDownload) {
+            aList.removeView(this);
 
-              // Remove the download to keep the list empty for the next test.  This
-              // also allows the caller to register the "onchange" event directly.
-              let promise = aList.remove(aDownload);
+            // Remove the download to keep the list empty for the next test.  This
+            // also allows the caller to register the "onchange" event directly.
+            let promise = aList.remove(aDownload);
 
-              // When the download object is ready, make it available to the caller.
-              promise.then(
-                () => resolve(aDownload),
-                do_report_unexpected_exception
-              );
-            },
-          })
-          .catch(do_report_unexpected_exception);
+            // When the download object is ready, make it available to the caller.
+            promise.then(
+              () => resolve(aDownload),
+              do_report_unexpected_exception
+            );
+          },
+        });
 
         let isPrivate = aOptions && aOptions.isPrivate;
         let referrerInfo = aOptions ? aOptions.referrerInfo : null;
@@ -387,23 +385,21 @@ function promiseStartExternalHelperAppServiceDownload(aSourceUrl) {
       .then(function (aList) {
         // Temporarily register a view that will get notified when the download we
         // are controlling becomes visible in the list of downloads.
-        aList
-          .addView({
-            onDownloadAdded(aDownload) {
-              aList.removeView(this).catch(do_report_unexpected_exception);
+        aList.addView({
+          onDownloadAdded(aDownload) {
+            aList.removeView(this);
 
-              // Remove the download to keep the list empty for the next test.  This
-              // also allows the caller to register the "onchange" event directly.
-              let promise = aList.remove(aDownload);
+            // Remove the download to keep the list empty for the next test.  This
+            // also allows the caller to register the "onchange" event directly.
+            let promise = aList.remove(aDownload);
 
-              // When the download object is ready, make it available to the caller.
-              promise.then(
-                () => resolve(aDownload),
-                do_report_unexpected_exception
-              );
-            },
-          })
-          .catch(do_report_unexpected_exception);
+            // When the download object is ready, make it available to the caller.
+            promise.then(
+              () => resolve(aDownload),
+              do_report_unexpected_exception
+            );
+          },
+        });
 
         let channel = NetUtil.newChannel({
           uri: sourceURI,

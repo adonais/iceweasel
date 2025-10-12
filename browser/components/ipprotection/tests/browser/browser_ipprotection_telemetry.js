@@ -54,7 +54,7 @@ add_task(async function user_toggle_on_and_off() {
   });
   IPProtectionService.isEnrolled = true;
   IPProtectionService.isEntitled = true;
-  content.state.isSignedIn = true;
+  content.state.isSignedOut = false;
   content.requestUpdate();
   await content.updateComplete;
 
@@ -135,7 +135,7 @@ add_task(async function toggle_off_on_shutdown() {
   });
   IPProtectionService.isEnrolled = true;
   IPProtectionService.isEntitled = true;
-  content.state.isSignedIn = true;
+  content.state.isSignedOut = false;
   content.requestUpdate();
   await content.updateComplete;
   lazy.IPProtectionService.isSignedIn = true;
@@ -210,7 +210,7 @@ add_task(async function click_upgrade_button() {
 
   Assert.ok(content, "Panel content should be present");
 
-  content.state.isSignedIn = true;
+  content.state.isSignedOut = false;
   content.requestUpdate();
   await content.updateComplete;
 

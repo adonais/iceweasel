@@ -13,6 +13,7 @@
 #include "mozilla/FastBernoulliTrial.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/JSONWriter.h"
+#include "mozilla/MulOverflowMask.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PlatformMutex.h"
 #include "mozilla/ProfilerCounts.h"
@@ -146,7 +147,7 @@ class InfallibleAllocWithoutHooksPolicy {
  public:
   template <typename T>
   static T* maybe_pod_malloc(size_t aNumElems) {
-    if (aNumElems & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
+    if (aNumElems & mozilla::MulOverflowMask<sizeof(T)>()) {
       return nullptr;
     }
     return (T*)gMallocTable.malloc(aNumElems * sizeof(T));
@@ -159,7 +160,7 @@ class InfallibleAllocWithoutHooksPolicy {
 
   template <typename T>
   static T* maybe_pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
-    if (aNewSize & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
+    if (aNewSize & mozilla::MulOverflowMask<sizeof(T)>()) {
       return nullptr;
     }
     return (T*)gMallocTable.realloc(aPtr, aNewSize * sizeof(T));

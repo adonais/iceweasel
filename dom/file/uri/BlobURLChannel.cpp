@@ -6,6 +6,10 @@
 
 #include "BlobURLChannel.h"
 
+#ifdef MOZ_WIDGET_ANDROID
+#  include "mozilla/BasePrincipal.h"
+#endif
+
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/BlobURL.h"
 #include "mozilla/dom/BlobURLInputStream.h"

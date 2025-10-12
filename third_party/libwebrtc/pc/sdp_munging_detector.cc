@@ -279,6 +279,22 @@ SdpMungingType DetermineVideoSdpMungingType(
   }
   if (last_created_media_description->codecs().size() <
       media_description_to_set->codecs().size()) {
+    // Nonstandard a=packetization:raw
+    bool created_raw_packetization =
+        absl::c_find_if(last_created_media_description->codecs(),
+                        [](const Codec codec) {
+                          return codec.packetization.has_value();
+                        }) != last_created_media_description->codecs().end();
+    bool set_raw_packetization =
+        absl::c_find_if(media_description_to_set->codecs(),
+                        [](const Codec codec) {
+                          return codec.packetization.has_value();
+                        }) != media_description_to_set->codecs().end();
+    if (!created_raw_packetization && set_raw_packetization) {
+      RTC_LOG(LS_WARNING)
+          << "SDP munging: video codecs with raw packetization added.";
+      return SdpMungingType::kVideoCodecsAddedWithRawPacketization;
+    }
     RTC_LOG(LS_WARNING) << "SDP munging: video codecs added.";
     return SdpMungingType::kVideoCodecsAdded;
   }
@@ -391,14 +407,14 @@ SdpMungingType DetermineSdpMungingType(
       continue;
     }
     // Validate video and audio contents.
-    webrtc::MediaType media_type = last_created_media_description->type();
-    if (media_type == webrtc::MediaType::VIDEO) {
+    MediaType media_type = last_created_media_description->type();
+    if (media_type == MediaType::VIDEO) {
       type = DetermineVideoSdpMungingType(last_created_media_description,
                                           media_description_to_set);
       if (type != SdpMungingType::kNoModification) {
         return type;
       }
-    } else if (media_type == webrtc::MediaType::AUDIO) {
+    } else if (media_type == MediaType::AUDIO) {
       type = DetermineAudioSdpMungingType(last_created_media_description,
                                           media_description_to_set);
       if (type != SdpMungingType::kNoModification) {
@@ -418,7 +434,7 @@ SdpMungingType DetermineSdpMungingType(
         // Codec position swapped.
         for (size_t j = i + 1; j < last_created_codecs.size(); j++) {
           if (last_created_codecs[i] == codecs_to_set[j]) {
-            return media_type == webrtc::MediaType::AUDIO
+            return media_type == MediaType::AUDIO
                        ? SdpMungingType::kAudioCodecsReordered
                        : SdpMungingType::kVideoCodecsReordered;
           }
@@ -429,19 +445,31 @@ SdpMungingType DetermineSdpMungingType(
           return SdpMungingType::kPayloadTypes;
         }
         if (last_created_codecs[i].params != codecs_to_set[i].params) {
-          return media_type == webrtc::MediaType::AUDIO
+          return media_type == MediaType::AUDIO
                      ? SdpMungingType::kAudioCodecsFmtp
                      : SdpMungingType::kVideoCodecsFmtp;
         }
         if (last_created_codecs[i].feedback_params !=
             codecs_to_set[i].feedback_params) {
-          return media_type == webrtc::MediaType::AUDIO
+          return media_type == MediaType::AUDIO
                      ? SdpMungingType::kAudioCodecsRtcpFb
                      : SdpMungingType::kVideoCodecsRtcpFb;
+        }
+        // Nonstandard a=packetization:raw added by munging
+        if (media_type == MediaType::VIDEO &&
+            last_created_codecs[i].packetization !=
+                codecs_to_set[i].packetization) {
+          return SdpMungingType::kVideoCodecsModifiedWithRawPacketization;
         }
         // At this point clockrate or channels changed. This should already be
         // rejected later in the process so ignore for munging.
       }
+    }
+
+    if (last_created_media_description->direction() !=
+        media_description_to_set->direction()) {
+      RTC_LOG(LS_WARNING) << "SDP munging: transceiver direction modified.";
+      return SdpMungingType::kDirection;
     }
 
     // Validate media streams.

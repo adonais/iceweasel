@@ -111,7 +111,7 @@ class FakeAudioTrack : public MediaStreamTrack<AudioTrackInterface> {
       : MediaStreamTrack<AudioTrackInterface>(id),
         processor_(make_ref_counted<FakeAudioProcessor>()) {}
   std::string kind() const override { return "audio"; }
-  AudioSourceInterface* GetSource() const override { return NULL; }
+  AudioSourceInterface* GetSource() const override { return nullptr; }
   void AddSink(AudioTrackSinkInterface* sink) override {}
   void RemoveSink(AudioTrackSinkInterface* sink) override {}
   bool GetSignalLevel(int* level) override {
@@ -148,7 +148,7 @@ class FakeAudioTrackWithInitValue
       : MediaStreamTrack<AudioTrackInterface>(id),
         processor_(make_ref_counted<FakeAudioProcessorWithInitValue>()) {}
   std::string kind() const override { return "audio"; }
-  AudioSourceInterface* GetSource() const override { return NULL; }
+  AudioSourceInterface* GetSource() const override { return nullptr; }
   void AddSink(AudioTrackSinkInterface* sink) override {}
   void RemoveSink(AudioTrackSinkInterface* sink) override {}
   bool GetSignalLevel(int* level) override {
@@ -295,7 +295,7 @@ void CheckCertChainReports(const StatsReports& reports,
   size_t i = 0;
   while (true) {
     const StatsReport* report = FindReportById(reports, *certificate_id);
-    ASSERT_TRUE(report != NULL);
+    ASSERT_TRUE(report != nullptr);
 
     std::string der_base64;
     EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDer, &der_base64));
@@ -745,8 +745,8 @@ static scoped_refptr<MockRtpSenderInternal> CreateMockSender(
   EXPECT_CALL(*sender, media_type())
       .WillRepeatedly(
           Return(track->kind() == MediaStreamTrackInterface::kAudioKind
-                     ? webrtc::MediaType::AUDIO
-                     : webrtc::MediaType::VIDEO));
+                     ? MediaType::AUDIO
+                     : MediaType::VIDEO));
   EXPECT_CALL(*sender, SetMediaChannel(_)).Times(AtMost(2));
   EXPECT_CALL(*sender, SetTransceiverAsStopped()).Times(AtMost(1));
   EXPECT_CALL(*sender, Stop());
@@ -762,8 +762,8 @@ static scoped_refptr<MockRtpReceiverInternal> CreateMockReceiver(
   EXPECT_CALL(*receiver, media_type())
       .WillRepeatedly(
           Return(track->kind() == MediaStreamTrackInterface::kAudioKind
-                     ? webrtc::MediaType::AUDIO
-                     : webrtc::MediaType::VIDEO));
+                     ? MediaType::AUDIO
+                     : MediaType::VIDEO));
   EXPECT_CALL(*receiver, SetMediaChannel(_)).WillRepeatedly(Return());
   EXPECT_CALL(*receiver, Stop()).WillRepeatedly(Return());
   return receiver;
@@ -1644,7 +1644,7 @@ TEST_P(StatsCollectorTrackTest, GetStatsFromLocalAudioTrack) {
   // we did not set it up.
   const StatsReport* remote_report =
       FindNthReportByType(reports, StatsReport::kStatsReportTypeRemoteSsrc, 1);
-  EXPECT_TRUE(remote_report == NULL);
+  EXPECT_TRUE(remote_report == nullptr);
 }
 
 // This test verifies that audio receive streams populate stats reports

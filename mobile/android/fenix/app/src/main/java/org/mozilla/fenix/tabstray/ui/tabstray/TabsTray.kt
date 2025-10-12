@@ -2,28 +2,42 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package org.mozilla.fenix.tabstray.ui.tabstray
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.BottomAppBarDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.storage.sync.TabEntry
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
+import mozilla.components.compose.base.snackbar.Snackbar
+import mozilla.components.compose.base.snackbar.SnackbarVisuals
+import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.TabsTrayAction
@@ -53,6 +67,7 @@ import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabCloseClick as OnSyncedTabCl
  * @param shouldShowTabAutoCloseBanner Whether the tab auto closer banner should be displayed.
  * @param shouldShowLockPbmBanner Whether the lock private browsing banner should be displayed.
  * @param isSignedIn Whether the user is signed into their Firefox account.
+ * @param snackbarHostState [SnackbarHostState] of this component to read and show [Snackbar]s accordingly.
  * @param modifier The [Modifier] used to style the container of the the Tabs Tray UI.
  * @param shouldShowInactiveTabsAutoCloseDialog Whether the inactive tabs auto close dialog should be displayed.
  * @param onTabPageClick Invoked when the user clicks on the Normal, Private, or Synced tabs page button.
@@ -71,11 +86,11 @@ import org.mozilla.fenix.tabstray.ui.syncedtabs.OnTabCloseClick as OnSyncedTabCl
  * @param onInactiveTabClose Invoked when the user clicks on an inactive tab's close button.
  * @param onSyncedTabClick Invoked when the user clicks on a synced tab.
  * @param onSyncedTabClose Invoked when the user clicks on a synced tab's close button.
+ * @param onSignInClick Invoked when an unauthenticated user clicks to sign-in.
  * @param onSaveToCollectionClick Invoked when the user clicks on the save to collection button from
  * the multi select banner.
  * @param onShareSelectedTabsClick Invoked when the user clicks on the share button from the
  * multi select banner.
- * @param onShareAllTabsClick Invoked when the user clicks on the share all tabs banner menu item.
  * @param onTabSettingsClick Invoked when the user clicks on the tab settings banner menu item.
  * @param onRecentlyClosedClick Invoked when the user clicks on the recently closed banner menu item.
  * @param onAccountSettingsClick Invoked when the user clicks on the account settings banner menu item.
@@ -107,6 +122,7 @@ fun TabsTray(
     shouldShowTabAutoCloseBanner: Boolean,
     shouldShowLockPbmBanner: Boolean,
     isSignedIn: Boolean,
+    snackbarHostState: SnackbarHostState,
     modifier: Modifier = Modifier,
     shouldShowInactiveTabsAutoCloseDialog: (Int) -> Boolean,
     onTabPageClick: (Page) -> Unit,
@@ -122,9 +138,9 @@ fun TabsTray(
     onInactiveTabClose: (TabSessionState) -> Unit,
     onSyncedTabClick: OnSyncedTabClick,
     onSyncedTabClose: OnSyncedTabClose,
+    onSignInClick: () -> Unit,
     onSaveToCollectionClick: () -> Unit,
     onShareSelectedTabsClick: () -> Unit,
-    onShareAllTabsClick: () -> Unit,
     onTabSettingsClick: () -> Unit,
     onRecentlyClosedClick: () -> Unit,
     onAccountSettingsClick: () -> Unit,
@@ -157,12 +173,26 @@ fun TabsTray(
             .sumOf { deviceSection: SyncedTabsListItem.DeviceSection -> deviceSection.tabs.size }
     }
 
+    val topAppBarScrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val bottomAppBarScrollBehavior = BottomAppBarDefaults.exitAlwaysScrollBehavior()
+
     LaunchedEffect(tabsTrayState.selectedPage) {
         pagerState.animateScrollToPage(Page.pageToPosition(tabsTrayState.selectedPage))
     }
 
     Scaffold(
-        modifier = modifier.testTag(TabsTrayTestTag.TABS_TRAY),
+        modifier = modifier
+            .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+            .nestedScroll(bottomAppBarScrollBehavior.nestedScrollConnection)
+            .testTag(TabsTrayTestTag.TABS_TRAY),
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                snackbar = { snackbarData ->
+                    Snackbar(snackbarData = snackbarData)
+                },
+            )
+        },
         topBar = {
             TabsTrayBanner(
                 selectedPage = tabsTrayState.selectedPage,
@@ -173,6 +203,7 @@ fun TabsTray(
                 isInDebugMode = isInDebugMode,
                 shouldShowTabAutoCloseBanner = shouldShowTabAutoCloseBanner,
                 shouldShowLockPbmBanner = shouldShowLockPbmBanner,
+                scrollBehavior = topAppBarScrollBehavior,
                 onTabPageIndicatorClicked = onTabPageClick,
                 onSaveToCollectionClick = onSaveToCollectionClick,
                 onShareSelectedTabsClick = onShareSelectedTabsClick,
@@ -192,7 +223,7 @@ fun TabsTray(
         bottomBar = {
             TabManagerBottomAppBar(
                 tabsTrayStore = tabsTrayStore,
-                onShareAllTabsClick = onShareAllTabsClick,
+                scrollBehavior = bottomAppBarScrollBehavior,
                 onTabSettingsClick = onTabSettingsClick,
                 onRecentlyClosedClick = onRecentlyClosedClick,
                 onAccountSettingsClick = onAccountSettingsClick,
@@ -202,7 +233,7 @@ fun TabsTray(
         floatingActionButton = {
             TabsTrayFab(
                 tabsTrayStore = tabsTrayStore,
-                expanded = true, // handled in bug 1976331
+                expanded = bottomAppBarScrollBehavior.state.collapsedFraction == 0f,
                 isSignedIn = isSignedIn,
                 onOpenNewNormalTabClicked = onOpenNewNormalTabClicked,
                 onOpenNewPrivateTabClicked = onOpenNewPrivateTabClicked,
@@ -266,9 +297,11 @@ fun TabsTray(
 
                 Page.SyncedTabs -> {
                     SyncedTabsPage(
+                        isSignedIn = isSignedIn,
                         syncedTabs = tabsTrayState.syncedTabs,
                         onTabClick = onSyncedTabClick,
                         onTabClose = onSyncedTabClose,
+                        onSignInClick = onSignInClick,
                     )
                 }
             }
@@ -276,7 +309,7 @@ fun TabsTray(
     }
 }
 
-@PreviewLightDark
+@FlexibleWindowPreview
 @Composable
 private fun TabsTrayPreview() {
     val tabs = generateFakeTabsList()
@@ -359,6 +392,8 @@ private fun TabsTrayPreviewRoot(
     isSignedIn: Boolean = true,
 ) {
     var showInactiveTabsAutoCloseDialogState by remember { mutableStateOf(showInactiveTabsAutoCloseDialog) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     val tabsTrayStore = remember {
         TabsTrayStore(
@@ -385,6 +420,7 @@ private fun TabsTrayPreviewRoot(
             isSignedIn = isSignedIn,
             shouldShowInactiveTabsAutoCloseDialog = { true },
             shouldShowTabAutoCloseBanner = showTabAutoCloseBanner,
+            snackbarHostState = snackbarHostState,
             onTabPageClick = { page ->
                 tabsTrayStore.dispatch(TabsTrayAction.PageSelected(page))
             },
@@ -395,6 +431,14 @@ private fun TabsTrayPreviewRoot(
                 } else {
                     val newTabs = tabsTrayStore.state.privateTabs - tab
                     tabsTrayStore.dispatch(TabsTrayAction.UpdatePrivateTabs(newTabs))
+                }
+
+                scope.launch {
+                    snackbarHostState.displaySnackbar(
+                        visuals = SnackbarVisuals(
+                            message = "Tab closed",
+                        ),
+                    )
                 }
             },
             onTabClick = { tab ->
@@ -420,6 +464,14 @@ private fun TabsTrayPreviewRoot(
             },
             onDeleteAllInactiveTabsClick = {
                 tabsTrayStore.dispatch(TabsTrayAction.UpdateInactiveTabs(emptyList()))
+
+                scope.launch {
+                    snackbarHostState.displaySnackbar(
+                        visuals = SnackbarVisuals(
+                            message = "Tabs closed",
+                        ),
+                    )
+                }
             },
             onInactiveTabsAutoCloseDialogShown = {},
             onInactiveTabAutoCloseDialogCloseButtonClick = {
@@ -432,12 +484,28 @@ private fun TabsTrayPreviewRoot(
             onInactiveTabClose = { tab ->
                 val newTabs = tabsTrayStore.state.inactiveTabs - tab
                 tabsTrayStore.dispatch(TabsTrayAction.UpdateInactiveTabs(newTabs))
+
+                scope.launch {
+                    snackbarHostState.displaySnackbar(
+                        visuals = SnackbarVisuals(
+                            message = "Tab closed",
+                        ),
+                    )
+                }
             },
             onSyncedTabClick = {},
-            onSyncedTabClose = { _, _ -> },
+            onSyncedTabClose = { _, _ ->
+                scope.launch {
+                    snackbarHostState.displaySnackbar(
+                        visuals = SnackbarVisuals(
+                            message = "Tab closed",
+                        ),
+                    )
+                }
+            },
+            onSignInClick = {},
             onSaveToCollectionClick = {},
             onShareSelectedTabsClick = {},
-            onShareAllTabsClick = {},
             onTabSettingsClick = {},
             onRecentlyClosedClick = {},
             onAccountSettingsClick = {},

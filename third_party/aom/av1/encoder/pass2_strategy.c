@@ -1506,7 +1506,7 @@ static void adjust_unstable_region_bounds(const FIRSTPASS_STATS *stats,
         }
       }
     }  // if k < *num_regions - 1
-  }    // end of loop over all regions
+  }  // end of loop over all regions
 
   cleanup_regions(regions, num_regions);
   remove_short_regions(regions, num_regions, HIGH_VAR_REGION, HALF_WIN);

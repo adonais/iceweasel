@@ -27,7 +27,6 @@ support-files = [
   "webapi_checknavigatedwindow.html",
   "!/toolkit/mozapps/extensions/test/xpinstall/corrupt.xpi",
   "!/toolkit/mozapps/extensions/test/xpinstall/incompatible.xpi",
-  "!/toolkit/mozapps/extensions/test/xpinstall/installtrigger.html",
   "!/toolkit/mozapps/extensions/test/xpinstall/unsigned.xpi",
   "!/toolkit/mozapps/extensions/test/xpinstall/amosigned.xpi",
 ]
@@ -124,9 +123,6 @@ https_first_disabled = true
 ["browser_html_warning_messages.js"]
 
 ["browser_installssl.js"]
-
-["browser_installtrigger_install.js"]
-skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks && swgl"] # Bug 1861339
 
 ["browser_local_install.js"]
 

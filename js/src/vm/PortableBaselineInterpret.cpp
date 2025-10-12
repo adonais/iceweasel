@@ -1941,7 +1941,12 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         uint32_t offsetOffset = cacheIRReader.stubOffset();
         ValOperandId rhsId = cacheIRReader.valOperandId();
         uint32_t newShapeOffset = cacheIRReader.stubOffset();
+        bool preserveWrapper = cacheIRReader.readBool();
         JSObject* obj = reinterpret_cast<JSObject*>(READ_REG(objId.id()));
+        if (preserveWrapper &&
+            !PreserveWrapper(ctx.frameMgr.cxForLocalUseOnly(), obj)) {
+          FAIL_IC();
+        }
         int32_t offset = stubInfo->getStubRawInt32(cstub, offsetOffset);
         Value rhs = READ_VALUE_REG(rhsId.id());
         Shape* newShape = reinterpret_cast<Shape*>(
@@ -1959,7 +1964,12 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         uint32_t offsetOffset = cacheIRReader.stubOffset();
         ValOperandId rhsId = cacheIRReader.valOperandId();
         uint32_t newShapeOffset = cacheIRReader.stubOffset();
+        bool preserveWrapper = cacheIRReader.readBool();
         JSObject* obj = reinterpret_cast<JSObject*>(READ_REG(objId.id()));
+        if (preserveWrapper &&
+            !PreserveWrapper(ctx.frameMgr.cxForLocalUseOnly(), obj)) {
+          FAIL_IC();
+        }
         int32_t offset = stubInfo->getStubRawInt32(cstub, offsetOffset);
         Value rhs = READ_VALUE_REG(rhsId.id());
         Shape* newShape = reinterpret_cast<Shape*>(
@@ -1980,7 +1990,12 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         ValOperandId rhsId = cacheIRReader.valOperandId();
         uint32_t newShapeOffset = cacheIRReader.stubOffset();
         uint32_t numNewSlotsOffset = cacheIRReader.stubOffset();
+        bool preserveWrapper = cacheIRReader.readBool();
         JSObject* obj = reinterpret_cast<JSObject*>(READ_REG(objId.id()));
+        if (preserveWrapper &&
+            !PreserveWrapper(ctx.frameMgr.cxForLocalUseOnly(), obj)) {
+          FAIL_IC();
+        }
         int32_t offset = stubInfo->getStubRawInt32(cstub, offsetOffset);
         Value rhs = READ_VALUE_REG(rhsId.id());
         Shape* newShape = reinterpret_cast<Shape*>(

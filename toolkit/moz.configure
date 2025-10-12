@@ -3292,13 +3292,6 @@ with only_when(target_is_android):
         help="Append username to app display and android name",
     )
 
-    confvar(
-        env="ANDROID_PACKAGE_NAME",
-        nargs=1,
-        set_as_config=False,
-        help="Name of the Android package (default org.mozilla.$MOZ_APP_NAME)",
-    )
-
     with only_when("ANDROID_APPEND_USERNAME_TO_PACKAGE_NAME"):
         option(env="USER", nargs=1, help="System user name")
 
@@ -3308,19 +3301,6 @@ with only_when(target_is_android):
                 return user[0].replace("-", "_")
             else:
                 return "unknown"
-
-    @depends("ANDROID_PACKAGE_NAME", moz_app_name, mangled_username)
-    def android_package_name(value, moz_app_name, username):
-        if value:
-            if username:
-                return f"{value[0]}_{username}"
-            else:
-                return value[0]
-        if moz_app_name == "fennec":
-            return "org.mozilla.fennec_aurora"
-        return "org.mozilla.%s" % moz_app_name
-
-    set_config("ANDROID_PACKAGE_NAME", android_package_name)
 
 
 @depends("MOZ_APP_DISPLAYNAME", mangled_username)

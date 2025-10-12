@@ -40,7 +40,7 @@ import { SyncDisconnect } from "resource://services-sync/SyncDisconnect.sys.mjs"
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  CryptoUtils: "resource://services-crypto/utils.sys.mjs",
+  CryptoUtils: "moz-src:///services/crypto/modules/utils.sys.mjs",
   FxAccountsPairingFlow: "resource://gre/modules/FxAccountsPairing.sys.mjs",
   FxAccountsStorageManagerCanStoreField:
     "resource://gre/modules/FxAccountsStorage.sys.mjs",

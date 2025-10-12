@@ -304,6 +304,16 @@ class nsNavHistory final : public nsSupportsWeakReference,
   int32_t GetNumVisitsForFrecency() const { return mNumVisitsForFrecency; }
 
   /**
+   * This is a simplified version of the frecency calculation that is used for
+   * thresholds. All visits are considered to have the given age, and the
+   * page may optionally be bookmarked.
+   *
+   * @see nsINavHistoryService::pageFrecencyThreshold
+   */
+  int64_t CalculateFrecency(int32_t aVisitAgeInDays, int32_t aNumVisits,
+                            bool aBookmarked) const;
+
+  /**
    * Updates and invalidates the mDaysOfHistory cache. Should be
    * called whenever a visit is added.
    */

@@ -20,7 +20,8 @@ public enum GeckoProcessType {
   SOCKET("socket"),
   OBSOLETE2("sandboxbroker"),
   FORKSERVER("forkserver"),
-  UTILITY("utility");
+  UTILITY("utility"),
+  CONTENT_ISOLATED("isolatedTab");
 
   private final String mGeckoName;
 

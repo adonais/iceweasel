@@ -7,6 +7,9 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
 const { PermissionTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PermissionTestUtils.sys.mjs"
 );
+const { PromptTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromptTestUtils.sys.mjs"
+);
 
 ChromeUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
   const { QuickSuggestTestUtils: module } = ChromeUtils.importESModule(
@@ -18,6 +21,7 @@ ChromeUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
 
 ChromeUtils.defineESModuleGetters(this, {
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
+  QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
 });
 
 NimbusTestUtils.init(this);
@@ -568,12 +572,63 @@ async function clickCheckboxAndWaitForPrefChange(
 ) {
   let checkbox = doc.getElementById(checkboxId);
   let prefChange = waitForAndAssertPrefState(prefName, expectedValue);
+
   checkbox.click();
+
   await prefChange;
   is(
     checkbox.checked,
     expectedValue,
     `The checkbox #${checkboxId} should be in the expected state after being clicked.`
   );
+  return checkbox;
+}
+
+/**
+ * Clicks a checkbox that triggers a confirmation dialog and handles the dialog response.
+ * @param {Document} doc - The document containing the checkbox.
+ * @param {string} checkboxId - The ID of the checkbox to click.
+ * @param {string} prefName - The name of the preference that should change.
+ * @param {boolean} expectedValue - The expected value after handling the dialog.
+ * @param {number} buttonNumClick - The button to click in the dialog (0 = cancel, 1 = OK).
+ * @returns {Promise<HTMLInputElement>}
+ */
+async function clickCheckboxWithConfirmDialog(
+  doc,
+  checkboxId,
+  prefName,
+  expectedValue,
+  buttonNumClick
+) {
+  let checkbox = doc.getElementById(checkboxId);
+
+  let promptPromise = PromptTestUtils.handleNextPrompt(
+    gBrowser.selectedBrowser,
+    { modalType: Services.prompt.MODAL_TYPE_CONTENT },
+    { buttonNumClick }
+  );
+
+  let prefChangePromise = null;
+  if (buttonNumClick === 1) {
+    // Only wait for the final preference change to the expected value
+    // The baseline checkbox handler sets the checkbox state directly and
+    // the preference binding handles the actual preference change
+    prefChangePromise = waitForAndAssertPrefState(prefName, expectedValue);
+  }
+
+  checkbox.click();
+
+  await promptPromise;
+
+  if (prefChangePromise) {
+    await prefChangePromise;
+  }
+
+  is(
+    checkbox.checked,
+    expectedValue,
+    `The checkbox #${checkboxId} should be in the expected state after dialog interaction.`
+  );
+
   return checkbox;
 }

@@ -1299,6 +1299,26 @@ nsresult xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp,
     realmOptions.behaviors().setClampAndJitterTime(false);
   }
 
+  if (obj) {
+    nsGlobalWindowInner* window =
+        WindowOrNull(js::UncheckedUnwrap(obj->GetGlobalJSObject(), false));
+    if (window) {
+      const nsCString& localeOverride =
+          window->GetBrowsingContext()->Top()->GetLanguageOverride();
+      if (!localeOverride.IsEmpty()) {
+        realmOptions.behaviors().setLocaleOverride(
+            PromiseFlatCString(localeOverride).get());
+      }
+
+      const nsAString& timezoneOverride =
+          window->GetBrowsingContext()->Top()->GetTimezoneOverride();
+      if (!timezoneOverride.IsEmpty()) {
+        realmOptions.behaviors().setTimeZoneCopyZ(
+            NS_ConvertUTF16toUTF8(timezoneOverride).get());
+      }
+    }
+  }
+
   const JSClass* clasp = &SandboxClass;
 
   RootedObject sandbox(
@@ -2197,6 +2217,26 @@ nsresult xpc::GetSandboxMetadata(JSContext* cx, HandleObject sandbox,
   }
 
   rval.set(metadata);
+  return NS_OK;
+}
+
+nsresult xpc::SetSandboxLocaleOverride(JSContext* cx, HandleObject sandbox,
+                                       const char* locale) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(IsSandbox(sandbox));
+
+  JS::SetRealmLocaleOverride(JS::GetObjectRealmOrNull(sandbox), locale);
+
+  return NS_OK;
+}
+
+nsresult xpc::SetSandboxTimezoneOverride(JSContext* cx, HandleObject sandbox,
+                                         const char* timezone) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(IsSandbox(sandbox));
+
+  JS::SetRealmTimezoneOverride(JS::GetObjectRealmOrNull(sandbox), timezone);
+
   return NS_OK;
 }
 

@@ -13,7 +13,7 @@ ${helpers.predefined_type(
     animation_type="discrete",
     spec="https://drafts.csswg.org/css-fonts/#propdef-font-family",
     gecko_ffi_name="mFont.family",
-    servo_restyle_damage="rebuild_and_reflow",
+    servo_restyle_damage="rebuild_box",
     affects="layout",
 )}
 
@@ -25,7 +25,7 @@ ${helpers.predefined_type(
     initial_specified_value="specified::FontStyle::normal()",
     spec="https://drafts.csswg.org/css-fonts/#propdef-font-style",
     gecko_ffi_name="mFont.style",
-    servo_restyle_damage="rebuild_and_reflow",
+    servo_restyle_damage="rebuild_box",
     affects="layout",
 )}
 
@@ -45,7 +45,7 @@ ${helpers.single_keyword(
     spec="https://drafts.csswg.org/css-fonts/#propdef-font-variant-caps",
     custom_consts=font_variant_caps_custom_consts,
     animation_type="discrete",
-    servo_restyle_damage="rebuild_and_reflow",
+    servo_restyle_damage="rebuild_box",
     affects="layout",
 )}
 
@@ -57,7 +57,7 @@ ${helpers.predefined_type(
     initial_specified_value="specified::FontWeight::normal()",
     gecko_ffi_name="mFont.weight",
     spec="https://drafts.csswg.org/css-fonts/#propdef-font-weight",
-    servo_restyle_damage="rebuild_and_reflow",
+    servo_restyle_damage="rebuild_box",
     affects="layout",
 )}
 
@@ -69,7 +69,7 @@ ${helpers.predefined_type(
     initial_specified_value="specified::FontSize::medium()",
     allow_quirks="Yes",
     spec="https://drafts.csswg.org/css-fonts/#propdef-font-size",
-    servo_restyle_damage="rebuild_and_reflow",
+    servo_restyle_damage="rebuild_box",
     affects="layout",
 )}
 
@@ -140,7 +140,7 @@ ${helpers.predefined_type(
     initial_specified_value="specified::FontStretch::normal()",
     gecko_ffi_name="mFont.stretch",
     spec="https://drafts.csswg.org/css-fonts/#propdef-font-stretch",
-    servo_restyle_damage="rebuild_and_reflow",
+    servo_restyle_damage="rebuild_box",
     affects="layout",
 )}
 
@@ -243,7 +243,7 @@ ${helpers.predefined_type(
     "font-variation-settings",
     "FontVariationSettings",
     engines="gecko servo",
-    servo_pref="layout.unimplemented",
+    servo_pref="layout.variable_fonts.enabled",
     gecko_pref="layout.css.font-variations.enabled",
     has_effect_on_gecko_scrollbars=False,
     initial_value="computed::FontVariationSettings::normal()",
@@ -308,7 +308,7 @@ ${helpers.predefined_type(
     "MathDepth",
     "0",
     engines="gecko",
-    animation_type="none",
+    animation_type="discrete",
     spec="https://mathml-refresh.github.io/mathml-core/#the-math-script-level-property",
     affects="",
 )}
@@ -319,7 +319,21 @@ ${helpers.single_keyword(
     engines="gecko",
     gecko_enum_prefix="StyleMathStyle",
     spec="https://mathml-refresh.github.io/mathml-core/#the-math-style-property",
-    animation_type="none",
+    animation_type="discrete",
+    needs_conversion=True,
+    affects="layout",
+)}
+
+${helpers.single_keyword(
+    "math-shift",
+    "normal compact",
+    engines="gecko",
+    gecko_enum_prefix="StyleMathShift",
+    spec="https://w3c.github.io/mathml-core/#the-math-shift",
+    animation_type="discrete",
+    gecko_pref="mathml.math_shift.enabled",
+    has_effect_on_gecko_scrollbars=False,
+    enabled_in="ua",
     needs_conversion=True,
     affects="layout",
 )}
@@ -359,7 +373,7 @@ ${helpers.predefined_type(
     "computed::LineHeight::normal()",
     engines="gecko servo",
     spec="https://drafts.csswg.org/css2/visudet.html#propdef-line-height",
-    servo_restyle_damage="reflow",
+    servo_restyle_damage="rebuild_box",
     affects="layout",
 )}
 

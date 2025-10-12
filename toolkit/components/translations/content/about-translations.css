@@ -11,7 +11,7 @@
      look nice by default in "toolkit". */
   --AT-box-background: var(--background-color-box);
   --AT-box-border-color: var(--in-content-box-border-color, #9e9ea0);
-  --AT-box-info-background: var(--in-content-box-info-background, #f0f0f4);
+  --AT-box-info-background: var(--background-color-box-info, #f0f0f4);
 
   /* Variables used in the page layout */
   --AT-page-margin: 20px;
@@ -78,7 +78,7 @@ select.about-translations-select:dir(rtl) {
   max-width: 1200px;
   background-color: var(--AT-box-background);
   border: 1px solid var(--AT-box-border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 }
 
 .about-translations-input {
@@ -122,7 +122,7 @@ select.about-translations-select:dir(rtl) {
   display: none;
   padding: 10px;
   background-color: var(--AT-box-info-background);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   margin-bottom: var(--AT-input-padding);
 }
 

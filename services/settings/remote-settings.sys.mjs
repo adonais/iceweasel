@@ -75,29 +75,73 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 /**
- * Default entry filtering function, in charge of excluding remote settings entries
+ * cacheProxy returns an object Proxy that will memoize properties of the target.
+ * @param {object} target the object to wrap.
+ * @returns {Proxy}
+ */
+function cacheProxy(target) {
+  const cache = new Map();
+  return new Proxy(target, {
+    get(innerTarget, prop) {
+      if (!cache.has(prop)) {
+        cache.set(prop, innerTarget[prop]);
+      }
+      return cache.get(prop);
+    },
+  });
+}
+
+class JexlFilter {
+  constructor(environment, collectionName) {
+    this._environment = environment;
+    this._collectionName = collectionName;
+    this._cachedResultForExpression = new Map();
+    this._context = {
+      env: environment,
+    };
+  }
+
+  /**
+   * Default entry filtering function, in charge of excluding remote settings entries
+   * where the JEXL expression evaluates into a falsy value.
+   * @param {Object} entry The Remote Settings entry to be excluded or kept.
+   * @returns {?Object} the entry or null if excluded.
+   */
+  async filterEntry(entry) {
+    const { filter_expression } = entry;
+    if (!filter_expression) {
+      return entry;
+    }
+    let result = this._cachedResultForExpression.get(filter_expression);
+    if (result === undefined) {
+      try {
+        result = Boolean(
+          await lazy.FilterExpressions.eval(filter_expression, this._context)
+        );
+      } catch (e) {
+        console.error(
+          e,
+          "Full expression: " + filter_expression,
+          this._collectionName
+        );
+      }
+      this._cachedResultForExpression.set(filter_expression, result);
+    }
+    return result ? entry : null;
+  }
+}
+
+/**
+ * Creates the default entry filter, in charge of excluding remote settings entries
  * where the JEXL expression evaluates into a falsy value.
- * @param {Object}            entry       The Remote Settings entry to be excluded or kept.
  * @param {ClientEnvironment} environment Information about version, language, platform etc.
  * @param {string}            collectionName
  *    Which collection includes this entry. This is used for error reporting.
- * @returns {?Object} the entry or null if excluded.
+ * @returns {RemoteSettingsEntryFilter} The entry filter.
  */
-export async function jexlFilterFunc(entry, environment, collectionName) {
-  const { filter_expression } = entry;
-  if (!filter_expression) {
-    return entry;
-  }
-  let result;
-  try {
-    const context = {
-      env: environment,
-    };
-    result = await lazy.FilterExpressions.eval(filter_expression, context);
-  } catch (e) {
-    console.error(e, "Full expression: " + filter_expression, collectionName);
-  }
-  return result ? entry : null;
+export async function jexlFilterCreator(environment, collectionName) {
+  const cachedEnvironment = cacheProxy(environment);
+  return new JexlFilter(cachedEnvironment, collectionName);
 }
 
 function remoteSettingsFunction() {
@@ -107,7 +151,7 @@ function remoteSettingsFunction() {
   // If not explicitly specified, use the default signer.
   const defaultOptions = {
     signerName: DEFAULT_SIGNER,
-    filterFunc: jexlFilterFunc,
+    filterCreator: jexlFilterCreator,
   };
 
   /**

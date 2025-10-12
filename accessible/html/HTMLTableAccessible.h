@@ -37,7 +37,7 @@ class HTMLTableCellAccessible : public HyperTextAccessible {
 
  protected:
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
+                                   AttrModType aModType,
                                    const nsAttrValue* aOldValue,
                                    uint64_t aOldState) override;
   // HTMLTableCellAccessible
@@ -122,7 +122,8 @@ class HTMLTableAccessible : public HyperTextAccessible {
   }
 
   // LocalAccessible
-  virtual void Description(nsString& aDescription) const override;
+  virtual EDescriptionValueFlag Description(
+      nsString& aDescription) const override;
   virtual uint64_t NativeState() const override;
   virtual already_AddRefed<AccAttributes> NativeAttributes() override;
   virtual Relation RelationByType(RelationType aRelationType) const override;
@@ -136,7 +137,7 @@ class HTMLTableAccessible : public HyperTextAccessible {
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
+                                   AttrModType aModType,
                                    const nsAttrValue* aOldValue,
                                    uint64_t aOldState) override;
 

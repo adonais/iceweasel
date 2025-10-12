@@ -62,7 +62,6 @@ def add_hardened_sign_config(config, jobs):
                         "project": config.params["project"],
                     },
                 )
-
             if "entitlements" in sign_cfg and not sign_cfg.get(
                 "entitlements", ""
             ).startswith("http"):

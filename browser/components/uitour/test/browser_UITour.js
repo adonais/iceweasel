@@ -601,8 +601,8 @@ var tests = [
     let defaultEngine = await Services.search.getDefault();
     let visibleEngines = await Services.search.getVisibleEngines();
     let expectedEngines = visibleEngines
-      .filter(engine => engine.identifier)
-      .map(engine => "searchEngine-" + engine.identifier);
+      .filter(engine => engine.isAppProvided)
+      .map(engine => "searchEngine-" + engine.id);
 
     let data = await new Promise(resolve =>
       gContentAPI.getConfiguration("search", resolve)
@@ -617,12 +617,12 @@ var tests = [
 
     is(
       data.searchEngineIdentifier,
-      defaultEngine.identifier,
-      "the searchEngineIdentifier property should contain the defaultEngine's identifier"
+      defaultEngine.id,
+      "the searchEngineIdentifier property should contain the defaultEngine's id"
     );
 
     let someOtherEngineID = data.engines.filter(
-      t => t != "searchEngine-" + defaultEngine.identifier
+      t => t != "searchEngine-" + defaultEngine.id
     )[0];
     someOtherEngineID = someOtherEngineID.replace(/^searchEngine-/, "");
 
@@ -635,7 +635,7 @@ var tests = [
         info("browser-search-engine-modified: " + verb);
         if (verb == "engine-default") {
           is(
-            Services.search.defaultEngine.identifier,
+            Services.search.defaultEngine.id,
             someOtherEngineID,
             "correct engine was switched to"
           );
@@ -653,9 +653,7 @@ var tests = [
       gContentAPI.setDefaultSearchEngine(someOtherEngineID);
     });
 
-    let engine = (await Services.search.getVisibleEngines()).filter(
-      e => e.identifier == someOtherEngineID
-    )[0];
+    let engine = Services.search.getEngineById(someOtherEngineID);
 
     let submissionUrl = engine
       .getSubmission("dummy")

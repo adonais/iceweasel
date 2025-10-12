@@ -192,7 +192,8 @@ void DoTwoTicketsWithSameNameBothBlockShutdown() {
   TimeStamp before = TimeStamp::Now();
   auto timerResult = NS_NewTimerWithCallback(
       [t = std::move(ticket2Holder)](nsITimer* aTimer) {},
-      waitBeforeDestroyingTicket, nsITimer::TYPE_ONE_SHOT, __func__);
+      waitBeforeDestroyingTicket, nsITimer::TYPE_ONE_SHOT,
+      "DoTwoTicketsWithSameNameBothBlockShutdown"_ns);
   ASSERT_TRUE(timerResult.isOk());
 
   AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownNetTeardown);

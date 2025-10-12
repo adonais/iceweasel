@@ -396,6 +396,25 @@ let SETTINGS_CONFIG = {
       },
     ],
   },
+  nonTechnicalPrivacy: {
+    l10nId: "non-technical-privacy-label",
+    items: [
+      {
+        id: "gpcEnabled",
+        l10nId: "global-privacy-control-description",
+        supportPage: "global-privacy-control",
+        controlAttrs: {
+          "search-l10n-ids": "global-privacy-control-search",
+        },
+      },
+      {
+        id: "dntRemoval",
+        l10nId: "do-not-track-removal2",
+        control: "moz-box-link",
+        supportPage: "how-do-i-turn-do-not-track-feature",
+      },
+    ],
+  },
 };
 
 function initSettingGroup(id) {

@@ -512,9 +512,6 @@ nsresult NS_CheckPortSafety(int32_t port, const char* scheme,
 // Determine if this URI is using a safe port.
 nsresult NS_CheckPortSafety(nsIURI* uri);
 
-nsresult NS_NewProxyInfo(const nsACString& type, const nsACString& host,
-                         int32_t port, uint32_t flags, nsIProxyInfo** result);
-
 nsresult NS_GetFileProtocolHandler(nsIFileProtocolHandler** result,
                                    nsIIOService* ioService = nullptr);
 

@@ -84,6 +84,7 @@ add_task(
           runAt: "document_start",
           world: "MAIN",
           persistAcrossSessions: false,
+          cssOrigin: "author",
           css: ["style.js"],
           excludeMatches: ["http://*/*/foobar.html"],
           js: ["script.js"],

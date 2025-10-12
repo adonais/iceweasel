@@ -13,6 +13,7 @@ import androidx.core.view.updatePaddingRelative
 import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.support.ktx.android.view.putCompoundDrawablesRelativeWithIntrinsicBounds
 import org.mozilla.fenix.R
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * An adapter for displaying an option to create a new collection and the list of existing
@@ -49,7 +50,7 @@ class CollectionsListAdapter(
             holder.textView.putCompoundDrawablesRelativeWithIntrinsicBounds(
                 start = AppCompatResources.getDrawable(
                     holder.textView.context,
-                    R.drawable.ic_new,
+                    iconsR.drawable.mozac_ic_plus_24,
                 ),
             )
         } else {

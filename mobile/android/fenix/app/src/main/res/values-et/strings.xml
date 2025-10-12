@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">Rohkem sätteid</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Luba privaatne veebilehitsemine</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Keela privaatne veebilehitsemine</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Privaatne veebilehitsemine</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Otsi või sisesta aadress</string>
@@ -296,10 +292,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Kaarte sünkroonitakse! Jätka teises seadmes sealt, kus pooleli jäid.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Sulge</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_default_browser_negative_button" tools:ignore="UnusedResources">Mitte praegu</string>
@@ -387,8 +381,7 @@
   <string name="preferences_add_private_browsing_shortcut">Lisa privaatse lehitsemise otsetee</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
   <string name="preferences_https_only_title">Ainult HTTPS-režiim</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">Vaata kaarte sõrmejälje, PIN-koodi või näotuvastusega.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Vaata kaarte sõrmejälje, PIN-koodi või näotuvastusega.</string>
   <!-- Text for indicating cookie banner handling is off this site, this is shown as part of the protections panel with the tracking protection toggle -->
   <string name="reduce_cookie_banner_off_for_site">Sellel saidil väljas</string>
   <!-- Text for cancel button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner details view. -->
@@ -588,12 +581,6 @@
   <string name="preferences_daily_usage_ping_title">Igapäevane kasutusping</string>
   <string name="preferences_daily_usage_ping_description">See aitab Mozillal aktiivsete kasutajate arvu \u0020hinnata.</string>
   <string name="preferences_daily_usage_ping_learn_more">Rohkem teavet igapäevasest kasutuspingust</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Vearaporteid saadetakse automaatselt</string>
-  <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">Need võimaldavad meil diagnoosida ja lahendada veebilehitseja probleeme. Aruanded võivad sisaldada isikuandmeid või tundlikke andmeid.</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Rohkem teavet vearaportitest</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Uuringud</string>
   <!-- Summary for studies preferences -->
@@ -815,9 +802,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Kustuta ajalugu</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Ajalugu kustutatud</string>
+  <string name="history_delete_multiple_items_snackbar">Ajalugu kustutatud</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Ajaloost kustutati %1$s</string>
+  <string name="history_delete_single_item_snackbar">Ajaloost kustutati %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Kustuta</string>
   <!--
@@ -898,16 +885,12 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">Katkisest saidist teavitamine</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">Aita muuta %1$s kõigi jaoks paremaks. Mozilla töötajad kasutavad sinu saadetud teavet veebisaidi probleemide lahendamiseks.</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">Palun sisesta korrektne URL</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Mis on katki?</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Vali põhjus</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_error">Palun vali põhjus</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
@@ -919,9 +902,9 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Saada</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">Raport on saadetud</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Raport on saadetud</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">Sulge</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Sulge</string>
   <!--
     Crashes
 
@@ -1144,12 +1127,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d kaart valitud</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Kaardid salvestati!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Kollektsioon salvesti!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Kollektsioon salvesti!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Kaart salvestati!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Kaart salvestati!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Sulge</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1261,8 +1242,6 @@
   <string name="tab_collection_dialog_message">Kas oled kindel, et soovid kustutada kollektsiooni %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Kustuta</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL kopeeritud</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">See on näidistekst. Siin näidatakse, kuidas teksti kuvatakse, kui selle sättega suurust suurendada või vähendada.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1343,9 +1322,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Kaardid on saadetud!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Kaardid on saadetud!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Kaart on saadetud!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Kaart on saadetud!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Saatmine pole võimalik</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1787,12 +1766,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Sisesta otsingustring</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Kontrolli, et otsingustring kattub näidises toodud formaadiga</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Loodi otsingumootor %s</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Otsingumootori %s muudatused salvestati</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Otsingumootor %s kustutati</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Lubamiseks:</string>
   <!-- First step for the allowing a permission -->

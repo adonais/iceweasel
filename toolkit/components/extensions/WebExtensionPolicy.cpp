@@ -765,7 +765,8 @@ WebExtensionContentScript::WebExtensionContentScript(
                          aRv),
       mRunAt(aInit.mRunAt),
       mWorld(aInit.mWorld),
-      mWorldId(aInit.mWorldId) {
+      mWorldId(aInit.mWorldId),
+      mCssOrigin(aInit.mCssOrigin) {
   mCssPaths.Assign(aInit.mCssPaths);
   mJsPaths.Assign(aInit.mJsPaths);
   mExtension = &aExtension;

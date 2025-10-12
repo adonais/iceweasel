@@ -47,4 +47,11 @@ class TermsOfUsePromptRepositoryTest {
         repository.updateLastTermsOfUsePromptTimeInMillis()
         assertTrue(settings.lastTermsOfUsePromptTimeInMillis > 0)
     }
+
+    @Test
+    fun `WHEN incrementTermsOfUsePromptDisplayedCount is called THEN the preference is updated`() {
+        assertEquals(0, settings.termsOfUsePromptDisplayedCount)
+        repository.incrementTermsOfUsePromptDisplayedCount()
+        assertEquals(1, settings.termsOfUsePromptDisplayedCount)
+    }
 }

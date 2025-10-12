@@ -37,6 +37,8 @@ class nsIRunnable;
 class nsIScriptTimeoutHandler;
 class nsISerialEventTarget;
 class nsIURI;
+class nsIPrompt;
+class nsIControllers;
 class nsIWebBrowserChrome;
 class nsPIDOMWindowInner;
 class nsPIDOMWindowOuter;
@@ -172,26 +174,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   mozilla::dom::Performance* GetPerformance();
 
   void QueuePerformanceNavigationTiming();
-
-  bool HasMutationListeners(uint32_t aMutationEventType) const {
-    if (!mOuterWindow) {
-      NS_ERROR("HasMutationListeners() called on orphan inner window!");
-
-      return false;
-    }
-
-    return (mMutationBits & aMutationEventType) != 0;
-  }
-
-  void SetMutationListeners(uint32_t aType) {
-    if (!mOuterWindow) {
-      NS_ERROR("HasMutationListeners() called on orphan inner window!");
-
-      return;
-    }
-
-    mMutationBits |= aType;
-  }
 
   /**
    * Call this to check whether some node (this window, its document,
@@ -683,8 +665,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
   RefPtr<mozilla::dom::Navigator> mNavigator;
 
   // These variables are only used on inner windows.
-  uint32_t mMutationBits = 0;
-
   uint32_t mActivePeerConnections = 0;
 
   bool mIsDocumentLoaded = false;
@@ -1072,11 +1052,16 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
                                   mozilla::dom::BrowsingContext** _retval) = 0;
 
   /**
-   * Fire a popup blocked event on the document.
+   * Fire a popup blocked event.
    */
-  virtual void FirePopupBlockedEvent(Document* aDoc, nsIURI* aPopupURI,
+  virtual void FirePopupBlockedEvent(nsIURI* aPopupURI,
                                      const nsAString& aPopupWindowName,
                                      const nsAString& aPopupWindowFeatures) = 0;
+
+  /**
+   * Fire a redirect blocked event.
+   */
+  virtual void FireRedirectBlockedEvent(nsIURI* aRedirectURI) = 0;
 
   // WebIDL-ish APIs
   void MarkUncollectableForCCGeneration(uint32_t aGeneration) {

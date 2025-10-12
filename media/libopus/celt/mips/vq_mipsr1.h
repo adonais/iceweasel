@@ -64,13 +64,14 @@ static void exp_rotation1(celt_norm *X, int len, int stride, opus_val16 c, opus_
 }
 
 #define OVERRIDE_renormalise_vector
-void renormalise_vector(celt_norm *X, int N, opus_val16 gain, int arch)
+void renormalise_vector(celt_norm *X, int N, opus_val32 gain, int arch)
 {
    int i;
 #ifdef FIXED_POINT
    int k;
 #endif
-   opus_val32 E = EPSILON;
+   long long acc = EPSILON;
+   opus_val32 E;
    opus_val16 g;
    opus_val32 t;
    celt_norm *xptr = X;
@@ -78,31 +79,28 @@ void renormalise_vector(celt_norm *X, int N, opus_val16 gain, int arch)
 
    (void)arch;
 
-   asm volatile("mult $ac1, $0, $0");
-   asm volatile("MTLO %0, $ac1" : :"r" (E));
    /*if(N %4)
        printf("error");*/
    for (i=0;i<N-2;i+=2)
    {
       X0 = (int)*xptr++;
-      asm volatile("MADD $ac1, %0, %1" : : "r" (X0), "r" (X0));
-
       X1 = (int)*xptr++;
-      asm volatile("MADD $ac1, %0, %1" : : "r" (X1), "r" (X1));
+      acc = __builtin_mips_madd(acc, X0, X0);
+      acc = __builtin_mips_madd(acc, X1, X1);
    }
 
    for (;i<N;i++)
    {
       X0 = (int)*xptr++;
-      asm volatile("MADD $ac1, %0, %1" : : "r" (X0), "r" (X0));
+      acc = __builtin_mips_madd(acc, X0, X0);
    }
 
-   asm volatile("MFLO %0, $ac1" : "=r" (E));
+   E = (opus_val32)acc;
 #ifdef FIXED_POINT
    k = celt_ilog2(E)>>1;
 #endif
    t = VSHR32(E, 2*(k-7));
-   g = MULT16_16_P15(celt_rsqrt_norm(t),gain);
+   g = MULT32_32_Q31(celt_rsqrt_norm(t),gain);
 
    xptr = X;
    for (i=0;i<N;i++)

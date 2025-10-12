@@ -8,10 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "opus.h"
+
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <cstdlib>
+#include <map>
 #include <memory>
 #include <string>
+#include <tuple>
+#include <vector>
 
-#include "modules/audio_coding/codecs/opus/opus_inst.h"
+#include "api/array_view.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
 #include "rtc_base/checks.h"
@@ -175,7 +184,7 @@ void OpusTest::PrepareSpeechData(int block_length_ms, int loop_length_ms) {
       {4, "audio_coding/speech_4_channels_48k_one_second"}};
   std::map<int, std::string> channel_to_suffix = {
       {1, "pcm"}, {2, "pcm"}, {4, "wav"}};
-  const std::string file_name = webrtc::test::ResourcePath(
+  const std::string file_name = test::ResourcePath(
       channel_to_basename[channels_], channel_to_suffix[channels_]);
   if (loop_length_ms < block_length_ms) {
     loop_length_ms = block_length_ms;
@@ -231,8 +240,8 @@ int OpusTest::EncodeDecode(WebRtcOpusEncInst* encoder,
                                            decoder_sample_rate_hz_ /
                                            encoder_sample_rate_hz_;
     while (total_dtx_len < output_samples_per_channel) {
-      int est_len = WebRtcOpus_DurationEst(decoder, NULL, 0);
-      int act_len = WebRtcOpus_Decode(decoder, NULL, 0,
+      int est_len = WebRtcOpus_DurationEst(decoder, nullptr, 0);
+      int act_len = WebRtcOpus_Decode(decoder, nullptr, 0,
                                       &output_audio[total_dtx_len * channels_],
                                       audio_type);
       EXPECT_EQ(est_len, act_len);
@@ -467,7 +476,7 @@ TEST(OpusTest, OpusCreateFail) {
   WebRtcOpusDecInst* opus_decoder;
 
   // Test to see that an invalid pointer is caught.
-  EXPECT_EQ(-1, WebRtcOpus_EncoderCreate(NULL, 1, 0, 48000));
+  EXPECT_EQ(-1, WebRtcOpus_EncoderCreate(nullptr, 1, 0, 48000));
   // Invalid channel number.
   EXPECT_EQ(-1, WebRtcOpus_EncoderCreate(&opus_encoder, 257, 0, 48000));
   // Invalid applciation mode.
@@ -475,7 +484,7 @@ TEST(OpusTest, OpusCreateFail) {
   // Invalid sample rate.
   EXPECT_EQ(-1, WebRtcOpus_EncoderCreate(&opus_encoder, 1, 0, 12345));
 
-  EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(NULL, 1, 48000));
+  EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(nullptr, 1, 48000));
   // Invalid channel number.
   EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(&opus_decoder, 257, 48000));
   // Invalid sample rate.
@@ -485,8 +494,8 @@ TEST(OpusTest, OpusCreateFail) {
 // Test failing Free.
 TEST(OpusTest, OpusFreeFail) {
   // Test to see that an invalid pointer is caught.
-  EXPECT_EQ(-1, WebRtcOpus_EncoderFree(NULL));
-  EXPECT_EQ(-1, WebRtcOpus_DecoderFree(NULL));
+  EXPECT_EQ(-1, WebRtcOpus_EncoderFree(nullptr));
+  EXPECT_EQ(-1, WebRtcOpus_DecoderFree(nullptr));
 }
 
 // Test normal Create and Free.
@@ -495,8 +504,8 @@ TEST_P(OpusTest, OpusCreateFree) {
                                    use_multistream_, encoder_sample_rate_hz_);
   CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_,
                                    decoder_sample_rate_hz_);
-  EXPECT_TRUE(opus_encoder_ != NULL);
-  EXPECT_TRUE(opus_decoder_ != NULL);
+  EXPECT_TRUE(opus_encoder_ != nullptr);
+  EXPECT_TRUE(opus_decoder_ != nullptr);
   // Free encoder and decoder memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_decoder_));
@@ -829,8 +838,8 @@ TEST_P(OpusTest, OpusDecodePlc) {
   constexpr int kPlcDurationMs = 10;
   const int plc_samples = decoder_sample_rate_hz_ * kPlcDurationMs / 1000;
   int16_t* plc_buffer = new int16_t[plc_samples * channels_];
-  EXPECT_EQ(plc_samples,
-            WebRtcOpus_Decode(opus_decoder_, NULL, 0, plc_buffer, &audio_type));
+  EXPECT_EQ(plc_samples, WebRtcOpus_Decode(opus_decoder_, nullptr, 0,
+                                           plc_buffer, &audio_type));
 
   // Free memory.
   delete[] plc_buffer;

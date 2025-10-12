@@ -8,8 +8,8 @@ origin:
   name: WebGPU CTS
   description: WebGPU Compliance Test Suite
   url: https://gpuweb.github.io/cts/
-  release: 07f4412e935c988d60fad2e373287d6450bcd231 (2025-08-04T05:53:27Z).
-  revision: 07f4412e935c988d60fad2e373287d6450bcd231
+  release: 42c0504c66193d231d31f1b64c1213c639281bc9 (2025-09-04T02:31:30Z).
+  revision: 42c0504c66193d231d31f1b64c1213c639281bc9
   license: ['BSD-3-Clause']
 
 updatebot:
@@ -40,6 +40,21 @@ vendoring:
       pattern: "const { version } = require('../src/common/tools/version.ts');"
       with: "const version = '{revision}';"
 
+    # Patch the `baseResourcePath` used by the CTS so that the tests we
+    # generate are able to load resources correctly.
+    # This must be invoked as a run-command prior to the `cargo run` step
+    # below, as it patches the original typescript sources. If we used
+    # moz.yaml's `patches` mechanism it would apply the patch to the typescript
+    # sources after we have already processed them and written our tests to
+    # their final location.
+    - action: run-command
+      cwd: '{yaml_dir}/checkout/'
+      command: patch
+      args:
+        - -p1
+        - -i
+        - ../patches/0001-base-resource-path.patch
+
     - action: run-command
       cwd: '{yaml_dir}/vendor/'
       command: cargo
@@ -50,10 +65,10 @@ vendoring:
         - '../checkout/'
 
     - action: delete-path
-      path: '../../../../../testing/web-platform/mozilla/tests/webgpu/'
+      path: '{topsrcdir}/testing/web-platform/mozilla/tests/webgpu/'
     - action: move-dir
       from: '{yaml_dir}/checkout/out-wpt/'
-      to: '../../../../../testing/web-platform/mozilla/tests/webgpu/'
+      to: '{topsrcdir}/testing/web-platform/mozilla/tests/webgpu/'
 
     - action: delete-path
       path: '{yaml_dir}/checkout/node_modules/'
@@ -64,4 +79,4 @@ vendoring:
     - action: delete-path
       path: '{yaml_dir}/checkout/deploy_key.enc'
     - action: vcs-add-remove-files
-      path: '../../../../../testing/web-platform/mozilla/tests/webgpu/'
+      path: '{topsrcdir}/testing/web-platform/mozilla/tests/webgpu/'

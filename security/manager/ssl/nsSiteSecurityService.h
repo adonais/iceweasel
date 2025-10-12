@@ -126,9 +126,6 @@ class nsSiteSecurityService : public nsISiteSecurityService {
   bool GetPreloadStatus(
       const nsACString& aHost,
       /*optional out*/ bool* aIncludeSubdomains = nullptr) const;
-  nsresult IsSecureHost(const nsACString& aHost,
-                        const OriginAttributes& aOriginAttributes,
-                        bool* aResult);
 
   nsresult GetWithMigration(const nsACString& aHostname,
                             const OriginAttributes& aOriginAttributes,

@@ -27,16 +27,18 @@ dependencies {
     // Necessary because we use 'suspend'. Fun fact: this module will compile just fine without this
     // dependency, but it will crash at runtime.
     // Included via 'api' because this module is unusable without coroutines.
-    api libs.kotlin.coroutines
+    api libs.kotlinx.coroutines
 
     implementation project(':components:support-ktx')
+
     implementation libs.androidx.annotation
 
     testImplementation project(':components:support-test')
+
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit4
-    testRuntimeOnly libs.junit.vintage
     testRuntimeOnly libs.junit.platform.launcher
+    testRuntimeOnly libs.junit.vintage
 }
 
 apply from: '../../../android-lint.gradle'

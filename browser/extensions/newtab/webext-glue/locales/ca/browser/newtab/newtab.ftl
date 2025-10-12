@@ -8,6 +8,9 @@
 newtab-page-title = Pestanya nova
 newtab-settings-button =
     .title = Personalitzeu la pàgina de pestanya nova
+newtab-customize-panel-icon-button =
+    .title = Personalitza aquesta pàgina
+newtab-customize-panel-icon-button-label = Personalitza
 newtab-personalize-settings-icon-label =
     .title = Personalitza la pestanya nova
     .aria-label = Paràmetres
@@ -85,6 +88,14 @@ newtab-confirm-delete-history-p2 = Aquesta acció no es pot desfer.
 
 newtab-topsite-sponsored = Patrocinat
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (fixat)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -120,9 +131,20 @@ newtab-menu-delete-pocket = Suprimeix del { -pocket-brand-name }
 newtab-menu-archive-pocket = Arxiva en el { -pocket-brand-name }
 newtab-menu-show-privacy-info = Els nostres patrocinadors i la vostra privadesa
 newtab-menu-about-fakespot = Quant a { -fakespot-brand-name }
+# Report is a verb (i.e. report issue with the content).
+newtab-menu-report = Informa
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Bloca
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
+newtab-menu-section-unfollow = Deixa de seguir el tema
+
+## Context menu options for sponsored stories and new ad formats on New Tab.
+
+newtab-menu-manage-sponsored-content = Gestiona el contingut patrocinat
+newtab-menu-our-sponsors-and-your-privacy = Els nostres patrocinadors i la vostra privadesa
+newtab-menu-report-this-ad = Informa sobre aquest anunci
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
@@ -184,6 +206,8 @@ newtab-label-sponsored-by = Patrocinat per { $sponsor }
 #   $source (string) - The name of a company or their domain
 #   $timeToRead (number) - The estimated number of minutes to read this story
 newtab-label-source-read-time = { $source } - { $timeToRead } min
+# This string is used under fixed size ads to indicate sponsored content
+newtab-label-sponsored-fixed = Patrocinat
 
 ## Section Menu: These strings are displayed in the section context menu and are
 ## meant as a call to action for the given section.
@@ -214,6 +238,8 @@ newtab-section-header-recent-activity = Activitat recent
 #   $provider (string) - Name of the corresponding content provider.
 newtab-section-header-pocket = Recomanat per { $provider }
 newtab-section-header-stories = Articles suggerents
+# "picks" refers to recommended articles
+newtab-section-header-todays-picks = Seleccions del dia
 
 ## Empty Section States: These show when there are no more items in a section. Ex. When there are no more Pocket story recommendations, in the space where there would have been stories, this is shown instead.
 
@@ -246,6 +272,21 @@ newtab-pocket-cta-text = Deseu els vostres articles preferits al { -pocket-brand
 newtab-pocket-pocket-firefox-family = El { -pocket-brand-name } és part de la família { -brand-product-name }
 newtab-pocket-save = Desa
 newtab-pocket-saved = S'ha desat
+
+## Thumbs up and down buttons that shows over a newtab stories card thumbnail on hover.
+
+# Clicking the thumbs up button for this story will result in more stories like this one being recommended
+newtab-pocket-thumbs-up-tooltip =
+    .title = Més d’aquest estil
+# Clicking the thumbs down button for this story informs us that the user does not feel like the story is interesting for them
+newtab-pocket-thumbs-down-tooltip =
+    .title = No és per a mi
+# Used to show the user a message upon clicking the thumbs up or down buttons
+newtab-toast-thumbs-up-or-down2 =
+    .message = Gràcies. Els vostres comentaris ens ajudaran a millorar-vos les recomanacions.
+newtab-toast-dismiss-button =
+    .title = Descarta
+    .aria-label = Descarta
 
 ## Pocket content onboarding experience dialog and modal for new users seeing the Pocket section for the first time, shown as the first item in the Pocket section.
 
@@ -282,9 +323,25 @@ newtab-custom-pocket-sponsored = Articles patrocinats
 newtab-custom-pocket-show-recent-saves = Mostra els elements desats recentment
 newtab-custom-recent-title = Activitat recent
 newtab-custom-recent-subtitle = Una selecció de llocs i continguts recents
-newtab-custom-recent-toggle =
-    .label = Activitat recent
-    .description = Una selecció de llocs i continguts recents
+newtab-custom-weather-toggle =
+    .label = Informació meteorològica
+    .description = La previsió d’avui d’un cop d’ull
+newtab-custom-trending-search-toggle =
+    .label = Cerques que són tendència
+    .description = Temes populars i cercats freqüentment
+newtab-custom-widget-weather-toggle =
+    .label = Informació meteorològica
+newtab-custom-widget-trending-search-toggle =
+    .label = Cerques que són tendència
+newtab-custom-widget-lists-toggle =
+    .label = Llistes
+newtab-custom-widget-timer-toggle =
+    .label = Temporitzador
+newtab-custom-widget-section-title = Ginys
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Tanca
+    .aria-label = Tanca el menú
 newtab-custom-close-button = Tanca
 newtab-custom-settings = Gestiona més paràmetres
 
@@ -292,6 +349,12 @@ newtab-custom-settings = Gestiona més paràmetres
 
 newtab-wallpaper-title = Fons de pantalla
 newtab-wallpaper-reset = Reinicia als valors per defecte
+newtab-wallpaper-upload-image = Puja una imatge
+newtab-wallpaper-custom-color = Trieu un color
+# Variables
+#   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
+newtab-wallpaper-error-max-file-size = La imatge supera el límit de mida de fitxer de { $file_size } MB. Proveu de pujar un fitxer més petit.
+newtab-wallpaper-error-file-type = No s’ha pogut pujar el fitxer. Torneu-ho a provar amb un altre tipus de fitxer.
 newtab-wallpaper-light-red-panda = Panda vermell
 newtab-wallpaper-light-mountain = Muntanya blanca
 newtab-wallpaper-light-sky = Cel amb núvols roses i liles
@@ -371,7 +434,6 @@ newtab-weather-menu-change-location = Canvia la ubicació
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Cerca la ubicació
     .aria-label = Cerca la ubicació
-newtab-weather-change-location-search-input = Cerca la ubicació
 newtab-weather-menu-weather-display = Visualització de la informació meteorològica
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -396,16 +458,52 @@ newtab-topic-label-business = Negocis
 newtab-topic-label-education = Educació
 newtab-topic-label-arts = Entreteniment
 newtab-topic-label-food = Menjar
+newtab-topic-label-health = Salut
 newtab-topic-label-hobbies = Jocs
 # ”Money” = “Personal Finance”, refers to articles and stories that help readers better manage
 # and understand their personal finances – from saving money to buying a home. See the
 # “Curated by our editors“ section at the top of https://getpocket.com/explore/personal-finance for more context
 newtab-topic-label-finance = Diners
+newtab-topic-label-society-parenting = Criança
 newtab-topic-label-government = Política
 newtab-topic-label-education-science = Ciència
+# ”Life Hacks” = “Self Improvement”, refers to articles and stories aimed at helping readers improve various
+# aspects of their lives – from mental health to  productivity. See the “Curated by our editors“ section
+# at the top of https://getpocket.com/explore/self-improvement for more context.
+newtab-topic-label-society = Creixement personal
+newtab-topic-label-sports = Esports
+newtab-topic-label-tech = Tecnologia
+newtab-topic-label-travel = Viatges
+newtab-topic-label-home = Casa i jardí
 
 ## Topic Selection Modal
 
+# “fine-tune” refers to the process of making small adjustments to something to get
+# the best or desired experience or performance.
+newtab-topic-selection-title = Trieu temes per a ajustar-vos les recomanacions
+# “tailored” refers to process of (a tailor) making (clothes) to fit individual customers.
+# In other words, “Our expert curators prioritize stories to fit your selected interests”
+newtab-topic-selection-subtitle = Trieu dos temes o més. Els nostres experts prioritzen els articles que s’ajusten als vostres interessos. Podeu actualitzar-los quan vulgueu.
 newtab-topic-selection-save-button = Desa
 newtab-topic-selection-cancel-button = Cancel·la
 newtab-topic-selection-button-maybe-later = Potser més tard
+
+## Confirmation modal for blocking a section
+
+newtab-section-confirm-block-topic-p1 = Segur que voleu blocar aquest tema?
+newtab-section-confirm-block-topic-p2 = Els temes blocats ja no apareixeran a la vostra cronologia.
+# Variables:
+#   $topic (string) - Name of topic that user is blocking
+newtab-section-block-topic-button = Bloca { $topic }
+
+## Strings for custom wallpaper highlight
+
+newtab-section-mangage-topics-title = Temes
+newtab-section-manage-topics-button-v2 =
+    .label = Gestiona els temes
+newtab-section-mangage-topics-followed-topics-empty-state = Encara no seguiu cap tema.
+newtab-section-mangage-topics-blocked-topics-empty-state = Encara no heu blocat cap tema.
+
+## Strings for reporting ads and content
+
+newtab-report-cancel = Cancel·la

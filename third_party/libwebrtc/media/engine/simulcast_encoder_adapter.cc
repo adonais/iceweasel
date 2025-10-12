@@ -115,7 +115,7 @@ int VerifyCodec(const VideoCodec* codec_settings) {
   if (codec_settings->width <= 1 || codec_settings->height <= 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (codec_settings->codecType == webrtc::kVideoCodecVP8 &&
+  if (codec_settings->codecType == kVideoCodecVP8 &&
       codec_settings->VP8().automaticResizeOn &&
       CountActiveStreams(*codec_settings) > 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -270,6 +270,8 @@ SimulcastEncoderAdapter::SimulcastEncoderAdapter(
       prefer_temporal_support_on_base_layer_(env_.field_trials().IsEnabled(
           "WebRTC-Video-PreferTemporalSupportOnBaseLayer")),
       per_layer_pli_(SupportsPerLayerPictureLossIndication(format.parameters)),
+      drop_unaligned_resolution_(!env_.field_trials().IsDisabled(
+          "WebRTC-SimulcastEncoderAdapter-DropUnalignedResolution")),
       encoder_info_override_(env.field_trials()) {
   RTC_DCHECK(primary_factory);
 
@@ -476,7 +478,8 @@ int SimulcastEncoderAdapter::Encode(
       RTC_LOG(LS_WARNING) << "Frame " << input_image.width() << "x"
                           << input_image.height() << " not divisible by "
                           << alignment;
-      return WEBRTC_VIDEO_CODEC_ERROR;
+      return drop_unaligned_resolution_ ? WEBRTC_VIDEO_CODEC_NO_OUTPUT
+                                        : WEBRTC_VIDEO_CODEC_ERROR;
     }
     if (encoder_info_override_.apply_alignment_to_all_simulcast_layers()) {
       for (const auto& layer : stream_contexts_) {
@@ -484,7 +487,8 @@ int SimulcastEncoderAdapter::Encode(
           RTC_LOG(LS_WARNING)
               << "Codec " << layer.width() << "x" << layer.height()
               << " not divisible by " << alignment;
-          return WEBRTC_VIDEO_CODEC_ERROR;
+          return drop_unaligned_resolution_ ? WEBRTC_VIDEO_CODEC_NO_OUTPUT
+                                            : WEBRTC_VIDEO_CODEC_ERROR;
         }
       }
     }
@@ -587,7 +591,7 @@ int SimulcastEncoderAdapter::Encode(
       // TODO(ilnik): Consider scaling UpdateRect together with the buffer.
       VideoFrame frame(input_image);
       frame.set_video_frame_buffer(dst_buffer);
-      frame.set_rotation(webrtc::kVideoRotation_0);
+      frame.set_rotation(kVideoRotation_0);
       frame.set_update_rect(
           VideoFrame::UpdateRect{0, 0, frame.width(), frame.height()});
       int ret = layer.encoder().Encode(frame, &stream_frame_types);
@@ -795,13 +799,13 @@ SimulcastEncoderAdapter::FetchOrCreateEncoderContext(
   return encoder_context;
 }
 
-webrtc::VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
-    const webrtc::VideoCodec& codec,
+VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
+    const VideoCodec& codec,
     int stream_idx,
     uint32_t start_bitrate_kbps,
     bool is_lowest_quality_stream,
     bool is_highest_quality_stream) {
-  webrtc::VideoCodec codec_params = codec;
+  VideoCodec codec_params = codec;
   const SimulcastStream& stream_params = codec.simulcastStream[stream_idx];
 
   codec_params.numberOfSimulcastStreams = 0;
@@ -841,7 +845,7 @@ webrtc::VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
       codec_params.qpMax = kLowestResMaxQp;
     }
   }
-  if (codec.codecType == webrtc::kVideoCodecVP8) {
+  if (codec.codecType == kVideoCodecVP8) {
     codec_params.VP8()->numberOfTemporalLayers =
         stream_params.numberOfTemporalLayers;
     if (!is_highest_quality_stream) {
@@ -850,15 +854,15 @@ webrtc::VideoCodec SimulcastEncoderAdapter::MakeStreamCodec(
       int pixels_per_frame = codec_params.width * codec_params.height;
       if (pixels_per_frame < 352 * 288) {
         codec_params.SetVideoEncoderComplexity(
-            webrtc::VideoCodecComplexity::kComplexityHigher);
+            VideoCodecComplexity::kComplexityHigher);
       }
       // Turn off denoising for all streams but the highest resolution.
       codec_params.VP8()->denoisingOn = false;
     }
-  } else if (codec.codecType == webrtc::kVideoCodecH264) {
+  } else if (codec.codecType == kVideoCodecH264) {
     codec_params.H264()->numberOfTemporalLayers =
         stream_params.numberOfTemporalLayers;
-  } else if (codec.codecType == webrtc::kVideoCodecVP9 &&
+  } else if (codec.codecType == kVideoCodecVP9 &&
              scalability_mode.has_value() && !only_active_stream) {
     // If VP9 simulcast then explicitly set a single spatial layer for each
     // simulcast stream.

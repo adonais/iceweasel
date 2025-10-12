@@ -13,7 +13,6 @@ import android.os.Bundle
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import mozilla.components.support.utils.PendingIntentUtils
 import org.mozilla.fenix.onboarding.view.OnboardingScreen
 
 /**
@@ -37,7 +36,7 @@ class WidgetPinnedReceiver : BroadcastReceiver() {
                 context,
                 0,
                 callbackIntent,
-                PendingIntentUtils.defaultFlags or PendingIntent.FLAG_UPDATE_CURRENT,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
         }
     }

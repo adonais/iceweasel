@@ -347,6 +347,9 @@ export const ContentProcessWatcherRegistry = {
       lazy.releaseDistinctSystemPrincipalLoader(watcherDataObject);
     }
 
+    if (watcherDataObject.htmlSourcesCache) {
+      watcherDataObject.htmlSourcesCache.destroy();
+    }
     gAllWatcherData.delete(watcherDataObject.watcherActorID);
     if (gAllWatcherData.size == 0) {
       gAllWatcherData = null;

@@ -18,8 +18,6 @@ import androidx.navigation.fragment.navArgs
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.Mode
-import mozilla.components.concept.engine.EngineSession
-import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.StoreProvider
@@ -69,6 +67,19 @@ class EditBookmarkFragment : Fragment(R.layout.fragment_edit_bookmark) {
                                     bookmarksStorage = requireContext().bookmarkStorage,
                                     clipboardManager = requireContext().getSystemService(),
                                     addNewTabUseCase = requireComponents.useCases.tabsUseCases.addTab,
+                                    fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
+                                    useNewSearchUX = settings().shouldUseComposableToolbar,
+                                    openBookmarksInNewTab = if (settings().enableHomepageAsNewTab) {
+                                        false
+                                    } else {
+                                        lifecycleHolder.homeActivity.browsingModeManager.mode.isPrivate
+                                    },
+                                    getNavController = { lifecycleHolder.composeNavController },
+                                    exitBookmarks = { lifecycleHolder.navController.popBackStack() },
+                                    navigateToBrowser = {
+                                        lifecycleHolder.navController.navigate(R.id.browserFragment)
+                                    },
+                                    navigateToSearch = { },
                                     navigateToSignIntoSync = {
                                         lifecycleHolder.navController
                                             .navigate(
@@ -77,11 +88,6 @@ class EditBookmarkFragment : Fragment(R.layout.fragment_edit_bookmark) {
                                                 ),
                                             )
                                     },
-                                    getNavController = { lifecycleHolder.composeNavController },
-                                    exitBookmarks = { lifecycleHolder.navController.popBackStack() },
-                                    wasPreviousAppDestinationHome = { false },
-                                    useNewSearchUX = settings().shouldUseComposableToolbar,
-                                    navigateToSearch = { },
                                     shareBookmarks = { bookmarks ->
                                         lifecycleHolder.navController.nav(
                                             R.id.bookmarkFragment,
@@ -100,16 +106,6 @@ class EditBookmarkFragment : Fragment(R.layout.fragment_edit_bookmark) {
                                     },
                                     getBrowsingMode = {
                                         lifecycleHolder.homeActivity.browsingModeManager.mode
-                                    },
-                                    openTab = { url, openInNewTab ->
-                                        lifecycleHolder.homeActivity.openToBrowserAndLoad(
-                                            searchTermOrURL = url,
-                                            newTab = openInNewTab,
-                                            from = BrowserDirection.FromBookmarks,
-                                            flags = EngineSession.LoadUrlFlags.select(
-                                                EngineSession.LoadUrlFlags.ALLOW_JAVASCRIPT_URL,
-                                            ),
-                                        )
                                     },
                                     lastSavedFolderCache = context.settings().lastSavedFolderCache,
                                     saveBookmarkSortOrder = {},

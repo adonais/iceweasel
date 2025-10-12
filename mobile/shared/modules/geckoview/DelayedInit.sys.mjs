@@ -55,7 +55,7 @@ var Impl = {
   pendingInits: [],
 
   onIdle() {
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
     let time = startTime;
     let nextDue;
 
@@ -68,7 +68,7 @@ var Impl = {
 
       if (time - startTime < MAX_IDLE_RUN_MS) {
         init.maybeInit();
-        time = Cu.now();
+        time = ChromeUtils.now();
       } else {
         // We ran out of time; find when the next closest due time is.
         nextDue = nextDue ? Math.min(nextDue, init.due) : init.due;
@@ -89,7 +89,7 @@ var Impl = {
   addPendingInit(fn, wait) {
     const init = {
       fn,
-      due: Cu.now() + wait,
+      due: ChromeUtils.now() + wait,
       complete: false,
       maybeInit() {
         if (this.complete) {

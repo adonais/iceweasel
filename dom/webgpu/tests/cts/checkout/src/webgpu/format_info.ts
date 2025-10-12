@@ -1717,6 +1717,15 @@ export const kTextureFormatTier1AllowsResolve: readonly ColorTextureFormat[] = [
   'rg11b10ufloat',
 ] as const;
 
+export const kTextureFormatTier1ThrowsWhenNotEnabled: readonly ColorTextureFormat[] = [
+  'r16unorm',
+  'r16snorm',
+  'rg16unorm',
+  'rg16snorm',
+  'rgba16unorm',
+  'rgba16snorm',
+] as const;
+
 export const kTextureFormatTier1AllowsRenderAttachmentBlendableMultisample: readonly ColorTextureFormat[] =
   [
     'r16unorm',
@@ -2324,6 +2333,9 @@ export function isTextureFormatUsableAsRenderAttachment(
 ) {
   if (format === 'rg11b10ufloat') {
     return device.features.has('rg11b10ufloat-renderable');
+  }
+  if (isTextureFormatTier1EnablesRenderAttachmentBlendableMultisample(format)) {
+    return device.features.has('texture-formats-tier1');
   }
   return kTextureFormatInfo[format].colorRender || isDepthOrStencilTextureFormat(format);
 }

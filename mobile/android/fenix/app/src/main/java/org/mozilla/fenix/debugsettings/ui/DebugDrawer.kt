@@ -34,6 +34,7 @@ import androidx.navigation.compose.rememberNavController
 import org.mozilla.fenix.R
 import org.mozilla.fenix.debugsettings.navigation.DebugDrawerDestination
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The debug drawer UI.
@@ -71,7 +72,7 @@ fun DebugDrawer(
                             onClick = onBackButtonClick,
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.mozac_ic_back_24),
+                                painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                                 contentDescription = stringResource(
                                     id = R.string.debug_drawer_back_button_content_description,
                                 ),

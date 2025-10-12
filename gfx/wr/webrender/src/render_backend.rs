@@ -73,6 +73,8 @@ use std::path::PathBuf;
 use crate::frame_builder::Frame;
 use core::time::Duration;
 use crate::util::{Recycler, VecHelper, drain_filter};
+#[cfg(feature = "debugger")]
+use crate::debugger::DebugQueryKind;
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -1146,6 +1148,32 @@ impl RenderBackend {
 
                         return RenderBackendStatus::Continue;
                     }
+                    DebugCommand::GenerateFrame => {
+                        self.prepare_for_frames();
+
+                        let documents: Vec<DocumentId> = self.documents.keys()
+                            .cloned()
+                            .collect();
+                        for document_id in documents {
+                            self.update_document(
+                                document_id,
+                                Vec::default(),
+                                Vec::default(),
+                                Vec::default(),
+                                true,
+                                true,
+                                false,
+                                RenderReasons::empty(),
+                                None,
+                                true,
+                                frame_counter,
+                                false,
+                                None);
+                        }
+                        self.bookkeep_after_frames();
+
+                        return RenderBackendStatus::Continue;
+                    }
                     #[cfg(feature = "capture")]
                     DebugCommand::SaveCapture(root, bits) => {
                         let output = self.save_capture(root, bits);
@@ -1184,6 +1212,18 @@ impl RenderBackend {
 
                         // Note: we can't pass `LoadCapture` here since it needs to arrive
                         // before the `PublishDocument` messages sent by `load_capture`.
+                        return RenderBackendStatus::Continue;
+                    }
+                    #[cfg(feature = "debugger")]
+                    DebugCommand::Query(query) => {
+                        match query.kind {
+                            DebugQueryKind::SpatialTree { .. } => {
+                                if let Some(doc) = self.documents.values().next() {
+                                    let result = doc.spatial_tree.print_to_string();
+                                    query.result.send(result).ok();
+                                }
+                            }
+                        }
                         return RenderBackendStatus::Continue;
                     }
                     DebugCommand::ClearCaches(mask) => {

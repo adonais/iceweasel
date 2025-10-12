@@ -41,7 +41,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "isPropertyUsed",
+  "getInactiveCssDataForProperty",
   "resource://devtools/server/actors/utils/inactive-property-helper.js",
   true
 );
@@ -511,8 +511,16 @@ class StyleRuleActor extends Actor {
             `${decl.name}:${decl.value}`,
             supportsOptions
           );
-        // TODO: convert from Object to Boolean. See Bug 1574471
-        decl.isUsed = isPropertyUsed(el, style, this.rawRule, decl.name);
+        const inactiveCssData = getInactiveCssDataForProperty(
+          el,
+          style,
+          this.rawRule,
+          decl.name
+        );
+        if (inactiveCssData !== null) {
+          decl.inactiveCssData = inactiveCssData;
+        }
+
         // Check property name. All valid CSS properties support "initial" as a value.
         decl.isNameValid =
           // InspectorUtils.supports can be costly, don't call it when the declaration
@@ -1417,11 +1425,19 @@ class StyleRuleActor extends Actor {
     const style = this.currentlySelectedElementComputedStyle;
 
     for (const decl of this._declarations) {
-      // TODO: convert from Object to Boolean. See Bug 1574471
-      const isUsed = isPropertyUsed(el, style, this.rawRule, decl.name);
+      const inactiveCssData = getInactiveCssDataForProperty(
+        el,
+        style,
+        this.rawRule,
+        decl.name
+      );
 
-      if (decl.isUsed.used !== isUsed.used) {
-        decl.isUsed = isUsed;
+      if (!decl.inactiveCssData !== !inactiveCssData) {
+        if (inactiveCssData) {
+          decl.inactiveCssData = inactiveCssData;
+        } else {
+          delete decl.inactiveCssData;
+        }
         hasChanged = true;
       }
     }

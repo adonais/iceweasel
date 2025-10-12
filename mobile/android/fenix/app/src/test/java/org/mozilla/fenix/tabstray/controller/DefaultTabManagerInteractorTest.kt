@@ -153,4 +153,11 @@ class DefaultTabManagerInteractorTest {
 
         verifySequence { controller.handleSyncedTabsFabClick() }
     }
+
+    @Test
+    fun `WHEN the user clicks the sign in button THEN the Interactor delegates to the controller`() {
+        interactor.onSignInClicked()
+
+        verifySequence { controller.handleSignInClicked() }
+    }
 }

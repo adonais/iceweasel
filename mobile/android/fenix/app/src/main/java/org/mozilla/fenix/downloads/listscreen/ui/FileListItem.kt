@@ -43,6 +43,8 @@ import org.mozilla.fenix.downloads.listscreen.DownloadsListTestTag
 import org.mozilla.fenix.downloads.listscreen.store.FileItem
 import org.mozilla.fenix.downloads.listscreen.store.TimeCategory
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.feature.media.R as mediaR
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * [SelectableListItem] used for displaying download items on the downloads screen.
@@ -75,7 +77,7 @@ internal fun FileListItem(
     SelectableListItem(
         label = fileItem.fileName ?: fileItem.url,
         description = fileItem.description,
-        icon = if (fileItem.status == FileItem.Status.Failed) R.drawable.mozac_ic_critical_24 else fileItem.icon,
+        icon = if (fileItem.status == FileItem.Status.Failed) iconsR.drawable.mozac_ic_critical_24 else fileItem.icon,
         isSelected = isSelected,
         modifier = modifier.selectableListItemProgressSemantics(status = fileItem.status),
         descriptionTextColor = if (fileItem.status == FileItem.Status.Failed) {
@@ -141,7 +143,7 @@ private fun AfterListItemAction(
                 onClick = { onPauseClick(fileItem.id) },
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.mozac_feature_media_action_pause),
+                    painter = painterResource(mediaR.drawable.mozac_feature_media_action_pause),
                     contentDescription = stringResource(R.string.download_pause_action),
                     tint = FirefoxTheme.colors.iconPrimary,
                 )
@@ -152,7 +154,7 @@ private fun AfterListItemAction(
                 onClick = { onResumeClick(fileItem.id) },
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.mozac_feature_media_action_play),
+                    painter = painterResource(mediaR.drawable.mozac_feature_media_action_play),
                     contentDescription = stringResource(R.string.download_resume_action),
                     tint = FirefoxTheme.colors.iconPrimary,
                 )
@@ -164,7 +166,7 @@ private fun AfterListItemAction(
                 onClick = { onRetryClick(fileItem.id) },
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.mozac_ic_arrow_counter_clockwise_24),
+                    painter = painterResource(iconsR.drawable.mozac_ic_arrow_counter_clockwise_24),
                     contentDescription = stringResource(R.string.download_retry_action),
                     tint = FirefoxTheme.colors.iconPrimary,
                 )
@@ -181,7 +183,7 @@ private fun AfterListItemAction(
             .testTag("${DownloadsListTestTag.DOWNLOADS_LIST_ITEM_MENU}.${fileItem.fileName}"),
     ) {
         Icon(
-            painter = painterResource(id = R.drawable.mozac_ic_ellipsis_vertical_24),
+            painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
             contentDescription = stringResource(id = R.string.content_description_menu),
             tint = FirefoxTheme.colors.iconPrimary,
         )

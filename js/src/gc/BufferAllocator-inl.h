@@ -113,8 +113,14 @@ inline bool IsBufferAlloc(void* alloc) {
   return BufferAllocator::IsBufferAlloc(alloc);
 }
 
-inline size_t GetAllocSize(JS::Zone* zone, void* alloc) {
-  return zone->bufferAllocator.getAllocSize(alloc);
+#ifdef DEBUG
+inline bool IsBufferAllocInZone(void* alloc, JS::Zone* zone) {
+  return zone->bufferAllocator.hasAlloc(alloc);
+}
+#endif
+
+inline size_t GetAllocSize(JS::Zone* zone, const void* alloc) {
+  return zone->bufferAllocator.getAllocSize(const_cast<void*>(alloc));
 }
 
 inline bool IsNurseryOwned(JS::Zone* zone, void* alloc) {
@@ -129,6 +135,10 @@ inline void TraceBufferEdgeInternal(JSTracer* trc, Cell* owner, void** bufferp,
                                     const char* name) {
   owner->zoneFromAnyThread()->bufferAllocator.traceEdge(trc, owner, bufferp,
                                                         name);
+}
+inline void TraceBufferEdgeInternal(JSTracer* trc, JS::Zone* zone,
+                                    void** bufferp, const char* name) {
+  zone->bufferAllocator.traceEdge(trc, nullptr, bufferp, name);
 }
 
 inline void MarkTenuredBuffer(JS::Zone* zone, void* alloc) {

@@ -133,7 +133,7 @@ const PREF_SYSTEM_SHORTCUTS_PERSONALIZATION =
 
 function smartshortcutsEnabled(values) {
   const systemPref = values[PREF_SYSTEM_SHORTCUTS_PERSONALIZATION];
-  const experimentVariable = values.smartShortcutsConfig?.enabled;
+  const experimentVariable = values.trainhopConfig?.smartShortcuts?.enabled;
   return systemPref || experimentVariable;
 }
 const OVERSAMPLE_MULTIPLIER = 2;
@@ -1303,7 +1303,7 @@ export class TopSitesFeed {
     const prefValues = this.store.getState().Prefs.values;
     // switch on top_sites thompson sampling experiment
     const overSampleMultiplier =
-      prefValues.smartShortcutsConfig?.over_sample_multiplier ??
+      prefValues?.trainhopConfig?.smartShortcuts?.over_sample_multiplier ??
       OVERSAMPLE_MULTIPLIER;
     const numFetch =
       (smartshortcutsEnabled(this.store.getState().Prefs.values)

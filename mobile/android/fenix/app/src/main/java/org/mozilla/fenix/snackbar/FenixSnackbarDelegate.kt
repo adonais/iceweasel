@@ -15,10 +15,26 @@ import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.compose.snackbar.toSnackbarDuration
 
+typealias SnackbarFactory = (
+    parentView: View,
+    state: SnackbarState,
+) -> Snackbar
+
 /**
  * An implementation of [SnackbarDelegate] used to display the snackbar.
+ *
+ * @param view The view to find a parent from.
+ * @param snackbarFactory A lambda function to create a [Snackbar].
  */
-class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
+class FenixSnackbarDelegate(
+    private val view: View,
+    private val snackbarFactory: SnackbarFactory = { parent, state ->
+        Snackbar.make(
+            parent,
+            state,
+        )
+    },
+) : SnackbarDelegate {
 
     // Holds onto a reference of a [Snackbar] that is displayed.
     private var snackbar: Snackbar? = null
@@ -30,6 +46,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
      * @param duration How long to display the message.
      * @param isError Whether the snackbar should be styled as an error.
      * @param action Optional String resource to display for the action.
+     * @param withDismissAction Whether to display a dismiss button.
      * The [listener] must also be provided to show an action button.
      * @param listener Optional callback to be invoked when the action is clicked.
      * An [action] must also be provided to show an action button.
@@ -39,6 +56,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         duration: Int = LENGTH_LONG,
         isError: Boolean = false,
         @StringRes action: Int = 0,
+        withDismissAction: Boolean = false,
         listener: ((v: View) -> Unit)? = null,
     ) {
         show(
@@ -47,6 +65,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
             duration = duration,
             isError = isError,
             action = action,
+            withDismissAction = withDismissAction,
             listener = listener,
         )
     }
@@ -61,6 +80,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
      * @param isError Whether the snackbar should be styled as an error.
      * @param action Optional String to display for the action.
      * The [listener] must also be provided to show an action button.
+     * @param withDismissAction Whether to display a dismiss button.
      * @param listener Optional callback to be invoked when the action is clicked.
      * An [action] must also be provided to show an action button.
      */
@@ -71,6 +91,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         duration: Int = LENGTH_LONG,
         isError: Boolean = false,
         action: String? = null,
+        withDismissAction: Boolean = false,
         listener: ((v: View) -> Unit)? = null,
     ) = show(
         snackBarParentView = view,
@@ -80,6 +101,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         duration = duration,
         isError = isError,
         action = action,
+        withDismissAction = withDismissAction,
         listener = listener,
     )
 
@@ -91,6 +113,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         duration: Int,
         isError: Boolean,
         @StringRes action: Int,
+        withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ) = show(
         snackBarParentView = snackBarParentView,
@@ -100,6 +123,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         duration = duration,
         isError = isError,
         action = if (action == 0) null else snackBarParentView.context.getString(action),
+        withDismissAction = withDismissAction,
         listener = listener,
     )
 
@@ -111,11 +135,12 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         duration: Int,
         isError: Boolean,
         action: String?,
+        withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ) {
-        val snackbar = Snackbar.make(
-            snackBarParentView = snackBarParentView,
-            snackbarState = makeSnackbarState(
+        val snackbar = snackbarFactory(
+            snackBarParentView,
+            makeSnackbarState(
                 snackBarParentView = snackBarParentView,
                 text = text,
                 subText = subText,
@@ -123,6 +148,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
                 duration = duration,
                 isError = isError,
                 actionText = action,
+                withDismissAction = withDismissAction,
                 listener = listener,
             ),
         )
@@ -149,6 +175,7 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
         duration: Int,
         isError: Boolean,
         actionText: String?,
+        withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ): SnackbarState {
         val action: Action? = if (actionText != null && listener != null) {
@@ -179,6 +206,8 @@ class FenixSnackbarDelegate(private val view: View) : SnackbarDelegate {
                 SnackbarState.Type.Default
             },
             action = action,
+            withDismissAction = withDismissAction,
+            onDismiss = { dismiss() },
         )
     }
 }

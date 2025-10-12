@@ -41,15 +41,13 @@ class MOZ_RAII AutoChangePointListNotifier {
     MOZ_ASSERT(mValue, "Expecting non-null value");
     if (mValue->IsInList()) {
       mUpdateBatch.emplace(mValue->Element()->GetComposedDoc(), true);
-      mEmptyOrOldValue =
-          mValue->Element()->WillChangePointList(mUpdateBatch.ref());
+      mValue->Element()->WillChangePointList(mUpdateBatch.ref());
     }
   }
 
   ~AutoChangePointListNotifier() {
     if (mValue->IsInList()) {
-      mValue->Element()->DidChangePointList(mEmptyOrOldValue,
-                                            mUpdateBatch.ref());
+      mValue->Element()->DidChangePointList(mUpdateBatch.ref());
       if (mValue->AttrIsAnimating()) {
         mValue->Element()->AnimationNeedsResample();
       }
@@ -59,7 +57,6 @@ class MOZ_RAII AutoChangePointListNotifier {
  private:
   Maybe<mozAutoDocUpdate> mUpdateBatch;
   T* const mValue;
-  nsAttrValue mEmptyOrOldValue;
 };
 
 /**

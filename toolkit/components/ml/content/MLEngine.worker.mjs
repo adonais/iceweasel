@@ -45,7 +45,7 @@ class MLEngineWorker {
     if (key.startsWith("NO_LOCAL")) {
       return null;
     }
-    let res = await this.getModelFile(key);
+    let res = await this.getModelFile({ url: key });
     if (res.fail) {
       return null;
     }
@@ -54,10 +54,10 @@ class MLEngineWorker {
     return lazy.OPFS.toResponse(res.ok[2], res.ok[1]);
   }
 
-  async getModelFile(...args) {
+  async getModelFile(args) {
+    console.log("Receiving ...", args);
     let result = await self.callMainThread("getModelFile", [
-      ...args,
-      this.#sessionId,
+      { sessionId: this.#sessionId, ...args },
     ]);
     return result;
   }

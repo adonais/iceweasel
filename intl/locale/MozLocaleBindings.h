@@ -10,16 +10,16 @@
 
 #include "mozilla/UniquePtr.h"
 
-namespace mozilla {
+namespace std {
 
 template <>
-class DefaultDelete<intl::ffi::LanguageIdentifier> {
+struct default_delete<mozilla::intl::ffi::LanguageIdentifier> {
  public:
-  void operator()(intl::ffi::LanguageIdentifier* aPtr) const {
+  void operator()(mozilla::intl::ffi::LanguageIdentifier* aPtr) const {
     unic_langid_destroy(aPtr);
   }
 };
 
-}  // namespace mozilla
+}  // namespace std
 
 #endif

@@ -10,10 +10,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.setMain
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.TestAction
 import mozilla.components.lib.state.TestState
@@ -29,12 +25,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.verify
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.CoroutineContext
 
 @RunWith(AndroidJUnit4::class)
 class FragmentKtTest {
@@ -271,7 +267,6 @@ class FragmentKtTest {
     }
 
     @Test
-    @ExperimentalCoroutinesApi // setMain
     fun `consumeFlow - creates flow synchronously`() {
         val fragment = mock<Fragment>()
         val fragmentLifecycle = mock<LifecycleRegistry>()
@@ -282,13 +277,6 @@ class FragmentKtTest {
         doReturn(fragmentLifecycle).`when`(fragment).lifecycle
         doReturn(view).`when`(fragment).view
 
-        // Verify that we create the flow even if no other coroutine runs past this point
-        val noopDispatcher = object : CoroutineDispatcher() {
-            override fun dispatch(context: CoroutineContext, block: Runnable) {
-                // NOOP
-            }
-        }
-        Dispatchers.setMain(noopDispatcher)
         fragment.consumeFlow(store) { flow ->
             flow.collect { }
         }
@@ -296,6 +284,6 @@ class FragmentKtTest {
         // Only way to verify that store.flow was called without triggering the channelFlow
         // producer and in this test we want to make sure we call store.flow before the flow
         // is "produced."
-        verify(fragmentLifecycle).addObserver(any())
+        verify(fragmentLifecycle, atLeastOnce()).addObserver(any())
     }
 }

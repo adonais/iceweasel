@@ -1169,22 +1169,6 @@ void CodeGenerator::visitTruncateDToInt32(LTruncateDToInt32* ins) {
   }
 }
 
-void CodeGenerator::visitNearbyInt(LNearbyInt* lir) {
-  FloatRegister input = ToFloatRegister(lir->input());
-  FloatRegister output = ToFloatRegister(lir->output());
-
-  RoundingMode roundingMode = lir->mir()->roundingMode();
-  masm.nearbyIntDouble(roundingMode, input, output);
-}
-
-void CodeGenerator::visitNearbyIntF(LNearbyIntF* lir) {
-  FloatRegister input = ToFloatRegister(lir->input());
-  FloatRegister output = ToFloatRegister(lir->output());
-
-  RoundingMode roundingMode = lir->mir()->roundingMode();
-  masm.nearbyIntFloat32(roundingMode, input, output);
-}
-
 void CodeGenerator::visitWasmBuiltinTruncateDToInt32(
     LWasmBuiltinTruncateDToInt32* lir) {
   FloatRegister input = ToFloatRegister(lir->input());

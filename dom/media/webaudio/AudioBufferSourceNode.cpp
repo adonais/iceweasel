@@ -699,7 +699,7 @@ void AudioBufferSourceNode::Start(double aWhen, double aOffset,
   mDuration = aDuration.WasPassed() ? aDuration.Value()
                                     : std::numeric_limits<double>::min();
 
-  WEB_AUDIO_API_LOG("%f: %s %u Start(%f, %g, %g)", Context()->CurrentTime(),
+  WEB_AUDIO_API_LOG("{:f}: {} {} Start({:f}, {}, {})", Context()->CurrentTime(),
                     NodeType(), Id(), aWhen, aOffset, mDuration);
 
   // We can't send these parameters without a buffer because we don't know the
@@ -776,8 +776,8 @@ void AudioBufferSourceNode::Stop(double aWhen, ErrorResult& aRv) {
     return;
   }
 
-  WEB_AUDIO_API_LOG("%f: %s %u Stop(%f)", Context()->CurrentTime(), NodeType(),
-                    Id(), aWhen);
+  WEB_AUDIO_API_LOG("{:f}: {} {} Stop({:f})", Context()->CurrentTime(),
+                    NodeType(), Id(), aWhen);
 
   AudioNodeTrack* ns = mTrack;
   if (!ns || !Context()) {

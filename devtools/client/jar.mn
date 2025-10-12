@@ -459,6 +459,10 @@ devtools.jar:
     content/application/src/components/service-workers/Worker.css (application/src/components/service-workers/Worker.css)
     content/application/src/components/ui/UIButton.css (application/src/components/ui/UIButton.css)
 
+    # Anti tracking panel
+    content/anti-tracking/index.html (anti-tracking/index.html)
+    content/anti-tracking/anti-tracking.css (anti-tracking/anti-tracking.css)
+
     # about:profiling
     skin/aboutprofiling.css (themes/aboutprofiling.css)
     content/performance-new/aboutprofiling/initializer.js (performance-new/aboutprofiling/initializer.js)

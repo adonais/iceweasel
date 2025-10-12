@@ -16,12 +16,12 @@ esid: pending
 const tests = [
   {
     calendar: "gregory",
-    era: "gregory",
+    era: "ce",
     start: "0001-01-01",
   },
   {
     calendar: "gregory",
-    era: "gregory-inverse",
+    era: "bce",
     start: "0000-01-01",
   },
 
@@ -56,29 +56,24 @@ const tests = [
   },
   {
     calendar: "japanese",
-    era: "japanese",
+    era: "ce",
     start: "0001-01-01",
   },
   {
     calendar: "japanese",
-    era: "japanese-inverse",
+    era: "bce",
     start: "0000-01-01",
   },
 
   {
     calendar: "coptic",
-    era: "coptic",
+    era: "am",
     start: "0284-08-29",
-  },
-  {
-    calendar: "coptic",
-    era: "coptic-inverse",
-    start: "0283-08-30",
   },
 
   {
     calendar: "ethiopic",
-    era: "ethiopic",
+    era: "am",
     start: "0008-08-27",
   },
 
@@ -89,7 +84,7 @@ const tests = [
   },
   {
     calendar: "roc",
-    era: "roc-inverse",
+    era: "broc",
     start: "1911-01-01",
   },
 ];

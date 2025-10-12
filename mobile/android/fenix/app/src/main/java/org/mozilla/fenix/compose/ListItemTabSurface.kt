@@ -66,7 +66,7 @@ fun ListItemTabSurface(
 
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
     ) {
@@ -78,7 +78,7 @@ fun ListItemTabSurface(
             val (imageWidth, imageHeight) = IMAGE_SIZE.dp to IMAGE_SIZE.dp
             val imageModifier = Modifier
                 .size(imageWidth, imageHeight)
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(16.dp))
 
             Image(
                 url = imageUrl,

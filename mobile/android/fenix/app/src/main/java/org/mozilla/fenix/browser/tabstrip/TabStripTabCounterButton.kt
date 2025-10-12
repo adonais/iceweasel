@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.browser.tabstrip
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,7 +47,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param onClick Invoked when the user clicks the button.
  */
 @Composable
-@OptIn(ExperimentalFoundationApi::class)
 fun TabStripTabCounterButton(
     tabCount: Int,
     size: Dp,

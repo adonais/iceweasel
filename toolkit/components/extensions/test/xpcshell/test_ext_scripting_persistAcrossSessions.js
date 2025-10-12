@@ -406,6 +406,7 @@ add_task(async function test_updateContentScripts_persistAcrossSessions_true() {
                   runAt: "document_idle",
                   world: "ISOLATED",
                   persistAcrossSessions: true,
+                  cssOrigin: "author",
                   js: ["script-1.js", "script-2.js"],
                 },
               ]),

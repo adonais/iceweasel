@@ -6,7 +6,7 @@ package org.mozilla.fenix.downloads
 
 import android.content.Context
 import android.webkit.MimeTypeMap
-import org.mozilla.fenix.R
+import mozilla.components.feature.downloads.R as downloadsR
 
 /**
  * Generates a user-facing error message indicating that a downloaded file cannot be opened
@@ -19,7 +19,7 @@ import org.mozilla.fenix.R
 fun getCannotOpenFileErrorMessage(context: Context, filePath: String): String {
     val fileExt = MimeTypeMap.getFileExtensionFromUrl(filePath)
     return context.getString(
-        R.string.mozac_feature_downloads_open_not_supported1,
+        downloadsR.string.mozac_feature_downloads_open_not_supported1,
         fileExt,
     )
 }

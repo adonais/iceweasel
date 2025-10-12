@@ -169,6 +169,11 @@ def make_task(config, jobs):
             task["scopes"] = ["secrets:get:" + job.get("secret")]
             task["worker"]["taskcluster-proxy"] = True
 
+        # Fetches that are used for local development need to be built on a
+        # level-3 branch to be installable via `mach bootstrap`.
+        if attributes.get("local-fetch"):
+            task["run-on-projects"] = ["integration", "release"]
+
         if not taskgraph.fast:
             cache_name = task["label"].replace(f"{config.kind}-", "", 1)
 

@@ -17,10 +17,11 @@ const PROFILES_PREF_NAME = "browser.profiles.enabled";
 const GROUPID_PREF_NAME = "toolkit.telemetry.cachedProfileGroupID";
 const DEFAULT_THEME_ID = "default-theme@mozilla.org";
 const PROFILES_CREATED_PREF_NAME = "browser.profiles.created";
+const DAU_GROUPID_PREF_NAME = "datareporting.dau.cachedUsageProfileGroupID";
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
-  CryptoUtils: "resource://services-crypto/utils.sys.mjs",
+  CryptoUtils: "moz-src:///services/crypto/modules/utils.sys.mjs",
   DownloadPaths: "resource://gre/modules/DownloadPaths.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
@@ -182,7 +183,9 @@ class SelectableProfileServiceClass extends EventEmitter {
     "app.shield.optoutstudies.enabled",
     "browser.crashReports.unsubmittedCheck.autoSubmit2",
     "browser.discovery.enabled",
+    "browser.shell.checkDefaultBrowser",
     "browser.urlbar.quicksuggest.dataCollection.enabled",
+    DAU_GROUPID_PREF_NAME,
     "datareporting.healthreport.uploadEnabled",
     "datareporting.policy.currentPolicyVersion",
     "datareporting.policy.dataSubmissionEnabled",
@@ -440,6 +443,9 @@ class SelectableProfileServiceClass extends EventEmitter {
     if (this.#currentProfile) {
       // Assume that settings in the database may have changed while we weren't running.
       await this.databaseChanged("startup");
+
+      // We only need to migrate if we are in an existing profile group.
+      await this.#maybeAddDAUGroupIDToDB();
     }
   }
 
@@ -891,6 +897,69 @@ class SelectableProfileServiceClass extends EventEmitter {
   }
 
   /**
+   * The "datareporting.dau.cachedUsageProfileGroupID" pref is different in
+   * every profile before this migration was created. We now need the entire
+   * group of profiles to share one group id. To migrate to one shared
+   * group id, we need to get the pref into the db for existing group. This
+   * function handles this by adding the pref to the db if it doesn't
+   * already exist OR if our pref value is better than the value from the db.
+   * Consolidation on one group id is also handled in `#maybeSetDAUGroupID`
+   * where we overwrite the pref value if the db value is better.
+   *
+   * New profile groups will automatically start tracking this pref and keep
+   * the UUID from the original profile. We need to migrate because the db in
+   * existing profile groups will not contain the pref and every profile will
+   * have a different group id.
+   */
+  async #maybeAddDAUGroupIDToDB() {
+    let writeToDB = false;
+    let prefValue = Services.prefs.getStringPref(DAU_GROUPID_PREF_NAME, "");
+    try {
+      let dbValue = await this.getDBPref(DAU_GROUPID_PREF_NAME);
+
+      // We found a DAU group id in the db. If our pref value is smaller
+      // alphanumerically, we will overwrite the db value.
+      if (prefValue < dbValue) {
+        // Pref value is smaller alphanumerically so overwrite the db.
+        writeToDB = true;
+      }
+    } catch {
+      // The pref is not in the db
+      writeToDB = true;
+    } finally {
+      if (writeToDB) {
+        // The pref is not in the db
+        // OR
+        // our pref value is better so overwrite the db.
+        this.#setDBPref(DAU_GROUPID_PREF_NAME, prefValue);
+      }
+    }
+  }
+
+  /**
+   * To consolidate on one group id, we compare the pref value from the db and
+   * this profiles pref value alphanumerically to converge on the smallest
+   * alphanumeric UUID. The `#maybeAddDAUGroupIDToDB` function handles the
+   * initial tracking of the "datareporting.dau.cachedUsageProfileGroupID" pref
+   * for an existing profile group. New profile groups will keep the original
+   * profiles group id.
+   *
+   * @param {string} dbValue The pref value of
+   *   "datareporting.dau.cachedUsageProfileGroupID" from the db
+   */
+  async #maybeSetDAUGroupID(dbValue) {
+    if (dbValue < Services.prefs.getStringPref(DAU_GROUPID_PREF_NAME, "")) {
+      try {
+        // The value from the db is better so we overwrite our group id.
+        await lazy.ClientID.setUsageProfileGroupID(dbValue); // Sets the pref for us.
+      } catch (e) {
+        // This may throw if the group ID is invalid. This happens in some tests.
+        console.error(e);
+      }
+    }
+  }
+
+  /**
    * Fetch all prefs from the DB and write to the current instance.
    */
   async loadSharedPrefsFromDatabase() {
@@ -917,6 +986,14 @@ class SelectableProfileServiceClass extends EventEmitter {
           // This may throw if the group ID is invalid. This happens in some tests.
           console.error(e);
         }
+        continue;
+      }
+
+      if (name === DAU_GROUPID_PREF_NAME) {
+        await this.#maybeSetDAUGroupID(value);
+
+        Services.prefs.addObserver(name, this.prefObserver);
+        this.#observedPrefs.add(name);
         continue;
       }
 
@@ -1087,6 +1164,9 @@ class SelectableProfileServiceClass extends EventEmitter {
     prefsJs.push(`user_pref("browser.profiles.enabled", true);`);
     prefsJs.push(`user_pref("browser.profiles.created", true);`);
     prefsJs.push(`user_pref("toolkit.profiles.storeID", "${this.storeID}");`);
+    prefsJs.push(
+      `user_pref("${DAU_GROUPID_PREF_NAME}", "${await this.getDBPref(DAU_GROUPID_PREF_NAME)}");`
+    );
 
     await IOUtils.writeUTF8(prefsJsFilePath, prefsJs.join(LINEBREAK));
   }
@@ -1321,7 +1401,7 @@ class SelectableProfileServiceClass extends EventEmitter {
    * @param {SelectableProfile} aSelectableProfile The SelectableProfile to be updated
    */
   async updateProfile(aSelectableProfile) {
-    let profileObj = await aSelectableProfile.toDbObject();
+    let profileObj = aSelectableProfile.toDbObject();
 
     await this.#connection.execute(
       `UPDATE Profiles
@@ -1521,6 +1601,14 @@ class SelectableProfileServiceClass extends EventEmitter {
     }
 
     return this.getPrefValueFromRow(rows[0]);
+  }
+
+  async setDBPref(aPrefName, aPrefValue) {
+    if (!Cu.isInAutomation) {
+      return;
+    }
+
+    await this.#setDBPref(aPrefName, aPrefValue);
   }
 
   /**

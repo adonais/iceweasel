@@ -309,7 +309,7 @@ inline size_t JSLinearString::maybeMallocCharsOnPromotion(
       isExtensible() ? (asExtensible().capacity() * sizeof(CharT)) : bytesUsed;
   MOZ_ASSERT(bytesUsed <= bytesCapacity);
 
-  if (nursery->maybeMoveBufferOnPromotion(
+  if (nursery->maybeMoveNurseryOrMallocBufferOnPromotion(
           const_cast<void**>(chars), this, bytesUsed, bytesCapacity,
           js::MemoryUse::StringContents,
           js::StringBufferArena) == js::Nursery::BufferMoved) {

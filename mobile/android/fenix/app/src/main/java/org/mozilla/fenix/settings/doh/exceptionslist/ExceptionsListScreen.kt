@@ -28,6 +28,7 @@ import org.mozilla.fenix.compose.list.FaviconListItem
 import org.mozilla.fenix.settings.doh.DohSettingsState
 import org.mozilla.fenix.settings.doh.ProtectionLevel
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Composable function that displays the exceptions list screen of DoH settings.
@@ -81,7 +82,7 @@ internal fun ExceptionsListScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                painter = painterResource(R.drawable.mozac_ic_plus_24),
+                painter = painterResource(iconsR.drawable.mozac_ic_plus_24),
                 contentDescription = stringResource(R.string.preference_doh_add_site_description),
                 tint = FirefoxTheme.colors.iconPrimary,
                 modifier = Modifier.padding(16.dp),

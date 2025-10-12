@@ -35,6 +35,7 @@ import org.mozilla.fenix.settings.wallpaper.getWallpapersForOnboarding
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.mozilla.fenix.wallpapers.WallpaperOnboarding
+import com.google.android.material.R as materialR
 
 /**
  * Dialog displaying the wallpapers onboarding.
@@ -51,7 +52,7 @@ class WallpaperOnboardingDialogFragment : BottomSheetDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         super.onCreateDialog(savedInstanceState).apply {
             setOnShowListener {
-                val bottomSheet = findViewById<View?>(R.id.design_bottom_sheet)
+                val bottomSheet = findViewById<View?>(materialR.id.design_bottom_sheet)
                 BottomSheetBehavior.from(bottomSheet).apply {
                     state = BottomSheetBehavior.STATE_EXPANDED
                 }

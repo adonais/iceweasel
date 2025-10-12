@@ -84,7 +84,9 @@ export var ContentTaskUtils = {
    *        Rejects if timeout is exceeded or condition ever throws.
    */
   async waitForCondition(condition, msg, interval = 100, maxTries = 50) {
-    let startTime = Cu.now();
+    // This newtab train-hop compatibility shim can be removed once Firefox 144
+    // makes it to the release channel.
+    let startTime = ChromeUtils.now?.() || Cu.now();
     for (let tries = 0; tries < maxTries; ++tries) {
       await new Promise(resolve => setTimeout(resolve, interval));
 
@@ -150,7 +152,9 @@ export var ContentTaskUtils = {
    */
   waitForEvent(subject, eventName, capture, checkFn, wantsUntrusted = false) {
     return new Promise((resolve, reject) => {
-      let startTime = Cu.now();
+      // This newtab train-hop compatibility shim can be removed once Firefox 144
+      // makes it to the release channel.
+      let startTime = ChromeUtils.now?.() || Cu.now();
       subject.addEventListener(
         eventName,
         function listener(event) {

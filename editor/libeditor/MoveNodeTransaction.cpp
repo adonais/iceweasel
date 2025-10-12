@@ -5,10 +5,11 @@
 
 #include "MoveNodeTransaction.h"
 
-#include "EditorBase.h"      // for EditorBase
-#include "EditorDOMPoint.h"  // for EditorDOMPoint
-#include "HTMLEditor.h"      // for HTMLEditor
-#include "HTMLEditUtils.h"   // for HTMLEditUtils
+#include "EditorBase.h"           // for EditorBase
+#include "EditorDOMAPIWrapper.h"  // for AutoNodeAPIWrapper
+#include "EditorDOMPoint.h"       // for EditorDOMPoint
+#include "HTMLEditor.h"           // for HTMLEditor
+#include "HTMLEditUtils.h"        // for HTMLEditUtils
 
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
@@ -166,15 +167,14 @@ nsresult MoveNodeTransaction::DoTransactionInternal() {
         htmlEditor->RangeUpdaterRef(), contentToMove,
         newNextSibling ? EditorRawDOMPoint(newNextSibling)
                        : EditorRawDOMPoint::AtEndOf(*container));
-    IgnoredErrorResult error;
-    container->InsertBefore(contentToMove, newNextSibling, error);
-    // InsertBefore() may call MightThrowJSException() even if there is no
-    // error. We don't need the flag here.
-    error.WouldReportJSException();
-    if (MOZ_UNLIKELY(error.Failed())) {
-      NS_WARNING("nsINode::InsertBefore() failed");
-      return error.StealNSResult();
+    AutoNodeAPIWrapper nodeWrapper(htmlEditor, container);
+    nsresult rv = nodeWrapper.InsertBefore(contentToMove, newNextSibling);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("AutoNodeAPIWrapper::InsertBefore() failed");
+      return rv;
     }
+    NS_WARNING_ASSERTION(nodeWrapper.IsExpectedResult(),
+                         "Moving node caused other mutations, but ignored");
     if (MOZ_LIKELY(contentToMove->GetParentNode() &&
                    contentToMove->OwnerDoc() == htmlEditor->GetDocument())) {
       notifyStoredRanges.DidMoveContent(contentToMove);
@@ -248,15 +248,14 @@ NS_IMETHODIMP MoveNodeTransaction::UndoTransaction() {
         htmlEditor->RangeUpdaterRef(), contentToMove,
         oldNextSibling ? EditorRawDOMPoint(oldNextSibling)
                        : EditorRawDOMPoint::AtEndOf(*oldContainer));
-    IgnoredErrorResult error;
-    oldContainer->InsertBefore(contentToMove, oldNextSibling, error);
-    // InsertBefore() may call MightThrowJSException() even if there is no
-    // error. We don't need the flag here.
-    error.WouldReportJSException();
-    if (MOZ_UNLIKELY(error.Failed())) {
-      NS_WARNING("nsINode::InsertBefore() failed");
-      return error.StealNSResult();
+    AutoNodeAPIWrapper nodeWrapper(htmlEditor, oldContainer);
+    nsresult rv = nodeWrapper.InsertBefore(contentToMove, oldNextSibling);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("AutoNodeAPIWrapper::InsertBefore() failed");
+      return rv;
     }
+    NS_WARNING_ASSERTION(nodeWrapper.IsExpectedResult(),
+                         "Moving node caused other mutations, but ignored");
     if (MOZ_LIKELY(contentToMove->GetParentNode() &&
                    contentToMove->OwnerDoc() == htmlEditor->GetDocument())) {
       notifyStoredRanges.DidMoveContent(contentToMove);

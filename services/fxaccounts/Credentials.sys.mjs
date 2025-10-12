@@ -11,7 +11,7 @@
 
 import { Log } from "resource://gre/modules/Log.sys.mjs";
 
-import { CryptoUtils } from "resource://services-crypto/utils.sys.mjs";
+import { CryptoUtils } from "moz-src:///services/crypto/modules/utils.sys.mjs";
 
 import { CommonUtils } from "resource://services-common/utils.sys.mjs";
 

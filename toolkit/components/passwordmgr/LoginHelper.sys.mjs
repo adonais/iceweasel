@@ -396,6 +396,7 @@ export const LoginHelper = {
   showAutoCompleteFooter: null,
   showAutoCompleteImport: null,
   testOnlyUserHasInteractedWithDocument: null,
+  testOnlyNotWaitForPaint: null,
   userInputRequiredToCapture: null,
   captureInputChanges: null,
   OS_AUTH_FOR_PASSWORDS_BOOL_PREF,
@@ -505,6 +506,12 @@ export const LoginHelper = {
     );
     this.relatedRealmsEnabled = Services.prefs.getBoolPref(
       "signon.relatedRealms.enabled"
+    );
+    // TODO: Remove this preference (Bug 1984225)
+    // Used by geckoview junit test because no paint event is fired in junit test.
+    this.testOnlyNotWaitForPaint = Services.prefs.getBoolPref(
+      "signon.testOnlyNotWaitForPaint",
+      false
     );
   },
 
@@ -1236,7 +1243,10 @@ export const LoginHelper = {
 
     const paramsPart = params.toString() ? `?${params}` : "";
 
-    let browserWindow = lazy.BrowserWindowTracker.getTopWindow();
+    // bug 1985105 - should this only look for windows on the current workspace?
+    let browserWindow = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
     const browser = browserWindow.gBrowser ?? browserWindow.opener?.gBrowser;
 
     const tab = browser.addTrustedTab(`about:logins${paramsPart}`, {

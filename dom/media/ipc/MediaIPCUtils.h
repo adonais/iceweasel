@@ -11,6 +11,7 @@
 
 #include "DecoderDoctorDiagnostics.h"
 #include "EncoderConfig.h"
+#include "MediaTrackConstraints.h"
 #include "PerformanceRecorder.h"
 #include "PlatformDecoderModule.h"
 #include "PlatformEncoderModule.h"
@@ -667,6 +668,48 @@ struct ParamTraits<mozilla::CDMKeyInfo> {
            ReadParam(aReader, &aResult->mStatus);
   }
 };
+
+template <typename T>
+struct ParamTraits<mozilla::NormalizedConstraintSet::Range<T>> {
+  using paramType = mozilla::NormalizedConstraintSet::Range<T>;
+  static void Write(MessageWriter* aWriter, const paramType& aParam) {
+    WriteParams(aWriter, aParam.mMin, aParam.mMax, aParam.mIdeal);
+  }
+
+  static bool Read(MessageReader* aReader, paramType* aResult) {
+    paramType& aParam = *aResult;
+    return ReadParams(aReader, aParam.mMin, aParam.mMax, aParam.mIdeal);
+  }
+};
+DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
+    mozilla::NormalizedConstraintSet::LongRange,
+    mozilla::NormalizedConstraintSet::Range<int32_t>);
+DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
+    mozilla::NormalizedConstraintSet::LongLongRange,
+    mozilla::NormalizedConstraintSet::Range<int64_t>);
+DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
+    mozilla::NormalizedConstraintSet::DoubleRange,
+    mozilla::NormalizedConstraintSet::Range<double>);
+DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS(
+    mozilla::NormalizedConstraintSet::BooleanRange,
+    mozilla::NormalizedConstraintSet::Range<bool>);
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::NormalizedConstraintSet::StringRange,
+                                  mExact, mIdeal);
+DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::NormalizedConstraintSet, mWidth,
+                                  mHeight, mFrameRate, mFacingMode, mResizeMode,
+                                  mMediaSource, mBrowserWindow, mDeviceId,
+                                  mGroupId, mViewportOffsetX, mViewportOffsetY,
+                                  mViewportWidth, mViewportHeight,
+                                  mEchoCancellation, mNoiseSuppression,
+                                  mAutoGainControl, mChannelCount);
+DEFINE_IPC_SERIALIZER_WITH_SUPER_CLASS_AND_FIELDS(
+    mozilla::NormalizedConstraints, mozilla::NormalizedConstraintSet,
+    mAdvanced);
+
+template <>
+struct ParamTraits<mozilla::dom::VideoResizeModeEnum>
+    : public mozilla::dom::WebIDLEnumSerializer<
+          mozilla::dom::VideoResizeModeEnum> {};
 
 }  // namespace IPC
 

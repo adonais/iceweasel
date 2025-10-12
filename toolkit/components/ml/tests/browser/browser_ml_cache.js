@@ -17,7 +17,7 @@ const { URLChecker } = ChromeUtils.importESModule(
   "chrome://global/content/ml/Utils.sys.mjs"
 );
 
-const { Progress } = ChromeUtils.importESModule(
+const { Progress, MLUtils } = ChromeUtils.importESModule(
   "chrome://global/content/ml/Utils.sys.mjs"
 );
 
@@ -607,8 +607,8 @@ add_task(async function testTooFewParts() {
  * Helper function to initialize the cache
  */
 async function initializeCache() {
-  const randomSuffix = Math.floor(Math.random() * 10000);
-  const dbName = `modelFiles-${randomSuffix}`;
+  const dbName = `modelFiles-${crypto.randomUUID()}`;
+  await TestIndexedDBCache.deleteDatabaseAndWait(dbName).catch(() => {});
   await OPFS.getDirectoryHandle(dbName, { create: true });
   return await IndexedDBCache.init({ dbName });
 }
@@ -618,7 +618,7 @@ async function initializeCache() {
  */
 async function deleteCache(cache) {
   await cache.dispose();
-  indexedDB.deleteDatabase(cache.dbName);
+  await TestIndexedDBCache.deleteDatabaseAndWait(cache.dbName).catch(() => {});
   try {
     await OPFS.remove(cache.dbName, { recursive: true });
   } catch (e) {
@@ -1325,8 +1325,8 @@ add_task(async function test_initDbFromNonExisting() {
  * Test that we can upgrade even if the existing database is missing some stores or indices.
  */
 add_task(async function test_initDbFromExistingEmpty() {
-  const randomSuffix = Math.floor(Math.random() * 10000);
-  const dbName = `modelFiles-${randomSuffix}`;
+  const dbName = `modelFiles-${crypto.randomUUID()}`;
+  await TestIndexedDBCache.deleteDatabaseAndWait(dbName).catch(() => {});
 
   const dbVersion = 1;
 
@@ -1388,8 +1388,9 @@ add_task(async function test_initDbFromExistingEmpty() {
  * Test that upgrading from version 1 to version 2 results in existing data being deleted.
  */
 add_task(async function test_initDbFromExistingNoChange() {
-  const randomSuffix = Math.floor(Math.random() * 10000);
-  const dbName = `modelFiles-${randomSuffix}`;
+  const dbName = `modelFiles-${crypto.randomUUID()}`;
+
+  await TestIndexedDBCache.deleteDatabaseAndWait(dbName).catch(() => {});
 
   // Create version 1
   let cache = await IndexedDBCache.init({ dbName, version: 1 });
@@ -1432,8 +1433,8 @@ add_task(async function test_initDbFromExistingNoChange() {
  * Test that upgrading an existing cache from another source is possible.
  */
 add_task(async function test_initDbFromExistingElseWhereStoreChanges() {
-  const randomSuffix = Math.floor(Math.random() * 10000);
-  const dbName = `modelFiles-${randomSuffix}`;
+  const dbName = `modelFiles-${crypto.randomUUID()}`;
+  await TestIndexedDBCache.deleteDatabaseAndWait(dbName).catch(() => {});
 
   const dbVersion = 2;
   const model = "mozilla/distilvit";
@@ -1830,8 +1831,8 @@ add_task(async function test_update_allow_deny_after_model_cache() {
  * Test that data from OPFS is wiped
  */
 add_task(async function test_migrateStore_modelsDeleted() {
-  const randomSuffix = Math.floor(Math.random() * 10000);
-  const dbName = `modelFiles-${randomSuffix}`;
+  const dbName = `modelFiles-${crypto.randomUUID()}`;
+  await TestIndexedDBCache.deleteDatabaseAndWait(dbName).catch(() => {});
 
   // Initialize version 4 of the database
   let cache = await IndexedDBCache.init({ dbName, version: 4 });
@@ -1880,8 +1881,8 @@ add_task(async function test_migrateStore_modelsDeleted() {
  * Test migration when database starts empty.
  */
 add_task(async function test_migrateStore_emptyDatabase() {
-  const randomSuffix = Math.floor(Math.random() * 10000);
-  const dbName = `modelFiles-${randomSuffix}`;
+  const dbName = `modelFiles-${crypto.randomUUID()}`;
+  await TestIndexedDBCache.deleteDatabaseAndWait(dbName).catch(() => {});
 
   // Initialize an empty version 4 database
   let cache = await IndexedDBCache.init({ dbName, version: 4 });
@@ -1973,5 +1974,70 @@ add_task(async function test_getOwnerIcon_download() {
   stub.restore();
   for (const path of localPaths) {
     await OPFS.remove(path, { recursive: true });
+  }
+});
+
+/**
+ * Test that downloads can be cancelled
+ */
+add_task(async function test_download_cancellation() {
+  const cache = await initializeCache();
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
+  hub.cache = cache;
+
+  const controller = new AbortController();
+  const { signal } = controller;
+
+  try {
+    controller.abort();
+
+    await Assert.rejects(
+      hub.getModelDataAsFile({ ...FAKE_MODEL_ARGS, abortSignal: signal }),
+      err => err?.name === "AbortError",
+      "The call should be cancelled"
+    );
+  } catch (err) {
+    Assert.ok(false, `Expected AbortError. Got ${err}`);
+  } finally {
+    await deleteCache(cache);
+  }
+});
+
+/**
+ * Test that downloads can be cancelled after fetch is successfull
+ */
+add_task(async function test_download_cancellation_after_fetch() {
+  const cache = await initializeCache();
+  const hub = new ModelHub({
+    rootUrl: FAKE_HUB,
+    urlTemplate: FAKE_URL_TEMPLATE,
+  });
+  hub.cache = cache;
+
+  const controller = new AbortController();
+  const { signal } = controller;
+
+  const fetchUrlStub = sinon
+    .stub(MLUtils, "fetchUrl")
+    .callsFake((url, { signal: _, ...rest } = {}) => {
+      const p = fetch(url, rest);
+      controller.abort();
+      return p;
+    });
+
+  try {
+    await Assert.rejects(
+      hub.getModelDataAsFile({ ...FAKE_MODEL_ARGS, abortSignal: signal }),
+      err => err?.name === "AbortError",
+      "The call should be cancelled"
+    );
+  } catch (err) {
+    Assert.ok(false, `Expected AbortError. Got ${err}`);
+  } finally {
+    await deleteCache(cache);
+    fetchUrlStub.restore();
   }
 });

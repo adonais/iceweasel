@@ -30,7 +30,17 @@ add_setup(async function () {
     ],
   });
   Services.obs.notifyObservers(null, "testonly-reload-permissions-from-disk");
-  registerCleanupFunction(restorePermissions);
+
+  const server = new HttpServer();
+  server.start(21555);
+  registerServerHandlers(server);
+
+  registerCleanupFunction(async () => {
+    await restorePermissions();
+    await new Promise(resolve => {
+      server.stop(resolve);
+    });
+  });
 });
 
 requestLongerTimeout(10);
@@ -221,16 +231,6 @@ async function runPromptedLnaTest(test, overrideLabel, notificationID) {
 }
 
 add_task(async function test_lna_prompt_behavior() {
-  const server = new HttpServer();
-  server.start(21555);
-  registerServerHandlers(server);
-
-  registerCleanupFunction(async () => {
-    await server.stop();
-    Services.prefs.clearUserPref("network.lna.address_space.public.override");
-    Services.prefs.clearUserPref("network.lna.address_space.private.override");
-  });
-
   // Non-LNA test: no prompt expected
   for (const test of testCases) {
     const rand = Math.random();
@@ -259,4 +259,205 @@ add_task(async function test_lna_prompt_behavior() {
   for (const test of testCases) {
     await runPromptedLnaTest(test, "private", "local-network");
   }
+
+  Services.prefs.clearUserPref("network.lna.address_space.private.override");
+});
+
+add_task(async function test_lna_cancellation_during_prompt() {
+  info("Testing LNA cancellation during permission prompt");
+
+  // Disable RCWN but enable caching for this test
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["network.http.rcwn.enabled", false],
+      ["browser.cache.disk.enable", true],
+      ["browser.cache.memory.enable", true],
+      ["network.lna.address_space.public.override", "127.0.0.1:4443"],
+    ],
+  });
+
+  const testType = "fetch";
+  const rand1 = Math.random();
+
+  // Test 1: Cancel request during LNA prompt and verify proper cleanup
+  info(
+    "Step 1: Making request that will trigger LNA prompt, then cancelling it"
+  );
+
+  // Open tab and wait for LNA prompt
+  const tab1 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    `${baseURL}page_with_non_trackers.html?test=${testType}&rand=${rand1}`
+  );
+
+  // Wait for the LNA permission prompt to appear
+  await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+  info("LNA permission prompt appeared");
+  gBrowser.removeTab(tab1);
+  // Navigate to a new URL (which should cancel the pending request)
+  const tab2 = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    `${baseURL}page_with_non_trackers.html?test=${testType}&rand=${rand1}`
+  );
+  info("Navigated to new URL, request should be cancelled");
+
+  // Wait for the navigation to complete
+  await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+  clickDoorhangerButton(
+    PROMPT_ALLOW_BUTTON,
+    gBrowser.selectedBrowser,
+    "localhost"
+  );
+
+  // Close the first tab now that we're done with it
+  gBrowser.removeTab(tab2);
+
+  // The main test objective is complete - we verified that cancellation
+  // during LNA prompt works without hanging channels. The navigation
+  // completed successfully, which means our fix is working correctly.
+  info(
+    "Test completed successfully - cancellation during LNA prompt handled correctly"
+  );
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_lna_top_level_navigation_bypass() {
+  info("Testing that top-level navigation to localhost bypasses LNA checks");
+
+  // Set up LNA to trigger for localhost connections and enable top-level navigation bypass
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["network.lna.address_space.public.override", "127.0.0.1:4443"],
+      ["network.lna.allow_top_level_navigation", true],
+    ],
+  });
+
+  requestLongerTimeout(1);
+
+  // Observer to verify that the navigation request succeeds without LNA error
+  const navigationObserver = {
+    observe(subject, topic) {
+      if (topic !== "http-on-stop-request") {
+        return;
+      }
+
+      let channel = subject.QueryInterface(Ci.nsIHttpChannel);
+      if (!channel || !channel.URI.spec.includes("localhost:21555")) {
+        return;
+      }
+
+      // For top-level navigation, we expect success (not LNA denied)
+      // The channel status should be NS_OK, not NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED
+      is(
+        channel.status,
+        Cr.NS_OK,
+        "Top-level navigation to localhost should not be blocked by LNA"
+      );
+
+      Services.obs.removeObserver(navigationObserver, "http-on-stop-request");
+    },
+  };
+
+  Services.obs.addObserver(navigationObserver, "http-on-stop-request");
+
+  try {
+    // Load the test page which will automatically navigate to localhost
+    info("Loading test page that will trigger navigation to localhost");
+
+    // Open the initial page - it will automatically navigate to localhost
+    const tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      `${baseURL}page_with_non_trackers.html?isTopLevelNavigation=true`
+    );
+
+    // Wait for the navigation to complete
+    info("Waiting for navigation to localhost to complete");
+    await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, url =>
+      url.includes("localhost:21555")
+    );
+
+    // Verify that no LNA permission prompt appeared
+    // If our fix works correctly, there should be no popup notification
+    let popup = PopupNotifications.getNotification(
+      "localhost",
+      tab.linkedBrowser
+    );
+    ok(
+      !popup,
+      "No LNA permission prompt should appear for top-level navigation"
+    );
+
+    // Verify the page loaded successfully
+    let location = await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+      return content.location.href;
+    });
+
+    ok(
+      location.includes("localhost:21555"),
+      "Top-level navigation to localhost should succeed"
+    );
+
+    gBrowser.removeTab(tab);
+
+    info("Top-level navigation test completed successfully");
+  } catch (error) {
+    ok(false, `Top-level navigation test failed: ${error.message}`);
+  }
+
+  await SpecialPowers.popPrefEnv();
+});
+
+add_task(async function test_lna_top_level_navigation_disabled() {
+  info("Testing that top-level navigation LNA bypass can be disabled via pref");
+
+  // Set up LNA to trigger for localhost connections but disable top-level navigation bypass
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["network.lna.address_space.public.override", "127.0.0.1:4443"],
+      ["network.lna.allow_top_level_navigation", false],
+    ],
+  });
+
+  requestLongerTimeout(1);
+
+  try {
+    // Load the test page which will attempt to navigate to localhost
+    info("Loading test page that will try to navigate to localhost");
+    const tab = await BrowserTestUtils.openNewForegroundTab(
+      gBrowser,
+      `${baseURL}page_with_non_trackers.html?isTopLevelNavigation=true`
+    );
+
+    // Wait for LNA permission prompt to appear (since bypass is disabled)
+    info("Waiting for LNA permission prompt to appear");
+    await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
+
+    // Verify that LNA permission prompt did appear
+    let popup = PopupNotifications.getNotification(
+      "localhost",
+      tab.linkedBrowser
+    );
+    ok(popup, "LNA permission prompt should appear when bypass is disabled");
+
+    // Allow the permission to complete the navigation
+    clickDoorhangerButton(
+      PROMPT_ALLOW_BUTTON,
+      gBrowser.selectedBrowser,
+      "localhost"
+    );
+
+    // Wait for navigation to complete after permission granted
+    await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, url =>
+      url.includes("localhost:21555")
+    );
+
+    gBrowser.removeTab(tab);
+
+    info("Top-level navigation disabled test completed successfully");
+  } catch (error) {
+    ok(false, `Top-level navigation disabled test failed: ${error.message}`);
+  }
+
+  await SpecialPowers.popPrefEnv();
 });

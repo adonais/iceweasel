@@ -401,21 +401,21 @@ index 6ba3292fca..5d3a731864 100644
    RTPHeader();
    RTPHeader(const RTPHeader& other);
 diff --git a/api/rtp_parameters.cc b/api/rtp_parameters.cc
-index bb2f500fd4..98a53578d7 100644
+index c6560d4bb0..5285bbd6b3 100644
 --- a/api/rtp_parameters.cc
 +++ b/api/rtp_parameters.cc
-@@ -173,7 +173,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
-          uri == webrtc::RtpExtension::kTransportSequenceNumberV2Uri ||
-          uri == webrtc::RtpExtension::kMidUri ||
-          uri == webrtc::RtpExtension::kRidUri ||
--         uri == webrtc::RtpExtension::kRepairedRidUri;
-+         uri == webrtc::RtpExtension::kRepairedRidUri ||
-+         uri == webrtc::RtpExtension::kCsrcAudioLevelsUri;
+@@ -172,7 +172,8 @@ bool RtpExtension::IsSupportedForAudio(absl::string_view uri) {
+          uri == RtpExtension::kTransportSequenceNumberUri ||
+          uri == RtpExtension::kTransportSequenceNumberV2Uri ||
+          uri == RtpExtension::kMidUri || uri == RtpExtension::kRidUri ||
+-         uri == RtpExtension::kRepairedRidUri;
++         uri == RtpExtension::kRepairedRidUri ||
++         uri == RtpExtension::kCsrcAudioLevelsUri;
  }
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index 073b4099e6..38e61ef56f 100644
+index cf4ad08d15..a70f751d71 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
@@ -450,10 +450,10 @@ index e7c6c85db7..b1a99c5519 100644
        LntfConfig lntf;
  
 diff --git a/modules/audio_coding/neteq/dtmf_buffer.cc b/modules/audio_coding/neteq/dtmf_buffer.cc
-index 9f78aca6e2..115bfcf97b 100644
+index 5813f6df9a..db99e227e9 100644
 --- a/modules/audio_coding/neteq/dtmf_buffer.cc
 +++ b/modules/audio_coding/neteq/dtmf_buffer.cc
-@@ -193,7 +193,11 @@ bool DtmfBuffer::Empty() const {
+@@ -195,7 +195,11 @@ bool DtmfBuffer::Empty() const {
  }
  
  int DtmfBuffer::SetSampleRate(int fs_hz) {
@@ -494,7 +494,7 @@ index f9d9dbd2c4..67149bfcb9 100644
  }
  
 diff --git a/modules/desktop_capture/linux/x11/mouse_cursor_monitor_x11.cc b/modules/desktop_capture/linux/x11/mouse_cursor_monitor_x11.cc
-index d9c7635c1d..d4b85af6bd 100644
+index 064b98fa15..37fe7e168c 100644
 --- a/modules/desktop_capture/linux/x11/mouse_cursor_monitor_x11.cc
 +++ b/modules/desktop_capture/linux/x11/mouse_cursor_monitor_x11.cc
 @@ -38,6 +38,7 @@ namespace {
@@ -523,7 +523,7 @@ index d9c7635c1d..d4b85af6bd 100644
      x_display_->AddEventHandler(xfixes_event_base_ + XFixesCursorNotify, this);
  
 diff --git a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
-index 0702c755a1..fb2b63adb7 100644
+index 0384a0373b..db0826b42b 100644
 --- a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
 +++ b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
 @@ -302,7 +302,7 @@ bool ScreenCapturerX11::GetSourceList(SourceList* sources) {
@@ -731,7 +731,7 @@ index 1f21ab969c..df7e86bf03 100644
  
  }  // namespace webrtc
 diff --git a/modules/desktop_capture/win/screen_capture_utils.cc b/modules/desktop_capture/win/screen_capture_utils.cc
-index 30120db3f4..082807f4f5 100644
+index 8ac8bfcd0c..4f6922f22c 100644
 --- a/modules/desktop_capture/win/screen_capture_utils.cc
 +++ b/modules/desktop_capture/win/screen_capture_utils.cc
 @@ -52,7 +52,7 @@ bool GetScreenList(DesktopCapturer::SourceList* screens,
@@ -744,10 +744,10 @@ index 30120db3f4..082807f4f5 100644
        device_names->push_back(webrtc::ToUtf8(device.DeviceName));
      }
 diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
-index c08fd08a73..355d1f16d5 100644
+index e1cbe26e24..0597ecdb86 100644
 --- a/modules/rtp_rtcp/source/rtcp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtcp_sender.cc
-@@ -210,7 +210,7 @@ void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
+@@ -211,7 +211,7 @@ void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
      next_time_to_send_rtcp_ = std::nullopt;
    } else if (method_ == RtcpMode::kOff) {
      // When switching on, reschedule the next packet
@@ -932,7 +932,7 @@ index 888e601e7f..d59b67c090 100644
    RTC_CHECK_NOTREACHED();
  }
 diff --git a/modules/video_capture/device_info_impl.cc b/modules/video_capture/device_info_impl.cc
-index dc49d8abb9..ba69a46334 100644
+index 1d3e3ee89e..97039646f7 100644
 --- a/modules/video_capture/device_info_impl.cc
 +++ b/modules/video_capture/device_info_impl.cc
 @@ -72,7 +72,7 @@ int32_t DeviceInfoImpl::GetCapability(const char* deviceUniqueIdUTF8,
@@ -1204,10 +1204,10 @@ index fb95a6020d..95432a509d 100644
  }  // namespace videocapturemodule
  }  // namespace webrtc
 diff --git a/modules/video_capture/video_capture.h b/modules/video_capture/video_capture.h
-index fe5c09bd87..d50111c175 100644
+index 7707608dbc..0681de3827 100644
 --- a/modules/video_capture/video_capture.h
 +++ b/modules/video_capture/video_capture.h
-@@ -15,15 +15,44 @@
+@@ -19,15 +19,44 @@
  #include "api/video/video_sink_interface.h"
  #include "modules/video_capture/raw_video_sink_interface.h"
  #include "modules/video_capture/video_capture_defines.h"
@@ -1252,7 +1252,7 @@ index fe5c09bd87..d50111c175 100644
  
      // Returns the available capture devices.
      // deviceNumber   - Index of capture device.
-@@ -38,7 +67,8 @@ class VideoCaptureModule : public RefCountInterface {
+@@ -42,7 +71,8 @@ class VideoCaptureModule : public RefCountInterface {
                                    char* deviceUniqueIdUTF8,
                                    uint32_t deviceUniqueIdUTF8Length,
                                    char* productUniqueIdUTF8 = 0,
@@ -1262,7 +1262,7 @@ index fe5c09bd87..d50111c175 100644
  
      // Returns the number of capabilities this device.
      virtual int32_t NumberOfCapabilities(const char* deviceUniqueIdUTF8) = 0;
-@@ -70,6 +100,8 @@ class VideoCaptureModule : public RefCountInterface {
+@@ -74,6 +104,8 @@ class VideoCaptureModule : public RefCountInterface {
          uint32_t positionY) = 0;
  
      virtual ~DeviceInfo() {}
@@ -1271,7 +1271,7 @@ index fe5c09bd87..d50111c175 100644
    };
  
    //   Register capture data callback
-@@ -79,11 +111,16 @@ class VideoCaptureModule : public RefCountInterface {
+@@ -83,11 +115,16 @@ class VideoCaptureModule : public RefCountInterface {
        RawVideoSinkInterface* dataCallback) = 0;
  
    //  Remove capture data callback
@@ -1290,10 +1290,10 @@ index fe5c09bd87..d50111c175 100644
  
    // Returns the name of the device used by this module.
 diff --git a/modules/video_capture/video_capture_factory.cc b/modules/video_capture/video_capture_factory.cc
-index 8354067f93..6e884f0d91 100644
+index d7fa0fa26e..bb45a88f0e 100644
 --- a/modules/video_capture/video_capture_factory.cc
 +++ b/modules/video_capture/video_capture_factory.cc
-@@ -16,11 +16,7 @@ namespace webrtc {
+@@ -18,11 +18,7 @@ namespace webrtc {
  
  scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
      [[maybe_unused]] const char* deviceUniqueIdUTF8) {
@@ -1305,7 +1305,7 @@ index 8354067f93..6e884f0d91 100644
  }
  
  scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
-@@ -37,11 +33,7 @@ scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
+@@ -39,11 +35,7 @@ scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
  }
  
  VideoCaptureModule::DeviceInfo* VideoCaptureFactory::CreateDeviceInfo() {
@@ -1318,18 +1318,18 @@ index 8354067f93..6e884f0d91 100644
  
  VideoCaptureModule::DeviceInfo* VideoCaptureFactory::CreateDeviceInfo(
 diff --git a/modules/video_capture/video_capture_impl.cc b/modules/video_capture/video_capture_impl.cc
-index 06f9bd3165..cafc13c970 100644
+index 6e205a215f..98bf0c78cf 100644
 --- a/modules/video_capture/video_capture_impl.cc
 +++ b/modules/video_capture/video_capture_impl.cc
-@@ -77,7 +77,6 @@ VideoCaptureImpl::VideoCaptureImpl()
+@@ -88,7 +88,6 @@ VideoCaptureImpl::VideoCaptureImpl()
        _requestedCapability(),
        _lastProcessTimeNanos(TimeNanos()),
        _lastFrameRateCallbackTimeNanos(TimeNanos()),
--      _dataCallBack(NULL),
-       _rawDataCallBack(NULL),
+-      _dataCallBack(nullptr),
+       _rawDataCallBack(nullptr),
        _lastProcessFrameTimeNanos(TimeNanos()),
        _rotateFrame(kVideoRotation_0),
-@@ -91,7 +90,6 @@ VideoCaptureImpl::VideoCaptureImpl()
+@@ -102,7 +101,6 @@ VideoCaptureImpl::VideoCaptureImpl()
  
  VideoCaptureImpl::~VideoCaptureImpl() {
    RTC_DCHECK_RUN_ON(&api_checker_);
@@ -1337,7 +1337,7 @@ index 06f9bd3165..cafc13c970 100644
    if (_deviceUniqueId)
      delete[] _deviceUniqueId;
  }
-@@ -100,28 +98,41 @@ void VideoCaptureImpl::RegisterCaptureDataCallback(
+@@ -111,28 +109,41 @@ void VideoCaptureImpl::RegisterCaptureDataCallback(
      VideoSinkInterface<VideoFrame>* dataCallBack) {
    MutexLock lock(&api_lock_);
    RTC_DCHECK(!_rawDataCallBack);
@@ -1357,12 +1357,12 @@ index 06f9bd3165..cafc13c970 100644
 +void VideoCaptureImpl::DeRegisterCaptureDataCallback(
 +    rtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
    MutexLock lock(&api_lock_);
--  _dataCallBack = NULL;
+-  _dataCallBack = nullptr;
 +  auto it = _dataCallBacks.find(dataCallBack);
 +  if (it != _dataCallBacks.end()) {
 +    _dataCallBacks.erase(it);
 +  }
-   _rawDataCallBack = NULL;
+   _rawDataCallBack = nullptr;
  }
 +
 +int32_t VideoCaptureImpl::StopCaptureIfAllClientsClose() {
@@ -1385,7 +1385,7 @@ index 06f9bd3165..cafc13c970 100644
    }
  
    return 0;
-@@ -229,6 +240,13 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
+@@ -240,6 +251,13 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
            .build();
    captureFrame.set_ntp_time_ms(captureTime);
  
@@ -1400,10 +1400,10 @@ index 06f9bd3165..cafc13c970 100644
  
    return 0;
 diff --git a/modules/video_capture/video_capture_impl.h b/modules/video_capture/video_capture_impl.h
-index 3ec832f871..16658d9844 100644
+index d3ac5fe5ef..3889867842 100644
 --- a/modules/video_capture/video_capture_impl.h
 +++ b/modules/video_capture/video_capture_impl.h
-@@ -64,8 +64,10 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
+@@ -66,8 +66,10 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
        VideoSinkInterface<VideoFrame>* dataCallback) override;
    virtual void RegisterCaptureDataCallback(
        RawVideoSinkInterface* dataCallback) override;
@@ -1415,7 +1415,7 @@ index 3ec832f871..16658d9844 100644
    int32_t SetCaptureRotation(VideoRotation rotation) override;
    bool SetApplyRotation(bool enable) override;
    bool GetApplyRotation() override;
-@@ -115,7 +117,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
+@@ -117,7 +119,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
    // last time the frame rate callback function was called.
    int64_t _lastFrameRateCallbackTimeNanos RTC_GUARDED_BY(capture_checker_);
  
@@ -1531,10 +1531,10 @@ index aa54caa6b2..aa21658bab 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 88164115c4..ea206b52a1 100644
+index 1211f0c856..794e8c2725 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -441,6 +441,12 @@ rtc_library("logging") {
+@@ -454,6 +454,12 @@ rtc_library("logging") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  
@@ -1621,10 +1621,10 @@ index b011acbefa..717aae2e19 100644
  
  //////////////////////////////////////////////////////////////////////
 diff --git a/test/fuzzers/rtp_packet_fuzzer.cc b/test/fuzzers/rtp_packet_fuzzer.cc
-index d2d4376bed..8eeed5cf5a 100644
+index 2b9c95a5b7..0048dab074 100644
 --- a/test/fuzzers/rtp_packet_fuzzer.cc
 +++ b/test/fuzzers/rtp_packet_fuzzer.cc
-@@ -179,6 +179,10 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
+@@ -183,6 +183,10 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
          CorruptionDetectionMessage message;
          packet.GetExtension<CorruptionDetectionExtension>(&message);
          break;
@@ -1636,7 +1636,7 @@ index d2d4376bed..8eeed5cf5a 100644
      }
    }
 diff --git a/test/vcm_capturer.cc b/test/vcm_capturer.cc
-index 0a9226ef6f..620c1c02f3 100644
+index bc022c1a80..fd1f627a44 100644
 --- a/test/vcm_capturer.cc
 +++ b/test/vcm_capturer.cc
 @@ -83,7 +83,7 @@ void VcmCapturer::Destroy() {
@@ -1649,7 +1649,7 @@ index 0a9226ef6f..620c1c02f3 100644
    vcm_ = nullptr;
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 2a407632d6..35c9768a1a 100644
+index 103983dec4..4fed37040d 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -123,7 +123,7 @@ declare_args() {

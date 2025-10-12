@@ -52,17 +52,12 @@ class SyncModuleLoader : public JS::loader::ModuleLoaderBase {
  private:
   ~SyncModuleLoader();
 
-  already_AddRefed<ModuleLoadRequest> CreateStaticImport(
-      nsIURI* aURI, JS::ModuleType aModuleType,
-      JS::loader::ModuleScript* aReferrerScript,
-      const mozilla::dom::SRIMetadata& aSriMetadata,
-      JS::loader::LoadContextBase* aLoadContext,
-      JS::loader::ModuleLoaderBase* aLoader) override;
-
-  already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
-      JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
-      JS::Handle<JSObject*> aModuleRequestObj,
-      JS::Handle<JSObject*> aPromise) override;
+  already_AddRefed<ModuleLoadRequest> CreateRequest(
+      JSContext* aCx, nsIURI* aURI, JS::Handle<JSObject*> aModuleRequest,
+      JS::Handle<JS::Value> aHostDefined, JS::Handle<JS::Value> aPayload,
+      bool aIsDynamicImport, JS::loader::ScriptFetchOptions* aOptions,
+      dom::ReferrerPolicy aReferrerPolicy, nsIURI* aBaseURL,
+      const dom::SRIMetadata& aSriMetadata) override;
 
   void OnDynamicImportStarted(ModuleLoadRequest* aRequest) override;
 

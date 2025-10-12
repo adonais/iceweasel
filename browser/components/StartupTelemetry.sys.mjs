@@ -45,7 +45,7 @@ export let StartupTelemetry = {
     for (let task of tasks) {
       ChromeUtils.idleDispatch(async () => {
         if (!Services.startup.shuttingDown) {
-          let startTime = Cu.now();
+          let startTime = ChromeUtils.now();
           try {
             await task();
           } catch (ex) {

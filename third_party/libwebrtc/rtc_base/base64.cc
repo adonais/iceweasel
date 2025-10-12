@@ -29,6 +29,10 @@ bool IsStrictBase64(absl::string_view data) {
 }
 }  // namespace
 
+std::string Base64Encode(absl::string_view data) {
+  return absl::Base64Escape(data);
+}
+
 std::optional<std::string> Base64Decode(absl::string_view data,
                                         Base64DecodeOptions options) {
   // absl::Base64Unescape is forgiving. Return nullopt if the input is not

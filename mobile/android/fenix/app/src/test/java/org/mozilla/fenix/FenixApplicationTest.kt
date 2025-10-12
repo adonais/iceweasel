@@ -175,6 +175,7 @@ class FenixApplicationTest {
         every { application.reportHomeScreenMetrics(settings) } just Runs
         every { application.getDeviceTotalRAM() } returns 7L
         every { settings.inactiveTabsAreEnabled } returns true
+        every { settings.isIsolatedProcessEnabled } returns true
         every { application.isDeviceRamAboveThreshold } returns true
 
         assertTrue(settings.contileContextId.isNotEmpty())
@@ -207,6 +208,8 @@ class FenixApplicationTest {
         assertEquals(true, Addons.hasEnabledAddons.testGetValue())
         assertEquals(listOf("test1", "test2"), Addons.enabledAddons.testGetValue())
         assertEquals(true, Preferences.searchSuggestionsEnabled.testGetValue())
+        assertEquals(true, Preferences.showSponsorSuggestionsEnabled.testGetValue())
+        assertEquals(true, Preferences.showNonSponsorSuggestionsEnabled.testGetValue())
         assertEquals(true, Preferences.remoteDebuggingEnabled.testGetValue())
         assertEquals(true, Preferences.telemetryEnabled.testGetValue())
         assertEquals(true, Preferences.studiesEnabled.testGetValue())
@@ -223,6 +226,7 @@ class FenixApplicationTest {
         assertEquals("standard", Preferences.enhancedTrackingProtection.testGetValue())
         assertEquals(listOf("switch", "touch exploration"), Preferences.accessibilityServices.testGetValue())
         assertEquals(true, Preferences.inactiveTabsEnabled.testGetValue())
+        assertEquals(true, Preferences.isolatedContentProcessesEnabled.testGetValue())
         assertEquals(true, Metrics.defaultWallpaper.testGetValue())
         assertEquals(true, Metrics.ramMoreThanThreshold.testGetValue())
         assertEquals(7L, Metrics.deviceTotalRam.testGetValue())

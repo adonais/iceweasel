@@ -30,6 +30,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "api/audio/audio_view.h"
 #include "api/candidate.h"
 #include "api/jsep.h"
 #include "api/jsep_ice_candidate.h"
@@ -67,34 +68,6 @@
 #include "rtc_base/ssl_fingerprint.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
-
-using ::webrtc::AudioContentDescription;
-using webrtc::Candidate;
-using ::webrtc::Candidates;
-using ::webrtc::ContentInfo;
-using ::webrtc::ICE_CANDIDATE_COMPONENT_RTCP;
-using ::webrtc::ICE_CANDIDATE_COMPONENT_RTP;
-using ::webrtc::kApplicationSpecificBandwidth;
-using ::webrtc::kCodecParamMaxPTime;
-using ::webrtc::kCodecParamMinPTime;
-using ::webrtc::kCodecParamPTime;
-using ::webrtc::kTransportSpecificBandwidth;
-using ::webrtc::MediaContentDescription;
-using ::webrtc::MediaProtocolType;
-using ::webrtc::RidDescription;
-using ::webrtc::RtpHeaderExtensions;
-using ::webrtc::SctpDataContentDescription;
-using ::webrtc::SimulcastDescription;
-using ::webrtc::SimulcastLayer;
-using ::webrtc::SimulcastLayerList;
-using ::webrtc::SocketAddress;
-using ::webrtc::SsrcGroup;
-using ::webrtc::StreamParams;
-using ::webrtc::StreamParamsVec;
-using ::webrtc::TransportDescription;
-using ::webrtc::TransportInfo;
-using ::webrtc::UnsupportedContentDescription;
-using ::webrtc::VideoContentDescription;
 
 // TODO(deadbeef): Switch to using anonymous namespace rather than declaring
 // everything "static".
@@ -203,8 +176,8 @@ static const char kCandidatePrflx[] = "prflx";
 static const char kCandidateRelay[] = "relay";
 static const char kTcpCandidateType[] = "tcptype";
 
-// webrtc::StringBuilder doesn't have a << overload for chars, while
-// webrtc::split and webrtc::tokenize_first both take a char delimiter. To
+// StringBuilder doesn't have a << overload for chars, while
+// split and tokenize_first both take a char delimiter. To
 // handle both cases these constants come in pairs of a chars and length-one
 // strings.
 static const char kSdpDelimiterEqual[] = "=";
@@ -254,9 +227,6 @@ static const char kDefaultSctpmapProtocol[] = "webrtc-datachannel";
 // types.
 const int kWildcardPayloadType = -1;
 
-// Maximum number of channels allowed.
-static const size_t kMaxNumberOfChannels = 24;
-
 struct SsrcInfo {
   uint32_t ssrc_id;
   std::string cname;
@@ -268,22 +238,22 @@ using SsrcGroupVec = std::vector<SsrcGroup>;
 
 static void BuildMediaDescription(const ContentInfo* content_info,
                                   const TransportInfo* transport_info,
-                                  const webrtc::MediaType media_type,
+                                  const MediaType media_type,
                                   const std::vector<Candidate>& candidates,
                                   int msid_signaling,
                                   std::string* message);
-static void BuildMediaLine(const webrtc::MediaType media_type,
+static void BuildMediaLine(const MediaType media_type,
                            const ContentInfo* content_info,
                            const MediaContentDescription* media_desc,
                            std::string* message);
 static void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
-                                      const webrtc::MediaType media_type,
+                                      const MediaType media_type,
                                       int msid_signaling,
                                       std::string* message);
 static void BuildRtpHeaderExtensions(const RtpHeaderExtensions& extensions,
                                      std::string* message);
 static void BuildRtpmap(const MediaContentDescription* media_desc,
-                        const webrtc::MediaType media_type,
+                        const MediaType media_type,
                         std::string* message);
 static void BuildCandidate(const std::vector<Candidate>& candidates,
                            bool include_ufrag,
@@ -314,7 +284,7 @@ static bool ParseMediaDescription(
     SdpParseError* error);
 static bool ParseContent(
     absl::string_view message,
-    const webrtc::MediaType media_type,
+    const MediaType media_type,
     int mline_index,
     absl::string_view protocol,
     const std::vector<int>& payload_types,
@@ -337,12 +307,12 @@ static bool ParseSsrcGroupAttribute(absl::string_view line,
                                     SsrcGroupVec* ssrc_groups,
                                     SdpParseError* error);
 static bool ParseRtpmapAttribute(absl::string_view line,
-                                 const webrtc::MediaType media_type,
+                                 const MediaType media_type,
                                  const std::vector<int>& payload_types,
                                  MediaContentDescription* media_desc,
                                  SdpParseError* error);
 static bool ParseFmtpAttributes(absl::string_view line,
-                                const webrtc::MediaType media_type,
+                                const MediaType media_type,
                                 MediaContentDescription* media_desc,
                                 SdpParseError* error);
 static bool ParseFmtpParam(absl::string_view line,
@@ -350,11 +320,11 @@ static bool ParseFmtpParam(absl::string_view line,
                            std::string* value,
                            SdpParseError* error);
 static bool ParsePacketizationAttribute(absl::string_view line,
-                                        const webrtc::MediaType media_type,
+                                        const MediaType media_type,
                                         MediaContentDescription* media_desc,
                                         SdpParseError* error);
 static bool ParseRtcpFbAttribute(absl::string_view line,
-                                 const webrtc::MediaType media_type,
+                                 const MediaType media_type,
                                  MediaContentDescription* media_desc,
                                  SdpParseError* error);
 static bool ParseIceOptions(absl::string_view line,
@@ -876,7 +846,7 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
       desc->GetGroupsByName(GROUP_TYPE_BUNDLE);
   for (const ContentGroup* group : groups) {
     std::string group_line = kAttrGroup;
-    RTC_DCHECK(group != NULL);
+    RTC_DCHECK(group != nullptr);
     for (const std::string& content_name : group->content_names()) {
       group_line.append(" ");
       group_line.append(content_name);
@@ -891,7 +861,7 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
   }
 
   // MediaStream semantics.
-  // TODO(bugs.webrtc.org/10421): Change to & webrtc::kMsidSignalingSemantic
+  // TODO(bugs.webrtc.org/10421): Change to & kMsidSignalingSemantic
   // when we think it's safe to do so, so that we gradually fade out this old
   // line that was removed from the specification.
   if (desc->msid_signaling() != kMsidSignalingNotUsed) {
@@ -998,7 +968,7 @@ bool SdpDeserialize(absl::string_view message,
 bool SdpDeserializeCandidate(absl::string_view message,
                              JsepIceCandidate* jcandidate,
                              SdpParseError* error) {
-  RTC_DCHECK(jcandidate != NULL);
+  RTC_DCHECK(jcandidate != nullptr);
   Candidate candidate;
   if (!ParseCandidate(message, &candidate, error, true)) {
     return false;
@@ -1023,7 +993,7 @@ bool ParseCandidate(absl::string_view message,
                     Candidate* candidate,
                     SdpParseError* error,
                     bool is_raw) {
-  RTC_DCHECK(candidate != NULL);
+  RTC_DCHECK(candidate != nullptr);
 
   // Makes sure `message` contains only one line.
   absl::string_view first_line;
@@ -1320,8 +1290,14 @@ bool ParseExtmap(absl::string_view line,
 }
 
 static void BuildSctpContentAttributes(
-    std::string* message,
-    const SctpDataContentDescription* data_desc) {
+    const MediaContentDescription* media_desc,
+    std::string* message) {
+  const SctpDataContentDescription* data_desc = media_desc->as_sctp();
+  if (!data_desc) {
+    // Ignore unsupported media types with the SCTP protocol.
+    return;
+  }
+
   StringBuilder os;
   if (data_desc->use_sctpmap()) {
     // draft-ietf-mmusic-sctp-sdp-04
@@ -1398,7 +1374,7 @@ void BuildDtlsFingerprintSetup(const TransportInfo* transport_info,
   }
 }
 
-void BuildMediaLine(const webrtc::MediaType media_type,
+void BuildMediaLine(const MediaType media_type,
                     const ContentInfo* content_info,
                     const MediaContentDescription* media_desc,
                     std::string* message) {
@@ -1409,15 +1385,14 @@ void BuildMediaLine(const webrtc::MediaType media_type,
   // fmt is a list of payload type numbers that MAY be used in the session.
   std::string type;
   std::string fmt;
-  if (media_type == webrtc::MediaType::AUDIO ||
-      media_type == webrtc::MediaType::VIDEO) {
-    type = media_type == webrtc::MediaType::AUDIO ? kSdpMediaTypeAudio
-                                                  : kSdpMediaTypeVideo;
+  if (media_type == MediaType::AUDIO || media_type == MediaType::VIDEO) {
+    type = media_type == MediaType::AUDIO ? kSdpMediaTypeAudio
+                                          : kSdpMediaTypeVideo;
     for (const Codec& codec : media_desc->codecs()) {
       fmt.append(" ");
       fmt.append(absl::StrCat(codec.id));
     }
-  } else if (media_type == webrtc::MediaType::DATA) {
+  } else if (media_type == MediaType::DATA) {
     type = kSdpMediaTypeData;
     const SctpDataContentDescription* sctp_data_desc = media_desc->as_sctp();
     if (sctp_data_desc) {
@@ -1431,7 +1406,7 @@ void BuildMediaLine(const webrtc::MediaType media_type,
     } else {
       RTC_DCHECK_NOTREACHED() << "Data description without SCTP";
     }
-  } else if (media_type == webrtc::MediaType::UNSUPPORTED) {
+  } else if (media_type == MediaType::UNSUPPORTED) {
     const UnsupportedContentDescription* unsupported_desc =
         media_desc->as_unsupported();
     type = unsupported_desc->media_type();
@@ -1469,7 +1444,7 @@ void BuildMediaLine(const webrtc::MediaType media_type,
 
 void BuildMediaDescription(const ContentInfo* content_info,
                            const TransportInfo* transport_info,
-                           const webrtc::MediaType media_type,
+                           const MediaType media_type,
                            const std::vector<Candidate>& candidates,
                            int msid_signaling,
                            std::string* message) {
@@ -1553,15 +1528,14 @@ void BuildMediaDescription(const ContentInfo* content_info,
   AddLine(os.str(), message);
 
   if (IsDtlsSctp(media_desc->protocol())) {
-    const SctpDataContentDescription* data_desc = media_desc->as_sctp();
-    BuildSctpContentAttributes(message, data_desc);
+    BuildSctpContentAttributes(media_desc, message);
   } else if (IsRtpProtocol(media_desc->protocol())) {
     BuildRtpContentAttributes(media_desc, media_type, msid_signaling, message);
   }
 }
 
 void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
-                               const webrtc::MediaType media_type,
+                               const MediaType media_type,
                                int msid_signaling,
                                std::string* message) {
   SimulcastSdpSerializer serializer;
@@ -1798,7 +1772,7 @@ bool IsFmtpParam(absl::string_view name) {
   return name != kCodecParamPTime && name != kCodecParamMaxPTime;
 }
 
-bool WriteFmtpParameters(const webrtc::CodecParameterMap& parameters,
+bool WriteFmtpParameters(const CodecParameterMap& parameters,
                          StringBuilder* os) {
   bool empty = true;
   const char* delimiter = "";  // No delimiter before first parameter.
@@ -1861,7 +1835,7 @@ bool GetMinValue(const std::vector<int>& values, int* value) {
 }
 
 bool GetParameter(const std::string& name,
-                  const webrtc::CodecParameterMap& params,
+                  const CodecParameterMap& params,
                   int* value) {
   std::map<std::string, std::string>::const_iterator found = params.find(name);
   if (found == params.end()) {
@@ -1874,12 +1848,12 @@ bool GetParameter(const std::string& name,
 }
 
 void BuildRtpmap(const MediaContentDescription* media_desc,
-                 const webrtc::MediaType media_type,
+                 const MediaType media_type,
                  std::string* message) {
-  RTC_DCHECK(message != NULL);
-  RTC_DCHECK(media_desc != NULL);
+  RTC_DCHECK(message != nullptr);
+  RTC_DCHECK(media_desc != nullptr);
   StringBuilder os;
-  if (media_type == webrtc::MediaType::VIDEO) {
+  if (media_type == MediaType::VIDEO) {
     for (const Codec& codec : media_desc->codecs()) {
       // RFC 4566
       // a=rtpmap:<payload type> <encoding name>/<clock rate>
@@ -1894,7 +1868,7 @@ void BuildRtpmap(const MediaContentDescription* media_desc,
       AddRtcpFbLines(codec, message);
       AddFmtpLine(codec, message);
     }
-  } else if (media_type == webrtc::MediaType::AUDIO) {
+  } else if (media_type == MediaType::AUDIO) {
     std::vector<int> ptimes;
     std::vector<int> maxptimes;
     int max_minptime = 0;
@@ -2256,7 +2230,7 @@ bool ParseSessionDescription(absl::string_view message,
 bool ParseGroupAttribute(absl::string_view line,
                          SessionDescription* desc,
                          SdpParseError* error) {
-  RTC_DCHECK(desc != NULL);
+  RTC_DCHECK(desc != nullptr);
 
   // RFC 5888 and draft-holmberg-mmusic-sdp-bundle-negotiation-00
   // a=group:BUNDLE video voice
@@ -2580,7 +2554,7 @@ static void BackfillCodecParameters(std::vector<Codec>& codecs) {
 
 static std::unique_ptr<MediaContentDescription> ParseContentDescription(
     absl::string_view message,
-    const webrtc::MediaType media_type,
+    const MediaType media_type,
     int mline_index,
     absl::string_view protocol,
     const std::vector<int>& payload_types,
@@ -2592,9 +2566,9 @@ static std::unique_ptr<MediaContentDescription> ParseContentDescription(
     std::vector<std::unique_ptr<JsepIceCandidate>>* candidates,
     SdpParseError* error) {
   std::unique_ptr<MediaContentDescription> media_desc;
-  if (media_type == webrtc::MediaType::AUDIO) {
+  if (media_type == MediaType::AUDIO) {
     media_desc = std::make_unique<AudioContentDescription>();
-  } else if (media_type == webrtc::MediaType::VIDEO) {
+  } else if (media_type == MediaType::VIDEO) {
     media_desc = std::make_unique<VideoContentDescription>();
   } else {
     RTC_DCHECK_NOTREACHED();
@@ -2651,7 +2625,7 @@ bool ParseMediaDescription(
     SessionDescription* desc,
     std::vector<std::unique_ptr<JsepIceCandidate>>* candidates,
     SdpParseError* error) {
-  RTC_DCHECK(desc != NULL);
+  RTC_DCHECK(desc != nullptr);
   int mline_index = -1;
   int msid_signaling = desc->msid_signaling();
 
@@ -2714,14 +2688,14 @@ bool ParseMediaDescription(
     }
     if (media_type == kSdpMediaTypeVideo) {
       content = ParseContentDescription(
-          message, webrtc::MediaType::VIDEO, mline_index, protocol,
-          payload_types, pos, &content_name, &bundle_only,
-          &section_msid_signaling, &transport, candidates, error);
+          message, MediaType::VIDEO, mline_index, protocol, payload_types, pos,
+          &content_name, &bundle_only, &section_msid_signaling, &transport,
+          candidates, error);
     } else if (media_type == kSdpMediaTypeAudio) {
       content = ParseContentDescription(
-          message, webrtc::MediaType::AUDIO, mline_index, protocol,
-          payload_types, pos, &content_name, &bundle_only,
-          &section_msid_signaling, &transport, candidates, error);
+          message, MediaType::AUDIO, mline_index, protocol, payload_types, pos,
+          &content_name, &bundle_only, &section_msid_signaling, &transport,
+          candidates, error);
     } else if (media_type == kSdpMediaTypeData && IsDtlsSctp(protocol)) {
       // The draft-03 format is:
       // m=application <port> DTLS/SCTP <sctp-port>...
@@ -2739,7 +2713,7 @@ bool ParseMediaDescription(
       } else if (fields[3] == kDefaultSctpmapProtocol) {
         data_desc->set_use_sctpmap(false);
       }
-      if (!ParseContent(message, webrtc::MediaType::DATA, mline_index, protocol,
+      if (!ParseContent(message, MediaType::DATA, mline_index, protocol,
                         payload_types, pos, &content_name, &bundle_only,
                         &section_msid_signaling, data_desc.get(), &transport,
                         candidates, error)) {
@@ -2751,11 +2725,10 @@ bool ParseMediaDescription(
       RTC_LOG(LS_WARNING) << "Unsupported media type: " << *mline;
       auto unsupported_desc =
           std::make_unique<UnsupportedContentDescription>(media_type);
-      if (!ParseContent(message, webrtc::MediaType::UNSUPPORTED, mline_index,
-                        protocol, payload_types, pos, &content_name,
-                        &bundle_only, &section_msid_signaling,
-                        unsupported_desc.get(), &transport, candidates,
-                        error)) {
+      if (!ParseContent(message, MediaType::UNSUPPORTED, mline_index, protocol,
+                        payload_types, pos, &content_name, &bundle_only,
+                        &section_msid_signaling, unsupported_desc.get(),
+                        &transport, candidates, error)) {
         return false;
       }
       unsupported_desc->set_protocol(protocol);
@@ -2841,7 +2814,7 @@ bool ParseMediaDescription(
   return true;
 }
 
-void AddParameters(const webrtc::CodecParameterMap& parameters, Codec* codec) {
+void AddParameters(const CodecParameterMap& parameters, Codec* codec) {
   for (const auto& entry : parameters) {
     const std::string& key = entry.first;
     const std::string& value = entry.second;
@@ -2863,15 +2836,15 @@ void AddFeedbackParameters(const FeedbackParams& feedback_params,
 // Gets the current codec setting associated with `payload_type`. If there
 // is no Codec associated with that payload type it returns an empty codec
 // with that payload type.
-Codec GetCodecWithPayloadType(webrtc::MediaType type,
+Codec GetCodecWithPayloadType(MediaType type,
                               const std::vector<Codec>& codecs,
                               int payload_type) {
   const Codec* codec = FindCodecById(codecs, payload_type);
   if (codec)
     return *codec;
   // Return empty codec with `payload_type`.
-  if (type == webrtc::MediaType::AUDIO) {
-    return CreateAudioCodec(payload_type, "", 0, 0);
+  if (type == MediaType::AUDIO) {
+    return CreateAudioCodec(payload_type, "", kDefaultAudioClockRateHz, 0);
   } else {
     return CreateVideoCodec(payload_type, "");
   }
@@ -2901,7 +2874,7 @@ void AddOrReplaceCodec(MediaContentDescription* content_desc,
 // to `parameters`.
 void UpdateCodec(MediaContentDescription* content_desc,
                  int payload_type,
-                 const webrtc::CodecParameterMap& parameters) {
+                 const CodecParameterMap& parameters) {
   // Codec might already have been populated (from rtpmap).
   Codec new_codec = GetCodecWithPayloadType(
       content_desc->type(), content_desc->codecs(), payload_type);
@@ -2982,7 +2955,7 @@ void AddAudioAttribute(const std::string& name,
 }
 
 bool ParseContent(absl::string_view message,
-                  const webrtc::MediaType media_type,
+                  const MediaType media_type,
                   int mline_index,
                   absl::string_view protocol,
                   const std::vector<int>& payload_types,
@@ -2994,11 +2967,11 @@ bool ParseContent(absl::string_view message,
                   TransportDescription* transport,
                   std::vector<std::unique_ptr<JsepIceCandidate>>* candidates,
                   SdpParseError* error) {
-  RTC_DCHECK(media_desc != NULL);
-  RTC_DCHECK(content_name != NULL);
-  RTC_DCHECK(transport != NULL);
+  RTC_DCHECK(media_desc != nullptr);
+  RTC_DCHECK(content_name != nullptr);
+  RTC_DCHECK(transport != nullptr);
 
-  if (media_type == webrtc::MediaType::AUDIO) {
+  if (media_type == MediaType::AUDIO) {
     MaybeCreateStaticPayloadAudioCodecs(payload_types, media_desc);
   }
 
@@ -3142,7 +3115,7 @@ bool ParseContent(absl::string_view message,
       if (!ParseDtlsSetup(*line, &(transport->connection_role), error)) {
         return false;
       }
-    } else if (IsDtlsSctp(protocol) && media_type == webrtc::MediaType::DATA) {
+    } else if (IsDtlsSctp(protocol) && media_type == MediaType::DATA) {
       //
       // SCTP specific attributes
       //
@@ -3344,7 +3317,7 @@ bool ParseContent(absl::string_view message,
   if (!ssrc_infos.empty()) {
     CreateTracksFromSsrcInfos(ssrc_infos, stream_ids, track_id, &tracks,
                               *msid_signaling);
-  } else if (media_type != webrtc::MediaType::DATA &&
+  } else if (media_type != MediaType::DATA &&
              (*msid_signaling & kMsidSignalingMediaSection)) {
     // If the stream_ids/track_id was signaled but SSRCs were unsignaled we
     // still create a track. This isn't done for data media types because
@@ -3383,7 +3356,7 @@ bool ParseContent(absl::string_view message,
                       [](const Codec codec) { return !codec.name.empty(); })) {
     return ParseFailed("Failed to parse codecs correctly.", error);
   }
-  if (media_type == webrtc::MediaType::AUDIO) {
+  if (media_type == MediaType::AUDIO) {
     AddAudioAttribute(kCodecParamMaxPTime, maxptime_as_string, media_desc);
     AddAudioAttribute(kCodecParamPTime, ptime_as_string, media_desc);
   }
@@ -3407,7 +3380,7 @@ bool ParseSsrcAttribute(absl::string_view line,
                         SsrcInfoVec* ssrc_infos,
                         int* msid_signaling,
                         SdpParseError* error) {
-  RTC_DCHECK(ssrc_infos != NULL);
+  RTC_DCHECK(ssrc_infos != nullptr);
   // RFC 5576
   // a=ssrc:<ssrc-id> <attribute>
   // a=ssrc:<ssrc-id> <attribute>:<value>
@@ -3479,7 +3452,7 @@ bool ParseSsrcAttribute(absl::string_view line,
 bool ParseSsrcGroupAttribute(absl::string_view line,
                              SsrcGroupVec* ssrc_groups,
                              SdpParseError* error) {
-  RTC_DCHECK(ssrc_groups != NULL);
+  RTC_DCHECK(ssrc_groups != nullptr);
   // RFC 5576
   // a=ssrc-group:<semantics> <ssrc-id> ...
   std::vector<absl::string_view> fields =
@@ -3542,7 +3515,7 @@ void UpdateCodec(int payload_type,
 }
 
 bool ParseRtpmapAttribute(absl::string_view line,
-                          const webrtc::MediaType media_type,
+                          const MediaType media_type,
                           const std::vector<int>& payload_types,
                           MediaContentDescription* media_desc,
                           SdpParseError* error) {
@@ -3586,7 +3559,7 @@ bool ParseRtpmapAttribute(absl::string_view line,
     return false;
   }
 
-  if (media_type == webrtc::MediaType::VIDEO) {
+  if (media_type == MediaType::VIDEO) {
     for (const Codec& existing_codec : media_desc->codecs()) {
       if (!existing_codec.name.empty() && payload_type == existing_codec.id &&
           (!absl::EqualsIgnoreCase(encoding_name, existing_codec.name) ||
@@ -3602,7 +3575,7 @@ bool ParseRtpmapAttribute(absl::string_view line,
       }
     }
     UpdateCodec(payload_type, encoding_name, media_desc);
-  } else if (media_type == webrtc::MediaType::AUDIO) {
+  } else if (media_type == MediaType::AUDIO) {
     // RFC 4566
     // For audio streams, <encoding parameters> indicates the number
     // of audio channels.  This parameter is OPTIONAL and may be
@@ -3614,8 +3587,11 @@ bool ParseRtpmapAttribute(absl::string_view line,
         return false;
       }
     }
-    if (channels > kMaxNumberOfChannels) {
-      return ParseFailed(line, "At most 24 channels are supported.", error);
+    if (channels > kMaxNumberOfAudioChannels) {
+      StringBuilder description;
+      description << "At most " << kMaxNumberOfAudioChannels
+                  << " channels are supported.";
+      return ParseFailed(line, description.Release(), error);
     }
 
     for (const Codec& existing_codec : media_desc->codecs()) {
@@ -3654,7 +3630,7 @@ bool ParseFmtpParam(absl::string_view line,
 }
 
 bool ParseFmtpParameterSet(absl::string_view line_params,
-                           webrtc::CodecParameterMap& codec_params,
+                           CodecParameterMap& codec_params,
                            SdpParseError* error) {
   // Parse out format specific parameters.
   for (absl::string_view param :
@@ -3675,11 +3651,10 @@ bool ParseFmtpParameterSet(absl::string_view line_params,
 }
 
 bool ParseFmtpAttributes(absl::string_view line,
-                         const webrtc::MediaType media_type,
+                         const MediaType media_type,
                          MediaContentDescription* media_desc,
                          SdpParseError* error) {
-  if (media_type != webrtc::MediaType::AUDIO &&
-      media_type != webrtc::MediaType::VIDEO) {
+  if (media_type != MediaType::AUDIO && media_type != MediaType::VIDEO) {
     return true;
   }
 
@@ -3709,23 +3684,22 @@ bool ParseFmtpAttributes(absl::string_view line,
   }
 
   // Parse out format specific parameters.
-  webrtc::CodecParameterMap codec_params;
+  CodecParameterMap codec_params;
   if (!ParseFmtpParameterSet(line_params, codec_params, error)) {
     return false;
   }
 
-  if (media_type == webrtc::MediaType::AUDIO ||
-      media_type == webrtc::MediaType::VIDEO) {
+  if (media_type == MediaType::AUDIO || media_type == MediaType::VIDEO) {
     UpdateCodec(media_desc, payload_type, codec_params);
   }
   return true;
 }
 
 bool ParsePacketizationAttribute(absl::string_view line,
-                                 const webrtc::MediaType media_type,
+                                 const MediaType media_type,
                                  MediaContentDescription* media_desc,
                                  SdpParseError* error) {
-  if (media_type != webrtc::MediaType::VIDEO) {
+  if (media_type != MediaType::VIDEO) {
     return true;
   }
   std::vector<absl::string_view> packetization_fields =
@@ -3749,11 +3723,10 @@ bool ParsePacketizationAttribute(absl::string_view line,
 }
 
 bool ParseRtcpFbAttribute(absl::string_view line,
-                          const webrtc::MediaType media_type,
+                          const MediaType media_type,
                           MediaContentDescription* media_desc,
                           SdpParseError* error) {
-  if (media_type != webrtc::MediaType::AUDIO &&
-      media_type != webrtc::MediaType::VIDEO) {
+  if (media_type != MediaType::AUDIO && media_type != MediaType::VIDEO) {
     return true;
   }
   std::vector<absl::string_view> rtcp_fb_fields =
@@ -3781,8 +3754,7 @@ bool ParseRtcpFbAttribute(absl::string_view line,
   }
   const FeedbackParam feedback_param(id, param);
 
-  if (media_type == webrtc::MediaType::AUDIO ||
-      media_type == webrtc::MediaType::VIDEO) {
+  if (media_type == MediaType::AUDIO || media_type == MediaType::VIDEO) {
     UpdateCodec(media_desc, payload_type, feedback_param);
   }
   return true;

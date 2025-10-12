@@ -14,9 +14,12 @@ import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
+import org.junit.Assert.assertArrayEquals
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
@@ -90,5 +93,50 @@ class ExceptionHandlerTest {
         handler.uncaughtException(Thread.currentThread(), exception)
 
         verify(defaultExceptionHandler).uncaughtException(Thread.currentThread(), exception)
+    }
+
+    @Test
+    fun `exceptions in CrashReporter invoke default exception handler`() {
+        val defaultExceptionHandler: Thread.UncaughtExceptionHandler = mock()
+
+        val crashReporter = spy(
+            CrashReporter(
+            context = testContext,
+            shouldPrompt = CrashReporter.Prompt.NEVER,
+            services = listOf(
+                object : CrashReporterService {
+                    override val id: String = "test"
+
+                    override val name: String = "TestReporter"
+
+                    override fun createCrashReportUrl(identifier: String): String? = null
+
+                    override fun report(crash: Crash.UncaughtExceptionCrash): String? = null
+
+                    override fun report(crash: Crash.NativeCodeCrash): String? = null
+
+                    override fun report(throwable: Throwable, breadcrumbs: ArrayList<Breadcrumb>): String? = null
+                },
+            ),
+            scope = scope,
+        ),
+        )
+        val reporterException = RuntimeException("CrashReporterException")
+        doThrow(reporterException).`when`(crashReporter).onCrash(any(), any())
+        crashReporter.install(testContext)
+
+        val handler = ExceptionHandler(
+            testContext,
+            crashReporter,
+            defaultExceptionHandler,
+        )
+
+        verify(defaultExceptionHandler, never()).uncaughtException(any(), any())
+
+        val exception = RuntimeException()
+        handler.uncaughtException(Thread.currentThread(), exception)
+
+        verify(defaultExceptionHandler).uncaughtException(Thread.currentThread(), reporterException)
+        assertArrayEquals(arrayOf(exception), reporterException.suppressed)
     }
 }

@@ -135,12 +135,16 @@ bool ScreenCapturerWinMagnifier::GetSourceList(SourceList* sources) {
 }
 
 bool ScreenCapturerWinMagnifier::SelectSource(SourceId id) {
-  if (IsScreenValid(id, &current_device_key_)) {
+  std::wstring device_key;
+  bool valid = IsScreenValid(id, &device_key);
+  if (valid) {
     current_screen_id_ = id;
-    return true;
+    current_device_key_ = device_key;
+  } else {
+    current_screen_id_ = kFullDesktopScreenId;
+    current_device_key_ = std::nullopt;
   }
-
-  return false;
+  return valid;
 }
 
 void ScreenCapturerWinMagnifier::SetExcludedWindow(WindowId excluded_window) {

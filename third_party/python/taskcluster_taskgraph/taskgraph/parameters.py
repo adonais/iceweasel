@@ -28,7 +28,8 @@ class ParameterMismatch(Exception):
     """Raised when a parameters.yml has extra or missing parameters."""
 
 
-# Please keep this list sorted and in sync with docs/reference/parameters.rst
+#: Schema for base parameters.
+#: Please keep this list sorted and in sync with docs/reference/parameters.rst
 base_schema = Schema(
     {
         Required("base_repository"): str,
@@ -362,10 +363,7 @@ def load_parameters_file(
 
 def parameters_loader(spec, strict=True, overrides=None):
     def get_parameters(graph_config):
-        try:
-            repo_root = graph_config.vcs_root
-        except Exception:
-            repo_root = None
+        repo_root = graph_config.vcs_root
 
         parameters = load_parameters_file(
             spec,

@@ -15,6 +15,7 @@
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/MouseEvent.h"
+#include "nsComboboxControlFrame.h"
 #include "nsListControlFrame.h"
 
 using namespace mozilla;
@@ -319,8 +320,7 @@ void HTMLSelectEventListener::OptionValueMightHaveChanged(
 
 void HTMLSelectEventListener::AttributeChanged(dom::Element* aElement,
                                                int32_t aNameSpaceID,
-                                               nsAtom* aAttribute,
-                                               int32_t aModType,
+                                               nsAtom* aAttribute, AttrModType,
                                                const nsAttrValue* aOldValue) {
   if (aElement->IsHTMLElement(nsGkAtoms::option) &&
       aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::label) {
@@ -363,17 +363,18 @@ void HTMLSelectEventListener::ContentInserted(nsIContent* aChild,
 }
 
 void HTMLSelectEventListener::ComboboxMightHaveChanged() {
-  if (nsIFrame* f = mElement->GetPrimaryFrame()) {
-    PresShell* ps = f->PresShell();
-    // nsComoboxControlFrame::Reflow updates the selected text. AddOption /
-    // RemoveOption / etc takes care of keeping the displayed index up to date.
-    ps->FrameNeedsReflow(f, IntrinsicDirty::FrameAncestorsAndDescendants,
-                         NS_FRAME_IS_DIRTY);
+  nsIFrame* f = mElement->GetPrimaryFrame();
+  if (!f) {
+    return;
+  }
+  PresShell* ps = f->PresShell();
 #ifdef ACCESSIBILITY
-    if (nsAccessibilityService* acc = GetAccService()) {
-      acc->ScheduleAccessibilitySubtreeUpdate(ps, mElement);
-    }
+  if (nsAccessibilityService* acc = GetAccService()) {
+    acc->ScheduleAccessibilitySubtreeUpdate(ps, mElement);
+  }
 #endif
+  if (nsComboboxControlFrame* combobox = do_QueryFrame(f)) {
+    combobox->RedisplaySelectedText();
   }
 }
 

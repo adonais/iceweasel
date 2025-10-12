@@ -269,12 +269,6 @@ class ThreeDotMenuMainRobotCompose(private val composeTestRule: ComposeTestRule)
         waitForAppWindowToBeUpdated()
     }
 
-    fun clickLessOptionChevron() {
-        Log.i(TAG, "clickLessOptionChevron: Trying to click the \"Less option chevron\" button from the new main menu design.")
-        composeTestRule.lessChevronButton().performClick()
-        Log.i(TAG, "clickLessOptionChevron: Clicked the \"Less option chevron\" button from the new main menu design.")
-    }
-
     fun verifyBookmarkThisPageButton() {
         composeTestRule.bookmarkPageButton().assertIsDisplayed()
     }
@@ -299,9 +293,6 @@ class ThreeDotMenuMainRobotCompose(private val composeTestRule: ComposeTestRule)
 
     fun verifyMoreMainMenuItems() {
         Log.i(TAG, "verifyMoreMainMenuItems: Trying to verify the more main menu items on the web page.")
-        Log.i(TAG, "verifyMoreMainMenuItems: Trying to verify that the \"Less\" button exists.")
-        composeTestRule.lessButton().assertIsDisplayed()
-        Log.i(TAG, "verifyMoreMainMenuItems: Verified that the \"Less\" button exists.")
         Log.i(TAG, "verifyMoreMainMenuItems: Trying to verify that the \"Translate page\" button exists.")
         composeTestRule.translatePageButton().assertIsDisplayed()
         Log.i(TAG, "verifyMoreMainMenuItems: Verified that the \"Translate page\" button exists.")
@@ -439,13 +430,11 @@ class ThreeDotMenuMainRobotCompose(private val composeTestRule: ComposeTestRule)
             return SettingsSubMenuAddonsManagerRobot.Transition()
         }
 
+        @OptIn(ExperimentalTestApi::class)
         fun clickExtensionsChevronFromMainMenu(interact: SettingsSubMenuAddonsManagerRobot.() -> Unit): SettingsSubMenuAddonsManagerRobot.Transition {
             Log.i(TAG, "clickExtensionsChevronFromMainMenu: Trying to click the \"Extensions chevron\" button from the new main menu design.")
-            composeTestRule.extensionsChevronButton().assertExists()
             composeTestRule.extensionsChevronButton().performClick()
             Log.i(TAG, "clickExtensionsChevronFromMainMenu: Clicked the \"Extensions chevron\" button from the new main menu design.")
-            composeTestRule.waitForIdle()
-            waitForAppWindowToBeUpdated()
 
             SettingsSubMenuAddonsManagerRobot().interact()
             return SettingsSubMenuAddonsManagerRobot.Transition()
@@ -648,8 +637,6 @@ private fun ComposeTestRule.moreButton() = onNodeWithContentDescription(getStrin
 
 private fun ComposeTestRule.moreChevronButton() = onNodeWithTag(MORE_OPTION_CHEVRON, useUnmergedTree = true)
 
-private fun ComposeTestRule.lessChevronButton() = onNodeWithTag(MORE_OPTION_CHEVRON, useUnmergedTree = true)
-
 private fun ComposeTestRule.bookmarksButton() = onNodeWithContentDescription(getStringResource(R.string.library_bookmarks), substring = true)
 
 private fun ComposeTestRule.historyButton() = onNodeWithContentDescription(getStringResource(R.string.library_history), substring = true)
@@ -657,8 +644,6 @@ private fun ComposeTestRule.historyButton() = onNodeWithContentDescription(getSt
 private fun ComposeTestRule.downloadsButton() = onNodeWithContentDescription(getStringResource(R.string.library_downloads), substring = true)
 
 private fun ComposeTestRule.passwordsButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_passwords), substring = true)
-
-private fun ComposeTestRule.backToMainMenuButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_back_button_content_description))
 
 private fun ComposeTestRule.quitFirefoxButton() = onNodeWithContentDescription("Quit $appName")
 
@@ -703,7 +688,5 @@ private fun ComposeTestRule.printContentButton() = onNodeWithContentDescription(
 private fun ComposeTestRule.defaultOpenInAppButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_open_app_link))
 
 private fun ComposeTestRule.openInAppNameButton(appName: String) = onNodeWithContentDescription(getStringResource(R.string.browser_menu_open_in_fenix, appName))
-
-private fun ComposeTestRule.lessButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_less_settings), substring = true)
 
 private fun ComposeTestRule.extensionsChevronButton() = onNodeWithTag(EXTENSIONS_OPTION_CHEVRON, useUnmergedTree = true)

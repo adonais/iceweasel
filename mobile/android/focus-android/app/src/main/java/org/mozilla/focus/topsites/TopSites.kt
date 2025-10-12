@@ -4,7 +4,6 @@
 
 package org.mozilla.focus.topsites
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -88,7 +87,6 @@ fun TopSites(
  * @param menuItems List of [MenuItem] to display in a top site dropdown menu.
  * @param onTopSiteClick Invoked when the user clicks on a top site.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TopSiteItem(
     topSite: TopSite,

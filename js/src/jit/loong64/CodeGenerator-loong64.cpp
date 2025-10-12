@@ -682,7 +682,17 @@ void CodeGenerator::visitAddI(LAddI* ins) {
   bailoutFrom(&overflow, ins->snapshot());
 }
 
-void CodeGenerator::visitAddIntPtr(LAddIntPtr* ins) { MOZ_CRASH(); }
+void CodeGenerator::visitAddIntPtr(LAddIntPtr* ins) {
+  Register lhs = ToRegister(ins->lhs());
+  const LAllocation* rhs = ins->rhs();
+  Register dest = ToRegister(ins->output());
+
+  if (rhs->isConstant()) {
+    masm.ma_add_d(dest, lhs, ImmWord(ToIntPtr(rhs)));
+  } else {
+    masm.as_add_d(dest, lhs, ToRegister(rhs));
+  }
+}
 
 void CodeGenerator::visitAddI64(LAddI64* lir) {
   LInt64Allocation lhs = lir->lhs();
@@ -728,7 +738,17 @@ void CodeGenerator::visitSubI(LSubI* ins) {
   bailoutFrom(&overflow, ins->snapshot());
 }
 
-void CodeGenerator::visitSubIntPtr(LSubIntPtr* ins) { MOZ_CRASH(); }
+void CodeGenerator::visitSubIntPtr(LSubIntPtr* ins) {
+  Register lhs = ToRegister(ins->lhs());
+  const LAllocation* rhs = ins->rhs();
+  Register dest = ToRegister(ins->output());
+
+  if (rhs->isConstant()) {
+    masm.ma_sub_d(dest, lhs, ImmWord(ToIntPtr(rhs)));
+  } else {
+    masm.as_sub_d(dest, lhs, ToRegister(rhs));
+  }
+}
 
 void CodeGenerator::visitSubI64(LSubI64* lir) {
   LInt64Allocation lhs = lir->lhs();
@@ -872,7 +892,41 @@ void CodeGenerator::visitMulI(LMulI* ins) {
   }
 }
 
-void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) { MOZ_CRASH(); }
+void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
+  Register lhs = ToRegister(ins->lhs());
+  const LAllocation* rhs = ins->rhs();
+  Register dest = ToRegister(ins->output());
+
+  if (rhs->isConstant()) {
+    intptr_t constant = ToIntPtr(rhs);
+
+    switch (constant) {
+      case -1:
+        masm.as_sub_d(dest, zero, lhs);
+        return;
+      case 0:
+        masm.movePtr(zero, dest);
+        return;
+      case 1:
+        masm.movePtr(lhs, dest);
+        return;
+      case 2:
+        masm.as_add_d(dest, lhs, lhs);
+        return;
+    }
+
+    // Use shift if constant is a power of 2.
+    if (constant > 0 && mozilla::IsPowerOfTwo(uintptr_t(constant))) {
+      uint32_t shift = mozilla::FloorLog2(constant);
+      masm.lshiftPtr(Imm32(shift), lhs, dest);
+      return;
+    }
+
+    masm.ma_mul_d(dest, lhs, ImmWord(constant));
+  } else {
+    masm.as_mul_d(dest, lhs, ToRegister(rhs));
+  }
+}
 
 void CodeGenerator::visitMulI64(LMulI64* lir) {
   LInt64Allocation lhs = lir->lhs();
@@ -1269,18 +1323,16 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
         MOZ_CRASH("Unexpected shift op");
     }
   } else {
-    // The shift amounts should be AND'ed into the 0-31 range
-    masm.ma_and(dest, ToRegister(rhs), Imm32(0x1F));
-
+    Register shift = ToRegister(rhs);
     switch (ins->bitop()) {
       case JSOp::Lsh:
-        masm.as_sll_w(dest, lhs, dest);
+        masm.as_sll_w(dest, lhs, shift);
         break;
       case JSOp::Rsh:
-        masm.as_sra_w(dest, lhs, dest);
+        masm.as_sra_w(dest, lhs, shift);
         break;
       case JSOp::Ursh:
-        masm.as_srl_w(dest, lhs, dest);
+        masm.as_srl_w(dest, lhs, shift);
         if (ins->mir()->toUrsh()->fallible()) {
           // x >>> 0 can overflow.
           bailoutCmp32(Assembler::LessThan, dest, Imm32(0), ins->snapshot());
@@ -1292,7 +1344,43 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
   }
 }
 
-void CodeGenerator::visitShiftIntPtr(LShiftIntPtr* ins) { MOZ_CRASH(); }
+void CodeGenerator::visitShiftIntPtr(LShiftIntPtr* ins) {
+  Register lhs = ToRegister(ins->lhs());
+  const LAllocation* rhs = ins->rhs();
+  Register dest = ToRegister(ins->output());
+
+  if (rhs->isConstant()) {
+    int32_t shift = ToIntPtr(rhs) & 0x3F;
+    switch (ins->bitop()) {
+      case JSOp::Lsh:
+        masm.as_slli_d(dest, lhs, shift);
+        break;
+      case JSOp::Rsh:
+        masm.as_srai_d(dest, lhs, shift);
+        break;
+      case JSOp::Ursh:
+        masm.as_srli_d(dest, lhs, shift);
+        break;
+      default:
+        MOZ_CRASH("Unexpected shift op");
+    }
+  } else {
+    Register shift = ToRegister(rhs);
+    switch (ins->bitop()) {
+      case JSOp::Lsh:
+        masm.as_sll_d(dest, lhs, shift);
+        break;
+      case JSOp::Rsh:
+        masm.as_sra_d(dest, lhs, shift);
+        break;
+      case JSOp::Ursh:
+        masm.as_srl_d(dest, lhs, shift);
+        break;
+      default:
+        MOZ_CRASH("Unexpected shift op");
+    }
+  }
+}
 
 void CodeGenerator::visitShiftI64(LShiftI64* lir) {
   LInt64Allocation lhs = lir->lhs();
@@ -2270,10 +2358,6 @@ void CodeGenerator::visitWasmAtomicBinopI64(LWasmAtomicBinopI64* lir) {
   masm.wasmAtomicFetchOp64(lir->mir()->access(), lir->mir()->operation(), value,
                            addr, temp, output);
 }
-
-void CodeGenerator::visitNearbyInt(LNearbyInt*) { MOZ_CRASH("NYI"); }
-
-void CodeGenerator::visitNearbyIntF(LNearbyIntF*) { MOZ_CRASH("NYI"); }
 
 void CodeGenerator::visitSimd128(LSimd128* ins) { MOZ_CRASH("No SIMD"); }
 

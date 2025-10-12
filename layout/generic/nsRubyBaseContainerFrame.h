@@ -59,6 +59,11 @@ class nsRubyBaseContainerFrame final : public nsContainerFrame {
     return mDescendantLeadings;
   }
 
+  mozilla::RubyMetrics RubyMetrics(float aRubyMetricsFactor) const override {
+    // provided by nsContainerFrame
+    return RubyMetricsIncludingChildren(aRubyMetricsFactor);
+  }
+
  protected:
   friend nsContainerFrame* NS_NewRubyBaseContainerFrame(
       mozilla::PresShell* aPresShell, ComputedStyle* aStyle);

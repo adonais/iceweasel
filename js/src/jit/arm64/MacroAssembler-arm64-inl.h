@@ -659,6 +659,10 @@ void MacroAssembler::negateDouble(FloatRegister reg) {
 }
 
 void MacroAssembler::abs32(Register src, Register dest) {
+  if (CPUHas(vixl::CPUFeatures::kCSSC)) {
+    Abs(ARMRegister(dest, 32), ARMRegister(src, 32));
+    return;
+  }
   Cmp(ARMRegister(src, 32), wzr);
   Cneg(ARMRegister(dest, 32), ARMRegister(src, 32), Assembler::LessThan);
 }
@@ -677,6 +681,38 @@ void MacroAssembler::sqrtFloat32(FloatRegister src, FloatRegister dest) {
 
 void MacroAssembler::sqrtDouble(FloatRegister src, FloatRegister dest) {
   fsqrt(ARMFPRegister(dest, 64), ARMFPRegister(src, 64));
+}
+
+void MacroAssembler::min32(Register lhs, Register rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::min32(Register lhs, Imm32 rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::max32(Register lhs, Register rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::max32(Register lhs, Imm32 rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::minPtr(Register lhs, Register rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::minPtr(Register lhs, ImmWord rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::maxPtr(Register lhs, Register rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ true);
 }
 
 void MacroAssembler::minFloat32(FloatRegister other, FloatRegister srcDest,
@@ -1005,6 +1041,10 @@ void MacroAssembler::clz32(Register src, Register dest, bool knownNotZero) {
 }
 
 void MacroAssembler::ctz32(Register src, Register dest, bool knownNotZero) {
+  if (CPUHas(vixl::CPUFeatures::kCSSC)) {
+    Ctz(ARMRegister(dest, 32), ARMRegister(src, 32));
+    return;
+  }
   Rbit(ARMRegister(dest, 32), ARMRegister(src, 32));
   Clz(ARMRegister(dest, 32), ARMRegister(dest, 32));
 }
@@ -1014,17 +1054,27 @@ void MacroAssembler::clz64(Register64 src, Register64 dest) {
 }
 
 void MacroAssembler::ctz64(Register64 src, Register64 dest) {
+  if (CPUHas(vixl::CPUFeatures::kCSSC)) {
+    Ctz(ARMRegister(dest.reg, 64), ARMRegister(src.reg, 64));
+    return;
+  }
   Rbit(ARMRegister(dest.reg, 64), ARMRegister(src.reg, 64));
   Clz(ARMRegister(dest.reg, 64), ARMRegister(dest.reg, 64));
 }
 
 void MacroAssembler::popcnt32(Register src_, Register dest_, Register tmp_) {
+  ARMRegister src(src_, 32);
+  ARMRegister dest(dest_, 32);
+
+  if (CPUHas(vixl::CPUFeatures::kCSSC)) {
+    Cnt(dest, src);
+    return;
+  }
+
   MOZ_ASSERT(tmp_ != Register::Invalid());
 
   // Equivalent to mozilla::CountPopulation32().
 
-  ARMRegister src(src_, 32);
-  ARMRegister dest(dest_, 32);
   ARMRegister tmp(tmp_, 32);
 
   Mov(tmp, src);
@@ -1047,12 +1097,18 @@ void MacroAssembler::popcnt32(Register src_, Register dest_, Register tmp_) {
 
 void MacroAssembler::popcnt64(Register64 src_, Register64 dest_,
                               Register tmp_) {
+  ARMRegister src(src_.reg, 64);
+  ARMRegister dest(dest_.reg, 64);
+
+  if (CPUHas(vixl::CPUFeatures::kCSSC)) {
+    Cnt(dest, src);
+    return;
+  }
+
   MOZ_ASSERT(tmp_ != Register::Invalid());
 
   // Equivalent to mozilla::CountPopulation64(), though likely more efficient.
 
-  ARMRegister src(src_.reg, 64);
-  ARMRegister dest(dest_.reg, 64);
   ARMRegister tmp(tmp_, 64);
 
   Mov(tmp, src);
@@ -1168,13 +1224,13 @@ void MacroAssembler::branch16(Condition cond, const Address& lhs, Imm32 rhs,
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Register rhs,
-                              Label* label, LhsHighBitsAreClean) {
+                              Label* label) {
   cmp32(lhs, rhs);
   B(label, cond);
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Imm32 imm,
-                              Label* label, LhsHighBitsAreClean) {
+                              Label* label) {
   if (imm.value == 0 && cond == Assembler::Equal) {
     Cbz(ARMRegister(lhs, 32), label);
   } else if (imm.value == 0 && cond == Assembler::NotEqual) {

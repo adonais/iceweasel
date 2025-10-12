@@ -7,10 +7,11 @@ from taskgraph.util.schema import Schema
 from taskgraph.util.templates import deep_get, substitute_task_fields
 from taskgraph.util.yaml import load_yaml
 
+#: Schema for the task_context transforms
 SCHEMA = Schema(
     {
         Optional("name"): str,
-        Required(
+        Optional(
             "task-context",
             description=dedent(
                 """
@@ -84,7 +85,10 @@ transforms.add_validate(SCHEMA)
 @transforms.add
 def render_task(config, tasks):
     for task in tasks:
-        sub_config = task.pop("task-context")
+        sub_config = task.pop("task-context", None)
+        if sub_config is None:
+            yield task
+            continue
         params_context = {}
         for var, path in sub_config.pop("from-parameters", {}).items():
             if isinstance(path, str):

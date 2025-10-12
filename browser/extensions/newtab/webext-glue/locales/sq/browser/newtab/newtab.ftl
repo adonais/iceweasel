@@ -304,9 +304,6 @@ newtab-custom-pocket-sponsored = Histori të sponsorizuara
 newtab-custom-pocket-show-recent-saves = Shfaq të ruajturat së fundi
 newtab-custom-recent-title = Veprimtari së fundi
 newtab-custom-recent-subtitle = Një përzgjedhje sajtesh dhe lënde së fundi
-newtab-custom-recent-toggle =
-    .label = Veprimtari së fundi
-    .description = Një përzgjedhje sajtesh dhe lënde së fundi
 newtab-custom-weather-toggle =
     .label = Moti
     .description = Parashikimi i motit për sot me një vështrim
@@ -427,7 +424,6 @@ newtab-weather-menu-change-location = Ndryshoni vendndodhje
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Kërkoni për vendndodhje
     .aria-label = Kërkoni për vendndodhje
-newtab-weather-change-location-search-input = Kërkoni për vendndodhje
 newtab-weather-menu-weather-display = Shfaqje moti
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature

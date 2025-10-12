@@ -2,8 +2,10 @@
 support-files = [
   "../formsubmit.sjs",
   "authenticate.sjs",
+  "slow_css.sjs",
   "empty.html",
   "form_basic.html",
+  "form_basic_slow_css.html",
   "form_basic_iframe.html",
   "form_basic_login.html",
   "form_basic_login_fields_with_max_length.html",
@@ -65,6 +67,8 @@ skip-if = [
 ["browser_autocomplete_insecure_warning.js"]
 
 ["browser_autocomplete_primary_password.js"]
+
+["browser_autofill_after_paint.js"]
 
 ["browser_autofill_hidden_document.js"]
 skip-if = ["os == 'mac' && os_version == '10.15' && processor == 'x86_64' && !debug"] # high frequency intermittent, Bug 1716486

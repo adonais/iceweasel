@@ -583,37 +583,21 @@ template float js::GetBiggestNumberLessThan<>(float x);
 double js::math_round_impl(double x) {
   AutoUnsafeCallWithABI unsafe;
 
-  int32_t ignored;
-  if (NumberEqualsInt32(x, &ignored)) {
-    return x;
+  double result = fdlibm_ceil(x);
+  if (x < result - 0.5) {
+    result -= 1.0;
   }
-
-  /* Some numbers are so big that adding 0.5 would give the wrong number. */
-  if (ExponentComponent(x) >=
-      int_fast16_t(FloatingPoint<double>::kExponentShift)) {
-    return x;
-  }
-
-  double add = (x >= 0) ? GetBiggestNumberLessThan(0.5) : 0.5;
-  return std::copysign(fdlibm_floor(x + add), x);
+  return result;
 }
 
 float js::math_roundf_impl(float x) {
   AutoUnsafeCallWithABI unsafe;
 
-  int32_t ignored;
-  if (NumberEqualsInt32(x, &ignored)) {
-    return x;
+  float result = fdlibm_ceilf(x);
+  if (x < result - 0.5f) {
+    result -= 1.0f;
   }
-
-  /* Some numbers are so big that adding 0.5 would give the wrong number. */
-  if (ExponentComponent(x) >=
-      int_fast16_t(FloatingPoint<float>::kExponentShift)) {
-    return x;
-  }
-
-  float add = (x >= 0) ? GetBiggestNumberLessThan(0.5f) : 0.5f;
-  return std::copysign(fdlibm_floorf(x + add), x);
+  return result;
 }
 
 /* ES5 15.8.2.15. */

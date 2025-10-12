@@ -68,6 +68,9 @@ skip-if = [
 
 ["browser_jsonview_manifest.js"]
 
+["browser_jsonview_multipart_response.js"]
+support-files = ["json_multipart.sjs"]
+
 ["browser_jsonview_nojs.js"]
 
 ["browser_jsonview_nul.js"]

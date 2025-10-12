@@ -10,10 +10,6 @@
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
   <string name="content_description_menu">ရွေးချယ်စရာများ</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">သီးသန့်ရှာဖွေမှုကို ဖွင့်ပါ</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">သီးသန့်ရှာဖွေမှုကို ပိတ်ပါ</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">လိပ်စာရှာဖွေ သို့ ရိုက်ထည့်ပါ</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -183,7 +179,11 @@
   <string name="search_engine_suggestions_title">%s ကို ရှာပါ</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">လိပ်စာ ဘားမှ တိုက်ရိုက် ရှာပါ</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
+  <!--
+    Home onboarding
+
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
+  -->
   <string name="onboarding_home_content_description_close_button">ပိတ်ပါ</string>
   <!-- Text for the button to sign in to sync on the device -->
   <string name="juno_onboarding_sign_in_positive_button" tools:ignore="UnusedResources">အကောင့်ဝင်မည်</string>
@@ -527,9 +527,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">မှတ်တမ်းကို ဖျက်ပါ</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">မှတ်တမ်း ကို ဖျက်ပြီး</string>
+  <string name="history_delete_multiple_items_snackbar">မှတ်တမ်း ကို ဖျက်ပြီး</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s ခု ဖျက်ပြီး</string>
+  <string name="history_delete_single_item_snackbar">%1$s ခု ဖျက်ပြီး</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">ဖျက်ပါ</string>
   <!--
@@ -736,12 +736,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d tabs ကိုရွေးချယ်ထားပါသည်</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">တဗ်များကိုသိမ်းထားပြီး</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">စုစည်းမှု သိမ်းပြီး။</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">စုစည်းမှု သိမ်းပြီး။</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">တဗ်ကိုသိမ်းထားပြီး</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">တဗ်ကိုသိမ်းထားပြီး</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">ပိတ်ပါ</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -828,8 +826,6 @@
   <string name="tab_collection_dialog_message">%1$s ကိုသင်ဖျက်လိုသလား။</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">ဖျက်ပါ</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL ကူးပြီး</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">စာသားချဲ့ခြင်းချုံခြင်းများကို ထိန်းညှိရန် ဤနေရာတွင် နမူနာစာသားဖြင့်ပြထားပါသည်။</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -890,9 +886,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Tabs ပို့လိုက်ပြီ!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Tabs ပို့လိုက်ပြီ!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">tab ပို့လိုက်ပြီ!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">tab ပို့လိုက်ပြီ!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">ပို့ရန်မစွမ်းနိုင်ပါ</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1159,12 +1155,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">ရှာဖွေစာကြောင်းကိုရိုက်ပါ</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">ရှာဖွေစာကြောင်းကိုဥပမာပုံစံနှင့်ကိုက်ညီသလားစစ်ပါ။</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ဖန်တီးထားသည်</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s သိမ်းဆည်းခဲ့သည်</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ဖျက်ပြီးပါပြီ</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">ခွင့်ပြုရန် -</string>
   <!-- First step for the allowing a permission -->

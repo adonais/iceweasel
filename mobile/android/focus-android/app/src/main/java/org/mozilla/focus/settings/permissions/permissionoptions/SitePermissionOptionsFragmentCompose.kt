@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -155,7 +156,7 @@ private fun OptionPermissionDisplayName(sitePermissionOption: SitePermissionOpti
         Text(
             textAlign = TextAlign.Start,
             color = focusColors.settingsTextColor,
-            text = AnnotatedString(LocalContext.current.resources.getString(sitePermissionOption.titleId)),
+            text = AnnotatedString(stringResource(id = sitePermissionOption.titleId)),
             style = TextStyle(
                 fontSize = 16.sp,
             ),
@@ -165,7 +166,7 @@ private fun OptionPermissionDisplayName(sitePermissionOption: SitePermissionOpti
         sitePermissionOption.summaryId?.let {
             Text(
                 textAlign = TextAlign.Start,
-                text = AnnotatedString(LocalContext.current.resources.getString(it)),
+                text = AnnotatedString(stringResource(id = it)),
                 color = focusColors.settingsTextSummaryColor,
                 style = TextStyle(
                     fontSize = 14.sp,
@@ -237,11 +238,7 @@ private fun ComponentPermissionBlockedByAndroidButton(goToPhoneSettings: () -> U
     ) {
         Text(
             color = PhotonColors.Ink20,
-            text = AnnotatedString(
-                LocalContext.current.resources.getString(
-                    R.string.phone_feature_go_to_settings,
-                ),
-            ),
+            text = AnnotatedString(stringResource(id = R.string.phone_feature_go_to_settings)),
         )
     }
 }

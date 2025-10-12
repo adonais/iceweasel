@@ -51,6 +51,7 @@ support-files = [
   "html_post-raw-with-headers-test-page.html",
   "html_simple-test-page.html",
   "html_single-get-page.html",
+  "html_single_get_page_favicon.html",
   "html_slow-requests-test-page.html",
   "html_send-beacon.html",
   "html_send-beacon-late-iframe-request.html",
@@ -497,6 +498,8 @@ skip-if = [
 ["browser_net_sort-reset.js"]
 
 ["browser_net_sse-basic.js"]
+
+["browser_net_stacktraces-no-chrome-frames.js"]
 
 ["browser_net_stacktraces-visibility.js"]
 

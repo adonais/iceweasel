@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">Mear opsjes</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Priveenavigaasje ynskeakelje</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Priveenavigaasje útskeakelje</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Priveenavigaasje</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Fier sykterm of adres yn</string>
@@ -32,6 +28,12 @@
   <string name="no_open_tabs_description">Jo iepene ljepblêden wurde hjir werjûn.</string>
   <!-- No Private Tabs Message Description -->
   <string name="no_private_tabs_description">Jo priveeljepblêden wurde hjir werjûn.</string>
+  <!-- The header text displayed on the private tabs page when no private tabs are open -->
+  <string name="tab_manager_empty_private_tabs_page_header">Priveenavigaasje</string>
+  <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
+  <string name="tab_manager_empty_private_tabs_page_description">%1$s sil gjin skiednis of cookies ûnthâlde, mar nije blêdwizers sille bewarre wurde.</string>
+  <!-- The header text displayed on the normal tabs page when no normal tabs are open -->
+  <string name="tab_manager_empty_normal_tabs_page_header">Meitsje in nij ljepblêd oan om te begjinnen mei sykjen</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">%1$d selektearre</string>
   <!-- Tab tray multi select title in app bar when no tabs are selected -->
@@ -46,6 +48,12 @@
   <string name="tab_tray_close_multiselect_content_description">Multiseleksjemodus ferlitte</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">Selektearre ljepblêden yn kolleksje bewarje</string>
+  <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_header">Pak fan elk apparaat ôf ljepblêden</string>
+  <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_description">Meld jo oan om syngronisearre ljepblêden fan al jo apparaten ôf te behearen.</string>
+  <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
+  <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">Oanmelde</string>
   <!--
     Home - Bookmarks
 
@@ -281,10 +289,6 @@
   <string name="browser_menu_new_private_tab">Nij priveeljepblêd</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Wachtwurden</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Nei mobylwebsite</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Haadmenuwurkblêd slute</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">Menu slute</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -331,8 +335,6 @@
   <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Nimt sekonden. Wizigje op elk momint.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">Fluch, privee, en makke foar jo.</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Slute</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss_promotion">Promoasje slute</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -365,6 +367,18 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Side oerset fan it %1$s nei it %2$s.</string>
+  <!--
+    Translation Toolbar
+
+    Translation toolbar label that is displayed when the current page has been translated by the translation feature.
+    %1$s is the name of the language that is displayed in the original page. (For example: English)
+    %2$s is the name of the language which the page was translated to. (For example: French)
+  -->
+  <string name="translation_toolbar_translated_from_and_to" tools:ignore="UnusedResources">Oerset fan it %1$s nei it %2$s</string>
+  <!-- Content description for the translate toolbar action that opens the translations dialog. -->
+  <string name="translation_toolbar_expand_action">Blêd Oersetting iepenje</string>
+  <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
+  <string name="translation_toolbar_close_action">Berjocht slute</string>
   <!--
     Locale Settings Fragment
 
@@ -415,10 +429,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Jo ljepblêden wurde syngronisearre! Gean fierder wêr’t jo bleaun wiene op jo oare apparaat.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Slute</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -495,6 +507,16 @@
   <string name="onboarding_preferences_dialog_crash_reporting_description">Mei ûngelokrapporten kinne wy problemen mei de browser analysearje en oplosse. Rapporten kinne persoanlike of gefoelige gegevens befetsje.</string>
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Mear ynfo</string>
+  <!-- Title for the startup crash page. %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_title">%s moat opnij opstarte wurde</string>
+  <!-- Body text for the startup crash page. %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_body">Der is in probleem bard by it iepenjen fan %s.\n\nIt ferstjoeren fan in ûngelokrapport helpe ús problemen mei de browser te analysearjen en op te lossen. Rapporten kinne persoanlike of gefoelige gegevens befetsje.</string>
+  <!-- Button text to submit a startup crash report -->
+  <string name="startup_crash_positive">Ungelokrapport ferstjoere</string>
+  <!-- Button text to continue and not send a startup crash report -->
+  <string name="startup_crash_negative">Nee, tankewol</string>
+  <!-- Button text to reopen firefox after the crash is processed %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_restart">%s opnij iepenje</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_usage_data_title">Technyske en ynteraksjegegevens nei Mozilla ferstjoere</string>
   <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Gegevens oer jo apparaat, hardwarekonfiguraasje, en hoe’t jo Firefox brûke, helpe by it ferbetterjen fan funksjes, prestaasjes en stabiliteit foar elkenien.</string>
@@ -519,6 +541,61 @@
   <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Om de browser te helpen ferbetterjen, ferstjoert Firefox diagnostyske en ynteraksjegegevens nei Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Beheare</string>
+  <!-- Terms of use (ToU) onboarding redesign title. -->
+  <string name="onboarding_redesign_tou_title">De ultime Android-browser starte</string>
+  <!-- Terms of use (ToU) first subheader. -->
+  <string name="onboarding_redesign_tou_subheader_one">Laad websites as de wjerljocht</string>
+  <!-- Terms of use (ToU) second subheader. -->
+  <string name="onboarding_redesign_tou_subheader_two">Automatyske beskerming tsjin folgjen</string>
+  <!-- Terms of use (ToU) third subheader. -->
+  <string name="onboarding_redesign_tou_subheader_three">Tûzenen oanpassingen</string>
+  <!--
+    Terms of use (ToU) first body text. %1$s is replaced by an active link,
+    using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="onboarding_redesign_tou_body_one">Troch fierder te gean, geane jo akkoard mei de %1$s.</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Gebrûksbetingsten fan Firefox</string>
+  <!--
+    Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
+  -->
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage">Firefox jout om jo privacy. Mear ynfo yn ús %1$s.</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
+  <string name="onboarding_redesign_tou_body_two_link_text">Privacyferklearring</string>
+  <!--
+    Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
+  -->
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage">Om de browser te helpen ferbetterjen, ferstjoert Firefox diagnostyske en ynteraksjegegevens nei Mozilla. %1$s</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
+  <string name="onboarding_redesign_tou_body_three_link_text">Ynstellingen beheare</string>
+  <!-- Terms of use (ToU) onboarding page continue button label. -->
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Trochgean</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">Wêr wolle jo jo adresbalke hawwe?</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">Trochgean</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Help ús Firefox groeie te litten</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Diel mei Mozilla\'s marketingtechnologypartners hoe’t jo Firefox ûntdutsen hawwe en dat jo it brûke. Dizze gegevens wurde nea ferkocht.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">Hoe’t wy gegevens brûke</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">Befêstigje</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title">Untfang standert automatyske beskerming tsjin folgjen</string>
+  <!-- Set to default browser onboarding redesign body. -->
+  <string name="onboarding_redesign_set_default_browser_body">Mei ien tik foarkomme dat bedriuwen jo tikken bespionearje.</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Syngronisearje oeral wêr’t jo Firefox brûke</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body">Untfang blêdwizers, ljepblêden en wachtwurden op elk apparaat. Alles befeilige mei fersifering.</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button">Begjinne mei syngronisearjen</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">No net</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Help ús Firefox groeie te litten</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -652,7 +729,8 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Skermbeskoatteling brûke om ljepblêden yn priveenavigaasje te ferstopjen</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">Ljepblêden mei jo fingerôfdruk, pinkoade of gesichtsûntskoatteling besjen.</string>
+  <string name="preferences_pbm_lock_screen_summary_3">Besjoch ljepblêden mei jo fingerôfdruk, pinkoade of gesichtsûntskoatteling. As jo dit ynskeakelje, wurdt ek it fêstlizzen en dielen fan jo skermôfbyldingen foarkommen.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Ljepblêden mei jo fingerôfdruk, pinkoade of gesichtsûntskoatteling besjen.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Blokkearring fan cookiebanners</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -732,7 +810,9 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Oanpasse</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Meld jo oan om jo ljepblêden, blêdwizers, wachtwurden en mear te syngronisearjen.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Meld jo oan om jo ljepblêden, blêdwizers, wachtwurden en mear te syngronisearjen.</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">Ljepblêden, blêdwizers, wachtwurden en mear syngronisearje.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Mozilla-account</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -964,6 +1044,12 @@
   <string name="alternative_app_icon_option_momo">Momo</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo_subtitle">Makke troch @heyheymomodraws</string>
+  <!-- Title for the "Cuddling" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
+  <string name="alternative_app_icon_option_cuddling">Oankrûpend</string>
+  <!-- Title for the "Flaming" themed alternative app icon variant in the icon picker screen. The app icon features a fiery design, with the Firefox logo surrounded by flames for a bold, energetic look. -->
+  <string name="alternative_app_icon_option_flaming">Flammend</string>
+  <!-- Title for the "Cool" themed alternative app icon variant in the icon picker screen. The app icon uses a warm orange-to-yellow gradient background with a sleek, modern twist on the Firefox logo, giving it a fresh and stylish appearance. -->
+  <string name="alternative_app_icon_option_cool">Cool</string>
   <!-- Title for the "Solid colors" group of alternative app icon variants in the icon picker screen. This group contains icons with flat, uniform color backgrounds. -->
   <string name="alternative_app_icon_group_solid_colors">Effen kleuren</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
@@ -974,8 +1060,12 @@
   <string name="restart_warning_dialog_title">App-piktogram wizigje?</string>
   <!-- Message to warn users that applying an alternative app icon requires an app restart -->
   <string name="restart_warning_dialog_body" tools:ignore="UnusedResources" moz:removedIn="144">It wizigjen fan it piktogram fereasket dat de app opnij starten wurdt.</string>
+  <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="restart_warning_dialog_body_2">De app kin sluten wurde. Tik gewoan op jo kreaze nije piktogram om %1$s opnij te iepenjen.</string>
   <!-- Dialog button text for confirming the app restart to apply the selected icon -->
   <string name="restart_warning_dialog_button_positive" tools:ignore="UnusedResources" moz:removedIn="144">No opnij starte</string>
+  <!-- Dialog button text for confirming the possible app restart and new icon selection -->
+  <string name="restart_warning_dialog_button_positive_2">Piktogram wizigje</string>
   <!-- Dialog button text for cancelling app icon change -->
   <string name="restart_warning_dialog_button_negative">Annulearje</string>
   <!--
@@ -1094,12 +1184,8 @@
   <string name="preferences_daily_usage_ping_title">Ping foar deistich gebrûk</string>
   <string name="preferences_daily_usage_ping_description">Dit helpt Mozilla om aktive brûkers te skatten.</string>
   <string name="preferences_daily_usage_ping_learn_more">Mear ynfo oer ping foar deistich gebrûk</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Automatysk ûngelokrapporten ferstjoere</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">Rapport ferstjoerd</string>
-  <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">Dit helpt ús problemen mei de browser analysearjen en op te lossen. Rapporten kinne persoanlike of gefoelige gegevens befetsje.</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
   <string name="preferences_crashes_learn_more">Mear ynfo oer ûngelokrapporten</string>
   <!-- Title Headers for data collection settings screen -->
@@ -1119,8 +1205,6 @@
   <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Diel mei Mozilla\'s marketingtechnologypartners hoe’t jo Firefox ûntdutsen hawwe en dat jo it brûke.</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">Mear ynfo oer marketinggegevens</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Mear ynfo oer ûngelokrapporten</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Undersiken</string>
   <!-- Summary for studies preferences -->
@@ -1130,7 +1214,9 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Syngronisearje en jo gegevens bewarje</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Syngronisearje en jo gegevens bewarje</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">Oanmelde</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Oanmelde om opnij te ferbinen</string>
   <!-- Preference for removing FxA account -->
@@ -1279,6 +1365,8 @@
   <string name="close_tabs_after_one_month">Nei ien moanne</string>
   <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Iepen ljepblêden automatysk slute</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">Slute</string>
   <!--
     Opening screen
 
@@ -1378,8 +1466,16 @@
   <string name="tab_tray_menu_item_close">Alle ljepblêden slute</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_bookmark">Blêdwizer meitsje</string>
+  <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
+  <string name="tab_manager_multiselect_menu_item_bookmark_content_description">Blêdwizer foar selektearre ljepblêden meitsje</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_close">Slute</string>
+  <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
+  <string name="tab_manager_multiselect_menu_item_close_content_description">Selektearre ljepblêden slute</string>
+  <!-- Text shown in the multiselect menu for sharing selected tabs. -->
+  <string name="tab_manager_multiselect_menu_item_share">Diele</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_collection">Tafoegje oan kolleksje</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description">Selektearre ljepblêden diele</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1421,9 +1517,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Skiednis wiskje</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Skiednis fuortsmiten</string>
+  <string name="history_delete_multiple_items_snackbar">Skiednis fuortsmiten</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s fuortsmiten</string>
+  <string name="history_delete_single_item_snackbar">%1$s fuortsmiten</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Fuortsmite</string>
   <!--
@@ -1594,8 +1690,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">Net-wurkjende website melde</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">Help %1$s foar elkenien better te meitsjen. Mozilla-meiwurkers brûke de ynformaasje dy’t jo ferstjoere om websiteproblemen op te lossen.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">Jo rapport helpt ús problemen yn %1$s te begripen en op te lossen, om it foar elkenien te ferbetterjen. Mear ynfo</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
@@ -1609,8 +1703,6 @@
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Wat wurket net?</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Kies reden</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">Kies in reden</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_error">Kies in reden</string>
@@ -1618,14 +1710,18 @@
   <string name="webcompat_reporter_label_description">Beskriuw it probleem (opsjoneel)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
   <string name="webcompat_reporter_send_more_info" moz:removedIn="144" tools:ignore="UnusedResources">Mear ynformaasje ferstjoere</string>
+  <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
+  <string name="webcompat_reporter_add_more_info">Mear ynfo tafoegje</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">Annulearje</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Ferstjoere</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">Jo rapport is ferstjoerd</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Jo rapport is ferstjoerd</string>
+  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
+  <string name="webcompat_reporter_success_snackbar_text_2">Rapport ferstjoerd</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">Slute</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Slute</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Wat barde der? Wat hie der barre moatten?</string>
   <!--
@@ -1662,8 +1758,6 @@
   <string name="tab_crash_close">Ljepblêd slute</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Ljepblêd werombringe</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s moast opnij starte wurden</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">%s is ferûngelokke. In rapport ferstjoere?</string>
   <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
@@ -1703,6 +1797,14 @@
   <string name="bookmark_add_folder">Map tafoegje</string>
   <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
   <string name="bookmark_saved_in_folder_snackbar">Bewarre yn ‘%s’</string>
+  <!-- Snackbar title describing failure to add a new folder -->
+  <string name="bookmark_error_add_folder">Kin map net tafoegje</string>
+  <!-- Snackbar title describing failure to edit an existing folder -->
+  <string name="bookmark_error_edit_folder">Kin map net bewurkje</string>
+  <!-- Snackbar title describing failure to select a new parent folder for a bookmark or folder -->
+  <string name="bookmark_error_select_folder">Kin boppelizzende map net wizigje</string>
+  <!-- Snackbar title describing failure to edit a bookmark -->
+  <string name="bookmark_error_edit_bookmark">Kin blêdwizer net bewurkje</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">BEWURKJE</string>
   <!-- Bookmark menu move button -->
@@ -1727,6 +1829,8 @@
   <string name="bookmark_menu_delete_button">Fuortsmite</string>
   <!-- Bookmark overflow menu save button -->
   <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Bewarje</string>
+  <!-- Accessibility label for sorting options -->
+  <string name="bookmark_sort_menu_content_desc">Sortearopsjes</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_custom">Sortearje op oanpaste folchoarder</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
@@ -1797,8 +1901,12 @@
   <string name="bookmark_search_button_content_description">Blêdwizers trochsykje</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Itemmenu foar %s</string>
+  <!-- Content description for the "close" button in bookmarks screen. -->
+  <string name="bookmark_close_button_content_description">Blêdwizers slute</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Noch gjin blêdwizers</string>
+  <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
+  <string name="bookmarks_folder_description">Blêdwizers yn map: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">Bewarje websites as jo sneupe. Meld jo oan om blêdwizers fan oare syngronisearre apparaten op te heljen.</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -1943,12 +2051,14 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ljepblêd selektearre</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Ljepblêden bewarre!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Kolleksje bewarre!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Kolleksje bewarre!</string>
+  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
+  <string name="create_collection_tabs_saved_new_collection_2">Kolleksje bewarre</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Ljepblêd bewarre!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Ljepblêd bewarre!</string>
+  <!-- Text shown in snackbar when one tab has been saved in a collection -->
+  <string name="create_collection_tab_saved_2">Ljepblêd bewarre</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Slute</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1995,7 +2105,9 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Oanmelde by Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Syngronisearje en gegevens bewarje</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Syngronisearje en gegevens bewarje</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">Oanmelde</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Ferstjoere nei alle apparaten</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2085,7 +2197,9 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Sluten ljepblêden: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">Blêdwizers bewarre yn ‘%s’!</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Blêdwizers bewarre yn ‘%s’!</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in_2">Blêdwizers bewarre yn ‘%s’</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Oan fluchkeppelingen tafoege!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -2113,8 +2227,6 @@
   <string name="tab_collection_dialog_message">Binne jo wis dat jo %1$s fuortsmite wolle?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Fuortsmite</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL kopiearre</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Dit is foarbyldtekst. Hjir wurdt mei toand hoe’t tekst werjûn wurdt, wannear’t jo mei dizze ynstelling de ôfmjitting fergrutsje of ferlytsje.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2203,9 +2315,13 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Ljepblêden ferstjoerd!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Ljepblêden ferstjoerd!</string>
+  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
+  <string name="sync_sent_tabs_snackbar_2">Ljepblêden ferstjoerd</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Ljepblêd ferstjoerd!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Ljepblêd ferstjoerd!</string>
+  <!-- Text shown in snackbar when one tab has been sent to device -->
+  <string name="sync_sent_tab_snackbar_2">Ljepblêd ferstjoerd</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Kin net ferstjoere</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2258,6 +2374,18 @@
   <string name="preference_enhanced_tracking_protection_allow_list_baseline">%1$s tastean om automatysk útsûnderingen ta te passen dy’t nedich binne om grutte defekten fan de website foar te kommen.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience">Ek automatysk útsûnderingen tapasse dy’t allinnich nedich binne om lytse problemen op te lossen en gemaksfunksjes beskikber te meitsjen.</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">Binne jo wis dat jo oplossingen útskeakelje wolle?</string>
+  <!-- Message for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">Dizze ynstelling helpt de meast foarkommende websiteproblemen op te lossen. As jo de funskje útskeakelje, wurkje guon siden miskien net, en kin %1$s net helpe by it oplossen fan dy problemen.</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">Oplossingen útskeakelje</string>
+  <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">Oplossingen ynskeakele hâlde</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">Wat wurdt blokkearre troch strange beskerming tsjin folgjen</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2576,6 +2704,10 @@
   <string name="saved_login_hide_password">Wachtwurd ferstopje</string>
   <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their passwords -->
   <string name="logins_biometric_prompt_message_2">Untskoattelje om jo bewarre wachtwurden te besjen</string>
+  <!-- Button for unlocking logins on the biometric lock screen -->
+  <string name="logins_biometric_unlock_button">Untskoattelje</string>
+  <!-- Button for leaving logins on the biometric lock screen -->
+  <string name="logins_biometric_leave_button">Ferlitte</string>
   <!-- Title of warning dialog if users have no device authentication set up -->
   <string name="logins_warning_dialog_title_2">Befeiligje jo bewarre wachtwurden</string>
   <!-- Message of warning dialog if users have no device authentication set up -->
@@ -2754,12 +2886,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Fier in sykterm yn</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Kontrolearje oft de sykterm mei de foarbyldopmaak oerienkomt</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s oanmakke</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s bewarre</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s fuortsmiten</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Tastean:</string>
   <!-- First step for the allowing a permission -->
@@ -2912,6 +3038,11 @@
     Title text displayed in the tabs tray when a tab has been unused for 14 days.
   -->
   <string name="inactive_tabs_title">Ynaktive ljepblêden</string>
+  <!--
+    Text displayed in the tabs tray, indicating the number of inactive tabs.
+    %d is the number of inactive tabs.
+  -->
+  <string name="inactive_tabs_num_items">Items: %d</string>
   <!-- Content description for closing all inactive tabs -->
   <string name="inactive_tabs_delete_all">Alle ynaktive ljepblêden slute</string>
   <!-- Content description for expanding the inactive tabs section. -->
@@ -2969,6 +3100,13 @@
     Header text for a section on the home screen.
   -->
   <string name="pocket_stories_header_2">Ferhalen</string>
+  <!--
+    Context description text for the "Discover more" button in the stories home screen section
+    which navigates the user to a screen displaying more stories.
+  -->
+  <string name="stories_discover_more_content_description">Mear ferhalen ûntdekke</string>
+  <!-- Content description for the "Navigate back" button on the top app bar of the Stories screen. -->
+  <string name="stories_back_button_content_description">Werom blêdzje</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Sponsore</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -3248,12 +3386,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">Befeilige</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">Net befeilige</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">Wês foarsichtich op dizze website</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">Jo ferbining is net befeilige.</string>
@@ -3278,11 +3412,7 @@
   <!-- Toggle if Enhanced Tracking Protection is turned off -->
   <string name="protection_panel_etp_toggle_off">Ut</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">As der wat op dizze website net wurket, probearje dan beskermingen út te skeakeljen.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description_2">As der wat op dizze website net wurket, probearje it dan út te skeakeljen.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Beskermingen binne ÚT. Wy riede jo oan se wer yn te skeakeljen.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description_2">Ynskeakeljen fan Beskerming tsjin folgjen wurdt oanrekommandearre.</string>
   <!--
@@ -3292,8 +3422,8 @@
   <string name="protection_panel_num_trackers_blocked">Trackers blokkearre: %d</string>
   <!-- Text for when no trackers have been blocked. -->
   <string name="protection_panel_no_trackers_blocked">Gjin trackers fûn</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">Privacy- en befeiligingsynstellingen</string>
+  <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
+  <string name="protection_panel_etp_disabled_no_trackers_blocked">Trackers wirde net blokkearre</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">Privacyynstellingen</string>
   <!-- Title text for the protection panel permissions section. -->
@@ -3324,6 +3454,8 @@
   <string name="connection_security_panel_secure">Befeilige ferbining</string>
   <!-- Text for the connection security panel when the site is not secure. -->
   <string name="connection_security_panel_not_secure">Ferbining net befeilige</string>
+  <!-- Text for the connection security panel when accessed from local PDF. -->
+  <string name="connection_security_panel_local_pdf">Dizze side is op jo apparaat bewarre</string>
   <!--
     Text for the connection security panel to indicate who the certificate was verified by.
     %s is a placeholder for the name of the certificate authority that issued the certificate.
@@ -3469,6 +3601,16 @@
   <string name="debug_drawer_add_new_address">Nij adres foar selektearre locale tafoegje</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">Alle adressen fuortsmite</string>
+  <!--
+    Debug drawer credit cards
+
+    The title of the credit cards feature in the Debug Drawer.
+  -->
+  <string name="debug_drawer_credit_cards_title">Creditcards</string>
+  <!-- The title of the button in the debug drawer for adding a new credit card -->
+  <string name="debug_drawer_add_new_credit_card">Nije creditcard tafoegje</string>
+  <!-- The title of the button for deleting in the debug drawer all addresses. -->
+  <string name="debug_drawer_delete_all_credit_cards">Alle creditcards fuortsmite</string>
   <!--
     Debug drawer "contextual feature recommendation" (CFR) tools
 

@@ -22,6 +22,7 @@ import org.hamcrest.CoreMatchers.containsString
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -207,6 +208,7 @@ class PrintDelegateTest : BaseSessionTest() {
         }
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @NullDelegate(Autofill.Delegate::class)
     @Test
     fun basicWindowDotPrintTest() {
@@ -257,6 +259,7 @@ class PrintDelegateTest : BaseSessionTest() {
         }
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @NullDelegate(Autofill.Delegate::class)
     @Test
     fun staticContextWindowDotPrintTest() {
@@ -298,6 +301,7 @@ class PrintDelegateTest : BaseSessionTest() {
         }
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @NullDelegate(Autofill.Delegate::class)
     @Test
     fun contentIframeWindowDotPrintTest() {

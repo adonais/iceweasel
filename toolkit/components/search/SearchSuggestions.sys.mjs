@@ -384,6 +384,13 @@ class SuggestAutoComplete {
     this.#suggestionController.stop();
   }
 
+  /**
+   * Handles the session being reset.
+   */
+  resetSession() {
+    this.#suggestionController?.resetSession();
+  }
+
   #suggestionController;
 
   /**
@@ -414,16 +421,16 @@ class SuggestAutoComplete {
    * @param {nsIAutoCompleteObserver} listener
    *   object implementing nsIAutoCompleteObserver which we notify when
    *   results are ready.
-   * @param {boolean} privacyMode
+   * @param {boolean} inPrivateBrowsing
    *   True if the search was made from a private browsing mode context.
    */
-  async #triggerSearch(searchString, searchParam, listener, privacyMode) {
+  async #triggerSearch(searchString, searchParam, listener, inPrivateBrowsing) {
     this.#listener = listener;
-    let results = await this.#suggestionController.fetch(
+    let results = await this.#suggestionController.fetch({
       searchString,
-      privacyMode,
-      Services.search.defaultEngine
-    );
+      inPrivateBrowsing,
+      engine: Services.search.defaultEngine,
+    });
 
     let formHistoryEntries = (results?.formHistoryResults ?? []).map(
       historyEntry => ({

@@ -47,6 +47,7 @@ import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.utils.Settings
 import java.lang.ref.WeakReference
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * An interface that handles the view manipulation of the top sites triggered by the Interactor.
@@ -187,7 +188,7 @@ class DefaultTopSiteController(
                         urlLayout.error =
                             activity.resources.getString(R.string.top_sites_edit_dialog_url_error)
 
-                        urlLayout.setErrorIconDrawable(R.drawable.mozac_ic_warning_fill_24)
+                        urlLayout.setErrorIconDrawable(iconsR.drawable.mozac_ic_warning_fill_24)
                     }
                 }
 

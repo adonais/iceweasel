@@ -60,12 +60,18 @@ let updateConfig = async config => {
 
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.scotchBonnet.enableOverride", true]],
+    set: [
+      ["browser.urlbar.scotchBonnet.enableOverride", true],
+      ["browser.urlbar.quickactions.timesToShowOnboardingLabel", 0],
+    ],
   });
 
   registerCleanupFunction(async () => {
     await updateConfig(null);
     Services.search.restoreDefaultEngines();
+    Services.prefs.clearUserPref(
+      "browser.urlbar.quickactions.timesShownOnboardingLabel"
+    );
   });
 });
 
@@ -261,6 +267,32 @@ add_task(async function test_tab_to_search_engine() {
   });
 
   await onLoad;
+  await updateConfig(null);
+});
+
+add_task(async function test_onboarding_default_engine() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.quickactions.timesToShowOnboardingLabel", 3]],
+  });
+
+  await updateConfig(CONFIG);
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "default",
+  });
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(
+      window.document.querySelector(".urlbarView-press-tab-label")
+    ),
+    "Tip for user to press TAB to select action is visible"
+  );
+
+  await UrlbarTestUtils.promisePopupClose(window, () => {
+    EventUtils.synthesizeKey("KEY_Escape");
+  });
+
   await updateConfig(null);
 });
 

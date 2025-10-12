@@ -1,6 +1,137 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
+add_task(async function looksLikeOrigin() {
+  let tests = [
+    {
+      token: "",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+
+    {
+      token: "user@example.com",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+
+    {
+      token: "user:pass@example.com",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.USERINFO_OR_PORT,
+    },
+
+    {
+      token: "example.com:1234",
+      // This should be `USERINFO_OR_PORT`, but it matches
+      // `REGEXP_LIKE_PROTOCOL`, so it returns `NONE`.
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+    {
+      token: "example.com:1234",
+      args: { noPort: true },
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+
+    {
+      token: "user@example.com:1234",
+      // This should be `USERINFO_OR_PORT`, but it matches
+      // `REGEXP_LIKE_PROTOCOL`, so it returns `NONE`.
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+    {
+      token: "user@example.com:1234",
+      args: { noPort: true },
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+
+    {
+      token: "user:pass@example.com:1234",
+      // This should be `USERINFO_OR_PORT`, but it matches
+      // `REGEXP_LIKE_PROTOCOL`, so it returns `NONE`.
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+    {
+      token: "user:pass@example.com:1234",
+      args: { noPort: true },
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+
+    {
+      token: "1.2.3.4",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.IP,
+    },
+    {
+      token: "1.2.3.4",
+      args: { noIp: true },
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+
+    {
+      token: "[2001:0db8:0000:0000:0000:8a2e:0370:7334]",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.IP,
+    },
+    {
+      token: "[2001:0db8:0000:0000:0000:8a2e:0370:7334]",
+      args: { noIp: true },
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+
+    {
+      token: "[2001:db8::8a2e:370:7334]",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.IP,
+    },
+    {
+      token: "[2001:db8::8a2e:370:7334]",
+      args: { noIp: true },
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+
+    {
+      token: "a!@#$%^&( z",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+
+    {
+      token: "example",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE,
+    },
+
+    {
+      token: "localhost",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.KNOWN_DOMAIN,
+    },
+    {
+      token: "localhost",
+      args: { ignoreKnownDomains: true },
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER,
+    },
+
+    {
+      token: "example.com",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER,
+    },
+    {
+      token: "example.co",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER,
+    },
+    {
+      token: "example.c",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER,
+    },
+    {
+      token: "example.",
+      expected: UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER,
+    },
+  ];
+
+  for (let { token, args, expected } of tests) {
+    Assert.strictEqual(
+      UrlbarTokenizer.looksLikeOrigin(token, args),
+      expected,
+      "looksLikeOrigin should return expected value: " +
+        JSON.stringify({ token, args })
+    );
+  }
+});
+
 add_task(async function test_tokenizer() {
   let testContexts = [
     { desc: "Empty string", searchString: "", expectedTokens: [] },
@@ -277,11 +408,85 @@ add_task(async function test_tokenizer() {
       ],
     },
     {
-      desc: "domain",
+      desc: "domain with two dots",
       searchString: "www.mozilla.org",
       expectedTokens: [
         {
           value: "www.mozilla.org",
+          type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED,
+        },
+      ],
+    },
+    {
+      desc: "domain with two dots and allowSearchSuggestionsForSimpleOrigins = false",
+      searchString: "www.mozilla.org",
+      allowSearchSuggestionsForSimpleOrigins: false,
+      expectedTokens: [
+        {
+          value: "www.mozilla.org",
+          type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN,
+        },
+      ],
+    },
+    {
+      desc: "domain with one dot",
+      searchString: "mozilla.org",
+      expectedTokens: [
+        {
+          value: "mozilla.org",
+          type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED,
+        },
+      ],
+    },
+    {
+      desc: "domain with one dot and allowSearchSuggestionsForSimpleOrigins = false",
+      searchString: "mozilla.org",
+      allowSearchSuggestionsForSimpleOrigins: false,
+      expectedTokens: [
+        {
+          value: "mozilla.org",
+          type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN,
+        },
+      ],
+    },
+    {
+      desc: "looks like simple origin",
+      searchString: "mozilla.o",
+      expectedTokens: [
+        {
+          value: "mozilla.o",
+          type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED,
+        },
+      ],
+    },
+    {
+      desc: "looks like simple origin with allowSearchSuggestionsForSimpleOrigins = false",
+      searchString: "mozilla.o",
+      allowSearchSuggestionsForSimpleOrigins: false,
+      expectedTokens: [
+        {
+          value: "mozilla.o",
+          type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN,
+        },
+      ],
+    },
+    {
+      desc: "query ends with dot",
+      searchString: "mozilla.",
+      expectedTokens: [
+        {
+          value: "mozilla.",
+          type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED,
+        },
+      ],
+    },
+    {
+      desc: "query ends with dot with allowSearchSuggestionsForSimpleOrigins = false",
+      searchString: "mozilla.",
+      allowSearchSuggestionsForSimpleOrigins: false,
+      expectedTokens: [
+        {
+          value: "mozilla.",
           type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN,
         },
       ],
@@ -307,7 +512,10 @@ add_task(async function test_tokenizer() {
       desc: "numeric domain",
       searchString: "test1001.com",
       expectedTokens: [
-        { value: "test1001.com", type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN },
+        {
+          value: "test1001.com",
+          type: UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED,
+        },
       ],
     },
     {
@@ -426,6 +634,14 @@ add_task(async function test_tokenizer() {
     for (let token of queryContext.expectedTokens) {
       token.lowerCaseValue = token.value.toLocaleLowerCase();
     }
+
+    if (queryContext.hasOwnProperty("allowSearchSuggestionsForSimpleOrigins")) {
+      Services.prefs.setBoolPref(
+        "browser.urlbar.allowSearchSuggestionsForSimpleOrigins",
+        queryContext.allowSearchSuggestionsForSimpleOrigins
+      );
+    }
+
     let newQueryContext = UrlbarTokenizer.tokenize(queryContext);
     Assert.equal(
       queryContext,
@@ -436,6 +652,10 @@ add_task(async function test_tokenizer() {
       queryContext.tokens,
       queryContext.expectedTokens,
       "Check the expected tokens"
+    );
+
+    Services.prefs.clearUserPref(
+      "browser.urlbar.allowSearchSuggestionsForSimpleOrigins"
     );
   }
 });

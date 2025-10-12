@@ -32,11 +32,26 @@ export default class MozBoxGroup extends MozLitElement {
 
   static queries = {
     reorderableList: "moz-reorderable-list",
+    headerSlot: "slot[name='header']",
+    footerSlot: "slot[name='footer']",
   };
 
   constructor() {
     super();
     this.listItems = [];
+    this.listMutationObserver = new MutationObserver(
+      this.updateItems.bind(this)
+    );
+  }
+
+  firstUpdated(changedProperties) {
+    super.firstUpdated(changedProperties);
+    this.listMutationObserver.observe(this, {
+      attributeFilter: ["hidden"],
+      subtree: true,
+      childList: true,
+    });
+    this.updateItems();
   }
 
   contentTemplate() {
@@ -69,7 +84,7 @@ export default class MozBoxGroup extends MozLitElement {
             </li> `;
           })}
         </${listTag}>
-        <slot hidden @slotchange=${this.updateItems}></slot>`;
+        <slot hidden></slot>`;
     }
     return html`<slot></slot>`;
   }
@@ -105,18 +120,20 @@ export default class MozBoxGroup extends MozLitElement {
     let positionAttr =
       event.target.getAttribute("position") ??
       // handles the case where an interactive element is nested in a moz-box-item
-      event.target.closest("moz-box-item").getAttribute("position");
+      event.target.closest("[position]").getAttribute("position");
     let currentPosition = parseInt(positionAttr);
 
     switch (event.key) {
       case "Down":
       case "ArrowDown": {
+        event.preventDefault();
         let nextItem = this.listItems[currentPosition + 1];
         nextItem?.focus(event);
         break;
       }
       case "Up":
       case "ArrowUp": {
+        event.preventDefault();
         let prevItem = this.listItems[currentPosition - 1];
         prevItem?.focus(event);
         break;
@@ -143,10 +160,10 @@ export default class MozBoxGroup extends MozLitElement {
   }
 
   updateItems() {
-    let boxElements = this.querySelectorAll(
-      ":is(moz-box-item, moz-box-button, moz-box-link):not([slot='header'], [slot='footer'])"
+    this.listItems = [...this.children].filter(
+      child =>
+        child.slot !== "header" && child.slot !== "footer" && !child.hidden
     );
-    this.listItems = Array.from(boxElements);
   }
 
   render() {
@@ -162,11 +179,33 @@ export default class MozBoxGroup extends MozLitElement {
   }
 
   updated(changedProperties) {
+    let headerNode = this.headerSlot.assignedNodes()[0];
+    let footerNode = this.footerSlot.assignedNodes().at(-1);
+    headerNode?.classList.add("first");
+    footerNode?.classList.add("last");
+
     if (changedProperties.has("listItems") && this.listItems.length) {
       this.listItems.forEach((item, i) => {
-        item.slot = i;
-        item.setAttribute("position", i);
+        if (
+          this.type == GROUP_TYPES.list ||
+          this.type == GROUP_TYPES.reorderable
+        ) {
+          item.slot = i;
+          item.setAttribute("position", i);
+        }
+        item.classList.toggle("first", i == 0 && !headerNode);
+        item.classList.toggle(
+          "last",
+          i == this.listItems.length - 1 && !footerNode
+        );
       });
+    }
+
+    if (
+      changedProperties.has("type") &&
+      (this.type == GROUP_TYPES.list || this.type == GROUP_TYPES.reorderable)
+    ) {
+      this.updateItems();
     }
   }
 }

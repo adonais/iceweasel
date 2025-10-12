@@ -316,9 +316,6 @@ newtab-custom-pocket-sponsored = Sponzorisane priče
 newtab-custom-pocket-show-recent-saves = Prikaži nedavno sačuvane
 newtab-custom-recent-title = Nedavne aktivnosti
 newtab-custom-recent-subtitle = Izbor najnovijih stranica i sadržaja
-newtab-custom-recent-toggle =
-    .label = Nedavne aktivnosti
-    .description = Izbor najnovijih stranica i sadržaja
 newtab-custom-weather-toggle =
     .label = Vrijeme
     .description = Ukratko o današnjoj prognozi
@@ -442,7 +439,6 @@ newtab-weather-menu-change-location = Promijeni lokaciju
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Traži lokaciju
     .aria-label = Traži lokaciju
-newtab-weather-change-location-search-input = Traži lokaciju
 newtab-weather-menu-weather-display = Prikaz vremena
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -583,8 +579,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Popularne teme na Google
 newtab-trending-searches-show-trending =
     .title = Prikaži popularne pretrage
 newtab-trending-searches-hide-trending =

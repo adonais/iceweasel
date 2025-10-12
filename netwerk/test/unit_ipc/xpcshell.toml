@@ -151,7 +151,10 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_http3_prio_disabled_wrap.js"]
 run-sequentially = "http3server"
-skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix"] # Bug 1807925
+skip-if = [
+  "os == 'android' && android_version == '34' && processor == 'x86_64'", # Bug 1982955
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix", # Bug 1807925
+]
 
 ["test_http3_prio_enabled_wrap.js"]
 run-sequentially = "http3server"

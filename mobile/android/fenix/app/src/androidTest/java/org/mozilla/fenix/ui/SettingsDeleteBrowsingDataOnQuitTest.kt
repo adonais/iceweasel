@@ -240,6 +240,7 @@ class SettingsDeleteBrowsingDataOnQuitTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416052
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1987355")
     @Test
     fun deleteCachedFilesOnQuitTest() {
         val wikipedia = getStringResource(R.string.default_top_site_wikipedia)

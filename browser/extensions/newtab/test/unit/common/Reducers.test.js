@@ -701,30 +701,6 @@ describe("Reducers", () => {
       });
       assert.isFalse(state.waitingForSpoc);
     });
-    it("should have undefined for initial isUserLoggedIn state", () => {
-      assert.isNull(Pocket(undefined, { type: "some_action" }).isUserLoggedIn);
-    });
-    it("should set isUserLoggedIn to false on a POCKET_LOGGED_IN with null", () => {
-      const state = Pocket(undefined, {
-        type: at.POCKET_LOGGED_IN,
-        data: null,
-      });
-      assert.isFalse(state.isUserLoggedIn);
-    });
-    it("should set isUserLoggedIn to false on a POCKET_LOGGED_IN with false", () => {
-      const state = Pocket(undefined, {
-        type: at.POCKET_LOGGED_IN,
-        data: false,
-      });
-      assert.isFalse(state.isUserLoggedIn);
-    });
-    it("should set isUserLoggedIn to true on a POCKET_LOGGED_IN with true", () => {
-      const state = Pocket(undefined, {
-        type: at.POCKET_LOGGED_IN,
-        data: true,
-      });
-      assert.isTrue(state.isUserLoggedIn);
-    });
     it("should set pocketCta with correct object on a POCKET_CTA", () => {
       const data = {
         cta_button: "cta button",
@@ -809,13 +785,6 @@ describe("Reducers", () => {
         data: { enabled: true },
       });
       assert.deepEqual(state.config, { enabled: true });
-    });
-    it("should set isUserLoggedIn with DISCOVERY_STREAM_POCKET_STATE_SET", () => {
-      const state = DiscoveryStream(undefined, {
-        type: at.DISCOVERY_STREAM_POCKET_STATE_SET,
-        data: { isUserLoggedIn: true },
-      });
-      assert.isTrue(state.isUserLoggedIn);
     });
     it("should set feeds as loaded with DISCOVERY_STREAM_FEEDS_UPDATE", () => {
       const state = DiscoveryStream(undefined, {

@@ -30,6 +30,7 @@ import org.mozilla.fenix.tabstray.TabsTrayStore
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.theme.FirefoxTheme
 import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Floating action button for the Tab Manager.
@@ -72,21 +73,21 @@ internal fun TabsTrayFab(
         val onClick: () -> Unit
         when (state.selectedPage) {
             Page.NormalTabs -> {
-                icon = R.drawable.mozac_ic_plus_24
+                icon = iconsR.drawable.mozac_ic_plus_24
                 contentDescription = stringResource(id = R.string.add_tab)
                 label = stringResource(id = R.string.tab_manager_floating_action_button_new_normal_tab)
                 onClick = onOpenNewNormalTabClicked
             }
 
             Page.PrivateTabs -> {
-                icon = R.drawable.mozac_ic_plus_24
+                icon = iconsR.drawable.mozac_ic_plus_24
                 contentDescription = stringResource(id = R.string.add_private_tab)
                 label = stringResource(id = R.string.tab_manager_floating_action_button_new_private_tab)
                 onClick = onOpenNewPrivateTabClicked
             }
 
             Page.SyncedTabs -> {
-                icon = R.drawable.mozac_ic_sync_24
+                icon = iconsR.drawable.mozac_ic_sync_24
                 contentDescription = stringResource(id = R.string.resync_button_content_description)
                 label = stringResource(id = R.string.tab_manager_floating_action_button_sync_tabs)
                 onClick = onSyncedTabsFabClicked

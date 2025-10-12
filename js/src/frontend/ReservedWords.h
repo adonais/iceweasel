@@ -63,7 +63,6 @@
                                                                           \
   /* Contextual keywords. */                                              \
   MACRO(as, as, TokenKind::As)                                            \
-  MACRO(assert, assert_, TokenKind::Assert)                               \
   MACRO(async, async, TokenKind::Async)                                   \
   MACRO(await, await, TokenKind::Await)                                   \
   MACRO(from, from, TokenKind::From)                                      \

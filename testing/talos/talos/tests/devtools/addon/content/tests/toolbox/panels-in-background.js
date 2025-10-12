@@ -58,7 +58,7 @@ module.exports = async function () {
   await toolbox.selectTool("jsdebugger");
   // Close all tabs so that the test behaves the same on each run and reopen the eval script
   const sources = dbg.selectors.getSourceList(dbg.getState());
-  await dbg.actions.closeTabs(sources);
+  await dbg.actions.closeTabsForSources(sources);
 
   await closeToolbox();
   await testTeardown();

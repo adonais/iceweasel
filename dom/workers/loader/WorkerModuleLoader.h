@@ -44,6 +44,18 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
  private:
   ~WorkerModuleLoader() = default;
 
+  nsIURI* GetClientReferrerURI() override;
+
+  already_AddRefed<JS::loader::ScriptFetchOptions>
+  CreateDefaultScriptFetchOptions() override;
+
+  already_AddRefed<ModuleLoadRequest> CreateRequest(
+      JSContext* aCx, nsIURI* aURI, JS::Handle<JSObject*> aModuleRequest,
+      JS::Handle<JS::Value> aHostDefined, JS::Handle<JS::Value> aPayload,
+      bool aIsDynamicImport, ScriptFetchOptions* aOptions,
+      mozilla::dom::ReferrerPolicy aReferrerPolicy, nsIURI* aBaseURL,
+      const mozilla::dom::SRIMetadata& aSriMetadata) override;
+
   bool CreateDynamicImportLoader();
   void SetScriptLoader(JS::loader::ScriptLoaderInterface* aLoader) {
     mLoader = aLoader;
@@ -54,18 +66,6 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
   WorkerScriptLoader* GetScriptLoaderFor(ModuleLoadRequest* aRequest);
 
   nsIURI* GetBaseURI() const override;
-
-  already_AddRefed<ModuleLoadRequest> CreateStaticImport(
-      nsIURI* aURI, JS::ModuleType aModuleType,
-      JS::loader::ModuleScript* aReferrerScript,
-      const mozilla::dom::SRIMetadata& aSriMetadata,
-      JS::loader::LoadContextBase* aLoadContext,
-      JS::loader::ModuleLoaderBase* aLoader) override;
-
-  already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
-      JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
-      JS::Handle<JSObject*> aModuleRequestObj,
-      JS::Handle<JSObject*> aPromise) override;
 
   bool IsDynamicImportSupported() override;
 

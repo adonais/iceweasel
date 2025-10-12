@@ -3585,8 +3585,8 @@ struct JavaMarkerWithDetails {
     schema.SetTooltipLabel("{marker.name}");
     schema.SetChartLabel("{marker.data.name}");
     schema.SetTableLabel("{marker.name} - {marker.data.name}");
-    schema.AddKeyLabelFormatSearchable("name", "Details", MS::Format::String,
-                                       MS::Searchable::Searchable);
+    schema.AddKeyLabelFormat("name", "Details", MS::Format::String,
+                             MS::PayloadFlags::Searchable);
     return schema;
   }
 };
@@ -5210,10 +5210,10 @@ struct UnregisteredThreadLifetimeMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormatSearchable("Thread Id", MS::Format::Integer,
-                                  MS::Searchable::Searchable);
-    schema.AddKeyFormatSearchable("Thread Name", MS::Format::String,
-                                  MS::Searchable::Searchable);
+    schema.AddKeyFormat("Thread Id", MS::Format::Integer,
+                        MS::PayloadFlags::Searchable);
+    schema.AddKeyFormat("Thread Name", MS::Format::String,
+                        MS::PayloadFlags::Searchable);
     schema.AddKeyFormat("End Event", MS::Format::String);
     schema.AddStaticLabelValue(
         "Note",
@@ -5242,8 +5242,8 @@ struct UnregisteredThreadCPUMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyFormatSearchable("Thread Id", MS::Format::Integer,
-                                  MS::Searchable::Searchable);
+    schema.AddKeyFormat("Thread Id", MS::Format::Integer,
+                        MS::PayloadFlags::Searchable);
     schema.AddKeyFormat("CPU Time", MS::Format::Nanoseconds);
     schema.AddKeyFormat("CPU Utilization", MS::Format::Percentage);
     schema.SetChartLabel("{marker.data.CPU Utilization}");
@@ -7739,7 +7739,8 @@ bool profiler_capture_backtrace_into(ProfileChunkedBuffer& aChunkedBuffer,
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   if (!profiler_is_active() ||
-      aCaptureOptions == StackCaptureOptions::NoStack) {
+      aCaptureOptions == StackCaptureOptions::NoStack ||
+      profiler_is_locked_on_current_thread()) {
     return false;
   }
 

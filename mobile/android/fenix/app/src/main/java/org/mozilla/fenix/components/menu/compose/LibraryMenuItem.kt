@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +43,7 @@ import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A [Surface]-backed menu item used in the library menu group, displaying an icon above a label
@@ -156,7 +156,7 @@ private fun LibraryMenuItemPreview(
                     .weight(1f)
                     .fillMaxHeight(),
                 isHighlighted = isHighlighted,
-                iconRes = R.drawable.mozac_ic_history_24,
+                iconRes = iconsR.drawable.mozac_ic_history_24,
                 labelRes = R.string.library_history,
                 shape = leftShape,
                 onClick = {},
@@ -169,7 +169,7 @@ private fun LibraryMenuItemPreview(
                     .weight(1f)
                     .fillMaxHeight(),
                 isHighlighted = isHighlighted,
-                iconRes = R.drawable.mozac_ic_bookmark_tray_fill_24,
+                iconRes = iconsR.drawable.mozac_ic_bookmark_tray_fill_24,
                 labelRes = R.string.library_bookmarks,
                 shape = middleShape,
                 onClick = {},
@@ -182,7 +182,7 @@ private fun LibraryMenuItemPreview(
                     .weight(1f)
                     .fillMaxHeight(),
                 isHighlighted = isHighlighted,
-                iconRes = R.drawable.mozac_ic_download_24,
+                iconRes = iconsR.drawable.mozac_ic_download_24,
                 labelRes = R.string.library_downloads,
                 shape = middleShape,
                 onClick = {},
@@ -195,7 +195,7 @@ private fun LibraryMenuItemPreview(
                     .weight(1f)
                     .fillMaxHeight(),
                 isHighlighted = isHighlighted,
-                iconRes = R.drawable.mozac_ic_login_24,
+                iconRes = iconsR.drawable.mozac_ic_login_24,
                 labelRes = R.string.browser_menu_passwords,
                 shape = rightShape,
                 onClick = {},

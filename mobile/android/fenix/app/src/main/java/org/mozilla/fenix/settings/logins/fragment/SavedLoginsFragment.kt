@@ -68,6 +68,7 @@ import org.mozilla.fenix.settings.logins.ui.LoginsStore
 import org.mozilla.fenix.settings.logins.ui.SavedLoginsScreen
 import org.mozilla.fenix.settings.logins.view.SavedLoginsListView
 import org.mozilla.fenix.theme.FirefoxTheme
+import androidx.appcompat.R as appcompatR
 
 @SuppressWarnings("TooManyFunctions")
 class SavedLoginsFragment : SecureFragment(), MenuProvider {
@@ -318,7 +319,7 @@ class SavedLoginsFragment : SecureFragment(), MenuProvider {
             },
         )
 
-        val closeButton: ImageView = searchView.findViewById(R.id.search_close_btn) as ImageView
+        val closeButton: ImageView = searchView.findViewById(appcompatR.id.search_close_btn) as ImageView
         closeButton.setOnClickListener {
             searchView.setQuery("", false)
             searchQuery = savedLoginsStore.state.copy(

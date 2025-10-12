@@ -141,7 +141,7 @@ function getPingMarkerString(aPing) {
  * @return {Promise} A promise resolved when the ping is saved.
  */
 function savePing(aPing) {
-  let startTime = Cu.now();
+  let startTime = ChromeUtils.now();
   let promise = lazy.TelemetryStorage.savePendingPing(aPing);
   promise.then(() => {
     ChromeUtils.addProfilerMarker(
@@ -1396,7 +1396,7 @@ export var TelemetrySendImpl = {
   },
 
   _doPing(ping, id, isPersisted) {
-    let startTime = Cu.now();
+    let startTime = ChromeUtils.now();
 
     if (!this.sendingEnabled(ping)) {
       // We can't send the pings to the server, so don't try to.

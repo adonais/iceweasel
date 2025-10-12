@@ -10,10 +10,6 @@
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
   <string name="content_description_menu">మరిన్ని ఎంపికలు</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">అంతరంగిక విహరణను చేతనించు</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">అంతరంగిక విహరణను అచేతనించు</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">వెతకండి లేదా చిరునామా ఇవ్వండి</string>
   <!-- No Open Tabs Message Description -->
@@ -192,7 +188,11 @@
   <string name="search_engine_suggestions_title">%s‌లో వెతకండి</string>
   <!-- Menu option in the search selector menu to open the search settings -->
   <string name="search_settings_menu_item">వెతుకుడు అమరికలు</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
+  <!--
+    Home onboarding
+
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
+  -->
   <string name="onboarding_home_content_description_close_button">మూసివేయి</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_default_browser_negative_button" tools:ignore="UnusedResources">ఇప్పుడు కాదు</string>
@@ -606,9 +606,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">చరిత్రను తొలగించు</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">చరిత్ర తొలగించబడింది</string>
+  <string name="history_delete_multiple_items_snackbar">చరిత్ర తొలగించబడింది</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s తొలగించబడింది</string>
+  <string name="history_delete_single_item_snackbar">%1$s తొలగించబడింది</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">తొలగించు</string>
   <!--
@@ -841,12 +841,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ట్యాబు ఎంచుకున్నారు</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ట్యాబులు భద్రమయ్యాయి!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">సేకరణ భద్రమయ్యింది!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">సేకరణ భద్రమయ్యింది!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">ట్యాబు భద్రమయింది!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">ట్యాబు భద్రమయింది!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">మూసివేయి</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -935,8 +933,6 @@
   <string name="tab_collection_dialog_message">మీరు నిజంగానే %1$s‌ను తొలగించాలనుకుంటున్నారా?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">తొలగించు</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL కాపీ అయ్యింది</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">ఇది నమూనా పాఠ్యం. ఈ అమరిక‌తో మీరు పరిమాణాన్ని పెంచినప్పుడు లేదా తగ్గించినప్పుడు పాఠ్యం ఎలా కనిపిస్తుందో చూపించడానికి ఇది ఇక్కడ ఉంది.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1011,9 +1007,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">ట్యాబులు పంపబడ్డాయి!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">ట్యాబులు పంపబడ్డాయి!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">ట్యాబు పంపబడింది!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">ట్యాబు పంపబడింది!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">పంపించలేకపోయాం</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1308,12 +1304,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">శోధన పదాన్ని ఇవ్వండి</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">శోధన పదం ఉదహరించిన ఆకృతిలో ఉండేలా సరిచూడండి</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s సృష్టించబడింది</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s భద్రమయ్యింది</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s తొలగించబడింది</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">దీనిని అనుమతించడానికి:</string>
   <!-- First step for the allowing a permission -->

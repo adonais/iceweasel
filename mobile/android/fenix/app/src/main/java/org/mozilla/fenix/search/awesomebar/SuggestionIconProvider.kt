@@ -14,6 +14,7 @@ import androidx.core.graphics.BlendModeCompat.SRC_IN
 import androidx.core.graphics.drawable.toBitmap
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import org.mozilla.fenix.R
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Provides themed/tinted icons for search suggestions.
@@ -177,7 +178,7 @@ class DefaultSuggestionIconProvider(private val context: Context) : SuggestionIc
     }
 
     override fun getSettingsIconBitmap(): Bitmap? =
-        AppCompatResources.getDrawable(context, R.drawable.mozac_ic_settings_24)?.apply {
+        AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_settings_24)?.apply {
             colorFilter = createBlendModeColorFilterCompat(
                 context.getColorFromAttr(R.attr.textPrimary),
                 SRC_IN,

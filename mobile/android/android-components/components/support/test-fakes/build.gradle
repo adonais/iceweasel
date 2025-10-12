@@ -27,9 +27,8 @@ android {
 dependencies {
     implementation project(":components:concept-engine")
 
-    implementation libs.kotlin.coroutines
-
     implementation libs.androidx.test.junit
+    implementation libs.kotlinx.coroutines
 }
 
 apply from: '../../../android-lint.gradle'

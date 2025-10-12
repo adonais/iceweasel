@@ -170,11 +170,11 @@ class nsPlaceholderFrame final : public nsIFrame {
   /**
    * @return the out-of-flow for aFrame, which is known to be a placeholder
    */
-  static nsIFrame* GetRealFrameForPlaceholder(nsIFrame* aFrame) {
+  static nsIFrame* GetRealFrameForPlaceholder(const nsIFrame* aFrame) {
     MOZ_ASSERT(aFrame->IsPlaceholderFrame(),
                "Must have placeholder frame as input");
     nsIFrame* outOfFlow =
-        static_cast<nsPlaceholderFrame*>(aFrame)->GetOutOfFlowFrame();
+        static_cast<const nsPlaceholderFrame*>(aFrame)->GetOutOfFlowFrame();
     NS_ASSERTION(outOfFlow, "Null out-of-flow for placeholder?");
     return outOfFlow;
   }

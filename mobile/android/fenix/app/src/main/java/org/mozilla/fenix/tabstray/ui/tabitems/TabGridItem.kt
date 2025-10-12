@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.tabstray.ui.tabitems
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,6 +67,7 @@ import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.max
+import mozilla.components.ui.icons.R as iconsR
 
 private val ThumbnailPadding = 4.dp
 
@@ -127,7 +127,6 @@ fun TabGridItem(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Suppress("LongMethod")
 @Composable
 private fun TabContent(
@@ -175,7 +174,6 @@ private fun TabContent(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .aspectRatio(gridItemAspectRatio)
                 .clip(tabContentCardShape)
                 .then(clickableModifier)
                 .semantics {
@@ -218,7 +216,7 @@ private fun TabContent(
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.mozac_ic_globe_24),
+                                painter = painterResource(id = iconsR.drawable.mozac_ic_globe_24),
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = if (isSelected) {
@@ -253,7 +251,7 @@ private fun TabContent(
                             },
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.mozac_ic_cross_20),
+                                painter = painterResource(id = iconsR.drawable.mozac_ic_cross_20),
                                 contentDescription = stringResource(
                                     id = R.string.close_tab_title,
                                     tab.toDisplayTitle(),
@@ -288,6 +286,7 @@ private fun TabContent(
                     bottomEnd = 12.dp,
                 )
                 Card(
+                    modifier = Modifier.aspectRatio(gridItemAspectRatio),
                     shape = thumbnailShape,
                 ) {
                     Thumbnail(

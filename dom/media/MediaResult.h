@@ -9,6 +9,7 @@
 
 #include "mozilla/ErrorNames.h"
 #include "mozilla/IntegerPrintfMacros.h"
+#include "mozilla/Logging.h"
 #include "nsError.h"
 #include "nsPrintfCString.h"
 #include "nsString.h"  // Required before 'mozilla/ErrorNames.h'!?
@@ -43,6 +44,16 @@ class MediaResult {
   MediaResult(nsresult aResult, CDMProxy* aCDMProxy)
       : mCode(aResult), mCDMProxy(aCDMProxy) {
     MOZ_ASSERT(aResult == NS_ERROR_DOM_MEDIA_CDM_PROXY_NOT_SUPPORTED_ERR);
+  }
+  static MediaResult Logged(nsresult aResult, const char* aMessage,
+                            const LogModule* aLogModule) {
+    MOZ_LOG(aLogModule, LogLevel::Warning, ("%s", aMessage));
+    return MediaResult(aResult, aMessage);
+  }
+  static MediaResult Logged(nsresult aResult, const nsCString& aMessage,
+                            const LogModule* aLogModule) {
+    MOZ_LOG(aLogModule, LogLevel::Warning, ("%s", aMessage.get()));
+    return MediaResult(aResult, aMessage);
   }
   MediaResult(const MediaResult& aOther) = default;
   MediaResult(MediaResult&& aOther) = default;

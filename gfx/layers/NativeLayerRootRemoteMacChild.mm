@@ -76,20 +76,18 @@ void NativeLayerRootRemoteMacChild::PrepareForCommit() {
 bool NativeLayerRootRemoteMacChild::CommitToScreen() {
   // Prepare and send all commands to the parent actor.
 
-  // Iterate our layers to get the LayerInfo commands into
-  // our shared command queue.
+  // Our shared command queue has all of our CreateLayer and LayerDestroyed
+  // commands. That's good, because the commands that we're adding to the
+  // queue rely upon those CreateLayer commands appearing first.
+
+  // Iterate our layers to get the LayerInfo and ChangedSurface commands
+  // into our shared command queue.
   for (auto layer : mNativeLayers) {
     RefPtr<NativeLayerRemoteMac> layerRemoteMac(
         layer->AsNativeLayerRemoteMac());
     MOZ_ASSERT(layerRemoteMac);
     layerRemoteMac->FlushDirtyLayerInfoToCommandQueue();
   }
-
-  // Now get everything from our shared command queue. This
-  // has all of our CreateLayer and LayerDestroyed and LayerInfo
-  // commands.
-  nsTArray<NativeLayerCommand> commands;
-  mCommandQueue->FlushToArray(commands);
 
   if (mNativeLayersChanged) {
     // If mNativeLayersChanged is set, we will send a SetLayers
@@ -100,9 +98,15 @@ bool NativeLayerRootRemoteMacChild::CommitToScreen() {
       auto ID = reinterpret_cast<uint64_t>(layer.get());
       setLayerIDs.AppendElement(ID);
     }
-    commands.AppendElement(mozilla::layers::CommandSetLayers(setLayerIDs));
+    mCommandQueue->AppendCommand(
+        mozilla::layers::CommandSetLayers(setLayerIDs));
     mNativeLayersChanged = false;
   }
+
+  // Now flush the shared command queue to our local command array,
+  // which is suitable for sending to the parent process.
+  nsTArray<NativeLayerCommand> commands;
+  mCommandQueue->FlushToArray(commands);
 
   if (!commands.IsEmpty()) {
     // Send all the queued commands, including the ones we just added.

@@ -510,26 +510,12 @@ void MacroAssembler::branch16(Condition cond, const Address& lhs, Imm32 rhs,
   }
 }
 void MacroAssembler::branch32(Condition cond, Register lhs, Register rhs,
-                              Label* label, LhsHighBitsAreClean clean) {
-  if (clean == LhsHighBitsAreClean::No) {
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    slliw(scratch, lhs, 0);
-    ma_b(scratch, rhs, label, cond);
-    return;
-  }
+                              Label* label) {
   ma_b(lhs, rhs, label, cond);
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Imm32 imm,
-                              Label* label, LhsHighBitsAreClean clean) {
-  if (clean == LhsHighBitsAreClean::No) {
-    UseScratchRegisterScope temps(this);
-    Register scratch = temps.Acquire();
-    slliw(scratch, lhs, 0);
-    ma_b(scratch, imm, label, cond);
-    return;
-  }
+                              Label* label) {
   ma_b(lhs, imm, label, cond);
 }
 
@@ -1629,6 +1615,38 @@ void MacroAssembler::flexibleLshiftPtr(Register shift, Register srcDest) {
   lshiftPtr(shift, srcDest);
 }
 
+void MacroAssembler::min32(Register lhs, Register rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::min32(Register lhs, Imm32 rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::max32(Register lhs, Register rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::max32(Register lhs, Imm32 rhs, Register dest) {
+  minMax32(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::minPtr(Register lhs, Register rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::minPtr(Register lhs, ImmWord rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::maxPtr(Register lhs, Register rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ true);
+}
+
 void MacroAssembler::maxDouble(FloatRegister other, FloatRegister srcDest,
                                bool handleNaN) {
   Float64Max(srcDest, srcDest, other);
@@ -1665,10 +1683,10 @@ void MacroAssembler::move16SignExtendToPtr(Register src, Register dest) {
   move16To64SignExtend(src, Register64(dest));
 }
 void MacroAssembler::move32SignExtendToPtr(Register src, Register dest) {
-  slliw(dest, src, 0);
+  SignExtendWord(dest, src);
 }
 void MacroAssembler::move32To64SignExtend(Register src, Register64 dest) {
-  slliw(dest.reg, src, 0);
+  SignExtendWord(dest.reg, src);
 }
 void MacroAssembler::move32To64ZeroExtend(Register src, Register64 dest) {
   slli(dest.reg, src, 32);
@@ -1687,7 +1705,7 @@ void MacroAssembler::move64(Imm64 imm, Register64 dest) {
 }
 
 void MacroAssembler::move64To32(Register64 src, Register dest) {
-  slliw(dest, src.reg, 0);
+  SignExtendWord(dest, src.reg);
 }
 
 void MacroAssembler::move8ZeroExtend(Register src, Register dest) {
@@ -1805,9 +1823,9 @@ void MacroAssembler::neg64(Register64 reg) { sub(reg.reg, zero, reg.reg); }
 void MacroAssembler::negPtr(Register reg) { sub(reg, zero, reg); }
 
 void MacroAssembler::neg32(Register reg) { subw(reg, zero, reg); }
-void MacroAssembler::not32(Register reg) { nor(reg, reg, zero); }
+void MacroAssembler::not32(Register reg) { not_(reg, reg); }
 
-void MacroAssembler::notPtr(Register reg) { nor(reg, reg, zero); }
+void MacroAssembler::notPtr(Register reg) { not_(reg, reg); }
 
 void MacroAssembler::or32(Register src, Register dest) {
   ma_or(dest, dest, src);
@@ -1861,7 +1879,7 @@ void MacroAssembler::orPtr(Imm32 imm, Register src, Register dest) {
 }
 
 void MacroAssembler::patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) {
-  DEBUG_PRINTF("patchSub32FromStackPtr at offset %lu with immediate %d\n",
+  DEBUG_PRINTF("patchSub32FromStackPtr at offset %zu with immediate %d\n",
                offset.offset(), imm.value);
   Instruction* inst0 =
       (Instruction*)m_buffer.getInst(BufferOffset(offset.offset()));

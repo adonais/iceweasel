@@ -170,6 +170,7 @@
                    removable="false"
                    overflows="false"/>
       <toolbaritem id="urlbar-container"
+                   class="urlbar-container"
                    removable="false"
                    overflows="false">
         <toolbartabstop/>
@@ -277,7 +278,7 @@
                   <image data-permission-id="persistent-storage" class="blocked-permission-icon persistent-storage-icon" role="button"
                         data-l10n-id="urlbar-persistent-storage-blocked"/>
                   <image data-permission-id="popup" class="blocked-permission-icon popup-icon" role="button"
-                        data-l10n-id="urlbar-popup-blocked"/>
+                        data-l10n-id="urlbar-popup-blocked2"/>
                   <image data-permission-id="autoplay-media" class="blocked-permission-icon autoplay-media-icon" role="button"
                         data-l10n-id="urlbar-autoplay-media-blocked"/>
                   <image data-permission-id="canvas" class="blocked-permission-icon canvas-icon" role="button"
@@ -601,7 +602,7 @@
       </hbox>
     </toolbaritem>
   </toolbar>
-  <toolbar id="notifications-toolbar" class="browser-toolbar" nowindowdrag="">
+  <toolbar id="notifications-toolbar" class="browser-toolbar" nowindowdrag="" fullscreentoolbar="true">
     <!-- NOTE: This gets instantiated in-place -->
     <html:template id="tab-notification-deck-template">
       <html:named-deck id="tab-notification-deck"></html:named-deck>
@@ -699,7 +700,7 @@
     </toolbarbutton>
 
     <toolbaritem id="search-container"
-                 class="chromeclass-toolbar-additional"
+                 class="chromeclass-toolbar-additional urlbar-container"
                  data-l10n-id="navbar-search"
                  align="center"
                  persist="width">

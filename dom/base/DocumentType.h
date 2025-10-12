@@ -38,7 +38,8 @@ class DocumentType final : public CharacterData {
     SetDOMStringToNull(aNodeValue);
   }
   void SetNodeValueInternal(const nsAString& aNodeValue,
-                            mozilla::ErrorResult& aError) override {}
+                            mozilla::ErrorResult& aError,
+                            MutationEffectOnScript) override {}
 
   // nsIContent overrides
   virtual const CharacterDataBuffer* GetCharacterDataBuffer() const override;

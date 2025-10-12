@@ -224,20 +224,21 @@ RefPtr<GLContext> DMABufSurface::ClaimSnapshotGLContext() {
     sSnapshotContext->mOwningThreadId = Nothing();  // No singular owner.
   }
   if (!sSnapshotContext->MakeCurrent()) {
-    LOGDMABUFS("ClaimSnapshotGLContext: Failed to make GLContext current.");
+    gfxCriticalNote
+        << "ClaimSnapshotGLContext: Failed to make GLContext current";
     return nullptr;
   }
   return sSnapshotContext;
 }
 
 void DMABufSurface::ReturnSnapshotGLContext(RefPtr<GLContext> aGLContext) {
-  // direct eglMakeCurrent() call breaks current context caching so make sure
-  // it's not used.
-  MOZ_ASSERT(!aGLContext->mUseTLSIsCurrent);
-  if (!aGLContext->IsCurrent()) {
+  if (!aGLContext || !aGLContext->IsCurrent()) {
     LOGDMABUFS("ReturnSnapshotGLContext() failed, is not current!");
     return;
   }
+  // direct eglMakeCurrent() call breaks current context caching so make sure
+  // it's not used.
+  MOZ_ASSERT(!aGLContext->mUseTLSIsCurrent);
   const auto& gle = gl::GLContextEGL::Cast(aGLContext);
   const auto& egl = gle->mEgl;
   egl->fMakeCurrent(EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -495,6 +496,11 @@ void DMABufSurface::FenceDelete() {
 }
 
 void DMABufSurface::FenceSet() {
+  // There's nothing to sync as we're missing textures/eglimages here.
+  if (!HoldsTexture()) {
+    return;
+  }
+
   if (!mGL || !mGL->MakeCurrent()) {
     MOZ_DIAGNOSTIC_ASSERT(mGL,
                           "DMABufSurface::FenceSet(): missing GL context!");
@@ -522,6 +528,11 @@ void DMABufSurface::FenceSet() {
 }
 
 void DMABufSurface::FenceWait() {
+  // There's nothing to sync as we're missing textures/eglimages here.
+  if (!HoldsTexture()) {
+    return;
+  }
+
   if (!mGL || !mSyncFd) {
     MOZ_DIAGNOSTIC_ASSERT(mGL,
                           "DMABufSurface::FenceWait() missing GL context!");
@@ -887,6 +898,7 @@ bool DMABufSurfaceRGBA::CreateExport(mozilla::gl::GLContext* aGLContext,
   MOZ_ASSERT(aGLContext);
   MOZ_DIAGNOSTIC_ASSERT(!mTexture && !mEGLImage, "Already exported??");
   MOZ_DIAGNOSTIC_ASSERT(!mGL || mGL == aGLContext);
+  MOZ_DIAGNOSTIC_ASSERT(aGLContext);
 
   mGL = aGLContext;
   auto releaseTextures = MakeScopeExit([&] { ReleaseTextures(); });
@@ -1103,6 +1115,7 @@ bool DMABufSurfaceRGBA::CreateTexture(GLContext* aGLContext, int aPlane) {
     return false;
   }
 
+  MOZ_DIAGNOSTIC_ASSERT(aGLContext);
   mGL = aGLContext;
   auto releaseTextures = MakeScopeExit([&] { ReleaseTextures(); });
 
@@ -1175,11 +1188,13 @@ bool DMABufSurfaceRGBA::CreateTexture(GLContext* aGLContext, int aPlane) {
   return true;
 }
 
+bool DMABufSurfaceRGBA::HoldsTexture() { return mTexture || mEGLImage; }
+
 void DMABufSurfaceRGBA::ReleaseTextures() {
   LOGDMABUF("DMABufSurfaceRGBA::ReleaseTextures() UID %d\n", mUID);
   FenceDelete();
 
-  if (!mTexture && !mEGLImage) {
+  if (!HoldsTexture()) {
     return;
   }
 
@@ -1692,6 +1707,7 @@ bool DMABufSurfaceYUV::CreateYUVPlaneExport(GLContext* aGLContext, int aPlane) {
       "DMABufSurfaceYUV::CreateYUVPlaneExport() UID %d size %d x %d plane %d",
       mUID, mWidth[aPlane], mHeight[aPlane], aPlane);
 
+  MOZ_DIAGNOSTIC_ASSERT(aGLContext);
   mGL = aGLContext;
   auto releaseTextures = MakeScopeExit([&] { ReleaseTextures(); });
 
@@ -2000,6 +2016,7 @@ bool DMABufSurfaceYUV::Serialize(
 
 bool DMABufSurfaceYUV::CreateTexture(GLContext* aGLContext, int aPlane) {
   if (mTexture[aPlane]) {
+    MOZ_DIAGNOSTIC_ASSERT(aGLContext);
     MOZ_DIAGNOSTIC_ASSERT(mGL == aGLContext);
     return true;
   }
@@ -2011,6 +2028,7 @@ bool DMABufSurfaceYUV::CreateTexture(GLContext* aGLContext, int aPlane) {
     return false;
   }
 
+  MOZ_DIAGNOSTIC_ASSERT(aGLContext);
   MOZ_DIAGNOSTIC_ASSERT(!mGL || mGL == aGLContext);
 
   mGL = aGLContext;
@@ -2075,20 +2093,21 @@ bool DMABufSurfaceYUV::CreateTexture(GLContext* aGLContext, int aPlane) {
   return true;
 }
 
+bool DMABufSurfaceYUV::HoldsTexture() {
+  for (int i = 0; i < mBufferPlaneCount; i++) {
+    if (mTexture[i] || mEGLImage[i]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void DMABufSurfaceYUV::ReleaseTextures() {
   LOGDMABUF("DMABufSurfaceYUV::ReleaseTextures() UID %d", mUID);
 
   FenceDelete();
 
-  bool textureActive = false;
-  for (int i = 0; i < mBufferPlaneCount; i++) {
-    if (mTexture[i] || mEGLImage[i]) {
-      textureActive = true;
-      break;
-    }
-  }
-
-  if (!textureActive) {
+  if (!HoldsTexture()) {
     return;
   }
 

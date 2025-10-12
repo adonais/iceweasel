@@ -156,7 +156,7 @@ module.exports = function (config) {
             /**
              * WallpaperFeed.sys.mjs is tested via an xpcshell test
              */
-            "lib/WallpaperFeed.sys.mjs": {
+            "lib/Wallpapers/WallpaperFeed.sys.mjs": {
               statements: 0,
               lines: 0,
               functions: 0,
@@ -319,17 +319,32 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
-            "content-src/components/CustomizeMenu/**/*.jsx": {
+            /**
+             * TODO: Bug 1985362 - Write SectionsMgmtPanel Unit Tests
+             */
+            "content-src/components/CustomizeMenu/SectionsMgmtPanel/*.jsx": {
               statements: 0,
               lines: 0,
               functions: 0,
               branches: 0,
             },
+            "content-src/components/CustomizeMenu/ContentSection/*.jsx": {
+              statements: 80,
+              lines: 80,
+              functions: 99,
+              branches: 64,
+            },
+            "content-src/components/CustomizeMenu/**/*.jsx": {
+              statements: 68,
+              lines: 66,
+              functions: 80,
+              branches: 16,
+            },
             "content-src/components/CustomizeMenu/*.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
+              statements: 98,
+              lines: 98,
+              functions: 98,
+              branches: 98,
             },
             "content-src/lib/link-menu-options.js": {
               statements: 96,

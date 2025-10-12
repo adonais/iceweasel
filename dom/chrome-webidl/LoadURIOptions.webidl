@@ -8,6 +8,12 @@ interface URI;
 interface InputStream;
 interface ReferrerInfo;
 
+enum ForceMediaDocument {
+  "none",
+  "image",
+  "video",
+};
+
 /**
  * This dictionary holds load arguments for docshell loads.
  */
@@ -118,4 +124,10 @@ dictionary LoadURIOptions {
    * This holds enum values for SchemelessInputType from nsILoadInfo.idl.
    */
   octet schemelessInput = 0;
+
+  /**
+   * If this is not none, the result document will be forced to to load as either
+   * an ImageDocument or VideoDocument.
+   */
+  ForceMediaDocument forceMediaDocument = "none";
 };

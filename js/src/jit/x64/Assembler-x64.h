@@ -731,6 +731,11 @@ class Assembler : public AssemblerX86Shared {
     }
   }
 
+  void andnq(Register src1, Register src2, Register dest) {
+    MOZ_ASSERT(HasBMI1());
+    masm.andnq_rrr(src1.encoding(), src2.encoding(), dest.encoding());
+  }
+
   void addq(Imm32 imm, Register dest) {
     masm.addq_ir(imm.value, dest.encoding());
   }

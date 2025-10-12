@@ -1692,6 +1692,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
                "InitAbsoluteConstraints should not be called on table frames");
   NS_ASSERTION(mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
                "Why are we here?");
+  MOZ_ASSERT(mStyleDisplay->IsAbsolutelyPositionedStyle());
 
   const auto anchorResolutionParams =
       AnchorPosOffsetResolutionParams::ExplicitCBFrameSize(
@@ -1775,8 +1776,6 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     }
   }
 
-  // Size of the containing block in its writing mode
-  LogicalSize cbSize = aCBSize;
   LogicalMargin offsets(cbwm);
 
   // Handle auto inset values, as per [1].
@@ -1789,13 +1788,13 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     offsets.IStart(cbwm) = 0;
   } else {
     offsets.IStart(cbwm) = nsLayoutUtils::ComputeCBDependentValue(
-        cbSize.ISize(cbwm), iStartOffset);
+        aCBSize.ISize(cbwm), iStartOffset);
   }
   if (iEndIsAuto) {
     offsets.IEnd(cbwm) = 0;
   } else {
     offsets.IEnd(cbwm) =
-        nsLayoutUtils::ComputeCBDependentValue(cbSize.ISize(cbwm), iEndOffset);
+        nsLayoutUtils::ComputeCBDependentValue(aCBSize.ISize(cbwm), iEndOffset);
   }
 
   if (iStartIsAuto && iEndIsAuto) {
@@ -1813,13 +1812,13 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     offsets.BStart(cbwm) = 0;
   } else {
     offsets.BStart(cbwm) = nsLayoutUtils::ComputeCBDependentValue(
-        cbSize.BSize(cbwm), bStartOffset);
+        aCBSize.BSize(cbwm), bStartOffset);
   }
   if (bEndIsAuto) {
     offsets.BEnd(cbwm) = 0;
   } else {
     offsets.BEnd(cbwm) =
-        nsLayoutUtils::ComputeCBDependentValue(cbSize.BSize(cbwm), bEndOffset);
+        nsLayoutUtils::ComputeCBDependentValue(aCBSize.BSize(cbwm), bEndOffset);
   }
 
   if (bStartIsAuto && bEndIsAuto) {
@@ -1829,8 +1828,8 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   }
 
   SetComputedLogicalOffsets(cbwm, offsets);
-
-  if (wm.IsOrthogonalTo(cbwm)) {
+  const bool isOrthogonal = wm.IsOrthogonalTo(cbwm);
+  if (isOrthogonal) {
     if (bStartIsAuto || bEndIsAuto) {
       mComputeSizeFlags += ComputeSizeFlag::ShrinkWrap;
     }
@@ -1846,8 +1845,8 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     AutoMaybeDisableFontInflation an(mFrame);
 
     sizeResult = mFrame->ComputeSize(
-        mRenderingContext, wm, cbSize.ConvertTo(wm, cbwm),
-        cbSize.ConvertTo(wm, cbwm).ISize(wm),  // XXX or AvailableISize()?
+        mRenderingContext, wm, aCBSize.ConvertTo(wm, cbwm),
+        aCBSize.ConvertTo(wm, cbwm).ISize(wm),  // XXX or AvailableISize()?
         ComputedLogicalMargin(wm).Size(wm) +
             ComputedLogicalOffsets(wm).Size(wm),
         ComputedLogicalBorderPadding(wm).Size(wm), {}, mComputeSizeFlags);
@@ -1876,6 +1875,20 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
   bool marginIEndIsAuto = false;
   bool marginBStartIsAuto = false;
   bool marginBEndIsAuto = false;
+  const bool hasIntrinsicKeywordForBSize =
+      mFrame->HasIntrinsicKeywordForBSize();
+  // Unconstrained size implies fit-content sizing, so auto margin(s) cannot
+  // be resolved at this time, except for cases where any inset is auto (Which
+  // will take up available space and leave auto margins to be zero).
+  const bool nonZeroAutoMarginOnUnconstrainedSize =
+      isOrthogonal ? computedSize.ISize(cbwm) == NS_UNCONSTRAINEDSIZE &&
+                         !(iStartIsAuto || iEndIsAuto)
+                   : computedSize.BSize(cbwm) == NS_UNCONSTRAINEDSIZE &&
+                         !(bStartIsAuto || bEndIsAuto);
+  // TODO(dshin, Bug 1985982): We should defer _all_ auto margin computation for
+  // simplicity.
+  mFlags.mDeferAutoMarginComputation =
+      nonZeroAutoMarginOnUnconstrainedSize || hasIntrinsicKeywordForBSize;
   if (iStartIsAuto) {
     // We know 'right' is not 'auto' anymore thanks to the hypothetical
     // box code above.
@@ -1886,7 +1899,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
       // we always compute widths.
       offsets.IStart(cbwm) = NS_AUTOOFFSET;
     } else {
-      offsets.IStart(cbwm) = cbSize.ISize(cbwm) - offsets.IEnd(cbwm) -
+      offsets.IStart(cbwm) = aCBSize.ISize(cbwm) - offsets.IEnd(cbwm) -
                              computedSize.ISize(cbwm) - margin.IStartEnd(cbwm) -
                              borderPadding.IStartEnd(cbwm);
     }
@@ -1900,12 +1913,11 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
       // we always compute widths.
       offsets.IEnd(cbwm) = NS_AUTOOFFSET;
     } else {
-      offsets.IEnd(cbwm) = cbSize.ISize(cbwm) - offsets.IStart(cbwm) -
+      offsets.IEnd(cbwm) = aCBSize.ISize(cbwm) - offsets.IStart(cbwm) -
                            computedSize.ISize(cbwm) - margin.IStartEnd(cbwm) -
                            borderPadding.IStartEnd(cbwm);
     }
-  } else if (!mFrame->HasIntrinsicKeywordForBSize() ||
-             !wm.IsOrthogonalTo(cbwm)) {
+  } else if (!mFlags.mDeferAutoMarginComputation || !isOrthogonal) {
     // Neither 'inline-start' nor 'inline-end' is 'auto'.
     // The inline-size might not fill all the available space (even though we
     // didn't shrink-wrap) in case:
@@ -1937,7 +1949,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     if (bSizeIsAuto) {
       offsets.BStart(cbwm) = NS_AUTOOFFSET;
     } else {
-      offsets.BStart(cbwm) = cbSize.BSize(cbwm) - margin.BStartEnd(cbwm) -
+      offsets.BStart(cbwm) = aCBSize.BSize(cbwm) - margin.BStartEnd(cbwm) -
                              borderPadding.BStartEnd(cbwm) -
                              computedSize.BSize(cbwm) - offsets.BEnd(cbwm);
     }
@@ -1946,14 +1958,13 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     if (bSizeIsAuto) {
       offsets.BEnd(cbwm) = NS_AUTOOFFSET;
     } else {
-      offsets.BEnd(cbwm) = cbSize.BSize(cbwm) - margin.BStartEnd(cbwm) -
+      offsets.BEnd(cbwm) = aCBSize.BSize(cbwm) - margin.BStartEnd(cbwm) -
                            borderPadding.BStartEnd(cbwm) -
                            computedSize.BSize(cbwm) - offsets.BStart(cbwm);
     }
-  } else if (!mFrame->HasIntrinsicKeywordForBSize() ||
-             wm.IsOrthogonalTo(cbwm)) {
+  } else if (!mFlags.mDeferAutoMarginComputation || isOrthogonal) {
     // Neither block-start nor -end is 'auto'.
-    nscoord autoBSize = cbSize.BSize(cbwm) - margin.BStartEnd(cbwm) -
+    nscoord autoBSize = aCBSize.BSize(cbwm) - margin.BStartEnd(cbwm) -
                         borderPadding.BStartEnd(cbwm) - offsets.BStartEnd(cbwm);
     autoBSize = std::max(autoBSize, 0);
     // FIXME: Bug 1602669: if |autoBSize| happens to be numerically equal to

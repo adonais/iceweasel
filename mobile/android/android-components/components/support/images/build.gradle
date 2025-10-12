@@ -39,25 +39,24 @@ android {
 }
 
 dependencies {
-    implementation platform(libs.androidx.compose.bom)
     implementation project(':components:concept-fetch')
     implementation project(':components:support-base')
 
-    implementation libs.kotlin.coroutines
-
-    implementation libs.androidx.compose.ui
+    implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.material3
+    implementation libs.androidx.compose.ui
+    implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
 
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
-    testImplementation libs.testing.coroutines
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.robolectric
 
     androidTestImplementation libs.androidx.test.core
-    androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.androidx.test.rules
+    androidTestImplementation libs.androidx.test.runner
 }
 
 apply from: '../../../android-lint.gradle'

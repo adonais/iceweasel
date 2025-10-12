@@ -6,7 +6,6 @@ package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
@@ -146,7 +145,7 @@ class MainMenuTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2284323
     @Test
-    fun openSyncAndSaveDataTest() {
+    fun openSignInTest() {
         val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
 
         navigationToolbar {
@@ -421,7 +420,7 @@ class MainMenuTest : TestSetup() {
             clickBrokenSiteFormSendButton(composeTestRule)
         }
         browserScreen {
-            verifySnackBarText("Your report was sent")
+            verifySnackBarText("Report sent")
         }.openThreeDotMenu {
         }.openReportBrokenSite {
             verifyWhatIsBrokenField(composeTestRule)

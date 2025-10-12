@@ -36,6 +36,7 @@ import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import java.util.Locale
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Firefox Translation options bottom sheet dialog.
@@ -173,7 +174,7 @@ private fun TranslationOptionsDialogHeader(
             modifier = Modifier.size(24.dp),
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.mozac_ic_back_24),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_back_24),
                 contentDescription = stringResource(R.string.etp_back_button_content_description),
                 tint = FirefoxTheme.colors.iconPrimary,
             )

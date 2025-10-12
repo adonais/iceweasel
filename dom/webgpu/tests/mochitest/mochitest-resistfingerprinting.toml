@@ -4,6 +4,7 @@ run-if = ["!release_or_beta"]
 prefs = [
   "dom.webgpu.enabled=true",
   "dom.webgpu.service-workers.enabled=true",
+  "gfx.webgpu.ignore-blocklist=true", # https://bugzilla.mozilla.org/show_bug.cgi?id=1985348
   "privacy.fingerprintingProtection=true",
   "privacy.fingerprintingProtection.overrides='-AllTargets,+WebGPULimits'",
 ]

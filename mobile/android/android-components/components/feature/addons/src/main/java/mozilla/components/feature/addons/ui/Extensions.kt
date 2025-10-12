@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Used to parse [Addon.createdAt] and [Addon.updatedAt].
@@ -153,10 +154,5 @@ fun ImageView.setDefaultAddonIcon() {
     val safeContext = context ?: return
     val att = safeContext.theme.resolveAttribute(android.R.attr.textColorPrimary)
     setColorFilter(ContextCompat.getColor(safeContext, att))
-    setImageDrawable(
-        AppCompatResources.getDrawable(
-            safeContext,
-            mozilla.components.ui.icons.R.drawable.mozac_ic_extension_24,
-        ),
-    )
+    setImageDrawable(AppCompatResources.getDrawable(safeContext, iconsR.drawable.mozac_ic_extension_24))
 }

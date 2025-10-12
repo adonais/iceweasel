@@ -43,6 +43,11 @@ skip-if = [
 skip-if = ["verify"] # Bug 1886017
 
 ["browser_opentabs_pinned_tabs.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64'" , # Bug 1896042
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1896042
+  "os == 'win' && os_version == '11.26100' && processor == 'x86'", # Bug 1896042
+]
 
 ["browser_opentabs_recency.js"]
 skip-if = [

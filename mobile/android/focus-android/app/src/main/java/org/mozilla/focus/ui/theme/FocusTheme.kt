@@ -13,7 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.sp
 import mozilla.components.ui.colors.PhotonColors
 
@@ -30,7 +31,11 @@ fun FocusTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    val dimensions = if (LocalConfiguration.current.screenWidthDp <= TABLET_SIZE) {
+    val widthDp = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp().value
+    }
+
+    val dimensions = if (widthDp <= TABLET_SIZE) {
         phoneDimensions()
     } else {
         tabletDimensions()

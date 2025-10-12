@@ -93,7 +93,7 @@ function buildResponseCacheObject(cacheEntry) {
 export function getResponseCacheObject(request) {
   const cacheSession = getCacheSession(request);
   if (!cacheSession) {
-    return null;
+    return Promise.resolve(null);
   }
 
   return new Promise(resolve => {

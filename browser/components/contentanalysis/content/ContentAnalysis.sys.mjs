@@ -468,7 +468,9 @@ export const ContentAnalysis = {
         aBrowsingContext?.topChromeWindow ??
         aBrowsingContext?.embedderWindowGlobal.browsingContext
           .topChromeWindow ??
-        lazy.BrowserWindowTracker.getTopWindow();
+        lazy.BrowserWindowTracker.getTopWindow({
+          allowFromInactiveWorkspace: true,
+        });
       if (!topWindow) {
         console.error(
           "Unable to get window to show Content Analysis notification for."

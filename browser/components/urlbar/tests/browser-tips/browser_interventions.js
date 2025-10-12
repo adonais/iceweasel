@@ -127,6 +127,13 @@ add_task(async function testIsActive() {
     },
   ];
 
+  let interventionsProviderInstance = UrlbarProvidersManager.getProvider(
+    "UrlbarProviderInterventions"
+  );
+  // Mock the relevent method of Query so we don't have to start a real one.
+  interventionsProviderInstance.queryInstance = {
+    getProvider: name => UrlbarProvidersManager.getProvider(name),
+  };
   for (const {
     description,
     searchString,
@@ -137,19 +144,20 @@ add_task(async function testIsActive() {
 
     // Set null to currentTip to know whether or not UrlbarProviderInterventions
     // calculated the score.
-    UrlbarProviderInterventions.currentTip = null;
+    interventionsProviderInstance.currentTip = null;
 
-    const isActive = await UrlbarProviderInterventions.isActive({
+    const isActive = await interventionsProviderInstance.isActive({
       searchString,
     });
     Assert.equal(isActive, expectedActive, "Result of isActive is correct");
-    const isScoreCalculated = UrlbarProviderInterventions.currentTip !== null;
+    const isScoreCalculated = interventionsProviderInstance.currentTip !== null;
     Assert.equal(
       isScoreCalculated,
       expectedScoreCalculated,
       "The score is calculated correctly"
     );
   }
+  interventionsProviderInstance.queryInstance = null;
 });
 
 add_task(async function tipsAreEnglishOnly() {

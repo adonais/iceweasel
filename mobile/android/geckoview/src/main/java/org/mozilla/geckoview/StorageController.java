@@ -64,6 +64,7 @@ public final class StorageController {
     public static final long ALL = 1 << 9;
   }
 
+  /** Clear flags for storage controller operations. */
   @Retention(RetentionPolicy.SOURCE)
   @LongDef(
       flag = true,

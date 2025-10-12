@@ -264,6 +264,43 @@ def setup_perftest_extra_options(config, jobs):
 
 
 @transforms.add
+def create_duplicate_simpleperf_jobs(config, jobs):
+    for job in jobs:
+        if (
+            "startup" in job["name"]
+            and "cold" not in job["name"]
+            and "chrome-m" not in job["name"]
+        ):
+            new_job = deepcopy(job)
+            new_job["run-on-projects"] = []
+            new_job["dependencies"] = {
+                "android-aarch64-shippable": "build-android-aarch64-shippable/opt"
+            }
+            new_job["name"] += "-simpleperf"
+            new_job["run"][
+                "command"
+            ] += " --simpleperf --simpleperf-path $MOZ_FETCHES_DIR/android-simpleperf"
+            new_job["description"] = str(new_job["description"]).replace(
+                "Run", "Profile"
+            )
+            new_job["treeherder"]["symbol"] = str(
+                new_job["treeherder"]["symbol"]
+            ).replace(")", "-profile)")
+            new_job["fetches"]["toolchain"].append(
+                "linux64-android-simpleperf-linux-repack"
+            )
+            new_job["fetches"]["toolchain"].append("linux64-samply")
+            new_job["fetches"]["android-aarch64-shippable"] = [
+                {
+                    "artifact": "target.crashreporter-symbols.zip",
+                    "extract": True,
+                }
+            ]
+            yield new_job
+        yield job
+
+
+@transforms.add
 def pass_perftest_options(config, jobs):
     for job in jobs:
         env = job.setdefault("worker", {}).setdefault("env", {})

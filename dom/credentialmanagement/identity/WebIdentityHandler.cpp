@@ -66,6 +66,11 @@ void WebIdentityHandler::GetCredential(const CredentialRequestOptions& aOptions,
     return;
   }
 
+  if (!mActor) {
+    aPromise->MaybeRejectWithUnknownError("Unknown failure");
+    return;
+  }
+
   if (mGetPromise) {
     aPromise->MaybeRejectWithNotAllowedError(
         "Concurrent requests not allowed.");
@@ -112,6 +117,10 @@ void WebIdentityHandler::GetCredential(const CredentialRequestOptions& aOptions,
 }
 
 void WebIdentityHandler::PreventSilentAccess(const RefPtr<Promise>& aPromise) {
+  if (!mActor) {
+    aPromise->MaybeRejectWithUnknownError("Unknown failure");
+    return;
+  }
   mActor->SendPreventSilentAccess()->Then(
       GetCurrentSerialEventTarget(), __func__,
       [aPromise](const WebIdentityChild::PreventSilentAccessPromise::
@@ -123,6 +132,10 @@ void WebIdentityHandler::PreventSilentAccess(const RefPtr<Promise>& aPromise) {
 void WebIdentityHandler::Disconnect(
     const IdentityCredentialDisconnectOptions& aOptions,
     const RefPtr<Promise>& aPromise) {
+  if (!mActor) {
+    aPromise->MaybeRejectWithUnknownError("Unknown failure");
+    return;
+  }
   mActor->SendDisconnectIdentityCredential(aOptions)->Then(
       GetCurrentSerialEventTarget(), __func__,
       [aPromise](nsresult aResult) {
@@ -144,6 +157,11 @@ void WebIdentityHandler::Disconnect(
 void WebIdentityHandler::SetLoginStatus(const LoginStatus& aStatus,
                                         const RefPtr<Promise>& aPromise) {
   const RefPtr<Promise>& promise = aPromise;
+  if (!mActor) {
+    promise->MaybeRejectWithUnknownError(
+        "navigator.login.setStatus had an unexpected internal error");
+    return;
+  }
   mActor->SendSetLoginStatus(aStatus)->Then(
       GetCurrentSerialEventTarget(), __func__,
       [promise](const WebIdentityChild::SetLoginStatusPromise::ResolveValueType&
@@ -165,6 +183,10 @@ void WebIdentityHandler::SetLoginStatus(const LoginStatus& aStatus,
 RefPtr<MozPromise<nsresult, nsresult, true>>
 WebIdentityHandler::ResolveContinuationWindow(
     const nsACString& aToken, const IdentityResolveOptions& aOptions) {
+  if (!mActor) {
+    return MozPromise<nsresult, nsresult, true>::CreateAndReject(
+        NS_ERROR_UNEXPECTED, __func__);
+  }
   // Tell the parent process that we want to resolve with a given token and
   // options. The main process will infer what popup we are, and find the
   // pending promise.
@@ -192,6 +214,10 @@ WebIdentityHandler::ResolveContinuationWindow(
 
 RefPtr<MozPromise<bool, nsresult, true>>
 WebIdentityHandler::IsContinuationWindow() {
+  if (!mActor) {
+    return MozPromise<bool, nsresult, true>::CreateAndReject(
+        NS_ERROR_UNEXPECTED, __func__);
+  }
   RefPtr<MozPromise<bool, nsresult, true>::Private> promise =
       new MozPromise<bool, nsresult, true>::Private(__func__);
   mActor->SendIsActiveContinuationWindow()->Then(

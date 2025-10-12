@@ -17,6 +17,9 @@
     const { BrowserTestUtils } = ChromeUtils.importESModule(
       "resource://testing-common/BrowserTestUtils.sys.mjs"
     );
+    const { ERRORS } = ChromeUtils.importESModule(
+      "chrome://browser/content/backup/backup-constants.mjs"
+    );
 
     /**
      * Tests that adding a restore-from-backup element to the DOM causes it to
@@ -127,22 +130,39 @@
     });
 
     /**
-     * Tests that an error message is displayed if there is an error restoring from backup.
+     * Tests that incorrect password is shown in a different error format than top level
+     */
+    add_task(async function test_incorrect_password_error_condition() {
+      let restoreFromBackup = document.getElementById("test-restore-from-backup");
+
+      is(restoreFromBackup.recoveryErrorCode, undefined, "Recovery error code should be undefined");
+      ok(!restoreFromBackup.isIncorrectPassword, "Error message should not be displayed");
+      ok(!restoreFromBackup.errorMessageEl, "No error message should be displayed");
+
+      restoreFromBackup.recoveryErrorCode = ERRORS.UNAUTHORIZED;
+
+      await restoreFromBackup.updateComplete;
+
+      is(restoreFromBackup.recoveryErrorCode, ERRORS.UNAUTHORIZED, "Recovery error code should be set");
+      ok(restoreFromBackup.isIncorrectPassword, "Error message should be displayed");
+      ok(!restoreFromBackup.errorMessageEl, "No top level error message should be displayed");
+    });
+
+    /**
+     * Tests that a top level error message is displayed if there is an error restoring from backup.
      */
      add_task(async function test_error_condition() {
       let restoreFromBackup = document.getElementById("test-restore-from-backup");
 
-      is(restoreFromBackup.recoveryErrorCode, undefined, "Recovery error code should be undefined");
       ok(!restoreFromBackup.errorMessageEl, "No error message should be displayed");
 
-      restoreFromBackup.recoveryErrorCode = 1;
+      restoreFromBackup.recoveryErrorCode = ERRORS.CORRUPTED_ARCHIVE;
 
       await restoreFromBackup.updateComplete;
 
-      is(restoreFromBackup.recoveryErrorCode, 1, "Recovery error code should be set");
+      is(restoreFromBackup.recoveryErrorCode, ERRORS.CORRUPTED_ARCHIVE, "Recovery error code should be set");
       ok(restoreFromBackup.errorMessageEl, "Error message should be displayed");
     });
-
   </script>
 </head>
 <body>

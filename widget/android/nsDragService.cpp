@@ -21,6 +21,7 @@
 #include "nsWindow.h"
 
 using namespace mozilla;
+using namespace mozilla::gfx;
 using namespace mozilla::widget;
 
 StaticRefPtr<nsDragService> sDragServiceInstance;

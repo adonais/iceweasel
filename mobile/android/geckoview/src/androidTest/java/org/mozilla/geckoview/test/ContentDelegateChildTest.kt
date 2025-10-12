@@ -443,8 +443,15 @@ class ContentDelegateChildTest : BaseSessionTest() {
     @WithDisplay(width = 100, height = 100)
     @Test
     fun requestContextMenuOnVideo() {
-        // Bug 1700243
-        assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
+        if (sessionRule.env.isIsolatedProcess) {
+            // Bug 1961624
+            // Temporary disable Java's media decode that isn't compatible with isolated process.
+            sessionRule.setPrefsUntilTestEnd(
+                mapOf(
+                    "media.android-media-codec.enabled" to false,
+                ),
+            )
+        }
         mainSession.loadTestPath(CONTEXT_MENU_VIDEO_HTML_PATH)
         mainSession.waitForPageStop()
         sendLongPress(50f, 50f)

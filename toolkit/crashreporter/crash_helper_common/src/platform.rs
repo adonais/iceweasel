@@ -9,13 +9,13 @@ pub use windows::{server_addr, ProcessHandle};
 pub(crate) mod windows;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-pub use linux::{server_addr, ProcessHandle};
+pub use linux::ProcessHandle;
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
 pub(crate) mod linux;
 
 #[cfg(target_os = "macos")]
-pub use macos::{server_addr, ProcessHandle};
+pub use macos::ProcessHandle;
 
 #[cfg(target_os = "macos")]
 pub(crate) mod macos;

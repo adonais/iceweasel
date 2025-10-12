@@ -49,6 +49,7 @@
 #ifdef MOZ_WIDGET_ANDROID
 #  include <set>
 #  include "AndroidBuild.h"
+#  include "nsContentUtils.h"
 #endif
 
 #if defined(XP_MACOSX)

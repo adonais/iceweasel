@@ -40,12 +40,16 @@ EXCLUDED_PACKAGES = {
     # modified 'dummy' version of it so that the dependency checks still succeed, but
     # if it ever is attempted to be used, it will fail gracefully.
     "ansicon",
+    # jsonschema 4.17.3 is incompatible with Python 3.14+,
+    # but later versions use a dependency with Rust components, which we thus can't vendor.
+    # For now we apply the minimal patch to jsonschema to make it work again.
+    "jsonschema",
 }
 
 
 class VendorPython(MozbuildObject):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, virtualenv_name="vendor", **kwargs)
+        super().__init__(*args, virtualenv_name="uv", **kwargs)
         self.removed = []
         self.added = []
 

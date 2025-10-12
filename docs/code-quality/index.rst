@@ -129,7 +129,7 @@ In this document, we try to list these all tools.
      - :ref:`Rustfmt`
      - https://github.com/rust-lang/rustfmt
    * - Clippy
-     -
+     - Yes
      - `bug 1361342 <https://bugzilla.mozilla.org/show_bug.cgi?id=1361342>`__
      - :ref:`clippy`
      - https://github.com/rust-lang/rust-clippy

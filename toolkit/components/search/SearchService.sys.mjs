@@ -1432,6 +1432,11 @@ export class SearchService {
       onUpdate: () =>
         this._maybeReloadEngines(Ci.nsISearchService.CHANGE_REASON_EXPERIMENT),
     },
+    suggestOhttpEnabled: {
+      pref: "browser.search.suggest.ohttp.enabled",
+      default: false,
+      onUpdate: this.#recordPreferencesTelemetry.bind(this),
+    },
   });
 
   /**
@@ -1538,7 +1543,8 @@ export class SearchService {
 
     Glean.searchService.startupTime.stopAndAccumulate(timerId);
 
-    this.#recordTelemetryData();
+    this.#recordDefaultEngineTelemetryData();
+    this.#recordPreferencesTelemetry();
 
     Services.obs.notifyObservers(
       null,
@@ -3287,7 +3293,7 @@ export class SearchService {
         newCurrentEngine,
         changeReason
       );
-      this.#recordTelemetryData();
+      this.#recordDefaultEngineTelemetryData();
     }
 
     lazy.SearchUtils.notifyAction(
@@ -3339,7 +3345,7 @@ export class SearchService {
       );
     }
     // Update the telemetry data.
-    this.#recordTelemetryData();
+    this.#recordDefaultEngineTelemetryData();
   }
 
   /**
@@ -3471,10 +3477,19 @@ export class SearchService {
   }
 
   /**
+   * Records in telemetry any user preferences that we monitor.
+   */
+  #recordPreferencesTelemetry() {
+    Glean.searchSuggestionsOhttp.enabled.set(
+      this.#lazyPrefs.suggestOhttpEnabled
+    );
+  }
+
+  /**
    * Records the user's current default engine (normal and private) data to
    * telemetry.
    */
-  #recordTelemetryData() {
+  #recordDefaultEngineTelemetryData() {
     let engineInfo = this.#getEngineInfo(this.defaultEngine);
 
     Glean.searchEngineDefault.providerId.set(engineInfo.providerId);

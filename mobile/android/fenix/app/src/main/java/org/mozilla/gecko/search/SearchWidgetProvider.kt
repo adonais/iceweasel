@@ -11,7 +11,6 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.view.View
@@ -19,8 +18,6 @@ import android.widget.RemoteViews
 import androidx.annotation.Dimension
 import androidx.annotation.Dimension.Companion.DP
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.graphics.drawable.toBitmap
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.IntentReceiverActivity
@@ -90,7 +87,7 @@ class SearchWidgetProvider : AppWidgetProvider() {
     private fun createTextSearchIntent(context: Context): PendingIntent {
         return Intent(context, IntentReceiverActivity::class.java)
             .let { intent ->
-                val createTextSearchIntentFlags = IntentUtils.defaultIntentPendingFlags or
+                val createTextSearchIntentFlags = IntentUtils.DEFAULT_PENDING_INTENT_FLAGS or
                     PendingIntent.FLAG_UPDATE_CURRENT
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 intent.putExtra(HomeActivity.OPEN_TO_SEARCH, StartSearchIntentProcessor.SEARCH_WIDGET)
@@ -124,7 +121,7 @@ class SearchWidgetProvider : AppWidgetProvider() {
                 context,
                 REQUEST_CODE_VOICE,
                 voiceIntent,
-                IntentUtils.defaultIntentPendingFlags,
+                IntentUtils.DEFAULT_PENDING_INTENT_FLAGS,
             )
         }
     }
@@ -168,20 +165,10 @@ class SearchWidgetProvider : AppWidgetProvider() {
 
     private fun RemoteViews.setIcon(context: Context) {
         // gradient color available for android:fillColor only on SDK 24+
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            setImageViewResource(
-                R.id.button_search_widget_new_tab_icon,
-                R.drawable.ic_launcher_foreground,
-            )
-        } else {
-            setImageViewBitmap(
-                R.id.button_search_widget_new_tab_icon,
-                AppCompatResources.getDrawable(
-                    context,
-                    R.drawable.ic_launcher_foreground,
-                )?.toBitmap(),
-            )
-        }
+        setImageViewResource(
+            R.id.button_search_widget_new_tab_icon,
+            R.drawable.ic_launcher_foreground,
+        )
 
         val appName = context.getString(R.string.app_name)
         setContentDescription(

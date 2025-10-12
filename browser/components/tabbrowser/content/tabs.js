@@ -48,7 +48,7 @@
       return element;
     }
     if (isTabGroupLabel(element)) {
-      return element.closest(".tab-group-label-container");
+      return element.group.labelContainerElement;
     }
     throw new Error(`Element "${element.tagName}" is not expected to move`);
   };
@@ -116,9 +116,21 @@
       // Override arrowscrollbox.js method, since our scrollbox's children are
       // inherited from the scrollbox binding parent (this).
       this.arrowScrollbox._getScrollableElements = () => {
-        return this.ariaFocusableItems.filter(
-          this.arrowScrollbox._canScrollToElement
-        );
+        return this.ariaFocusableItems.reduce((elements, item) => {
+          if (this.arrowScrollbox._canScrollToElement(item)) {
+            elements.push(item);
+            if (
+              isTab(item) &&
+              item.group &&
+              item.group.collapsed &&
+              item.selected
+            ) {
+              // overflow container is scrollable, but not in focus order
+              elements.push(item.group.overflowContainer);
+            }
+          }
+          return elements;
+        }, []);
       };
       this.arrowScrollbox._canScrollToElement = element => {
         if (isTab(element)) {
@@ -172,7 +184,7 @@
 
       this.newTabButton.setAttribute(
         "aria-label",
-        GetDynamicShortcutTooltipText("tabs-newtab-button")
+        DynamicShortcutTooltip.getText("tabs-newtab-button")
       );
 
       let handleResize = () => {
@@ -1798,11 +1810,14 @@
       // remove arrowScrollbox periphery element.
       unpinnedChildren.pop();
 
-      // explode tab groups
+      // explode tab groups and split view wrappers
       // Iterate backwards over the array to preserve indices while we modify
       // things in place
       for (let i = unpinnedChildren.length - 1; i >= 0; i--) {
-        if (unpinnedChildren[i].tagName == "tab-group") {
+        if (
+          unpinnedChildren[i].tagName == "tab-group" ||
+          unpinnedChildren[i].tagName == "tab-split-view-wrapper"
+        ) {
           unpinnedChildren.splice(i, 1, ...unpinnedChildren[i].tabs);
         }
       }
@@ -2070,15 +2085,17 @@
               parent.prepend(popup);
               parent.setAttribute("type", "menu");
               // Update tooltip text
-              nodeToTooltipMap[parent.id] = newTabLeftClickOpensContainersMenu
-                ? "newTabAlwaysContainer.tooltip"
-                : "newTabContainer.tooltip";
+              DynamicShortcutTooltip.nodeToTooltipMap[parent.id] =
+                newTabLeftClickOpensContainersMenu
+                  ? "newTabAlwaysContainer.tooltip"
+                  : "newTabContainer.tooltip";
             } else {
-              nodeToTooltipMap[parent.id] = "newTabButton.tooltip";
+              DynamicShortcutTooltip.nodeToTooltipMap[parent.id] =
+                "newTabButton.tooltip";
               parent.removeAttribute("context", "new-tab-button-popup");
             }
             // evict from tooltip cache
-            gDynamicTooltipCache.delete(parent.id);
+            DynamicShortcutTooltip.cache.delete(parent.id);
 
             // If containers and press-hold container menu are both used,
             // add to gClickAndHoldListenersOnElement; otherwise, remove.
@@ -2340,7 +2357,9 @@
         }
         // Prevent flex rules from resizing non dragged tabs while the dragged
         // tabs are positioned absolutely
-        t.style.maxWidth = tabRect.width + "px";
+        if (!this.expandOnHover) {
+          t.style.maxWidth = tabRect.width + "px";
+        }
         // Prevent non-moving tab strip items from performing any animations
         // at the very beginning of the drag operation; this prevents them
         // from appearing to move while the dragged tabs are positioned absolutely
@@ -2507,6 +2526,25 @@
             setGridElPosition(t);
           }
         }
+      }
+
+      if (this.expandOnHover) {
+        // Query the expanded width from sidebar launcher to ensure tabs aren't
+        // cut off (Bug 1974037).
+        const { SidebarController } = tab.ownerGlobal;
+        SidebarController.expandOnHoverComplete.then(async () => {
+          const width = await window.promiseDocumentFlushed(
+            () => SidebarController.sidebarMain.clientWidth
+          );
+          requestAnimationFrame(() => {
+            for (const t of movingTabs) {
+              t.style.width = width + "px";
+            }
+            // Allow scrollboxes to grow to expanded sidebar width.
+            this.arrowScrollbox.scrollbox.style.width = "";
+            this.pinnedTabsContainer.scrollbox.style.width = "";
+          });
+        });
       }
 
       // Handle the new tab button filling the space when the dragged tab
@@ -3411,6 +3449,7 @@
         label.style.height = "";
         label.style.left = "";
         label.style.top = "";
+        label.style.maxWidth = "";
         label.removeAttribute("dragtarget");
       }
       let periphery = draggedTabDocument.getElementById(

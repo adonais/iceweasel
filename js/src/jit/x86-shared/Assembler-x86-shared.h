@@ -1756,6 +1756,10 @@ class AssemblerX86Shared : public AssemblerShared {
         MOZ_CRASH("unexpected operand kind");
     }
   }
+  void andnl(Register src1, Register src2, Register dest) {
+    MOZ_ASSERT(HasBMI1());
+    masm.andnl_rrr(src1.encoding(), src2.encoding(), dest.encoding());
+  }
   void orl(const Operand& src, Register dest) {
     switch (src.kind()) {
       case Operand::REG:

@@ -23,7 +23,6 @@
 #include "mozilla/dom/FileList.h"
 #include "mozilla/dom/HTMLButtonElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/UnionTypes.h"
 #include "nsCOMPtr.h"

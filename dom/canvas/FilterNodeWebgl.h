@@ -54,9 +54,9 @@ class FilterNodeWebgl : public FilterNode {
 
   virtual void Draw(DrawTargetWebgl* aDT, const Rect& aSourceRect,
                     const Point& aDestPoint, const DrawOptions& aOptions);
-  virtual already_AddRefed<SourceSurface> DrawChild(
-      DrawTargetWebgl* aDT, const Rect& aSourceRect,
-      IntPoint* aSurfaceOffset = nullptr);
+  virtual already_AddRefed<SourceSurface> DrawChild(DrawTargetWebgl* aDT,
+                                                    const Rect& aSourceRect,
+                                                    Point& aSurfaceOffset);
   virtual DeviceColor GetColor() const { return DeviceColor(1, 1, 1, 1); }
 
   virtual void ResolveInputs(DrawTargetWebgl* aDT, bool aAccel) {}
@@ -112,11 +112,9 @@ class FilterNodeTransformWebgl : public FilterNodeWebgl {
   IntRect MapRectToSource(const IntRect& aRect, const IntRect& aMax,
                           FilterNode* aSourceNode) override;
 
-  void Draw(DrawTargetWebgl* aDT, const Rect& aSourceRect,
-            const Point& aDestPoint, const DrawOptions& aOptions) override;
   already_AddRefed<SourceSurface> DrawChild(DrawTargetWebgl* aDT,
                                             const Rect& aSourceRect,
-                                            IntPoint* aSurfaceOffset) override;
+                                            Point& aSurfaceOffset) override;
 
  protected:
   Matrix mMatrix;

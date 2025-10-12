@@ -751,21 +751,22 @@ void RTCRtpTransceiver::NegotiatedDetailsToAudioCodecConfigs(
     std::vector<AudioCodecConfig>* aConfigs) {
   Maybe<AudioCodecConfig> telephoneEvent;
 
-  if (aDetails.GetEncodingCount()) {
-    for (const auto& codec : aDetails.GetEncoding(0).GetCodecs()) {
-      if (NS_WARN_IF(codec->Type() != SdpMediaSection::kAudio)) {
-        MOZ_ASSERT(false, "Codec is not audio! This is a JSEP bug.");
-        return;
-      }
-      Maybe<AudioCodecConfig> config;
-      const JsepAudioCodecDescription& audio =
-          static_cast<const JsepAudioCodecDescription&>(*codec);
-      JsepCodecDescToAudioCodecConfig(audio, &config);
-      if (config->mName == "telephone-event") {
-        telephoneEvent = std::move(config);
-      } else {
-        aConfigs->push_back(std::move(*config));
-      }
+  const std::decay_t<decltype(aDetails.GetEncoding(0).GetCodecs())> empty;
+  const auto& codecs =
+      aDetails.GetEncodingCount() ? aDetails.GetEncoding(0).GetCodecs() : empty;
+  for (const auto& codec : codecs) {
+    if (NS_WARN_IF(codec->Type() != SdpMediaSection::kAudio)) {
+      MOZ_ASSERT(false, "Codec is not audio! This is a JSEP bug.");
+      return;
+    }
+    Maybe<AudioCodecConfig> config;
+    const JsepAudioCodecDescription& audio =
+        static_cast<const JsepAudioCodecDescription&>(*codec);
+    JsepCodecDescToAudioCodecConfig(audio, &config);
+    if (config->mName == "telephone-event") {
+      telephoneEvent = std::move(config);
+    } else {
+      aConfigs->push_back(std::move(*config));
     }
   }
 
@@ -870,30 +871,30 @@ static auto JsepCodecDescToVideoCodecConfig(
 void RTCRtpTransceiver::NegotiatedDetailsToVideoCodecConfigs(
     const JsepTrackNegotiatedDetails& aDetails,
     std::vector<VideoCodecConfig>* aConfigs) {
-  if (aDetails.GetEncodingCount()) {
-    for (const auto& codec : aDetails.GetEncoding(0).GetCodecs()) {
-      if (NS_WARN_IF(codec->Type() != SdpMediaSection::kVideo)) {
-        MOZ_ASSERT(false, "Codec is not video! This is a JSEP bug.");
-        return;
-      }
-      const JsepVideoCodecDescription& video =
-          static_cast<const JsepVideoCodecDescription&>(*codec);
-
-      JsepCodecDescToVideoCodecConfig(video).apply(
-          [&](VideoCodecConfig config) {
-            config.mTias = aDetails.GetTias();
-            for (size_t i = 0; i < aDetails.GetEncodingCount(); ++i) {
-              const JsepTrackEncoding& jsepEncoding(aDetails.GetEncoding(i));
-              if (jsepEncoding.HasFormat(video.mDefaultPt)) {
-                VideoCodecConfig::Encoding encoding;
-                encoding.rid = jsepEncoding.mRid;
-                config.mEncodings.push_back(encoding);
-              }
-            }
-
-            aConfigs->push_back(std::move(config));
-          });
+  const std::decay_t<decltype(aDetails.GetEncoding(0).GetCodecs())> empty;
+  const auto& codecs =
+      aDetails.GetEncodingCount() ? aDetails.GetEncoding(0).GetCodecs() : empty;
+  for (const auto& codec : codecs) {
+    if (NS_WARN_IF(codec->Type() != SdpMediaSection::kVideo)) {
+      MOZ_ASSERT(false, "Codec is not video! This is a JSEP bug.");
+      return;
     }
+    const JsepVideoCodecDescription& video =
+        static_cast<const JsepVideoCodecDescription&>(*codec);
+
+    JsepCodecDescToVideoCodecConfig(video).apply([&](VideoCodecConfig config) {
+      config.mTias = aDetails.GetTias();
+      for (size_t i = 0; i < aDetails.GetEncodingCount(); ++i) {
+        const JsepTrackEncoding& jsepEncoding(aDetails.GetEncoding(i));
+        if (jsepEncoding.HasFormat(video.mDefaultPt)) {
+          VideoCodecConfig::Encoding encoding;
+          encoding.rid = jsepEncoding.mRid;
+          config.mEncodings.push_back(encoding);
+        }
+      }
+
+      aConfigs->push_back(std::move(config));
+    });
   }
 }
 

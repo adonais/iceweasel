@@ -46,12 +46,11 @@ struct IsSortedSet;
 template <IDBSpecialValue First, IDBSpecialValue Second,
           IDBSpecialValue... Rest>
 struct IsSortedSet<First, Second, Rest...>
-    : std::integral_constant<bool, IsSortedSet<First, Second>::value &&
-                                       IsSortedSet<Second, Rest...>::value> {};
+    : std::conjunction<IsSortedSet<First, Second>,
+                       IsSortedSet<Second, Rest...>> {};
 
 template <IDBSpecialValue First, IDBSpecialValue Second>
-struct IsSortedSet<First, Second>
-    : std::integral_constant<bool, (First < Second)> {};
+struct IsSortedSet<First, Second> : std::bool_constant<(First < Second)> {};
 
 template <IDBSpecialValue First>
 struct IsSortedSet<First> : std::true_type {};

@@ -9,8 +9,8 @@ android {
     compileSdkVersion = project.ext.compileSdkVersion
 
     defaultConfig {
-        targetSdkVersion = project.ext.targetSdkVersion
-        minSdkVersion = project.ext.minSdkVersion
+        targetSdkVersion project.ext.targetSdkVersion
+        minSdkVersion 21 // this will be updated to project.ext.minSdkVersion shortly
         manifestPlaceholders = project.ext.manifestPlaceholders
 
         applicationId "org.mozilla.geckoview.test_runner"
@@ -39,11 +39,11 @@ android {
 }
 
 dependencies {
+    implementation project(path: ':geckoview')
+
     implementation libs.androidx.annotation
     implementation libs.androidx.appcompat
-    implementation libs.androidx.preferences
-
-    implementation project(path: ':geckoview')
     implementation libs.androidx.constraintlayout
+    implementation libs.androidx.preferences
     implementation libs.google.material
 }

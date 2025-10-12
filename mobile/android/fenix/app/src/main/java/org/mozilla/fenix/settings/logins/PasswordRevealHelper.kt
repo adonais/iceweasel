@@ -11,6 +11,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.R
+import mozilla.components.ui.icons.R as iconsR
 
 fun togglePasswordReveal(passwordText: TextView, revealPasswordButton: ImageButton) {
     val context = passwordText.context
@@ -21,7 +22,7 @@ fun togglePasswordReveal(passwordText: TextView, revealPasswordButton: ImageButt
         Logins.viewPasswordLogin.record(NoExtras())
         passwordText.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
         revealPasswordButton.setImageDrawable(
-            AppCompatResources.getDrawable(context, R.drawable.mozac_ic_eye_slash_24),
+            AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_eye_slash_24),
         )
         revealPasswordButton.contentDescription =
             context.getString(R.string.saved_login_hide_password)
@@ -29,7 +30,7 @@ fun togglePasswordReveal(passwordText: TextView, revealPasswordButton: ImageButt
         passwordText.inputType =
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         revealPasswordButton.setImageDrawable(
-            AppCompatResources.getDrawable(context, R.drawable.mozac_ic_eye_24),
+            AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_eye_24),
         )
         revealPasswordButton.contentDescription =
             context.getString(R.string.saved_login_reveal_password)

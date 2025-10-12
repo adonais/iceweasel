@@ -516,6 +516,9 @@ let WasmNonNullExternrefValues = [
 ];
 let WasmExternrefValues = [null, ...WasmNonNullExternrefValues];
 
+// Max number of memories in a single wasm module.
+let MaxMemories = 100
+
 // Common array utilities
 
 // iota(n,k) creates an Array of length n with values k..k+n-1

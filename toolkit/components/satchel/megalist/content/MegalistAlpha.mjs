@@ -90,7 +90,9 @@ export class MegalistAlpha extends MozLitElement {
           const { BrowserWindowTracker } = ChromeUtils.importESModule(
             "resource:///modules/BrowserWindowTracker.sys.mjs"
           );
-          const window = BrowserWindowTracker.getTopWindow();
+          const window = BrowserWindowTracker.getTopWindow({
+            allowFromInactiveWorkspace: true,
+          });
           window.SidebarController.hide();
         }
       }
@@ -380,9 +382,9 @@ export class MegalistAlpha extends MozLitElement {
           this.shadowRoot.querySelector(".passwords-list").focus();
         } else if (e.key === "Tab") {
           e.preventDefault();
-          const webContent =
-            lazy.BrowserWindowTracker.getTopWindow().gBrowser.selectedTab
-              .linkedBrowser;
+          const webContent = lazy.BrowserWindowTracker.getTopWindow({
+            allowFromInactiveWorkspace: true,
+          }).gBrowser.selectedTab.linkedBrowser;
           webContent.focus();
         }
       }}
@@ -683,7 +685,7 @@ export class MegalistAlpha extends MozLitElement {
           type="radio"
           id="allLogins"
           name="logins"
-          value=${DISPLAY_MODES.ALL}
+          .value=${DISPLAY_MODES.ALL}
         />
         <label
           for="allLogins"
@@ -697,7 +699,7 @@ export class MegalistAlpha extends MozLitElement {
           type="radio"
           id="alerts"
           name="logins"
-          value=${DISPLAY_MODES.ALERTS}
+          .value=${DISPLAY_MODES.ALERTS}
         />
         <label
           for="alerts"
@@ -876,29 +878,41 @@ export class MegalistAlpha extends MozLitElement {
   }
 
   renderAuthenticatedView() {
+    return html`${this.renderNotification()} ${this.renderContent()}`;
+  }
+
+  render() {
     const showToolbar =
       this.viewMode === VIEW_MODES.ALERTS ||
       (this.viewMode === VIEW_MODES.LIST && this.header?.value?.total > 0);
 
-    return html`${when(showToolbar, () => html`${this.renderToolbar()}`)}
-    ${this.renderNotification()} ${this.renderContent()}`;
-  }
-
-  render() {
     return html`
       <link
         rel="stylesheet"
         href="chrome://global/content/megalist/megalist.css"
       />
-      <div class="container" aria-labelledby="sidebar-menu-cpm-header">
+      <link
+        rel="stylesheet"
+        href="chrome://browser/content/sidebar/sidebar.css"
+      />
+      <div
+        class="container sidebar-panel"
+        aria-labelledby="sidebar-menu-cpm-header"
+      >
         <sidebar-panel-header
           data-l10n-id="sidebar-menu-cpm-header"
           data-l10n-attrs="heading"
           view="viewCPMSidebar"
-        ></sidebar-panel-header>
-        ${!this.shouldShowPrimaryPasswordAuth
-          ? this.renderAuthenticatedView()
-          : this.renderReauthPrimaryPassword()}
+        >
+          ${when(!this.shouldShowPrimaryPasswordAuth && showToolbar, () =>
+            this.renderToolbar()
+          )}
+        </sidebar-panel-header>
+        <div class="sidebar-panel-scrollable-content">
+          ${!this.shouldShowPrimaryPasswordAuth
+            ? this.renderAuthenticatedView()
+            : this.renderReauthPrimaryPassword()}
+        </div>
       </div>
     `;
   }

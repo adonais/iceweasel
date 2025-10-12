@@ -851,4 +851,56 @@ class EngineDelegateMiddlewareTest {
         verify(engineSession).requestTranslationRestore()
         assertTrue(store.state.findTab(tab.id)?.translationsState?.isRestoreProcessing!!)
     }
+
+    @Test
+    fun `FlushEngineSessionStateAction correctly triggers the engine session state flush on the selected tab`() {
+        val tab = createTab("https://www.mozilla.org")
+        val engineSession: EngineSession = mock()
+        val engine: Engine = mock()
+        doReturn(engineSession).`when`(engine).createSession()
+        val store = BrowserStore(
+            middleware = EngineMiddleware.create(
+                engine = engine,
+                scope = scope,
+            ),
+            initialState = BrowserState(
+                tabs = listOf(tab),
+            ),
+        )
+
+        store.dispatch(
+            EngineAction.FlushEngineSessionStateAction(tabId = tab.id),
+        ).joinBlocking()
+
+        dispatcher.scheduler.advanceUntilIdle()
+        store.waitUntilIdle()
+
+        verify(engineSession).flushSessionState()
+    }
+
+    @Test
+    fun `FlushEngineSessionStateAction correctly triggers the engine session state flush on the custom tab`() {
+        val tab = createCustomTab("https://www.mozilla.org")
+        val engineSession: EngineSession = mock()
+        val engine: Engine = mock()
+        doReturn(engineSession).`when`(engine).createSession()
+        val store = BrowserStore(
+            middleware = EngineMiddleware.create(
+                engine = engine,
+                scope = scope,
+            ),
+            initialState = BrowserState(
+                customTabs = listOf(tab),
+            ),
+        )
+
+        store.dispatch(
+            EngineAction.FlushEngineSessionStateAction(tabId = tab.id),
+        ).joinBlocking()
+
+        dispatcher.scheduler.advanceUntilIdle()
+        store.waitUntilIdle()
+
+        verify(engineSession).flushSessionState()
+    }
 }

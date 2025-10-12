@@ -90,7 +90,7 @@ add_task(async function disable() {
   Assert.equal(UrlbarTestUtils.getResultCount(window), 1);
 
   const { result } = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.equal(result.providerName, "HeuristicFallback");
+  Assert.equal(result.providerName, "UrlbarProviderHeuristicFallback");
 
   await SpecialPowers.popPrefEnv();
   await QuickSuggestTestUtils.forceSync();

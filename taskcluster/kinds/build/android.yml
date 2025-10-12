@@ -100,11 +100,11 @@ android-x86/opt:
     worker:
         env:
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
-            MOZ_AUTOMATION_PACKAGE_TESTS: "1"
     run:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86
     use-sccache: true
+    use-python: "3.11"
     fetches:
         toolchain:
             - linux64-clang
@@ -212,6 +212,7 @@ android-arm/opt:
         actions: [get-secrets, build]
         custom-build-variant-cfg: arm
     use-sccache: true
+    use-python: "3.11"
     fetches:
         toolchain:
             - linux64-clang
@@ -319,6 +320,7 @@ android-aarch64/opt:
         actions: [get-secrets, build]
         custom-build-variant-cfg: aarch64
     use-sccache: true
+    use-python: "3.11"
     fetches:
         toolchain:
             - linux64-clang
@@ -348,6 +350,33 @@ android-aarch64-lite/opt:
             - linux64-clang
             - linux64-sccache
             - android-gradle-dependencies-lite
+
+android-aarch64-non-unified/opt:
+    description: "Android AArch64 Opt Non-unified"
+    index:
+        job-name: android-aarch64-non-unified
+    treeherder:
+        platform: android-5-0-aarch64/opt
+        symbol: B-nu
+    run-on-projects: ['integration']
+    worker:
+        env:
+            MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
+            PERFHERDER_EXTRA_OPTIONS: non-unified
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
+    run:
+        actions: [get-secrets, build]
+        custom-build-variant-cfg: aarch64
+        extra-config:
+            extra_mozconfig_content:
+                - ac_add_options --disable-unified-build
+    use-sccache: true
+    use-python: "3.11"
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-sccache
+            - android-gradle-dependencies
 
 android-aarch64/debug:
     description: "Android AArch64 Debug"
@@ -450,6 +479,7 @@ android-x86_64/opt:
         actions: [get-secrets, build]
         custom-build-variant-cfg: x86_64
     use-sccache: true
+    use-python: "3.11"
     fetches:
         toolchain:
             - linux64-clang
@@ -504,6 +534,33 @@ android-x86_64-fuzzing/debug:
             - android-gradle-dependencies
     optimization:
         skip-unless-expanded: null
+
+android-x86_64-non-unified/opt:
+    description: "Android x86-64 Opt Non-unified"
+    index:
+        job-name: android-x86_64-non-unified
+    treeherder:
+        platform: android-5-0-x86_64/opt
+        symbol: B-nu
+    run-on-projects: ['integration']
+    worker:
+        env:
+            MOZ_AUTOMATION_BUILD_SYMBOLS: '0'
+            PERFHERDER_EXTRA_OPTIONS: non-unified
+            TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android-x86/releng.manifest"
+    run:
+        actions: [get-secrets, build]
+        custom-build-variant-cfg: x86_64
+        extra-config:
+            extra_mozconfig_content:
+                - ac_add_options --disable-unified-build
+    use-sccache: true
+    use-python: "3.11"
+    fetches:
+        toolchain:
+            - linux64-clang
+            - linux64-sccache
+            - android-gradle-dependencies
 
 android-x86_64-shippable/opt:
     description: "Android x86-64 Shippable"

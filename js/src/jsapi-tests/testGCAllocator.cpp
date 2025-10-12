@@ -758,6 +758,46 @@ BEGIN_TEST(testBufferAllocator_alignedAlloc) {
 }
 END_TEST(testBufferAllocator_alignedAlloc)
 
+BEGIN_TEST(testBufferAllocator_rooting) {
+  // Exercise RootedBuffer API to hold tenured-owned buffers live before
+  // attaching them to a GC thing.
+
+  const size_t bytes = 12 * 1024;  // Large enough to affect memory accounting.
+
+  Zone* zone = cx->zone();
+  size_t initialMallocHeapSize = zone->mallocHeapSize.bytes();
+
+  auto* buffer = static_cast<uint8_t*>(gc::AllocBuffer(zone, bytes, false));
+  CHECK(buffer);
+
+  RootedBuffer<uint8_t> root(cx, buffer);
+  buffer = nullptr;
+  CHECK(root);
+  CHECK(zone->mallocHeapSize.bytes() > initialMallocHeapSize);
+
+  memset(root, 42, bytes);
+  JS_GC(cx);
+  CHECK(zone->mallocHeapSize.bytes() > initialMallocHeapSize);
+  for (size_t i = 0; i < bytes; i++) {
+    CHECK(root[i] == 42);
+  }
+
+  HandleBuffer<uint8_t> handle(root);
+  CHECK(handle[0] == 42);
+
+  MutableHandleBuffer<uint8_t> mutableHandle(&root);
+  CHECK(mutableHandle[0] == 42);
+  mutableHandle.set(nullptr);
+  CHECK(!root);
+  CHECK(!handle);
+
+  JS_GC(cx);
+  CHECK(zone->mallocHeapSize.bytes() == initialMallocHeapSize);
+
+  return true;
+}
+END_TEST(testBufferAllocator_rooting)
+
 BEGIN_TEST(testBufferAllocator_predicatesOnOtherAllocs) {
   if (!cx->runtime()->gc.nursery().isEnabled()) {
     fprintf(stderr, "Skipping test as nursery is disabled.\n");

@@ -29,22 +29,22 @@ tasks.register("updateBuiltInExtensionVersion", Copy) { task ->
 }
 
 dependencies {
-    implementation libs.kotlin.coroutines
-    implementation libs.androidx.work.runtime
-
-    implementation project(':components:concept-engine')
     implementation project(":components:browser-state")
+    implementation project(':components:concept-engine')
     implementation project(':components:feature-tabs')
     implementation project(':components:service-firefox-accounts')
     implementation project(':components:support-ktx')
     implementation project(':components:support-webextensions')
 
-    testImplementation libs.androidx.test.junit
-    testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
-    testImplementation libs.testing.robolectric
-    testImplementation libs.testing.coroutines
+    implementation libs.androidx.work.runtime
+    implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
+
+    testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

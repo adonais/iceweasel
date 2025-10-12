@@ -11,7 +11,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.layout.AcornSize.MaxWidth.large
 import mozilla.components.compose.base.theme.layout.AcornSize.MaxWidth.medium
-import mozilla.components.compose.base.theme.layout.AcornSize.MaxWidth.small
 
 private const val DEFAULT_FONT_SCALE = 1.0f
 

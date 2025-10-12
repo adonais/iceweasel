@@ -513,4 +513,27 @@ TEST(CharacterDataBufferTest, RFindNonWhitespaceIn2b)
   }
 }
 
+TEST(CharacterDataBufferTest, SafeAPIsChar1b)
+{
+  const RefPtr<Document> doc = CreateHTMLDoc();
+  const RefPtr<nsTextNode> textNode = doc->CreateTextNode(EmptyString());
+  MOZ_RELEASE_ASSERT(textNode);
+  const CharacterDataBuffer& characterDataBuffer = textNode->DataBuffer();
+
+  // Test empty data buffer.
+  EXPECT_EQ(characterDataBuffer.SafeFirstChar(), u'\0');
+  EXPECT_EQ(characterDataBuffer.SafeLastChar(), u'\0');
+  EXPECT_EQ(characterDataBuffer.SafeCharAt(100), u'\0');
+
+  // Test non-empty data buffer.
+  const char16_t* testStr = u"abcdef";
+  textNode->SetData(nsDependentString(testStr), IgnoreErrors());
+  MOZ_ASSERT(!characterDataBuffer.Is2b());
+
+  EXPECT_EQ(characterDataBuffer.SafeFirstChar(), u'a');
+  EXPECT_EQ(characterDataBuffer.SafeLastChar(), u'f');
+  EXPECT_EQ(characterDataBuffer.SafeCharAt(2), u'c');
+  EXPECT_EQ(characterDataBuffer.SafeCharAt(100), u'\0');
+}
+
 };  // namespace mozilla::dom

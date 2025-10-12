@@ -10,6 +10,7 @@
 #include "mozilla/dom/DOMString.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/dom/File.h"
+#include "nsVariant.h"
 
 namespace mozilla {
 class ErrorResult;

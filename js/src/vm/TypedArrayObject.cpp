@@ -143,32 +143,48 @@ bool TypedArrayObject::ensureHasBuffer(JSContext* cx,
   size_t byteLength = tarray->byteLength();
 
   AutoRealm ar(cx, tarray);
-  ArrayBufferObject* buffer =
-      ArrayBufferObject::createZeroed(cx, tarray->byteLength());
-  if (!buffer) {
-    return false;
+
+  ArrayBufferObject* buffer;
+  if (tarray->hasMallocedElements(cx)) {
+    // Allocate a new array buffer and transfer our malloced buffer to it
+    // without copying.
+    buffer =
+        ArrayBufferObject::createFromTypedArrayMallocedElements(cx, tarray);
+    if (!buffer) {
+      return false;
+    }
+  } else {
+    buffer = ArrayBufferObject::createZeroed(cx, byteLength);
+    if (!buffer) {
+      return false;
+    }
+
+    // tarray is not shared, because if it were it would have a buffer.
+    memcpy(buffer->dataPointer(), tarray->dataPointerUnshared(), byteLength);
+
+    // If the object is in the nursery, the buffer will be freed by the next
+    // nursery GC. Free the data slot pointer if the object has no inline data.
+    //
+    // Note: we checked hasMallocedElements above, but allocating the array
+    // buffer object might have triggered a GC and this can malloc typed array
+    // elements if the typed array was in the nursery.
+    if (tarray->isTenured() && tarray->hasMallocedElements(cx)) {
+      size_t nbytes = RoundUp(byteLength, sizeof(Value));
+      js_free(tarray->elements());
+      RemoveCellMemory(tarray, nbytes, MemoryUse::TypedArrayElements);
+    }
+
+    tarray->setFixedSlot(TypedArrayObject::DATA_SLOT,
+                         PrivateValue(buffer->dataPointer()));
   }
+
+  MOZ_ASSERT(tarray->elements() == buffer->dataPointer());
 
   buffer->pinLength(tarray->isLengthPinned());
 
   // Attaching the first view to an array buffer is infallible.
   MOZ_ALWAYS_TRUE(buffer->addView(cx, tarray));
 
-  // tarray is not shared, because if it were it would have a buffer.
-  memcpy(buffer->dataPointer(), tarray->dataPointerUnshared(), byteLength);
-
-  // If the object is in the nursery, the buffer will be freed by the next
-  // nursery GC. Free the data slot pointer if the object has no inline data.
-  size_t nbytes = RoundUp(byteLength, sizeof(Value));
-  Nursery& nursery = cx->nursery();
-  if (tarray->isTenured() && !tarray->hasInlineElements() &&
-      !nursery.isInside(tarray->elements())) {
-    js_free(tarray->elements());
-    RemoveCellMemory(tarray, nbytes, MemoryUse::TypedArrayElements);
-  }
-
-  tarray->setFixedSlot(TypedArrayObject::DATA_SLOT,
-                       PrivateValue(buffer->dataPointer()));
   tarray->setFixedSlot(TypedArrayObject::BUFFER_SLOT, ObjectValue(*buffer));
 
   return true;
@@ -274,9 +290,10 @@ size_t FixedLengthTypedArrayObject::objectMoved(JSObject* obj, JSObject* old) {
   // Non-inline allocations are rounded up.
   nbytes = RoundUp(nbytes, sizeof(Value));
 
-  Nursery::WasBufferMoved result = nursery.maybeMoveBufferOnPromotion(
-      &buf, newObj, nbytes, nbytes, MemoryUse::TypedArrayElements,
-      ArrayBufferContentsArena);
+  Nursery::WasBufferMoved result =
+      nursery.maybeMoveNurseryOrMallocBufferOnPromotion(
+          &buf, newObj, nbytes, nbytes, MemoryUse::TypedArrayElements,
+          ArrayBufferContentsArena);
   if (result == Nursery::BufferMoved) {
     newObj->setReservedSlot(DATA_SLOT, PrivateValue(buf));
 
@@ -301,6 +318,10 @@ void FixedLengthTypedArrayObject::setInlineElements() {
   char* dataSlot = reinterpret_cast<char*>(this) + dataOffset();
   *reinterpret_cast<void**>(dataSlot) =
       this->fixedData(FixedLengthTypedArrayObject::FIXED_DATA_START);
+}
+
+bool FixedLengthTypedArrayObject::hasMallocedElements(JSContext* cx) const {
+  return !hasInlineElements() && !cx->nursery().isInside(elements());
 }
 
 /* Helper clamped uint8_t type */
@@ -6806,7 +6827,7 @@ bool TypedArrayObject::sort(JSContext* cx, unsigned argc, Value* vp) {
         return true;
 
       case ArraySortResult::CallJS:
-      case ArraySortResult::CallJSSameRealmNoRectifier:
+      case ArraySortResult::CallJSSameRealmNoUnderflow:
         MOZ_ASSERT(data.get().comparatorThisValue().isUndefined());
         MOZ_ASSERT(&args[0].toObject() == data.get().comparator());
         callArgs[0].set(data.get().comparatorArg(0));

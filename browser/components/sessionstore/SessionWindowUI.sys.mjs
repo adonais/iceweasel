@@ -156,7 +156,9 @@ export var SessionWindowUI = {
    * Only show the infobar when canRestoreLastSession and the pref value == 1
    */
   async maybeShowRestoreSessionInfoBar() {
-    let win = lazy.BrowserWindowTracker.getTopWindow();
+    let win = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
     let count = Services.prefs.getIntPref(
       "browser.startup.couldRestoreSession.count",
       0

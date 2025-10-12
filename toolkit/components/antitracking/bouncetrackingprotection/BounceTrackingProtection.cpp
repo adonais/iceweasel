@@ -22,6 +22,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/Promise.h"
 #include "nsDebug.h"
+#include "nsGlobalWindowInner.h"
 #include "nsHashPropertyBag.h"
 #include "nsIClearDataService.h"
 #include "nsIObserverService.h"
@@ -201,7 +202,7 @@ nsresult BounceTrackingProtection::UpdateBounceTrackingPurgeTimer(
             [] { NS_WARNING("RunPurgeBounceTrackers failed"); });
       },
       purgeTimerPeriod * PR_MSEC_PER_SEC, nsITimer::TYPE_REPEATING_SLACK,
-      "mBounceTrackingPurgeTimer");
+      "mBounceTrackingPurgeTimer"_ns);
 }
 
 // static

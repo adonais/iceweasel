@@ -22,7 +22,7 @@ const { SCOPE_PROFILE, OAUTH_CLIENT_ID } = ChromeUtils.importESModule(
 );
 
 ChromeUtils.defineESModuleGetters(this, {
-  jwcrypto: "resource://services-crypto/jwcrypto.sys.mjs",
+  jwcrypto: "moz-src:///services/crypto/modules/jwcrypto.sys.mjs",
   FxAccountsKeys: "resource://gre/modules/FxAccountsKeys.sys.mjs",
 });
 

@@ -373,7 +373,7 @@ PurgeTrackerService.prototype = {
     // Record how long this iteration took for telemetry.
     // This is a tuple of start and end time, the second
     // part will be added at the end of this function.
-    let duration = [Cu.now()];
+    let duration = [ChromeUtils.now()];
 
     /**
      * We record the creationTime of the last cookie we looked at and
@@ -494,7 +494,7 @@ PurgeTrackerService.prototype = {
       saved_date
     );
 
-    duration.push(Cu.now());
+    duration.push(ChromeUtils.now());
     this._telemetryData.durationIntervals.push(duration);
 
     // We've reached the end, no need to repeat again until next idle-daily.

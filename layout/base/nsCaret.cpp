@@ -643,7 +643,7 @@ void nsCaret::ResetBlinking() {
   mLastBlinkTimerReset = now;
   mBlinkTimer->InitWithNamedFuncCallback(CaretBlinkCallback, this, mBlinkTime,
                                          nsITimer::TYPE_REPEATING_SLACK,
-                                         "CaretBlinkCallback");
+                                         "CaretBlinkCallback"_ns);
 }
 
 void nsCaret::StopBlinking() {

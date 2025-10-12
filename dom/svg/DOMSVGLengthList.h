@@ -38,13 +38,11 @@ class MOZ_RAII AutoChangeLengthListNotifier : public mozAutoDocUpdate {
       : mozAutoDocUpdate(aValue->Element()->GetComposedDoc(), true),
         mValue(aValue) {
     MOZ_ASSERT(aValue, "Expecting non-null value");
-    mEmptyOrOldValue =
-        mValue->Element()->WillChangeLengthList(mValue->AttrEnum(), *this);
+    mValue->Element()->WillChangeLengthList(mValue->AttrEnum(), *this);
   }
 
   ~AutoChangeLengthListNotifier() {
-    mValue->Element()->DidChangeLengthList(mValue->AttrEnum(), mEmptyOrOldValue,
-                                           *this);
+    mValue->Element()->DidChangeLengthList(mValue->AttrEnum(), *this);
     if (mValue->IsAnimating()) {
       mValue->Element()->AnimationNeedsResample();
     }
@@ -52,7 +50,6 @@ class MOZ_RAII AutoChangeLengthListNotifier : public mozAutoDocUpdate {
 
  private:
   T* const mValue;
-  nsAttrValue mEmptyOrOldValue;
 };
 
 /**

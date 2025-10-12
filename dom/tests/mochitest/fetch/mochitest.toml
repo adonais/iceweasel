@@ -94,6 +94,7 @@ skip-if = [
 ["test_fetch_cors.html"]
 scheme = "https"
 skip-if = [
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && debug", # Bug 1858891
   "http3",
   "http2",
 ]

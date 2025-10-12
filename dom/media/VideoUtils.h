@@ -319,6 +319,7 @@ bool ParseCodecsString(const nsAString& aCodecs,
                        nsTArray<nsString>& aOutCodecs);
 
 bool IsH264CodecString(const nsAString& aCodec);
+bool IsAllowedH264Codec(const nsAString& aCodec);
 
 bool IsH265CodecString(const nsAString& aCodec);
 

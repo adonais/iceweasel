@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html } from "chrome://global/content/vendor/lit.all.mjs";
+import { html, classMap } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
 window.MozXULElement?.insertFTLIfNeeded("browser/webrtc-preview.ftl");
@@ -151,6 +151,7 @@ export class WebRTCPreview extends MozLitElement {
           autoplay
           tabindex="-1"
           @play=${() => (this._loading = false)}
+          class=${classMap({ active: this._previewActive })}
         ></video>
         <moz-button
           id="show-preview-button"

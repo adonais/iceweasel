@@ -317,11 +317,6 @@ class NativeLayerCA : public NativeLayer {
 
   void SetBackingScale(float aBackingScale);
 
-  // Invalidates the specified region in all surfaces that are tracked by this
-  // layer.
-  void InvalidateRegionThroughoutSwapchain(const MutexAutoLock& aProofOfLock,
-                                           const gfx::IntRegion& aRegion);
-
   // Invalidate aUpdateRegion and make sure that mInProgressSurface retains any
   // valid content from the previous surface outside of aUpdateRegion, so that
   // only aUpdateRegion needs to be drawn. If content needs to be copied,

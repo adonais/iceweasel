@@ -110,7 +110,7 @@ function createToolMenuElements(toolDefinition, doc) {
   const oncommand = async function (id, event) {
     try {
       const window = event.target.ownerDocument.defaultView;
-      await gDevToolsBrowser.selectToolCommand(window, id, Cu.now());
+      await gDevToolsBrowser.selectToolCommand(window, id, ChromeUtils.now());
       sendEntryPointTelemetry(window);
     } catch (e) {
       console.error(`Exception while opening ${id}: ${e}\n${e.stack}`);

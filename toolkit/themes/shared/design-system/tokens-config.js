@@ -10,7 +10,7 @@ const figmaConfig = require("./figma-tokens-config");
 
 const TOKEN_SECTIONS = {
   "Attention Dot": "attention-dot",
-  "Background Color": "background-color",
+  "Background Color": ["background-color", "promo", "table-row"],
   Border: "border",
   "Box Shadow": "box-shadow",
   Button: "button",
@@ -28,7 +28,6 @@ const TOKEN_SECTIONS = {
   Page: "page",
   Size: "size",
   Space: "space",
-  "Table Row": "table-row",
   Text: "text",
   Unspecified: "",
 };
@@ -504,7 +503,7 @@ function getTableName(tokenName) {
   }
 
   let replacePattern =
-    /^(button-|input-text-|input-|focus-|checkbox-|table-row-|attention-dot-)/;
+    /^(button-|input-text-|input-|focus-|checkbox-|table-row-|attention-dot-|promo-)/;
   if (tokenName.match(replacePattern)) {
     tokenName = tokenName.replace(replacePattern, "");
   }

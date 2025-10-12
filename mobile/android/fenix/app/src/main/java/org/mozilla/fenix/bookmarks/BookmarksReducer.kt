@@ -124,9 +124,23 @@ internal fun bookmarksReducer(state: BookmarksState, action: BookmarksAction) = 
         )
     } ?: state
     is BookmarksListMenuAction -> state.handleListMenuAction(action)
-    SnackbarAction.Undo -> state.copy(bookmarksSnackbarState = BookmarksSnackbarState.None)
+    SnackbarAction.Undo -> {
+        state.copy(
+            bookmarksSnackbarState = BookmarksSnackbarState.None,
+            bookmarksDeletionSnackbarQueueCount = 0,
+        )
+    }
     SnackbarAction.Dismissed -> {
-        state.withDeletedItemsRemoved().copy(bookmarksSnackbarState = BookmarksSnackbarState.None)
+        if (state.bookmarksDeletionSnackbarQueueCount > 1) {
+            state.copy(bookmarksDeletionSnackbarQueueCount = state.bookmarksDeletionSnackbarQueueCount - 1)
+        } else {
+            state
+                .withDeletedItemsRemoved()
+                .copy(
+                    bookmarksSnackbarState = BookmarksSnackbarState.None,
+                    bookmarksDeletionSnackbarQueueCount = 0,
+                )
+        }
     }
     is DeletionDialogAction.CountLoaded -> state.copy(
         bookmarksDeletionDialogState = DeletionDialogState.Presenting(
@@ -307,6 +321,7 @@ private fun BookmarksState.handleListMenuAction(action: BookmarksListMenuAction)
             } ?: this
         is BookmarksListMenuAction.Bookmark.DeleteClicked -> copy(
             bookmarksSnackbarState = bookmarksSnackbarState.addGuidToDelete(action.bookmark.guid),
+            bookmarksDeletionSnackbarQueueCount = bookmarksDeletionSnackbarQueueCount + 1,
         )
         is BookmarksListMenuAction.Folder.DeleteClicked -> copy(
             bookmarksDeletionDialogState = DeletionDialogState.LoadingCount(listOf(action.folder.guid)),

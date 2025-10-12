@@ -18,9 +18,16 @@
 // IWYU pragma: begin_exports
 #include "hwy/base.h"
 #include "hwy/detect_compiler_arch.h"
+#include "hwy/detect_targets.h"
 #include "hwy/highway_export.h"
 #include "hwy/targets.h"
 // IWYU pragma: end_exports
+
+#if HWY_CXX_LANG < 201703L
+#define HWY_DISPATCH_MAP 1
+#else
+#define HWY_DISPATCH_MAP 0
+#endif
 
 // This include guard is checked by foreach_target, so avoid the usual _H_
 // suffix to prevent copybara from renaming it. NOTE: ops/*-inl.h are included
@@ -29,11 +36,6 @@
 #define HWY_HIGHWAY_INCLUDED
 
 namespace hwy {
-
-// API version (https://semver.org/); keep in sync with CMakeLists.txt.
-#define HWY_MAJOR 1
-#define HWY_MINOR 1
-#define HWY_PATCH 0
 
 //------------------------------------------------------------------------------
 // Shorthand for tags (defined in shared-inl.h) used to select overloads.
@@ -59,250 +61,373 @@ namespace hwy {
 //------------------------------------------------------------------------------
 // Export user functions for static/dynamic dispatch
 
+// The static target is the best baseline. When using foreach_target.h, this is
+// the last target compiled. Otherwise, it is the only target.
+
 // Evaluates to 0 inside a translation unit if it is generating anything but the
-// static target (the last one if multiple targets are enabled). Used to prevent
-// redefinitions of HWY_EXPORT. Unless foreach_target.h is included, we only
-// compile once anyway, so this is 1 unless it is or has been included.
+// static target. Used to prevent redefinitions of HWY_EXPORT. Unless
+// foreach_target.h is included, we only compile once anyway, so this is 1
+// unless it is or has been included.
 #ifndef HWY_ONCE
 #define HWY_ONCE 1
 #endif
 
-// HWY_STATIC_DISPATCH(FUNC_NAME) is the namespace-qualified FUNC_NAME for
-// HWY_STATIC_TARGET (the only defined namespace unless HWY_TARGET_INCLUDE is
-// defined), and can be used to deduce the return type of Choose*.
+// `HWY_STATIC_NAMESPACE` expands to its namespace name, e.g. `N_AVX2`.
 #if HWY_STATIC_TARGET == HWY_SCALAR
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_SCALAR::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_SCALAR
 #elif HWY_STATIC_TARGET == HWY_EMU128
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_EMU128::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_RVV
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_RVV::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_WASM_EMU256
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_WASM_EMU256::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_EMU128
 #elif HWY_STATIC_TARGET == HWY_WASM
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_WASM::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_NEON_WITHOUT_AES
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_NEON_WITHOUT_AES::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_NEON
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_NEON::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_SVE
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_SVE::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_SVE2
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_SVE2::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_SVE_256
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_SVE_256::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_SVE2_128
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_SVE2_128::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_PPC8
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_PPC8::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_PPC9
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_PPC9::FUNC_NAME
-#elif HWY_STATIC_TARGET == HWY_PPC10
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_PPC10::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_WASM
+#elif HWY_STATIC_TARGET == HWY_WASM_EMU256
+#define HWY_STATIC_NAMESPACE N_WASM_EMU256
 #elif HWY_STATIC_TARGET == HWY_Z14
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_Z14::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_Z14
 #elif HWY_STATIC_TARGET == HWY_Z15
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_Z15::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_Z15
+#elif HWY_STATIC_TARGET == HWY_PPC8
+#define HWY_STATIC_NAMESPACE N_PPC8
+#elif HWY_STATIC_TARGET == HWY_PPC9
+#define HWY_STATIC_NAMESPACE N_PPC9
+#elif HWY_STATIC_TARGET == HWY_PPC10
+#define HWY_STATIC_NAMESPACE N_PPC10
+#elif HWY_STATIC_TARGET == HWY_LSX
+#define HWY_STATIC_NAMESPACE N_LSX
+#elif HWY_STATIC_TARGET == HWY_LASX
+#define HWY_STATIC_NAMESPACE N_LASX
+#elif HWY_STATIC_TARGET == HWY_RVV
+#define HWY_STATIC_NAMESPACE N_RVV
+#elif HWY_STATIC_TARGET == HWY_NEON_WITHOUT_AES
+#define HWY_STATIC_NAMESPACE N_NEON_WITHOUT_AES
+#elif HWY_STATIC_TARGET == HWY_NEON
+#define HWY_STATIC_NAMESPACE N_NEON
+#elif HWY_STATIC_TARGET == HWY_NEON_BF16
+#define HWY_STATIC_NAMESPACE N_NEON_BF16
+#elif HWY_STATIC_TARGET == HWY_SVE
+#define HWY_STATIC_NAMESPACE N_SVE
+#elif HWY_STATIC_TARGET == HWY_SVE2
+#define HWY_STATIC_NAMESPACE N_SVE2
+#elif HWY_STATIC_TARGET == HWY_SVE_256
+#define HWY_STATIC_NAMESPACE N_SVE_256
+#elif HWY_STATIC_TARGET == HWY_SVE2_128
+#define HWY_STATIC_NAMESPACE N_SVE2_128
 #elif HWY_STATIC_TARGET == HWY_SSE2
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_SSE2::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_SSE2
 #elif HWY_STATIC_TARGET == HWY_SSSE3
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_SSSE3::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_SSSE3
 #elif HWY_STATIC_TARGET == HWY_SSE4
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_SSE4::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_SSE4
 #elif HWY_STATIC_TARGET == HWY_AVX2
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_AVX2::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_AVX2
 #elif HWY_STATIC_TARGET == HWY_AVX3
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_AVX3::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_AVX3
 #elif HWY_STATIC_TARGET == HWY_AVX3_DL
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_AVX3_DL::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_AVX3_DL
 #elif HWY_STATIC_TARGET == HWY_AVX3_ZEN4
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_AVX3_ZEN4::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_AVX3_ZEN4
 #elif HWY_STATIC_TARGET == HWY_AVX3_SPR
-#define HWY_STATIC_DISPATCH(FUNC_NAME) N_AVX3_SPR::FUNC_NAME
+#define HWY_STATIC_NAMESPACE N_AVX3_SPR
+#elif HWY_STATIC_TARGET == HWY_AVX10_2
+#define HWY_STATIC_NAMESPACE N_AVX10_2
 #endif
 
-// HWY_CHOOSE_*(FUNC_NAME) expands to the function pointer for that target or
-// nullptr is that target was not compiled.
+// `HWY_STATIC_DISPATCH(FUNC_NAME)` is the namespace-qualified FUNC_NAME for
+// `HWY_STATIC_TARGET`, and can be used to deduce the return type of Choose*.
+#define HWY_STATIC_DISPATCH(FUNC_NAME) HWY_STATIC_NAMESPACE::FUNC_NAME
+
+// `HWY_CHOOSE_*(FUNC_NAME)` expands to the function pointer for that target or
+// nullptr if that target was not compiled.
+// `HWY_VISIT_*(VISITOR)` expands to `VISITOR(TARGET, NAMESPACE)` or nothing if
+// that target was not compiled.
 #if HWY_TARGETS & HWY_EMU128
 #define HWY_CHOOSE_FALLBACK(FUNC_NAME) &N_EMU128::FUNC_NAME
+#define HWY_VISIT_FALLBACK(VISITOR) VISITOR(HWY_EMU128, N_EMU128)
 #elif HWY_TARGETS & HWY_SCALAR
 #define HWY_CHOOSE_FALLBACK(FUNC_NAME) &N_SCALAR::FUNC_NAME
+#define HWY_VISIT_FALLBACK(VISITOR) VISITOR(HWY_SCALAR, N_SCALAR)
 #else
 // When HWY_SCALAR/HWY_EMU128 are not present and other targets were disabled at
 // runtime, fall back to the baseline with HWY_STATIC_DISPATCH().
 #define HWY_CHOOSE_FALLBACK(FUNC_NAME) &HWY_STATIC_DISPATCH(FUNC_NAME)
-#endif
-
-#if HWY_TARGETS & HWY_WASM_EMU256
-#define HWY_CHOOSE_WASM_EMU256(FUNC_NAME) &N_WASM_EMU256::FUNC_NAME
-#else
-#define HWY_CHOOSE_WASM_EMU256(FUNC_NAME) nullptr
+#define HWY_VISIT_FALLBACK(VISITOR) \
+  VISITOR(HWY_STATIC_TARGET, HWY_STATIC_NAMESPACE)
 #endif
 
 #if HWY_TARGETS & HWY_WASM
 #define HWY_CHOOSE_WASM(FUNC_NAME) &N_WASM::FUNC_NAME
+#define HWY_VISIT_WASM(VISITOR) VISITOR(HWY_WASM, N_WASM)
 #else
 #define HWY_CHOOSE_WASM(FUNC_NAME) nullptr
+#define HWY_VISIT_WASM(VISITOR)
 #endif
 
-#if HWY_TARGETS & HWY_RVV
-#define HWY_CHOOSE_RVV(FUNC_NAME) &N_RVV::FUNC_NAME
+#if HWY_TARGETS & HWY_WASM_EMU256
+#define HWY_CHOOSE_WASM_EMU256(FUNC_NAME) &N_WASM_EMU256::FUNC_NAME
+#define HWY_VISIT_WASM_EMU256(VISITOR) VISITOR(HWY_WASM_EMU256, N_WASM_EMU256)
 #else
-#define HWY_CHOOSE_RVV(FUNC_NAME) nullptr
-#endif
-
-#if HWY_TARGETS & HWY_NEON_WITHOUT_AES
-#define HWY_CHOOSE_NEON_WITHOUT_AES(FUNC_NAME) &N_NEON_WITHOUT_AES::FUNC_NAME
-#else
-#define HWY_CHOOSE_NEON_WITHOUT_AES(FUNC_NAME) nullptr
-#endif
-
-#if HWY_TARGETS & HWY_NEON
-#define HWY_CHOOSE_NEON(FUNC_NAME) &N_NEON::FUNC_NAME
-#else
-#define HWY_CHOOSE_NEON(FUNC_NAME) nullptr
-#endif
-
-#if HWY_TARGETS & HWY_SVE
-#define HWY_CHOOSE_SVE(FUNC_NAME) &N_SVE::FUNC_NAME
-#else
-#define HWY_CHOOSE_SVE(FUNC_NAME) nullptr
-#endif
-
-#if HWY_TARGETS & HWY_SVE2
-#define HWY_CHOOSE_SVE2(FUNC_NAME) &N_SVE2::FUNC_NAME
-#else
-#define HWY_CHOOSE_SVE2(FUNC_NAME) nullptr
-#endif
-
-#if HWY_TARGETS & HWY_SVE_256
-#define HWY_CHOOSE_SVE_256(FUNC_NAME) &N_SVE_256::FUNC_NAME
-#else
-#define HWY_CHOOSE_SVE_256(FUNC_NAME) nullptr
-#endif
-
-#if HWY_TARGETS & HWY_SVE2_128
-#define HWY_CHOOSE_SVE2_128(FUNC_NAME) &N_SVE2_128::FUNC_NAME
-#else
-#define HWY_CHOOSE_SVE2_128(FUNC_NAME) nullptr
-#endif
-
-#if HWY_TARGETS & HWY_PPC8
-#define HWY_CHOOSE_PPC8(FUNC_NAME) &N_PPC8::FUNC_NAME
-#else
-#define HWY_CHOOSE_PPC8(FUNC_NAME) nullptr
-#endif
-
-#if HWY_TARGETS & HWY_PPC9
-#define HWY_CHOOSE_PPC9(FUNC_NAME) &N_PPC9::FUNC_NAME
-#else
-#define HWY_CHOOSE_PPC9(FUNC_NAME) nullptr
-#endif
-
-#if HWY_TARGETS & HWY_PPC10
-#define HWY_CHOOSE_PPC10(FUNC_NAME) &N_PPC10::FUNC_NAME
-#else
-#define HWY_CHOOSE_PPC10(FUNC_NAME) nullptr
+#define HWY_CHOOSE_WASM_EMU256(FUNC_NAME) nullptr
+#define HWY_VISIT_WASM_EMU256(VISITOR)
 #endif
 
 #if HWY_TARGETS & HWY_Z14
 #define HWY_CHOOSE_Z14(FUNC_NAME) &N_Z14::FUNC_NAME
+#define HWY_VISIT_Z14(VISITOR) VISITOR(HWY_Z14, N_Z14)
 #else
 #define HWY_CHOOSE_Z14(FUNC_NAME) nullptr
+#define HWY_VISIT_Z14(VISITOR)
 #endif
 
 #if HWY_TARGETS & HWY_Z15
 #define HWY_CHOOSE_Z15(FUNC_NAME) &N_Z15::FUNC_NAME
+#define HWY_VISIT_Z15(VISITOR) VISITOR(HWY_Z15, N_Z15)
 #else
 #define HWY_CHOOSE_Z15(FUNC_NAME) nullptr
+#define HWY_VISIT_Z15(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_PPC8
+#define HWY_CHOOSE_PPC8(FUNC_NAME) &N_PPC8::FUNC_NAME
+#define HWY_VISIT_PPC8(VISITOR) VISITOR(HWY_PPC8, N_PPC8)
+#else
+#define HWY_CHOOSE_PPC8(FUNC_NAME) nullptr
+#define HWY_VISIT_PPC8(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_PPC9
+#define HWY_CHOOSE_PPC9(FUNC_NAME) &N_PPC9::FUNC_NAME
+#define HWY_VISIT_PPC9(VISITOR) VISITOR(HWY_PPC9, N_PPC9)
+#else
+#define HWY_CHOOSE_PPC9(FUNC_NAME) nullptr
+#define HWY_VISIT_PPC9(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_LSX
+#define HWY_CHOOSE_LSX(FUNC_NAME) &N_LSX::FUNC_NAME
+#define HWY_VISIT_LSX(VISITOR) VISITOR(HWY_LSX, N_LSX)
+#else
+#define HWY_CHOOSE_LSX(FUNC_NAME) nullptr
+#define HWY_VISIT_LSX(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_LASX
+#define HWY_CHOOSE_LASX(FUNC_NAME) &N_LASX::FUNC_NAME
+#define HWY_VISIT_LASX(VISITOR) VISITOR(HWY_LASX, N_LASX)
+#else
+#define HWY_CHOOSE_LASX(FUNC_NAME) nullptr
+#define HWY_VISIT_LASX(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_PPC10
+#define HWY_CHOOSE_PPC10(FUNC_NAME) &N_PPC10::FUNC_NAME
+#define HWY_VISIT_PPC10(VISITOR) VISITOR(HWY_PPC10, N_PPC10)
+#else
+#define HWY_CHOOSE_PPC10(FUNC_NAME) nullptr
+#define HWY_VISIT_PPC10(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_RVV
+#define HWY_CHOOSE_RVV(FUNC_NAME) &N_RVV::FUNC_NAME
+#define HWY_VISIT_RVV(VISITOR) VISITOR(HWY_RVV, N_RVV)
+#else
+#define HWY_CHOOSE_RVV(FUNC_NAME) nullptr
+#define HWY_VISIT_RVV(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_NEON_WITHOUT_AES
+#define HWY_CHOOSE_NEON_WITHOUT_AES(FUNC_NAME) &N_NEON_WITHOUT_AES::FUNC_NAME
+#define HWY_VISIT_NEON_WITHOUT_AES(VISITOR) \
+  VISITOR(HWY_NEON_WITHOUT_AES, N_NEON_WITHOUT_AES)
+#else
+#define HWY_CHOOSE_NEON_WITHOUT_AES(FUNC_NAME) nullptr
+#define HWY_VISIT_NEON_WITHOUT_AES(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_NEON
+#define HWY_CHOOSE_NEON(FUNC_NAME) &N_NEON::FUNC_NAME
+#define HWY_VISIT_NEON(VISITOR) VISITOR(HWY_NEON, N_NEON)
+#else
+#define HWY_CHOOSE_NEON(FUNC_NAME) nullptr
+#define HWY_VISIT_NEON(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_NEON_BF16
+#define HWY_CHOOSE_NEON_BF16(FUNC_NAME) &N_NEON_BF16::FUNC_NAME
+#define HWY_VISIT_NEON_BF16(VISITOR) VISITOR(HWY_NEON_BF16, N_NEON_BF16)
+#else
+#define HWY_CHOOSE_NEON_BF16(FUNC_NAME) nullptr
+#define HWY_VISIT_NEON_BF16(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_SVE
+#define HWY_CHOOSE_SVE(FUNC_NAME) &N_SVE::FUNC_NAME
+#define HWY_VISIT_SVE(VISITOR) VISITOR(HWY_SVE, N_SVE)
+#else
+#define HWY_CHOOSE_SVE(FUNC_NAME) nullptr
+#define HWY_VISIT_SVE(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_SVE2
+#define HWY_CHOOSE_SVE2(FUNC_NAME) &N_SVE2::FUNC_NAME
+#define HWY_VISIT_SVE2(VISITOR) VISITOR(HWY_SVE2, N_SVE2)
+#else
+#define HWY_CHOOSE_SVE2(FUNC_NAME) nullptr
+#define HWY_VISIT_SVE2(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_SVE_256
+#define HWY_CHOOSE_SVE_256(FUNC_NAME) &N_SVE_256::FUNC_NAME
+#define HWY_VISIT_SVE_256(VISITOR) VISITOR(HWY_SVE_256, N_SVE_256)
+#else
+#define HWY_CHOOSE_SVE_256(FUNC_NAME) nullptr
+#define HWY_VISIT_SVE_256(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_SVE2_128
+#define HWY_CHOOSE_SVE2_128(FUNC_NAME) &N_SVE2_128::FUNC_NAME
+#define HWY_VISIT_SVE2_128(VISITOR) VISITOR(HWY_SVE2_128, N_SVE2_128)
+#else
+#define HWY_CHOOSE_SVE2_128(FUNC_NAME) nullptr
+#define HWY_VISIT_SVE2_128(VISITOR)
 #endif
 
 #if HWY_TARGETS & HWY_SSE2
 #define HWY_CHOOSE_SSE2(FUNC_NAME) &N_SSE2::FUNC_NAME
+#define HWY_VISIT_SSE2(VISITOR) VISITOR(HWY_SSE2, N_SSE2)
 #else
 #define HWY_CHOOSE_SSE2(FUNC_NAME) nullptr
+#define HWY_VISIT_SSE2(VISITOR)
 #endif
 
 #if HWY_TARGETS & HWY_SSSE3
 #define HWY_CHOOSE_SSSE3(FUNC_NAME) &N_SSSE3::FUNC_NAME
+#define HWY_VISIT_SSSE3(VISITOR) VISITOR(HWY_SSSE3, N_SSSE3)
 #else
 #define HWY_CHOOSE_SSSE3(FUNC_NAME) nullptr
+#define HWY_VISIT_SSSE3(VISITOR)
 #endif
 
 #if HWY_TARGETS & HWY_SSE4
 #define HWY_CHOOSE_SSE4(FUNC_NAME) &N_SSE4::FUNC_NAME
+#define HWY_VISIT_SSE4(VISITOR) VISITOR(HWY_SSE4, N_SSE4)
 #else
 #define HWY_CHOOSE_SSE4(FUNC_NAME) nullptr
+#define HWY_VISIT_SSE4(VISITOR)
 #endif
 
 #if HWY_TARGETS & HWY_AVX2
 #define HWY_CHOOSE_AVX2(FUNC_NAME) &N_AVX2::FUNC_NAME
+#define HWY_VISIT_AVX2(VISITOR) VISITOR(HWY_AVX2, N_AVX2)
 #else
 #define HWY_CHOOSE_AVX2(FUNC_NAME) nullptr
+#define HWY_VISIT_AVX2(VISITOR)
 #endif
 
 #if HWY_TARGETS & HWY_AVX3
 #define HWY_CHOOSE_AVX3(FUNC_NAME) &N_AVX3::FUNC_NAME
+#define HWY_VISIT_AVX3(VISITOR) VISITOR(HWY_AVX3, N_AVX3)
 #else
 #define HWY_CHOOSE_AVX3(FUNC_NAME) nullptr
+#define HWY_VISIT_AVX3(VISITOR)
 #endif
 
 #if HWY_TARGETS & HWY_AVX3_DL
 #define HWY_CHOOSE_AVX3_DL(FUNC_NAME) &N_AVX3_DL::FUNC_NAME
+#define HWY_VISIT_AVX3_DL(VISITOR) VISITOR(HWY_AVX3_DL, N_AVX3_DL)
 #else
 #define HWY_CHOOSE_AVX3_DL(FUNC_NAME) nullptr
+#define HWY_VISIT_AVX3_DL(VISITOR)
 #endif
 
 #if HWY_TARGETS & HWY_AVX3_ZEN4
 #define HWY_CHOOSE_AVX3_ZEN4(FUNC_NAME) &N_AVX3_ZEN4::FUNC_NAME
+#define HWY_VISIT_AVX3_ZEN4(VISITOR) VISITOR(HWY_AVX3_ZEN4, N_AVX3_ZEN4)
 #else
 #define HWY_CHOOSE_AVX3_ZEN4(FUNC_NAME) nullptr
+#define HWY_VISIT_AVX3_ZEN4(VISITOR)
 #endif
 
 #if HWY_TARGETS & HWY_AVX3_SPR
 #define HWY_CHOOSE_AVX3_SPR(FUNC_NAME) &N_AVX3_SPR::FUNC_NAME
+#define HWY_VISIT_AVX3_SPR(VISITOR) VISITOR(HWY_AVX3_SPR, N_AVX3_SPR)
 #else
 #define HWY_CHOOSE_AVX3_SPR(FUNC_NAME) nullptr
+#define HWY_VISIT_AVX3_SPR(VISITOR)
+#endif
+
+#if HWY_TARGETS & HWY_AVX10_2
+#define HWY_CHOOSE_AVX10_2(FUNC_NAME) &N_AVX10_2::FUNC_NAME
+#define HWY_VISIT_AVX10_2(VISITOR) VISITOR(HWY_AVX10_2, N_AVX10_2)
+#else
+#define HWY_CHOOSE_AVX10_2(FUNC_NAME) nullptr
+#define HWY_VISIT_AVX10_2(VISITOR)
 #endif
 
 // MSVC 2017 workaround: the non-type template parameter to ChooseAndCall
 // apparently cannot be an array. Use a function pointer instead, which has the
 // disadvantage that we call the static (not best) target on the first call to
 // any HWY_DYNAMIC_DISPATCH.
-#if HWY_COMPILER_MSVC && HWY_COMPILER_MSVC < 1915
+#if (HWY_COMPILER_MSVC && HWY_COMPILER_MSVC < 1915) || \
+    (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 700)
 #define HWY_DISPATCH_WORKAROUND 1
 #else
 #define HWY_DISPATCH_WORKAROUND 0
 #endif
 
+#if HWY_DISPATCH_MAP
+struct AllExports {
+  template <class FuncPtr, class ExportsKey, uint64_t kHash>
+  static const FuncPtr*& GetRefToExportsPtr() {
+    static const FuncPtr* s_exports = nullptr;
+    return s_exports;
+  }
+};
+#endif
+
 // Provides a static member function which is what is called during the first
 // HWY_DYNAMIC_DISPATCH, where GetIndex is still zero, and instantiations of
-// this function are the first entry in the tables created by HWY_EXPORT.
+// this function are the first entry in the tables created by HWY_EXPORT[_T].
 template <typename RetType, typename... Args>
 struct FunctionCache {
  public:
-  typedef RetType(FunctionType)(Args...);
+  typedef RetType(FuncType)(Args...);
+  using FuncPtr = FuncType*;
 
-#if HWY_DISPATCH_WORKAROUND
-  template <FunctionType* const func>
-  static RetType ChooseAndCall(Args... args) {
-    ChosenTarget& chosen_target = GetChosenTarget();
-    chosen_target.Update(SupportedTargets());
-    return (*func)(args...);
-  }
-#else
   // A template function that when instantiated has the same signature as the
   // function being called. This function initializes the bit array of targets
   // supported by the current CPU and then calls the appropriate entry within
   // the HWY_EXPORT table. Subsequent calls via HWY_DYNAMIC_DISPATCH to any
   // exported functions, even those defined by different translation units,
   // will dispatch directly to the best available target.
-  template <FunctionType* const table[]>
+#if HWY_DISPATCH_MAP
+  template <class ExportsKey, uint64_t kHash>
+  static RetType ChooseAndCall(Args... args) {
+    ChosenTarget& chosen_target = GetChosenTarget();
+    chosen_target.Update(SupportedTargets());
+
+    const FuncPtr* table = AllExports::template GetRefToExportsPtr<
+        FuncPtr, RemoveCvRef<ExportsKey>, kHash>();
+    HWY_ASSERT(table);
+
+    return (table[chosen_target.GetIndex()])(args...);
+  }
+
+#if !HWY_DISPATCH_WORKAROUND
+  template <const FuncPtr* table>
+  static RetType TableChooseAndCall(Args... args) {
+    ChosenTarget& chosen_target = GetChosenTarget();
+    chosen_target.Update(SupportedTargets());
+    return (table[chosen_target.GetIndex()])(args...);
+  }
+#endif  // !HWY_DISPATCH_WORKAROUND
+
+#else   // !HWY_DISPATCH_MAP: zero-overhead, but requires C++17
+  template <const FuncPtr* table>
   static RetType ChooseAndCall(Args... args) {
     ChosenTarget& chosen_target = GetChosenTarget();
     chosen_target.Update(SupportedTargets());
     return (table[chosen_target.GetIndex()])(args...);
   }
-#endif  // HWY_DISPATCH_WORKAROUND
+#endif  // HWY_DISPATCH_MAP
 };
 
 // Used to deduce the template parameters RetType and Args from a function.
@@ -315,9 +440,7 @@ FunctionCache<RetType, Args...> DeduceFunctionCache(RetType (*)(Args...)) {
   HWY_CONCAT(FUNC_NAME, HighwayDispatchTable)
 
 // HWY_EXPORT(FUNC_NAME); expands to a static array that is used by
-// HWY_DYNAMIC_DISPATCH() to call the appropriate function at runtime. This
-// static array must be defined at the same namespace level as the function
-// it is exporting.
+// HWY_DYNAMIC_DISPATCH() to call the appropriate function at runtime.
 // After being exported, it can be called from other parts of the same source
 // file using HWY_DYNAMIC_DISPATCH(), in particular from a function wrapper
 // like in the following example:
@@ -342,58 +465,196 @@ FunctionCache<RetType, Args...> DeduceFunctionCache(RetType (*)(Args...)) {
 //   }
 //   }  // namespace skeleton
 //
-
-#if HWY_IDE || ((HWY_TARGETS & (HWY_TARGETS - 1)) == 0)
+// For templated code with a single type parameter, instead use HWY_EXPORT_T and
+// its HWY_DYNAMIC_DISPATCH_T counterpart:
+//
+//   template <typename T>
+//   void MyFunctionCaller(T ...) {
+//     // First argument to both HWY_EXPORT_T and HWY_DYNAMIC_DISPATCH_T is an
+//     // arbitrary table name; you must provide the same name for each call.
+//     // It is fine to have multiple HWY_EXPORT_T in a function, but a 64-bit
+//     // FNV hash collision among *any* table names will trigger HWY_ABORT.
+//     HWY_EXPORT_T(Table1, MyFunction<T>)
+//     HWY_DYNAMIC_DISPATCH_T(Table1)(a, b, c);
+//   }
+//
+// Note that HWY_EXPORT_T must be invoked inside a template (in the above
+// example: `MyFunctionCaller`), so that a separate table will be created for
+// each template instantiation. For convenience, we also provide a macro that
+// combines both steps and avoids the need to pick a table name:
+//
+//   template <typename T>
+//   void MyFunctionCaller(T ...) {
+//     // Table name is automatically chosen. Note that this variant must be
+//     // called in statement context; it is not a valid expression.
+//     HWY_EXPORT_AND_DYNAMIC_DISPATCH_T(MyFunction<T>)(a, b, c);
+//   }
 
 // Simplified version for IDE or the dynamic dispatch case with only one target.
-// This case still uses a table, although of a single element, to provide the
-// same compile error conditions as with the dynamic dispatch case when multiple
-// targets are being compiled.
-#define HWY_EXPORT(FUNC_NAME)                                             \
+#if HWY_IDE || ((HWY_TARGETS & (HWY_TARGETS - 1)) == 0)
+
+// We use a table to provide the same compile error conditions as with the
+// non-simplified case, but the table only has a single entry.
+#define HWY_EXPORT_T(TABLE_NAME, FUNC_NAME)                               \
   HWY_MAYBE_UNUSED static decltype(&HWY_STATIC_DISPATCH(FUNC_NAME)) const \
-  HWY_DISPATCH_TABLE(FUNC_NAME)[1] = {&HWY_STATIC_DISPATCH(FUNC_NAME)}
-#define HWY_DYNAMIC_DISPATCH(FUNC_NAME) HWY_STATIC_DISPATCH(FUNC_NAME)
+  HWY_DISPATCH_TABLE(TABLE_NAME)[1] = {&HWY_STATIC_DISPATCH(FUNC_NAME)}
+
+// Use the table, not just STATIC_DISPATCH as in DYNAMIC_DISPATCH, because
+// TABLE_NAME might not match the function name.
+#define HWY_DYNAMIC_POINTER_T(TABLE_NAME) (HWY_DISPATCH_TABLE(TABLE_NAME)[0])
+#define HWY_DYNAMIC_DISPATCH_T(TABLE_NAME) \
+  (*(HWY_DYNAMIC_POINTER_T(TABLE_NAME)))
+
+#define HWY_EXPORT(FUNC_NAME) HWY_EXPORT_T(FUNC_NAME, FUNC_NAME)
 #define HWY_DYNAMIC_POINTER(FUNC_NAME) &HWY_STATIC_DISPATCH(FUNC_NAME)
+#define HWY_DYNAMIC_DISPATCH(FUNC_NAME) HWY_STATIC_DISPATCH(FUNC_NAME)
 
-#else
+#else  // not simplified: full table
 
-// Simplified version for MSVC 2017: function pointer instead of table.
-#if HWY_DISPATCH_WORKAROUND
+// Pre-C++17 workaround: non-type template arguments must have linkage, which
+// means we cannot pass &table as a template argument to ChooseAndCall.
+// ChooseAndCall must find a way to access the table in order to dispatch to the
+// chosen target:
+// 0) Skipping this by dispatching to the static target would be surprising to
+//    users and may have serious performance implications.
+// 1) An extra function parameter would be unacceptable because it changes the
+//    user-visible function signature.
+// 2) Declaring a table, then defining a pointer to it would work, but requires
+//    an additional DECLARE step outside the function so that the pointer has
+//    linkage, which breaks existing code.
+// 3) We instead associate the function with the table using an instance of an
+//    unnamed struct and the hash of the table name as the key. Because
+//    ChooseAndCall has the type information, it can then cast to the function
+//    pointer type. However, we cannot simply pass the name as a template
+//    argument to ChooseAndCall because this requires char*, which hits the same
+//    linkage problem. We instead hash the table name, which assumes the
+//    function names do not have collisions.
+#if HWY_DISPATCH_MAP
 
-#define HWY_EXPORT(FUNC_NAME)                                                \
-  static decltype(&HWY_STATIC_DISPATCH(FUNC_NAME)) const HWY_DISPATCH_TABLE( \
-      FUNC_NAME)[HWY_MAX_DYNAMIC_TARGETS + 2] = {                            \
-      /* The first entry in the table initializes the global cache and       \
-       * calls the function from HWY_STATIC_TARGET. */                       \
-      &decltype(hwy::DeduceFunctionCache(&HWY_STATIC_DISPATCH(               \
-          FUNC_NAME)))::ChooseAndCall<&HWY_STATIC_DISPATCH(FUNC_NAME)>,      \
-      HWY_CHOOSE_TARGET_LIST(FUNC_NAME),                                     \
-      HWY_CHOOSE_FALLBACK(FUNC_NAME),                                        \
+static constexpr uint64_t FNV(const char* name) {
+  return *name ? static_cast<uint64_t>(static_cast<uint8_t>(*name)) ^
+                     (0x100000001b3ULL * FNV(name + 1))
+               : 0xcbf29ce484222325ULL;
+}
+
+template <uint64_t kHash>
+struct AddExport {
+  template <class ExportsKey, class FuncPtr>
+  AddExport(ExportsKey /*exports_key*/, const char* table_name,
+            const FuncPtr* table) {
+    using FuncCache = decltype(DeduceFunctionCache(hwy::DeclVal<FuncPtr>()));
+    static_assert(
+        hwy::IsSame<RemoveCvRef<FuncPtr>, typename FuncCache::FuncPtr>(),
+        "FuncPtr should be same type as FuncCache::FuncPtr");
+
+    const FuncPtr*& exports_ptr = AllExports::template GetRefToExportsPtr<
+        RemoveCvRef<FuncPtr>, RemoveCvRef<ExportsKey>, kHash>();
+    if (exports_ptr && exports_ptr != table) {
+      HWY_ABORT("Hash collision for %s, rename the function\n", table_name);
+    } else {
+      exports_ptr = table;
+    }
   }
+};
 
+// Dynamic dispatch: defines table of function pointers. This must be invoked
+// from inside the function template that calls the template we are exporting.
+// TABLE_NAME must match the one passed to HWY_DYNAMIC_DISPATCH_T. This
+// argument allows multiple exports within one function.
+#define HWY_EXPORT_T(TABLE_NAME, FUNC_NAME)                                   \
+  static const struct {                                                       \
+  } HWY_CONCAT(TABLE_NAME, HighwayDispatchExportsKey) = {};                   \
+  static decltype(&HWY_STATIC_DISPATCH(FUNC_NAME)) const HWY_DISPATCH_TABLE(  \
+      TABLE_NAME)[static_cast<size_t>(HWY_MAX_DYNAMIC_TARGETS + 2)] = {       \
+      /* The first entry in the table initializes the global cache and        \
+       * calls the appropriate function. */                                   \
+      &decltype(hwy::DeduceFunctionCache(&HWY_STATIC_DISPATCH(FUNC_NAME)))::  \
+          template ChooseAndCall<decltype(HWY_CONCAT(                         \
+                                     TABLE_NAME, HighwayDispatchExportsKey)), \
+                                 hwy::FNV(#TABLE_NAME)>,                      \
+      HWY_CHOOSE_TARGET_LIST(FUNC_NAME),                                      \
+      HWY_CHOOSE_FALLBACK(FUNC_NAME),                                         \
+  };                                                                          \
+  HWY_MAYBE_UNUSED static hwy::AddExport<hwy::FNV(#TABLE_NAME)> HWY_CONCAT(   \
+      HighwayAddTable, __LINE__)(                                             \
+      HWY_CONCAT(TABLE_NAME, HighwayDispatchExportsKey), #TABLE_NAME,         \
+      HWY_DISPATCH_TABLE(TABLE_NAME))
+
+// For non-template functions. Not necessarily invoked within a function, hence
+// we derive the string and variable names from FUNC_NAME, not HWY_FUNCTION.
+#if HWY_DISPATCH_WORKAROUND
+#define HWY_EXPORT(FUNC_NAME) HWY_EXPORT_T(FUNC_NAME, FUNC_NAME)
 #else
-
-// Dynamic dispatch case with one entry per dynamic target plus the fallback
-// target and the initialization wrapper.
 #define HWY_EXPORT(FUNC_NAME)                                                \
   static decltype(&HWY_STATIC_DISPATCH(FUNC_NAME)) const HWY_DISPATCH_TABLE( \
-      FUNC_NAME)[HWY_MAX_DYNAMIC_TARGETS + 2] = {                            \
+      FUNC_NAME)[static_cast<size_t>(HWY_MAX_DYNAMIC_TARGETS + 2)] = {       \
       /* The first entry in the table initializes the global cache and       \
        * calls the appropriate function. */                                  \
-      &decltype(hwy::DeduceFunctionCache(&HWY_STATIC_DISPATCH(               \
-          FUNC_NAME)))::ChooseAndCall<HWY_DISPATCH_TABLE(FUNC_NAME)>,        \
+      &decltype(hwy::DeduceFunctionCache(&HWY_STATIC_DISPATCH(FUNC_NAME))):: \
+          template TableChooseAndCall<HWY_DISPATCH_TABLE(FUNC_NAME)>,        \
+      HWY_CHOOSE_TARGET_LIST(FUNC_NAME),                                     \
+      HWY_CHOOSE_FALLBACK(FUNC_NAME),                                        \
+  }
+#endif  // HWY_DISPATCH_WORKAROUND
+
+#else  // !HWY_DISPATCH_MAP
+
+// Zero-overhead, but requires C++17 for non-type template arguments without
+// linkage, because HWY_EXPORT_T tables are local static variables.
+#define HWY_EXPORT_T(TABLE_NAME, FUNC_NAME)                                  \
+  static decltype(&HWY_STATIC_DISPATCH(FUNC_NAME)) const HWY_DISPATCH_TABLE( \
+      TABLE_NAME)[static_cast<size_t>(HWY_MAX_DYNAMIC_TARGETS + 2)] = {      \
+      /* The first entry in the table initializes the global cache and       \
+       * calls the appropriate function. */                                  \
+      &decltype(hwy::DeduceFunctionCache(&HWY_STATIC_DISPATCH(FUNC_NAME))):: \
+          template ChooseAndCall<HWY_DISPATCH_TABLE(TABLE_NAME)>,            \
       HWY_CHOOSE_TARGET_LIST(FUNC_NAME),                                     \
       HWY_CHOOSE_FALLBACK(FUNC_NAME),                                        \
   }
 
-#endif  // HWY_DISPATCH_WORKAROUND
+#define HWY_EXPORT(FUNC_NAME) HWY_EXPORT_T(FUNC_NAME, FUNC_NAME)
 
-#define HWY_DYNAMIC_DISPATCH(FUNC_NAME) \
-  (*(HWY_DISPATCH_TABLE(FUNC_NAME)[hwy::GetChosenTarget().GetIndex()]))
+#endif  // HWY_DISPATCH_MAP
+
+// HWY_DISPATCH_MAP only affects how tables are created, not their usage.
+
+// Evaluates to the function pointer for the chosen target.
 #define HWY_DYNAMIC_POINTER(FUNC_NAME) \
   (HWY_DISPATCH_TABLE(FUNC_NAME)[hwy::GetChosenTarget().GetIndex()])
 
+// Calls the function pointer for the chosen target.
+#if HWY_COMPILER_GCC || HWY_COMPILER_CLANG
+
+// On GCC or Clang, we call hwy::PreventElision(...) to work around a compiler
+// crash where the LLVM inliner crashes due to inlining incompatible intrinsics.
+
+#define HWY_DYNAMIC_DISPATCH(FUNC_NAME)         \
+  __extension__({                               \
+    auto HWY_CONCAT(hwy_tmp_, __LINE__) = *(HWY_DYNAMIC_POINTER(FUNC_NAME)); \
+    hwy::PreventElision(HWY_CONCAT(hwy_tmp_, __LINE__));                     \
+    HWY_CONCAT(hwy_tmp_, __LINE__);                                          \
+  })
+
+#else  // !(HWY_COMPILER_GCC || HWY_COMPILER_CLANG)
+
+#define HWY_DYNAMIC_DISPATCH(FUNC_NAME) (*(HWY_DYNAMIC_POINTER(FUNC_NAME)))
+
+#endif  // HWY_COMPILER_GCC || HWY_COMPILER_CLANG
+
+// Same as DISPATCH, but provide a different arg name to clarify usage.
+#define HWY_DYNAMIC_DISPATCH_T(TABLE_NAME) HWY_DYNAMIC_DISPATCH(TABLE_NAME)
+#define HWY_DYNAMIC_POINTER_T(TABLE_NAME) HWY_DYNAMIC_POINTER(TABLE_NAME)
+
 #endif  // HWY_IDE || ((HWY_TARGETS & (HWY_TARGETS - 1)) == 0)
+
+// Returns the name of an anonymous dispatch table that is only shared with
+// macro invocations coming from the same source line.
+#define HWY_DISPATCH_TABLE_T() HWY_CONCAT(HighwayDispatchTableT, __LINE__)
+
+// For templated code, combines export and dispatch using an anonymous table.
+#define HWY_EXPORT_AND_DYNAMIC_DISPATCH_T(FUNC_NAME) \
+  HWY_EXPORT_T(HWY_DISPATCH_TABLE_T(), FUNC_NAME);   \
+  HWY_DYNAMIC_DISPATCH_T(HWY_DISPATCH_TABLE_T())
 
 // DEPRECATED names; please use HWY_HAVE_* instead.
 #define HWY_CAP_INTEGER64 HWY_HAVE_INTEGER64
@@ -421,17 +682,16 @@ FunctionCache<RetType, Args...> DeduceFunctionCache(RetType (*)(Args...)) {
 #include "hwy/ops/x86_128-inl.h"
 #elif HWY_TARGET == HWY_AVX2
 #include "hwy/ops/x86_256-inl.h"
-#elif HWY_TARGET == HWY_AVX3 || HWY_TARGET == HWY_AVX3_DL || \
-    HWY_TARGET == HWY_AVX3_ZEN4 || HWY_TARGET == HWY_AVX3_SPR
-#include "hwy/ops/x86_512-inl.h"
+#elif HWY_TARGET == HWY_AVX3 || HWY_TARGET == HWY_AVX3_DL ||     \
+    HWY_TARGET == HWY_AVX3_ZEN4 || HWY_TARGET == HWY_AVX3_SPR || \
+    HWY_TARGET == HWY_AVX10_2
+#include "hwy/ops/x86_avx3-inl.h"
 #elif HWY_TARGET == HWY_Z14 || HWY_TARGET == HWY_Z15 || \
-    HWY_TARGET == HWY_PPC8 || HWY_TARGET == HWY_PPC9 || \
-    HWY_TARGET == HWY_PPC10
+    (HWY_TARGET & HWY_ALL_PPC)
 #include "hwy/ops/ppc_vsx-inl.h"
-#elif HWY_TARGET == HWY_NEON || HWY_TARGET == HWY_NEON_WITHOUT_AES
+#elif HWY_TARGET & HWY_ALL_NEON
 #include "hwy/ops/arm_neon-inl.h"
-#elif HWY_TARGET == HWY_SVE || HWY_TARGET == HWY_SVE2 || \
-    HWY_TARGET == HWY_SVE_256 || HWY_TARGET == HWY_SVE2_128
+#elif HWY_TARGET & HWY_ALL_SVE
 #include "hwy/ops/arm_sve-inl.h"
 #elif HWY_TARGET == HWY_WASM_EMU256
 #include "hwy/ops/wasm_256-inl.h"
@@ -439,6 +699,10 @@ FunctionCache<RetType, Args...> DeduceFunctionCache(RetType (*)(Args...)) {
 #include "hwy/ops/wasm_128-inl.h"
 #elif HWY_TARGET == HWY_RVV
 #include "hwy/ops/rvv-inl.h"
+#elif HWY_TARGET == HWY_LSX
+#include "hwy/ops/loongarch_lsx-inl.h"
+#elif HWY_TARGET == HWY_LASX
+#include "hwy/ops/loongarch_lasx-inl.h"
 #elif HWY_TARGET == HWY_EMU128
 #include "hwy/ops/emu128-inl.h"
 #elif HWY_TARGET == HWY_SCALAR

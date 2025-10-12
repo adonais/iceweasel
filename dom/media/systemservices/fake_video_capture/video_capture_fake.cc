@@ -30,20 +30,25 @@ VideoCaptureFake::VideoCaptureFake(nsISerialEventTarget* aTarget)
   if (_deviceUniqueId) {
     memcpy(_deviceUniqueId, DeviceInfoFake::kId, len + 1);
   }
-  mGeneratedImageListener = mSource->GeneratedImageEvent().Connect(
-      mTarget, this, &VideoCaptureFake::OnGeneratedImage);
 }
 
-VideoCaptureFake::~VideoCaptureFake() { mGeneratedImageListener.Disconnect(); }
+VideoCaptureFake::~VideoCaptureFake() { StopCapture(); }
 
 int32_t VideoCaptureFake::StartCapture(
     const VideoCaptureCapability& aCapability) {
+  if (!CaptureStarted()) {
+    mGeneratedImageListener = mSource->GeneratedImageEvent().Connect(
+        mTarget, this, &VideoCaptureFake::OnGeneratedImage);
+  }
   return mSource->StartCapture(
       aCapability.width, aCapability.height,
       TimeDuration::FromSeconds(1.0 / aCapability.maxFPS));
 }
 
-int32_t VideoCaptureFake::StopCapture() { return mSource->StopCapture(); }
+int32_t VideoCaptureFake::StopCapture() {
+  mGeneratedImageListener.DisconnectIfExists();
+  return mSource->StopCapture();
+}
 
 bool VideoCaptureFake::CaptureStarted() { return mSource->CaptureStarted(); }
 

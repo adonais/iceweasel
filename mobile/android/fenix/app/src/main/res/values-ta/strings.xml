@@ -10,10 +10,6 @@
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
   <string name="content_description_menu">கூடுதல் தேர்வுகள்</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">கமுக்க உலாவல் முறை செயலில்</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">கமுக்க உலாவல் முறை முடக்கத்தில்</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">தேடு/முகவரியை உள்ளிடு</string>
   <!-- No Open Tabs Message Description -->
@@ -397,9 +393,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">வரலாற்றை அழி</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">வரலாறு அழிக்கப்பட்டது</string>
+  <string name="history_delete_multiple_items_snackbar">வரலாறு அழிக்கப்பட்டது</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s அழிக்கப்பட்டது</string>
+  <string name="history_delete_single_item_snackbar">%1$s அழிக்கப்பட்டது</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">அழி</string>
   <!--
@@ -581,12 +577,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d கீற்று தேர்ந்தது</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">கீற்றுகள் சேமிக்கப்பட்டன!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">திரட்டு சேமிக்கப்பட்டது!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">திரட்டு சேமிக்கப்பட்டது!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">கீற்று சேமிக்கப்பட்டது!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">கீற்று சேமிக்கப்பட்டது!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">மூடு</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -669,8 +663,6 @@
   <string name="tab_collection_dialog_message">%1$s அழிக்க விரும்புகிறீர்களா?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">அழி</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">தொடுப்பு நகலெடுக்கப்பட்டது</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">இது மாதிரி உரை. இந்த அமைவைக் கொண்டு உரையின் அளவை அதிகரிக்கும்போதும் அல்லது குறைக்கும்போதும் எவ்வாறு தோன்றும் என்பதைக் காண்பிக்க உள்ளது.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -729,9 +721,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">கீற்றுகள் அனுப்பப்பட்டன!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">கீற்றுகள் அனுப்பப்பட்டன!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">கீற்று அனுப்பப்பட்டது!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">கீற்று அனுப்பப்பட்டது!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">அனுப்ப முடியவில்லை</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -942,12 +934,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">ஒரு தேடல் தொடரை உள்ளிடுக</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">தேடல் தொடர் எ.கா வடிவத்தை ஒத்துள்ளதா எனப் பாருங்கள்</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s உருவாக்கப்பட்டது</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s சேமிக்கப்பட்டது</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s நீக்கப்பட்டது</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">அனுமதிக்க:</string>
   <!-- First step for the allowing a permission -->

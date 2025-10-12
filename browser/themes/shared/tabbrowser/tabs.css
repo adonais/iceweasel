@@ -942,7 +942,7 @@
 }
 
 #pinned-tabs-container[orient="horizontal"] {
-  max-width: 60vw;
+  max-width: max(80px, calc(100vw - var(--window-controls-size) - 300px /* Room for toolbar buttons, drag space, and unpinned tabs */));
 
   &:empty {
     display: none;
@@ -1033,6 +1033,95 @@
 
     > #pinned-drop-indicator-text {
       display: none;
+    }
+  }
+}
+
+/* Split View */
+
+#tabbrowser-tabs .tab-split-view-container {
+  display: grid;
+  grid-template-columns: 50% 50%;
+  margin-inline: var(--space-small);
+  width: 100%;
+  padding: var(--space-xsmall);
+
+  tab-split-view-wrapper[hasactivetab] > & {
+    background-color: var(--tab-hover-background-color);
+  }
+
+  > .tabbrowser-tab {
+    padding-block: 0 !important;
+
+    .tab-background {
+      margin-inline: var(--space-xxsmall);
+      margin-block: 0;
+    }
+
+    .tab-content {
+      padding-inline: var(--space-medium);
+    }
+
+    &:first-child {
+      .tab-background {
+        margin-inline-end: 0;
+      }
+
+      tab-split-view-wrapper:not([hasactivetab]) & {
+        border-block-end: transparent;
+      }
+    }
+
+    &:last-child {
+      .tab-background {
+        margin-inline-start: 0;
+      }
+
+      .tab-content {
+        padding-inline-start: var(--space-medium);
+      }
+    }
+  }
+
+  tab-split-view-wrapper:not([hasactivetab]) & {
+    &:hover {
+      background-color: var(--tab-hover-background-color);
+      outline-color: var(--tab-hover-outline-color);
+    }
+
+    .tabbrowser-tab {
+      &:hover .tab-background {
+        background-color: transparent;
+        outline-color: transparent;
+      }
+
+      &:last-child {
+        tab-split-view-wrapper:not([hasactivetab]) & {
+          border-inline-start: 1px solid var(--toolbarbutton-icon-fill);
+        }
+      }
+    }
+  }
+
+  #tabbrowser-tabs[orient="vertical"] & {
+    border-radius: var(--border-radius-large);
+    gap: var(--space-xsmall);
+
+    @container vertical-tabs-container (max-width: 210px) {
+      grid-template-columns: 1fr;
+
+      tab-split-view-wrapper:not([hasactivetab]) > & {
+        .tabbrowser-tab {
+          &:first-child {
+            border-block-end: 1px solid var(--toolbarbutton-icon-fill);
+            border-inline-end: transparent;
+          }
+
+          &:last-child {
+            border-inline-start: transparent !important;
+          }
+        }
+      }
     }
   }
 }
@@ -1270,6 +1359,48 @@ tab-group {
   }
 }
 
+.tab-group-label-hover-highlight {
+  tab-group[collapsed] & {
+    border-radius: 2px;
+
+    #tabbrowser-tabs[orient="horizontal"] & {
+      padding-block: 4px;
+    }
+
+    #tabbrowser-tabs[orient="vertical"][expanded] & {
+      margin-inline-end: var(--space-medium);
+    }
+  }
+
+  #tabbrowser-tabs[orient="vertical"]:not([expanded]) & {
+    /*
+     * Keep tab group label square in collapsed sidebar centered without
+     * margin: auto, similar to how tabs' .tab-background use margin in order
+     * to stay centered in the collapsed sidebar. This helps prevent the tab
+     * group label from jumping around during the sidebar collapsed-to-expanded
+     * transition.
+     */
+    margin-inline: calc(var(--tab-inner-inline-margin) + (var(--tab-collapsed-background-width) - 24px) / 2);
+  }
+
+  tab-group[collapsed]:not([movingtabgroup]) &:hover,
+  tab-group[previewpanelactive] & {
+    background-color: var(--tab-hover-background-color);
+
+    #tabbrowser-tabs[orient="horizontal"] & {
+      box-shadow: 0 0 0 2px var(--tab-hover-background-color);
+    }
+
+    #tabbrowser-tabs[orient="vertical"] & {
+      box-shadow: 0 0 0 3px var(--tab-hover-background-color);
+    }
+
+    #tabbrowser-tabs[orient="vertical"][expanded] & {
+      box-shadow: 0 0 0 4px var(--tab-hover-background-color);
+    }
+  }
+}
+
 .tab-group-label {
   -moz-window-dragging: no-drag;
   text-align: center;
@@ -1298,7 +1429,7 @@ tab-group {
       var(--tab-group-label-highlight-thickness);
   }
 
-  tab-group[collapsed] > .tab-group-label-container > & {
+  tab-group[collapsed] > .tab-group-label-container & {
     background-color: light-dark(var(--tab-group-color-pale), var(--tab-group-color));
     color: light-dark(var(--tab-group-color), var(--tab-group-color-pale));
     outline: 1px solid light-dark(var(--tab-group-color), var(--tab-group-color-pale));
@@ -1320,15 +1451,6 @@ tab-group {
       width: 24px;
       max-width: 24px;
       font-size-adjust: 0;
-
-      /*
-       * Keep tab group label square in collapsed sidebar centered without
-       * margin: auto, similar to how tabs' .tab-background use margin in order
-       * to stay centered in the collapsed sidebar. This helps prevent the tab
-       * group label from jumping around during the sidebar collapsed-to-expanded
-       * transition.
-       */
-      margin-inline: calc(var(--tab-inner-inline-margin) + (var(--tab-collapsed-background-width) - 24px) / 2);
 
       &::first-letter {
         font: message-box;
@@ -1541,12 +1663,8 @@ tab-group {
   }
 }
 
-#tabbrowser-arrowscrollbox[orient="horizontal"] {
-  min-width: 20vw;
-
-  &::part(scrollbox) {
-    contain: inline-size;
-  }
+#tabbrowser-arrowscrollbox[orient="horizontal"]::part(scrollbox) {
+  contain: inline-size;
 }
 
 /* Vertical tabs styling */
@@ -1623,6 +1741,8 @@ tab-group {
   &[visible] {
     display: flex;
     flex-grow: 1;
+    container-type: inline-size;
+    container-name: vertical-tabs-container;
   }
 }
 

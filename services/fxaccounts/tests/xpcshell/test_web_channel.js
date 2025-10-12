@@ -12,7 +12,7 @@ const {
   "resource://gre/modules/FxAccountsCommon.sys.mjs"
 );
 const { CryptoUtils } = ChromeUtils.importESModule(
-  "resource://services-crypto/utils.sys.mjs"
+  "moz-src:///services/crypto/modules/utils.sys.mjs"
 );
 const { FxAccountsWebChannel, FxAccountsWebChannelHelpers } =
   ChromeUtils.importESModule(

@@ -11,8 +11,6 @@ skip-if = ["appname == 'thunderbird'"]
 ["test_jwcrypto.js"]
 skip-if = ["appname == 'thunderbird'"]
 
-["test_load_modules.js"]
-
 ["test_utils_hawk.js"]
 
 ["test_utils_httpmac.js"]

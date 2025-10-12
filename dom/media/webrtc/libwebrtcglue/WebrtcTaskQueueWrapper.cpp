@@ -169,8 +169,20 @@ class WebrtcTaskQueueWrapper : public webrtc::TaskQueueBase {
   void PostTaskImpl(absl::AnyInvocable<void() &&> aTask,
                     const PostTaskTraits& aTraits,
                     const webrtc::Location& aLocation) override {
-    MOZ_ALWAYS_SUCCEEDS(
-        mTaskQueue->Dispatch(WrapInvocable(std::move(aTask), aLocation)));
+    if (NS_FAILED(mTaskQueue->Dispatch(
+            WrapInvocable(std::move(aTask), aLocation),
+            /* Pass NS_DISPATCH_FALLIBLE as documentation, but note
+               that TaskQueue::Dispatch does not leak the task even
+               with NS_DISPATCH_NORMAL, which is what
+               DelayedDispatch below results in. */
+            NS_DISPATCH_FALLIBLE))) {
+      NS_WARNING(
+          nsFmtCString(
+              FMT_STRING(
+                  "TaskQueue '{}' failed to dispatch a task from {} ({}:{})"),
+              mName, aLocation.mFunction, aLocation.mFile, aLocation.mLine)
+              .get());
+    };
   }
 
   void PostDelayedTaskImpl(absl::AnyInvocable<void() &&> aTask,
@@ -182,8 +194,14 @@ class WebrtcTaskQueueWrapper : public webrtc::TaskQueueBase {
       PostTaskImpl(std::move(aTask), PostTaskTraits{}, aLocation);
       return;
     }
-    MOZ_ALWAYS_SUCCEEDS(mTaskQueue->DelayedDispatch(
-        WrapInvocable(std::move(aTask), aLocation), aDelay.ms()));
+    if (NS_FAILED(mTaskQueue->DelayedDispatch(
+            WrapInvocable(std::move(aTask), aLocation), aDelay.ms()))) {
+      NS_WARNING(nsFmtCString(FMT_STRING("TaskQueue '{}' failed to dispatch a "
+                                         "delayed task from {} ({}:{})"),
+                              mName, aLocation.mFunction, aLocation.mFile,
+                              aLocation.mLine)
+                     .get());
+    }
   }
 
   // If Blocking, access is through WebrtcTaskQueueWrapper, which has to keep
@@ -196,14 +214,20 @@ class WebrtcTaskQueueWrapper : public webrtc::TaskQueueBase {
   const nsCString mName;
 };
 
-template <DeletionPolicy Deletion>
-class DefaultDelete<WebrtcTaskQueueWrapper<Deletion>>
-    : public webrtc::TaskQueueDeleter {
- public:
-  void operator()(WebrtcTaskQueueWrapper<Deletion>* aPtr) const {
+}  // namespace mozilla
+
+namespace std {
+template <mozilla::DeletionPolicy Deletion>
+struct default_delete<mozilla::WebrtcTaskQueueWrapper<Deletion>>
+    : webrtc::TaskQueueDeleter {
+  void operator()(mozilla::WebrtcTaskQueueWrapper<Deletion>* aPtr) const {
     webrtc::TaskQueueDeleter::operator()(aPtr);
   }
 };
+
+}  // namespace std
+
+namespace mozilla {
 
 std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter>
 CreateWebrtcTaskQueue(already_AddRefed<nsIEventTarget> aTarget,

@@ -706,7 +706,17 @@ class ResourceCommand {
         let isWillNavigate = false;
         if (resourceType == DOCUMENT_EVENT) {
           isWillNavigate = resource.name === "will-navigate";
-          if (isWillNavigate && resource.targetFront.isTopLevel) {
+          const isBrowserToolbox =
+            this.targetCommand.descriptorFront.isBrowserProcessDescriptor;
+          if (
+            isWillNavigate &&
+            resource.targetFront.isTopLevel &&
+            // When selecting a document in the Browser Toolbox iframe picker, we're getting
+            // a will-navigate event. In such case, we don't want to clear the cache,
+            // otherwise we'd miss some resources that we might already received (e.g. stylesheets)
+            // See Bug 1981937
+            (!isBrowserToolbox || !resource.isFrameSwitching)
+          ) {
             includesDocumentEventWillNavigate = true;
             this._onWillNavigate(resource.targetFront);
           }

@@ -131,8 +131,7 @@ SOURCES += [
     "nsRefreshDriver.cpp",
 ]
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["gtest"]
+TEST_DIRS += ["gtest"]
 
 include("/ipc/chromium/chromium-config.mozbuild")
 

@@ -22,6 +22,7 @@ interface SnackbarDelegate {
      * @param duration How long to display the message.
      * @param isError Whether the snackbar should be styled as an error.
      * @param action String resource to display for the action.
+     * @param withDismissAction Whether to display a dismiss button.
      * @param listener callback to be invoked when the action is clicked.
      */
     fun show(
@@ -32,6 +33,7 @@ interface SnackbarDelegate {
         duration: Int,
         isError: Boolean = false,
         action: Int = 0,
+        withDismissAction: Boolean = false,
         listener: ((v: View) -> Unit)? = null,
     )
 
@@ -46,6 +48,7 @@ interface SnackbarDelegate {
      * @param isError Whether the snackbar should be styled as an error.
      * @param action Text of the optional action.
      * The [listener] must also be provided to show an action button.
+     * @param withDismissAction Whether to display a dismiss button.
      * @param listener callback to be invoked when the action is clicked.
      * An [action] must also be provided to show an action button.
      */
@@ -57,6 +60,7 @@ interface SnackbarDelegate {
         duration: Int,
         isError: Boolean = false,
         action: String? = null,
+        withDismissAction: Boolean = false,
         listener: ((v: View) -> Unit)? = null,
     )
 }
@@ -73,6 +77,7 @@ class DefaultSnackbarDelegate : SnackbarDelegate {
         duration: Int,
         isError: Boolean,
         action: String?,
+        withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ) {
         val snackbar = Snackbar.make(
@@ -96,6 +101,7 @@ class DefaultSnackbarDelegate : SnackbarDelegate {
         duration: Int,
         isError: Boolean,
         action: Int,
+        withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ) = show(
         snackBarParentView = snackBarParentView,

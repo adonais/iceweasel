@@ -8,6 +8,7 @@
 #define MMPrinter_h
 
 #include "mozilla/Maybe.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/DOMTypes.h"
 #include "nsString.h"
 
@@ -28,7 +29,7 @@ class MMPrinter {
 
   static void Print(char const* aLocation, const nsACString& aActorName,
                     const nsAString& aMessageName,
-                    const Maybe<ClonedMessageData>& aData) {
+                    const UniquePtr<ClonedMessageData>& aData) {
     if (MOZ_UNLIKELY(MOZ_LOG_TEST(MMPrinter::sMMLog, LogLevel::Debug))) {
       Maybe<uint64_t> msgId = MMPrinter::PrintHeader(
           aLocation,
@@ -38,7 +39,7 @@ class MMPrinter {
         return;
       }
 
-      if (aData.isSome()) {
+      if (aData) {
         MMPrinter::PrintData(*msgId, *aData);
       } else {
         MMPrinter::PrintNoData(*msgId);

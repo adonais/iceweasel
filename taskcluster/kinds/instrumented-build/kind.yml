@@ -26,6 +26,7 @@ task-defaults:
         max-run-time: 7200
         env:
             PERFHERDER_EXTRA_OPTIONS: instrumented
+            DISABLE_CLANG_PLUGIN: "1"
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
     use-python: default
     run:
@@ -482,9 +483,9 @@ tasks:
                 - sysroot-x86_64-linux-gnu
                 - sysroot-wasm32-wasi
                 - vs
-                - windows-rs
             fetch:
                 - upx-3.95-win
+                - windows-rs
 
     win64-nightlyasrelease/opt:
         description: "Win64 Shippable PGO Instrumented"
@@ -522,10 +523,10 @@ tasks:
                 - sysroot-x86_64-linux-gnu
                 - sysroot-wasm32-wasi
                 - vs
-                - windows-rs
                 - dxc-x86_64-pc-windows-msvc
             fetch:
                 - upx-3.95-win
+                - windows-rs
 
     win64-shippable/opt:
         description: "Win64 Shippable PGO Instrumented"
@@ -561,10 +562,10 @@ tasks:
                 - sysroot-x86_64-linux-gnu
                 - sysroot-wasm32-wasi
                 - vs
-                - windows-rs
                 - dxc-x86_64-pc-windows-msvc
             fetch:
                 - upx-3.95-win
+                - windows-rs
 
     win64-aarch64-shippable/opt:
         description: "Win64 AArch64 Shippable PGO Instrumented"
@@ -600,7 +601,7 @@ tasks:
                 - sysroot-x86_64-linux-gnu
                 - sysroot-wasm32-wasi
                 - vs
-                - windows-rs
                 - dxc-aarch64-pc-windows-msvc
             fetch:
                 - upx-3.95-win
+                - windows-rs

@@ -51,6 +51,9 @@ skip-if = [
   "isolated_process", # Bug 1709948
 ]
 
+["test_autoplay_gvobserver_late_auth.html"]
+skip-if = ["os != 'android'"]
+
 ["test_autoplay_policy.html"]
 skip-if = ["isolated_process"] # Bug 1709948
 

@@ -149,6 +149,7 @@
 #include "wasm/WasmValue.h"
 
 #include "debugger/DebugAPI-inl.h"
+#include "jit/JitHints-inl.h"
 #include "vm/Compartment-inl.h"
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/JSContext-inl.h"
@@ -1816,6 +1817,13 @@ static bool DisassembleNative(JSContext* cx, unsigned argc, Value* vp) {
     JS_ReportErrorASCII(cx, "disnative is not fuzzing-safe on ARM32");
     return false;
   }
+#elif defined(JS_CODEGEN_RISCV64)
+  // The riscv64 disassembler is currently not fuzzing-safe because it doesn't
+  // handle constant pools correctly (bug 1987559).
+  if (fuzzingSafe) {
+    JS_ReportErrorASCII(cx, "disnative is not fuzzing-safe on riscv64");
+    return false;
+  }
 #endif
 
   // Dump the raw code to a file before disassembling in case
@@ -1893,6 +1901,13 @@ static bool DisassembleBaselineICs(JSContext* cx, unsigned argc, Value* vp) {
   // handle constant pools correctly (bug 1875363).
   if (fuzzingSafe) {
     JS_ReportErrorASCII(cx, "disblic is not fuzzing-safe on ARM32");
+    return false;
+  }
+#elif defined(JS_CODEGEN_RISCV64)
+  // The riscv64 disassembler is currently not fuzzing-safe because it doesn't
+  // handle constant pools correctly (bug 1987559).
+  if (fuzzingSafe) {
+    JS_ReportErrorASCII(cx, "disblic is not fuzzing-safe on riscv64");
     return false;
   }
 #endif
@@ -2179,34 +2194,6 @@ static bool WasmFunctionTier(JSContext* cx, unsigned argc, Value* vp) {
   return false;
 }
 
-static bool ToIonDumpContents(JSContext* cx, HandleValue value,
-                              wasm::IonDumpContents* contents) {
-  RootedString option(cx, JS::ToString(cx, value));
-
-  if (!option) {
-    return false;
-  }
-
-  bool isEqual = false;
-  if (!JS_StringEqualsLiteral(cx, option, "mir", &isEqual) || isEqual) {
-    *contents = wasm::IonDumpContents::UnoptimizedMIR;
-    return isEqual;
-  } else if (!JS_StringEqualsLiteral(cx, option, "unopt-mir", &isEqual) ||
-             isEqual) {
-    *contents = wasm::IonDumpContents::UnoptimizedMIR;
-    return isEqual;
-  } else if (!JS_StringEqualsLiteral(cx, option, "opt-mir", &isEqual) ||
-             isEqual) {
-    *contents = wasm::IonDumpContents::OptimizedMIR;
-    return isEqual;
-  } else if (!JS_StringEqualsLiteral(cx, option, "lir", &isEqual) || isEqual) {
-    *contents = wasm::IonDumpContents::LIR;
-    return isEqual;
-  } else {
-    return false;
-  }
-}
-
 static bool WasmDumpIon(JSContext* cx, unsigned argc, Value* vp) {
   if (!wasm::HasSupport(cx)) {
     JS_ReportErrorASCII(cx, "wasm support unavailable");
@@ -2225,12 +2212,6 @@ static bool WasmDumpIon(JSContext* cx, unsigned argc, Value* vp) {
   uint32_t targetFuncIndex;
   if (!ToUint32(cx, args.get(1), &targetFuncIndex)) {
     JS_ReportErrorASCII(cx, "argument is not a func index");
-    return false;
-  }
-
-  wasm::IonDumpContents contents = wasm::IonDumpContents::Default;
-  if (args.length() > 2 && !ToIonDumpContents(cx, args.get(2), &contents)) {
-    JS_ReportErrorASCII(cx, "argument is not a valid dump contents");
     return false;
   }
 
@@ -2258,8 +2239,7 @@ static bool WasmDumpIon(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  if (!wasm::DumpIonFunctionInModule(*bytecode, targetFuncIndex, contents, out,
-                                     &error)) {
+  if (!wasm::DumpIonFunctionInModule(*bytecode, targetFuncIndex, out, &error)) {
     if (error) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_WASM_COMPILE_ERROR, error.get());
@@ -8631,62 +8611,6 @@ static bool GetTimeZone(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-/*
- * Validate time zone input. Accepts the following formats:
- *  - "America/Chicago" (raw time zone)
- *  - ":America/Chicago"
- *  - "/this-part-is-ignored/zoneinfo/America/Chicago"
- *  - ":/this-part-is-ignored/zoneinfo/America/Chicago"
- *  - "/etc/localtime"
- *  - ":/etc/localtime"
- * Once the raw time zone is parsed out of the string, it is checked
- * against the time zones from GetAvailableTimeZones(). Throws an
- * Error if the time zone is invalid.
- */
-#if defined(JS_HAS_INTL_API) && !defined(__wasi__)
-static bool ValidateTimeZone(JSContext* cx, const char* timeZone) {
-  static constexpr char zoneInfo[] = "/zoneinfo/";
-  static constexpr size_t zoneInfoLength = sizeof(zoneInfo) - 1;
-
-  size_t i = 0;
-  if (timeZone[i] == ':') {
-    ++i;
-  }
-  const char* zoneInfoPtr = strstr(timeZone, zoneInfo);
-  const char* timeZonePart = timeZone[i] == '/' && zoneInfoPtr
-                                 ? zoneInfoPtr + zoneInfoLength
-                                 : timeZone + i;
-
-  if (!*timeZonePart) {
-    JS_ReportErrorASCII(cx, "Invalid time zone format");
-    return false;
-  }
-
-  if (!strcmp(timeZonePart, "/etc/localtime")) {
-    return true;
-  }
-
-  auto timeZones = mozilla::intl::TimeZone::GetAvailableTimeZones();
-  if (timeZones.isErr()) {
-    intl::ReportInternalError(cx, timeZones.unwrapErr());
-    return false;
-  }
-  for (auto timeZoneName : timeZones.unwrap()) {
-    if (timeZoneName.isErr()) {
-      intl::ReportInternalError(cx);
-      return false;
-    }
-
-    if (!strcmp(timeZonePart, timeZoneName.unwrap().data())) {
-      return true;
-    }
-  }
-
-  JS_ReportErrorASCII(cx, "Unsupported time zone name: %s", timeZonePart);
-  return false;
-}
-#endif
-
 static bool SetTimeZone(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   RootedObject callee(cx, &args.callee());
@@ -8720,30 +8644,18 @@ static bool SetTimeZone(JSContext* cx, unsigned argc, Value* vp) {
   };
 
   if (args[0].isString() && !args[0].toString()->empty()) {
-    Rooted<JSLinearString*> str(cx, args[0].toString()->ensureLinear(cx));
+    Rooted<JSString*> str(cx, args[0].toString());
     if (!str) {
       return false;
     }
 
-    if (!StringIsAscii(str)) {
-      ReportUsageErrorASCII(cx, callee,
-                            "First argument contains non-ASCII characters");
-      return false;
-    }
-
-    UniqueChars timeZone = JS_EncodeStringToASCII(cx, str);
+    UniqueChars timeZone =
+        StringToTimeZone(cx, callee, str, AllowTimeZoneLink::Yes);
     if (!timeZone) {
       return false;
     }
 
-    const char* timeZoneStr = timeZone.get();
-#  ifdef JS_HAS_INTL_API
-    if (!ValidateTimeZone(cx, timeZoneStr)) {
-      return false;
-    }
-#  endif
-
-    if (!setTimeZone(timeZoneStr)) {
+    if (!setTimeZone(timeZone.get())) {
       JS_ReportErrorASCII(cx, "Failed to set 'TZ' environment variable");
       return false;
     }
@@ -8763,6 +8675,73 @@ static bool SetTimeZone(JSContext* cx, unsigned argc, Value* vp) {
   JS::ResetTimeZone();
 
 #endif /* __wasi__ */
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool GetRealmTimeZone(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 0) {
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+#ifdef JS_HAS_INTL_API
+  TimeZoneIdentifierVector timeZoneId;
+  if (!DateTimeInfo::timeZoneId(cx->realm()->getDateTimeInfo(), timeZoneId)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  auto* str = NewStringCopy<CanGC>(
+      cx, static_cast<mozilla::Span<const char>>(timeZoneId));
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+#else
+  // Realm time zones require Intl support.
+  args.rval().setString(cx->emptyString());
+#endif
+
+  return true;
+}
+
+static bool SetRealmTimeZone(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 1) {
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+  if (!args[0].isString() && !args[0].isUndefined()) {
+    ReportUsageErrorASCII(cx, callee,
+                          "First argument should be a string or undefined");
+    return false;
+  }
+
+  if (args[0].isString() && !args[0].toString()->empty()) {
+    Rooted<JSString*> str(cx, args[0].toString());
+    if (!str) {
+      return false;
+    }
+
+    auto timeZone = StringToTimeZone(cx, callee, str, AllowTimeZoneLink::No);
+    if (!timeZone) {
+      return false;
+    }
+
+    cx->realm()->setTimeZone(timeZone.get());
+  } else {
+    // Reset to use the system default time zone.
+    cx->realm()->setTimeZone(nullptr);
+  }
+
   args.rval().setUndefined();
   return true;
 }
@@ -9001,14 +8980,9 @@ static bool GetFuseState(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   RootedObject fuseObj(cx);
-  RootedString intactStr(cx, NewStringCopyZ<CanGC>(cx, "intact"));
-  if (!intactStr) {
-    return false;
-  }
-
   RootedValue intactValue(cx);
 
-#define FUSE(Name, LowerName)                                                \
+#define REALM_FUSE(Name, LowerName)                                          \
   fuseObj = JS_NewPlainObject(cx);                                           \
   if (!fuseObj) {                                                            \
     return false;                                                            \
@@ -9022,40 +8996,26 @@ static bool GetFuseState(JSContext* cx, unsigned argc, Value* vp) {
     return false;                                                            \
   }
 
-  FOR_EACH_REALM_FUSE(FUSE)
-#undef FUSE
+  FOR_EACH_REALM_FUSE(REALM_FUSE)
+#undef REALM_FUSE
 
-  // Register hasSeenUndefinedFuse
-  fuseObj = JS_NewPlainObject(cx);
-  if (!fuseObj) {
-    return false;
-  }
-  intactValue.setBoolean(
-      cx->runtime()->hasSeenObjectEmulateUndefinedFuse.ref().intact());
-  if (!JS_DefineProperty(cx, fuseObj, "intact", intactValue,
-                         JSPROP_ENUMERATE)) {
-    return false;
-  }
-
-  if (!JS_DefineProperty(cx, returnObj, "hasSeenObjectEmulateUndefinedFuse",
-                         fuseObj, JSPROP_ENUMERATE)) {
-    return false;
+#define RUNTIME_FUSE(Name)                                                   \
+  fuseObj = JS_NewPlainObject(cx);                                           \
+  if (!fuseObj) {                                                            \
+    return false;                                                            \
+  }                                                                          \
+  intactValue.setBoolean(cx->runtime()->Name.ref().intact());                \
+  if (!JS_DefineProperty(cx, fuseObj, "intact", intactValue,                 \
+                         JSPROP_ENUMERATE)) {                                \
+    return false;                                                            \
+  }                                                                          \
+  if (!JS_DefineProperty(cx, returnObj, #Name, fuseObj, JSPROP_ENUMERATE)) { \
+    return false;                                                            \
   }
 
-  fuseObj = JS_NewPlainObject(cx);
-  if (!fuseObj) {
-    return false;
-  }
-  intactValue.setBoolean(
-      cx->runtime()->hasSeenArrayExceedsInt32LengthFuse.ref().intact());
-  if (!JS_DefineProperty(cx, fuseObj, "intact", intactValue,
-                         JSPROP_ENUMERATE)) {
-    return false;
-  }
-  if (!JS_DefineProperty(cx, returnObj, "hasSeenArrayExceedsInt32LengthFuse",
-                         fuseObj, JSPROP_ENUMERATE)) {
-    return false;
-  }
+  RUNTIME_FUSE(hasSeenObjectEmulateUndefinedFuse)
+  RUNTIME_FUSE(hasSeenArrayExceedsInt32LengthFuse)
+#undef RUNTIME_FUSE
 
   args.rval().setObject(*returnObj);
   return true;
@@ -9532,6 +9492,58 @@ static bool BaselineCompile(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool SetBaselineHint(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 1) {
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+  RootedScript script(cx, TestingFunctionArgumentToScript(cx, args[0]));
+  if (!script) {
+    return false;
+  }
+
+  if (!cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  jit::JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+  jitHints->setEagerBaselineHint(script);
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool HasBaselineHint(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 1) {
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+  RootedScript script(cx, TestingFunctionArgumentToScript(cx, args[0]));
+  if (!script) {
+    return false;
+  }
+
+  if (!cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+    args.rval().setBoolean(false);
+    return true;
+  }
+
+  jit::JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+  bool hasHint = jitHints->mightHaveEagerBaselineHint(script);
+
+  args.rval().setBoolean(hasHint);
+  return true;
+}
+
 static bool ClearKeptObjects(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   JS::ClearKeptObjects(cx);
@@ -9593,7 +9605,7 @@ static bool GetICUOptions(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   TimeZoneIdentifierVector timeZoneId;
-  if (!DateTimeInfo::timeZoneId(DateTimeInfo::ForceUTC::No, timeZoneId)) {
+  if (!DateTimeInfo::timeZoneId(nullptr, timeZoneId)) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -10894,6 +10906,13 @@ JS_FOR_WASM_FEATURES(WASM_FEATURE)
 "    baselineCompile();  for (var i=0; i<1; i++) {} ...\n"
 "  The interpreter will enter the new jitcode at the loop header unless\n"
 "  baselineCompile returned a string or threw an error.\n"),
+    JS_FN_HELP("setBaselineHint", SetBaselineHint, 1, 0,
+"setBaselineHint(fun)",
+"  Sets a baseline JIT hint for the given function, marking it for eager\n"
+"  baseline compilation on subsequent executions.\n"),
+    JS_FN_HELP("hasBaselineHint", HasBaselineHint, 1, 0,
+"hasBaselineHint(fun)",
+"  Returns true if the given function has a baseline JIT hint set.\n"),
 
     JS_FN_HELP("encodeAsUtf8InBuffer", EncodeAsUtf8InBuffer, 2, 0,
 "encodeAsUtf8InBuffer(str, uint8Array)",
@@ -11007,6 +11026,16 @@ JS_FN_HELP("setTimeZone", SetTimeZone, 1, 0,
 "  Set the 'TZ' environment variable to the given time zone and applies the new time zone.\n"
 "  The time zone given is validated according to the current environment.\n"
 "  An empty string or undefined resets the time zone to its default value."),
+
+JS_FN_HELP("getRealmTimeZone", GetRealmTimeZone, 0, 0,
+"getRealmTimeZone()",
+"  Get the time zone for the current realm.\n"),
+
+JS_FN_HELP("setRealmTimeZone", SetRealmTimeZone, 1, 0,
+"setRealmTimeZone(tzname)",
+"  Set the time zone for the current realm.\n"
+"  The time zone must be a valid IANA time zone identifier.\n"
+"  An empty string or undefined resets the realm time zone to the system default time zone."),
 
 JS_FN_HELP("setDefaultLocale", SetDefaultLocale, 1, 0,
 "setDefaultLocale(locale)",

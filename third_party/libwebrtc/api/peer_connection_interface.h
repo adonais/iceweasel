@@ -92,6 +92,7 @@
 #include "api/data_channel_event_observer_interface.h"
 #include "api/data_channel_interface.h"
 #include "api/dtls_transport_interface.h"
+#include "api/environment/environment.h"
 #include "api/fec_controller.h"
 #include "api/field_trials_view.h"
 #include "api/ice_transport_interface.h"
@@ -1430,9 +1431,16 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   Thread* worker_thread = nullptr;
   Thread* signaling_thread = nullptr;
   SocketFactory* socket_factory = nullptr;
+
+  // Provides common widely used dependencies for webrtc subcomponents.
+  // `task_queue_factory` and `field_trials` members below override values in
+  // `env` when set.
+  std::optional<Environment> env;
+
   // The `packet_socket_factory` will only be used if CreatePeerConnection is
   // called without a `port_allocator`.
   std::unique_ptr<PacketSocketFactory> packet_socket_factory;
+  [[deprecated("Pass custom task queue factory through the 'env'")]]
   std::unique_ptr<TaskQueueFactory> task_queue_factory;
   std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory;
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory;
@@ -1448,6 +1456,7 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   std::unique_ptr<NetworkMonitorFactory> network_monitor_factory;
   std::unique_ptr<NetEqFactory> neteq_factory;
   std::unique_ptr<SctpTransportFactoryInterface> sctp_factory;
+  [[deprecated("Pass custom field trials through the 'env'")]]
   std::unique_ptr<FieldTrialsView> trials;
   std::unique_ptr<RtpTransportControllerSendFactoryInterface>
       transport_controller_send_factory;
@@ -1463,9 +1472,6 @@ struct RTC_EXPORT PeerConnectionFactoryDependencies final {
   scoped_refptr<AudioEncoderFactory> audio_encoder_factory;
   scoped_refptr<AudioDecoderFactory> audio_decoder_factory;
   scoped_refptr<AudioMixer> audio_mixer;
-  // TODO: bugs.webrtc.org/369904700 - Delete `audio_processing` in favor
-  // of `audio_processing_builder`.
-  [[deprecated]] scoped_refptr<AudioProcessing> audio_processing;
   std::unique_ptr<AudioProcessingBuilderInterface> audio_processing_builder;
   std::unique_ptr<AudioFrameProcessor> audio_frame_processor;
   std::unique_ptr<VideoEncoderFactory> video_encoder_factory;

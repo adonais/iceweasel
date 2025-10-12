@@ -31,11 +31,11 @@ import mozilla.components.support.ktx.android.content.appVersionName
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.HomeActivity
-import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentInstalledAddOnDetailsBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.showToolbar
+import mozilla.components.feature.addons.R as addonsR
 
 /**
  * An activity to show the details of a installed add-on.
@@ -142,7 +142,7 @@ class InstalledAddonDetailsFragment : Fragment() {
         runIfFragmentIsAttached {
             showSnackBar(
                 binding.root,
-                getString(R.string.mozac_feature_addons_failed_to_query_extensions),
+                getString(addonsR.string.mozac_feature_addons_failed_to_query_extensions),
             )
             findNavController().popBackStack()
         }
@@ -159,9 +159,9 @@ class InstalledAddonDetailsFragment : Fragment() {
         bindReportButton()
         context?.let {
             val messageBarWarningView =
-                binding.root.findViewById<View>(mozilla.components.feature.addons.R.id.add_on_messagebar_warning)
+                binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
             val messageBarErrorView =
-                binding.root.findViewById<View>(mozilla.components.feature.addons.R.id.add_on_messagebar_error)
+                binding.root.findViewById<View>(addonsR.id.add_on_messagebar_error)
 
             AddonsManagerAdapter.bindMessageBars(
                 it,
@@ -232,7 +232,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                                 showSnackBar(
                                     binding.root,
                                     getString(
-                                        R.string.mozac_feature_addons_failed_to_enable,
+                                        addonsR.string.mozac_feature_addons_failed_to_enable,
                                         addon.translateName(it),
                                     ),
                                 )
@@ -261,7 +261,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                                 showSnackBar(
                                     binding.root,
                                     getString(
-                                        R.string.mozac_feature_addons_failed_to_disable,
+                                        addonsR.string.mozac_feature_addons_failed_to_disable,
                                         addon.translateName(it),
                                     ),
                                 )
@@ -303,7 +303,9 @@ class InstalledAddonDetailsFragment : Fragment() {
         if (addon.incognito == Addon.Incognito.NOT_ALLOWED) {
             switch.isChecked = false
             switch.isEnabled = false
-            switch.text = requireContext().getString(R.string.mozac_feature_addons_not_allowed_in_private_browsing)
+            switch.text = requireContext().getString(
+                addonsR.string.mozac_feature_addons_not_allowed_in_private_browsing,
+                )
             return
         }
 
@@ -416,7 +418,7 @@ class InstalledAddonDetailsFragment : Fragment() {
                             showSnackBar(
                                 binding.root,
                                 getString(
-                                    R.string.mozac_feature_addons_failed_to_uninstall,
+                                    addonsR.string.mozac_feature_addons_failed_to_uninstall,
                                     addon.translateName(it),
                                 ),
                             )

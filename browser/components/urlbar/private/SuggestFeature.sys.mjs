@@ -242,6 +242,18 @@ export class SuggestProvider extends SuggestFeature {
   }
 
   /**
+   * Gets the list of commands that should be shown in the result menu for a
+   * given result from the provider. All commands returned by this method should
+   * be handled by implementing `onEngagement()` with the possible exception of
+   * commands automatically handled by the urlbar, like "help".
+   *
+   * @returns {?UrlbarResultCommand[]}
+   */
+  getResultCommand() {
+    return undefined;
+  }
+
+  /**
    * The subclass should override this method if it manages any sponsored
    * suggestion types. It should return true if the given suggestion should be
    * considered sponsored.

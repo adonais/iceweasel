@@ -7,6 +7,7 @@
 #include "Timeout.h"
 
 #include "GeckoProfiler.h"
+#include "mozilla/dom/TimeoutHandler.h"
 #include "mozilla/dom/TimeoutManager.h"
 
 namespace mozilla::dom {
@@ -24,6 +25,8 @@ Timeout::Timeout()
       mRunning(false),
       mIsInterval(false) {
 }
+
+Timeout::~Timeout() { SetTimeoutContainer(nullptr); }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(Timeout)
 

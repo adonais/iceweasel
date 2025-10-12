@@ -26,4 +26,6 @@ CompilationMessage::CompilationMessage(Device* const aParent,
       mLength(aLength),
       mMessage(std::move(aMessage)) {}
 
+CompilationMessage::~CompilationMessage() = default;
+
 }  // namespace mozilla::webgpu

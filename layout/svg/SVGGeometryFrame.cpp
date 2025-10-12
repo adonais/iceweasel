@@ -64,8 +64,7 @@ void SVGGeometryFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 }
 
 nsresult SVGGeometryFrame::AttributeChanged(int32_t aNameSpaceID,
-                                            nsAtom* aAttribute,
-                                            int32_t aModType) {
+                                            nsAtom* aAttribute, AttrModType) {
   // We don't invalidate for transform changes (the layers code does that).
   // Also note that SVGTransformableElement::GetAttributeChangeHint will
   // return nsChangeHint_UpdateOverflow for "transform" attribute changes

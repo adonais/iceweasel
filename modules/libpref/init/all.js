@@ -229,8 +229,8 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   // Whether to expose the resizeMode constraint/setting/capability to content.
   // Kept false while implementing the feature in bug 1286945 and dependencies,
   // to allow for gradually gaining support and test coverage.
-  pref("media.navigator.video.resize_mode.enabled", false);
-  pref("media.navigator.video.default_resize_mode", 0); // 0=none, 1=crop-and-scale
+  pref("media.navigator.video.resize_mode.enabled", true);
+  pref("media.navigator.video.default_resize_mode", 1); // 0=none, 1=crop-and-scale
   pref("media.navigator.video.use_remb", true);
   pref("media.navigator.video.use_transport_cc", true);
   pref("media.peerconnection.video.use_rtx", true);
@@ -370,6 +370,9 @@ pref("media.video-queue.default-size", 10);
 pref("media.video-queue.send-to-compositor-size", 9999);
 
 pref("media.cubeb.output_voice_routing", true);
+
+// Force cubeb to use the mock context, which exposes only fake devices.
+pref("media.cubeb.force_mock_context", false);
 
 // APZ preferences. For documentation/details on what these prefs do, check
 // gfx/layers/apz/src/AsyncPanZoomController.cpp.
@@ -790,10 +793,6 @@ pref("dom.disable_window_flip",             false);
 pref("dom.disable_window_move_resize",      false);
 
 pref("dom.allow_scripts_to_close_windows",          false);
-
-// List of urls for which mutation events are enabled even if mutation events
-// in general are disabled. See nsContentUtils::IsURIInPrefList.
-pref("dom.mutation_events.forceEnable", "");
 
 pref("dom.popup_allowed_events", "change click dblclick auxclick mousedown mouseup pointerdown pointerup notificationclick reset submit touchend contextmenu");
 
@@ -3340,6 +3339,11 @@ pref("privacy.trackingprotection.emailtracking.webapp.domains", "mail.163.com,ma
 // and baseline) for users in ETP "strict" and "custom" mode.
 pref("privacy.trackingprotection.allow_list.hasMigratedCategoryPrefs", false);
 
+// Indicates if the user has interacted with the ETP category, tracking protection baseline exceptions, 
+// or convenience exceptions by changing them in the prefs or in the UI. This is used to determine 
+// if we should show the ETP Strict exceptions onboarding message again.
+pref("privacy.trackingprotection.allow_list.hasUserInteractedWithETPSettings", false);
+
 // Number of random entries to send with a gethash request
 pref("urlclassifier.gethashnoise", 4);
 
@@ -3402,6 +3406,12 @@ pref("browser.safebrowsing.provider.google4.advisoryName", "Google Safe Browsing
 pref("browser.safebrowsing.provider.google4.dataSharingURL", "https://safebrowsing.googleapis.com/v4/threatHits?$ct=application/x-protobuf&key=%GOOGLE_SAFEBROWSING_API_KEY%&$httpMethod=POST");
 pref("browser.safebrowsing.provider.google4.dataSharing.enabled", false);
 
+// Google Safe Browsing V5 prefs.
+pref("browser.safebrowsing.provider.google5.enabled", false);
+pref("browser.safebrowsing.provider.google5.updateURL", "https://safebrowsing.googleapis.com/v5/hashLists:batchGet?key=%GOOGLE_SAFEBROWSING_API_KEY%");
+pref("browser.safebrowsing.provider.google5.gethashURL", "https://safebrowsing.googleapis.com/v5/hashes:search?key=%GOOGLE_SAFEBROWSING_API_KEY%");
+pref("browser.safebrowsing.provider.google5.lists", "");
+
 #endif // ifndef MOZ_WIDGET_ANDROID
 
 pref("browser.safebrowsing.reportPhishURL", "https://%LOCALE%.phish-report.mozilla.com/?url=");
@@ -3439,6 +3449,7 @@ pref("browser.search.log", false);
 pref("browser.search.update", true);
 pref("browser.search.suggest.enabled", true);
 pref("browser.search.suggest.enabled.private", false);
+pref("browser.search.suggest.ohttp.enabled", false);
 pref("browser.search.separatePrivateDefault", true);
 pref("browser.search.separatePrivateDefault.ui.enabled", false);
 pref("browser.search.removeEngineInfobar.enabled", true);
@@ -3579,6 +3590,9 @@ pref("narrate.voice", " { \"default\": \"automatic\" }");
 pref("narrate.filter-voices", true);
 
 pref("memory.report_concurrency", 10);
+
+// Enable logging downloads operations to the Console.
+pref("toolkit.download.loglevel", "Error");
 
 pref("toolkit.pageThumbs.screenSizeDivisor", 7);
 pref("toolkit.pageThumbs.minWidth", 0);
@@ -3904,9 +3918,6 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
   // Enable retrying to execute commands in the child process in case the
   // JSWindowActor gets destroyed.
   pref("remote.retry-on-abort", true);
-
-  // Enable the NavigationManager using parent process WebProgress listeners
-  pref("remote.parent-navigation.enabled", true);
 #endif
 
 // Enable the JSON View tool (an inspector for application/json documents).

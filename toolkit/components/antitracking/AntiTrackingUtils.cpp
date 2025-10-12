@@ -287,9 +287,7 @@ Maybe<size_t> AntiTrackingUtils::CountSitesAllowStorageAccess(
 // static
 bool AntiTrackingUtils::CheckStoragePermission(nsIPrincipal* aPrincipal,
                                                const nsAutoCString& aType,
-                                               bool aIsInPrivateBrowsing,
-                                               uint32_t* aRejectedReason,
-                                               uint32_t aBlockedReason) {
+                                               bool aIsInPrivateBrowsing) {
   RefPtr<PermissionManager> permManager = PermissionManager::GetInstance();
   if (NS_WARN_IF(!permManager)) {
     LOG(("Failed to obtain the permission manager"));
@@ -357,9 +355,6 @@ bool AntiTrackingUtils::CheckStoragePermission(nsIPrincipal* aPrincipal,
     }
 
     if (!found) {
-      if (aRejectedReason) {
-        *aRejectedReason = aBlockedReason;
-      }
       return false;
     }
   } else {
@@ -377,9 +372,6 @@ bool AntiTrackingUtils::CheckStoragePermission(nsIPrincipal* aPrincipal,
         aPrincipal);
 
     if (result != nsIPermissionManager::ALLOW_ACTION) {
-      if (aRejectedReason) {
-        *aRejectedReason = aBlockedReason;
-      }
       return false;
     }
   }
@@ -552,11 +544,8 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
   nsAutoCString type;
   AntiTrackingUtils::CreateStoragePermissionKey(trackingPrincipal, type);
 
-  uint32_t unusedReason = 0;
-
-  if (AntiTrackingUtils::CheckStoragePermission(targetPrincipal, type,
-                                                NS_UsePrivateBrowsing(aChannel),
-                                                &unusedReason, unusedReason)) {
+  if (AntiTrackingUtils::CheckStoragePermission(
+          targetPrincipal, type, NS_UsePrivateBrowsing(aChannel))) {
     return nsILoadInfo::HasStoragePermission;
   }
 
@@ -628,6 +617,25 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
     if (NS_SUCCEEDED(rv) && wc->GetUsingStorageAccess() && !isThirdParty) {
       return nsILoadInfo::HasStoragePermission;
     }
+  }
+
+  // determine whether storage access could be granted using the
+  // Activate-Storage-Access header from the storage-access-headers draft.
+  // XXX(Bug 1968723, Bug 1968725): The response header is not yet parsed.
+  uint32_t result = 0;
+  rv = AntiTrackingUtils::TestStoragePermissionInParent(
+      targetPrincipal, trackingPrincipal, &result);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nsILoadInfo::NoStoragePermission;
+  }
+  if (result == nsIPermissionManager::ALLOW_ACTION) {
+    return nsILoadInfo::InactiveStoragePermission;
+  }
+
+  bool isThirdParty = false;
+  rv = framePrincipal->IsThirdPartyURI(trackingURI, &isThirdParty);
+  if (NS_FAILED(rv) || isThirdParty) {
+    return nsILoadInfo::DisabledStoragePermission;
   }
 
   return nsILoadInfo::NoStoragePermission;

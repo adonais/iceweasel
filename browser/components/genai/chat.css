@@ -120,6 +120,10 @@ browser {
     padding-inline: 0;
   }
 
+  .content-tile {
+    width: 100%;
+  }
+
   .tiles-single-select-container {
     margin-top: 0;
 
@@ -221,72 +225,11 @@ browser {
     font-weight: var(--font-weight-bold);
     margin: 5px;
     text-align: start;
-
-    > div {
-      color: var(--text-color-deemphasized);
-      font-weight: normal;
-      margin: -3px;
-      overflow-y: hidden;
-      padding: 3px; /* extra space to avoid outlines hidden by overflow */
-
-      @media (prefers-reduced-motion: no-preference) {
-        transition: max-height 0.6s;
-      }
-    }
-
-    ul {
-      margin: 0;
-      padding: 0;
-    }
-
-    li {
-      background-position: 0 50%;
-      background-repeat: no-repeat;
-      -moz-context-properties: fill;
-      fill: currentColor;
-      margin-block: var(--space-small);
-      padding-inline-start: 24px;
-
-      &[data-l10n-id*="generate"] {
-        background-image: url(chrome://global/skin/icons/edit-outline.svg);
-      }
-      &[data-l10n-id*="analyze"] {
-        background-image: url(chrome://global/skin/icons/eye.svg);
-      }
-      &[data-l10n-id*="switch"] {
-        background-image: url(chrome://global/skin/icons/arrows-updown.svg);
-      }
-      &[data-l10n-id*="price"] {
-        background-image: url(chrome://browser/skin/price.svg);
-      }
-    }
   }
 
   .link-paragraph {
     color: var(--text-color-deemphasized);
     font-size: 0.8em;
-  }
-
-  .inline-image {
-    background-image: url(assets/shortcuts-static.svg);
-    background-repeat: no-repeat;
-    background-size: contain;
-
-    @media (prefers-reduced-motion: no-preference) {
-      background-image: url(assets/shortcuts-animated.svg);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      background-image: url(assets/shortcuts-static-dark.svg);
-
-      @media (prefers-reduced-motion: no-preference) {
-        background-image: url(assets/shortcuts-animated-dark.svg);
-      }
-    }
-
-    > img {
-      visibility: hidden;
-    }
   }
 }
 

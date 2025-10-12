@@ -8,7 +8,7 @@
 
   position: relative;
   -moz-window-dragging: drag;
-  padding: calc(env(-moz-mac-titlebar-height) + 4px) 4px 3px;
+  padding: 4px 4px 3px;
   border-bottom: 1px solid ThreeDShadow;
 
   &::after {

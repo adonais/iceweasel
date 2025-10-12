@@ -9,6 +9,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.Intent.ACTION_MAIN
+import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -28,7 +29,6 @@ import android.view.WindowManager.LayoutParams.FLAG_SECURE
 import androidx.activity.BackEventCompat
 import androidx.annotation.CallSuper
 import androidx.annotation.IdRes
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.widget.Toolbar
@@ -102,6 +102,7 @@ import org.mozilla.fenix.components.metrics.GrowthDataWorker
 import org.mozilla.fenix.components.metrics.MarketingAttributionService
 import org.mozilla.fenix.components.metrics.fonts.FontEnumerationWorker
 import org.mozilla.fenix.crashes.CrashReporterBinding
+import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.crashes.UnsubmittedCrashDialog
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
 import org.mozilla.fenix.databinding.ActivityHomeBinding
@@ -157,6 +158,7 @@ import org.mozilla.fenix.splashscreen.DefaultExperimentsOperationStorage
 import org.mozilla.fenix.splashscreen.DefaultSplashScreenStorage
 import org.mozilla.fenix.splashscreen.FetchExperimentsOperation
 import org.mozilla.fenix.splashscreen.SplashScreenManager
+import org.mozilla.fenix.startupCrash.StartupCrashActivity
 import org.mozilla.fenix.tabhistory.TabHistoryDialogFragment
 import org.mozilla.fenix.tabstray.TabsTrayFragment
 import org.mozilla.fenix.theme.DefaultThemeManager
@@ -335,8 +337,27 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         }
     }
 
-    @Suppress("ComplexMethod")
     final override fun onCreate(savedInstanceState: Bundle?) {
+        if (StartupCrashCanary.build(applicationContext).startupCrashDetected) {
+            super.onCreate(savedInstanceState)
+            val startupCrashIntent =
+                Intent(
+                    applicationContext,
+                    StartupCrashActivity::class.java,
+                )
+            startupCrashIntent.flags = FLAG_ACTIVITY_NEW_TASK
+            startActivity(startupCrashIntent)
+            finish()
+        } else {
+            initialize(savedInstanceState)
+        }
+    }
+
+    /**
+     * Initializes [HomeActivity] and all required subsystems.
+     */
+    @Suppress("ComplexMethod")
+    fun initialize(savedInstanceState: Bundle?) {
         // DO NOT MOVE ANYTHING ABOVE THIS getProfilerTime CALL.
         val startTimeProfiler = components.core.engine.profiler?.getProfilerTime()
 
@@ -402,7 +423,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             },
             scope = lifecycleScope,
             splashScreenTimeout = FxNimbus.features.splashScreen.value().maximumDurationMs.toLong(),
-            isDeviceSupported = { Build.VERSION.SDK_INT > Build.VERSION_CODES.M },
             storage = DefaultSplashScreenStorage(components.settings),
             showSplashScreen = { installSplashScreen().setKeepOnScreenCondition(it) },
             onSplashScreenFinished = { result ->
@@ -466,10 +486,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             // Unless the activity is recreated, navigate to home first (without rendering it)
             // to add it to the back stack.
             if (savedInstanceState == null) {
-                val intent = intent.toSafeIntent()
-                val focusOnAddressBar = intent.getStringExtra(OPEN_TO_SEARCH) != null
-
-                navigateToHome(navHost.navController, focusOnAddressBar)
+                navigateToHome(navHost.navController)
             }
 
             if (shouldNavigateToBrowserOnColdStart(savedInstanceState)) {
@@ -616,7 +633,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     }
 
     private fun checkAndExitPiP() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode && intent != null) {
+        if (isInPictureInPictureMode && intent != null) {
             // Exit PiP mode
             moveTaskToBack(false)
             startActivity(Intent(this, this::class.java).setFlags(FLAG_ACTIVITY_REORDER_TO_FRONT))
@@ -798,7 +815,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         BrowsersCache.resetAll()
     }
 
-    @RequiresApi(Build.VERSION_CODES.M)
     override fun onProvideAssistContent(outContent: AssistContent?) {
         super.onProvideAssistContent(outContent)
         val currentTabUrl = components.core.store.state.selectedTab?.content?.url
@@ -990,11 +1006,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     }
 
     private fun shouldUseCustomBackLongPress(): Boolean {
-        val isAndroidN =
-            Build.VERSION.SDK_INT == Build.VERSION_CODES.N || Build.VERSION.SDK_INT == Build.VERSION_CODES.N_MR1
         // Huawei devices seem to have problems with onKeyLongPress
         // See https://github.com/mozilla-mobile/fenix/issues/13498
-        return isAndroidN || BuildManufacturerChecker().isHuawei()
+        return BuildManufacturerChecker().isHuawei()
     }
 
     /**
@@ -1257,12 +1271,12 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     }
 
     @VisibleForTesting
-    internal fun navigateToHome(navController: NavController, focusOnAddressBar: Boolean) {
+    internal fun navigateToHome(navController: NavController) {
         if (this is ExternalAppBrowserActivity) {
             return
         }
 
-        navController.navigate(NavGraphDirections.actionStartupHome(focusOnAddressBar = focusOnAddressBar))
+        navController.navigate(NavGraphDirections.actionStartupHome())
     }
 
     final override fun attachBaseContext(base: Context) {
@@ -1276,7 +1290,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         // when using the TimePicker. Since the inflater was created for performance monitoring
         // purposes and that we test on new android versions, this means that any difference in
         // inflation will be caught on those devices.
-        if (LAYOUT_INFLATER_SERVICE == name && Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
+        if (LAYOUT_INFLATER_SERVICE == name) {
             if (inflater == null) {
                 inflater = PerformanceInflater(LayoutInflater.from(baseContext), this)
             }

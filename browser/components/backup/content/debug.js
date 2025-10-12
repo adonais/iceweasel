@@ -67,10 +67,10 @@ let DebugUI = {
         let lastBackupStatus = document.querySelector("#last-backup-status");
         lastBackupStatus.textContent = "Creating backup...";
 
-        let then = Cu.now();
+        let then = ChromeUtils.now();
         button.disabled = true;
         await service.createBackup();
-        let totalTimeSeconds = (Cu.now() - then) / 1000;
+        let totalTimeSeconds = (ChromeUtils.now() - then) / 1000;
         button.disabled = false;
         new Notification(`Backup created`, {
           body: `Total time ${this.secondsToHms(totalTimeSeconds)}`,

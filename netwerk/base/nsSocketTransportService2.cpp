@@ -10,6 +10,7 @@
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Likely.h"
+#include "mozilla/MaybeLeakRefPtr.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -22,6 +23,7 @@
 #include "mozilla/Telemetry.h"
 #include "nsASocketHandler.h"
 #include "nsError.h"
+#include "nsIEventTarget.h"
 #include "nsIFile.h"
 #include "nsINetworkLinkService.h"
 #include "nsIOService.h"
@@ -273,21 +275,22 @@ already_AddRefed<nsIThread> nsSocketTransportService::GetThreadSafely() {
 
 NS_IMETHODIMP
 nsSocketTransportService::DispatchFromScript(nsIRunnable* event,
-                                             uint32_t flags) {
-  nsCOMPtr<nsIRunnable> event_ref(event);
-  return Dispatch(event_ref.forget(), flags);
+                                             DispatchFlags flags) {
+  return Dispatch(do_AddRef(event), flags);
 }
 
 NS_IMETHODIMP
 nsSocketTransportService::Dispatch(already_AddRefed<nsIRunnable> event,
-                                   uint32_t flags) {
-  nsCOMPtr<nsIRunnable> event_ref(event);
+                                   DispatchFlags flags) {
+  // NOTE: We don't leak runnables on dispatch failure here, even if
+  // NS_DISPATCH_FALLIBLE is not specified.
+  nsCOMPtr<nsIRunnable> event_ref(std::move(event));
   SOCKET_LOG(("STS dispatch [%p]\n", event_ref.get()));
 
   nsCOMPtr<nsIThread> thread = GetThreadSafely();
-  nsresult rv;
-  rv = thread ? thread->Dispatch(event_ref.forget(), flags)
-              : NS_ERROR_NOT_INITIALIZED;
+  nsresult rv = thread ? thread->Dispatch(event_ref.forget(),
+                                          flags | NS_DISPATCH_FALLIBLE)
+                       : NS_ERROR_NOT_INITIALIZED;
   if (rv == NS_ERROR_UNEXPECTED) {
     // Thread is no longer accepting events. We must have just shut it
     // down on the main thread. Pretend we never saw it.
@@ -1444,9 +1447,8 @@ nsresult nsSocketTransportService::DoPollIteration() {
         static MarkerSchema MarkerTypeDisplay() {
           using MS = MarkerSchema;
           MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-          schema.AddKeyLabelFormatSearchable("category", "Type",
-                                             MS::Format::String,
-                                             MS::Searchable::Searchable);
+          schema.AddKeyLabelFormat("category", "Type", MS::Format::String,
+                                   MS::PayloadFlags::Searchable);
           return schema;
         }
       };

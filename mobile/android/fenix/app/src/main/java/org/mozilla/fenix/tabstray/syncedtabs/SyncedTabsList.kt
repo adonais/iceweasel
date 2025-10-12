@@ -8,7 +8,6 @@ package org.mozilla.fenix.tabstray.syncedtabs
 
 import android.content.res.Configuration
 import androidx.annotation.VisibleForTesting
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,7 +63,6 @@ typealias OnTabCloseClick = (deviceId: String, tab: SyncTab) -> Unit
  * @param onTabCloseClick The lambda for handling clicks on a synced tab's close button.
  */
 @SuppressWarnings("LongMethod")
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SyncedTabsList(
     syncedTabs: List<SyncedTabsListItem>,

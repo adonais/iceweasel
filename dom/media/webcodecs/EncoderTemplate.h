@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_EncoderTemplate_h
 #define mozilla_dom_EncoderTemplate_h
 
+#include <limits>
 #include <queue>
 
 #include "EncoderAgent.h"
@@ -92,25 +93,48 @@ class EncoderTemplate : public DOMEventTargetHelper {
     const RefPtr<ConfigTypeInternal> mConfig;
   };
 
+  // This stores batch encoding requests, created by grouping multiple encode()
+  // calls. See PushEncodeRequest() for further details.
   class EncodeMessage final
       : public ControlMessage,
         public MessageRequestHolder<EncoderAgent::EncodePromise> {
    public:
-    EncodeMessage(WebCodecsId aConfigureId, RefPtr<InputTypeInternal>&& aData,
+    EncodeMessage(WebCodecsId aConfigureId,
+                  already_AddRefed<InputTypeInternal> aData,
                   Maybe<VideoEncoderEncodeOptions>&& aOptions = Nothing());
     nsCString ToString() const override {
       nsCString rv;
-      bool isKeyFrame = mOptions.isSome() && mOptions.ref().mKeyFrame;
-      rv.AppendPrintf("EncodeMessage(#%zu,#%zu): %s (%s)", this->mConfigureId,
-                      this->mMessageId, mData->ToString().get(),
-                      isKeyFrame ? "kf" : "");
+      rv.AppendPrintf(
+          "EncodeMessage(#%zu, #%zu): %zu frames (%zu kfs, %zu held)",
+          this->mConfigureId, this->mMessageId, mFrames, mKeyFrames,
+          mData.Length());
       return rv;
     }
+    bool IsValid() const { return !mHasEmptyData && !mData.IsEmpty(); }
+    size_t BatchSize() const { return mData.Length(); }
+    void PushData(already_AddRefed<InputTypeInternal> aData,
+                  Maybe<VideoEncoderEncodeOptions>&& aOptions = Nothing()) {
+      mFrames += 1;
+      RefPtr<InputTypeInternal> data = aData;
+      if (!data) {
+        mHasEmptyData = true;
+      }
+      MOZ_ASSERT_IF(aOptions.isSome() && aOptions->mKeyFrame, data->mKeyframe);
+      mKeyFrames += data->mKeyframe ? 1 : 0;
+      mData.AppendElement(data.forget());
+    }
+    nsTArray<RefPtr<MediaData>>&& TakeData() { return std::move(mData); }
     virtual void Cancel() override { Disconnect(); }
     virtual bool IsProcessing() override { return Exists(); };
     virtual RefPtr<EncodeMessage> AsEncodeMessage() override { return this; }
-    RefPtr<InputTypeInternal> mData;
-    Maybe<VideoEncoderEncodeOptions> mOptions;
+
+   private:
+    // Stores data in MediaData rather than InputTypeInternal, as
+    // MediaDataEncoder::EncodeBatch expects an array of MediaData.
+    nsTArray<RefPtr<MediaData>> mData;
+    size_t mFrames = 0;
+    size_t mKeyFrames = 0;
+    bool mHasEmptyData = false;
   };
 
   class FlushMessage final
@@ -124,7 +148,7 @@ class EncoderTemplate : public DOMEventTargetHelper {
 
     nsCString ToString() const override {
       nsCString rv;
-      rv.AppendPrintf("FlushMessage(#%zu,#%zu)", this->mConfigureId,
+      rv.AppendPrintf("FlushMessage(#%zu, #%zu)", this->mConfigureId,
                       this->mMessageId);
       return rv;
     }
@@ -220,6 +244,10 @@ class EncoderTemplate : public DOMEventTargetHelper {
   // Returns true when mAgent can be created.
   bool CreateEncoderAgent(WebCodecsId aId, RefPtr<ConfigTypeInternal> aConfig);
   void DestroyEncoderAgentIfAny();
+
+  void PushEncodeRequest(
+      WebCodecsId aConfigureId, RefPtr<InputTypeInternal>&& aData,
+      Maybe<VideoEncoderEncodeOptions>&& aOptions = Nothing());
 
   // Constant in practice, only set in ctor.
   RefPtr<WebCodecsErrorCallback> mErrorCallback;

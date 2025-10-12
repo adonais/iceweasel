@@ -208,7 +208,7 @@ class ScrollFrameActivityTracker final
   enum { TIMEOUT_MS = 1000 };
   explicit ScrollFrameActivityTracker(nsIEventTarget* aEventTarget)
       : nsExpirationTracker<ScrollContainerFrame, 4>(
-            TIMEOUT_MS, "ScrollFrameActivityTracker", aEventTarget) {}
+            TIMEOUT_MS, "ScrollFrameActivityTracker"_ns, aEventTarget) {}
   ~ScrollFrameActivityTracker() { AgeAllGenerations(); }
 
   virtual void NotifyExpired(ScrollContainerFrame* aObject) override {
@@ -2183,8 +2183,9 @@ void ScrollContainerFrame::AsyncScroll::InitSmoothScroll(
   if (!mAnimationPhysics || aOrigin != mOrigin) {
     mOrigin = aOrigin;
     if (StaticPrefs::general_smoothScroll_msdPhysics_enabled()) {
-      mAnimationPhysics =
-          MakeUnique<ScrollAnimationMSDPhysics>(aInitialPosition);
+      mAnimationPhysics = MakeUnique<ScrollAnimationMSDPhysics>(
+          apz::ScrollAnimationKind::Smooth, aInitialPosition,
+          /*smallestVisibleIncrement=*/1.0);
     } else {
       ScrollAnimationBezierPhysicsSettings settings =
           layers::apz::ComputeBezierAnimationSettingsForOrigin(mOrigin);
@@ -2503,7 +2504,8 @@ void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
 
       if (canHandoffToApz) {
         ApzSmoothScrollTo(mDestination, ScrollMode::SmoothMsd, aParams.mOrigin,
-                          aParams.mTriggeredByScript, std::move(snapTargetIds));
+                          aParams.mTriggeredByScript, std::move(snapTargetIds),
+                          ViewportType::Layout);
         return;
       }
 
@@ -2534,7 +2536,8 @@ void ScrollContainerFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
   if (!mAsyncScroll) {
     if (isSmoothScroll && canHandoffToApz) {
       ApzSmoothScrollTo(mDestination, ScrollMode::Smooth, aParams.mOrigin,
-                        aParams.mTriggeredByScript, std::move(snapTargetIds));
+                        aParams.mTriggeredByScript, std::move(snapTargetIds),
+                        ViewportType::Layout);
       return;
     }
 
@@ -2720,7 +2723,7 @@ void ScrollContainerFrame::ResetDisplayPortExpiryTimer() {
     mDisplayPortExpiryTimer->InitWithNamedFuncCallback(
         RemoveDisplayPortCallback, this,
         StaticPrefs::apz_displayport_expiry_ms(), nsITimer::TYPE_ONE_SHOT,
-        "ScrollContainerFrame::ResetDisplayPortExpiryTimer");
+        "ScrollContainerFrame::ResetDisplayPortExpiryTimer"_ns);
   }
 }
 
@@ -2882,7 +2885,7 @@ void ScrollContainerFrame::ScheduleSyntheticMouseMove() {
 
   mScrollActivityTimer->InitWithNamedFuncCallback(
       ScrollActivityCallback, this, 100, nsITimer::TYPE_ONE_SHOT,
-      "ScrollContainerFrame::ScheduleSyntheticMouseMove");
+      "ScrollContainerFrame::ScheduleSyntheticMouseMove"_ns);
 }
 
 void ScrollContainerFrame::NotifyApproximateFrameVisibilityUpdate(
@@ -3260,6 +3263,7 @@ void ScrollContainerFrame::ScrollToImpl(
       return;
     }
   }
+  PresShell()->UpdateAnchorPosLayoutForScroll(this);
 
   presContext->RecordInteractionTime(
       nsPresContext::InteractionType::ScrollInteraction, TimeStamp::Now());
@@ -3353,12 +3357,13 @@ static void AppendToTop(nsDisplayListBuilder* aBuilder,
     newItem = MakeDisplayItemWithIndex<nsDisplayOwnLayer>(
         aBuilder, aSourceFrame,
         /* aIndex = */ nsDisplayOwnLayer::OwnLayerForScrollbar, aSource, asr,
-        nsDisplayOwnLayerFlags::None, scrollbarData, true, false);
+        nsDisplayItem::ContainerASRType::Constant, nsDisplayOwnLayerFlags::None,
+        scrollbarData, true, false);
   } else {
     // Build the wrap list with an index of 1, since the scrollbar frame itself
     // might have already built an nsDisplayWrapList.
-    newItem = MakeDisplayItemWithIndex<nsDisplayWrapper>(
-        aBuilder, aSourceFrame, 1, aSource, asr, false);
+    newItem = MakeDisplayItemWithIndex<nsDisplayWrapper>(aBuilder, aSourceFrame,
+                                                         1, aSource, false);
   }
   if (!newItem) {
     return;
@@ -3671,7 +3676,7 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
     nsDisplayListBuilder* aBuilder, nsDisplayListCollection& aSet,
     bool aCreateAsyncZoom, bool aCapturedByViewTransition,
     AutoContainsBlendModeCapturer* aAsyncZoomBlendCapture,
-    const nsRect& aAsyncZoomClipRect, nscoord* aRadii) {
+    const nsRect& aAsyncZoomClipRect, const nsRectCornerRadii* aRadii) {
   if (!mIsRoot) {
     return;
   }
@@ -3785,7 +3790,8 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
       nsDisplayItem* blendContainer =
           nsDisplayBlendContainer::CreateForMixBlendMode(
               aBuilder, this, &rootResultList,
-              aBuilder->CurrentActiveScrolledRoot());
+              aBuilder->CurrentActiveScrolledRoot(),
+              nsDisplayItem::ContainerASRType::Constant);
       rootResultList.AppendToTop(blendContainer);
 
       // Blend containers can be created or omitted during partial updates
@@ -3810,7 +3816,7 @@ void ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems(
 
     rootResultList.AppendNewToTop<nsDisplayAsyncZoom>(
         aBuilder, this, &rootResultList, aBuilder->CurrentActiveScrolledRoot(),
-        viewID);
+        nsDisplayItem::ContainerASRType::Constant, viewID);
   }
 
   if (serializedList) {
@@ -4030,7 +4036,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   nsRect clipRect = scrollPortClip;
   // Our override of GetBorderRadii ensures we never have a radius at
   // the corners where we have a scrollbar.
-  nscoord radii[8];
+  nsRectCornerRadii radii;
   const bool haveRadii = GetPaddingBoxBorderRadii(radii);
   if (mIsRoot) {
     clipRect.SizeTo(nsLayoutUtils::CalculateCompositionSizeForFrame(
@@ -4067,10 +4073,10 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
         willBuildAsyncZoomContainer ? scrollPortClip : clipRect;
     if (mIsRoot) {
       clipState.ClipContentDescendants(clipRectForContents,
-                                       haveRadii ? radii : nullptr);
+                                       haveRadii ? &radii : nullptr);
     } else {
       clipState.ClipContainingBlockDescendants(clipRectForContents,
-                                               haveRadii ? radii : nullptr);
+                                               haveRadii ? &radii : nullptr);
     }
 
     Maybe<DisplayListClipState::AutoSaveRestore> contentBoxClipState;
@@ -4261,7 +4267,7 @@ void ScrollContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   MaybeCreateTopLayerAndWrapRootItems(
       aBuilder, set, willBuildAsyncZoomContainer, capturedByViewTransition,
-      &blendCapture, clipRect, haveRadii ? radii : nullptr);
+      &blendCapture, clipRect, haveRadii ? &radii : nullptr);
 
   // We want to call SetContainsNonMinimalDisplayPort if
   // mWillBuildScrollableLayer is true for any reason other than having a
@@ -6682,19 +6688,18 @@ void ScrollContainerFrame::LayoutScrollbars(ScrollReflowInput& aState,
   }
 }
 
-static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nscoord& aXRadius,
-                        nscoord& aYRadius) {
+static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nsSize& aRadius) {
   // In order to ensure that the inside edge of the border has no
   // curvature, we need at least one of its radii to be zero.
-  if (aXRadius <= aXBorder || aYRadius <= aYBorder) {
+  if (aRadius.width <= aXBorder || aRadius.height <= aYBorder) {
     return;
   }
 
   // For any corner where we reduce the radii, preserve the corner's shape.
-  double ratio =
-      std::max(double(aXBorder) / aXRadius, double(aYBorder) / aYRadius);
-  aXRadius *= ratio;
-  aYRadius *= ratio;
+  double ratio = std::max(double(aXBorder) / aRadius.width,
+                          double(aYBorder) / aRadius.height);
+  aRadius.width *= ratio;
+  aRadius.height *= ratio;
 }
 
 /**
@@ -6708,7 +6713,7 @@ static void ReduceRadii(nscoord aXBorder, nscoord aYBorder, nscoord& aXRadius,
 bool ScrollContainerFrame::GetBorderRadii(const nsSize& aFrameSize,
                                           const nsSize& aBorderArea,
                                           Sides aSkipSides,
-                                          nscoord aRadii[8]) const {
+                                          nsRectCornerRadii& aRadii) const {
   if (!nsContainerFrame::GetBorderRadii(aFrameSize, aBorderArea, aSkipSides,
                                         aRadii)) {
     return false;
@@ -6721,25 +6726,17 @@ bool ScrollContainerFrame::GetBorderRadii(const nsSize& aFrameSize,
   nsMargin border = GetUsedBorder();
 
   if (sb.left > 0 || sb.top > 0) {
-    ReduceRadii(border.left, border.top, aRadii[eCornerTopLeftX],
-                aRadii[eCornerTopLeftY]);
+    ReduceRadii(border.left, border.top, aRadii.TopLeft());
   }
-
   if (sb.top > 0 || sb.right > 0) {
-    ReduceRadii(border.right, border.top, aRadii[eCornerTopRightX],
-                aRadii[eCornerTopRightY]);
+    ReduceRadii(border.right, border.top, aRadii.TopRight());
   }
-
   if (sb.right > 0 || sb.bottom > 0) {
-    ReduceRadii(border.right, border.bottom, aRadii[eCornerBottomRightX],
-                aRadii[eCornerBottomRightY]);
+    ReduceRadii(border.right, border.bottom, aRadii.BottomRight());
   }
-
   if (sb.bottom > 0 || sb.left > 0) {
-    ReduceRadii(border.left, border.bottom, aRadii[eCornerBottomLeftX],
-                aRadii[eCornerBottomLeftY]);
+    ReduceRadii(border.left, border.bottom, aRadii.BottomLeft());
   }
-
   return true;
 }
 
@@ -7836,7 +7833,8 @@ void ScrollContainerFrame::AsyncScrollbarDragRejected() {
 void ScrollContainerFrame::ApzSmoothScrollTo(
     const nsPoint& aDestination, ScrollMode aMode, ScrollOrigin aOrigin,
     ScrollTriggeredByScript aTriggeredByScript,
-    UniquePtr<ScrollSnapTargetIds> aSnapTargetIds) {
+    UniquePtr<ScrollSnapTargetIds> aSnapTargetIds,
+    ViewportType aViewportToScroll) {
   if (mApzSmoothScrollDestination == Some(aDestination)) {
     // If we already sent APZ a smooth-scroll request to this
     // destination (i.e. it was the last request
@@ -7859,7 +7857,7 @@ void ScrollContainerFrame::ApzSmoothScrollTo(
   mApzSmoothScrollDestination = Some(aDestination);
   AppendScrollUpdate(ScrollPositionUpdate::NewSmoothScroll(
       aMode, aOrigin, aDestination, aTriggeredByScript,
-      std::move(aSnapTargetIds)));
+      std::move(aSnapTargetIds), aViewportToScroll));
 
   nsIContent* content = GetContent();
   if (!DisplayPortUtils::HasNonMinimalNonZeroDisplayPort(content)) {
@@ -7935,7 +7933,8 @@ bool ScrollContainerFrame::SmoothScrollVisual(
                     aUpdateType == FrameMetrics::eRestore
                         ? ScrollOrigin::Restore
                         : ScrollOrigin::Other,
-                    ScrollTriggeredByScript::No, std::move(snapTargetIds));
+                    ScrollTriggeredByScript::No, std::move(snapTargetIds),
+                    ViewportType::Visual);
   return true;
 }
 

@@ -39,8 +39,8 @@ mozilla::ipc::IPCResult GMPTimerParent::RecvSetTimer(
 
   rv = NS_NewTimerWithFuncCallback(
       getter_AddRefs(ctx->mTimer), &GMPTimerParent::GMPTimerExpired, ctx.get(),
-      aTimeoutMs, nsITimer::TYPE_ONE_SHOT, "gmp::GMPTimerParent::RecvSetTimer",
-      mGMPEventTarget);
+      aTimeoutMs, nsITimer::TYPE_ONE_SHOT,
+      "gmp::GMPTimerParent::RecvSetTimer"_ns, mGMPEventTarget);
   NS_ENSURE_SUCCESS(rv, IPC_OK());
 
   ctx->mId = aTimerId;

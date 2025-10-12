@@ -212,6 +212,12 @@ class MacroAssemblerMIPSShared : public Assembler {
   void moveToFloat32(Register src, FloatRegister dest) { as_mtc1(src, dest); }
   void moveFromFloat32(FloatRegister src, Register dest) { as_mfc1(dest, src); }
 
+  void minMax32(Register lhs, Register rhs, Register dest, bool isMax);
+  void minMax32(Register lhs, Imm32 rhs, Register dest, bool isMax);
+
+  void minMaxPtr(Register lhs, Register rhs, Register dest, bool isMax);
+  void minMaxPtr(Register lhs, ImmWord rhs, Register dest, bool isMax);
+
   // Evaluate srcDest = minmax<isMax>{Float32,Double}(srcDest, other).
   // Handle NaN specially if handleNaN is true.
   void minMaxDouble(FloatRegister srcDest, FloatRegister other, bool handleNaN,

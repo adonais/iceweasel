@@ -59,7 +59,6 @@ void moz_container_wayland_add_or_fire_initial_draw_callback(
     MozContainer* container, const std::function<void(void)>& initial_draw_cb);
 
 wl_surface* moz_gtk_widget_get_wl_surface(GtkWidget* aWidget);
-void moz_container_wayland_update_opaque_region(MozContainer* container);
 gboolean moz_container_wayland_can_draw(MozContainer* container);
 double moz_container_wayland_get_scale(MozContainer* container);
 bool moz_container_wayland_is_waiting_to_show(MozContainer* container);

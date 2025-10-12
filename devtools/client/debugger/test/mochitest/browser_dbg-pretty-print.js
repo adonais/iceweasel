@@ -14,7 +14,7 @@ add_task(async function () {
   await selectSource(dbg, "math.min.js", 2);
   await togglePrettyPrint(dbg);
   is(
-    dbg.selectors.getTabs().length,
+    countTabs(dbg),
     1,
     "After pretty printing there is still only one tab in the reducer store"
   );
@@ -77,7 +77,7 @@ add_task(async function () {
 
   await togglePrettyPrint(dbg);
   is(
-    dbg.selectors.getTabs().length,
+    countTabs(dbg),
     1,
     "After disabling pretty printing, there is still only one tab in the reducer store"
   );

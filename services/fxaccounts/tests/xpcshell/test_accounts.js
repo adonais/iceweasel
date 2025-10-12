@@ -4,7 +4,7 @@
 "use strict";
 
 const { CryptoUtils } = ChromeUtils.importESModule(
-  "resource://services-crypto/utils.sys.mjs"
+  "moz-src:///services/crypto/modules/utils.sys.mjs"
 );
 const { FxAccounts, ERROR_INVALID_ACCOUNT_STATE } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccounts.sys.mjs"

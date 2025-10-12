@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+from webdriver.error import StaleElementReferenceException
 
 URL = "https://es.wallapop.com/search"
 MOBILE_FILTERS_CSS = "walla-button[data-testid=single-access-filters].hydrated"
@@ -11,11 +12,16 @@ async def does_left_slider_work(client):
     await client.navigate(URL)
     client.hide_elements("#onetrust-consent-sdk")
     client.await_css(MOBILE_FILTERS_CSS, is_displayed=True).click()
-    client.await_css(
-        "button",
-        condition="elem.innerText.includes('Precio')",
-        is_displayed=True,
-    ).click()
+    for i in range(5):
+        try:
+            client.await_css(
+                "button",
+                condition="elem.innerText.includes('Precio')",
+                is_displayed=True,
+            ).click()
+            break
+        except StaleElementReferenceException:
+            await client.stall(0.5)
     slider = client.await_css(LEFT_SLIDER_CSS, is_displayed=True)
     await asyncio.sleep(0.5)
 
@@ -40,13 +46,6 @@ async def does_left_slider_work(client):
 
 @pytest.mark.only_platforms("android")
 @pytest.mark.asyncio
-@pytest.mark.with_interventions
-async def test_enabled(client):
-    assert await does_left_slider_work(client)
-
-
-@pytest.mark.only_platforms("android")
-@pytest.mark.asyncio
 @pytest.mark.without_interventions
-async def test_disabled(client):
-    assert not await does_left_slider_work(client)
+async def test_regression(client):
+    assert await does_left_slider_work(client)

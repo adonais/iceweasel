@@ -401,29 +401,6 @@ genai.chatbot:
         type: quantity
         description: Onboarding screen number.
 
-  onboarding_provider_learn:
-    type: event
-    description: >
-      Chatbot onboarding opened provider learn more link.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1911104
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D223938
-    data_sensitivity:
-      - interaction
-    expires: 147
-    notification_emails:
-      - elee@mozilla.com
-    send_in_pings:
-      - events
-    extra_keys:
-      provider:
-        type: string
-        description: Which provider.
-      step:
-        type: quantity
-        description: Onboarding screen number.
-
   onboarding_provider_selection:
     type: event
     description: >

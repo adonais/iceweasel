@@ -23,7 +23,9 @@ registerCleanupFunction(() =>
 
 var { synthesizeDrop, synthesizeMouseAtCenter } = EventUtils;
 
-const kForceOverflowWidthPx = 450;
+// As of bug 1960002, this width no longer technically forces overflow.
+// Instead, use `ensureToolbarOverflow()` below.
+const kForceOverflowWidthPx = 500;
 
 function createDummyXULButton(id, label, win = window) {
   let btn = win.document.createXULElement("toolbarbutton");
@@ -527,4 +529,58 @@ async function hideHistoryPanel(doc = document) {
   let promise = BrowserTestUtils.waitForEvent(historyPanel, "popuphidden");
   historyPanel.hidePopup();
   return promise;
+}
+
+/**
+ * After bug 1960002, setting the window to its min-width is no longer enough
+ * to trigger navbar overflow. So, to keep the overflow tests working, we need
+ * to both change the window width and add more buttons to the navbar.
+ *
+ * Note this helper registers a cleanup function that undoes changes to the
+ * supplied window's width and resets its toolbar state. Be sure to call this
+ * helper before other cleanup functions that might assert on the state of the
+ * window after it is reset.
+ *
+ * Set the shouldCleanup param to false if you don't need to register another
+ * end-of-test cleanup function, for instance, if your test calls
+ * `CustomizableUI.reset()` in the middle of asserts that rely on overflow.
+ *
+ * Returns the original window width in case a test needs to resize the window
+ * before the cleanup function runs.
+ */
+function ensureToolbarOverflow(aWindow, shouldCleanup = true) {
+  const originalWindowWidth = aWindow.outerWidth;
+
+  aWindow.resizeTo(kForceOverflowWidthPx, aWindow.outerHeight);
+  CustomizableUI.addWidgetToArea(
+    "history-panelmenu",
+    CustomizableUI.AREA_NAVBAR,
+    0
+  );
+  CustomizableUI.addWidgetToArea(
+    "email-link-button",
+    CustomizableUI.AREA_NAVBAR,
+    0
+  );
+  CustomizableUI.addWidgetToArea("panic-button", CustomizableUI.AREA_NAVBAR, 0);
+
+  if (shouldCleanup) {
+    registerCleanupFunction(() => {
+      unensureToolbarOverflow(aWindow, originalWindowWidth);
+    });
+  }
+
+  return originalWindowWidth;
+}
+
+/**
+ * Helper function that undoes what `ensureToolbarOverflow` does.
+ */
+function unensureToolbarOverflow(aWindow, originalWindowWidth) {
+  if (originalWindowWidth) {
+    aWindow.resizeTo(originalWindowWidth, aWindow.outerHeight);
+  }
+  CustomizableUI.removeWidgetFromArea("history-panelmenu");
+  CustomizableUI.removeWidgetFromArea("email-link-button");
+  CustomizableUI.removeWidgetFromArea("panic-button");
 }

@@ -856,6 +856,27 @@
       }
     },
 
+    "GenerativeAI": {
+      "type": "object",
+      "properties": {
+        "Chatbot": {
+          "type": "boolean"
+        },
+        "LinkPreviews": {
+          "type": "boolean"
+        },
+        "TabGroups": {
+          "type": "boolean"
+        },
+        "Enabled": {
+          "type": "boolean"
+        },
+        "Locked": {
+          "type": "boolean"
+        }
+      }
+    },
+
     "GoToIntranetSiteForSingleWordEntryInAddressBar": {
       "type": "boolean"
     },
@@ -1621,6 +1642,10 @@
     },
 
     "UseSystemPrintDialog": {
+      "type": "boolean"
+    },
+
+    "VisualSearchEnabled": {
       "type": "boolean"
     },
 

@@ -26,7 +26,7 @@ async function expectFocusAfterKey(aKey, aFocus) {
  */
 add_task(async function test_keyboard_navigation_in_panel() {
   let content = await openPanel({
-    isSignedIn: true,
+    isSignedOut: false,
   });
 
   Assert.ok(

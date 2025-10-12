@@ -282,6 +282,9 @@ select > label {
   overflow: clip;
   pointer-events: none;
   cursor: unset;
+  /* Required for making nsIFrame::PeekOffset treat anonymous content in
+   * <select> as not selectable. */
+  user-select: none;
 }
 
 option[label]::before {

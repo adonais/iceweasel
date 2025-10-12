@@ -2,12 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-@file:OptIn(ExperimentalFoundationApi::class)
-
 package org.mozilla.fenix.onboarding.view
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -72,7 +69,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param onMarketingOptInToggle callback for when the user toggles the opt-in checkbox
  * @param onMarketingDataContinueClick callback for when the user clicks the continue button on the
  * marketing data opt out screen.
- * on the marketing data opt out screen.
  * @param onFinish Invoked when the onboarding is completed.
  * @param onImpression Invoked when a page in the pager is displayed.
  * @param currentIndex callback for when the current horizontal pager page changes

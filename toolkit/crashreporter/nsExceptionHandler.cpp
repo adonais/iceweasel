@@ -286,11 +286,12 @@ static std::terminate_handler oldTerminateHandler = nullptr;
 MOZ_RUNINIT static nsCString childCrashNotifyPipe;
 
 #elif defined(XP_LINUX)
-static int serverSocketFd = -1;
 static int clientSocketFd = -1;
-#  if defined(MOZ_WIDGET_ANDROID)
+#  if !defined(MOZ_WIDGET_ANDROID)
+static int serverSocketFd = -1;
+#  else
 static int crashHelperClientFd = -1;
-#  endif  // defined(MOZ_WIDGET_ANDROID)
+#  endif
 #endif
 
 static void OOPInit();

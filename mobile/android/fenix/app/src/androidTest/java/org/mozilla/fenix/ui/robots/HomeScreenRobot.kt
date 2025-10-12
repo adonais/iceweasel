@@ -35,6 +35,7 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.PositionAssertions.isCompletelyAbove
+import androidx.test.espresso.assertion.PositionAssertions.isPartiallyAbove
 import androidx.test.espresso.assertion.PositionAssertions.isPartiallyBelow
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers
@@ -48,6 +49,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiScrollable
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.Assert.assertTrue
 import org.mozilla.fenix.R
@@ -81,6 +83,8 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_LOGO
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
 import org.mozilla.fenix.home.ui.HomepageTestTag.PRIVATE_BROWSING_HOMEPAGE_BUTTON
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import mozilla.components.browser.menu.R as menuR
+import mozilla.components.ui.tabcounter.R as tabcounterR
 
 /**
  * Implementation of Robot Pattern for the home screen menu.
@@ -139,7 +143,7 @@ class HomeScreenRobot {
     fun verifyTabCounter(numberOfOpenTabs: String) =
         onView(
             allOf(
-                withId(R.id.counter_text),
+                withId(tabcounterR.id.counter_text),
                 withText(numberOfOpenTabs),
                 withEffectiveVisibility(Visibility.VISIBLE),
             ),
@@ -478,6 +482,19 @@ class HomeScreenRobot {
         Log.i(TAG, "verifyAddressBarPosition: Verified toolbar position is set to top: $bottomPosition")
     }
 
+    fun verifyComposableToolbarPosition(bottomPosition: Boolean) {
+        Log.i(TAG, "verifyComposableToolbarPosition: Trying to verify toolbar is set to top: $bottomPosition")
+        onView(withId(R.id.composable_toolbar))
+            .check(
+                if (bottomPosition) {
+                    isPartiallyBelow(withId(R.id.homepageView))
+                } else {
+                    isPartiallyAbove(withId(R.id.homepageView))
+                },
+            )
+        Log.i(TAG, "verifyComposableToolbarPosition: Verified toolbar position is set to top: $bottomPosition")
+    }
+
     fun verifyNavigationToolbarIsSetToTheBottomOfTheHomeScreen() {
         Log.i(TAG, "verifyAddressBarPosition: Trying to verify that the navigation toolbar is set to bottom")
         onView(withId(R.id.navigation_bar)).check(isPartiallyBelow(withId(R.id.homepageView)))
@@ -602,6 +619,16 @@ class HomeScreenRobot {
             return ThreeDotMenuMainRobotCompose.Transition(composeTestRule)
         }
 
+        fun openThreeDotMenuWithComposableToolbar(composeTestRule: ComposeTestRule, interact: ThreeDotMenuMainRobotCompose.() -> Unit): ThreeDotMenuMainRobotCompose.Transition {
+            Log.i(TAG, "openThreeDotMenuWithComposableToolbar: Trying to click main menu button")
+            composeTestRule.onNodeWithContentDescription(getStringResource(R.string.content_description_menu)).performClick()
+            Log.i(TAG, "openThreeDotMenuWithComposableToolbar: Clicked main menu button")
+            assertUIObjectExists(itemWithResId("$packageName:id/design_bottom_sheet"))
+
+            ThreeDotMenuMainRobotCompose(composeTestRule).interact()
+            return ThreeDotMenuMainRobotCompose.Transition(composeTestRule)
+        }
+
         fun openSearch(interact: SearchRobot.() -> Unit): SearchRobot.Transition {
             Log.i(TAG, "openSearch: Waiting for $waitingTime ms for the navigation toolbar to exist")
             navigationToolbar().waitForExists(waitingTime)
@@ -612,6 +639,17 @@ class HomeScreenRobot {
             Log.i(TAG, "openSearch: Waiting for device to be idle")
             mDevice.waitForIdle()
             Log.i(TAG, "openSearch: Device was idle")
+
+            SearchRobot().interact()
+            return SearchRobot.Transition()
+        }
+
+        @OptIn(ExperimentalTestApi::class)
+        fun openSearchWithComposableToolbar(composeTestRule: ComposeTestRule, interact: SearchRobot.() -> Unit): SearchRobot.Transition {
+            composeTestRule.waitUntilAtLeastOneExists(hasTestTag(ADDRESSBAR_URL_BOX), waitingTime)
+            Log.i(TAG, "openSearchWithComposableToolbar: Trying to click navigation toolbar")
+            composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).performClick()
+            Log.i(TAG, "openSearchWithComposableToolbar: Clicked navigation toolbar")
 
             SearchRobot().interact()
             return SearchRobot.Transition()
@@ -936,7 +974,7 @@ private fun tabCounter(numberOfOpenTabs: String) =
 fun deleteFromHistory() =
     onView(
         allOf(
-            withId(R.id.simple_text),
+            withId(menuR.id.simple_text),
             withText(R.string.delete_from_history),
         ),
     ).inRoot(RootMatchers.isPlatformPopup())

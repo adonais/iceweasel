@@ -7,7 +7,6 @@
 package org.mozilla.gecko;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.credentials.CreateCredentialException;
@@ -31,7 +30,6 @@ import org.mozilla.gecko.util.WebAuthnUtils;
 import org.mozilla.geckoview.GeckoResult;
 
 // Credential Manager implementation that is introduced from Android 14.
-@TargetApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 public class WebAuthnCredentialManager {
   private static final String LOGTAG = "WebAuthnCredMan";
   private static final boolean DEBUG = false;
@@ -254,6 +252,10 @@ public class WebAuthnCredentialManager {
           final GeckoBundle assertionBundle,
           final GeckoBundle extensions,
           final byte[] clientDataHash) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      // No credential manager. Relay to GMS FIDO2
+      return GeckoResult.fromValue(null);
+    }
     final Bundle requestBundle =
         getRequestBundleForGetAssertion(
             challenge, allowList, assertionBundle, extensions, clientDataHash);
@@ -335,6 +337,9 @@ public class WebAuthnCredentialManager {
 
   public static GeckoResult<WebAuthnUtils.GetAssertionResponse> getAssertion(
       final PrepareGetCredentialResponse.PendingGetCredentialHandle pendingHandle) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      return GeckoResult.fromException(new WebAuthnUtils.Exception("NOT_SUPPORTED_ERR"));
+    }
     final GeckoResult<WebAuthnUtils.GetAssertionResponse> result = new GeckoResult<>();
     final Context context = GeckoAppShell.getApplicationContext();
     final CredentialManager manager =

@@ -102,6 +102,21 @@ function languageModelNames(languagePairs) {
 }
 
 /**
+ * Loads a new page in the given browser at the given URL.
+ *
+ * @param {object} browser
+ * @param {string} url
+ */
+async function loadNewPage(browser, url) {
+  BrowserTestUtils.startLoadingURIString(browser, url);
+  await BrowserTestUtils.browserLoaded(
+    browser,
+    /* includeSubFrames */ false,
+    url
+  );
+}
+
+/**
  * The mochitest runs in the parent process. This function opens up a new tab,
  * opens up about:translations, and passes the test requirements into the content process.
  *
@@ -188,11 +203,7 @@ async function openAboutTranslations({
   });
 
   // Now load the about:translations page, since the actor could be mocked.
-  BrowserTestUtils.startLoadingURIString(
-    tab.linkedBrowser,
-    "about:translations"
-  );
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await loadNewPage(tab.linkedBrowser, "about:translations");
 
   /**
    * @param {number} count - Count of the language pairs expected.
@@ -1447,8 +1458,7 @@ async function loadTestPage({
     // We cannot access the TranslationsParent actor on BLANK_PAGE because the
     // data scheme is disallowed for the TranslationsParent actor, so we will load
     // our blank https:// page to ensure that the actor has registered its findBar.
-    BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, BLANK_PAGE_URL);
-    await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+    await loadNewPage(tab.linkedBrowser, BLANK_PAGE_URL);
 
     const actor = getTranslationsParent(win);
     await waitForCondition(
@@ -1457,8 +1467,7 @@ async function loadTestPage({
     );
   }
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, page);
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await loadNewPage(tab.linkedBrowser, page);
 
   if (autoOffer && TranslationsParent.shouldAlwaysOfferTranslations()) {
     info("Waiting for the popup to be automatically shown.");
@@ -2226,11 +2235,7 @@ async function setupAboutPreferences(
     languagePairs,
   });
 
-  BrowserTestUtils.startLoadingURIString(
-    tab.linkedBrowser,
-    "about:preferences"
-  );
-  await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+  await loadNewPage(tab.linkedBrowser, "about:preferences");
 
   const elements = await selectAboutPreferencesElements();
 
@@ -2726,8 +2731,7 @@ function promiseLoadSubDialog(aURL) {
  * unintentional state left over from test case.
  */
 async function loadBlankPage() {
-  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, BLANK_PAGE);
-  await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+  await loadNewPage(gBrowser.selectedBrowser, BLANK_PAGE);
 }
 
 /**

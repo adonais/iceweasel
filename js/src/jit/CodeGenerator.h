@@ -98,8 +98,7 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                                   size_t trapExitLayoutNumWords,
                                   wasm::FuncOffsets* offsets,
                                   wasm::StackMaps* stackMaps,
-                                  wasm::Decoder* decoder,
-                                  jit::IonPerfSpewer* spewer);
+                                  wasm::Decoder* decoder);
 
   [[nodiscard]] bool link(JSContext* cx);
 
@@ -410,8 +409,6 @@ class CodeGenerator final : public CodeGeneratorSpecific {
 
   // Script counts created during code generation.
   IonScriptCounts* scriptCounts_;
-
-  IonPerfSpewer perfSpewer_;
 
   // Total Ion compilation time.
   mozilla::TimeDuration compileTime_;

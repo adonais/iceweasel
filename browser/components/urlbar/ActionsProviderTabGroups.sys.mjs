@@ -38,7 +38,11 @@ class ProviderTabGroups extends ActionsProvider {
   }
 
   async queryActions(queryContext) {
-    let window = lazy.BrowserWindowTracker.getTopWindow();
+    // We need a non-private window here to call gBrowser.getAllTabGroups()
+    // on, and it's OK if it's not on the current workspace.
+    let window = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
     if (!window) {
       // We're likely running xpcshell tests if this happens in automation.
       if (!Cu.isInAutomation) {

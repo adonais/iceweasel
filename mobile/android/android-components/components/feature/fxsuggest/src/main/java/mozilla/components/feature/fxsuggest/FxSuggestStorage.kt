@@ -17,6 +17,7 @@ import mozilla.appservices.suggest.SuggestStore
 import mozilla.appservices.suggest.SuggestStoreBuilder
 import mozilla.appservices.suggest.Suggestion
 import mozilla.appservices.suggest.SuggestionQuery
+import mozilla.components.feature.fxsuggest.facts.emitSuggestionQueryCountFact
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.remotesettings.RemoteSettingsService
 
@@ -58,7 +59,11 @@ class FxSuggestStorage(
     suspend fun query(query: SuggestionQuery): List<Suggestion> =
         withContext(readScope.coroutineContext) {
             handleSuggestExceptions("query", emptyList()) {
-                store.value.query(query)
+                val result = store.value.query(query)
+                if (result.isNotEmpty()) {
+                    emitSuggestionQueryCountFact(queryCount = result.size)
+                }
+                result
             }
         }
 

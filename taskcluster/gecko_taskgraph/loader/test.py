@@ -5,9 +5,12 @@
 
 import logging
 
+from mozbuild.util import memoize
 from taskgraph.loader.transform import loader as transform_loader
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.yaml import load_yaml
+
+from gecko_taskgraph import TEST_CONFIGS
 
 logger = logging.getLogger(__name__)
 
@@ -25,14 +28,14 @@ def loader(kind, path, config, params, loaded_tasks):
     )
 
     # get the test platforms for those build tasks
-    test_platforms_cfg = load_yaml(path, "test-platforms.yml")
+    test_platforms_cfg = load_yaml(TEST_CONFIGS, "test-platforms.yml")
     test_platforms = get_test_platforms(
         test_platforms_cfg, builds_by_platform, signed_builds_by_platform
     )
 
     # expand the test sets for each of those platforms
-    test_sets_cfg = load_yaml(path, "test-sets.yml")
-    test_platforms = expand_tests(test_sets_cfg, test_platforms)
+    test_sets_cfg = load_yaml(TEST_CONFIGS, "test-sets.yml")
+    test_platforms = expand_tests(test_sets_cfg, test_platforms, kind)
 
     # load the test descriptions
     tests = transform_loader(kind, path, config, params, loaded_tasks)
@@ -116,7 +119,27 @@ def get_test_platforms(
     return test_platforms
 
 
-def expand_tests(test_sets_cfg, test_platforms):
+PREFIX_BY_KIND = {
+    "mochitest": {"mochitest"},
+}
+
+
+@memoize
+def is_test_for_kind(test_name, kind):
+    if kind == "test":
+        # the test kind is special: we assume that it should contain any tests
+        # that aren't included in an explicitly listed `kind`.
+        # if/when the `test` kind goes away, this block should go away too
+        for prefixes in PREFIX_BY_KIND.values():
+            if any([test_name.startswith(prefix) for prefix in prefixes]):
+                return False
+        return True
+    else:
+        test_set_prefixes = PREFIX_BY_KIND[kind]
+        return any([test_name.startswith(prefix) for prefix in test_set_prefixes])
+
+
+def expand_tests(test_sets_cfg, test_platforms, kind):
     """Expand the test sets in `test_platforms` out to sets of test names.
     Returns a dictionary like `get_test_platforms`, with an additional
     `test-names` key for each test platform, containing a set of test
@@ -132,7 +155,15 @@ def expand_tests(test_sets_cfg, test_platforms):
             )
         test_names = set()
         for test_set in test_sets:
-            test_names.update(test_sets_cfg[test_set])
+            for test_name in test_sets_cfg[test_set]:
+                # test_sets contains groups of test suites that we commonly
+                # run together. these tests are defined across more than one
+                # `kind`, which means we may only have a subset of them when
+                # this is called for any given kind. any tests that are
+                # relevant to the given kind will be included; all others will
+                # be skipped over.
+                if is_test_for_kind(test_name, kind):
+                    test_names.add(test_name)
         rv[test_platform] = cfg.copy()
         rv[test_platform]["test-names"] = test_names
     return rv

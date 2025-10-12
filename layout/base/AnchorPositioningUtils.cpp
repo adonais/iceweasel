@@ -18,16 +18,78 @@
 #include "nsINode.h"
 #include "nsLayoutUtils.h"
 #include "nsPlaceholderFrame.h"
+#include "nsStyleStruct.h"
 #include "nsTArray.h"
 
 namespace mozilla {
 
 namespace {
 
-bool IsAnchorInScopeForPositionedElement(
-    const nsIFrame* /* aPossibleAnchorFrame */,
-    const nsIFrame* /* aPositionedFrame */) {
-  return true;  // TODO: Implement this check. For now, always in scope.
+/**
+ * Checks for the implementation of `anchor-scope`:
+ * https://drafts.csswg.org/css-anchor-position-1/#anchor-scope
+ *
+ * TODO: Consider caching the ancestors, see bug 1986347
+ */
+bool IsAnchorInScopeForPositionedElement(const nsAtom* aName,
+                                         const nsIFrame* aPossibleAnchorFrame,
+                                         const nsIFrame* aPositionedFrame) {
+  // We don't need to look beyond positioned element's containing block.
+  const auto* positionedContainingBlockContent =
+      aPositionedFrame->GetParent()->GetContent();
+
+  auto getAnchorPosNearestScope =
+      [&positionedContainingBlockContent](
+          const nsAtom* aName, const nsIFrame* aFrame) -> const nsIContent* {
+    // We need to traverse the DOM, not the frame tree, since `anchor-scope`
+    // may be present on elements with `display: contents` (in which case its
+    // frame is in the `::before` list and won't be found by walking the frame
+    // tree parent chain).
+    for (const nsIContent* cp = aFrame->GetContent();
+         cp && cp != positionedContainingBlockContent;
+         cp = cp->GetFlattenedTreeParentElementForStyle()) {
+      // TODO: The case when no frame is generated needs to be
+      // handled, e.g. `display: contents`, see bug 1987086.
+      const nsIFrame* f = cp->GetPrimaryFrame();
+      if (!f) {
+        continue;
+      }
+
+      const StyleAnchorScope& anchorScope = f->StyleDisplay()->mAnchorScope;
+      if (anchorScope.IsNone()) {
+        continue;
+      }
+
+      if (anchorScope.IsAll()) {
+        return cp;
+      }
+
+      MOZ_ASSERT(anchorScope.IsIdents());
+      for (const StyleAtom& ident : anchorScope.AsIdents().AsSpan()) {
+        const auto* id = ident.AsAtom();
+        if (aName->Equals(id->GetUTF16String(), id->GetLength())) {
+          return cp;
+        }
+      }
+    }
+
+    return nullptr;
+  };
+
+  const nsIContent* nearestScopeForAnchor =
+      getAnchorPosNearestScope(aName, aPossibleAnchorFrame);
+  const nsIContent* nearestScopeForPositioned =
+      getAnchorPosNearestScope(aName, aPositionedFrame);
+  if (!nearestScopeForAnchor) {
+    // Anchor is not scoped and positioned element also should
+    // not be gated by a scope.
+    return !nearestScopeForPositioned ||
+           aPossibleAnchorFrame->GetContent() == nearestScopeForPositioned;
+  }
+
+  // There may not be any other scopes between the positioned element
+  // and the nearest scope of the anchor.
+  return nearestScopeForAnchor == nearestScopeForPositioned;
 };
 
 bool IsFullyStyleableTreeAbidingOrNotPseudoElement(const nsIFrame* aFrame) {
@@ -101,8 +163,14 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
   // Note: The containing block of an absolutely positioned element
   // is just the parent frame.
   const nsIFrame* positionedContainingBlock = aPositionedFrame->GetParent();
-  const nsIFrame* anchorContainingBlock =
-      aPossibleAnchorFrame->GetContainingBlock();
+  // Note(dshin, bug 1985654): Spec strictly uses the term "containing block,"
+  // corresponding to `GetContainingBlock()`. However, this leads to cases
+  // where an anchor's non-inline containing block prevents it from being a
+  // valid anchor for a absolutely positioned element (Which can explicitly
+  // have inline elements as a containing block). Some WPT rely on inline
+  // containing blocks as well.
+  // See also: https://github.com/w3c/csswg-drafts/issues/12674
+  const nsIFrame* anchorContainingBlock = aPossibleAnchorFrame->GetParent();
 
   // 2. Both elements are in the same top layer but have different
   // containing blocks and positioned el's containing block is an
@@ -121,7 +189,7 @@ bool IsAnchorLaidOutStrictlyBeforeElement(
          &positionedContainingBlock]() -> bool {
       const nsIFrame* it = anchorContainingBlock;
       while (it) {
-        const nsIFrame* parentContainingBlock = it->GetContainingBlock();
+        const nsIFrame* parentContainingBlock = it->GetParent();
         if (!parentContainingBlock) {
           return false;
         }
@@ -243,7 +311,8 @@ struct LazyAncestorHolder {
 };
 
 bool IsAcceptableAnchorElement(
-    const nsIFrame* aPossibleAnchorFrame, const nsIFrame* aPositionedFrame,
+    const nsIFrame* aPossibleAnchorFrame, const nsAtom* aName,
+    const nsIFrame* aPositionedFrame,
     LazyAncestorHolder& aPositionedFrameAncestorHolder) {
   MOZ_ASSERT(aPossibleAnchorFrame);
   MOZ_ASSERT(aPositionedFrame);
@@ -262,11 +331,11 @@ bool IsAcceptableAnchorElement(
   // used by the spec is taken to mean
   // "either not a pseudo-element or a pseudo-element of a specific kind".
   return (IsFullyStyleableTreeAbidingOrNotPseudoElement(aPossibleAnchorFrame) &&
-          IsAnchorInScopeForPositionedElement(aPossibleAnchorFrame,
-                                              aPositionedFrame) &&
           IsAnchorLaidOutStrictlyBeforeElement(
               aPossibleAnchorFrame, aPositionedFrame,
               aPositionedFrameAncestorHolder.GetAncestors()) &&
+          IsAnchorInScopeForPositionedElement(aName, aPossibleAnchorFrame,
+                                              aPositionedFrame) &&
           IsPositionedElementAlsoSkippedWhenAnchorIsSkipped(
               aPossibleAnchorFrame, aPositionedFrame));
 }
@@ -274,13 +343,13 @@ bool IsAcceptableAnchorElement(
 }  // namespace
 
 nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
-    const nsIFrame* aPositionedFrame,
+    const nsAtom* aName, const nsIFrame* aPositionedFrame,
     const nsTArray<nsIFrame*>& aPossibleAnchorFrames) {
   LazyAncestorHolder positionedFrameAncestorHolder(aPositionedFrame);
   for (auto it = aPossibleAnchorFrames.rbegin();
        it != aPossibleAnchorFrames.rend(); ++it) {
     // Check if the possible anchor is an acceptable anchor element.
-    if (IsAcceptableAnchorElement(*it, aPositionedFrame,
+    if (IsAcceptableAnchorElement(*it, aName, aPositionedFrame,
                                   positionedFrameAncestorHolder)) {
       return *it;
     }
@@ -288,6 +357,80 @@ nsIFrame* AnchorPositioningUtils::FindFirstAcceptableAnchor(
 
   // If we reach here, we didn't find any acceptable anchor.
   return nullptr;
+}
+
+// Find the aContainer's child that is the ancestor of aDescendant.
+static const nsIFrame* TraverseUpToContainerChild(const nsIFrame* aContainer,
+                                                  const nsIFrame* aDescendant) {
+  const auto* current = aDescendant;
+  while (true) {
+    const auto* parent = current->GetParent();
+    if (!parent) {
+      return nullptr;
+    }
+    if (parent == aContainer) {
+      return current;
+    }
+    current = parent;
+  }
+}
+
+Maybe<AnchorPosInfo> AnchorPositioningUtils::GetAnchorPosRect(
+    const nsIFrame* aAbsoluteContainingBlock, const nsIFrame* aAnchor,
+    bool aCBRectIsvalid,
+    Maybe<AnchorPosResolutionData>* aReferencedAnchorsEntry) {
+  auto rect = [&]() -> Maybe<nsRect> {
+    if (aCBRectIsvalid) {
+      const nsRect result = aAnchor->GetRectRelativeToSelf();
+      const auto offset = aAnchor->GetOffsetTo(aAbsoluteContainingBlock);
+      // Easy, just use the existing function.
+      return Some(result + offset);
+    }
+
+    // Ok, containing block doesn't have its rect fully resolved. Figure out
+    // rect relative to the child of containing block that is also the ancestor
+    // of the anchor, and manually compute the offset.
+    // TODO(dshin): This wouldn't handle anchor in a previous top layer.
+    const auto* containerChild =
+        TraverseUpToContainerChild(aAbsoluteContainingBlock, aAnchor);
+    if (!containerChild) {
+      return Nothing{};
+    }
+
+    if (aAnchor == containerChild) {
+      // Anchor is the direct child of anchor's CBWM.
+      return Some(aAnchor->GetRect());
+    }
+
+    // TODO(dshin): Already traversed up to find `containerChild`, and we're
+    // going to do it again here, which feels a little wasteful.
+    const nsRect rectToContainerChild = aAnchor->GetRectRelativeToSelf();
+    const auto offset = aAnchor->GetOffsetTo(containerChild);
+    return Some(rectToContainerChild + offset + containerChild->GetPosition());
+  }();
+  return rect.map([&](const nsRect& aRect) {
+    // We need to position the border box of the anchor within the abspos
+    // containing block's size - So the rectangle's size (i.e. Anchor size)
+    // stays the same, while "the outer rectangle" (i.e. The abspos cb size)
+    // "shrinks" by shifting the position.
+    const auto border = aAbsoluteContainingBlock->GetUsedBorder();
+    const nsPoint borderTopLeft{border.left, border.top};
+    const auto rect = aRect - borderTopLeft;
+    if (aReferencedAnchorsEntry) {
+      // If a partially resolved entry exists, make sure that it matches what we
+      // have now.
+      MOZ_ASSERT_IF(*aReferencedAnchorsEntry,
+                    aReferencedAnchorsEntry->ref().mSize == rect.Size());
+      *aReferencedAnchorsEntry = Some(AnchorPosResolutionData{
+          rect.Size(),
+          Some(rect.TopLeft()),
+      });
+    }
+    return AnchorPosInfo{
+        .mRect = rect,
+        .mContainingBlock = aAbsoluteContainingBlock,
+    };
+  });
 }
 
 }  // namespace mozilla

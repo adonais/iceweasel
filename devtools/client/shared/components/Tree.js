@@ -9,6 +9,10 @@ const { Component, createFactory } = React;
 const dom = require("resource://devtools/client/shared/vendor/react-dom-factories.js");
 const PropTypes = require("resource://devtools/client/shared/vendor/react-prop-types.mjs");
 
+const { scrollIntoView } = ChromeUtils.importESModule(
+  "resource://devtools/client/shared/scroll.mjs"
+);
+
 // Localized strings for (devtools/client/locales/en-US/components.properties)
 loader.lazyGetter(this, "L10N_COMPONENTS", function () {
   const { LocalizationHelper } = require("resource://devtools/shared/l10n.js");
@@ -727,9 +731,10 @@ class Tree extends Component {
    *
    * @param {Object|undefined} options
    *        An options object which can contain:
-   *          - dir: "up" or "down" to indicate if we should scroll the element
+   *          - alignTo: "up" or "down" to indicate if we should scroll the element
    *                 to the top or the bottom of the scrollable container when
    *                 the element is off canvas.
+   *          - preventAutoScroll: boolean, avoid scrolling automatically
    */
   _focus(item, options = {}) {
     const { preventAutoScroll } = options;
@@ -770,45 +775,20 @@ class Tree extends Component {
    *
    * @param {Object|undefined} options
    *        An options object which can contain:
-   *          - dir: "up" or "down" to indicate if we should scroll the element
+   *          - alignTo: "up" or "down" to indicate if we should scroll the element
    *                 to the top or the bottom of the scrollable container when
    *                 the element is off canvas.
    */
   _scrollNodeIntoView(item, options = {}) {
-    if (item !== undefined) {
-      const treeElement = this.treeRef.current;
-      const doc = treeElement && treeElement.ownerDocument;
-      const element = doc.getElementById(this.props.getKey(item));
+    if (!item) {
+      return;
+    }
+    const treeElement = this.treeRef.current;
+    const doc = treeElement && treeElement.ownerDocument;
+    const element = doc.getElementById(this.props.getKey(item));
 
-      if (element) {
-        const { top, bottom } = element.getBoundingClientRect();
-        const closestScrolledParent = node => {
-          if (node == null) {
-            return null;
-          }
-
-          if (node.scrollHeight > node.clientHeight) {
-            return node;
-          }
-          return closestScrolledParent(node.parentNode);
-        };
-        const scrolledParent = closestScrolledParent(treeElement);
-        const scrolledParentRect = scrolledParent
-          ? scrolledParent.getBoundingClientRect()
-          : null;
-        const isVisible =
-          !scrolledParent ||
-          (top >= scrolledParentRect.top &&
-            bottom <= scrolledParentRect.bottom);
-
-        if (!isVisible) {
-          const { alignTo } = options;
-          const scrollToTop = alignTo
-            ? alignTo === "top"
-            : !scrolledParentRect || top < scrolledParentRect.top;
-          element.scrollIntoView(scrollToTop);
-        }
-      }
+    if (element) {
+      scrollIntoView(element, options);
     }
   }
 

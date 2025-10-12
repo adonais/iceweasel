@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">ٻیاں آپشناں</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">نجی براؤزنگ فعال کرو</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">نجی براؤزنگ غیرفعال کرو</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">نجی براؤزنگ</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">ڳولو یا پتہ درج کرو</string>
@@ -257,8 +253,6 @@
   <string name="browser_menu_new_private_tab">نویں نجی ٹیب</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">پاس ورڈز</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">موبائل سائٹ تے سوئچ کرو</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
   <string name="browser_main_menu_content_description_help_button">مدد</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
@@ -331,10 +325,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">تہاݙے ٹیب ہم وقت تھیندے پئے ہن۔ آپݨی ݙوجھی ڈیوائس تے اتھاہوں شروع کرو جتھ تساں چھوڑیا ہائی۔</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">بند کرو</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -557,7 +549,7 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">تخصیص کرو</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">ٹیباں، نشانیاں، پاس ورڈ تے ٻیا ٻہوں کجھ ہم وقت کرݨ کیتے سائن ان تھیوو۔</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">ٹیباں، نشانیاں، پاس ورڈ تے ٻیا ٻہوں کجھ ہم وقت کرݨ کیتے سائن ان تھیوو۔</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Mozilla کھاتہ</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -816,7 +808,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">آپݨا ڈیٹا ہم وقت کرو تے محفوظ کرو</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">آپݨا ڈیٹا ہم وقت کرو تے محفوظ کرو</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">ولدا کنکٹ کرݨ کیتے سائن ان تھیوو</string>
   <!-- Preference for removing FxA account -->
@@ -1054,9 +1046,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">تاریخ مٹاؤ</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">تاریخ مٹ ڳئی</string>
+  <string name="history_delete_multiple_items_snackbar">تاریخ مٹ ڳئی</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s مٹ ڳیا</string>
+  <string name="history_delete_single_item_snackbar">%1$s مٹ ڳیا</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">مٹاؤ</string>
   <!--
@@ -1091,8 +1083,6 @@
   <string name="webcompat_reporter_label_url">یوآرایل</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">براہ مہربانی ٹھیک URL درج کرو۔</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">وجہ چݨو</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description">مسئلہ دی وضاحت کرو (اختیاری)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
@@ -1115,8 +1105,6 @@
   <string name="tab_crash_close">ٹیب بند کرو</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">ٹیب بحال کرو</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s دوبارہ شروع کرݨاں پیا</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">کریش رپورٹاں خودکار بھیڄو</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
@@ -1353,12 +1341,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ٹیب چُݨیج ڳئی</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ٹیباں محفوظ تھی ڳیاں!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">مجموعہ محفوظ تھی ڳیا!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">مجموعہ محفوظ تھی ڳیا!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">ٹیب محفوظ تھی ڳئی!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">ٹیب محفوظ تھی ڳئی!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">بند کرو</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1405,7 +1391,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">ہم وقت کرݨ کیتے سائن ان تھیوو</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">ڈیٹا ہم وقت کرو تے محفوظ کرو</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">ڈیٹا ہم وقت کرو تے محفوظ کرو</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ساریاں ڈیوائساں تے بھیڄو</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1517,8 +1503,6 @@
   <string name="tab_collection_dialog_message">بھلا تہاکوں پک ہے جو تساں %1$s مٹاوݨ چاہندے ہو؟</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">مٹاؤ</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">یوآرایل نقل تھی ڳیا</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">ایہ نمونے دی عبارت ہے۔ ایہ ایہ ݙکھیندی ہے جو ترتیباں وچ سائز گھٹیسوں یا ودھیسوں تاں عبارت کین٘ویں نظرسی۔</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1605,9 +1589,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">ٹیباں بھیڄ ݙٹیاں ڳیاں!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">ٹیباں بھیڄ ݙٹیاں ڳیاں!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">ٹیب بھیڄ ݙتی ڳئی!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">ٹیب بھیڄ ݙتی ڳئی!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">بھیڄݨ وچ ناکام</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2042,12 +2026,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">ڳولݨ تن٘د درج کرو</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">پڑتال کرو جو ڳولݨ تند مثال دے نمونے مطابق ہے</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s بݨ ڳیا</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">محفوظ %s</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">مٹ ڳیا %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">ایں کوں اجازت ݙیوݨ کیتے:</string>
   <!-- First step for the allowing a permission -->

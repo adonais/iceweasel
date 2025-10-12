@@ -56,7 +56,7 @@ NS_QUERYFRAME_TAIL_INHERITING(SVGPaintServerFrame)
 
 nsresult SVGPatternFrame::AttributeChanged(int32_t aNameSpaceID,
                                            nsAtom* aAttribute,
-                                           int32_t aModType) {
+                                           AttrModType aModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
       (aAttribute == nsGkAtoms::patternUnits ||
        aAttribute == nsGkAtoms::patternContentUnits ||

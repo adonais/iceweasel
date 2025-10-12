@@ -59,6 +59,7 @@ class NetworkEventOwner {
   hasRawHeaders = false;
   hasResponseCache = false;
   hasResponseContent = false;
+  hasResponseContentComplete = false;
   hasResponseStart = false;
   hasSecurityInfo = false;
   hasServerTimings = false;
@@ -77,6 +78,9 @@ class NetworkEventOwner {
   }
   addResponseContent() {
     this.hasResponseContent = true;
+  }
+  addResponseContentComplete() {
+    this.hasResponseContentComplete = true;
   }
   addResponseStart() {
     this.hasResponseStart = true;
@@ -139,7 +143,7 @@ async function waitForNetworkEvents(expectedUrl = null, expectedRequestsCount) {
  * a network event.
  */
 class ResponseContentOwner extends NetworkEventOwner {
-  addResponseContent(response, { truncated }) {
+  addResponseContent(response) {
     super.addResponseContent();
     this.compressionEncodings = response.compressionEncodings;
     this.contentCharset = response.contentCharset;
@@ -149,6 +153,10 @@ class ResponseContentOwner extends NetworkEventOwner {
     this.encoding = response.encoding;
     this.isContentEncoded = response.isContentEncoded;
     this.text = response.text;
+  }
+
+  addResponseContentComplete({ truncated }) {
+    super.addResponseContentComplete();
     this.truncated = truncated;
   }
 

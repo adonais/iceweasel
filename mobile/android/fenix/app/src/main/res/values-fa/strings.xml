@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">گزینه‌های بیشتر</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">فعال کردن حالت خصوصی</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">غیرفعال کردن حالت مرور خصوصی</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">مرور ناشناس</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">جست‌وجو یا ورود نشانی</string>
@@ -48,6 +44,8 @@
   <string name="tab_tray_close_multiselect_content_description">از حالت چند انتخابی خارج شوید</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">ذخیره‌سازی زبانه‌های انتخاب شده داخل مجموعه</string>
+  <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
+  <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">ورود</string>
   <!--
     Home - Bookmarks
 
@@ -279,10 +277,6 @@
   <string name="browser_menu_new_private_tab">زبانه خصوصی جدید</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">گذرواژه‌ها</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">تغییر به حالت موبایل</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">بستن برگه منوی اصلی</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">بستن منو</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
@@ -301,6 +295,8 @@
   <string name="browser_menu_bookmark_this_page_2">نشانک‌گذاری صفحه</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">ویرایش نشانک</string>
+  <!-- Browser menu label that the saves the currently visited page as a PDF -->
+  <string name="browser_menu_save_as_pdf_2">ذخیره به صورت PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">ترجمه صفحه</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -314,6 +310,8 @@
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="browser_menu_delete_browsing_data_on_quit">خروج از %1$s</string>
+  <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
+  <string name="browser_menu_recommended_extensions_content_description">اطلاعات بیشتر</string>
   <!--
     Menu "contextual feature recommendation" (CFR)
 
@@ -392,10 +390,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">زبانه‌هایتان در حال همگام‌سازی‌اند! جایی که در افزاره‌ای دیگر رها کرده‌اید را پی بگیرید.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">بستن</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -496,6 +492,14 @@
   <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">برای کمک به بهبود مرورگر، Firefox داده‌های تشخیصی و تعاملات را به Mozilla ارسال می‌کند. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">مدیریت</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
+  <string name="onboarding_redesign_tou_body_three_link_text">مدیریت تنظیمات</string>
+  <!-- Terms of use (ToU) onboarding page continue button label. -->
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label">ادامه</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">ادامه</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">تایید</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">به ما در رشد Firefox کمک کنید</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -626,8 +630,7 @@
   <string name="preferences_https_only_title">حالت فقط-Https</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">استفاده از قفل صفحه برای پنهان کردن زبانه‌ها در مرور خصوصی</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">زبانه‌ها را با اثر انگشت، پین یا بازگشایی با چهره مشاهده‌ کنید.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">زبانه‌ها را با اثر انگشت، پین یا بازگشایی با چهره مشاهده‌ کنید.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">مسدودکننده برنمای کلوچک</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -701,7 +704,7 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">سفارشی‌سازی</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">برای همگام‌سازی زبانه‌ها، نشانک‌ها، گذرواژه‌ها و… وارد شوید.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">برای همگام‌سازی زبانه‌ها، نشانک‌ها، گذرواژه‌ها و… وارد شوید.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">حساب کاربری Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -770,6 +773,8 @@
   <string name="preferences_open_links_in_apps_ask">پرسش پیش از گشودن</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">هرگز</string>
+  <!-- Preference for downloads -->
+  <string name="preferences_downloads">بارگیری‌ها</string>
   <!-- Preference for enabling gecko engine logs -->
   <string name="preferences_enable_gecko_logs">به کار انداختن گزارش‌ها گکو</string>
   <!-- Message to indicate users that we are quitting the application to apply the changes -->
@@ -794,6 +799,10 @@
   <string name="addons_permissions_allow_for_all_sites_subtitle">اگر به این افزونه اعتماد دارید، می‌توانید به آن در هر وبگاه‌ی اجازه دسترسی بدهید.</string>
   <!-- The text shown when an extension does not require permissions -->
   <string name="addons_does_not_require_permissions">این افزونه نیازی به مجوز ندارد.</string>
+  <!-- The description of data collection permissions listed in the addon's permissions screen.  %1$s is a formatted list of permissions. -->
+  <string name="addons_permissions_required_data_collection_description_2">این افزونه به گفته توسعه‌دهنده، داده‌های زیر را جمع‌آوری می‌کند: %1$s</string>
+  <!-- The description of the "none" data collection permission, when the extension doesn't collect anything according to the developer. -->
+  <string name="addons_permissions_none_required_data_collection_description">توسعه‌دهنده اعلام کرده است که این افزونه نیازی به جمع‌آوری داده ندارد.</string>
   <!--
     Add-on Preferences
 
@@ -1011,10 +1020,6 @@
   <string name="preferences_daily_usage_ping_title">پینگ استفاده روزانه</string>
   <string name="preferences_daily_usage_ping_description">این به Mozilla کمک می‌کند تا کاربران فعال را تخمین بزند.</string>
   <string name="preferences_daily_usage_ping_learn_more">بیشتر درباره پینگ استفاده روزانه بدانید</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">به‌صورت خودکار گزارشات خرابی ارسال کنید</string>
-  <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">این به ما کمک می‌کند تا مشکلات مرورگر را تشخیص داده و رفع کنیم. گزارش‌ها ممکن است شامل داده‌های شخصی یا حساس باشند.</string>
   <!-- Preference switch for campaign measurement data (marketing data) collection -->
   <string name="preferences_marketing_data_2">داده‌های اندازه‌گیری کمپین</string>
   <!--
@@ -1024,8 +1029,6 @@
   <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">نحوه کشف Firefox و استفاده از آن را با شرکای فناوری بازاریابی Mozilla هم‌رسانی کنید.</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">بیشتر درباره داده‌های بازاریابی بدانید</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">بیشتر درباره گزارشات خرابی بدانید</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">مطالعات</string>
   <!-- Summary for studies preferences -->
@@ -1035,7 +1038,9 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">همگام‌سازی و ذخیرهٔ داده‌های شما</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">همگام‌سازی و ذخیرهٔ داده‌های شما</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">ورود</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">برای اتصال مجدد وارد شوید</string>
   <!-- Preference for removing FxA account -->
@@ -1168,6 +1173,8 @@
   <string name="close_tabs_after_one_month">بعد از یک ماه</string>
   <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">بستن خودکار زبانه‌های باز</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">بستن</string>
   <!--
     Opening screen
 
@@ -1232,6 +1239,10 @@
   <string name="tabs_header_normal_tabs_title">زبانه‌ها</string>
   <!-- Text for the tabs header synced tabs -->
   <string name="tabs_header_synced_tabs_title">همگام‌سازی</string>
+  <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
+  <string name="tab_manager_floating_action_button_new_normal_tab">زبانه جدید</string>
+  <!-- Text for the new tab button in the Tab Manager to indicate opening a new private tab -->
+  <string name="tab_manager_floating_action_button_new_private_tab">زبانه خصوصی جدید</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_tab">افزودن زبانه</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
@@ -1256,6 +1267,10 @@
   <string name="tab_tray_multiselect_menu_item_bookmark">نشانک‌گذاری</string>
   <!-- Text shown in the multiselect menu for closing selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_close">بستن</string>
+  <!-- Text shown in the multiselect menu for sharing selected tabs. -->
+  <string name="tab_manager_multiselect_menu_item_share">هم‌رسانی</string>
+  <!-- Text shown in the multiselect menu for adding selected tabs to collections. -->
+  <string name="tab_manager_multiselect_menu_item_add_to_collection">افزودن به مجموعه</string>
   <!-- Content description for tabs tray multiselect share button -->
   <string name="tab_tray_multiselect_share_content_description">هم‌رسانی زبانه‌های انتخاب شده</string>
   <!-- Content description for tabs tray multiselect menu -->
@@ -1297,9 +1312,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">حذف تاریخچه</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">تاریخچه حذف شد.</string>
+  <string name="history_delete_multiple_items_snackbar">تاریخچه حذف شد.</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$sحذف شد</string>
+  <string name="history_delete_single_item_snackbar">%1$sحذف شد</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">حذف</string>
   <!--
@@ -1433,16 +1448,12 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">گزارش خرابی وبگاه</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">به بهتر شدن %1$s برای همه کمک کنید. کارکنان Mozilla از اطلاعاتی که ارسال می‌کنید برای رفع مشکلات وبگاه استفاده می‌کنند.</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
   <string name="webcompat_reporter_label_url">نشانی اینترنتی</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">لطفا یک نشانی اینترنتی معتبر وارد کنید</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">چه مشکلی پیش آمده است؟</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">انتخاب دلیل</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_error">لطفا یک دلیل انتخاب کنید</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
@@ -1454,9 +1465,9 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">ارسال</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">گزارش شما ارسال شد</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">گزارش شما ارسال شد</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">بستن</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">بستن</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -1487,8 +1498,6 @@
   <string name="tab_crash_close">بستن زبانه</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">بازآوری زبانه‌</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s نیاز به راه‌اندازی مجدد داشت</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">به‌صورت خودکار گزارشات خرابی ارسال کنید</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
@@ -1496,7 +1505,10 @@
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
   <string name="unsubmitted_crash_dialog_negative_button_2">بستن</string>
   <!-- Unsubmitted crash dialog positive button to submit crash report -->
+  <string name="unsubmitted_crash_dialog_positive_button_2">ارسال</string>
+  <!-- Unsubmitted crash dialog positive button to submit crash report -->
   <string name="unsubmitted_crash_dialog_positive_button">ارسال گزارش خرابی</string>
+  <string name="unsubmitted_crash_dialog_learn_more">بیشتر بدانید</string>
   <!--
     Bookmarks
 
@@ -1749,12 +1761,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d زبانه انتخاب شده</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">زبانه‌‌ها ذخیره شدند!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">مجموعه ذخیره شد!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">مجموعه ذخیره شد!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">زبانه‌ ذخیره شد!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">زبانه‌ ذخیره شد!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">بستن</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1801,7 +1811,9 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">برای همگام‌سازی وارد شوید</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">همگام‌سازی و ذخیرهٔ داده‌ها</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">همگام‌سازی و ذخیرهٔ داده‌ها</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">ورود</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ارسال به همه دستگاه‌ها</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1891,7 +1903,7 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">زبانه‌های بسته شده: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">نشانک‌ها در «%s» ذخیره شدند!</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">نشانک‌ها در «%s» ذخیره شدند!</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">به میان‌برها اضافه شد!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -1919,14 +1931,14 @@
   <string name="tab_collection_dialog_message">آیا در خصوص حذف کردن%1$s مطئنید؟</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">حذف</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">نشانی رونوشت شد</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">این نمونه متن است. در اینجا آمده است تا نشان دهیم که با بزرگنمایی یا کاهش اندازه با این تنظیم ، متن چگونه ظاهر می شود.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_text_size_summary">متن را در وبگاه‌ها بزرگتر یا کوچکتر کنید</string>
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">اندازه قلم</string>
+  <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
+  <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">اندازه قلم خودکار</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -2007,9 +2019,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">زبانه‌ها ارسال شد!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">زبانه‌ها ارسال شد!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">زبانه‌ ارسال شد!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">زبانه‌ ارسال شد!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">امکان ارسال وجود ندارد</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2540,12 +2552,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">یک رشته جست‌وجو وارد کنید</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">بررسی کنید که رشته جست‌وجو با شکل و قالب نمونه ارائه شده مطابقت دارد</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ایجاد شد</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ذخیره شد</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s پاک شد</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">برای اجازه دادن به آن:</string>
   <!-- First step for the allowing a permission -->
@@ -3012,12 +3018,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">ایمن</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">ناامن</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">مواظب این وبگاه باشید</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">اتصال شما ایمن نیست.</string>
@@ -3037,10 +3039,6 @@
   <string name="protection_panel_banner_protected_description">شما محافظت شده‌اید. اگر چیزی را ببینیم، به شما اطلاع خواهیم داد.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
   <string name="protection_panel_etp_toggle_label">محافظت پیشرفته در برابر ردیابی</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">اگر چیزی در این وبگاه خراب به نظر می‌رسد، سعی کنید محافظت‌ها را خاموش کنید.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">محافظ‌ها خاموش هستند. پیشنهاد می‌کنیم آن‌ها را دوباره فعال کنید.</string>
   <!--
     Text for displaying the total number of trackers blocked in the protection panel.
     %d is a placeholder for the number of trackers blocked.
@@ -3048,8 +3046,6 @@
   <string name="protection_panel_num_trackers_blocked">ردیاب‌ها مسدود شدند: %d</string>
   <!-- Text for when no trackers have been blocked. -->
   <string name="protection_panel_no_trackers_blocked">ردیابی یافت نشد</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">تنظیمات حریم خصوصی و امنیت</string>
   <!-- Title text for the protection panel permissions section. -->
   <string name="protection_panel_permissions_title">مجوزها</string>
   <!--
@@ -3431,4 +3427,6 @@
   <string name="private_tab_cfr_negative">خیر، متشکرم</string>
   <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
   <string name="private_tab_cfr_positive">قفل کردن زبانه‌ها</string>
+  <!-- Learn more link in the pop up prompt message that links to a site with more information about the terms of use -->
+  <string name="terms_of_use_prompt_link_learn_more">بیشتر بدانید</string>
 </resources>

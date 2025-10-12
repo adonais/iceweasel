@@ -88,8 +88,10 @@ def build(ctx, lib):
 @SubCommand("ts", "check", description="Check types in a project using tsc.")
 @CommandArgument("paths", nargs="+", help="Path to a (dir with) tsconfig.json.")
 def check(ctx, paths):
+    maybe_setup(ctx)
+
     for p in paths:
-        rv = node(ctx, "node_modules/typescript/bin/tsc", "--project", p)
+        rv = tsc(ctx, "--project", p)
         if rv:
             return rv
     return 0
@@ -153,7 +155,13 @@ def subs(ctx):
     for file in processed:
         path = mozpath.join(ctx.topobjdir, file)
         print(f"[INFO] {path} -> {subs_dir}/{mozpath.basename(path)}")
-        node(ctx, "node_modules/typescript/bin/tsc", *args, subs_dir, path)
+        tsc(ctx, *args, subs_dir, path)
+
+
+def tsc(ctx, *args):
+    return ctx._sub_mach(
+        ["node", os.path.join("node_modules", "typescript", "bin", "tsc"), *args]
+    )
 
 
 def node(ctx, script, *args):
@@ -169,9 +177,11 @@ def maybe_setup(ctx):
     if not setup_helper.check_node_executables_valid():
         return 1
 
+    setup_helper.eslint_maybe_setup(package_name="TypeScript")
+
     """Check if npm modules are installed, and run setup if needed."""
     dir = mozpath.dirname(__file__)
-    setup_helper.eslint_maybe_setup(dir, "TypeScript")
+    setup_helper.eslint_maybe_setup(dir, "TypeScript support modules")
 
 
 def build_required(lib, item):

@@ -270,17 +270,14 @@ class ConnectionAdapter {
       : mDatabase(nullptr), mConcurrentConnection(aConn) {}
 
   already_AddRefed<mozIStorageStatement> GetStatement(
-
       const nsCString& aQuery) const {
     MOZ_ASSERT(!NS_IsMainThread(), "Must be on helper thread");
 
     if (mDatabase) {
       return mDatabase->GetStatement(aQuery);
-    } else if (mConcurrentConnection) {
-      auto conn = mConcurrentConnection.get();
-      if (conn) {
-        return conn->GetStatementOnHelperThread(aQuery);
-      }
+    }
+    if (mConcurrentConnection) {
+      return mConcurrentConnection->GetStatementOnHelperThread(aQuery);
     }
     return nullptr;
   }

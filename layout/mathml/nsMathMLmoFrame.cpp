@@ -1071,7 +1071,7 @@ void nsMathMLmoFrame::GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
 
 nsresult nsMathMLmoFrame::AttributeChanged(int32_t aNameSpaceID,
                                            nsAtom* aAttribute,
-                                           int32_t aModType) {
+                                           AttrModType aModType) {
   // check if this is an attribute that can affect the embellished hierarchy
   // in a significant way and re-layout the entire hierarchy.
   // This is not needed for the fence and separator

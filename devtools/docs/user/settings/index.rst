@@ -120,6 +120,9 @@ Inspector
 Web Console
 -----------
 
+*Enable split console*
+  Enables or disables the split console feature, disabling it will remove it from the Toolbar menu and disable its hotkey :kbd:`Esc`
+
 *Enable timestamps*
   Controls whether the Web Console displays timestamps. The Web Console defaults to hiding timestamps.
 

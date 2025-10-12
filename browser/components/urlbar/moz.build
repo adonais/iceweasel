@@ -80,6 +80,7 @@ EXTRA_JS_MODULES["urlbar/private"] += [
     "private/SuggestFeature.sys.mjs",
     "private/WeatherSuggestions.sys.mjs",
     "private/WikipediaSuggestions.sys.mjs",
+    "private/YelpRealtimeSuggestions.sys.mjs",
     "private/YelpSuggestions.sys.mjs",
 ]
 

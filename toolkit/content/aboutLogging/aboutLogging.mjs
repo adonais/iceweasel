@@ -612,6 +612,21 @@ function init() {
     $("#buttons-disabled").hidden = false;
     toggleLoggingButton.disabled = true;
   }
+
+  // Initialize the uploaded profiles manager if profile uploading is enabled
+  const shouldUpload = Services.prefs.getBoolPref(
+    "toolkit.aboutLogging.uploadProfileToCloud",
+    false
+  );
+  if (shouldUpload) {
+    import("chrome://global/content/aboutLogging/uploadedProfilesManager.mjs")
+      .then(({ UploadedProfilesManager }) => {
+        new UploadedProfilesManager();
+      })
+      .catch(error => {
+        console.error("Error initializing uploaded profiles manager:", error);
+      });
+  }
 }
 
 function maybeEnsureButtonInNavbar() {

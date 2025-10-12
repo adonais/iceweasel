@@ -734,8 +734,16 @@ class OSXVsyncSource final : public VsyncSource {
   OSXVsyncSource() : mDisplayLink(nullptr, "OSXVsyncSource::mDisplayLink") {
     MOZ_ASSERT(NS_IsMainThread());
     mTimer = NS_NewTimer();
-    CGDisplayRegisterReconfigurationCallback(DisplayReconfigurationCallback,
-                                             this);
+    CGError err = CGDisplayRegisterReconfigurationCallback(
+        DisplayReconfigurationCallback, this);
+    if (err != kCGErrorSuccess) {
+      gfxWarning() << "Failed to register display reconfiguration callback";
+      // We're in a tricky situation. Without a working reconfiguration
+      // callback, we might fail to recover from sleep. Best to early exit
+      // without creating a display link, and fall back to software vsync.
+      return;
+    }
+
     CreateDisplayLink();
   }
 
@@ -790,9 +798,9 @@ class OSXVsyncSource final : public VsyncSource {
     }
 
     if (!*displayLink || (retval != kCVReturnSuccess)) {
-      NS_WARNING(
-          "Could not create a display link with all active displays. "
-          "Retrying");
+      gfxWarning()
+          << "Could not create a display link with all active displays. "
+             "Retrying";
       if (*displayLink) {
         CVDisplayLinkRelease(*displayLink);
         *displayLink = nullptr;
@@ -813,13 +821,13 @@ class OSXVsyncSource final : public VsyncSource {
       uint32_t delay = 100;
       mTimer->InitWithNamedFuncCallback(RetryCreateDisplayLink, this, delay,
                                         nsITimer::TYPE_ONE_SHOT,
-                                        "RetryCreateDisplayLink");
+                                        "RetryCreateDisplayLink"_ns);
       return;
     }
 
     if (CVDisplayLinkSetOutputCallback(*displayLink, &VsyncCallback, this) !=
         kCVReturnSuccess) {
-      NS_WARNING("Could not set displaylink output callback");
+      gfxWarning() << "Could not set displaylink output callback";
       CVDisplayLinkRelease(*displayLink);
       *displayLink = nullptr;
     }
@@ -842,20 +850,20 @@ class OSXVsyncSource final : public VsyncSource {
 
     auto displayLink = mDisplayLink.Lock();
     if (!*displayLink) {
-      NS_WARNING("No display link available when starting vsync");
+      gfxWarning() << "No display link available when starting vsync";
       return;
     }
 
     mPreviousTimestamp = TimeStamp::Now();
     if (CVDisplayLinkStart(*displayLink) != kCVReturnSuccess) {
-      NS_WARNING("Could not activate the display link");
+      gfxWarning() << "Could not activate the display link";
       return;
     }
 
     CVTime vsyncRate =
         CVDisplayLinkGetNominalOutputVideoRefreshPeriod(*displayLink);
     if (vsyncRate.flags & kCVTimeIsIndefinite) {
-      NS_WARNING("Could not get vsync rate, setting to 60.");
+      gfxWarning() << "Could not get vsync rate, setting to 60.";
       mVsyncRate = TimeDuration::FromMilliseconds(1000.0 / 60.0);
     } else {
       int64_t timeValue = vsyncRate.timeValue;
@@ -953,7 +961,7 @@ class OSXVsyncSource final : public VsyncSource {
         uint32_t delay = 100;
         mTimer->InitWithNamedFuncCallback(RetryCreateDisplayLink, this, delay,
                                           nsITimer::TYPE_ONE_SHOT,
-                                          "RetryEnableVsync");
+                                          "RetryEnableVsync"_ns);
       }
     }
   }
@@ -1007,8 +1015,8 @@ gfxPlatformMac::CreateGlobalHardwareVsyncSource() {
   RefPtr<VsyncSource> osxVsyncSource = new OSXVsyncSource();
   osxVsyncSource->EnableVsync();
   if (!osxVsyncSource->IsVsyncEnabled()) {
-    NS_WARNING(
-        "OS X Vsync source not enabled. Falling back to software vsync.");
+    gfxWarning()
+        << "OS X Vsync source not enabled. Falling back to software vsync.";
     return GetSoftwareVsyncSource();
   }
 

@@ -4,7 +4,7 @@
 ---
 diff:
     description: Generates diffs of CI changes
-    platform: linux1804-64/opt
+    platform: linux
     worker-type: t-linux-docker
     worker:
         docker-image: {in-tree: "lint"}

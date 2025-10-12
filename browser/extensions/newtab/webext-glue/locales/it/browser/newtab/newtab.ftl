@@ -321,19 +321,32 @@ newtab-custom-pocket-subtitle = Contenuti eccezionali a cura di { -pocket-brand-
 newtab-custom-stories-toggle =
     .label = Storie consigliate
     .description = Contenuti eccezionali curati dalla famiglia di prodotti { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Storie
+newtab-custom-stories-personalized-checkbox-label = Storie personalizzate in base alla tua attività
 newtab-custom-pocket-sponsored = Storie sponsorizzate
 newtab-custom-pocket-show-recent-saves = Mostra elementi salvati di recente
 newtab-custom-recent-title = Attività recente
 newtab-custom-recent-subtitle = Una selezione di siti e contenuti visualizzati di recente
-newtab-custom-recent-toggle =
-    .label = Attività recente
-    .description = Una selezione di siti e contenuti visualizzati di recente
 newtab-custom-weather-toggle =
     .label = Meteo
     .description = Panoramica delle previsioni meteo per oggi
 newtab-custom-trending-search-toggle =
     .label = Ricerche di tendenza
     .description = Argomenti popolari e cercati di frequente
+newtab-custom-widget-weather-toggle =
+    .label = Meteo
+newtab-custom-widget-trending-search-toggle =
+    .label = Ricerche di tendenza
+newtab-custom-widget-lists-toggle =
+    .label = Liste
+newtab-custom-widget-timer-toggle =
+    .label = Timer
+newtab-custom-widget-section-title = Widget
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Chiudi
+    .aria-label = Chiudi menu
 newtab-custom-close-button = Chiudi
 newtab-custom-settings = Gestisci altre impostazioni
 
@@ -346,6 +359,7 @@ newtab-wallpaper-custom-color = Scegli un colore
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = L’immagine eccede la dimensione massima consentita ({ $file_size } MB). Prova a caricare un file più piccolo.
+newtab-wallpaper-error-upload-file-type = Impossibile caricare il file. Riprova con un file immagine.
 newtab-wallpaper-error-file-type = Impossibile caricare il file. Riprova con un altro tipo di file.
 newtab-wallpaper-light-red-panda = Panda rosso
 newtab-wallpaper-light-mountain = Montagna imbiancata
@@ -451,7 +465,6 @@ newtab-weather-menu-change-location = Modifica località
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Cerca località
     .aria-label = Cerca località
-newtab-weather-change-location-search-input = Cerca località
 newtab-weather-menu-weather-display = Visualizzazione meteo
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -598,8 +611,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Di tendenza su Google
 newtab-trending-searches-show-trending =
     .title = Mostra ricerche di tendenza
 newtab-trending-searches-hide-trending =
@@ -608,4 +619,77 @@ newtab-trending-searches-learn-more = Ulteriori informazioni
 newtab-trending-searches-dismiss = Nascondi ricerche di tendenza
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Ricerche di tendenza
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Le possibilità sono infinite. Aggiungine una.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Novità
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Completate ({ $number })
+newtab-widget-task-list-menu-copy = Copia
+newtab-widget-lists-menu-edit = Modifica nome lista
+newtab-widget-lists-menu-create = Crea nuova lista
+newtab-widget-lists-menu-delete = Elimina questa lista
+newtab-widget-lists-menu-copy = Copia lista negli appunti
+newtab-widget-lists-menu-hide = Nascondi tutte le liste
+newtab-widget-lists-menu-learn-more = Ulteriori informazioni
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Aggiungi un elemento
+newtab-widget-lists-input-error = Includere del testo per aggiungere un elemento.
+newtab-widget-lists-input-menu-open-link = Apri link
+newtab-widget-lists-input-menu-move-up = Sposta in alto
+newtab-widget-lists-input-menu-move-down = Sposta in basso
+newtab-widget-lists-input-menu-delete = Elimina
+newtab-widget-lists-input-menu-edit = Modifica
+newtab-widget-lists-name-label-default =
+    .label = Lista di attività
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Lista di attività
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Nuova lista
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Timer
+newtab-widget-timer-notification-focus = Il tempo per concentrarti è terminato. Ottimo lavoro. Ti serve una pausa?
+newtab-widget-timer-notification-break = La tua pausa è finita. Pronto per concentrarti?
+newtab-widget-timer-notification-warning = Le notifiche sono disattivate
+newtab-widget-timer-mode-focus =
+    .label = Concentrazione
+newtab-widget-timer-mode-break =
+    .label = Pausa
+newtab-widget-timer-play =
+    .title = Avvia
+newtab-widget-timer-pause =
+    .title = Metti in pausa
+newtab-widget-timer-label-play =
+    .label = Avvia
+newtab-widget-timer-label-pause =
+    .label = Metti in pausa
+newtab-widget-timer-reset =
+    .title = Ripristina
+newtab-widget-timer-menu-notifications = Disattiva notifiche
+newtab-widget-timer-menu-notifications-on = Attiva le notifiche
+newtab-widget-timer-menu-hide = Nascondi timer
+newtab-widget-timer-menu-learn-more = Ulteriori informazioni
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Scorri per altri contenuti
+newtab-widget-message-title = Mantieni la concentrazione utilizzando le liste e il timer integrato
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Da promemoria veloci a liste di attività quotidiane, da sessioni di concentrazione a pause per rilassarsi: mantieni l’attenzione e rispetta i tempi.
+newtab-promo-card-title = Sostieni { -brand-product-name }
+newtab-promo-card-body = I nostri sponsor sostengono la nostra missione di costruire un Web migliore
+newtab-promo-card-cta = Ulteriori informazioni
+newtab-promo-card-dismiss-button =
+    .title = Chiudi
+    .aria-label = Chiudi
 

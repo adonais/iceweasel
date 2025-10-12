@@ -8,8 +8,6 @@ import android.app.Activity
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
-import android.os.Build
-import androidx.annotation.ChecksSdkIntAtLeast
 import org.mozilla.fenix.onboarding.WidgetPinnedReceiver
 import org.mozilla.gecko.search.SearchWidgetProvider
 
@@ -21,9 +19,8 @@ import org.mozilla.gecko.search.SearchWidgetProvider
 fun maybeShowAddSearchWidgetPrompt(activity: Activity) {
     val appWidgetManager = AppWidgetManager.getInstance(activity)
 
-    // Requesting to pin app widget is only available for Android 8.0 and above.
     // We don't use canShowAddSearchWidgetPrompt here directly as lint does not pick on the version check.
-    if (androidVersionSupportsWidgetPinning() && appWidgetManager.isRequestPinAppWidgetSupported) {
+    if (appWidgetManager.isRequestPinAppWidgetSupported) {
         val searchWidgetProvider = ComponentName(activity, SearchWidgetProvider::class.java)
         val successCallback = WidgetPinnedReceiver.getPendingIntent(activity)
         appWidgetManager.requestPinAppWidget(searchWidgetProvider, null, successCallback)
@@ -58,15 +55,5 @@ fun showAddSearchWidgetPromptIfSupported(
 /**
  * Checks whether the device is capable of displaying the "add search widget" prompt.
  */
-@ChecksSdkIntAtLeast(api = Build.VERSION_CODES.O)
 fun canShowAddSearchWidgetPrompt(appWidgetManager: AppWidgetManager) =
-    if (androidVersionSupportsWidgetPinning()) {
-        appWidgetManager.isRequestPinAppWidgetSupported
-    } else {
-        false
-    }
-
-/**
- * Checks whether the device Android version is capable of displaying the "add search widget" prompt.
- */
-private fun androidVersionSupportsWidgetPinning() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+    appWidgetManager.isRequestPinAppWidgetSupported

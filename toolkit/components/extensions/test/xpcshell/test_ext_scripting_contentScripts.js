@@ -103,6 +103,7 @@ add_task(async function test_registerContentScripts_runAt() {
             runAt: "document_idle",
             world: "ISOLATED",
             persistAcrossSessions: false,
+            cssOrigin: "author",
             js: ["script-idle.js"],
           },
           {
@@ -113,6 +114,7 @@ add_task(async function test_registerContentScripts_runAt() {
             runAt: "document_idle",
             world: "ISOLATED",
             persistAcrossSessions: false,
+            cssOrigin: "author",
             js: ["script-idle-default.js"],
           },
           {
@@ -123,6 +125,7 @@ add_task(async function test_registerContentScripts_runAt() {
             runAt: "document_end",
             world: "ISOLATED",
             persistAcrossSessions: false,
+            cssOrigin: "author",
             js: ["script-end.js"],
           },
           {
@@ -133,6 +136,7 @@ add_task(async function test_registerContentScripts_runAt() {
             runAt: "document_start",
             world: "ISOLATED",
             persistAcrossSessions: false,
+            cssOrigin: "author",
             js: ["script-start.js"],
           },
         ]),
@@ -436,6 +440,7 @@ add_task(async function test_register_update_and_unregister() {
             runAt: "document_idle",
             world: "ISOLATED",
             persistAcrossSessions: false,
+            cssOrigin: "author",
             js: ["script-3.js"],
           },
         ]),

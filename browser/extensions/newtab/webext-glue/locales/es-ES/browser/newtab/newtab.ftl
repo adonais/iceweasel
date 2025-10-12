@@ -307,19 +307,32 @@ newtab-custom-pocket-subtitle = Contenido excepcional seleccionado por { -pocket
 newtab-custom-stories-toggle =
     .label = Historias recomendadas
     .description = Contenido excepcional seleccionado por la familia { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Historias
+newtab-custom-stories-personalized-checkbox-label = Historias personalizadas basadas en su actividad
 newtab-custom-pocket-sponsored = Historias patrocinadas
 newtab-custom-pocket-show-recent-saves = Mostrar guardados recientemente
 newtab-custom-recent-title = Actividad reciente
 newtab-custom-recent-subtitle = Una selección de sitios y contenidos recientes
-newtab-custom-recent-toggle =
-    .label = Actividad reciente
-    .description = Una selección de sitios y contenidos recientes
 newtab-custom-weather-toggle =
     .label = El tiempo
     .description = El pronóstico de hoy de un vistazo
 newtab-custom-trending-search-toggle =
     .label = Tendencias de búsqueda
     .description = Temas populares y buscados frecuentemente
+newtab-custom-widget-weather-toggle =
+    .label = El tiempo
+newtab-custom-widget-trending-search-toggle =
+    .label = Tendencias de búsqueda
+newtab-custom-widget-lists-toggle =
+    .label = Listas
+newtab-custom-widget-timer-toggle =
+    .label = Temporizador
+newtab-custom-widget-section-title = Widgets
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Cerrar
+    .aria-label = Cerrar menú
 newtab-custom-close-button = Cerrar
 newtab-custom-settings = Administrar más ajustes
 
@@ -437,7 +450,6 @@ newtab-weather-menu-change-location = Cambiar ubicación
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Buscar ubicación
     .aria-label = Buscar ubicación
-newtab-weather-change-location-search-input = Buscar ubicación
 newtab-weather-menu-weather-display = Visualización del tiempo
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -573,8 +585,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Tendencia en Google
 newtab-trending-searches-show-trending =
     .title = Mostrar búsquedas más populares
 newtab-trending-searches-hide-trending =
@@ -583,3 +593,62 @@ newtab-trending-searches-learn-more = Saber más
 newtab-trending-searches-dismiss = Ocultar búsquedas más populares
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Tendencias de búsqueda
+
+## Strings for task / to-do list productivity widget
+
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nuevo
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Completadas ({ $number })
+newtab-widget-task-list-menu-copy = Copiar
+newtab-widget-lists-menu-edit = Editar nombre de la lista
+newtab-widget-lists-menu-create = Crear una nueva lista
+newtab-widget-lists-menu-delete = Eliminar esta lista
+newtab-widget-lists-menu-copy = Copiar lista al portapapeles
+newtab-widget-lists-menu-hide = Ocultar todas las listas
+newtab-widget-lists-menu-learn-more = Saber más
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Añadir un elemento
+newtab-widget-lists-input-error = Por favor, incluya texto para añadir un elemento.
+newtab-widget-lists-input-menu-open-link = Abrir enlace
+newtab-widget-lists-input-menu-move-up = Subir
+newtab-widget-lists-input-menu-move-down = Bajar
+newtab-widget-lists-input-menu-delete = Eliminar
+newtab-widget-lists-input-menu-edit = Editar
+newtab-widget-lists-name-label-default =
+    .label = Lista de tareas
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Lista de tareas
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Nueva lista
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Temporizador
+newtab-widget-timer-notification-focus = Se acabó el tiempo de concentración. Buen trabajo. ¿Necesita un descanso?
+newtab-widget-timer-notification-break = Su descanso ha acabado. ¿Preparado para concentrarse?
+newtab-widget-timer-notification-warning = Notificaciones apagadas
+newtab-widget-timer-mode-focus =
+    .label = Concentración
+newtab-widget-timer-mode-break =
+    .label = Descanso
+newtab-widget-timer-play =
+    .title = Comenzar
+newtab-widget-timer-pause =
+    .title = Pausar
+newtab-widget-timer-reset =
+    .title = Restablecer
+newtab-widget-timer-menu-notifications = Desactivar notificaciones
+newtab-widget-timer-menu-notifications-on = Activar notificaciones
+newtab-widget-timer-menu-hide = Ocultar temporizador
+newtab-widget-timer-menu-learn-more = Saber más
+newtab-promo-card-title = Apoyar a { -brand-product-name }
+newtab-promo-card-body = Nuestros patrocinadores apoyan nuestra misión de construir una web mejor
+newtab-promo-card-cta = Saber más

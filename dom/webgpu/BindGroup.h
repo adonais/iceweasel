@@ -18,7 +18,9 @@ namespace mozilla::webgpu {
 class Device;
 class ExternalTexture;
 
-class BindGroup final : public ObjectBase, public ChildOf<Device> {
+class BindGroup final : public nsWrapperCache,
+                        public ObjectBase,
+                        public ChildOf<Device> {
  public:
   GPU_DECL_CYCLE_COLLECTION(BindGroup)
   GPU_DECL_JS_WRAP(BindGroup)
@@ -26,8 +28,6 @@ class BindGroup final : public ObjectBase, public ChildOf<Device> {
   BindGroup(Device* const aParent, RawId aId,
             CanvasContextArray&& aCanvasContexts,
             nsTArray<RefPtr<ExternalTexture>>&& aExternalTextures);
-
-  const RawId mId;
 
   mozilla::Span<const WeakPtr<CanvasContext>> GetCanvasContexts() const {
     return mUsedCanvasContexts;
@@ -38,8 +38,7 @@ class BindGroup final : public ObjectBase, public ChildOf<Device> {
   }
 
  private:
-  ~BindGroup();
-  void Cleanup();
+  virtual ~BindGroup();
 
   // The canvas contexts of any canvas textures used in this bind group.
   CanvasContextArray mUsedCanvasContexts;

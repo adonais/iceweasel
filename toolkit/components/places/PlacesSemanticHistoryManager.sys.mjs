@@ -347,7 +347,7 @@ class PlacesSemanticHistoryManager {
         }
 
         // Capture updateTask startTime.
-        const updateStartTime = Cu.now();
+        const updateStartTime = ChromeUtils.now();
 
         try {
           lazy.logger.info("Running vector DB update task...");
@@ -367,7 +367,7 @@ class PlacesSemanticHistoryManager {
           }
 
           this.#prevPagesRankChangedCount = pagesRankChangedCount;
-          const startTime = Cu.now();
+          const startTime = ChromeUtils.now();
 
           lazy.logger.info(
             `Changes exceed threshold (${this.#changeThresholdCount}).`
@@ -381,7 +381,7 @@ class PlacesSemanticHistoryManager {
           // We already have startTime for profile markers, so just use it
           // instead of tracking timer within the distribution.
           Glean.places.semanticHistoryFindChunksTime.accumulateSingleSample(
-            Cu.now() - startTime
+            ChromeUtils.now() - startTime
           );
 
           lazy.logger.info(
@@ -434,7 +434,7 @@ class PlacesSemanticHistoryManager {
           lazy.logger.error("Error executing vector DB update task:", error);
         } finally {
           lazy.logger.info("Vector DB update task completed.");
-          const updateEndTime = Cu.now();
+          const updateEndTime = ChromeUtils.now();
           const updateTaskTime = updateEndTime - updateStartTime;
           this.#updateTaskLatency.push(updateTaskTime);
 
@@ -634,7 +634,10 @@ class PlacesSemanticHistoryManager {
               INSERT INTO vec_history (rowid, embedding, embedding_coarse)
               VALUES (:rowid, :vector, vec_quantize_binary(:vector))
               `,
-              { rowid, vector: this.tensorToBindable(tensor) }
+              {
+                rowid,
+                vector: lazy.PlacesUtils.tensorToSQLBindable(tensor),
+              }
             );
           } catch (error) {
             lazy.logger.trace(
@@ -654,7 +657,10 @@ class PlacesSemanticHistoryManager {
               INSERT INTO vec_history (rowid, embedding, embedding_coarse)
               VALUES (:rowid, :vector, vec_quantize_binary(:vector))
               `,
-              { rowid, vector: this.tensorToBindable(tensor) }
+              {
+                rowid,
+                vector: lazy.PlacesUtils.tensorToSQLBindable(tensor),
+              }
             );
           }
 
@@ -728,13 +734,6 @@ class PlacesSemanticHistoryManager {
     lazy.logger.info("PlacesSemanticHistoryManager shut down.");
   }
 
-  tensorToBindable(tensor) {
-    if (!tensor) {
-      throw new Error("tensorToBindable received an undefined tensor");
-    }
-    return new Uint8ClampedArray(new Float32Array(tensor).buffer);
-  }
-
   /**
    * Executes an inference operation using the ML engine.
    *
@@ -749,7 +748,7 @@ class PlacesSemanticHistoryManager {
    *   The result of the engine's inference pipeline.
    */
   async infer(queryContext) {
-    const inferStartTime = Cu.now();
+    const inferStartTime = ChromeUtils.now();
     let results = [];
     await this.embedder.ensureEngine();
     let tensor = await this.embedder.embed(queryContext.searchString);
@@ -805,7 +804,7 @@ class PlacesSemanticHistoryManager {
       ORDER BY distance
       `,
       {
-        vector: this.tensorToBindable(tensor),
+        vector: lazy.PlacesUtils.tensorToSQLBindable(tensor),
         distanceThreshold: this.#distanceThreshold,
       }
     );

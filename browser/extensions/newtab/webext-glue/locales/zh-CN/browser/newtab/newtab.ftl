@@ -314,19 +314,32 @@ newtab-custom-pocket-subtitle = 由 { -brand-product-name } 旗下 { -pocket-bra
 newtab-custom-stories-toggle =
     .label = 推荐文章
     .description = 由 { -brand-product-name } 推荐的精选内容
+newtab-custom-stories-personalized-toggle =
+    .label = 文章
+newtab-custom-stories-personalized-checkbox-label = 根据您的阅读记录为您推荐文章
 newtab-custom-pocket-sponsored = 赞助内容
 newtab-custom-pocket-show-recent-saves = 显示近期保存内容
 newtab-custom-recent-title = 近期动态
 newtab-custom-recent-subtitle = 近期访问的网站与内容精选
-newtab-custom-recent-toggle =
-    .label = 近期动态
-    .description = 近期访问的网站与内容精选
 newtab-custom-weather-toggle =
     .label = 天气
     .description = 速览今日天气预报
 newtab-custom-trending-search-toggle =
     .label = 热门搜索
     .description = 流行及常搜主题
+newtab-custom-widget-weather-toggle =
+    .label = 天气
+newtab-custom-widget-trending-search-toggle =
+    .label = 热门搜索
+newtab-custom-widget-lists-toggle =
+    .label = 清单
+newtab-custom-widget-timer-toggle =
+    .label = 计时器
+newtab-custom-widget-section-title = 小组件
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = 关闭
+    .aria-label = 关闭菜单
 newtab-custom-close-button = 关闭
 newtab-custom-settings = 管理更多设置
 
@@ -339,6 +352,7 @@ newtab-wallpaper-custom-color = 选择颜色
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = 图像超出文件大小上限（{ $file_size }MB），请尝试上传较小的文件。
+newtab-wallpaper-error-upload-file-type = 无法上传文件，请尝试使用图像文件。
 newtab-wallpaper-error-file-type = 无法上传文件，请尝试使用其他文件类型。
 newtab-wallpaper-light-red-panda = 小熊猫
 newtab-wallpaper-light-mountain = 白山山脉
@@ -444,7 +458,6 @@ newtab-weather-menu-change-location = 更改位置
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = 搜索位置
     .aria-label = 搜索位置
-newtab-weather-change-location-search-input = 搜索位置
 newtab-weather-menu-weather-display = 天气信息显示方式
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -591,8 +604,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Google 热门搜索
 newtab-trending-searches-show-trending =
     .title = 显示热门搜索
 newtab-trending-searches-hide-trending =
@@ -601,3 +612,76 @@ newtab-trending-searches-learn-more = 详细了解
 newtab-trending-searches-dismiss = 隐藏热门搜索
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = 热门搜索
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = 立即添加任务，开启无限可能。
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = 新功能
+newtab-widget-lists-label-beta =
+    .label = 测试版
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = 已完成（{ $number }）
+newtab-widget-task-list-menu-copy = 复制
+newtab-widget-lists-menu-edit = 编辑清单名称
+newtab-widget-lists-menu-create = 创建新清单
+newtab-widget-lists-menu-delete = 删除此清单
+newtab-widget-lists-menu-copy = 复制清单到剪贴板
+newtab-widget-lists-menu-hide = 隐藏所有清单
+newtab-widget-lists-menu-learn-more = 详细了解
+newtab-widget-lists-input-add-an-item =
+    .placeholder = 添加项目
+newtab-widget-lists-input-error = 请输入项目名称
+newtab-widget-lists-input-menu-open-link = 打开链接
+newtab-widget-lists-input-menu-move-up = 上移
+newtab-widget-lists-input-menu-move-down = 下移
+newtab-widget-lists-input-menu-delete = 删除
+newtab-widget-lists-input-menu-edit = 编辑
+newtab-widget-lists-name-label-default =
+    .label = 任务清单
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = 任务清单
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = 新清单
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = 计时器
+newtab-widget-timer-notification-focus = 专注时间结束，真棒！要休息一下吗？
+newtab-widget-timer-notification-break = 休息时间结束。准备好继续专注了吗？
+newtab-widget-timer-notification-warning = 通知已关闭
+newtab-widget-timer-mode-focus =
+    .label = 专注
+newtab-widget-timer-mode-break =
+    .label = 休息
+newtab-widget-timer-play =
+    .title = 开始
+newtab-widget-timer-pause =
+    .title = 暂停
+newtab-widget-timer-label-play =
+    .label = 开始
+newtab-widget-timer-label-pause =
+    .label = 暂停
+newtab-widget-timer-reset =
+    .title = 重置
+newtab-widget-timer-menu-notifications = 关闭通知
+newtab-widget-timer-menu-notifications-on = 开启通知
+newtab-widget-timer-menu-hide = 隐藏计时器
+newtab-widget-timer-menu-learn-more = 详细了解
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = 滚动浏览更多
+newtab-widget-message-title = 借助清单和内置计时器，聚焦重点、保持专注。
+# to-dos stands for "things to do".
+newtab-widget-message-copy = 从快捷提醒到日常待办，从专注时段到放松片刻，既能帮您管理任务，又可助您把握时间。
+newtab-promo-card-title = 支持 { -brand-product-name }
+newtab-promo-card-body = 建设一个更好的互联网的使命，离不开我们赞助商的支持
+newtab-promo-card-cta = 详细了解
+newtab-promo-card-dismiss-button =
+    .title = 知道了
+    .aria-label = 知道了

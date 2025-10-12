@@ -55,7 +55,7 @@ class StunRequestTest : public ::testing::Test {
                    OnSendPacket(data, size, request);
                  }),
         request_count_(0),
-        response_(NULL),
+        response_(nullptr),
         success_(false),
         failure_(false),
         timeout_(false) {}
@@ -143,7 +143,7 @@ TEST_F(StunRequestTest, TestUnexpected) {
   manager_.Send(request);
   EXPECT_FALSE(manager_.CheckResponse(res.get()));
 
-  EXPECT_TRUE(response_ == NULL);
+  EXPECT_TRUE(response_ == nullptr);
   EXPECT_FALSE(success_);
   EXPECT_FALSE(failure_);
   EXPECT_FALSE(timeout_);
@@ -156,15 +156,14 @@ TEST_F(StunRequestTest, TestBackoff) {
   std::unique_ptr<StunMessage> res =
       request->CreateResponseMessage(STUN_BINDING_RESPONSE);
 
-  int64_t start = webrtc::TimeMillis();
+  int64_t start = TimeMillis();
   manager_.Send(request);
   for (int i = 0; i < 9; ++i) {
-    EXPECT_THAT(
-        webrtc::WaitUntil([&] { return request_count_; }, Ne(i),
+    EXPECT_THAT(WaitUntil([&] { return request_count_; }, Ne(i),
                           {.timeout = TimeDelta::Millis(STUN_TOTAL_TIMEOUT),
                            .clock = &fake_clock}),
-        webrtc::IsRtcOk());
-    int64_t elapsed = webrtc::TimeMillis() - start;
+                IsRtcOk());
+    int64_t elapsed = TimeMillis() - start;
     RTC_DLOG(LS_INFO) << "STUN request #" << (i + 1) << " sent at " << elapsed
                       << " ms";
     EXPECT_EQ(TotalDelay(i), elapsed);
@@ -188,7 +187,7 @@ TEST_F(StunRequestTest, TestTimeout) {
   SIMULATED_WAIT(false, STUN_TOTAL_TIMEOUT, fake_clock);
 
   EXPECT_FALSE(manager_.CheckResponse(res.get()));
-  EXPECT_TRUE(response_ == NULL);
+  EXPECT_TRUE(response_ == nullptr);
   EXPECT_FALSE(success_);
   EXPECT_FALSE(failure_);
   EXPECT_TRUE(timeout_);

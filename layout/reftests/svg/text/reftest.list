@@ -25,7 +25,7 @@ fuzzy-if(winWidget,47-138,260-319) fuzzy-if(Android,0-9,0-45) == simple-bidi.svg
 == simple-dx-rtl-2.svg simple-dx-rtl-2-ref.svg
 
 == simple-fill-color-dynamic.svg simple-fill-color-dynamic-ref.svg
-fuzzy-if(winWidget,47-129,221-254) fuzzy-if(cocoaWidget,0-65,0-196) == simple-fill-color.svg simple-fill-color-ref.html
+fuzzy-if(winWidget,47-129,221-254) fuzzy-if(cocoaWidget,0-65,0-196) fuzzy-if(Android,0-8,0-194) == simple-fill-color.svg simple-fill-color-ref.html
 == simple-fill-gradient.svg simple-fill-gradient-ref.svg
 == simple-fill-none.svg simple.svg
 == simple-pointer-events.svg simple.svg
@@ -79,7 +79,7 @@ fuzzy-if(Android,0-192,0-82) == multiple-x-holes-rtl.svg multiple-x-holes-rtl-re
 
 fails-if(geckoview) == multiple-chunks-bidi.svg multiple-chunks-bidi-ref.svg # Bug 1558513 for GV
 fails-if(geckoview) == multiple-chunks-different-anchor-bidi.svg multiple-chunks-different-anchor-bidi-ref.svg # Bug 1558513 for GV
-fuzzy-if(Android,0-128,0-177) == multiple-chunks-different-anchor-rtl.svg multiple-chunks-different-anchor-rtl-ref.svg
+fuzzy-if(Android,0-148,0-177) == multiple-chunks-different-anchor-rtl.svg multiple-chunks-different-anchor-rtl-ref.svg
 == multiple-chunks-different-anchor.svg multiple-chunks-different-anchor-ref.svg
 fuzzy-if(Android,0-242,0-81) == multiple-chunks-directions-and-anchor.svg multiple-chunks-directions-and-anchor-ref.svg
 == multiple-chunks-directions-and-anchor-dx.svg multiple-chunks-directions-and-anchor-dx-ref.svg
@@ -203,7 +203,7 @@ fuzzy(0-1,0-600) needs-focus == selectSubString-2.svg selectSubString-2-ref.svg
 fuzzy(0-1,0-250) needs-focus == selectSubString-3.svg selectSubString-3-ref.svg
 fuzzy-if(!geckoview,0-1,0-237) needs-focus fuzzy-if(winWidget,55-163,200-254) == simple-selection.svg simple-selection-ref.html
 fuzzy(0-8,0-575) needs-focus fuzzy-if(winWidget,55-163,200-318) == simple-bidi-selection.svg simple-bidi-selection-ref.html
-fuzzy(0-1,0-237) needs-focus fuzzy-if(winWidget,55-163,200-254) fuzzy-if(cocoaWidget,1-65,19-196) == simple-fill-color-selection.svg simple-fill-color-selection-ref.html
+fuzzy(0-1,0-237) needs-focus fuzzy-if(winWidget,55-163,200-254) fuzzy-if(cocoaWidget,1-65,19-196) fuzzy-if(Android,0-8,0-360) == simple-fill-color-selection.svg simple-fill-color-selection-ref.html
 fuzzy(0-1,0-222) needs-focus fuzzy-if(winWidget,125-163,221-254) == simple-underline-selection.svg simple-underline-selection-ref.html # Bug 1392106
 fuzzy(0-1,0-934) needs-focus fuzzy-if(Android13,0-3,0-926) fuzzy-if(winWidget,134-163,432-501) == multiple-text-selection.svg multiple-text-selection-ref.html # Bug 1392106
 needs-focus == multiple-chunks-selection.svg multiple-chunks-selection-ref.svg

@@ -125,8 +125,8 @@ interface """
     output.write("};")
 
 
-def generateCSS2Properties(output, dataFile):
-    generate(output, dataFile, "Style", "CSS2Properties", "CSS2Property")
+def generateCSSStyleProperties(output, dataFile):
+    generate(output, dataFile, "Style", "CSSStyleProperties", "CSS2Property")
 
 
 def generateCSSPageDescriptors(output, dataFile):

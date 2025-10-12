@@ -71,7 +71,7 @@
   padding: 4px;
   background-color: var(--background-color-canvas);
   color: var(--text-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 }
 
 #selection-size {
@@ -157,45 +157,16 @@
 #face-container {
   position: relative;
 
-  @media (forced-colors) {
-    display: none;
+  /*
+   * The overlay always darkens the underlying page, regardless of light/dark settings.
+   * So we hard-code these colors to be visible against a dark background.
+   */
+  .face-line-color {
+    fill: #fff;
   }
-}
-
-.face {
-  width: 64px;
-  height: 64px;
-  background-image: url("chrome://browser/content/screenshots/icon-welcome-face-without-eyes.svg");
-}
-
-.eye {
-  background-color: #fff;
-  width: 10px;
-  height: 14px;
-  position: absolute;
-  border-radius: 100%;
-  overflow: hidden;
-  inset-inline-start: 16px;
-  top: 19px;
-}
-
-.eyeball {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background-color: #000;
-  border-radius: 50%;
-  inset-inline-start: 2px;
-  top: 4px;
-  z-index: var(--screenshots-high-layer);
-}
-
-.left {
-  margin-inline-start: 0;
-}
-
-.right {
-  margin-inline-start: 20px;
+  .face-pupil-color {
+    fill: #000;
+  }
 }
 
 .preview-instructions {
@@ -345,7 +316,7 @@
 
 .mover {
   background-color: #fff;
-  border-radius: 50%;
+  border-radius: var(--border-radius-circle);
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
   transition: transform 125ms cubic-bezier(0.07, 0.95, 0, 1);
   position: relative;

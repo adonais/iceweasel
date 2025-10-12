@@ -175,6 +175,11 @@ skip-if = ["true"]
 ["browser_primaryPassword.js"]
 
 ["browser_privacy_allowListPreference.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan"] # Bug 1984525
+
+["browser_privacy_allowListPreference_reload.js"]
+
+["browser_privacy_allowListPreference_dialog.js"]
 
 ["browser_privacy_allowListPreference_telemetry.js"]
 

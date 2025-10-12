@@ -89,7 +89,7 @@ void DoArmIPCTimerMainThread(const StaticMutexAutoLock& lock) {
         TelemetryIPCAccumulator::IPCTimerFired, nullptr,
         mozilla::StaticPrefs::toolkit_telemetry_ipcBatchTimeout(),
         nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
-        "TelemetryIPCAccumulator::IPCTimerFired");
+        "TelemetryIPCAccumulator::IPCTimerFired"_ns);
     gIPCTimerArmed = true;
     PROFILER_MARKER_UNTYPED("IPC Accumulator", TELEMETRY,
                             mozilla::MarkerTiming::IntervalStart());

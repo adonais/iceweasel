@@ -345,9 +345,11 @@ bool PointerLockManager::SetPointerLock(Element* aElement, Document* aDocument,
     NS_WARNING_ASSERTION(widget,
                          "SetPointerLock(): Unable to find widget in "
                          "presShell->GetRootFrame()->GetNearestWidget();");
-    if (aElement && !widget) {
-      return false;
-    }
+  }
+
+  if (aElement && !widget) {
+    NS_WARNING("SetPointerLock(): No Widget while requesting pointer lock");
+    return false;
   }
 
   sIsLocked = !!aElement;

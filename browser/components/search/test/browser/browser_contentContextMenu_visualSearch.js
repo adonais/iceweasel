@@ -486,6 +486,10 @@ async function checkNewBadge({ item, shouldHaveNewBadge }) {
       !item.hasAttribute("badge"),
       "The visual search menuitem should not have the New badge"
     );
+    Assert.ok(
+      !item.classList.contains("badge-new"),
+      "The visual search menuitem should not have the badge-new class"
+    );
     return;
   }
 
@@ -497,6 +501,10 @@ async function checkNewBadge({ item, shouldHaveNewBadge }) {
     item.getAttribute("badge"),
     "New",
     "The visual search menu item `badge` attribute should be 'New'"
+  );
+  Assert.ok(
+    item.classList.contains("badge-new"),
+    "The visual search menuitem should have the badge-new class"
   );
 }
 

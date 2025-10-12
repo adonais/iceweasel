@@ -44,6 +44,7 @@ add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.suggest.topsites", true],
+      ["browser.urlbar.suggest.quickactions", false],
       ["browser.newtabpage.activity-stream.default.sites", TOP_SITES.join(",")],
     ],
   });

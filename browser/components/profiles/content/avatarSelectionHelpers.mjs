@@ -13,6 +13,8 @@
  * will choose to return the "correct" value. For example, the left getter
  * returns the min of x1 and x2. The same goes for the other three getters.
  */
+
+const MIN_SELECTION_SIZE = 48;
 export class Region {
   #x1;
   #x2;
@@ -71,25 +73,41 @@ export class Region {
     let { left, right, top, bottom } = dims;
     switch (direction) {
       case "mover-topLeft": {
-        let newDiameter = Math.max(this.right - left, this.bottom - top);
+        let newDiameter = Math.max(
+          MIN_SELECTION_SIZE,
+          this.right - left,
+          this.bottom - top
+        );
         this.left = this.right - newDiameter;
         this.top = this.bottom - newDiameter;
         break;
       }
       case "mover-topRight": {
-        let newDiameter = Math.max(right - this.left, this.bottom - top);
+        let newDiameter = Math.max(
+          MIN_SELECTION_SIZE,
+          right - this.left,
+          this.bottom - top
+        );
         this.right = this.left + newDiameter;
         this.top = this.bottom - newDiameter;
         break;
       }
       case "mover-bottomRight": {
-        let newDiameter = Math.max(right - this.left, bottom - this.top);
+        let newDiameter = Math.max(
+          MIN_SELECTION_SIZE,
+          right - this.left,
+          bottom - this.top
+        );
         this.right = this.left + newDiameter;
         this.bottom = this.top + newDiameter;
         break;
       }
       case "mover-bottomLeft": {
-        let newDiameter = Math.max(this.right - left, bottom - this.top);
+        let newDiameter = Math.max(
+          MIN_SELECTION_SIZE,
+          this.right - left,
+          bottom - this.top
+        );
         this.left = this.right - newDiameter;
         this.bottom = this.top + newDiameter;
         break;
@@ -144,12 +162,15 @@ export class Region {
   }
 
   forceSquare(direction) {
-    if (this.width === this.height) {
-      // Already square
+    if (this.width === this.height && this.width >= MIN_SELECTION_SIZE) {
+      // Already square and large enough
       return;
     }
 
-    let newDiameter = Math.min(this.width, this.height);
+    let newDiameter = Math.max(
+      MIN_SELECTION_SIZE,
+      Math.min(this.width, this.height)
+    );
     switch (direction) {
       case "mover-topLeft": {
         this.left = this.right - newDiameter;
@@ -172,7 +193,7 @@ export class Region {
         break;
       }
       default: {
-        newDiameter = Math.max(this.width, this.height);
+        newDiameter = Math.max(MIN_SELECTION_SIZE, this.width, this.height);
         if (this.left === 0) {
           this.right = newDiameter;
         }

@@ -295,9 +295,6 @@ newtab-custom-pocket-sponsored = ᱜᱟᱲᱚ ᱠᱟᱱ ᱠᱟᱹᱦᱱᱤ ᱠ�
 newtab-custom-pocket-show-recent-saves = ᱱᱮᱱᱮ ᱥᱟᱧᱪᱟᱣ ᱠᱚ ᱫᱮᱠᱷᱟᱣ ᱢᱮ
 newtab-custom-recent-title = ᱱᱤᱛᱚᱜᱟᱜ ᱠᱟᱹᱢᱤ ᱠᱚ
 newtab-custom-recent-subtitle = ᱱᱚᱱᱮᱛᱚᱜᱟᱜ ᱥᱟᱭᱤᱴ ᱟᱨ ᱡᱤᱱᱤᱥ ᱨᱮᱭᱟᱜ ᱢᱤᱫᱴᱟᱝ ᱵᱟᱪᱷᱟᱣ
-newtab-custom-recent-toggle =
-    .label = ᱱᱤᱛᱚᱜᱟᱜ ᱠᱟᱹᱢᱤ ᱠᱚ
-    .description = ᱱᱚᱱᱮᱛᱚᱜᱟᱜ ᱥᱟᱭᱤᱴ ᱟᱨ ᱡᱤᱱᱤᱥ ᱨᱮᱭᱟᱜ ᱢᱤᱫᱴᱟᱝ ᱵᱟᱪᱷᱟᱣ
 newtab-custom-weather-toggle =
     .label = ᱦᱚᱭ ᱦᱤᱥᱤᱫ
     .description = ᱢᱤᱫ ᱧᱮᱞ ᱛᱮ ᱛᱮᱦᱮᱧᱟᱜ ᱯᱷᱚᱨᱠᱟᱥᱴ
@@ -389,7 +386,6 @@ newtab-weather-menu-change-location = ᱡᱟᱭᱜᱟ ᱵᱚᱫᱚᱞ ᱢᱮ
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = ᱡᱟᱭᱜᱟ ᱥᱮᱸᱫᱽᱨᱟᱭ ᱢᱮ
     .aria-label = ᱡᱟᱭᱜᱟ ᱥᱮᱸᱫᱽᱨᱟᱭ ᱢᱮ
-newtab-weather-change-location-search-input = ᱡᱟᱭᱜᱟ ᱥᱮᱸᱫᱽᱨᱟᱭ ᱢᱮ
 newtab-weather-menu-weather-display = ᱦᱚᱭ ᱦᱤᱥᱤᱫ ᱩᱫᱩᱜ
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature

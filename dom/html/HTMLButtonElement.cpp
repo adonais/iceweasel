@@ -381,12 +381,11 @@ void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
     // 5.5. Let continue be the result of firing an event named command at
     // target, using CommandEvent, with its command attribute initialized to
     // command, its source attribute initialized to element, and its cancelable
-    // and composed attributes initialized to true.
+    // attribute initialized to true.
     CommandEventInit init;
     GetCommand(init.mCommand);
     init.mSource = this;
     init.mCancelable = true;
-    init.mComposed = true;
     RefPtr<Event> event = CommandEvent::Constructor(this, u"command"_ns, init);
     event->SetTrusted(true);
     event->SetTarget(target);

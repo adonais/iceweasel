@@ -24,7 +24,6 @@ import android.view.ViewGroup
 import android.view.ViewStub
 import android.view.Window
 import android.view.WindowManager
-import android.view.accessibility.AccessibilityEvent
 import android.view.inputmethod.InputMethodManager
 import android.window.OnBackInvokedDispatcher
 import androidx.activity.ComponentDialog
@@ -110,6 +109,7 @@ import org.mozilla.fenix.search.toolbar.SearchSelectorMenu
 import org.mozilla.fenix.search.toolbar.SearchSelectorToolbarAction
 import org.mozilla.fenix.search.toolbar.ToolbarView
 import org.mozilla.fenix.settings.SupportUtils
+import mozilla.components.browser.toolbar.R as toolbarR
 
 typealias SearchDialogFragmentStore = SearchFragmentStore
 
@@ -297,7 +297,7 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
             binding.toolbar,
             fromHomeFragment,
         ).also {
-            inlineAutocompleteEditText = it.view.findViewById(R.id.mozac_browser_toolbar_edit_url_view)
+            inlineAutocompleteEditText = it.view.findViewById(toolbarR.id.mozac_browser_toolbar_edit_url_view)
             inlineAutocompleteEditText.increaseTapArea(TAP_INCREASE_DPS_4)
         }
 
@@ -589,13 +589,7 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
     }
 
     private fun updateAccessibilityTraversalOrder() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-            binding.fillLinkFromClipboard.accessibilityTraversalAfter = binding.searchWrapper.id
-        } else {
-            viewLifecycleOwner.lifecycleScope.launch {
-                binding.searchWrapper.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED)
-            }
-        }
+        binding.fillLinkFromClipboard.accessibilityTraversalAfter = binding.searchWrapper.id
     }
 
     override fun onResume() {

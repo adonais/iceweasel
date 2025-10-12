@@ -222,13 +222,6 @@
   font-size: 1.15em;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
-@media -moz-pref("browser.urlbar.experimental.expandTextOnFocus") {
-  #urlbar[breakout-extend] {
-    font-size: 1.25em;
-  }
-}
-
 @media (prefers-contrast) {
   :root {
     /* Windows HCM conventions use these colors for chiclets. We can't use them on

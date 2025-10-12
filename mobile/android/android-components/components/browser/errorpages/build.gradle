@@ -25,16 +25,15 @@ android {
 }
 
 dependencies {
-    implementation libs.androidx.annotation
-
     implementation project(':components:support-ktx')
-
     implementation project(':components:ui-icons')
+
+    implementation libs.androidx.annotation
 
     testImplementation project(':components:support-test')
 
     testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

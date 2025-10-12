@@ -370,21 +370,22 @@ void GeckoMediaPluginService::ShutdownGMPThread() {
   }
 }
 
-nsresult GeckoMediaPluginService::GMPDispatch(nsIRunnable* event,
-                                              uint32_t flags) {
-  nsCOMPtr<nsIRunnable> r(event);
-  return GMPDispatch(r.forget(), flags);
+nsresult GeckoMediaPluginService::GMPDispatch(
+    nsIRunnable* event, nsIEventTarget::DispatchFlags flags) {
+  return GMPDispatch(do_AddRef(event), flags);
 }
 
 nsresult GeckoMediaPluginService::GMPDispatch(
-    already_AddRefed<nsIRunnable> event, uint32_t flags) {
+    already_AddRefed<nsIRunnable> event, nsIEventTarget::DispatchFlags flags) {
+  // NOTE: This method always releases `event` on failure, rather than leaking
+  // it, even if `NS_DISPATCH_FALLIBLE` is not specified.
   nsCOMPtr<nsIRunnable> r(event);
   nsCOMPtr<nsIThread> thread;
   nsresult rv = GetThread(getter_AddRefs(thread));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-  return thread->Dispatch(r, flags);
+  return thread->Dispatch(r.forget(), flags | NS_DISPATCH_FALLIBLE);
 }
 
 // always call with getter_AddRefs, because it does

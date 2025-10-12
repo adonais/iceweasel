@@ -22,11 +22,11 @@ static_prefs = { path = "../../../../modules/libpref/init/static_prefs" }
 profiler_helper = { path = "../../../../tools/profiler/rust-helper", optional = true }
 mozurl = { path = "../../../../netwerk/base/mozurl" }
 webrender_bindings = { path = "../../../../gfx/webrender_bindings" }
-cubeb-coreaudio = { git = "https://github.com/mozilla/cubeb-coreaudio-rs", rev = "721b915d12dd899a67596cd3d9357a31c0af45b5", optional = true, features=["vpio-forcelist"] }
-cubeb-pulse = { git = "https://github.com/mozilla/cubeb-pulse-rs", rev="e0ddf430162f9113a9a90dc52b349d273baa3ec5", optional = true, features=["pulse-dlopen"] }
-cubeb-sys = { version = "0.29", optional = true, features=["gecko-in-tree"] }
-audioipc2-client = { git = "https://github.com/mozilla/audioipc", rev = "ec44d33e5924f6618467fdb18010d626701fd110", optional = true }
-audioipc2-server = { git = "https://github.com/mozilla/audioipc", rev = "ec44d33e5924f6618467fdb18010d626701fd110", optional = true }
+cubeb-coreaudio = { git = "https://github.com/mozilla/cubeb-coreaudio-rs", rev = "7b996ab09d0a57a2345cd1c4509f0a8491cd3d66", optional = true, features=["vpio-forcelist"] }
+cubeb-pulse = { git = "https://github.com/mozilla/cubeb-pulse-rs", rev="4e3ea4bbc582705a4e7d9220679525283c035a7e", optional = true, features=["pulse-dlopen"] }
+cubeb-sys = { version = "0.30.1", optional = true, features=["gecko-in-tree"] }
+audioipc2-client = { git = "https://github.com/mozilla/audioipc", rev = "82fe7fa7e3aaa35468137239a0e4c2f867457214", optional = true }
+audioipc2-server = { git = "https://github.com/mozilla/audioipc", rev = "82fe7fa7e3aaa35468137239a0e4c2f867457214", optional = true }
 encoding_glue = { path = "../../../../intl/encoding_glue" }
 authrs_bridge = { path = "../../../../dom/webauthn/authrs_bridge" }
 gkrust_utils = { path = "../../../../xpcom/rust/gkrust_utils" }
@@ -110,6 +110,7 @@ etagere = { version = "0.2.13", features = ["ffi"] }
 url = "2.5.0"
 urlpattern = "0.3.0"
 urlpattern_glue = { path = "../../../../netwerk/base/urlpattern_glue" }
+uritemplate_glue = { path = "../../../../netwerk/base/uritemplate_glue" }
 
 libz-rs-sys = { version = "0.4.1", features = ["custom-prefix"], optional = true }
 

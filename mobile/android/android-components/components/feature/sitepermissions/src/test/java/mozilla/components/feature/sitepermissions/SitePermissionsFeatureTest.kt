@@ -538,7 +538,11 @@ class SitePermissionsFeatureTest {
         doReturn(mock<SelectOrAddUseCase>()).`when`(sitePermissionFeature).selectOrAddUseCase
 
         // when
-        sitePermissionFeature.onLearnMorePress(PERMISSION_ID, SESSION_ID)
+        sitePermissionFeature.onLearnMorePress(
+            permissionId = PERMISSION_ID,
+            sessionId = SESSION_ID,
+            learnMoreLink = "https://mozilla.org",
+        )
 
         // then
         verify(sitePermissionFeature)
@@ -546,9 +550,44 @@ class SitePermissionsFeatureTest {
         verify(sitePermissionFeature)
             .onContentPermissionDeny(permissionRequest, false)
         verify(sitePermissionFeature.selectOrAddUseCase).invoke(
-            url = STORAGE_ACCESS_DOCUMENTATION_URL,
+            url = "https://mozilla.org",
             private = false,
             source = SessionState.Source.Internal.TextSelection,
+        )
+    }
+
+    @Test
+    fun `GIVEN permissionRequest WHEN onLearnMorePress() THEN SelectOrAddUseCase is not called if learn more link is empty`() {
+        // given
+        val permission: ContentCrossOriginStorageAccess = mock()
+        val permissionRequest: PermissionRequest = mock {
+            whenever(permissions).thenReturn(listOf(permission))
+        }
+        doNothing().`when`(sitePermissionFeature).consumePermissionRequest(any(), any())
+        doNothing().`when`(sitePermissionFeature)
+            .onContentPermissionDeny(mockPermissionRequest, true)
+        doReturn(permissionRequest).`when`(sitePermissionFeature).findRequestedPermission(
+            anyString(),
+        )
+        doReturn(mock<SelectOrAddUseCase>()).`when`(sitePermissionFeature).selectOrAddUseCase
+
+        // given the learn more link provider returns an empty string
+        sitePermissionFeature.learnMoreUrlProvider = FakeSitePermissionsLearnMoreUrlProvider(expectedLink = "")
+
+        // when
+        sitePermissionFeature.onLearnMorePress(
+            permissionId = PERMISSION_ID,
+            sessionId = SESSION_ID,
+            learnMoreLink = "",
+        )
+
+        // then verify that SelectOrAddUseCase is never called
+        verify(sitePermissionFeature.selectOrAddUseCase, never()).invoke(
+            url = anyString(),
+            private = anyBoolean(),
+            source = any(),
+            flags = any(),
+            ignoreFragment = anyBoolean(),
         )
     }
 
@@ -1207,6 +1246,9 @@ class SitePermissionsFeatureTest {
             whenever(permissions).thenReturn(listOf(permission))
             whenever(id).thenReturn("id")
         }
+        sitePermissionFeature.learnMoreUrlProvider = FakeSitePermissionsLearnMoreUrlProvider(
+            expectedLink = "https://content-storage-url.com",
+        )
 
         // when
         sitePermissionFeature.handlingSingleContentPermissions(permissionRequest, permission, origin)
@@ -1216,8 +1258,9 @@ class SitePermissionsFeatureTest {
             context = testContext,
             origin,
             permissionRequest,
-            false,
-            true,
+            showDoNotAskAgainCheckBox = false,
+            shouldSelectRememberChoice = true,
+            learnMoreLink = "https://content-storage-url.com",
         )
     }
 
@@ -1233,12 +1276,16 @@ class SitePermissionsFeatureTest {
         }
 
         // when
+        sitePermissionFeature.learnMoreUrlProvider = FakeSitePermissionsLearnMoreUrlProvider(
+            expectedLink = "https://content-storage-url.com",
+        )
         val dialog = sitePermissionFeature.createContentCrossOriginStorageAccessPermissionPrompt(
             testContext,
             origin,
             permissionRequest,
-            false,
-            true,
+            showDoNotAskAgainCheckBox = false,
+            shouldSelectRememberChoice = true,
+            learnMoreLink = "https://content-storage-url.com",
         )
 
         // then
@@ -1268,7 +1315,7 @@ class SitePermissionsFeatureTest {
             testContext.getString(R.string.mozac_feature_sitepermissions_storage_access_not_allow),
             dialog.negativeButtonText,
         )
-        assertEquals(true, dialog.shouldShowLearnMoreLink)
+        assertEquals("https://content-storage-url.com", dialog.learnMoreLink)
     }
 
     @Test
@@ -1309,6 +1356,7 @@ class SitePermissionsFeatureTest {
                 shouldSelectRememberChoice = ArgumentMatchers.anyBoolean(),
                 isNotificationRequest = ArgumentMatchers.anyBoolean(),
                 negativeButtonResId = ArgumentMatchers.anyInt(),
+                learnMoreLink = anyString(),
             )
 
         // when
@@ -1326,6 +1374,7 @@ class SitePermissionsFeatureTest {
             shouldSelectRememberChoice = ArgumentMatchers.anyBoolean(),
             isNotificationRequest = ArgumentMatchers.anyBoolean(),
             negativeButtonResId = ArgumentMatchers.isNull(),
+            learnMoreLink = ArgumentMatchers.isNull(),
         )
     }
 
@@ -1380,6 +1429,7 @@ class SitePermissionsFeatureTest {
                     shouldSelectRememberChoice = ArgumentMatchers.anyBoolean(),
                     isNotificationRequest = ArgumentMatchers.anyBoolean(),
                     negativeButtonResId = ArgumentMatchers.anyInt(),
+                    learnMoreLink = ArgumentMatchers.anyString(),
                 )
 
             sitePermissionFeature.createPrompt(permissionRequest, URL)
@@ -1608,5 +1658,11 @@ class SitePermissionsFeatureTest {
         val transaction: FragmentTransaction = mock()
         doReturn(transaction).`when`(fragmentManager).beginTransaction()
         return fragmentManager
+    }
+
+    private class FakeSitePermissionsLearnMoreUrlProvider(
+        var expectedLink: String? = null,
+    ) : SitePermissionsLearnMoreUrlProvider {
+        override fun getUrl(permission: Permission): String? = expectedLink
     }
 }

@@ -25,22 +25,23 @@ android {
 }
 
 dependencies {
-    implementation libs.androidx.core
-    implementation libs.androidx.core.ktx
-    implementation libs.kotlin.coroutines
-
+    implementation project(':components:browser-state')
     implementation project(':components:support-base')
     implementation project(':components:support-utils')
-    implementation project(':components:browser-state')
+
+    implementation libs.androidx.core
+    implementation libs.androidx.core.ktx
+    implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
     testImplementation project(':components:support-test-libstate')
+
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
-    testImplementation libs.testing.coroutines
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.robolectric
 
-    androidTestImplementation libs.testing.coroutines
+    androidTestImplementation libs.kotlinx.coroutines.test
 }
 
 apply from: '../../../android-lint.gradle'

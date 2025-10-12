@@ -8,7 +8,6 @@ import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
-import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
@@ -23,7 +22,6 @@ import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.ids.SharedIdsHelper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.getOrigin
-import java.lang.UnsupportedOperationException
 import kotlin.coroutines.CoroutineContext
 
 private const val NOTIFICATION_CHANNEL_ID = "mozac.feature.webnotifications.generic.channel"
@@ -107,16 +105,14 @@ class WebNotificationFeature(
     }
 
     private fun ensureNotificationGroupAndChannelExists() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL_ID,
-                context.getString(R.string.mozac_feature_notification_channel_name),
-                NotificationManager.IMPORTANCE_DEFAULT,
-            )
-            channel.setShowBadge(true)
-            channel.lockscreenVisibility = NotificationCompat.VISIBILITY_PRIVATE
+        val channel = NotificationChannel(
+            NOTIFICATION_CHANNEL_ID,
+            context.getString(R.string.mozac_feature_notification_channel_name),
+            NotificationManager.IMPORTANCE_DEFAULT,
+        )
+        channel.setShowBadge(true)
+        channel.lockscreenVisibility = NotificationCompat.VISIBILITY_PRIVATE
 
-            notificationsDelegate.notificationManagerCompat.createNotificationChannel(channel)
-        }
+        notificationsDelegate.notificationManagerCompat.createNotificationChannel(channel)
     }
 }

@@ -242,8 +242,8 @@ class TextPropertyEditor {
       this.#createInvalidAtComputedValueTimeIcon();
     }
 
-    if (this.#shouldShowUnusedState) {
-      this.#createUnusedWarningIcon();
+    if (this.#shouldShowInactiveCssState) {
+      this.#createInactiveCssWarningIcon();
     }
 
     if (this.#shouldShowFilterProperty) {
@@ -316,6 +316,32 @@ class TextPropertyEditor {
           // Forward clicks on valueContainer to the editable valueSpan
           if (event.target === this.valueContainer) {
             this.valueSpan.click();
+          }
+
+          if (event.target.classList.contains("ruleview-variable-link")) {
+            const isRuleInStartingStyle =
+              this.ruleEditor.rule.isInStartingStyle();
+            const rulePseudoElement = this.ruleEditor.rule.pseudoElement;
+            this.ruleView.highlightProperty(event.target.dataset.variableName, {
+              ruleValidator: rule => {
+                // If the associated rule is not in starting style, the variable
+                // definition can't be in a starting style rule.
+                // Note that if the rule is in starting style, then the variable
+                // definition might be in a starting style rule, or in a regular one.
+                if (!isRuleInStartingStyle && rule.isInStartingStyle()) {
+                  return false;
+                }
+
+                if (
+                  rule.pseudoElement &&
+                  rulePseudoElement !== rule.pseudoElement
+                ) {
+                  return false;
+                }
+
+                return true;
+              },
+            });
           }
         },
         { signal: this.abortController.signal }
@@ -814,8 +840,10 @@ class TextPropertyEditor {
     // Update the rule property highlight.
     this.ruleView._updatePropertyHighlight(this);
 
-    // Restore focus back to the element whose markup was recreated above.
-    if (focusedElSelector) {
+    // Restore focus back to the element whose markup was recreated above, if
+    // the focus is still in the current document (avoid stealing the focus, see
+    // Bug 1911627).
+    if (this.doc.hasFocus() && focusedElSelector) {
       const elementToFocus = this.doc.querySelector(focusedElSelector);
       if (elementToFocus) {
         elementToFocus.focus();
@@ -824,7 +852,7 @@ class TextPropertyEditor {
   };
 
   #onStartEditing = () => {
-    this.element.classList.remove("ruleview-overridden");
+    this.element.classList.remove("ruleview-overridden", "ruleview-invalid");
     this.enable.style.visibility = "hidden";
     if (this.filterProperty) {
       this.filterProperty.hidden = true;
@@ -859,9 +887,13 @@ class TextPropertyEditor {
     return !this.editing && !this.isValid();
   }
 
-  get #shouldShowUnusedState() {
-    const { used } = this.prop.isUsed();
-    return !this.editing && !this.prop.overridden && this.prop.enabled && !used;
+  get #shouldShowInactiveCssState() {
+    return (
+      !this.editing &&
+      !this.prop.overridden &&
+      this.prop.enabled &&
+      !!this.prop.getInactiveCssData()
+    );
   }
 
   get #shouldShowFilterProperty() {
@@ -912,7 +944,7 @@ class TextPropertyEditor {
     this.container.insertBefore(
       this.warning,
       this.invalidAtComputedValueTimeWarning ||
-        this.unusedState ||
+        this.inactiveCssState ||
         this.compatibilityState ||
         this.filterProperty
     );
@@ -932,19 +964,19 @@ class TextPropertyEditor {
     );
     this.container.insertBefore(
       this.invalidAtComputedValueTimeWarning,
-      this.unusedState || this.compatibilityState || this.filterProperty
+      this.inactiveCssState || this.compatibilityState || this.filterProperty
     );
   }
 
-  #createUnusedWarningIcon() {
-    if (this.unusedState) {
+  #createInactiveCssWarningIcon() {
+    if (this.inactiveCssState) {
       return;
     }
 
-    this.unusedState = this.doc.createElementNS(HTML_NS, "div");
-    this.unusedState.classList.add("ruleview-unused-warning");
+    this.inactiveCssState = this.doc.createElementNS(HTML_NS, "div");
+    this.inactiveCssState.classList.add("ruleview-inactive-css-warning");
     this.container.insertBefore(
-      this.unusedState,
+      this.inactiveCssState,
       this.compatibilityState || this.filterProperty
     );
   }
@@ -995,6 +1027,8 @@ class TextPropertyEditor {
     this.enable.checked = this.prop.enabled;
 
     if (this.#shouldShowWarning) {
+      this.element.classList.add("ruleview-invalid");
+
       if (!this.warning) {
         this.#createWarningIcon();
       } else {
@@ -1003,8 +1037,11 @@ class TextPropertyEditor {
       this.warning.title = !this.#isNameValid()
         ? l10n("rule.warningName.title")
         : l10n("rule.warning.title");
-    } else if (this.warning) {
-      this.warning.hidden = true;
+    } else {
+      this.element.classList.remove("ruleview-invalid");
+      if (this.warning) {
+        this.warning.hidden = true;
+      }
     }
 
     if (!this.editing && this.#isInvalidAtComputedValueTime()) {
@@ -1047,24 +1084,29 @@ class TextPropertyEditor {
       this.element.classList.remove("ruleview-overridden");
     }
 
-    this.#updatePropertyUsedIndicator();
+    this.#updateInactiveCssIndicator();
     this.#updatePropertyCompatibilityIndicator();
   };
 
-  #updatePropertyUsedIndicator() {
-    const { used } = this.prop.isUsed();
+  #updateInactiveCssIndicator() {
+    const inactiveCssData = this.prop.getInactiveCssData();
 
-    if (this.editing || this.prop.overridden || !this.prop.enabled || used) {
-      this.element.classList.remove("unused");
-      if (this.unusedState) {
-        this.unusedState.hidden = true;
+    if (
+      this.editing ||
+      this.prop.overridden ||
+      !this.prop.enabled ||
+      !inactiveCssData
+    ) {
+      this.element.classList.remove("inactive-css");
+      if (this.inactiveCssState) {
+        this.inactiveCssState.hidden = true;
       }
     } else {
-      this.element.classList.add("unused");
-      if (!this.unusedState) {
-        this.#createUnusedWarningIcon();
+      this.element.classList.add("inactive-css");
+      if (!this.inactiveCssState) {
+        this.#createInactiveCssWarningIcon();
       } else {
-        this.unusedState.hidden = false;
+        this.inactiveCssState.hidden = false;
       }
     }
   }

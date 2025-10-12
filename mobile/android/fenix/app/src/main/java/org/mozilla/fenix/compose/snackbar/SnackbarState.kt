@@ -9,6 +9,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
 import com.google.android.material.snackbar.Snackbar.LENGTH_SHORT
+import mozilla.components.compose.base.snackbar.SnackbarData
+import mozilla.components.compose.base.snackbar.SnackbarVisuals
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.snackbar.SnackbarState.Type
 
@@ -25,6 +27,7 @@ private val defaultOnDismiss: () -> Unit = {}
  * @property duration The duration of the Snackbar.
  * @property type The [Type] used to apply styling.
  * @property action Optional action within the Snackbar.
+ * @property withDismissAction Whether to display a dismiss button.
  * @property onDismiss Invoked when the Snackbar is dismissed.
  */
 data class SnackbarState(
@@ -33,6 +36,7 @@ data class SnackbarState(
     val duration: Duration = defaultDuration,
     val type: Type = defaultType,
     val action: Action? = defaultAction,
+    val withDismissAction: Boolean = false,
     val onDismiss: () -> Unit = defaultOnDismiss,
 ) {
 
@@ -97,6 +101,23 @@ data class SnackbarState(
         val text: String,
         val textOverflow: TextOverflow = TextOverflow.Ellipsis,
     )
+
+    /**
+     * Converts this [SnackbarState] into [SnackbarData] used to display a Snackbar.
+     */
+    fun toSnackbarData(): SnackbarData {
+        return SnackbarData(
+            visuals = SnackbarVisuals(
+                message = message,
+                subMessage = subMessage?.text,
+                actionLabel = action?.label,
+                withDismissAction = withDismissAction,
+                duration = toSnackbarDuration(),
+            ),
+            dismiss = onDismiss,
+            performAction = action?.onClick ?: {},
+        )
+    }
 }
 
 /**

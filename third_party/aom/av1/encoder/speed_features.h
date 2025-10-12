@@ -357,10 +357,12 @@ typedef enum {
  */
 typedef enum {
   NO_PRUNING = -1,
-  SIMPLE_AGG_LVL0,     /*!< Simple prune aggressiveness level 0. */
-  SIMPLE_AGG_LVL1,     /*!< Simple prune aggressiveness level 1. */
-  SIMPLE_AGG_LVL2,     /*!< Simple prune aggressiveness level 2. */
-  SIMPLE_AGG_LVL3,     /*!< Simple prune aggressiveness level 3. */
+  SIMPLE_AGG_LVL0,     /*!< Simple prune aggressiveness level 0. speed = 0 */
+  SIMPLE_AGG_LVL1,     /*!< Simple prune aggressiveness level 1. speed = 1 */
+  SIMPLE_AGG_LVL2,     /*!< Simple prune aggressiveness level 2. speed = 2 */
+  SIMPLE_AGG_LVL3,     /*!< Simple prune aggressiveness level 3. speed >= 3 */
+  SIMPLE_AGG_LVL4,     /*!< Simple prune aggressiveness level 4. speed >= 4 */
+  SIMPLE_AGG_LVL5,     /*!< Simple prune aggressiveness level 5. speed >= 5 */
   QIDX_BASED_AGG_LVL1, /*!< Qindex based prune aggressiveness level, aggressive
                           level maps to simple agg level 1 or 2 based on qindex.
                         */
@@ -368,7 +370,7 @@ typedef enum {
                                                   aggressiveness levels. */
   TOTAL_QINDEX_BASED_AGG_LVLS =
       QIDX_BASED_AGG_LVL1 -
-      SIMPLE_AGG_LVL3, /*!< Total number of qindex based simple prune
+      SIMPLE_AGG_LVL5, /*!< Total number of qindex based simple prune
                           aggressiveness levels. */
   TOTAL_AGG_LVLS = TOTAL_SIMPLE_AGG_LVLS +
                    TOTAL_QINDEX_BASED_AGG_LVLS, /*!< Total number of levels. */
@@ -666,10 +668,16 @@ typedef struct PARTITION_SPEED_FEATURES {
   int partition_search_breakout_rate_thr;
 
   // Thresholds for ML based partition search breakout.
-  int ml_partition_search_breakout_thresh[PARTITION_BLOCK_SIZES];
+  float ml_partition_search_breakout_thresh[PARTITION_BLOCK_SIZES];
+
+  // ML based partition search breakout model index
+  int ml_partition_search_breakout_model_index;
+
+  // ML based partition search breakout model index
+  int ml_4_partition_search_level_index;
 
   // Aggressiveness levels for pruning split and rectangular partitions based on
-  // simple_motion_search. SIMPLE_AGG_LVL0 to SIMPLE_AGG_LVL3 correspond to
+  // simple_motion_search. SIMPLE_AGG_LVL0 to SIMPLE_AGG_LVL5 correspond to
   // simple motion search based pruning. QIDX_BASED_AGG_LVL1 corresponds to
   // qindex based and simple motion search based pruning.
   int simple_motion_search_prune_agg;
@@ -916,8 +924,9 @@ typedef struct MV_SPEED_FEATURES {
   int prune_intrabc_candidate_block_hash_search;
 
   // Intrabc search level
-  // 0: top + left search
-  // 1: top search only
+  // 0: top + left search, all block sizes, always hash plus pixel search
+  // 1: top search only, 4x4, 8x8 and 16x16 block sizes only, perform pixel
+  //    search if and only if hash search failed to find a candidate
   int intrabc_search_level;
 
   // Whether the maximum intrabc block size to hash is 8x8

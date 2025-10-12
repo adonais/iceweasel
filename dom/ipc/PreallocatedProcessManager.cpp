@@ -60,7 +60,7 @@ class PreallocatedProcessManagerImpl final : public nsIObserver {
   void Init();
 
   bool CanAllocate();
-  void AllocateAfterDelay(bool aStartup = false);
+  void AllocateAfterDelay();
   void AllocateOnIdle();
   void AllocateNow();
 
@@ -239,7 +239,7 @@ void PreallocatedProcessManagerImpl::Enable(uint32_t aProcesses) {
   }
 
   mEnabled = true;
-  AllocateAfterDelay(/* aStartup */ true);
+  AllocateAfterDelay();
 }
 
 void PreallocatedProcessManagerImpl::AddBlocker(ContentParent* aParent) {
@@ -277,12 +277,11 @@ bool PreallocatedProcessManagerImpl::CanAllocate() {
           !ContentParent::IsMaxProcessCountReached(DEFAULT_REMOTE_TYPE));
 }
 
-void PreallocatedProcessManagerImpl::AllocateAfterDelay(bool aStartup) {
+void PreallocatedProcessManagerImpl::AllocateAfterDelay() {
   if (!IsEnabled()) {
     return;
   }
-  long delay = aStartup ? StaticPrefs::dom_ipc_processPrelaunch_startupDelayMs()
-                        : StaticPrefs::dom_ipc_processPrelaunch_delayMs();
+  long delay = StaticPrefs::dom_ipc_processPrelaunch_delayMs();
   MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
           ("Starting delayed process start, delay=%ld", delay));
   NS_DelayedDispatchToCurrentThread(

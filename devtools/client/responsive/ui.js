@@ -717,8 +717,8 @@ class ResponsiveUI {
   }
 
   async onRotateViewport(event) {
-    const { orientationType: type, angle, isViewportRotated } = event.data;
-    await this.updateScreenOrientation(type, angle, isViewportRotated);
+    const { orientationType: type, angle } = event.data;
+    await this.updateScreenOrientation(type, angle);
   }
 
   async onScreenshot() {
@@ -953,21 +953,12 @@ class ResponsiveUI {
    *        The orientation type to update the current device screen to.
    * @param {Number} angle
    *        The rotation angle to update the current device screen to.
-   * @param {Boolean} isViewportRotated
-   *        Whether or not the reason for updating the screen orientation is a result
-   *        of actually rotating the device via the RDM toolbar. If true, then an
-   *        "orientationchange" event is simulated. Otherwise, the screen orientation is
-   *        updated because of changing devices, opening RDM, or the page has been
-   *        reloaded/navigated to, so we should not be simulating "orientationchange".
    */
-  async updateScreenOrientation(type, angle, isViewportRotated = false) {
-    await this.commands.targetConfigurationCommand.simulateScreenOrientationChange(
-      {
-        type,
-        angle,
-        isViewportRotated,
-      }
-    );
+  async updateScreenOrientation(type, angle) {
+    // We need to call the method on the parent process
+    await this.commands.targetConfigurationCommand.updateConfiguration({
+      rdmPaneOrientation: { type, angle },
+    });
   }
 
   /**

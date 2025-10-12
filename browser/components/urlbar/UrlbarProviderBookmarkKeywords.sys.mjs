@@ -21,16 +21,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 /**
  * Class used to create the provider.
  */
-class ProviderBookmarkKeywords extends UrlbarProvider {
-  /**
-   * Returns the name of this provider.
-   *
-   * @returns {string} the name of this provider.
-   */
-  get name() {
-    return "BookmarkKeywords";
-  }
-
+export class UrlbarProviderBookmarkKeywords extends UrlbarProvider {
   /**
    * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
    */
@@ -110,5 +101,3 @@ class ProviderBookmarkKeywords extends UrlbarProvider {
     addCallback(this, result);
   }
 }
-
-export var UrlbarProviderBookmarkKeywords = new ProviderBookmarkKeywords();

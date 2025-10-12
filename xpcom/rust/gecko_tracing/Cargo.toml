@@ -8,5 +8,5 @@ license = "MPL-2.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std"] }
 # app-services crates, overridden in the `[patch.crates-io]` section of the top-level Cargo.toml
-error-support = { version = "0.1", features = ["tracing-logging"] }
+error-support = { version = "0.1", features = ["tracing-logging", "tracing-reporting"] }
 tracing-support = { version = "0.1" }

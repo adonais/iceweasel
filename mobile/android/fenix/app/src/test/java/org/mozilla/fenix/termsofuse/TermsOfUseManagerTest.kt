@@ -31,6 +31,7 @@ class TermsOfUseManagerTest {
     @Test
     fun `GIVEN the user has not accepted terms of use THEN the prompt should not show`() {
         settings.hasAcceptedTermsOfService = true
+        settings.isTermsOfUsePromptEnabled = true
 
         assertFalse(termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment())
     }
@@ -38,6 +39,7 @@ class TermsOfUseManagerTest {
     @Test
     fun `GIVEN the user has not postponed accepting THEN the prompt should show`() {
         settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
         settings.hasPostponedAcceptingTermsOfUse = false
         termsOfUseManager.onStart()
 
@@ -45,8 +47,19 @@ class TermsOfUseManagerTest {
     }
 
     @Test
+    fun `GIVEN the terms of use feature flag is disabled AND all other conditions to show are met THEN the prompt should not show`() {
+        settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = false
+        settings.hasPostponedAcceptingTermsOfUse = false
+        termsOfUseManager.onStart()
+
+        assertFalse(termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment())
+    }
+
+    @Test
     fun `GIVEN the user has postponed accepting AND it has been 5 days since THEN the prompt should show`() {
         settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
         settings.hasPostponedAcceptingTermsOfUse = true
         termsOfUseManager.onStart()
         settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis() - Settings.FIVE_DAYS_MS
@@ -57,6 +70,7 @@ class TermsOfUseManagerTest {
     @Test
     fun `GIVEN the user has postponed accepting AND it has not been 5 days since THEN the prompt should not show`() {
         settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
         settings.hasPostponedAcceptingTermsOfUse = true
         termsOfUseManager.onStart()
         settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis()
@@ -67,6 +81,7 @@ class TermsOfUseManagerTest {
     @Test
     fun `GIVEN this is the first check of the session AND other requirements are met THEN the prompt should show`() {
         settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
         settings.hasPostponedAcceptingTermsOfUse = false
         termsOfUseManager.onStart()
 
@@ -76,6 +91,7 @@ class TermsOfUseManagerTest {
     @Test
     fun `GIVEN this is not the first check of the session AND other requirements are met THEN the prompt should not show`() {
         settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
         settings.hasPostponedAcceptingTermsOfUse = false
         termsOfUseManager.onStart()
 
@@ -87,6 +103,7 @@ class TermsOfUseManagerTest {
     @Test
     fun `GIVEN this is not the first check of the session AND we ignore the first check AND other requirements are met THEN the prompt should show`() {
         settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
         settings.hasPostponedAcceptingTermsOfUse = false
         termsOfUseManager.onStart()
 
@@ -98,6 +115,7 @@ class TermsOfUseManagerTest {
     @Test
     fun `GIVEN the first check was before 5 days WHEN we check again after 5 days on the Browser Fragment without restarting AND other requirements are met THEN the prompt should not show`() {
         settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
         settings.hasPostponedAcceptingTermsOfUse = true
         settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis()
         termsOfUseManager.onStart()
@@ -112,6 +130,7 @@ class TermsOfUseManagerTest {
     @Test
     fun `GIVEN the first check was before 5 days WHEN we check again after 5 days on the Home Fragment without restarting AND other requirements are met THEN the prompt should show`() {
         settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
         settings.hasPostponedAcceptingTermsOfUse = true
         settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis()
         termsOfUseManager.onStart()
@@ -121,5 +140,43 @@ class TermsOfUseManagerTest {
         settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis() - Settings.FIVE_DAYS_MS
 
         assertTrue(termsOfUseManager.shouldShowTermsOfUsePromptOnHomepage())
+    }
+
+    @Test
+    fun `GIVEN other conditions satisfied WHEN prompt has not been displayed THEN shouldShowTermsOfUsePrompt returns true`() {
+        settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
+        settings.hasPostponedAcceptingTermsOfUse = false
+        // Prompt display count configuration.
+        settings.termsOfUsePromptDisplayedCount = 0
+        settings.termsOfUseMaxDisplayCount = 2
+
+        termsOfUseManager.onStart()
+
+        assertTrue(termsOfUseManager.shouldShowTermsOfUsePrompt())
+    }
+
+    @Test
+    fun `GIVEN other conditions satisfied WHEN prompt has been displayed the maximum number of times THEN shouldShowTermsOfUsePrompt returns false`() {
+        settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
+        settings.hasPostponedAcceptingTermsOfUse = false
+        // Prompt display count configuration.
+        settings.termsOfUsePromptDisplayedCount = 2
+        settings.termsOfUseMaxDisplayCount = 2
+
+        assertFalse(termsOfUseManager.shouldShowTermsOfUsePrompt())
+    }
+
+    @Test
+    fun `GIVEN other conditions satisfied WHEN prompt has been displayed more than the maximum number of times THEN shouldShowTermsOfUsePrompt returns false`() {
+        settings.hasAcceptedTermsOfService = false
+        settings.isTermsOfUsePromptEnabled = true
+        settings.hasPostponedAcceptingTermsOfUse = false
+        // Prompt display count configuration.
+        settings.termsOfUsePromptDisplayedCount = 3
+        settings.termsOfUseMaxDisplayCount = 2
+
+        assertFalse(termsOfUseManager.shouldShowTermsOfUsePrompt())
     }
 }

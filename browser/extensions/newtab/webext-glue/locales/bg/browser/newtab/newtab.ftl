@@ -8,6 +8,14 @@
 newtab-page-title = Нов раздел
 newtab-settings-button =
     .title = Настройки на новия раздел
+newtab-customize-panel-icon-button =
+    .title = Персонализирайте тази страница
+newtab-customize-panel-icon-button-label = Персонализиране
+newtab-personalize-settings-icon-label =
+    .title = Персонализиране на нов раздел
+    .aria-label = Настройки
+newtab-settings-dialog-label =
+    .aria-label = Настройки
 newtab-personalize-icon-label =
     .title = Приспособяване на новите раздели
     .aria-label = Приспособяване на новите раздели
@@ -80,6 +88,14 @@ newtab-confirm-delete-history-p2 = Действието е необратимо.
 
 newtab-topsite-sponsored = Спонсорирано
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (закачен)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -114,6 +130,21 @@ newtab-menu-save-to-pocket = Запазване в { -pocket-brand-name }
 newtab-menu-delete-pocket = Изтриване от { -pocket-brand-name }
 newtab-menu-archive-pocket = Архивиране в { -pocket-brand-name }
 newtab-menu-show-privacy-info = Спонсори и поверителност
+newtab-menu-about-fakespot = Относно { -fakespot-brand-name }
+# Report is a verb (i.e. report issue with the content).
+newtab-menu-report = Докладване
+# Context menu option to personalize New Tab recommended stories by blocking a section of stories,
+# e.g. "Sports". "Block" is a verb here.
+newtab-menu-section-block = Забраняване
+# "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
+# e.g. Following the travel section of stories.
+newtab-menu-section-unfollow = Прекратяване  на следенето на темата
+
+## Context menu options for sponsored stories and new ad formats on New Tab.
+
+newtab-menu-manage-sponsored-content = Управление на спонсорирано съдържание
+newtab-menu-our-sponsors-and-your-privacy = Нашите спонсори и вашата поверителност
+newtab-menu-report-this-ad = Докладване на рекламата
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
@@ -176,6 +207,8 @@ newtab-label-sponsored-by = Спонсорирано от { $sponsor }
 #   $source (string) - The name of a company or their domain
 #   $timeToRead (number) - The estimated number of minutes to read this story
 newtab-label-source-read-time = { $source } · { $timeToRead } мин.
+# This string is used under fixed size ads to indicate sponsored content
+newtab-label-sponsored-fixed = Спонсорирано
 
 ## Section Menu: These strings are displayed in the section context menu and are
 ## meant as a call to action for the given section.
@@ -237,6 +270,7 @@ newtab-pocket-more-recommendations = Повече препоръчани
 newtab-pocket-learn-more = Научете повече
 newtab-pocket-cta-button = Вземете { -pocket-brand-name }
 newtab-pocket-cta-text = Запазете статиите, които харесвате в { -pocket-brand-name } и заредете ума си с увлекателни четива.
+newtab-pocket-pocket-firefox-family = { -pocket-brand-name } е част от семейството на { -brand-product-name }
 newtab-pocket-save = Запазване
 newtab-pocket-saved = Запазено
 
@@ -258,6 +292,7 @@ newtab-toast-dismiss-button =
 ## Pocket content onboarding experience dialog and modal for new users seeing the Pocket section for the first time, shown as the first item in the Pocket section.
 
 newtab-pocket-onboarding-discover = Открийте най-доброто от интернет
+newtab-pocket-onboarding-cta = { -pocket-brand-name } изследва широка гама от публикации, за да предостави най-информиращото, вдъхновяващо и надеждно съдържание точно за вашия четец { -brand-product-name }.
 
 ## Error Fallback Content.
 ## This message and suggested action link are shown in each section of UI that fails to render.
@@ -289,9 +324,6 @@ newtab-custom-pocket-sponsored = Платени публикации
 newtab-custom-pocket-show-recent-saves = Показване на последните запазени
 newtab-custom-recent-title = Последна активност
 newtab-custom-recent-subtitle = Избрани страници и съдържание
-newtab-custom-recent-toggle =
-    .label = Последна активност
-    .description = Избрани страници и съдържание
 newtab-custom-weather-toggle =
     .label = Времето
     .description = Времето днес накратко
@@ -301,6 +333,8 @@ newtab-custom-settings = Настройки
 ## New Tab Wallpapers
 
 newtab-wallpaper-title = Тапети
+newtab-wallpaper-reset = Връщане на стандартни настройки
+newtab-wallpaper-upload-image = Качване на изображение
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Изображението надхвърля ограничението за големина на файла от { $file_size }MB. Моля, опитайте се да качите по-малък файл.

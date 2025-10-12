@@ -635,6 +635,9 @@ function makeExpectedAmpResult({
     blockId: suggestion.id,
     advertiser: suggestion.advertiser,
     icon: suggestion.icon,
+    // Expect index -1 for amp results because we test
+    // without the search suggestions provider.
+    suggestedIndex: -1,
   });
 }
 

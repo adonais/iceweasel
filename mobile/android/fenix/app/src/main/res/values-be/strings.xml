@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">Дадаткова</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Уключыць прыватнае агляданне</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Адключыць прыватнае агляданне</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Прыватнае агляданне</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Увядзіце запыт або адрас</string>
@@ -48,6 +44,10 @@
   <string name="tab_tray_close_multiselect_content_description">Выйсці з рэжыму мультывыбару</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">Захаваць абраныя карткі ў калекцыю</string>
+  <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_header">Захоплівайце карткі з любой прылады</string>
+  <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
+  <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">Увайсці</string>
   <!--
     Home - Bookmarks
 
@@ -218,6 +218,8 @@
   <string name="browser_menu_add_to_homescreen">Дадаць на хатні экран</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
   <string name="browser_menu_add_app_to_homescreen">Дадаць праграму на хатні экран</string>
+  <!-- Text for notifying users that Xiaomi devices require additional permissions to add to home screen -->
+  <string name="browser_menu_add_to_homescreen_xiaomi">Прыладам Xiaomi могуць спатрэбіцца дадатковыя дазволы для дадання цэтлікаў на галоўны экран. Калі ласка, праверце свае налады.</string>
   <!-- Content description (not visible, for screen readers etc.) for the Resync tabs button -->
   <string name="resync_button_content_description">Сінхранізаваць ізноў</string>
   <!-- Browser menu button that opens the find in page menu -->
@@ -269,8 +271,6 @@
   <string name="browser_menu_new_private_tab">Прыватная картка</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Паролі</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Пераключыцца на мабільную версію</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">Закрыць меню</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -300,8 +300,11 @@
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="browser_menu_delete_browsing_data_on_quit">Выйсці з %1$s</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Адхіліць</string>
+  <!--
+    Content description for a banner within the menu which prompt the user to make this app their default browser.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="browser_menu_default_banner_title">Зрабіць %1$s прыладай па змаўчанні</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
   <string name="browser_menu_recommended_extensions_content_description">Падрабязней</string>
   <!--
@@ -366,12 +369,16 @@
   -->
   <string name="search_engine_icon_content_description_1">Пошукавая сістэма: %s</string>
   <!--
+    Content description (not visible, for screen readers etc.) of the search engine selector from the search toolbar.
+    %s is the search engine name (for example: DuckDuckGo).
+    The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
+  -->
+  <string name="search_engine_selector_content_description">%s: выбар пошукавай сістэмы</string>
+  <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Вашыя карткі сінхранізуюцца! Працягвайце з таго месца, дзе спыніліся на іншай прыладзе.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Закрыць</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -443,6 +450,14 @@
   <string name="onboarding_preferences_dialog_crash_reporting_description">Справаздачы аб збоях дазваляюць нам дыягнаставаць і выпраўляць праблемы з браўзерам. Справаздачы могуць уключаць асабістыя або канфідэнцыяльныя звесткі.</string>
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Падрабязней</string>
+  <!-- Title for the startup crash page. %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_title">%s трэба перазапусціць</string>
+  <!-- Button text to submit a startup crash report -->
+  <string name="startup_crash_positive">Даслаць справаздачу пра крах</string>
+  <!-- Button text to continue and not send a startup crash report -->
+  <string name="startup_crash_negative">Не, дзякуй</string>
+  <!-- Button text to reopen firefox after the crash is processed %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_restart">Зноў адкрыць %s</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Падрабязней</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">Гатова</string>
@@ -456,8 +471,26 @@
   <string name="onboarding_term_of_service_line_two_link_text">Паведамленнем аб прыватнасці</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Кіраваць</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
+  <string name="onboarding_redesign_tou_body_three_link_text">Кіраваць наладамі</string>
+  <!-- Terms of use (ToU) onboarding page continue button label. -->
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Працягнуць</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">Як мы выкарыстоўваем дадзеныя</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">Сцвердзіць</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Сінхранізацыя ўсюды, дзе вы карыстаецеся Firefox</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body">Атрымлівайце закладкі, укладкі і паролі на любой прыладзе. Усё абаронена шыфраваннем.</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button">Пачаць сінхранізацыю</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">Не зараз</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">Як мы выкарыстоўваем дадзеныя</string>
+  <!-- Marketing onboarding page title variant. “One last thing” refers to the final step or action in the onboarding process that we’re asking users to take before they can start using the browser. -->
+  <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">Яшчэ адна рэч</string>
   <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
   <string name="onboarding_save_and_continue_button">Захаваць і працягваць</string>
   <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
@@ -617,12 +650,14 @@
   <string name="preferences_theme">Тэма</string>
   <!-- Preference for customizing the home screen -->
   <string name="preferences_home_2">Хатняя старонка</string>
+  <!-- Preference for customizing the app icon -->
+  <string name="preferences_app_icon">Іконка праграмы</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">Жэсты</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Уладкаванне</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Увайсці, каб сінхранізаваць карткі, закладкі, паролі і іншае.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Увайсці, каб сінхранізаваць карткі, закладкі, паролі і іншае.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Уліковы запіс Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -669,6 +704,10 @@
   <string name="preferences_show_nonsponsored_suggestions">Прапановы ад %1$s</string>
   <!-- Summary for preference to show Firefox Suggest search suggestions for web content -->
   <string name="preferences_show_nonsponsored_suggestions_summary">Атрымлівайце прапановы з інтэрнэту, звязаныя з вашым пошукам</string>
+  <!-- Preference for link sharing -->
+  <string name="preferences_link_sharing">Абагульванне спасылак</string>
+  <!-- Snackbar message shown when user shares a link -->
+  <string name="link_shared_snackbar_message">Спасылка абагулена</string>
   <!-- Snackbar action label shown when user shares a link -->
   <string name="link_shared_snackbar_action">Кіраваць наладамі</string>
   <!-- Preference for open links in third party apps -->
@@ -906,10 +945,6 @@
   <string name="exceptions_empty_message_description">Выключэнні дазваляюць адключыць функцыю аховы ад сачэння для абраных сайтаў.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">Даведацца больш</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Аўтаматычна адпраўляць справаздачы аб збоях</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Падрабязней пра справаздачы аб збоях</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Даследаванні</string>
   <!-- Summary for studies preferences -->
@@ -919,7 +954,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Сінхранізацыя і захаванне вашых дадзеных</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Сінхранізацыя і захаванне вашых дадзеных</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Увайдзіце, каб злучыцца зноў</string>
   <!-- Preference for removing FxA account -->
@@ -1173,9 +1208,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Выдаліць гісторыю</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Гісторыя выдалена</string>
+  <string name="history_delete_multiple_items_snackbar">Гісторыя выдалена</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s выдалены</string>
+  <string name="history_delete_single_item_snackbar">%1$s выдалены</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Выдаліць</string>
   <!--
@@ -1280,8 +1315,6 @@
   <string name="webcompat_reporter_label_url">URL</string>
   <!-- The error message of the URL text field when an invalid URL has been entered. -->
   <string name="webcompat_reporter_url_error_invalid">Калі ласка, увядзіце сапраўдны URL</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Выберыце прычыну</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_error">Калі ласка, выберыце прычыну</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
@@ -1293,7 +1326,7 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Даслаць</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">Закрыць</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Закрыць</string>
   <!-- Broken site reason text for site is slow -->
   <string name="webcompat_reporter_reason_slow2">Сайт марудны</string>
   <!-- Broken site reason text for something else -->
@@ -1310,8 +1343,6 @@
   <string name="tab_crash_close">Закрыць картку</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Аднавіць картку</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s прыйшлося перазапусціць</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">Аўтаматычна адпраўляць справаздачы аб збоях</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
@@ -1498,6 +1529,10 @@
   <string name="studies_on">Уключаны</string>
   <!-- Summary of studies data on quit preference if it is set to off -->
   <string name="studies_off">Выключаны</string>
+  <!-- Toggle if desktop site is turned on -->
+  <string name="browser_feature_desktop_site_on">Уключана</string>
+  <!-- Toggle if desktop site is turned off -->
+  <string name="browser_feature_desktop_site_off">Выключана</string>
   <!-- Category header of a preference that allows a user to alter settings related to web permissions. -->
   <string name="preferences_category_permissions">Дазволы</string>
   <!-- Category header of a preference that allows a user to alter settings related to web content. -->
@@ -1536,12 +1571,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">Выбрана картка: %d</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Карткі захаваны!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Калекцыя захаваная!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Калекцыя захаваная!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Картка захавана!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Картка захавана!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Закрыць</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1588,7 +1621,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Увайсці ў сінхранізацыю</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Сінхранізаваць і захаваць дадзеныя</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Сінхранізаваць і захаваць дадзеныя</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Даслаць на ўсе прылады</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1699,8 +1732,6 @@
   <string name="tab_collection_dialog_message">Вы ўпэўнены, што хочаце выдаліць %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Выдаліць</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL скапіраваны</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Гэта ўзор тэксту. Ён тут, каб паказаць, як тэкст будзе выглядаць пры павелічэнні або памяншэнні памеру з дапамогай гэтай налады.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1787,9 +1818,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Карткі адпраўлены!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Карткі адпраўлены!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Картка адпраўлена!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Картка адпраўлена!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Немагчыма адправіць</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2238,12 +2269,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Увядзіце радок пошуку</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Пераканайцеся, што пошукавы запыт адпавядае Ўзорнаму фармату</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Пашукавік %s створаны</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Пашукавік %s захаваны</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Пашукавік %s выдалены</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Каб дазволіць гэта:</string>
   <!-- First step for the allowing a permission -->
@@ -2345,6 +2370,17 @@
   <string name="synced_tabs_expand_group">Разгарнуць групу сінхранізаваных картак</string>
   <!-- Content description for collapsing a group of synced tabs. -->
   <string name="synced_tabs_collapse_group">Згарнуць групу сінхранізаваных картак</string>
+  <!--
+    Top Sites
+
+    Title text displayed for the shortcuts home screen section.
+  -->
+  <string name="homepage_shortcuts_title">Цэтлікі</string>
+  <!--
+    Context description text for the "Show all" button in the shortcuts home screen section
+    which navigates the user to a screen displaying all the shortcuts.
+  -->
+  <string name="homepage_shortcuts_show_all_content_description">Паказаць усе цэтлікі</string>
   <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
   <string name="shortcut_max_limit_title">Дасягнуты ліміт цэтлікаў</string>
   <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -2655,6 +2691,8 @@
   <string name="download_language_file_dialog_positive_button_text_all_languages">Сцягнуць і перакласці</string>
   <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to cancel the action and not perform a download of the language file. -->
   <string name="download_language_file_dialog_negative_button_text">Скасаваць</string>
+  <!-- Title text for the protection panel permissions section. -->
+  <string name="protection_panel_permissions_title">Дазволы</string>
   <!--
     Debug drawer
 

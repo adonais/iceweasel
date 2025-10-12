@@ -9,6 +9,7 @@ import android.util.AttributeSet
 import android.widget.ImageView
 import android.widget.RadioButton
 import android.widget.TextView
+import androidx.core.content.edit
 import androidx.core.content.withStyledAttributes
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
@@ -77,14 +78,14 @@ class ToggleRadioButtonPreference @JvmOverloads constructor(
         optionTrueView.setOnClickListener {
             optionTrueIconView.isSelected = true
             optionFalseIconView.isSelected = false
-            preferences.edit().putBoolean(sharedKey, true).apply()
+            preferences.edit { putBoolean(sharedKey, true) }
             notifyChanged()
         }
 
         optionFalseView.setOnClickListener {
             optionTrueIconView.isSelected = false
             optionFalseIconView.isSelected = true
-            preferences.edit().putBoolean(sharedKey, false).apply()
+            preferences.edit { putBoolean(sharedKey, false) }
             notifyChanged()
         }
     }

@@ -48,7 +48,7 @@ L10nMutations::~L10nMutations() {
 }
 
 void L10nMutations::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
-                                     nsAtom* aAttribute, int32_t aModType,
+                                     nsAtom* aAttribute, AttrModType,
                                      const nsAttrValue* aOldValue) {
   if (!mObserving) {
     return;

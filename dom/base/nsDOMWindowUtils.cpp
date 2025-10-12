@@ -43,6 +43,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileBinding.h"
+#include "mozilla/dom/FunctionBinding.h"
 #include "mozilla/dom/Touch.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
@@ -707,67 +708,6 @@ nsDOMWindowUtils::GetPresShellId(uint32_t* aPresShellId) {
     return NS_OK;
   }
   return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::SendMouseEvent(
-    const nsAString& aType, float aX, float aY, int32_t aButton,
-    int32_t aClickCount, int32_t aModifiers, bool aIgnoreRootScrollFrame,
-    float aPressure, unsigned short aInputSourceArg,
-    bool aIsDOMEventSynthesized, bool aIsWidgetEventSynthesized,
-    int32_t aButtons, uint32_t aIdentifier, uint8_t aOptionalArgCount,
-    bool* aPreventDefault) {
-  return SendMouseEventCommon(
-      aType, aX, aY, aButton, aClickCount, aModifiers, aIgnoreRootScrollFrame,
-      aPressure, aInputSourceArg,
-      aOptionalArgCount >= 7 ? aIdentifier : DEFAULT_MOUSE_POINTER_ID, false,
-      aPreventDefault, aOptionalArgCount >= 4 ? aIsDOMEventSynthesized : true,
-      aOptionalArgCount >= 5 ? aIsWidgetEventSynthesized : false,
-      aOptionalArgCount >= 6 ? aButtons : MOUSE_BUTTONS_NOT_SPECIFIED);
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::SendMouseEventToWindow(
-    const nsAString& aType, float aX, float aY, int32_t aButton,
-    int32_t aClickCount, int32_t aModifiers, bool aIgnoreRootScrollFrame,
-    float aPressure, unsigned short aInputSourceArg,
-    bool aIsDOMEventSynthesized, bool aIsWidgetEventSynthesized,
-    int32_t aButtons, uint32_t aIdentifier, uint8_t aOptionalArgCount) {
-  AUTO_PROFILER_LABEL("nsDOMWindowUtils::SendMouseEventToWindow", OTHER);
-
-  return SendMouseEventCommon(
-      aType, aX, aY, aButton, aClickCount, aModifiers, aIgnoreRootScrollFrame,
-      aPressure, aInputSourceArg,
-      aOptionalArgCount >= 7 ? aIdentifier : DEFAULT_MOUSE_POINTER_ID, true,
-      nullptr, aOptionalArgCount >= 4 ? aIsDOMEventSynthesized : true,
-      aOptionalArgCount >= 5 ? aIsWidgetEventSynthesized : false,
-      aOptionalArgCount >= 6 ? aButtons : MOUSE_BUTTONS_NOT_SPECIFIED);
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::SendMouseEventCommon(
-    const nsAString& aType, float aX, float aY, int32_t aButton,
-    int32_t aClickCount, int32_t aModifiers, bool aIgnoreRootScrollFrame,
-    float aPressure, unsigned short aInputSourceArg, uint32_t aPointerId,
-    bool aToWindow, bool* aPreventDefault, bool aIsDOMEventSynthesized,
-    bool aIsWidgetEventSynthesized, int32_t aButtons) {
-  RefPtr<PresShell> presShell = GetPresShell();
-  if (!presShell) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsPoint offset;
-  nsCOMPtr<nsIWidget> widget = GetWidget(&offset);
-  if (!widget) {
-    return NS_ERROR_FAILURE;
-  }
-  LayoutDeviceIntPoint refPoint = nsContentUtils::ToWidgetPoint(
-      CSSPoint(aX, aY), offset, presShell->GetPresContext());
-  return nsContentUtils::SendMouseEvent(
-      presShell, widget, aType, refPoint, aButton, aButtons, aClickCount,
-      aModifiers, aIgnoreRootScrollFrame, aPressure, aInputSourceArg,
-      aPointerId, aToWindow, aPreventDefault, aIsDOMEventSynthesized,
-      aIsWidgetEventSynthesized);
 }
 
 NS_IMETHODIMP
@@ -4996,13 +4936,17 @@ nsDOMWindowUtils::SendMozMouseHitTestEvent(float aX, float aY,
   LayoutDeviceIntPoint refPoint = nsContentUtils::ToWidgetPoint(
       CSSPoint(aX, aY), offset, presShell->GetPresContext());
 
-  return nsContentUtils::SendMouseEvent(
-      presShell, widget, u"MozMouseHittest"_ns, refPoint, 0 /* aButton */,
-      MOUSE_BUTTONS_NOT_SPECIFIED /* aButtons */, 0 /* aClickCount */,
-      0 /* aModifiers */, true /* aIgnoreRootScrollFrame */, 0 /* aPressure */,
-      0 /* aInputSourceArg */, DEFAULT_MOUSE_POINTER_ID /* aIdentifier */,
-      false /* aToWindow */, nullptr /* aPreventDefault */,
-      true /* aIsDOMEventSynthesized */, true /* aIsWidgetEventSynthesized */);
+  SynthesizeMouseEventOptions options;
+  options.mIgnoreRootScrollFrame = true;
+  options.mIsDOMEventSynthesized = true;
+  options.mIsWidgetEventSynthesized = true;
+  options.mIsAsyncEnabled = false;
+
+  auto result = nsContentUtils::SynthesizeMouseEvent(
+      presShell, widget, u"MozMouseHittest"_ns, refPoint,
+      SynthesizeMouseEventData{}, options,
+      Optional<OwningNonNull<VoidFunction>>{});
+  return result.isOk() ? NS_OK : result.unwrapErr();
 }
 
 NS_IMETHODIMP

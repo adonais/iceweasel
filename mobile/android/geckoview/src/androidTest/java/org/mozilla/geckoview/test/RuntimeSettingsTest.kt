@@ -718,9 +718,9 @@ class RuntimeSettingsTest : BaseSessionTest() {
         val geckoRuntimeSettings = sessionRule.runtime.settings
 
         assertThat(
-            "Certificate Transparency mode should default to 0",
+            "Certificate Transparency mode should default to 1",
             geckoRuntimeSettings.certificateTransparencyMode,
-            equalTo(0),
+            equalTo(1),
         )
 
         geckoRuntimeSettings.setCertificateTransparencyMode(2)

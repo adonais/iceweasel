@@ -752,7 +752,7 @@ void nsNetworkLinkService::DNSConfigChanged(uint32_t aDelayMs) {
           self->mDNSConfigChangedTimers.RemoveElement(aTimer);
         },
         TimeDuration::FromMilliseconds(aDelayMs), nsITimer::TYPE_ONE_SHOT,
-        "nsNetworkLinkService::GetDnsSuffixListInternal", target));
+        "nsNetworkLinkService::GetDnsSuffixListInternal"_ns, target));
     mDNSConfigChangedTimers.AppendElement(timer);
   } else {
     MOZ_ALWAYS_SUCCEEDS(target->Dispatch(NS_NewRunnableFunction(

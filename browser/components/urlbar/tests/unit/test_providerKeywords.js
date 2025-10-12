@@ -394,7 +394,7 @@ add_task(async function test_keyword_search() {
         uri: "http://key2/",
         fallbackTitle: "http://key2/",
         heuristic: true,
-        providerName: "HeuristicFallback",
+        providerName: "UrlbarProviderHeuristicFallback",
       }),
       makeVisitResult(context, {
         uri: uri7,

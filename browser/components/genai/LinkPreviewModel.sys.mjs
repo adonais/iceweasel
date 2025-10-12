@@ -400,7 +400,7 @@ export const LinkPreviewModel = {
     try {
       engine = await this.createEngine(
         {
-          backend: "wllama",
+          backend: "best-llama",
           engineId: "wllamapreview",
           kvCacheDtype: "q8_0",
           modelFile: "smollm2-360m-instruct-q8_0.gguf",

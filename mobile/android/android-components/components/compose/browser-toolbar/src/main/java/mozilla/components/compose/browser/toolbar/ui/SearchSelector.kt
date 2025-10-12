@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
@@ -44,6 +45,7 @@ import mozilla.components.compose.base.menu.CustomPlacementPopup
 import mozilla.components.compose.base.menu.CustomPlacementPopupVerticalContent
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.R
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.SEARCH_SELECTOR
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem
@@ -81,6 +83,7 @@ fun SearchSelector(
             .height(40.dp)
             .semantics(mergeDescendants = true) {
                 this.contentDescription = contentDescription
+                this.testTag = SEARCH_SELECTOR
             }
             .clickable {
                 view.playSoundEffect(SoundEffectConstants.CLICK)

@@ -10,10 +10,6 @@
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
   <string name="content_description_menu">Doj sa ga\'ue nagi\'át</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Nāchrūn riña gāchē nu huìt</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Dūnâ\\’āJ riña gāchē nu huìt</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Gachrūn nuguan\' ruhuât nanà\'uìt</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -232,10 +228,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">¡Huā nūguan’àn nej rakïj ñanj huā ‘hiát! Guīj riña rakïj ñanj dunâjt riña a’ngô si āgâ’t.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Nārán</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Dūnâj gāhuin man riña sa nānà\'uì\' yītïnjt</string>
@@ -363,7 +357,7 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Nādunō\' dàj huin ruhuô\'</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Gāyi’ì sēsiûn da’ nāgi’hiaj nūguan’ànt nej rakïj ñanj, nej markadô, nej da’nga’ huìi nī doj sa huāa.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Gāyi’ì sēsiûn da’ nāgi’hiaj nūguan’ànt nej rakïj ñanj, nej markadô, nej da’nga’ huìi nī doj sa huāa.</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
   <string name="preferences_account_sync_error">Nātū nākà ñû da\' gānahuij nāgi\'iaj nūguàn\'anj</string>
   <!-- Preference for language -->
@@ -538,7 +532,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Nāgi\\’hiaj nūguà\'àn nī na’nïnj sà\\’t nej si datôt</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Nāgi\\’hiaj nūguà\'àn nī na’nïnj sà\\’t nej si datôt</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Gāyi\'ì sēsiûn da\' ga\'ue gānātū nûnt</string>
   <!-- Preference for removing FxA account -->
@@ -774,9 +768,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Nādūre\' sa gini\'iājt</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Ngà nare\' nej sa gini\'iājt</string>
+  <string name="history_delete_multiple_items_snackbar">Ngà nare\' nej sa gini\'iājt</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Ngà nare\' %1$s</string>
+  <string name="history_delete_single_item_snackbar">Ngà nare\' %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Nādūre\'</string>
   <!--
@@ -1005,12 +999,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d rakïj ñanj naguit</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Nej rakïj ñanj na\'nín sà\'t</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Ngà nanun sà\' nej sa nachra chrē\'t</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Ngà nanun sà\' nej sa nachra chrē\'t</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Rakïj ñanj na\'nïnj sà\'t</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Rakïj ñanj na\'nïnj sà\'t</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Nārán</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1057,7 +1049,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Gāyi\'ì sēsiû riña Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Nāgi\\’hiaj nūguà\'àn nī na’nïnj sà\\’t nej dâto</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Nāgi\\’hiaj nūguà\'àn nī na’nïnj sà\\’t nej dâto</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Gā \'nïnj gan\'an riña daran\' nej aga\'a</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1162,8 +1154,6 @@
   <string name="tab_collection_dialog_message">Huā yītïnj ruhuât nādure\'t %1$s anj</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Nādūre\'</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Ngà naka URL</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Ni\'iāj sò\' hua lechrâ nan. Dānaj gūruguì\'ij ni\'iājt sisī nāgi\'iaj yāchìjt asi nāgi\'iaj lít man.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1250,9 +1240,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Nej rakïj ñanj ngà gan\'ānj</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Nej rakïj ñanj ngà gan\'ānj</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Rakïj ñanj ngà gan\'ānj</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Rakïj ñanj ngà gan\'ānj</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Nu ga\'ue gan\'an</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1615,12 +1605,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Gāchrūn \'ngō kādenâ nanà\'uì\'t</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Gīni\'iāj sisī dàj rû\' hua kādenâ \'na\' diganj hua si kādenât</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ngà nahuij gahui</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Ngà nanun sà\' %s</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Ngà nare\' %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Da\' ga\'ue gā\'nïn:</string>
   <!-- First step for the allowing a permission -->

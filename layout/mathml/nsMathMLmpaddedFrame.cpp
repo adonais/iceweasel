@@ -42,7 +42,7 @@ nsMathMLmpaddedFrame::InheritAutomaticData(nsIFrame* aParent) {
 
 nsresult nsMathMLmpaddedFrame::AttributeChanged(int32_t aNameSpaceID,
                                                 nsAtom* aAttribute,
-                                                int32_t aModType) {
+                                                AttrModType aModType) {
   if (aNameSpaceID == kNameSpaceID_None) {
     bool hasDirtyAttributes = false;
     IntrinsicDirty intrinsicDirty = IntrinsicDirty::None;

@@ -3,9 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use anyhow::Result;
-use crash_helper_common::{
-    ignore_eintr, BreakpadChar, BreakpadData, IPCChannel, IPCConnector, IPCListener,
-};
+use crash_helper_common::{ignore_eintr, BreakpadChar, BreakpadData, IPCChannel, IPCConnector};
 use nix::{
     spawn::{posix_spawn, PosixSpawnAttr, PosixSpawnFileActions},
     sys::wait::waitpid,
@@ -25,12 +23,11 @@ impl CrashHelperClient {
         minidump_path: *const BreakpadChar,
     ) -> Result<CrashHelperClient> {
         let channel = IPCChannel::new()?;
-        let (listener, server_endpoint, client_endpoint) = channel.deconstruct();
+        let (_listener, server_endpoint, client_endpoint) = channel.deconstruct();
         CrashHelperClient::spawn_crash_helper(
             program,
             breakpad_data,
             minidump_path,
-            listener,
             server_endpoint,
         )?;
 
@@ -45,7 +42,6 @@ impl CrashHelperClient {
         program: *const BreakpadChar,
         breakpad_data: BreakpadData,
         minidump_path: *const BreakpadChar,
-        listener: IPCListener,
         endpoint: IPCConnector,
     ) -> Result<()> {
         let parent_pid = getpid().to_string();
@@ -54,7 +50,6 @@ impl CrashHelperClient {
         let breakpad_data_arg =
             unsafe { CString::from_vec_unchecked(breakpad_data.to_string().into_bytes()) };
         let minidump_path = unsafe { CStr::from_ptr(minidump_path) };
-        let listener_arg = listener.serialize();
         let endpoint_arg = endpoint.serialize();
 
         let file_actions = PosixSpawnFileActions::init()?;
@@ -74,7 +69,6 @@ impl CrashHelperClient {
                 &parent_pid_arg,
                 &breakpad_data_arg,
                 minidump_path,
-                &listener_arg,
                 &endpoint_arg,
             ],
             env.as_slice(),

@@ -138,7 +138,7 @@ bool HTMLFrameSetElement::ParseAttribute(int32_t aNamespaceID,
 }
 
 nsChangeHint HTMLFrameSetElement::GetAttributeChangeHint(
-    const nsAtom* aAttribute, int32_t aModType) const {
+    const nsAtom* aAttribute, AttrModType aModType) const {
   nsChangeHint retval =
       nsGenericHTMLElement::GetAttributeChangeHint(aAttribute, aModType);
   if (aAttribute == nsGkAtoms::rows || aAttribute == nsGkAtoms::cols) {

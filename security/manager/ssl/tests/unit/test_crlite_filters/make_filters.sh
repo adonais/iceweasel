@@ -5,9 +5,11 @@ L2="20200101-1"
 
 python add_cert.py ${L1} known int.pem valid.example.com.pem
 python add_cert.py ${L1} revoked int.pem revoked.example.com.pem
+python add_cert.py ${L1} revoked int.pem revoked-no-sct.example.com.pem
 
 python add_cert.py ${L2} known int.pem valid.example.com.pem
 python add_cert.py ${L2} revoked int.pem revoked.example.com.pem
+python add_cert.py ${L1} revoked int.pem revoked-no-sct.example.com.pem
 python add_cert.py ${L2} revoked int.pem revoked-in-delta.example.com.pem
 
 cat > ./ct-logs.json << EOF

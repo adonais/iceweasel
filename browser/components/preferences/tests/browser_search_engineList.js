@@ -5,9 +5,6 @@
 
 "use strict";
 
-const { PromptTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/PromptTestUtils.sys.mjs"
-);
 const { SearchTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/SearchTestUtils.sys.mjs"
 );

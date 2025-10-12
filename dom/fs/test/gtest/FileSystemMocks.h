@@ -192,9 +192,9 @@ class TestPromiseListener : public PromiseNativeHandler,
       *isDone = true;
       FAIL() << "Timed out!";
     };
-    const char* timerName = "fs::TestPromiseListener::ClearDone";
     auto res = NS_NewTimerWithCallback(timerCallback, MilliSeconds,
-                                       nsITimer::TYPE_ONE_SHOT, timerName);
+                                       nsITimer::TYPE_ONE_SHOT,
+                                       "fs::TestPromiseListener::ClearDone"_ns);
     if (res.isOk()) {
       mTimer = res.unwrap();
     }

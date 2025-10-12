@@ -492,7 +492,7 @@ mod test {
             true,
             GLOBAL_METRIC
                 .get("a_value")
-                .test_get_value("test-ping")
+                .test_get_value(Some("test-ping".to_string()))
                 .unwrap()
         );
     }
@@ -518,8 +518,8 @@ mod test {
 
         metric.get("upload").set(true);
 
-        assert!(metric.get("upload").test_get_value("test-ping").unwrap());
-        assert_eq!(None, metric.get("download").test_get_value("test-ping"));
+        assert!(metric.get("upload").test_get_value(Some("test-ping".to_string())).unwrap());
+        assert_eq!(None, metric.get("download").test_get_value(Some("test-ping".to_string())));
     }
 
     #[test]
@@ -545,9 +545,9 @@ mod test {
 
         assert_eq!(
             "Glean",
-            metric.get("upload").test_get_value("test-ping").unwrap()
+            metric.get("upload").test_get_value(Some("test-ping".to_string())).unwrap()
         );
-        assert_eq!(None, metric.get("download").test_get_value("test-ping"));
+        assert_eq!(None, metric.get("download").test_get_value(Some("test-ping".to_string())));
     }
 
     #[test]
@@ -573,9 +573,9 @@ mod test {
 
         assert_eq!(
             10,
-            metric.get("upload").test_get_value("test-ping").unwrap()
+            metric.get("upload").test_get_value(Some("test-ping".to_string())).unwrap()
         );
-        assert_eq!(None, metric.get("download").test_get_value("test-ping"));
+        assert_eq!(None, metric.get("download").test_get_value(Some("test-ping".to_string())));
     }
 
     #[test]
@@ -635,16 +635,16 @@ mod test {
 
         assert_eq!(
             true,
-            metric.get("label1").test_get_value("test-ping").unwrap()
+            metric.get("label1").test_get_value(Some("test-ping".to_string())).unwrap()
         );
         assert_eq!(
             false,
-            metric.get("label2").test_get_value("test-ping").unwrap()
+            metric.get("label2").test_get_value(Some("test-ping".to_string())).unwrap()
         );
         // The label not in the predefined set is recorded to the `other` bucket.
         assert_eq!(
             true,
-            metric.get("__other__").test_get_value("test-ping").unwrap()
+            metric.get("__other__").test_get_value(Some("test-ping".to_string())).unwrap()
         );
 
         assert_eq!(

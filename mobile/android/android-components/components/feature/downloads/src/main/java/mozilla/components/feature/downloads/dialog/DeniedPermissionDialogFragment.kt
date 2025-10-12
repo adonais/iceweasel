@@ -13,8 +13,8 @@ import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
-import mozilla.components.support.base.R
 import mozilla.components.ui.widgets.withCenterAlignedButtons
+import mozilla.components.support.base.R as supportBaseR
 
 internal const val KEY_MESSAGE = "KEY_MESSAGE"
 
@@ -31,10 +31,10 @@ class DeniedPermissionDialogFragment : DialogFragment() {
         val builder = AlertDialog.Builder(requireContext())
             .setMessage(message)
             .setCancelable(true)
-            .setNegativeButton(R.string.mozac_support_base_permissions_needed_negative_button) { _, _ ->
+            .setNegativeButton(supportBaseR.string.mozac_support_base_permissions_needed_negative_button) { _, _ ->
                 dismiss()
             }
-            .setPositiveButton(R.string.mozac_support_base_permissions_needed_positive_button) { _, _ ->
+            .setPositiveButton(supportBaseR.string.mozac_support_base_permissions_needed_positive_button) { _, _ ->
                 openSettingsPage()
             }
         return builder.create().withCenterAlignedButtons()

@@ -319,19 +319,32 @@ newtab-custom-pocket-subtitle = Exceptional content curated by { -pocket-brand-n
 newtab-custom-stories-toggle =
     .label = Recommended stories
     .description = Exceptional content curated by the { -brand-product-name } family
+newtab-custom-stories-personalized-toggle =
+    .label = Stories
+newtab-custom-stories-personalized-checkbox-label = Personalised stories based on your activity
 newtab-custom-pocket-sponsored = Sponsored stories
 newtab-custom-pocket-show-recent-saves = Show recent saves
 newtab-custom-recent-title = Recent activity
 newtab-custom-recent-subtitle = A selection of recent sites and content
-newtab-custom-recent-toggle =
-    .label = Recent activity
-    .description = A selection of recent sites and content
 newtab-custom-weather-toggle =
     .label = Weather
     .description = Today’s forecast at a glance
 newtab-custom-trending-search-toggle =
     .label = Trending searches
     .description = Popular and frequently searched topics
+newtab-custom-widget-weather-toggle =
+    .label = Weather
+newtab-custom-widget-trending-search-toggle =
+    .label = Trending searches
+newtab-custom-widget-lists-toggle =
+    .label = Lists
+newtab-custom-widget-timer-toggle =
+    .label = Timer
+newtab-custom-widget-section-title = Widgets
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Close
+    .aria-label = Close menu
 newtab-custom-close-button = Close
 newtab-custom-settings = Manage more settings
 
@@ -344,6 +357,7 @@ newtab-wallpaper-custom-color = Choose a colour
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = The image exceeded the file size limit of { $file_size }MB. Please try uploading a smaller file.
+newtab-wallpaper-error-upload-file-type = We couldn’t upload your file. Please try again with an image file.
 newtab-wallpaper-error-file-type = We couldn’t upload your file. Please try again with different file type.
 newtab-wallpaper-light-red-panda = Red panda
 newtab-wallpaper-light-mountain = White mountain
@@ -449,7 +463,6 @@ newtab-weather-menu-change-location = Change location
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Search location
     .aria-label = Search location
-newtab-weather-change-location-search-input = Search location
 newtab-weather-menu-weather-display = Weather display
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -596,8 +609,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Trending on Google
 newtab-trending-searches-show-trending =
     .title = Show trending searches
 newtab-trending-searches-hide-trending =
@@ -606,3 +617,76 @@ newtab-trending-searches-learn-more = Learn more
 newtab-trending-searches-dismiss = Hide trending searches
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Trending searches
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = The possibilities are endless. Add one.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = New
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Completed ({ $number })
+newtab-widget-task-list-menu-copy = Copy
+newtab-widget-lists-menu-edit = Edit list name
+newtab-widget-lists-menu-create = Create a new list
+newtab-widget-lists-menu-delete = Delete this list
+newtab-widget-lists-menu-copy = Copy list to clipboard
+newtab-widget-lists-menu-hide = Hide all lists
+newtab-widget-lists-menu-learn-more = Learn more
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Add an item
+newtab-widget-lists-input-error = Please include text to add an item.
+newtab-widget-lists-input-menu-open-link = Open link
+newtab-widget-lists-input-menu-move-up = Move up
+newtab-widget-lists-input-menu-move-down = Move down
+newtab-widget-lists-input-menu-delete = Delete
+newtab-widget-lists-input-menu-edit = Edit
+newtab-widget-lists-name-label-default =
+    .label = Task list
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Task list
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = New list
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Timer
+newtab-widget-timer-notification-focus = Focus time is up. Nice work. Need a break?
+newtab-widget-timer-notification-break = Your break is over. Ready to focus?
+newtab-widget-timer-notification-warning = Notifications are off
+newtab-widget-timer-mode-focus =
+    .label = Focus
+newtab-widget-timer-mode-break =
+    .label = Break
+newtab-widget-timer-play =
+    .title = Play
+newtab-widget-timer-pause =
+    .title = Pause
+newtab-widget-timer-label-play =
+    .label = Play
+newtab-widget-timer-label-pause =
+    .label = Pause
+newtab-widget-timer-reset =
+    .title = Reset
+newtab-widget-timer-menu-notifications = Turn off notifications
+newtab-widget-timer-menu-notifications-on = Turn on notifications
+newtab-widget-timer-menu-hide = Hide timer
+newtab-widget-timer-menu-learn-more = Learn more
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Scroll for more
+newtab-widget-message-title = Stay focused with lists and a built-in timer
+# to-dos stands for "things to do".
+newtab-widget-message-copy = From quick reminders to daily to-dos, focus sessions to stretch breaks — stay on task and on time.
+newtab-promo-card-title = Support { -brand-product-name }
+newtab-promo-card-body = Our sponsors support our mission to build a better web
+newtab-promo-card-cta = Learn more
+newtab-promo-card-dismiss-button =
+    .title = Dismiss
+    .aria-label = Dismiss

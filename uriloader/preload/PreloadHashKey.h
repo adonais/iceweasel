@@ -13,7 +13,7 @@
 class nsIPrincipal;
 
 namespace JS::loader {
-enum class ScriptKind;
+enum class ScriptKind : uint8_t;
 }
 
 namespace mozilla {

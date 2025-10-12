@@ -923,6 +923,12 @@ export let ProfileDataUpgrader = {
       }
     }
 
+    if (existingDataVersion < 160) {
+      // Force all logins to be re-encrypted to make use of more modern crypto.
+      // This pref is checked in the initialization of the LoginManagerStorage.
+      Services.prefs.setBoolPref("signon.reencryptionNeeded", true);
+    }
+
     // Update the migration version.
     Services.prefs.setIntPref("browser.migration.version", newVersion);
   },

@@ -56,6 +56,11 @@
   padding: 0;
   width: 100%;
 
+  &:checked,
+  &.selected {
+    box-shadow: inset 0 0 0 3px var(--color-accent-primary);
+  }
+
   &.theme-custom-wallpaper {
     border: 2px dashed var(--border-color-default, #CFCFD8);
     box-shadow: none;
@@ -72,6 +77,11 @@
       inset-block-start: 50%;
       inset-inline-start: 50%;
       transform: translate(-50%, -50%);
+    }
+
+    &:focus {
+      outline-color: var(--focus-outline-color);
+      outline-offset: var(--focus-outline-offset);
     }
   }
 
@@ -90,18 +100,12 @@
   }
 
   &:focus-visible {
-    outline-color: var(--newtab-primary-action-background);
+    outline-offset: var(--focus-outline-offset);
   }
 
   &:hover {
     filter: brightness(55%);
     outline-color: transparent;
-  }
-
-  &:focus {
-    border-color: transparent;
-    outline-color: var(--color-accent-primary-active);
-    padding: var(--space-xxsmall);
   }
 }
 
@@ -112,16 +116,14 @@
   outline: 2px dashed var(--border-color-default, #CFCFD8);
   outline-offset: 2px;
   position: relative;
-  color-scheme: light;
 
   .wallpaper-input {
     box-shadow: none;
-  }
 
-  &:focus-visible {
-    border-color: transparent;
-    outline-color: var(--color-accent-primary-active);
-    padding: var(--space-xxsmall);
+    &:focus {
+      outline-color: var(--focus-outline-color);
+      outline-offset: 6px;
+    }
   }
 
   // The color picker has a default state where the user has not picked a custom color
@@ -174,6 +176,7 @@
     transform: translate(-50%, -50%);
     pointer-events: none;
     cursor: pointer;
+    color-scheme: light;
   }
 
   label {
@@ -284,6 +287,10 @@
 
   &:hover {
     text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline-offset: -2px;
   }
 }
 

@@ -138,7 +138,7 @@ add_task(async function test_prefix_autofill() {
       makeVisitResult(context, {
         uri: "http://mozilla.org/test/",
         title: "test visit for http://mozilla.org/test/",
-        providerName: "Places",
+        providerName: "UrlbarProviderPlaces",
       }),
     ],
   });

@@ -10,6 +10,7 @@ from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import Schema
 from taskgraph.util.templates import substitute
 
+#: Schema for chunking transforms
 CHUNK_SCHEMA = Schema(
     {
         # Optional, so it can be used for a subset of tasks in a kind

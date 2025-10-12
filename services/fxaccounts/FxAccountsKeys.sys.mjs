@@ -5,7 +5,7 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { CommonUtils } from "resource://services-common/utils.sys.mjs";
 
-import { CryptoUtils } from "resource://services-crypto/utils.sys.mjs";
+import { CryptoUtils } from "moz-src:///services/crypto/modules/utils.sys.mjs";
 
 import {
   SCOPE_APP_SYNC,

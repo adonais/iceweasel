@@ -20,17 +20,27 @@
 #include "hwy/foreach_target.h"  // IWYU pragma: keep
 
 // After foreach_target
-#include "hwy/contrib/sort/traits-inl.h"
 #include "hwy/contrib/sort/vqsort-inl.h"
 
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
-void SortF32Desc(float* HWY_RESTRICT keys, size_t num) {
+void SortF32Desc(float* HWY_RESTRICT keys, const size_t num) {
   return VQSortStatic(keys, num, SortDescending());
 }
 
+void PartialSortF32Desc(float* HWY_RESTRICT keys, const size_t num,
+                        const size_t k) {
+  return VQPartialSortStatic(keys, num, k, SortDescending());
+}
+
+void SelectF32Desc(float* HWY_RESTRICT keys, const size_t num, const size_t k) {
+  return VQSelectStatic(keys, num, k, SortDescending());
+}
+
+}  // namespace
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -40,10 +50,27 @@ HWY_AFTER_NAMESPACE();
 namespace hwy {
 namespace {
 HWY_EXPORT(SortF32Desc);
+HWY_EXPORT(PartialSortF32Desc);
+HWY_EXPORT(SelectF32Desc);
 }  // namespace
 
-void VQSort(float* HWY_RESTRICT keys, size_t n, SortDescending) {
+void VQSort(float* HWY_RESTRICT keys, const size_t n, SortDescending) {
   HWY_DYNAMIC_DISPATCH(SortF32Desc)(keys, n);
+}
+
+void VQPartialSort(float* HWY_RESTRICT keys, const size_t n, const size_t k,
+                   SortDescending) {
+  HWY_DYNAMIC_DISPATCH(PartialSortF32Desc)(keys, n, k);
+}
+
+void VQSelect(float* HWY_RESTRICT keys, const size_t n, const size_t k,
+              SortDescending) {
+  HWY_DYNAMIC_DISPATCH(SelectF32Desc)(keys, n, k);
+}
+
+void Sorter::operator()(float* HWY_RESTRICT keys, size_t n,
+                        SortDescending tag) const {
+  VQSort(keys, n, tag);
 }
 
 }  // namespace hwy

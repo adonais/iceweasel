@@ -20,6 +20,9 @@ task-defaults:
                 android-em-7.*:
                     - android/android_common.py
                     - android/android-x86_64.py
+                android-em-14.*:
+                    - android/android_common.py
+                    - android/android14-x86_64.py
                 android-hw.*:
                     - android/android_common.py
                     - android/android_hw.py
@@ -38,7 +41,7 @@ cppunittest:
     treeherder-symbol: cppunit
     target:
         by-test-platform:
-            android-em-7.*: geckoview-test_runner.apk
+            android-em.*: geckoview-test_runner.apk
             default: null
     tier: default
     run-on-projects:
@@ -78,7 +81,7 @@ gtest:
                 default: []
     target:
         by-test-platform:
-            android-em-7.*: geckoview-test_runner.apk
+            android-em.*: geckoview-test_runner.apk
             default: null
     tier: default
 
@@ -129,9 +132,9 @@ jittest-all:
     suite: jittest
     treeherder-symbol: Jit
     run-on-projects:
-        by-test-platform:
-            android-hw-.*-arm7(?:-shippable)?(-qr)?/.*: ['mozilla-central', 'release']
-            default: []
+        by-variant:
+            inc-origin-init: []
+            default: ['mozilla-central', 'release']
     chunks:
         by-test-platform:
             android-.*/opt: 3

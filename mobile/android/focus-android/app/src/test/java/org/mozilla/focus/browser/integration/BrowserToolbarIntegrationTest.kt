@@ -5,11 +5,8 @@
 package org.mozilla.focus.browser.integration
 
 import android.view.View
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SecurityInfoState
@@ -19,10 +16,10 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.browser.toolbar.display.DisplayToolbar.Indicators
 import mozilla.components.support.test.ext.joinBlocking
+import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -36,10 +33,10 @@ import org.mockito.MockitoAnnotations
 import org.mozilla.focus.fragment.BrowserFragment
 import org.robolectric.RobolectricTestRunner
 
-@ExperimentalCoroutinesApi // resetMain, setMain, UnconfinedTestDispatcher
 @RunWith(RobolectricTestRunner::class)
 class BrowserToolbarIntegrationTest {
-    private val testDispatcher = UnconfinedTestDispatcher()
+    private val testDispatcher = StandardTestDispatcher()
+
     private val selectedTab = createSecureTab()
 
     private lateinit var toolbar: BrowserToolbar
@@ -57,7 +54,6 @@ class BrowserToolbarIntegrationTest {
     @Before
     fun setUp() {
         MockitoAnnotations.openMocks(this)
-        Dispatchers.setMain(testDispatcher)
         store = spy(
             BrowserStore(
                 initialState = BrowserState(
@@ -85,13 +81,9 @@ class BrowserToolbarIntegrationTest {
                 onUrlLongClicked = { false },
                 eraseActionListener = {},
                 tabCounterListener = {},
+                coroutineDispatcher = testDispatcher,
             ),
         )
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
     }
 
     @Test
@@ -149,10 +141,13 @@ class BrowserToolbarIntegrationTest {
     }
 
     @Test
-    fun `GIVEN an insecure site WHEN observing security changes THEN add the security icon`() {
+    fun `GIVEN an insecure site WHEN observing security changes THEN add the security icon`() =
+        runTest(testDispatcher) {
         browserToolbarIntegration.start()
+        testScheduler.advanceUntilIdle()
 
         updateSecurityStatus(secure = false)
+        testScheduler.advanceUntilIdle()
 
         verify(browserToolbarIntegration).addSecurityIndicator()
         assertEquals(listOf(Indicators.SECURITY), toolbar.display.indicators)
@@ -169,14 +164,17 @@ class BrowserToolbarIntegrationTest {
     }
 
     @Test
-    fun `GIVEN a secure site after a previous insecure site WHEN observing security changes THEN add the tracking protection icon`() {
+    fun `GIVEN a secure site after a previous insecure site WHEN observing security changes THEN add the tracking protection icon`() = runTest(testDispatcher) {
         browserToolbarIntegration.start()
+        testScheduler.advanceUntilIdle()
 
         updateSecurityStatus(secure = false)
+        testScheduler.advanceUntilIdle()
 
         verify(browserToolbarIntegration).addSecurityIndicator()
 
         updateSecurityStatus(secure = true)
+        testScheduler.advanceUntilIdle()
 
         verify(browserToolbarIntegration).addTrackingProtectionIndicator()
         assertEquals(listOf(Indicators.TRACKING_PROTECTION), toolbar.display.indicators)
@@ -210,17 +208,15 @@ class BrowserToolbarIntegrationTest {
                     issuer = "Mozilla",
                 ),
             ),
-        ).joinBlocking()
+        )
 
-        testDispatcher.scheduler.advanceUntilIdle()
+        store.waitUntilIdle()
     }
 
     private fun updateTabUrl(url: String) {
         store.dispatch(
             ContentAction.UpdateUrlAction(selectedTab.id, url),
         ).joinBlocking()
-
-        testDispatcher.scheduler.advanceUntilIdle()
     }
 
     private fun createSecureTab(): TabSessionState {

@@ -25,7 +25,8 @@ void PostTraversalTask::Run() {
       break;
 
     case Type::RejectFontFaceLoadedPromise:
-      static_cast<FontFace*>(mTarget)->MaybeReject(mResult);
+      static_cast<FontFace*>(mTarget)->MaybeReject(mResult.extract(),
+                                                   std::move(mMessage));
       break;
 
     case Type::DispatchLoadingEventAndReplaceReadyPromise:

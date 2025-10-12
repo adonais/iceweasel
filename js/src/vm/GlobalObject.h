@@ -63,10 +63,6 @@ class PropertyIteratorObject;
 class RegExpStatics;
 class SetObject;
 
-namespace gc {
-class FinalizationRegistryGlobalData;
-}  // namespace gc
-
 // Fixed slot capacities for PlainObjects. The global has a cached Shape for
 // PlainObject with default prototype for each of these values.
 enum class PlainObjectSlotsKind {
@@ -226,8 +222,6 @@ class GlobalObjectData {
   // Lazily initialized script source object to use for scripts cloned from the
   // self-hosting stencil.
   GCPtr<ScriptSourceObject*> selfHostingScriptSource;
-
-  UniquePtr<gc::FinalizationRegistryGlobalData> finalizationRegistryData;
 
   // The number of times that one of the following has occurred:
   // 1. A property of this GlobalObject is deleted.
@@ -1140,11 +1134,6 @@ class GlobalObject : public NativeObject {
   // Returns an object that represents the realm, used by embedder.
   static JSObject* getOrCreateRealmKeyObject(JSContext* cx,
                                              Handle<GlobalObject*> global);
-
-  gc::FinalizationRegistryGlobalData* getOrCreateFinalizationRegistryData();
-  gc::FinalizationRegistryGlobalData* maybeFinalizationRegistryData() const {
-    return data().finalizationRegistryData.get();
-  }
 
   static size_t offsetOfGlobalDataSlot() {
     return getFixedSlotOffset(GLOBAL_DATA_SLOT);

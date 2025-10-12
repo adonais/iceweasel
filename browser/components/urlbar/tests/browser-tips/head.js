@@ -705,7 +705,9 @@ function resetSearchTipsProvider() {
   Services.prefs.clearUserPref(
     `browser.urlbar.tipShownCount.${UrlbarProviderSearchTips.TIP_TYPE.REDIRECT}`
   );
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  UrlbarProvidersManager.getProvider(
+    "UrlbarProviderSearchTips"
+  ).disableTipsForCurrentSession = false;
 }
 
 async function setDefaultEngine(name) {

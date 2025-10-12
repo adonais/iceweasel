@@ -1559,7 +1559,8 @@ nsresult nsTreeBodyFrame::IsCellCropped(int32_t aRow, nsTreeColumn* aCol,
 
 nsresult nsTreeBodyFrame::CreateTimer(const LookAndFeel::IntID aID,
                                       nsTimerCallbackFunc aFunc, int32_t aType,
-                                      nsITimer** aTimer, const char* aName) {
+                                      nsITimer** aTimer,
+                                      const nsACString& aName) {
   // Get the delay from the look and feel service.
   int32_t delay = LookAndFeel::GetInt(aID, 0);
 
@@ -1643,6 +1644,12 @@ nsresult nsTreeBodyFrame::RowCountChanged(int32_t aIndex, int32_t aCount) {
       }
       needsInvalidation = true;
     }
+  }
+
+  int32_t lastPageTopRow = std::max(0, mRowCount - mPageLength);
+  if (mTopRowIndex > lastPageTopRow) {
+    mTopRowIndex = lastPageTopRow;
+    needsInvalidation = true;
   }
 
   FullScrollbarsUpdate(needsInvalidation);
@@ -2267,7 +2274,7 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
         // Set a timer to trigger the tree scrolling.
         CreateTimer(LookAndFeel::IntID::TreeLazyScrollDelay, LazyScrollCallback,
                     nsITimer::TYPE_ONE_SHOT, getter_AddRefs(mSlots->mTimer),
-                    "nsTreeBodyFrame::LazyScrollCallback");
+                    "nsTreeBodyFrame::LazyScrollCallback"_ns);
       }
 #endif
       // Bail out to prevent spring loaded timer and feedback line settings.
@@ -2307,7 +2314,7 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
               CreateTimer(LookAndFeel::IntID::TreeOpenDelay, OpenCallback,
                           nsITimer::TYPE_ONE_SHOT,
                           getter_AddRefs(mSlots->mTimer),
-                          "nsTreeBodyFrame::OpenCallback");
+                          "nsTreeBodyFrame::OpenCallback"_ns);
             }
           }
         }
@@ -2385,7 +2392,7 @@ nsresult nsTreeBodyFrame::HandleEvent(nsPresContext* aPresContext,
       // Close all spring loaded folders except the drop folder.
       CreateTimer(LookAndFeel::IntID::TreeCloseDelay, CloseCallback,
                   nsITimer::TYPE_ONE_SHOT, getter_AddRefs(mSlots->mTimer),
-                  "nsTreeBodyFrame::CloseCallback");
+                  "nsTreeBodyFrame::CloseCallback"_ns);
     }
   }
 
@@ -3945,7 +3952,7 @@ void nsTreeBodyFrame::LazyScrollCallback(nsITimer* aTimer, void* aClosure) {
       self->CreateTimer(LookAndFeel::IntID::TreeScrollDelay, ScrollCallback,
                         nsITimer::TYPE_REPEATING_SLACK,
                         getter_AddRefs(self->mSlots->mTimer),
-                        "nsTreeBodyFrame::ScrollCallback");
+                        "nsTreeBodyFrame::ScrollCallback"_ns);
       self->ScrollByLines(self->mSlots->mScrollLines);
       // ScrollByLines may have deleted |self|.
     }

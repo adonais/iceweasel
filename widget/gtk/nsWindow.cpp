@@ -5560,7 +5560,7 @@ void nsWindow::OnScaleEvent() {
   RefreshScale(/* aRefreshScreen */ true);
 }
 
-void nsWindow::RefreshScale(bool aRefreshScreen) {
+void nsWindow::RefreshScale(bool aRefreshScreen, bool aForceRefresh) {
   if (!IsTopLevelWidget()) {
     return;
   }
@@ -5570,8 +5570,8 @@ void nsWindow::RefreshScale(bool aRefreshScreen) {
 
   MOZ_DIAGNOSTIC_ASSERT(mIsMapped && mGdkWindow);
   int ceiledScale = gdk_window_get_scale_factor(mGdkWindow);
-  const bool scaleChanged = GdkCeiledScaleFactor() != ceiledScale;
-
+  const bool scaleChanged =
+      aForceRefresh || GdkCeiledScaleFactor() != ceiledScale;
 #ifdef MOZ_WAYLAND
   if (GdkIsWaylandDisplay()) {
     WaylandSurfaceLock lock(mSurface);
@@ -7061,20 +7061,25 @@ void nsWindow::UpdateOpaqueRegionInternal() {
         cairo_rectangle_int_t rect = {gdkRect.x + offset.x,
                                       gdkRect.y + offset.y, gdkRect.width,
                                       gdkRect.height};
+        LOG("nsWindow::UpdateOpaqueRegionInternal() set opaque region [%d,%d] "
+            "-> [%d x %d]",
+            gdkRect.x, gdkRect.y, gdkRect.width, gdkRect.height);
         cairo_region_union_rectangle(region, &rect);
       }
+    } else {
+      LOG("nsWindow::UpdateOpaqueRegionInternal() window is transparent");
     }
     gdk_window_set_opaque_region(window, region);
     if (region) {
       cairo_region_destroy(region);
     }
-  }
 
 #ifdef MOZ_WAYLAND
-  if (GdkIsWaylandDisplay()) {
-    moz_container_wayland_update_opaque_region(mContainer);
-  }
+    if (GdkIsWaylandDisplay()) {
+      mSurface->SetOpaqueRegion(mOpaqueRegion.ToUnknownRegion());
+    }
 #endif
+  }
 }
 
 bool nsWindow::IsChromeWindowTitlebar() {
@@ -7376,8 +7381,15 @@ void nsWindow::SetWindowDecoration(BorderStyle aStyle) {
     wasVisible = true;
   }
 
-  gtk_window_set_decorated(GTK_WINDOW(mShell),
-                           !mUndecorated && aStyle != BorderStyle::None);
+  const bool decorated = !mUndecorated && aStyle != BorderStyle::None;
+  gtk_window_set_decorated(GTK_WINDOW(mShell), decorated);
+
+  if (!decorated) {
+    // Work around for https://gitlab.gnome.org/GNOME/gtk/-/merge_requests/8875,
+    // window shadow doesn't update on Wayland after removing window
+    // decorations. This doesn't seem like it'd affect GTK4.
+    gdk_window_set_shadow_width(GetToplevelGdkWindow(), 0, 0, 0, 0);
+  }
 
   gint wmd = ConvertBorderStyles(aStyle);
   if (wmd != -1) {
@@ -9027,7 +9039,7 @@ double nsWindow::FractionalScaleFactor() {
     }
   }
 #endif
-  return GdkCeiledScaleFactor();
+  return ScreenHelperGTK::GetGTKMonitorFractionalScaleFactor();
 }
 
 gint nsWindow::DevicePixelsToGdkCoordRoundUp(int aPixels) {

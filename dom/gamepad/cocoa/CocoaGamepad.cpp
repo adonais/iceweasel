@@ -532,7 +532,7 @@ void DarwinGamepadService::RunEventLoopOnce() {
   if (mIsRunning) {
     mPollingTimer->InitWithNamedFuncCallback(
         EventLoopOnceCallback, this, kDarwinGamepadPollInterval,
-        nsITimer::TYPE_ONE_SHOT, "EventLoopOnceCallback");
+        nsITimer::TYPE_ONE_SHOT, "EventLoopOnceCallback"_ns);
   } else {
     // We schedule a task shutdown and cleaning up resources to Background
     // thread here to make sure no runloop is running to prevent potential race

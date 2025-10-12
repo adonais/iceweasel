@@ -36,10 +36,7 @@ LOCAL_INCLUDES += [
 
 UNIFIED_SOURCES += [
     "/third_party/libwebrtc/system_wrappers/source/clock.cc",
-    "/third_party/libwebrtc/system_wrappers/source/cpu_features.cc",
-    "/third_party/libwebrtc/system_wrappers/source/cpu_info.cc",
-    "/third_party/libwebrtc/system_wrappers/source/rtp_to_ntp_estimator.cc",
-    "/third_party/libwebrtc/system_wrappers/source/sleep.cc"
+    "/third_party/libwebrtc/system_wrappers/source/cpu_features.cc"
 ]
 
 if not CONFIG["MOZ_DEBUG"]:

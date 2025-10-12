@@ -807,6 +807,26 @@
     cmpMir: MCompare*
   num_temps: 2
 
+# Fused Test and StrictConstantCompareInt32.
+- name: StrictConstantCompareInt32AndBranch
+  successors: [ifTrue, ifFalse]
+  operands:
+    value: BoxedValue
+  arguments:
+    cmpMir: MStrictConstantCompareInt32*
+  mir_op: Test
+  extra_name: true
+
+# Fused Test and StrictConstantCompareBoolean.
+- name: StrictConstantCompareBooleanAndBranch
+  successors: [ifTrue, ifFalse]
+  operands:
+    value: BoxedValue
+  arguments:
+    cmpMir: MStrictConstantCompareBoolean*
+  mir_op: Test
+  extra_name: true
+
 - name: BitAndAndBranch
   successors: [ifTrue, ifFalse]
   operands:
@@ -2537,6 +2557,13 @@
   num_temps: 1
   mir_op: true
 
+- name: AddAndStoreSlotPreserveWrapper
+  operands:
+    object: WordSized
+    value: BoxedValue
+  num_temps: 2
+  mir_op: AddAndStoreSlot
+
 # Store a boxed value to an object's fixed slot.
 - name: StoreFixedSlotV
   operands:
@@ -2678,6 +2705,22 @@
   operands:
     input: WordSized
   mir_op: NearbyInt
+
+# Rounds a double precision number and keeps a double output.
+# Implements Math.round().
+- name: RoundToDouble
+  result_type: WordSized
+  operands:
+    input: WordSized
+  mir_op: true
+
+# Rounds a single precision number and keeps a single output.
+# Implements Math.round().
+- name: RoundToFloat32
+  result_type: WordSized
+  operands:
+    input: WordSized
+  mir_op: RoundToDouble
 
 - name: NewLexicalEnvironmentObject
   result_type: WordSized

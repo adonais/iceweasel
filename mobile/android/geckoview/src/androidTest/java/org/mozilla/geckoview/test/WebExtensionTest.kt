@@ -4342,6 +4342,8 @@ class WebExtensionTest : BaseSessionTest() {
         downloadData.endTime = expectedEndTime
         downloadData.totalBytes = finishedDownloadSize
         downloadData.state = Download.STATE_COMPLETE
+
+        downloadCreated.update(downloadData)
         downloadCreated.update(downloadData)
 
         sessionRule.waitForResult(thirdUpdateReceived)

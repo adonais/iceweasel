@@ -9,7 +9,6 @@ import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.search.RegionState
@@ -84,57 +83,55 @@ class SearchFragmentStoreTest {
         every { settings.showNonSponsoredSuggestions } returns true
         every { settings.shouldUseBottomToolbar } returns true
 
-        mockkStatic("org.mozilla.fenix.search.SearchFragmentStoreKt") {
-            val expected = EMPTY_SEARCH_FRAGMENT_STATE.copy(
-                searchSuggestionsOrientedAtBottom = true,
-                showSearchShortcutsSetting = true,
-                showSearchSuggestionsFromCurrentEngine = true,
-                showSearchTermHistory = true,
-                showAllHistorySuggestions = true,
-                showAllSessionSuggestions = true,
-                showSponsoredSuggestions = true,
-                showNonSponsoredSuggestions = true,
-                showQrButton = true,
+        val expected = EMPTY_SEARCH_FRAGMENT_STATE.copy(
+            searchSuggestionsOrientedAtBottom = true,
+            showSearchShortcutsSetting = true,
+            showSearchSuggestionsFromCurrentEngine = true,
+            showSearchTermHistory = true,
+            showAllHistorySuggestions = true,
+            showAllSessionSuggestions = true,
+            showSponsoredSuggestions = true,
+            showNonSponsoredSuggestions = true,
+            showQrButton = true,
+            pastedText = "pastedText",
+            searchAccessPoint = MetricsUtils.Source.ACTION,
+        )
+
+        assertEquals(
+            expected,
+            createInitialSearchFragmentState(
+                activity,
+                components,
+                tabId = null,
                 pastedText = "pastedText",
                 searchAccessPoint = MetricsUtils.Source.ACTION,
-            )
+                isAndroidAutomotiveAvailable = false,
+            ),
+        )
+        assertEquals(
+            expected.copy(tabId = "tabId"),
+            createInitialSearchFragmentState(
+                activity,
+                components,
+                tabId = "tabId",
+                pastedText = "pastedText",
+                searchAccessPoint = MetricsUtils.Source.ACTION,
+                isAndroidAutomotiveAvailable = false,
+            ),
+        )
+        assertEquals(
+            expected.copy(showQrButton = false),
+            createInitialSearchFragmentState(
+                activity,
+                components,
+                tabId = null,
+                pastedText = "pastedText",
+                searchAccessPoint = MetricsUtils.Source.ACTION,
+                isAndroidAutomotiveAvailable = true,
+            ),
+        )
 
-            assertEquals(
-                expected,
-                createInitialSearchFragmentState(
-                    activity,
-                    components,
-                    tabId = null,
-                    pastedText = "pastedText",
-                    searchAccessPoint = MetricsUtils.Source.ACTION,
-                    isAndroidAutomotiveAvailable = false,
-                ),
-            )
-            assertEquals(
-                expected.copy(tabId = "tabId"),
-                createInitialSearchFragmentState(
-                    activity,
-                    components,
-                    tabId = "tabId",
-                    pastedText = "pastedText",
-                    searchAccessPoint = MetricsUtils.Source.ACTION,
-                    isAndroidAutomotiveAvailable = false,
-                ),
-            )
-            assertEquals(
-                expected.copy(showQrButton = false),
-                createInitialSearchFragmentState(
-                    activity,
-                    components,
-                    tabId = null,
-                    pastedText = "pastedText",
-                    searchAccessPoint = MetricsUtils.Source.ACTION,
-                    isAndroidAutomotiveAvailable = true,
-                ),
-            )
-
-            verify(exactly = 3) { shouldShowSearchSuggestions(BrowsingMode.Normal, settings) }
-        }
+        verify(exactly = 3) { shouldShowSearchSuggestions(BrowsingMode.Normal, settings) }
     }
 
     @Test
@@ -613,31 +610,29 @@ class SearchFragmentStoreTest {
         every { settings.showSponsoredSuggestions } returns true
         every { settings.showNonSponsoredSuggestions } returns true
 
-        mockkStatic("org.mozilla.fenix.search.SearchFragmentStoreKt") {
-            store.dispatch(
-                SearchFragmentAction.SearchDefaultEngineSelected(
-                    engine = searchEngine,
-                    browsingMode = BrowsingMode.Private,
-                    settings = settings,
-                ),
-            ).join()
+        store.dispatch(
+            SearchFragmentAction.SearchDefaultEngineSelected(
+                engine = searchEngine,
+                browsingMode = BrowsingMode.Private,
+                settings = settings,
+            ),
+        ).join()
 
-            assertNotSame(initialState, store.state)
-            assertEquals(SearchEngineSource.Default(searchEngine), store.state.searchEngineSource)
+        assertNotSame(initialState, store.state)
+        assertEquals(SearchEngineSource.Default(searchEngine), store.state.searchEngineSource)
 
-            assertTrue(store.state.showSearchSuggestionsFromCurrentEngine)
-            assertFalse(store.state.showSearchShortcuts)
-            assertTrue(store.state.showClipboardSuggestions)
-            assertFalse(store.state.showSearchTermHistory)
-            assertFalse(store.state.showHistorySuggestionsForCurrentEngine)
-            assertTrue(store.state.showAllHistorySuggestions)
-            assertFalse(store.state.showAllBookmarkSuggestions)
-            assertFalse(store.state.showAllSyncedTabsSuggestions)
-            assertTrue(store.state.showAllSessionSuggestions)
-            assertFalse(store.state.showSponsoredSuggestions)
-            assertFalse(store.state.showNonSponsoredSuggestions)
-            verify { shouldShowSearchSuggestions(BrowsingMode.Private, settings) }
-        }
+        assertTrue(store.state.showSearchSuggestionsFromCurrentEngine)
+        assertFalse(store.state.showSearchShortcuts)
+        assertTrue(store.state.showClipboardSuggestions)
+        assertFalse(store.state.showSearchTermHistory)
+        assertFalse(store.state.showHistorySuggestionsForCurrentEngine)
+        assertTrue(store.state.showAllHistorySuggestions)
+        assertFalse(store.state.showAllBookmarkSuggestions)
+        assertFalse(store.state.showAllSyncedTabsSuggestions)
+        assertTrue(store.state.showAllSessionSuggestions)
+        assertFalse(store.state.showSponsoredSuggestions)
+        assertFalse(store.state.showNonSponsoredSuggestions)
+        verify { shouldShowSearchSuggestions(BrowsingMode.Private, settings) }
     }
 
     @Test

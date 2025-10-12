@@ -127,6 +127,11 @@ sealed class BrowserEditToolbarAction : BrowserToolbarAction {
     ) : BrowserEditToolbarAction()
 
     /**
+     * Indicates that the toolbar is used for private mode / incognito queries.
+     */
+    data class PrivateModeUpdated(val inPrivateMode: Boolean) : BrowserEditToolbarAction()
+
+    /**
      * Indicates that the user has aborted editing the URL/text.
      * This callback works only up until Android API 33.
      */

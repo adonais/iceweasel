@@ -315,19 +315,32 @@ newtab-custom-pocket-subtitle = Contento exceptional a cura de { -pocket-brand-n
 newtab-custom-stories-toggle =
     .label = Historias recommendate
     .description = Exceptional contento curate per le familia de { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Historias
+newtab-custom-stories-personalized-checkbox-label = Historias personalisate basate sur tu activitate
 newtab-custom-pocket-sponsored = Articulos sponsorisate
 newtab-custom-pocket-show-recent-saves = Monstrar salvamentos recente
 newtab-custom-recent-title = Activitate recente
 newtab-custom-recent-subtitle = Un selection de sitos e contento recente
-newtab-custom-recent-toggle =
-    .label = Activitate recente
-    .description = Un selection de sitos e contento recente
 newtab-custom-weather-toggle =
     .label = Meteo
     .description = Prevision hodierne a un colpo de oculos
 newtab-custom-trending-search-toggle =
     .label = Recercas popular
     .description = Themas popular e frequentemente recercate
+newtab-custom-widget-weather-toggle =
+    .label = Meteo
+newtab-custom-widget-trending-search-toggle =
+    .label = Recercas popular
+newtab-custom-widget-lists-toggle =
+    .label = Listas
+newtab-custom-widget-timer-toggle =
+    .label = Temporisator
+newtab-custom-widget-section-title = Widgets
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Clauder
+    .aria-label = Clauder menu
 newtab-custom-close-button = Clauder
 newtab-custom-settings = Gerer altere parametros
 
@@ -340,6 +353,7 @@ newtab-wallpaper-custom-color = Eliger un color
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Le dimension del imagine excede le limite de { $file_size }MB. Tenta incargar un file minus grande.
+newtab-wallpaper-error-upload-file-type = Impossibile incargar tu file. Retenta con un file de imagine.
 newtab-wallpaper-error-file-type = Impossibile incargar tu file. Retenta con un altere typo de file.
 newtab-wallpaper-light-red-panda = Panda rubie
 newtab-wallpaper-light-mountain = Montania blanc
@@ -361,7 +375,7 @@ newtab-wallpaper-light-fox-anniversary = Un vulpe in un prato con un brumose pai
 newtab-wallpaper-category-title-colors = Colores unite
 newtab-wallpaper-blue = Blau
 newtab-wallpaper-light-blue = Blau clar
-newtab-wallpaper-light-purple = Violette clar
+newtab-wallpaper-light-purple = Purpuree clar
 newtab-wallpaper-light-green = Verde clar
 newtab-wallpaper-green = Verde
 newtab-wallpaper-beige = Beige
@@ -371,7 +385,7 @@ newtab-wallpaper-pink = Rosate
 newtab-wallpaper-light-pink = Rosate clar
 newtab-wallpaper-red = Rubie
 newtab-wallpaper-dark-blue = Blau obscur
-newtab-wallpaper-dark-purple = Violette obscur
+newtab-wallpaper-dark-purple = Purpuree obscur
 newtab-wallpaper-dark-green = Verde obscur
 newtab-wallpaper-brown = Brun
 
@@ -380,10 +394,10 @@ newtab-wallpaper-brown = Brun
 newtab-wallpaper-category-title-abstract = Abstracte
 newtab-wallpaper-abstract-green = Formas verde
 newtab-wallpaper-abstract-blue = Formas blau
-newtab-wallpaper-abstract-purple = Formas violette
+newtab-wallpaper-abstract-purple = Formas purpuree
 newtab-wallpaper-abstract-orange = Formas orange
 newtab-wallpaper-gradient-orange = Gradiente orange e rosate
-newtab-wallpaper-abstract-blue-purple = Formas blau e violette
+newtab-wallpaper-abstract-blue-purple = Formas blau e purpuree
 newtab-wallpaper-abstract-white-curves = Blanc con curvas umbrate
 newtab-wallpaper-abstract-purple-green = Gradiente purpuree e verde clar
 newtab-wallpaper-abstract-blue-purple-waves = Formas undulate blau e purpuree
@@ -445,7 +459,6 @@ newtab-weather-menu-change-location = Cambiar loco
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Cercar loco
     .aria-label = Cercar loco
-newtab-weather-change-location-search-input = Cercar loco
 newtab-weather-menu-weather-display = Visualisation meteo
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -592,8 +605,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Popular sur Google
 newtab-trending-searches-show-trending =
     .title = Monstrar recercas popular
 newtab-trending-searches-hide-trending =
@@ -602,3 +613,76 @@ newtab-trending-searches-learn-more = Pro saper plus
 newtab-trending-searches-dismiss = Celar recercas popular
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Recercas popular
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Le possibilitates es infinite. Adde un.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nove
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Completate ({ $number })
+newtab-widget-task-list-menu-copy = Copiar
+newtab-widget-lists-menu-edit = Modificar le nomine del lista
+newtab-widget-lists-menu-create = Crear un nove lista
+newtab-widget-lists-menu-delete = Deler iste lista
+newtab-widget-lists-menu-copy = Copiar lista al area de transferentia
+newtab-widget-lists-menu-hide = Celar tote le listas
+newtab-widget-lists-menu-learn-more = Pro saper plus
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Adder un elemento
+newtab-widget-lists-input-error = Include texto pro adder un elemento.
+newtab-widget-lists-input-menu-open-link = Aperir ligamine
+newtab-widget-lists-input-menu-move-up = Mover in alto
+newtab-widget-lists-input-menu-move-down = Mover in basso
+newtab-widget-lists-input-menu-delete = Deler
+newtab-widget-lists-input-menu-edit = Modificar
+newtab-widget-lists-name-label-default =
+    .label = Agenda
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Agenda
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Nove lista
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Temporisator
+newtab-widget-timer-notification-focus = Le periodo de concentration ha terminate. Belle labor. Besonio de un pausa?
+newtab-widget-timer-notification-break = Tu pausa ha terminate. Preste a concentrar te?
+newtab-widget-timer-notification-warning = Notificationes disactivate
+newtab-widget-timer-mode-focus =
+    .label = Concentration
+newtab-widget-timer-mode-break =
+    .label = Pausa
+newtab-widget-timer-play =
+    .title = Reproducer
+newtab-widget-timer-pause =
+    .title = Pausar
+newtab-widget-timer-label-play =
+    .label = Reproducer
+newtab-widget-timer-label-pause =
+    .label = Pausar
+newtab-widget-timer-reset =
+    .title = Reinitialisar
+newtab-widget-timer-menu-notifications = Disactivar notificationes
+newtab-widget-timer-menu-notifications-on = Activar notificationes
+newtab-widget-timer-menu-hide = Celar temporisator
+newtab-widget-timer-menu-learn-more = Pro saper plus
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Rola pro vider plus
+newtab-widget-message-title = Remane concentrate con le listas e un temporisator integrate
+# to-dos stands for "things to do".
+newtab-widget-message-copy = De rememorationes a travalios, de concentration a relaxation – resta attente e a tempore.
+newtab-promo-card-title = Supporta { -brand-product-name }
+newtab-promo-card-body = Nostre patrocinatores supporta nostre mission pro construer un web melior
+newtab-promo-card-cta = Pro saper plus
+newtab-promo-card-dismiss-button =
+    .title = Clauder
+    .aria-label = Clauder

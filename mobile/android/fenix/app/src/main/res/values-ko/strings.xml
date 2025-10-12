@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">옵션 더보기</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">사생활 보호 모드 활성화</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">사생활 보호 모드 비활성화</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">사생활 보호 모드</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">검색어 또는 주소 입력</string>
@@ -293,10 +289,6 @@
   <string name="browser_menu_new_private_tab">새 사생활 보호 탭</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">비밀번호</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">모바일 사이트로 전환</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">메인 메뉴 시트 닫기</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">메뉴 닫기</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -343,8 +335,6 @@
   <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">몇 초 정도 걸립니다. 언제든지 바꿀 수 있습니다.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">빠르고, 안전하며, 여러분을 위해 만들어졌습니다.</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">닫기</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss_promotion">프로모션 닫기</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -439,10 +429,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">탭이 동기화 중입니다! 다른 기기에서 중단한 부분부터 다시 시작하세요.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">닫기</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -584,6 +572,30 @@
   <string name="onboarding_redesign_tou_body_three_link_text">설정 관리</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
   <string name="onboarding_redesign_tou_agree_and_continue_button_label">계속</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">주소 표시줄을 어디에 두시겠습니까?</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">계속</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Firefox를 성장시킬 수 있도록 도와주세요</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Firefox를 발견한 방법과 사용 방법을 Mozilla의 마케팅 파트너들과 공유해보세요. 이 데이터는 판매되지 않습니다.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">저희가 데이터를 사용하는 방법</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">확인</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title">기본적으로 자동 추적 보호 받기</string>
+  <!-- Set to default browser onboarding redesign body. -->
+  <string name="onboarding_redesign_set_default_browser_body">한 번의 탭으로 기업이 여러분의 클릭을 염탐하는 것을 막을 수 있습니다.</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Firefox를 사용하는 모든 곳에서 동기화</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body">모든 기기에서 북마크, 탭 및 비밀번호를 사용하세요. 모두 암호화로 보호됩니다.</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button">동기화 시작</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">나중에</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Firefox를 성장시킬 수 있도록 도와주세요</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -717,7 +729,8 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">사생활 보호 모드에서 탭을 숨기기 위해 화면 잠금 사용</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">지문, PIN 또는 얼굴인식 잠금 해제로 탭을 봅니다.</string>
+  <string name="preferences_pbm_lock_screen_summary_3">지문, PIN 또는 얼굴인식 잠금 해제로 탭을 봅니다. 이 옵션을 켜면 화면 캡처 및 공유도 차단합니다.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">지문, PIN 또는 얼굴인식 잠금 해제로 탭을 봅니다.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">쿠키 배너 차단기</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -797,7 +810,9 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">사용자 지정</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">탭, 북마크, 비밀번호 등을 동기화하려면 로그인하세요.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">탭, 북마크, 비밀번호 등을 동기화하려면 로그인하세요.</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">탭, 북마크, 비밀번호 등을 동기화하세요.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Mozilla 계정</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1169,12 +1184,8 @@
   <string name="preferences_daily_usage_ping_title">일일 사용량 핑</string>
   <string name="preferences_daily_usage_ping_description">이 정보는 Mozilla가 활성 사용자를 예측하는 데 도움이 됩니다.</string>
   <string name="preferences_daily_usage_ping_learn_more">일일 사용량 핑에 대해 더 알아보기</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">자동으로 충돌 보고서 보내기</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">보고서 전송됨</string>
-  <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">브라우저의 문제를 진단하고 해결하는 데 도움이 됩니다. 보고서에는 개인 정보나 민감한 정보가 포함되어 있을 수 있습니다.</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
   <string name="preferences_crashes_learn_more">충돌 보고서에 대해 더 알아보기</string>
   <!-- Title Headers for data collection settings screen -->
@@ -1194,8 +1205,6 @@
   <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Firefox를 발견한 방법과 사용 방법을 Mozilla의 마케팅 기술 파트너들과 공유해보세요.</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">마케팅 데이터에 대해 더 알아보기</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">충돌 보고서에 대해 더 알아보기</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">연구</string>
   <!-- Summary for studies preferences -->
@@ -1205,7 +1214,9 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">데이터 동기화 및 저장</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">데이터 동기화 및 저장</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">로그인</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">재연결을 위해 로그인</string>
   <!-- Preference for removing FxA account -->
@@ -1354,6 +1365,8 @@
   <string name="close_tabs_after_one_month">한 달 후</string>
   <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">열린 탭 자동 닫기</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">닫기</string>
   <!--
     Opening screen
 
@@ -1504,9 +1517,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">기록 삭제</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">기록 삭제됨</string>
+  <string name="history_delete_multiple_items_snackbar">기록 삭제됨</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s 삭제됨</string>
+  <string name="history_delete_single_item_snackbar">%1$s 삭제됨</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">삭제</string>
   <!--
@@ -1677,8 +1690,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">깨진 사이트 신고</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">모두를 위해 %1$s가 더 나아지도록 도와주세요. Mozilla 직원은 보내주신 정보를 웹 사이트 문제 해결에 사용합니다.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">여러분의 신고는 저희가 %1$s의 문제점을 이해하고 고쳐서 모든 사람을 위해 더 나은 서비스로 만들 수 있도록 도와줍니다. 더 알아보기</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
@@ -1691,8 +1702,6 @@
   <string name="webcompat_reporter_url_error_invalid">올바른 URL을 입력하세요</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">어떤 문제인가요?</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">이유 선택</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">이유 선택</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
@@ -1708,9 +1717,11 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">보내기</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">신고가 전송됨</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">신고가 전송됨</string>
+  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
+  <string name="webcompat_reporter_success_snackbar_text_2">신고가 전송됨</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">닫기</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">닫기</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">무슨 일이 있었나요? 무슨 일이 일어났어야 했나요?</string>
   <!--
@@ -1747,8 +1758,6 @@
   <string name="tab_crash_close">탭 닫기</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">탭 복원</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s를 다시 시작해야 함</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">%s에 충돌이 발생했습니다. 보고서를 보내시겠습니까?</string>
   <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
@@ -1788,6 +1797,14 @@
   <string name="bookmark_add_folder">폴더 추가</string>
   <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
   <string name="bookmark_saved_in_folder_snackbar">“%s”에 저장됨</string>
+  <!-- Snackbar title describing failure to add a new folder -->
+  <string name="bookmark_error_add_folder">폴더를 추가할 수 없음</string>
+  <!-- Snackbar title describing failure to edit an existing folder -->
+  <string name="bookmark_error_edit_folder">폴더를 편집할 수 없음</string>
+  <!-- Snackbar title describing failure to select a new parent folder for a bookmark or folder -->
+  <string name="bookmark_error_select_folder">상위 폴더를 변경할 수 없음</string>
+  <!-- Snackbar title describing failure to edit a bookmark -->
+  <string name="bookmark_error_edit_bookmark">북마크를 편집할 수 없음</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">편집</string>
   <!-- Bookmark menu move button -->
@@ -1888,6 +1905,8 @@
   <string name="bookmark_close_button_content_description">북마크 닫기</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">북마크 없음</string>
+  <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
+  <string name="bookmarks_folder_description">폴더 내 북마크: %s개</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">탐색하는 동안 사이트를 저장하세요. 다른 동기화된 기기에서 북마크를 가져오려면 로그인하세요.</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -2032,12 +2051,14 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d개 탭 선택됨</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">탭이 저장되었습니다!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">모음집 저장됨!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">모음집 저장됨!</string>
+  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
+  <string name="create_collection_tabs_saved_new_collection_2">모음집 저장됨</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">탭이 저장되었습니다!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">탭이 저장되었습니다!</string>
+  <!-- Text shown in snackbar when one tab has been saved in a collection -->
+  <string name="create_collection_tab_saved_2">탭 저장됨</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">닫기</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -2084,7 +2105,9 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Sync에 로그인</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">데이터 동기화 및 저장</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">데이터 동기화 및 저장</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">로그인</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">모든 기기에 보내기</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2174,7 +2197,9 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">탭 닫힘: %1$s개</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">“%s”에 북마크 저장됨!</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">“%s”에 북마크 저장됨!</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in_2">“%s”에 북마크 저장됨</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">바로 가기에 추가됨!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -2202,8 +2227,6 @@
   <string name="tab_collection_dialog_message">%1$s 파일을 삭제하시겠습니까?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">삭제</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL 복사됨</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">샘플 텍스트입니다. 이 설정으로 크기를 늘리거나 줄일 때 텍스트가 어떻게 표시되는지 보여줍니다.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2292,9 +2315,13 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">탭 보냄!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">탭 보냄!</string>
+  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
+  <string name="sync_sent_tabs_snackbar_2">탭 보냄</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">탭 보냄!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">탭 보냄!</string>
+  <!-- Text shown in snackbar when one tab has been sent to device -->
+  <string name="sync_sent_tab_snackbar_2">탭 보냄</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">보낼 수 없음</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2347,6 +2374,18 @@
   <string name="preference_enhanced_tracking_protection_allow_list_baseline">%1$s가 주요 웹 사이트 손상을 방지하는 데 필요한 예외를 자동으로 적용하도록 허용합니다.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience">또한 사소한 문제를 고치고 편의 기능을 사용할 수 있도록 하는 데에만 필요한 예외를 자동으로 적용합니다.</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">정말로 사이트 문제 해결을 끄시겠습니까?</string>
+  <!-- Message for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">이 설정은 가장 일반적인 사이트 문제를 해결하는 데 도움이 됩니다. 이 기능을 끄면 일부 사이트가 작동하지 않을 수 있으며 %1$s가 이러한 문제 해결을 돕지 못할 수 있습니다.</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">문제 해결 기능 끄기</string>
+  <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">문제 해결 기능 계속 켜기</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">엄격 추적 방지 기능에 의해 차단된 것</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2665,6 +2704,10 @@
   <string name="saved_login_hide_password">비밀번호 숨기기</string>
   <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their passwords -->
   <string name="logins_biometric_prompt_message_2">저장된 비밀번호를 보시려면 잠금 해제하세요</string>
+  <!-- Button for unlocking logins on the biometric lock screen -->
+  <string name="logins_biometric_unlock_button">잠금 해제</string>
+  <!-- Button for leaving logins on the biometric lock screen -->
+  <string name="logins_biometric_leave_button">나가기</string>
   <!-- Title of warning dialog if users have no device authentication set up -->
   <string name="logins_warning_dialog_title_2">저장된 비밀번호를 보호하세요</string>
   <!-- Message of warning dialog if users have no device authentication set up -->
@@ -2843,12 +2886,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">검색 문자열을 입력하세요</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">검색 문자열이 예시 형식과 일치하는지 확인하세요</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s 생성됨</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s 저장됨</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s 삭제됨</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">허용하려면:</string>
   <!-- First step for the allowing a permission -->
@@ -3001,6 +3038,11 @@
     Title text displayed in the tabs tray when a tab has been unused for 14 days.
   -->
   <string name="inactive_tabs_title">비활성 탭</string>
+  <!--
+    Text displayed in the tabs tray, indicating the number of inactive tabs.
+    %d is the number of inactive tabs.
+  -->
+  <string name="inactive_tabs_num_items">항목: %d개</string>
   <!-- Content description for closing all inactive tabs -->
   <string name="inactive_tabs_delete_all">모든 비활성 탭 닫기</string>
   <!-- Content description for expanding the inactive tabs section. -->
@@ -3344,12 +3386,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">안전함</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">안전하지 않음</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">이 사이트를 조심하세요</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">연결이 안전하지 않습니다.</string>
@@ -3364,7 +3402,7 @@
     Title text for the protection panel banner when tracking protection is enabled.
     %s is the name of the app (for example "Firefox").
   -->
-  <string name="protection_panel_banner_protected_title">%s가 경비 중</string>
+  <string name="protection_panel_banner_protected_title">%s가 경계 중</string>
   <!-- Description text for the protection panel banner when tracking protection is enabled. -->
   <string name="protection_panel_banner_protected_description">보호 중입니다. 무언가를 발견하면 알려드리겠습니다.</string>
   <!-- Label text for the Enhanced Tracking Protection toggle. -->
@@ -3374,11 +3412,7 @@
   <!-- Toggle if Enhanced Tracking Protection is turned off -->
   <string name="protection_panel_etp_toggle_off">꺼짐</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">이 사이트에서 뭔가 손상된 것처럼 보이면 보호 기능을 꺼보세요.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description_2">이 사이트에서 뭔가 손상된 것처럼 보이면 해당 기능을 꺼보세요.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">보호 기능이 꺼져 있습니다. 다시 켜는 것이 좋습니다.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description_2">추적 방지 기능을 켜는 것을 권장합니다.</string>
   <!--
@@ -3390,8 +3424,6 @@
   <string name="protection_panel_no_trackers_blocked">추적기 없음</string>
   <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
   <string name="protection_panel_etp_disabled_no_trackers_blocked">추적기가 차단되지 않음</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">개인 정보 및 보안 설정</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">개인 정보 설정</string>
   <!-- Title text for the protection panel permissions section. -->
@@ -3569,6 +3601,16 @@
   <string name="debug_drawer_add_new_address">선택한 로케일의 새 주소 추가</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">모든 주소 삭제</string>
+  <!--
+    Debug drawer credit cards
+
+    The title of the credit cards feature in the Debug Drawer.
+  -->
+  <string name="debug_drawer_credit_cards_title">신용 카드</string>
+  <!-- The title of the button in the debug drawer for adding a new credit card -->
+  <string name="debug_drawer_add_new_credit_card">새 신용 카드 추가</string>
+  <!-- The title of the button for deleting in the debug drawer all addresses. -->
+  <string name="debug_drawer_delete_all_credit_cards">모든 신용 카드 삭제</string>
   <!--
     Debug drawer "contextual feature recommendation" (CFR) tools
 

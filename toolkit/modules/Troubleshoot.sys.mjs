@@ -66,7 +66,6 @@ const PREFS_FOR_DISPLAY = [
   "extensions.manifestV3.enabled",
   "extensions.quarantinedDomains.enabled",
   "extensions.InstallTrigger.enabled",
-  "extensions.InstallTriggerImpl.enabled",
   "fission.autostart",
   "font.",
   "general.autoScroll",

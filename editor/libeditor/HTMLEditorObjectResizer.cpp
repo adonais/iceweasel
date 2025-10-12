@@ -28,7 +28,6 @@
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
-#include "nsICSSDeclaration.h"
 #include "nsID.h"
 #include "mozilla/dom/Document.h"
 #include "nsISupportsUtils.h"
@@ -697,7 +696,8 @@ nsresult HTMLEditor::StartResizing(Element& aHandleElement) {
           nsStyledElement::FromNodeOrNull(mResizingShadow.get())) {
     nsresult rv;
     rv = CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-        *resizingShadowStyledElement, *nsGkAtoms::width, mResizedObjectWidth);
+        *this, *resizingShadowStyledElement, *nsGkAtoms::width,
+        mResizedObjectWidth);
     if (rv == NS_ERROR_EDITOR_DESTROYED) {
       NS_WARNING(
           "CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction("
@@ -708,7 +708,8 @@ nsresult HTMLEditor::StartResizing(Element& aHandleElement) {
                          "CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction("
                          "nsGkAtoms::width) failed");
     rv = CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-        *resizingShadowStyledElement, *nsGkAtoms::height, mResizedObjectHeight);
+        *this, *resizingShadowStyledElement, *nsGkAtoms::height,
+        mResizedObjectHeight);
     if (rv == NS_ERROR_EDITOR_DESTROYED) {
       NS_WARNING(
           "CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction("
@@ -888,7 +889,7 @@ nsresult HTMLEditor::SetResizingInfoPosition(int32_t aX, int32_t aY, int32_t aW,
           nsStyledElement::FromNodeOrNull(mResizingInfo.get())) {
     nsresult rv;
     rv = CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-        *resizingInfoStyledElement, *nsGkAtoms::left,
+        *this, *resizingInfoStyledElement, *nsGkAtoms::left,
         infoXPosition + mouseCursorOffset);
     if (rv == NS_ERROR_EDITOR_DESTROYED) {
       NS_WARNING(
@@ -901,7 +902,7 @@ nsresult HTMLEditor::SetResizingInfoPosition(int32_t aX, int32_t aY, int32_t aW,
         "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::left) "
         "failed, but ignored");
     rv = CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-        *resizingInfoStyledElement, *nsGkAtoms::top,
+        *this, *resizingInfoStyledElement, *nsGkAtoms::top,
         infoYPosition + mouseCursorOffset);
     if (rv == NS_ERROR_EDITOR_DESTROYED) {
       NS_WARNING(
@@ -1095,7 +1096,7 @@ nsresult HTMLEditor::UpdateResizerOrGrabberPositionTo(
             nsStyledElement::FromNodeOrNull(mResizingShadow.get())) {
       nsresult rv;
       rv = CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-          *resizingShadowStyledElement, *nsGkAtoms::left, newX);
+          *this, *resizingShadowStyledElement, *nsGkAtoms::left, newX);
       if (rv == NS_ERROR_EDITOR_DESTROYED) {
         NS_WARNING(
             "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::left)"
@@ -1107,7 +1108,7 @@ nsresult HTMLEditor::UpdateResizerOrGrabberPositionTo(
           "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::left) "
           "failed, but ignored");
       rv = CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-          *resizingShadowStyledElement, *nsGkAtoms::top, newY);
+          *this, *resizingShadowStyledElement, *nsGkAtoms::top, newY);
       if (rv == NS_ERROR_EDITOR_DESTROYED) {
         NS_WARNING(
             "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::top)"
@@ -1119,7 +1120,7 @@ nsresult HTMLEditor::UpdateResizerOrGrabberPositionTo(
           "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::top) "
           "failed, but ignored");
       rv = CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-          *resizingShadowStyledElement, *nsGkAtoms::width, newWidth);
+          *this, *resizingShadowStyledElement, *nsGkAtoms::width, newWidth);
       if (rv == NS_ERROR_EDITOR_DESTROYED) {
         NS_WARNING(
             "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::"
@@ -1131,7 +1132,7 @@ nsresult HTMLEditor::UpdateResizerOrGrabberPositionTo(
           "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::width) "
           "failed, but ignored");
       rv = CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-          *resizingShadowStyledElement, *nsGkAtoms::height, newHeight);
+          *this, *resizingShadowStyledElement, *nsGkAtoms::height, newHeight);
       if (rv == NS_ERROR_EDITOR_DESTROYED) {
         NS_WARNING(
             "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::"
@@ -1180,7 +1181,7 @@ nsresult HTMLEditor::UpdateResizerOrGrabberPositionTo(
             nsStyledElement::FromNodeOrNull(mPositioningShadow.get())) {
       nsresult rv;
       rv = CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-          *positioningShadowStyledElement, *nsGkAtoms::left, newX);
+          *this, *positioningShadowStyledElement, *nsGkAtoms::left, newX);
       if (rv == NS_ERROR_EDITOR_DESTROYED) {
         NS_WARNING(
             "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::left)"
@@ -1192,7 +1193,7 @@ nsresult HTMLEditor::UpdateResizerOrGrabberPositionTo(
           "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::left) "
           "failed, but ignored");
       rv = CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-          *positioningShadowStyledElement, *nsGkAtoms::top, newY);
+          *this, *positioningShadowStyledElement, *nsGkAtoms::top, newY);
       if (rv == NS_ERROR_EDITOR_DESTROYED) {
         NS_WARNING(
             "CSSEditUtils::SetCSSPropertyPixelsWithTransaction(nsGkAtoms::top) "

@@ -749,7 +749,7 @@ nsresult BounceTrackingState::OnResponseReceived(
       },
       StaticPrefs::
           privacy_bounceTrackingProtection_clientBounceDetectionTimerPeriodMS(),
-      nsITimer::TYPE_ONE_SHOT, "mClientBounceDetectionTimeout");
+      nsITimer::TYPE_ONE_SHOT, "mClientBounceDetectionTimeout"_ns);
   NS_ENSURE_SUCCESS(rv, rv);
 
   // For each URL in URLs: Insert host to the navigable’s bounce tracking

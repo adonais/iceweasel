@@ -5,7 +5,6 @@
 package org.mozilla.fenix.settings.address
 
 import androidx.annotation.StringRes
-import androidx.annotation.VisibleForTesting
 import mozilla.components.concept.storage.Address
 import org.mozilla.fenix.R
 
@@ -31,8 +30,7 @@ internal const val DEFAULT_COUNTRY = "US"
  * @property subregionTitleResource The string resource for the subregion title.
  * @property subregions THe list of subregions.
  */
-@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-internal data class Country(
+data class Country(
     val countryCode: String,
     val displayName: String,
     @param:StringRes val subregionTitleResource: Int,

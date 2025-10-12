@@ -13,6 +13,8 @@ import time
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
+from urllib.parse import urljoin, urlparse
+from zipfile import ZipFile
 
 import requests
 import yaml
@@ -23,6 +25,8 @@ from mach.decorators import (
     SubCommand,
 )
 from mozfile import json
+
+import taskcluster
 
 # The glean parser module dependency is in a different folder, so we add it to our path.
 sys.path.append(
@@ -59,6 +63,11 @@ RELEASE_SCHEDULE_QUERY = (
     "https://whattrainisitnow.com/api/release/schedule/?version=release"
 )
 BETA_FALLBACK_THRESHOLD = timedelta(weeks=3)
+TASKCLUSTER_ROOT_URL = "https://firefox-ci-tc.services.mozilla.com"
+BEETMOVER_TASK_NAME = "beetmover-newtab"
+XPI_NAME = "newtab.xpi"
+BEETMOVER_ARTIFACT_PATH = f"public/build/{XPI_NAME}"
+ARCHIVE_ROOT_PATH = "https://ftp.mozilla.org"
 
 
 class YamlType(Enum):
@@ -392,7 +401,6 @@ def display_report(report, details=None):
         sorted_locales = sorted(report["locales"].keys(), key=lambda x: x.lower())
     for locale in sorted_locales:
         print(Style.RESET_ALL, end="")
-        # import pdb;pdb.set_trace()
         if report["locales"][locale]["missing"]:
             missing_translations = report["locales"][locale]["missing"][
                 str(FLUENT_FILE_ANCESTRY.joinpath(FLUENT_FILE))
@@ -750,3 +758,77 @@ def check_existing_metrics(main_yaml, compare_yaml):
             changed_metrics[category] = category_changes
 
     return changed_metrics
+
+
+@SubCommand(
+    "newtab",
+    "trainhop-recipe",
+    description="""Generates the appropriate trainhop recipe for the Nimbus
+newtabTrainhopAddon feature, given a Taskcluster shipping task group URL from
+ship-it""",
+)
+@CommandArgument(
+    "taskcluster_group_url", help="The shipping Taskcluster task group URL from ship-it"
+)
+def trainhop_recipe(command_context, taskcluster_group_url):
+    tc_root_url = urlparse(TASKCLUSTER_ROOT_URL)
+    group_url = urlparse(taskcluster_group_url)
+    if group_url.scheme != "https" or group_url.hostname != tc_root_url.hostname:
+        print(
+            f"Expected an https URL with hostname {tc_root_url.hostname}. Got: {taskcluster_group_url}"
+        )
+        return 1
+
+    group_id = group_url.path.split("/")[-1]
+    if not group_id:
+        print(f"Could not extract the task group ID from {taskcluster_group_url}")
+        return 1
+
+    print(f"Extracted task group ID {group_id}")
+
+    queue = taskcluster.Queue({"rootUrl": TASKCLUSTER_ROOT_URL})
+    task_group = queue.listTaskGroup(group_id)
+    artifact_destination = ""
+
+    for task in task_group["tasks"]:
+        if task["task"]["metadata"]["name"] == BEETMOVER_TASK_NAME:
+            print(f"Found {BEETMOVER_TASK_NAME} task")
+            artifacts = task["task"]["payload"]["artifactMap"]
+            for artifact in artifacts:
+                if BEETMOVER_ARTIFACT_PATH in artifact["paths"]:
+                    artifact_destination = artifact["paths"][BEETMOVER_ARTIFACT_PATH][
+                        "destinations"
+                    ][0]
+
+    print(f"Got the destination: {artifact_destination}")
+    xpi_archive_url = urljoin(ARCHIVE_ROOT_PATH, artifact_destination)
+    print(f"Downloading from: {xpi_archive_url}")
+
+    with tempfile.TemporaryDirectory() as download_dir:
+        with requests.get(xpi_archive_url, stream=True) as request:
+            request.raise_for_status()
+
+            download_path = Path(download_dir).joinpath(XPI_NAME)
+            with open(download_path, "wb") as f:
+                for chunk in request.iter_content(chunk_size=8192):
+                    # If you have chunk encoded response uncomment if
+                    # and set chunk_size parameter to None.
+                    # if chunk:
+                    f.write(chunk)
+
+            # XPIs are just ZIP files, so let's reach in and read manifest.json.
+            with ZipFile(download_path) as newtab_xpi:
+                with newtab_xpi.open("manifest.json") as manifest_file:
+                    manifest = json.loads(manifest_file.read())
+                    addon_version = manifest["version"]
+
+            shutil.rmtree(download_dir)
+
+    result = {
+        "addon_version": addon_version,
+        "xpi_download_path": "/".join(artifact_destination.split("/")[-2:]),
+    }
+
+    print("Nimbus train-hop recipe:\n\n")
+    print(json.dumps(result, indent=2, sort_keys=True))
+    print("\n")

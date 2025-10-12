@@ -55,9 +55,6 @@ exports.fixed = {
     "toolkit/components/passwordmgr/storage-desktop.sys.mjs",
   ],
   "resource://services-common/utils.sys.mjs": ["services/common/utils.sys.mjs"],
-  "resource://services-crypto/utils.sys.mjs": [
-    "services/crypto/modules/utils.sys.mjs",
-  ],
   "resource://services-settings/Utils.sys.mjs": [
     "services/settings/Utils.sys.mjs",
   ],

@@ -802,9 +802,9 @@ class Operand {
 };
 
 // int check.
-inline bool is_intN(int32_t x, unsigned n) {
+inline bool is_intN(int64_t x, unsigned n) {
   MOZ_ASSERT((0 < n) && (n < 64));
-  int32_t limit = static_cast<int32_t>(1) << (n - 1);
+  int64_t limit = static_cast<int64_t>(1) << (n - 1);
   return (-limit <= x) && (x < limit);
 }
 

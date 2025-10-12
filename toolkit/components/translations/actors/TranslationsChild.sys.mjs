@@ -130,7 +130,7 @@ export class TranslationsChild extends JSWindowActorChild {
           return undefined;
         }
 
-        const startTime = Cu.now();
+        const startTime = ChromeUtils.now();
         const detectionResult =
           await lazy.LanguageDetector.detectLanguageFromDocument(this.document);
 

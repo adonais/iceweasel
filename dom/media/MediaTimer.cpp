@@ -200,7 +200,7 @@ void MediaTimer<T>::ArmTimer(const T& aTarget, const T& aNow) {
       TimeDuration::FromMicroseconds(delay.ToMicroseconds());
   MOZ_ALWAYS_SUCCEEDS(mTimer->InitHighResolutionWithNamedFuncCallback(
       &TimerCallback, this, duration, nsITimer::TYPE_ONE_SHOT,
-      "MediaTimer::TimerCallback"));
+      "MediaTimer::TimerCallback"_ns));
 }
 
 template <typename T>

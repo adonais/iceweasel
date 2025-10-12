@@ -87,13 +87,13 @@ class MOZ_RAII AutoChangeViewBoxNotifier {
 
     if (mDoSetAttr) {
       mUpdateBatch.emplace(aSVGElement->GetComposedDoc(), true);
-      mEmptyOrOldValue = mSVGElement->WillChangeViewBox(mUpdateBatch.ref());
+      mSVGElement->WillChangeViewBox(mUpdateBatch.ref());
     }
   }
 
   ~AutoChangeViewBoxNotifier() {
     if (mDoSetAttr) {
-      mSVGElement->DidChangeViewBox(mEmptyOrOldValue, mUpdateBatch.ref());
+      mSVGElement->DidChangeViewBox(mUpdateBatch.ref());
     }
     if (mViewBox->mAnimVal) {
       mSVGElement->AnimationNeedsResample();
@@ -104,7 +104,6 @@ class MOZ_RAII AutoChangeViewBoxNotifier {
   SVGAnimatedViewBox* const mViewBox;
   SVGElement* const mSVGElement;
   Maybe<mozAutoDocUpdate> mUpdateBatch;
-  nsAttrValue mEmptyOrOldValue;
   bool mDoSetAttr;
 };
 

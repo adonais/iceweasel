@@ -167,10 +167,14 @@ SFTKCipherWrap(AESKeyWrapContext, AESKeyWrap_DecryptKWP);
         mmm##_DestroyContext(ctx, freeit);                                   \
     }
 
+#ifndef NSS_DISABLE_DEPRECATED_RC2
 SFTKCipherWrap2(RC2Context, RC2);
+#endif
 SFTKCipherWrap2(RC4Context, RC4);
 SFTKCipherWrap2(DESContext, DES);
+#ifndef NSS_DISABLE_DEPRECATED_SEED
 SFTKCipherWrap2(SEEDContext, SEED);
+#endif
 SFTKCipherWrap2(CamelliaContext, Camellia);
 SFTKCipherWrap2(AESContext, AES);
 SFTKCipherWrap2(AESKeyWrapContext, AESKeyWrap);
@@ -2771,6 +2775,7 @@ sftk_RSASignPSS(void *ctx, unsigned char *sig,
     return rv;
 }
 
+#ifndef NSS_DISABLE_DSA
 static SECStatus
 nsc_DSA_Verify_Stub(void *ctx, const unsigned char *sigBuf, unsigned int sigLen,
                     const unsigned char *dataBuf, unsigned int dataLen)
@@ -2796,6 +2801,7 @@ nsc_DSA_Sign_Stub(void *ctx, unsigned char *sigBuf,
     *sigLen = signature.len;
     return rv;
 }
+#endif
 
 static SECStatus
 nsc_ECDSAVerifyStub(void *ctx, const unsigned char *sigBuf, unsigned int sigLen,
@@ -3011,6 +3017,7 @@ NSC_SignInit(CK_SESSION_HANDLE hSession,
             context->maxLen = nsslowkey_PrivateModulusLen(pinfo->key);
             break;
 
+#ifndef NSS_DISABLE_DSA
 #define INIT_DSA_SIG_MECH(mmm)          \
     case CKM_DSA_##mmm:                 \
         context->multi = PR_TRUE;       \
@@ -3039,6 +3046,7 @@ NSC_SignInit(CK_SESSION_HANDLE hSession,
             context->maxLen = DSA_MAX_SIGNATURE_LEN;
 
             break;
+#endif
 
 #define INIT_ECDSA_SIG_MECH(mmm)        \
     case CKM_ECDSA_##mmm:               \
@@ -3827,6 +3835,7 @@ NSC_VerifyInit(CK_SESSION_HANDLE hSession,
             context->verify = sftk_RSACheckSignPSS;
             break;
 
+#ifndef NSS_DISABLE_DSA
             INIT_DSA_SIG_MECH(SHA1)
             INIT_DSA_SIG_MECH(SHA224)
             INIT_DSA_SIG_MECH(SHA256)
@@ -3846,6 +3855,7 @@ NSC_VerifyInit(CK_SESSION_HANDLE hSession,
             context->verify = nsc_DSA_Verify_Stub;
             context->destroy = sftk_Null;
             break;
+#endif
 
             INIT_ECDSA_SIG_MECH(SHA1)
             INIT_ECDSA_SIG_MECH(SHA224)
@@ -4060,7 +4070,7 @@ NSC_VerifySignatureInit(CK_SESSION_HANDLE hSession,
 
     CHECK_FORK();
 
-    crv = sftk_GetContext(hSession, &context, SFTK_VERIFY, PR_TRUE, &session);
+    crv = sftk_GetContext(hSession, &context, SFTK_VERIFY, PR_FALSE, &session);
     if (crv != CKR_OK)
         return crv;
 
@@ -4085,7 +4095,7 @@ NSC_VerifySignature(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pData,
     SFTKSessionContext *context;
     CK_RV crv;
 
-    crv = sftk_GetContext(hSession, &context, SFTK_VERIFY, PR_TRUE, &session);
+    crv = sftk_GetContext(hSession, &context, SFTK_VERIFY, PR_FALSE, &session);
     if (crv != CKR_OK)
         return crv;
 
@@ -5010,12 +5020,16 @@ NSC_GenerateKey(CK_SESSION_HANDLE hSession,
             key_gen_type = nsc_pbe;
             crv = nsc_SetupPBEKeyGen(pMechanism, &pbe_param, &key_type, &key_length);
             break;
+            /*#ifndef NSS_DISABLE_DSA */
+            /* some applications use CKM_DSA_PARAMETER_GEN for weak DH keys...
+             * most notably tests and even ssl... continue to allow it for now */
         case CKM_DSA_PARAMETER_GEN:
             key_gen_type = nsc_param;
             key_type = CKK_DSA;
             objclass = CKO_DOMAIN_PARAMETERS;
             crv = CKR_OK;
             break;
+            /* #endif */
         case CKM_NSS_JPAKE_ROUND1_SHA1:
             hashType = HASH_AlgSHA1;
             goto jpake1;
@@ -5156,6 +5170,65 @@ loser:
     return crv;
 }
 
+/* takes raw sessions and key handles and determines if the keys
+ * have the same value. */
+PRBool
+sftk_compareKeysEqual(CK_SESSION_HANDLE hSession,
+                      CK_OBJECT_HANDLE key1, CK_OBJECT_HANDLE key2)
+{
+    PRBool result = PR_FALSE;
+    SFTKSession *session;
+    SFTKObject *key1obj = NULL;
+    SFTKObject *key2obj = NULL;
+    SFTKAttribute *att1 = NULL;
+    SFTKAttribute *att2 = NULL;
+
+    /* fetch the pkcs11 objects from the handles */
+    session = sftk_SessionFromHandle(hSession);
+    if (session == NULL) {
+        return CKR_SESSION_HANDLE_INVALID;
+    }
+
+    key1obj = sftk_ObjectFromHandle(key1, session);
+    key2obj = sftk_ObjectFromHandle(key2, session);
+    sftk_FreeSession(session);
+    if ((key1obj == NULL) || (key2obj == NULL)) {
+        goto loser;
+    }
+    /* fetch the value attributes */
+    att1 = sftk_FindAttribute(key1obj, CKA_VALUE);
+    if (att1 == NULL) {
+        goto loser;
+    }
+    att2 = sftk_FindAttribute(key2obj, CKA_VALUE);
+    if (att2 == NULL) {
+        goto loser;
+    }
+    /* make sure that they are equal */
+    if (att1->attrib.ulValueLen != att2->attrib.ulValueLen) {
+        goto loser;
+    }
+    if (PORT_Memcmp(att1->attrib.pValue, att2->attrib.pValue,
+                    att1->attrib.ulValueLen) != 0) {
+        goto loser;
+    }
+    result = PR_TRUE;
+loser:
+    if (key1obj) {
+        sftk_FreeObject(key1obj);
+    }
+    if (key2obj) {
+        sftk_FreeObject(key1obj);
+    }
+    if (att1) {
+        sftk_FreeAttribute(att1);
+    }
+    if (att2) {
+        sftk_FreeAttribute(att2);
+    }
+    return result;
+}
+
 #define PAIRWISE_MESSAGE_LENGTH 20 /* 160-bits */
 
 /*
@@ -5189,15 +5262,23 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
      *                      CKK_EC_MONTGOMERY   => CKM_ECDH1_DERIVE
      *                      others   => CKM_INVALID_MECHANISM
      *
+     * For KEM mechanisms:
+     *                     CKK_NSS_KYBER   => don't
+     *                     CKK_NSS_ML_KEM  => don't
+     *                     CKK_ML_KEM      => CM_ML_KEM
+     *
      * The parameters for these mechanisms is the public key.
      */
     CK_MECHANISM mech = { 0, NULL, 0 };
 
     CK_ULONG modulusLen = 0;
+#ifndef NSS_DISABLE_DSA
     CK_ULONG subPrimeLen = 0;
+#endif
     PRBool isEncryptable = PR_FALSE;
     PRBool canSignVerify = PR_FALSE;
     PRBool isDerivable = PR_FALSE;
+    PRBool isKEM = PR_FALSE;
     CK_RV crv;
 
     /* Variables used for Encrypt/Decrypt functions. */
@@ -5212,41 +5293,49 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
     /* Variables used for Signature/Verification functions. */
     unsigned char *signature;
     CK_ULONG signature_length;
+    SFTKAttribute *attribute;
 
-    if (keyType == CKK_RSA) {
-        SFTKAttribute *attribute;
-
-        /* Get modulus length of private key. */
-        attribute = sftk_FindAttribute(privateKey, CKA_MODULUS);
-        if (attribute == NULL) {
-            return CKR_DEVICE_ERROR;
-        }
-        modulusLen = attribute->attrib.ulValueLen;
-        if (*(unsigned char *)attribute->attrib.pValue == 0) {
-            modulusLen--;
-        }
-        sftk_FreeAttribute(attribute);
+    switch (keyType) {
+        case CKK_RSA:
+            /* Get modulus length of private key. */
+            attribute = sftk_FindAttribute(privateKey, CKA_MODULUS);
+            if (attribute == NULL) {
+                return CKR_DEVICE_ERROR;
+            }
+            modulusLen = attribute->attrib.ulValueLen;
+            if (*(unsigned char *)attribute->attrib.pValue == 0) {
+                modulusLen--;
+            }
+            sftk_FreeAttribute(attribute);
 #if RSA_MIN_MODULUS_BITS < 1023
-        /* if we allow weak RSA keys, and this is a weak RSA key and
-         * we aren't in FIPS mode, skip the tests, These keys are
-         * factorable anyway, the pairwise test doen't matter. */
-        if ((modulusLen < 1023) && !sftk_isFIPS(slot->slotID)) {
-            return CKR_OK;
-        }
+            /* if we allow weak RSA keys, and this is a weak RSA key and
+             * we aren't in FIPS mode, skip the tests, These keys are
+             * factorable anyway, the pairwise test doen't matter. */
+            if ((modulusLen < 1023) && !sftk_isFIPS(slot->slotID)) {
+                return CKR_OK;
+            }
 #endif
-    } else if (keyType == CKK_DSA) {
-        SFTKAttribute *attribute;
-
-        /* Get subprime length of private key. */
-        attribute = sftk_FindAttribute(privateKey, CKA_SUBPRIME);
-        if (attribute == NULL) {
-            return CKR_DEVICE_ERROR;
-        }
-        subPrimeLen = attribute->attrib.ulValueLen;
-        if (subPrimeLen > 1 && *(unsigned char *)attribute->attrib.pValue == 0) {
-            subPrimeLen--;
-        }
-        sftk_FreeAttribute(attribute);
+            break;
+#ifndef NSS_DISABLE_DSA
+        case CKK_DSA:
+            /* Get subprime length of private key. */
+            attribute = sftk_FindAttribute(privateKey, CKA_SUBPRIME);
+            if (attribute == NULL) {
+                return CKR_DEVICE_ERROR;
+            }
+            subPrimeLen = attribute->attrib.ulValueLen;
+            if (subPrimeLen > 1 &&
+                *(unsigned char *)attribute->attrib.pValue == 0) {
+                subPrimeLen--;
+            }
+            sftk_FreeAttribute(attribute);
+            break;
+#endif
+        case CKK_NSS_KYBER:
+        case CKK_NSS_ML_KEM:
+            /* these aren't FIPS. we use them to generate keys without a
+             * pairwise consistency check */
+            return CKR_OK;
     }
 
     /**************************************************/
@@ -5393,10 +5482,12 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
                 mech.pParameter = &pssParams;
                 mech.ulParameterLen = sizeof(pssParams);
                 break;
+#ifndef NSS_DISABLE_DSA
             case CKK_DSA:
                 signature_length = DSA_MAX_SIGNATURE_LEN;
                 mech.mechanism = CKM_DSA_SHA256;
                 break;
+#endif
             case CKK_EC:
                 signature_length = MAX_ECKEY_LEN * 2;
                 mech.mechanism = CKM_ECDSA_SHA256;
@@ -5616,6 +5707,60 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession, SFTKSlot *slot,
         }
     }
 
+    isKEM = sftk_isTrue(privateKey, CKA_ENCAPSULATE);
+    if (isKEM) {
+        unsigned char *cipher_text = NULL;
+        CK_ULONG cipher_text_length = 0;
+        CK_OBJECT_HANDLE key1 = CK_INVALID_HANDLE;
+        CK_OBJECT_HANDLE key2 = CK_INVALID_HANDLE;
+        CK_KEY_TYPE genType = CKO_SECRET_KEY;
+        CK_ATTRIBUTE template = { CKA_KEY_TYPE, NULL, 0 };
+
+        template.pValue = &genType;
+        template.ulValueLen = sizeof(genType);
+        crv = CKR_OK;
+        switch (keyType) {
+            case CKK_ML_KEM:
+                cipher_text_length = MAX_ML_KEM_CIPHER_LENGTH;
+                mech.mechanism = CKM_ML_KEM;
+                break;
+            default:
+                return CKR_DEVICE_ERROR;
+        }
+        /* Allocate space for kem cipher text. */
+        cipher_text = (unsigned char *)PORT_ZAlloc(cipher_text_length);
+        if (cipher_text == NULL) {
+            return CKR_HOST_MEMORY;
+        }
+        crv = NSC_Encapsulate(hSession, &mech, publicKey->handle, &template, 1,
+                              &key1, cipher_text, &cipher_text_length);
+        if (crv != CKR_OK) {
+            goto kem_done;
+        }
+        crv = NSC_Decapsulate(hSession, &mech, privateKey->handle,
+                              cipher_text, cipher_text_length, &template, 1,
+                              &key2);
+        if (crv != CKR_OK) {
+            goto kem_done;
+        }
+        if (!sftk_compareKeysEqual(hSession, key1, key2)) {
+            crv = CKR_DEVICE_ERROR;
+            goto kem_done;
+        }
+    kem_done:
+        /* PORT_Free already checks for NULL */
+        PORT_Free(cipher_text);
+        if (key1 != CK_INVALID_HANDLE) {
+            NSC_DestroyObject(hSession, key1);
+        }
+        if (key2 != CK_INVALID_HANDLE) {
+            NSC_DestroyObject(hSession, key2);
+        }
+        if (crv != CKR_OK) {
+            return CKR_DEVICE_ERROR;
+        }
+    }
+
     return CKR_OK;
 }
 
@@ -5645,10 +5790,12 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
     SECItem pubExp;
     RSAPrivateKey *rsaPriv;
 
+    DHParams dhParam;
+#ifndef NSS_DISABLE_DSA
     /* DSA */
     PQGParams pqgParam;
-    DHParams dhParam;
     DSAPrivateKey *dsaPriv;
+#endif
 
     /* Diffie Hellman */
     DHPrivateKey *dhPriv;
@@ -5825,6 +5972,7 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             /* Should zeroize the contents first, since this func doesn't. */
             PORT_FreeArena(rsaPriv->arena, PR_TRUE);
             break;
+#ifndef NSS_DISABLE_DSA
         case CKM_DSA_KEY_PAIR_GEN:
             sftk_DeleteAttributeType(publicKey, CKA_VALUE);
             sftk_DeleteAttributeType(privateKey, CKA_NSS_DB);
@@ -5936,6 +6084,7 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             /* should zeroize, since this function doesn't. */
             PORT_FreeArena(dsaPriv->params.arena, PR_TRUE);
             break;
+#endif
 
         case CKM_DH_PKCS_KEY_PAIR_GEN:
             sftk_DeleteAttributeType(privateKey, CKA_PRIME);
@@ -6082,11 +6231,13 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             PORT_FreeArena(ecPriv->ecParams.arena, PR_TRUE);
             break;
 
-#ifndef NSS_NO_KYBER_SUPPORT
+#ifndef NSS_DISABLE_KYBER
         case CKM_NSS_KYBER_KEY_PAIR_GEN:
+            key_type = CKK_NSS_KYBER;
+            goto do_ml_kem;
 #endif
         case CKM_NSS_ML_KEM_KEY_PAIR_GEN:
-            key_type = CKK_NSS_KYBER;
+            key_type = CKK_NSS_ML_KEM;
             goto do_ml_kem;
 
         case CKM_ML_KEM_KEY_PAIR_GEN:
@@ -6115,8 +6266,8 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             if (crv != CKR_OK) {
                 goto kyber_done;
             }
-            CK_ATTRIBUTE_TYPE param_set = (key_type == CKK_NSS_KYBER) ? CKA_NSS_PARAMETER_SET : CKA_PARAMETER_SET;
-            crv = sftk_AddAttributeType(publicKey, param_set, &genParamSet,
+            crv = sftk_AddAttributeType(publicKey, CKA_PARAMETER_SET,
+                                        &genParamSet,
                                         sizeof(CK_ML_KEM_PARAMETER_SET_TYPE));
             if (crv != CKR_OK) {
                 goto kyber_done;
@@ -6126,7 +6277,8 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
             if (crv != CKR_OK) {
                 goto kyber_done;
             }
-            crv = sftk_AddAttributeType(privateKey, param_set, &genParamSet,
+            crv = sftk_AddAttributeType(privateKey, CKA_PARAMETER_SET,
+                                        &genParamSet,
                                         sizeof(CK_ML_KEM_PARAMETER_SET_TYPE));
             if (crv != CKR_OK) {
                 goto kyber_done;
@@ -6277,7 +6429,8 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
                                   &cktrue, sizeof(CK_BBOOL));
     }
 
-    if (crv == CKR_OK && pMechanism->mechanism != CKM_NSS_ECDHE_NO_PAIRWISE_CHECK_KEY_PAIR_GEN && key_type != CKK_NSS_KYBER && key_type != CKK_ML_KEM) {
+    if (crv == CKR_OK &&
+        pMechanism->mechanism != CKM_NSS_ECDHE_NO_PAIRWISE_CHECK_KEY_PAIR_GEN) {
         /* Perform FIPS 140-2 pairwise consistency check. */
         crv = sftk_PairwiseConsistencyCheck(hSession, slot,
                                             publicKey, privateKey, key_type);
@@ -8109,6 +8262,8 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
         }
 
         /* Extended master key derivation [draft-ietf-tls-session-hash] */
+        case CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE:
+        case CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE_DH:
         case CKM_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE:
         case CKM_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE_DH: {
             CK_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE_PARAMS *ems_params;
@@ -8118,11 +8273,12 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             SECItem seed = { siBuffer, NULL, 0 };
             SECItem master = { siBuffer, NULL, 0 };
 
-            ems_params = (CK_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE_PARAMS *)
+            ems_params = (CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS *)
                              pMechanism->pParameter;
 
             /* First do the consistency checks */
-            if ((mechanism == CKM_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE) &&
+            if (((mechanism == CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE) ||
+                 (mechanism == CKM_NSS_TLS_EXTENDED_MASTER_KEY_DERIVE)) &&
                 (att->attrib.ulValueLen != SSL3_PMS_LENGTH)) {
                 crv = CKR_KEY_TYPE_INCONSISTENT;
                 break;

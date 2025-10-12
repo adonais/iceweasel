@@ -26,7 +26,7 @@ rtc_source_set("call_api") {
   sources = [ "call/audio_sink.h" ]
 }
 
-rtc_source_set("enable_media") {
+rtc_library("enable_media") {
   visibility = [ "*" ]
   sources = [
     "enable_media.cc",
@@ -49,7 +49,7 @@ rtc_source_set("enable_media") {
   }
 }
 
-rtc_source_set("enable_media_with_defaults") {
+rtc_library("enable_media_with_defaults") {
   visibility = [ "*" ]
   allow_poison = [
     "audio_codecs",
@@ -68,7 +68,6 @@ rtc_source_set("enable_media_with_defaults") {
     "audio:builtin_audio_processing_builder",
     "audio_codecs:builtin_audio_decoder_factory",
     "audio_codecs:builtin_audio_encoder_factory",
-    "task_queue:default_task_queue_factory",
     "video_codecs:builtin_video_decoder_factory",
     "video_codecs:builtin_video_encoder_factory",
   ]
@@ -87,10 +86,7 @@ if (!build_with_chromium && !build_with_mozilla) {
       ":field_trials_view",
       ":libjingle_peerconnection_api",
       ":scoped_refptr",
-      "../api/rtc_event_log:rtc_event_log_factory",
       "../pc:peer_connection_factory",
-      "../pc:webrtc_sdp",
-      "../rtc_base:socket_server",
       "../rtc_base:threading",
       "../rtc_base/system:rtc_export",
       "../stats:rtc_stats",
@@ -99,6 +95,8 @@ if (!build_with_chromium && !build_with_mozilla) {
       "audio:audio_processing",
       "audio:builtin_audio_processing_builder",
       "audio_codecs:audio_codecs_api",
+      "environment:environment_factory",
+      "rtc_event_log:rtc_event_log_factory",
       "video_codecs:video_codecs_api",
     ]
   }
@@ -349,7 +347,6 @@ if (!build_with_mozilla) {
     ":data_channel_event_observer_interface",
     ":dtls_transport_interface",
     ":fec_controller_api",
-    ":field_trials",
     ":field_trials_view",
     ":frame_transformer_interface",
     ":ice_transport_interface",
@@ -394,6 +391,7 @@ if (!build_with_mozilla) {
     "crypto:frame_decryptor_interface",
     "crypto:frame_encryptor_interface",
     "crypto:options",
+    "environment",
     "metronome",
     "neteq:neteq_api",
     "rtc_event_log:rtc_event_log_factory_interface",
@@ -432,7 +430,7 @@ if (!build_with_mozilla) {
 }
 }
 
-rtc_source_set("frame_transformer_interface") {
+rtc_library("frame_transformer_interface") {
   visibility = [ "*" ]
   sources = [
     "frame_transformer_interface.cc",
@@ -461,7 +459,6 @@ rtc_library("rtc_error") {
   deps = [
     "../rtc_base:checks",
     "../rtc_base:logging",
-    "../rtc_base:macromagic",
     "../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/meta:type_traits",
     "//third_party/abseil-cpp/absl/strings",
@@ -555,12 +552,16 @@ rtc_source_set("rtp_transceiver_direction") {
   sources = [ "rtp_transceiver_direction.h" ]
 }
 
-rtc_source_set("priority") {
+rtc_library("priority") {
   visibility = [ "*" ]
-  sources = [ "priority.h" ]
+  sources = [
+    "priority.cc",
+    "priority.h",
+  ]
   deps = [
     "../rtc_base:checks",
     "../rtc_base:strong_alias",
+    "../rtc_base/system:rtc_export",
   ]
 }
 
@@ -682,7 +683,7 @@ if (!build_with_mozilla) {
 }
 }
 
-rtc_source_set("frame_generator_api") {
+rtc_library("frame_generator_api") {
   visibility = [ "*" ]
   sources = [
     "test/frame_generator_interface.cc",
@@ -919,7 +920,6 @@ rtc_source_set("simulated_network_api") {
   visibility = [ "*" ]
   sources = [ "test/simulated_network.h" ]
   deps = [
-    "../rtc_base:macromagic",
     "../rtc_base:random",
     "transport:ecn_marking",
     "units:data_rate",
@@ -928,7 +928,7 @@ rtc_source_set("simulated_network_api") {
 }
 
 # TODO(srte): Move to network_emulation sub directory.
-rtc_source_set("network_emulation_manager_api") {
+rtc_library("network_emulation_manager_api") {
   visibility = [ "*" ]
   sources = [
     "test/network_emulation_manager.cc",
@@ -954,7 +954,7 @@ rtc_source_set("network_emulation_manager_api") {
   ]
 }
 
-rtc_source_set("time_controller") {
+rtc_library("time_controller") {
   visibility = [ "*" ]
   sources = [
     "test/time_controller.cc",
@@ -1007,7 +1007,6 @@ rtc_source_set("refcountedbase") {
   sources = [ "ref_counted_base.h" ]
   deps = [
     ":ref_count",
-    "../rtc_base:macromagic",
     "../rtc_base:refcount",
   ]
 }
@@ -1582,20 +1581,9 @@ if (rtc_include_tests) {
     ]
 
     deps = [
-      ":enable_media_with_defaults",
-      ":libjingle_peerconnection_api",
       ":time_controller",
-      "../call",
-      "../call:call_interfaces",
-      "../media:media_engine",
-      "../pc:media_factory",
-      "../rtc_base:checks",
-      "../system_wrappers",
       "../test/time_controller",
-      "environment",
-      "environment:environment_factory",
       "units:timestamp",
-      "//third_party/abseil-cpp/absl/base:nullability",
     ]
   }
 
@@ -1661,7 +1649,6 @@ if (rtc_include_tests) {
       "task_queue:task_queue_default_factory_unittests",
       "test/pclf:media_configuration",
       "test/video:video_frame_writer",
-      "transport:field_trial_based_config",
       "units:time_delta",
       "units:timestamp",
       "units:units_unittests",
@@ -1716,7 +1703,7 @@ if (rtc_include_tests) {
   }
 }
 
-rtc_source_set("field_trials_registry") {
+rtc_library("field_trials_registry") {
   visibility = [ "*" ]
   sources = [
     "field_trials_registry.cc",
@@ -1760,7 +1747,8 @@ rtc_library("field_trials") {
     ":field_trials_registry",
     "../rtc_base:checks",
     "../rtc_base/containers:flat_map",
-    "../system_wrappers:field_trial",
+    "//third_party/abseil-cpp/absl/base:nullability",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings:string_view",
   ]
 }

@@ -1698,7 +1698,7 @@ BufferOffset MacroAssemblerARM::ma_vstr(VFPRegister src, Register base,
 }
 
 bool MacroAssemblerARMCompat::buildOOLFakeExitFrame(void* fakeReturnAddr) {
-  asMasm().PushFrameDescriptor(FrameType::IonJS);  // descriptor_
+  asMasm().Push(FrameDescriptor(FrameType::IonJS));  // descriptor_
   asMasm().Push(ImmPtr(fakeReturnAddr));
   asMasm().Push(FramePointer);
   return true;
@@ -2362,6 +2362,39 @@ void MacroAssemblerARMCompat::minMaxDouble(FloatRegister srcDest,
   bind(&done);
 }
 
+void MacroAssemblerARMCompat::minMax32(Register lhs, Register rhs,
+                                       Register dest, bool isMax) {
+  if (rhs == dest) {
+    std::swap(lhs, rhs);
+  }
+
+  auto cond = isMax ? Assembler::LessThan : Assembler::GreaterThan;
+  if (lhs != dest) {
+    move32(lhs, dest);
+  }
+  cmp32(lhs, rhs);
+  ma_mov(rhs, dest, LeaveCC, cond);
+}
+
+void MacroAssemblerARMCompat::minMax32(Register lhs, Imm32 rhs, Register dest,
+                                       bool isMax) {
+  // We need a scratch register when |rhs| can't be encoded in the compare
+  // instruction.
+  if (Imm8(rhs.value).invalid() && Imm8(~rhs.value).invalid()) {
+    ScratchRegisterScope scratch(asMasm());
+    move32(rhs, scratch);
+    minMax32(lhs, scratch, dest, isMax);
+    return;
+  }
+
+  auto cond = isMax ? Assembler::LessThan : Assembler::GreaterThan;
+  if (lhs != dest) {
+    move32(lhs, dest);
+  }
+  cmp32(lhs, rhs);
+  ma_mov(rhs, dest, cond);
+}
+
 void MacroAssemblerARMCompat::minMaxFloat32(FloatRegister srcDest,
                                             FloatRegister second, bool canBeNaN,
                                             bool isMax) {
@@ -2907,6 +2940,17 @@ void MacroAssemblerARMCompat::boxNonDouble(JSValueType type, Register src,
     ma_mov(src, dest.payloadReg());
   }
   ma_mov(ImmType(type), dest.typeReg());
+}
+
+void MacroAssemblerARMCompat::boxNonDouble(Register type, Register src,
+                                           const ValueOperand& dest) {
+  MOZ_ASSERT(type != dest.payloadReg() && src != dest.typeReg());
+
+  if (src != dest.payloadReg()) {
+    ma_mov(src, dest.payloadReg());
+  }
+  ScratchRegisterScope scratch(asMasm());
+  ma_orr(Imm32(JSVAL_TAG_CLEAR), type, dest.typeReg(), scratch);
 }
 
 void MacroAssemblerARMCompat::loadConstantFloat32(float f, FloatRegister dest) {

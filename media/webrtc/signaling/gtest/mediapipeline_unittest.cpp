@@ -96,10 +96,11 @@ class FakeAudioTrack : public ProcessedMediaTrack {
   FakeAudioTrack()
       : ProcessedMediaTrack(44100, MediaSegment::AUDIO, nullptr),
         mMutex("Fake AudioTrack") {
-    NS_NewTimerWithFuncCallback(
-        getter_AddRefs(mTimer), FakeAudioTrackGenerateData, this, 20,
-        nsITimer::TYPE_REPEATING_SLACK,
-        "FakeAudioTrack::FakeAudioTrackGenerateData", test_utils->sts_target());
+    NS_NewTimerWithFuncCallback(getter_AddRefs(mTimer),
+                                FakeAudioTrackGenerateData, this, 20,
+                                nsITimer::TYPE_REPEATING_SLACK,
+                                "FakeAudioTrack::FakeAudioTrackGenerateData"_ns,
+                                test_utils->sts_target());
   }
 
   void Destroy() override {

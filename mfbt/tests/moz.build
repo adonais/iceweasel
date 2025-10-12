@@ -46,6 +46,7 @@ CppUnitTests(
         "TestMacroForEach",
         "TestMathAlgorithms",
         "TestMaybe",
+        "TestMulOverflowMask",
         "TestNonDereferenceable",
         "TestNotNull",
         "TestRandomNum",
@@ -75,7 +76,7 @@ CppUnitTests(
 if CONFIG["OS_ARCH"] != "WASI":
     CppUnitTests(
         [
-            "TestMPSCQueue",
+            "TestBoundedMPSCQueue",
             "TestSPSCQueue",
             "TestThreadSafeWeakPtr",
         ]

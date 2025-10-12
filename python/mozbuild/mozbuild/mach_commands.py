@@ -468,7 +468,7 @@ def doctor(command_context, fix=False, verbose=False):
     )
 
 
-CLOBBER_CHOICES = {"objdir", "python", "gradle"}
+CLOBBER_CHOICES = {"objdir", "python", "gradle", "artifacts"}
 
 
 @Command(
@@ -503,6 +503,9 @@ def clobber(command_context, what, full=False):
 
     The `gradle` target will remove the "gradle" subdirectory of the object
     directory.
+
+    The `artifacts` target will remove cached artifact files from
+    ~/.mozbuild/package-frontend or $MOZBUILD_STATE_PATH/package-frontend.
 
     By default, the command clobbers the `objdir` and `python` targets.
     """
@@ -598,6 +601,16 @@ def clobber(command_context, what, full=False):
         shutil.rmtree(
             mozpath.join(command_context.topobjdir, "gradle"), ignore_errors=True
         )
+
+    if "artifacts" in what:
+        from mach.util import get_state_dir
+
+        state_dir = Path(get_state_dir(specific_to_topsrcdir=False))
+        artifact_cache_dir = state_dir / "package-frontend"
+
+        if artifact_cache_dir.exists():
+            print(f"Removing artifact cache directory: {artifact_cache_dir}")
+            shutil.rmtree(artifact_cache_dir, ignore_errors=True)
 
     return ret
 
@@ -2454,7 +2467,7 @@ def repackage(command_context):
     help="Location of the templates used to generate the debian/ directory files",
 )
 @CommandArgument(
-    "--release-product",
+    "--product",
     type=str,
     required=True,
     help="The product being shipped. Used to disambiguate beta/devedition etc.",
@@ -2473,7 +2486,7 @@ def repackage_deb(
     version,
     build_number,
     templates,
-    release_product,
+    product,
     release_type,
 ):
     if not os.path.exists(input):
@@ -2497,7 +2510,7 @@ def repackage_deb(
         arch,
         version,
         build_number,
-        release_product,
+        product,
         release_type,
         FluentLocalization,
         FluentResourceLoader,
@@ -2538,7 +2551,7 @@ def repackage_deb(
     help="Location of the templates used to generate the debian/ directory files",
 )
 @CommandArgument(
-    "--release-product",
+    "--product",
     type=str,
     required=True,
     help="The product being shipped. Used to disambiguate beta/devedition etc.",
@@ -2551,7 +2564,7 @@ def repackage_deb_l10n(
     version,
     build_number,
     templates,
-    release_product,
+    product,
 ):
     for input_file in (input_xpi_file, input_tar_file):
         if not os.path.exists(input_file):
@@ -2572,7 +2585,7 @@ def repackage_deb_l10n(
         template_dir,
         version,
         build_number,
-        release_product,
+        product,
     )
 
 
@@ -2619,7 +2632,7 @@ def repackage_deb_l10n(
     help="Location of the templates used to generate the rpm/ directory files",
 )
 @CommandArgument(
-    "--release-product",
+    "--product",
     type=str,
     required=True,
     help="The product being shipped. Used to disambiguate beta/devedition etc.",
@@ -2639,7 +2652,7 @@ def repackage_rpm(
     version,
     build_number,
     templates,
-    release_product,
+    product,
     release_type,
 ):
     if not os.path.exists(input):
@@ -2664,7 +2677,7 @@ def repackage_rpm(
         arch,
         version,
         build_number,
-        release_product,
+        product,
         release_type,
         FluentLocalization,
         FluentResourceLoader,
@@ -3400,15 +3413,15 @@ def repackage_snap_install(command_context, snap_file, snap_name, sudo=None):
 @SubCommand(
     "repackage",
     "desktop-file",
-    description="Prepare a firefox.desktop file",
+    description="Prepare a firefox.desktop file for snap",
     virtualenv_name="repackage-desktop-file",
 )
 @CommandArgument("--output", type=str, required=True, help="Output desktop file")
 @CommandArgument(
     "--flavor",
     type=str,
-    required=True,
-    choices=["snap", "flatpak"],
+    required=False,
+    choices=["snap"],
     help="Desktop file flavor to generate.",
 )
 @CommandArgument(
@@ -3437,49 +3450,16 @@ def repackage_desktop_file(
     release_type,
     wmclass,
 ):
-    desktop = None
-    if flavor == "flatpak":
-        from fluent.runtime.fallback import FluentLocalization, FluentResourceLoader
+    from mozbuild.repackaging.snapcraft_transform import (
+        SnapDesktopFile,
+    )
 
-        from mozbuild.repackaging.desktop_file import generate_browser_desktop_entry
-
-        # This relies in existing build variables usage inherited from the
-        # debian repackage code that serves the same purpose on Flatpak, so
-        # it is just directly re-used here.
-        build_variables = {
-            "PKG_NAME": release_product,
-            "DBusActivatable": "false",
-            "Icon": "org.mozilla.firefox",
-            "StartupWMClass": release_product,
-        }
-
-        desktop = "\n".join(
-            generate_browser_desktop_entry(
-                command_context.log,
-                build_variables,
-                release_product,
-                release_type,
-                FluentLocalization,
-                FluentResourceLoader,
-            )
-        )
-
-    if flavor == "snap":
-        from mozbuild.repackaging.snapcraft_transform import (
-            SnapDesktopFile,
-        )
-
-        desktop = SnapDesktopFile(
-            command_context.log,
-            appname=release_product,
-            branchname=release_type,
-            wmclass=wmclass,
-        ).repack()
-
-    if desktop is None:
-        raise NotImplementedError(
-            f"Couldn't generate a desktop file. Unknown flavor: {flavor}"
-        )
+    desktop = SnapDesktopFile(
+        command_context.log,
+        appname=release_product,
+        branchname=release_type,
+        wmclass=wmclass,
+    ).repack()
 
     with open(output, "w") as desktop_file:
         desktop_file.write(desktop)

@@ -11,8 +11,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.ui.platform.ComposeView
+import androidx.navigation.fragment.navArgs
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import org.mozilla.fenix.R
 import org.mozilla.fenix.components.lazyStore
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.SupportUtils
@@ -20,12 +20,16 @@ import org.mozilla.fenix.termsofuse.store.DefaultTermsOfUsePromptRepository
 import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptAction
 import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptPreferencesMiddleware
 import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptStore
+import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptTelemetryMiddleware
 import org.mozilla.fenix.theme.FirefoxTheme
+import com.google.android.material.R as materialR
 
 /**
- * [BottomSheetDialogFragment] wrapper for the compose [TermsOfUseBottomSheet]
+ * [BottomSheetDialogFragment] wrapper for the compose [TermsOfUseBottomSheet].
  */
 class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
+
+    private val args by navArgs<TermsOfUseBottomSheetFragmentArgs>()
 
     private val termsOfUsePromptStore by lazyStore {
         TermsOfUsePromptStore(
@@ -35,6 +39,7 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
                         settings = requireContext().settings(),
                     ),
                 ),
+                TermsOfUsePromptTelemetryMiddleware(),
             ),
         )
     }
@@ -43,8 +48,10 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
         super.onCreateDialog(savedInstanceState).apply {
             window?.setDimAmount(0f)
             setOnShowListener {
-                val bottomSheet = findViewById<View?>(R.id.design_bottom_sheet)
+                val bottomSheet = findViewById<View?>(materialR.id.design_bottom_sheet)
                 bottomSheet?.setBackgroundResource(android.R.color.transparent)
+
+                termsOfUsePromptStore.dispatch(TermsOfUsePromptAction.OnImpression(args.surface))
             }
         }
 
@@ -56,9 +63,21 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
         setContent {
             FirefoxTheme {
                 TermsOfUseBottomSheet(
-                    store = termsOfUsePromptStore,
-                    onDismiss = {
+                    onDismiss = { dismiss() },
+                    onDismissRequest = {
+                        termsOfUsePromptStore.dispatch(
+                            TermsOfUsePromptAction.OnPromptManuallyDismissed(args.surface),
+                        )
+
                         dismiss()
+                    },
+                    onAcceptClicked = {
+                        termsOfUsePromptStore.dispatch(TermsOfUsePromptAction.OnAcceptClicked(args.surface))
+                    },
+                    onRemindMeLaterClicked = {
+                        termsOfUsePromptStore.dispatch(
+                            TermsOfUsePromptAction.OnRemindMeLaterClicked(args.surface),
+                        )
                     },
                     onTermsOfUseClicked = {
                         SupportUtils.launchSandboxCustomTab(

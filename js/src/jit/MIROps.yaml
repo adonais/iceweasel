@@ -109,6 +109,13 @@
 #   - attribute not specified (default): no code generated, no constants to fold
 #   - custom: custom C++ implementation
 #
+# value_hash
+# ==========
+# Used by ValueNumbering to determine the hash number for the instruction.
+#   - attribute not specified (default): no code generated, inherit valueHash from
+#     the base class
+#   - custom: custom C++ implementation
+#
 # congruent_to
 # ============
 # Used by ValueNumbering to determine if two values are congruent.
@@ -469,9 +476,10 @@
   can_recover: true
   movable: true
   alias_set: none
+  folds_to: custom
   result_type: Boolean
   generate_lir: true
-  lir_temps: 2
+  lir_temps: 1
 
 - name: StrictConstantCompareBoolean
   operands:
@@ -482,9 +490,9 @@
   can_recover: true
   movable: true
   alias_set: none
+  folds_to: custom
   result_type: Boolean
   generate_lir: true
-  lir_temps: 1
 
 - name: SameValueDouble
   operands:
@@ -2500,6 +2508,7 @@
     nurseryObjectIndex: uint32_t
   result_type: Object
   movable: true
+  value_hash: custom
   congruent_to: custom
   alias_set: none
   generate_lir: true
@@ -2707,6 +2716,7 @@
     slotOffset: uint32_t
     shape: Shape*
     numNewSlots: uint32_t
+    preserveWrapper: bool
   possibly_calls: true
   alias_set: custom
   generate_lir: true
@@ -2870,6 +2880,9 @@
   gen_boilerplate: false
 
 - name: NearbyInt
+  gen_boilerplate: false
+
+- name: RoundToDouble
   gen_boilerplate: false
 
 - name: GetIteratorCache

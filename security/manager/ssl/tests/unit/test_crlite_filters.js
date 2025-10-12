@@ -26,6 +26,8 @@ const CRLITE_FILTER_CHANNEL_PREF = "security.pki.crlite_channel";
 const CRLITE_MODE_PREF = "security.pki.crlite_mode";
 const CRLITE_TIMESTAMPS_FOR_COVERAGE_PREF =
   "security.pki.crlite_timestamps_for_coverage";
+const CERTIFICATE_TRANSPARENCY_MODE_PREF =
+  "security.pki.certificate_transparency.mode";
 const INTERMEDIATES_ENABLED_PREF =
   "security.remote_settings.intermediates.enabled";
 const INTERMEDIATES_DL_PER_POLL_PREF =
@@ -986,6 +988,12 @@ function run_test() {
   Services.prefs.setIntPref(INTERMEDIATES_DL_PER_POLL_PREF, 0);
 
   Services.prefs.setCharPref("browser.policies.loglevel", "debug");
+
+  // All of the tests here should work even when CT is disabled.
+  Services.prefs.setIntPref(
+    CERTIFICATE_TRANSPARENCY_MODE_PREF,
+    CT_MODE_DISABLE
+  );
 
   run_next_test();
 }

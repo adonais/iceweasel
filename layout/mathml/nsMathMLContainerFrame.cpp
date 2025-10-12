@@ -11,7 +11,6 @@
 #include "mozilla/Likely.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/MathMLElement.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/gfx/2D.h"
 #include "nsContentUtils.h"
 #include "nsDisplayList.h"
@@ -706,7 +705,7 @@ nsresult nsMathMLContainerFrame::ReLayoutChildren(nsIFrame* aParentFrame) {
 // and properties such as the scriptlevel depends on those rules.
 // Hence for things to work, callers must use Append/Insert/etc wisely.
 
-nsresult nsMathMLContainerFrame::ChildListChanged(int32_t aModType) {
+nsresult nsMathMLContainerFrame::ChildListChanged() {
   // If this is an embellished frame we need to rebuild the
   // embellished hierarchy by walking-up to the parent of the
   // outermost embellished container.
@@ -728,7 +727,7 @@ void nsMathMLContainerFrame::AppendFrames(ChildListID aListID,
                                           nsFrameList&& aFrameList) {
   MOZ_ASSERT(aListID == FrameChildListID::Principal);
   mFrames.AppendFrames(this, std::move(aFrameList));
-  ChildListChanged(dom::MutationEvent_Binding::ADDITION);
+  ChildListChanged();
 }
 
 void nsMathMLContainerFrame::InsertFrames(
@@ -736,7 +735,7 @@ void nsMathMLContainerFrame::InsertFrames(
     const nsLineList::iterator* aPrevFrameLine, nsFrameList&& aFrameList) {
   MOZ_ASSERT(aListID == FrameChildListID::Principal);
   mFrames.InsertFrames(this, aPrevFrame, std::move(aFrameList));
-  ChildListChanged(dom::MutationEvent_Binding::ADDITION);
+  ChildListChanged();
 }
 
 void nsMathMLContainerFrame::RemoveFrame(DestroyContext& aContext,
@@ -744,7 +743,7 @@ void nsMathMLContainerFrame::RemoveFrame(DestroyContext& aContext,
                                          nsIFrame* aOldFrame) {
   MOZ_ASSERT(aListID == FrameChildListID::Principal);
   mFrames.DestroyFrame(aContext, aOldFrame);
-  ChildListChanged(dom::MutationEvent_Binding::REMOVAL);
+  ChildListChanged();
 }
 
 void nsMathMLContainerFrame::GatherAndStoreOverflow(ReflowOutput* aMetrics) {

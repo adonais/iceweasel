@@ -208,8 +208,6 @@ class Http2Session final : public ASpdySession,
   const static uint32_t kQueueTailRoom = 4096;
   const static uint32_t kQueueReserved = 1024;
 
-  const static uint32_t kMaxStreamID = 0x7800000;
-
   // This is a sentinel for a deleted stream. It is not a valid
   // 31 bit stream ID.
   const static uint32_t kDeadStreamID = 0xffffdead;
@@ -440,7 +438,7 @@ class Http2Session final : public ASpdySession,
   // further up the stack.
   RefPtr<nsAHttpSegmentReader> mSegmentReader;
   nsAHttpSegmentWriter* mSegmentWriter;
-
+  const uint32_t kMaxStreamID;
   uint32_t mSendingChunkSize;    /* the transmission chunk size */
   uint32_t mNextStreamID;        /* 24 bits */
   uint32_t mConcurrentHighWater; /* max parallelism on session */

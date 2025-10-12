@@ -846,6 +846,34 @@ void MacroAssembler::Adds(const Register& rd,
   Add(rd, rn, operand, SetFlags);
 }
 
+#define MINMAX(V)        \
+  V(Smax, smax, IsInt8)  \
+  V(Smin, smin, IsInt8)  \
+  V(Umax, umax, IsUint8) \
+  V(Umin, umin, IsUint8)
+
+#define VIXL_DEFINE_MASM_FUNC(MASM, ASM, RANGE)      \
+  void MacroAssembler::MASM(const Register& rd,      \
+                            const Register& rn,      \
+                            const Operand& op) {     \
+    if (op.IsImmediate()) {                          \
+      int64_t imm = op.GetImmediate();               \
+      if (!RANGE(imm)) {                             \
+        UseScratchRegisterScope temps(this);         \
+        Register temp = temps.AcquireSameSizeAs(rd); \
+        Mov(temp, imm);                              \
+        MASM(rd, rn, temp);                          \
+        return;                                      \
+      }                                              \
+    }                                                \
+    SingleEmissionCheckScope guard(this);            \
+    ASM(rd, rn, op);                                 \
+  }
+MINMAX(VIXL_DEFINE_MASM_FUNC)
+#undef VIXL_DEFINE_MASM_FUNC
+
+// Mozilla change: Undefine MINMAX
+#undef MINMAX
 
 void MacroAssembler::Sub(const Register& rd,
                          const Register& rn,

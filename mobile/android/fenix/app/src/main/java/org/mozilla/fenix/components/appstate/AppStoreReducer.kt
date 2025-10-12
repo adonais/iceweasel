@@ -177,10 +177,6 @@ internal object AppStoreReducer {
             state.copy(snackbarState = SnackbarState.DeletingBrowserDataInProgress)
         }
 
-        is AppAction.SiteDataCleared -> state.copy(
-            snackbarState = SnackbarState.SiteDataCleared,
-        )
-
         is AppAction.CurrentTabClosed -> state.copy(
             snackbarState = SnackbarState.CurrentTabClosed(action.isPrivate),
         )
@@ -250,6 +246,7 @@ internal object AppStoreReducer {
             snackbarState = SnackbarState.DownloadCompleted(
                 action.downloadState,
             ),
+            supportedMenuNotifications = state.supportedMenuNotifications + SupportedMenuNotifications.Downloads,
         )
 
         is AppAction.DownloadAction.CannotOpenFile -> state.copy(
@@ -265,6 +262,14 @@ internal object AppStoreReducer {
         is AppAction.ReviewPromptAction -> ReviewPromptReducer.reduce(state, action)
 
         is AppAction.SearchAction -> SearchStateReducer.reduce(state, action)
+
+        is AppAction.MenuNotification.AddMenuNotification -> state.copy(
+            supportedMenuNotifications = state.supportedMenuNotifications + action.notification,
+        )
+
+        is AppAction.MenuNotification.RemoveMenuNotification -> state.copy(
+            supportedMenuNotifications = state.supportedMenuNotifications - action.notification,
+        )
     }
 }
 

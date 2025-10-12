@@ -100,34 +100,26 @@ class DateTimeHelper {
 #if !JS_HAS_INTL_API
   static int equivalentYearForDST(int year);
   static bool isRepresentableAsTime32(int64_t t);
-  static int32_t daylightSavingTA(DateTimeInfo::ForceUTC forceUTC, int64_t t);
-  static int32_t adjustTime(DateTimeInfo::ForceUTC forceUTC, int64_t date);
-  static PRMJTime toPRMJTime(DateTimeInfo::ForceUTC forceUTC, int64_t localTime,
-                             int64_t utcTime);
+  static int32_t daylightSavingTA(int64_t t);
+  static int32_t adjustTime(int64_t date);
+  static PRMJTime toPRMJTime(int64_t localTime, int64_t utcTime);
 #endif
 
  public:
-  static int32_t getTimeZoneOffset(DateTimeInfo::ForceUTC forceUTC,
+  static int32_t getTimeZoneOffset(DateTimeInfo* dtInfo,
                                    int64_t epochMilliseconds,
                                    DateTimeInfo::TimeZoneOffset offset);
 
-  static JSString* timeZoneComment(JSContext* cx,
-                                   DateTimeInfo::ForceUTC forceUTC,
+  static JSString* timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
                                    const char* locale, int64_t utcTime,
                                    int64_t localTime);
 #if !JS_HAS_INTL_API
-  static size_t formatTime(DateTimeInfo::ForceUTC forceUTC, char* buf,
-                           size_t buflen, const char* fmt, int64_t utcTime,
-                           int64_t localTime);
+  static size_t formatTime(char* buf, size_t buflen, const char* fmt,
+                           int64_t utcTime, int64_t localTime);
 #endif
 };
 
 }  // namespace
-
-static DateTimeInfo::ForceUTC ForceUTC(const Realm* realm) {
-  return realm->creationOptions().forceUTC() ? DateTimeInfo::ForceUTC::Yes
-                                             : DateTimeInfo::ForceUTC::No;
-}
 
 /**
  * 5.2.5 Mathematical Operations
@@ -638,7 +630,7 @@ JS_PUBLIC_API void JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter) {
 }
 
 #if JS_HAS_INTL_API
-int32_t DateTimeHelper::getTimeZoneOffset(DateTimeInfo::ForceUTC forceUTC,
+int32_t DateTimeHelper::getTimeZoneOffset(DateTimeInfo* dtInfo,
                                           int64_t epochMilliseconds,
                                           DateTimeInfo::TimeZoneOffset offset) {
   MOZ_ASSERT_IF(offset == DateTimeInfo::TimeZoneOffset::UTC,
@@ -646,8 +638,7 @@ int32_t DateTimeHelper::getTimeZoneOffset(DateTimeInfo::ForceUTC forceUTC,
   MOZ_ASSERT_IF(offset == DateTimeInfo::TimeZoneOffset::Local,
                 IsLocalTimeValue(epochMilliseconds));
 
-  return DateTimeInfo::getOffsetMilliseconds(forceUTC, epochMilliseconds,
-                                             offset);
+  return DateTimeInfo::getOffsetMilliseconds(dtInfo, epochMilliseconds, offset);
 }
 #else
 /*
@@ -694,8 +685,7 @@ bool DateTimeHelper::isRepresentableAsTime32(int64_t t) {
 }
 
 /* ES5 15.9.1.8. */
-int32_t DateTimeHelper::daylightSavingTA(DateTimeInfo::ForceUTC forceUTC,
-                                         int64_t t) {
+int32_t DateTimeHelper::daylightSavingTA(int64_t t) {
   /*
    * If earlier than 1970 or after 2038, potentially beyond the ken of
    * many OSes, map it to an equivalent year before asking.
@@ -710,26 +700,26 @@ int32_t DateTimeHelper::daylightSavingTA(DateTimeInfo::ForceUTC forceUTC,
     MOZ_ALWAYS_TRUE(mozilla::NumberEqualsInt64(equivalentDate, &t));
   }
 
-  return DateTimeInfo::getDSTOffsetMilliseconds(forceUTC, t);
+  return DateTimeInfo::getDSTOffsetMilliseconds(nullptr, t);
 }
 
-int32_t DateTimeHelper::adjustTime(DateTimeInfo::ForceUTC forceUTC,
-                                   int64_t date) {
-  int32_t localTZA = DateTimeInfo::localTZA(forceUTC);
-  int32_t t = daylightSavingTA(forceUTC, date) + localTZA;
+int32_t DateTimeHelper::adjustTime(int64_t date) {
+  int32_t localTZA = DateTimeInfo::localTZA();
+  int32_t t = daylightSavingTA(date) + localTZA;
   return (localTZA >= 0) ? (t % msPerDay) : -((msPerDay - t) % msPerDay);
 }
 
-int32_t DateTimeHelper::getTimeZoneOffset(DateTimeInfo::ForceUTC forceUTC,
+int32_t DateTimeHelper::getTimeZoneOffset(DateTimeInfo* dtInfo,
                                           int64_t epochMilliseconds,
                                           DateTimeInfo::TimeZoneOffset offset) {
+  MOZ_ASSERT(dtInfo == nullptr);
   MOZ_ASSERT_IF(offset == DateTimeInfo::TimeZoneOffset::UTC,
                 IsTimeValue(epochMilliseconds));
   MOZ_ASSERT_IF(offset == DateTimeInfo::TimeZoneOffset::Local,
                 IsLocalTimeValue(epochMilliseconds));
 
   if (offset == DateTimeInfo::TimeZoneOffset::UTC) {
-    return adjustTime(forceUTC, epochMilliseconds);
+    return adjustTime(epochMilliseconds);
   }
 
   // Following the ES2017 specification creates undesirable results at DST
@@ -739,9 +729,8 @@ int32_t DateTimeHelper::getTimeZoneOffset(DateTimeInfo::ForceUTC forceUTC,
   // V8 and subtract one hour before computing the offset.
   // Spec bug: https://bugs.ecmascript.org/show_bug.cgi?id=4007
 
-  return adjustTime(forceUTC, epochMilliseconds -
-                                  int64_t(DateTimeInfo::localTZA(forceUTC)) -
-                                  int64_t(msPerHour));
+  return adjustTime(epochMilliseconds - int64_t(DateTimeInfo::localTZA()) -
+                    int64_t(msPerHour));
 }
 #endif /* JS_HAS_INTL_API */
 
@@ -750,13 +739,13 @@ int32_t DateTimeHelper::getTimeZoneOffset(DateTimeInfo::ForceUTC forceUTC,
  *
  * ES2025 draft rev 76814cbd5d7842c2a99d28e6e8c7833f1de5bee0
  */
-static int64_t LocalTime(DateTimeInfo::ForceUTC forceUTC, double t) {
+static int64_t LocalTime(DateTimeInfo* dtInfo, double t) {
   MOZ_ASSERT(std::isfinite(t));
   MOZ_ASSERT(IsTimeValue(t));
 
   // Steps 1-4.
   int32_t offsetMs = DateTimeHelper::getTimeZoneOffset(
-      forceUTC, static_cast<int64_t>(t), DateTimeInfo::TimeZoneOffset::UTC);
+      dtInfo, static_cast<int64_t>(t), DateTimeInfo::TimeZoneOffset::UTC);
   MOZ_ASSERT(std::abs(offsetMs) < msPerDay);
 
   // Step 5.
@@ -768,7 +757,7 @@ static int64_t LocalTime(DateTimeInfo::ForceUTC forceUTC, double t) {
  *
  * ES2025 draft rev 76814cbd5d7842c2a99d28e6e8c7833f1de5bee0
  */
-static double UTC(DateTimeInfo::ForceUTC forceUTC, double t) {
+static double UTC(DateTimeInfo* dtInfo, double t) {
   // Step 1.
   if (!std::isfinite(t)) {
     return GenericNaN();
@@ -781,7 +770,7 @@ static double UTC(DateTimeInfo::ForceUTC forceUTC, double t) {
 
   // Steps 2-5.
   int32_t offsetMs = DateTimeHelper::getTimeZoneOffset(
-      forceUTC, static_cast<int64_t>(t), DateTimeInfo::TimeZoneOffset::Local);
+      dtInfo, static_cast<int64_t>(t), DateTimeInfo::TimeZoneOffset::Local);
   MOZ_ASSERT(std::abs(offsetMs) < msPerDay);
 
   // Step 6.
@@ -1128,7 +1117,7 @@ static bool ParseDigitsNOrLess(size_t n, size_t* result, const CharT* s,
  *   TZD  = time zone designator (Z or +hh:mm or -hh:mm or missing for local)
  */
 template <typename CharT>
-static bool ParseISOStyleDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
+static bool ParseISOStyleDate(DateTimeInfo* dtInfo, const CharT* s,
                               size_t length, ClippedTime* result) {
   size_t i = 0;
   int tzMul = 1;
@@ -1252,7 +1241,7 @@ done:
                          MakeTime(hour, min, sec, msec));
 
   if (isLocalTime) {
-    date = UTC(forceUTC, date);
+    date = UTC(dtInfo, date);
   } else {
     date -=
         tzMul * (int32_t(tzHour) * msPerHour + int32_t(tzMin) * msPerMinute);
@@ -1549,13 +1538,13 @@ static constexpr size_t MinKeywordLength(const CharsAndAction (&keywords)[N]) {
 }
 
 template <typename CharT>
-static bool ParseDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
-                      const CharT* s, size_t length, ClippedTime* result) {
+static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo, const CharT* s,
+                      size_t length, ClippedTime* result) {
   if (length == 0) {
     return false;
   }
 
-  if (ParseISOStyleDate(forceUTC, s, length, result)) {
+  if (ParseISOStyleDate(dtInfo, s, length, result)) {
     return true;
   }
 
@@ -2043,7 +2032,7 @@ static bool ParseDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
       MakeDate(MakeDay(year, mon, mday), MakeTime(hour, min, sec, msec));
 
   if (tzOffset == -1) { /* no time zone specified, have to use local */
-    date = UTC(forceUTC, date);
+    date = UTC(dtInfo, date);
   } else {
     date += double(tzOffset) * msPerMinute;
   }
@@ -2052,16 +2041,16 @@ static bool ParseDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
   return true;
 }
 
-static bool ParseDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
+static bool ParseDate(JSContext* cx, DateTimeInfo* dtInfo,
                       const JSLinearString* s, ClippedTime* result) {
   AutoCheckCannotGC nogc;
   // Collect telemetry on how often Date.parse is being used.
   // This can be removed in the future, see Bug 1944630.
   cx->runtime()->setUseCounter(cx->global(), JSUseCounter::DATEPARSE);
-  return s->hasLatin1Chars() ? ParseDate(cx, forceUTC, s->latin1Chars(nogc),
-                                         s->length(), result)
-                             : ParseDate(cx, forceUTC, s->twoByteChars(nogc),
-                                         s->length(), result);
+  return s->hasLatin1Chars()
+             ? ParseDate(cx, dtInfo, s->latin1Chars(nogc), s->length(), result)
+             : ParseDate(cx, dtInfo, s->twoByteChars(nogc), s->length(),
+                         result);
 }
 
 /**
@@ -2089,7 +2078,7 @@ static bool date_parse(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   ClippedTime result;
-  if (!ParseDate(cx, ForceUTC(cx->realm()), linearStr, &result)) {
+  if (!ParseDate(cx, cx->realm()->getDateTimeInfo(), linearStr, &result)) {
     args.rval().setNaN();
     return true;
   }
@@ -2154,8 +2143,8 @@ static bool date_now(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-DateTimeInfo::ForceUTC DateObject::forceUTC() const {
-  return ForceUTC(realm());
+DateTimeInfo* DateObject::dateTimeInfo() const {
+  return realm()->getDateTimeInfo();
 }
 
 void DateObject::setUTCTime(ClippedTime t) {
@@ -2172,17 +2161,22 @@ void DateObject::setUTCTime(ClippedTime t, MutableHandleValue vp) {
 }
 
 void DateObject::fillLocalTimeSlots() {
-  const int32_t utcTZOffset =
-      DateTimeInfo::utcToLocalStandardOffsetSeconds(forceUTC());
+  auto* dtInfo = dateTimeInfo();
+
+  // |timeZoneCacheKey| is used to validate that the cached local time values
+  // are still valid. They can become invalid if either:
+  // - the system default time zone changed, or
+  // - the realm time zone override was changed.
+  const int32_t timeZoneCacheKey = DateTimeInfo::timeZoneCacheKey(dtInfo);
 
   /* Check if the cache is already populated. */
   if (!getReservedSlot(LOCAL_TIME_SLOT).isUndefined() &&
-      getReservedSlot(UTC_TIME_ZONE_OFFSET_SLOT).toInt32() == utcTZOffset) {
+      getReservedSlot(TIME_ZONE_CACHE_KEY_SLOT).toInt32() == timeZoneCacheKey) {
     return;
   }
 
   /* Remember time zone used to generate the local cache. */
-  setReservedSlot(UTC_TIME_ZONE_OFFSET_SLOT, Int32Value(utcTZOffset));
+  setReservedSlot(TIME_ZONE_CACHE_KEY_SLOT, Int32Value(timeZoneCacheKey));
 
   double utcTime = UTCTime().toDouble();
 
@@ -2193,7 +2187,7 @@ void DateObject::fillLocalTimeSlots() {
     return;
   }
 
-  int64_t localTime = LocalTime(forceUTC(), utcTime);
+  int64_t localTime = LocalTime(dtInfo, utcTime);
 
   setReservedSlot(LOCAL_TIME_SLOT, DoubleValue(localTime));
 
@@ -2784,14 +2778,15 @@ static bool date_setMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Step 6.
-  int64_t tv = LocalTime(unwrapped->forceUTC(), t);
+  auto* dtInfo = unwrapped->dateTimeInfo();
+  int64_t tv = LocalTime(dtInfo, t);
 
   // Step 7.
   double time =
       MakeTime(HourFromTime(tv), MinFromTime(tv), SecFromTime(tv), ms);
 
   // Step 8.
-  ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), MakeDate(Day(tv), time)));
+  ClippedTime u = TimeClip(UTC(dtInfo, MakeDate(Day(tv), time)));
 
   // Steps 9-10.
   unwrapped->setUTCTime(u, args.rval());
@@ -2880,7 +2875,8 @@ static bool date_setSeconds(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Step 7.
-  int64_t tv = LocalTime(unwrapped->forceUTC(), t);
+  auto* dtInfo = unwrapped->dateTimeInfo();
+  int64_t tv = LocalTime(dtInfo, t);
 
   // Step 8.
   if (args.length() <= 1) {
@@ -2892,7 +2888,7 @@ static bool date_setSeconds(JSContext* cx, unsigned argc, Value* vp) {
       MakeDate(Day(tv), MakeTime(HourFromTime(tv), MinFromTime(tv), s, milli));
 
   // Step 10.
-  ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), date));
+  ClippedTime u = TimeClip(UTC(dtInfo, date));
 
   // Steps 11-12.
   unwrapped->setUTCTime(u, args.rval());
@@ -2998,7 +2994,8 @@ static bool date_setMinutes(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Step 8.
-  int64_t tv = LocalTime(unwrapped->forceUTC(), t);
+  auto* dtInfo = unwrapped->dateTimeInfo();
+  int64_t tv = LocalTime(dtInfo, t);
 
   // Step 9.
   if (args.length() <= 1) {
@@ -3014,7 +3011,7 @@ static bool date_setMinutes(JSContext* cx, unsigned argc, Value* vp) {
   double date = MakeDate(Day(tv), MakeTime(HourFromTime(tv), m, s, milli));
 
   // Step 12.
-  ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), date));
+  ClippedTime u = TimeClip(UTC(dtInfo, date));
 
   // Steps 13-14.
   unwrapped->setUTCTime(u, args.rval());
@@ -3136,7 +3133,8 @@ static bool date_setHours(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Step 9.
-  int64_t tv = LocalTime(unwrapped->forceUTC(), t);
+  auto* dtInfo = unwrapped->dateTimeInfo();
+  int64_t tv = LocalTime(dtInfo, t);
 
   // Step 10.
   if (args.length() <= 1) {
@@ -3157,7 +3155,7 @@ static bool date_setHours(JSContext* cx, unsigned argc, Value* vp) {
   double date = MakeDate(Day(tv), MakeTime(h, m, s, milli));
 
   // Step 14.
-  ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), date));
+  ClippedTime u = TimeClip(UTC(dtInfo, date));
 
   // Steps 15-16.
   unwrapped->setUTCTime(u, args.rval());
@@ -3272,14 +3270,15 @@ static bool date_setDate(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Step 6.
-  int64_t tv = LocalTime(unwrapped->forceUTC(), t);
+  auto* dtInfo = unwrapped->dateTimeInfo();
+  int64_t tv = LocalTime(dtInfo, t);
 
   // Step 7.
   double newDate = MakeDate(
       MakeDay(::YearFromTime(tv), ::MonthFromTime(tv), dt), TimeWithinDay(tv));
 
   // Step 8.
-  ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), newDate));
+  ClippedTime u = TimeClip(UTC(dtInfo, newDate));
 
   // Steps 9-10.
   unwrapped->setUTCTime(u, args.rval());
@@ -3368,7 +3367,8 @@ static bool date_setMonth(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Step 7.
-  int64_t tv = LocalTime(unwrapped->forceUTC(), t);
+  auto* dtInfo = unwrapped->dateTimeInfo();
+  int64_t tv = LocalTime(dtInfo, t);
 
   // Step 8.
   if (args.length() <= 1) {
@@ -3380,7 +3380,7 @@ static bool date_setMonth(JSContext* cx, unsigned argc, Value* vp) {
       MakeDate(MakeDay(::YearFromTime(tv), m, dt), TimeWithinDay(tv));
 
   // Step 10
-  ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), newDate));
+  ClippedTime u = TimeClip(UTC(dtInfo, newDate));
 
   // Steps 11-12.
   unwrapped->setUTCTime(u, args.rval());
@@ -3468,11 +3468,12 @@ static bool date_setFullYear(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Step 5.
+  auto* dtInfo = unwrapped->dateTimeInfo();
   int64_t tv;
   if (std::isnan(t)) {
     tv = 0;
   } else {
-    tv = LocalTime(unwrapped->forceUTC(), t);
+    tv = LocalTime(dtInfo, t);
   }
 
   // Step 6.
@@ -3499,7 +3500,7 @@ static bool date_setFullYear(JSContext* cx, unsigned argc, Value* vp) {
   double newDate = MakeDate(MakeDay(y, m, dt), TimeWithinDay(tv));
 
   // Step 9.
-  ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), newDate));
+  ClippedTime u = TimeClip(UTC(dtInfo, newDate));
 
   // Steps 10-11.
   unwrapped->setUTCTime(u, args.rval());
@@ -3596,11 +3597,12 @@ static bool date_setYear(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Step 5.
+  auto* dtInfo = unwrapped->dateTimeInfo();
   int64_t tv;
   if (std::isnan(t)) {
     tv = 0;
   } else {
-    tv = LocalTime(unwrapped->forceUTC(), t);
+    tv = LocalTime(dtInfo, t);
   }
 
   // Step 6.
@@ -3613,7 +3615,7 @@ static bool date_setYear(JSContext* cx, unsigned argc, Value* vp) {
   double date = MakeDate(day, TimeWithinDay(tv));
 
   // Step 9.
-  ClippedTime u = TimeClip(UTC(unwrapped->forceUTC(), date));
+  ClippedTime u = TimeClip(UTC(dtInfo, date));
 
   // Steps 10-11.
   unwrapped->setUTCTime(u, args.rval());
@@ -3919,8 +3921,7 @@ static bool date_toJSON(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 #if JS_HAS_INTL_API
-JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
-                                          DateTimeInfo::ForceUTC forceUTC,
+JSString* DateTimeHelper::timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
                                           const char* locale, int64_t utcTime,
                                           int64_t localTime) {
   MOZ_ASSERT(IsTimeValue(utcTime));
@@ -3930,7 +3931,7 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
 
   // Parenthesize the returned display name.
   if (!displayName.append(' ') || !displayName.append('(') ||
-      !DateTimeInfo::timeZoneDisplayName(forceUTC, displayName, utcTime,
+      !DateTimeInfo::timeZoneDisplayName(dtInfo, displayName, utcTime,
                                          locale) ||
       !displayName.append(')')) {
     ReportOutOfMemory(cx);
@@ -3942,8 +3943,7 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
 }
 #else
 /* Interface to PRMJTime date struct. */
-PRMJTime DateTimeHelper::toPRMJTime(DateTimeInfo::ForceUTC forceUTC,
-                                    int64_t localTime, int64_t utcTime) {
+PRMJTime DateTimeHelper::toPRMJTime(int64_t localTime, int64_t utcTime) {
   auto [year, month, day] = ToYearMonthDay(localTime);
   auto [hour, minute, second] = ToHourMinuteSecond(localTime);
 
@@ -3957,15 +3957,14 @@ PRMJTime DateTimeHelper::toPRMJTime(DateTimeInfo::ForceUTC forceUTC,
   prtm.tm_wday = int8_t(WeekDay(localTime));
   prtm.tm_year = year;
   prtm.tm_yday = int16_t(::DayWithinYear(localTime, year));
-  prtm.tm_isdst = (daylightSavingTA(forceUTC, utcTime) != 0);
+  prtm.tm_isdst = (daylightSavingTA(utcTime) != 0);
 
   return prtm;
 }
 
-size_t DateTimeHelper::formatTime(DateTimeInfo::ForceUTC forceUTC, char* buf,
-                                  size_t buflen, const char* fmt,
+size_t DateTimeHelper::formatTime(char* buf, size_t buflen, const char* fmt,
                                   int64_t utcTime, int64_t localTime) {
-  PRMJTime prtm = toPRMJTime(forceUTC, localTime, utcTime);
+  PRMJTime prtm = toPRMJTime(localTime, utcTime);
 
   // If an equivalent year was used to compute the date/time components, use
   // the same equivalent year to determine the time zone name and offset in
@@ -3980,14 +3979,14 @@ size_t DateTimeHelper::formatTime(DateTimeInfo::ForceUTC forceUTC, char* buf,
                          offsetInSeconds);
 }
 
-JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
-                                          DateTimeInfo::ForceUTC forceUTC,
+JSString* DateTimeHelper::timeZoneComment(JSContext* cx, DateTimeInfo* dtInfo,
                                           const char* locale, int64_t utcTime,
                                           int64_t localTime) {
+  MOZ_ASSERT(dtInfo == nullptr);
+
   char tzbuf[100];
 
-  size_t tzlen =
-      formatTime(forceUTC, tzbuf, sizeof tzbuf, " (%Z)", utcTime, localTime);
+  size_t tzlen = formatTime(tzbuf, sizeof tzbuf, " (%Z)", utcTime, localTime);
   if (tzlen != 0) {
     // Decide whether to use the resulting time zone string.
     //
@@ -4019,8 +4018,8 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
 
 enum class FormatSpec { DateTime, Date, Time };
 
-static bool FormatDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
-                       const char* locale, double utcTime, FormatSpec format,
+static bool FormatDate(JSContext* cx, DateTimeInfo* dtInfo, const char* locale,
+                       double utcTime, FormatSpec format,
                        MutableHandleValue rval) {
   MOZ_ASSERT(IsTimeValue(utcTime));
 
@@ -4030,7 +4029,7 @@ static bool FormatDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
   }
 
   int64_t epochMilliseconds = static_cast<int64_t>(utcTime);
-  int64_t localTime = LocalTime(forceUTC, utcTime);
+  int64_t localTime = LocalTime(dtInfo, utcTime);
 
   int offset = 0;
   RootedString timeZoneComment(cx);
@@ -4058,7 +4057,7 @@ static bool FormatDate(JSContext* cx, DateTimeInfo::ForceUTC forceUTC,
 
     // Get a time zone string from the OS or ICU to include as a comment.
     timeZoneComment = DateTimeHelper::timeZoneComment(
-        cx, forceUTC, locale, epochMilliseconds, localTime);
+        cx, dtInfo, locale, epochMilliseconds, localTime);
     if (!timeZoneComment) {
       return false;
     }
@@ -4144,7 +4143,6 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
 #else
 static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
                                  const char* format, MutableHandleValue rval) {
-  DateTimeInfo::ForceUTC forceUTC = unwrapped->forceUTC();
   double utcTime = unwrapped->UTCTime().toDouble();
 
   const char* locale = unwrapped->realm()->getLocale();
@@ -4159,15 +4157,15 @@ static bool ToLocaleFormatHelper(JSContext* cx, DateObject* unwrapped,
     MOZ_ASSERT(IsTimeValue(utcTime));
 
     int64_t epochMilliseconds = static_cast<int64_t>(utcTime);
-    int64_t localTime = static_cast<int64_t>(LocalTime(forceUTC, utcTime));
+    int64_t localTime = static_cast<int64_t>(LocalTime(nullptr, utcTime));
 
     /* Let PRMJTime format it. */
     size_t result_len = DateTimeHelper::formatTime(
-        forceUTC, buf, sizeof buf, format, epochMilliseconds, localTime);
+        buf, sizeof buf, format, epochMilliseconds, localTime);
 
     /* If it failed, default to toString. */
     if (result_len == 0) {
-      return FormatDate(cx, forceUTC, locale, utcTime, FormatSpec::DateTime,
+      return FormatDate(cx, nullptr, locale, utcTime, FormatSpec::DateTime,
                         rval);
     }
 
@@ -4329,7 +4327,7 @@ static bool date_toTimeString(JSContext* cx, unsigned argc, Value* vp) {
   if (!locale) {
     return false;
   }
-  return FormatDate(cx, unwrapped->forceUTC(), locale,
+  return FormatDate(cx, unwrapped->dateTimeInfo(), locale,
                     unwrapped->UTCTime().toDouble(), FormatSpec::Time,
                     args.rval());
 }
@@ -4355,7 +4353,7 @@ static bool date_toDateString(JSContext* cx, unsigned argc, Value* vp) {
   if (!locale) {
     return false;
   }
-  return FormatDate(cx, unwrapped->forceUTC(), locale,
+  return FormatDate(cx, unwrapped->dateTimeInfo(), locale,
                     unwrapped->UTCTime().toDouble(), FormatSpec::Date,
                     args.rval());
 }
@@ -4404,7 +4402,7 @@ static bool date_toString(JSContext* cx, unsigned argc, Value* vp) {
   if (!locale) {
     return false;
   }
-  return FormatDate(cx, unwrapped->forceUTC(), locale,
+  return FormatDate(cx, unwrapped->dateTimeInfo(), locale,
                     unwrapped->UTCTime().toDouble(), FormatSpec::DateTime,
                     args.rval());
 }
@@ -4583,7 +4581,7 @@ static bool ToDateString(JSContext* cx, const CallArgs& args, ClippedTime t) {
   if (!locale) {
     return false;
   }
-  return FormatDate(cx, ForceUTC(cx->realm()), locale, t.toDouble(),
+  return FormatDate(cx, cx->realm()->getDateTimeInfo(), locale, t.toDouble(),
                     FormatSpec::DateTime, args.rval());
 }
 
@@ -4648,7 +4646,7 @@ static bool DateOneArgument(JSContext* cx, const CallArgs& args) {
       return false;
     }
 
-    if (!ParseDate(cx, ForceUTC(cx->realm()), linearStr, &t)) {
+    if (!ParseDate(cx, cx->realm()->getDateTimeInfo(), linearStr, &t)) {
       t = ClippedTime::invalid();
     }
   } else {
@@ -4742,8 +4740,8 @@ static bool DateMultipleArguments(JSContext* cx, const CallArgs& args) {
   double finalDate = MakeDate(MakeDay(yr, m, dt), MakeTime(h, min, s, milli));
 
   // Steps 5.k and 6-8.
-  return NewDateObject(cx, args,
-                       TimeClip(UTC(ForceUTC(cx->realm()), finalDate)));
+  return NewDateObject(
+      cx, args, TimeClip(UTC(cx->realm()->getDateTimeInfo(), finalDate)));
 }
 
 /**
@@ -4839,7 +4837,8 @@ JS_PUBLIC_API JSObject* js::NewDateObject(JSContext* cx, int year, int mon,
   MOZ_ASSERT(mon < 12);
   double msec_time =
       MakeDate(MakeDay(year, mon, mday), MakeTime(hour, min, sec, 0.0));
-  return NewDateObjectMsec(cx, TimeClip(UTC(ForceUTC(cx->realm()), msec_time)));
+  return NewDateObjectMsec(
+      cx, TimeClip(UTC(cx->realm()->getDateTimeInfo(), msec_time)));
 }
 
 JS_PUBLIC_API bool js::DateIsValid(JSContext* cx, HandleObject obj,
@@ -4908,6 +4907,6 @@ JS_PUBLIC_API bool js::DateGetMsecSinceEpoch(JSContext* cx, HandleObject obj,
 JS_PUBLIC_API bool JS::IsISOStyleDate(JSContext* cx,
                                       const JS::Latin1Chars& str) {
   ClippedTime result;
-  return ParseISOStyleDate(ForceUTC(cx->realm()), str.begin().get(),
+  return ParseISOStyleDate(cx->realm()->getDateTimeInfo(), str.begin().get(),
                            str.length(), &result);
 }

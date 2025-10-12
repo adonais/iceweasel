@@ -34,13 +34,29 @@ radio-option-1 =
   .description = It's a full moz-radio
 radio-option-2 =
   .label = Option 2
+extension-controlled-input =
+  .label = Setting controlled by extension
+extension-controlled-message = <strong>My Extension</strong> requires Controlled Setting.
 `,
   },
 };
 
 const Template = ({ config, setting }) => html`
-  <setting-control .config=${config} .setting=${setting}></setting-control>
+  <link
+    rel="stylesheet"
+    href="chrome://browser/content/preferences/widgets/setting-control.css"
+  /><setting-control .config=${config} .setting=${setting}></setting-control>
 `;
+
+const DEFAULT_SETTING = {
+  value: 1,
+  on() {},
+  off() {},
+  userChange() {},
+  getControlConfig: c => c,
+  controllingExtensionInfo: {},
+  visible: true,
+};
 
 export const Checkbox = Template.bind({});
 Checkbox.args = {
@@ -48,13 +64,7 @@ Checkbox.args = {
     id: "checkbox-example",
     l10nId: "checkbox-example-input",
   },
-  setting: {
-    value: true,
-    on() {},
-    off() {},
-    userChange() {},
-    getControlConfig: c => c,
-  },
+  setting: DEFAULT_SETTING,
 };
 
 export const Select = Template.bind({});
@@ -79,13 +89,7 @@ Select.args = {
       },
     ],
   },
-  setting: {
-    value: 1,
-    on() {},
-    off() {},
-    userChange() {},
-    getControlConfig: c => c,
-  },
+  setting: DEFAULT_SETTING,
 };
 
 export const Radio = Template.bind({});
@@ -111,11 +115,29 @@ Radio.args = {
       },
     ],
   },
+  setting: DEFAULT_SETTING,
+};
+
+export const ExtensionControlled = Template.bind({});
+ExtensionControlled.args = {
+  config: {
+    id: "extension-controlled-example",
+    l10nId: "extension-controlled-input",
+    pref: "privacy.userContext.enabled",
+    controllingExtensionInfo: {
+      storeId: "privacy.containers",
+      /* Example of a Fluent string used for the message bar:
+       * extension-controlled-message = <strong>{ $name }</strong> requires Container Tabs.
+       * */
+      l10nId: "extension-controlled-message",
+    },
+  },
   setting: {
-    value: 1,
-    on() {},
-    off() {},
-    userChange() {},
-    getControlConfig: c => c,
+    ...DEFAULT_SETTING,
+    controllingExtensionInfo: {
+      id: "extension-controlled-example",
+      l10nId: "extension-controlled-message",
+      name: "My Extension",
+    },
   },
 };

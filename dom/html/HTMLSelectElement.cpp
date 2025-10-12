@@ -240,27 +240,26 @@ void HTMLSelectElement::GetAutocompleteInfo(AutocompleteInfo& aInfo) {
       attributeVal, aInfo, mAutocompleteInfoState, true);
 }
 
-void HTMLSelectElement::InsertChildBefore(nsIContent* aKid,
-                                          nsIContent* aBeforeThis, bool aNotify,
-                                          ErrorResult& aRv,
-                                          nsINode* aOldParent) {
+void HTMLSelectElement::InsertChildBefore(
+    nsIContent* aKid, nsIContent* aBeforeThis, bool aNotify, ErrorResult& aRv,
+    nsINode* aOldParent, MutationEffectOnScript aMutationEffectOnScript) {
   const uint32_t index =
       aBeforeThis ? *ComputeIndexOf(aBeforeThis) : GetChildCount();
   SafeOptionListMutation safeMutation(this, this, aKid, index, aNotify);
   nsGenericHTMLFormControlElementWithState::InsertChildBefore(
-      aKid, aBeforeThis, aNotify, aRv, aOldParent);
+      aKid, aBeforeThis, aNotify, aRv, aOldParent, aMutationEffectOnScript);
   if (aRv.Failed()) {
     safeMutation.MutationFailed();
   }
 }
 
-void HTMLSelectElement::RemoveChildNode(nsIContent* aKid, bool aNotify,
-                                        const BatchRemovalState* aState,
-                                        nsINode* aNewParent) {
+void HTMLSelectElement::RemoveChildNode(
+    nsIContent* aKid, bool aNotify, const BatchRemovalState* aState,
+    nsINode* aNewParent, MutationEffectOnScript aMutationEffectOnScript) {
   SafeOptionListMutation safeMutation(this, this, nullptr,
                                       *ComputeIndexOf(aKid), aNotify);
-  nsGenericHTMLFormControlElementWithState::RemoveChildNode(aKid, aNotify,
-                                                            aState, aNewParent);
+  nsGenericHTMLFormControlElementWithState::RemoveChildNode(
+      aKid, aNotify, aState, aNewParent, aMutationEffectOnScript);
 }
 
 void HTMLSelectElement::InsertOptionsIntoList(nsIContent* aOptions,
@@ -1236,8 +1235,8 @@ void HTMLSelectElement::MapAttributesIntoRule(
   nsGenericHTMLFormControlElementWithState::MapCommonAttributesInto(aBuilder);
 }
 
-nsChangeHint HTMLSelectElement::GetAttributeChangeHint(const nsAtom* aAttribute,
-                                                       int32_t aModType) const {
+nsChangeHint HTMLSelectElement::GetAttributeChangeHint(
+    const nsAtom* aAttribute, AttrModType aModType) const {
   nsChangeHint retval =
       nsGenericHTMLFormControlElementWithState::GetAttributeChangeHint(
           aAttribute, aModType);

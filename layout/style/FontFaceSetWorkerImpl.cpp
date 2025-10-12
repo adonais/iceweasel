@@ -357,7 +357,11 @@ nsresult FontFaceSetWorkerImpl::CreateChannelForSyncLoadFontData(
                                         : nsIContentPolicy::TYPE_FONT);
 }
 
-nsPresContext* FontFaceSetWorkerImpl::GetPresContext() const { return nullptr; }
+FontVisibilityProvider* FontFaceSetWorkerImpl::GetFontVisibilityProvider()
+    const {
+  RecursiveMutexAutoLock lock(mMutex);
+  return mWorkerRef->Private();
+}
 
 TimeStamp FontFaceSetWorkerImpl::GetNavigationStartTimeStamp() {
   RecursiveMutexAutoLock lock(mMutex);

@@ -103,6 +103,7 @@ class HistoryTest : TestSetup() {
             ) {
                 clickDeleteHistoryButton(firstWebPage.url.toString())
             }
+            verifySnackBarText(expectedText = "Deleted")
             verifyEmptyHistoryView()
         }
     }

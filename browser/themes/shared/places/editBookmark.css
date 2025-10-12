@@ -13,7 +13,7 @@
   height: 12.5em;
   flex: 1 auto;
   border: 1px solid ThreeDShadow;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 }
 
 #editBMPanel_folderTree {

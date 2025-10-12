@@ -9,6 +9,12 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+registerCleanupFunction(() => {
+  try {
+    Services.prefs.clearUserPref("signon.firefoxRelay.feature");
+  } catch (_) {}
+});
+
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -124,9 +130,16 @@ add_task(
         await openACPopup(acPopup, browser, "#form-basic-username");
         await clickRelayItemAndWaitForPopup(acPopup);
 
-        const fxaRelayOptInPrompt = document.getElementById(
-          "fxa-and-relay-integration-offer-notification"
-        );
+        const fxaRelayOptInPrompt =
+          document.getElementById(
+            "fxa-and-relay-integration-offer-notification"
+          ) ||
+          document.getElementById(
+            "fxa-and-relay-integration-offer-with-domain-notification"
+          ) ||
+          document.querySelector(
+            "[id^='fxa-and-relay-integration-offer'][id$='-notification']"
+          );
         Assert.ok(
           fxaRelayOptInPrompt,
           "Clicking on Relay auto-complete item should open the FXA + Relay opt-in prompt"
@@ -135,19 +148,21 @@ add_task(
           ".firefox-fxa-and-relay-offer-tos-url"
         );
         Assert.ok(
-          relayTermsLink.href,
+          relayTermsLink && relayTermsLink.href,
           "Relay opt-in prompt includes link to terms of service."
         );
         const relayPrivacyLink = fxaRelayOptInPrompt.querySelector(
           ".firefox-fxa-and-relay-offer-privacy-url"
         );
         Assert.ok(
-          relayPrivacyLink.href,
+          relayPrivacyLink && relayPrivacyLink.href,
           "Relay opt-in prompt includes link to privacy notice."
         );
-        const relayLearnMoreLink = fxaRelayOptInPrompt.querySelector(
-          ".popup-notification-learnmore-link"
-        );
+        const relayLearnMoreLink =
+          fxaRelayOptInPrompt.querySelector(".firefox-relay-learn-more-url") ||
+          fxaRelayOptInPrompt.querySelector(
+            ".popup-notification-learnmore-link"
+          );
         Assert.ok(
           relayLearnMoreLink,
           "Relay opt-in prompt includes link to learn more."
@@ -164,50 +179,63 @@ add_task(
 
 add_task(async function test_experimenter_feature_value_changes_UI() {
   const rsSandbox = await stubRemoteSettingsAllowList();
-  for (const firstOfferVersion of Object.keys(autocompleteUXTreatments)) {
-    const doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig({
-      featureId: "email-autocomplete-relay",
-      value: { firstOfferVersion },
-    });
-    const treatmentTitleMessageId =
-      autocompleteUXTreatments[firstOfferVersion].messageIds[0];
-    const expectedACTitle = await new Localization([
-      "browser/firefoxRelay.ftl",
-      "toolkit/branding/brandings.ftl",
-    ]).formatMessages([treatmentTitleMessageId]);
-    await BrowserTestUtils.withNewTab(
-      {
-        gBrowser,
-        url: TEST_URL_PATH,
-      },
-      async function (browser) {
-        const acPopup = document.getElementById("PopupAutoComplete");
-        await openACPopup(acPopup, browser, "#form-basic-username");
-        const relayItem = await clickRelayItemAndWaitForPopup(
-          acPopup,
-          firstOfferVersion
-        );
-        Assert.equal(
-          relayItem.getAttribute("ac-value"),
-          expectedACTitle[0].value
-        );
+  try {
+    for (const firstOfferVersion of Object.keys(autocompleteUXTreatments)) {
+      const doExperimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
+        {
+          featureId: "email-autocomplete-relay",
+          value: { firstOfferVersion },
+        }
+      );
+      const treatmentTitleMessageId =
+        autocompleteUXTreatments[firstOfferVersion].messageIds[0];
+      const expectedACTitle = await new Localization([
+        "browser/firefoxRelay.ftl",
+        "toolkit/branding/brandings.ftl",
+      ]).formatMessages([treatmentTitleMessageId]);
+      await BrowserTestUtils.withNewTab(
+        {
+          gBrowser,
+          url: TEST_URL_PATH,
+        },
+        async function (browser) {
+          const acPopup = document.getElementById("PopupAutoComplete");
+          await openACPopup(acPopup, browser, "#form-basic-username");
+          const relayItem = await clickRelayItemAndWaitForPopup(
+            acPopup,
+            firstOfferVersion
+          );
+          Assert.equal(
+            relayItem.getAttribute("ac-value"),
+            expectedACTitle[0].value
+          );
 
-        const offerPopupNotificationId =
-          firstOfferVersion === "control"
-            ? "fxa-and-relay-integration-offer-notification"
-            : `fxa-and-relay-integration-offer-${firstOfferVersion}-notification`;
-        const fxaRelayOptInPrompt = document.getElementById(
-          offerPopupNotificationId
-        );
-        Assert.ok(
-          fxaRelayOptInPrompt,
-          "Clicking on Relay auto-complete item should open the FXA + Relay opt-in prompt that matches the offer version of the experiment."
-        );
-      }
-    );
-    await doExperimentCleanup();
+          const offerPopupNotificationId =
+            firstOfferVersion === "control"
+              ? "fxa-and-relay-integration-offer-notification"
+              : `fxa-and-relay-integration-offer-${firstOfferVersion}-notification`;
+          let fxaRelayOptInPrompt = document.getElementById(
+            offerPopupNotificationId
+          );
+          if (!fxaRelayOptInPrompt) {
+            fxaRelayOptInPrompt = document.querySelector(
+              "[id^='fxa-and-relay-integration-offer'][id$='-notification']"
+            );
+          }
+          Assert.ok(
+            fxaRelayOptInPrompt,
+            "Clicking on Relay auto-complete item should open the FXA + Relay opt-in prompt that matches the offer version of the experiment."
+          );
+        }
+      );
+      await doExperimentCleanup();
+      try {
+        Services.prefs.clearUserPref("signon.firefoxRelay.feature");
+      } catch (_) {}
+    }
+  } finally {
+    rsSandbox.restore();
   }
-  rsSandbox.restore();
 });
 
 add_task(async function test_dismiss_Relay_optin_shows_Relay_again_later() {
@@ -341,6 +369,7 @@ add_task(
       }
     );
     rsSandbox.restore();
+    Services.prefs.clearUserPref("signon.firefoxRelay.feature");
   }
 );
 
@@ -423,5 +452,9 @@ add_task(
       fxaServer.stop(resolve);
     });
     await SpecialPowers.popPrefEnv();
+
+    try {
+      Services.prefs.clearUserPref("signon.firefoxRelay.feature");
+    } catch (_) {}
   }
 );

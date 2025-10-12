@@ -29,6 +29,7 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsContentUtils.h"
+#include "nsGlobalWindowInner.h"
 #include "nsPresContext.h"
 
 #ifdef XP_WIN

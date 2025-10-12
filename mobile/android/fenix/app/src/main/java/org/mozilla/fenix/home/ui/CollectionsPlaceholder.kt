@@ -32,6 +32,7 @@ import org.mozilla.fenix.home.collections.CollectionColors
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.sessioncontrol.CollectionInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun CollectionsPlaceholder(
@@ -78,7 +79,7 @@ internal fun CollectionsPlaceholder(
                     modifier = Modifier.size(20.dp),
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.mozac_ic_cross_20),
+                        painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
                         contentDescription = stringResource(
                             R.string.remove_home_collection_placeholder_content_description,
                         ),

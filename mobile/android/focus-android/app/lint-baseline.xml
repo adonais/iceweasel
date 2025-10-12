@@ -1,346 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.12.0" type="baseline" client="gradle" dependencies="false" name="AGP (8.12.0)" variant="all" version="8.12.0">
-
-    <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="        binding.trackersCount.text = String.format(&quot;%,d&quot;, blockedTrackersCount)"
-        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/focus/settings/privacy/TrackingProtectionPanel.kt"
-            line="161"
-            column="38"/>
-    </issue>
-
-    <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `String.format(Locale, ...)` instead"
-        errorLine1="        binding.trackersCount.text = String.format(&quot;%,d&quot;, blockedTrackersCount)"
-        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/focus/settings/privacy/TrackingProtectionPanel.kt"
-            line="161"
-            column="38"/>
-    </issue>
-
-    <issue
-        id="InlinedApi"
-        message="Field requires API level 24 (current min is 21): `android.accessibilityservice.AccessibilityServiceInfo#CAPABILITY_CAN_PERFORM_GESTURES`"
-        errorLine1="            it.capabilities.and(AccessibilityServiceInfo.CAPABILITY_CAN_PERFORM_GESTURES) == 1"
-        errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/focus/ext/Context.kt"
-            line="72"
-            column="33"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `breakStrategy` is only used in API level 23 and higher (current min is 21)"
-        errorLine1="            android:breakStrategy=&quot;simple&quot;"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/dialog_tracking_protection_sheet.xml"
-            line="34"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `textFontWeight` is only used in API level 28 and higher (current min is 21)"
-        errorLine1="        android:textFontWeight=&quot;600&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/fragment_crash_reporter.xml"
-            line="79"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `android:foreground` has no effect on API levels lower than 23 (current min is 21)"
-        errorLine1="    android:foreground=&quot;?selectableItemBackground&quot;>"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/item_custom_domain.xml"
-            line="14"
-            column="5"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `font` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:font=&quot;@font/metropolis_black&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="11"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontStyle` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontStyle=&quot;normal&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="12"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontWeight` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontWeight=&quot;900&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="13"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `font` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:font=&quot;@font/metropolis_extrabold&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="20"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontStyle` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontStyle=&quot;normal&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="21"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontWeight` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontWeight=&quot;800&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="22"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `font` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:font=&quot;@font/metropolis_bold&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="29"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontStyle` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontStyle=&quot;normal&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="30"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontWeight` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontWeight=&quot;700&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="31"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `font` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:font=&quot;@font/metropolis_semibold&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="38"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontStyle` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontStyle=&quot;normal&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="39"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontWeight` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontWeight=&quot;600&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="40"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `font` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:font=&quot;@font/metropolis_medium&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="47"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontStyle` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontStyle=&quot;normal&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="48"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontWeight` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontWeight=&quot;500&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="49"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `font` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:font=&quot;@font/metropolis_regular&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="56"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontStyle` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontStyle=&quot;normal&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="57"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontWeight` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontWeight=&quot;400&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="58"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `font` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:font=&quot;@font/metropolis_thin&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="65"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontStyle` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontStyle=&quot;normal&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="66"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontWeight` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontWeight=&quot;200&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="67"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `font` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:font=&quot;@font/metropolis_light&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="74"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontStyle` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontStyle=&quot;normal&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="75"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `fontWeight` is only used in API level 26 and higher (current min is 21)"
-        errorLine1="        android:fontWeight=&quot;100&quot;"
-        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/font/metropolis.xml"
-            line="76"
-            column="9"/>
-    </issue>
-
-    <issue
-        id="UnusedAttribute"
-        message="Attribute `android:foreground` has no effect on API levels lower than 23 (current min is 21)"
-        errorLine1="    android:foreground=&quot;@drawable/preference_multiselect_search_engine_foreground&quot;"
-        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/layout/search_engine_checkbox_button.xml"
-            line="13"
-            column="5"/>
-    </issue>
+<issues format="6" by="lint 8.13.0" type="baseline" client="gradle" dependencies="false" name="AGP (8.13.0)" variant="all" version="8.13.0">
 
     <issue
         id="AppBundleLocaleChanges"
@@ -384,28 +43,6 @@
             file="src/main/res/layout/fragment_search_suggestions.xml"
             line="108"
             column="10"/>
-    </issue>
-
-    <issue
-        id="NonConstantResourceId"
-        message="Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them in const fields"
-        errorLine1="        const val LAYOUT_ID = R.layout.item_app"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/focus/open/AppViewHolder.kt"
-            line="38"
-            column="31"/>
-    </issue>
-
-    <issue
-        id="NonConstantResourceId"
-        message="Resource IDs will be non-final by default in Android Gradle Plugin version 8.0, avoid using them in const fields"
-        errorLine1="        const val LAYOUT_ID = R.layout.item_install_banner"
-        errorLine2="                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/focus/open/InstallBannerViewHolder.kt"
-            line="37"
-            column="31"/>
     </issue>
 
     <issue
@@ -494,17 +131,6 @@
             file="src/main/res/drawable/wordmark2.xml"
             line="7"
             column="20"/>
-    </issue>
-
-    <issue
-        id="ConfigurationScreenWidthHeight"
-        message="Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize"
-        errorLine1="    val dimensions = if (LocalConfiguration.current.screenWidthDp &lt;= TABLET_SIZE) {"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/org/mozilla/focus/ui/theme/FocusTheme.kt"
-            line="33"
-            column="26"/>
     </issue>
 
     <issue
@@ -668,7 +294,7 @@
         errorLine2="       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/org/mozilla/focus/topsites/TopSites.kt"
-            line="21"
+            line="20"
             column="8"/>
     </issue>
 
@@ -785,7 +411,7 @@
     <issue
         id="Overdraw"
         message="Possible overdraw: Root element paints background `@color/settings_background` with a theme that also paints a background (inferred theme is `@style/Theme.App.Starting`)"
-        errorLine1="    android:background=&quot;@color/settings_background&quot;"
+        errorLine1="    android:background=&quot;@color/settings_background&quot; />"
         errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/layout/fragment_settings.xml"
@@ -2441,34 +2067,12 @@
 
     <issue
         id="UnusedResources"
-        message="The resource `R.string.onboarding_first_screen_terms_of_use_link` appears to be unused"
-        errorLine1="    &lt;string name=&quot;onboarding_first_screen_terms_of_use_link&quot; moz:removedIn=&quot;141&quot; tools:ignore=&quot;BrandUsage&quot;>Firefox Terms of Use.&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="519"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
-        message="The resource `R.string.onboarding_first_screen_privacy_notice_text` appears to be unused"
-        errorLine1="    &lt;string name=&quot;onboarding_first_screen_privacy_notice_text&quot; moz:removedIn=&quot;141&quot; tools:ignore=&quot;BrandUsage&quot;>Firefox cares about your privacy. Learn more in our %1$s&lt;/string>"
-        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/res/values/strings.xml"
-            line="525"
-            column="13"/>
-    </issue>
-
-    <issue
-        id="UnusedResources"
         message="The resource `R.string.firstrun_defaultbrowser_text2` appears to be unused"
         errorLine1="    &lt;string name=&quot;firstrun_defaultbrowser_text2&quot;>Take private browsing to the next level. Block ads and other content that can track you across sites and bog down page load times.&lt;/string>"
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="560"
+            line="551"
             column="13"/>
     </issue>
 
@@ -2479,7 +2083,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="565"
+            line="556"
             column="13"/>
     </issue>
 
@@ -2490,7 +2094,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="570"
+            line="561"
             column="13"/>
     </issue>
 
@@ -2501,7 +2105,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="575"
+            line="566"
             column="13"/>
     </issue>
 
@@ -2512,7 +2116,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="577"
+            line="568"
             column="13"/>
     </issue>
 
@@ -2523,7 +2127,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="578"
+            line="569"
             column="13"/>
     </issue>
 
@@ -2534,7 +2138,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="579"
+            line="570"
             column="13"/>
     </issue>
 
@@ -2545,7 +2149,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="582"
+            line="573"
             column="13"/>
     </issue>
 
@@ -2556,7 +2160,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="587"
+            line="578"
             column="13"/>
     </issue>
 
@@ -2567,7 +2171,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="592"
+            line="583"
             column="13"/>
     </issue>
 
@@ -2578,7 +2182,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="615"
+            line="606"
             column="13"/>
     </issue>
 
@@ -2589,7 +2193,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="625"
+            line="616"
             column="13"/>
     </issue>
 
@@ -2600,7 +2204,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="626"
+            line="617"
             column="13"/>
     </issue>
 
@@ -2611,7 +2215,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="627"
+            line="618"
             column="13"/>
     </issue>
 
@@ -2622,7 +2226,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="631"
+            line="622"
             column="13"/>
     </issue>
 
@@ -2633,7 +2237,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="632"
+            line="623"
             column="13"/>
     </issue>
 
@@ -2644,7 +2248,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="634"
+            line="625"
             column="13"/>
     </issue>
 
@@ -2655,7 +2259,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="637"
+            line="628"
             column="13"/>
     </issue>
 
@@ -2666,7 +2270,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="644"
+            line="635"
             column="13"/>
     </issue>
 
@@ -2677,7 +2281,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="649"
+            line="640"
             column="13"/>
     </issue>
 
@@ -2688,7 +2292,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="653"
+            line="644"
             column="13"/>
     </issue>
 
@@ -2699,7 +2303,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="656"
+            line="647"
             column="13"/>
     </issue>
 
@@ -2710,7 +2314,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="658"
+            line="649"
             column="13"/>
     </issue>
 
@@ -2721,7 +2325,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="660"
+            line="651"
             column="13"/>
     </issue>
 
@@ -2732,7 +2336,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="663"
+            line="654"
             column="13"/>
     </issue>
 
@@ -2743,7 +2347,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="823"
+            line="814"
             column="13"/>
     </issue>
 
@@ -2754,7 +2358,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="830"
+            line="821"
             column="13"/>
     </issue>
 
@@ -2765,7 +2369,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="834"
+            line="825"
             column="13"/>
     </issue>
 
@@ -2776,7 +2380,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="859"
+            line="850"
             column="13"/>
     </issue>
 
@@ -2787,7 +2391,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="864"
+            line="855"
             column="13"/>
     </issue>
 
@@ -2798,7 +2402,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="869"
+            line="860"
             column="13"/>
     </issue>
 
@@ -2809,7 +2413,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="875"
+            line="866"
             column="13"/>
     </issue>
 
@@ -2820,7 +2424,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="881"
+            line="872"
             column="13"/>
     </issue>
 
@@ -2831,7 +2435,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="886"
+            line="877"
             column="13"/>
     </issue>
 
@@ -2842,7 +2446,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="889"
+            line="880"
             column="13"/>
     </issue>
 
@@ -2853,7 +2457,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="892"
+            line="883"
             column="13"/>
     </issue>
 
@@ -2864,7 +2468,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="895"
+            line="886"
             column="13"/>
     </issue>
 
@@ -2875,7 +2479,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="919"
+            line="910"
             column="13"/>
     </issue>
 
@@ -2886,7 +2490,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="922"
+            line="913"
             column="13"/>
     </issue>
 
@@ -2897,7 +2501,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="997"
+            line="988"
             column="13"/>
     </issue>
 
@@ -2908,7 +2512,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1000"
+            line="991"
             column="13"/>
     </issue>
 
@@ -2919,7 +2523,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1006"
+            line="997"
             column="13"/>
     </issue>
 
@@ -2930,7 +2534,7 @@
         errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/res/values/strings.xml"
-            line="1021"
+            line="1012"
             column="13"/>
     </issue>
 
@@ -3127,7 +2731,7 @@
         errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
         errorLine2="^">
         <location
-            file="src/debug/res/mipmap-anydpi-v26/ic_launcher.xml"
+            file="src/debug/res/mipmap-anydpi/ic_launcher.xml"
             line="6"
             column="1"/>
     </issue>
@@ -3138,16 +2742,9 @@
         errorLine1="&lt;adaptive-icon xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;>"
         errorLine2="^">
         <location
-            file="src/main/res/mipmap-anydpi-v26/ic_launcher.xml"
+            file="src/main/res/mipmap-anydpi/ic_launcher.xml"
             line="6"
             column="1"/>
-    </issue>
-
-    <issue
-        id="IconLocation"
-        message="Found bitmap drawable `res/drawable/ic_splash_screen.png` in densityless folder">
-        <location
-            file="src/main/res/drawable/ic_splash_screen.png"/>
     </issue>
 
     <issue
@@ -3162,28 +2759,6 @@
         message="Missing density variation folders in `src/main/res`: drawable-mdpi, drawable-xhdpi, drawable-xxhdpi">
         <location
             file="src/main/res"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="`onTouch` lambda should call `View#performClick` when a click is detected"
-        errorLine1="            handleView.setOnTouchListener { _, event ->"
-        errorLine2="                                          ^">
-        <location
-            file="src/main/java/org/mozilla/focus/autocomplete/AutocompleteListFragment.kt"
-            line="309"
-            column="43"/>
-    </issue>
-
-    <issue
-        id="ClickableViewAccessibility"
-        message="`onTouch` lambda should call `View#performClick` when a click is detected"
-        errorLine1="            handleView.setOnTouchListener { _, event ->"
-        errorLine2="                                          ^">
-        <location
-            file="src/main/java/org/mozilla/focus/exceptions/ExceptionsListFragment.kt"
-            line="303"
-            column="43"/>
     </issue>
 
     <issue

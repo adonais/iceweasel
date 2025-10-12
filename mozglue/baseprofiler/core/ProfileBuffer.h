@@ -47,7 +47,7 @@ class ProfileBuffer final {
                            const Maybe<ProfilingCategoryPair>& aCategoryPair);
 
   // Maximum size of a frameKey string that we'll handle.
-  static const size_t kMaxFrameKeyLength = 512;
+  static constexpr size_t kMaxFrameKeyLength = 512;
 
   // Stream JSON for samples in the buffer to aWriter, using the supplied
   // UniqueStacks object.

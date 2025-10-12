@@ -23,6 +23,7 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.ext.waitNotNull
+import mozilla.components.feature.findinpage.R as findinpageR
 
 /**
  * Implementation of Robot Pattern for the find in page UI.
@@ -102,8 +103,8 @@ class FindInPageRobot {
     }
 }
 
-private fun findInPageQuery() = onView(withId(R.id.find_in_page_query_text))
-private fun findInPageResult() = onView(withId(R.id.find_in_page_result_text))
-private fun findInPageNextButton() = onView(withId(R.id.find_in_page_next_btn))
-private fun findInPagePrevButton() = onView(withId(R.id.find_in_page_prev_btn))
-private fun findInPageCloseButton() = onView(withId(R.id.find_in_page_close_btn))
+private fun findInPageQuery() = onView(withId(findinpageR.id.find_in_page_query_text))
+private fun findInPageResult() = onView(withId(findinpageR.id.find_in_page_result_text))
+private fun findInPageNextButton() = onView(withId(findinpageR.id.find_in_page_next_btn))
+private fun findInPagePrevButton() = onView(withId(findinpageR.id.find_in_page_prev_btn))
+private fun findInPageCloseButton() = onView(withId(findinpageR.id.find_in_page_close_btn))

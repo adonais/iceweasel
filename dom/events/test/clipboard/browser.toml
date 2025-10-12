@@ -14,6 +14,7 @@ support-files = [
   "file_toplevel.html",
   "file_iframe.html",
 ]
+skip-if = ["headless"] # bug 1989339
 
 ["browser_navigator_clipboard_contextmenu_suppression_ext.js"]
 support-files = [
@@ -23,15 +24,18 @@ support-files = [
 
 ["browser_navigator_clipboard_read.js"]
 support-files = ["simple_navigator_clipboard_read.html"]
+skip-if = ["headless"] # bug 1989339
 
 ["browser_navigator_clipboard_readText.js"]
 support-files = ["simple_navigator_clipboard_readText.html"]
+skip-if = ["headless"] # bug 1989339
 
 ["browser_navigator_clipboard_readText_multiple.js"]
 support-files = [
   "file_toplevel.html",
   "file_iframe.html",
 ]
+skip-if = ["headless"] # bug 1989339
 
 ["browser_navigator_clipboard_touch.js"]
 support-files = ["simple_navigator_clipboard_readText.html"]

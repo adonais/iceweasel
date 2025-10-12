@@ -158,7 +158,13 @@ add_task(async function test_collapsedTabGroupTooltips() {
     "Group label tooltip indicates its expanded state"
   );
 
-  info("Collapse the group to confirm tooltip states");
+  info("Enable tab group hover preview");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.groups.hoverPreview.enabled", true]],
+  });
+  info(
+    "Collapse the group to confirm tooltip state when tab group hover preview is enabled"
+  );
   let collapseFinished = BrowserTestUtils.waitForEvent(
     group,
     "TabGroupCollapse"
@@ -166,11 +172,44 @@ add_task(async function test_collapsedTabGroupTooltips() {
   group.collapsed = true;
   await collapseFinished;
   await flushL10n();
+
+  Assert.equal(
+    group._showTabGroupHoverPreview,
+    true,
+    "Sanity check: tab group hover preview is enabled"
+  );
+  Assert.equal(
+    group.labelElement.getAttribute("tooltiptext"),
+    null,
+    "Group label has no tooltip when tab group hover preview is enabled"
+  );
+  await SpecialPowers.popPrefEnv();
+
+  info("Disable tab group hover preview");
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.groups.hoverPreview.enabled", false]],
+  });
+  info(
+    "Un-collapse and re-collapse group to ensure group picks up new pref setting"
+  );
+  group.collapsed = false;
+  collapseFinished = BrowserTestUtils.waitForEvent(group, "TabGroupCollapse");
+  group.collapsed = true;
+  await collapseFinished;
+  await flushL10n();
+
+  Assert.equal(
+    group._showTabGroupHoverPreview,
+    false,
+    "Sanity check: tab group hover preview is false"
+  );
   Assert.equal(
     group.labelElement.getAttribute("tooltiptext"),
     "Unnamed Group — Collapsed",
-    "Group label tooltip indicates its collapsed state"
+    "Group label tooltip indicates its collapsed state when tab group hover preview is disabled"
   );
+  await SpecialPowers.popPrefEnv();
+
   Assert.equal(
     group.overflowCountLabel.getAttribute("tooltiptext"),
     "1 more tab",

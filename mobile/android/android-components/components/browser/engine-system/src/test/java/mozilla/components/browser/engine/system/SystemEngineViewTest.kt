@@ -49,7 +49,6 @@ import mozilla.components.concept.fetch.Response
 import mozilla.components.concept.storage.PageVisit
 import mozilla.components.concept.storage.VisitType
 import mozilla.components.support.test.any
-import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.shadow.PixelCopyShadow
@@ -633,91 +632,7 @@ class SystemEngineViewTest {
     }
 
     @Test
-    @Suppress("Deprecation")
-    fun `WebViewClient calls interceptor from deprecated onReceivedError API`() {
-        val engineSession = spy(SystemEngineSession(testContext))
-        val engineView = SystemEngineView(testContext)
-        engineView.render(engineSession)
-        doNothing().`when`(engineSession).initSettings()
-
-        val requestInterceptor: RequestInterceptor = mock()
-        val webViewClient = engineSession.webView.webViewClient
-
-        // No session or interceptor attached.
-        webViewClient.onReceivedError(
-            engineSession.webView,
-            WebViewClient.ERROR_UNKNOWN,
-            null,
-            "http://failed.random",
-        )
-        verifyNoInteractions(requestInterceptor)
-
-        // Session attached, but not interceptor.
-        engineView.render(engineSession)
-        webViewClient.onReceivedError(
-            engineSession.webView,
-            WebViewClient.ERROR_UNKNOWN,
-            null,
-            "http://failed.random",
-        )
-        verifyNoInteractions(requestInterceptor)
-
-        // Session and interceptor.
-        engineSession.settings.requestInterceptor = requestInterceptor
-        webViewClient.onReceivedError(
-            engineSession.webView,
-            WebViewClient.ERROR_UNKNOWN,
-            null,
-            "http://failed.random",
-        )
-        verify(requestInterceptor).onErrorRequest(engineSession, ErrorType.UNKNOWN, "http://failed.random")
-
-        val webView = mock<WebView>()
-        val settings = mock<WebSettings>()
-        whenever(webView.settings).thenReturn(settings)
-
-        engineSession.webView = webView
-        val errorResponse = RequestInterceptor.ErrorResponse("about:fail")
-        webViewClient.onReceivedError(
-            engineSession.webView,
-            WebViewClient.ERROR_UNKNOWN,
-            null,
-            "http://failed.random",
-        )
-        verify(webView, never()).loadUrl(ArgumentMatchers.anyString())
-
-        whenever(requestInterceptor.onErrorRequest(engineSession, ErrorType.UNKNOWN, "http://failed.random"))
-            .thenReturn(errorResponse)
-        webViewClient.onReceivedError(
-            engineSession.webView,
-            WebViewClient.ERROR_UNKNOWN,
-            null,
-            "http://failed.random",
-        )
-        verify(webView).loadUrl("about:fail")
-
-        val errorResponse2 = RequestInterceptor.ErrorResponse("about:fail2")
-        webViewClient.onReceivedError(
-            engineSession.webView,
-            WebViewClient.ERROR_UNKNOWN,
-            null,
-            "http://failed.random",
-        )
-        verify(webView, never()).loadUrl("about:fail2")
-
-        whenever(requestInterceptor.onErrorRequest(engineSession, ErrorType.UNKNOWN, "http://failed.random"))
-            .thenReturn(errorResponse2)
-        webViewClient.onReceivedError(
-            engineSession.webView,
-            WebViewClient.ERROR_UNKNOWN,
-            null,
-            "http://failed.random",
-        )
-        verify(webView).loadUrl("about:fail2")
-    }
-
-    @Test
-    fun `WebViewClient calls interceptor from new onReceivedError API`() {
+    fun `WebViewClient calls interceptor from onReceivedError API`() {
         val engineSession = spy(SystemEngineSession(testContext))
         val engineView = SystemEngineView(testContext)
         engineView.render(engineSession)
@@ -1389,36 +1304,6 @@ class SystemEngineViewTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.N])
-    fun captureThumbnailOnPreO() {
-        val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
-        val engineView = SystemEngineView(activity)
-        val webView = mock<WebView>()
-
-        whenever(webView.width).thenReturn(100)
-        whenever(webView.height).thenReturn(200)
-
-        engineView.session = mock()
-
-        whenever(engineView.session!!.webView).thenReturn(webView)
-
-        var thumbnail: Bitmap? = null
-
-        engineView.captureThumbnail {
-            thumbnail = it
-        }
-        verify(webView).draw(any())
-        assertNotNull(thumbnail)
-
-        engineView.session = null
-        engineView.captureThumbnail {
-            thumbnail = it
-        }
-
-        assertNull(thumbnail)
-    }
-
-    @Test
     @Config(sdk = [Build.VERSION_CODES.O], shadows = [PixelCopyShadow::class])
     fun captureThumbnailOnPostO() {
         val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
@@ -1538,55 +1423,6 @@ class SystemEngineViewTest {
             it.substring(it.length - 10)
         }
         assertTrue((request as PromptRequest.Authentication).message.endsWith(noRealmMessageTail))
-    }
-
-    @Test
-    @Config(sdk = [Build.VERSION_CODES.N])
-    @Suppress("Deprecation")
-    fun `onReceivedHttpAuthRequest takes credentials from WebView`() {
-        val engineSession = SystemEngineSession(testContext)
-        val engineView = SystemEngineView(testContext)
-        var request: PromptRequest? = null
-
-        engineSession.register(
-            object : EngineSession.Observer {
-                override fun onPromptRequest(promptRequest: PromptRequest) {
-                    request = promptRequest
-                }
-            },
-        )
-
-        engineSession.webView = spy(engineSession.webView)
-        engineView.render(engineSession)
-
-        // use captor as getWebViewClient() is available only from Oreo
-        // and this test runs on N to not use WebViewDatabase
-        val captor = argumentCaptor<WebViewClient>()
-        verify(engineSession.webView).webViewClient = captor.capture()
-        val webViewClient = captor.value
-
-        val host = "mozilla.org"
-        val realm = "realm"
-        val userName = "user123"
-        val password = "pass@123"
-
-        val validCredentials = arrayOf(userName, password)
-        whenever(engineSession.webView.getHttpAuthUsernamePassword(host, realm)).thenReturn(validCredentials)
-        webViewClient.onReceivedHttpAuthRequest(engineSession.webView, mock(), host, realm)
-        assertEquals((request as PromptRequest.Authentication).userName, userName)
-        assertEquals((request as PromptRequest.Authentication).password, password)
-
-        val nullCredentials = null
-        whenever(engineSession.webView.getHttpAuthUsernamePassword(host, realm)).thenReturn(nullCredentials)
-        webViewClient.onReceivedHttpAuthRequest(engineSession.webView, mock(), host, realm)
-        assertEquals((request as PromptRequest.Authentication).userName, "")
-        assertEquals((request as PromptRequest.Authentication).password, "")
-
-        val credentialsWithNulls = arrayOf<String?>(null, null)
-        whenever(engineSession.webView.getHttpAuthUsernamePassword(host, realm)).thenReturn(credentialsWithNulls)
-        webViewClient.onReceivedHttpAuthRequest(engineSession.webView, mock(), host, realm)
-        assertEquals((request as PromptRequest.Authentication).userName, "")
-        assertEquals((request as PromptRequest.Authentication).password, "")
     }
 
     @Test

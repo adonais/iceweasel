@@ -7,7 +7,6 @@ package org.mozilla.fenix.settings.account
 import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import android.text.SpannableString
 import androidx.annotation.VisibleForTesting
@@ -15,7 +14,6 @@ import androidx.appcompat.app.AlertDialog
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.settings.SupportUtils
 
 interface SyncController {
     fun handleCameraPermissionsNeeded()
@@ -53,17 +51,7 @@ class DefaultSyncController(
                 dialog.cancel()
             }
             setPositiveButton(R.string.camera_permissions_needed_positive_button_text) { dialog: DialogInterface, _ ->
-                val intent: Intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                } else {
-                    SupportUtils.createCustomTabIntent(
-                        activity,
-                        SupportUtils.getSumoURLForTopic(
-                            activity,
-                            SupportUtils.SumoTopic.QR_CAMERA_ACCESS,
-                        ),
-                    )
-                }
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                 val uri = Uri.fromParts("package", activity.packageName, null)
                 intent.data = uri
                 dialog.cancel()

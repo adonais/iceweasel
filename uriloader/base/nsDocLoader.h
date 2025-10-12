@@ -333,7 +333,9 @@ class nsDocLoader : public nsIDocumentLoader,
   bool mDocumentOpenedButNotLoaded;
 
   /**
-   * This flag indicates that the loader is loading javascipt URI.
+   * This flag indicates that the loader is loading javascipt URI and might need
+   * to fire a load event for the step 7.1 of
+   * https://html.spec.whatwg.org/#navigate-to-a-javascript:-url
    */
   bool mIsLoadingJavascriptURI = false;
 

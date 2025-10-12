@@ -141,7 +141,8 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   virtual ~ScriptLoadContext();
 
  public:
-  explicit ScriptLoadContext(nsIScriptElement* aScriptElement = nullptr);
+  explicit ScriptLoadContext(nsIScriptElement* aScriptElement = nullptr,
+                             const nsAString& aSourceText = VoidString());
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ScriptLoadContext,
@@ -319,6 +320,8 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   // The script element which trigerred this script load.
   // This is valid only for classic script and top-level module script.
   nsCOMPtr<nsIScriptElement> mScriptElement;
+
+  nsString mSourceText;
 
   // For preload requests, we defer reporting errors to the console until the
   // request is used.

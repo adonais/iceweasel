@@ -111,15 +111,15 @@ export class LlamaPipeline {
     let startInitTime = performance.now();
 
     const modelFilePath = (
-      await mlEngineWorker.getModelFile(
-        createFileUrl({
+      await mlEngineWorker.getModelFile({
+        url: createFileUrl({
           model: modelId,
           revision: modelRevision,
           file: modelFile,
           urlTemplate: modelHubUrlTemplate,
           rootUrl: modelHubRootUrl,
-        })
-      )
+        }),
+      })
     ).ok[2];
 
     lazy.console.debug("LlamaPipeline.initialize", { modelFilePath });

@@ -6,11 +6,14 @@
 
 #include "EncoderTemplate.h"
 
+#include <algorithm>
 #include <type_traits>
 
 #include "EncoderTypes.h"
 #include "WebCodecsUtils.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/StaticPrefs_media.h"
 #include "mozilla/Try.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -73,9 +76,11 @@ EncoderTemplate<EncoderType>::ConfigureMessage::ConfigureMessage(
 
 template <typename EncoderType>
 EncoderTemplate<EncoderType>::EncodeMessage::EncodeMessage(
-    WebCodecsId aConfigureId, RefPtr<InputTypeInternal>&& aData,
+    WebCodecsId aConfigureId, already_AddRefed<InputTypeInternal> aData,
     Maybe<VideoEncoderEncodeOptions>&& aOptions)
-    : ControlMessage(aConfigureId), mData(aData) {}
+    : ControlMessage(aConfigureId) {
+  PushData(std::move(aData), std::move(aOptions));
+}
 
 template <typename EncoderType>
 EncoderTemplate<EncoderType>::FlushMessage::FlushMessage(
@@ -167,13 +172,10 @@ void EncoderTemplate<EncoderType>::EncodeAudioData(InputType& aInput,
   mAsyncDurationTracker.Start(
       aInput.Timestamp(),
       AutoWebCodecsMarker(EncoderType::Name.get(), ".encode-duration-a"));
-  mEncodeQueueSize += 1;
   // Dummy options here as a shortcut
-  mControlMessageQueue.push(MakeRefPtr<EncodeMessage>(
+  PushEncodeRequest(
       mLatestConfigureId,
-      EncoderType::CreateInputInternal(aInput, VideoEncoderEncodeOptions())));
-  LOGV("%s %p enqueues %s", EncoderType::Name.get(), this,
-       mControlMessageQueue.back()->ToString().get());
+      EncoderType::CreateInputInternal(aInput, VideoEncoderEncodeOptions()));
   ProcessControlMessageQueue();
 }
 
@@ -199,12 +201,9 @@ void EncoderTemplate<EncoderType>::EncodeVideoFrame(
   mAsyncDurationTracker.Start(
       aInput.Timestamp(),
       AutoWebCodecsMarker(EncoderType::Name.get(), ".encode-duration-v"));
-  mEncodeQueueSize += 1;
-  mControlMessageQueue.push(MakeRefPtr<EncodeMessage>(
-      mLatestConfigureId, EncoderType::CreateInputInternal(aInput, aOptions),
-      Some(aOptions)));
-  LOGV("%s %p enqueues %s", EncoderType::Name.get(), this,
-       mControlMessageQueue.back()->ToString().get());
+  PushEncodeRequest(mLatestConfigureId,
+                    EncoderType::CreateInputInternal(aInput, aOptions),
+                    Some(aOptions));
   ProcessControlMessageQueue();
 }
 
@@ -854,6 +853,7 @@ MessageProcessedResult EncoderTemplate<EncoderType>::ProcessEncodeMessage(
   AssertIsOnOwningThread();
   MOZ_ASSERT(mState == CodecState::Configured);
   MOZ_ASSERT(aMessage->AsEncodeMessage());
+  MOZ_ASSERT(mEncodeQueueSize > 0);
 
   AUTO_ENCODER_MARKER(marker, ".encode-process");
 
@@ -867,7 +867,8 @@ MessageProcessedResult EncoderTemplate<EncoderType>::ProcessEncodeMessage(
   LOGV("%s %p processing %s", EncoderType::Name.get(), this,
        aMessage->ToString().get());
 
-  mEncodeQueueSize -= 1;
+  MOZ_ASSERT(AssertedCast<uint32_t>(aMessage->BatchSize()) <= mEncodeQueueSize);
+  mEncodeQueueSize -= AssertedCast<uint32_t>(aMessage->BatchSize());
   ScheduleDequeueEvent();
 
   // Treat it like decode error if no EncoderAgent is available or the encoded
@@ -888,17 +889,15 @@ MessageProcessedResult EncoderTemplate<EncoderType>::ProcessEncodeMessage(
   }
 
   MOZ_ASSERT(mActiveConfig);
-  RefPtr<InputTypeInternal> data = aMessage->mData;
-  if (!data) {
-    LOGE("%s %p, data for %s is empty or invalid", EncoderType::Name.get(),
-         this, aMessage->ToString().get());
+  if (!aMessage->IsValid()) {
+    LOGE("%s %p, %s has empty data", EncoderType::Name.get(), this,
+         aMessage->ToString().get());
     return closeOnError();
   }
 
-  mAgent->Encode(data.get())
+  mAgent->Encode(aMessage->TakeData())
       ->Then(GetCurrentSerialEventTarget(), __func__,
-             [self = RefPtr{this}, id = mAgent->mId, aMessage,
-              m = std::move(marker)](
+             [self = RefPtr{this}, id = mAgent->mId, m = std::move(marker)](
                  EncoderAgent::EncodePromise::ResolveOrRejectValue&&
                      aResult) mutable {
                MOZ_ASSERT(self->mProcessingMessage);
@@ -908,9 +907,11 @@ MessageProcessedResult EncoderTemplate<EncoderType>::ProcessEncodeMessage(
                MOZ_ASSERT(id == self->mAgent->mId);
                MOZ_ASSERT(self->mActiveConfig);
 
-               nsCString msgStr = aMessage->ToString();
+               RefPtr<EncodeMessage> msg =
+                   self->mProcessingMessage->AsEncodeMessage();
+               nsCString msgStr = msg->ToString();
 
-               aMessage->Complete();
+               msg->Complete();
                self->mProcessingMessage = nullptr;
 
                if (aResult.IsReject()) {
@@ -1206,6 +1207,45 @@ void EncoderTemplate<EncoderType>::DestroyEncoderAgentIfAny() {
             EncoderType::Name.get(), self.get(), id,
             aResult.IsResolve() ? "resolved" : "rejected");
       });
+}
+
+template <typename EncoderType>
+void EncoderTemplate<EncoderType>::PushEncodeRequest(
+    WebCodecsId aConfigureId, RefPtr<InputTypeInternal>&& aData,
+    Maybe<VideoEncoderEncodeOptions>&& aOptions) {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mState == CodecState::Configured);
+
+  // TODO(Bug 1984936): Enable batch encoding for selected encoders now.
+  const size_t batchSize =
+      (StaticPrefs::media_use_remote_encoder_video() && mActiveConfig &&
+       IsH264CodecString(mActiveConfig->mCodec))
+          ? std::max<size_t>(
+                StaticPrefs::dom_media_webcodecs_batch_encoding_size(), 1)
+          : 1;
+
+  RefPtr<EncodeMessage> msg;
+  if (!mControlMessageQueue.empty()) {
+    msg = mControlMessageQueue.back()->AsEncodeMessage();
+    if (msg &&
+        (msg->mConfigureId != aConfigureId || msg->BatchSize() >= batchSize)) {
+      msg = nullptr;
+    }
+  }
+
+  const bool isNewMessage = !msg;
+  if (isNewMessage) {
+    msg = MakeRefPtr<EncodeMessage>(aConfigureId, aData.forget(),
+                                    std::move(aOptions));
+    mControlMessageQueue.push(msg);
+  } else {
+    msg->PushData(aData.forget(), std::move(aOptions));
+  }
+
+  mEncodeQueueSize += 1;
+  LOGV("%s %p %s %s, encode queue size: %u", EncoderType::Name.get(), this,
+       isNewMessage ? "queued a new" : "appended data to",
+       msg->ToString().get(), mEncodeQueueSize);
 }
 
 template class EncoderTemplate<VideoEncoderTraits>;

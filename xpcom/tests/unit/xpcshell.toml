@@ -105,7 +105,7 @@ skip-if = ["os == 'android'"]
 # Creating a symlink requires admin or developer mode on Windows.
 skip-if = ["os == 'win'"]
 # Bug 676998: test fails consistently on Android
-fail-if = ["os == 'android'"]
+fail-if = ["os == 'android' && android_version == '24'"]
 
 ["test_systemInfo.js"]
 
@@ -113,6 +113,9 @@ fail-if = ["os == 'android'"]
 skip-if = ["os == 'win' && asan"] # Bug 1763002
 
 ["test_windows_cmdline_file.js"]
+run-if = ["os == 'win'"]
+
+["test_windows_onedrive_registry.js"]
 run-if = ["os == 'win'"]
 
 ["test_windows_registry.js"]

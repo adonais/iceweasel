@@ -50,6 +50,7 @@ const NETWORK_EVENT_TYPES = {
   REQUEST_POSTDATA: "requestPostData",
   RESPONSE_CACHE: "responseCache",
   RESPONSE_CONTENT: "responseContent",
+  RESPONSE_CONTENT_COMPLETE: "responseContentComplete",
   RESPONSE_COOKIES: "responseCookies",
   RESPONSE_HEADERS: "responseHeaders",
   RESPONSE_START: "responseStart",
@@ -796,7 +797,8 @@ function handleDataChannel(channel, networkEventActor) {
   // not be considered as insecure either. Set empty string as security
   // state.
   networkEventActor.addSecurityInfo({ state: "" });
-  networkEventActor.addResponseContent(response, {});
+  networkEventActor.addResponseContent(response);
+  networkEventActor.addResponseContentComplete({});
 }
 
 /**
@@ -952,6 +954,26 @@ async function decodeCompressedStream(stream, length, encodings, charset) {
   return lazy.NetworkHelper.convertToUnicode(result, charset);
 }
 
+/**
+ * Remove any frames in a stack that are related to chrome resource files.
+ *
+ * @param array stack
+ *        An array of frames, each of which has a
+ *        'filename' property.
+ * @return array
+ *         An array of stack frames with any chrome frames removed.
+ *         The original array is not modified.
+ */
+function removeChromeFrames(stacktrace) {
+  return stacktrace.filter(({ filename }) => {
+    return (
+      filename &&
+      !filename.startsWith("resource://") &&
+      !filename.startsWith("chrome://")
+    );
+  });
+}
+
 export const NetworkUtils = {
   ACCEPTED_COMPRESSION_ENCODINGS,
   causeTypeToString,
@@ -978,6 +1000,7 @@ export const NetworkUtils = {
   matchRequest,
   NETWORK_EVENT_TYPES,
   parseEarlyHintsResponseHeaders,
+  removeChromeFrames,
   setEventAsAvailable,
   stringToCauseType,
 };

@@ -256,6 +256,83 @@ class InputTestHelpers extends LitTestHelpers {
   }
 
   /**
+   * Verifies input value property remains in sync with its inner HTMLInputElement's value in both directions.
+   *
+   * @param {string} selector - HTML tag of the element under test.
+   */
+  async verifyValueSync(selector) {
+    const INITIAL_VALUE = "value";
+    const USER_INPUT = "new value";
+    const UNIQUE_INPUT = "unique value";
+
+    const valueTemplate = this.templateFn({
+      label: "Testing value",
+      value: INITIAL_VALUE,
+    });
+    const renderTarget = await this.renderTemplate(valueTemplate);
+
+    const wrapper = renderTarget.querySelector(selector);
+    ok(wrapper, `Found ${selector} wrapper`);
+
+    const innerInput = wrapper.inputEl;
+    ok(
+      HTMLInputElement.isInstance(innerInput),
+      "Wrapper inner element is an <input>"
+    );
+
+    is(
+      innerInput.value,
+      INITIAL_VALUE,
+      "Inner input starts with the initial template value."
+    );
+    is(
+      wrapper.value,
+      INITIAL_VALUE,
+      "Wrapper value starts with the initial template value."
+    );
+
+    wrapper.value = INITIAL_VALUE;
+    await wrapper.updateComplete;
+    is(
+      innerInput.value,
+      INITIAL_VALUE,
+      "Inner input value is in sync with wrapper value (after direct set)."
+    );
+
+    wrapper.value = "";
+    await wrapper.updateComplete;
+
+    innerInput.focus();
+    sendString(USER_INPUT);
+    innerInput.blur();
+    await TestUtils.waitForTick();
+
+    is(
+      wrapper.value,
+      USER_INPUT,
+      "Wrapper value is updated after typing into inner input."
+    );
+    is(
+      innerInput.value,
+      USER_INPUT,
+      "Inner input value is updated after typing into inner input."
+    );
+
+    wrapper.value = UNIQUE_INPUT;
+    await wrapper.updateComplete;
+    is(
+      wrapper.value,
+      UNIQUE_INPUT,
+      "Wrapper value is updated to unique value."
+    );
+    is(
+      innerInput.value,
+      UNIQUE_INPUT,
+      "Inner input value is in sync with unique wrapper value."
+    );
+  }
+
+  /**
    * Verifies input element can display and icon.
    *
    * @param {string} selector - HTML tag of the element under test.

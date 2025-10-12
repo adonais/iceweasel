@@ -49,7 +49,7 @@ void DeregisterCallbackHandler(uint64_t aInterfaceId, ErrorResult& aError);
  * The generated subclass stores all data needed to make the call, including the
  * arguments passed from Rust internally. MakeCall must only be called
  * once-per-object, since it may consume some of the arguments. We create a new
- * UniffiCallbackMethodHandlerBase subclass instance for each callback interface
+ * AsyncCallbackMethodHandlerBase subclass instance for each callback interface
  * call from Rust.
  */
 class AsyncCallbackMethodHandlerBase {

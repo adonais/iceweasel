@@ -21,6 +21,8 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
   #localeOverride;
   #preloadScripts;
   #resolveBlockerPromise;
+  #screenOrientationOverride;
+  #timezoneOverride;
   #viewportConfiguration;
 
   constructor(messageHandler) {
@@ -29,6 +31,8 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
     this.#geolocationConfiguration = undefined;
     this.#localeOverride = null;
     this.#preloadScripts = new Set();
+    this.#screenOrientationOverride = undefined;
+    this.#timezoneOverride = null;
     this.#viewportConfiguration = new Map();
 
     Services.obs.addObserver(this, "document-element-inserted");
@@ -59,7 +63,9 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
         this.#preloadScripts.size === 0 &&
         this.#viewportConfiguration.size === 0 &&
         this.#geolocationConfiguration === undefined &&
-        this.#localeOverride === null
+        this.#localeOverride === null &&
+        this.#screenOrientationOverride === undefined &&
+        this.#timezoneOverride === null
       ) {
         this.#onConfigurationComplete(window);
         return;
@@ -104,6 +110,34 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
           params: {
             context: this.messageHandler.context,
             locale: this.#localeOverride,
+          },
+        });
+      }
+
+      if (this.#timezoneOverride !== null) {
+        await this.messageHandler.forwardCommand({
+          moduleName: "emulation",
+          commandName: "_setTimezoneOverride",
+          destination: {
+            type: lazy.RootMessageHandler.type,
+          },
+          params: {
+            context: this.messageHandler.context,
+            timezone: this.#timezoneOverride,
+          },
+        });
+      }
+
+      if (this.#screenOrientationOverride !== undefined) {
+        await this.messageHandler.forwardCommand({
+          moduleName: "emulation",
+          commandName: "_setEmulatedScreenOrientation",
+          destination: {
+            type: lazy.RootMessageHandler.type,
+          },
+          params: {
+            context: this.messageHandler.context,
+            orientationOverride: this.#screenOrientationOverride,
           },
         });
       }
@@ -161,10 +195,13 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
       }
     }
 
-    // Geolocation and viewport overrides apply only to top-level traversables.
+    // The following overrides apply only to top-level traversables.
     if (
       (category === "geolocation-override" ||
-        category === "viewport-overrides") &&
+        category === "viewport-overrides" ||
+        category === "locale-override" ||
+        category === "screen-orientation-override" ||
+        category === "timezone-override") &&
       !this.messageHandler.context.parent
     ) {
       for (const { contextDescriptor, value } of sessionData) {
@@ -190,20 +227,19 @@ class _ConfigurationModule extends WindowGlobalBiDiModule {
             }
             break;
           }
+          case "locale-override": {
+            this.#localeOverride = value;
+            break;
+          }
+          case "screen-orientation-override": {
+            this.#screenOrientationOverride = value;
+            break;
+          }
+          case "timezone-override": {
+            this.#timezoneOverride = value;
+            break;
+          }
         }
-      }
-    }
-
-    // TODO: Bug 1979026. Locale overrides apply only to top-level traversables,
-    // but we have to reapply configuration if a cross-origin iframe is created,
-    // until platform bug is fixed.
-    if (category === "locale-override") {
-      for (const { contextDescriptor, value } of sessionData) {
-        if (!this.messageHandler.matchesContext(contextDescriptor)) {
-          continue;
-        }
-
-        this.#localeOverride = value;
       }
     }
   }

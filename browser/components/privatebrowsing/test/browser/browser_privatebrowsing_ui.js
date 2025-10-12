@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// This test makes sure that the gPrivateBrowsingUI object, the Private Browsing
+// This test makes sure that the PrivateBrowsingUI module, the Private Browsing
 // menu item and its XUL <command> element work correctly.
 
 function test() {
@@ -19,7 +19,7 @@ function test() {
     BrowserTestUtils.browserLoaded(aWindow.gBrowser.selectedBrowser, {
       wantLoad: () => true,
     }).then(function () {
-      ok(aWindow.gPrivateBrowsingUI, "The gPrivateBrowsingUI object exists");
+      ok(PrivateBrowsingUI, "The PrivateBrowsingUI module exists");
 
       pbMenuItem = aWindow.document.getElementById("menu_newPrivateWindow");
       ok(pbMenuItem, "The Private Browsing menu item exists");

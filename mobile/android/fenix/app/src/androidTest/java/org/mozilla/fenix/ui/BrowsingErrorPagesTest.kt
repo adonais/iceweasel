@@ -22,16 +22,20 @@ import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.navigationToolbar
+import mozilla.components.browser.errorpages.R as errorpagesR
 
 /**
  * Tests that verify errors encountered while browsing websites: unsafe pages, connection errors, etc
  */
 class BrowsingErrorPagesTest : TestSetup() {
-    private val malwareWarning = getStringResource(R.string.mozac_browser_errorpages_safe_browsing_malware_uri_title)
-    private val phishingWarning = getStringResource(R.string.mozac_browser_errorpages_safe_phishing_uri_title)
+    private val malwareWarning =
+        getStringResource(errorpagesR.string.mozac_browser_errorpages_safe_browsing_malware_uri_title)
+    private val phishingWarning =
+        getStringResource(errorpagesR.string.mozac_browser_errorpages_safe_phishing_uri_title)
     private val unwantedSoftwareWarning =
-        getStringResource(R.string.mozac_browser_errorpages_safe_browsing_unwanted_uri_title)
-    private val harmfulSiteWarning = getStringResource(R.string.mozac_browser_errorpages_safe_harmful_uri_title)
+        getStringResource(errorpagesR.string.mozac_browser_errorpages_safe_browsing_unwanted_uri_title)
+    private val harmfulSiteWarning =
+        getStringResource(errorpagesR.string.mozac_browser_errorpages_safe_harmful_uri_title)
 
     @get:Rule
     val mActivityTestRule = HomeActivityTestRule.withDefaultSettingsOverrides()
@@ -126,6 +130,7 @@ class BrowsingErrorPagesTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2140588
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1987355")
     @Test
     fun verifyNoInternetConnectionErrorMessageTest() {
         val url = "www.example.com"

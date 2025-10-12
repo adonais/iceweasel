@@ -9,6 +9,11 @@
     "dark": "{Colors$color/gray/80}",
     "forcedColors": "{Theme$background/color/canvas}"
   },
+  "background/color/box/info": {
+    "light": "{Colors$color/gray/20}",
+    "dark": "{Colors$color/gray/80}",
+    "forcedColors": "{Theme$background/color/canvas}"
+  },
   "background/color/canvas": {
     "light": "{Colors$color/white}",
     "dark": "{Colors$color/gray/90}",
@@ -400,6 +405,11 @@
     "light": "{Colors$color/red/70}",
     "dark": "{Colors$color/red/20}",
     "forcedColors": "{Theme$border/color}"
+  },
+  "promo/background/color": {
+    "light": "{Theme$background/color/box/info}",
+    "dark": "{Theme$background/color/box/info}",
+    "forcedColors": "{Theme$background/color/box/info}"
   },
   "box/shadow/level-1/shadow-1/color": "{Theme$box/shadow/color/darker/layer-1}",
   "box/shadow/level-1/shadow-2/color": "{Theme$box/shadow/color/darker/layer-2}",

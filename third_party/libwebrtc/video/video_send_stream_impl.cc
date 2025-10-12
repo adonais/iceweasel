@@ -53,7 +53,6 @@
 #include "call/rtp_config.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_send_stream.h"
-#include "media/base/media_constants.h"
 #include "media/base/sdp_video_format_utils.h"
 #include "modules/pacing/pacing_controller.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
@@ -68,7 +67,6 @@
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
@@ -230,10 +228,9 @@ int GetEncoderPriorityBitrate(std::string codec_name,
                               const FieldTrialsView& field_trials) {
   int priority_bitrate = 0;
   if (PayloadStringToCodecType(codec_name) == VideoCodecType::kVideoCodecAV1) {
-    webrtc::FieldTrialParameter<int> av1_priority_bitrate("bitrate", 0);
-    webrtc::ParseFieldTrial(
-        {&av1_priority_bitrate},
-        field_trials.Lookup("WebRTC-AV1-OverridePriorityBitrate"));
+    FieldTrialParameter<int> av1_priority_bitrate("bitrate", 0);
+    ParseFieldTrial({&av1_priority_bitrate},
+                    field_trials.Lookup("WebRTC-AV1-OverridePriorityBitrate"));
     priority_bitrate = av1_priority_bitrate;
   }
   return priority_bitrate;
@@ -250,8 +247,12 @@ uint32_t GetInitialEncoderMaxBitrate(int initial_encoder_max_bitrate) {
   // reasonable use cases as it allows adding the max of multiple streams
   // without wrappping around.
   const int kFallbackMaxBitrateBps = 10000000;
-  RTC_DLOG(LS_ERROR) << "ERROR: Initial encoder max bitrate = "
-                     << initial_encoder_max_bitrate << " which is <= 0!";
+  // Don't log an error for -1 since this is the default value that is used to
+  // signal that the max bitrate is unset.
+  if (initial_encoder_max_bitrate != -1) {
+    RTC_DLOG(LS_ERROR) << "ERROR: Initial encoder max bitrate = "
+                       << initial_encoder_max_bitrate << " which is <= 0!";
+  }
   RTC_DLOG(LS_INFO) << "Using default encoder max bitrate = 10 Mbps";
   return kFallbackMaxBitrateBps;
 }
@@ -297,9 +298,8 @@ size_t CalculateMaxHeaderSize(const RtpConfig& config) {
 VideoStreamEncoder::BitrateAllocationCallbackType
 GetBitrateAllocationCallbackType(const VideoSendStream::Config& config,
                                  const FieldTrialsView& field_trials) {
-  if (webrtc::RtpExtension::FindHeaderExtensionByUri(
-          config.rtp.extensions,
-          webrtc::RtpExtension::kVideoLayersAllocationUri,
+  if (RtpExtension::FindHeaderExtensionByUri(
+          config.rtp.extensions, RtpExtension::kVideoLayersAllocationUri,
           config.crypto_options.srtp.enable_encrypted_rtp_header_extensions
               ? RtpExtension::Filter::kPreferEncryptedExtension
               : RtpExtension::Filter::kDiscardEncryptedExtension)) {
@@ -347,7 +347,7 @@ std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
     VideoStreamEncoder::BitrateAllocationCallbackType
         bitrate_allocation_callback_type,
     Metronome* metronome,
-    webrtc::VideoEncoderFactory::EncoderSelectorInterface* encoder_selector) {
+    VideoEncoderFactory::EncoderSelectorInterface* encoder_selector) {
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> encoder_queue =
       env.task_queue_factory().CreateTaskQueue(
           "EncoderQueue", TaskQueueFactory::Priority::NORMAL);
@@ -540,7 +540,7 @@ VideoSendStreamImpl::GetAdaptationResources() {
 }
 
 void VideoSendStreamImpl::SetSource(
-    VideoSourceInterface<webrtc::VideoFrame>* source,
+    VideoSourceInterface<VideoFrame>* source,
     const DegradationPreference& degradation_preference) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   video_stream_encoder_->SetSource(source, degradation_preference);
@@ -787,7 +787,7 @@ MediaStreamAllocationConfig VideoSendStreamImpl::GetAllocationConfig() const {
       !config_.suspend_below_min_bitrate,
       encoder_bitrate_priority_,
       (content_type_ == VideoEncoderConfig::ContentType::kRealtimeVideo)
-          ? std::optional<TrackRateElasticity>(TrackRateElasticity::kCanConsumeExtraRate)
+          ? std::optional(TrackRateElasticity::kCanConsumeExtraRate)
           : std::nullopt};
 }
 

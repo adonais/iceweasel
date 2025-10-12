@@ -240,7 +240,7 @@ void BFCachePreventionObserver::CharacterDataChanged(
 void BFCachePreventionObserver::AttributeChanged(Element* aElement,
                                                  int32_t aNameSpaceID,
                                                  nsAtom* aAttribute,
-                                                 int32_t aModType,
+                                                 AttrModType,
                                                  const nsAttrValue* aOldValue) {
   if (aElement->IsInNativeAnonymousSubtree()) {
     return;
@@ -1179,7 +1179,7 @@ nsDocumentViewer::PermitUnload(PermitUnloadAction aAction,
       }
     } else if (aBC->GetDocShell()) {
       nsCOMPtr<nsIDocumentViewer> viewer(aBC->GetDocShell()->GetDocViewer());
-      if (viewer && viewer->DispatchBeforeUnload() == eRequestBlockNavigation) {
+      if (viewer && viewer->DispatchBeforeUnload() != eContinue) {
         foundBlocker = true;
       }
     }
@@ -1240,7 +1240,7 @@ nsDocumentViewer::DispatchBeforeUnload() {
   AutoDontWarnAboutSyncXHR disableSyncXHRWarning;
 
   if (!mDocument || mInPermitUnload || mInPermitUnloadPrompt || !mContainer) {
-    return eAllowNavigation;
+    return eContinue;
   }
 
   // First, get the script global object from the document...
@@ -1249,7 +1249,7 @@ nsDocumentViewer::DispatchBeforeUnload() {
   if (!window) {
     // This is odd, but not fatal
     NS_WARNING("window not set for document!");
-    return eAllowNavigation;
+    return eContinue;
   }
 
   NS_ASSERTION(nsContentUtils::IsSafeToRunScript(), "This is unsafe");
@@ -1305,9 +1305,9 @@ nsDocumentViewer::DispatchBeforeUnload() {
       (!StaticPrefs::dom_require_user_interaction_for_beforeunload() ||
        mDocument->ChromeRulesEnabled() || mDocument->UserHasInteracted()) &&
       (event->WidgetEventPtr()->DefaultPrevented() || !text.IsEmpty())) {
-    return eRequestBlockNavigation;
+    return eCanceledByBeforeUnload;
   }
-  return eAllowNavigation;
+  return eContinue;
 }
 
 NS_IMETHODIMP
@@ -2496,9 +2496,7 @@ NS_IMETHODIMP nsDocumentViewer::GetContents(const char* mimeType,
 
 NS_IMETHODIMP nsDocumentViewer::GetCanGetContents(bool* aCanGetContents) {
   NS_ENSURE_ARG_POINTER(aCanGetContents);
-  *aCanGetContents = false;
-  NS_ENSURE_STATE(mDocument);
-  *aCanGetContents = nsCopySupport::CanCopy(mDocument);
+  *aCanGetContents = mDocument && nsCopySupport::CanCopy(mDocument);
   return NS_OK;
 }
 
@@ -2753,40 +2751,19 @@ already_AddRefed<nsIImageLoadingContent> nsDocumentViewer::GetPopupImageNode() {
  */
 
 NS_IMETHODIMP nsDocumentViewer::GetInLink(bool* aInLink) {
-#ifdef DEBUG_dr
-  printf("dr :: nsDocumentViewer::GetInLink\n");
-#endif
-
   NS_ENSURE_ARG_POINTER(aInLink);
-
-  // we're not in a link unless i say so
-  *aInLink = false;
-
-  // get the popup link
   nsCOMPtr<nsINode> node = GetPopupLinkNode();
-  if (!node) {
-    return NS_ERROR_FAILURE;
-  }
-
-  // if we made it here, we're in a link
-  *aInLink = true;
+  *aInLink = !!node;
   return NS_OK;
 }
 
 NS_IMETHODIMP nsDocumentViewer::GetInImage(bool* aInImage) {
-#ifdef DEBUG_dr
-  printf("dr :: nsDocumentViewer::GetInImage\n");
-#endif
-
   NS_ENSURE_ARG_POINTER(aInImage);
-
-  // we're not in an image unless i say so
   *aInImage = false;
-
   // get the popup image
   nsCOMPtr<nsIImageLoadingContent> node = GetPopupImageNode();
   if (!node) {
-    return NS_ERROR_FAILURE;
+    return NS_OK;
   }
 
   // Make sure there is a URI assigned. This allows <input type="image"> to
@@ -2798,7 +2775,6 @@ NS_IMETHODIMP nsDocumentViewer::GetInImage(bool* aInImage) {
     // if we made it here, we're in an image
     *aInImage = true;
   }
-
   return NS_OK;
 }
 

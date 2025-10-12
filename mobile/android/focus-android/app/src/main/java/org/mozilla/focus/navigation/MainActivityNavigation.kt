@@ -4,7 +4,6 @@
 
 package org.mozilla.focus.navigation
 
-import android.os.Build
 import android.os.Bundle
 import androidx.fragment.app.commit
 import org.mozilla.focus.R
@@ -48,7 +47,6 @@ import org.mozilla.focus.settings.privacy.PrivacySecuritySettingsFragment
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
 import org.mozilla.focus.utils.ViewUtils
-import kotlin.collections.forEach as withEach
 
 /**
  * Class performing the actual navigation in [MainActivity] by performing fragment transactions if
@@ -240,10 +238,6 @@ class MainActivityNavigation(
      * be redirected to a certain screen. It comes from the external intent.
      */
     fun lock(bundle: Bundle? = null) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            throw IllegalStateException("Trying to lock unsupported device")
-        }
-
         val fragmentManager = activity.supportFragmentManager
 
         val biometricAuthenticationFragment =
@@ -253,7 +247,7 @@ class MainActivityNavigation(
             return
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && activity.isInPictureInPictureMode) {
+        if (activity.isInPictureInPictureMode) {
             return
         }
 

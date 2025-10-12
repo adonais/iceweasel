@@ -79,7 +79,7 @@ vendoring:
 
     - action: move-file
       from: 'build/index.es.js'
-      to: '../../../toolkit/components/certviewer/content/vendor/pkijs.js'
+      to: '{topsrcdir}/toolkit/components/certviewer/content/vendor/pkijs.js'
 
     - action: delete-path
       path: 'build'

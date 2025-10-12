@@ -40,6 +40,18 @@ def generate_cpp_events(output_fd, *inputs):
     return get_deps().union(load_schema_index() if not inputs else {})
 
 
+def generate_glean_metrics(output_fd, *inputs):
+    events = parse_and_validate(inputs if inputs else load_schema_index())
+
+    template = _jinja2_env().get_template("generated-metrics.yaml.jinja2")
+    output_fd.write(
+        template.render(
+            events=events,
+        )
+    )
+    output_fd.write("\n")
+
+
 @memoize
 def load_schema_index():
     index = THIS_DIR.parent / "index.py"

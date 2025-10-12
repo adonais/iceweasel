@@ -59,6 +59,7 @@ import org.mozilla.fenix.wallpapers.WallpaperState
  * @property standardSnackbarError A snackbar error message to display.
  * @property readerViewState The [ReaderViewState] to display.
  * @property snackbarState The [SnackbarState] to display.
+ * @property supportedMenuNotifications The set of currently active [SupportedMenuNotifications].
  * @property showFindInPage Whether or not to show the find in page feature.
  * @property crashState State related to the crash reporter.
  * @property wasLastTabClosedPrivate Whether the last remaining tab that was closed in private mode. This is used to
@@ -96,6 +97,7 @@ data class AppState(
     val standardSnackbarError: StandardSnackbarError? = null,
     val readerViewState: ReaderViewState = ReaderViewState.None,
     val snackbarState: SnackbarState = SnackbarState.None(),
+    val supportedMenuNotifications: Set<SupportedMenuNotifications> = emptySet(),
     val showFindInPage: Boolean = false,
     val crashState: CrashState = CrashState.Idle,
     val wasLastTabClosedPrivate: Boolean? = null,

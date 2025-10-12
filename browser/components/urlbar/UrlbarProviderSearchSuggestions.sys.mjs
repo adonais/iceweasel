@@ -25,6 +25,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
 });
 
+/**
+ * @import {SearchSuggestionController} from "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs"
+ */
+
 const RESULT_MENU_COMMANDS = {
   TRENDING_BLOCK: "trendingblock",
   TRENDING_HELP: "help",
@@ -58,18 +62,9 @@ function looksLikeUrl(str, ignoreAlphanumericHosts = false) {
 /**
  * Class used to create the provider.
  */
-class ProviderSearchSuggestions extends UrlbarProvider {
+export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
   constructor() {
     super();
-  }
-
-  /**
-   * Returns the name of this provider.
-   *
-   * @returns {string} the name of this provider.
-   */
-  get name() {
-    return "SearchSuggestions";
   }
 
   /**
@@ -84,9 +79,10 @@ class ProviderSearchSuggestions extends UrlbarProvider {
    * If this method returns false, the providers manager won't start a query
    * with this provider, to save on resources.
    *
-   * @param {UrlbarQueryContext} queryContext The query context object
+   * @param {UrlbarQueryContext} queryContext The query context object.
+   * @param {UrlbarController} controller The current controller.
    */
-  async isActive(queryContext) {
+  async isActive(queryContext, controller) {
     // If the sources don't include search or the user used a restriction
     // character other than search, don't allow any suggestions.
     if (
@@ -107,7 +103,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       return false;
     }
 
-    if (!this._allowSuggestions(queryContext)) {
+    if (!this._allowSuggestions(queryContext, controller)) {
       return false;
     }
 
@@ -147,15 +143,17 @@ class ProviderSearchSuggestions extends UrlbarProvider {
    * context.  If this returns false, then we shouldn't fetch either form
    * history or remote suggestions.
    *
-   * @param {object} queryContext The query context object
+   * @param {UrlbarQueryContext} queryContext The query context object.
+   * @param {UrlbarController} controller The current controller.
    * @returns {boolean} True if suggestions in general are allowed and false if
    *   not.
    */
-  _allowSuggestions(queryContext) {
+  _allowSuggestions(queryContext, controller) {
     if (
       // If the user typed a restriction token or token alias, we ignore the
       // pref to disable suggestions in the Urlbar.
-      (!lazy.UrlbarPrefs.get("suggest.searches") &&
+      (controller.input.isAddressbar &&
+        !lazy.UrlbarPrefs.get("suggest.searches") &&
         !this._isTokenOrRestrictionPresent(queryContext)) ||
       !lazy.UrlbarPrefs.get("browser.search.suggest.enabled") ||
       (queryContext.isPrivate &&
@@ -221,7 +219,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
   /**
    * Starts querying.
    *
-   * @param {object} queryContext The query context object
+   * @param {UrlbarQueryContext} queryContext The query context object
    * @param {Function} addCallback Callback invoked by the provider to add a new
    *        result.
    * @returns {Promise} resolved when the query stops.
@@ -284,7 +282,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     }
 
     let alias = (aliasEngine && aliasEngine.alias) || "";
-    let results = await this._fetchSearchSuggestions(
+    let results = await this.#fetchSearchSuggestions(
       queryContext,
       engine,
       query,
@@ -298,6 +296,20 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     for (let result of results) {
       addCallback(this, result);
     }
+  }
+
+  /**
+   * Called when a search session concludes regardless of how it ends -
+   * whether through engagement or abandonment or otherwise. This is
+   * called for all providers who have implemented this method.
+   *
+   * @param {UrlbarQueryContext} _queryContext
+   *    The current query context.
+   * @param {UrlbarController} _controller
+   *    The associated controller.
+   */
+  onSearchSessionEnd(_queryContext, _controller) {
+    this.#suggestionsController?.resetSession();
   }
 
   /**
@@ -317,9 +329,8 @@ class ProviderSearchSuggestions extends UrlbarProvider {
    * Cancels a running query.
    */
   cancelQuery() {
-    if (this._suggestionsController) {
-      this._suggestionsController.stop();
-      this._suggestionsController = null;
+    if (this.#suggestionsController) {
+      this.#suggestionsController.stop();
     }
   }
 
@@ -328,12 +339,10 @@ class ProviderSearchSuggestions extends UrlbarProvider {
    *
    * @param {UrlbarResult} result
    *   The result to get menu comands for.
-   *
-   * @returns {Array} The commands to be shown.
    */
   getResultCommands(result) {
     if (result.payload.trending) {
-      return [
+      return /** @type {UrlbarResultCommand[]} */ ([
         {
           name: RESULT_MENU_COMMANDS.TRENDING_BLOCK,
           l10n: { id: "urlbar-result-menu-trending-dont-show" },
@@ -345,7 +354,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
           name: RESULT_MENU_COMMANDS.TRENDING_HELP,
           l10n: { id: "urlbar-result-menu-trending-why" },
         },
-      ];
+      ]);
     }
     return undefined;
   }
@@ -376,14 +385,26 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     }
   }
 
-  async _fetchSearchSuggestions(queryContext, engine, searchString, alias) {
+  /**
+   * @type {?SearchSuggestionController}
+   */
+  #suggestionsController;
+
+  async #fetchSearchSuggestions(queryContext, engine, searchString, alias) {
     if (!engine) {
       return null;
     }
 
-    this._suggestionsController = new lazy.SearchSuggestionController(
-      queryContext.formHistoryName
-    );
+    if (!this.#suggestionsController) {
+      this.#suggestionsController = new lazy.SearchSuggestionController();
+    }
+
+    // TODO (Bug 1987895): Change Search Suggestions Controller to allow passing
+    // formHistoryParam and other fields as options on the fetch() call.
+    if (queryContext.formHistoryName) {
+      this.#suggestionsController.formHistoryParam =
+        queryContext.formHistoryName;
+    }
 
     // If there's a form history entry that equals the search string, the search
     // suggestions controller will include it, and we'll make a result for it.
@@ -392,12 +413,12 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     // final list of results would be left with `count` - 1 form history results
     // instead of `count`.  Therefore we request `count` + 1 entries.  The muxer
     // will dedupe and limit the final form history count as appropriate.
-    this._suggestionsController.maxLocalResults = queryContext.maxResults + 1;
+    this.#suggestionsController.maxLocalResults = queryContext.maxResults + 1;
 
     // Request maxResults + 1 remote suggestions for the same reason we request
     // maxResults + 1 form history entries.
     let allowRemote = this._allowRemoteSuggestions(queryContext, searchString);
-    this._suggestionsController.maxRemoteResults = allowRemote
+    this.#suggestionsController.maxRemoteResults = allowRemote
       ? queryContext.maxResults + 1
       : 0;
 
@@ -406,32 +427,31 @@ class ProviderSearchSuggestions extends UrlbarProvider {
         queryContext.searchMode &&
         lazy.UrlbarPrefs.get("trending.maxResultsSearchMode") != -1
       ) {
-        this._suggestionsController.maxRemoteResults = lazy.UrlbarPrefs.get(
+        this.#suggestionsController.maxRemoteResults = lazy.UrlbarPrefs.get(
           "trending.maxResultsSearchMode"
         );
       } else if (
         !queryContext.searchMode &&
         lazy.UrlbarPrefs.get("trending.maxResultsNoSearchMode") != -1
       ) {
-        this._suggestionsController.maxRemoteResults = lazy.UrlbarPrefs.get(
+        this.#suggestionsController.maxRemoteResults = lazy.UrlbarPrefs.get(
           "trending.maxResultsNoSearchMode"
         );
       }
     }
 
-    this._suggestionsFetchCompletePromise = this._suggestionsController.fetch(
-      searchString,
-      queryContext.isPrivate,
-      engine,
-      queryContext.userContextId,
-      this._isTokenOrRestrictionPresent(queryContext),
-      false,
-      this.#shouldFetchTrending(queryContext)
-    );
-
     // See `SearchSuggestionsController.fetch` documentation for a description
     // of `fetchData`.
-    let fetchData = await this._suggestionsFetchCompletePromise;
+    let fetchData = await this.#suggestionsController.fetch({
+      searchString,
+      inPrivateBrowsing: queryContext.isPrivate,
+      engine,
+      userContextId: queryContext.userContextId,
+      restrictToEngine: this._isTokenOrRestrictionPresent(queryContext),
+      dedupeRemoteAndLocal: false,
+      fetchTrending: this.#shouldFetchTrending(queryContext),
+    });
+
     // The fetch was canceled.
     if (!fetchData) {
       return null;
@@ -651,5 +671,3 @@ function makeFormHistoryResult(queryContext, engine, entry) {
     })
   );
 }
-
-export var UrlbarProviderSearchSuggestions = new ProviderSearchSuggestions();

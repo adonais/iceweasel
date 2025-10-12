@@ -345,7 +345,7 @@ toolbarpaletteitem {
   appearance: none;
   color: inherit;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   padding-block: 0;
   padding-inline: 0 5px;
   margin: 2px 0;

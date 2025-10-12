@@ -182,14 +182,14 @@ void PolicyContainer::SetCSP(nsIContentSecurityPolicy* aPolicy) {
   mCSP = aPolicy;
 }
 
-nsIContentSecurityPolicy* PolicyContainer::CSP() const { return mCSP; }
+nsIContentSecurityPolicy* PolicyContainer::GetCSP() const { return mCSP; }
 
 nsIContentSecurityPolicy* PolicyContainer::GetCSP(
     const nsIPolicyContainer* aPolicyContainer) {
   if (!aPolicyContainer) {
     return nullptr;
   }
-  return PolicyContainer::Cast(aPolicyContainer)->CSP();
+  return PolicyContainer::Cast(aPolicyContainer)->GetCSP();
 }
 
 // == Integrity Policy ==
@@ -197,7 +197,7 @@ void PolicyContainer::SetIntegrityPolicy(nsIIntegrityPolicy* aPolicy) {
   mIntegrityPolicy = aPolicy;
 }
 
-nsIIntegrityPolicy* PolicyContainer::IntegrityPolicy() const {
+nsIIntegrityPolicy* PolicyContainer::GetIntegrityPolicy() const {
   return mIntegrityPolicy;
 }
 
@@ -206,7 +206,7 @@ nsIIntegrityPolicy* PolicyContainer::GetIntegrityPolicy(
   if (!aPolicyContainer) {
     return nullptr;
   }
-  return PolicyContainer::Cast(aPolicyContainer)->IntegrityPolicy();
+  return PolicyContainer::Cast(aPolicyContainer)->GetIntegrityPolicy();
 }
 
 NS_IMETHODIMP PolicyContainer::GetCsp(nsIContentSecurityPolicy** aCsp) {

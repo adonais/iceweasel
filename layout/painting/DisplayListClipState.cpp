@@ -63,8 +63,8 @@ static void ApplyClip(nsDisplayListBuilder* aBuilder,
 }
 
 void DisplayListClipState::ClipContainingBlockDescendants(
-    nsDisplayListBuilder* aBuilder, const nsRect& aRect, const nscoord* aRadii,
-    DisplayItemClipChain& aClipChainOnStack) {
+    nsDisplayListBuilder* aBuilder, const nsRect& aRect,
+    const nsRectCornerRadii* aRadii, DisplayItemClipChain& aClipChainOnStack) {
   if (aRadii) {
     aClipChainOnStack.mClip.SetTo(aRect, aRadii);
   } else {
@@ -77,8 +77,8 @@ void DisplayListClipState::ClipContainingBlockDescendants(
 }
 
 void DisplayListClipState::ClipContentDescendants(
-    nsDisplayListBuilder* aBuilder, const nsRect& aRect, const nscoord* aRadii,
-    DisplayItemClipChain& aClipChainOnStack) {
+    nsDisplayListBuilder* aBuilder, const nsRect& aRect,
+    const nsRectCornerRadii* aRadii, DisplayItemClipChain& aClipChainOnStack) {
   if (aRadii) {
     aClipChainOnStack.mClip.SetTo(aRect, aRadii);
   } else {
@@ -91,7 +91,7 @@ void DisplayListClipState::ClipContentDescendants(
 
 void DisplayListClipState::ClipContentDescendants(
     nsDisplayListBuilder* aBuilder, const nsRect& aRect,
-    const nsRect& aRoundedRect, const nscoord* aRadii,
+    const nsRect& aRoundedRect, const nsRectCornerRadii* aRadii,
     DisplayItemClipChain& aClipChainOnStack) {
   if (aRadii) {
     aClipChainOnStack.mClip.SetTo(aRect, aRoundedRect, aRadii);
@@ -118,7 +118,7 @@ void DisplayListClipState::InvalidateCurrentCombinedClipChain(
 void DisplayListClipState::ClipContainingBlockDescendantsToContentBox(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
     DisplayItemClipChain& aClipChainOnStack, uint32_t aFlags) {
-  nscoord radii[8];
+  nsRectCornerRadii radii;
   bool hasBorderRadius = aFrame->GetContentBoxBorderRadii(radii);
   if (!hasBorderRadius &&
       (aFlags & ASSUME_DRAWING_RESTRICTED_TO_CONTENT_RECT)) {
@@ -129,8 +129,9 @@ void DisplayListClipState::ClipContainingBlockDescendantsToContentBox(
                     aBuilder->ToReferenceFrame(aFrame);
   // If we have a border-radius, we have to clip our content to that
   // radius.
-  ClipContainingBlockDescendants(
-      aBuilder, clipRect, hasBorderRadius ? radii : nullptr, aClipChainOnStack);
+  ClipContainingBlockDescendants(aBuilder, clipRect,
+                                 hasBorderRadius ? &radii : nullptr,
+                                 aClipChainOnStack);
 }
 
 DisplayListClipState::AutoSaveRestore::AutoSaveRestore(

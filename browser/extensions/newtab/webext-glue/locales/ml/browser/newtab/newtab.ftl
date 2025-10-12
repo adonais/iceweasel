@@ -289,9 +289,6 @@ newtab-custom-sponsored-sites = പണം കൊണ്ടു് പ്രസര�
 newtab-custom-pocket-title = { -pocket-brand-name } ശുപാൎശ ചെയ്ത
 newtab-custom-pocket-show-recent-saves = അടുത്തിടെ കരുതിവയ്ക്കലുകൾ കാണിക്കുക
 newtab-custom-recent-title = ഒടുവിലുള്ള പ്രവർത്തനം
-newtab-custom-recent-toggle =
-    .label = ഒടുവിലുള്ള പ്രവർത്തനം
-    .description = ഒടുവിൽ സന്ദൎശിച്ച വെബ്സ്ഥാനങ്ങളുടെയും ഉള്ളടക്കത്തിന്റെയും ഒരു തിരഞ്ഞെടുപ്പു്
 newtab-custom-weather-toggle =
     .label = കാലാവസ്ഥ
     .description = ഒരു നോട്ടത്തിൽ ഇന്നത്തെ കാലാവസ്ഥ
@@ -358,7 +355,6 @@ newtab-weather-menu-change-location = സ്ഥാനം മാറ്റുക
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = സ്ഥാനം തപ്പുക
     .aria-label = സ്ഥാനം തപ്പുക
-newtab-weather-change-location-search-input = സ്ഥാനം തപ്പുക
 newtab-weather-menu-weather-display = കാലാവസ്ഥ പ്രദർശകം
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature

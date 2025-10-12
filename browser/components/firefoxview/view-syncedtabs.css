@@ -61,7 +61,7 @@ h3.device-header:not([slot="header"]):not(:first-child) {
   border: 1px solid var(--fxview-border);
   text-align: center;
   height: 70px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-medium);
   width: 100%;
   display: flex;
   align-items: center;

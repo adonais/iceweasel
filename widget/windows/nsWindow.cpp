@@ -1789,6 +1789,13 @@ void nsWindow::Show(bool aState) {
           // background color before uncloaking it to complete the Show().
           ClearWindow(mWnd);
           CloakWindow(mWnd, FALSE);
+          // bug 1833841: Initialize mWorkspaceId asynchronously so that we
+          // don't try to update it synchronously on WM_CLOSE. Calling
+          // GetWindowDesktopId() is very slow and doing it can cause WM_CLOSE
+          // to "timeout" and fail to close other windows. (if the user selected
+          // "Close all windows" in the taskbar)
+          AsyncUpdateWorkspaceID();
+
           mHasBeenShown = true;
         }
 
@@ -2242,7 +2249,10 @@ nsString DoGetWorkspaceID(HWND aWnd) {
   }
 
   GUID desktop;
+  MOZ_LOG(gWindowsLog, LogLevel::Debug, ("calling GetWindowDesktopId"));
   HRESULT hr = desktopManager->GetWindowDesktopId(aWnd, &desktop);
+  MOZ_LOG(gWindowsLog, LogLevel::Debug,
+          ("called GetWindowDesktopId, hr=%08lX", hr));
   if (FAILED(hr)) {
     return ret;
   }
@@ -2261,8 +2271,12 @@ void nsWindow::GetWorkspaceID(nsAString& workspaceID) {
   // one synchronously.
   AssertIsOnMainThread();
   if (mDesktopId.IsEmpty()) {
+    MOZ_LOG(gWindowsLog, LogLevel::Debug,
+            ("GetWorkspaceId - calling DoGetWorkspaceID() (synchronously)"));
     mDesktopId = DoGetWorkspaceID(mWnd);
   } else {
+    MOZ_LOG(gWindowsLog, LogLevel::Debug,
+            ("GetWorkspaceId - calling AsyncUpdateWorkspaceID()"));
     AsyncUpdateWorkspaceID();
   }
   workspaceID = mDesktopId;

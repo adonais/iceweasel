@@ -49,11 +49,13 @@ internal sealed class BookmarkItem {
      * Note: this should be preserved across Sync, as users will re-order their bookmarks on desktop.
      * When null, it is appended.
      * @property dateAdded Timestamp in milliseconds when the Bookmark Item was added.
+     * @property nestedItemCount The count of nested child items under this folder.
      */
     data class Folder(
         override val title: String,
         override val guid: String,
         override val position: UInt?,
         override val dateAdded: Long = 0,
+        val nestedItemCount: Int = 0,
     ) : BookmarkItem()
 }

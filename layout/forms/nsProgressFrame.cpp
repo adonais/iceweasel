@@ -206,7 +206,7 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
 
 nsresult nsProgressFrame::AttributeChanged(int32_t aNameSpaceID,
                                            nsAtom* aAttribute,
-                                           int32_t aModType) {
+                                           AttrModType aModType) {
   NS_ASSERTION(mBarDiv, "Progress bar div must exist!");
 
   if (aNameSpaceID == kNameSpaceID_None &&

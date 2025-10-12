@@ -250,7 +250,7 @@ export class TranslationsEngine {
    * @returns {Promise<TranslationsEngine>}
    */
   static async create(languagePair, innerWindowId) {
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
     if (!languagePair.sourceLanguage || !languagePair.targetLanguage) {
       throw new Error(
         "Attempt to create Translator with missing language tags."

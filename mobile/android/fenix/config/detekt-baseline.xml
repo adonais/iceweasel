@@ -316,6 +316,7 @@
     <ID>UndocumentedPublicClass:PocketCategoriesViewHolder.kt$PocketCategoriesViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:PocketRecommendationsHeaderViewHolder.kt$PocketRecommendationsHeaderViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:PocketStoriesViewHolder.kt$PocketStoriesViewHolder$Companion</ID>
+    <ID>UndocumentedPublicClass:PlayStoreReviewPromptController.kt$PlayStoreReviewPromptController$Companion</ID>
     <ID>UndocumentedPublicClass:PoweredByNotification.kt$PoweredByNotification$Companion</ID>
     <ID>UndocumentedPublicClass:PrivateBrowserPageViewHolder.kt$PrivateBrowserPageViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:PrivateBrowserTrayList.kt$PrivateBrowserTrayList : AbstractBrowserTrayList</ID>
@@ -752,7 +753,7 @@
     <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature$fun isAndroidPermissionGranted(context: Context): Boolean</ID>
     <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature.Companion$fun findFeatureBy(permissions: Array&lt;out String&gt;): PhoneFeature?</ID>
     <ID>UndocumentedPublicFunction:PocketStoriesViewHolder.kt$@Composable @Preview fun PocketStoriesViewHolderPreview()</ID>
-    <ID>UndocumentedPublicFunction:PrivateShortcutCreateManager.kt$PrivateShortcutCreateManager$fun createPrivateShortcut(context: Context)</ID>
+    <ID>UndocumentedPublicFunction:PrivacyContentDisplayHelper.kt$fun showPrivacyPopWindow(context: Context, activity: Activity)</ID>
     <ID>UndocumentedPublicFunction:ProfilerMarkerFactProcessor.kt$ProfilerMarkerFactProcessor.Companion$fun create(profilerProvider: () -&gt; Profiler?)</ID>
     <ID>UndocumentedPublicFunction:ProfilerMarkers.kt$ProfilerMarkers$fun addForDispatchTouchEvent(profiler: Profiler?, ev: MotionEvent?)</ID>
     <ID>UndocumentedPublicFunction:ProfilerMarkers.kt$ProfilerMarkers$fun addListenerForOnGlobalLayout(engine: Engine, activity: Activity, rootView: View)</ID>

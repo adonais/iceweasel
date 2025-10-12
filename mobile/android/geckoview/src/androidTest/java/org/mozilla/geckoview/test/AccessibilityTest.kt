@@ -1663,6 +1663,7 @@ class AccessibilityTest : BaseSessionTest() {
         })
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun testRemoteAccessibilityFocusIframe() {
         testAccessibilityFocusIframe(REMOTE_IFRAME)
     }
@@ -1707,6 +1708,7 @@ class AccessibilityTest : BaseSessionTest() {
         assertThat("inner node in inner doc bounds", innerDocBounds.contains(nodeBounds), equalTo(true))
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test
     fun testRemoteIframeTree() {
         testIframeTree(REMOTE_IFRAME)

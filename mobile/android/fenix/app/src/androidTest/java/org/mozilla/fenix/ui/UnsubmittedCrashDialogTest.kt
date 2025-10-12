@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.ui
 
-import android.app.Activity
 import android.content.Context
 import android.text.format.DateUtils
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -15,16 +14,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
-import io.mockk.verify
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import mozilla.components.lib.crash.store.CrashAction
-import mozilla.components.support.ktx.android.content.getColorFromAttr
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -48,17 +38,10 @@ class UnsubmittedCrashDialogTest : TestSetup() {
 
     @Before
     fun setup() {
-        mockkStatic("mozilla.components.support.ktx.android.content.ContextKt")
         fakeContext = mockk<Context>()
         every { fakeContext.getTheme() } returns mockk()
         every { fakeContext.packageName } returns "org.mozilla.fenix.debug"
-        every { any<Activity>().getColorFromAttr(any()) } returns 0
         every { fakeContext.startActivity(any()) } returns mockk()
-    }
-
-    @After
-    fun teardown() {
-        unmockkStatic("org.mozilla.fenix.ext.ContextKt")
     }
 
     @get:Rule(order = 0)

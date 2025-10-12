@@ -14,7 +14,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
-  pktApi: "chrome://pocket/content/pktApi.sys.mjs",
 });
 
 export const STORIES_UPDATE_TIME = 30 * 60 * 1000; // 30 minutes
@@ -119,14 +118,6 @@ export class TopStoriesFeed {
   uninit() {
     this.storiesLoaded = false;
     SectionsManager.disableSection(SECTION_ID);
-  }
-
-  getPocketState(target) {
-    const action = {
-      type: at.POCKET_LOGGED_IN,
-      data: lazy.pktApi.isUserLoggedIn(),
-    };
-    this.store.dispatch(ac.OnlyToOneContent(action, target));
   }
 
   dispatchPocketCta(data, shouldBroadcast) {
@@ -664,7 +655,6 @@ export class TopStoriesFeed {
         this.uninit();
         break;
       case at.NEW_TAB_REHYDRATED:
-        this.getPocketState(action.meta.fromTarget);
         this.maybeAddSpoc(action.meta.fromTarget);
         break;
       case at.SECTION_OPTIONS_CHANGED:

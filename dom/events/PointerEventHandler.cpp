@@ -44,13 +44,6 @@ LazyLogModule gLogPointerLocation("PointerLocation");
 // Log the updates of sActivePointersIds.
 LazyLogModule gLogActivePointers("ActivePointers");
 
-#ifdef DEBUG
-#  define MOZ_LOG_IF_DEBUG(_module, _level, _args) \
-    MOZ_LOG(_module, _level, _args)
-#else
-#  define MOZ_LOG_IF_DEBUG(_module, _level, _args)
-#endif
-
 using namespace dom;
 
 Maybe<int32_t> PointerEventHandler::sSpoofedPointerId;
@@ -247,7 +240,7 @@ void PointerEventHandler::RecordPointerState(
   // ePointerMove.
   else {
     pointerInfo->ClearLastState();
-    MOZ_LOG_IF_DEBUG(
+    MOZ_LOG_DEBUG_ONLY(
         gLogPointerLocation, LogLevel::Info,
         ("got %s on widget:%p, pointer location is cleared (pointerId=%u, "
          "source=%s)\n",
@@ -318,12 +311,12 @@ void PointerEventHandler::ClearMouseState(PresShell& aRootPresShell,
   sLastMouseInfo->mInputSource = MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
   sLastMouseInfo->mIsSynthesizedForTests =
       aMouseEvent.mFlags.mIsSynthesizedForTests;
-  MOZ_LOG_IF_DEBUG(gLogMouseLocation, LogLevel::Info,
-                   ("[ps=%p]got %s on widget:%p, mouse location is cleared "
-                    "(pointerId=%u, source=%s)\n",
-                    &aRootPresShell, ToChar(aMouseEvent.mMessage),
-                    aMouseEvent.mWidget.get(), aMouseEvent.pointerId,
-                    InputSourceToString(aMouseEvent.mInputSource).get()));
+  MOZ_LOG_DEBUG_ONLY(gLogMouseLocation, LogLevel::Info,
+                     ("[ps=%p]got %s on widget:%p, mouse location is cleared "
+                      "(pointerId=%u, source=%s)\n",
+                      &aRootPresShell, ToChar(aMouseEvent.mMessage),
+                      aMouseEvent.mWidget.get(), aMouseEvent.pointerId,
+                      InputSourceToString(aMouseEvent.mInputSource).get()));
 }
 
 /* static */
@@ -1591,7 +1584,7 @@ void PointerEventHandler::UpdateLastPointerId(uint32_t aPointerId,
   if (sLastPointerId && *sLastPointerId == aPointerId) {
     return;
   }
-  MOZ_LOG_IF_DEBUG(
+  MOZ_LOG_DEBUG_ONLY(
       EventStateManager::MouseCursorUpdateLogRef(), LogLevel::Info,
       ("PointerEventHandler::UpdateLastPointerId(): "
        "Last pointerId (%s) is changed to %u when %s",
@@ -1605,12 +1598,11 @@ void PointerEventHandler::MaybeForgetLastPointerId(uint32_t aPointerId,
     return;
   }
   sLastPointerId.reset();
-  MOZ_LOG_IF_DEBUG(EventStateManager::MouseCursorUpdateLogRef(), LogLevel::Info,
-                   ("PointerEventHandler::MaybeForgetLastPointerId(): "
-                    "Last pointerId (%u) is changed to Nothing when %s",
-                    aPointerId, ToChar(aEventMessage)));
+  MOZ_LOG_DEBUG_ONLY(EventStateManager::MouseCursorUpdateLogRef(),
+                     LogLevel::Info,
+                     ("PointerEventHandler::MaybeForgetLastPointerId(): "
+                      "Last pointerId (%u) is changed to Nothing when %s",
+                      aPointerId, ToChar(aEventMessage)));
 }
 
 }  // namespace mozilla
-
-#undef MOZ_LOG_IF_DEBUG

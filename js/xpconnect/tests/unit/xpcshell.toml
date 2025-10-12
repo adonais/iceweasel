@@ -357,6 +357,7 @@ skip-if = ["!nightly_build"]
 skip-if = [
   "!nightly_build",
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan",
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan",
 ]
 
 ["test_wasm_tailcalls_profiler.js"]

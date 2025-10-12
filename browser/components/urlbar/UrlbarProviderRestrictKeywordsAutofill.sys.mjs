@@ -25,16 +25,12 @@ const RESTRICT_KEYWORDS_FEATURE_GATE = "searchRestrictKeywords.featureGate";
 /**
  * Class used to create the provider.
  */
-class ProviderRestrictKeywordsAutofill extends UrlbarProvider {
+export class UrlbarProviderRestrictKeywordsAutofill extends UrlbarProvider {
   #autofillData;
   #lowerCaseTokenToKeywords;
 
   constructor() {
     super();
-  }
-
-  get name() {
-    return "RestrictKeywordsAutofill";
   }
 
   /**
@@ -214,6 +210,3 @@ class ProviderRestrictKeywordsAutofill extends UrlbarProvider {
     return null;
   }
 }
-
-export var UrlbarProviderRestrictKeywordsAutofill =
-  new ProviderRestrictKeywordsAutofill();

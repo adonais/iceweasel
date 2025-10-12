@@ -8,6 +8,8 @@ import io.mockk.mockk
 import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
+import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.perf.runBlockingIncrement
 
 /**
  * An override of our application for use in Robolectric-based unit tests. We're forced to override
@@ -22,6 +24,8 @@ class FenixRobolectricTestApplication : FenixApplication() {
     }
 
     override val components = mockk<Components>()
+
+    override fun initializeWithStartupCrashCheck() = Unit
 
     override fun initializeNimbus() = Unit
 

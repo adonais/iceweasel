@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.shopping.ui.ext.headingResource
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 private val cardShape = RoundedCornerShape(8.dp)
 private val defaultCardElevation = 5.dp
@@ -94,9 +95,9 @@ fun ExpandableInfoCardContainer(
             )
 
             val chevronDrawable = if (isExpanded) {
-                R.drawable.mozac_ic_chevron_up_20
+                iconsR.drawable.mozac_ic_chevron_up_20
             } else {
-                R.drawable.mozac_ic_chevron_down_20
+                iconsR.drawable.mozac_ic_chevron_down_20
             }
 
             Icon(

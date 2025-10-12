@@ -46,7 +46,7 @@ pub enum GenericImage<G, ImageUrl, Color, Percentage, Resolution> {
     /// A paint worklet image.
     /// <https://drafts.css-houdini.org/css-paint-api/>
     #[cfg(feature = "servo")]
-    PaintWorklet(PaintWorklet),
+    PaintWorklet(Box<PaintWorklet>),
 
     /// A `<cross-fade()>` image. Storing this directly inside of
     /// GenericImage increases the size by 8 bytes so we box it here
@@ -464,8 +464,8 @@ where
         let (compat_mode, repeating, has_default_color_interpolation_method) = match *self {
             Gradient::Linear {
                 compat_mode, flags, ..
-            } |
-            Gradient::Radial {
+            }
+            | Gradient::Radial {
                 compat_mode, flags, ..
             } => (
                 compat_mode,
@@ -528,8 +528,8 @@ where
             } => {
                 dest.write_str("radial-gradient(")?;
                 let omit_shape = match *shape {
-                    EndingShape::Ellipse(Ellipse::Extent(ShapeExtent::Cover)) |
-                    EndingShape::Ellipse(Ellipse::Extent(ShapeExtent::FarthestCorner)) => true,
+                    EndingShape::Ellipse(Ellipse::Extent(ShapeExtent::Cover))
+                    | EndingShape::Ellipse(Ellipse::Extent(ShapeExtent::FarthestCorner)) => true,
                     _ => false,
                 };
                 let omit_position = position.is_center();

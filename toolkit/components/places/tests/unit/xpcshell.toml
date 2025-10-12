@@ -142,6 +142,8 @@ prefs = ["places.frecency.pages.alternative.featureGate=true"]
 
 ["test_frecency_recalculator.js"]
 
+["test_frecency_threshold.js"]
+
 ["test_frecency_unvisited_bookmark.js"]
 
 ["test_frecency_zero_updated.js"]

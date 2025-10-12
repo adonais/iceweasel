@@ -315,9 +315,6 @@ newtab-custom-pocket-sponsored = Histórias patrocinadas
 newtab-custom-pocket-show-recent-saves = Mostrar coisas guardadas recentemente
 newtab-custom-recent-title = Atividade recente
 newtab-custom-recent-subtitle = Uma seleção de sites e conteúdos recentes
-newtab-custom-recent-toggle =
-    .label = Atividade recente
-    .description = Uma seleção de sites e conteúdos recentes
 newtab-custom-weather-toggle =
     .label = Meteorologia
     .description = Visão geral da meteorologia para hoje
@@ -441,7 +438,6 @@ newtab-weather-menu-change-location = Alterar localização
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Pesquisar localização
     .aria-label = Pesquisar localização
-newtab-weather-change-location-search-input = Pesquisar localização
 newtab-weather-menu-weather-display = Apresentação da meteorologia
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -582,8 +578,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Em alta no Google
 newtab-trending-searches-show-trending =
     .title = Mostrar pesquisas em alta
 newtab-trending-searches-hide-trending =

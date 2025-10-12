@@ -30,7 +30,6 @@ import reducers from "../reducers/index";
 import * as selectors from "../selectors/index";
 import App from "../components/App";
 import { asyncStore, prefs } from "./prefs";
-import { persistTabs } from "../utils/tabs";
 const {
   sanitizeBreakpoints,
 } = require("resource://devtools/client/shared/thread-utils.js");
@@ -136,8 +135,14 @@ function updatePrefs(state, oldState) {
     asyncStore.eventListenerBreakpoints = state.eventListenerBreakpoints;
   }
 
-  if (hasChanged(selectors.getTabs)) {
-    asyncStore.tabs = persistTabs(selectors.getTabs(state));
+  if (hasChanged(selectors.getOpenedURLs)) {
+    asyncStore.openedURLs = selectors.getOpenedURLs(state);
+  }
+  if (hasChanged(selectors.getPrettyPrintedURLs)) {
+    // Convert the Set into an Array
+    asyncStore.prettyPrintedURLs = Array.from(
+      selectors.getPrettyPrintedURLs(state)
+    );
   }
 
   if (hasChanged(selectors.getXHRBreakpoints)) {

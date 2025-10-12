@@ -36,6 +36,7 @@ UNIFIED_SOURCES += [
     "TestStandardURL.cpp",
     "TestUDPSocket.cpp",
     "TestURIMutator.cpp",
+    "TestUriTemplate.cpp",
     "TestURLPatternGlue.cpp",
     "TestWebTransportFlowControl.cpp",
 ]

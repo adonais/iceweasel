@@ -2181,7 +2181,7 @@ void ContentParent::MaybeBeginShutDown(bool aImmediate,
             self->MaybeBeginShutDown(/* aImmediate */ true);
             return true;
           },
-          "ContentParent::IdleMaybeBeginShutdown", startDelay, maxDelay,
+          "ContentParent::IdleMaybeBeginShutdown"_ns, startDelay, maxDelay,
           /* aMinimumUsefulBudget */ TimeDuration::FromMilliseconds(3),
           /* aRepeating */ false, [] { return false; });
     }
@@ -2213,10 +2213,11 @@ void ContentParent::StartSendShutdownTimer() {
 
   uint32_t timeoutSecs = StaticPrefs::dom_ipc_tabs_shutdownTimeoutSecs();
   if (timeoutSecs > 0) {
-    NS_NewTimerWithFuncCallback(getter_AddRefs(mSendShutdownTimer),
-                                ContentParent::SendShutdownTimerCallback, this,
-                                timeoutSecs * 1000, nsITimer::TYPE_ONE_SHOT,
-                                "dom::ContentParent::StartSendShutdownTimer");
+    NS_NewTimerWithFuncCallback(
+        getter_AddRefs(mSendShutdownTimer),
+        ContentParent::SendShutdownTimerCallback, this, timeoutSecs * 1000,
+        nsITimer::TYPE_ONE_SHOT,
+        "dom::ContentParent::StartSendShutdownTimer"_ns);
     MOZ_ASSERT(mSendShutdownTimer);
   }
 }
@@ -2231,7 +2232,7 @@ void ContentParent::StartForceKillTimer() {
     NS_NewTimerWithFuncCallback(getter_AddRefs(mForceKillTimer),
                                 ContentParent::ForceKillTimerCallback, this,
                                 timeoutSecs * 1000, nsITimer::TYPE_ONE_SHOT,
-                                "dom::ContentParent::StartForceKillTimer");
+                                "dom::ContentParent::StartForceKillTimer"_ns);
     MOZ_ASSERT(mForceKillTimer);
   }
 }
@@ -2736,7 +2737,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
       clipboard->IsClipboardTypeSupported(nsIClipboard::kSelectionCache);
 
   // Let's copy the domain policy from the parent to the child (if it's active).
-  StructuredCloneData initialData;
+  auto initialData = MakeUnique<StructuredCloneData>();
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
   if (ssm) {
     ssm->CloneDomainPolicy(&xpcomInit.domainPolicy());
@@ -2756,7 +2757,7 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
         MOZ_CRASH();
       }
 
-      initialData.Write(jsapi.cx(), init, rv);
+      initialData->Write(jsapi.cx(), init, rv);
       if (NS_WARN_IF(rv.Failed())) {
         MOZ_CRASH();
       }
@@ -4654,7 +4655,7 @@ mozilla::ipc::IPCResult ContentParent::RecvExtProtocolChannelConnectParent(
 
 mozilla::ipc::IPCResult ContentParent::RecvSyncMessage(
     const nsAString& aMsg, const ClonedMessageData& aData,
-    nsTArray<StructuredCloneData>* aRetvals) {
+    nsTArray<UniquePtr<StructuredCloneData>>* aRetvals) {
   AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING("ContentParent::RecvSyncMessage",
                                              OTHER, aMsg);
   MMPrinter::Print("ContentParent::RecvSyncMessage", aMsg, aData);
@@ -7566,6 +7567,18 @@ mozilla::ipc::IPCResult ContentParent::RecvHistoryGo(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult ContentParent::RecvNavigationTraverse(
+    const MaybeDiscarded<BrowsingContext>& aContext, const nsID& aKey,
+    uint64_t aHistoryEpoch, bool aUserActivation,
+    NavigationTraverseResolver&& aResolver) {
+  if (!aContext.IsNullOrDiscarded()) {
+    RefPtr<CanonicalBrowsingContext> canonical = aContext.get_canonical();
+    canonical->NavigationTraverse(aKey, aHistoryEpoch, aUserActivation,
+                                  Some(ChildID()), aResolver);
+  }
+  return IPC_OK();
+}
+
 mozilla::ipc::IPCResult ContentParent::RecvSynchronizeLayoutHistoryState(
     const MaybeDiscarded<BrowsingContext>& aContext,
     nsILayoutHistoryState* aState) {
@@ -7854,16 +7867,16 @@ void ContentParent::StartRemoteWorkerService() {
 }
 
 IPCResult ContentParent::RecvRawMessage(
-    const JSActorMessageMeta& aMeta, const Maybe<ClonedMessageData>& aData,
-    const Maybe<ClonedMessageData>& aStack) {
-  Maybe<StructuredCloneData> data;
+    const JSActorMessageMeta& aMeta, const UniquePtr<ClonedMessageData>& aData,
+    const UniquePtr<ClonedMessageData>& aStack) {
+  UniquePtr<StructuredCloneData> data;
   if (aData) {
-    data.emplace();
+    data = MakeUnique<StructuredCloneData>();
     data->BorrowFromClonedMessageData(*aData);
   }
-  Maybe<StructuredCloneData> stack;
+  UniquePtr<StructuredCloneData> stack;
   if (aStack) {
-    stack.emplace();
+    stack = MakeUnique<StructuredCloneData>();
     stack->BorrowFromClonedMessageData(*aStack);
   }
   MMPrinter::Print("ContentParent::RecvRawMessage", aMeta.actorName(),

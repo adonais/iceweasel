@@ -44,6 +44,20 @@ ScriptFetchOptions::ScriptFetchOptions(
       mParserMetadata(aParserMetadata),
       mTriggeringPrincipal(aTriggeringPrincipal) {}
 
+void ScriptFetchOptions::SetTriggeringPrincipal(
+    nsIPrincipal* aTriggeringPrincipal) {
+  MOZ_ASSERT(!mTriggeringPrincipal);
+  mTriggeringPrincipal = aTriggeringPrincipal;
+}
+
+// static
+already_AddRefed<ScriptFetchOptions> ScriptFetchOptions::CreateDefault() {
+  RefPtr<ScriptFetchOptions> options = new ScriptFetchOptions(
+      mozilla::CORS_NONE, /* aNonce = */ u""_ns,
+      mozilla::dom::RequestPriority::Auto, ParserMetadata::NotParserInserted);
+  return options.forget();
+}
+
 ScriptFetchOptions::~ScriptFetchOptions() = default;
 
 //////////////////////////////////////////////////////////////
@@ -62,8 +76,8 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ScriptLoadRequest)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ScriptLoadRequest)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFetchOptions, mOriginPrincipal, mBaseURL,
                                   mLoadedScript, mCacheInfo, mLoadContext)
-  tmp->mScriptForBytecodeEncoding = nullptr;
-  tmp->DropBytecodeCacheReferences();
+  tmp->mScriptForCache = nullptr;
+  tmp->DropCacheReferences();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ScriptLoadRequest)
@@ -72,7 +86,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ScriptLoadRequest)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(ScriptLoadRequest)
-  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mScriptForBytecodeEncoding)
+  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mScriptForCache)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 ScriptLoadRequest::ScriptLoadRequest(
@@ -83,6 +97,7 @@ ScriptLoadRequest::ScriptLoadRequest(
     : mKind(aKind),
       mState(State::CheckingCache),
       mFetchSourceOnly(false),
+      mHasSourceMapURL_(false),
       mReferrerPolicy(aReferrerPolicy),
       mFetchOptions(aFetchOptions),
       mIntegrity(aIntegrity),
@@ -110,7 +125,7 @@ void ScriptLoadRequest::Cancel() {
   }
 }
 
-void ScriptLoadRequest::DropBytecodeCacheReferences() { mCacheInfo = nullptr; }
+void ScriptLoadRequest::DropCacheReferences() { mCacheInfo = nullptr; }
 
 bool ScriptLoadRequest::HasScriptLoadContext() const {
   return HasLoadContext() && mLoadContext->IsWindowContext();
@@ -233,11 +248,11 @@ void ScriptLoadRequest::SetPendingFetchingError() {
   mState = State::PendingFetchingError;
 }
 
-void ScriptLoadRequest::MarkScriptForBytecodeEncoding(JSScript* aScript) {
+void ScriptLoadRequest::MarkScriptForCache(JSScript* aScript) {
   MOZ_ASSERT(!IsModuleRequest());
-  MOZ_ASSERT(!mScriptForBytecodeEncoding);
-  MarkForBytecodeEncoding();
-  mScriptForBytecodeEncoding = aScript;
+  MOZ_ASSERT(!mScriptForCache);
+  MarkForCache();
+  mScriptForCache = aScript;
   HoldJSObjects(this);
 }
 
@@ -256,31 +271,5 @@ void ScriptLoadRequest::SetBaseURLFromChannelAndOriginalURI(
     aChannel->GetURI(getter_AddRefs(mBaseURL));
   }
 }
-
-//////////////////////////////////////////////////////////////
-// ScriptLoadRequestList
-//////////////////////////////////////////////////////////////
-
-ScriptLoadRequestList::~ScriptLoadRequestList() { CancelRequestsAndClear(); }
-
-void ScriptLoadRequestList::CancelRequestsAndClear() {
-  while (!isEmpty()) {
-    RefPtr<ScriptLoadRequest> first = StealFirst();
-    first->Cancel();
-    // And just let it go out of scope and die.
-  }
-}
-
-#ifdef DEBUG
-bool ScriptLoadRequestList::Contains(ScriptLoadRequest* aElem) const {
-  for (const ScriptLoadRequest* req = getFirst(); req; req = req->getNext()) {
-    if (req == aElem) {
-      return true;
-    }
-  }
-
-  return false;
-}
-#endif  // DEBUG
 
 }  // namespace JS::loader

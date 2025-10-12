@@ -38,7 +38,7 @@ class HTMLOptionElement final : public nsGenericHTMLElement {
   void SetSelectedChanged(bool aValue) { mSelectedChanged = aValue; }
 
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
-                                      int32_t aModType) const override;
+                                      AttrModType aModType) const override;
 
   void BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                      const nsAttrValue* aValue, bool aNotify) override;

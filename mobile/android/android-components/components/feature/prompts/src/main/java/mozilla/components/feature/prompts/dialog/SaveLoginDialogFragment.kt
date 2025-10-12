@@ -46,7 +46,7 @@ import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.components.support.ktx.android.view.toScope
 import mozilla.components.support.utils.ext.getParcelableCompat
 import kotlin.reflect.KProperty
-import com.google.android.material.R as MaterialR
+import com.google.android.material.R as materialR
 
 private const val KEY_LOGIN_HINT = "KEY_LOGIN_HINT"
 private const val KEY_LOGIN_USERNAME = "KEY_LOGIN_USERNAME"
@@ -106,8 +106,7 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
                 CoroutineScope(IO).launch {
                     delay(KEYBOARD_HIDING_DELAY)
                     launch(Main) {
-                        val bottomSheet =
-                            findViewById<View>(MaterialR.id.design_bottom_sheet) as FrameLayout
+                        val bottomSheet = findViewById<View>(materialR.id.design_bottom_sheet) as FrameLayout
                         val behavior = BottomSheetBehavior.from(bottomSheet)
                         behavior.state = BottomSheetBehavior.STATE_EXPANDED
                     }

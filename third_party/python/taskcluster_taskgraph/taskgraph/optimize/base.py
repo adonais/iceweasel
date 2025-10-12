@@ -56,7 +56,7 @@ def optimize_task_graph(
     assigned taskId, including replacement tasks.
     """
     # avoid circular import
-    from taskgraph.optimize.strategies import IndexSearch
+    from taskgraph.optimize.strategies import IndexSearch  # noqa: PLC0415
 
     label_to_taskid = {}
     if not existing_tasks:
@@ -294,7 +294,7 @@ def replace_tasks(
     a side-effect.
     """
     # avoid circular import
-    from taskgraph.optimize.strategies import IndexSearch
+    from taskgraph.optimize.strategies import IndexSearch  # noqa: PLC0415
 
     opt_counts = defaultdict(int)
     replaced = set()

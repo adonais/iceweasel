@@ -307,6 +307,9 @@ class WindowTracker extends WindowTrackerBase {
     if (!context.privateBrowsingAllowed) {
       options.private = false;
     }
+    // bug 1983854 - should this only look for windows on the current
+    // workspace?
+    options.allowFromInactiveWorkspace = true;
     return BrowserWindowTracker.getTopWindow(options);
   }
 }

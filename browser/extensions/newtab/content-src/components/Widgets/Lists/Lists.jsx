@@ -31,6 +31,8 @@ const USER_ACTION_TYPES = {
 
 const PREF_WIDGETS_LISTS_MAX_LISTS = "widgets.lists.maxLists";
 const PREF_WIDGETS_LISTS_MAX_LISTITEMS = "widgets.lists.maxListItems";
+const PREF_WIDGETS_LISTS_BADGE_ENABLED = "widgets.lists.badge.enabled";
+const PREF_WIDGETS_LISTS_BADGE_LABEL = "widgets.lists.badge.label";
 
 function Lists({ dispatch, handleUserInteraction }) {
   const prefs = useSelector(state => state.Prefs.values);
@@ -380,6 +382,14 @@ function Lists({ dispatch, handleUserInteraction }) {
     handleListInteraction();
   }
 
+  function handleCancelNewList() {
+    // If current list is new and has no label/tasks, remove it
+    if (!selectedList?.label && selectedList?.tasks?.length === 0) {
+      const updatedLists = { ...lists };
+      delete updatedLists[selected];
+    }
+  }
+
   function handleDeleteList() {
     let updatedLists = { ...lists };
     if (updatedLists[selected]) {
@@ -537,6 +547,23 @@ function Lists({ dispatch, handleUserInteraction }) {
       ? "newtab-widget-lists-name-placeholder-new"
       : "newtab-widget-lists-name-placeholder-default";
 
+  const nimbusBadgeEnabled = prefs.widgetsConfig?.listsBadgeEnabled;
+  const nimbusBadgeLabel = prefs.widgetsConfig?.listsBadgeLabel;
+  const nimbusBadgeTrainhopEnabled =
+    prefs.trainhopConfig?.widgets?.listsBadgeEnabled;
+  const nimbusBadgeTrainhopLabel =
+    prefs.trainhopConfig?.widgets?.listsBadgeLabel;
+
+  const badgeEnabled =
+    (nimbusBadgeEnabled || nimbusBadgeTrainhopEnabled) ??
+    prefs[PREF_WIDGETS_LISTS_BADGE_ENABLED] ??
+    false;
+
+  const badgeLabel =
+    (nimbusBadgeLabel || nimbusBadgeTrainhopLabel) ??
+    prefs[PREF_WIDGETS_LISTS_BADGE_LABEL] ??
+    "";
+
   return (
     <article
       className="lists"
@@ -550,6 +577,7 @@ function Lists({ dispatch, handleUserInteraction }) {
           onSave={handleListNameSave}
           isEditing={isEditing}
           setIsEditing={setIsEditing}
+          onCancel={handleCancelNewList}
           type="list"
           maxLength={30}
           dataL10nId={listNamePlaceholder}
@@ -570,8 +598,18 @@ function Lists({ dispatch, handleUserInteraction }) {
           </moz-select>
         </EditableText>
         {/* Hide the badge when user is editing task list title */}
-        {!isEditing && (
-          <moz-badge data-l10n-id="newtab-widget-lists-label-new"></moz-badge>
+        {!isEditing && badgeEnabled && badgeLabel && (
+          <moz-badge
+            data-l10n-id={(() => {
+              if (badgeLabel === "New") {
+                return "newtab-widget-lists-label-new";
+              }
+              if (badgeLabel === "Beta") {
+                return "newtab-widget-lists-label-beta";
+              }
+              return "";
+            })()}
+          ></moz-badge>
         )}
         <moz-button
           className="lists-panel-button"
@@ -634,7 +672,8 @@ function Lists({ dispatch, handleUserInteraction }) {
           dragSelector=".checkbox-wrapper"
         >
           <fieldset>
-            {selectedList?.tasks.length >= 1 ? (
+            {/* Incomplete List  */}
+            {selectedList?.tasks.length >= 1 &&
               selectedList.tasks.map((task, index) => (
                 <ListItem
                   type={TASK_TYPE.IN_PROGRESS}
@@ -647,15 +686,13 @@ function Lists({ dispatch, handleUserInteraction }) {
                   isFirst={index === 0}
                   isLast={index === selectedList.tasks.length - 1}
                 />
-              ))
-            ) : (
-              <p
-                className="empty-list-text"
-                data-l10n-id="newtab-widget-lists-empty-cta"
-              ></p>
-            )}
+              ))}
+            {/* Completed List */}
             {selectedList?.completed.length >= 1 && (
-              <details className="completed-task-wrapper">
+              <details
+                className="completed-task-wrapper"
+                open={selectedList?.tasks.length < 1}
+              >
                 <summary>
                   <span
                     data-l10n-id="newtab-widget-lists-completed-list"
@@ -678,6 +715,27 @@ function Lists({ dispatch, handleUserInteraction }) {
             )}
           </fieldset>
         </moz-reorderable-list>
+        {/* Empty State */}
+        {selectedList?.tasks.length < 1 &&
+          selectedList?.completed.length < 1 && (
+            <div className="empty-list">
+              <picture>
+                <source
+                  srcSet="chrome://newtab/content/data/content/assets/lists-empty-state-dark.svg"
+                  media="(prefers-color-scheme: dark)"
+                />
+                <source
+                  srcSet="chrome://newtab/content/data/content/assets/lists-empty-state-light.svg"
+                  media="(prefers-color-scheme: light)"
+                />
+                <img width="100" height="100" alt="" />
+              </picture>
+              <p
+                className="empty-list-text"
+                data-l10n-id="newtab-widget-lists-empty-cta"
+              ></p>
+            </div>
+          )}
       </div>
       <canvas className="confetti-canvas" ref={canvasRef} />
     </article>
@@ -748,13 +806,14 @@ function ListItem({
       {task.value}
     </a>
   ) : (
-    <span
+    <label
       className="task-label"
       title={task.value}
+      htmlFor={`task-${task.id}`}
       onClick={() => setIsEditing(true)}
     >
       {task.value}
-    </span>
+    </label>
   );
 
   return (
@@ -769,6 +828,7 @@ function ListItem({
           type="checkbox"
           onChange={handleCheckboxChange}
           checked={task.completed || exiting}
+          id={`task-${task.id}`}
         />
         {isCompleted ? (
           taskLabel
@@ -830,6 +890,7 @@ function EditableText({
   isEditing,
   setIsEditing,
   onSave,
+  onCancel,
   children,
   type,
   dataL10nId = null,
@@ -856,6 +917,7 @@ function EditableText({
     } else if (e.key === "Escape") {
       setIsEditing(false);
       setTempValue(value);
+      onCancel?.();
     }
   }
 

@@ -26,7 +26,9 @@ import org.mozilla.gecko.util.XPCOMError;
  */
 @AnyThread
 public class WebRequestError extends Exception {
+  /** Defines the set of valid error categories for web request failures. */
   @Retention(RetentionPolicy.SOURCE)
+  /** Error category definitions for web request errors. */
   @IntDef({
     ERROR_CATEGORY_UNKNOWN,
     ERROR_CATEGORY_SECURITY,
@@ -38,6 +40,7 @@ public class WebRequestError extends Exception {
   })
   public @interface ErrorCategory {}
 
+  /** Error code definitions for web request errors. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     ERROR_UNKNOWN,
@@ -87,8 +90,13 @@ public class WebRequestError extends Exception {
   /** This is used for error codes relating to invalid or corrupt web pages. */
   public static final int ERROR_CATEGORY_CONTENT = 0x4;
 
+  /** This is used for error codes relating to URI problems. */
   public static final int ERROR_CATEGORY_URI = 0x5;
+
+  /** This is used for error codes relating to proxy problems. */
   public static final int ERROR_CATEGORY_PROXY = 0x6;
+
+  /** This is used for error codes relating to safe browsing warnings. */
   public static final int ERROR_CATEGORY_SAFEBROWSING = 0x7;
 
   /** An unknown error occurred */

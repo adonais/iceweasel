@@ -6,6 +6,7 @@ prefs = [
   "browser.ml.linkPreview.optin=true",
   "browser.ml.linkPreview.prefetchOnEnable=false",
   "browser.ml.linkPreview.shiftAlt=true",
+  "browser.ml.pageAssist.enabled=true",
 ]
 
 ["browser_chat_contextmenu.js"]
@@ -49,6 +50,11 @@ support-files = [
 ["browser_link_preview_telemetry.js"]
 support-files = [
   "data/readableFr.html",
+  "data/readableEn.html"
+]
+
+["browser_page_assist_actors.js"]
+support-files = [
   "data/readableEn.html"
 ]
 

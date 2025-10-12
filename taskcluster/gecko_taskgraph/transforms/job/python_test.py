@@ -14,8 +14,6 @@ from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_u
 python_test_schema = Schema(
     {
         Required("using"): "python-test",
-        # Python version to use
-        Required("python-version"): int,
         # The subsuite to run
         Required("subsuite"): str,
         # Base work directory used to set up the task.
@@ -30,7 +28,6 @@ python_test_schema = Schema(
 
 
 defaults = {
-    "python-version": 3,
     "subsuite": "default",
 }
 

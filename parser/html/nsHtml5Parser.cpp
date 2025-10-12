@@ -43,6 +43,7 @@ nsHtml5Parser::nsHtml5Parser()
       mBlocked(0),
       mDocWriteSpeculatorActive(false),
       mScriptNestingLevel(0),
+      mTerminationStarted(false),
       mDocumentClosed(false),
       mInDocumentWrite(false),
       mInsertionPointPermanentlyUndefined(false),
@@ -468,8 +469,14 @@ nsresult nsHtml5Parser::Parse(const nsAString& aSourceBuffer, void* aKey,
 
 NS_IMETHODIMP
 nsHtml5Parser::Terminate() {
-  // Prevent a second call to DidBuildModel via document.close()
-  mDocumentClosed = true;
+  if (mTerminationStarted) {
+    return NS_OK;
+  }
+  // `mExecutor->IsComplete()` becomes true too late, if JavaScript event
+  // handlers cause a nested event loop or calls back into the parser during the
+  // termination. It's also hard to make `mExecutor->IsComplete()` to become
+  // true sooner. Hence, let's have yet another flag to prevent further parsing.
+  mTerminationStarted = true;
   // We should only call DidBuildModel once, so don't do anything if this is
   // the second time that Terminate has been called.
   if (mExecutor->IsComplete()) {
@@ -533,7 +540,7 @@ bool nsHtml5Parser::IsScriptCreated() { return !GetStreamParser(); }
 nsresult nsHtml5Parser::ParseUntilBlocked() {
   nsresult rv = mExecutor->IsBroken();
   NS_ENSURE_SUCCESS(rv, rv);
-  if (mBlocked || mInsertionPointPermanentlyUndefined ||
+  if (mBlocked || mInsertionPointPermanentlyUndefined || mTerminationStarted ||
       mExecutor->IsComplete()) {
     return NS_OK;
   }

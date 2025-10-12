@@ -63,6 +63,8 @@ support-files = [
 
 ["test_PreferencesBackupResource.js"]
 
+["test_PreferencesBackupResource_Nimbus.js"]
+
 ["test_PreferencesBackupResource_searchEngines.js"]
 
 ["test_SessionStoreBackupResource.js"]

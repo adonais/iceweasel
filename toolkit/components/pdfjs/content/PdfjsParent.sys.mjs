@@ -322,7 +322,7 @@ export class PdfjsParent extends JSWindowActorParent {
       return null;
     }
     try {
-      const now = Cu.now();
+      const now = ChromeUtils.now();
 
       let response;
       if (Cu.isInAutomation) {
@@ -332,7 +332,7 @@ export class PdfjsParent extends JSWindowActorParent {
         response = await engine.run(request);
       }
 
-      const time = Cu.now() - now;
+      const time = ChromeUtils.now() - now;
       const length = response?.output.length ?? 0;
       PdfJsTelemetry.report({
         type: "editing",

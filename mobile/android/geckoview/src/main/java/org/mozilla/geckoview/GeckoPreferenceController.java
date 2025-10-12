@@ -442,9 +442,16 @@ public class GeckoPreferenceController {
    * @param <T> May be constructed as String, Integer, or Boolean.
    */
   public static class SetGeckoPreference<T> {
+    /** The preference name. */
     public final @NonNull String pref;
+
+    /** The value the preference should be set to. */
     public final @NonNull T value;
+
+    /** The preference branch to operate on. */
     public final @PrefBranch int branch;
+
+    /** The Gecko specified type of preference. */
     public final @PrefType int type;
 
     /**

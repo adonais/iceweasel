@@ -257,6 +257,25 @@ struct SpecificNaNBits {
 };
 
 /**
+ * Computes the bit pattern for any floating point value.
+ */
+template <typename T, int SignBit, typename FloatingPoint<T>::Bits Exponent,
+          typename FloatingPoint<T>::Bits Significand>
+struct SpecificFloatingPointBits {
+  using Traits = FloatingPoint<T>;
+
+  static_assert(SignBit == 0 || SignBit == 1, "bad sign bit");
+  static_assert((Exponent & ~Traits::kExponentBias) == 0,
+                "exponent must only have exponent bits set");
+  static_assert((Significand & ~Traits::kSignificandBits) == 0,
+                "significand must only have significand bits set");
+
+  static constexpr typename Traits::Bits value =
+      (SignBit * Traits::kSignBit) | (Exponent << Traits::kExponentShift) |
+      Significand;
+};
+
+/**
  * Constructs a NaN value with the specified sign bit and significand bits.
  *
  * There is also a variant that returns the value directly.  In most cases, the

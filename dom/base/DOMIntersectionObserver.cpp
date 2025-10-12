@@ -533,8 +533,24 @@ static Maybe<nsRect> ComputeTheIntersection(
 
   // 5.Update intersectionRect by intersecting it with the root intersection
   // rectangle.
-  intersectionRect =
-      intersectionRectRelativeToRoot.EdgeInclusiveIntersection(aRootBounds);
+  //
+  // In out-of-process iframes we need to take an intersection with the remote
+  // document visible rect which was already clipped by ancestor document's
+  // viewports.
+  if (aRemoteDocumentVisibleRect) {
+    MOZ_ASSERT(aRoot->PresContext()->IsRootContentDocumentInProcess() &&
+               !aRoot->PresContext()->IsRootContentDocumentCrossProcess());
+
+    intersectionRect = intersectionRectRelativeToRoot.EdgeInclusiveIntersection(
+        *aRemoteDocumentVisibleRect);
+    if (intersectionRect.isNothing()) {
+      return Nothing();
+    }
+  } else {
+    intersectionRect =
+        intersectionRectRelativeToRoot.EdgeInclusiveIntersection(aRootBounds);
+  }
+
   if (intersectionRect.isNothing()) {
     return Nothing();
   }
@@ -550,21 +566,6 @@ static Maybe<nsRect> ComputeTheIntersection(
             aTarget->PresShell()->GetRootScrollContainerFrame()) {
       nsLayoutUtils::TransformRect(aRoot, rootScrollContainerFrame, rect);
     }
-  }
-
-  // In out-of-process iframes we need to take an intersection with the remote
-  // document visible rect which was already clipped by ancestor document's
-  // viewports.
-  if (aRemoteDocumentVisibleRect) {
-    MOZ_ASSERT(aRoot->PresContext()->IsRootContentDocumentInProcess() &&
-               !aRoot->PresContext()->IsRootContentDocumentCrossProcess());
-
-    intersectionRect =
-        rect.EdgeInclusiveIntersection(*aRemoteDocumentVisibleRect);
-    if (intersectionRect.isNothing()) {
-      return Nothing();
-    }
-    rect = intersectionRect.value();
   }
 
   // 7. Return intersectionRect.

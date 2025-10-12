@@ -86,7 +86,7 @@ function checkToolbarButtons(view) {
       toolbarbutton.label,
       toolbarbutton.textContent,
       toolbarbutton.toolTipText,
-      GetDynamicShortcutTooltipText(toolbarbutton.id),
+      DynamicShortcutTooltip.getText(toolbarbutton.id),
     ];
     info("Checking toolbarbutton " + toolbarbutton.id);
     for (let string of strings) {

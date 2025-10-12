@@ -9,6 +9,7 @@
 #ifndef nsPresContext_h___
 #define nsPresContext_h___
 
+#include "FontVisibilityProvider.h"
 #include "Units.h"
 #include "gfxRect.h"
 #include "gfxTypes.h"
@@ -128,7 +129,9 @@ class nsRootPresContext;
 // An interface for presentation contexts. Presentation contexts are
 // objects that provide an outer context for a presentation shell.
 
-class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
+class nsPresContext : public nsISupports,
+                      public mozilla::SupportsWeakPtr,
+                      public FontVisibilityProvider {
  public:
   using Encoding = mozilla::Encoding;
   template <typename T>
@@ -142,6 +145,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(nsPresContext)
+
+  FONT_VISIBILITY_PROVIDER_IMPL
 
   enum nsPresContextType : uint8_t {
     eContext_Galley,        // unpaginated screen presentation
@@ -164,21 +169,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   void InitFontCache();
 
   void UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet);
-
-  /**
-   * Return the font visibility level to be applied to this context,
-   * potentially blocking user-installed or non-standard fonts from being
-   * used by web content.
-   * Note that depending on ResistFingerprinting options, the caller may
-   * override this value when resolving CSS <generic-family> keywords.
-   */
-  FontVisibility GetFontVisibility() const { return mFontVisibility; }
-
-  /**
-   * Log a message to the console about a font request being blocked.
-   */
-  void ReportBlockedFontFamily(const mozilla::fontlist::Family& aFamily);
-  void ReportBlockedFontFamily(const gfxFontFamily& aFamily);
 
   /**
    * Get the nsFontMetrics that describe the properties of
@@ -917,15 +907,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   bool IsPrintPreview() const { return mType == eContext_PrintPreview; }
 
-  // Is this presentation in a chrome docshell?
-  bool IsChrome() const;
-
   gfxUserFontSet* GetUserFontSet();
-
-  // Should be called whenever the set of fonts available in the user
-  // font set changes (e.g., because a new font loads, or because the
-  // user font set is changed and fonts become unavailable).
-  void UserFontSetUpdated(gfxUserFontEntry* aUpdatedFont = nullptr);
 
   gfxMissingFontRecorder* MissingFontRecorder() { return mMissingFonts.get(); }
 
@@ -1080,7 +1062,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   void FinishedContainerQueryUpdate();
 
-  bool UpdateContainerQueryStyles();
+  void UpdateContainerQueryStylesAndAnchorPosLayout();
 
   mozilla::intl::Bidi& BidiEngine();
 
@@ -1150,6 +1132,18 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
     return mMarkPaintTimingStart;
   }
 
+  // Are we using normalized ruby-positioning metrics? This will fetch and
+  // cache the pref if not already initialized.
+  bool NormalizeRubyMetrics();
+
+  // Get the scaling factor to apply to em-normalized font ascent/descent. This
+  // should only be used if NormalizeRubyMetrics() has returned true, otherwise
+  // its return value may be meaningless.
+  float RubyPositioningFactor() const {
+    MOZ_ASSERT(mRubyPositioningFactor > 0.0f);
+    return mRubyPositioningFactor;
+  }
+
  protected:
   // May be called multiple times (unlink, destructor)
   void Destroy();
@@ -1161,7 +1155,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   // Creates a one-shot timer with the given aCallback & aDelay.
   // Returns a refcounted pointer to the timer (or nullptr on failure).
   already_AddRefed<nsITimer> CreateTimer(nsTimerCallbackFunc aCallback,
-                                         const char* aName, uint32_t aDelay);
+                                         const nsACString& aName,
+                                         uint32_t aDelay);
 
   struct TransactionInvalidations {
     TransactionId mTransactionId;
@@ -1178,8 +1173,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   // visibile to CSS. Returns whether the current visibility value actually
   // changed (in which case content should be reflowed).
   bool UpdateFontVisibility();
-  void ReportBlockedFontFamilyName(const nsCString& aFamily,
-                                   FontVisibility aVisibility);
 
   // IMPORTANT: The ownership implicit in the following member variables
   // has been explicitly checked.  If you add any members to this class,
@@ -1216,10 +1209,13 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   float mTextZoom;  // Text zoom, defaults to 1.0
   float mFullZoom;  // Page zoom, defaults to 1.0
+
   gfxSize mLastFontInflationScreenSize;
 
   int32_t mCurAppUnitsPerDevPixel;
   int32_t mAutoQualityMinFontSizePixelsPref;
+
+  float mRubyPositioningFactor = -1.0f;  // negative indicates uninitialized
 
   nsCOMPtr<nsITheme> mTheme;
   nsCOMPtr<nsIPrintSettings> mPrintSettings;

@@ -234,7 +234,7 @@ def vendor_rust(command_context, **kwargs):
     "Some extra files like docs and tests will automatically be excluded."
     "Downloads the packages listed in third_party/python/pyproject.toml, along "
     "with their transitive dependencies, and adds them to version control.",
-    virtualenv_name="vendor",
+    virtualenv_name="uv",
 )
 @CommandArgument(
     "--keep-extra-files",

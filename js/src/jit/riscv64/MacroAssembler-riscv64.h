@@ -375,9 +375,10 @@ class MacroAssemblerRiscv64 : public Assembler {
 
   void BranchShort(Label* L);
 
-  void BranchShort(int32_t offset, Condition cond, Register rs,
-                   const Operand& rt);
-  void BranchShort(Label* L, Condition cond, Register rs, const Operand& rt);
+  [[nodiscard]] bool BranchShort(int32_t offset, Condition cond, Register rs,
+                                 const Operand& rt);
+  [[nodiscard]] bool BranchShort(Label* L, Condition cond, Register rs,
+                                 const Operand& rt);
   void BranchShortHelper(int32_t offset, Label* L);
   bool BranchShortHelper(int32_t offset, Label* L, Condition cond, Register rs,
                          const Operand& rt);
@@ -617,15 +618,15 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   void mov(Address src, Register dest) { MOZ_CRASH("NYI-IC"); }
 
   void writeDataRelocation(const Value& val) {
+    MOZ_ASSERT(val.isGCThing(), "only called for gc-things");
+
     // Raw GC pointer relocations and Value relocations both end up in
     // TraceOneDataRelocation.
-    if (val.isGCThing()) {
-      gc::Cell* cell = val.toGCThing();
-      if (cell && gc::IsInsideNursery(cell)) {
-        embedsNurseryPointers_ = true;
-      }
-      dataRelocations_.writeUnsigned(currentOffset());
+    gc::Cell* cell = val.toGCThing();
+    if (cell && gc::IsInsideNursery(cell)) {
+      embedsNurseryPointers_ = true;
     }
+    dataRelocations_.writeUnsigned(currentOffset());
   }
 
   void branch(JitCode* c) {
@@ -783,7 +784,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   void unboxNonDouble(Register src, Register dest, JSValueType type) {
     MOZ_ASSERT(type != JSVAL_TYPE_DOUBLE);
     if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
-      slliw(dest, src, 0);
+      SignExtendWord(dest, src);
       return;
     }
     UseScratchRegisterScope temps(this);
@@ -791,14 +792,6 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     MOZ_ASSERT(scratch != src);
     mov(ImmShiftedTag(type), scratch);
     xor_(dest, src, scratch);
-  }
-
-  template <typename T>
-  void unboxObjectOrNull(const T& src, Register dest) {
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-    static_assert(JS::detail::ValueObjectOrNullBit ==
-                  (uint64_t(0x8) << JSVAL_TAG_SHIFT));
-    InsertBits(dest, zero, JSVAL_TAG_SHIFT + 3, 1);
   }
 
   void unboxGCThingForGCBarrier(const Address& src, Register dest) {
@@ -873,6 +866,7 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   // boxing code
   void boxDouble(FloatRegister src, const ValueOperand& dest, FloatRegister);
   void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest);
+  void boxNonDouble(Register type, Register src, const ValueOperand& dest);
 
   // Extended unboxing API. If the payload is already in a register, returns
   // that register. Otherwise, provides a move to the given scratch register,
@@ -936,70 +930,8 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
     }
   }
 
-  void storeUnboxedPayload(ValueOperand value, BaseIndex address, size_t nbytes,
-                           JSValueType type) {
-    switch (nbytes) {
-      case 8: {
-        UseScratchRegisterScope temps(this);
-        Register scratch = temps.Acquire();
-        Register scratch2 = temps.Acquire();
-        if (type == JSVAL_TYPE_OBJECT) {
-          unboxObjectOrNull(value, scratch2);
-        } else {
-          unboxNonDouble(value, scratch2, type);
-        }
-        computeEffectiveAddress(address, scratch);
-        sd(scratch2, scratch, 0);
-        return;
-      }
-      case 4:
-        store32(value.valueReg(), address);
-        return;
-      case 1:
-        store8(value.valueReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
-    }
-  }
-
-  void storeUnboxedPayload(ValueOperand value, Address address, size_t nbytes,
-                           JSValueType type) {
-    switch (nbytes) {
-      case 8: {
-        UseScratchRegisterScope temps(this);
-        Register scratch = temps.Acquire();
-        if (type == JSVAL_TYPE_OBJECT) {
-          unboxObjectOrNull(value, scratch);
-        } else {
-          unboxNonDouble(value, scratch, type);
-        }
-        storePtr(scratch, address);
-        return;
-      }
-      case 4:
-        store32(value.valueReg(), address);
-        return;
-      case 1:
-        store8(value.valueReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
-    }
-  }
-
-  void boxValue(JSValueType type, Register src, Register dest) {
-    MOZ_ASSERT(src != dest);
-
-    JSValueTag tag = (JSValueTag)JSVAL_TYPE_TO_TAG(type);
-    ma_li(dest, Imm32(tag));
-    slli(dest, dest, JSVAL_TAG_SHIFT);
-    if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
-      InsertBits(dest, src, 0, 32);
-    } else {
-      InsertBits(dest, src, 0, JSVAL_TAG_SHIFT);
-    }
-  }
+  void boxValue(JSValueType type, Register src, Register dest);
+  void boxValue(Register type, Register src, Register dest);
 
   void storeValue(ValueOperand val, const Address& dest);
   void storeValue(ValueOperand val, const BaseIndex& dest);
@@ -1256,6 +1188,12 @@ class MacroAssemblerRiscv64Compat : public MacroAssemblerRiscv64 {
   };
 
   static void calculateAlignedStackPointer(void** stackPointer);
+
+  void minMax32(Register lhs, Register rhs, Register dest, bool isMax);
+  void minMax32(Register lhs, Imm32 rhs, Register dest, bool isMax);
+
+  void minMaxPtr(Register lhs, Register rhs, Register dest, bool isMax);
+  void minMaxPtr(Register lhs, ImmWord rhs, Register dest, bool isMax);
 
   void cmpPtrSet(Assembler::Condition cond, Address lhs, ImmPtr rhs,
                  Register dest);

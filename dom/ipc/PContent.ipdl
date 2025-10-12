@@ -110,7 +110,7 @@ using mozilla::LayoutDeviceIntPoint from "Units.h";
 using mozilla::ImagePoint from "Units.h";
 using mozilla::widget::ThemeChangeKind from "mozilla/widget/WidgetMessageUtils.h";
 using class mozilla::dom::MessagePort from "mozilla/dom/MessagePort.h";
-[MoveOnly=data] using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
+using class mozilla::dom::ipc::StructuredCloneData from "mozilla/dom/ipc/StructuredCloneData.h";
 using mozilla::OriginAttributes from "mozilla/ipc/BackgroundUtils.h";
 using mozilla::OriginAttributesPattern from "mozilla/dom/quota/SerializationHelpers.h";
 using struct mozilla::layers::TextureFactoryIdentifier from "mozilla/layers/CompositorTypes.h";
@@ -580,8 +580,8 @@ both:
     async PWebBrowserPersistDocument(nullable PBrowser aBrowser,
                                      MaybeDiscardedBrowsingContext aContext);
 
-    async RawMessage(JSActorMessageMeta aMetadata, ClonedMessageData? aData,
-                     ClonedMessageData? aStack);
+    async RawMessage(JSActorMessageMeta aMetadata, UniquePtr<ClonedMessageData> aData,
+                     UniquePtr<ClonedMessageData> aStack);
 
 child:
     async InitGMPService(Endpoint<PGMPServiceChild> service);
@@ -818,7 +818,7 @@ child:
     async UnregisterJSProcessActor(nsCString name);
 
     async SetXPCOMProcessAttributes(XPCOMInitData xpcomInit,
-                                    StructuredCloneData initialData,
+                                    UniquePtr<StructuredCloneData> initialData,
                                     FullLookAndFeel lookAndFeeldata,
                                     /* used on MacOSX/Linux/Android only: */
                                     SystemFontList systemFontList,
@@ -1160,7 +1160,7 @@ parent:
     async ExtProtocolChannelConnectParent(uint64_t registrarId);
 
     sync SyncMessage(nsString aMessage, ClonedMessageData aData)
-      returns (StructuredCloneData[] retval);
+      returns (UniquePtr<StructuredCloneData>[] retval);
 
     async AddSecurityState(MaybeDiscardedWindowContext aContext, uint32_t aStateFlags);
 
@@ -1781,6 +1781,10 @@ parent:
     async HistoryGo(MaybeDiscardedBrowsingContext aContext, int32_t aOffset,
                     uint64_t aHistoryEpoch, bool aRequireUserInteraction,
                     bool aUserActivation) returns(int32_t? requestedIndex);
+
+    async NavigationTraverse(MaybeDiscardedBrowsingContext aContext, nsID aKey,
+                           uint64_t aHistoryEpoch, bool aUserActivation)
+      returns(nsresult result);
 
     async BlobURLDataRequest(nsCString aBlobURL,
                              nsIPrincipal aTriggeringPrincipal,

@@ -100,6 +100,7 @@
 #include "vm/Uint8Clamped.h"
 #include "vm/WrapperObject.h"
 
+#include "gc/WeakMap-inl.h"
 #include "vm/Compartment-inl.h"
 #include "vm/JSAtomUtils-inl.h"  // PrimitiveValueToId
 #include "vm/JSFunction-inl.h"
@@ -1573,6 +1574,14 @@ static bool intrinsic_newList(JSContext* cx, unsigned argc, js::Value* vp) {
   return true;
 }
 
+static bool intrinsic_CanBeHeldWeakly(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 1);
+
+  args.rval().setBoolean(CanBeHeldWeakly(args[0]));
+  return true;
+}
+
 static const JSFunctionSpec intrinsic_functions[] = {
     // Intrinsic helper functions
     JS_INLINABLE_FN("ArrayIteratorPrototypeOptimizable",
@@ -1619,6 +1628,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
           CallNonGenericSelfhostedMethod<Is<WeakMapObject>>, 2, 0),
     JS_FN("CallWrapForValidIteratorMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<WrapForValidIteratorObject>>, 2, 0),
+    JS_FN("CanBeHeldWeakly", intrinsic_CanBeHeldWeakly, 1, 0),
     JS_INLINABLE_FN("CanOptimizeArraySpecies",
                     intrinsic_CanOptimizeArraySpecies, 1, 0,
                     IntrinsicCanOptimizeArraySpecies),
@@ -1950,9 +1960,9 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_TRAMPOLINE_FN("std_Array_sort", array_sort, 1, 0, ArraySort),
     JS_FN("std_Function_apply", fun_apply, 2, 0),
     JS_FN("std_Map_entries", MapObject::entries, 0, 0),
-    JS_FN("std_Map_get", MapObject::get, 1, 0),
-    JS_FN("std_Map_has", MapObject::has, 1, 0),
-    JS_FN("std_Map_set", MapObject::set, 2, 0),
+    JS_INLINABLE_FN("std_Map_get", MapObject::get, 1, 0, MapGet),
+    JS_INLINABLE_FN("std_Map_has", MapObject::has, 1, 0, MapHas),
+    JS_INLINABLE_FN("std_Map_set", MapObject::set, 2, 0, MapSet),
     JS_INLINABLE_FN("std_Math_abs", math_abs, 1, 0, MathAbs),
     JS_INLINABLE_FN("std_Math_floor", math_floor, 1, 0, MathFloor),
     JS_INLINABLE_FN("std_Math_max", math_max, 2, 0, MathMax),
@@ -1963,13 +1973,13 @@ static const JSFunctionSpec intrinsic_functions[] = {
                     ObjectIsPrototypeOf),
     JS_FN("std_Object_propertyIsEnumerable", obj_propertyIsEnumerable, 1, 0),
     JS_FN("std_Object_setProto", obj_setProto, 1, 0),
-    JS_FN("std_Object_toString", obj_toString, 0, 0),
+    JS_INLINABLE_FN("std_Object_toString", obj_toString, 0, 0, ObjectToString),
     JS_INLINABLE_FN("std_Reflect_getPrototypeOf", Reflect_getPrototypeOf, 1, 0,
                     ReflectGetPrototypeOf),
     JS_FN("std_Reflect_isExtensible", Reflect_isExtensible, 1, 0),
     JS_FN("std_Reflect_ownKeys", Reflect_ownKeys, 1, 0),
-    JS_FN("std_Set_add", SetObject::add, 1, 0),
-    JS_FN("std_Set_delete", SetObject::delete_, 1, 0),
+    JS_INLINABLE_FN("std_Set_add", SetObject::add, 1, 0, SetAdd),
+    JS_INLINABLE_FN("std_Set_delete", SetObject::delete_, 1, 0, SetDelete),
     JS_INLINABLE_FN("std_Set_has", SetObject::has, 1, 0, SetHas),
     JS_INLINABLE_FN("std_Set_size", SetObject::size, 1, 0, SetSize),
     JS_FN("std_Set_values", SetObject::values, 0, 0),
@@ -1982,14 +1992,14 @@ static const JSFunctionSpec intrinsic_functions[] = {
                     StringFromCharCode),
     JS_INLINABLE_FN("std_String_fromCodePoint", str_fromCodePoint, 1, 0,
                     StringFromCodePoint),
-    JS_FN("std_String_includes", str_includes, 1, 0),
+    JS_INLINABLE_FN("std_String_includes", str_includes, 1, 0, StringIncludes),
     JS_INLINABLE_FN("std_String_indexOf", str_indexOf, 1, 0, StringIndexOf),
     JS_INLINABLE_FN("std_String_startsWith", str_startsWith, 1, 0,
                     StringStartsWith),
     JS_TRAMPOLINE_FN("std_TypedArray_sort", TypedArrayObject::sort, 1, 0,
                      TypedArraySort),
-    JS_FN("std_WeakMap_get", WeakMapObject::get, 1, 0),
-    JS_FN("std_WeakMap_has", WeakMapObject::has, 1, 0),
+    JS_INLINABLE_FN("std_WeakMap_get", WeakMapObject::get, 1, 0, WeakMapGet),
+    JS_INLINABLE_FN("std_WeakMap_has", WeakMapObject::has, 1, 0, WeakMapHas),
     JS_FN("std_WeakMap_set", WeakMapObject::set, 2, 0),
 
     JS_FS_END,

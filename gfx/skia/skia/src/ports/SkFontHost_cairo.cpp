@@ -201,8 +201,11 @@ public:
             rec->setHinting(SkFontHinting::kNone);
         }
 
+#ifndef SK_GAMMA_APPLY_TO_A8
         // Don't apply any gamma so that we match cairo-ft's results.
+        // Only do this if not requesting gamma in build config.
         rec->ignorePreBlend();
+#endif
     }
 
     void onGetFontDescriptor(SkFontDescriptor*, bool*) const override

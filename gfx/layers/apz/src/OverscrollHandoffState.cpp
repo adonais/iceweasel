@@ -215,10 +215,10 @@ bool OverscrollHandoffChain::ScrollingUpWillTriggerPullToRefresh(
 
   for (uint32_t i = IndexOf(aApzc); i < Length(); i++) {
     if (mChain[i]->IsRootContent()) {
-      return mChain[i]->CanOverscrollUpwards();
+      return mChain[i]->CanOverscrollUpwards(HandoffConsumer::PullToRefresh);
     }
 
-    if (!mChain[i]->CanOverscrollUpwards()) {
+    if (!mChain[i]->CanOverscrollUpwards(HandoffConsumer::PullToRefresh)) {
       return false;
     }
   }

@@ -40,6 +40,7 @@ import org.mozilla.fenix.databinding.FragmentInstalledAddOnDetailsBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.SupportUtils
 import org.robolectric.RobolectricTestRunner
+import mozilla.components.feature.addons.R as addonsR
 
 @RunWith(RobolectricTestRunner::class)
 class InstalledAddonDetailsFragmentTest {
@@ -335,12 +336,12 @@ class InstalledAddonDetailsFragmentTest {
         fragment.setBindingAndBindUI(binding)
 
         val warningView =
-            binding.root.findViewById<View>(mozilla.components.feature.addons.R.id.add_on_messagebar_warning)
+            binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
         assertFalse(warningView.isVisible)
-        val errorView = binding.root.findViewById<View>(mozilla.components.feature.addons.R.id.add_on_messagebar_error)
+        val errorView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_error)
         assertTrue(errorView.isVisible)
 
-        errorView.findViewById<TextView>(mozilla.components.feature.addons.R.id.add_on_messagebar_error_learn_more_link)
+        errorView.findViewById<TextView>(addonsR.id.add_on_messagebar_error_learn_more_link)
             .performClick()
 
         verify {
@@ -376,12 +377,12 @@ class InstalledAddonDetailsFragmentTest {
         fragment.setBindingAndBindUI(binding)
 
         val warningView =
-            binding.root.findViewById<View>(mozilla.components.feature.addons.R.id.add_on_messagebar_warning)
+            binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
         assertFalse(warningView.isVisible)
-        val errorView = binding.root.findViewById<View>(mozilla.components.feature.addons.R.id.add_on_messagebar_error)
+        val errorView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_error)
         assertTrue(errorView.isVisible)
 
-        errorView.findViewById<TextView>(mozilla.components.feature.addons.R.id.add_on_messagebar_error_learn_more_link)
+        errorView.findViewById<TextView>(addonsR.id.add_on_messagebar_error_learn_more_link)
             .performClick()
 
         verify {
@@ -416,12 +417,12 @@ class InstalledAddonDetailsFragmentTest {
         )
         fragment.setBindingAndBindUI(binding)
 
-        val warningView = binding.root.findViewById<View>(mozilla.components.feature.addons.R.id.add_on_messagebar_warning)
+        val warningView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
         assertTrue(warningView.isVisible)
-        val errorView = binding.root.findViewById<View>(mozilla.components.feature.addons.R.id.add_on_messagebar_error)
+        val errorView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_error)
         assertFalse(errorView.isVisible)
 
-        warningView.findViewById<TextView>(mozilla.components.feature.addons.R.id.add_on_messagebar_warning_learn_more_link)
+        warningView.findViewById<TextView>(addonsR.id.add_on_messagebar_warning_learn_more_link)
             .performClick()
 
         verify {

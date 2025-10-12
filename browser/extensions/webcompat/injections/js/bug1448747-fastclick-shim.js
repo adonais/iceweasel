@@ -16,7 +16,8 @@
 /* globals exportFunction */
 
 (function () {
-  const proto = CSS2Properties.prototype.wrappedJSObject;
+  const proto = (window.CSSStyleProperties ?? window.CSS2Properties).prototype
+    .wrappedJSObject;
   const descriptor = Object.getOwnPropertyDescriptor(proto, "touchAction");
   const { get } = descriptor;
 

@@ -3772,7 +3772,7 @@ void Simulator::branchDelayInstructionDecode(SimInstruction* instr) {
   }
 
   if (instr->isForbiddenInBranchDelay()) {
-    MOZ_CRASH("Eror:Unexpected opcode in a branch delay slot.");
+    MOZ_CRASH("Error: Unexpected opcode in a branch delay slot.");
   }
   instructionDecode(instr);
 }

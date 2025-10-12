@@ -94,6 +94,10 @@
 #  include "mozilla/layers/TextureClientOGL.h"
 #endif
 
+#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
+#  include "mozilla/MediaDrmRemoteCDMParent.h"
+#endif
+
 #if defined(MOZ_USE_HWDECODE) && defined(MOZ_WIDGET_GTK)
 // Forward declare from va.h
 typedef int VAStatus;

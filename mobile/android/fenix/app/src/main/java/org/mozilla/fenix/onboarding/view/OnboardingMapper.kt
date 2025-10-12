@@ -131,6 +131,9 @@ private fun List<CustomizationToolbarData>.toOnboardingToolbarOptions() = map { 
 
 private fun TermsOfServiceData.toOnboardingTermsOfService() = with(this) {
     OnboardingTermsOfService(
+        subheaderOneText = subheaderOneText,
+        subheaderTwoText = subheaderTwoText,
+        subheaderThreeText = subheaderThreeText,
         lineOneText = lineOneText,
         lineOneLinkText = lineOneLinkText,
         lineOneLinkUrl = lineOneLinkUrl,
@@ -188,12 +191,12 @@ internal fun mapToOnboardingPageState(
     onMakeFirefoxDefaultSkipClick: () -> Unit,
     onSignInButtonClick: () -> Unit,
     onSignInSkipClick: () -> Unit,
-    onNotificationPermissionButtonClick: () -> Unit,
-    onNotificationPermissionSkipClick: () -> Unit,
+    onNotificationPermissionButtonClick: () -> Unit = {},
+    onNotificationPermissionSkipClick: () -> Unit = {},
     onAddFirefoxWidgetClick: () -> Unit,
     onAddFirefoxWidgetSkipClick: () -> Unit,
     onCustomizeToolbarButtonClick: () -> Unit,
-    onCustomizeThemeClick: () -> Unit,
+    onCustomizeThemeClick: () -> Unit = {},
     onTermsOfServiceButtonClick: () -> Unit,
     onMarketingDataContinueClick: () -> Unit = {},
 ): OnboardingPageState = when (onboardingPageUiData.type) {

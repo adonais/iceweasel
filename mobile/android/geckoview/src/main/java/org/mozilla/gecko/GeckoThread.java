@@ -147,6 +147,7 @@ public class GeckoThread extends Thread {
   public static final int FLAG_DISABLE_LOW_MEMORY_DETECTION =
       1 << 3; // Disable low-memory detection and notifications.
   public static final int FLAG_CHILD = 1 << 4; // This is a child process.
+  public static final int FLAG_CONTENT_ISOLATED = 1 << 5; // Content service is isolated process.
 
   /* package */ static final String EXTRA_ARGS = "args";
 
@@ -492,6 +493,10 @@ public class GeckoThread extends Thread {
     if ((mInitInfo.flags & FLAG_PRELOAD_CHILD) != 0) {
       // Preload the content ("tab") child process.
       GeckoProcessManager.getInstance().preload(GeckoProcessType.CONTENT);
+    }
+
+    if ((mInitInfo.flags & FLAG_CONTENT_ISOLATED) != 0) {
+      GeckoProcessManager.getInstance().setIsolatedProcessEnabled(true);
     }
 
     if ((mInitInfo.flags & FLAG_DEBUGGING) != 0) {

@@ -1153,7 +1153,7 @@ void TestProgressLogger() {
 
 #ifdef MOZ_GECKO_PROFILER
 
-MOZ_MAYBE_UNUSED static void SleepMilli(unsigned aMilliseconds) {
+[[maybe_unused]] static void SleepMilli(unsigned aMilliseconds) {
 #  if defined(_MSC_VER) || defined(__MINGW32__)
   Sleep(aMilliseconds);
 #  else
@@ -1171,7 +1171,7 @@ MOZ_MAYBE_UNUSED static void SleepMilli(unsigned aMilliseconds) {
 #  endif
 }
 
-MOZ_MAYBE_UNUSED static void WaitUntilTimeStampChanges(
+[[maybe_unused]] static void WaitUntilTimeStampChanges(
     const mozilla::TimeStamp& aTimeStampToCompare = mozilla::TimeStamp::Now()) {
   while (aTimeStampToCompare == mozilla::TimeStamp::Now()) {
     SleepMilli(1);
@@ -4633,8 +4633,8 @@ void TestUserMarker() {
       using MS = mozilla::MarkerSchema;
       MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
       schema.SetTooltipLabel("tooltip for test-minimal");
-      schema.AddKeyLabelFormatSearchable("text", "Text", MS::Format::String,
-                                         MS::Searchable::Searchable);
+      schema.AddKeyLabelFormat("text", "Text", MS::Format::String,
+                               MS::PayloadFlags::Searchable);
       return schema;
     }
   };

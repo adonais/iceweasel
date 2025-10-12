@@ -25,7 +25,6 @@ import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.whenever
-import mozilla.components.ui.tabcounter.R
 import mozilla.components.ui.tabcounter.TabCounterMenu
 import mozilla.components.ui.tabcounter.TabCounterView
 import org.junit.Assert.assertEquals
@@ -40,6 +39,7 @@ import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.eq
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
+import mozilla.components.ui.tabcounter.R as tabcounterR
 
 @RunWith(AndroidJUnit4::class)
 class TabCounterToolbarButtonTest {
@@ -77,7 +77,7 @@ class TabCounterToolbarButtonTest {
         )
 
         val view = button.createView(LinearLayout(testContext) as ViewGroup) as TabCounterView
-        val counterText: TextView = view.findViewById(R.id.counter_text)
+        val counterText: TextView = view.findViewById(tabcounterR.id.counter_text)
         assertEquals("0", counterText.text)
     }
 
@@ -95,7 +95,7 @@ class TabCounterToolbarButtonTest {
         )
 
         val view = button.createView(LinearLayout(testContext) as ViewGroup) as TabCounterView
-        val counterMask: View = view.findViewById(R.id.counter_mask)
+        val counterMask: View = view.findViewById(tabcounterR.id.counter_mask)
         assertFalse(counterMask.isVisible)
     }
 
@@ -115,7 +115,7 @@ class TabCounterToolbarButtonTest {
         )
 
         val view = button.createView(LinearLayout(testContext) as ViewGroup) as TabCounterView
-        val counterMask: View = view.findViewById(R.id.counter_mask)
+        val counterMask: View = view.findViewById(tabcounterR.id.counter_mask)
         assertTrue(counterMask.isVisible)
     }
 

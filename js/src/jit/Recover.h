@@ -120,7 +120,6 @@ namespace jit {
   _(Sqrt)                         \
   _(Atan2)                        \
   _(Hypot)                        \
-  _(NearbyInt)                    \
   _(Sign)                         \
   _(MathFunction)                 \
   _(Random)                       \
@@ -781,17 +780,6 @@ class RHypot final : public RInstruction {
   RINSTRUCTION_HEADER_(Hypot)
 
   uint32_t numOperands() const override { return numOperands_; }
-
-  [[nodiscard]] bool recover(JSContext* cx,
-                             SnapshotIterator& iter) const override;
-};
-
-class RNearbyInt final : public RInstruction {
- private:
-  uint8_t roundingMode_;
-
- public:
-  RINSTRUCTION_HEADER_NUM_OP_(NearbyInt, 1)
 
   [[nodiscard]] bool recover(JSContext* cx,
                              SnapshotIterator& iter) const override;

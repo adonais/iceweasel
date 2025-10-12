@@ -265,9 +265,9 @@ struct BlurCacheKey : public PLDHashEntryHdr {
     hash = AddToHash(
         hash, HashBytes(&aKey->mShadowColor.a, sizeof(aKey->mShadowColor.a)));
 
-    for (int i = 0; i < 4; i++) {
-      hash = AddToHash(hash, aKey->mCornerRadii[i].width,
-                       aKey->mCornerRadii[i].height);
+    for (auto corner : mozilla::AllPhysicalCorners()) {
+      hash = AddToHash(hash, aKey->mCornerRadii[corner].width,
+                       aKey->mCornerRadii[corner].height);
     }
 
     hash = AddToHash(hash, (uint32_t)aKey->mBackend);
@@ -324,7 +324,7 @@ struct BlurCacheData {
 class BlurCache final : public nsExpirationTracker<BlurCacheData, 4> {
  public:
   BlurCache()
-      : nsExpirationTracker<BlurCacheData, 4>(GENERATION_MS, "BlurCache") {}
+      : nsExpirationTracker<BlurCacheData, 4>(GENERATION_MS, "BlurCache"_ns) {}
 
   virtual void NotifyExpired(BlurCacheData* aObject) override {
     RemoveObject(aObject);

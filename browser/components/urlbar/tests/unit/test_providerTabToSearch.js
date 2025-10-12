@@ -50,7 +50,7 @@ add_task(async function basic() {
         uri: "https://example.com/",
         title: "test visit for https://example.com/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
       makeSearchResult(context, {
         engineName: testEngine.name,
@@ -60,7 +60,7 @@ add_task(async function basic() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
       }),
     ],
   });
@@ -76,7 +76,7 @@ add_task(async function basic() {
         uri: "https://example.com/",
         title: "test visit for https://example.com/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
     ],
   });
@@ -97,7 +97,7 @@ add_task(async function noAutofill() {
         engineName: Services.search.defaultEngine.name,
         engineIconUri: await Services.search.defaultEngine.getIconURL(),
         heuristic: true,
-        providerName: "HeuristicFallback",
+        providerName: "UrlbarProviderHeuristicFallback",
       }),
       makeSearchResult(context, {
         engineName: testEngine.name,
@@ -107,7 +107,7 @@ add_task(async function noAutofill() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
       }),
     ],
   });
@@ -127,7 +127,7 @@ add_task(async function autofillDoesNotMatchEngine() {
         uri: "https://example.test.ca/",
         title: "test visit for https://example.test.ca/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
     ],
   });
@@ -150,7 +150,7 @@ add_task(async function ignoreWww() {
         uri: "https://www.example.com/",
         title: "test visit for https://www.example.com/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
       makeSearchResult(context, {
         engineName: testEngine.name,
@@ -160,7 +160,7 @@ add_task(async function ignoreWww() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
       }),
     ],
   });
@@ -186,7 +186,7 @@ add_task(async function ignoreWww() {
         uri: "https://foo.bar/",
         title: "test visit for https://foo.bar/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
       makeSearchResult(context, {
         engineName: wwwTestEngine.name,
@@ -196,7 +196,7 @@ add_task(async function ignoreWww() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
       }),
     ],
   });
@@ -214,7 +214,7 @@ add_task(async function ignoreWww() {
         uri: "https://www.foo.bar/",
         title: "test visit for https://www.foo.bar/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
       makeSearchResult(context, {
         engineName: wwwTestEngine.name,
@@ -224,7 +224,7 @@ add_task(async function ignoreWww() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
       }),
     ],
   });
@@ -273,7 +273,7 @@ add_task(async function conflictingEngines() {
         uri: "https://foo.com/",
         title: "test visit for https://foo.com/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
       makeSearchResult(context, {
         engineName: fooTestEngine.name,
@@ -283,12 +283,12 @@ add_task(async function conflictingEngines() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
       }),
       makeVisitResult(context, {
         uri: "https://foobar.com/",
         title: "test visit for https://foobar.com/",
-        providerName: "Places",
+        providerName: "UrlbarProviderPlaces",
       }),
     ],
   });
@@ -305,7 +305,7 @@ add_task(async function conflictingEngines() {
         uri: "https://foobar.com/",
         title: "test visit for https://foobar.com/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
       makeSearchResult(context, {
         engineName: fooBarTestEngine.name,
@@ -315,7 +315,7 @@ add_task(async function conflictingEngines() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
       }),
     ],
   });
@@ -368,7 +368,7 @@ add_task(async function multipleEnginesForHostname() {
         uri: "https://example.com/",
         title: "test visit for https://example.com/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
       makeSearchResult(context, {
         engineName: testEngine.name,
@@ -378,7 +378,7 @@ add_task(async function multipleEnginesForHostname() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
       }),
       // There should be `maxResultCount` - 2 other visit results. If this fails
       // because there are actually `maxResultCount` - 3 other results, then the
@@ -405,7 +405,7 @@ add_task(async function test_casing() {
         uri: "https://example.com/",
         title: "test visit for https://example.com/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
       makeSearchResult(context, {
         engineName: testEngine.name,
@@ -415,7 +415,7 @@ add_task(async function test_casing() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
       }),
     ],
   });
@@ -441,7 +441,7 @@ add_task(async function test_publicSuffix() {
         engineName: Services.search.defaultEngine.name,
         engineIconUri: await Services.search.defaultEngine.getIconURL(),
         heuristic: true,
-        providerName: "HeuristicFallback",
+        providerName: "UrlbarProviderHeuristicFallback",
       }),
       makeSearchResult(context, {
         engineName: engine.name,
@@ -451,13 +451,13 @@ add_task(async function test_publicSuffix() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
         satisfiesAutofillThreshold: true,
       }),
       makeVisitResult(context, {
         uri: "https://test.mytest.it/",
         title: "test visit for https://test.mytest.it/",
-        providerName: "Places",
+        providerName: "UrlbarProviderPlaces",
       }),
     ],
   });
@@ -487,7 +487,7 @@ add_task(async function test_publicSuffixIsHost() {
         uri: "https://com.mx/",
         title: "test visit for https://com.mx/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
     ],
   });
@@ -518,7 +518,7 @@ add_task(async function test_disabledEngine() {
         uri: "https://disabled.com/",
         title: "test visit for https://disabled.com/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
       makeSearchResult(context, {
         engineName: engine.name,
@@ -528,7 +528,7 @@ add_task(async function test_disabledEngine() {
         ),
         providesSearchMode: true,
         query: "",
-        providerName: "TabToSearch",
+        providerName: "UrlbarProviderTabToSearch",
       }),
     ],
   });
@@ -545,7 +545,7 @@ add_task(async function test_disabledEngine() {
         uri: "https://disabled.com/",
         title: "test visit for https://disabled.com/",
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
     ],
   });

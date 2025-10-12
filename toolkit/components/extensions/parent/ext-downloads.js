@@ -348,7 +348,7 @@ const DownloadMap = new (class extends EventEmitter {
       this.loadPromise = (async () => {
         const list = await Downloads.getList(Downloads.ALL);
 
-        await list.addView({
+        list.addView({
           onDownloadAdded: download => {
             const item = this.newFromDownload(download, null);
             this.emit("create", item);

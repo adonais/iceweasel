@@ -4,33 +4,31 @@
 
 package org.mozilla.fenix.reviewprompt
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.mozilla.experiments.nimbus.NimbusMessagingHelperInterface
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction
 import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.nimbus.FakeNimbusEventStore
 import org.mozilla.fenix.reviewprompt.ReviewPromptState.Eligible.Type
-import org.mozilla.fenix.utils.Settings
 
-@RunWith(AndroidJUnit4::class)
 class ReviewPromptMiddlewareTest {
 
-    private val settings = Settings(testContext)
+    private val eventStore = FakeNimbusEventStore()
 
+    private var isTelemetryEnabled = true
     private lateinit var mainCriteria: Sequence<Boolean>
     private lateinit var subCriteria: Sequence<Boolean>
 
     private val store = AppStore(
         middlewares = listOf(
             ReviewPromptMiddleware(
-                settings = settings,
+                isReviewPromptFeatureEnabled = { true },
+                isTelemetryEnabled = { isTelemetryEnabled },
                 createJexlHelper = {
                     object : NimbusMessagingHelperInterface {
                         override fun evalJexl(expression: String) = assertUnused()
@@ -38,9 +36,9 @@ class ReviewPromptMiddlewareTest {
                         override fun stringFormat(template: String, uuid: String?) = assertUnused()
                     }
                 },
-                timeNowInMillis = { TEST_TIME_NOW },
                 buildTriggerMainCriteria = { mainCriteria },
                 buildTriggerSubCriteria = { subCriteria },
+                nimbusEventStore = eventStore,
             ),
         ),
     )
@@ -158,10 +156,10 @@ class ReviewPromptMiddlewareTest {
     }
 
     @Test
-    fun `WHEN review prompt shown THEN last review prompt time updated`() {
+    fun `WHEN review prompt shown THEN an event is recorded`() {
         store.dispatch(ReviewPromptAction.ReviewPromptShown).joinBlocking()
 
-        assertEquals(TEST_TIME_NOW, settings.lastReviewPromptTimeInMillis)
+        eventStore.assertSingleEventEquals("review_prompt_shown")
     }
 
     @Test
@@ -181,7 +179,7 @@ class ReviewPromptMiddlewareTest {
 
     @Test
     fun `GIVEN telemetry enabled AND criteria satisfied WHEN check requested THEN sets eligible for Custom prompt`() {
-        settings.isTelemetryEnabled = true
+        isTelemetryEnabled = true
         mainCriteria = sequenceOf(true)
         subCriteria = sequenceOf(true)
 
@@ -195,7 +193,7 @@ class ReviewPromptMiddlewareTest {
 
     @Test
     fun `GIVEN telemetry disabled AND criteria satisfied WHEN check requested THEN sets eligible for Play Store prompt`() {
-        settings.isTelemetryEnabled = false
+        isTelemetryEnabled = false
         mainCriteria = sequenceOf(true)
         subCriteria = sequenceOf(true)
 
@@ -209,54 +207,72 @@ class ReviewPromptMiddlewareTest {
 
     @Test
     fun `WHEN evalJexl returns false THEN createdAtLeastOneBookmark returns false`() {
-        val jexlHelper = FakeNimbusMessagingHelperInterface(false)
+        val jexlHelper = FakeNimbusMessagingHelperInterface(evalJexlValue = false)
 
         val result = createdAtLeastOneBookmark(jexlHelper)
-
-        assertEquals(jexlHelper.evalJexlValue, result)
-    }
-
-    @Test
-    fun `WHEN evalJexl returns true THEN createdAtLeastOneBookmark returns true`() {
-        val jexlHelper = FakeNimbusMessagingHelperInterface(true)
-
-        val result = createdAtLeastOneBookmark(jexlHelper)
-
-        assertEquals(jexlHelper.evalJexlValue, result)
-    }
-
-    @Test
-    fun `WHEN evalJexl returns false THEN isDefaultBrowserTrigger returns false`() {
-        val jexlHelper = FakeNimbusMessagingHelperInterface(false)
-
-        val result = isDefaultBrowserTrigger(jexlHelper)
 
         assertFalse(result)
     }
 
     @Test
-    fun `WHEN evalJexl returns true THEN isDefaultBrowserTrigger returns true`() {
-        val jexlHelper = FakeNimbusMessagingHelperInterface(true)
+    fun `WHEN evalJexl returns true THEN createdAtLeastOneBookmark returns true`() {
+        val jexlHelper = FakeNimbusMessagingHelperInterface(evalJexlValue = true)
 
-        val result = isDefaultBrowserTrigger(jexlHelper)
+        val result = createdAtLeastOneBookmark(jexlHelper)
 
         assertTrue(result)
     }
 
     @Test
-    fun `WHEN evalJexl returns false THEN usedAppOnAtLeastFourOfLastSevenDaysTrigger returns false`() {
-        val jexlHelper = FakeNimbusMessagingHelperInterface(false)
+    fun `WHEN evalJexl returns false THEN isDefaultBrowser returns false`() {
+        val jexlHelper = FakeNimbusMessagingHelperInterface(evalJexlValue = false)
 
-        val result = usedAppOnAtLeastFourOfLastSevenDaysTrigger(jexlHelper)
+        val result = isDefaultBrowser(jexlHelper)
 
         assertFalse(result)
     }
 
     @Test
-    fun `WHEN evalJexl returns true THEN usedAppOnAtLeastFourOfLastSevenDaysTrigger returns true`() {
-        val jexlHelper = FakeNimbusMessagingHelperInterface(true)
+    fun `WHEN evalJexl returns true THEN isDefaultBrowser returns true`() {
+        val jexlHelper = FakeNimbusMessagingHelperInterface(evalJexlValue = true)
 
-        val result = usedAppOnAtLeastFourOfLastSevenDaysTrigger(jexlHelper)
+        val result = isDefaultBrowser(jexlHelper)
+
+        assertTrue(result)
+    }
+
+    @Test
+    fun `WHEN evalJexl returns false THEN usedAppOnAtLeastFourOfLastSevenDays returns false`() {
+        val jexlHelper = FakeNimbusMessagingHelperInterface(evalJexlValue = false)
+
+        val result = usedAppOnAtLeastFourOfLastSevenDays(jexlHelper)
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun `WHEN evalJexl returns true THEN usedAppOnAtLeastFourOfLastSevenDays returns true`() {
+        val jexlHelper = FakeNimbusMessagingHelperInterface(evalJexlValue = true)
+
+        val result = usedAppOnAtLeastFourOfLastSevenDays(jexlHelper)
+
+        assertTrue(result)
+    }
+
+    @Test
+    fun `WHEN evalJexl returns false THEN hasNotBeenPromptedLastFourMonths returns false`() {
+        val jexlHelper = FakeNimbusMessagingHelperInterface(evalJexlValue = false)
+
+        val result = hasNotBeenPromptedLastFourMonths(jexlHelper)
+
+        assertFalse(result)
+    }
+
+    @Test
+    fun `WHEN evalJexl returns true THEN hasNotBeenPromptedLastFourMonths returns true`() {
+        val jexlHelper = FakeNimbusMessagingHelperInterface(evalJexlValue = true)
+
+        val result = hasNotBeenPromptedLastFourMonths(jexlHelper)
 
         assertTrue(result)
     }
@@ -276,10 +292,6 @@ class ReviewPromptMiddlewareTest {
 
     private fun assertUnused(): Nothing =
         throw AssertionError("Expected unused function, but was called here ")
-
-    private companion object {
-        const val TEST_TIME_NOW = 1598416882805L
-    }
 
     private class FakeNimbusMessagingHelperInterface(val evalJexlValue: Boolean) :
         NimbusMessagingHelperInterface {

@@ -17,7 +17,7 @@ use crate::profiler::TransactionProfile;
 use crate::spatial_tree::SpatialNodeIndex;
 use crate::prim_store::PrimitiveInstanceIndex;
 use crate::filterdata::FilterDataHandle;
-use fxhash::FxHasher;
+use rustc_hash::FxHasher;
 use plane_split::BspSplitter;
 use smallvec::SmallVec;
 use std::{usize, i32};

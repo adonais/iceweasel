@@ -475,23 +475,19 @@ template <typename Condition,
 using CheckIf = std::conditional_t<Condition::value, CheckingPolicy,
                                    DoNotCheckCheckedUnsafePtrs>;
 
-using AssertEnabled = std::integral_constant<bool,
 #ifdef DEBUG
-                                             true
+using AssertEnabled = std::true_type;
 #else
-                                             false
+using AssertEnabled = std::false_type;
 #endif
-                                             >;
 
-using DiagnosticAssertEnabled = std::integral_constant<bool,
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-                                                       true
+using DiagnosticAssertEnabled = std::true_type;
 #else
-                                                       false
+using DiagnosticAssertEnabled = std::false_type;
 #endif
-                                                       >;
 
-using ReleaseAssertEnabled = std::integral_constant<bool, true>;
+using ReleaseAssertEnabled = std::true_type;
 
 // A T class that publicly inherits from an instantiation of
 // SupportsCheckedUnsafePtr and its subclasses can be pointed to by smart

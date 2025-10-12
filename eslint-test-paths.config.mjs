@@ -87,6 +87,7 @@ const extraBrowserTestPaths = [
   "browser/base/content/test/contextMenu/",
   "browser/base/content/test/favicons/",
   "browser/base/content/test/forms/",
+  "browser/base/content/test/framebusting/",
   "browser/base/content/test/fullscreen/",
   "browser/base/content/test/general/",
   "browser/base/content/test/gesture/",

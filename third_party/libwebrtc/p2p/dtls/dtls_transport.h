@@ -178,6 +178,9 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
 
   // Find out which TLS version was negotiated
   bool GetSslVersionBytes(int* version) const override;
+  // Return the the ID of the group used by the adapters most recently
+  // completed handshake, or 0 if not applicable (e.g. before the handshake).
+  uint16_t GetSslGroupId() const override;
   // Find out which DTLS-SRTP cipher was negotiated
   bool GetSrtpCryptoSuite(int* cipher) const override;
 
@@ -280,6 +283,8 @@ class DtlsTransportInternalImpl : public webrtc::DtlsTransportInternal {
   StreamInterfaceChannel*
       downward_;  // Wrapper for ice_transport_, owned by dtls_.
   const std::vector<int> srtp_ciphers_;  // SRTP ciphers to use with DTLS.
+  // Cipher groups used for DTLS handshake to establish ephemeral key.
+  const std::vector<uint16_t> ephemeral_key_exchange_cipher_groups_;
   bool dtls_active_ = false;
   scoped_refptr<webrtc::RTCCertificate> local_certificate_;
   std::optional<webrtc::SSLRole> dtls_role_;

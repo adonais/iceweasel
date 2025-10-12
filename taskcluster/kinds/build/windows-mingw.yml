@@ -13,7 +13,7 @@ task-defaults:
     optimization:
         skip-unless-expanded: null
     fetches:
-        toolchain:
+        fetch:
             - windows-rs
 
 win32-mingwclang/opt:

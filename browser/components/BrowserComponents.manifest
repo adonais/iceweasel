@@ -66,6 +66,7 @@ category browser-idle-startup resource:///modules/UrlbarSearchTermsPersistence.s
 category browser-idle-startup moz-src:///browser/components/search/SERPCategorization.sys.mjs SERPCategorization.init
 category browser-idle-startup resource://gre/modules/ContentRelevancyManager.sys.mjs ContentRelevancyManager.init
 category browser-idle-startup resource://gre/modules/ColorwayThemeMigration.sys.mjs ColorwayThemeMigration.maybeWarn
+category browser-idle-startup resource://gre/modules/AppServicesTracing.sys.mjs RustLogForwarder.init
 #ifdef MOZ_UPDATER
 category browser-idle-startup resource://gre/modules/UpdateListener.sys.mjs UpdateListener.maybeShowUnsupportedNotification
 #endif

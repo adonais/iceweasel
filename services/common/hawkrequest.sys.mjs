@@ -11,7 +11,7 @@ import { Credentials } from "resource://gre/modules/Credentials.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  CryptoUtils: "resource://services-crypto/utils.sys.mjs",
+  CryptoUtils: "moz-src:///services/crypto/modules/utils.sys.mjs",
 });
 
 /**

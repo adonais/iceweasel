@@ -161,7 +161,14 @@ export class MozLitElement extends LitElement {
       this.#l10nRootConnected = true;
 
       if (this.constructor.fluentProperties?.length) {
-        this.dataset.l10nAttrs = this.constructor.fluentProperties.join(",");
+        let { fluentProperties } = this.constructor;
+        if (this.dataset.l10nAttrs) {
+          // Not worrying about duplication since this may happen a lot and we
+          // could avoid it by not providing the duplicates manually.
+          // Copy the fluentProperties since they're stored on our class.
+          fluentProperties = fluentProperties.concat(this.dataset.l10nAttrs);
+        }
+        this.dataset.l10nAttrs = fluentProperties.join(",");
         if (this.dataset.l10nId) {
           this.#l10n.translateElements([this]);
         }

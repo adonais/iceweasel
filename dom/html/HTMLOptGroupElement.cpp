@@ -46,26 +46,26 @@ Element* HTMLOptGroupElement::GetSelect() {
   return parent;
 }
 
-void HTMLOptGroupElement::InsertChildBefore(nsIContent* aKid,
-                                            nsIContent* aBeforeThis,
-                                            bool aNotify, ErrorResult& aRv,
-                                            nsINode* aOldParent) {
+void HTMLOptGroupElement::InsertChildBefore(
+    nsIContent* aKid, nsIContent* aBeforeThis, bool aNotify, ErrorResult& aRv,
+    nsINode* aOldParent, MutationEffectOnScript aMutationEffectOnScript) {
   const uint32_t index =
       aBeforeThis ? *ComputeIndexOf(aBeforeThis) : GetChildCount();
   SafeOptionListMutation safeMutation(GetSelect(), this, aKid, index, aNotify);
   nsGenericHTMLElement::InsertChildBefore(aKid, aBeforeThis, aNotify, aRv,
-                                          aOldParent);
+                                          aOldParent, aMutationEffectOnScript);
   if (aRv.Failed()) {
     safeMutation.MutationFailed();
   }
 }
 
-void HTMLOptGroupElement::RemoveChildNode(nsIContent* aKid, bool aNotify,
-                                          const BatchRemovalState* aState,
-                                          nsINode* aNewParent) {
+void HTMLOptGroupElement::RemoveChildNode(
+    nsIContent* aKid, bool aNotify, const BatchRemovalState* aState,
+    nsINode* aNewParent, MutationEffectOnScript aMutationEffectOnScript) {
   SafeOptionListMutation safeMutation(GetSelect(), this, nullptr,
                                       *ComputeIndexOf(aKid), aNotify);
-  nsGenericHTMLElement::RemoveChildNode(aKid, aNotify, aState, aNewParent);
+  nsGenericHTMLElement::RemoveChildNode(aKid, aNotify, aState, aNewParent,
+                                        aMutationEffectOnScript);
 }
 
 void HTMLOptGroupElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,

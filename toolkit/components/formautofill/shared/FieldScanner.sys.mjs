@@ -225,6 +225,19 @@ export class FieldScanner {
     return this.#fieldDetails[index];
   }
 
+  getFieldsMatching(matchFn, includeInvisible = false) {
+    let fields = [];
+
+    for (let idx = 0; this.elementExisting(idx); idx++) {
+      let field = this.#fieldDetails[idx];
+      if ((includeInvisible || field.isVisible) && matchFn(field)) {
+        fields.push(field);
+      }
+    }
+
+    return fields;
+  }
+
   /**
    * Return the index of the first visible field found with the given name.
    *

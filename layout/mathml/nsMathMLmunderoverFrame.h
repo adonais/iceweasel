@@ -40,7 +40,7 @@ class nsMathMLmunderoverFrame final : public nsMathMLContainerFrame,
   void Destroy(DestroyContext&) override;
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   uint8_t ScriptIncrement(nsIFrame* aFrame) override;
 

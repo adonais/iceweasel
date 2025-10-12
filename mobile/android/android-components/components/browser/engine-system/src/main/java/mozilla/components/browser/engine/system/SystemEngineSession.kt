@@ -170,6 +170,10 @@ class SystemEngineSession(
         return state.bundle?.let { webView.restoreState(it) } != null
     }
 
+    override fun flushSessionState() {
+        throw UnsupportedOperationException("Engine session state flush is not available in this engine")
+    }
+
     /**
      * See [EngineSession.updateTrackingProtection]
      */

@@ -11,7 +11,7 @@ features: [Temporal]
 
 const date1 = Temporal.PlainDateTime.from({
   calendar: "gregory",
-  era: "ce",
+  era: "ad",
   eraYear: 2024,
   year: 2024,
   month: 1,
@@ -20,13 +20,13 @@ const date1 = Temporal.PlainDateTime.from({
 TemporalHelpers.assertPlainDateTime(
   date1,
   2024, 1, "M01", 1, 0, 0, 0, 0, 0, 0,
-  "'ce' is accepted as alias for 'gregory'",
-  "gregory", 2024
+  "'ad' is accepted as alias for 'ce'",
+  "ce", 2024
 );
 
 const date2 = Temporal.PlainDateTime.from({
   calendar: "gregory",
-  era: "bce",
+  era: "bc",
   eraYear: 44,
   year: -43,
   month: 3,
@@ -35,8 +35,8 @@ const date2 = Temporal.PlainDateTime.from({
 TemporalHelpers.assertPlainDateTime(
   date2,
   -43, 3, "M03", 15, 0, 0, 0, 0, 0, 0,
-  "'bce' is accepted as alias for 'gregory-inverse'",
-  "gregory-inverse", 44
+  "'bc' is accepted as alias for 'bce'",
+  "bce", 44
 );
 
 reportCompare(0, 0);

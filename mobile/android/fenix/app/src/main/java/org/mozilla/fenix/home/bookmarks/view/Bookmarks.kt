@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.home.bookmarks.view
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -30,7 +29,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -69,7 +67,6 @@ private val imageModifier = Modifier
  * @param backgroundColor The background [Color] of each bookmark.
  * @param onBookmarkClick Invoked when the user clicks on a bookmark.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun Bookmarks(
     bookmarks: List<Bookmark>,
@@ -104,10 +101,6 @@ fun Bookmarks(
  * @param backgroundColor The background [Color] of the bookmark item.
  * @param onBookmarkClick Invoked when the user clicks on the bookmark item.
  */
-@OptIn(
-    ExperimentalFoundationApi::class,
-    ExperimentalComposeUiApi::class,
-)
 @Composable
 @Suppress("Deprecation") // https://bugzilla.mozilla.org/show_bug.cgi?id=1927718
 private fun BookmarkItem(

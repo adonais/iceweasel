@@ -74,6 +74,13 @@ skip-if = [
   "os == 'linux' && fission && socketprocess_networking && !debug", # high frequency intermittent, Bug 1673140
 ]
 
+["browser_datetime_datetimepicker.js"]
+skip-if = [
+  "tsan", # Frequently times out on TSan
+  "os == 'win' && asan", # fails on asan
+  "os == 'linux' && fission && socketprocess_networking && !debug", # high frequency intermittent, Bug 1673140
+]
+
 ["browser_datetime_showPicker.js"]
 # do not skip
 

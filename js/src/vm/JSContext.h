@@ -18,6 +18,7 @@
 #include "builtin/AtomicsObject.h"
 #include "ds/TraceableFifo.h"
 #include "frontend/NameCollections.h"
+#include "gc/Allocator.h"
 #include "gc/GCEnum.h"
 #include "gc/Memory.h"
 #include "irregexp/RegExpTypes.h"
@@ -28,6 +29,7 @@
 #include "js/Interrupt.h"
 #include "js/Promise.h"
 #include "js/Result.h"
+#include "js/RootingAPI.h"
 #include "js/Stack.h"  // JS::NativeStackBase, JS::NativeStackLimit
 #include "js/Utility.h"
 #include "js/Vector.h"
@@ -54,7 +56,6 @@ class ExecutionTracer;
 #endif
 
 namespace jit {
-class ICScript;
 class JitActivation;
 class JitContext;
 class DebugModeOSRVolatileJitFrameIter;
@@ -400,10 +401,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     return offsetof(JSContext, inUnsafeCallWithABI);
   }
 #endif
-
-  static size_t offsetOfInlinedICScript() {
-    return offsetof(JSContext, inlinedICScript_);
-  }
 
  public:
   js::InterpreterStack& interpreterStack() {
@@ -874,12 +871,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   }
   void clearPendingInterrupt(js::InterruptReason reason);
 
-  // For JIT use. Points to the inlined ICScript for a baseline script
-  // being invoked as part of a trial inlining.  Contains nullptr at
-  // all times except for the brief moment between being set in the
-  // caller and read in the callee's prologue.
-  js::ContextData<js::jit::ICScript*> inlinedICScript_;
-
  public:
   void* addressOfInterruptBits() { return &interruptBits_; }
   void* addressOfJitStackLimit() { return &jitStackLimit; }
@@ -889,8 +880,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   void* addressOfZone() { return &zone_; }
 
   const void* addressOfRealm() const { return &realm_; }
-
-  void* addressOfInlinedICScript() { return &inlinedICScript_; }
 
   const void* addressOfJitActivation() const { return &jitActivation; }
 
@@ -1187,6 +1176,10 @@ class MOZ_RAII AutoUnsafeCallWithABI {
       UnsafeABIStrictness unused_ = UnsafeABIStrictness::NoExceptions) {}
 #endif
 };
+
+template <typename T>
+inline BufferHolder<T>::BufferHolder(JSContext* cx, T* buffer)
+    : BufferHolder(cx->zone(), buffer) {}
 
 } /* namespace js */
 

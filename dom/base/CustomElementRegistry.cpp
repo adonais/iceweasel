@@ -12,6 +12,7 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/CycleCollectedUniquePtr.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/UseCounter.h"
 #include "mozilla/dom/AutoEntryScript.h"

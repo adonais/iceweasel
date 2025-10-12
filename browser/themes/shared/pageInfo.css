@@ -9,7 +9,6 @@
   #topBar {
     position: relative;
     -moz-window-dragging: drag;
-    padding-top: env(-moz-mac-titlebar-height);
     border-bottom: 1px solid ThreeDShadow;
 
     align-items: center;

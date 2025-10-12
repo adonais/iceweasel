@@ -854,41 +854,7 @@ networking:
       - necko@mozilla.com
     expires: 146
 
-  http_ip_addr_any_count:
-    type: labeled_counter
-    description: >
-      The number of times we see the IP address 0.0.0.0 or its IPv6 equivalent.
-    bugs:
-    - https://bugzilla.mozilla.org/show_bug.cgi?id=1919216
-    - https://bugzilla.mozilla.org/show_bug.cgi?id=1949775
-    data_reviews:
-    - https://bugzilla.mozilla.org/show_bug.cgi?id=1919216
-    data_sensitivity:
-    - technical
-    notification_emails:
-    - necko@mozilla.com
-    expires: 145
-    labels:
-    - not_blocked_requests
-    - blocked_requests
 
-  http_ip_addr_any_hostnames:
-    type: labeled_counter
-    description: >
-        The number of times we see the IP address 0.0.0.0 or its IPv6 equivalent used as hostnames
-    bugs:
-    - https://bugzilla.mozilla.org/show_bug.cgi?id=1937743
-    - https://bugzilla.mozilla.org/show_bug.cgi?id=1949775
-    data_reviews:
-    - https://bugzilla.mozilla.org/show_bug.cgi?id=1937743
-    data_sensitivity:
-    - technical
-    notification_emails:
-    - necko@mozilla.com
-    expires: 145
-    labels:
-    - success
-    - failure
 
   http_onstart_suspend_total_time:
     type: timing_distribution
@@ -2031,6 +1997,24 @@ networking:
      - vgosu@mozilla.com
      - necko@gmail.com
     expires: 150
+
+  local_network_access_prompts_shown:
+    type: labeled_counter
+    description: >
+      Count of permission prompts shown to users for local network access,
+      separated by localhost vs local network access types.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
+    notification_emails:
+      - smayya@mozilla.com
+      - vgosu@mozilla.com
+      - necko@gmail.com
+    expires: 150
+    labels:
+      - localhost
+      - local_network
 
   local_network_blocked_tracker:
     type: counter

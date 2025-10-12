@@ -13,8 +13,6 @@
 #include <DispatcherQueue.h>
 #include <windows.graphics.capture.interop.h>
 #include <windows.graphics.directX.direct3d11.interop.h>
-#include <windows.graphics.h>
-#include <wrl/client.h>
 #include <wrl/event.h>
 
 #include <algorithm>
@@ -26,11 +24,12 @@
 #include "modules/desktop_capture/win/wgc_desktop_frame.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/win/create_direct3d_device.h"
 #include "rtc_base/win/get_activation_factory.h"
+#include "rtc_base/win/windows_version.h"
 #include "system_wrappers/include/metrics.h"
-#include "system_wrappers/include/sleep.h"
 
 using Microsoft::WRL::ComPtr;
 namespace WGC = ABI::Windows::Graphics::Capture;
@@ -96,6 +95,11 @@ bool SizeHasChanged(ABI::Windows::Graphics::SizeInt32 size_new,
                     ABI::Windows::Graphics::SizeInt32 size_old) {
   return (size_new.Height != size_old.Height ||
           size_new.Width != size_old.Width);
+}
+
+bool DoesWgcSkipStaticFrames() {
+  return (webrtc::rtc_win::GetVersion() >=
+          webrtc::rtc_win::Version::VERSION_WIN11_24H2);
 }
 
 }  // namespace
@@ -258,7 +262,7 @@ void WgcCaptureSession::EnsureFrame() {
   int sleep_count = 0;
   while (!queue_.current_frame() && sleep_count < max_sleep_count) {
     sleep_count++;
-    webrtc::SleepMs(sleep_time_ms);
+    Thread::SleepMs(sleep_time_ms);
     hr = ProcessFrame();
     if (FAILED(hr)) {
       RTC_DLOG(LS_WARNING) << "ProcessFrame failed during startup: " << hr;
@@ -469,17 +473,21 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   DesktopFrame* current_frame = queue_.current_frame();
   DesktopFrame* previous_frame = queue_.previous_frame();
 
-  HMONITOR monitor;
   if (is_window_source_) {
     // If the captured window moves to another screen, the HMONITOR associated
     // with the captured window will change. Therefore, we need to get the value
     // of HMONITOR per frame.
-    monitor = MonitorFromWindow(reinterpret_cast<HWND>(source_id_),
-                                /*dwFlags=*/MONITOR_DEFAULTTONEAREST);
+    monitor_ = ::MonitorFromWindow(reinterpret_cast<HWND>(source_id_),
+                                   /*dwFlags=*/MONITOR_DEFAULTTONEAREST);
   } else {
-    if (!GetHmonitorFromDeviceIndex(source_id_, &monitor)) {
-      RTC_LOG(LS_ERROR) << "Failed to get HMONITOR from device index.";
-      return E_FAIL;
+    if (!monitor_.has_value()) {
+      HMONITOR monitor;
+      if (!GetHmonitorFromDeviceIndex(source_id_, &monitor)) {
+        RTC_LOG(LS_ERROR) << "Failed to get HMONITOR from device index.";
+        d3d_context->Unmap(mapped_texture_.Get(), 0);
+        return E_FAIL;
+      }
+      monitor_ = monitor;
     }
   }
 
@@ -489,7 +497,7 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   // 1, 1.5, 2.5, etc.
   DEVICE_SCALE_FACTOR device_scale_factor = DEVICE_SCALE_FACTOR_INVALID;
   HRESULT scale_factor_hr =
-      GetScaleFactorForMonitor(monitor, &device_scale_factor);
+      GetScaleFactorForMonitor(monitor_.value(), &device_scale_factor);
   RTC_LOG_IF(LS_ERROR, FAILED(scale_factor_hr))
       << "Failed to get scale factor for monitor: " << scale_factor_hr;
   if (device_scale_factor != DEVICE_SCALE_FACTOR_INVALID) {
@@ -502,7 +510,11 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   // previous. The idea is to get a low-complexity indication of if the content
   // is static or not without performing a full/deep memory comparison when
   // updating the damaged region.
-  bool frame_content_has_changed = false;
+  // `DoesWgcSkipStaticFrames()`: `TryGetNextFrame()` returns a frame
+  // successfully only if there is a region that has changed. This means that
+  // we can skip the full memory comparison if the running OS is Windows 11
+  // 24H2 or later.
+  bool frame_content_has_changed = DoesWgcSkipStaticFrames();
 
   // Check if the queue contains two frames whose content can be compared.
   const bool frame_content_can_be_compared = FrameContentCanBeCompared();

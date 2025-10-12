@@ -72,6 +72,8 @@ function setVariableTooltip(
     outputParser.parseCssProperty(variableName, value, {
       ...outputParserOptions,
       colorSwatchReadOnly: true,
+      // At the moment, we can't hover the tooltip, so the button couldn't be clicked/activated
+      showJumpToVariableButton: false,
     });
 
   const valueEl = doc.createElementNS(XHTML_NS, "section");

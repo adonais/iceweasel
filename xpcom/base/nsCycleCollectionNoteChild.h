@@ -14,6 +14,8 @@
 #include "nsCycleCollectionTraversalCallback.h"
 #include "mozilla/Likely.h"
 
+#include <type_traits>
+
 enum { CycleCollectionEdgeNameArrayFlag = 1 };
 
 // Just a helper for appending "[i]". Didn't want to pull in string headers

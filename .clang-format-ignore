@@ -24,7 +24,6 @@ js/src/util/UnicodeNonBMP.h
 layout/style/nsCSSAnonBoxList.h
 layout/style/nsCSSCounterDescList.h
 layout/style/nsCSSFontDescList.h
-layout/style/nsCSSKeywordList.h
 layout/style/nsCSSPseudoElementList.h
 layout/style/nsCSSVisitedDependentPropList.h
 layout/style/nsDOMCSSValueList.h
@@ -42,10 +41,6 @@ intl/unicharutil/util/nsSpecialCasingData.cpp
 intl/unicharutil/util/nsUnicodePropertyData.cpp
 media/mp4parse-rust/mp4parse.h
 security/manager/ssl/StaticHPKPins.h
-widget/gtk/wayland/gtk-primary-selection-client-protocol.h
-widget/gtk/wayland/gtk-primary-selection-protocol.c
-widget/gtk/wayland/primary-selection-unstable-v1-client-protocol.h
-widget/gtk/wayland/primary-selection-unstable-v1-protocol.c
 
 # Ignored because these files are used to generate a windows.h STL wrapper,
 # and reformatting them can break generating that wrapper.

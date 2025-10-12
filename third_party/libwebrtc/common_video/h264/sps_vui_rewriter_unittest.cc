@@ -10,11 +10,15 @@
 
 #include "common_video/h264/sps_vui_rewriter.h"
 
+#include <cstddef>
 #include <cstdint>
-#include <vector>
+#include <optional>
+#include <tuple>
 
+#include "api/array_view.h"
 #include "api/video/color_space.h"
 #include "common_video/h264/h264_common.h"
+#include "common_video/h264/sps_parser.h"
 #include "rtc_base/bit_buffer.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/logging.h"
@@ -150,37 +154,37 @@ static const VuiHeader kVuiLimitedRangeBt709Color = {
     /* transfer_characteristics= */ 1,
     /* matrix_coefficients= */ 1};
 
-static const webrtc::ColorSpace kColorSpaceH264Default(
+static const ColorSpace kColorSpaceH264Default(
     ColorSpace::PrimaryID::kUnspecified,
     ColorSpace::TransferID::kUnspecified,
     ColorSpace::MatrixID::kUnspecified,
     ColorSpace::RangeID::kLimited);
 
-static const webrtc::ColorSpace kColorSpacePrimariesBt709(
+static const ColorSpace kColorSpacePrimariesBt709(
     ColorSpace::PrimaryID::kBT709,
     ColorSpace::TransferID::kUnspecified,
     ColorSpace::MatrixID::kUnspecified,
     ColorSpace::RangeID::kLimited);
 
-static const webrtc::ColorSpace kColorSpaceTransferBt709(
+static const ColorSpace kColorSpaceTransferBt709(
     ColorSpace::PrimaryID::kUnspecified,
     ColorSpace::TransferID::kBT709,
     ColorSpace::MatrixID::kUnspecified,
     ColorSpace::RangeID::kLimited);
 
-static const webrtc::ColorSpace kColorSpaceMatrixBt709(
+static const ColorSpace kColorSpaceMatrixBt709(
     ColorSpace::PrimaryID::kUnspecified,
     ColorSpace::TransferID::kUnspecified,
     ColorSpace::MatrixID::kBT709,
     ColorSpace::RangeID::kLimited);
 
-static const webrtc::ColorSpace kColorSpaceFullRange(
+static const ColorSpace kColorSpaceFullRange(
     ColorSpace::PrimaryID::kBT709,
     ColorSpace::TransferID::kUnspecified,
     ColorSpace::MatrixID::kUnspecified,
     ColorSpace::RangeID::kFull);
 
-static const webrtc::ColorSpace kColorSpaceBt709LimitedRange(
+static const ColorSpace kColorSpaceBt709LimitedRange(
     ColorSpace::PrimaryID::kBT709,
     ColorSpace::TransferID::kBT709,
     ColorSpace::MatrixID::kBT709,

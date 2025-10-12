@@ -7,7 +7,10 @@ import { DSEmptyState } from "../DSEmptyState/DSEmptyState";
 import { DSCard, PlaceholderDSCard } from "../DSCard/DSCard";
 import { useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { useIntersectionObserver } from "../../../lib/utils";
+import {
+  selectWeatherPlacement,
+  useIntersectionObserver,
+} from "../../../lib/utils";
 import { SectionContextMenu } from "../SectionContextMenu/SectionContextMenu";
 import { InterestPicker } from "../InterestPicker/InterestPicker";
 import { AdBanner } from "../AdBanner/AdBanner.jsx";
@@ -15,6 +18,7 @@ import { PersonalizedCard } from "../PersonalizedCard/PersonalizedCard";
 import { FollowSectionButtonHighlight } from "../FeatureHighlight/FollowSectionButtonHighlight";
 import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
 import { TrendingSearches } from "../TrendingSearches/TrendingSearches.jsx";
+import { Weather } from "../../Weather/Weather.jsx";
 
 // Prefs
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
@@ -41,6 +45,7 @@ const PREF_TRENDING_SEARCH = "trendingSearch.enabled";
 const PREF_TRENDING_SEARCH_SYSTEM = "system.trendingSearch.enabled";
 const PREF_SEARCH_ENGINE = "trendingSearch.defaultSearchEngine";
 const PREF_TRENDING_SEARCH_VARIANT = "trendingSearch.variant";
+const PREF_DAILY_BRIEF_SECTIONID = "discoverystream.dailyBrief.sectionId";
 
 function getLayoutData(
   responsiveLayouts,
@@ -139,10 +144,10 @@ function CardSection({
   dispatch,
   type,
   firstVisibleTimestamp,
-  spocMessageVariant,
   ctaButtonVariant,
   ctaButtonSponsors,
   anySectionsFollowed,
+  showWeather,
 }) {
   const prefs = useSelector(state => state.Prefs.values);
 
@@ -172,7 +177,7 @@ function CardSection({
     prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
 
   const { sectionKey, title, subtitle } = section;
-  const { responsiveLayouts } = section.layout;
+  const { responsiveLayouts, name: layoutName } = section.layout;
 
   const following = sectionPersonalization[sectionKey]?.isFollowed;
 
@@ -184,10 +189,11 @@ function CardSection({
           section: sectionKey,
           section_position: sectionPosition,
           is_section_followed: following,
+          layout_name: layoutName,
         },
       })
     );
-  }, [dispatch, sectionKey, sectionPosition, following]);
+  }, [dispatch, sectionKey, sectionPosition, following, layoutName]);
 
   // Ref to hold the section element
   const sectionRefs = useIntersectionObserver(handleIntersection);
@@ -323,7 +329,6 @@ function CardSection({
       />
     </div>
   );
-
   return (
     <section
       className="ds-section"
@@ -332,9 +337,12 @@ function CardSection({
       }}
     >
       <div className="section-heading">
-        <div className="section-title-wrapper">
-          <h2 className="section-title">{title}</h2>
-          {subtitle && <p className="section-subtitle">{subtitle}</p>}
+        <div className="section-heading-inline-start">
+          <div className="section-title-wrapper">
+            <h2 className="section-title">{title}</h2>
+            {subtitle && <p className="section-subtitle">{subtitle}</p>}
+          </div>
+          {showWeather && <Weather isInSection={true} />}
         </div>
         {mayHaveSectionsPersonalization ? sectionContextWrapper : null}
       </div>
@@ -395,12 +403,12 @@ function CardSection({
               availableTopics={availableTopics}
               ctaButtonSponsors={ctaButtonSponsors}
               ctaButtonVariant={ctaButtonVariant}
-              spocMessageVariant={spocMessageVariant}
               sectionsClassNames={classNames.join(" ")}
               sectionsCardImageSizes={imageSizes}
               section={sectionKey}
               sectionPosition={sectionPosition}
               sectionFollowed={following}
+              sectionLayoutName={layoutName}
               isTimeSensitive={rec.isTimeSensitive}
             />
           );
@@ -421,7 +429,6 @@ function CardSections({
   dispatch,
   type,
   firstVisibleTimestamp,
-  spocMessageVariant,
   ctaButtonVariant,
   ctaButtonSponsors,
 }) {
@@ -430,6 +437,11 @@ function CardSections({
     state => state.DiscoveryStream
   );
   const { messageData } = useSelector(state => state.Messages);
+  const weatherPlacement = useSelector(selectWeatherPlacement);
+  const dailyBriefSectionId =
+    prefs.trainhopConfig?.dailyBriefing?.sectionId ||
+    prefs[PREF_DAILY_BRIEF_SECTIONID];
+  const weatherEnabled = prefs.showWeather;
   const personalizationEnabled = prefs[PREF_SECTIONS_PERSONALIZATION_ENABLED];
   const interestPickerEnabled = prefs[PREF_INTEREST_PICKER_ENABLED];
 
@@ -470,10 +482,15 @@ function CardSections({
       dispatch={dispatch}
       type={type}
       firstVisibleTimestamp={firstVisibleTimestamp}
-      spocMessageVariant={spocMessageVariant}
       ctaButtonVariant={ctaButtonVariant}
       ctaButtonSponsors={ctaButtonSponsors}
       anySectionsFollowed={anySectionsFollowed}
+      showWeather={
+        weatherEnabled &&
+        weatherPlacement === "section" &&
+        sectionPosition === 0 &&
+        section.sectionKey === dailyBriefSectionId
+      }
     />
   ));
 

@@ -13,6 +13,7 @@ run-if = [
 
 prefs = [
   "dom.webgpu.service-workers.enabled=true",
+  "gfx.webgpu.ignore-blocklist=true", # https://bugzilla.mozilla.org/show_bug.cgi?id=1985348
 ]
 support-files = [
   "worker_wrapper.js",

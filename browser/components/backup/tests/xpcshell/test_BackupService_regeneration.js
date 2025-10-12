@@ -181,6 +181,7 @@ async function expectRegeneration(taskFn, msg) {
   }
 
   bs.uninitBackupScheduler();
+  Services.prefs.clearUserPref("browser.backup.scheduled.enabled");
   sandbox.restore();
 }
 
@@ -251,6 +252,7 @@ async function expectNoRegeneration(taskFn, msg) {
   }
 
   bs.uninitBackupScheduler();
+  Services.prefs.clearUserPref("browser.backup.scheduled.enabled");
   sandbox.restore();
 }
 

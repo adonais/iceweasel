@@ -316,9 +316,6 @@ newtab-custom-pocket-sponsored = Storiis sponsorizadis
 newtab-custom-pocket-show-recent-saves = Mostre salvaments resints
 newtab-custom-recent-title = Ativitât resinte
 newtab-custom-recent-subtitle = Une selezion di sîts e contignûts resints
-newtab-custom-recent-toggle =
-    .label = Ativitât resinte
-    .description = Une selezion di sîts e contignûts resints
 newtab-custom-weather-toggle =
     .label = Meteo
     .description = Previsions par vuê cuntune voglade
@@ -442,7 +439,6 @@ newtab-weather-menu-change-location = Cambie localitât
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Cîr localitât
     .aria-label = Cîr localitât
-newtab-weather-change-location-search-input = Cîr localitât
 newtab-weather-menu-weather-display = Visualizazion meteo
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -583,8 +579,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Di tindince su Google
 newtab-trending-searches-show-trending =
     .title = Mostre ricercjis di tindince
 newtab-trending-searches-hide-trending =

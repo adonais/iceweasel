@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.utils
 
+import androidx.core.content.edit
 import io.mockk.every
 import io.mockk.spyk
 import mozilla.components.concept.engine.Engine.HttpsOnlyMode.DISABLED
@@ -24,6 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
+import org.mozilla.fenix.nimbus.FakeNimbusEventStore
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
 import org.robolectric.RobolectricTestRunner
@@ -1056,16 +1058,6 @@ class SettingsTest {
     }
 
     @Test
-    fun `GIVEN only microsurvey is enabled WHEN getBottomToolbarContainerHeight THEN returns microsurvey height`() {
-        val settings = spyk(settings)
-        every { settings.shouldShowMicrosurveyPrompt } returns true
-
-        val bottomToolbarContainerHeight = settings.getBottomToolbarContainerHeight()
-
-        assertEquals(131, bottomToolbarContainerHeight)
-    }
-
-    @Test
     fun `GIVEN the address bar and the microsurvey are shown at bottom WHEN getBottomToolbarHeight THEN returns the combined height`() {
         val settings = spyk(settings)
         every { settings.shouldUseComposableToolbar } returns false
@@ -1122,17 +1114,6 @@ class SettingsTest {
         val bottomToolbarHeight = settings.getBottomToolbarHeight()
 
         assertEquals(64, bottomToolbarHeight)
-    }
-
-    @Test
-    fun `GIVEN navigation bar and microsurvey is enabled WHEN getBottomToolbarContainerHeight THEN returns the combined height`() {
-        val settings = spyk(settings)
-        every { settings.shouldShowMicrosurveyPrompt } returns true
-        every { settings.shouldUseExpandedToolbar } returns true
-
-        val bottomToolbarContainerHeight = settings.getBottomToolbarContainerHeight()
-
-        assertEquals(191, bottomToolbarContainerHeight)
     }
 
     @Test
@@ -1275,5 +1256,56 @@ class SettingsTest {
         settings.coldStartsBetweenSetAsDefaultPrompts = 5 // More than required cold starts
 
         assertTrue(settings.shouldShowSetAsDefaultPrompt)
+    }
+
+    @Test
+    fun `GIVEN previously stored pref_key_last_review_prompt_shown_time value WHEN calling migrateLastReviewPromptTimePrefIfNeeded THEN migrate the value`() {
+        val oldKey = "pref_key_last_review_prompt_shown_time"
+        val lastReviewPromptTimeInMillis = 300_000L
+        val timeNowInMillis = 500_000L
+        val eventStore = FakeNimbusEventStore()
+
+        val settings = spyk(settings)
+        every { settings.timeNowInMillis() } returns timeNowInMillis
+
+        settings.preferences.edit { putLong(oldKey, lastReviewPromptTimeInMillis) }
+
+        assertEquals(lastReviewPromptTimeInMillis, settings.preferences.getLong(oldKey, 0))
+        eventStore.assertNoPastEvents()
+
+        settings.migrateLastReviewPromptTimePrefIfNeeded(eventStore)
+
+        assertFalse(settings.preferences.contains(oldKey))
+        eventStore.assertSinglePastEventEquals(
+            eventId = "review_prompt_shown",
+            secondsAgo = (timeNowInMillis - lastReviewPromptTimeInMillis) / 1000,
+        )
+    }
+
+    @Test
+    fun `GIVEN none previously stored pref_key_last_review_prompt_shown_time value WHEN calling migrateLastReviewPromptTimePrefIfNeeded THEN migration should not happen`() {
+        val oldKey = "pref_key_last_review_prompt_shown_time"
+        val eventStore = FakeNimbusEventStore()
+
+        assertFalse(settings.preferences.contains(oldKey))
+        eventStore.assertNoPastEvents()
+
+        settings.migrateLastReviewPromptTimePrefIfNeeded(eventStore)
+
+        eventStore.assertNoPastEvents()
+    }
+
+    @Test
+    fun `GIVEN previously stored pref_key_last_review_prompt_shown_time value is a String WHEN calling migrateLastReviewPromptTimePrefIfNeeded THEN crash should not happen`() {
+        val oldKey = "pref_key_last_review_prompt_shown_time"
+        val eventStore = FakeNimbusEventStore()
+
+        settings.preferences.edit { putString(oldKey, "something unexpected") }
+        eventStore.assertNoPastEvents()
+
+        settings.migrateLastReviewPromptTimePrefIfNeeded(eventStore)
+
+        assertFalse(settings.preferences.contains(oldKey))
+        eventStore.assertNoPastEvents()
     }
 }

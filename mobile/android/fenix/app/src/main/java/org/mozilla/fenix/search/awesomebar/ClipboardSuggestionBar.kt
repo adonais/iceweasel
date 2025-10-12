@@ -26,6 +26,7 @@ import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A suggestion bar that appears when a link is copied to the clipboard.
@@ -49,7 +50,7 @@ fun ClipboardSuggestionBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.mozac_ic_link_24),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_link_24),
                 contentDescription = null,
                 tint = FirefoxTheme.colors.iconPrimary,
                 modifier = Modifier.size(20.dp),

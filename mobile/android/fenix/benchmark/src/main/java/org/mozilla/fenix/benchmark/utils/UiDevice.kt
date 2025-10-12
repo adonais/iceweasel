@@ -193,7 +193,7 @@ fun UiDevice.flingToBeginning(scrollableId: String, maxSwipes: Int) {
 }
 
 private fun getUrlBarId(useNewToolbar: Boolean) = when (useNewToolbar) {
-    true -> "ADDRESSBAR_URL"
+    true -> "ADDRESSBAR_URL_BOX"
     false -> "$TARGET_PACKAGE:id/toolbar"
 }
 

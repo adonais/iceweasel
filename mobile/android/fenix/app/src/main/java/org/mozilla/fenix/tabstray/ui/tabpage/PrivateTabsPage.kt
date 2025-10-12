@@ -4,19 +4,39 @@
 
 package org.mozilla.fenix.tabstray.ui.tabpage
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.compose.base.annotation.FlexibleWindowPreview
+import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayState
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
+
+private val EmptyPageWidth = 190.dp
 
 /**
- * UI for displaying the Private Tabs Page in the Tabs Tray.
+ * UI for displaying the Private Tabs Page in the Tab Manager.
  *
  * @param privateTabs The list of private tabs to display.
  * @param selectedTabId The ID of the currently selected tab.
- * @param selectionMode [TabsTrayState.Mode] indicating whether the Tabs Tray is in single selection.
+ * @param selectionMode [TabsTrayState.Mode] indicating whether the Tab Manager is in single selection.
  * @param displayTabsInGrid Whether the normal and private tabs should be displayed in a grid.
  * @param onTabClose Invoked when the user clicks to close a tab.
  * @param onTabClick Invoked when the user clicks on a tab.
@@ -52,6 +72,55 @@ internal fun PrivateTabsPage(
             onMove = onMove,
         )
     } else {
-        EmptyTabPage(isPrivate = true)
+        EmptyPrivateTabsPage()
+    }
+}
+
+/**
+ * UI for displaying the empty state of the Private Tabs Page in the Tab Manager.
+ *
+ * @param modifier The [Modifier] to be applied to the layout.
+ */
+@Composable
+private fun EmptyPrivateTabsPage(
+    modifier: Modifier = Modifier,
+) {
+    EmptyTabPage(
+        modifier = modifier.testTag(TabsTrayTestTag.EMPTY_PRIVATE_TABS_LIST),
+    ) {
+        Column(
+            modifier = Modifier.width(EmptyPageWidth),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Icon(
+                painter = painterResource(id = iconsR.drawable.mozac_ic_private_mode_72),
+                contentDescription = null,
+            )
+
+            Text(
+                text = stringResource(id = R.string.tab_manager_empty_private_tabs_page_header),
+                textAlign = TextAlign.Center,
+                style = FirefoxTheme.typography.headline7,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = stringResource(
+                    id = R.string.tab_manager_empty_private_tabs_page_description,
+                    stringResource(id = R.string.app_name),
+                ),
+                textAlign = TextAlign.Center,
+                style = FirefoxTheme.typography.caption,
+            )
+        }
+    }
+}
+
+@FlexibleWindowPreview
+@Composable
+private fun EmptyPrivateTabsPagePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        EmptyPrivateTabsPage(modifier = Modifier.background(color = MaterialTheme.colorScheme.surface))
     }
 }

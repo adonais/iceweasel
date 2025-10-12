@@ -930,7 +930,7 @@ class RulesetsStore {
         continue;
       }
 
-      const readJSONStartTime = Cu.now();
+      const readJSONStartTime = ChromeUtils.now();
       const rawRules =
         enabled &&
         (await fetch(path)
@@ -1020,7 +1020,7 @@ class RulesetsStore {
     rawRules,
     { logRuleValidationError = err => Cu.reportError(err) } = {}
   ) {
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
     const validatedRulesTimerId =
       Glean.extensionsApisDnr.validateRulesTime.start();
     try {
@@ -1207,7 +1207,7 @@ class RulesetsStore {
         );
       }
 
-      const startTime = Cu.now();
+      const startTime = ChromeUtils.now();
       const timerId = Glean.extensionsApisDnr.startupCacheReadTime.start();
       this._ensureCacheLoaded = (async () => {
         const cacheFilePath = this.#getCacheFilePath();
@@ -1284,7 +1284,7 @@ class RulesetsStore {
     return this._readData(extension);
   }
   async _readData(extension) {
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
     try {
       let result;
       // Try to load data from the startupCache.
@@ -1579,7 +1579,7 @@ class RulesetsStore {
   }
 
   async #saveCacheDataNow() {
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
     const timerId = Glean.extensionsApisDnr.startupCacheWriteTime.start();
     try {
       const cacheFilePath = this.#getCacheFilePath();
@@ -1616,7 +1616,7 @@ class RulesetsStore {
    * @returns {Promise<void>}
    */
   async #saveNow(extensionUUID, extensionId) {
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
     try {
       if (
         !this._dataPromises.has(extensionUUID) ||

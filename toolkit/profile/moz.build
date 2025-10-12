@@ -10,8 +10,7 @@ MOCHITEST_CHROME_MANIFESTS += ["test/chrome/chrome.toml"]
 
 XPCSHELL_TESTS_MANIFESTS += ["test/xpcshell/xpcshell.toml"]
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["test/gtest"]
+TEST_DIRS += ["test/gtest"]
 
 XPIDL_SOURCES += [
     "nsIProfileMigrator.idl",

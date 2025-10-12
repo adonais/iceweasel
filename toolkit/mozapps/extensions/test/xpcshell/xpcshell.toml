@@ -146,9 +146,6 @@ skip-if = [
 prefs = ["dom.security.https_first=false"]
 head = "head_addons.js head_amremotesettings.js"
 
-["test_installtrigger_schemes.js"]
-prefs = ["dom.security.https_first=false"]
-
 ["test_isDebuggable.js"]
 
 ["test_isReady.js"]
@@ -355,6 +352,8 @@ skip-if = ["os == 'win'"] # Bug 1358846
 
 ["test_update_addontype.js"]
 skip-if = ["os == 'android'"] # Non-extension add-ons are not supported on Android, but test installs static theme.
+
+["test_update_cn_repack_addons.js"]
 
 ["test_update_compatmode.js"]
 head = "head_addons.js head_compat.js"

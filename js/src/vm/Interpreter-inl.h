@@ -260,6 +260,9 @@ inline void InitGlobalLexicalOperation(
   MOZ_ASSERT(prop.isSome());
   MOZ_ASSERT(IsUninitializedLexical(lexicalEnv->getSlot(prop->slot())));
 
+  // Note: we don't have to call Watchtower::watchPropertyValueChange because
+  // this is an initialization instead of a mutation. We don't optimize loads of
+  // uninitialized lexicals in the JIT.
   lexicalEnv->setSlot(prop->slot(), value);
 }
 

@@ -341,31 +341,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     loadValue(addr, ValueOperand(scratch));
     pushValue(ValueOperand(scratch));
   }
-  template <typename T>
-  void storeUnboxedPayload(ValueOperand value, T address, size_t nbytes,
-                           JSValueType type) {
-    switch (nbytes) {
-      case 8: {
-        vixl::UseScratchRegisterScope temps(this);
-        const Register scratch = temps.AcquireX().asUnsized();
-        if (type == JSVAL_TYPE_OBJECT) {
-          unboxObjectOrNull(value, scratch);
-        } else {
-          unboxNonDouble(value, scratch, type);
-        }
-        storePtr(scratch, address);
-        return;
-      }
-      case 4:
-        store32(value.valueReg(), address);
-        return;
-      case 1:
-        store8(value.valueReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
-    }
-  }
   void moveValue(const Value& val, Register dest) {
     if (val.isGCThing()) {
       BufferOffset load =
@@ -397,6 +372,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   }
 
   void boxValue(JSValueType type, Register src, Register dest);
+  void boxValue(Register type, Register src, Register dest);
 
   void splitSignExtTag(Register src, Register dest) {
     sbfx(ARMRegister(dest, 64), ARMRegister(src, 64), JSVAL_TAG_SHIFT,
@@ -1286,6 +1262,12 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     Negs(ARMRegister(reg, 64), Operand(ARMRegister(reg, 64)));
   }
 
+  void minMax32(Register lhs, Register rhs, Register dest, bool isMax);
+  void minMax32(Register lhs, Imm32 rhs, Register dest, bool isMax);
+
+  void minMaxPtr(Register lhs, Register rhs, Register dest, bool isMax);
+  void minMaxPtr(Register lhs, ImmWord rhs, Register dest, bool isMax);
+
   BufferOffset ret() {
     pop(lr);
     BufferOffset ret(currentOffset());
@@ -1347,6 +1329,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     Fmov(ARMRegister(dest.valueReg(), 64), ARMFPRegister(src, 64));
   }
   void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest) {
+    boxValue(type, src, dest.valueReg());
+  }
+  void boxNonDouble(Register type, Register src, const ValueOperand& dest) {
     boxValue(type, src, dest.valueReg());
   }
 
@@ -1425,13 +1410,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void unboxObject(const BaseIndex& src, Register dest) {
     doBaseIndex(ARMRegister(dest, 64), src, vixl::LDR_x);
     unboxNonDouble(dest, dest, JSVAL_TYPE_OBJECT);
-  }
-
-  template <typename T>
-  void unboxObjectOrNull(const T& src, Register dest) {
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-    And(ARMRegister(dest, 64), ARMRegister(dest, 64),
-        Operand(~JS::detail::ValueObjectOrNullBit));
   }
 
   // See comment in MacroAssembler-x64.h.
@@ -1973,15 +1951,15 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     }
   }
   void writeDataRelocation(const Value& val, BufferOffset load) {
+    MOZ_ASSERT(val.isGCThing(), "only called for gc-things");
+
     // Raw GC pointer relocations and Value relocations both end up in
     // Assembler::TraceDataRelocations.
-    if (val.isGCThing()) {
-      gc::Cell* cell = val.toGCThing();
-      if (cell && gc::IsInsideNursery(cell)) {
-        embedsNurseryPointers_ = true;
-      }
-      dataRelocations_.writeUnsigned(load.getOffset());
+    gc::Cell* cell = val.toGCThing();
+    if (cell && gc::IsInsideNursery(cell)) {
+      embedsNurseryPointers_ = true;
     }
+    dataRelocations_.writeUnsigned(load.getOffset());
   }
 
   void computeEffectiveAddress(const Address& address, Register dest) {

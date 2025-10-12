@@ -36,26 +36,26 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(LoadedScript)
 LoadedScript::LoadedScript(ScriptKind aKind,
                            mozilla::dom::ReferrerPolicy aReferrerPolicy,
                            ScriptFetchOptions* aFetchOptions, nsIURI* aURI)
-    : mKind(aKind),
+    : mDataType(DataType::eUnknown),
+      mKind(aKind),
       mReferrerPolicy(aReferrerPolicy),
+      mBytecodeOffset(0),
       mFetchOptions(aFetchOptions),
       mURI(aURI),
-      mDataType(DataType::eUnknown),
-      mReceivedScriptTextLength(0),
-      mBytecodeOffset(0) {
+      mReceivedScriptTextLength(0) {
   MOZ_ASSERT(mFetchOptions);
   MOZ_ASSERT(mURI);
 }
 
 LoadedScript::LoadedScript(const LoadedScript& aOther)
-    : mKind(aOther.mKind),
+    : mDataType(DataType::eStencil),
+      mKind(aOther.mKind),
       mReferrerPolicy(aOther.mReferrerPolicy),
+      mBytecodeOffset(0),
       mFetchOptions(aOther.mFetchOptions),
       mURI(aOther.mURI),
       mBaseURL(aOther.mBaseURL),
-      mDataType(DataType::eStencil),
       mReceivedScriptTextLength(0),
-      mBytecodeOffset(0),
       mStencil(aOther.mStencil) {
   MOZ_ASSERT(mFetchOptions);
   MOZ_ASSERT(mURI);

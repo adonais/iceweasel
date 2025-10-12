@@ -32,7 +32,23 @@ const ETP_DISABLED_ASSETS = {
 
 class TrustPanel {
   #state = null;
+  #secInfo = null;
   #uri = null;
+  #uriHasHost = null;
+  #pageExtensionPolicy = null;
+  #isURILoadedFromFile = null;
+  #isSecureContext = null;
+
+  // Lazy pref getters.
+  #insecureConnectionTextEnabled = null;
+  #insecureConnectionTextPBModeEnabled = null;
+  #httpsOnlyModeEnabled = null;
+  #httpsFirstModeEnabled = null;
+  #schemelessHttpsFirstModeEnabled = null;
+  #httpsFirstModeEnabledPBM = null;
+  #httpsOnlyModeEnabledPBM = null;
+
+  #lastEvent = null;
 
   #blockers = {
     SocialTracking,
@@ -48,6 +64,41 @@ class TrustPanel {
         blocker.init();
       }
     }
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "#insecureConnectionTextEnabled",
+      "security.insecure_connection_text.enabled"
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "#insecureConnectionTextPBModeEnabled",
+      "security.insecure_connection_text.pbmode.enabled"
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "#httpsOnlyModeEnabled",
+      "dom.security.https_only_mode"
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "#httpsFirstModeEnabled",
+      "dom.security.https_first"
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "#schemelessHttpsFirstModeEnabled",
+      "dom.security.https_first_schemeless"
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "#httpsFirstModeEnabledPBM",
+      "dom.security.https_first_pbm"
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "#httpsOnlyModeEnabledPBM",
+      "dom.security.https_only_mode_pbm"
+    );
   }
 
   uninit() {
@@ -88,7 +139,7 @@ class TrustPanel {
     // different blockers:
     this.anyDetected = false;
     this.anyBlocking = false;
-    this._lastEvent = event;
+    this.#lastEvent = event;
 
     // Check whether the user has added an exception for this site.
     this.hasException =
@@ -116,7 +167,7 @@ class TrustPanel {
       document
         .getElementById("trustpanel-popup-connection")
         .addEventListener("click", event =>
-          this.#openSiteInformationSubview(event)
+          this.#openSecurityInformationSubview(event)
         );
       document
         .getElementById("trustpanel-blocker-see-all")
@@ -143,6 +194,9 @@ class TrustPanel {
       document
         .getElementById("trustpanel-toggle")
         .addEventListener("click", () => this.#toggleTrackingProtection());
+      document
+        .getElementById("identity-popup-remove-cert-exception")
+        .addEventListener("click", () => this.#removeCertException());
     }
   }
 
@@ -166,8 +220,20 @@ class TrustPanel {
     if (!this.#enabled) {
       return;
     }
+    try {
+      // Account for file: urls and catch when "" is the value
+      this.#uriHasHost = !!uri.host;
+    } catch (ex) {
+      this.#uriHasHost = false;
+    }
     this.#state = state;
     this.#uri = uri;
+
+    this.#secInfo = gBrowser.securityUI.secInfo;
+    this.#pageExtensionPolicy = WebExtensionPolicy.getByURI(uri);
+    this.#isURILoadedFromFile = uri.schemeIs("file");
+    this.#isSecureContext = this.#getIsSecureContext();
+
     this.#updateUrlbarIcon();
   }
 
@@ -274,10 +340,10 @@ class TrustPanel {
       let detected = [];
 
       for (let blocker of Object.values(this.#blockers)) {
-        if (blocker.isBlocking(this._lastEvent)) {
+        if (blocker.isBlocking(this.#lastEvent)) {
           blocked.push(blocker);
           count += await blocker.getBlockerCount();
-        } else if (blocker.isDetected(this._lastEvent)) {
+        } else if (blocker.isDetected(this.#lastEvent)) {
           detected.push(blocker);
         }
       }
@@ -299,6 +365,19 @@ class TrustPanel {
     window.BrowserCommands.pageInfo(null, "securityTab");
   }
 
+  #removeCertException() {
+    let overrideService = Cc["@mozilla.org/security/certoverride;1"].getService(
+      Ci.nsICertOverrideService
+    );
+    overrideService.clearValidityOverride(
+      this.#uri.host,
+      this.#uri.port > 0 ? this.#uri.port : 443,
+      gBrowser.contentPrincipal.originAttributes
+    );
+    BrowserCommands.reloadSkipCache();
+    PanelMultiView.hidePopup(this.#popup);
+  }
+
   #trackingProtectionStatus() {
     if (!this.#isSecurePage()) {
       return "warning";
@@ -306,26 +385,45 @@ class TrustPanel {
     return this.#trackingProtectionEnabled ? "enabled" : "disabled";
   }
 
-  #openSiteInformationSubview(event) {
-    let secureConnection =
-      this.#state & Ci.nsIWebProgressListener.STATE_IS_SECURE;
-
+  #openSecurityInformationSubview(event) {
     document.l10n.setAttributes(
-      document.getElementById("trustpanel-siteInformationView"),
+      document.getElementById("trustpanel-securityInformationView"),
       "trustpanel-site-information-header",
       { host: this.host }
     );
 
-    document.l10n.setAttributes(
-      document.getElementById("trustpanel-siteinfo-label"),
-      secureConnection
-        ? "trustpanel-connection-secure"
-        : "trustpanel-connection-not-secure"
-    );
+    let customRoot = this.#isSecureConnection ? this.#hasCustomRoot() : false;
+    let connection = this.#connectionState();
+    let mixedcontent = this.#mixedContentState();
+    let ciphers = this.#ciphersState();
+    let httpsOnlyStatus = this.#httpsOnlyState();
+
+    // Update all elements.
+    let elementIDs = [
+      "trustpanel-popup",
+      "identity-popup-securityView-extended-info",
+    ];
+
+    for (let id of elementIDs) {
+      let element = document.getElementById(id);
+      this.#updateAttribute(element, "connection", connection);
+      this.#updateAttribute(element, "ciphers", ciphers);
+      this.#updateAttribute(element, "mixedcontent", mixedcontent);
+      this.#updateAttribute(element, "isbroken", this.#isBrokenConnection);
+      this.#updateAttribute(element, "customroot", customRoot);
+      this.#updateAttribute(element, "httpsonlystatus", httpsOnlyStatus);
+    }
+
+    let { supplemental, owner, verifier } = this.#supplementalText();
+    document.getElementById("identity-popup-content-supplemental").textContent =
+      supplemental;
+    document.getElementById("identity-popup-content-verifier").textContent =
+      verifier;
+    document.getElementById("identity-popup-content-owner").textContent = owner;
 
     document
       .getElementById("trustpanel-popup-multiView")
-      .showSubView("trustpanel-siteInformationView", event.target);
+      .showSubView("trustpanel-securityInformationView", event.target);
   }
 
   async #openBlockerSubview(event) {
@@ -459,6 +557,423 @@ class TrustPanel {
 
     PanelMultiView.hidePopup(this.#popup);
     window.BrowserCommands.reload();
+  }
+
+  #isHttpsOnlyModeActive(isWindowPrivate) {
+    return (
+      this.#httpsOnlyModeEnabled ||
+      (isWindowPrivate && this.#httpsOnlyModeEnabledPBM)
+    );
+  }
+
+  #isHttpsFirstModeActive(isWindowPrivate) {
+    return (
+      !this.#isHttpsOnlyModeActive(isWindowPrivate) &&
+      (this.#httpsFirstModeEnabled ||
+        (isWindowPrivate && this.#httpsFirstModeEnabledPBM))
+    );
+  }
+  #isSchemelessHttpsFirstModeActive(isWindowPrivate) {
+    return (
+      !this.#isHttpsOnlyModeActive(isWindowPrivate) &&
+      !this.#isHttpsFirstModeActive(isWindowPrivate) &&
+      this.#schemelessHttpsFirstModeEnabled
+    );
+  }
+  /**
+   * Helper to parse out the important parts of _secInfo (of the SSL cert in
+   * particular) for use in constructing identity UI strings
+   */
+  #getIdentityData() {
+    var result = {};
+    var cert = this.#secInfo.serverCert;
+
+    // Human readable name of Subject
+    result.subjectOrg = cert.organization;
+
+    // SubjectName fields, broken up for individual access
+    if (cert.subjectName) {
+      result.subjectNameFields = {};
+      cert.subjectName.split(",").forEach(function (v) {
+        var field = v.split("=");
+        this[field[0]] = field[1];
+      }, result.subjectNameFields);
+
+      // Call out city, state, and country specifically
+      result.city = result.subjectNameFields.L;
+      result.state = result.subjectNameFields.ST;
+      result.country = result.subjectNameFields.C;
+    }
+
+    // Human readable name of Certificate Authority
+    result.caOrg = cert.issuerOrganization || cert.issuerCommonName;
+    result.cert = cert;
+
+    return result;
+  }
+
+  #getIsSecureContext() {
+    if (gBrowser.contentPrincipal?.originNoSuffix != "resource://pdf.js") {
+      return gBrowser.securityUI.isSecureContext;
+    }
+
+    // For PDF viewer pages (pdf.js) we can't rely on the isSecureContext field.
+    // The backend will return isSecureContext = true, because the content
+    // principal has a resource:// URI. Instead use the URI of the selected
+    // browser to perform the isPotentiallyTrustWorthy check.
+
+    let principal;
+    try {
+      principal = Services.scriptSecurityManager.createContentPrincipal(
+        gBrowser.selectedBrowser.documentURI,
+        {}
+      );
+      return principal.isOriginPotentiallyTrustworthy;
+    } catch (error) {
+      console.error(
+        "Error while computing isPotentiallyTrustWorthy for pdf viewer page: ",
+        error
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Returns whether the issuer of the current certificate chain is
+   * built-in (returns false) or imported (returns true).
+   */
+  #hasCustomRoot() {
+    return !this.#secInfo.isBuiltCertChainRootBuiltInRoot;
+  }
+
+  /**
+   * Whether the established HTTPS connection is considered "broken".
+   * This could have several reasons, such as mixed content or weak
+   * cryptography. If this is true, _isSecureConnection is false.
+   */
+  get #isBrokenConnection() {
+    return this.#state & Ci.nsIWebProgressListener.STATE_IS_BROKEN;
+  }
+
+  /**
+   * Whether the connection to the current site was done via secure
+   * transport. Note that this attribute is not true in all cases that
+   * the site was accessed via HTTPS, i.e. _isSecureConnection will
+   * be false when _isBrokenConnection is true, even though the page
+   * was loaded over HTTPS.
+   */
+  get #isSecureConnection() {
+    // If a <browser> is included within a chrome document, then this._state
+    // will refer to the security state for the <browser> and not the top level
+    // document. In this case, don't upgrade the security state in the UI
+    // with the secure state of the embedded <browser>.
+    return (
+      !this.#isURILoadedFromFile &&
+      this.#state & Ci.nsIWebProgressListener.STATE_IS_SECURE
+    );
+  }
+
+  get #isEV() {
+    // If a <browser> is included within a chrome document, then this._state
+    // will refer to the security state for the <browser> and not the top level
+    // document. In this case, don't upgrade the security state in the UI
+    // with the EV state of the embedded <browser>.
+    return (
+      !this.#isURILoadedFromFile &&
+      this.#state & Ci.nsIWebProgressListener.STATE_IDENTITY_EV_TOPLEVEL
+    );
+  }
+
+  get #isAssociatedIdentity() {
+    return this.#state & Ci.nsIWebProgressListener.STATE_IDENTITY_ASSOCIATED;
+  }
+
+  get #isMixedActiveContentLoaded() {
+    return (
+      this.#state & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT
+    );
+  }
+
+  get #isMixedActiveContentBlocked() {
+    return (
+      this.#state & Ci.nsIWebProgressListener.STATE_BLOCKED_MIXED_ACTIVE_CONTENT
+    );
+  }
+
+  get #isMixedPassiveContentLoaded() {
+    return (
+      this.#state & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_DISPLAY_CONTENT
+    );
+  }
+
+  get #isContentHttpsOnlyModeUpgraded() {
+    return (
+      this.#state & Ci.nsIWebProgressListener.STATE_HTTPS_ONLY_MODE_UPGRADED
+    );
+  }
+
+  get #isContentHttpsOnlyModeUpgradeFailed() {
+    return (
+      this.#state &
+      Ci.nsIWebProgressListener.STATE_HTTPS_ONLY_MODE_UPGRADE_FAILED
+    );
+  }
+
+  get #isContentHttpsFirstModeUpgraded() {
+    return (
+      this.#state &
+      Ci.nsIWebProgressListener.STATE_HTTPS_ONLY_MODE_UPGRADED_FIRST
+    );
+  }
+
+  get #isCertUserOverridden() {
+    return this.#state & Ci.nsIWebProgressListener.STATE_CERT_USER_OVERRIDDEN;
+  }
+
+  get #isCertErrorPage() {
+    let { documentURI } = gBrowser.selectedBrowser;
+    if (documentURI?.scheme != "about") {
+      return false;
+    }
+
+    return (
+      documentURI.filePath == "certerror" ||
+      (documentURI.filePath == "neterror" &&
+        new URLSearchParams(documentURI.query).get("e") == "nssFailure2")
+    );
+  }
+
+  get #isSecurelyConnectedAboutNetErrorPage() {
+    let { documentURI } = gBrowser.selectedBrowser;
+    if (documentURI?.scheme != "about" || documentURI.filePath != "neterror") {
+      return false;
+    }
+
+    let error = new URLSearchParams(documentURI.query).get("e");
+
+    // Bug 1944993 - A list of neterrors without connection issues
+    return error === "httpErrorPage" || error === "serverError";
+  }
+
+  get #isAboutNetErrorPage() {
+    let { documentURI } = gBrowser.selectedBrowser;
+    return documentURI?.scheme == "about" && documentURI.filePath == "neterror";
+  }
+
+  get #isAboutHttpsOnlyErrorPage() {
+    let { documentURI } = gBrowser.selectedBrowser;
+    return (
+      documentURI?.scheme == "about" && documentURI.filePath == "httpsonlyerror"
+    );
+  }
+
+  get #isPotentiallyTrustworthy() {
+    return (
+      !this.#isBrokenConnection &&
+      (this.#isSecureContext ||
+        gBrowser.selectedBrowser.documentURI?.scheme == "chrome")
+    );
+  }
+
+  get #isAboutBlockedPage() {
+    let { documentURI } = gBrowser.selectedBrowser;
+    return documentURI?.scheme == "about" && documentURI.filePath == "blocked";
+  }
+
+  #supplementalText() {
+    let supplemental = "";
+    let verifier = "";
+    let owner = "";
+
+    // Fill in the CA name if we have a valid TLS certificate.
+    if (this.#isSecureConnection || this.#isCertUserOverridden) {
+      verifier = this.#tooltipText();
+    }
+
+    // Fill in organization information if we have a valid EV certificate.
+    if (this.#isEV) {
+      let iData = this.#getIdentityData();
+      owner = iData.subjectOrg;
+      verifier = this._identityIconLabel.tooltipText;
+
+      // Build an appropriate supplemental block out of whatever location data we have
+      if (iData.city) {
+        supplemental += iData.city + "\n";
+      }
+      if (iData.state && iData.country) {
+        supplemental += gNavigatorBundle.getFormattedString(
+          "identity.identified.state_and_country",
+          [iData.state, iData.country]
+        );
+      } else if (iData.state) {
+        // State only
+        supplemental += iData.state;
+      } else if (iData.country) {
+        // Country only
+        supplemental += iData.country;
+      }
+    }
+    return { supplemental, verifier, owner };
+  }
+
+  #tooltipText() {
+    let tooltip = "";
+    let warnTextOnInsecure =
+      this.#insecureConnectionTextEnabled ||
+      (this.#insecureConnectionTextPBModeEnabled &&
+        PrivateBrowsingUtils.isWindowPrivate(window));
+
+    if (this.#uriHasHost && this.#isSecureConnection) {
+      // This is a secure connection.
+      if (!this._isCertUserOverridden) {
+        // It's a normal cert, verifier is the CA Org.
+        tooltip = gNavigatorBundle.getFormattedString(
+          "identity.identified.verifier",
+          [this.#getIdentityData().caOrg]
+        );
+      }
+    } else if (this.#isBrokenConnection) {
+      if (this.#isMixedActiveContentLoaded) {
+        this._identityBox.classList.add("mixedActiveContent");
+        if (
+          UrlbarPrefs.getScotchBonnetPref("trimHttps") &&
+          warnTextOnInsecure
+        ) {
+          tooltip = gNavigatorBundle.getString("identity.notSecure.tooltip");
+        }
+      }
+    } else {
+      tooltip = gNavigatorBundle.getString("identity.notSecure.tooltip");
+    }
+
+    if (this._isCertUserOverridden) {
+      // Cert is trusted because of a security exception, verifier is a special string.
+      tooltip = gNavigatorBundle.getString(
+        "identity.identified.verified_by_you"
+      );
+    }
+    return tooltip;
+  }
+
+  #connectionState() {
+    // Determine connection security information.
+    let connection = "not-secure";
+    if (this._isSecureInternalUI) {
+      connection = "chrome";
+    } else if (this.#pageExtensionPolicy) {
+      connection = "extension";
+    } else if (this.#isURILoadedFromFile) {
+      connection = "file";
+    } else if (this.#isEV) {
+      connection = "secure-ev";
+    } else if (this.#isCertUserOverridden) {
+      connection = "secure-cert-user-overridden";
+    } else if (this.#isSecureConnection) {
+      connection = "secure";
+    } else if (this.#isCertErrorPage) {
+      connection = "cert-error-page";
+    } else if (this.#isAboutHttpsOnlyErrorPage) {
+      connection = "https-only-error-page";
+    } else if (this.#isAboutBlockedPage) {
+      connection = "not-secure";
+    } else if (this.#isSecurelyConnectedAboutNetErrorPage) {
+      connection = "secure";
+    } else if (this.#isAboutNetErrorPage) {
+      connection = "net-error-page";
+    } else if (this.#isAssociatedIdentity) {
+      connection = "associated";
+    } else if (this.#isPotentiallyTrustworthy) {
+      connection = "file";
+    }
+    return connection;
+  }
+
+  #mixedContentState() {
+    let mixedcontent = [];
+    if (this.#isMixedPassiveContentLoaded) {
+      mixedcontent.push("passive-loaded");
+    }
+    if (this.#isMixedActiveContentLoaded) {
+      mixedcontent.push("active-loaded");
+    } else if (this.#isMixedActiveContentBlocked) {
+      mixedcontent.push("active-blocked");
+    }
+    return mixedcontent;
+  }
+
+  #ciphersState() {
+    // We have no specific flags for weak ciphers (yet). If a connection is
+    // broken and we can't detect any mixed content loaded then it's a weak
+    // cipher.
+    if (
+      this.#isBrokenConnection &&
+      !this.#isMixedActiveContentLoaded &&
+      !this.#isMixedPassiveContentLoaded
+    ) {
+      return "weak";
+    }
+    return "";
+  }
+
+  #httpsOnlyState() {
+    // If HTTPS-Only Mode is enabled, check the permission status
+    const privateBrowsingWindow = PrivateBrowsingUtils.isWindowPrivate(window);
+    const isHttpsOnlyModeActive = this.#isHttpsOnlyModeActive(
+      privateBrowsingWindow
+    );
+    const isHttpsFirstModeActive = this.#isHttpsFirstModeActive(
+      privateBrowsingWindow
+    );
+    const isSchemelessHttpsFirstModeActive =
+      this.#isSchemelessHttpsFirstModeActive(privateBrowsingWindow);
+
+    let httpsOnlyStatus = "";
+    if (
+      isHttpsFirstModeActive ||
+      isHttpsOnlyModeActive ||
+      isSchemelessHttpsFirstModeActive
+    ) {
+      // Note: value and permission association is laid out
+      //       in _getHttpsOnlyPermission
+      let value = this._getHttpsOnlyPermission();
+
+      // We do not want to display the exception ui for schemeless
+      // HTTPS-First, but we still want the "Upgraded to HTTPS" label.
+      document.getElementById("identity-popup-security-httpsonlymode").hidden =
+        isSchemelessHttpsFirstModeActive;
+
+      document.getElementById(
+        "identity-popup-security-menulist-off-item"
+      ).hidden = privateBrowsingWindow && value != 1;
+      document.getElementById(
+        "identity-popup-security-httpsonlymode-menulist"
+      ).value = value;
+
+      if (value > 0) {
+        httpsOnlyStatus = "exception";
+      } else if (
+        this._isAboutHttpsOnlyErrorPage ||
+        (isHttpsFirstModeActive && this.#isContentHttpsOnlyModeUpgradeFailed)
+      ) {
+        httpsOnlyStatus = "failed-top";
+      } else if (this.#isContentHttpsOnlyModeUpgradeFailed) {
+        httpsOnlyStatus = "failed-sub";
+      } else if (
+        this.#isContentHttpsOnlyModeUpgraded ||
+        this.#isContentHttpsFirstModeUpgraded
+      ) {
+        httpsOnlyStatus = "upgraded";
+      }
+    }
+    return httpsOnlyStatus;
+  }
+
+  #updateAttribute(elem, attr, value) {
+    if (value) {
+      elem.setAttribute(attr, value);
+    } else {
+      elem.removeAttribute(attr);
+    }
   }
 }
 

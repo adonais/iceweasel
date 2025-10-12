@@ -791,6 +791,11 @@ class TestRetry(unittest.TestCase):
 
 class BaseScriptWithDecorators(script.BaseScript):
     def __init__(self, *args, **kwargs):
+        self._tmpdir = tempfile.mkdtemp(suffix=".mozharness")
+        option_args = kwargs.get("option_args", [])
+        option_args.extend(["--base-work-dir", self._tmpdir])
+        kwargs["option_args"] = option_args
+
         super(BaseScriptWithDecorators, self).__init__(*args, **kwargs)
 
         self.pre_run_1_args = []
@@ -867,6 +872,9 @@ class TestScriptDecorators(unittest.TestCase):
         self.s = None
 
     def tearDown(self):
+        if isinstance(getattr(self, "s", None), BaseScriptWithDecorators):
+            cleanup([self.s._tmpdir])
+
         if hasattr(self, "s") and isinstance(self.s, object):
             del self.s
 

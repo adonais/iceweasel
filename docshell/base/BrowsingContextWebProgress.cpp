@@ -16,10 +16,10 @@
 #include "xptinfo.h"
 #include "mozilla/RefPtr.h"
 
+mozilla::LazyLogModule gBCWebProgressLog("BCWebProgress");
+
 namespace mozilla {
 namespace dom {
-
-static mozilla::LazyLogModule gBCWebProgressLog("BCWebProgress");
 
 static nsCString DescribeBrowsingContext(CanonicalBrowsingContext* aContext);
 static nsCString DescribeWebProgress(nsIWebProgress* aWebProgress);

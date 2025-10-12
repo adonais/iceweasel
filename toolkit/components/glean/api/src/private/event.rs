@@ -34,11 +34,11 @@ impl gecko_profiler::ProfilerMarker for EventMetricMarker {
         let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
         schema.set_tooltip_label("{marker.data.id}");
         schema.set_table_label("{marker.name} - {marker.data.id}: {marker.data.extra}");
-        schema.add_key_label_format_searchable(
+        schema.add_key_label_format_with_flags(
             "id",
             "Metric",
             Format::UniqueString,
-            Searchable::Searchable,
+            PayloadFlags::Searchable,
         );
         schema.add_key_label_format("extra", "Extra", Format::String);
         schema
@@ -200,18 +200,6 @@ impl<K: 'static + ExtraKeys + Send + Sync + Clone> Event for EventMetric<K> {
         }
     }
 
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<Vec<RecordedEvent>> {
-        match self {
-            EventMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            EventMetric::Child(_) => {
-                panic!("Cannot get test value for event metric in non-main process!",)
-            }
-        }
-    }
-
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
             EventMetric::Parent { inner, .. } => inner.test_get_num_recorded_errors(error),
@@ -219,6 +207,18 @@ impl<K: 'static + ExtraKeys + Send + Sync + Clone> Event for EventMetric<K> {
                 "Cannot get the number of recorded errors for {:?} in non-main process!",
                 meta.id
             ),
+        }
+    }
+}
+
+#[inherent]
+impl<K> glean::TestGetValue<Vec<RecordedEvent>> for EventMetric<K> {
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Vec<RecordedEvent>> {
+        match self {
+            EventMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            EventMetric::Child(_) => {
+                panic!("Cannot get test value for event metric in non-main process!",)
+            }
         }
     }
 }
@@ -246,7 +246,7 @@ mod test {
         // No extra keys
         metric.record(None);
 
-        let recorded = metric.test_get_value("test-ping").unwrap();
+        let recorded = metric.test_get_value(Some("test-ping".to_string())).unwrap();
 
         assert!(recorded.iter().any(|e| e.name == "event_metric"));
     }
@@ -286,7 +286,7 @@ mod test {
 
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
-        let events = parent_metric.test_get_value("test-ping").unwrap();
+        let events = parent_metric.test_get_value(Some("test-ping".to_string())).unwrap();
         assert_eq!(events.len(), 4);
 
         // Events from the child process are last, they might get sorted later by Glean.
@@ -311,7 +311,7 @@ mod test {
         };
         event.record(extra);
 
-        let recorded = event.test_get_value("test-ping").unwrap();
+        let recorded = event.test_get_value(Some("test-ping".to_string())).unwrap();
 
         assert_eq!(recorded.len(), 1);
         assert!(recorded[0].extra.as_ref().unwrap().get("extra1").unwrap() == "a-valid-value");

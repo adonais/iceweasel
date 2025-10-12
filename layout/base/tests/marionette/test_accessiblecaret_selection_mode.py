@@ -156,8 +156,8 @@ class AccessibleCaretSelectionModeTestCase(MarionetteTestCase):
             utils.sendTouchEventToWindow('touchstart', [0],
                                          [arguments[0]], [arguments[1]],
                                          [1], [1], [0], [1], [0], [0], [0], 0);
-            utils.sendMouseEventToWindow('mouselongtap', arguments[0], arguments[1],
-                                          0, 1, 0);
+            window.synthesizeMouseEvent('mouselongtap', arguments[0], arguments[1],
+                                        {}, { toWindow: true });
             utils.sendTouchEventToWindow('touchend', [0],
                                          [arguments[0]], [arguments[1]],
                                          [1], [1], [0], [1], [0], [0], [0], 0);

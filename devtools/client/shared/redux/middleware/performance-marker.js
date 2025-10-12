@@ -43,7 +43,7 @@ function createPerformanceMarkerMiddleware(cases) {
       const shouldAddProfileMarker = !!condition;
 
       // Start the marker timer before calling next(action).
-      const startTime = shouldAddProfileMarker ? Cu.now() : null;
+      const startTime = shouldAddProfileMarker ? ChromeUtils.now() : null;
       const newState = next(action);
 
       if (shouldAddProfileMarker) {

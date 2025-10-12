@@ -364,6 +364,7 @@ static void WrapBackgroundColorInOwnLayer(nsDisplayListBuilder* aBuilder,
       item = MakeDisplayItemWithIndex<nsDisplayOwnLayer>(
           aBuilder, aFrame, /* aIndex = */ nsDisplayOwnLayer::OwnLayerForSubdoc,
           &tmpList, aBuilder->CurrentActiveScrolledRoot(),
+          nsDisplayItem::ContainerASRType::Constant,
           nsDisplayOwnLayerFlags::None, ScrollbarData{}, true, false);
     }
     aList->AppendToTop(item);
@@ -758,8 +759,7 @@ void nsSubDocumentFrame::ReflowCallbackCanceled() {
 }
 
 nsresult nsSubDocumentFrame::AttributeChanged(int32_t aNameSpaceID,
-                                              nsAtom* aAttribute,
-                                              int32_t aModType) {
+                                              nsAtom* aAttribute, AttrModType) {
   if (aNameSpaceID != kNameSpaceID_None) {
     return NS_OK;
   }

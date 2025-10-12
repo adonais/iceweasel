@@ -125,9 +125,12 @@ where
     /// that is, in the case above it should match
     /// `div .foo:where(.bar *, .baz)`.
     ///
+    /// `scope` is set to `Some()` if this dependency follows a scope invalidation
+    /// Matching context should be adjusted accordingly with `nest_for_scope`.
+    ///
     /// Returning true unconditionally here is over-optimistic and may
     /// over-invalidate.
-    fn check_outer_dependency(&mut self, dependency: &Dependency, element: E) -> bool;
+    fn check_outer_dependency(&mut self, dependency: &Dependency, element: E, scope: Option<OpaqueElement>) -> bool;
 
     /// The matching context that should be used to process invalidations.
     fn matching_context(&mut self) -> &mut MatchingContext<'b, E::Impl>;
@@ -193,9 +196,9 @@ pub struct DescendantInvalidationLists<'a> {
 
 impl<'a> DescendantInvalidationLists<'a> {
     fn is_empty(&self) -> bool {
-        self.dom_descendants.is_empty() &&
-            self.slotted_descendants.is_empty() &&
-            self.parts.is_empty()
+        self.dom_descendants.is_empty()
+            && self.slotted_descendants.is_empty()
+            && self.parts.is_empty()
     }
 }
 
@@ -251,6 +254,8 @@ pub struct Invalidation<'a> {
     /// This is needed to ensure that we match the selector with the right
     /// state, as whether some selectors like :host and ::part() match depends
     /// on it.
+    host: Option<OpaqueElement>,
+    /// The scope element from which this rule comes from, if any.
     scope: Option<OpaqueElement>,
     /// The offset of the selector pointing to a compound selector.
     ///
@@ -270,15 +275,16 @@ pub struct Invalidation<'a> {
 
 impl<'a> Invalidation<'a> {
     /// Create a new invalidation for matching a dependency.
-    pub fn new(dependency: &'a Dependency, scope: Option<OpaqueElement>) -> Self {
+    pub fn new(dependency: &'a Dependency, host: Option<OpaqueElement>, scope: Option<OpaqueElement>) -> Self {
         debug_assert!(
             dependency.selector_offset == dependency.selector.len() + 1 ||
-                dependency.normal_invalidation_kind() !=
-                    NormalDependencyInvalidationKind::Element,
+                dependency.invalidation_kind() !=
+                    DependencyInvalidationKind::Normal(NormalDependencyInvalidationKind::Element),
             "No point to this, if the dependency matched the element we should just invalidate it"
         );
         Self {
             dependency,
+            host,
             scope,
             // + 1 to go past the combinator.
             offset: dependency.selector.len() + 1 - dependency.selector_offset,
@@ -303,10 +309,10 @@ impl<'a> Invalidation<'a> {
             .combinator_at_parse_order(self.offset - 1)
         {
             Combinator::Descendant | Combinator::LaterSibling | Combinator::PseudoElement => true,
-            Combinator::Part |
-            Combinator::SlotAssignment |
-            Combinator::NextSibling |
-            Combinator::Child => false,
+            Combinator::Part
+            | Combinator::SlotAssignment
+            | Combinator::NextSibling
+            | Combinator::Child => false,
         }
     }
 
@@ -890,14 +896,16 @@ where
 
         let matching_result = {
             let context = self.processor.matching_context();
-            context.current_host = invalidation.scope;
+            context.current_host = invalidation.host;
 
-            matches_compound_selector_from(
-                &invalidation.dependency.selector,
-                invalidation.offset,
-                context,
-                &self.element,
-            )
+            context.nest_for_scope_condition(invalidation.scope,|ctx| {
+                matches_compound_selector_from(
+                    &invalidation.dependency.selector,
+                    invalidation.offset,
+                    ctx,
+                    &self.element,
+                )
+            })
         };
 
         let next_invalidation = match matching_result {
@@ -913,6 +921,7 @@ where
                 // to go outside our selector and carry on invalidating.
                 let mut cur_dependency = invalidation.dependency;
                 loop {
+                    let mut scope = invalidation.scope;
                     cur_dependency = match cur_dependency.next {
                         None => {
                             return SingleInvalidationResult {
@@ -926,6 +935,11 @@ where
                             match invalidation_kind {
                                 DependencyInvalidationKind::FullSelector => unreachable!(),
                                 DependencyInvalidationKind::Normal(_) => n,
+                                //TODO(descalente, bug 1934061): Add specific handling for implicit scopes.
+                                DependencyInvalidationKind::Scope(_) => {
+                                    scope = Some(self.element.opaque());
+                                    n
+                                },
                                 DependencyInvalidationKind::Relative(kind) => {
                                     self.processor.found_relative_selector_invalidation(
                                         self.element,
@@ -948,7 +962,7 @@ where
                     // checking for descendants.
                     if !self
                         .processor
-                        .check_outer_dependency(cur_dependency, self.element)
+                        .check_outer_dependency(cur_dependency, self.element, invalidation.scope)
                     {
                         return SingleInvalidationResult {
                             invalidated_self: false,
@@ -956,20 +970,27 @@ where
                         };
                     }
 
-                    if cur_dependency.normal_invalidation_kind() ==
-                        NormalDependencyInvalidationKind::Element
+                    let invalidation_kind = cur_dependency.invalidation_kind();
+                    if matches!(invalidation_kind,
+                        DependencyInvalidationKind::Normal(NormalDependencyInvalidationKind::Element))
+                        || (
+                            matches!(invalidation_kind,
+                            DependencyInvalidationKind::Scope(_))
+                            && cur_dependency.selector_offset == 0
+                        )
                     {
                         continue;
                     }
 
                     debug!(" > Generating invalidation");
-                    break Invalidation::new(cur_dependency, invalidation.scope);
+                    break Invalidation::new(cur_dependency, invalidation.host, scope);
                 }
             },
             CompoundSelectorMatchingResult::Matched {
                 next_combinator_offset,
             } => Invalidation {
                 dependency: invalidation.dependency,
+                host: invalidation.host,
                 scope: invalidation.scope,
                 offset: next_combinator_offset + 1,
                 matched_by_any_previous: false,
@@ -987,8 +1008,8 @@ where
             .selector
             .combinator_at_parse_order(next_invalidation.offset - 1);
 
-        if matches!(next_combinator, Combinator::PseudoElement) &&
-            self.processor.invalidates_on_pseudo_element()
+        if matches!(next_combinator, Combinator::PseudoElement)
+            && self.processor.invalidates_on_pseudo_element()
         {
             // We need to invalidate the element whenever pseudos change, for
             // two reasons:
@@ -1081,9 +1102,9 @@ where
         //
         //   [div div div, div div, div]
         //
-        let can_skip_pushing = next_invalidation_kind == invalidation_kind &&
-            invalidation.matched_by_any_previous &&
-            next_invalidation.effective_for_next();
+        let can_skip_pushing = next_invalidation_kind == invalidation_kind
+            && invalidation.matched_by_any_previous
+            && next_invalidation.effective_for_next();
 
         if can_skip_pushing {
             debug!(

@@ -28,7 +28,7 @@ android {
         abi {
             enable = true
             reset()
-            include 'x86', 'arm64-v8a', 'armeabi-v7a'
+            include "armeabi-v7a", "arm64-v8a", "x86_64"
         }
     }
 
@@ -37,17 +37,15 @@ android {
 }
 
 dependencies {
-    implementation project(':components:service-firefox-accounts')
     implementation project(':components:feature-qr')
-    implementation project(':components:support-base')
-    implementation project(':components:support-appservices')
     implementation project(':components:lib-fetch-httpurlconnection')
-
-    implementation libs.androidx.constraintlayout
-    implementation libs.androidx.core.ktx
-
-    implementation libs.kotlin.coroutines
+    implementation project(':components:service-firefox-accounts')
+    implementation project(':components:support-appservices')
+    implementation project(':components:support-base')
 
     implementation libs.androidx.appcompat
     implementation libs.androidx.browser
+    implementation libs.androidx.constraintlayout
+    implementation libs.androidx.core.ktx
+    implementation libs.kotlinx.coroutines
 }

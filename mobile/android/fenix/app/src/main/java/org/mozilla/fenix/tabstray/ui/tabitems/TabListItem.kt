@@ -7,7 +7,6 @@ package org.mozilla.fenix.tabstray.ui.tabitems
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -55,6 +54,8 @@ import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.browser.tabstray.R as tabstrayR
+import mozilla.components.ui.icons.R as iconsR
 
 private val ThumbnailWidth = 78.dp
 private val ThumbnailHeight = 68.dp
@@ -76,7 +77,6 @@ private val ThumbnailHeight = 68.dp
  * @param onClick Callback to handle when item is clicked.
  * @param onLongClick Optional callback to handle when item is long clicked.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TabListItem(
     tab: TabSessionState,
@@ -131,7 +131,6 @@ fun TabListItem(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Suppress("LongMethod", "LongParameterList")
 @Composable
 private fun TabContent(
@@ -225,7 +224,7 @@ private fun TabContent(
                     .testTag(TabsTrayTestTag.TAB_ITEM_CLOSE),
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.mozac_ic_cross_24),
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
                     contentDescription = stringResource(
                         id = R.string.close_tab_title,
                         tab.toDisplayTitle(),
@@ -264,7 +263,7 @@ private fun Thumbnail(
             .testTag(TabsTrayTestTag.TAB_ITEM_THUMBNAIL),
         shape = RoundedCornerShape(size = 4.dp),
         border = BorderStroke(width = 1.dp, color = MaterialTheme.colorScheme.outlineVariant),
-        contentDescription = stringResource(id = R.string.mozac_browser_tabstray_open_tab),
+        contentDescription = stringResource(id = tabstrayR.string.mozac_browser_tabstray_open_tab),
     )
 }
 

@@ -2,7 +2,7 @@
  * Test that doorhanger submit telemetry is sent when the user saves/updates.
  */
 
-add_setup(function () {
+add_setup(async function () {
   // This test used to rely on the initial timer of
   // TestUtils.waitForCondition. See bug 1695395.
   // The test is perma-fail on Linux asan opt without this.
@@ -288,6 +288,7 @@ async function test_submit_telemetry(tc) {
 
   let notif;
   for (let userAction of tc.userActions) {
+    const formProcessedPromise = listenForTestNotification("FormProcessed");
     await BrowserTestUtils.withNewTab(
       {
         gBrowser,
@@ -297,6 +298,9 @@ async function test_submit_telemetry(tc) {
       },
       async function (browser) {
         await SimpleTest.promiseFocus(browser.ownerGlobal);
+
+        info("Waiting for form-processed message");
+        await formProcessedPromise;
 
         if (userAction.pageChanges) {
           info(
@@ -316,7 +320,10 @@ async function test_submit_telemetry(tc) {
         }
 
         info("Submitting form");
-        let formSubmittedPromise = listenForTestNotification("ShowDoorhanger");
+        let formSubmittedPromise = listenForTestNotification([
+          "FormProcessed",
+          "ShowDoorhanger",
+        ]);
         await SpecialPowers.spawn(browser, [], async function () {
           let doc = this.content.document;
           doc.getElementById("form-basic").submit();

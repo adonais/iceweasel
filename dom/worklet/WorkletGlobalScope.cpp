@@ -132,8 +132,10 @@ void WorkletGlobalScope::Dump(const Optional<nsAString>& aString) const {
 JS::RealmOptions WorkletGlobalScope::CreateRealmOptions() const {
   JS::RealmOptions options;
 
-  options.creationOptions().setForceUTC(
-      ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC));
+  if (ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC)) {
+    nsCString timeZone = nsRFPService::GetSpoofedJSTimeZone();
+    options.behaviors().setTimeZoneCopyZ(timeZone.get());
+  }
   options.creationOptions().setAlwaysUseFdlibm(
       ShouldResistFingerprinting(RFPTarget::JSMathFdlibm));
   if (ShouldResistFingerprinting(RFPTarget::JSLocale)) {

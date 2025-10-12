@@ -240,13 +240,14 @@ internal class DefaultCookieBannerDetailsControllerTest {
             coEvery { controller.getTabDomain(any()) } returns "mozilla.org"
             every { protectionsStore.dispatch(any()) } returns mockk()
 
-            controller.handleRequestSiteSupportPressed()
-
-            assertNotNull(CookieBanners.reportDomainSiteButton.testGetValue())
-            Pings.cookieBannerReportSite.testBeforeNextSubmit {
+            val job = Pings.cookieBannerReportSite.testBeforeNextSubmit {
                 assertNotNull(CookieBanners.reportSiteDomain.testGetValue())
                 assertEquals("mozilla.org", CookieBanners.reportSiteDomain.testGetValue())
             }
+            controller.handleRequestSiteSupportPressed()
+            job.join()
+
+            assertNotNull(CookieBanners.reportDomainSiteButton.testGetValue())
             advanceUntilIdle()
             coVerifyOrder {
                 protectionsStore.dispatch(

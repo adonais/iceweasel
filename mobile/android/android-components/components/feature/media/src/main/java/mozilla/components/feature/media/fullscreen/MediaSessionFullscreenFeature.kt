@@ -6,7 +6,6 @@ package mozilla.components.feature.media.fullscreen
 
 import android.app.Activity
 import android.content.pm.ActivityInfo
-import android.os.Build
 import android.view.WindowManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -62,7 +61,7 @@ class MediaSessionFullscreenFeature(
                     ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
 
             false ->
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && activity.isInPictureInPictureMode) {
+                if (activity.isInPictureInPictureMode) {
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                 } else {
                     activity.requestedOrientation =

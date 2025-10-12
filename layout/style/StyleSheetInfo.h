@@ -60,8 +60,6 @@ struct StyleSheetInfo final {
   // parent chain and things are good.
   nsTArray<RefPtr<StyleSheet>> mChildren;
 
-  AutoTArray<StyleSheet*, 8> mSheets;
-
   // If a SourceMap or X-SourceMap response header is seen, this is
   // the value.  If both are seen, SourceMap is preferred.  If neither
   // is seen, this will be an empty string.
@@ -77,6 +75,13 @@ struct StyleSheetInfo final {
   // Also, this is mostly a duplicate reference of the same url data
   // inside RawServoStyleSheet. We may want to just use that instead.
   RefPtr<URLExtraData> mURLData;
+
+  // HACK: This must be the after any member rust accesses in order to not cause
+  // issues on i686-android. Bindgen generates an opaque blob of [u64; N] for
+  // types it doesn't understand like AutoTArray, but turns out u64 is not
+  // 8-byte aligned on this arch (wtf), which would cause other members rust
+  // cares about to be misaligned.
+  AutoTArray<StyleSheet*, 8> mSheets;
 
 #ifdef DEBUG
   bool mPrincipalSet = false;

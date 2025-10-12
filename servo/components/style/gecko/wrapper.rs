@@ -71,7 +71,7 @@ use app_units::Au;
 use atomic_refcell::{AtomicRef, AtomicRefCell, AtomicRefMut};
 use dom::{DocumentState, ElementState};
 use euclid::default::Size2D;
-use fxhash::FxHashMap;
+use rustc_hash::FxHashMap;
 use selectors::attr::{AttrSelectorOperation, CaseSensitivity, NamespaceConstraint};
 use selectors::bloom::{BloomFilter, BLOOM_HASH_MASK};
 use selectors::matching::VisitedHandlingMode;
@@ -737,8 +737,8 @@ impl<'le> GeckoElement<'le> {
     fn extended_slots(&self) -> Option<&structs::FragmentOrElement_nsExtendedDOMSlots> {
         self.dom_slots().and_then(|s| unsafe {
             // For the bit usage, see nsContentSlots::GetExtendedSlots.
-            let e_slots = s._base.mExtendedSlots &
-                !structs::nsIContent_nsContentSlots_sNonOwningExtendedSlotsFlag;
+            let e_slots = s._base.mExtendedSlots
+                & !structs::nsIContent_nsContentSlots_sNonOwningExtendedSlotsFlag;
             (e_slots as *const structs::FragmentOrElement_nsExtendedDOMSlots).as_ref()
         })
     }
@@ -890,8 +890,8 @@ impl<'le> GeckoElement<'le> {
             let after_value =
                 AnimationValue::from_computed_values(property_declaration_id, after_change_style);
             debug_assert!(
-                after_value.is_some() ||
-                    matches!(property_declaration_id, PropertyDeclarationId::Custom(..))
+                after_value.is_some()
+                    || matches!(property_declaration_id, PropertyDeclarationId::Custom(..))
             );
             return after_value.is_none() || ***existing != after_value.unwrap();
         }
@@ -1052,9 +1052,9 @@ impl<'le> TElement for GeckoElement<'le> {
         // StyleChildrenIterator::IsNeeded does, except that it might return
         // true if we used to (but no longer) have anonymous content from
         // ::before/::after, or nsIAnonymousContentCreators.
-        if self.is_html_slot_element() ||
-            self.shadow_root().is_some() ||
-            self.may_have_anonymous_children()
+        if self.is_html_slot_element()
+            || self.shadow_root().is_some()
+            || self.may_have_anonymous_children()
         {
             unsafe {
                 let mut iter = std::mem::MaybeUninit::<structs::StyleChildrenIterator>::uninit();
@@ -1185,31 +1185,15 @@ impl<'le> TElement for GeckoElement<'le> {
             return;
         }
 
-        unsafe {
-            const STACK_BUFFER_CAP: usize = 8;
-            // We should virtually never have more than 8 NAC roots for a single element.
-            let mut stack_buffer =
-                [mem::MaybeUninit::<*mut nsIContent>::uninit(); STACK_BUFFER_CAP];
-            let stack_buffer_ptr = stack_buffer.as_mut_ptr() as *mut *mut nsIContent;
-            let mut stack_buffer_len = 0;
-            // If we end up with more, they will end up on the heap, here.
-            let mut array = thin_vec::ThinVec::<*mut nsIContent>::new();
-            bindings::Gecko_GetAnonymousContentForElement(
-                self.0,
-                stack_buffer_ptr,
-                STACK_BUFFER_CAP,
-                &mut stack_buffer_len,
-                &mut array,
-            );
-            let stack_els = std::slice::from_raw_parts(stack_buffer_ptr, stack_buffer_len);
-            for content in stack_els.iter().chain(array.iter()) {
-                let node = GeckoNode::from_content(&**content);
-                let element = match node.as_element() {
-                    Some(e) => e,
-                    None => continue,
-                };
-                f(element);
-            }
+        thin_vec::auto_thin_vec!(let array: [*mut nsIContent; 8]);
+        unsafe { bindings::Gecko_GetAnonymousContentForElement(self.0, array.as_mut().as_mut_ptr()) };
+        for content in array.iter() {
+            let node = GeckoNode::from_content(unsafe { &**content });
+            let element = match node.as_element() {
+                Some(e) => e,
+                None => continue,
+            };
+            f(element);
         }
     }
 
@@ -1392,9 +1376,9 @@ impl<'le> TElement for GeckoElement<'le> {
 
     unsafe fn clear_descendant_bits(&self) {
         self.unset_flags(
-            ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO |
-                ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO |
-                NODE_DESCENDANTS_NEED_FRAMES,
+            ELEMENT_HAS_DIRTY_DESCENDANTS_FOR_SERVO
+                | ELEMENT_HAS_ANIMATION_ONLY_DIRTY_DESCENDANTS_FOR_SERVO
+                | NODE_DESCENDANTS_NEED_FRAMES,
         )
     }
 
@@ -1452,10 +1436,10 @@ impl<'le> TElement for GeckoElement<'le> {
     unsafe fn clear_data(&self) {
         let ptr = self.0.mServoData.get();
         self.unset_flags(
-            ELEMENT_HAS_SNAPSHOT |
-                ELEMENT_HANDLED_SNAPSHOT |
-                structs::Element_kAllServoDescendantBits |
-                NODE_NEEDS_FRAME,
+            ELEMENT_HAS_SNAPSHOT
+                | ELEMENT_HANDLED_SNAPSHOT
+                | structs::Element_kAllServoDescendantBits
+                | NODE_NEEDS_FRAME,
         );
         if !ptr.is_null() {
             debug!("Dropping ElementData for {:?}", self);
@@ -1714,8 +1698,8 @@ impl<'le> TElement for GeckoElement<'le> {
         let ns = self.namespace_id();
         // <th> elements get a default MozCenterOrInherit which may get overridden
         if ns == structs::kNameSpaceID_XHTML as i32 {
-            if self.local_name().as_ptr() == atom!("table").as_ptr() &&
-                self.as_node().owner_doc().quirks_mode() == QuirksMode::Quirks
+            if self.local_name().as_ptr() == atom!("table").as_ptr()
+                && self.as_node().owner_doc().quirks_mode() == QuirksMode::Quirks
             {
                 hints.push(TABLE_COLOR_RULE.clone());
             }
@@ -2027,54 +2011,54 @@ impl<'le> ::selectors::Element for GeckoElement<'le> {
     ) -> bool {
         use selectors::matching::*;
         match *pseudo_class {
-            NonTSPseudoClass::Autofill |
-            NonTSPseudoClass::Defined |
-            NonTSPseudoClass::Focus |
-            NonTSPseudoClass::Enabled |
-            NonTSPseudoClass::Disabled |
-            NonTSPseudoClass::Checked |
-            NonTSPseudoClass::Fullscreen |
-            NonTSPseudoClass::Indeterminate |
-            NonTSPseudoClass::MozInert |
-            NonTSPseudoClass::PopoverOpen |
-            NonTSPseudoClass::PlaceholderShown |
-            NonTSPseudoClass::Target |
-            NonTSPseudoClass::Valid |
-            NonTSPseudoClass::Invalid |
-            NonTSPseudoClass::MozBroken |
-            NonTSPseudoClass::Required |
-            NonTSPseudoClass::Optional |
-            NonTSPseudoClass::ReadOnly |
-            NonTSPseudoClass::ReadWrite |
-            NonTSPseudoClass::FocusWithin |
-            NonTSPseudoClass::FocusVisible |
-            NonTSPseudoClass::MozDragOver |
-            NonTSPseudoClass::MozDevtoolsHighlighted |
-            NonTSPseudoClass::MozStyleeditorTransitioning |
-            NonTSPseudoClass::MozMathIncrementScriptLevel |
-            NonTSPseudoClass::InRange |
-            NonTSPseudoClass::OutOfRange |
-            NonTSPseudoClass::Default |
-            NonTSPseudoClass::UserValid |
-            NonTSPseudoClass::UserInvalid |
-            NonTSPseudoClass::MozMeterOptimum |
-            NonTSPseudoClass::MozMeterSubOptimum |
-            NonTSPseudoClass::MozMeterSubSubOptimum |
-            NonTSPseudoClass::MozHasDirAttr |
-            NonTSPseudoClass::MozDirAttrLTR |
-            NonTSPseudoClass::MozDirAttrRTL |
-            NonTSPseudoClass::MozDirAttrLikeAuto |
-            NonTSPseudoClass::Modal |
-            NonTSPseudoClass::MozTopmostModal |
-            NonTSPseudoClass::Open |
-            NonTSPseudoClass::Active |
-            NonTSPseudoClass::Hover |
-            NonTSPseudoClass::HasSlotted |
-            NonTSPseudoClass::MozAutofillPreview |
-            NonTSPseudoClass::MozRevealed |
-            NonTSPseudoClass::ActiveViewTransition |
-            NonTSPseudoClass::MozValueEmpty |
-            NonTSPseudoClass::MozSuppressForPrintSelection => {
+            NonTSPseudoClass::Autofill
+            | NonTSPseudoClass::Defined
+            | NonTSPseudoClass::Focus
+            | NonTSPseudoClass::Enabled
+            | NonTSPseudoClass::Disabled
+            | NonTSPseudoClass::Checked
+            | NonTSPseudoClass::Fullscreen
+            | NonTSPseudoClass::Indeterminate
+            | NonTSPseudoClass::MozInert
+            | NonTSPseudoClass::PopoverOpen
+            | NonTSPseudoClass::PlaceholderShown
+            | NonTSPseudoClass::Target
+            | NonTSPseudoClass::Valid
+            | NonTSPseudoClass::Invalid
+            | NonTSPseudoClass::MozBroken
+            | NonTSPseudoClass::Required
+            | NonTSPseudoClass::Optional
+            | NonTSPseudoClass::ReadOnly
+            | NonTSPseudoClass::ReadWrite
+            | NonTSPseudoClass::FocusWithin
+            | NonTSPseudoClass::FocusVisible
+            | NonTSPseudoClass::MozDragOver
+            | NonTSPseudoClass::MozDevtoolsHighlighted
+            | NonTSPseudoClass::MozStyleeditorTransitioning
+            | NonTSPseudoClass::MozMathIncrementScriptLevel
+            | NonTSPseudoClass::InRange
+            | NonTSPseudoClass::OutOfRange
+            | NonTSPseudoClass::Default
+            | NonTSPseudoClass::UserValid
+            | NonTSPseudoClass::UserInvalid
+            | NonTSPseudoClass::MozMeterOptimum
+            | NonTSPseudoClass::MozMeterSubOptimum
+            | NonTSPseudoClass::MozMeterSubSubOptimum
+            | NonTSPseudoClass::MozHasDirAttr
+            | NonTSPseudoClass::MozDirAttrLTR
+            | NonTSPseudoClass::MozDirAttrRTL
+            | NonTSPseudoClass::MozDirAttrLikeAuto
+            | NonTSPseudoClass::Modal
+            | NonTSPseudoClass::MozTopmostModal
+            | NonTSPseudoClass::Open
+            | NonTSPseudoClass::Active
+            | NonTSPseudoClass::Hover
+            | NonTSPseudoClass::HasSlotted
+            | NonTSPseudoClass::MozAutofillPreview
+            | NonTSPseudoClass::MozRevealed
+            | NonTSPseudoClass::ActiveViewTransition
+            | NonTSPseudoClass::MozValueEmpty
+            | NonTSPseudoClass::MozSuppressForPrintSelection => {
                 self.state().intersects(pseudo_class.state_flag())
             },
             NonTSPseudoClass::Dir(ref dir) => self.state().intersects(dir.element_state()),

@@ -20,14 +20,20 @@ export const DEFAULT_ENGINE_ID = "default-engine";
  * @type {Array<string>}
  * @description Supported backends.
  */
-export const BACKENDS = ["onnx", "wllama", "onnx-native"];
+export const BACKENDS = Object.freeze({
+  onnx: "onnx",
+  wllama: "wllama",
+  onnxNative: "onnx-native",
+  llamaCpp: "llama.cpp",
+  bestLlama: "best-llama",
+});
 
 /**
  * @constant
  * @type {Array<string>}
  * @description Backends using WASM.
  */
-export const WASM_BACKENDS = ["onnx", "wllama"];
+export const WASM_BACKENDS = [BACKENDS.onnx, BACKENDS.wllama];
 
 /**
  * @constant
@@ -848,11 +854,14 @@ export class PipelineOptions {
         this.#validateIntegerRange(key, options[key], 1, 10000000);
       }
 
-      if (key === "backend" && !BACKENDS.includes(options[key])) {
+      if (
+        key === "backend" &&
+        !Object.values(BACKENDS).includes(options[key])
+      ) {
         throw new PipelineOptionsValidationError(
           key,
           options[key],
-          `Should be one of ${BACKENDS.join(", ")}`
+          `Should be one of ${Object.values(BACKENDS).join(", ")}`
         );
       }
 
@@ -1010,6 +1019,10 @@ export class EngineProcess {
 
     try {
       const actor = keepAlive.domProcess.getActor(actorName);
+
+      // keep track of the childID for the inference process, so we can observe its shutdowns.
+      actor.childID = keepAlive.domProcess.childID;
+
       if (actor && !actor.processKeepAlive) {
         ChromeUtils.addProfilerMarker(
           "EngineProcess",
@@ -1073,12 +1086,21 @@ export class EngineProcess {
  *
  * @param {object} options - Configuration options for the ML engine.
  * @param {?function(ProgressAndStatusCallbackParams):void} notificationsCallback A function to call to indicate notifications.
+ * @param {?AbortSignal} abortSignal - AbortSignal to cancel the download.
  */
-export async function createEngine(options, notificationsCallback = null) {
+export async function createEngine(
+  options,
+  notificationsCallback = null,
+  abortSignal
+) {
   try {
     const pipelineOptions = new PipelineOptions(options);
     const engineParent = await EngineProcess.getMLEngineParent();
-    return engineParent.getEngine(pipelineOptions, notificationsCallback);
+    return engineParent.getEngine({
+      pipelineOptions,
+      notificationsCallback,
+      abortSignal,
+    });
   } catch (e) {
     Glean.firefoxAiRuntime.engineCreationFailure.record({
       engineId: options.engineId || "",

@@ -14,7 +14,7 @@ android {
     compileSdk = config.compileSdkVersion
 
     defaultConfig {
-        minSdk = 23
+        minSdk = config.minSdkVersion
         targetSdk = config.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -62,10 +62,12 @@ configurations.configureEach {
 }
 
 dependencies {
-    implementation libs.androidx.test.junit
-    implementation libs.androidx.espresso.core
-    implementation libs.androidx.test.uiautomator
     implementation libs.androidx.benchmark.macro.junit4
+    implementation libs.androidx.core.ktx
+    implementation libs.androidx.test.espresso.core
+    implementation libs.androidx.test.junit
+    implementation libs.androidx.test.uiautomator
+    implementation libs.mockwebserver
 }
 
 androidComponents {

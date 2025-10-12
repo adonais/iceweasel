@@ -193,6 +193,7 @@ class WebExtensionContentScript final : public MozDocumentMatcher {
  public:
   using RunAtEnum = dom::ContentScriptRunAt;
   using ExecutionWorld = dom::ContentScriptExecutionWorld;
+  using CSSOrigin = dom::ContentScriptCssOrigin;
 
   static already_AddRefed<WebExtensionContentScript> Constructor(
       dom::GlobalObject& aGlobal, WebExtensionPolicy& aExtension,
@@ -200,6 +201,7 @@ class WebExtensionContentScript final : public MozDocumentMatcher {
 
   RunAtEnum RunAt() const { return mRunAt; }
   ExecutionWorld World() const { return mWorld; }
+  CSSOrigin CssOrigin() const { return mCssOrigin; }
   void GetWorldId(nsAString& aWorldId) const;
 
   void GetCssPaths(nsTArray<nsString>& aPaths) const {
@@ -228,6 +230,7 @@ class WebExtensionContentScript final : public MozDocumentMatcher {
   RunAtEnum mRunAt;
   ExecutionWorld mWorld;
   Nullable<nsString> mWorldId;
+  CSSOrigin mCssOrigin;
 };
 
 }  // namespace extensions

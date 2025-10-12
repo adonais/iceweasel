@@ -45,10 +45,22 @@ logger.addHandler(handler)
 log = logging.LoggerAdapter(logger, {"lintname": "mozlint", "pid": os.getpid()})
 
 
+def _setup_logger(log, show_verbose):
+    if show_verbose:
+        formatter = logging.Formatter(
+            "%(asctime)s.%(msecs)03d %(lintname)s (%(pid)s) | %(message)s", "%H:%M:%S"
+        )
+        logger.handlers[0].setFormatter(formatter)
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.WARNING)
+
+
 def _run_worker(config, paths, **lintargs):
     log = logging.LoggerAdapter(
         logger, {"lintname": config.get("name"), "pid": os.getpid()}
     )
+    _setup_logger(log, lintargs.get("show_verbose"))
     lintargs["log"] = log
     result = ResultSummary(lintargs["root"])
 
@@ -188,14 +200,7 @@ class LintRoller:
         self.root = root
         self.exclude = exclude or []
 
-        if lintargs.get("show_verbose"):
-            formatter = logging.Formatter(
-                "%(asctime)s.%(msecs)d %(lintname)s (%(pid)s) | %(message)s", "%H:%M:%S"
-            )
-            logger.handlers[0].setFormatter(formatter)
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.WARNING)
+        _setup_logger(log, lintargs.get("show_verbose"))
 
     def read(self, paths):
         """Parse one or more linters and add them to the registry.
@@ -323,7 +328,10 @@ class LintRoller:
             return
 
         # Merge this job's results with our global ones.
-        self.result.update(future.result())
+        try:
+            self.result.update(future.result())
+        except Exception:
+            log.exception("Sub-process raised an error:")
 
     def roll(self, paths=None, outgoing=None, workdir=None, rev=None, num_procs=None):
         """Run all of the registered linters against the specified file paths.

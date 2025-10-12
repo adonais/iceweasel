@@ -505,42 +505,27 @@ static inline wr::BorderRadius ToBorderRadius(
 
 static inline wr::BorderRadius ToBorderRadius(
     const gfx::RectCornerRadii& aRadii) {
-  return ToBorderRadius(LayoutDeviceSize::FromUnknownSize(aRadii[0]),
-                        LayoutDeviceSize::FromUnknownSize(aRadii[1]),
-                        LayoutDeviceSize::FromUnknownSize(aRadii[3]),
-                        LayoutDeviceSize::FromUnknownSize(aRadii[2]));
+  return ToBorderRadius(
+      LayoutDeviceSize::FromUnknownSize(aRadii.TopLeft()),
+      LayoutDeviceSize::FromUnknownSize(aRadii.TopRight()),
+      LayoutDeviceSize::FromUnknownSize(aRadii.BottomLeft()),
+      LayoutDeviceSize::FromUnknownSize(aRadii.BottomRight()));
 }
 
 static inline wr::ComplexClipRegion ToComplexClipRegion(
-    const nsRect& aRect, const nscoord* aRadii, int32_t aAppUnitsPerDevPixel) {
+    const nsRect& aRect, const nsRectCornerRadii& aRadii,
+    int32_t aAppUnitsPerDevPixel) {
   wr::ComplexClipRegion ret;
   ret.rect =
       ToLayoutRect(LayoutDeviceRect::FromAppUnits(aRect, aAppUnitsPerDevPixel));
   ret.radii = ToBorderRadius(
-      LayoutDeviceSize::FromAppUnits(
-          nsSize(aRadii[eCornerTopLeftX], aRadii[eCornerTopLeftY]),
-          aAppUnitsPerDevPixel),
-      LayoutDeviceSize::FromAppUnits(
-          nsSize(aRadii[eCornerTopRightX], aRadii[eCornerTopRightY]),
-          aAppUnitsPerDevPixel),
-      LayoutDeviceSize::FromAppUnits(
-          nsSize(aRadii[eCornerBottomLeftX], aRadii[eCornerBottomLeftY]),
-          aAppUnitsPerDevPixel),
-      LayoutDeviceSize::FromAppUnits(
-          nsSize(aRadii[eCornerBottomRightX], aRadii[eCornerBottomRightY]),
-          aAppUnitsPerDevPixel));
+      LayoutDeviceSize::FromAppUnits(aRadii.TopLeft(), aAppUnitsPerDevPixel),
+      LayoutDeviceSize::FromAppUnits(aRadii.TopRight(), aAppUnitsPerDevPixel),
+      LayoutDeviceSize::FromAppUnits(aRadii.BottomLeft(), aAppUnitsPerDevPixel),
+      LayoutDeviceSize::FromAppUnits(aRadii.BottomRight(),
+                                     aAppUnitsPerDevPixel));
   ret.mode = ClipMode::Clip;
   return ret;
-}
-
-static inline wr::LayoutSideOffsets ToBorderWidths(float top, float right,
-                                                   float bottom, float left) {
-  wr::LayoutSideOffsets bw;
-  bw.top = top;
-  bw.right = right;
-  bw.bottom = bottom;
-  bw.left = left;
-  return bw;
 }
 
 static inline wr::DeviceIntSideOffsets ToDeviceIntSideOffsets(int32_t top,
@@ -564,6 +549,21 @@ static inline wr::LayoutSideOffsets ToLayoutSideOffsets(float top, float right,
   offset.bottom = bottom;
   offset.left = left;
   return offset;
+}
+
+static inline wr::LayoutSideOffsets ToLayoutSideOffsets(
+    const gfx::Margin& aMargin) {
+  return ToLayoutSideOffsets(aMargin.top, aMargin.right, aMargin.bottom,
+                             aMargin.left);
+}
+
+static inline wr::LayoutSideOffsets ToBorderWidths(float top, float right,
+                                                   float bottom, float left) {
+  return ToLayoutSideOffsets(top, right, bottom, left);
+}
+
+static inline wr::LayoutSideOffsets ToBorderWidths(const gfx::Margin& aMargin) {
+  return ToLayoutSideOffsets(aMargin);
 }
 
 wr::RepeatMode ToRepeatMode(StyleBorderImageRepeatKeyword);

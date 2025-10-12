@@ -112,6 +112,9 @@ certificate-viewer-export = Export
 # Label for a tab where we haven't found a better label:
 certificate-viewer-unknown-group-label = (unknown)
 
+# Name for a file where we haven't found a better name:
+certificate-viewer-unknown-file-name = certificate
+
 ## Labels for tabs displayed in stand-alone about:certificate page
 
 certificate-viewer-tab-mine = Your Certificates

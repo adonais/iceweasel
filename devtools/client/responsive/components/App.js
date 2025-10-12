@@ -176,20 +176,17 @@ class App extends PureComponent {
     this.props.dispatch(changeUserAgent(userAgent));
   }
 
-  onChangeViewportOrientation(id, type, angle, isViewportRotated = false) {
+  onChangeViewportOrientation(id, type, angle) {
     window.postMessage(
       {
         type: "viewport-orientation-change",
         orientationType: type,
         angle,
-        isViewportRotated,
       },
       "*"
     );
 
-    if (isViewportRotated) {
-      this.props.dispatch(changeViewportAngle(id, angle));
-    }
+    this.props.dispatch(changeViewportAngle(id, angle));
   }
 
   onDeviceListUpdate(devices) {

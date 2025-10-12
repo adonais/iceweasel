@@ -318,19 +318,32 @@ newtab-custom-pocket-subtitle = Contenido excepcional seleccionado por { -pocket
 newtab-custom-stories-toggle =
     .label = Historias recomendadas
     .description = Contenido excepcional seleccionado por la familia de { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Historias
+newtab-custom-stories-personalized-checkbox-label = Historias personalizadas basadas en su actividad
 newtab-custom-pocket-sponsored = Historias patrocinadas
 newtab-custom-pocket-show-recent-saves = Mostrar guardados recientes
 newtab-custom-recent-title = Actividad reciente
 newtab-custom-recent-subtitle = Una selección de sitios y contenido recientes
-newtab-custom-recent-toggle =
-    .label = Actividad reciente
-    .description = Una selección de sitios y contenido recientes
 newtab-custom-weather-toggle =
     .label = Clima
     .description = El pronóstico de hoy de un vistazo
 newtab-custom-trending-search-toggle =
     .label = Búsquedas más populares
     .description = Temas populares y buscados con frecuencia
+newtab-custom-widget-weather-toggle =
+    .label = Clima
+newtab-custom-widget-trending-search-toggle =
+    .label = Búsquedas más populares
+newtab-custom-widget-lists-toggle =
+    .label = Listas
+newtab-custom-widget-timer-toggle =
+    .label = Temporizador
+newtab-custom-widget-section-title = Widgets
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Cerrar
+    .aria-label = Cerrar menú
 newtab-custom-close-button = Cerrar
 newtab-custom-settings = Administrar más configuraciones
 
@@ -343,10 +356,11 @@ newtab-wallpaper-custom-color = Elegir un color
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = La imagen excedió el límite de tamaño de archivo de { $file_size }MB. Pruebe subir un archivo más chico.
+newtab-wallpaper-error-upload-file-type = No pudimos subir el archivo. Vuelva a probar con un archivo de imagen.
 newtab-wallpaper-error-file-type = No pudimos subir el archivo. Vuelva a probar con un tipo de archivo diferente.
 newtab-wallpaper-light-red-panda = Panda rojo
 newtab-wallpaper-light-mountain = Montaña blanca
-newtab-wallpaper-light-sky = Cielo con nubes púrpuras y rosas
+newtab-wallpaper-light-sky = Cielo con nubes violetas y rosas
 newtab-wallpaper-light-color = Formas azules, rosas y amarillas
 newtab-wallpaper-light-landscape = Paisaje de montaña con neblina azul
 newtab-wallpaper-light-beach = Playa con palmera
@@ -355,7 +369,7 @@ newtab-wallpaper-dark-color = Formas rojas y azules
 newtab-wallpaper-dark-panda = Panda rojo oculto en el bosque
 newtab-wallpaper-dark-sky = Paisaje de ciudad con cielo nocturno
 newtab-wallpaper-dark-mountain = Paisaje de montaña
-newtab-wallpaper-dark-city = Paisaje de ciudad púrpura
+newtab-wallpaper-dark-city = Paisaje de ciudad violeta
 newtab-wallpaper-dark-fox-anniversary = Un zorro en el pavimento cerca de un bosque
 newtab-wallpaper-light-fox-anniversary = Un zorro en un campo cubierto de césped con un paisaje montañoso brumoso
 
@@ -364,7 +378,7 @@ newtab-wallpaper-light-fox-anniversary = Un zorro en un campo cubierto de céspe
 newtab-wallpaper-category-title-colors = Colores lisos
 newtab-wallpaper-blue = Azul
 newtab-wallpaper-light-blue = Celeste
-newtab-wallpaper-light-purple = Púrpura claro
+newtab-wallpaper-light-purple = Violeta claro
 newtab-wallpaper-light-green = Verde claro
 newtab-wallpaper-green = Verde
 newtab-wallpaper-beige = Beige
@@ -374,7 +388,7 @@ newtab-wallpaper-pink = Rosa
 newtab-wallpaper-light-pink = Rosa claro
 newtab-wallpaper-red = Rojo
 newtab-wallpaper-dark-blue = Azul oscuro
-newtab-wallpaper-dark-purple = Púrpura oscuro
+newtab-wallpaper-dark-purple = Violeta oscuro
 newtab-wallpaper-dark-green = Verde oscuro
 newtab-wallpaper-brown = Marrón
 
@@ -383,13 +397,13 @@ newtab-wallpaper-brown = Marrón
 newtab-wallpaper-category-title-abstract = Abstracto
 newtab-wallpaper-abstract-green = Formas verdes
 newtab-wallpaper-abstract-blue = Formas azules
-newtab-wallpaper-abstract-purple = Formas púrpuras
+newtab-wallpaper-abstract-purple = Formas violetas
 newtab-wallpaper-abstract-orange = Formas naranjas
 newtab-wallpaper-gradient-orange = Degradado naranja y rosa
-newtab-wallpaper-abstract-blue-purple = Formas azules y púrpuras
+newtab-wallpaper-abstract-blue-purple = Formas azules y violetas
 newtab-wallpaper-abstract-white-curves = Blanco con curvas sombreadas
-newtab-wallpaper-abstract-purple-green = Gradiente de luz púrpura y verde
-newtab-wallpaper-abstract-blue-purple-waves = Formas onduladas azules y púrpuras
+newtab-wallpaper-abstract-purple-green = Gradiente de luz violeta y verde
+newtab-wallpaper-abstract-blue-purple-waves = Formas onduladas azules y violetas
 newtab-wallpaper-abstract-black-waves = Formas onduladas negras
 
 ## Celestial
@@ -448,7 +462,6 @@ newtab-weather-menu-change-location = Cambiar ubicación
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Buscar ubicación
     .aria-label = Buscar ubicación
-newtab-weather-change-location-search-input = Buscar ubicación
 newtab-weather-menu-weather-display = Visualización del clima
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -595,8 +608,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Tendencia en Google
 newtab-trending-searches-show-trending =
     .title = Mostrar búsquedas más populares
 newtab-trending-searches-hide-trending =
@@ -605,3 +616,76 @@ newtab-trending-searches-learn-more = Conocer más
 newtab-trending-searches-dismiss = Ocultar búsquedas más populares
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Búsquedas más populares
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Las posibilidades son infinitas. Agregar una.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nuevo
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Completa ({ $number })
+newtab-widget-task-list-menu-copy = Copiar
+newtab-widget-lists-menu-edit = Editar nombre de lista
+newtab-widget-lists-menu-create = Crear nueva lista
+newtab-widget-lists-menu-delete = Borrar esta lista
+newtab-widget-lists-menu-copy = Copiar lista al portapapeles
+newtab-widget-lists-menu-hide = Ocultar todas las listas
+newtab-widget-lists-menu-learn-more = Conocer más
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Agregar un ítem
+newtab-widget-lists-input-error = Incluir texto para agregar un ítem.
+newtab-widget-lists-input-menu-open-link = Abrir enlace
+newtab-widget-lists-input-menu-move-up = Mover arriba
+newtab-widget-lists-input-menu-move-down = Mover abajo
+newtab-widget-lists-input-menu-delete = Borrar
+newtab-widget-lists-input-menu-edit = Editar
+newtab-widget-lists-name-label-default =
+    .label = Lista de tareas
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Lista de tareas
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Nueva lista
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Temporizador
+newtab-widget-timer-notification-focus = Se terminó el tiempo de enfocarse. Buen trabajo. ¿Necesita un descanso?
+newtab-widget-timer-notification-break = Se terminó el descanso. ¿Listo para enfocarse?
+newtab-widget-timer-notification-warning = Las notificaciones están desactivadas
+newtab-widget-timer-mode-focus =
+    .label = A enfocarse
+newtab-widget-timer-mode-break =
+    .label = Descanso
+newtab-widget-timer-play =
+    .title = A jugar
+newtab-widget-timer-pause =
+    .title = Pausa
+newtab-widget-timer-label-play =
+    .label = A jugar
+newtab-widget-timer-label-pause =
+    .label = Pausa
+newtab-widget-timer-reset =
+    .title = Restablecer
+newtab-widget-timer-menu-notifications = Desactivar notificaciones
+newtab-widget-timer-menu-notifications-on = Activar notificaciones
+newtab-widget-timer-menu-hide = Ocultar temporizador
+newtab-widget-timer-menu-learn-more = Conocer más
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Deslizar para ver más
+newtab-widget-message-title = Manténgase enfocado con listas y un temporizador incorporado
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Desde recordatorios rápidos hasta tareas diarias, sesiones de enfoque y descansos prolongados: manténgase concentrado en la tarea y a tiempo.
+newtab-promo-card-title = Ayudar a { -brand-product-name }
+newtab-promo-card-body = Nuestros patrocinadores apoyan nuestra misión de construir una web mejor
+newtab-promo-card-cta = Conocer más
+newtab-promo-card-dismiss-button =
+    .title = Descartar
+    .aria-label = Descartar

@@ -824,6 +824,7 @@ MSG_DEF(JSMSG_BIGINT_NOT_SERIALIZABLE, 0, JSEXN_TYPEERR, "BigInt value can't be 
 
 // FinalizationRegistry
 MSG_DEF(JSMSG_NOT_A_FINALIZATION_REGISTRY,               1, JSEXN_TYPEERR, "{0} is not a FinalizationRegistry")
+MSG_DEF(JSMSG_BAD_FINALIZATION_REGISTRY_TARGET,          0, JSEXN_TYPEERR, "The target registered with a finalization registry must be either an object or a symbol")
 MSG_DEF(JSMSG_BAD_HELD_VALUE,                            0, JSEXN_TYPEERR, "The heldValue parameter passed to FinalizationRegistry.register must not be the same as the target parameter")
 MSG_DEF(JSMSG_BAD_UNREGISTER_TOKEN,                      1, JSEXN_TYPEERR, "Invalid unregister token passed to {0}")
 MSG_DEF(JSMSG_BAD_FINALIZATION_REGISTRY_OBJECT,          0, JSEXN_TYPEERR, "cannot register the given object with a FinalizationRegistry")

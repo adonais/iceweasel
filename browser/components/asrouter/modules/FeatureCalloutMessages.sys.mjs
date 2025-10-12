@@ -1887,6 +1887,78 @@ const MESSAGES = () => {
       },
       skip_in_tests: "it's not tested in automation",
     },
+    {
+      id: "NEW_PROFILE_APP_MENU_TOUR",
+      groups: [],
+      profileScope: "single",
+      targeting:
+        "'browser.profiles.profile-name.updated' | preferenceValue == true && userPrefs.cfrFeatures && localeLanguageCode == 'en'",
+      trigger: {
+        id: "preferenceObserver",
+        params: ["browser.profiles.profile-name.updated"],
+      },
+      frequency: {
+        lifetime: 1,
+      },
+      skip_in_tests: "it's not tested in automation",
+      template: "feature_callout",
+      content: {
+        id: "NEW_PROFILE_APP_MENU_TOUR",
+        template: "multistage",
+        backdrop: "transparent",
+        transitions: false,
+        disableHistoryUpdates: true,
+        screens: [
+          {
+            id: "NEW_PROFILE_APP_MENU_TOUR",
+            anchors: [
+              {
+                selector: "#PanelUI-button",
+                panel_position: {
+                  anchor_attachment: "leftcenter",
+                  callout_attachment: "topright",
+                },
+              },
+            ],
+            content: {
+              position: "callout",
+              logo: {
+                imageURL:
+                  "chrome://browser/content/asrouter/assets/fox-with-profiles.svg",
+                height: "100%",
+                width: "100%",
+              },
+              title: {
+                string_id: "profiles-appmenu-callout-tour-title",
+                paddingBlock: "8px",
+              },
+              subtitle: {
+                string_id: "profiles-appmenu-callout-tour-subtitle",
+              },
+              dismiss_button: {
+                size: "small",
+                background: true,
+                marginInline: "0 21px",
+                marginBlock: "21px 0",
+                action: {
+                  dismiss: true,
+                },
+              },
+              primary_button: {
+                label: {
+                  string_id: "profiles-appmenu-callout-tour-primary-button",
+                },
+                action: {
+                  navigate: true,
+                  type: "HIGHLIGHT_FEATURE",
+                  data: { args: "profilesAppMenuButton" },
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
   ];
   messages = add24HourImpressionJEXLTargeting(
     ["FIREFOX_VIEW_TAB_PICKUP_REMINDER"],

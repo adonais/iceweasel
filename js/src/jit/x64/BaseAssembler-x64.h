@@ -1178,6 +1178,17 @@ class BaseAssemblerX64 : public BaseAssembler {
                                  rm, src0, reg);
   }
 
+  void andnq_rrr(RegisterID src1, RegisterID src2, RegisterID dst) {
+    spew("andnq      %s, %s, %s", GPReg64Name(src1), GPReg64Name(src2),
+         GPReg64Name(dst));
+
+    RegisterID rm = src2;
+    XMMRegisterID src0 = static_cast<XMMRegisterID>(src1);
+    int reg = dst;
+    m_formatter.threeByteOpVex64(VEX_PS, OP3_ANDN_GyByEy, ESCAPE_38, rm, src0,
+                                 reg);
+  }
+
  private:
   [[nodiscard]] JmpSrc twoByteRipOpSimd(const char* name, VexOperandType ty,
                                         TwoByteOpcodeID opcode,

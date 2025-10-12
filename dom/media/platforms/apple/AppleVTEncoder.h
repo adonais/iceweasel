@@ -38,6 +38,7 @@ class AppleVTEncoder final : public MediaDataEncoder {
 
   RefPtr<InitPromise> Init() override;
   RefPtr<EncodePromise> Encode(const MediaData* aSample) override;
+  RefPtr<EncodePromise> Encode(nsTArray<RefPtr<MediaData>>&& aSamples) override;
   RefPtr<ReconfigurationPromise> Reconfigure(
       const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges)
       override;
@@ -86,6 +87,9 @@ class AppleVTEncoder final : public MediaDataEncoder {
   bool IsSettingColorSpaceSupported() const;
   MediaResult SetColorSpace(const EncoderConfig::SampleFormat& aFormat);
 
+  void EncodeNextSample(nsTArray<RefPtr<MediaData>>&& aInputs,
+                        MediaDataEncoder::EncodedData&& aOutputs);
+
   void AssertOnTaskQueue() { MOZ_ASSERT(mTaskQueue->IsCurrentThreadIn()); }
 
   EncoderConfig mConfig;
@@ -95,6 +99,8 @@ class AppleVTEncoder final : public MediaDataEncoder {
   EncodedData mEncodedData;
   // Accessed only in mTaskQueue.
   MozPromiseHolder<EncodePromise> mEncodePromise;
+  MozPromiseHolder<EncodePromise> mEncodeBatchPromise;
+  MozPromiseRequestHolder<EncodePromise> mEncodeBatchRequest;
   RefPtr<MediaByteBuffer> mAvcc;  // Stores latest avcC data.
   MediaResult mError;
 

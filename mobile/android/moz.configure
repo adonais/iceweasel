@@ -145,8 +145,8 @@ include("gradle.configure")
 option(
     env="MOZ_ANDROID_FAT_AAR_ARCHITECTURES",
     nargs="*",
-    choices=("armeabi-v7a", "arm64-v8a", "x86", "x86_64"),
-    help='Comma-separated list of Android CPU architectures like "armeabi-v7a,arm64-v8a,x86,x86_64"',
+    choices=("armeabi-v7a", "arm64-v8a", "x86_64"),
+    help='Comma-separated list of Android CPU architectures like "armeabi-v7a,arm64-v8a,x86_64"',
 )
 
 set_config(

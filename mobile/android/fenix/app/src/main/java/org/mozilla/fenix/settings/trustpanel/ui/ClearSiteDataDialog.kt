@@ -44,14 +44,12 @@ fun ClearSiteDataDialog(
         confirmButton = {
             TextButton(
                 text = stringResource(id = R.string.clear_site_data_dialog_positive_button_text),
-                upperCaseText = false,
                 onClick = { onClearSiteDataClick() },
             )
         },
         dismissButton = {
             TextButton(
                 text = stringResource(id = R.string.clear_site_data_dialog_negative_button_text),
-                upperCaseText = false,
                 onClick = { onCancelClick() },
             )
         },

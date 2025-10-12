@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">Повече настройки</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Включване на поверително разглеждане</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Изключване на поверително разглеждане</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Поверително разглеждане</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Търсете или въведете адрес</string>
@@ -293,10 +289,6 @@
   <string name="browser_menu_new_private_tab">Нов поверителен раздел</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Пароли</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Към мобилна версия</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Затваряне на главното меню</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">Затваряне на менюто</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -343,8 +335,6 @@
   <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Отнема секунди. Променяйте по всяко време.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">Бърз, поверителен и направен за вас.</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Прекратяване</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss_promotion">Отхвърляне на промоцията</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -439,10 +429,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Вашите раздели се синхронизират! Продължете откъдето сте спрели на другото си устройство.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Затваряне</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -584,6 +572,30 @@
   <string name="onboarding_redesign_tou_body_three_link_text">Управление на настройките</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
   <string name="onboarding_redesign_tou_agree_and_continue_button_label">Продължаване</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">Къде искате вашата адресна лента?</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">Продължаване</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Помогнете ни да подобрим Firefox</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Споделете как сте открили Firefox и че го използвате с маркетинговите партньори на Mozilla. Тези данни никога не се продават.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">Как използваме данните</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">Потвърждение</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title">Получаване на защита от автоматично проследяване по подразбиране</string>
+  <!-- Set to default browser onboarding redesign body. -->
+  <string name="onboarding_redesign_set_default_browser_body">Едно докосване помага да спрете компаниите да следят кликванията ви.</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Синхронизирайте навсякъде, където използвате Firefox</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body">Получавайте отметки, раздели и пароли на всяко устройство. Всички защитени с криптиране.</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button">Започнете да синхронизирате</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">Не сега</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Помогнете ни да подобрим Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -717,7 +729,8 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Използвайте заключване на екрана, за да скриете разделите в поверително сърфиране</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">Преглеждайте раздели защитени с вашия пръстов отпечатък, PIN или отключване с лице.</string>
+  <string name="preferences_pbm_lock_screen_summary_3">Преглеждайте раздели с вашия пръстов отпечатък, PIN или отключване с лице. Включването на това също предотвратява заснемането и споделянето на екрана.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Преглеждайте раздели защитени с вашия пръстов отпечатък, PIN или отключване с лице.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Блокиране на банери за бисквитки</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -797,7 +810,9 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Външен вид</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Впишете се, за да синхронизирате раздели, отметки, пароли и други.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Впишете се, за да синхронизирате раздели, отметки, пароли и други.</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">Синхронизирайте раздели, отметки, пароли и др.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Профил в Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1030,11 +1045,11 @@
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo_subtitle">Създадено от @heyheymomodraws</string>
   <!-- Title for the "Cuddling" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
-  <string name="alternative_app_icon_option_cuddling">Прегръщане</string>
+  <string name="alternative_app_icon_option_cuddling">Прегръдка</string>
   <!-- Title for the "Flaming" themed alternative app icon variant in the icon picker screen. The app icon features a fiery design, with the Firefox logo surrounded by flames for a bold, energetic look. -->
-  <string name="alternative_app_icon_option_flaming">Огнен</string>
+  <string name="alternative_app_icon_option_flaming">Искрящ</string>
   <!-- Title for the "Cool" themed alternative app icon variant in the icon picker screen. The app icon uses a warm orange-to-yellow gradient background with a sleek, modern twist on the Firefox logo, giving it a fresh and stylish appearance. -->
-  <string name="alternative_app_icon_option_cool">Супер</string>
+  <string name="alternative_app_icon_option_cool">Яко</string>
   <!-- Title for the "Solid colors" group of alternative app icon variants in the icon picker screen. This group contains icons with flat, uniform color backgrounds. -->
   <string name="alternative_app_icon_group_solid_colors">Едноцветни</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
@@ -1169,12 +1184,8 @@
   <string name="preferences_daily_usage_ping_title">Ежедневна употреба</string>
   <string name="preferences_daily_usage_ping_description">Това помага на Mozilla да оцени активните потребители.</string>
   <string name="preferences_daily_usage_ping_learn_more">Научете повече за ежедневната употреба</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Автоматично изпращане на доклади за срив</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">Докладът е изпратен</string>
-  <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">Това ни помага да откриваме и отстраняваме проблеми с четеца. Докладите може да включват лични или чувствителни данни.</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
   <string name="preferences_crashes_learn_more">Научете повече за докладите за сривове</string>
   <!-- Title Headers for data collection settings screen -->
@@ -1194,8 +1205,6 @@
   <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Споделете как сте открили Firefox и че го използвате с партньорите в маркетинговите технологии на Mozilla.</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">Научете повече за маркетинговите данни</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Научете повече за докладите за сривове</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Проучвания</string>
   <!-- Summary for studies preferences -->
@@ -1205,7 +1214,9 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Синхронизиране и запазване на данни</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Синхронизиране и запазване на данни</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">Вписване</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Влезте, за да свържете отново</string>
   <!-- Preference for removing FxA account -->
@@ -1354,6 +1365,8 @@
   <string name="close_tabs_after_one_month">След един месец</string>
   <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Автоматично затваряне на раздели</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">Затваряне</string>
   <!--
     Opening screen
 
@@ -1504,9 +1517,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Изчистване на история</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Историята е изчистена</string>
+  <string name="history_delete_multiple_items_snackbar">Историята е изчистена</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Изтрито %1$s</string>
+  <string name="history_delete_single_item_snackbar">Изтрито %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Изтриване</string>
   <!--
@@ -1677,8 +1690,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">Доклад за повредена страница</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">Помогнете да направим %1$s по-добър за всички. Служителите на Mozilla използват информацията, която изпращате, за да решават проблеми в уебсайта.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">Докладът ви ни помага да разберем и отстраним проблемите в %1$s, за да го направим по-добър за всички. Научете повече</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
@@ -1691,8 +1702,6 @@
   <string name="webcompat_reporter_url_error_invalid">Моля въведете валиден URL</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Какво е повредено?</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Избор на причина</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">Изберете причина</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
@@ -1708,9 +1717,11 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Изпращане</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">Докладът ви е изпратен</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Докладът ви е изпратен</string>
+  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
+  <string name="webcompat_reporter_success_snackbar_text_2">Докладът е изпратен</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">Затваряне</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Затваряне</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Какво се случи? Какво трябваше да се случи?</string>
   <!--
@@ -1747,8 +1758,6 @@
   <string name="tab_crash_close">Затваряне на раздел</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Възстановяване на раздел</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s трябваше да бъде рестартиран</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">%s се срина. Изпращане на доклад?</string>
   <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
@@ -1788,6 +1797,14 @@
   <string name="bookmark_add_folder">Добавяне на папка</string>
   <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
   <string name="bookmark_saved_in_folder_snackbar">Запазено в „%s“</string>
+  <!-- Snackbar title describing failure to add a new folder -->
+  <string name="bookmark_error_add_folder">Папката не можа да бъде добавена</string>
+  <!-- Snackbar title describing failure to edit an existing folder -->
+  <string name="bookmark_error_edit_folder">Папката не можа да бъде редактирана</string>
+  <!-- Snackbar title describing failure to select a new parent folder for a bookmark or folder -->
+  <string name="bookmark_error_select_folder">Родителската папка не можа да бъде променена</string>
+  <!-- Snackbar title describing failure to edit a bookmark -->
+  <string name="bookmark_error_edit_bookmark">Отметката не може да бъде редактирана</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">РЕДАКТИРАНЕ</string>
   <!-- Bookmark menu move button -->
@@ -1888,6 +1905,8 @@
   <string name="bookmark_close_button_content_description">Затваряне на отметки</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Все още няма отметки</string>
+  <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
+  <string name="bookmarks_folder_description">Отметки в папка: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">Запазване на сайтове, докато разглеждате. Впишете се, за да вземете отметки от други синхронизирани устройства.</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -2032,12 +2051,14 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d раздел избран</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Разделите са запазени!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Колекция запазена!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Колекция запазена!</string>
+  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
+  <string name="create_collection_tabs_saved_new_collection_2">Списъкът е запазен</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Разделът е запазен!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Разделът е запазен!</string>
+  <!-- Text shown in snackbar when one tab has been saved in a collection -->
+  <string name="create_collection_tab_saved_2">Разделът е запазен</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Затваряне</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -2084,7 +2105,9 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Вписване в Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Синхронизиране и запазване на данни</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Синхронизиране и запазване на данни</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">Вписване</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Изпращане до всички устройства</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2174,7 +2197,9 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Затворени раздели: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">Отметки, запазени в „%s“!</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Отметки, запазени в „%s“!</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in_2">Отметки, запазени в „%s“</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Добавено към преки пътища!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -2202,8 +2227,6 @@
   <string name="tab_collection_dialog_message">Наистина ли искате да изтриете %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Изтриване</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Адресът е копиран</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Това е примерен текст. Той е тук, за да покаже как ще изглежда текста при намаляване и увеличаване на размера чрез тази настройка.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2292,9 +2315,13 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Разделите са изпратени!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Разделите са изпратени!</string>
+  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
+  <string name="sync_sent_tabs_snackbar_2">Разделите са изпратени</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Разделът е изпратен!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Разделът е изпратен!</string>
+  <!-- Text shown in snackbar when one tab has been sent to device -->
+  <string name="sync_sent_tab_snackbar_2">Разделът е изпратен</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Грешка при изпращане</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2347,6 +2374,18 @@
   <string name="preference_enhanced_tracking_protection_allow_list_baseline">Разрешаване на %1$s автоматично да прилага изключения, необходими за избягване на сериозна повреда на уебсайта.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience">Също така автоматично прилага изключения, които са необходими само за отстраняване на незначителни проблеми и за предоставяне на удобни функции.</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">Сигурни ли сте, че искате да изключите корекциите?</string>
+  <!-- Message for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">Тази настройка помага за отстраняването на най-често срещаните проблеми със сайта. Ако го изключите някои сайтове може да не работят и %1$s няма да може да помогне за отстраняването на тези проблеми.</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">Изключване на корекциите</string>
+  <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">Запазване на корекциите включени</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">Какво е спряно от строгата защита от проследяване</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2665,6 +2704,10 @@
   <string name="saved_login_hide_password">Скриване на парола</string>
   <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their passwords -->
   <string name="logins_biometric_prompt_message_2">Отключете, за да видите запазените пароли</string>
+  <!-- Button for unlocking logins on the biometric lock screen -->
+  <string name="logins_biometric_unlock_button">Отключване</string>
+  <!-- Button for leaving logins on the biometric lock screen -->
+  <string name="logins_biometric_leave_button">Напускане</string>
   <!-- Title of warning dialog if users have no device authentication set up -->
   <string name="logins_warning_dialog_title_2">Защитете запазените пароли</string>
   <!-- Message of warning dialog if users have no device authentication set up -->
@@ -2843,12 +2886,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Въведете низ за търсене</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Уверете се, че низът за търсене съвпада с примера</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s е създадена</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s е запазена</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s е изтрита</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">За да разрешите:</string>
   <!-- First step for the allowing a permission -->
@@ -3001,6 +3038,11 @@
     Title text displayed in the tabs tray when a tab has been unused for 14 days.
   -->
   <string name="inactive_tabs_title">Неактивни раздели</string>
+  <!--
+    Text displayed in the tabs tray, indicating the number of inactive tabs.
+    %d is the number of inactive tabs.
+  -->
+  <string name="inactive_tabs_num_items">Елементи: %d</string>
   <!-- Content description for closing all inactive tabs -->
   <string name="inactive_tabs_delete_all">Затваряне на всички неактивни раздели</string>
   <!-- Content description for expanding the inactive tabs section. -->
@@ -3211,7 +3253,7 @@
   -->
   <string name="automatic_translation_toolbar_title_preference">Автоматичен превод</string>
   <!-- Screen header presenting the automatic translation preference feature. It will appear under the toolbar. -->
-  <string name="automatic_translation_header_preference">Изберете език, който да управлявате „винаги превежда“ и „never translate“.</string>
+  <string name="automatic_translation_header_preference">Изберете език, който да управлявате настройките „винаги да се превежда“ и „никога да не се превежда“.</string>
   <!-- The title of the warning card informs the user that the system could not load languages for translation settings. -->
   <string name="automatic_translation_error_warning_text">Езиците не можаха да бъдат заредени. Моля, проверете отново по-късно.</string>
   <!--
@@ -3344,12 +3386,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">Защитен</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">Не е защитено</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">Бъдете внимателни в този сайт</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">Връзката ви не е защитена.</string>
@@ -3374,11 +3412,7 @@
   <!-- Toggle if Enhanced Tracking Protection is turned off -->
   <string name="protection_panel_etp_toggle_off">Изключено</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Ако нещо на този сайт изглежда повредено, опитайте да изключите защитите.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description_2">Ако нещо на този сайт изглежда повредено, опитайте да го изключите.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Защитите са ИЗКЛЮЧЕНИ. Препоръчваме ви да ги включите отново.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description_2">Препоръчително е да включите защитата от проследяване.</string>
   <!--
@@ -3390,8 +3424,6 @@
   <string name="protection_panel_no_trackers_blocked">Не са намерени проследяващи програми</string>
   <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
   <string name="protection_panel_etp_disabled_no_trackers_blocked">Проследяванията не са блокирани</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">Настройки за поверителност и сигурност</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">Настройки за поверителност</string>
   <!-- Title text for the protection panel permissions section. -->
@@ -3516,7 +3548,7 @@
   <!-- Option for likert scale. Note: The word "Firefox" should NOT be translated. -->
   <string name="likert_scale_option_7" tools:ignore="BrandUsage,UnusedResources">Не използвам търсене във Firefox</string>
   <!-- Option for likert scale -->
-  <string name="likert_scale_option_8" tools:ignore="UnusedResources">Не използвам sync</string>
+  <string name="likert_scale_option_8" tools:ignore="UnusedResources">Не използвам синхронизация</string>
   <!-- Text shown in prompt for printing microsurvey. "sec" It's an abbreviation for "second". Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_prompt_printing_title" tools:ignore="BrandUsage,UnusedResources">Помогнете за подобряването на отпечатването във Firefox. Отнема само секунда</string>
   <!-- Text shown in prompt for search microsurvey. Note: The word "Firefox" should NOT be translated. -->
@@ -3562,13 +3594,23 @@
   -->
   <string name="debug_drawer_addresses_title">Адреси</string>
   <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
-  <string name="debug_drawer_addresses_debug_locales_header">Дебъгване на локали, за да активирате</string>
+  <string name="debug_drawer_addresses_debug_locales_header">Списък с езици, за които може да се включи настройката</string>
   <!-- The title of the header for the section for managing addresses. -->
   <string name="debug_drawer_addresses_management_header">Управление на адреси</string>
   <!-- The title of the button in the debug drawer for adding a new address. -->
   <string name="debug_drawer_add_new_address">Добавяне на нов адрес за избрания език</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">Изтриване на всички адреси</string>
+  <!--
+    Debug drawer credit cards
+
+    The title of the credit cards feature in the Debug Drawer.
+  -->
+  <string name="debug_drawer_credit_cards_title">Кредитни карти</string>
+  <!-- The title of the button in the debug drawer for adding a new credit card -->
+  <string name="debug_drawer_add_new_credit_card">Добавяне на нова банкова карта</string>
+  <!-- The title of the button for deleting in the debug drawer all addresses. -->
+  <string name="debug_drawer_delete_all_credit_cards">Изтриване на всички кредитни карти</string>
   <!--
     Debug drawer "contextual feature recommendation" (CFR) tools
 
@@ -3720,9 +3762,9 @@
   <!-- Subtitle for the setup checklist when the second task is completed. -->
   <string name="setup_checklist_subtitle_5_steps_second_step">Завършихте 2 от общо 5 стъпки. Страхотен напредък!</string>
   <!-- Subtitle for a setup checklist with 5 steps when three of the tasks are completed. -->
-  <string name="setup_checklist_subtitle_5_steps_third_step">Вие сте наполовина там! Три стъпки са завършени и остават 2.</string>
+  <string name="setup_checklist_subtitle_5_steps_third_step">Почти е готово! Три стъпки са завършени, а остават 2.</string>
   <!-- Subtitle for a setup checklist with 5 steps when the fifth task is completed. -->
-  <string name="setup_checklist_subtitle_5_steps_fourth_step">Почти е готов! Вие сте само на 1 крачка от финалната линия.</string>
+  <string name="setup_checklist_subtitle_5_steps_fourth_step">Още малко! Вие сте само на 1 крачка от финалната права.</string>
   <!-- Subtitle for a setup checklist with 5 steps completed state. %1$s is the name of the app (for example "Firefox"). -->
   <string name="setup_checklist_subtitle_5_steps_completed_state">Завършихте всичките 5 стъпки за настройка. Насладете се на скоростта, поверителността и сигурността на %1$s.</string>
   <!--
@@ -3734,7 +3776,7 @@
   <!-- The title of the sign-in task for the setup checklist -->
   <string name="setup_checklist_task_account_sync">Влезте в профила си</string>
   <!-- The title of the theme selection task for the setup checklist -->
-  <string name="setup_checklist_task_theme_selection">Изберете тема</string>
+  <string name="setup_checklist_task_theme_selection">Избор на тема</string>
   <!-- The title of the toolbar selection task for the setup checklist -->
   <string name="setup_checklist_task_toolbar_selection">Изберете разположение на лентата с инструменти</string>
   <!-- The title of the explore extensions task for the setup checklist -->
@@ -3780,7 +3822,7 @@
   <!-- Authentication prompt title to enable the private tabs mode -->
   <string name="pbm_authentication_enable_lock">Активиране на заключване на екрана на поверителните раздели</string>
   <!-- Authentication prompt title to disable the private tabs mode -->
-  <string name="pbm_authentication_disable_lock">Изключване на заключването на екрана на поверителните раздели</string>
+  <string name="pbm_authentication_disable_lock">Деактивиране на заключването на екрана на поверителните раздели</string>
   <!-- Label for a preference shown when the device supports screen lock (e.g., PIN, pattern, or password) but the user has not set one up. -->
   <string name="pbm_authentication_lock_device_feature_disabled">Настройте заключване на екрана, за да скривате раздели</string>
   <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
@@ -3834,5 +3876,5 @@
   <!-- Label for a button to accept the terms of use -->
   <string name="terms_of_use_prompt_accept">Приемане</string>
   <!-- Label for a button to postpone accepting the terms of use -->
-  <string name="terms_of_use_prompt_postpone">Напомни ми по-късно</string>
+  <string name="terms_of_use_prompt_postpone">Напомняне по-късно</string>
 </resources>

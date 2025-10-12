@@ -159,6 +159,8 @@ class RangeBoundaryBase;
 template <typename T>
 class NotNull;
 template <class T>
+class OwningNonNull;
+template <class T>
 class StaticRefPtr;
 
 namespace dom {
@@ -198,7 +200,10 @@ struct SetHTMLUnsafeOptions;
 enum class ShadowRootMode : uint8_t;
 class ShadowRoot;
 struct StructuredSerializeOptions;
+struct SynthesizeMouseEventData;
+struct SynthesizeMouseEventOptions;
 class TrustedHTMLOrString;
+class VoidFunction;
 class WorkerPrivate;
 enum class ElementCallbackType;
 enum class ReferrerPolicy : uint8_t;
@@ -468,7 +473,7 @@ class nsContentUtils {
    * Retarget an object A against an object B
    * @see https://dom.spec.whatwg.org/#retarget
    */
-  static nsINode* Retarget(nsINode* aTargetA, nsINode* aTargetB);
+  static nsINode* Retarget(nsINode* aTargetA, const nsINode* aTargetB);
 
   /**
    * @see https://wicg.github.io/element-timing/#get-an-element
@@ -843,6 +848,7 @@ class nsContentUtils {
    * HTML 4.01 also lists U+200B (zero-width space).
    */
   static bool IsHTMLWhitespace(char16_t aChar);
+  static constexpr std::string_view kHTMLWhitespace{"\x09\x0a\x0c\x0d\x20"};
 
   /*
    * Returns whether the character is an HTML whitespace (see IsHTMLWhitespace)
@@ -1512,47 +1518,14 @@ class nsContentUtils {
   static bool IsPreloadType(nsContentPolicyType aType);
 
   /**
-   * Quick helper to determine whether mutation events are enabled and there are
-   * any mutation listeners of a given type that apply to this content or any of
-   * its ancestors.
-   * The method has the side effect to call document's MayDispatchMutationEvent
-   * using aTargetForSubtreeModified as the parameter.
+   * Synchronously fire a chrome only event to notify the DevTools of the
+   * removal of aRemovingNode. Only fires the event if
+   * aRemovingNode.ShouldNotifyDevToolsOfNodeRemovals() returns true.
    *
-   * @param aNode  The node to search for listeners
-   * @param aType  The type of listener (NS_EVENT_BITS_MUTATION_*)
-   * @param aTargetForSubtreeModified The node which is the target of the
-   *                                  possible DOMSubtreeModified event.
-   *
-   * @return true if there are mutation listeners of the specified type
+   * @param aRemovingNode   The node which will be removed.
    */
-  static bool WantMutationEvents(nsINode* aNode, uint32_t aType,
-                                 nsINode* aTargetForSubtreeModified);
-
-  /**
-   * Quick helper to determine whether there are any mutation listeners
-   * of a given type that apply to any content in this document. It is valid
-   * to pass null for aDocument here, in which case this function always
-   * returns true.
-   *
-   * @param aDocument The document to search for listeners
-   * @param aType     The type of listener (NS_EVENT_BITS_MUTATION_*)
-   *
-   * @return true if there are mutation listeners of the specified type
-   */
-  static bool HasMutationListeners(Document* aDocument, uint32_t aType);
-  /**
-   * Synchronously fire DOMNodeRemoved on aChild. Only fires the event if
-   * there really are listeners by checking using the HasMutationListeners
-   * function above. The function makes sure to hold the relevant objects alive
-   * for the duration of the event firing. However there are no guarantees
-   * that any of the objects are alive by the time the function returns.
-   * If you depend on that you need to hold references yourself.
-   *
-   * @param aChild    The node to fire DOMNodeRemoved at.
-   * @param aParent   The parent of aChild.
-   */
-  MOZ_CAN_RUN_SCRIPT static void MaybeFireNodeRemoved(nsINode* aChild,
-                                                      nsINode* aParent);
+  MOZ_CAN_RUN_SCRIPT static void NotifyDevToolsOfNodeRemoval(
+      nsINode& aRemovingNode);
 
   /**
    * These methods create and dispatch a trusted event.
@@ -2047,9 +2020,13 @@ class nsContentUtils {
    * @param aValue   Value to set contents to.
    * @param aTryReuse When true, the function will try to reuse an existing
    *                  textnodes rather than always creating a new one.
+   * @param aMutationEffectOnScript Whether to preserve trustworthiness of
+   *        script elements.
    */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static nsresult SetNodeTextContent(
-      nsIContent* aContent, const nsAString& aValue, bool aTryReuse);
+      nsIContent* aContent, const nsAString& aValue, bool aTryReuse,
+      MutationEffectOnScript aMutationEffectOnScript =
+          MutationEffectOnScript::DropTrustWorthiness);
 
   /**
    * Get the textual contents of a node. This is a concatenation of all
@@ -2571,18 +2548,6 @@ class nsContentUtils {
   }
 
   /**
-   * Fire mutation events for changes caused by parsing directly into a
-   * context node.
-   *
-   * @param aDoc the document of the node
-   * @param aDest the destination node that got stuff appended to it
-   * @param aOldChildCount the number of children the node had before parsing
-   */
-  static void FireMutationEventsForDirectParsing(Document* aDoc,
-                                                 nsIContent* aDest,
-                                                 int32_t aOldChildCount);
-
-  /**
    * Returns the in-process subtree root document in a document hierarchy.
    * This could be a chrome document.
    */
@@ -3077,17 +3042,19 @@ class nsContentUtils {
 
   /**
    * Synthesize a mouse event to the given widget
-   * (see nsIDOMWindowUtils.sendMouseEvent).
+   * (See synthesizeMouseEvent in Window.webidl).
+   *
+   * @return A boolean indicating whether the default action was prevented
+   *         by any event listener.
    */
   MOZ_CAN_RUN_SCRIPT
-  static nsresult SendMouseEvent(
+  static mozilla::Result<bool, nsresult> SynthesizeMouseEvent(
       mozilla::PresShell* aPresShell, nsIWidget* aWidget,
       const nsAString& aType, mozilla::LayoutDeviceIntPoint& aRefPoint,
-      int32_t aButton, int32_t aButtons, int32_t aClickCount,
-      int32_t aModifiers, bool aIgnoreRootScrollFrame, float aPressure,
-      unsigned short aInputSourceArg, uint32_t aIdentifier, bool aToWindow,
-      bool* aPreventDefault, bool aIsDOMEventSynthesized,
-      bool aIsWidgetEventSynthesized);
+      const mozilla::dom::SynthesizeMouseEventData& aMouseEventData,
+      const mozilla::dom::SynthesizeMouseEventOptions& aOptions,
+      const mozilla::dom::Optional<
+          mozilla::OwningNonNull<mozilla::dom::VoidFunction>>& aCallback);
 
   static void FirePageShowEventForFrameLoaderSwap(
       nsIDocShellTreeItem* aItem,
@@ -3601,7 +3568,7 @@ class nsContentUtils {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static nsIContent* AttachDeclarativeShadowRoot(
       nsIContent* aHost, mozilla::dom::ShadowRootMode aMode, bool aIsClonable,
-      bool aIsSerializable, bool aDelegatesFocus);
+      bool aIsSerializable, bool aDelegatesFocus, const nsAString&);
 
   static bool NavigationMustBeAReplace(nsIURI& aURI, const Document& aDocument);
 

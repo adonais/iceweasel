@@ -35,6 +35,7 @@ using class mozilla::TimeStamp from "mozilla/TimeStamp.h";
 [RefCounted] using class nsDocShellLoadState from "nsDocShellLoadState.h";
 using nsContentPolicyType from "nsIContentPolicy.h";
 using mozilla::net::PreferredAlternativeDataDeliveryTypeIPC from "nsICacheInfoChannel.h";
+using mozilla::dom::ForceMediaDocument from "mozilla/dom/LoadURIOptionsBinding.h";
 using nsILoadInfo::CrossOriginEmbedderPolicy from "nsILoadInfo.h";
 using nsILoadInfo::StoragePermissionState from "nsILoadInfo.h";
 using nsILoadInfo::IPAddressSpace from "nsILoadInfo.h";
@@ -141,6 +142,7 @@ struct LoadInfoArgs
   bool                        browserWouldUpgradeInsecureRequests;
   bool                        forceAllowDataURI;
   bool                        allowInsecureRedirectToDataURI;
+  ForceMediaDocument          forceMediaDocument;
   bool                        skipContentPolicyCheckForWebRequest;
   bool                        originalFrameSrcLoad;
   bool                        forceInheritPrincipalDropped;
@@ -567,6 +569,7 @@ struct RedirectToRealChannelArgs {
   nsCString? originalUriString;
   EarlyHintConnectArgs[] earlyHints;
   uint32_t earlyHintLinkType;
+  nullable nsIReferrerInfo referrerInfo;
 };
 
 struct TimingStructArgs {

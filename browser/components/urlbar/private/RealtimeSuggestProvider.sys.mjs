@@ -26,6 +26,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
 export class RealtimeSuggestProvider extends SuggestProvider {
   // The following methods must be overridden.
 
+  /**
+   * The type of the realtime suggestion provider.
+   *
+   * @type {string}
+   */
   get realtimeType() {
     throw new Error("Trying to access the base class, must be overridden");
   }
@@ -63,6 +68,10 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     return this.realtimeType;
   }
 
+  get realtimeTypeForFtl() {
+    return this.realtimeType.replace(/([A-Z])/g, "-$1").toLowerCase();
+  }
+
   get featureGatePref() {
     return this.realtimeType + "FeatureGate";
   }
@@ -79,15 +88,34 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     return this.realtimeType + ".showLessFrequentlyCount";
   }
 
+  get optInIcon() {
+    return `chrome://browser/skin/illustrations/${this.realtimeType}-opt-in.svg`;
+  }
+
+  get optInTitleL10n() {
+    return {
+      id: `urlbar-result-${this.realtimeTypeForFtl}-opt-in-title`,
+      cacheable: true,
+    };
+  }
+
+  get optInDescriptionL10n() {
+    return {
+      id: `urlbar-result-${this.realtimeTypeForFtl}-opt-in-description`,
+      cacheable: true,
+      parseMarkup: true,
+    };
+  }
+
   get notInterestedCommandL10n() {
     return {
-      id: "urlbar-result-menu-dont-show-" + this.realtimeType,
+      id: "urlbar-result-menu-dont-show-" + this.realtimeTypeForFtl,
     };
   }
 
   get acknowledgeDismissalL10n() {
     return {
-      id: "urlbar-result-dismissal-acknowledgment-" + this.realtimeType,
+      id: "urlbar-result-dismissal-acknowledgment-" + this.realtimeTypeForFtl,
     };
   }
 
@@ -308,16 +336,9 @@ export class RealtimeSuggestProvider extends SuggestProvider {
         {
           // This `type` is the tip type, required for `TIP` results.
           type: "realtime_opt_in",
-          icon: "chrome://browser/skin/illustrations/market-opt-in.svg",
-          titleL10n: {
-            id: "urlbar-result-market-opt-in-title",
-            cacheable: true,
-          },
-          descriptionL10n: {
-            id: "urlbar-result-market-opt-in-description",
-            cacheable: true,
-            parseMarkup: true,
-          },
+          icon: this.optInIcon,
+          titleL10n: this.optInTitleL10n,
+          descriptionL10n: this.optInDescriptionL10n,
           descriptionLearnMoreTopic: lazy.QuickSuggest.HELP_TOPIC,
           buttons: [
             {
@@ -358,6 +379,7 @@ export class RealtimeSuggestProvider extends SuggestProvider {
       return null;
     }
 
+    /** @type {UrlbarResultCommand[]} */
     let commands = [
       {
         name: "not_interested",

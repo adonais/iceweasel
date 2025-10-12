@@ -18,6 +18,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(28.dp)
 
@@ -49,12 +50,12 @@ private fun MenuGroupPreview() {
             MenuGroup {
                 MenuItem(
                     label = stringResource(id = R.string.browser_menu_add_to_homescreen),
-                    beforeIconPainter = painterResource(id = R.drawable.mozac_ic_plus_24),
+                    beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_plus_24),
                 )
 
                 MenuItem(
                     label = stringResource(id = R.string.browser_menu_add_to_homescreen),
-                    beforeIconPainter = painterResource(id = R.drawable.mozac_ic_plus_24),
+                    beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_plus_24),
                 )
             }
         }

@@ -236,11 +236,10 @@ class HgRepository(Repository):
         args = ["diff", f"-U{context}"]
         if rev:
             args += ["-c", rev]
-        else:
-            args += ["-r", ".^"]
         for dot_extension in extensions:
             args += ["--include", f"glob:**{dot_extension}"]
-        args += ["--exclude", f"listfile:{exclude_file}"]
+        if exclude_file is not None:
+            args += ["--exclude", f"listfile:{exclude_file}"]
         return self._pipefrom(*args)
 
     def working_directory_clean(self, untracked=False, ignored=False):

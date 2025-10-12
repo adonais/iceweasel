@@ -32,11 +32,14 @@
 #include "frontend/StencilXdr.h"  // XDRStencilEncoder, XDRStencilDecoder
 #include "gc/AllocKind.h"         // gc::AllocKind
 #include "gc/Tracer.h"            // TraceNullableRoot
-#include "jit/BaselineJIT.h"      // jit::BaselineScript
-#include "jit/JitRuntime.h"       // jit::JitRuntime
-#include "jit/JitScript.h"        // AutoKeepJitScripts
-#include "js/CallArgs.h"          // JSNative
+#include "jit/BaselineCompileTask.h"  // BaselineCompileTask::OffThreadBaselineCompilationAvailable
+#include "jit/BaselineJIT.h"  // jit::BaselineScript, jit::CanBaselineInterpretScript
+#include "jit/JitContext.h"     // jit::MethodStatus
+#include "jit/JitRuntime.h"     // jit::JitRuntime
+#include "jit/JitScript.h"      // AutoKeepJitScripts
+#include "js/CallArgs.h"        // JSNative
 #include "js/CompileOptions.h"  // JS::DecodeOptions, JS::ReadOnlyDecodeOptions
+#include "js/DOMEventDispatch.h"            // TRACE_FOR_TEST_DOM
 #include "js/experimental/CompileScript.h"  // JS::PrepareForInstantiate
 #include "js/experimental/JSStencil.h"      // JS::Stencil
 #include "js/GCAPI.h"                       // JS::AutoCheckCannotGC
@@ -68,6 +71,7 @@
 #include "vm/StringType.h"    // JSAtom, js::CopyChars
 #include "wasm/AsmJS.h"       // InstantiateAsmJS
 
+#include "jit/JitHints-inl.h"          // JitHints::mightHaveEagerBaselineHint
 #include "jit/JitScript-inl.h"         // AutoKeepJitScripts constructor
 #include "vm/EnvironmentObject-inl.h"  // JSObject::enclosingEnvironment
 #include "vm/JSFunction-inl.h"         // JSFunction::create
@@ -2653,6 +2657,94 @@ CompilationStencil::CompilationStencil(
 #endif
 }
 
+// Instantiate JitScripts and eagerly baseline compile any potential
+// candidate functions.
+//
+// Return value indicates whether a failure occured. (i.e. allocation failure.)
+// There is no current indication of whether a function was actually dispatched
+// for eager baseline compilation.
+static bool MaybeDoEagerBaselineCompilations(JSContext* cx,
+                                             const CompilationStencil& stencil,
+                                             CompilationGCOutput& gcOutput,
+                                             bool doAggressive) {
+  if (!jit::IsBaselineInterpreterEnabled()) {
+    return true;
+  }
+
+  if (!cx->zone()->ensureJitZoneExists(cx)) {
+    return false;
+  }
+
+  jit::JitHintsMap* jitHints = nullptr;
+  if (!doAggressive) {
+    if (jit::JitOptions.disableJitHints ||
+        !cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+      return true;
+    }
+    jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+  }
+
+  jit::AutoKeepJitScripts keepJitScript(cx);
+  RootedScript script(cx);
+  Rooted<JSFunction*> fn(cx);
+  jit::BaselineCompileQueue& queue = cx->realm()->baselineCompileQueue();
+
+  for (auto item :
+       CompilationStencil::functionScriptStencils(stencil, gcOutput)) {
+    fn = item.function;
+    if (!fn->hasBytecode()) {
+      continue;
+    }
+
+    script = fn->nonLazyScript();
+
+    // Only eagerly baseline compile functions with hints unless aggressive
+    // strategy is set.
+    if (!doAggressive) {
+      if (!jitHints->mightHaveEagerBaselineHint(script)) {
+        continue;
+      }
+    }
+
+    if (script->baselineDisabled()) {
+      continue;
+    }
+
+    if (!jit::CanBaselineInterpretScript(script)) {
+      continue;
+    }
+
+    if (!jit::BaselineCompileTask::OffThreadBaselineCompilationAvailable(
+            cx, script, /* isEager = */ true)) {
+      continue;
+    }
+
+    // Add script to the baseline compile batch queue and dispatch if full.
+    if (queue.numQueued() >= jit::JitOptions.baselineQueueCapacity) {
+      if (!jit::DispatchOffThreadBaselineBatchEager(cx)) {
+        return false;
+      }
+      TRACE_FOR_TEST_DOM(cx, "omt_eager_baseline_dispatch");
+    }
+
+    // Add script to queue
+    if (!queue.enqueue(script)) {
+      return false;
+    }
+    TRACE_FOR_TEST_DOM(cx, "omt_eager_baseline_function", script);
+  }
+
+  // Dispatch any remaining scripts in the queue
+  if (queue.numQueued() > 0) {
+    if (!jit::DispatchOffThreadBaselineBatchEager(cx)) {
+      return false;
+    }
+    TRACE_FOR_TEST_DOM(cx, "omt_eager_baseline_dispatch");
+  }
+
+  return true;
+}
+
 /* static */
 bool CompilationStencil::instantiateStencils(JSContext* cx,
                                              CompilationInput& input,
@@ -2663,7 +2755,23 @@ bool CompilationStencil::instantiateStencils(JSContext* cx,
     return false;
   }
 
-  return instantiateStencilAfterPreparation(cx, input, stencil, gcOutput);
+  if (!instantiateStencilAfterPreparation(cx, input, stencil, gcOutput)) {
+    return false;
+  }
+
+  if (input.options.eagerBaselineStrategy() != JS::EagerBaselineOption::None) {
+    MOZ_ASSERT(!input.isDelazifying(),
+               "No current support for eager baseline during delazifications.");
+
+    bool doAggressive = input.options.eagerBaselineStrategy() ==
+                        JS::EagerBaselineOption::Aggressive;
+    if (!MaybeDoEagerBaselineCompilations(cx, stencil, gcOutput,
+                                          doAggressive)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /* static */
@@ -5046,6 +5154,25 @@ struct DumpOptionsFields {
 
       FOREACH_DELAZIFICATION_STRATEGY(SelectValueStr_)
 #  undef SelectValueStr_
+    }
+    json.property(name, valueStr);
+  }
+
+  void operator()(const char* name, JS::EagerBaselineOption value) {
+    const char* valueStr = nullptr;
+    switch (value) {
+      case JS::EagerBaselineOption::None:
+        valueStr = "JS::EagerBaselineOption::None";
+        break;
+      case JS::EagerBaselineOption::JitHints:
+        valueStr = "JS::EagerBaselineOption::JitHints";
+        break;
+      case JS::EagerBaselineOption::Aggressive:
+        valueStr = "JS::EagerBaselineOption::Aggressive";
+        break;
+      default:
+        MOZ_CRASH("Unknown JS::EagerBaselineOption enum");
+        break;
     }
     json.property(name, valueStr);
   }

@@ -166,8 +166,8 @@ def update_glean(command_context, version):
 
     replace_in_file_or_die(
         topsrcdir / "gradle" / "libs.versions.toml",
-        r'mozilla-glean = "[0-9.]+"',
-        f'mozilla-glean = "{version}"',
+        r'glean = "[0-9.]+"',
+        f'glean = "{version}"',
     )
     replace_in_file_or_die(
         topsrcdir / "Cargo.toml",

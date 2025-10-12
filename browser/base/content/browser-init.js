@@ -164,6 +164,13 @@ var gBrowserInit = {
 
     gURLBar.initPlaceHolder();
 
+    if (Services.prefs.getBoolPref("browser.search.widget.new", false)) {
+      new UrlbarInput({
+        textbox: document.getElementById("searchbar-new"),
+        eventTelemetryCategory: "searchbar",
+      });
+    }
+
     // Hack to ensure that the various initial pages favicon is loaded
     // instantaneously, to avoid flickering and improve perceived performance.
     this._callWithURIToLoad(uriToLoad => {
@@ -192,7 +199,10 @@ var gBrowserInit = {
 
   onLoad() {
     gBrowser.addEventListener("DOMUpdateBlockedPopups", e =>
-      PopupBlockerObserver.handleEvent(e)
+      PopupAndRedirectBlockerObserver.handleEvent(e)
+    );
+    gBrowser.addEventListener("DOMUpdateBlockedRedirect", e =>
+      PopupAndRedirectBlockerObserver.handleEvent(e)
     );
     gBrowser.addEventListener(
       "TranslationsParent:LanguageState",
@@ -249,7 +259,10 @@ var gBrowserInit = {
     gUIDensity.init();
     Win10TabletModeUpdater.init();
     CombinedStopReload.ensureInitialized();
-    gPrivateBrowsingUI.init();
+    // Initialize private browsing UI only if window is private
+    if (PrivateBrowsingUtils.isWindowPrivate(window)) {
+      PrivateBrowsingUI.init(window);
+    }
     TaskbarTabsChrome.init(window);
     BrowserPageActions.init();
     if (gToolbarKeyNavEnabled) {
@@ -396,7 +409,6 @@ var gBrowserInit = {
     Services.obs.addObserver(gLocaleChangeObserver, "intl:app-locales-changed");
 
     BrowserOffline.init();
-    WebAuthnPromptHelper.init();
 
     BrowserUtils.callModulesFromCategory(
       {
@@ -1137,7 +1149,6 @@ var gBrowserInit = {
       );
 
       BrowserOffline.uninit();
-      WebAuthnPromptHelper.uninit();
       PanelUI.uninit();
     }
 

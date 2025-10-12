@@ -232,7 +232,7 @@ async function testOpeningLargeMinifiedFile(dbg) {
   await onSelected;
   fullTest.done();
 
-  await dbg.actions.closeTabs([findSource(dbg, MINIFIED_URL)]);
+  await dbg.actions.closeTabsForSources([findSource(dbg, MINIFIED_URL)]);
 
   // Also clear to prevent reselecting this source
   await dbg.actions.clearSelectedLocation();
@@ -272,7 +272,7 @@ async function testLargeFileWithWrapping(dbg, toolbox) {
   );
 
   await removeBreakpoints(dbg);
-  await dbg.actions.closeTabs([findSource(dbg, MAIN_URL)]);
+  await dbg.actions.closeTabsForSources([findSource(dbg, MAIN_URL)]);
 
   await garbageCollect();
 }
@@ -347,7 +347,7 @@ async function testPrettyPrint(dbg, toolbox) {
   // (because bundle and pretty print sources use almost the same URL except ':formatted' for the pretty printed one)
   // let's close all the tabs.
   const sources = dbg.selectors.getSourceList(dbg.getState());
-  await dbg.actions.closeTabs(sources);
+  await dbg.actions.closeTabsForSources(sources);
 
   await garbageCollect();
 }
@@ -394,7 +394,7 @@ async function testBigBundle(dbg, tab) {
   await stepDebuggerAndLog(dbg, tab, EXPECTED_FUNCTION, STEP_TESTS);
 
   const sources = dbg.selectors.getSourceList(dbg.getState());
-  await dbg.actions.closeTabs(sources);
+  await dbg.actions.closeTabsForSources(sources);
 
   await garbageCollect();
 }

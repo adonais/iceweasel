@@ -4,12 +4,14 @@
 
 package mozilla.components.browser.state.engine.middleware
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.InitAction
 import mozilla.components.browser.state.action.LocaleAction
 import mozilla.components.browser.state.action.TranslationsAction
-import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.TranslationsBrowserState
@@ -39,13 +41,12 @@ import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.whenever
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.Mockito.atLeastOnce
+import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
@@ -53,24 +54,16 @@ import java.util.Locale
 
 class TranslationsMiddlewareTest {
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
-    private val scope = coroutinesTestRule.scope
-    private val engine: Engine = mock()
-    private val engineSession: EngineSession = mock()
-    private val tab: TabSessionState = spy(
-        createTab(
-            url = "https://www.firefox.com",
-            title = "Firefox",
-            id = "1",
-            engineSession = engineSession,
-        ),
-    )
-    private val translationsMiddleware = TranslationsMiddleware(engine = engine, scope = scope)
-    private val tabs = spy(listOf(tab))
-    private val state = spy(BrowserState(tabs = tabs, selectedTabId = tab.id))
-    private val store = spy(BrowserStore(middleware = listOf(translationsMiddleware), initialState = state))
-    private val context = mock<MiddlewareContext<BrowserState, BrowserAction>>()
+    @OptIn(ExperimentalCoroutinesApi::class) // UnconfinedTestDispatcher
+    private val scope = TestScope(UnconfinedTestDispatcher())
+    private lateinit var engine: Engine
+    private lateinit var engineSession: EngineSession
+    private lateinit var tab: TabSessionState
+    private lateinit var translationsMiddleware: TranslationsMiddleware
+    private lateinit var tabs: List<TabSessionState>
+    private lateinit var state: BrowserState
+    private lateinit var store: BrowserStore
+    private lateinit var context: MiddlewareContext<BrowserState, BrowserAction>
 
     // Mock Variables
     private val mockFrom = Language(code = "es", localizedDisplayName = "Spanish")
@@ -83,18 +76,35 @@ class TranslationsMiddlewareTest {
     private val mockSize: Long = 1234
     private val mockLanguage = Language(mockFrom.code, mockFrom.localizedDisplayName)
     private val mockLanguageModel = LanguageModel(mockLanguage, mockDownloaded, mockSize)
-    private val mockLanguageModels = mutableListOf(mockLanguageModel)
+    private lateinit var mockLanguageModels: MutableList<LanguageModel>
 
     @Before
     fun setup() {
+        engine = mock()
+        engineSession = mock()
+        tab = spy(
+            createTab(
+                url = "https://www.firefox.com",
+                title = "Firefox",
+                id = "1",
+                engineSession = engineSession,
+            ),
+        )
+        tabs = spy(listOf(tab))
+        state = spy(BrowserState(tabs = tabs, selectedTabId = tab.id))
+        translationsMiddleware = TranslationsMiddleware(engine = engine, scope = scope)
+        store = spy(BrowserStore(middleware = listOf(translationsMiddleware), initialState = state))
+        context = mock<MiddlewareContext<BrowserState, BrowserAction>>()
+
         whenever(context.store).thenReturn(store)
         whenever(context.state).thenReturn(state)
+
+        mockLanguageModels = mutableListOf(mockLanguageModel)
     }
 
     private fun waitForIdle() {
         scope.testScheduler.runCurrent()
         scope.testScheduler.advanceUntilIdle()
-        coroutinesTestRule.testDispatcher.scheduler.advanceUntilIdle()
         store.waitUntilIdle()
     }
 
@@ -110,10 +120,11 @@ class TranslationsMiddlewareTest {
         val mockSessionState = TranslationsState(
             translationEngineState = TranslationEngineState(mockDetectedLanguages),
         )
-        whenever(store.state.findTab(tab.id)?.translationsState).thenReturn(mockSessionState)
 
         val mockBrowserState = TranslationsBrowserState(isEngineSupported = true, supportedLanguages = mockSupportedLanguages, languageModels = mockLanguageModels)
-        whenever(store.state.translationEngine).thenReturn(mockBrowserState)
+
+        doReturn(mockSessionState).`when`(tab).translationsState
+        doReturn(mockBrowserState).`when`(state).translationEngine
     }
 
     @Test

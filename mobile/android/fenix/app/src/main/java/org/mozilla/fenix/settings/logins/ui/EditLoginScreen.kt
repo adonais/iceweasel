@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -36,6 +37,7 @@ import mozilla.components.compose.base.textfield.TextFieldStyle
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 private val IconButtonHeight = 48.dp
 
@@ -53,17 +55,25 @@ internal fun EditLoginScreen(store: LoginsStore) {
         },
         containerColor = FirefoxTheme.colors.layer1,
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .width(FirefoxTheme.layout.size.containerMaxWidth),
-        ) {
-            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
-            EditLoginUrl(url = editState.login.url)
-            Spacer(modifier = Modifier.height(8.dp))
-            EditLoginUsername(store = store, user = editState.login.username)
-            Spacer(modifier = Modifier.height(8.dp))
-            EditLoginPassword(store = store, pass = editState.login.password)
+
+        if (state.biometricAuthenticationDialogState.shouldShow) {
+            BiometricAuthenticationDialog(store = store)
+        }
+
+        if (state.biometricAuthenticationState == BiometricAuthenticationState.Authorized) {
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+                EditLoginUrl(url = editState.login.url)
+                Spacer(modifier = Modifier.height(8.dp))
+                EditLoginUsername(store = store, user = editState.login.username)
+                Spacer(modifier = Modifier.height(8.dp))
+                EditLoginPassword(store = store, pass = editState.login.password)
+            }
         }
     }
 }
@@ -102,7 +112,7 @@ internal fun EditLoginTopBar(store: LoginsStore, loginItem: LoginItem) {
                 ),
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.mozac_ic_back_24),
+                    painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                     contentDescription = null,
                     tint = FirefoxTheme.colors.iconPrimary,
                 )
@@ -124,7 +134,7 @@ internal fun EditLoginTopBar(store: LoginsStore, loginItem: LoginItem) {
                     enabled = isLoginValid,
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.mozac_ic_checkmark_24),
+                        painter = painterResource(iconsR.drawable.mozac_ic_checkmark_24),
                         contentDescription = null,
                         tint = if (isLoginValid) {
                             FirefoxTheme.colors.textPrimary
@@ -145,9 +155,8 @@ private fun EditLoginUrl(url: String) {
         style = TextFieldStyle.default().labelStyle,
         color = TextFieldColors.default().labelColor,
         modifier = Modifier
-            .padding(
-                horizontal = FirefoxTheme.layout.space.static200,
-            ),
+            .padding(horizontal = FirefoxTheme.layout.space.static200)
+            .width(FirefoxTheme.layout.size.containerMaxWidth),
     )
 
     Text(
@@ -158,7 +167,8 @@ private fun EditLoginUrl(url: String) {
             .padding(
                 horizontal = FirefoxTheme.layout.space.static200,
                 vertical = FirefoxTheme.layout.space.static100,
-            ),
+            )
+            .width(FirefoxTheme.layout.size.containerMaxWidth),
     )
 }
 
@@ -179,7 +189,8 @@ private fun EditLoginUsername(store: LoginsStore, user: String) {
             .padding(
                 horizontal = FirefoxTheme.layout.space.static200,
                 vertical = FirefoxTheme.layout.space.static100,
-            ),
+            )
+            .width(FirefoxTheme.layout.size.containerMaxWidth),
         label = stringResource(R.string.preferences_passwords_saved_logins_username),
         minHeight = IconButtonHeight,
         trailingIcons = {
@@ -214,7 +225,8 @@ private fun EditLoginPassword(store: LoginsStore, pass: String) {
                 .padding(
                     horizontal = FirefoxTheme.layout.space.static200,
                     vertical = FirefoxTheme.layout.space.static100,
-                ),
+                )
+                .width(FirefoxTheme.layout.size.containerMaxWidth),
             label = stringResource(R.string.preferences_passwords_saved_logins_password),
             minHeight = IconButtonHeight,
             trailingIcons = {

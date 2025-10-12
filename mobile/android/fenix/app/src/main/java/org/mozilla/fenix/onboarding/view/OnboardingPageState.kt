@@ -111,6 +111,9 @@ enum class ThemeOptionType(val id: String) {
  * Model containing data for the terms of service page during onboarding.
  */
 data class OnboardingTermsOfService(
+    val subheaderOneText: String? = null,
+    val subheaderTwoText: String? = null,
+    val subheaderThreeText: String? = null,
     val lineOneText: String,
     val lineOneLinkText: String,
     val lineOneLinkUrl: String,

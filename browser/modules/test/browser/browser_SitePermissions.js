@@ -89,7 +89,7 @@ add_task(async function testGetAllPermissionDetailsForBrowser() {
   let popup = permissions.find(({ id }) => id === "popup");
   Assert.deepEqual(popup, {
     id: "popup",
-    label: "Open pop-up windows",
+    label: "Pop-ups and third-party redirects",
     state: SitePermissions.BLOCK,
     scope: SitePermissions.SCOPE_PERSISTENT,
   });

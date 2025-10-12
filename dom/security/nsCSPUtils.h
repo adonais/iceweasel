@@ -116,7 +116,8 @@ CSPDirective CSP_StringToCSPDirective(const nsAString& aDir);
   MACRO(CSP_REPORT_SAMPLE, "'report-sample'")       \
   MACRO(CSP_STRICT_DYNAMIC, "'strict-dynamic'")     \
   MACRO(CSP_WASM_UNSAFE_EVAL, "'wasm-unsafe-eval'") \
-  MACRO(CSP_ALLOW_DUPLICATES, "'allow-duplicates'")
+  MACRO(CSP_ALLOW_DUPLICATES, "'allow-duplicates'") \
+  MACRO(CSP_TRUSTED_TYPES_EVAL, "'trusted-types-eval'")
 
 enum CSPKeyword {
 #define KEYWORD_ENUM(id_, string_) id_,

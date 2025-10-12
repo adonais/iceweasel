@@ -615,6 +615,15 @@ GetTrustedTypesCompliantStringForTrustedScript(
       aError);
 }
 
+MOZ_CAN_RUN_SCRIPT const nsAString*
+GetTrustedTypesCompliantStringForTrustedScript(
+    const nsAString& aInput, const nsAString& aSink,
+    const nsAString& aSinkGroup, const nsINode& aNode,
+    Maybe<nsAutoString>& aResultHolder, ErrorResult& aError) {
+  return GetTrustedTypesCompliantString<TrustedScript>(
+      &aInput, aSink, aSinkGroup, aNode, nullptr, aResultHolder, aError);
+}
+
 bool GetTrustedTypeDataForAttribute(const nsAtom* aElementName,
                                     int32_t aElementNamespaceID,
                                     nsAtom* aAttributeName,

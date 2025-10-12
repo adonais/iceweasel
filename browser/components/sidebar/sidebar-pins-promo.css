@@ -28,6 +28,12 @@
     outline-color: var(--border-color);
   }
 
+  @media (forced-colors) {
+    background-color: ButtonFace;
+    color: ButtonText;
+    outline-color: ButtonText;
+  }
+
   &[dragactive] {
     outline-style: solid;
   }
@@ -109,5 +115,17 @@
 
   @media not (prefers-contrast) {
     color: light-dark(var(--promo-light-text), var(--promo-dark-text));
+  }
+
+  @media (forced-colors) {
+    background-color: ButtonFace;
+    color: ButtonText;
+  }
+
+  &:hover {
+    @media (forced-colors) {
+      background-color: SelectedItem;
+      color: SelectedItemText;
+    }
   }
 }

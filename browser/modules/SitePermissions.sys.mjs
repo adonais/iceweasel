@@ -1244,6 +1244,7 @@ let gPermissions = {
           ? SitePermissions.BLOCK
           : SitePermissions.ALLOW;
       },
+      labelID: "popup2",
       states: [SitePermissions.ALLOW, SitePermissions.BLOCK],
     },
 

@@ -316,9 +316,6 @@ newtab-custom-pocket-sponsored = Матеріали від спонсорів
 newtab-custom-pocket-show-recent-saves = Показати останні збереження
 newtab-custom-recent-title = Недавня активність
 newtab-custom-recent-subtitle = Добірка недавніх сайтів та вмісту
-newtab-custom-recent-toggle =
-    .label = Недавня активність
-    .description = Добірка недавніх сайтів та вмісту
 newtab-custom-weather-toggle =
     .label = Погода
     .description = Точний прогноз на сьогодні
@@ -442,7 +439,6 @@ newtab-weather-menu-change-location = Змінити розташування
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Пошук розташування
     .aria-label = Пошук розташування
-newtab-weather-change-location-search-input = Пошук розташування
 newtab-weather-menu-weather-display = Подання погоди
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -583,8 +579,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Популярне в Google
 newtab-trending-searches-show-trending =
     .title = Показати популярні пошукові запити
 newtab-trending-searches-hide-trending =

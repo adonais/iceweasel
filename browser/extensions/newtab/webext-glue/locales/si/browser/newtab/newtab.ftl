@@ -251,9 +251,6 @@ newtab-custom-pocket-sponsored = අනුග්‍රහය ලද කතා
 newtab-custom-pocket-show-recent-saves = මෑත සුරැකීම් පෙන්වන්න
 newtab-custom-recent-title = මෑත ක්‍රියාකාරකම
 newtab-custom-recent-subtitle = මෑත අඩවි සහ අන්තර්ගතවල තේරීමකි
-newtab-custom-recent-toggle =
-    .label = මෑත ක්‍රියාකාරකම
-    .description = මෑත අඩවි සහ අන්තර්ගතවල තේරීමකි
 newtab-custom-close-button = වසන්න
 newtab-custom-settings = වෙනත් සැකසුම් කළමනාකරණය
 
@@ -294,7 +291,6 @@ newtab-weather-menu-change-location = ස්ථානය වෙනස් කර�
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = ස්ථානයක් සොයන්න
     .aria-label = ස්ථානයක් සොයන්න
-newtab-weather-change-location-search-input = ස්ථානයක් සොයන්න
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"

@@ -79,6 +79,7 @@ const EXPECTED_AMP_RESULT = QuickSuggestTestUtils.ampResult({
   source: "merino",
   provider: "adm",
   requestId: "request_id",
+  suggestedIndex: -1,
 });
 const EXPECTED_WIKIPEDIA_RESULT = QuickSuggestTestUtils.wikipediaResult({
   source: "merino",
@@ -364,6 +365,7 @@ async function doOfflineTest({ mode, expectedResultArgs }) {
       QuickSuggestTestUtils.ampResult({
         ...expectedResultArgs,
         keyword: "offline",
+        suggestedIndex: -1,
       }),
     ],
   });
@@ -374,8 +376,11 @@ async function doOfflineTest({ mode, expectedResultArgs }) {
 }
 
 async function applyRanking(suggestions) {
+  let quickSuggestProviderInstance = UrlbarProvidersManager.getProvider(
+    UrlbarProviderQuickSuggest.name
+  );
   for (let s of suggestions) {
-    await UrlbarProviderQuickSuggest._test_applyRanking(s);
+    await quickSuggestProviderInstance._test_applyRanking(s);
   }
 }
 

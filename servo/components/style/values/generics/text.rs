@@ -66,8 +66,8 @@ impl<Integer: ToCss + PartialEq> ToCss for GenericHyphenateLimitChars<Integer> {
     {
         self.total_word_length.to_css(dest)?;
 
-        if self.pre_hyphen_length != NumberOrAuto::Auto ||
-            self.post_hyphen_length != self.pre_hyphen_length
+        if self.pre_hyphen_length != NumberOrAuto::Auto
+            || self.post_hyphen_length != self.pre_hyphen_length
         {
             dest.write_char(' ')?;
             self.pre_hyphen_length.to_css(dest)?;
@@ -188,11 +188,14 @@ pub enum GenericTextDecorationTrim<L> {
     Length { start: L, end: L },
 }
 
-impl<L: Zero> GenericTextDecorationTrim<L>{
+impl<L: Zero> GenericTextDecorationTrim<L> {
     /// Gets the initial value (zero)
     #[inline]
     pub fn get_initial_value() -> Self {
-        GenericTextDecorationTrim::Length{ start: L::zero(), end: L::zero() }
+        GenericTextDecorationTrim::Length {
+            start: L::zero(),
+            end: L::zero(),
+        }
     }
 }
 

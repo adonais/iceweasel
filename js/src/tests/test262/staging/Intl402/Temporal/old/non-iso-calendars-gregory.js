@@ -39,7 +39,7 @@ compareFormatToPartsSnapshot("0001-01-01T00:00Z", {
 
 var fromWithCases = {
   year2000: {
-    era: "gregory",
+    era: "ce",
     eraYear: 2000,
     year: 2000,
     month: 1,
@@ -47,7 +47,7 @@ var fromWithCases = {
     day: 1,
   },
   year1: {
-    era: "gregory",
+    era: "ce",
     eraYear: 1,
     year: 1,
     month: 1,
@@ -122,7 +122,7 @@ var durationCases = {
   days: {
     duration: { days: 280 },
     result: {
-      era: "gregory",
+      era: "ce",
       eraYear: 2000,
       year: 2000,
       month: 10,
@@ -138,7 +138,7 @@ var durationCases = {
   weeks: {
     duration: { weeks: 40 },
     result: {
-      era: "gregory",
+      era: "ce",
       eraYear: 2000,
       year: 2000,
       month: 10,
@@ -154,7 +154,7 @@ var durationCases = {
   months: {
     duration: { months: 6 },
     result: {
-      era: "gregory",
+      era: "ce",
       eraYear: 2001,
       year: 2001,
       month: 6,
@@ -174,7 +174,7 @@ var durationCases = {
       days: 17
     },
     result: {
-      era: "gregory",
+      era: "ce",
       eraYear: 2001,
       year: 2001,
       month: 6,

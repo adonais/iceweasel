@@ -8,7 +8,6 @@
 
 #include "jsapi.h"
 #include "mozilla/dom/DOMStringMapBinding.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
 #include "nsGenericHTMLElement.h"
@@ -231,11 +230,9 @@ bool nsDOMStringMap::AttrToDataProp(const nsAString& aAttr,
 }
 
 void nsDOMStringMap::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
-                                      nsAtom* aAttribute, int32_t aModType,
+                                      nsAtom* aAttribute, AttrModType aModType,
                                       const nsAttrValue* aOldValue) {
-  if ((aModType == MutationEvent_Binding::ADDITION ||
-       aModType == MutationEvent_Binding::REMOVAL) &&
-      aNameSpaceID == kNameSpaceID_None &&
+  if (IsAdditionOrRemoval(aModType) && aNameSpaceID == kNameSpaceID_None &&
       StringBeginsWith(nsDependentAtomString(aAttribute), u"data-"_ns)) {
     ++mExpandoAndGeneration.generation;
   }

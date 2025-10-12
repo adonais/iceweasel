@@ -9,7 +9,6 @@ import mozilla.components.concept.toolbar.fake.FakeToolbar
 import mozilla.components.feature.session.SessionUseCases
 import org.junit.Assert.assertNotNull
 import org.junit.Test
-import org.mockito.Mockito.spy
 
 class ToolbarInteractorTest {
 

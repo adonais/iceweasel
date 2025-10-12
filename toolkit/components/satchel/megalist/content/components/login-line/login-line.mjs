@@ -122,7 +122,7 @@ class LoginLine extends MozLitElement {
             <input
               class="input-field"
               id="login-line-input"
-              value=${this.value}
+              .value=${this.value}
               type=${this.inputType}
               readonly
             />

@@ -1156,4 +1156,43 @@ describe("MultiStageAboutWelcomeProton module", () => {
       );
     });
   });
+
+  describe("Multiple secondary_top buttons", () => {
+    const SCREEN_PROPS = {
+      content: {
+        title: "test title",
+        tiles: {
+          type: "migration-wizard",
+        },
+        secondary_button_top: [
+          {
+            label: {
+              raw: "test button 1",
+            },
+            action: {
+              navigate: true,
+            },
+          },
+          {
+            label: {
+              raw: "test button 2",
+            },
+            action: {
+              navigate: true,
+            },
+          },
+        ],
+      },
+      setScreenMultiSelects: sinon.stub(),
+      setActiveMultiSelect: sinon.stub(),
+    };
+
+    it("should render both buttons in a container", async () => {
+      const wrapper = mount(<MultiStageProtonScreen {...SCREEN_PROPS} />);
+      assert.ok(wrapper.exists());
+      assert.isTrue(wrapper.find(".secondary-buttons-top-container").exists());
+      assert.isTrue(wrapper.find("#secondary_button_0").exists());
+      assert.isTrue(wrapper.find("#secondary_button_1").exists());
+    });
+  });
 });

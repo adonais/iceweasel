@@ -94,21 +94,15 @@ support-files = [
 ["test_WebAudioMemoryReporting.html"]
 
 ["test_analyserNode.html"]
-run-if = ["os == 'android'"] # These are tested in web-platform-tests, except on Android which don't run WPT.
-
-["test_analyserNodeMinimum.html"]
-run-if = ["os == 'android'"] # These are tested in web-platform-tests, except on Android which don't run WPT.
-
-["test_analyserNodeOutput.html"]
-run-if = ["os == 'android'"] # These are tested in web-platform-tests, except on Android which don't run WPT.
+run-if = ["os == 'android'"] # Tested in web-platform-tests test-analysernode.html, but times out on Android.
 
 ["test_analyserNodePassThrough.html"]
 
 ["test_analyserNodeWithGain.html"]
-run-if = ["os == 'android'"] # These are tested in web-platform-tests, except on Android which don't run WPT.
+run-if = ["os == 'android'"] # Tested in web-platform-tests test-analyser-gain.html, but times out on Android.
 
 ["test_analyserScale.html"]
-run-if = ["os == 'android'"] # These are tested in web-platform-tests, except on Android which don't run WPT.
+run-if = ["os == 'android'"] # Tested in web-platform-tests test-analyser-scale.html, but times out on Android.
 
 ["test_audioContextParams_recordNonDefaultSampleRate.html"]
 

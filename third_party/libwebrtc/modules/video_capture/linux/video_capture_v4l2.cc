@@ -64,7 +64,7 @@ VideoCaptureModuleV4L2::VideoCaptureModuleV4L2()
       _buffersAllocatedByDevice(-1),
       _streaming(false),
       _captureStarted(false),
-      _pool(NULL) {}
+      _pool(nullptr) {}
 
 int32_t VideoCaptureModuleV4L2::Init(const char* deviceUniqueIdUTF8) {
   RTC_DCHECK_RUN_ON(&api_checker_);
@@ -380,7 +380,7 @@ bool VideoCaptureModuleV4L2::AllocateVideoBuffers() {
       return false;
     }
 
-    _pool[i].start = mmap(NULL, buffer.length, PROT_READ | PROT_WRITE,
+    _pool[i].start = mmap(nullptr, buffer.length, PROT_READ | PROT_WRITE,
                           MAP_SHARED, _deviceFd, buffer.m.offset);
 
     if (MAP_FAILED == _pool[i].start) {

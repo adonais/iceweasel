@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.ui
 
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SkipLeaks
@@ -43,7 +44,10 @@ class CreditCardAutofillTest : TestSetup() {
     }
 
     @get:Rule
-    val activityIntentTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides()
+    val composeTestRule =
+        AndroidComposeTestRule(
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
+        ) { it.activity }
 
     @get:Rule
     val memoryLeaksRule = DetectMemoryLeaksRule()
@@ -57,7 +61,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
                 MockCreditCard1.MOCK_CREDIT_CARD_NUMBER,
@@ -93,7 +97,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
                 MockCreditCard1.MOCK_CREDIT_CARD_NUMBER,
@@ -120,7 +124,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
                 MockCreditCard1.MOCK_CREDIT_CARD_NUMBER,
@@ -146,7 +150,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, false)
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
@@ -172,7 +176,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
                 MockCreditCard1.MOCK_CREDIT_CARD_NUMBER,
@@ -188,7 +192,7 @@ class CreditCardAutofillTest : TestSetup() {
         }.enterURLAndEnterToBrowser(creditCardFormPage.url) {
             clickCreditCardNumberTextBox()
             clickPageObject(itemWithResId("$packageName:id/select_credit_card_header"))
-        }.clickManageCreditCardsButton {
+        }.clickManageCreditCardsButton(composeTestRule) {
         }.goBackToBrowser {
             verifySelectCreditCardPromptExists(false)
         }
@@ -202,7 +206,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, false)
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
@@ -221,7 +225,7 @@ class CreditCardAutofillTest : TestSetup() {
             verifySelectCreditCardPromptExists(true)
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             clickSaveAndAutofillCreditCardsOption()
             verifyCreditCardsAutofillSection(false, true)
         }
@@ -241,7 +245,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, false)
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
@@ -279,7 +283,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, false)
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
@@ -326,7 +330,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, false)
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
@@ -363,7 +367,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, false)
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
@@ -427,7 +431,7 @@ class CreditCardAutofillTest : TestSetup() {
             verifyUpdateOrSaveCreditCardPromptExists(exists = false)
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, false)
         }
     }
@@ -448,7 +452,7 @@ class CreditCardAutofillTest : TestSetup() {
             verifyUpdateOrSaveCreditCardPromptExists(exists = false)
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, true)
             clickManageSavedCreditCardsButton()
             clickSecuredCreditCardsLaterButton()
@@ -467,7 +471,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, false)
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
@@ -500,7 +504,7 @@ class CreditCardAutofillTest : TestSetup() {
             verifyUpdateOrSaveCreditCardPromptExists(false)
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, true)
             clickManageSavedCreditCardsButton()
             verifySavedCreditCardsSection(
@@ -518,7 +522,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, false)
             clickAddCreditCardButton()
             fillAndSaveCreditCard(
@@ -551,7 +555,7 @@ class CreditCardAutofillTest : TestSetup() {
             verifyUpdateOrSaveCreditCardPromptExists(false)
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, true)
             clickManageSavedCreditCardsButton()
             verifySavedCreditCardsSection(
@@ -567,7 +571,7 @@ class CreditCardAutofillTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
-        }.openAutofillSubMenu {
+        }.openAutofillSubMenu(composeTestRule) {
             verifyCreditCardsAutofillSection(true, false)
             clickAddCreditCardButton()
             fillAndSaveCreditCard(

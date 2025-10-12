@@ -607,7 +607,6 @@ class PeerConnectionImpl final
   PeerConnectionImpl& operator=(PeerConnectionImpl);
 
   RefPtr<dom::RTCStatsPromise> GetDataChannelStats(
-      const RefPtr<DataChannelConnection>& aDataChannelConnection,
       const DOMHighResTimeStamp aTimestamp);
   nsresult CalculateFingerprint(const nsACString& algorithm,
                                 std::vector<uint8_t>* fingerprint) const;
@@ -673,6 +672,7 @@ class PeerConnectionImpl final
   RefPtr<PeerConnectionObserver> mPCObserver;
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
+  nsString mOrigin;
 
   // The SDP sent in from JS
   std::string mLocalRequestedSDP;

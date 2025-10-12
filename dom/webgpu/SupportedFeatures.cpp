@@ -17,6 +17,8 @@ GPU_IMPL_JS_WRAP(SupportedFeatures)
 SupportedFeatures::SupportedFeatures(Adapter* const aParent)
     : ChildOf(aParent) {}
 
+SupportedFeatures::~SupportedFeatures() = default;
+
 void SupportedFeatures::Add(const dom::GPUFeatureName aFeature,
                             ErrorResult& aRv) {
   const auto u8 = dom::GetEnumString(aFeature);

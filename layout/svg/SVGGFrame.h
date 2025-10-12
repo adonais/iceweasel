@@ -47,7 +47,7 @@ class SVGGFrame : public SVGDisplayContainerFrame {
 
   // nsIFrame interface:
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 };
 
 }  // namespace mozilla

@@ -6,7 +6,6 @@ package org.mozilla.fenix.settings.logins.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.os.Build
 import android.os.PersistableBundle
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineDispatcher
@@ -123,6 +122,10 @@ internal class LoginsMiddleware(
             is EditLoginAction.SaveEditClicked -> {
                 context.store.handleEditLogin(loginItem = action.login)
             }
+            is BiometricAuthenticationAction.AuthenticationSucceeded,
+            is BiometricAuthenticationAction.AuthenticationInProgress,
+            is BiometricAuthenticationAction.AuthenticationFailed,
+            is PinVerificationAction,
             is LoginsLoaded,
             is EditLoginAction.UsernameChanged,
             is EditLoginAction.PasswordChanged,
@@ -130,6 +133,7 @@ internal class LoginsMiddleware(
             is AddLoginAction.HostChanged,
             is AddLoginAction.UsernameChanged,
             is AddLoginAction.PasswordChanged,
+            is BiometricAuthenticationDialogAction,
             is DetailLoginMenuAction.DeleteLoginMenuItemClicked,
             is LoginDeletionDialogAction.CancelTapped,
             is ViewDisposed,
@@ -158,11 +162,9 @@ internal class LoginsMiddleware(
     private fun handleUsernameClicked(username: String) {
         val usernameClipData = ClipData.newPlainText(username, username)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            usernameClipData.apply {
-                description.extras = PersistableBundle().apply {
-                    putBoolean("android.content.extra.IS_SENSITIVE", false)
-                }
+        usernameClipData.apply {
+            description.extras = PersistableBundle().apply {
+                putBoolean("android.content.extra.IS_SENSITIVE", false)
             }
         }
         clipboardManager?.setPrimaryClip(usernameClipData)
@@ -171,11 +173,9 @@ internal class LoginsMiddleware(
     private fun handlePasswordClicked(password: String) {
         val passwordClipData = ClipData.newPlainText(password, password)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            passwordClipData.apply {
-                description.extras = PersistableBundle().apply {
-                    putBoolean("android.content.extra.IS_SENSITIVE", true)
-                }
+        passwordClipData.apply {
+            description.extras = PersistableBundle().apply {
+                putBoolean("android.content.extra.IS_SENSITIVE", true)
             }
         }
         clipboardManager?.setPrimaryClip(passwordClipData)

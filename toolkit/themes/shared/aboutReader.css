@@ -418,7 +418,7 @@ button:disabled {
   height: 32px;
   padding: 0;
   border: 1px solid var(--toolbar-button-border);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   margin: 4px 0;
   background-color: var(--toolbar-button-background);
   background-size: 16px 16px;
@@ -492,7 +492,7 @@ button:disabled {
   z-index: 1000;
   background-color: var(--popup-background);
   visibility: hidden;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   border: 1px solid var(--popup-border);
   box-shadow: 0 0 10px 0 var(--popup-shadow);
   top: var(--space-xsmall);
@@ -592,14 +592,6 @@ body.hcm .color-scheme-buttons {
   margin: 10px 5px;
   border-radius: 2px;
   border-color: var(--popup-border);
-}
-
-.color-scheme-buttons > input:first-child + label {
-  margin-inline-start: 10px;
-}
-
-.color-scheme-buttons > label:last-child {
-  margin-inline-end: 10px;
 }
 
 /* Improved text and layout menu popup */

@@ -80,7 +80,7 @@ export default class MozInputSearch extends MozInputText {
         class=${this.#hasIcon() ? "with-icon" : ""}
         type="search"
         name=${this.name}
-        value=${this.value}
+        .value=${this.value}
         ?disabled=${this.disabled || this.parentDisabled}
         accesskey=${ifDefined(this.accessKey)}
         placeholder=${ifDefined(this.placeholder)}

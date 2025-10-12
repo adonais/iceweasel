@@ -481,6 +481,9 @@ void OscillatorNode::SendPeriodicWaveToTrack() {
 }
 
 void OscillatorNode::Start(double aWhen, ErrorResult& aRv) {
+  WEB_AUDIO_API_LOG("{:f}: {} {} Start({:f})", Context()->CurrentTime(),
+                    NodeType(), Id(), aWhen);
+
   if (!WebAudioUtils::IsTimeValid(aWhen)) {
     aRv.ThrowRangeError<MSG_VALUE_OUT_OF_RANGE>("start time");
     return;
@@ -505,6 +508,9 @@ void OscillatorNode::Start(double aWhen, ErrorResult& aRv) {
 }
 
 void OscillatorNode::Stop(double aWhen, ErrorResult& aRv) {
+  WEB_AUDIO_API_LOG("{:f}: {} {} Stop({:f})", Context()->CurrentTime(),
+                    NodeType(), Id(), aWhen);
+
   if (!WebAudioUtils::IsTimeValid(aWhen)) {
     aRv.ThrowRangeError<MSG_VALUE_OUT_OF_RANGE>("stop time");
     return;

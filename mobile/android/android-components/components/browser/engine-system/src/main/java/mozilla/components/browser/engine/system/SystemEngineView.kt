@@ -8,11 +8,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.net.Uri
 import android.net.http.SslError
-import android.os.Build
-import android.os.Build.VERSION.SDK_INT
 import android.os.Handler
 import android.os.Message
 import android.util.AttributeSet
@@ -40,7 +37,6 @@ import android.webkit.WebView.HitTestResult.SRC_ANCHOR_TYPE
 import android.webkit.WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import androidx.core.graphics.createBitmap
@@ -238,11 +234,7 @@ class SystemEngineView @JvmOverloads constructor(
                 }
             }
 
-            val isRedirect = if (SDK_INT >= Build.VERSION_CODES.N) {
-                request.isRedirect
-            } else {
-                false
-            }
+            val isRedirect = request.isRedirect
 
             session?.let { session ->
                 session.settings.requestInterceptor?.let { interceptor ->
@@ -308,21 +300,6 @@ class SystemEngineView @JvmOverloads constructor(
             }
         }
 
-        @Deprecated("Deprecated in Java")
-        override fun onReceivedError(view: WebView, errorCode: Int, description: String?, failingUrl: String?) {
-            session?.let { session ->
-                val errorType = SystemEngineSession.webViewErrorToErrorType(errorCode)
-                session.settings.requestInterceptor?.onErrorRequest(
-                    session,
-                    errorType,
-                    failingUrl,
-                )?.apply {
-                    view.loadUrl(this.uri)
-                }
-            }
-        }
-
-        @RequiresApi(Build.VERSION_CODES.M)
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
             session?.let { session ->
                 if (!request.isForMainFrame) {
@@ -744,25 +721,13 @@ class SystemEngineView @JvmOverloads constructor(
             return
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-            createThumbnailUsingDrawingView(webView, onFinish)
-        } else {
-            createThumbnailUsingPixelCopy(webView, onFinish)
-        }
+        createThumbnailUsingPixelCopy(webView, onFinish)
     }
 
     override fun clearSelection() {
         // no-op
     }
 
-    private fun createThumbnailUsingDrawingView(view: View, onFinish: (Bitmap?) -> Unit) {
-        val outBitmap = createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(outBitmap)
-        view.draw(canvas)
-        onFinish(outBitmap)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
     private fun createThumbnailUsingPixelCopy(view: View, onFinish: (Bitmap?) -> Unit) {
         val out = createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         val viewRect = view.getRectWithViewLocation()
@@ -787,11 +752,7 @@ class SystemEngineView @JvmOverloads constructor(
 
     @Suppress("Deprecation")
     private fun WebView.getAuthCredentials(host: String, realm: String): Pair<String, String> {
-        val credentials = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            session?.webViewDatabase(context)?.getHttpAuthUsernamePassword(host, realm)
-        } else {
-            this.getHttpAuthUsernamePassword(host, realm)
-        }
+        val credentials = session?.webViewDatabase(context)?.getHttpAuthUsernamePassword(host, realm)
 
         var credentialsPair = "" to ""
 

@@ -233,6 +233,9 @@ XPCOMUtils.defineLazyPreferenceGetter(
           : undefined // Adds to the end of navbar if position_start is false.
       );
     }
+    // Ensure CUI knows to not restore this button if the user later removes it
+    let prefId = "browser.toolbarbuttons.introduced.sidebar-button";
+    Services.prefs.setBoolPref(prefId, true);
   }
 );
 
@@ -7900,8 +7903,13 @@ class OverflowableToolbar {
 
     // If the target has min-width: 0, their children might actually overflow
     // it, so check for both cases explicitly.
-    let targetContentWidth = Math.max(targetWidth, targetChildrenWidth);
-    let isOverflowing = Math.floor(targetContentWidth) > totalAvailWidth;
+    // We don't care about <1px differences, so ceil the avail width and floor
+    // the content width to deal with it.
+    let targetContentWidth = Math.floor(
+      Math.max(targetWidth, targetChildrenWidth)
+    );
+    totalAvailWidth = Math.ceil(totalAvailWidth);
+    let isOverflowing = targetContentWidth > totalAvailWidth;
     return { isOverflowing, targetContentWidth, totalAvailWidth };
   }
 

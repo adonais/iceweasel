@@ -4,8 +4,6 @@
 
 package org.mozilla.fenix.benchmark
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.StartupMode
@@ -47,7 +45,6 @@ import org.mozilla.fenix.benchmark.utils.revokeNotificationPermission
  * and the [instrumentation arguments documentation](https://d.android.com/topic/performance/benchmarking/macrobenchmark-instrumentation-args).
  **/
 @RunWith(AndroidJUnit4::class)
-@RequiresApi(Build.VERSION_CODES.N)
 @BaselineProfileMacrobenchmark
 class BaselineProfilesOnboardingBenchmark {
 

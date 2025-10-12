@@ -12,6 +12,7 @@ use crate::selector_map::PrecomputedHashMap;
 use crate::str::HTML_SPACE_CHARACTERS;
 use crate::values::computed::LengthPercentage as ComputedLengthPercentage;
 use crate::values::computed::{Context, Percentage, ToComputedValue};
+use crate::values::generics::length::GenericAnchorSizeFunction;
 use crate::values::generics::position::Position as GenericPosition;
 use crate::values::generics::position::PositionComponent as GenericPositionComponent;
 use crate::values::generics::position::PositionOrAuto as GenericPositionOrAuto;
@@ -325,8 +326,8 @@ impl<S: Side> ToComputedValue for PositionComponent<S> {
                 // We represent `<end-side> <length>` as `calc(100% - <length>)`.
                 ComputedLengthPercentage::hundred_percent_minus(length, AllowedNumericType::All)
             },
-            PositionComponent::Side(_, Some(ref length)) |
-            PositionComponent::Length(ref length) => length.to_computed_value(context),
+            PositionComponent::Side(_, Some(ref length))
+            | PositionComponent::Length(ref length) => length.to_computed_value(context),
         }
     }
 
@@ -801,6 +802,26 @@ impl PositionVisibility {
     }
 }
 
+#[derive(PartialEq)]
+/// A value indicating which high level group in the formal grammar a
+/// PositionAreaKeyword or PositionArea belongs to.
+pub enum PositionAreaType {
+    /// X || Y
+    Physical,
+    /// block || inline
+    Logical,
+    /// self-block || self-inline
+    SelfLogical,
+    /// start|end|span-* {1,2}
+    Inferred,
+    /// self-start|self-end|span-self-* {1,2}
+    SelfInferred,
+    /// center, span-all
+    Common,
+    /// none
+    None,
+}
+
 #[derive(
     Clone,
     Copy,
@@ -901,133 +922,106 @@ impl PositionAreaKeyword {
         *self == Self::None
     }
 
-    /// Is a value that's common to all compatible keyword groupings.
-    pub fn is_common(&self) -> bool {
-        *self == Self::Center || *self == Self::SpanAll
+    // TODO: Investigate better perf: https://bugzilla.mozilla.org/show_bug.cgi?id=1987803
+    fn get_type(&self) -> PositionAreaType {
+        use PositionAreaKeyword::*;
+        match self {
+            // X-axis
+            Left | Right | SpanLeft | SpanRight | XStart | XEnd | SpanXStart | SpanXEnd
+            | XSelfStart | XSelfEnd | SpanXSelfStart | SpanXSelfEnd => PositionAreaType::Physical,
+
+            // Y-axis
+            Top | Bottom | SpanTop | SpanBottom | YStart | YEnd | SpanYStart | SpanYEnd
+            | YSelfStart | YSelfEnd | SpanYSelfStart | SpanYSelfEnd => PositionAreaType::Physical,
+
+            // Block
+            BlockStart | BlockEnd | SpanBlockStart | SpanBlockEnd => PositionAreaType::Logical,
+
+            // Inline
+            InlineStart | InlineEnd | SpanInlineStart | SpanInlineEnd => PositionAreaType::Logical,
+
+            // Self block
+            SelfBlockStart | SelfBlockEnd | SpanSelfBlockStart | SpanSelfBlockEnd => {
+                PositionAreaType::SelfLogical
+            },
+
+            // Self inline
+            SelfInlineStart | SelfInlineEnd | SpanSelfInlineStart | SpanSelfInlineEnd => {
+                PositionAreaType::SelfLogical
+            },
+
+            // Inferred
+            Start | End | SpanStart | SpanEnd => PositionAreaType::Inferred,
+
+            // Self inferred
+            SelfStart | SelfEnd | SpanSelfStart | SpanSelfEnd => PositionAreaType::SelfInferred,
+
+            // Common
+            Center | SpanAll => PositionAreaType::Common,
+
+            None => PositionAreaType::None,
+        }
     }
 
-    pub fn is_horizontal(&self) -> bool {
+    #[inline]
+    pub fn canonical_order_is_first(&self) -> bool {
+        use PositionAreaKeyword::*;
         matches!(
             self,
-            Self::Left |
-                Self::Right |
-                Self::SpanLeft |
-                Self::SpanRight |
-                Self::XStart |
-                Self::XEnd |
-                Self::SpanXStart |
-                Self::SpanXEnd |
-                Self::XSelfStart |
-                Self::XSelfEnd |
-                Self::SpanXSelfStart |
-                Self::SpanXSelfEnd
-        )
-    }
-    pub fn is_vertical(&self) -> bool {
-        matches!(
-            self,
-            Self::Top |
-                Self::Bottom |
-                Self::SpanTop |
-                Self::SpanBottom |
-                Self::YStart |
-                Self::YEnd |
-                Self::SpanYStart |
-                Self::SpanYEnd |
-                Self::YSelfStart |
-                Self::YSelfEnd |
-                Self::SpanYSelfStart |
-                Self::SpanYSelfEnd
-        )
-    }
-
-    pub fn is_block(&self) -> bool {
-        matches!(
-            self,
-            Self::BlockStart | Self::BlockEnd | Self::SpanBlockStart | Self::SpanBlockEnd
-        )
-    }
-    pub fn is_inline(&self) -> bool {
-        matches!(
-            self,
-            Self::InlineStart | Self::InlineEnd | Self::SpanInlineStart | Self::SpanInlineEnd
-        )
-    }
-
-    pub fn is_self_block(&self) -> bool {
-        matches!(
-            self,
-            Self::SelfBlockStart |
-                Self::SelfBlockEnd |
-                Self::SpanSelfBlockStart |
-                Self::SpanSelfBlockEnd
-        )
-    }
-    pub fn is_self_inline(&self) -> bool {
-        matches!(
-            self,
-            Self::SelfInlineStart |
-                Self::SelfInlineEnd |
-                Self::SpanSelfInlineStart |
-                Self::SpanSelfInlineEnd
+            Left | Right
+                | SpanLeft
+                | SpanRight
+                | XStart
+                | XEnd
+                | SpanXStart
+                | SpanXEnd
+                | XSelfStart
+                | XSelfEnd
+                | SpanXSelfStart
+                | SpanXSelfEnd
+                | BlockStart
+                | BlockEnd
+                | SpanBlockStart
+                | SpanBlockEnd
+                | SelfBlockStart
+                | SelfBlockEnd
+                | SpanSelfBlockStart
+                | SpanSelfBlockEnd
         )
     }
 
-    pub fn is_inferred_logical(&self) -> bool {
+    #[inline]
+    pub fn canonical_order_is_second(&self) -> bool {
+        use PositionAreaKeyword::*;
         matches!(
             self,
-            Self::Start | Self::End | Self::SpanStart | Self::SpanEnd
+            Top | Bottom
+                | SpanTop
+                | SpanBottom
+                | YStart
+                | YEnd
+                | SpanYStart
+                | SpanYEnd
+                | YSelfStart
+                | YSelfEnd
+                | SpanYSelfStart
+                | SpanYSelfEnd
+                | InlineStart
+                | InlineEnd
+                | SpanInlineStart
+                | SpanInlineEnd
+                | SelfInlineStart
+                | SelfInlineEnd
+                | SpanSelfInlineStart
+                | SpanSelfInlineEnd
         )
     }
 
-    pub fn is_self_inferred_logical(&self) -> bool {
-        matches!(
-            self,
-            Self::SelfStart | Self::SelfEnd | Self::SpanSelfStart | Self::SpanSelfEnd
-        )
+    #[inline]
+    pub fn has_same_canonical_order(&self, other: PositionAreaKeyword) -> bool {
+        self.canonical_order_is_first() == other.canonical_order_is_first()
+            || self.canonical_order_is_second() == other.canonical_order_is_second()
     }
-}
-
-#[inline]
-fn is_compatible_pairing(first: PositionAreaKeyword, second: PositionAreaKeyword) -> bool {
-    if first.is_none() || second.is_none() {
-        // `none` is not allowed as one of the keywords when two keywords are
-        // provided.
-        return false;
-    }
-    if first.is_common() || second.is_common() {
-        return true;
-    }
-    if first.is_horizontal() {
-        return second.is_vertical();
-    }
-    if first.is_vertical() {
-        return second.is_horizontal();
-    }
-    if first.is_block() {
-        return second.is_inline();
-    }
-    if first.is_inline() {
-        return second.is_block();
-    }
-    if first.is_self_block() {
-        return second.is_self_inline();
-    }
-    if first.is_self_inline() {
-        return second.is_self_block();
-    }
-    if first.is_inferred_logical() {
-        return second.is_inferred_logical();
-    }
-    if first.is_self_inferred_logical() {
-        return second.is_self_inferred_logical();
-    }
-
-    debug_assert!(false, "Not reached");
-
-    // Return false to increase the chances of this being reported to us if we
-    // ever were to get here.
-    false
 }
 
 #[derive(
@@ -1038,7 +1032,6 @@ fn is_compatible_pairing(first: PositionAreaKeyword, second: PositionAreaKeyword
     MallocSizeOf,
     PartialEq,
     SpecifiedValueInfo,
-    ToComputedValue,
     ToCss,
     ToResolvedValue,
     ToShmem,
@@ -1075,6 +1068,41 @@ impl PositionArea {
         Self::parse_internal(context, input, /*allow_none*/ false)
     }
 
+    #[inline]
+    pub fn get_type(&self) -> PositionAreaType {
+        match (self.first.get_type(), self.second.get_type()) {
+            (PositionAreaType::Physical, PositionAreaType::Physical)
+                if !self.first.has_same_canonical_order(self.second) =>
+            {
+                PositionAreaType::Physical
+            },
+            (PositionAreaType::Logical, PositionAreaType::Logical)
+                if !self.first.has_same_canonical_order(self.second) =>
+            {
+                PositionAreaType::Logical
+            },
+            (PositionAreaType::SelfLogical, PositionAreaType::SelfLogical)
+                if !self.first.has_same_canonical_order(self.second) =>
+            {
+                PositionAreaType::SelfLogical
+            },
+            (PositionAreaType::Inferred, PositionAreaType::Inferred) => PositionAreaType::Inferred,
+            (PositionAreaType::SelfInferred, PositionAreaType::SelfInferred) => {
+                PositionAreaType::SelfInferred
+            },
+            (PositionAreaType::Common, PositionAreaType::Common) => PositionAreaType::Common,
+
+            // Allow mixing Common with any other types except `none`
+            (PositionAreaType::Common, other) | (other, PositionAreaType::Common)
+                if other != PositionAreaType::None =>
+            {
+                other
+            },
+
+            _ => PositionAreaType::None,
+        }
+    }
+
     fn parse_internal<'i, 't>(
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
@@ -1105,41 +1133,34 @@ impl PositionArea {
             return Ok(Self { first, second });
         }
 
-        if !is_compatible_pairing(first, second) {
+        let pair_type = Self { first, second }.get_type();
+
+        if pair_type == PositionAreaType::None {
+            // `none` is only allowed as a standalone value, and we've handled
+            // that already.
             return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
 
-        // Normalize by applying the shortest serialization principle:
-        // https://drafts.csswg.org/cssom/#serializing-css-values
-        if first.is_inferred_logical() ||
-            second.is_inferred_logical() ||
-            first.is_self_inferred_logical() ||
-            second.is_self_inferred_logical() ||
-            (first.is_common() && second.is_common())
-        {
-            // In these cases we must not change the order of the keywords
-            // since their meaning is inferred from their order. However, if
-            // both keywords are the same, only one should be set.
-            if first == second {
+        // For types that have a canonical order, put them in order and remove
+        // 'span-all' (the default behavior; unnecessary for keyword pairs with
+        // a known order).
+        if matches!(
+            pair_type,
+            PositionAreaType::Physical | PositionAreaType::Logical | PositionAreaType::SelfLogical
+        ) {
+            if second == PositionAreaKeyword::SpanAll {
+                // Span-all is the default behavior, so specifying `span-all` is
+                // superfluous.
                 second = PositionAreaKeyword::None;
+            } else if first == PositionAreaKeyword::SpanAll {
+                first = second;
+                second = PositionAreaKeyword::None;
+            } else if first.canonical_order_is_second() || second.canonical_order_is_first() {
+                std::mem::swap(&mut first, &mut second);
             }
-        } else if second == PositionAreaKeyword::SpanAll {
-            // Span-all is the default behavior, so specifying `span-all` is
-            // superfluous.
+        }
+        if first == second {
             second = PositionAreaKeyword::None;
-        } else if first == PositionAreaKeyword::SpanAll {
-            // Same here, but the non-superfluous keyword must come first.
-            first = second;
-            second = PositionAreaKeyword::None;
-        } else if first.is_vertical() ||
-            second.is_horizontal() ||
-            first.is_inline() ||
-            second.is_block() ||
-            first.is_self_inline() ||
-            second.is_self_block()
-        {
-            // Canonical order is horizontal before vertical, block before inline.
-            std::mem::swap(&mut first, &mut second);
         }
 
         Ok(Self { first, second })
@@ -1482,8 +1503,8 @@ impl TemplateAreasParser {
             match self.area_indices.entry(name) {
                 Entry::Occupied(ref e) => {
                     let index = *e.get();
-                    if self.areas[index].columns.start != column ||
-                        self.areas[index].rows.end != self.row
+                    if self.areas[index].columns.start != column
+                        || self.areas[index].rows.end != self.row
                     {
                         return Err(());
                     }
@@ -1655,12 +1676,12 @@ impl<'a> Iterator for TemplateAreasTokenizer<'a> {
 }
 
 fn is_name_code_point(c: char) -> bool {
-    c >= 'A' && c <= 'Z' ||
-        c >= 'a' && c <= 'z' ||
-        c >= '\u{80}' ||
-        c == '_' ||
-        c >= '0' && c <= '9' ||
-        c == '-'
+    c >= 'A' && c <= 'Z'
+        || c >= 'a' && c <= 'z'
+        || c >= '\u{80}'
+        || c == '_'
+        || c >= '0' && c <= '9'
+        || c == '-'
 }
 
 /// This property specifies named grid areas.
@@ -1769,10 +1790,36 @@ impl Inset {
             },
             Err(_) => (),
         };
+        Self::parse_anchor_functions_quirky(context, input, allow_quirks)
+    }
+
+    fn parse_as_anchor_function_fallback<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        if let Ok(l) =
+            input.try_parse(|i| LengthPercentage::parse_quirky(context, i, AllowQuirks::No))
+        {
+            return Ok(Self::LengthPercentage(l));
+        }
+        Self::parse_anchor_functions_quirky(context, input, AllowQuirks::No)
+    }
+
+    fn parse_anchor_functions_quirky<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+        allow_quirks: AllowQuirks,
+    ) -> Result<Self, ParseError<'i>> {
+        debug_assert!(
+            static_prefs::pref!("layout.css.anchor-positioning.enabled"),
+            "How are we parsing with pref off?"
+        );
         if let Ok(inner) = input.try_parse(|i| AnchorFunction::parse(context, i)) {
             return Ok(Self::AnchorFunction(Box::new(inner)));
         }
-        if let Ok(inner) = input.try_parse(|i| specified::AnchorSizeFunction::parse(context, i)) {
+        if let Ok(inner) =
+            input.try_parse(|i| GenericAnchorSizeFunction::<Inset>::parse(context, i))
+        {
             return Ok(Self::AnchorSizeFunction(Box::new(inner)));
         }
         Ok(Self::AnchorContainingCalcFunction(input.try_parse(
@@ -1791,7 +1838,7 @@ impl Parse for Inset {
 }
 
 /// A specified value for `anchor()` function.
-pub type AnchorFunction = GenericAnchorFunction<specified::Percentage, LengthPercentage>;
+pub type AnchorFunction = GenericAnchorFunction<specified::Percentage, Inset>;
 
 impl Parse for AnchorFunction {
     fn parse<'i, 't>(
@@ -1813,7 +1860,7 @@ impl Parse for AnchorFunction {
             let fallback = i
                 .try_parse(|i| {
                     i.expect_comma()?;
-                    LengthPercentage::parse(context, i)
+                    Inset::parse_as_anchor_function_fallback(context, i)
                 })
                 .ok();
             Ok(Self {

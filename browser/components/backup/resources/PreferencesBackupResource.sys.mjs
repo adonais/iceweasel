@@ -7,6 +7,7 @@ import { BackupResource } from "resource:///modules/backup/BackupResource.sys.mj
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
 });
 
@@ -20,6 +21,36 @@ export class PreferencesBackupResource extends BackupResource {
 
   static get requiresEncryption() {
     return false;
+  }
+
+  /**
+   * Nimbus metadata prefs that are currently set should not be included in the
+   * backup, so this adds them to the given override map with null values.
+   *
+   * @param {nsIPrefOverrideMap} prefsOverrideMap
+   * @returns {nsIPrefOverrideMap} prefsOverrideMap with metadata prefs added
+   */
+  static addNimbusMetadataPrefs(prefsOverrideMap) {
+    // List of prefs we always override.
+    const kNimbusMetadataPrefs = [
+      "app.normandy.user_id",
+      "toolkit.telemetry.cachedProfileGroupID",
+    ];
+    // Prefs with this prefix are always overriden.
+    const kNimbusMetadataPrefPrefix = "nimbus.";
+
+    for (const pref of kNimbusMetadataPrefs) {
+      if (Services.prefs.getPrefType(pref) !== Services.prefs.PREF_INVALID) {
+        prefsOverrideMap.addEntry(pref, null);
+      }
+    }
+
+    const nimbusPrefs = Services.prefs.getChildList(kNimbusMetadataPrefPrefix);
+    for (const pref of nimbusPrefs) {
+      prefsOverrideMap.addEntry(pref, null);
+    }
+
+    return prefsOverrideMap;
   }
 
   async backup(
@@ -52,7 +83,14 @@ export class PreferencesBackupResource extends BackupResource {
     // current prefs state to disk off of the main thread.
     let prefsDestPath = PathUtils.join(stagingPath, "prefs.js");
     let prefsDestFile = await IOUtils.getFile(prefsDestPath);
-    await Services.prefs.backupPrefFile(prefsDestFile);
+    await lazy.ExperimentAPI._rsLoader.withUpdateLock(async () => {
+      await Services.prefs.backupPrefFile(
+        prefsDestFile,
+        PreferencesBackupResource.addNimbusMetadataPrefs(
+          lazy.ExperimentAPI.manager.store.getOriginalPrefValuesForAllActiveEnrollments()
+        )
+      );
+    });
 
     // During recovery, we need to recompute verification hashes for any
     // custom engines, but only for engines that were originally passing

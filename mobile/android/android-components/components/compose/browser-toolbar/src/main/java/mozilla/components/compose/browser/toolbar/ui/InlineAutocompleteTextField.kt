@@ -15,14 +15,12 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import androidx.annotation.ColorInt
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -31,6 +29,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.graphics.toColorInt
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat.Type.ime
+import androidx.core.view.inputmethod.EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -64,13 +63,13 @@ private const val LETTER_SPACING_SP = 0.5f
  * Sub-component of the [BrowserEditToolbar] responsible for displaying a text field that is
  * capable of inline autocompletion.
  */
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalLayoutApi::class)
 @Composable
 @Suppress("LongMethod")
 internal fun InlineAutocompleteTextField(
     query: String,
     hint: String,
     showQueryAsPreselected: Boolean,
+    usePrivateModeQueries: Boolean,
     autocompleteProviders: List<AutocompleteProvider>,
     modifier: Modifier = Modifier,
     onUrlEdit: (String) -> Unit = {},
@@ -144,6 +143,10 @@ internal fun InlineAutocompleteTextField(
                 imeOptions = EditorInfo.IME_ACTION_GO or
                     EditorInfo.IME_FLAG_NO_EXTRACT_UI or
                     EditorInfo.IME_FLAG_NO_FULLSCREEN
+                imeOptions = when (usePrivateModeQueries) {
+                    true -> imeOptions or IME_FLAG_NO_PERSONALIZED_LEARNING
+                    false -> imeOptions and (IME_FLAG_NO_PERSONALIZED_LEARNING.inv())
+                }
                 inputType = TYPE_CLASS_TEXT or TYPE_TEXT_VARIATION_URI
                 setLines(1)
                 gravity = Gravity.CENTER_VERTICAL
@@ -317,6 +320,7 @@ private fun BrowserEditToolbarPreview() {
         query = "http://www.mozilla.org",
         hint = "",
         showQueryAsPreselected = false,
+        usePrivateModeQueries = false,
         autocompleteProviders = emptyList(),
     )
 }

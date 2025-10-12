@@ -98,8 +98,8 @@ child:
   async RestoreTabContent(nullable SessionStoreRestoreData aData) returns (bool success);
 
 both:
-  async RawMessage(JSActorMessageMeta aMetadata, ClonedMessageData? aData,
-                   ClonedMessageData? aStack);
+  async RawMessage(JSActorMessageMeta aMetadata, UniquePtr<ClonedMessageData> aData,
+                   UniquePtr<ClonedMessageData> aStack);
 
 parent:
   // Load the given URI load state into the current owner process of the given

@@ -15,13 +15,16 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <optional>
 #include <vector>
 
+#include "api/array_view.h"
 #include "api/video/color_space.h"
 #include "common_video/h264/h264_common.h"
 #include "common_video/h264/sps_parser.h"
 #include "rtc_base/bit_buffer.h"
 #include "rtc_base/bitstream_reader.h"
+#include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/metrics.h"
@@ -85,7 +88,7 @@ uint32_t CopyBits(int bits,
 bool CopyAndRewriteVui(const SpsParser::SpsState& sps,
                        BitstreamReader& source,
                        BitBufferWriter& destination,
-                       const webrtc::ColorSpace* color_space,
+                       const ColorSpace* color_space,
                        SpsVuiRewriter::ParseResult& out_vui_rewritten);
 
 void CopyHrdParameters(BitstreamReader& source, BitBufferWriter& destination);
@@ -134,7 +137,7 @@ void SpsVuiRewriter::UpdateStats(ParseResult result, Direction direction) {
 SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
     ArrayView<const uint8_t> buffer,
     std::optional<SpsParser::SpsState>* sps,
-    const webrtc::ColorSpace* color_space,
+    const ColorSpace* color_space,
     Buffer* destination) {
   // Create temporary RBSP decoded buffer of the payload (exlcuding the
   // leading nalu type header byte (the SpsParser uses only the payload).
@@ -210,7 +213,7 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
 SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
     ArrayView<const uint8_t> buffer,
     std::optional<SpsParser::SpsState>* sps,
-    const webrtc::ColorSpace* color_space,
+    const ColorSpace* color_space,
     Buffer* destination,
     Direction direction) {
   ParseResult result =
@@ -221,7 +224,7 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
 
 Buffer SpsVuiRewriter::ParseOutgoingBitstreamAndRewrite(
     ArrayView<const uint8_t> buffer,
-    const webrtc::ColorSpace* color_space) {
+    const ColorSpace* color_space) {
   std::vector<H264::NaluIndex> nalus = H264::FindNaluIndices(buffer);
 
   // Allocate some extra space for potentially adding a missing VUI.
@@ -281,7 +284,7 @@ namespace {
 bool CopyAndRewriteVui(const SpsParser::SpsState& sps,
                        BitstreamReader& source,
                        BitBufferWriter& destination,
-                       const webrtc::ColorSpace* color_space,
+                       const ColorSpace* color_space,
                        SpsVuiRewriter::ParseResult& out_vui_rewritten) {
   out_vui_rewritten = SpsVuiRewriter::ParseResult::kVuiOk;
 

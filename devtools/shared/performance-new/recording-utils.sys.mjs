@@ -14,7 +14,7 @@
  * @type {GetActiveBrowserID}
  */
 export function getActiveBrowserID() {
-  const win = Services.wm.getMostRecentWindow("navigator:browser");
+  const win = Services.wm.getMostRecentBrowserWindow();
 
   const browserId = win?.gBrowser?.selectedBrowser?.browsingContext?.browserId;
   if (browserId) {

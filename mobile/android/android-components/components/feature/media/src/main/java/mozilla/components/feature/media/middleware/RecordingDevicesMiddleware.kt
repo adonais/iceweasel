@@ -27,7 +27,6 @@ import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.android.OnPermissionGranted
 import mozilla.components.support.base.ids.SharedIdsHelper
-import mozilla.components.support.utils.PendingIntentUtils
 import mozilla.components.support.utils.ThreadUtils
 import mozilla.components.support.utils.ext.registerReceiverCompat
 import mozilla.components.ui.icons.R as iconsR
@@ -143,14 +142,14 @@ class RecordingDevicesMiddleware(
             context,
             SharedIdsHelper.getIdForTag(context, PENDING_INTENT_TAG),
             intent,
-            PendingIntentUtils.defaultFlags or PendingIntent.FLAG_UPDATE_CURRENT,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
         val dismissPendingIntent = PendingIntent.getBroadcast(
             context,
             0,
             Intent(ACTION_RECORDING_DEVICES_NOTIFICATION_DISMISSED),
-            PendingIntentUtils.defaultFlags,
+            PendingIntent.FLAG_IMMUTABLE,
         )
 
         val broadcastReceiver = NotificationDismissedReceiver(processRecordingState)

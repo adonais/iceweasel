@@ -259,20 +259,6 @@ class AppStoreReducerTest {
     }
 
     @Test
-    fun `WHEN site data cleared action is dispatched THEN snackbar state is updated`() {
-        val appStore = AppStore()
-
-        appStore.dispatch(
-            AppAction.SiteDataCleared,
-        ).joinBlocking()
-
-        assertEquals(
-            SnackbarState.SiteDataCleared,
-            appStore.state.snackbarState,
-        )
-    }
-
-    @Test
     fun `WHEN the current tab is closed THEN show a snackbar`() {
         val appStore = AppStore()
 
@@ -354,6 +340,7 @@ class AppStoreReducerTest {
             ),
             appStore.state.snackbarState,
         )
+        assertTrue(appStore.state.supportedMenuNotifications.contains(SupportedMenuNotifications.Downloads))
     }
 
     @Test

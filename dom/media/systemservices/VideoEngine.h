@@ -12,7 +12,6 @@
 #include <memory>
 
 #include "MediaEventSource.h"
-#include "modules/video_capture/video_capture.h"
 #include "mozilla/DefineEnum.h"
 #include "video_engine/video_capture_factory.h"
 

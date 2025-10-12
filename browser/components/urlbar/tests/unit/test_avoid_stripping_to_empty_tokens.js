@@ -71,12 +71,12 @@ add_task(async function test_protocol_trimming() {
           fallbackTitle: `${input.trim()}/`,
           iconUri: "",
           heuristic: true,
-          providerName: "HeuristicFallback",
+          providerName: "UrlbarProviderHeuristicFallback",
         }),
         makeVisitResult(context, {
           uri: visit.uri.spec,
           title: visit.title,
-          providerName: "Places",
+          providerName: "UrlbarProviderPlaces",
         }),
       ],
     });
@@ -106,7 +106,7 @@ add_task(async function test_protocol_trimming() {
           makeVisitResult(context, {
             uri: visit.uri.spec,
             title: visit.title,
-            providerName: "Places",
+            providerName: "UrlbarProviderPlaces",
           }),
         ],
       });

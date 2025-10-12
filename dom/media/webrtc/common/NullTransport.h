@@ -21,8 +21,10 @@ class NullTransport : public webrtc::Transport {
     return true;
   }
 
-  virtual bool SendRtcp(webrtc::ArrayView<const uint8_t> packet) {
+  virtual bool SendRtcp(webrtc::ArrayView<const uint8_t> packet,
+                        const webrtc::PacketOptions& options) {
     (void)packet;
+    (void)options;
     return true;
   }
 #if 0

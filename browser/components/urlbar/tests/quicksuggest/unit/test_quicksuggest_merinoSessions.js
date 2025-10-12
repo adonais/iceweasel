@@ -146,18 +146,21 @@ function endEngagement({ controller, context = null, state = "engagement" }) {
     isPrivate: false,
   });
   let details = { selIndex: -1, result: { payload: {} } };
+  let quickSuggestProviderInstance = UrlbarProvidersManager.getProvider(
+    UrlbarProviderQuickSuggest.name
+  );
 
   switch (state) {
     case "engagement":
-      UrlbarProviderQuickSuggest.onEngagement(context, controller, details);
-      UrlbarProviderQuickSuggest.onSearchSessionEnd(
+      quickSuggestProviderInstance.onEngagement(context, controller, details);
+      quickSuggestProviderInstance.onSearchSessionEnd(
         context,
         controller,
         details
       );
       break;
     case "abandonment":
-      UrlbarProviderQuickSuggest.onSearchSessionEnd(
+      quickSuggestProviderInstance.onSearchSessionEnd(
         context,
         controller,
         details

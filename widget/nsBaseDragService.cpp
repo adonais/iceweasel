@@ -749,22 +749,22 @@ nsBaseDragSession::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
       LOGI(
           "[%p] %s | aDoneDrag: %s | aKeyModifiers: %u | Delaying drag session "
           "end",
-          this, __FUNCTION__, GetBoolName(aDoneDrag), aKeyModifiers);
+          this, __FUNCTION__, TrueOrFalse(aDoneDrag), aKeyModifiers);
       EndDragSessionData edsData = {aDoneDrag, aKeyModifiers};
       mEndDragSessionData = Some(edsData);
     }
     return NS_OK;
   }
   LOGI("[%p] %s | aDoneDrag: %s | aKeyModifiers: %u | Ending drag session now",
-       this, __FUNCTION__, GetBoolName(aDoneDrag), aKeyModifiers);
+       this, __FUNCTION__, TrueOrFalse(aDoneDrag), aKeyModifiers);
   return EndDragSessionImpl(aDoneDrag, aKeyModifiers);
 }
 
 nsresult nsBaseDragSession::EndDragSessionImpl(bool aDoneDrag,
                                                uint32_t aKeyModifiers) {
   LOGD("[%p] %s | aDoneDrag: %s | aKeyModifiers: %u | mDoingDrag %s", this,
-       __FUNCTION__, GetBoolName(aDoneDrag), aKeyModifiers,
-       GetBoolName(mDoingDrag));
+       __FUNCTION__, TrueOrFalse(aDoneDrag), aKeyModifiers,
+       TrueOrFalse(mDoingDrag));
   if (!mDoingDrag || mEndingSession) {
     return NS_ERROR_FAILURE;
   }
@@ -1427,7 +1427,7 @@ nsBaseDragSession::SendDispatchToDropTargetAndResumeEndDragSession(
       "[%p] %s | mDelayedDropBrowserParent: %p | aShouldDrop: %s | sending "
       "dispatch drop to child",
       this, __FUNCTION__, mDelayedDropBrowserParent.get(),
-      GetBoolName(aShouldDrop));
+      TrueOrFalse(aShouldDrop));
   Unused << mDelayedDropBrowserParent
                 ->SendDispatchToDropTargetAndResumeEndDragSession(
                     aShouldDrop, std::move(allowedFilePaths));
@@ -1453,7 +1453,7 @@ nsBaseDragSession::DispatchToDropTargetAndResumeEndDragSession(
   MOZ_ASSERT(XRE_IsContentProcess());
   LOGI("[%p] %s | pt=(%d, %d) | shouldDrop: %s", this, __FUNCTION__,
        static_cast<int32_t>(aPt.x), static_cast<int32_t>(aPt.y),
-       GetBoolName(aShouldDrop));
+       TrueOrFalse(aShouldDrop));
 
   RefPtr<Element> delayedDropTarget = do_QueryReferent(mDelayedDropTarget);
   mDelayedDropTarget = nullptr;
@@ -1520,7 +1520,7 @@ nsBaseDragSession::DispatchToDropTargetAndResumeEndDragSession(
     LOGI(
         "[%p] %s | mDoneDrag: %s | mKeyModifiers: %u | Issuing delayed "
         "EndDragSession",
-        this, __FUNCTION__, GetBoolName(edsData->mDoneDrag),
+        this, __FUNCTION__, TrueOrFalse(edsData->mDoneDrag),
         edsData->mKeyModifiers);
     EndDragSession(edsData->mDoneDrag, edsData->mKeyModifiers);
   }

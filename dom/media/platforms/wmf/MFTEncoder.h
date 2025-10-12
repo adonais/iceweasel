@@ -62,8 +62,9 @@ class MFTEncoder final {
   HRESULT SetMediaTypes(IMFMediaType* aInputType, IMFMediaType* aOutputType);
   HRESULT SetModes(const EncoderConfig& aConfig);
   HRESULT SetBitrate(UINT32 aBitsPerSec);
+  bool IsHardwareAccelerated() const;
 
-  RefPtr<EncodePromise> Encode(InputSample&& aInput);
+  RefPtr<EncodePromise> Encode(nsTArray<InputSample>&& aInputs);
   RefPtr<EncodePromise> Drain();
 
   HRESULT CreateInputSample(RefPtr<IMFSample>* aSample, size_t aSize);
@@ -105,12 +106,12 @@ class MFTEncoder final {
   static Maybe<Info> GetInfo(const GUID& aSubtype);
 
   // APIs for synchronous processing model.
-  Result<EncodedData, MediaResult> EncodeSync(InputSample&& aInput);
+  Result<EncodedData, MediaResult> EncodeSync(nsTArray<InputSample>&& aInputs);
   Result<EncodedData, MediaResult> DrainSync();
   Result<EncodedData, HRESULT> PullOutputs();
 
   // APIs for asynchronous processing model for regular usage.
-  Result<EncodedData, MediaResult> EncodeAsync(InputSample&& aInput);
+  Result<EncodedData, MediaResult> EncodeAsync(nsTArray<InputSample>&& aInputs);
   Result<EncodedData, MediaResult> DrainAsync();
 
   MOZ_DEFINE_ENUM_CLASS_WITH_TOSTRING_AT_CLASS_SCOPE(
@@ -121,7 +122,8 @@ class MFTEncoder final {
   Result<MediaEventType, HRESULT> GetPendingEvent();
 
   // For realtime usage in asynchronous processing model only.
-  RefPtr<EncodePromise> EncodeWithAsyncCallback(InputSample&& aInput);
+  RefPtr<EncodePromise> EncodeWithAsyncCallback(
+      nsTArray<InputSample>&& aInputs);
   RefPtr<EncodePromise> DrainWithAsyncCallback();
   RefPtr<EncodePromise> PrepareForDrain();
   RefPtr<EncodePromise> StartDraining();
@@ -137,6 +139,7 @@ class MFTEncoder final {
   Result<ProcessedResult, HRESULT> ProcessInput();
   Result<ProcessedResult, HRESULT> ProcessOutput();
   Result<ProcessedResult, HRESULT> ProcessDrainComplete();
+  Result<ProcessedResult, HRESULT> ProcessPendingInputs();
 
   // Utilities for both processing models.
   class OutputResult {

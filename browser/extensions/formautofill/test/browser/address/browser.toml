@@ -74,3 +74,5 @@ skip-if = [
 ["browser_edit_address_doorhanger_display_state.js"]
 
 ["browser_edit_address_doorhanger_save_edited_fields.js"]
+
+["browser_phonenumber.js"]

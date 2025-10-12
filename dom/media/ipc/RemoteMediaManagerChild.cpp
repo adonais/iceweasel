@@ -562,12 +562,8 @@ EncodeSupportSet RemoteMediaManagerChild::Supports(RemoteMediaIn aLocation,
 
     // Assume the format is supported to prevent false negative, if the remote
     // process supports that specific track type.
-    const bool isVideo =
-        aCodec > CodecType::_BeginVideo_ && aCodec < CodecType::_EndVideo_;
-    const bool isAudio =
-        aCodec > CodecType::_BeginAudio_ && aCodec < CodecType::_EndAudio_;
     const auto trackSupport = GetTrackSupport(aLocation);
-    if (isVideo) {
+    if (IsVideo(aCodec)) {
       // Special condition for HEVC, which can only be supported in specific
       // process. As HEVC support is still a experimental feature, we don't want
       // to report support for it arbitrarily.
@@ -583,7 +579,7 @@ EncodeSupportSet RemoteMediaManagerChild::Supports(RemoteMediaIn aLocation,
       return supported ? EncodeSupportSet{EncodeSupport::SoftwareEncode}
                        : EncodeSupportSet{};
     }
-    if (isAudio) {
+    if (IsAudio(aCodec)) {
       return trackSupport.contains(TrackSupport::EncodeAudio)
                  ? EncodeSupportSet{EncodeSupport::SoftwareEncode}
                  : EncodeSupportSet{};

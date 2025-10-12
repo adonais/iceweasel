@@ -6,6 +6,8 @@
 
 #include "mozilla/ArrayUtils.h"
 
+#include "nsArrayEnumerator.h"
+#include "nsCOMArray.h"
 #include "nsCOMPtr.h"
 #include "nsDirectoryService.h"
 #include "nsLocalFile.h"
@@ -415,6 +417,11 @@ nsDirectoryService::GetFile(const char* aProp, bool* aPersistent,
     rv = GetSpecialSystemDirectory(Win_Cookies, getter_AddRefs(localFile));
   } else if (inAtom == nsGkAtoms::DirectoryService_DefaultDownloadDirectory) {
     rv = GetSpecialSystemDirectory(Win_Downloads, getter_AddRefs(localFile));
+  } else if (inAtom == nsGkAtoms::DirectoryService_OneDrivePersonalDirectory) {
+    // OneDrives can be added, removed or even moved at any time.
+    *aPersistent = false;
+    rv = GetSpecialSystemDirectory(Win_OneDrivePersonal,
+                                   getter_AddRefs(localFile));
   }
 #elif defined(XP_UNIX)
   else if (inAtom == nsGkAtoms::Home) {
@@ -450,10 +457,20 @@ nsDirectoryService::GetFile(const char* aProp, bool* aPersistent,
 
 NS_IMETHODIMP
 nsDirectoryService::GetFiles(const char* aProp, nsISimpleEnumerator** aResult) {
-  if (NS_WARN_IF(!aResult)) {
-    return NS_ERROR_INVALID_ARG;
-  }
+  NS_ENSURE_ARG(aProp);
+  NS_ENSURE_ARG(aResult);
   *aResult = nullptr;
 
+#ifdef XP_WIN
+  if (!strcmp(aProp, NS_WIN_ONEDRIVE_BUSINESS_DIR_LIST)) {
+    nsCOMArray<nsIFile> directories;
+    nsresult rv =
+        GetSpecialSystemDirectoryList(Win_OneDriveBusiness, directories);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = NS_NewArrayEnumerator(aResult, directories, NS_GET_IID(nsIFile));
+    NS_ENSURE_SUCCESS(rv, rv);
+    return NS_SUCCESS_AGGREGATE_RESULT;
+  }
+#endif  // XP_WIN
   return NS_ERROR_FAILURE;
 }

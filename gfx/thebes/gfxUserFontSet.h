@@ -301,7 +301,7 @@ class gfxUserFontSet {
 
   virtual already_AddRefed<gfxFontSrcPrincipal> GetStandardFontLoadPrincipal()
       const = 0;
-  virtual nsPresContext* GetPresContext() const = 0;
+  virtual FontVisibilityProvider* GetFontVisibilityProvider() const = 0;
 
   // check whether content policies allow the given URI to load.
   virtual bool IsFontLoadAllowed(const gfxFontFaceSrc&) = 0;

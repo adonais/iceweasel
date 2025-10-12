@@ -46,19 +46,20 @@ class RefPtrTraits<FcConfig> {
   static void AddRef(FcConfig* ptr) { FcConfigReference(ptr); }
 };
 
+}  // namespace mozilla
+
+namespace std {
 template <>
-class DefaultDelete<FcFontSet> {
- public:
+struct default_delete<FcFontSet> {
   void operator()(FcFontSet* aPtr) { FcFontSetDestroy(aPtr); }
 };
 
 template <>
-class DefaultDelete<FcObjectSet> {
- public:
+struct default_delete<FcObjectSet> {
   void operator()(FcObjectSet* aPtr) { FcObjectSetDestroy(aPtr); }
 };
 
-};  // namespace mozilla
+}  // namespace std
 
 // The names for the font entry and font classes should really
 // the common 'Fc' abbreviation but the gfxPangoFontGroup code already
@@ -266,7 +267,7 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
       mozilla::fontlist::Face* aFace,
       const mozilla::fontlist::Family* aFamily) override;
 
-  gfxFontEntry* LookupLocalFont(nsPresContext* aPresContext,
+  gfxFontEntry* LookupLocalFont(FontVisibilityProvider* aFontVisibilityProvider,
                                 const nsACString& aFontName,
                                 WeightRange aWeightForEntry,
                                 StretchRange aStretchForEntry,
@@ -280,11 +281,11 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
                                  uint32_t aLength) override;
 
   bool FindAndAddFamiliesLocked(
-      nsPresContext* aPresContext, mozilla::StyleGenericFontFamily aGeneric,
-      const nsACString& aFamily, nsTArray<FamilyAndGeneric>* aOutput,
-      FindFamiliesFlags aFlags, gfxFontStyle* aStyle = nullptr,
-      nsAtom* aLanguage = nullptr, gfxFloat aDevToCssSize = 1.0)
-      MOZ_REQUIRES(mLock) override;
+      FontVisibilityProvider* aFontVisibilityProvider,
+      mozilla::StyleGenericFontFamily aGeneric, const nsACString& aFamily,
+      nsTArray<FamilyAndGeneric>* aOutput, FindFamiliesFlags aFlags,
+      gfxFontStyle* aStyle = nullptr, nsAtom* aLanguage = nullptr,
+      gfxFloat aDevToCssSize = 1.0) MOZ_REQUIRES(mLock) override;
 
   bool GetStandardFamilyName(const nsCString& aFontName,
                              nsACString& aFamilyName) override;
@@ -292,7 +293,7 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
   FcConfig* GetLastConfig() const { return mLastConfig; }
 
   // override to use fontconfig lookup for generics
-  void AddGenericFonts(nsPresContext* aPresContext,
+  void AddGenericFonts(FontVisibilityProvider* aFontVisibilityProvider,
                        mozilla::StyleGenericFontFamily, nsAtom* aLanguage,
                        nsTArray<FamilyAndGeneric>& aFamilyList) override;
 
@@ -336,18 +337,18 @@ class gfxFcPlatformFontList final : public gfxPlatformFontList {
 
   // figure out which families fontconfig maps a generic to
   // (aGeneric assumed already lowercase)
-  PrefFontList* FindGenericFamilies(nsPresContext* aPresContext,
-                                    const nsCString& aGeneric,
-                                    nsAtom* aLanguage) MOZ_REQUIRES(mLock);
+  PrefFontList* FindGenericFamilies(
+      FontVisibilityProvider* aFontVisibilityProvider,
+      const nsCString& aGeneric, nsAtom* aLanguage) MOZ_REQUIRES(mLock);
 
   // are all pref font settings set to use fontconfig generics?
   bool PrefFontListsUseOnlyGenerics() MOZ_REQUIRES(mLock);
 
   static void CheckFontUpdates(nsITimer* aTimer, void* aThis);
 
-  FontFamily GetDefaultFontForPlatform(nsPresContext* aPresContext,
-                                       const gfxFontStyle* aStyle,
-                                       nsAtom* aLanguage = nullptr)
+  FontFamily GetDefaultFontForPlatform(
+      FontVisibilityProvider* aFontVisibilityProvider,
+      const gfxFontStyle* aStyle, nsAtom* aLanguage = nullptr)
       MOZ_REQUIRES(mLock) override;
 
   FontVisibility GetVisibilityForFamily(const nsACString& aName) const;

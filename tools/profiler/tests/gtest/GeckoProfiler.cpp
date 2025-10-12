@@ -2422,12 +2422,10 @@ TEST(GeckoProfiler, Markers)
       schema.AddKeyFormat("key with url", MS::Format::Url);
       schema.AddKeyLabelFormat("key with label filePath", "label filePath",
                                MS::Format::FilePath);
-      schema.AddKeyFormatSearchable("key with string not-searchable",
-                                    MS::Format::String,
-                                    MS::Searchable::NotSearchable);
-      schema.AddKeyLabelFormatSearchable("key with label duration searchable",
-                                         "label duration", MS::Format::Duration,
-                                         MS::Searchable::Searchable);
+      schema.AddKeyFormat("key with string not-searchable", MS::Format::String);
+      schema.AddKeyLabelFormat("key with label duration searchable",
+                               "label duration", MS::Format::Duration,
+                               MS::PayloadFlags::Searchable);
       schema.AddKeyFormat("key with time", MS::Format::Time);
       schema.AddKeyFormat("key with seconds", MS::Format::Seconds);
       schema.AddKeyFormat("key with milliseconds", MS::Format::Milliseconds);
@@ -2439,9 +2437,19 @@ TEST(GeckoProfiler, Markers)
       schema.AddKeyFormat("key with decimal", MS::Format::Decimal);
       schema.AddStaticLabelValue("static label", "static value");
       schema.AddKeyFormat("key with unique string", MS::Format::UniqueString);
-      schema.AddKeyFormatSearchable("key with sanitized string",
-                                    MS::Format::SanitizedString,
-                                    MS::Searchable::Searchable);
+      schema.AddKeyFormat("key with sanitized string",
+                          MS::Format::SanitizedString,
+                          MS::PayloadFlags::Searchable);
+      schema.AddKeyLabelFormat("key with label hidden", "label",
+                               MS::Format::String, MS::PayloadFlags::Hidden);
+      schema.AddKeyFormat("key hidden", MS::Format::String,
+                          MS::PayloadFlags::Hidden);
+
+      schema.AddKeyFormat(
+          "key hidden and searchable", MS::Format::String,
+          MS::PayloadFlags(uint32_t(MS::PayloadFlags::Hidden) |
+                           uint32_t(MS::PayloadFlags::Searchable)));
+
       return schema;
     }
   };
@@ -3501,7 +3509,7 @@ TEST(GeckoProfiler, Markers)
             EXPECT_EQ_JSON(schema["tooltipLabel"], String, "tooltip label");
             EXPECT_EQ_JSON(schema["tableLabel"], String, "table label");
 
-            ASSERT_EQ(data.size(), 16u);
+            ASSERT_EQ(data.size(), 19u);
 
             ASSERT_TRUE(data[0u].isObject());
             EXPECT_EQ_JSON(data[0u]["key"], String, "key with url");
@@ -3520,7 +3528,7 @@ TEST(GeckoProfiler, Markers)
                            "key with string not-searchable");
             EXPECT_TRUE(data[2u]["label"].isNull());
             EXPECT_EQ_JSON(data[2u]["format"], String, "string");
-            EXPECT_EQ_JSON(data[2u]["searchable"], Bool, false);
+            EXPECT_TRUE(data[2u]["searchable"].isNull());
 
             ASSERT_TRUE(data[3u].isObject());
             EXPECT_EQ_JSON(data[3u]["key"], String,
@@ -3599,6 +3607,29 @@ TEST(GeckoProfiler, Markers)
             EXPECT_TRUE(data[15u]["label"].isNull());
             EXPECT_EQ_JSON(data[15u]["format"], String, "sanitized-string");
             EXPECT_EQ_JSON(data[15u]["searchable"], Bool, true);
+
+            ASSERT_TRUE(data[16u].isObject());
+            EXPECT_EQ_JSON(data[16u]["key"], String, "key with label hidden");
+            EXPECT_EQ_JSON(data[16u]["label"], String, "label");
+            EXPECT_EQ_JSON(data[16u]["format"], String, "string");
+            EXPECT_TRUE(data[16u]["searchable"].isNull());
+            EXPECT_EQ_JSON(data[16u]["hidden"], Bool, true);
+
+            ASSERT_TRUE(data[17u].isObject());
+            EXPECT_EQ_JSON(data[17u]["key"], String, "key hidden");
+            EXPECT_TRUE(data[17u]["label"].isNull());
+            EXPECT_EQ_JSON(data[17u]["format"], String, "string");
+            EXPECT_TRUE(data[17u]["searchable"].isNull());
+            EXPECT_EQ_JSON(data[17u]["hidden"], Bool, true);
+
+            ASSERT_TRUE(data[18u].isObject());
+            EXPECT_EQ_JSON(data[18u]["key"], String,
+                           "key hidden and searchable");
+            EXPECT_TRUE(data[18u]["label"].isNull());
+            EXPECT_EQ_JSON(data[18u]["format"], String, "string");
+            EXPECT_EQ_JSON(data[18u]["searchable"], Bool, true);
+            EXPECT_EQ_JSON(data[18u]["hidden"], Bool, true);
+
           } else if (nameString == "markers-gtest-special") {
             EXPECT_EQ(display.size(), 0u);
             ASSERT_EQ(data.size(), 0u);

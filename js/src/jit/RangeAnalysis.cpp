@@ -547,8 +547,12 @@ Range* Range::intersect(TempAllocator& alloc, const Range* lhs,
 
   FractionalPartFlag newCanHaveFractionalPart = FractionalPartFlag(
       lhs->canHaveFractionalPart_ && rhs->canHaveFractionalPart_);
+
+  // As 0.0 == -0.0, the intersection should include negative zero if any of the
+  // operands can be negative zero.
   NegativeZeroFlag newMayIncludeNegativeZero =
-      NegativeZeroFlag(lhs->canBeNegativeZero_ && rhs->canBeNegativeZero_);
+      NegativeZeroFlag((lhs->canBeNegativeZero_ && rhs->canBeZero()) ||
+                       (rhs->canBeNegativeZero_ && lhs->canBeZero()));
 
   uint16_t newExponent = std::min(lhs->max_exponent_, rhs->max_exponent_);
 
@@ -726,21 +730,31 @@ void Range::setDouble(double l, double h) {
   canHaveFractionalPart_ = ExcludesFractionalParts;
   canBeNegativeZero_ = ExcludesNegativeZero;
 
+  // If denormals are disabled, any value with exponent 0 will be immediately
+  // flushed to 0. This gives 2**53 bit patterns that compare equal to zero.
+  //
+  // Check whether the range [l .. h] can cross any of the 2^53 zeros. We have
+  // to be conservative as the main thread might not interpret doubles the same
+  // way as the compiler thread.
+  const double doubleMin = mozilla::BitwiseCast<double>(
+      mozilla::SpecificFloatingPointBits<double, 0, 1, 0>::value);
+  bool includesNegative = std::isnan(l) || l < doubleMin;
+  bool includesPositive = std::isnan(h) || h > -doubleMin;
+  bool crossesZero = includesNegative && includesPositive;
+
   // Infer the canHaveFractionalPart_ setting. We can have a
   // fractional part if the range crosses through the neighborhood of zero. We
   // won't have a fractional value if the value is always beyond the point at
   // which double precision can't represent fractional values.
   uint16_t minExp = std::min(lExp, hExp);
-  bool includesNegative = std::isnan(l) || l < 0;
-  bool includesPositive = std::isnan(h) || h > 0;
-  bool crossesZero = includesNegative && includesPositive;
   if (crossesZero || minExp < MaxTruncatableExponent) {
     canHaveFractionalPart_ = IncludesFractionalParts;
   }
 
-  // Infer the canBeNegativeZero_ setting. We can have a negative zero if
-  // either bound is zero.
-  if (!(l > 0) && !(h < 0)) {
+  // Infer a conservative value for canBeNegativeZero_ setting. We can have a
+  // negative zero value if the range crosses through the neighborhood of zero
+  // and the lower bound can have a sign bit.
+  if (crossesZero && (std::isnan(l) || mozilla::IsNegative(l))) {
     canBeNegativeZero_ = IncludesNegativeZero;
   }
 
@@ -749,14 +763,6 @@ void Range::setDouble(double l, double h) {
 
 void Range::setDoubleSingleton(double d) {
   setDouble(d, d);
-
-  // The above setDouble call is for comparisons, and treats negative zero
-  // as equal to zero. We're aiming for a minimum range, so we can clear the
-  // negative zero flag if the value isn't actually negative zero.
-  if (!IsNegativeZero(d)) {
-    canBeNegativeZero_ = ExcludesNegativeZero;
-  }
-
   assertInvariants();
 }
 

@@ -859,7 +859,9 @@ bool NativeObject::removeProperty(JSContext* cx, Handle<NativeObject*> obj,
   }
 
   PropertyInfo prop = propMap->getPropertyInfo(propIndex);
-  if (!Watchtower::watchPropertyRemove(cx, obj, id, prop)) {
+  bool wasTrackedObjectFuseProp = false;
+  if (!Watchtower::watchPropertyRemove(cx, obj, id, prop,
+                                       &wasTrackedObjectFuseProp)) {
     return false;
   }
 
@@ -877,7 +879,19 @@ bool NativeObject::removeProperty(JSContext* cx, Handle<NativeObject*> obj,
     // Fast path for removing the last property from a SharedPropMap. In this
     // case we can just call getPrevious and then look up a shape for the
     // resulting map/mapLength.
-    if (propMap == map && propIndex == mapLength - 1) {
+    //
+    // Don't reuse a previously-used Shape if the object has an ObjectFuse and
+    // we are removing a tracked property, to avoid the following bug:
+    //
+    // 1) The object has Shape S1 and a property P that was marked NotConstant.
+    // 2) We attach a SetSlot IC stub that guards on the object + S1 and stores
+    //    a new value for this property.
+    // 3) We remove property P (we are here now).
+    // 4) We add a new property P, reuse Shape S1, and mark P Constant.
+    // 5) We use the SetSlot IC stub again but this is invalid because P is
+    //    still marked Constant.
+    if (propMap == map && propIndex == mapLength - 1 &&
+        !wasTrackedObjectFuseProp) {
       MOZ_ASSERT(obj->getLastProperty().key() == id);
 
       Rooted<SharedPropMap*> sharedMap(cx, map->asShared());

@@ -99,7 +99,7 @@ def _make_artifacts(
         hg = command_context.substs["HG"]
 
     git = None
-    if conditions.is_git(command_context):
+    if conditions.is_git(command_context) or conditions.is_jj(command_context):
         git = command_context.substs["GIT"]
 
     # If we're building Thunderbird, we should be checking for comm-central artifacts.
@@ -402,10 +402,10 @@ def artifact_toolchain(
         for b in from_build:
             user_value = b
 
-            if not b.startswith("toolchain-"):
-                b = f"toolchain-{b}"
-
             task = tasks.get(b)
+            if not task and not b.startswith("toolchain-"):
+                task = tasks.get(f"toolchain-{b}")
+
             if not task:
                 command_context.log(
                     logging.ERROR,
@@ -428,7 +428,7 @@ def artifact_toolchain(
                 )
                 return 1
 
-            artifact_name = task.attributes.get("toolchain-artifact")
+            artifact_name = task.attributes.get(f"{task.kind}-artifact")
             command_context.log(
                 logging.DEBUG,
                 "artifact",

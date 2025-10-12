@@ -145,7 +145,7 @@ class nsTextControlFrame : public nsContainerFrame,
 
   /** handler for attribute changes to mContent */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult AttributeChanged(
-      int32_t aNameSpaceID, nsAtom* aAttribute, int32_t aModType) override;
+      int32_t aNameSpaceID, nsAtom* aAttribute, AttrModType aModType) override;
   void ElementStateChanged(mozilla::dom::ElementState aStates) override;
 
   nsresult PeekOffset(mozilla::PeekOffsetStruct* aPos) override;

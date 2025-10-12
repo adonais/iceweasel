@@ -76,8 +76,7 @@ struct UrlMarker {
     using MS = MarkerSchema;
     MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
     schema.SetTableLabel("{marker.name} - {marker.data.url}");
-    schema.AddKeyFormatSearchable("url", MS::Format::Url,
-                                  MS::Searchable::Searchable);
+    schema.AddKeyFormat("url", MS::Format::Url, MS::PayloadFlags::Searchable);
     schema.AddKeyLabelFormat("duration", "Duration", MS::Format::Duration);
     return schema;
   }
@@ -3454,6 +3453,9 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
           ("GetOrCreateConnectionEntry is coalescing h2/3 an/onymous "
            "connections, ent=%p",
            invertedEnt));
+      if (aAvailableForDispatchNow) {
+        *aAvailableForDispatchNow = true;
+      }
       return invertedEnt;
     }
   }

@@ -187,6 +187,8 @@ class FixedLengthTypedArrayObject : public TypedArrayObject {
     return elementsRaw();
   }
 
+  bool hasMallocedElements(JSContext* cx) const;
+
 #ifdef DEBUG
   void assertZeroLengthArrayData() const;
 #else

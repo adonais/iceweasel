@@ -105,6 +105,7 @@ void Http2StreamTunnel::CloseStream(nsresult aReason) {
     mOutput->OnSocketReady(aReason);
     mInput->OnSocketReady(aReason);
   }
+  mClosed = true;
 }
 
 NS_IMETHODIMP
@@ -112,7 +113,6 @@ Http2StreamTunnel::Close(nsresult aReason) {
   LOG(("Http2StreamTunnel::Close this=%p", this));
   RefPtr<Http2Session> session = Session();
   if (NS_SUCCEEDED(mCondition)) {
-    mSession = nullptr;
     if (NS_SUCCEEDED(aReason)) {
       aReason = NS_BASE_STREAM_CLOSED;
     }
@@ -120,6 +120,9 @@ Http2StreamTunnel::Close(nsresult aReason) {
     mInput->CloseWithStatus(aReason);
     // Let the session pickup that the stream has been closed.
     mCondition = aReason;
+    // Clear the session in the end to make sure that CleanupStream() can be
+    // called in CloseWithStatus().
+    mSession = nullptr;
   }
   return NS_OK;
 }
@@ -319,13 +322,6 @@ nsresult Http2StreamTunnel::GenerateHeaders(nsCString& aCompressedData,
       mFlatHttpRequestHeaders, "CONNECT"_ns, EmptyCString(), authorityHeader,
       EmptyCString(), EmptyCString(), true, aCompressedData, true);
   NS_ENSURE_SUCCESS(rv, rv);
-
-  // The size of the input headers is approximate
-  uint32_t ratio =
-      aCompressedData.Length() * 100 /
-      (11 + authorityHeader.Length() + mFlatHttpRequestHeaders.Length());
-
-  glean::spdy::syn_ratio.AccumulateSingleSample(ratio);
 
   return NS_OK;
 }
@@ -703,12 +699,6 @@ nsresult Http2StreamWebSocket::GenerateHeaders(nsCString& aCompressedData,
 
   mRequestBodyLenRemaining = 0x0fffffffffffffffULL;
 
-  // The size of the input headers is approximate
-  uint32_t ratio =
-      aCompressedData.Length() * 100 /
-      (11 + authorityHeader.Length() + mFlatHttpRequestHeaders.Length());
-
-  glean::spdy::syn_ratio.AccumulateSingleSample(ratio);
   return NS_OK;
 }
 

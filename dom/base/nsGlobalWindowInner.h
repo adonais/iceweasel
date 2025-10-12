@@ -85,8 +85,10 @@ class PromiseDocumentFlushedResolver;
 
 namespace mozilla {
 class AbstractThread;
-class ScrollContainerFrame;
 class ErrorResult;
+template <class T>
+class OwningNonNull;
+class ScrollContainerFrame;
 
 namespace glean {
 class Glean;
@@ -116,7 +118,6 @@ class ContentMediaController;
 enum class ImageBitmapFormat : uint8_t;
 class IdleRequest;
 class IdleRequestCallback;
-class InstallTriggerImpl;
 class IntlUtils;
 class MediaQueryList;
 class OwningExternalOrWindowProxy;
@@ -134,6 +135,7 @@ class SpeechSynthesis;
 class Timeout;
 class TrustedTypePolicyFactory;
 class VisualViewport;
+class VoidFunction;
 class VRDisplay;
 enum class VRDisplayEventReason : uint8_t;
 class VREventObserver;
@@ -918,6 +920,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void Restore();
   void GetWorkspaceID(nsAString& workspaceID);
   void MoveToWorkspace(const nsAString& workspaceID);
+  bool IsCloaked() const;
   void NotifyDefaultButtonLoaded(mozilla::dom::Element& aDefaultButton,
                                  mozilla::ErrorResult& aError);
   mozilla::dom::ChromeMessageBroadcaster* MessageManager();
@@ -936,7 +939,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   bool ShouldReportForServiceWorkerScope(const nsAString& aScope);
 
-  mozilla::dom::InstallTriggerImpl* GetInstallTrigger();
+  void GetInstallTrigger(JSContext* aCx, JS::MutableHandle<JSObject*> aResult);
 
   nsIDOMWindowUtils* GetWindowUtils(mozilla::ErrorResult& aRv);
 
@@ -970,6 +973,14 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
       const override {
     return mWebTaskSchedulingState;
   }
+
+  MOZ_CAN_RUN_SCRIPT bool SynthesizeMouseEvent(
+      const nsAString& aType, float aOffsetX, float aOffsetY,
+      const mozilla::dom::SynthesizeMouseEventData& aMouseEventData,
+      const mozilla::dom::SynthesizeMouseEventOptions& aOptions,
+      const mozilla::dom::Optional<
+          mozilla::OwningNonNull<mozilla::dom::VoidFunction>>& aCallback,
+      mozilla::ErrorResult& aError);
 
  protected:
   // Web IDL helpers
@@ -1100,7 +1111,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void ScrollTo(const mozilla::CSSPoint& aScroll,
                 const mozilla::dom::ScrollOptions& aOptions);
 
-  already_AddRefed<nsIWidget> GetMainWidget();
+  already_AddRefed<nsIWidget> GetMainWidget() const;
   nsIWidget* GetNearestWidget() const;
 
   bool IsInModalState();
@@ -1383,7 +1394,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   RefPtr<mozilla::dom::CookieStore> mCookieStore;
   RefPtr<mozilla::dom::Worklet> mPaintWorklet;
   RefPtr<mozilla::dom::External> mExternal;
-  RefPtr<mozilla::dom::InstallTriggerImpl> mInstallTrigger;
 
   RefPtr<mozilla::dom::Storage> mLocalStorage;
   RefPtr<mozilla::dom::Storage> mSessionStorage;

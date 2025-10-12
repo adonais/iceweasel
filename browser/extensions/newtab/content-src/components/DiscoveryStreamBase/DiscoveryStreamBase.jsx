@@ -176,7 +176,6 @@ export class _DiscoveryStreamBase extends React.PureComponent {
               firstVisibleTimestamp={this.props.firstVisibleTimestamp}
               ctaButtonSponsors={component.properties.ctaButtonSponsors}
               ctaButtonVariant={component.properties.ctaButtonVariant}
-              spocMessageVariant={component.properties.spocMessageVariant}
             />
           );
         }
@@ -193,10 +192,8 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             hideCardBackground={component.properties.hideCardBackground}
             fourCardLayout={component.properties.fourCardLayout}
             compactGrid={component.properties.compactGrid}
-            onboardingExperience={component.properties.onboardingExperience}
             ctaButtonSponsors={component.properties.ctaButtonSponsors}
             ctaButtonVariant={component.properties.ctaButtonVariant}
-            spocMessageVariant={component.properties.spocMessageVariant}
             hideDescriptions={this.props.DiscoveryStream.hideDescriptions}
             firstVisibleTimestamp={this.props.firstVisibleTimestamp}
             spocPositions={component.spocs?.positions}
@@ -222,7 +219,7 @@ export class _DiscoveryStreamBase extends React.PureComponent {
   }
 
   render() {
-    const { locale, mayHaveSponsoredStories } = this.props;
+    const { locale } = this.props;
     // Bug 1980459 - Note that selectLayoutRender acts as a selector that transforms layout data based on current
     // preferences and experiment flags. It runs after Redux state is populated but before render.
     // Components removed in selectLayoutRender (e.g., Widgets or TopSites) will not appear in the
@@ -339,10 +336,8 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             showPrefName={topStories.pref.feed}
             title={sectionTitle}
             subTitle={subTitle}
-            mayHaveSponsoredStories={mayHaveSponsoredStories}
             mayHaveTopicsSelection={topicSelectionEnabled}
             sectionsEnabled={sectionsEnabled}
-            spocMessageVariant={message?.properties?.spocMessageVariant}
             eventSource="CARDGRID"
           >
             {this.renderLayout(layoutRender)}

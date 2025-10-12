@@ -2,8 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const HEURISTIC_FALLBACK_PROVIDERNAME = "HeuristicFallback";
-const PLACES_PROVIDERNAME = "Places";
+const HEURISTIC_FALLBACK_PROVIDERNAME = "UrlbarProviderHeuristicFallback";
+const PLACES_PROVIDERNAME = "UrlbarProviderPlaces";
 
 /**
  * Helpful reminder of the `autofilled` and `completed` properties in the

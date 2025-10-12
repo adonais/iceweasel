@@ -164,7 +164,9 @@ export var BrowserTestUtils = {
    * @resolves The new tab.
    */
   openNewForegroundTab(tabbrowser, ...args) {
-    let startTime = Cu.now();
+    // This newtab train-hop compatibility shim can be removed once Firefox 144
+    // makes it to the release channel.
+    let startTime = ChromeUtils.now?.() || Cu.now();
     let options;
     if (
       tabbrowser.ownerGlobal &&
@@ -360,7 +362,9 @@ export var BrowserTestUtils = {
    * @resolves The tab switched to.
    */
   switchTab(tabbrowser, tab) {
-    let startTime = Cu.now();
+    // This newtab train-hop compatibility shim can be removed once Firefox 144
+    // makes it to the release channel.
+    let startTime = ChromeUtils.now?.() || Cu.now();
     let { innerWindowId } = tabbrowser.ownerGlobal.windowGlobalChild;
 
     // Some tests depend on the delay and TabSwitched only fires if the browser is visible.
@@ -443,7 +447,9 @@ export var BrowserTestUtils = {
       wantLoad = null,
       maybeErrorPage = false,
     } = options;
-    let startTime = Cu.now();
+    // This newtab train-hop compatibility shim can be removed once Firefox 144
+    // makes it to the release channel.
+    let startTime = ChromeUtils.now?.() || Cu.now();
     let { innerWindowId } = browser.ownerGlobal.windowGlobalChild;
 
     // Passing a url as second argument is a common mistake we should prevent.
@@ -1071,7 +1077,9 @@ export var BrowserTestUtils = {
    *         Resolves with the new window once it is loaded.
    */
   async openNewBrowserWindow(options = {}) {
-    let startTime = Cu.now();
+    // This newtab train-hop compatibility shim can be removed once Firefox 144
+    // makes it to the release channel.
+    let startTime = ChromeUtils.now?.() || Cu.now();
 
     let openerWindow = lazy.BrowserWindowTracker.getTopWindow({
       private: false,
@@ -1272,7 +1280,9 @@ export var BrowserTestUtils = {
    * @resolves The Event object.
    */
   waitForEvent(subject, eventName, capture, checkFn, wantsUntrusted) {
-    let startTime = Cu.now();
+    // This newtab train-hop compatibility shim can be removed once Firefox 144
+    // makes it to the release channel.
+    let startTime = ChromeUtils.now?.() || Cu.now();
     let innerWindowId = subject.ownerGlobal?.windowGlobalChild.innerWindowId;
 
     return new Promise((resolve, reject) => {
@@ -1445,9 +1455,7 @@ export var BrowserTestUtils = {
       let isValidUrl = () => {
         return (
           frame.browsingContext?.currentURI?.spec ==
-            "chrome://global/content/datepicker.xhtml" ||
-          frame.browsingContext?.currentURI?.spec ==
-            "chrome://global/content/timepicker.xhtml"
+          "chrome://global/content/datetimepicker.xhtml"
         );
       };
 
@@ -2835,7 +2843,9 @@ export var BrowserTestUtils = {
    *        Extra information to pass to the actor.
    */
   async sendQuery(aBrowsingContext, aMessageName, aMessageData) {
-    let startTime = Cu.now();
+    // This newtab train-hop compatibility shim can be removed once Firefox 144
+    // makes it to the release channel.
+    let startTime = ChromeUtils.now?.() || Cu.now();
     if (!aBrowsingContext.currentWindowGlobal) {
       await this.waitForCondition(() => aBrowsingContext.currentWindowGlobal);
     }

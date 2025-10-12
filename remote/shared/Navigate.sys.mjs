@@ -17,6 +17,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NavigationListener:
     "chrome://remote/content/shared/listeners/NavigationListener.sys.mjs",
   truncate: "chrome://remote/content/shared/Format.sys.mjs",
+  NavigationError: "chrome://remote/content/shared/RemoteError.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
@@ -350,7 +351,7 @@ export class ProgressListener {
             return;
           }
 
-          this.stop({ error: new Error(errorName) });
+          this.stop({ error: new lazy.NavigationError(errorName, status) });
           return;
         }
 
@@ -503,7 +504,7 @@ export class ProgressListener {
       }
     }
 
-    this.#deferredNavigation = new lazy.Deferred();
+    this.#deferredNavigation = lazy.Deferred();
 
     // Enable all location change and network state notifications to get
     // informed about an upcoming load as early as possible.

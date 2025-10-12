@@ -37,25 +37,6 @@ export function divideDict(numerator, denominator) {
 }
 
 /**
- * Returns a secure random value between 0 and 1
- */
-function secureRandomNumber() {
-  const array = new Uint32Array(1);
-  crypto.getRandomValues(array);
-  return array[0] / MAX_INT_32;
-}
-
-/**
- * Applies laplace noise at a given scale
- * @param {number} scale value
- * @returns noisy value
- */
-function laplaceNoise(scale) {
-  const u = secureRandomNumber() - 0.5;
-  return -scale * Math.sign(u) * Math.log(1 - 2 * Math.abs(u));
-}
-
-/**
  * Unary encoding with randomized response for differential privacy.
  * The output must be decoded to back to an integer when aggregating a historgram on a server
  * @param {number} x - Integer input (0 <= x < N)
@@ -266,10 +247,7 @@ export class FeatureModel {
     modelType,
     rescale = true,
     logScale = false,
-    noiseScale = 0,
-    laplaceNoiseFn = laplaceNoise,
-    clipZero = true,
-    maxVal = 0.04,
+    privateFeatures = [],
   }) {
     this.modelId = modelId;
     this.tileImportance = tileImportance;
@@ -278,10 +256,7 @@ export class FeatureModel {
     this.rescale = rescale;
     this.logScale = logScale;
     this.modelType = modelType;
-    this.noiseScale = noiseScale;
-    this.laplaceNoiseFn = laplaceNoiseFn;
-    this.clipZero = clipZero;
-    this.maxVal = maxVal;
+    this.privateFeatures = privateFeatures;
   }
 
   static fromJSON(json) {
@@ -302,9 +277,7 @@ export class FeatureModel {
       logScale: json.log_scale,
       clickScale: json.clickScale,
       modelType: json.model_type,
-      noiseScale: json.noise_scale,
-      clipZero: json.clipZero ?? true,
-      maxVal: json.maxVal ?? 0.04,
+      privateFeatures: json.private_features ?? null,
     });
   }
 
@@ -476,19 +449,27 @@ export class FeatureModel {
     const inferredInterests = divideDict(clicks, impressions);
     const originalInterestValues = { ...inferredInterests };
 
-    this.applyLaplaceNoise(inferredInterests, this.clipZero);
     const resultObject = {
       inferredInterests: { ...inferredInterests, model_id },
     };
 
     if (this.supportsCoarseInterests()) {
+      // always true
       const coarseValues = { ...originalInterestValues };
       this.applyThresholding(coarseValues, false);
       resultObject.coarseInferredInterests = { ...coarseValues, model_id };
     }
 
     if (this.supportsCoarsePrivateInterests()) {
-      const coarsePrivateValues = { ...originalInterestValues };
+      let coarsePrivateValues = { ...originalInterestValues };
+      if (this.privateFeatures) {
+        // filter here for private features
+        coarsePrivateValues = Object.fromEntries(
+          Object.entries(coarsePrivateValues).filter(([key]) =>
+            this.privateFeatures.includes(key)
+          )
+        );
+      }
       this.applyThresholding(coarsePrivateValues, true);
 
       if (condensePrivateValues) {
@@ -505,31 +486,6 @@ export class FeatureModel {
       }
     }
     return resultObject;
-  }
-
-  /**
-   * Applies laplace noise to values in a dictionary if specified in the model
-   * @param {Object} inputDict key-value pairs
-   * @param {boolean} clipZero If true clip less than zero values to zero
-   * @returns
-   */
-  applyLaplaceNoise(inputDict, clipZero = true) {
-    if (!this.noiseScale) {
-      return;
-    }
-    for (const key in inputDict) {
-      if (typeof inputDict[key] === "number") {
-        const noise = this.laplaceNoiseFn(this.noiseScale);
-        if (clipZero) {
-          inputDict[key] = Math.min(
-            Math.max(inputDict[key] + noise, 0),
-            this.maxVal
-          );
-        } else {
-          inputDict[key] += noise;
-        }
-      }
-    }
   }
 
   /**
@@ -564,9 +520,7 @@ export class FeatureModel {
       dataForIntervals,
       indexSchema,
     });
-    const updatedFuzzyInterests = { ...inferredInterests };
-    this.applyLaplaceNoise(updatedFuzzyInterests, this.clipZero);
-    result.inferredInterests = { ...updatedFuzzyInterests, model_id };
+    result.inferredInterests = { ...inferredInterests };
 
     if (this.supportsCoarseInterests()) {
       coarseInferredInterests = this.computeInterestVector({

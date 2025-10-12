@@ -735,12 +735,12 @@ void MacroAssembler::branch16(Condition cond, const Address& lhs, Imm32 rhs,
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Register rhs,
-                              Label* label, LhsHighBitsAreClean) {
+                              Label* label) {
   MOZ_CRASH();
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Imm32 rhs,
-                              Label* label, LhsHighBitsAreClean) {
+                              Label* label) {
   MOZ_CRASH();
 }
 
@@ -1160,6 +1160,38 @@ void MacroAssembler::branch64(Condition cond, const Address& lhs,
 void MacroAssembler::branch64(Condition cond, const Address& lhs,
                               const Address& rhs, Register scratch,
                               Label* label) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::min32(Register lhs, Register rhs, Register dest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::min32(Register lhs, Imm32 rhs, Register dest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::max32(Register lhs, Register rhs, Register dest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::max32(Register lhs, Imm32 rhs, Register dest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::minPtr(Register lhs, Register rhs, Register dest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::minPtr(Register lhs, ImmWord rhs, Register dest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::maxPtr(Register lhs, Register rhs, Register dest) {
+  MOZ_CRASH();
+}
+
+void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
   MOZ_CRASH();
 }
 

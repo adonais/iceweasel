@@ -11,7 +11,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.draggable2D
 import androidx.compose.foundation.gestures.rememberDraggable2DState
@@ -41,8 +40,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import mozilla.components.compose.base.button.FloatingActionButton
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.button.FloatingActionButton
 import org.mozilla.fenix.debugsettings.navigation.DebugDrawerDestination
 import org.mozilla.fenix.debugsettings.store.DrawerStatus
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -69,7 +68,6 @@ private const val INITIAL_FAB_OFFSET_Y = 0f
  * @param onDrawerClose Invoked when the drawer is closed.
  * @param onDrawerBackButtonClick Invoked when the user taps on the back button in the app bar.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Suppress("LongMethod")
 @Composable
 fun DebugOverlay(

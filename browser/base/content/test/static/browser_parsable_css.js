@@ -85,6 +85,14 @@ if (!Services.prefs.getBoolPref("dom.viewTransitions.enabled")) {
   });
 }
 
+if (!Services.prefs.getBoolPref("mathml.math_shift.enabled")) {
+  ignoreList.push({
+    sourceName: /\bmathml\.css$/i,
+    errorMessage: /Unknown property.*math-shift/i,
+    isFromDevTools: false,
+  });
+}
+
 let propNameAllowlist = [
   // These custom properties are retrieved directly from CSSOM
   // in videocontrols.xml to get pre-defined style instead of computed
@@ -178,6 +186,10 @@ let propNameAllowlist = [
   // Ignore token properties that follow the pattern --color-[name]-[number]
   // This enables us to provide our full color palette for developers.
   { propName: /--color-[a-z]+-\d+/, isFromDevTools: false },
+
+  // Design system border radius tokens that are defined but not yet used
+  // these should be removed once they are used in the codebase.
+  { propName: "--border-radius-xsmall", isFromDevTools: false },
 ];
 
 // Add suffix to stylesheets' URI so that we always load them here and

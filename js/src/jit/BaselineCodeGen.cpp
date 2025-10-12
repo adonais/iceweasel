@@ -274,6 +274,7 @@ MethodStatus BaselineCompiler::compileOffThread() {
 bool BaselineCompiler::compileImpl() {
   AutoCreatedBy acb(masm, "BaselineCompiler::compile");
 
+  perfSpewer_.startRecording();
   perfSpewer_.recordOffset(masm, "Prologue");
   if (!emitPrologue()) {
     return false;
@@ -291,12 +292,14 @@ bool BaselineCompiler::compileImpl() {
   perfSpewer_.recordOffset(masm, "OOLPostBarrierSlot");
   emitOutOfLinePostBarrierSlot();
 
+  perfSpewer_.endRecording();
+
   return true;
 }
 
 bool BaselineCompiler::finishCompile(JSContext* cx) {
   Rooted<JSScript*> script(cx, handler.script());
-  bool isSelfHostedJitCodeShared =
+  bool isRealmIndependentJitCodeShared =
       JS::Prefs::experimental_self_hosted_cache() && script->selfHosted();
 
   UniquePtr<BaselineScript> baselineScript(
@@ -304,7 +307,7 @@ bool BaselineCompiler::finishCompile(JSContext* cx) {
   JitCode* code = nullptr;
   {
     mozilla::Maybe<AutoAllocInAtomsZone> ar;
-    if (isSelfHostedJitCodeShared) {
+    if (isRealmIndependentJitCodeShared) {
       ar.emplace(cx);
     }
 
@@ -368,7 +371,7 @@ bool BaselineCompiler::finishCompile(JSContext* cx) {
     UniqueJitcodeGlobalEntry entry;
     JitSpew(JitSpew_Profiling,
             "Added JitcodeGlobalEntry for baseline %sscript %s:%u:%u (%p)",
-            isSelfHostedJitCodeShared ? "shared self-hosted " : "",
+            isRealmIndependentJitCodeShared ? "shared realm-independent " : "",
             script->filename(), script->lineno(),
             script->column().oneOriginValue(), baselineScript.get());
 
@@ -378,8 +381,8 @@ bool BaselineCompiler::finishCompile(JSContext* cx) {
       return false;
     }
 
-    if (isSelfHostedJitCodeShared) {
-      entry = MakeJitcodeGlobalEntry<SelfHostedSharedEntry>(
+    if (isRealmIndependentJitCodeShared) {
+      entry = MakeJitcodeGlobalEntry<RealmIndependentSharedEntry>(
           cx, code, code->raw(), code->rawEnd(), std::move(str));
     } else {
       uint64_t realmId = script->realm()->creationOptions().profilerRealmID();
@@ -420,6 +423,7 @@ void BaselineCompilerHandler::maybeDisableIon() {
   if (analysis_.isInliningDisabled()) {
     script()->setUninlineable();
   }
+  script()->jitScript()->setRanBytecodeAnalysis();
 }
 
 // On most platforms we use a dedicated bytecode PC register to avoid many
@@ -460,10 +464,9 @@ static void LoadUint16Operand(MacroAssembler& masm, Register dest) {
 static void LoadConstantCompareOperand(MacroAssembler& masm,
                                        Register constantType,
                                        Register payload) {
-  // Note: In baseline interpreter on 32-bit we dont
-  // have a separate pc register see HasInterpreterPCReg()
-  // so we use the payload reg as scratch first and then rewrite the
-  // actual payload on to it after loading the type
+  // Note: Baseline interpreter on x86 doesn't have a separate pc register,
+  // see HasInterpreterPCReg(), so we use |payload| as a scratch register first
+  // and then write the actual payload into it after loading the type.
   Register pc = LoadBytecodePC(masm, payload);
   masm.load8ZeroExtend(Address(pc, ConstantCompareOperand::OFFSET_OF_TYPE),
                        constantType);
@@ -819,7 +822,7 @@ void BaselineCompilerCodeGen::storeFrameSizeAndPushDescriptor(
   masm.store32(Imm32(frame.frameSize()), frame.addressOfDebugFrameSize());
 #endif
 
-  masm.pushFrameDescriptor(FrameType::BaselineJS);
+  masm.push(FrameDescriptor(FrameType::BaselineJS));
 }
 
 template <>
@@ -834,7 +837,7 @@ void BaselineInterpreterCodeGen::storeFrameSizeAndPushDescriptor(
   masm.store32(scratch, frame.addressOfDebugFrameSize());
 #endif
 
-  masm.pushFrameDescriptor(FrameType::BaselineJS);
+  masm.push(FrameDescriptor(FrameType::BaselineJS));
 }
 
 static uint32_t GetVMFunctionArgSize(const VMFunctionData& fun) {
@@ -869,7 +872,7 @@ bool BaselineCodeGen<Handler>::callVMInternal(VMFunctionId id,
     uint32_t frameBaseSize = BaselineFrame::frameSizeForNumValueSlots(0);
     masm.store32(Imm32(frameBaseSize), frame.addressOfDebugFrameSize());
 #endif
-    masm.pushFrameDescriptor(FrameType::BaselineJS);
+    masm.push(FrameDescriptor(FrameType::BaselineJS));
   }
   // Perform the call.
   masm.call(code);
@@ -1293,16 +1296,16 @@ void BaselineCompilerCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
     masm.storePtr(nonFunctionEnv, frame.addressOfEnvironmentChain());
   }
 
-  // If cx->inlinedICScript contains an inlined ICScript (passed from
-  // the caller), take that ICScript and store it in the frame, then
-  // overwrite cx->inlinedICScript with nullptr.
+  // If the HasInlinedICScript flag is set in the frame descriptor, then load
+  // the inlined ICScript from our caller's frame and store it in our own frame.
   Label notInlined, done;
-  masm.movePtr(ImmPtr(runtime->addressOfInlinedICScript()), scratch);
-  Address inlinedAddr(scratch, 0);
-  masm.branchPtr(Assembler::Equal, inlinedAddr, ImmWord(0), &notInlined);
-  masm.loadPtr(inlinedAddr, scratch2);
-  masm.storePtr(scratch2, frame.addressOfICScript());
-  masm.storePtr(ImmPtr(nullptr), inlinedAddr);
+  masm.branchTest32(Assembler::Zero, frame.addressOfDescriptor(),
+                    Imm32(FrameDescriptor::HasInlinedICScript), &notInlined);
+  masm.loadPtr(Address(FramePointer, 0), scratch);
+  masm.loadPtr(
+      Address(scratch, BaselineStubFrameLayout::InlinedICScriptOffsetFromFP),
+      scratch);
+  masm.storePtr(scratch, frame.addressOfICScript());
   masm.jump(&done);
 
   // Otherwise, store this script's default ICSCript in the frame.
@@ -1360,10 +1363,22 @@ void BaselineInterpreterCodeGen::emitInitFrameFields(Register nonFunctionEnv) {
   masm.bind(&done);
   masm.storePtr(scratch1, frame.addressOfInterpreterScript());
 
-  // Initialize icScript and interpreterICEntry
+  // Load the ICScript in scratch2..
+  Label inlined, haveICScript;
+  masm.branchTest32(Assembler::NonZero, frame.addressOfDescriptor(),
+                    Imm32(FrameDescriptor::HasInlinedICScript), &inlined);
   masm.loadJitScript(scratch1, scratch2);
   masm.computeEffectiveAddress(Address(scratch2, JitScript::offsetOfICScript()),
                                scratch2);
+  masm.jump(&haveICScript);
+  masm.bind(&inlined);
+  masm.loadPtr(Address(FramePointer, 0), scratch2);
+  masm.loadPtr(
+      Address(scratch2, BaselineStubFrameLayout::InlinedICScriptOffsetFromFP),
+      scratch2);
+  masm.bind(&haveICScript);
+
+  // Initialize icScript and interpreterICEntry
   masm.storePtr(scratch2, frame.addressOfICScript());
   masm.computeEffectiveAddress(Address(scratch2, ICScript::offsetOfICEntries()),
                                scratch2);
@@ -1555,6 +1570,39 @@ bool BaselineCodeGen<Handler>::emitInterruptCheck() {
   return true;
 }
 
+template <typename Handler>
+bool BaselineCodeGen<Handler>::emitTrialInliningCheck(Register count,
+                                                      Register icScript,
+                                                      Register scratch) {
+  if (JitOptions.disableInlining) {
+    return true;
+  }
+
+  // Consider trial inlining.
+  // Note: unlike other warmup thresholds, where we try to enter a
+  // higher tier whenever we are higher than a given warmup count,
+  // trial inlining triggers once when reaching the threshold.
+  Label noTrialInlining;
+  masm.branch32(Assembler::NotEqual, count,
+                Imm32(JitOptions.trialInliningWarmUpThreshold),
+                &noTrialInlining);
+  prepareVMCall();
+
+  masm.PushBaselineFramePtr(FramePointer, scratch);
+
+  using Fn = bool (*)(JSContext*, BaselineFrame*);
+  if (!callVMNonOp<Fn, DoTrialInlining>()) {
+    return false;
+  }
+  // Reload registers potentially clobbered by the call.
+  Address warmUpCounterAddr(icScript, ICScript::offsetOfWarmUpCount());
+  masm.loadPtr(frame.addressOfICScript(), icScript);
+  masm.load32(warmUpCounterAddr, count);
+  masm.bind(&noTrialInlining);
+
+  return true;
+}
+
 template <>
 bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   frame.assertSyncedStack();
@@ -1591,27 +1639,8 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
   masm.add32(Imm32(1), countReg);
   masm.store32(countReg, warmUpCounterAddr);
 
-  if (!JitOptions.disableInlining) {
-    // Consider trial inlining.
-    // Note: unlike other warmup thresholds, where we try to enter a
-    // higher tier whenever we are higher than a given warmup count,
-    // trial inlining triggers once when reaching the threshold.
-    Label noTrialInlining;
-    masm.branch32(Assembler::NotEqual, countReg,
-                  Imm32(JitOptions.trialInliningWarmUpThreshold),
-                  &noTrialInlining);
-    prepareVMCall();
-
-    masm.PushBaselineFramePtr(FramePointer, R0.scratchReg());
-
-    using Fn = bool (*)(JSContext*, BaselineFrame*);
-    if (!callVMNonOp<Fn, DoTrialInlining>()) {
-      return false;
-    }
-    // Reload registers potentially clobbered by the call.
-    masm.loadPtr(frame.addressOfICScript(), scriptReg);
-    masm.load32(warmUpCounterAddr, countReg);
-    masm.bind(&noTrialInlining);
+  if (!emitTrialInliningCheck(countReg, scriptReg, R1.scratchReg())) {
+    return false;
   }
 
   if (JSOp(*pc) == JSOp::LoopHead) {
@@ -1739,6 +1768,11 @@ bool BaselineCompilerCodeGen::emitWarmUpCounterIncrement() {
 
 template <>
 bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
+  // Emit no warm-up counter increments if Baseline is disabled.
+  if (!JitOptions.baselineJit) {
+    return true;
+  }
+
   Register scriptReg = R2.scratchReg();
   Register countReg = R0.scratchReg();
 
@@ -1751,6 +1785,10 @@ bool BaselineInterpreterCodeGen::emitWarmUpCounterIncrement() {
   masm.load32(warmUpCounterAddr, countReg);
   masm.add32(Imm32(1), countReg);
   masm.store32(countReg, warmUpCounterAddr);
+
+  if (!emitTrialInliningCheck(countReg, scriptReg, R1.scratchReg())) {
+    return false;
+  }
 
   if (JitOptions.baselineBatching) {
     Register scratch = R1.scratchReg();
@@ -3002,65 +3040,47 @@ bool BaselineCompilerCodeGen::emitConstantStrictEq(JSOp op) {
   frame.popRegsAndSync(1);
 
   ValueOperand value = R0;
-  Label fail, pass, done;
+  Label pass, done;
 
   switch (data.type()) {
     case ConstantCompareOperand::EncodedType::Int32: {
       int32_t constantVal = data.toInt32();
 
-      Label maybeDouble;
-      masm.branchTestInt32(Assembler::NotEqual, value, &maybeDouble);
-      masm.branch32(JSOpToCondition(op, true), value.payloadOrValueReg(),
-                    Imm32(constantVal), &pass,
-                    MacroAssembler::LhsHighBitsAreClean::No);
-      masm.jump(&fail);
-
-      masm.bind(&maybeDouble);
-      {
-        FloatRegister unboxedValue = FloatReg0;
-        FloatRegister floatPayload = FloatReg1;
-
-        masm.branchTestDouble(Assembler::NotEqual, value,
-                              op == JSOp::StrictEq ? &fail : &pass);
-
-        masm.unboxDouble(value, unboxedValue);
-        masm.loadConstantDouble(double(constantVal), floatPayload);
-        masm.branchDouble(JSOpToDoubleCondition(op), unboxedValue, floatPayload,
-                          &pass);
+      Label fail;
+      masm.branchTestValue(Assembler::Equal, value, Int32Value(constantVal),
+                           op == JSOp::StrictEq ? &pass : &fail);
+      if (constantVal != 0) {
+        masm.branchTestValue(JSOpToCondition(op, false), value,
+                             DoubleValue(constantVal), &pass);
+      } else {
+        masm.branchTestValue(Assembler::Equal, value, DoubleValue(0.0),
+                             op == JSOp::StrictEq ? &pass : &fail);
+        masm.branchTestValue(JSOpToCondition(op, false), value,
+                             DoubleValue(-0.0), &pass);
       }
+      masm.bind(&fail);
       break;
     }
 
     case ConstantCompareOperand::EncodedType::Boolean: {
       bool constantVal = data.toBoolean();
-      Register boolUnboxed = R1.scratchReg();
-      masm.fallibleUnboxBoolean(value, boolUnboxed,
-                                op == JSOp::StrictEq ? &fail : &pass);
-      masm.branch32(JSOpToCondition(op, true), boolUnboxed, Imm32(constantVal),
-                    &pass);
+
+      masm.branchTestValue(JSOpToCondition(op, false), value,
+                           BooleanValue(constantVal), &pass);
       break;
     }
 
     case ConstantCompareOperand::EncodedType::Null: {
-      masm.branchTestNull(Assembler::NotEqual, value,
-                          op == JSOp::StrictEq ? &fail : &pass);
-      if (op == JSOp::StrictEq) {
-        masm.jump(&pass);
-      }
+      masm.branchTestNull(JSOpToCondition(op, false), value, &pass);
       break;
     }
 
     case ConstantCompareOperand::EncodedType::Undefined: {
-      masm.branchTestUndefined(Assembler::NotEqual, value,
-                               op == JSOp::StrictEq ? &fail : &pass);
-      if (op == JSOp::StrictEq) {
-        masm.jump(&pass);
-      }
+      masm.branchTestUndefined(JSOpToCondition(op, false), value, &pass);
       break;
     }
   }
 
-  masm.bind(&fail);
   {
     masm.moveValue(BooleanValue(false), R0);
     masm.jump(&done);
@@ -3091,81 +3111,52 @@ bool BaselineInterpreterCodeGen::emitConstantStrictEq(JSOp op) {
   frame.popRegsAndSync(1);
 
   ValueOperand value = R0;
+
+#if defined(JS_NUNBOX32)
+  Register constantType = R1.typeReg();
+  Register payload = R1.payloadReg();
+#else
   Register constantType = R1.scratchReg();
   Register payload = R2.scratchReg();
+#endif
 
   LoadConstantCompareOperand(masm, constantType, payload);
-  Label isInt32, isBool, isNull, isUndefined;
+
   Label pass, fail, done;
 
-  masm.branch32(Assembler::Equal, constantType,
+  // Int32 constants need to check for double-valued inputs.
+  Label compareValueBitwise;
+  masm.branch32(Assembler::NotEqual, constantType,
                 Imm32(int32_t(ConstantCompareOperand::EncodedType::Int32)),
-                &isInt32);
-  masm.branch32(Assembler::Equal, constantType,
-                Imm32(int32_t(ConstantCompareOperand::EncodedType::Boolean)),
-                &isBool);
-  masm.branch32(Assembler::Equal, constantType,
-                Imm32(int32_t(ConstantCompareOperand::EncodedType::Null)),
-                &isNull);
-  masm.branch32(Assembler::Equal, constantType,
-                Imm32(int32_t(ConstantCompareOperand::EncodedType::Undefined)),
-                &isUndefined);
-  masm.assumeUnreachable("Unexpected constant compare type");
-
-  masm.bind(&isInt32);
+                &compareValueBitwise);
+  masm.branchTestDouble(Assembler::NotEqual, value, &compareValueBitwise);
   {
-    Label maybeDouble;
-    masm.branchTestInt32(Assembler::NotEqual, value, &maybeDouble);
-    masm.branch32(JSOpToCondition(op, true), value.payloadOrValueReg(), payload,
-                  &pass, MacroAssembler::LhsHighBitsAreClean::No);
-    masm.jump(&fail);
-
-    masm.bind(&maybeDouble);
-    {
-      FloatRegister unboxedValue = FloatReg0;
-      FloatRegister floatPayload = FloatReg1;
-      masm.branchTestDouble(Assembler::NotEqual, value,
-                            op == JSOp::StrictEq ? &fail : &pass);
-      masm.unboxDouble(value, unboxedValue);
-      masm.convertInt32ToDouble(payload, floatPayload);
-      masm.branchDouble(JSOpToDoubleCondition(op), unboxedValue, floatPayload,
-                        &pass);
-      masm.jump(&fail);
-    }
-  }
-
-  masm.bind(&isBool);
-  {
-    Register boolUnboxed = R1.scratchReg();
-    masm.fallibleUnboxBoolean(value, boolUnboxed,
-                              op == JSOp::StrictEq ? &fail : &pass);
-    masm.branch32(JSOpToCondition(op, true), boolUnboxed, payload, &pass);
+    FloatRegister unboxedValue = FloatReg0;
+    FloatRegister floatPayload = FloatReg1;
+    masm.unboxDouble(value, unboxedValue);
+    masm.convertInt32ToDouble(payload, floatPayload);
+    masm.branchDouble(JSOpToDoubleCondition(op), unboxedValue, floatPayload,
+                      &pass);
     masm.jump(&fail);
   }
+  masm.bind(&compareValueBitwise);
 
-  masm.bind(&isNull);
-  {
-    masm.branchTestNull(Assembler::NotEqual, value,
-                        op == JSOp::StrictEq ? &fail : &pass);
-    masm.jump(op == JSOp::StrictEq ? &pass : &fail);
-  }
+  // Box constant value into R1.
+  masm.boxNonDouble(constantType, payload, R1);
 
-  masm.bind(&isUndefined);
+  // Bitwise comparison for int32, boolean, null, and undefined values.
+  masm.branch64(JSOpToCondition(op, false), value.toRegister64(),
+                R1.toRegister64(), &pass);
+
+  masm.bind(&fail);
   {
-    masm.branchTestUndefined(Assembler::NotEqual, value,
-                             op == JSOp::StrictEq ? &fail : &pass);
-    masm.jump(op == JSOp::StrictEq ? &pass : &fail);
+    masm.moveValue(BooleanValue(false), R0);
+    masm.jump(&done);
   }
 
   masm.bind(&pass);
   {
-    masm.moveValue(BooleanValue(true), value);
-    masm.jump(&done);
-  }
-
-  masm.bind(&fail);
-  {
-    masm.moveValue(BooleanValue(false), value);
+    masm.moveValue(BooleanValue(true), R0);
   }
 
   masm.bind(&done);
@@ -4013,22 +4004,27 @@ bool BaselineCompilerCodeGen::emit_SetAliasedVar() {
   // Keep rvalue in R0.
   frame.popRegsAndSync(1);
   Register objReg = R2.scratchReg();
+  AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
+  MOZ_ASSERT(!regs.has(FramePointer));
+  regs.take(R0);
+  regs.take(R2);
+  Register temp = regs.takeAny();
+  Register temp2 = regs.takeAny();
 
   getEnvironmentCoordinateObject(objReg);
-  Address address =
-      getEnvironmentCoordinateAddressFromObject(objReg, R1.scratchReg());
-  masm.guardedCallPreBarrier(address, MIRType::Value);
+  Address address = getEnvironmentCoordinateAddressFromObject(objReg, temp);
+  emitGuardedCallPreBarrierAnyZone(address, MIRType::Value, temp2);
   masm.storeValue(R0, address);
   frame.push(R0);
 
-  // Only R0 is live at this point.
-  // Scope coordinate object is already in R2.scratchReg().
-  Register temp = R1.scratchReg();
+  // Only R0 and R2 are live at this point.
+  // R2.scratchReg() has the scope coordinate object.
 
   Label skipBarrier;
   masm.branchPtrInNurseryChunk(Assembler::Equal, objReg, temp, &skipBarrier);
   masm.branchValueIsNurseryCell(Assembler::NotEqual, R0, temp, &skipBarrier);
 
+  // Uses R2.scratchReg() as input
   masm.call(&postBarrierSlot_);  // Won't clobber R0
 
   masm.bind(&skipBarrier);
@@ -4087,7 +4083,7 @@ bool BaselineInterpreterCodeGen::emit_SetAliasedVar() {
 
   // Pre-barrier and store.
   Address slotAddr(scratch2, 0);
-  masm.guardedCallPreBarrierAnyZone(slotAddr, MIRType::Value, scratch3);
+  emitGuardedCallPreBarrierAnyZone(slotAddr, MIRType::Value, scratch3);
   masm.storeValue(R2, slotAddr);
 
   // Post barrier.
@@ -4426,7 +4422,7 @@ bool BaselineCompilerCodeGen::emitFormalArgAccess(JSOp op) {
     frame.push(R0);
   } else {
     Register temp = R1.scratchReg();
-    masm.guardedCallPreBarrierAnyZone(argAddr, MIRType::Value, temp);
+    emitGuardedCallPreBarrierAnyZone(argAddr, MIRType::Value, temp);
     masm.loadValue(frame.addressOfStackValue(-1), R0);
     masm.storeValue(R0, argAddr);
 
@@ -4481,8 +4477,8 @@ bool BaselineInterpreterCodeGen::emitFormalArgAccess(JSOp op) {
       masm.loadValue(argAddr, R0);
       frame.push(R0);
     } else {
-      masm.guardedCallPreBarrierAnyZone(argAddr, MIRType::Value,
-                                        R0.scratchReg());
+      emitGuardedCallPreBarrierAnyZone(argAddr, MIRType::Value,
+                                       R0.scratchReg());
       masm.loadValue(frame.addressOfStackValue(-1), R0);
       masm.storeValue(R0, argAddr);
 
@@ -5288,7 +5284,7 @@ bool BaselineCodeGen<Handler>::emit_TakeDisposeCapability() {
   masm.loadPtr(frame.addressOfEnvironmentChain(), R0.scratchReg());
   Address capAddr(R0.scratchReg(),
                   DisposableEnvironmentObject::offsetOfDisposeCapability());
-  masm.guardedCallPreBarrierAnyZone(capAddr, MIRType::Value, R2.scratchReg());
+  emitGuardedCallPreBarrierAnyZone(capAddr, MIRType::Value, R2.scratchReg());
   masm.loadValue(capAddr, R1);
   masm.storeValue(UndefinedValue(), capAddr);
 
@@ -6148,7 +6144,7 @@ bool BaselineCodeGen<Handler>::emitSuspend(JSOp op) {
     Address envChainSlot(
         genObj, AbstractGeneratorObject::offsetOfEnvironmentChainSlot());
     masm.loadPtr(frame.addressOfEnvironmentChain(), envObj);
-    masm.guardedCallPreBarrierAnyZone(envChainSlot, MIRType::Value, temp);
+    emitGuardedCallPreBarrierAnyZone(envChainSlot, MIRType::Value, temp);
     masm.storeValue(JSVAL_TYPE_OBJECT, envObj, envChainSlot);
 
     Label skipBarrier;
@@ -6414,7 +6410,7 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
 #endif
 
   masm.PushCalleeToken(callee, /* constructing = */ false);
-  masm.pushFrameDescriptorForJitCall(FrameType::BaselineJS, /* argc = */ 0);
+  masm.push(FrameDescriptor(FrameType::BaselineJS, /* argc = */ 0));
 
   // PushCalleeToken bumped framePushed. Reset it.
   MOZ_ASSERT(masm.framePushed() == sizeof(uintptr_t));
@@ -6503,8 +6499,8 @@ bool BaselineCodeGen<Handler>::emit_Resume() {
     masm.bind(&loop);
     {
       masm.pushValue(Address(scratch2, 0));
-      masm.guardedCallPreBarrierAnyZone(Address(scratch2, 0), MIRType::Value,
-                                        scratch1);
+      emitGuardedCallPreBarrierAnyZone(Address(scratch2, 0), MIRType::Value,
+                                       scratch1);
       masm.addPtr(Imm32(sizeof(Value)), scratch2);
       masm.branchSub32(Assembler::NonZero, Imm32(1), initLength, &loop);
     }
@@ -6737,7 +6733,7 @@ bool BaselineCodeGen<Handler>::emit_InitHomeObject() {
   // Set HOMEOBJECT_SLOT
   Register temp = R1.scratchReg();
   Address addr(func, FunctionExtended::offsetOfMethodHomeObjectSlot());
-  masm.guardedCallPreBarrierAnyZone(addr, MIRType::Value, temp);
+  emitGuardedCallPreBarrierAnyZone(addr, MIRType::Value, temp);
   masm.storeValue(R0, addr);
 
   Label skipBarrier;
@@ -7003,7 +6999,7 @@ bool BaselineCompiler::emitBody() {
       return false;
     }
 
-    perfSpewer_.recordInstruction(masm, handler.pc(), frame);
+    perfSpewer_.recordInstruction(masm, handler.pc(), handler.script(), frame);
 
 #define EMIT_OP(OP, ...)                                \
   case JSOp::OP: {                                      \
@@ -7241,6 +7237,7 @@ bool BaselineInterpreterGenerator::generate(JSContext* cx,
     return false;
   }
 
+  perfSpewer_.startRecording();
   perfSpewer_.recordOffset(masm, "Prologue");
   if (!emitPrologue()) {
     ReportOutOfMemory(cx);
@@ -7303,6 +7300,7 @@ bool BaselineInterpreterGenerator::generate(JSContext* cx,
                                            tableLoc);
     }
 
+    perfSpewer_.endRecording();
     perfSpewer_.saveProfile(code);
 
 #ifdef MOZ_VTUNE

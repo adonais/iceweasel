@@ -73,7 +73,7 @@ add_task(async function toolbar_icon_status() {
   });
   IPProtectionService.isEnrolled = true;
   IPProtectionService.isEntitled = true;
-  content.state.isSignedIn = true;
+  content.state.isSignedOut = false;
   await putServerInRemoteSettings();
   content.requestUpdate();
   await content.updateComplete;

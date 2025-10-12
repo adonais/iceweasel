@@ -33,9 +33,9 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.PrimaryButton
-import org.mozilla.fenix.R
 import org.mozilla.fenix.shopping.ui.ext.headingResource
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Card for presenting informational messages or errors.
@@ -75,21 +75,21 @@ fun InfoCard(
         ) {
             when (type) {
                 InfoType.Warning -> {
-                    InfoCardIcon(iconId = R.drawable.mozac_ic_warning_fill_24)
+                    InfoCardIcon(iconId = iconsR.drawable.mozac_ic_warning_fill_24)
                 }
 
                 InfoType.Confirmation -> {
-                    InfoCardIcon(iconId = R.drawable.mozac_ic_checkmark_24)
+                    InfoCardIcon(iconId = iconsR.drawable.mozac_ic_checkmark_24)
                 }
 
                 InfoType.Error -> {
-                    InfoCardIcon(iconId = R.drawable.mozac_ic_critical_fill_24)
+                    InfoCardIcon(iconId = iconsR.drawable.mozac_ic_critical_fill_24)
                 }
 
                 InfoType.Info,
                 InfoType.InfoPlain,
                 -> {
-                    InfoCardIcon(iconId = R.drawable.mozac_ic_information_fill_24)
+                    InfoCardIcon(iconId = iconsR.drawable.mozac_ic_information_fill_24)
                 }
             }
 

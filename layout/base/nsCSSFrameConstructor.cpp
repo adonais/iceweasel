@@ -189,12 +189,12 @@ struct FrameCtorDebugFlags {
   bool* on;
 };
 
-static FrameCtorDebugFlags gFlags[] = {
+static FrameCtorDebugFlags gFrameCtorDebugFlags[] = {
     {"content-updates", &gNoisyContentUpdates},
     {"really-noisy-content-updates", &gReallyNoisyContentUpdates},
     {"noisy-inline", &gNoisyInlineConstruction}};
 
-#  define NUM_DEBUG_FLAGS (sizeof(gFlags) / sizeof(gFlags[0]))
+#  define NUM_DEBUG_FLAGS (std::size(gFrameCtorDebugFlags))
 #endif
 
 //------------------------------------------------------------------
@@ -1444,8 +1444,8 @@ nsCSSFrameConstructor::nsCSSFrameConstructor(Document* aDocument,
         if (comma) *comma = '\0';
 
         bool found = false;
-        FrameCtorDebugFlags* flag = gFlags;
-        FrameCtorDebugFlags* limit = gFlags + NUM_DEBUG_FLAGS;
+        FrameCtorDebugFlags* flag = gFrameCtorDebugFlags;
+        FrameCtorDebugFlags* limit = gFrameCtorDebugFlags + NUM_DEBUG_FLAGS;
         while (flag < limit) {
           if (nsCRT::strcasecmp(flag->name, flags) == 0) {
             *(flag->on) = true;
@@ -1467,8 +1467,8 @@ nsCSSFrameConstructor::nsCSSFrameConstructor(Document* aDocument,
 
       if (error) {
         printf("Here are the available GECKO_FRAMECTOR_DEBUG_FLAGS:\n");
-        FrameCtorDebugFlags* flag = gFlags;
-        FrameCtorDebugFlags* limit = gFlags + NUM_DEBUG_FLAGS;
+        FrameCtorDebugFlags* flag = gFrameCtorDebugFlags;
+        FrameCtorDebugFlags* limit = gFrameCtorDebugFlags + NUM_DEBUG_FLAGS;
         while (flag < limit) {
           printf("  %s\n", flag->name);
           ++flag;

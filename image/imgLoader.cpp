@@ -1205,7 +1205,7 @@ class imgCacheExpirationTracker final
 
 imgCacheExpirationTracker::imgCacheExpirationTracker()
     : nsExpirationTracker<imgCacheEntry, 3>(TIMEOUT_SECONDS * 1000,
-                                            "imgCacheExpirationTracker") {}
+                                            "imgCacheExpirationTracker"_ns) {}
 
 void imgCacheExpirationTracker::NotifyExpired(imgCacheEntry* entry) {
   // Hold on to a reference to this entry, because the expiration tracker

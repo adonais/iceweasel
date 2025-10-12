@@ -29,7 +29,7 @@ import org.mozilla.samples.browser.databinding.FragmentAddOnsBinding
 import org.mozilla.samples.browser.databinding.OverlayAddOnProgressBinding
 import org.mozilla.samples.browser.ext.components
 import java.util.concurrent.CancellationException
-import androidx.browser.R as androidxBrowserR
+import androidx.browser.R as browserR
 import mozilla.components.browser.menu.R as menuR
 import mozilla.components.feature.addons.R as addonsR
 
@@ -79,7 +79,7 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate {
                 val addons = context.components.addonManager.getAddons()
 
                 val style = AddonsManagerAdapter.Style(
-                    dividerColor = androidxBrowserR.color.browser_actions_divider_color,
+                    dividerColor = browserR.color.browser_actions_divider_color,
                     dividerHeight = menuR.dimen.mozac_browser_menu_item_divider_height,
                 )
 

@@ -39,6 +39,14 @@ UNCOMMITTED_CHANGES = """
 ERROR please commit changes before continuing
 """.strip()
 
+LARGE_PUSH_THRESHOLD = 1000
+LARGE_PUSH_WARNING = f"""
+Your push would schedule at least {{}} tasks. To avoid backlogs that cause delays for
+others, your tasks will be scheduled at a lower priority and may not run before
+their deadline. Consider selecting fewer than {LARGE_PUSH_THRESHOLD} tasks to save resources and
+get results faster.
+"""
+
 MAX_HISTORY = 10
 
 MACH_TRY_PUSH_TO_VCS = os.getenv("MACH_TRY_PUSH_TO_VCS") == "1"
@@ -98,6 +106,27 @@ def generate_try_task_config(method, labels, params=None, routes=None):
 
     try_config = params.setdefault("try_task_config", {})
     try_config.setdefault("env", {})["TRY_SELECTOR"] = method
+
+    # In reality, the number of tasks will likely be much larger thanks to test
+    # chunks being collapsed behind a wildcard. However because we use
+    # `taskgraph.fast` when generating tasks, we don't process test manifests
+    # and have no way of knowing how many chunks will be scheduled for a given
+    # task. For the purposes of this check, we'll ignore test chunks as it's
+    # causing us to underestimate anyway.
+    num_tasks = len(labels) * try_config.get("rebuild", 1)
+    if "priority" not in try_config and num_tasks > LARGE_PUSH_THRESHOLD:
+        print(LARGE_PUSH_WARNING.format(num_tasks))
+        while True:
+            answer = input("Would you like to proceed anyway? [Y/n]: ").lower()
+            if answer in ("n", "no"):
+                sys.exit(1)
+
+            if answer in ("y", "yes"):
+                break
+
+            print(f"Invalid answer: '{answer}'")
+
+        try_config["priority"] = "lowest"
 
     try_config["tasks"] = sorted(labels)
 

@@ -27,10 +27,9 @@ per-ABI feature splits to produce arch-specific APKs.
 
 If you want to run this task locally, you need to specify these environment variable:
   - MOZ_ANDROID_FAT_AAR_ARCHITECTURES: must be a comma-separated list of architecture.
-    Eg: "armeabi-v7a,arm64-v8a,x86,x86_64".
+    Eg: "armeabi-v7a,arm64-v8a,x86_64".
   - each of MOZ_ANDROID_FAT_AAR_ARM64_V8A, MOZ_ANDROID_FAT_AAR_ARMEABI_V7A,
-    MOZ_ANDROID_FAT_AAR_X86, MOZ_ANDROID_FAT_AAR_X86_64 must be a path relative to
-    MOZ_FETCHES_DIR.
+    and MOZ_ANDROID_FAT_AAR_X86_64 must be a path relative to MOZ_FETCHES_DIR.
 
 build-signing
 -------------
@@ -181,6 +180,17 @@ spidermonkey
 
 Spidermonkey tasks check out the full gecko source tree, then compile only the
 spidermonkey portion.  Each task runs specific tests after the build.
+
+mochitest
+---------
+
+See the :doc:`test kind documentation <kinds/test>` for more info.
+
+.. toctree::
+   :hidden:
+
+   kinds/test
+
 
 test
 ----

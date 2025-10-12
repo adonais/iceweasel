@@ -234,6 +234,106 @@ async function imageToText(request, model, tokenizer, processor, _config) {
   return result;
 }
 
+async function getDomainId(domain, domainVocab) {
+  return domainVocab[domain] ?? domainVocab["<unk>"];
+}
+
+/**
+ * Converts a query or webpage title into a goal embedding using a multi-task ONNX model.
+ *
+ * Accepts either:
+ * - Query: just `text`
+ * - Page: requires both `text` and `domain`
+ *
+ * @param {object} request - The input request to the pipeline.
+ * @param {Array} request.inputArgs - The input arguments: [texts], [taskTypes], [domains?]
+ * @param {object} model - The ONNX model session.
+ * @param {object} tokenizer - The tokenizer instance.
+ * @param {object} _processor - (Unused)
+ * @param {object} config - The engine configuration options
+ * @param {object} modelConfig - The model configuration options
+ * @returns {object} - Inference result with embedding(s)
+ */
+async function textToGoal(
+  request,
+  model,
+  tokenizer,
+  _processor,
+  config,
+  modelConfig
+) {
+  const result = {
+    metrics: {
+      tokenizingTime: 0,
+      inferenceTime: 0,
+    },
+    output: [],
+  };
+
+  const texts = request.args?.[0] ?? [];
+  const taskTypes = request.args?.[1] ?? []; // ["query", "page", ...]
+  const domains = request.args?.[2] ?? []; // Optional (needed for "page")
+
+  for (let i = 0; i < texts.length; i++) {
+    const text = texts[i];
+    const task = taskTypes[i] ?? "query";
+    const domain = domains[i] ?? "";
+
+    const startToken = Date.now();
+
+    const encoded = await tokenizer(text, {
+      padding: "max_length",
+      truncation: true,
+      max_length: 64,
+      return_attention_mask: true,
+    });
+    result.metrics.tokenizingTime += Date.now() - startToken;
+    const input_ids = encoded.input_ids.ort_tensor;
+    const attention_mask = encoded.attention_mask.ort_tensor;
+    const domain_vocab = modelConfig["transformers.js_config"].domain_vocab;
+    const domain_id =
+      task === "page" ? await getDomainId(domain, domain_vocab) : 0;
+    // choose Tensor based on WASM or ONNX-NATIVE backend respectively
+    const tensorFactory =
+      config.backend === WASM_BACKEND ? transformers.Tensor : globalThis.Tensor;
+
+    const domain_ids = new tensorFactory(
+      "int64",
+      BigInt64Array.from([BigInt(domain_id)]),
+      [1]
+    );
+    const task_type = new tensorFactory(
+      "int64",
+      BigInt64Array.from([task === "query" ? 0n : 1n]),
+      [1]
+    );
+
+    const inputs = {
+      input_ids,
+      attention_mask,
+      domain_ids,
+      task_type,
+    };
+
+    const startInfer = Date.now();
+    const session = model.sessions.model;
+    const output = await session.run(inputs);
+    result.metrics.inferenceTime += Date.now() - startInfer;
+
+    result.output.push({
+      embedding: Array.from(output.embedding.data),
+      task,
+      domain,
+    });
+  }
+
+  if (result.output.length === 1) {
+    result.output = result.output[0];
+  }
+
+  return result;
+}
+
 /**
  * Configuration for engine. Each task has a configuration object that
  * gets merged at runtime with the options from PipelineOptions.
@@ -269,6 +369,13 @@ const ENGINE_CONFIGURATION = {
     processorId: null,
     processorClass: null,
     pipelineFunction: echo,
+  },
+  "moz-text-to-goal": {
+    modelId: "mozilla/iab-multitask-inference",
+    modelClass: "AutoModel",
+    tokenizerId: "mozilla/iab-multitask-inference",
+    tokenizerClass: "AutoTokenizer",
+    pipelineFunction: textToGoal,
   },
 };
 
@@ -345,6 +452,7 @@ export class ONNXPipeline {
   #config = null;
   #metrics = null;
   #errorFactory = null;
+  #modelConfig = null;
 
   /**
    * Creates an instance of a Pipeline.
@@ -430,6 +538,19 @@ export class ONNXPipeline {
 
     if (config.pipelineFunction && config.taskName != "test-echo") {
       lazy.console.debug("Using internal inference function");
+
+      //moz-text-to-goal customizes feature-extraction
+      if (config.taskName === "moz-text-to-goal") {
+        config.taskName = "feature-extraction";
+        //obtain modelConfig options using AutoConfig
+        this.#modelConfig = transformers.AutoConfig.from_pretrained(
+          config.modelId,
+          { revision: config.modelRevision }
+        );
+        lazy.console.debug(
+          `Switching  config.taskName from  moz-text-to-goal to ${config.taskName}`
+        );
+      }
 
       // use the model revision of the tokenizer or processor don't have one
       if (!config.tokenizerRevision) {
@@ -593,9 +714,13 @@ export class ONNXPipeline {
           lazy.console.debug("Initializing model, tokenizer and processor");
 
           try {
-            [this.#model, this.#tokenizer, this.#processor] = await Promise.all(
-              [this.#model, this.#tokenizer, this.#processor]
-            );
+            [this.#model, this.#tokenizer, this.#processor, this.#modelConfig] =
+              await Promise.all([
+                this.#model,
+                this.#tokenizer,
+                this.#processor,
+                this.#modelConfig,
+              ]);
             this.#isReady = true;
           } catch (error) {
             lazy.console.debug("Error initializing pipeline", error);
@@ -761,7 +886,8 @@ export class ONNXPipeline {
         this.#model,
         this.#tokenizer,
         this.#processor,
-        this.#config
+        this.#config,
+        this.#modelConfig
       );
     }
     await this.#metricsSnapShot({ name: "runEnd" });

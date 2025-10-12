@@ -88,6 +88,14 @@ newtab-confirm-delete-history-p2 = Бұл әрекетті болдырмау м
 
 newtab-topsite-sponsored = Демеуленген
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (бекітілген)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -310,16 +318,28 @@ newtab-custom-pocket-subtitle = { -brand-product-name } отбасының мү�
 newtab-custom-stories-toggle =
     .label = Ұсынылатын оқиғалар
     .description = { -brand-product-name } жетекшілік ететін тамаша құрама
+newtab-custom-stories-personalized-toggle =
+    .label = Әңгімелер
 newtab-custom-pocket-sponsored = Демеушілер мақалалары
 newtab-custom-pocket-show-recent-saves = Соңғы сақтауларды көрсету
 newtab-custom-recent-title = Жуырдағы белсенділік
 newtab-custom-recent-subtitle = Жуырдағы сайттар мен құрама таңдауы
-newtab-custom-recent-toggle =
-    .label = Жуырдағы белсенділік
-    .description = Жуырдағы сайттар мен құрама таңдауы
 newtab-custom-weather-toggle =
     .label = Ауа райы
     .description = Бүгінге қысқа болжам
+newtab-custom-widget-weather-toggle =
+    .label = Ауа райы
+newtab-custom-widget-trending-search-toggle =
+    .label = Трендтік іздеулер
+newtab-custom-widget-lists-toggle =
+    .label = Тізімдер
+newtab-custom-widget-timer-toggle =
+    .label = Таймер
+newtab-custom-widget-section-title = Виджеттер
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Жабу
+    .aria-label = Мәзірді жабу
 newtab-custom-close-button = Жабу
 newtab-custom-settings = Көбірек баптауларды басқару
 
@@ -332,6 +352,7 @@ newtab-wallpaper-custom-color = Түсті таңдау
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Сурет файл өлшемі шегінен { $file_size } МБ асып кетті. Шағындау файлды жүктеп салып көріңіз.
+newtab-wallpaper-error-upload-file-type = Файлыңызды жүктеп жіберу мүмкін болмады. Сурет файлымен әрекетті қайталаңыз.
 newtab-wallpaper-error-file-type = Файлыңызды жүктеп жіберу мүмкін болмады. Басқа файл түрімен әрекетті қайталаңыз.
 newtab-wallpaper-light-red-panda = Қызыл панда
 newtab-wallpaper-light-mountain = Ақ тау
@@ -437,7 +458,6 @@ newtab-weather-menu-change-location = Орналасуды ауыстыру
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Орналасуды іздеу
     .aria-label = Орналасуды іздеу
-newtab-weather-change-location-search-input = Орналасуды іздеу
 newtab-weather-menu-weather-display = Ауа райын көрсету
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -562,6 +582,81 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Google-да әйгілі
+newtab-trending-searches-show-trending =
+    .title = Трендтік іздеулерді көрсету
+newtab-trending-searches-hide-trending =
+    .title = Трендтік іздеулерді жасыру
 newtab-trending-searches-learn-more = Көбірек білу
+newtab-trending-searches-dismiss = Трендтік іздеулерді жасыру
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Трендтік іздеулер
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Мүмкіндіктер шексіз. Біреуін қосыңыз.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Жаңа
+newtab-widget-lists-label-beta =
+    .label = Бета
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Аяқталған ({ $number })
+newtab-widget-task-list-menu-copy = Көшіріп алу
+newtab-widget-lists-menu-edit = Тізім атауын түзету
+newtab-widget-lists-menu-create = Жаңа тізімді жасау
+newtab-widget-lists-menu-delete = Бұл тізімді өшіру
+newtab-widget-lists-menu-copy = Тізімді алмасу буферіне көшіру
+newtab-widget-lists-menu-hide = Барлық тізімдерді жасыру
+newtab-widget-lists-menu-learn-more = Көбірек білу
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Элементті қосу
+newtab-widget-lists-input-error = Элемент қосу үшін мәтінді қосыңыз.
+newtab-widget-lists-input-menu-open-link = Сілтемені ашу
+newtab-widget-lists-input-menu-move-up = Жоғары жылжыту
+newtab-widget-lists-input-menu-move-down = Төмен жылжыту
+newtab-widget-lists-input-menu-delete = Өшіру
+newtab-widget-lists-input-menu-edit = Түзету
+newtab-widget-lists-name-label-default =
+    .label = Тапсырмалар тізімі
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Тапсырмалар тізімі
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Жаңа тізім
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Таймер
+newtab-widget-timer-notification-focus = Фокустау уақыты аяқталды. Жақсы жұмыс. Үзіліс керек пе?
+newtab-widget-timer-notification-break = Сіздің үзілісіңіз аяқталды. Фокустауға дайынсыз ба?
+newtab-widget-timer-notification-warning = Хабарламалар сөндірулі
+newtab-widget-timer-mode-focus =
+    .label = Фокустау
+newtab-widget-timer-mode-break =
+    .label = Үзіліс
+newtab-widget-timer-play =
+    .title = Ойнату
+newtab-widget-timer-pause =
+    .title = Аялдату
+newtab-widget-timer-label-play =
+    .label = Ойнату
+newtab-widget-timer-label-pause =
+    .label = Аялдату
+newtab-widget-timer-reset =
+    .title = Тастау
+newtab-widget-timer-menu-notifications = Хабарламаларды сөндіру
+newtab-widget-timer-menu-notifications-on = Хабарламаларды іске қосу
+newtab-widget-timer-menu-hide = Таймерді жасыру
+newtab-widget-timer-menu-learn-more = Көбірек білу
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Қосымша ақпарат алу үшін айналдырыңыз
+newtab-widget-message-title = Тізімдер мен кірістірілген таймер арқылы назарыңызды сақтаңыз
+newtab-promo-card-title = { -brand-product-name } қолдау
+newtab-promo-card-cta = Көбірек білу
+newtab-promo-card-dismiss-button =
+    .title = Елемеу
+    .aria-label = Елемеу

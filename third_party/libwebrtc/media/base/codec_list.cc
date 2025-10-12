@@ -23,9 +23,6 @@
 
 namespace webrtc {
 
-using webrtc::RTCError;
-using webrtc::RTCErrorOr;
-using webrtc::RTCErrorType;
 
 namespace {
 
@@ -36,14 +33,17 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
   for (size_t i = 0; i < codecs.size(); i++) {
     const Codec& codec = codecs[i];
     if (codec.id != Codec::kIdNotSet) {
-      bool inserted = pt_to_index.insert({codec.id, i}).second;
-      if (!inserted) {
+      auto [it, success] = pt_to_index.insert({codec.id, i});
+      if (!success) {
+        RTC_LOG(LS_ERROR) << "Duplicate payload type in codec list, " << codec
+                          << " and " << codecs[it->second]
+                          << " have the same ID";
         LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                              "Duplicate payload type in codec list");
       }
     }
   }
-  for (const webrtc::Codec& codec : codecs) {
+  for (const Codec& codec : codecs) {
     switch (codec.GetResiliencyType()) {
       case Codec::ResiliencyType::kRed:
         // Check that the target codec exists
@@ -71,7 +71,7 @@ RTCError CheckInputConsistency(const std::vector<Codec>& codecs) {
           break;
         }
         int associated_pt;
-        if (!(webrtc::FromString(apt_it->second, &associated_pt))) {
+        if (!(FromString(apt_it->second, &associated_pt))) {
           RTC_LOG(LS_ERROR) << "Non-numeric argument to rtx apt: " << codec
                             << " apt=" << apt_it->second;
           LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,

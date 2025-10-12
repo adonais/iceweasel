@@ -31,8 +31,7 @@
 namespace webrtc {
 
 DtlsStunPiggybackController::DtlsStunPiggybackController(
-    absl::AnyInvocable<void(webrtc::ArrayView<const uint8_t>)>
-        dtls_data_callback)
+    absl::AnyInvocable<void(ArrayView<const uint8_t>)> dtls_data_callback)
     : dtls_data_callback_(std::move(dtls_data_callback)) {}
 
 DtlsStunPiggybackController::~DtlsStunPiggybackController() {}
@@ -57,6 +56,17 @@ void DtlsStunPiggybackController::SetDtlsHandshakeComplete(bool is_dtls_client,
     return;
   }
   state_ = State::PENDING;
+}
+
+void DtlsStunPiggybackController::SetDtlsFailed() {
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
+
+  if (state_ == State::TENTATIVE || state_ == State::CONFIRMED ||
+      state_ == State::PENDING) {
+    RTC_LOG(LS_INFO)
+        << "DTLS-STUN piggybacking DTLS failed during negotiation.";
+  }
+  state_ = State::OFF;
 }
 
 void DtlsStunPiggybackController::CapturePacket(ArrayView<const uint8_t> data) {

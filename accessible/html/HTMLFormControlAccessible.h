@@ -40,7 +40,7 @@ class HTMLRadioButtonAccessible : public RadioButtonAccessible {
                                      int32_t* aSetSize) override;
 
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
+                                   AttrModType aModType,
                                    const nsAttrValue* aOldValue,
                                    uint64_t aOldState) override;
 
@@ -75,7 +75,7 @@ class HTMLButtonAccessible : public HyperTextAccessible {
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
+                                   AttrModType aModType,
                                    const nsAttrValue* aOldValue,
                                    uint64_t aOldState) override;
 };
@@ -121,7 +121,7 @@ class HTMLTextFieldAccessible : public HyperTextAccessible {
   virtual ENameValueFlag Name(nsString& aName) const override;
 
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
+                                   AttrModType aModType,
                                    const nsAttrValue* aOldValue,
                                    uint64_t aOldState) override;
 };
@@ -262,7 +262,7 @@ class HTMLFormAccessible : public HyperTextAccessible {
 
  protected:
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
+                                   AttrModType aModType,
                                    const nsAttrValue* aOldValue,
                                    uint64_t aOldState) override;
 
@@ -303,7 +303,7 @@ class HTMLProgressAccessible : public LeafAccessible {
   virtual ~HTMLProgressAccessible() {}
 
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
+                                   AttrModType aModType,
                                    const nsAttrValue* aOldValue,
                                    uint64_t aOldState) override;
 };
@@ -351,7 +351,7 @@ class HTMLMeterAccessible : public LeafAccessible {
   virtual ~HTMLMeterAccessible() {}
 
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
+                                   AttrModType aModType,
                                    const nsAttrValue* aOldValue,
                                    uint64_t aOldState) override;
 };

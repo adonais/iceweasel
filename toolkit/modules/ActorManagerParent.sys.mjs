@@ -472,14 +472,17 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
-  PopupBlocking: {
+  PopupAndRedirectBlocking: {
     parent: {
-      esModuleURI: "resource://gre/actors/PopupBlockingParent.sys.mjs",
+      esModuleURI:
+        "resource://gre/actors/PopupAndRedirectBlockingParent.sys.mjs",
     },
     child: {
-      esModuleURI: "resource://gre/actors/PopupBlockingChild.sys.mjs",
+      esModuleURI:
+        "resource://gre/actors/PopupAndRedirectBlockingChild.sys.mjs",
       events: {
         DOMPopupBlocked: { capture: true },
+        DOMRedirectBlocked: { capture: true },
         // Only listen for the `pageshow` event after the actor has already been
         // created for some other reason.
         pageshow: { createActor: false },
@@ -707,7 +710,7 @@ if (AppConstants.platform != "android") {
         MozTogglePictureInPicture: { capture: true },
       },
     },
-
+    messageManagerGroups: ["browsers"],
     allFrames: true,
   };
 
@@ -718,7 +721,7 @@ if (AppConstants.platform != "android") {
     child: {
       esModuleURI: "resource://gre/actors/PictureInPictureChild.sys.mjs",
     },
-
+    messageManagerGroups: ["browsers", "pip-player"],
     allFrames: true,
   };
 
@@ -733,7 +736,7 @@ if (AppConstants.platform != "android") {
         contextmenu: { capture: true },
       },
     },
-
+    messageManagerGroups: ["browsers"],
     allFrames: true,
   };
 }

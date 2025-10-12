@@ -203,8 +203,7 @@ nsDisplayWrapList* ViewportFrame::MaybeWrapTopLayerList(
   // Wrap the whole top layer in a single item with maximum z-index,
   // and append it at the very end, so that it stays at the topmost.
   nsDisplayWrapList* wrapList = MakeDisplayItemWithIndex<nsDisplayWrapper>(
-      aBuilder, this, aIndex, &aTopLayerList,
-      aBuilder->CurrentActiveScrolledRoot(), false);
+      aBuilder, this, aIndex, &aTopLayerList, false);
   if (!wrapList) {
     return nullptr;
   }

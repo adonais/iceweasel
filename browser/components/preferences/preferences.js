@@ -155,7 +155,7 @@ function register_module(categoryName, categoryObject) {
   gCategoryInits.set(categoryName, {
     _initted: false,
     init() {
-      let startTime = performance.now();
+      let startTime = ChromeUtils.now();
       if (this._initted) {
         return;
       }

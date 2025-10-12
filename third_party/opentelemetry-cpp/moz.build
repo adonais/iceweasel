@@ -9,8 +9,7 @@ DIRS += [
 ]
 
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["exporters/memory"]
+TEST_DIRS += ["exporters/memory"]
 
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Gecko Trace")

@@ -205,9 +205,6 @@ tags = "os_integration"
 
 ["browser_not_collect_when_idle.js"]
 
-["browser_old_favicon.js"]
-https_first_disabled = true
-
 ["browser_page_title.js"]
 
 ["browser_parentProcessRestoreHash.js"]
@@ -322,6 +319,9 @@ skip-if = [
 ["browser_tab_groups_restore_closed_in_open_window.js"]
 
 ["browser_tab_groups_restore_closed_many_tabs.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1954300
+]
 
 ["browser_tab_groups_restore_multiple.js"]
 

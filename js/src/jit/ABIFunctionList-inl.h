@@ -175,6 +175,7 @@ namespace jit {
   _(js::jit::PostGlobalWriteBarrier)                                           \
   _(js::jit::PostWriteBarrier)                                                 \
   _(js::jit::PostWriteElementBarrier)                                          \
+  _(js::jit::PreserveWrapper)                                                  \
   _(js::jit::Printf0)                                                          \
   _(js::jit::Printf1)                                                          \
   _(js::jit::StringFromCharCodeNoGC)                                           \

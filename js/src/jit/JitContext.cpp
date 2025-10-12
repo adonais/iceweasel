@@ -109,6 +109,9 @@ bool jit::InitializeJit() {
 #ifdef JS_CODEGEN_ARM64
   // Initialize instruction cache flushing.
   vixl::CPU::SetUp();
+
+  // Initialize supported CPU features.
+  ARM64Flags::Init();
 #endif
 
 #ifndef JS_CODEGEN_NONE

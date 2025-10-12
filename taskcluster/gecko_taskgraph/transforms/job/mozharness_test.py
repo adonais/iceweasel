@@ -109,7 +109,7 @@ def mozharness_test_on_docker(config, job, taskdesc):
     worker["loopback-audio"] = test["loopback-audio"]
     worker["max-run-time"] = test["max-run-time"]
     worker["retry-exit-status"] = test["retry-exit-status"]
-    if "android-em-7.0-x86" in test["test-platform"]:
+    if "android-em-" in test["test-platform"]:
         worker["kvm"] = True
 
     artifacts = [

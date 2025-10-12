@@ -94,6 +94,17 @@ def extract_info_from_mozbuild(command_context, paths):
             module_name = os.path.basename(module_path)
             keystr = "/".join(key.split(".")) + "/" if key else ""
             resource_suffix = "modules/" + keystr + module_name
+            # Handle aliases for modules in services/.
+            if module_path.startswith("services/common/"):
+                urlmap["resource://services-common/" + module_name] = newurl
+            elif module_path.startswith("services/crypto/"):
+                urlmap["resource://services-crypto/" + module_name] = newurl
+            elif module_path.startswith("services/settings/"):
+                urlmap["resource://services-settings/" + module_name] = newurl
+            elif module_path.startswith("services/sync/"):
+                urlmap["resource://services-sync/" + module_name] = newurl
+
+            # Handle standard resource URLs.
             if is_browser:
                 urlmap["resource:///" + resource_suffix] = newurl
             else:
@@ -104,7 +115,7 @@ def extract_info_from_mozbuild(command_context, paths):
     return mozbuilds_for_fixing, urlmap
 
 
-extra_js_modules_re = re.compile('EXTRA_JS_MODULES(["\\.\\w/\\[\\]]*) [+=]+')
+extra_js_modules_re = re.compile('EXTRA_JS_MODULES(["\\.\\w/\\[\\]-]*) [+=]+')
 
 
 def rewrite_mozbuilds(mozbuilds):

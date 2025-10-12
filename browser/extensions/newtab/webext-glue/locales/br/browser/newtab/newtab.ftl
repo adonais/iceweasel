@@ -291,9 +291,6 @@ newtab-custom-pocket-sponsored = Istorioù paeroniet
 newtab-custom-pocket-show-recent-saves = Diskouez an enrolladennoù diwezhañ
 newtab-custom-recent-title = Oberiantiz nevesañ
 newtab-custom-recent-subtitle = Un dibab lec'hiennoù ha danvezioù nevez
-newtab-custom-recent-toggle =
-    .label = Oberiantiz nevesañ
-    .description = Un dibab lec'hiennoù ha danvezioù nevez
 newtab-custom-close-button = Serriñ
 newtab-custom-settings = Merañ muioc'h a arventennoù
 
@@ -378,7 +375,6 @@ newtab-weather-menu-change-location = Cheñch al lec’h
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Klask ul lec’h
     .aria-label = Klask ul lec’h
-newtab-weather-change-location-search-input = Klask ul lec’h
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"

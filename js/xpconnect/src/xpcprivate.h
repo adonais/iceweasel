@@ -2449,6 +2449,14 @@ nsresult GetSandboxMetadata(JSContext* cx, JS::HandleObject sandboxArg,
                                           JS::HandleObject sandboxArg,
                                           JS::HandleValue metadata);
 
+[[nodiscard]] nsresult SetSandboxLocaleOverride(JSContext* cx,
+                                                JS::HandleObject sandboxArg,
+                                                const char* locale);
+
+[[nodiscard]] nsresult SetSandboxTimezoneOverride(JSContext* cx,
+                                                  JS::HandleObject sandboxArg,
+                                                  const char* timezone);
+
 bool CreateObjectIn(JSContext* cx, JS::HandleValue vobj,
                     CreateObjectInOptions& options,
                     JS::MutableHandleValue rval);

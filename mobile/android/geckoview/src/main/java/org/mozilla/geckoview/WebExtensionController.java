@@ -30,6 +30,10 @@ import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.geckoview.WebExtension.InstallException;
 
+/**
+ * Controller for managing WebExtensions within a GeckoRuntime instance. Provides functionality for
+ * installing, uninstalling, enabling, disabling, and managing delegates for WebExtensions.
+ */
 public class WebExtensionController {
   private static final String LOGTAG = "WebExtension";
 
@@ -275,31 +279,6 @@ public class WebExtensionController {
      * Called whenever an updated extension has new permissions. This is intended as an opportunity
      * for the app to prompt the user for the new permissions required by this extension.
      *
-     * @deprecated Use onUpdatePrompt(WebExtension, String[], String[], String[]) to account for
-     *     data collection permissions.
-     * @param currentlyInstalled The {@link WebExtension} that is currently installed.
-     * @param updatedExtension The {@link WebExtension} that will replace the previous extension.
-     * @param newPermissions The new permissions that are needed.
-     * @param newOrigins The new origins that are needed.
-     * @return A {@link GeckoResult} that completes to either {@link AllowOrDeny#ALLOW ALLOW} if
-     *     this extension should be update or {@link AllowOrDeny#DENY DENY} if this extension should
-     *     not be update. A null value will be interpreted as {@link AllowOrDeny#DENY DENY}.
-     */
-    @Nullable
-    @Deprecated
-    @DeprecationSchedule(id = "web-extension-on-update-prompt", version = 144)
-    default GeckoResult<AllowOrDeny> onUpdatePrompt(
-        @NonNull final WebExtension currentlyInstalled,
-        @NonNull final WebExtension updatedExtension,
-        @NonNull final String[] newPermissions,
-        @NonNull final String[] newOrigins) {
-      return null;
-    }
-
-    /**
-     * Called whenever an updated extension has new permissions. This is intended as an opportunity
-     * for the app to prompt the user for the new permissions required by this extension.
-     *
      * @param extension The {@link WebExtension} being updated.
      * @param newPermissions The new permissions that are needed.
      * @param newOrigins The new origins that are needed.
@@ -314,31 +293,6 @@ public class WebExtensionController {
         @NonNull final String[] newPermissions,
         @NonNull final String[] newOrigins,
         @NonNull final String[] newDataCollectionPermissions) {
-      return null;
-    }
-
-    /**
-     * Called whenever permissions are requested. This is intended as an opportunity for the app to
-     * prompt the user for the permissions required by this extension at runtime.
-     *
-     * @deprecated Use onOptionalPrompt(WebExtension, String[], String[], String[]) to account for
-     *     data collection permissions.
-     * @param extension The {@link WebExtension} that is about to be installed. You can use {@link
-     *     WebExtension#metaData} to gather information about this extension when building the user
-     *     prompt dialog.
-     * @param permissions The permissions that are requested.
-     * @param origins The requested host permissions.
-     * @return A {@link GeckoResult} that completes to either {@link AllowOrDeny#ALLOW ALLOW} if the
-     *     request should be approved or {@link AllowOrDeny#DENY DENY} if the request should be
-     *     denied. A null value will be interpreted as {@link AllowOrDeny#DENY DENY}.
-     */
-    @Nullable
-    @Deprecated
-    @DeprecationSchedule(id = "web-extension-on-optional-prompt", version = 144)
-    default GeckoResult<AllowOrDeny> onOptionalPrompt(
-        final @NonNull WebExtension extension,
-        final @NonNull String[] permissions,
-        final @NonNull String[] origins) {
       return null;
     }
 
@@ -366,6 +320,10 @@ public class WebExtensionController {
     }
   }
 
+  /**
+   * Delegate for receiving debugger-related WebExtension events. Used to notify about changes to
+   * extensions during development with tools like web-ext.
+   */
   public interface DebuggerDelegate {
     /**
      * Called whenever the list of installed extensions has been modified using the debugger with
@@ -930,6 +888,7 @@ public class WebExtensionController {
         .accept(result -> unregisterWebExtension(extension));
   }
 
+  /** Defines the possible sources that can enable or disable a WebExtension. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({EnableSource.USER, EnableSource.APP})
   public @interface EnableSources {}
@@ -1264,34 +1223,21 @@ public class WebExtensionController {
   }
 
   private void updatePrompt(final GeckoBundle message, final EventCallback callback) {
-    final WebExtension currentExtension =
-        new WebExtension(mDelegateControllerProvider, message.getBundle("currentlyInstalled"));
-    final WebExtension updatedExtension =
-        new WebExtension(mDelegateControllerProvider, message.getBundle("updatedExtension"));
+    final WebExtension extension =
+        new WebExtension(mDelegateControllerProvider, message.getBundle("extension"));
     final String[] newPermissions = message.getStringArray("newPermissions");
     final String[] newOrigins = message.getStringArray("newOrigins");
+    final String[] newDataCollectionPermissions =
+        message.getStringArray("newDataCollectionPermissions");
 
     if (mPromptDelegate == null) {
-      Log.e(
-          LOGTAG,
-          "Tried to update extension " + currentExtension.id + " but no delegate is registered");
+      Log.e(LOGTAG, "Tried to update extension " + extension.id + " but no delegate is registered");
       return;
     }
 
-    // TODO - Bug 1974744: remove the first call when we remove the deprecated
-    // `onUpdatePrompt` method since this has been done to preserve backward
-    // compatibility.
-    GeckoResult<AllowOrDeny> promptResponse =
+    final GeckoResult<AllowOrDeny> promptResponse =
         mPromptDelegate.onUpdatePrompt(
-            currentExtension, updatedExtension, newPermissions, newOrigins);
-
-    if (promptResponse == null) {
-      final String[] newDataCollectionPermissions =
-          message.getStringArray("newDataCollectionPermissions");
-      promptResponse =
-          mPromptDelegate.onUpdatePrompt(
-              updatedExtension, newPermissions, newOrigins, newDataCollectionPermissions);
-    }
+            extension, newPermissions, newOrigins, newDataCollectionPermissions);
 
     if (promptResponse == null) {
       return;
@@ -1319,21 +1265,12 @@ public class WebExtensionController {
     final String[] permissions =
         message.bundle.getBundle("permissions").getStringArray("permissions");
     final String[] origins = message.bundle.getBundle("permissions").getStringArray("origins");
+    final String[] dataCollectionPermissions =
+        message.bundle.getBundle("permissions").getStringArray("data_collection");
 
-    // TODO - Bug 1972510: remove the first call when we remove the deprecated
-    // `onOptionalPrompt` method since this has been done to preserve backward
-    // compatibility.
-    GeckoResult<AllowOrDeny> promptResponse =
-        mPromptDelegate.onOptionalPrompt(extension, permissions, origins);
-
-    if (promptResponse == null) {
-      final String[] dataCollectionPermissions =
-          message.bundle.getBundle("permissions").getStringArray("data_collection");
-
-      promptResponse =
-          mPromptDelegate.onOptionalPrompt(
-              extension, permissions, origins, dataCollectionPermissions);
-    }
+    final GeckoResult<AllowOrDeny> promptResponse =
+        mPromptDelegate.onOptionalPrompt(
+            extension, permissions, origins, dataCollectionPermissions);
 
     if (promptResponse == null) {
       return;
@@ -1912,6 +1849,13 @@ public class WebExtensionController {
     return null;
   }
 
+  /**
+   * Creates a new Download object with the specified ID for tracking WebExtension downloads.
+   *
+   * @param id The unique identifier for the download
+   * @return A new Download object for the specified ID
+   * @throws IllegalArgumentException if a download with this ID already exists
+   */
   @Nullable
   @UiThread
   public WebExtension.Download createDownload(final int id) {

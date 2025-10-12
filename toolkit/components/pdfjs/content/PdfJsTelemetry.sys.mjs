@@ -113,20 +113,26 @@ export class PdfJsTelemetry {
         if (!stats) {
           return;
         }
-        if (data.type === "highlight") {
+
+        if (stats.highlight) {
           const numbers = ["one", "two", "three", "four", "five"];
           Glean.pdfjsEditingHighlight[data.type].add(1);
           Glean.pdfjsEditingHighlight.numberOfColors[
-            numbers[stats.highlight.numberOfColors - 1]
+            numbers[
+              Math.min(
+                Math.max(1, stats.highlight.numberOfColors),
+                numbers.length
+              ) - 1
+            ]
           ].add(1);
-          return;
         }
         if (stats.stamp) {
           this.onImage({
             action: "pdfjs.image.added",
             data: stats.stamp,
           });
-        } else if (stats.signature) {
+        }
+        if (stats.signature) {
           this.onSignature({
             action: "pdfjs.signature.added",
             data: stats.signature,

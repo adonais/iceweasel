@@ -202,9 +202,6 @@ static Result BuildCertChainForOneKeyUsage(
 }
 
 void CertVerifier::LoadKnownCTLogs() {
-  if (mCTConfig.mMode == CertificateTransparencyMode::Disabled) {
-    return;
-  }
   mCTVerifier = MakeUnique<MultiLogCTVerifier>();
   for (const CTLogInfo& log : kCTLogList) {
     Input publicKey;
@@ -343,24 +340,6 @@ Result CertVerifier::VerifyCertificateTransparencyPolicyInner(
     NSSCertDBTrustDomain& trustDomain,
     const nsTArray<nsTArray<uint8_t>>& builtChain, Input sctsFromTLS, Time time,
     /*optional out*/ CertificateTransparencyInfo* ctInfo) {
-  Input embeddedSCTs = trustDomain.GetSCTListFromCertificate();
-  if (embeddedSCTs.GetLength() > 0) {
-    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-            ("Got embedded SCT data of length %zu\n",
-             static_cast<size_t>(embeddedSCTs.GetLength())));
-  }
-  Input sctsFromOCSP = trustDomain.GetSCTListFromOCSPStapling();
-  if (sctsFromOCSP.GetLength() > 0) {
-    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-            ("Got OCSP SCT data of length %zu\n",
-             static_cast<size_t>(sctsFromOCSP.GetLength())));
-  }
-  if (sctsFromTLS.GetLength() > 0) {
-    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-            ("Got TLS SCT data of length %zu\n",
-             static_cast<size_t>(sctsFromTLS.GetLength())));
-  }
-
   if (builtChain.Length() == 1) {
     // Issuer certificate is required for SCT verification.
     // If we've arrived here, we probably have a "trust chain" with only one
@@ -386,29 +365,61 @@ Result CertVerifier::VerifyCertificateTransparencyPolicyInner(
     return rv;
   }
 
-  const nsTArray<uint8_t>& issuerBytes = builtChain.ElementAt(1);
-  Input issuerInput;
-  rv = issuerInput.Init(issuerBytes.Elements(), issuerBytes.Length());
-  if (rv != Success) {
-    return rv;
+  // We evaluated embedded SCTs and SCTs from the TLS handshake before we
+  // performed revocation checks, and we should have a cached CTVerifyResult in
+  // the trust domain. If we later received SCTs from OCSP (very rare), then
+  // we'll re-check all of the SCTs. Otherwise we'll use the cached
+  // CTVerifyResult.
+  Input sctsFromOCSP = trustDomain.GetSCTListFromOCSPStapling();
+  if (sctsFromOCSP.GetLength() > 0) {
+    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+            ("Got OCSP SCT data of length %zu",
+             static_cast<size_t>(sctsFromOCSP.GetLength())));
   }
-
-  BackCert issuerBackCert(issuerInput, EndEntityOrCA::MustBeCA, nullptr);
-  rv = issuerBackCert.Init();
-  if (rv != Success) {
-    return rv;
-  }
-  Input issuerPublicKeyInput = issuerBackCert.GetSubjectPublicKeyInfo();
 
   CTVerifyResult result;
-  rv = mCTVerifier->Verify(endEntityInput, issuerPublicKeyInput, embeddedSCTs,
-                           sctsFromOCSP, sctsFromTLS, time,
-                           trustDomain.GetDistrustAfterTime(), result);
-  if (rv != Success) {
-    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-            ("SCT verification failed with fatal error %" PRId32 "\n",
-             static_cast<uint32_t>(rv)));
-    return rv;
+  if (trustDomain.GetCachedCTVerifyResult().isSome() &&
+      sctsFromOCSP.GetLength() == 0) {
+    result = trustDomain.GetCachedCTVerifyResult().extract();
+  } else {
+    // invalidate the cached result if it exists
+    trustDomain.GetCachedCTVerifyResult().reset();
+
+    Input embeddedSCTs = trustDomain.GetSCTListFromCertificate();
+    if (embeddedSCTs.GetLength() > 0) {
+      MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+              ("Got embedded SCT data of length %zu",
+               static_cast<size_t>(embeddedSCTs.GetLength())));
+    }
+    if (sctsFromTLS.GetLength() > 0) {
+      MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+              ("Got TLS SCT data of length %zu",
+               static_cast<size_t>(sctsFromTLS.GetLength())));
+    }
+
+    const nsTArray<uint8_t>& issuerBytes = builtChain.ElementAt(1);
+    Input issuerInput;
+    rv = issuerInput.Init(issuerBytes.Elements(), issuerBytes.Length());
+    if (rv != Success) {
+      return rv;
+    }
+
+    BackCert issuerBackCert(issuerInput, EndEntityOrCA::MustBeCA, nullptr);
+    rv = issuerBackCert.Init();
+    if (rv != Success) {
+      return rv;
+    }
+    Input issuerPublicKeyInput = issuerBackCert.GetSubjectPublicKeyInfo();
+
+    rv = mCTVerifier->Verify(endEntityInput, issuerPublicKeyInput, embeddedSCTs,
+                             sctsFromOCSP, sctsFromTLS, time,
+                             trustDomain.GetDistrustAfterTime(), result);
+    if (rv != Success) {
+      MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+              ("SCT verification failed with fatal error %" PRId32 "\n",
+               static_cast<uint32_t>(rv)));
+      return rv;
+    }
   }
 
   if (MOZ_LOG_TEST(gCertVerifierLog, LogLevel::Debug)) {
@@ -569,8 +580,8 @@ Result CertVerifier::VerifyCert(
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
           mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
           originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          mThirdPartyIntermediateInputs, extraCertificates, sctsFromTLSInput,
+          mCTVerifier, builtChain, nullptr, nullptr);
       rv = BuildCertChain(
           trustDomain, certDER, time, EndEntityOrCA::MustBeEndEntity,
           KeyUsage::digitalSignature, KeyPurposeId::id_kp_clientAuth,
@@ -602,8 +613,8 @@ Result CertVerifier::VerifyCert(
             mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
             mCertShortLifetimeInDays, MIN_RSA_BITS, mCRLiteMode,
             originAttributes, mThirdPartyRootInputs,
-            mThirdPartyIntermediateInputs, extraCertificates, builtChain,
-            pinningTelemetryInfo, hostname);
+            mThirdPartyIntermediateInputs, extraCertificates, sctsFromTLSInput,
+            mCTVerifier, builtChain, pinningTelemetryInfo, hostname);
         rv = BuildCertChainForOneKeyUsage(
             trustDomain, certDER, time,
             KeyUsage::digitalSignature,  // (EC)DHE
@@ -664,8 +675,8 @@ Result CertVerifier::VerifyCert(
             mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
             mCertShortLifetimeInDays, keySizeOptions[i], mCRLiteMode,
             originAttributes, mThirdPartyRootInputs,
-            mThirdPartyIntermediateInputs, extraCertificates, builtChain,
-            pinningTelemetryInfo, hostname);
+            mThirdPartyIntermediateInputs, extraCertificates, sctsFromTLSInput,
+            mCTVerifier, builtChain, pinningTelemetryInfo, hostname);
         rv = BuildCertChainForOneKeyUsage(
             trustDomain, certDER, time,
             KeyUsage::digitalSignature,  //(EC)DHE
@@ -726,8 +737,8 @@ Result CertVerifier::VerifyCert(
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
           mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
           originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          mThirdPartyIntermediateInputs, extraCertificates, sctsFromTLSInput,
+          mCTVerifier, builtChain, nullptr, nullptr);
       rv = BuildCertChain(trustDomain, certDER, time, EndEntityOrCA::MustBeCA,
                           KeyUsage::keyCertSign, purpose,
                           CertPolicyId::anyPolicy, stapledOCSPResponse);
@@ -744,8 +755,8 @@ Result CertVerifier::VerifyCert(
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
           mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
           originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          mThirdPartyIntermediateInputs, extraCertificates, sctsFromTLSInput,
+          mCTVerifier, builtChain, nullptr, nullptr);
       rv = BuildCertChain(
           trustDomain, certDER, time, EndEntityOrCA::MustBeEndEntity,
           KeyUsage::digitalSignature, KeyPurposeId::id_kp_emailProtection,
@@ -772,8 +783,8 @@ Result CertVerifier::VerifyCert(
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
           mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
           originAttributes, mThirdPartyRootInputs,
-          mThirdPartyIntermediateInputs, extraCertificates, builtChain, nullptr,
-          nullptr);
+          mThirdPartyIntermediateInputs, extraCertificates, sctsFromTLSInput,
+          mCTVerifier, builtChain, nullptr, nullptr);
       rv = BuildCertChain(trustDomain, certDER, time,
                           EndEntityOrCA::MustBeEndEntity,
                           KeyUsage::keyEncipherment,  // RSA

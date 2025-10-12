@@ -7,6 +7,7 @@
 #ifndef nsGlobalWindowCommands_h__
 #define nsGlobalWindowCommands_h__
 
+#include "nsStringFwd.h"
 #include "nscore.h"
 
 namespace mozilla::layers {
@@ -17,8 +18,7 @@ class nsControllerCommandTable;
 
 class nsWindowCommandRegistration {
  public:
-  static nsresult RegisterWindowCommands(
-      nsControllerCommandTable* aCommandTable);
+  static void RegisterWindowCommands(nsControllerCommandTable* aCommandTable);
 };
 
 class nsGlobalWindowCommands {
@@ -34,7 +34,7 @@ class nsGlobalWindowCommands {
    * null
    * @returns whether a keyboard action was found or not
    */
-  static bool FindScrollCommand(const char* aCommandName,
+  static bool FindScrollCommand(const nsACString& aCommandName,
                                 KeyboardScrollAction* aOutAction);
 };
 

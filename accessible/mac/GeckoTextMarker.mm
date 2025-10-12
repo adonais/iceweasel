@@ -429,6 +429,13 @@ static void AppendTextToAttributedString(
 
 static RefPtr<AccAttributes> GetTextAttributes(TextLeafPoint aPoint) {
   RefPtr<AccAttributes> attrs = aPoint.GetTextAttributes();
+  if (!attrs) {
+    // If we can't fetch text attributes for the given point, return null.
+    // We avoid creating a new AccAttributes here because our AttributedText()
+    // code below relies on this null return value to indicate we're dealing
+    // with a non-text control.
+    return nullptr;
+  }
   // Mac expects some object properties to be exposed as text attributes. We
   // add these here rather than in utils::StringAttributesFromAccAttributes so
   // we can use AccAttributes::Equal to determine whether we need to start a new

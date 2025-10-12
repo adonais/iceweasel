@@ -646,7 +646,7 @@ nsMathMLmtableWrapperFrame::~nsMathMLmtableWrapperFrame() = default;
 
 nsresult nsMathMLmtableWrapperFrame::AttributeChanged(int32_t aNameSpaceID,
                                                       nsAtom* aAttribute,
-                                                      int32_t aModType) {
+                                                      AttrModType aModType) {
   // Attributes specific to <mtable>:
   // frame         : in mathml.css
   // framespacing  : here
@@ -1020,7 +1020,7 @@ nsMathMLmtrFrame::~nsMathMLmtrFrame() = default;
 
 nsresult nsMathMLmtrFrame::AttributeChanged(int32_t aNameSpaceID,
                                             nsAtom* aAttribute,
-                                            int32_t aModType) {
+                                            AttrModType aModType) {
   // Attributes specific to <mtr>:
   // groupalign  : Not yet supported.
   // rowalign    : Here
@@ -1073,7 +1073,7 @@ void nsMathMLmtdFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 nsresult nsMathMLmtdFrame::AttributeChanged(int32_t aNameSpaceID,
                                             nsAtom* aAttribute,
-                                            int32_t aModType) {
+                                            AttrModType aModType) {
   // Attributes specific to <mtd>:
   // groupalign  : Not yet supported
   // rowalign    : here

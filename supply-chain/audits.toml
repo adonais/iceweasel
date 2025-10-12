@@ -839,6 +839,11 @@ criteria = "safe-to-deploy"
 delta = "0.7.2 -> 0.7.6"
 notes = "Manually verified new unsafe pointer arithmetic."
 
+[[audits.ascii]]
+who = "Glenn Watson <git@chillybin.org>"
+criteria = "safe-to-deploy"
+version = "1.1.0"
+
 [[audits.ash]]
 who = "Jim Blandy <jimb@red-bean.com>"
 criteria = "safe-to-deploy"
@@ -1052,6 +1057,19 @@ delta = "0.69.1 -> 0.69.2"
 who = "Emilio Cobos Álvarez <emilio@crisal.io>"
 criteria = "safe-to-deploy"
 delta = "0.69.2 -> 0.69.4"
+
+[[audits.bindgen]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "0.69.4 -> 0.72.0"
+notes = "I'm the primary maintainer of this crate."
+
+[[audits.bindgen]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "0.72.0 -> 0.72.0@git:9366e0af8da529c958b4cd4fcbe492d951c86f5c"
+importable = false
+notes = "Authored or reviewed all relevant changes upstream."
 
 [[audits.bit-set]]
 who = "Aria Beingessner <a.beingessner@gmail.com>"
@@ -1294,6 +1312,11 @@ who = "Mark Hammond <mhammond@skippinet.com.au>"
 criteria = "safe-to-deploy"
 delta = "0.4.19 -> 0.4.40"
 notes = "Significant refactor of both implementation and dependencies."
+
+[[audits.chunked_transfer]]
+who = "Glenn Watson <git@chillybin.org>"
+criteria = "safe-to-deploy"
+delta = "1.4.1 -> 1.5.0"
 
 [[audits.circular]]
 who = "Alex Franchuk <afranchuk@mozilla.com>"
@@ -1727,6 +1750,11 @@ who = "Matthew Gregan <kinetik@flim.org>"
 criteria = "safe-to-deploy"
 delta = "0.13.0 -> 0.29.0"
 
+[[audits.cubeb]]
+who = "Matthew Gregan <kinetik@flim.org>"
+criteria = "safe-to-deploy"
+delta = "0.29.0 -> 0.30.1"
+
 [[audits.cubeb-backend]]
 who = "Matthew Gregan <kinetik@flim.org>"
 criteria = "safe-to-deploy"
@@ -1767,6 +1795,11 @@ delta = "0.12.0 -> 0.13.0"
 who = "Matthew Gregan <kinetik@flim.org>"
 criteria = "safe-to-deploy"
 delta = "0.13.0 -> 0.29.0"
+
+[[audits.cubeb-backend]]
+who = "Matthew Gregan <kinetik@flim.org>"
+criteria = "safe-to-deploy"
+delta = "0.29.0 -> 0.30.1"
 
 [[audits.cubeb-core]]
 who = "Matthew Gregan <kinetik@flim.org>"
@@ -1814,6 +1847,11 @@ who = "Matthew Gregan <kinetik@flim.org>"
 criteria = "safe-to-deploy"
 delta = "0.13.0 -> 0.29.0"
 
+[[audits.cubeb-core]]
+who = "Matthew Gregan <kinetik@flim.org>"
+criteria = "safe-to-deploy"
+delta = "0.29.0 -> 0.30.1"
+
 [[audits.cubeb-sys]]
 who = "Matthew Gregan <kinetik@flim.org>"
 criteria = "safe-to-deploy"
@@ -1854,6 +1892,11 @@ delta = "0.12.0 -> 0.13.0"
 who = "Matthew Gregan <kinetik@flim.org>"
 criteria = "safe-to-deploy"
 delta = "0.13.0 -> 0.29.0"
+
+[[audits.cubeb-sys]]
+who = "Matthew Gregan <kinetik@flim.org>"
+criteria = "safe-to-deploy"
+delta = "0.29.0 -> 0.30.1"
 
 [[audits.d3d12]]
 who = "Jim Blandy <jimb@red-bean.com>"
@@ -3047,6 +3090,28 @@ who = "Makoto Kato <m_kato@ga2.so-net.ne.jp>"
 criteria = "safe-to-deploy"
 delta = "2.0.0-beta2 -> 2.0.0"
 
+[[audits.icu_casemap]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+delta = "2.0.0-beta2 -> 2.0.0"
+
+[[audits.icu_casemap_data]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+delta = "2.0.0-beta2 -> 2.0.0"
+
+[[audits.icu_collator]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+delta = "2.0.0-beta2 -> 2.0.0"
+notes = "I authored the substantive upstream changes in this version delta."
+
+[[audits.icu_collator_data]]
+who = "Henri Sivonen <hsivonen@hsivonen.fi>"
+criteria = "safe-to-deploy"
+version = "2.0.0"
+notes = "ZeroVec family datastructures are initialized from unchecked data, so soundness depends on databake having worked properly."
+
 [[audits.icu_collections]]
 who = "Makoto Kato <m_kato@ga2.so-net.ne.jp>"
 criteria = "safe-to-deploy"
@@ -3477,6 +3542,31 @@ delta = "0.2.147 -> 0.2.148"
 who = "Alex Franchuk <afranchuk@mozilla.com>"
 criteria = "safe-to-deploy"
 delta = "0.2.154 -> 0.2.158"
+
+[[audits.libcrux-hacl-rs]]
+who = "Dana Keeler <dkeeler@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.0.3"
+
+[[audits.libcrux-macros]]
+who = "Dana Keeler <dkeeler@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.0.3"
+
+[[audits.libcrux-p256]]
+who = "Dana Keeler <dkeeler@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.0.3"
+
+[[audits.libcrux-sha2]]
+who = "Dana Keeler <dkeeler@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.0.3"
+
+[[audits.libcrux-traits]]
+who = "Dana Keeler <dkeeler@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.0.3"
 
 [[audits.libloading]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
@@ -4109,10 +4199,11 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Jim Blandy <jimb@red-bean.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:54be6a2b5b780e356976ef7e30d00244f2bad651"
+delta = "26.0.0 -> 26.0.0@git:c488bbe60447d28736c26c82a32cd87794b3bf1d"
 importable = false
 
 [[audits.net2]]
@@ -5371,6 +5462,12 @@ criteria = "safe-to-deploy"
 delta = "0.9.3 -> 0.9.4"
 notes = "Only an update of `indexmap` 1 → 2."
 
+[[audits.sfv]]
+who = "Valentin Gosu <valentin.gosu@gmail.com>"
+criteria = "safe-to-deploy"
+delta = "0.9.4 -> 0.14.0"
+notes = "I have reviewed and published the sfv updates myself."
+
 [[audits.sha1]]
 who = "Dana Keeler <dkeeler@mozilla.com>"
 criteria = "safe-to-deploy"
@@ -5609,6 +5706,22 @@ who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
 delta = "0.2.7 -> 0.2.12"
 
+[[audits.thin-vec]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "0.2.12 -> 0.2.14"
+notes = "Minor API additions, trivial no-std support, and minor inlining tweaks."
+
+[[audits.thin-vec]]
+who = "Emilio Cobos Álvarez <emilio@crisal.io>"
+criteria = "safe-to-deploy"
+delta = "0.2.14 -> 0.2.14@git:3b4d5c838eacf5e2156d89bfdb559b6377bd6c39"
+importable = false
+notes = """
+Main changes are Gecko specific, reviewed in bug 1978229. Other changes are
+minor and look good as well.
+"""
+
 [[audits.thiserror]]
 who = "Mike Hommey <mh+mozilla@glandium.org>"
 criteria = "safe-to-deploy"
@@ -5713,6 +5826,11 @@ delta = "0.2.10 -> 0.2.18"
 who = "Lars Eggert <lars@eggert.org>"
 criteria = "safe-to-deploy"
 delta = "0.2.18 -> 0.2.22"
+
+[[audits.tiny_http]]
+who = "Glenn Watson <git@chillybin.org>"
+criteria = "safe-to-deploy"
+version = "0.12.0"
 
 [[audits.tinystr]]
 who = "Zibi Braniecki <zibi@unicode.org>"
@@ -6279,6 +6397,11 @@ criteria = "safe-to-deploy"
 version = "0.23.0"
 notes = "Maintained by the Glean and Application Services team."
 
+[[audits.uritemplate-next]]
+who = "Kershaw Chang <kershaw@mozilla.com>"
+criteria = "safe-to-deploy"
+version = "0.2.0"
+
 [[audits.url]]
 who = "Valentin Gosu <valentin.gosu@gmail.com>"
 criteria = "safe-to-deploy"
@@ -6555,10 +6678,11 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Jim Blandy <jimb@red-bean.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:54be6a2b5b780e356976ef7e30d00244f2bad651"
+delta = "26.0.0 -> 26.0.0@git:c488bbe60447d28736c26c82a32cd87794b3bf1d"
 importable = false
 
 [[audits.wgpu-core-deps-apple]]
@@ -6575,10 +6699,11 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Jim Blandy <jimb@red-bean.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:54be6a2b5b780e356976ef7e30d00244f2bad651"
+delta = "26.0.0 -> 26.0.0@git:c488bbe60447d28736c26c82a32cd87794b3bf1d"
 importable = false
 
 [[audits.wgpu-core-deps-windows-linux-android]]
@@ -6595,10 +6720,11 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Jim Blandy <jimb@red-bean.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:54be6a2b5b780e356976ef7e30d00244f2bad651"
+delta = "26.0.0 -> 26.0.0@git:c488bbe60447d28736c26c82a32cd87794b3bf1d"
 importable = false
 
 [[audits.wgpu-hal]]
@@ -6693,10 +6819,11 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Jim Blandy <jimb@red-bean.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:54be6a2b5b780e356976ef7e30d00244f2bad651"
+delta = "26.0.0 -> 26.0.0@git:c488bbe60447d28736c26c82a32cd87794b3bf1d"
 importable = false
 
 [[audits.wgpu-types]]
@@ -6786,10 +6913,11 @@ delta = "25.0.0 -> 26.0.0"
 who = [
     "Andy Leiserson <aleiserson@mozilla.com>",
     "Teodor Tanasoaia <ttanasoaia@mozilla.com>",
+    "Jim Blandy <jimb@red-bean.com>",
     "Erich Gubler <erichdongubler@gmail.com>",
 ]
 criteria = "safe-to-deploy"
-delta = "26.0.0 -> 26.0.0@git:54be6a2b5b780e356976ef7e30d00244f2bad651"
+delta = "26.0.0 -> 26.0.0@git:c488bbe60447d28736c26c82a32cd87794b3bf1d"
 importable = false
 
 [[audits.whatsys]]
@@ -7360,13 +7488,25 @@ end = "2024-04-25"
 criteria = "safe-to-deploy"
 user-id = 3618 # David Tolnay (dtolnay)
 start = "2019-04-23"
-end = "2024-05-30"
+end = "2026-09-05"
 
 [[trusted.quote]]
 criteria = "safe-to-deploy"
 user-id = 3618 # David Tolnay (dtolnay)
 start = "2019-04-09"
 end = "2024-05-30"
+
+[[trusted.ref-cast]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-05-05"
+end = "2026-08-19"
+
+[[trusted.ref-cast-impl]]
+criteria = "safe-to-deploy"
+user-id = 3618 # David Tolnay (dtolnay)
+start = "2019-05-05"
+end = "2026-08-19"
 
 [[trusted.regex]]
 criteria = "safe-to-deploy"
@@ -7456,7 +7596,7 @@ end = "2024-05-06"
 criteria = "safe-to-deploy"
 user-id = 3618 # David Tolnay (dtolnay)
 start = "2019-03-01"
-end = "2025-07-04"
+end = "2026-09-05"
 
 [[trusted.termcolor]]
 criteria = "safe-to-deploy"

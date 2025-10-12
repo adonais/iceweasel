@@ -6,7 +6,7 @@ import { CommonUtils } from "resource://services-common/utils.sys.mjs";
 
 import { HawkClient } from "resource://services-common/hawkclient.sys.mjs";
 import { deriveHawkCredentials } from "resource://services-common/hawkrequest.sys.mjs";
-import { CryptoUtils } from "resource://services-crypto/utils.sys.mjs";
+import { CryptoUtils } from "moz-src:///services/crypto/modules/utils.sys.mjs";
 
 import {
   ERRNO_ACCOUNT_DOES_NOT_EXIST,

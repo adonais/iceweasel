@@ -498,8 +498,8 @@ Memory.prototype = {
       return docShell.now();
     }
     // When used from the ContentProcessTargetActor, parent has no docShell,
-    // so fallback to Cu.now
-    return Cu.now();
+    // so fallback to ChromeUtils.now
+    return ChromeUtils.now();
   },
 };
 

@@ -67,7 +67,6 @@ script.addMessageListener("test-end", () => {
 
 SpecialPowers.pushPrefEnv({set: [
   ["network.proxy.allow_hijacking_localhost", true],
-  ["network.proxy.testing_localhost_is_secure_when_hijacked", true],
 ]}).then(function() {
   win = window.open("http://localhost:9898/tests/dom/security/test/sec-fetch/file_trustworthy_loopback.html");
 });

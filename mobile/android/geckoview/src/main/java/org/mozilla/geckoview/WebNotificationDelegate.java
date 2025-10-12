@@ -7,6 +7,7 @@ package org.mozilla.geckoview;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 
+/** Delegate for handling web notification events. */
 public interface WebNotificationDelegate {
   /**
    * This is called when a new notification is created.

@@ -13,7 +13,7 @@ const { ERRORS } = ChromeUtils.importESModule(
  */
 add_task(async function test_generic_error() {
   let content = await openPanel({
-    isSignedIn: true,
+    isSignedOut: false,
     error: "",
   });
 
@@ -28,7 +28,7 @@ add_task(async function test_generic_error() {
   );
 
   await setPanelState({
-    isSignedIn: true,
+    isSignedOut: false,
     error: ERRORS.GENERIC,
   });
   await messageBarLoadedPromise;
@@ -55,7 +55,7 @@ add_task(async function test_generic_error() {
  */
 add_task(async function test_dismiss() {
   let content = await openPanel({
-    isSignedIn: true,
+    isSignedOut: false,
     error: "",
   });
 
@@ -71,7 +71,7 @@ add_task(async function test_dismiss() {
 
   // Use generic error as a fallback
   await setPanelState({
-    isSignedIn: true,
+    isSignedOut: false,
     error: ERRORS.GENERIC,
   });
   await messageBarLoadedPromise;

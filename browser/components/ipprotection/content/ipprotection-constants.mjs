@@ -7,7 +7,7 @@ export const LINKS = Object.freeze({
   DOWNLOAD_URL: "https://www.mozilla.org/en-US/products/vpn/download/",
   // Used for the upgrade button in the main panel view
   PRODUCT_URL:
-    "https://www.mozilla.org/products/vpn/?utm_medium=firefox-desktop&utm_source=freevpnpilot&utm_content=vpnpanel",
+    "https://www.mozilla.org/products/vpn/?utm_medium=firefox-desktop&utm_source=freevpnpilot&utm_campaign=evergreen&utm_content=vpnpanel",
   SIGNIN_URL:
     "https://accounts.firefox.com?entrypoint=desktop-fx-vpn&service=sync&entrypoint_experiment=fx-vpn-pilot&entrypoint_variation=alpha",
   SUPPORT_URL: "https://support.mozilla.org/kb/use-ip-concealment-in-firefox",

@@ -14,6 +14,7 @@
 
 #include "base/win/windows_version.h"
 #include "base/win/sid.h"
+#include "ConfigHelpers.h"
 #include "GfxDriverInfo.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -71,6 +72,7 @@ bool SandboxBroker::sRunningFromNetworkDrive = false;
 // Cached special directories used for adding policy rules.
 static StaticAutoPtr<nsString> sBinDir;
 static StaticAutoPtr<nsString> sProfileDir;
+static StaticAutoPtr<nsString> sWindowsProfileDir;
 static StaticAutoPtr<nsString> sLocalAppDataDir;
 static StaticAutoPtr<nsString> sSystemFontsDir;
 static StaticAutoPtr<nsString> sWindowsSystemDir;
@@ -80,7 +82,7 @@ static StaticAutoPtr<nsString> sLocalAppDataLowParentDir;
 static StaticAutoPtr<nsString> sUserExtensionsDir;
 #endif
 
-static LazyLogModule sSandboxBrokerLog("SandboxBroker");
+LazyLogModule sSandboxBrokerLog("SandboxBroker");
 
 #define LOG_E(...) MOZ_LOG(sSandboxBrokerLog, LogLevel::Error, (__VA_ARGS__))
 #define LOG_W(...) MOZ_LOG(sSandboxBrokerLog, LogLevel::Warning, (__VA_ARGS__))
@@ -143,6 +145,7 @@ void SandboxBroker::Initialize(sandbox::BrokerServices* aBrokerServices,
     sLaunchErrors = nullptr;
     sBinDir = nullptr;
     sProfileDir = nullptr;
+    sWindowsProfileDir = nullptr;
     sLocalAppDataDir = nullptr;
     sSystemFontsDir = nullptr;
     sWindowsSystemDir = nullptr;
@@ -172,8 +175,8 @@ static void CacheDirectoryServiceDir(nsIProperties* aDirSvc,
   CacheAndStandardizeDir(dirPath, aCacheVar);
 }
 
-static void AddCachedDirRule(sandbox::TargetConfig* aConfig,
-                             sandbox::FileSemantics aAccess,
+template <typename TC>
+static void AddCachedDirRule(TC* aConfig, sandbox::FileSemantics aAccess,
                              const StaticAutoPtr<nsString>& aBaseDir,
                              const nsLiteralString& aRelativePath = u""_ns) {
   if (!aBaseDir) {
@@ -229,9 +232,10 @@ static void EnsureWindowsDirCached(
   }
 }
 
+template <typename TC>
 static void AddCachedWindowsDirRule(
-    sandbox::TargetConfig* aConfig, sandbox::FileSemantics aAccess,
-    GUID aFolderID, const nsLiteralString& aRelativePath = u""_ns) {
+    TC* aConfig, sandbox::FileSemantics aAccess, GUID aFolderID,
+    const nsLiteralString& aRelativePath = u""_ns) {
   if (aFolderID == FOLDERID_Fonts) {
     EnsureWindowsDirCached(FOLDERID_Fonts, sSystemFontsDir,
                            "Failed to get Windows Fonts folder");
@@ -250,6 +254,12 @@ static void AddCachedWindowsDirRule(
                            "Failed to get Windows LocalAppDataLow folder",
                            &sLocalAppDataLowParentDir);
     AddCachedDirRule(aConfig, aAccess, sLocalAppDataLowDir, aRelativePath);
+    return;
+  }
+  if (aFolderID == FOLDERID_Profile) {
+    EnsureWindowsDirCached(FOLDERID_Profile, sWindowsProfileDir,
+                           "Failed to get Windows Profile folder");
+    AddCachedDirRule(aConfig, aAccess, sWindowsProfileDir, aRelativePath);
     return;
   }
 
@@ -896,7 +906,7 @@ static sandbox::ResultCode AddAndConfigureAppContainerProfile(
 }
 #endif
 
-void AddShaderCachesToPolicy(sandbox::TargetConfig* aConfig,
+void AddShaderCachesToPolicy(sandboxing::SizeTrackingConfig* aConfig,
                              int32_t aSandboxLevel) {
   // The GPU process needs to write to a shader cache for performance reasons
   if (sProfileDir) {
@@ -1262,28 +1272,39 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   config->SetLockdownDefaultDacl();
   config->AddRestrictingRandomSid();
 
+  // Policy wrapper to keep track of available rule space. The full policy has
+  // 14 pages, so 13 allows one page for generic process rules.
+  sandboxing::SizeTrackingConfig trackingConfig(config, 13);
+
   // Add the policy for the client side of a pipe. It is just a file
   // in the \pipe\ namespace. We restrict it to pipes that start with
   // "chrome." so the sandboxed process cannot connect to system services.
-  SANDBOX_SUCCEED_OR_CRASH(config->AllowFileAccess(
+  SANDBOX_SUCCEED_OR_CRASH(trackingConfig.AllowFileAccess(
       sandbox::FileSemantics::kAllowAny, L"\\??\\pipe\\chrome.*"));
 
   // Add the policy for the client side of the crash server pipe.
   SANDBOX_SUCCEED_OR_CRASH(
-      config->AllowFileAccess(sandbox::FileSemantics::kAllowAny,
-                              L"\\??\\pipe\\gecko-crash-server-pipe.*"));
+      trackingConfig.AllowFileAccess(sandbox::FileSemantics::kAllowAny,
+                                     L"\\??\\pipe\\gecko-crash-server-pipe.*"));
 
   // Add rule to allow read access to installation directory.
-  AddCachedDirRule(config, sandbox::FileSemantics::kAllowReadonly, sBinDir,
-                   u"\\*"_ns);
+  AddCachedDirRule(&trackingConfig, sandbox::FileSemantics::kAllowReadonly,
+                   sBinDir, u"\\*"_ns);
 
-  if (aSandboxLevel >= 2) {
-    // Add rule to allow access to user specific fonts.
-    AddCachedDirRule(config, sandbox::FileSemantics::kAllowReadonly,
-                     sLocalAppDataDir, u"\\Microsoft\\Windows\\Fonts\\*"_ns);
+  AddShaderCachesToPolicy(&trackingConfig, aSandboxLevel);
+
+  // The GPU process is launched without GeckoDependentInitialize for the
+  // profile picker making sLocalAppDataDir null.
+  if (aSandboxLevel >= 2 && sLocalAppDataDir) {
+    // We don't want to add a rule directly here but use the same retrieval and
+    // caching mechanism to get the Windows user profile dir.
+    EnsureWindowsDirCached(FOLDERID_Profile, sWindowsProfileDir,
+                           "Failed to get Windows Profile folder");
+    sandboxing::UserFontConfigHelper configHelper(
+        LR"(Software\Microsoft\Windows NT\CurrentVersion\Fonts)",
+        *sWindowsProfileDir, *sLocalAppDataDir);
+    configHelper.AddRules(trackingConfig);
   }
-
-  AddShaderCachesToPolicy(config, aSandboxLevel);
 }
 
 #define SANDBOX_ENSURE_SUCCESS(result, message)          \

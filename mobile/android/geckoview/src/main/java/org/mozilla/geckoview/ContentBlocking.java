@@ -74,18 +74,32 @@ public class ContentBlocking {
           .dataSharingEnabled(false)
           .build();
 
-  // This class shouldn't be instantiated
+  /** {@link SafeBrowsingProvider} configuration for Google's SafeBrowsing V5 server. */
+  public static final SafeBrowsingProvider GOOGLE_SAFE_BROWSING_V5_PROVIDER =
+      SafeBrowsingProvider.withName("google5")
+          .lists("")
+          .updateUrl(
+              "https://safebrowsing.googleapis.com/v5/hashLists:batchGet?key=%GOOGLE_SAFEBROWSING_API_KEY%")
+          .getHashUrl(
+              "https://safebrowsing.googleapis.com/v5/hashes:search?key=%GOOGLE_SAFEBROWSING_API_KEY%")
+          .enabled(false)
+          .build();
+
+  /** Protected constructor - this class shouldn't be instantiated. */
   protected ContentBlocking() {}
 
+  /** Content blocking settings for configuring various blocking features. */
   @AnyThread
   public static class Settings extends RuntimeSettings {
     private final Map<String, SafeBrowsingProvider> mSafeBrowsingProviders = new HashMap<>();
 
     private static final SafeBrowsingProvider[] DEFAULT_PROVIDERS = {
       ContentBlocking.GOOGLE_LEGACY_SAFE_BROWSING_PROVIDER,
-      ContentBlocking.GOOGLE_SAFE_BROWSING_PROVIDER
+      ContentBlocking.GOOGLE_SAFE_BROWSING_PROVIDER,
+      ContentBlocking.GOOGLE_SAFE_BROWSING_V5_PROVIDER
     };
 
+    /** Builder for constructing ContentBlocking Settings instances. */
     @AnyThread
     public static class Builder extends RuntimeSettings.Builder<Settings> {
       @Override
@@ -564,8 +578,9 @@ public class ContentBlocking {
      * Sets the collection of {@link SafeBrowsingProvider} for this runtime.
      *
      * <p>By default the collection is composed of {@link
-     * ContentBlocking#GOOGLE_LEGACY_SAFE_BROWSING_PROVIDER} and {@link
-     * ContentBlocking#GOOGLE_SAFE_BROWSING_PROVIDER}.
+     * ContentBlocking#GOOGLE_LEGACY_SAFE_BROWSING_PROVIDER}, {@link
+     * ContentBlocking#GOOGLE_SAFE_BROWSING_PROVIDER} and {@link
+     * ContentBlocking#GOOGLE_SAFE_BROWSING_V5_PROVIDER}.
      *
      * @param providers {@link SafeBrowsingProvider} instances for this runtime.
      * @return the {@link Settings} instance.
@@ -1062,6 +1077,7 @@ public class ContentBlocking {
       return mCbhModePrivateBrowsing.get();
     }
 
+    /** Parcelable creator for ContentBlocking Settings instances. */
     public static final Parcelable.Creator<Settings> CREATOR =
         new Parcelable.Creator<Settings>() {
           @Override
@@ -1147,8 +1163,9 @@ public class ContentBlocking {
    * custom SafeBrowsing provider to the app. <br>
    * <br>
    * Default configuration for Google's SafeBrowsing servers can be found at {@link
-   * ContentBlocking#GOOGLE_SAFE_BROWSING_PROVIDER} and {@link
-   * ContentBlocking#GOOGLE_LEGACY_SAFE_BROWSING_PROVIDER}. <br>
+   * ContentBlocking#GOOGLE_SAFE_BROWSING_PROVIDER}, {@link
+   * ContentBlocking#GOOGLE_LEGACY_SAFE_BROWSING_PROVIDER} and {@link
+   * ContentBlocking#GOOGLE_SAFE_BROWSING_V5_PROVIDER}. <br>
    * <br>
    * This class is immutable, once constructed its values cannot be changed. <br>
    * <br>
@@ -1188,6 +1205,7 @@ public class ContentBlocking {
    *         custom,
    *         // Add this if you want to keep the existing configuration too.
    *         ContentBlocking.GOOGLE_SAFE_BROWSING_PROVIDER,
+   *         ContentBlocking.GOOGLE_SAFE_BROWSING_V5_PROVIDER,
    *         ContentBlocking.GOOGLE_LEGACY_SAFE_BROWSING_PROVIDER);
    * </code></pre>
    *
@@ -1222,6 +1240,7 @@ public class ContentBlocking {
     /* package */ final Pref<String> mAdvisoryName;
     /* package */ final Pref<String> mDataSharingUrl;
     /* package */ final Pref<Boolean> mDataSharingEnabled;
+    /* package */ final Pref<Boolean> mEnabled;
 
     /**
      * Creates a {@link SafeBrowsingProvider.Builder} for a provider with the given name.
@@ -1255,6 +1274,7 @@ public class ContentBlocking {
       return new Builder(provider);
     }
 
+    /** Builder for constructing SafeBrowsingProvider instances. */
     @AnyThread
     public static class Builder {
       final SafeBrowsingProvider mProvider;
@@ -1403,6 +1423,17 @@ public class ContentBlocking {
       }
 
       /**
+       * Set whether to enable this provider. This is currently only used for the SafeBrowsing V5.
+       *
+       * @param enabled <code>true</code> if the provider should be enabled.
+       * @return this {@link Builder} instance.
+       */
+      public @NonNull Builder enabled(final boolean enabled) {
+        mProvider.mEnabled.set(enabled);
+        return this;
+      }
+
+      /**
        * Build the {@link SafeBrowsingProvider} based on this {@link Builder} instance.
        *
        * @return thie {@link SafeBrowsingProvider} instance.
@@ -1448,6 +1479,7 @@ public class ContentBlocking {
       mAdvisoryName = new Pref<>(ROOT + mName + ".advisoryName", null);
       mDataSharingUrl = new Pref<>(ROOT + mName + ".dataSharingURL", null);
       mDataSharingEnabled = new Pref<>(ROOT + mName + ".dataSharing.enabled", false);
+      mEnabled = new Pref<>(ROOT + mName + ".enabled", false);
 
       if (source != null) {
         updatePrefs(source);
@@ -1574,6 +1606,15 @@ public class ContentBlocking {
       return mDataSharingEnabled.get();
     }
 
+    /**
+     * Get whether this provider is enabled. This is currently only used for the SafeBrowsing V5.
+     *
+     * @return <code>true</code> if the provider is enabled, <code>false</code> otherwise.
+     */
+    public @Nullable Boolean getEnabled() {
+      return mEnabled.get();
+    }
+
     @Override // Parcelable
     @AnyThread
     public void writeToParcel(final Parcel out, final int flags) {
@@ -1625,7 +1666,9 @@ public class ContentBlocking {
     return pref != null ? pref.split(",") : new String[] {};
   }
 
+  /** Anti-tracking content blocking constants. */
   public static class AntiTracking {
+    /** No anti-tracking protection. */
     public static final int NONE = 0;
 
     /** Block advertisement trackers. */
@@ -1664,9 +1707,11 @@ public class ContentBlocking {
     /** Block all known trackers. May cause issues with some web sites. */
     public static final int STRICT = DEFAULT | CONTENT | CRYPTOMINING | FINGERPRINTING | EMAIL;
 
+    /** Protected constructor for AntiTracking. */
     protected AntiTracking() {}
   }
 
+  /** Content blocking anti-tracking type definitions. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -1686,7 +1731,9 @@ public class ContentBlocking {
       })
   public @interface CBAntiTracking {}
 
+  /** Safe browsing content blocking constants. */
   public static class SafeBrowsing {
+    /** No safe browsing protection. */
     public static final int NONE = 0;
 
     /** Block malware sites. */
@@ -1704,9 +1751,11 @@ public class ContentBlocking {
     /** Block all unsafe sites. */
     public static final int DEFAULT = MALWARE | UNWANTED | HARMFUL | PHISHING;
 
+    /** Protected constructor for SafeBrowsing. */
     protected SafeBrowsing() {}
   }
 
+  /** Content blocking safe browsing type definitions. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef(
       flag = true,
@@ -1718,6 +1767,7 @@ public class ContentBlocking {
   public @interface CBSafeBrowsing {}
 
   // Sync values with nsICookieService.idl.
+  /** Cookie behavior content blocking constants. */
   public static class CookieBehavior {
     /** Accept first-party and third-party cookies and site data. */
     public static final int ACCEPT_ALL = 0;
@@ -1749,9 +1799,11 @@ public class ContentBlocking {
      */
     public static final int ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS = 5;
 
+    /** Protected constructor for CookieBehavior. */
     protected CookieBehavior() {}
   }
 
+  /** Content blocking cookie behavior type definitions. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     CookieBehavior.ACCEPT_ALL,
@@ -1763,6 +1815,7 @@ public class ContentBlocking {
   })
   public @interface CBCookieBehavior {}
 
+  /** Content blocking ETP level type definitions. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({EtpLevel.NONE, EtpLevel.DEFAULT, EtpLevel.STRICT})
   public @interface CBEtpLevel {}
@@ -1781,19 +1834,20 @@ public class ContentBlocking {
     public static final int STRICT = 2;
   }
 
+  /** Content blocking ETP category type definitions. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({EtpCategory.STANDARD, EtpCategory.STRICT, EtpCategory.CUSTOM})
   public @interface CBEtpCategory {}
 
   /** Possible settings for ETP category. */
   public static class EtpCategory {
-    // The default ETP category, balancing privacy and web compatibility.
+    /** The default ETP category, balancing privacy and web compatibility. */
     public static final int STANDARD = 0;
-    // The strict ETP category, blocking more trackers but potentially breaking
-    // more sites.
+
+    /** The strict ETP category, blocking more trackers but potentially breaking more sites. */
     public static final int STRICT = 1;
-    // The custom ETP category, allowing the user to choose which anti-tracking
-    // to enable.
+
+    /** The custom ETP category, allowing the user to choose which anti-tracking to enable. */
     public static final int CUSTOM = 2;
   }
 
@@ -1807,7 +1861,15 @@ public class ContentBlocking {
     private final @CBCookieBehavior int mCookieBehaviorCat;
     private final boolean mIsBlocking;
 
-    @SuppressWarnings("checkstyle:javadocmethod")
+    /**
+     * Constructor for BlockEvent.
+     *
+     * @param uri The URI of the blocked resource
+     * @param atCat The anti-tracking category
+     * @param sbCat The safe browsing category
+     * @param cbCat The cookie behavior category
+     * @param isBlocking Whether the resource is being blocked
+     */
     public BlockEvent(
         @NonNull final String uri,
         final @CBAntiTracking int atCat,
@@ -1877,8 +1939,12 @@ public class ContentBlocking {
           blocking);
     }
 
+    /**
+     * Get whether this resource is being blocked.
+     *
+     * @return true if the resource is being blocked, false otherwise
+     */
     @UiThread
-    @SuppressWarnings("checkstyle:javadocmethod")
     public boolean isBlocking() {
       return mIsBlocking;
     }
@@ -2144,6 +2210,7 @@ public class ContentBlocking {
 
   // Cookie Banner Handling feature.
 
+  /** Cookie banner handling mode constants. */
   public static class CookieBannerMode {
     /** Do not enable handling cookie banners. */
     public static final int COOKIE_BANNER_MODE_DISABLED = 0;
@@ -2154,9 +2221,11 @@ public class ContentBlocking {
     /** Reject cookies when possible otherwise accept the cookies. */
     public static final int COOKIE_BANNER_MODE_REJECT_OR_ACCEPT = 2;
 
+    /** Protected constructor for CookieBannerMode. */
     protected CookieBannerMode() {}
   }
 
+  /** Content blocking cookie banner mode type definitions. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     CookieBannerMode.COOKIE_BANNER_MODE_DISABLED,
@@ -2185,9 +2254,11 @@ public class ContentBlocking {
      */
     public static final int BOUNCE_TRACKING_PROTECTION_MODE_ENABLED_DRY_RUN = 3;
 
+    /** Protected constructor for BounceTrackingProtectionMode. */
     protected BounceTrackingProtectionMode() {}
   }
 
+  /** Content blocking bounce tracking protection mode type definitions. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({
     BounceTrackingProtectionMode.BOUNCE_TRACKING_PROTECTION_MODE_DISABLED,

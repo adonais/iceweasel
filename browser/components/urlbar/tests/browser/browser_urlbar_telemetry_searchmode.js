@@ -557,7 +557,7 @@ add_task(async function test_tabtosearch() {
   ).result;
   Assert.equal(
     tabToSearchResult.providerName,
-    "TabToSearch",
+    "UrlbarProviderTabToSearch",
     "The second result is a tab-to-search result."
   );
   Assert.equal(
@@ -615,7 +615,7 @@ add_task(async function test_tabtosearch_onboard() {
   ).result;
   Assert.equal(
     tabToSearchResult.providerName,
-    "TabToSearch",
+    "UrlbarProviderTabToSearch",
     "The second result is a tab-to-search result."
   );
   Assert.equal(

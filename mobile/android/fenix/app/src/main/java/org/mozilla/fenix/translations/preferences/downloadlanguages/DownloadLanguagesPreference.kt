@@ -58,6 +58,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.translations.DownloadIconIndicator
 import org.mozilla.fenix.translations.DownloadInProgressIndicator
 import java.util.Locale
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Firefox Download Languages preference screen.
@@ -463,7 +464,7 @@ private fun IconDownloadLanguageItemPreference(
 
         ModelState.DELETION_IN_PROGRESS -> {
             DownloadIconIndicator(
-                icon = painterResource(id = R.drawable.mozac_ic_sync_24),
+                icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
             )
         }
     }

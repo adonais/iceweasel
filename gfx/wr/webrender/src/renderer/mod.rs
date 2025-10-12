@@ -93,6 +93,8 @@ use crate::telemetry::Telemetry;
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::util::drain_filter;
 use crate::rectangle_occlusion as occlusion;
+#[cfg(feature = "debugger")]
+use crate::debugger::Debugger;
 use upload::{upload_to_texture_cache, UploadTexturePool};
 use init::*;
 
@@ -837,6 +839,8 @@ pub struct Renderer {
     resource_upload_time: f64,
     gpu_cache_upload_time: f64,
     profiler: Profiler,
+    #[cfg(feature = "debugger")]
+    debugger: Debugger,
 
     last_time: u64,
 
@@ -1268,7 +1272,12 @@ impl Renderer {
     fn handle_debug_command(&mut self, command: DebugCommand) {
         match command {
             DebugCommand::SetPictureTileSize(_) |
-            DebugCommand::SetMaximumSurfaceSize(_) => {
+            DebugCommand::SetMaximumSurfaceSize(_) |
+            DebugCommand::GenerateFrame => {
+                panic!("Should be handled by render backend");
+            }
+            #[cfg(feature = "debugger")]
+            DebugCommand::Query(_) => {
                 panic!("Should be handled by render backend");
             }
             DebugCommand::SaveCapture(..) |
@@ -1286,6 +1295,17 @@ impl Renderer {
             }
             DebugCommand::SetFlags(flags) => {
                 self.set_debug_flags(flags);
+            }
+            DebugCommand::GetDebugFlags(tx) => {
+                tx.send(self.debug_flags).unwrap();
+            }
+            #[cfg(feature = "debugger")]
+            DebugCommand::AddDebugClient(client) => {
+                self.debugger.add_client(
+                    client,
+                    self.debug_flags,
+                    &self.profiler,
+                );
             }
         }
     }
@@ -1783,6 +1803,14 @@ impl Renderer {
 
         // Note: this clears the values in self.profile.
         self.profiler.set_counters(&mut self.profile);
+
+        // If debugger is enabled, collect any profiler updates before value is overwritten
+        // during update below.
+        #[cfg(feature = "debugger")]
+        self.debugger.update(
+            self.debug_flags,
+            &self.profiler,
+        );
 
         // Note: profile counters must be set before this or they will count for next frame.
         self.profiler.update();
@@ -3852,12 +3880,13 @@ impl Renderer {
 
         if window_is_opaque {
             match input_layers.last_mut() {
-                Some(layer) => {
+                Some(_layer) => {
                     // If the window is opaque, and the last(back) layer is
                     //  a content layer then mark that as opaque.
-                    if let CompositorSurfaceUsage::Content = layer.usage {
-                        layer.is_opaque = true;
-                    }
+                    // TODO: This causes talos performance regressions.
+                    // if let CompositorSurfaceUsage::Content = layer.usage {
+                    //     layer.is_opaque = true;
+                    // }
                 }
                 None => {
                     // If no tiles were present, and we expect an opaque window,
@@ -4114,6 +4143,7 @@ impl Renderer {
         }
 
         assert_eq!(swapchain_layers.len(), input_layers.len());
+        let mut content_clear_color = Some(self.clear_color);
 
         for (layer_index, (layer, swapchain_layer)) in input_layers.iter().zip(swapchain_layers.iter()).enumerate() {
             self.device.reset_state();
@@ -4126,11 +4156,8 @@ impl Renderer {
                 }
             }
 
-            let clear_color = if layer_index == 0 {
-                self.clear_color
-            } else {
-                ColorF::TRANSPARENT
-            };
+            // Only use supplied clear color for first content layer we encounter
+            let clear_color = content_clear_color.take().unwrap_or(ColorF::TRANSPARENT);
 
             if let Some(ref mut _compositor) = self.compositor_config.layer_compositor() {
                 if let Some(PartialPresentMode::Single { dirty_rect }) = partial_present_mode {

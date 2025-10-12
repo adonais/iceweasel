@@ -63,6 +63,7 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.browser.browsingmode.DefaultBrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.TabCollectionStorage
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.helpers.FenixGleanTestRule
@@ -1338,6 +1339,19 @@ class DefaultTabManagerControllerTest {
         createController().handleTabPageClicked(Page.SyncedTabs)
 
         assertNull(TabsTray.syncedModeTapped.testGetValue())
+    }
+
+    @Test
+    fun `WHEN the sign into Sync button is clicked THEN navigate the user to the sign into Sync flow`() {
+        createController().handleSignInClicked()
+
+        verify {
+            navController.navigate(
+                TabManagementFragmentDirections.actionGlobalTurnOnSync(
+                    entrypoint = FenixFxAEntryPoint.SyncedTabsMenu,
+                ),
+            )
+        }
     }
 
     private fun createController(

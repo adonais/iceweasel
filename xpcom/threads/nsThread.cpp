@@ -671,22 +671,20 @@ void nsThread::SetThreadNameInternal(const nsACString& aName) {
 // nsIEventTarget
 
 NS_IMETHODIMP
-nsThread::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags) {
-  MOZ_ASSERT(mEventTarget);
-  NS_ENSURE_TRUE(mEventTarget, NS_ERROR_NOT_IMPLEMENTED);
-
-  nsCOMPtr<nsIRunnable> event(aEvent);
-  return mEventTarget->Dispatch(event.forget(), aFlags);
+nsThread::DispatchFromScript(nsIRunnable* aEvent, DispatchFlags aFlags) {
+  return Dispatch(do_AddRef(aEvent), aFlags);
 }
 
 NS_IMETHODIMP
-nsThread::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags) {
+nsThread::Dispatch(already_AddRefed<nsIRunnable> aEvent, DispatchFlags aFlags) {
+  MaybeLeakRefPtr<nsIRunnable> event(std::move(aEvent),
+                                     aFlags & NS_DISPATCH_FALLIBLE);
   MOZ_ASSERT(mEventTarget);
   NS_ENSURE_TRUE(mEventTarget, NS_ERROR_NOT_IMPLEMENTED);
 
-  LOG(("THRD(%p) Dispatch [%p %x]\n", this, /* XXX aEvent */ nullptr, aFlags));
+  LOG(("THRD(%p) Dispatch [%p %x]\n", this, event.get(), aFlags));
 
-  return mEventTarget->Dispatch(std::move(aEvent), aFlags);
+  return mEventTarget->Dispatch(event.forget(), aFlags);
 }
 
 NS_IMETHODIMP
@@ -829,9 +827,9 @@ nsThread::BeginShutdown(nsIThreadShutdown** aShutdown) {
 
   // Set mShutdownContext and wake up the thread in case it is waiting for
   // events to process.
-  nsCOMPtr<nsIRunnable> event =
+  RefPtr<nsIRunnable> event =
       new nsThreadShutdownEvent(WrapNotNull(this), WrapNotNull(context));
-  if (!mEvents->PutEvent(event.forget(), EventQueuePriority::Normal)) {
+  if (!mEvents->PutEvent(event, EventQueuePriority::Normal)) {
     // We do not expect this to happen. Let's collect some diagnostics.
     nsAutoCString threadName;
     GetThreadName(threadName);
@@ -934,13 +932,13 @@ nsThread::HasPendingHighPriorityEvents(bool* aResult) {
 NS_IMETHODIMP
 nsThread::DispatchToQueue(already_AddRefed<nsIRunnable> aEvent,
                           EventQueuePriority aQueue) {
-  nsCOMPtr<nsIRunnable> event = aEvent;
+  RefPtr<nsIRunnable> event = aEvent;
 
   if (NS_WARN_IF(!event)) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  if (!mEvents->PutEvent(event.forget(), aQueue)) {
+  if (!mEvents->PutEvent(event, aQueue)) {
     NS_WARNING(
         "An idle event was posted to a thread that will never run it "
         "(rejected)");
@@ -1518,9 +1516,8 @@ void PerformanceCounterState::MaybeReportAccumulatedTime(const nsCString& aName,
         static MarkerSchema MarkerTypeDisplay() {
           using MS = MarkerSchema;
           MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-          schema.AddKeyLabelFormatSearchable("category", "Type",
-                                             MS::Format::String,
-                                             MS::Searchable::Searchable);
+          schema.AddKeyLabelFormat("category", "Type", MS::Format::String,
+                                   MS::PayloadFlags::Searchable);
           return schema;
         }
       };

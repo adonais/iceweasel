@@ -14,7 +14,9 @@ namespace mozilla::webgpu {
 
 class Device;
 
-class RenderBundle final : public ObjectBase, public ChildOf<Device> {
+class RenderBundle final : public nsWrapperCache,
+                           public ObjectBase,
+                           public ChildOf<Device> {
  public:
   GPU_DECL_CYCLE_COLLECTION(RenderBundle)
   GPU_DECL_JS_WRAP(RenderBundle)
@@ -22,15 +24,12 @@ class RenderBundle final : public ObjectBase, public ChildOf<Device> {
   RenderBundle(Device* const aParent, RawId aId,
                CanvasContextArray&& aCanvasContexts);
 
-  const RawId mId;
-
   mozilla::Span<const WeakPtr<CanvasContext>> GetCanvasContexts() const {
     return mUsedCanvasContexts;
   }
 
  private:
   virtual ~RenderBundle();
-  void Cleanup();
 
   // The canvas contexts of any canvas textures used in this render bundle.
   CanvasContextArray mUsedCanvasContexts;

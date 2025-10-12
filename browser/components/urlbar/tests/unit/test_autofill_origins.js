@@ -4,7 +4,7 @@
 
 "use strict";
 
-const HEURISTIC_FALLBACK_PROVIDERNAME = "HeuristicFallback";
+const HEURISTIC_FALLBACK_PROVIDERNAME = "UrlbarProviderHeuristicFallback";
 
 const origin = "example.com";
 

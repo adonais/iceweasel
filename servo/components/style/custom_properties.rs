@@ -156,12 +156,7 @@ fn eval_gtk_csd_titlebar_radius(device: &Device, url_data: &UrlExtraData) -> Var
     VariableValue::pixels(int_pixels as f32 * unzoomed_scale, url_data)
 }
 
-static CHROME_ENVIRONMENT_VARIABLES: [EnvironmentVariable; 10] = [
-    lnf_int_variable!(
-        atom!("-moz-mac-titlebar-height"),
-        MacTitlebarHeight,
-        int_pixels
-    ),
+static CHROME_ENVIRONMENT_VARIABLES: [EnvironmentVariable; 9] = [
     make_variable!(
         atom!("-moz-gtk-csd-titlebar-radius"),
         eval_gtk_csd_titlebar_radius
@@ -407,11 +402,11 @@ impl NonCustomReferences {
         if value.eq_ignore_ascii_case(FontRelativeLength::LH) {
             return Self::FONT_UNITS | Self::LH_UNITS;
         }
-        if value.eq_ignore_ascii_case(FontRelativeLength::EM) ||
-            value.eq_ignore_ascii_case(FontRelativeLength::EX) ||
-            value.eq_ignore_ascii_case(FontRelativeLength::CAP) ||
-            value.eq_ignore_ascii_case(FontRelativeLength::CH) ||
-            value.eq_ignore_ascii_case(FontRelativeLength::IC)
+        if value.eq_ignore_ascii_case(FontRelativeLength::EM)
+            || value.eq_ignore_ascii_case(FontRelativeLength::EX)
+            || value.eq_ignore_ascii_case(FontRelativeLength::CAP)
+            || value.eq_ignore_ascii_case(FontRelativeLength::CH)
+            || value.eq_ignore_ascii_case(FontRelativeLength::IC)
         {
             return Self::FONT_UNITS;
         }
@@ -593,8 +588,8 @@ impl VariableValue {
         let mut css = input.slice_from(start_position).to_owned();
         if !missing_closing_characters.is_empty() {
             // Unescaped backslash at EOF in a quoted string is ignored.
-            if css.ends_with("\\") &&
-                matches!(missing_closing_characters.as_bytes()[0], b'"' | b'\'')
+            if css.ends_with("\\")
+                && matches!(missing_closing_characters.as_bytes()[0], b'"' | b'\'')
             {
                 css.pop();
             }
@@ -865,8 +860,8 @@ fn parse_declaration_value_block<'i, 't>(
                     check_closed!(")");
                     prev_reference_index = Some(our_ref_index);
                     let reference = &mut references.refs[our_ref_index];
-                    reference.end = input.position().byte_index() - input_start.byte_index() +
-                        missing_closing_characters.len();
+                    reference.end = input.position().byte_index() - input_start.byte_index()
+                        + missing_closing_characters.len();
                     reference.fallback = fallback;
                     if is_var {
                         references.any_var = true;
@@ -898,12 +893,12 @@ fn parse_declaration_value_block<'i, 't>(
                     missing_closing_characters.push_str(quote)
                 }
             },
-            Token::Ident(ref value) |
-            Token::AtKeyword(ref value) |
-            Token::Hash(ref value) |
-            Token::IDHash(ref value) |
-            Token::UnquotedUrl(ref value) |
-            Token::Dimension {
+            Token::Ident(ref value)
+            | Token::AtKeyword(ref value)
+            | Token::Hash(ref value)
+            | Token::IDHash(ref value)
+            | Token::UnquotedUrl(ref value)
+            | Token::Dimension {
                 unit: ref value, ..
             } => {
                 references
@@ -947,8 +942,8 @@ fn find_non_custom_references(
     include_universal: bool,
 ) -> Option<NonCustomReferences> {
     let dependent_types = registration.syntax.dependent_types();
-    let may_reference_length = dependent_types.intersects(DependentDataTypes::LENGTH) ||
-        (include_universal && registration.syntax.is_universal());
+    let may_reference_length = dependent_types.intersects(DependentDataTypes::LENGTH)
+        || (include_universal && registration.syntax.is_universal());
     if may_reference_length {
         let value_dependencies = value.references.non_custom_references(is_root_element);
         if !value_dependencies.is_empty() {
@@ -1042,8 +1037,8 @@ impl<'a, 'b: 'a> CustomPropertiesBuilder<'a, 'b> {
                 let may_have_color_scheme = true;
                 // Non-custom dependency is really relevant for registered custom properties
                 // that require computed value of such dependencies.
-                let has_dependency = unparsed_value.references.any_var ||
-                    find_non_custom_references(
+                let has_dependency = unparsed_value.references.any_var
+                    || find_non_custom_references(
                         registration,
                         unparsed_value,
                         may_have_color_scheme,
@@ -1346,8 +1341,8 @@ impl<'a, 'b: 'a> CustomPropertiesBuilder<'a, 'b> {
             inherited: if self
                 .computed_context
                 .inherited_custom_properties()
-                .inherited ==
-                self.custom_properties.inherited
+                .inherited
+                == self.custom_properties.inherited
             {
                 self.computed_context
                     .inherited_custom_properties()
@@ -1734,8 +1729,8 @@ fn substitute_all(
                     context.computed_context.is_root_element(),
                     /* include_unregistered = */ false,
                 )
-                .is_some() ||
-                    v.references.refs.iter().any(|reference| {
+                .is_some()
+                    || v.references.refs.iter().any(|reference| {
                         reference.is_var && deferred.get(&reference.name).is_some()
                     });
 
@@ -1867,20 +1862,20 @@ fn substitute_references_if_needed_and_apply(
                 registration.inherits(),
                 computed_context.is_root_element(),
             ) {
-                (CSSWideKeyword::Initial, _, _) |
-                (CSSWideKeyword::Revert, false, _) |
-                (CSSWideKeyword::RevertLayer, false, _) |
-                (CSSWideKeyword::Unset, false, _) |
-                (CSSWideKeyword::Revert, true, true) |
-                (CSSWideKeyword::RevertLayer, true, true) |
-                (CSSWideKeyword::Unset, true, true) |
-                (CSSWideKeyword::Inherit, _, true) => {
+                (CSSWideKeyword::Initial, _, _)
+                | (CSSWideKeyword::Revert, false, _)
+                | (CSSWideKeyword::RevertLayer, false, _)
+                | (CSSWideKeyword::Unset, false, _)
+                | (CSSWideKeyword::Revert, true, true)
+                | (CSSWideKeyword::RevertLayer, true, true)
+                | (CSSWideKeyword::Unset, true, true)
+                | (CSSWideKeyword::Inherit, _, true) => {
                     remove_and_insert_initial_value(name, registration, custom_properties);
                 },
-                (CSSWideKeyword::Revert, true, false) |
-                (CSSWideKeyword::RevertLayer, true, false) |
-                (CSSWideKeyword::Inherit, _, false) |
-                (CSSWideKeyword::Unset, true, false) => {
+                (CSSWideKeyword::Revert, true, false)
+                | (CSSWideKeyword::RevertLayer, true, false)
+                | (CSSWideKeyword::Inherit, _, false)
+                | (CSSWideKeyword::Unset, true, false) => {
                     match inherited.get(registration, name) {
                         Some(value) => {
                             custom_properties.insert(registration, name, value.clone());

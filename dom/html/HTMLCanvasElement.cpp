@@ -718,8 +718,8 @@ nsresult HTMLCanvasElement::CopyInnerTo(HTMLCanvasElement* aDest) {
   return rv;
 }
 
-nsChangeHint HTMLCanvasElement::GetAttributeChangeHint(const nsAtom* aAttribute,
-                                                       int32_t aModType) const {
+nsChangeHint HTMLCanvasElement::GetAttributeChangeHint(
+    const nsAtom* aAttribute, AttrModType aModType) const {
   nsChangeHint retval =
       nsGenericHTMLElement::GetAttributeChangeHint(aAttribute, aModType);
   if (aAttribute == nsGkAtoms::width || aAttribute == nsGkAtoms::height) {

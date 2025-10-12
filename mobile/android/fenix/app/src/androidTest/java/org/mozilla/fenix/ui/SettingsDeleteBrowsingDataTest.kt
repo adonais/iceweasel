@@ -232,6 +232,7 @@ class SettingsDeleteBrowsingDataTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416042
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1987355")
     @SdkSuppress(minSdkVersion = 34)
     @SmokeTest
     @Test

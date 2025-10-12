@@ -297,11 +297,6 @@ class MenuDialogMiddleware(
             .firstOrNull { it.url == url } ?: return@launch
 
         removePinnedSitesUseCase(topSite = topSite)
-
-        appStore.dispatch(
-            AppAction.ShortcutAction.ShortcutRemoved,
-        )
-
         onDismiss()
     }
 

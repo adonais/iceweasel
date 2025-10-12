@@ -12,11 +12,18 @@
 
 #include <stdio.h>
 
+#include <cstdint>
 #include <memory>
+#include <ostream>
+#include <utility>
 
+#include "api/array_view.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/environment/environment_factory.h"
 #include "api/neteq/default_neteq_factory.h"
+#include "api/neteq/neteq.h"
+#include "api/scoped_refptr.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
 #include "modules/audio_coding/neteq/tools/packet.h"
@@ -98,7 +105,7 @@ void AcmReceiveTestOldApi::Run() {
           static_cast<size_t>(output_freq_hz_ * 10 / 1000);
       EXPECT_EQ(samples_per_block, output_frame.samples_per_channel_);
       if (exptected_output_channels_ != kArbitraryChannels) {
-        if (output_frame.speech_type_ == webrtc::AudioFrame::kPLC) {
+        if (output_frame.speech_type_ == AudioFrame::kPLC) {
           // Don't check number of channels for PLC output, since each test run
           // usually starts with a short period of mono PLC before decoding the
           // first packet.

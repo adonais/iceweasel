@@ -31,19 +31,24 @@ impl gecko_profiler::ProfilerMarker for UrlMetricMarker {
         let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
         schema.set_tooltip_label("{marker.data.cat}.{marker.data.id} {marker.data.val}");
         schema.set_table_label("{marker.data.cat}.{marker.data.id}: {marker.data.val}");
-        schema.add_key_label_format_searchable(
+        schema.add_key_label_format_with_flags(
             "cat",
             "Category",
             Format::UniqueString,
-            Searchable::Searchable,
+            PayloadFlags::Searchable,
         );
-        schema.add_key_label_format_searchable(
+        schema.add_key_label_format_with_flags(
             "id",
             "Metric",
             Format::UniqueString,
-            Searchable::Searchable,
+            PayloadFlags::Searchable,
         );
-        schema.add_key_label_format_searchable("val", "Value", Format::Url, Searchable::Searchable);
+        schema.add_key_label_format_with_flags(
+            "val",
+            "Value",
+            Format::Url,
+            PayloadFlags::Searchable,
+        );
         schema
     }
 
@@ -128,25 +133,24 @@ impl glean::traits::Url for UrlMetric {
         };
     }
 
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<std::string::String> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
-        match self {
-            UrlMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            UrlMetric::Child(_) => {
-                panic!("Cannot get test value for Url metric in non-main process!")
-            }
-        }
-    }
-
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
             UrlMetric::Parent { inner, .. } => inner.test_get_num_recorded_errors(error),
             UrlMetric::Child(_) => panic!(
                 "Cannot get the number of recorded errors for Url metric in non-main process!"
             ),
+        }
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<std::string::String> for UrlMetric {
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<std::string::String> {
+        match self {
+            UrlMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            UrlMetric::Child(_) => {
+                panic!("Cannot get test value for Url metric in non-main process!")
+            }
         }
     }
 }
@@ -165,7 +169,7 @@ mod test {
 
         assert_eq!(
             "https://example.com",
-            metric.test_get_value("test-ping").unwrap()
+            metric.test_get_value(Some("test-ping".to_string())).unwrap()
         );
     }
 
@@ -193,7 +197,7 @@ mod test {
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
         assert!(
-            "https://example.com/parent" == parent_metric.test_get_value("test-ping").unwrap(),
+            "https://example.com/parent" == parent_metric.test_get_value(Some("test-ping".to_string())).unwrap(),
             "Url metrics should only work in the parent process"
         );
     }

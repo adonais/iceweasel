@@ -445,6 +445,9 @@ class Context {
       localize(value) {
         return value;
       },
+      stringToLowerCase(value) {
+        return value.toLowerCase();
+      },
       ...params.preprocessors,
     };
 
@@ -4010,7 +4013,7 @@ export var Schemas = {
       return;
     }
 
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
     let schemaCache = await this.loadCachedSchemas();
     const fromCache = schemaCache.has(url);
 

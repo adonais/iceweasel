@@ -2623,7 +2623,7 @@ nsresult CacheIndex::ScheduleUpdateTimer(uint32_t aDelay) {
 
   return NS_NewTimerWithFuncCallback(
       getter_AddRefs(mUpdateTimer), CacheIndex::DelayedUpdate, nullptr, aDelay,
-      nsITimer::TYPE_ONE_SHOT, "net::CacheIndex::ScheduleUpdateTimer",
+      nsITimer::TYPE_ONE_SHOT, "net::CacheIndex::ScheduleUpdateTimer"_ns,
       ioTarget);
 }
 

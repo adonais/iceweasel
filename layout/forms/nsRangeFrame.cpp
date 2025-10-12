@@ -17,12 +17,12 @@
 #include "mozilla/dom/HTMLDataListElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLOptionElement.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "nsCSSRendering.h"
 #include "nsContentCreatorFunctions.h"
 #include "nsDisplayList.h"
 #include "nsGkAtoms.h"
 #include "nsIContent.h"
+#include "nsIMutationObserver.h"
 #include "nsLayoutUtils.h"
 #include "nsNodeInfoManager.h"
 #include "nsPresContext.h"
@@ -552,7 +552,8 @@ void nsRangeFrame::DoUpdateRangeProgressFrame(
 }
 
 nsresult nsRangeFrame::AttributeChanged(int32_t aNameSpaceID,
-                                        nsAtom* aAttribute, int32_t aModType) {
+                                        nsAtom* aAttribute,
+                                        AttrModType aModType) {
   NS_ASSERTION(mTrackDiv, "The track div must exist!");
   NS_ASSERTION(mThumbDiv, "The thumb div must exist!");
 
@@ -582,7 +583,7 @@ nsresult nsRangeFrame::AttributeChanged(int32_t aNameSpaceID,
       PresShell()->FrameNeedsReflow(this, IntrinsicDirty::None,
                                     NS_FRAME_IS_DIRTY);
     } else if (aAttribute == nsGkAtoms::list) {
-      const bool isRemoval = aModType == MutationEvent_Binding::REMOVAL;
+      const bool isRemoval = aModType == AttrModType::Removal;
       if (mListMutationObserver) {
         mListMutationObserver->Detach();
         if (isRemoval) {

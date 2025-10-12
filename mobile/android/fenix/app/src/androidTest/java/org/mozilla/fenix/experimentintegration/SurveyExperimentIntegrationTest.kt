@@ -72,7 +72,7 @@ class SurveyExperimentIntegrationTest {
     @Test
     fun checkHomescreenSurveyDismissesCorrectly() {
         surveyScreen {
-            verifyHomeScreenSurveyCloseButton()
+            verifyHomeScreenSurveyCloseButton(true)
         }.clickHomeScreenSurveyCloseButton {
             verifyTabCounter("0")
             verifySurveyButtonDoesNotExist()

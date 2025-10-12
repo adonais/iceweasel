@@ -930,15 +930,11 @@ extern JS_PUBLIC_API size_t UserRealmCount(JSContext* cx);
 
 extern JS_PUBLIC_API size_t PeakSizeOfTemporary(const JSContext* cx);
 
-extern JS_PUBLIC_API bool AddSizeOfTab(JSContext* cx, JS::HandleObject obj,
+extern JS_PUBLIC_API bool AddSizeOfTab(JSContext* cx, JS::Zone* zone,
                                        mozilla::MallocSizeOf mallocSizeOf,
                                        ObjectPrivateVisitor* opv,
-                                       TabSizes* sizes);
-
-extern JS_PUBLIC_API bool AddServoSizeOf(JSContext* cx,
-                                         mozilla::MallocSizeOf mallocSizeOf,
-                                         ObjectPrivateVisitor* opv,
-                                         ServoSizes* sizes);
+                                       TabSizes* sizes,
+                                       const JS::AutoRequireNoGC& nogc);
 
 }  // namespace JS
 

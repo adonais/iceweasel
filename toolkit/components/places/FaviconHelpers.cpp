@@ -136,14 +136,14 @@ nsresult FetchPageInfo(const RefPtr<Database>& aDB, PageData& _page) {
       // The page is not bookmarked.  Since updating the icon with a disabled
       // history would be a privacy leak, bail out as if the page did not exist.
       return NS_ERROR_NOT_AVAILABLE;
-    } else {
-      // The page, or a redirect to it, is bookmarked.  If the bookmarked spec
-      // is different from the requested one, use it.
-      if (!_page.bookmarkedSpec.Equals(_page.spec)) {
-        _page.spec = _page.bookmarkedSpec;
-        rv = FetchPageInfo(aDB, _page);
-        NS_ENSURE_SUCCESS(rv, rv);
-      }
+    }
+
+    // The page, or a redirect to it, is bookmarked.  If the bookmarked spec
+    // is different from the requested one, use it.
+    if (!_page.bookmarkedSpec.Equals(_page.spec)) {
+      _page.spec = _page.bookmarkedSpec;
+      rv = FetchPageInfo(aDB, _page);
+      NS_ENSURE_SUCCESS(rv, rv);
     }
   }
 

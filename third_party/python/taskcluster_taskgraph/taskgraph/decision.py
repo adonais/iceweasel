@@ -39,6 +39,7 @@ PER_PROJECT_PARAMETERS = {
 }
 
 
+#: Schema for try_task_config.json version 2
 try_task_config_schema_v2 = Schema(
     {
         Optional("parameters"): {str: object},
@@ -109,6 +110,7 @@ def taskgraph_decision(options, parameters=None):
         parameters=parameters,
         decision_task_id=decision_task_id,
         write_artifacts=True,
+        enable_verifications=options.get("verify", True),
     )
 
     # write out the parameters used to generate this graph
@@ -261,9 +263,9 @@ def get_decision_parameters(graph_config, options):
         parameters["optimize_target_tasks"] = options["optimize_target_tasks"]
 
     if "decision-parameters" in graph_config["taskgraph"]:
-        find_object(graph_config["taskgraph"]["decision-parameters"])(
-            graph_config, parameters
-        )
+        decision_params = find_object(graph_config["taskgraph"]["decision-parameters"])
+        assert callable(decision_params)
+        decision_params(graph_config, parameters)
 
     if options.get("try_task_config_file"):
         task_config_file = os.path.abspath(options.get("try_task_config_file"))
@@ -376,7 +378,7 @@ def write_artifact(filename, data):
         with open(path, "w") as f:
             json.dump(data, f, sort_keys=True, indent=2)
     elif filename.endswith(".gz"):
-        import gzip
+        import gzip  # noqa: PLC0415
 
         with gzip.open(path, "wb") as f:
             f.write(json.dumps(data))  # type: ignore
@@ -392,7 +394,7 @@ def read_artifact(filename):
         with open(path) as f:
             return json.load(f)
     elif filename.endswith(".gz"):
-        import gzip
+        import gzip  # noqa: PLC0415
 
         with gzip.open(path, "rb") as f:
             return json.load(f)

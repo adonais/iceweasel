@@ -206,27 +206,31 @@
                   <label class="content-blocking-label" data-l10n-id="content-blocking-known-and-suspected-fingerprinters"/>
                 </hbox>
               </vbox>
-              <vbox>
-                <html:moz-checkbox id="contentBlockingBaselineExceptionsStrict"
-                                   class="content-blocking-checkbox"
-                                   flex="1"
-                                   data-l10n-id="content-blocking-baseline-exceptions"
-                                   preference="privacy.trackingprotection.allow_list.baseline.enabled">
-                  <html:moz-checkbox id="contentBlockingConvenienceExceptionsStrict"
-                                     slot="nested"
-                                     class="content-blocking-checkbox"
-                                     flex="1"
-                                     data-l10n-id="content-blocking-convenience-exceptions"
-                                     preference="privacy.trackingprotection.allow_list.convenience.enabled"/>
-                </html:moz-checkbox>
-              </vbox>
+            </vbox>
+          </vbox>
+          <vbox class="privacy-extra-information">
+            <vbox class="content-blocking-exceptions">
+              <html:moz-checkbox id="contentBlockingBaselineExceptionsStrict"
+                                  class="content-blocking-checkbox"
+                                  flex="1"
+                                  data-l10n-id="content-blocking-baseline-exceptions-3"
+                                  preference="privacy.trackingprotection.allow_list.baseline.enabled"
+                                  support-page="manage-enhanced-tracking-protection-exceptions">
+                <html:moz-checkbox id="contentBlockingConvenienceExceptionsStrict"
+                                    slot="nested"
+                                    class="content-blocking-checkbox"
+                                    flex="1"
+                                    data-l10n-id="content-blocking-convenience-exceptions-3"
+                                    preference="privacy.trackingprotection.allow_list.convenience.enabled"/>
+              </html:moz-checkbox>
+            </vbox>
               <html:div class="content-blocking-warning info-box-container reload-tabs" hidden="true">
                 <html:div class="content-blocking-reload-desc-container">
                   <html:div class="info-icon-container">
                     <html:img class="info-icon"/>
                   </html:div>
                   <html:span data-l10n-id="content-blocking-reload-description"
-                             class="content-blocking-reload-description" />
+                              class="content-blocking-reload-description" />
                 </html:div>
                 <button class="accessory-button reload-tabs-button primary"
                         is="highlightable-button"
@@ -235,17 +239,16 @@
               <vbox class="content-blocking-warning info-box-container">
                 <hbox>
                   <image class="content-blocking-warning-image"/>
-                  <label class="content-blocking-warning-title" data-l10n-id="content-blocking-warning-title"/>
+                  <label class="content-blocking-warning-title" data-l10n-id="content-blocking-warning-title-2"/>
                 </hbox>
-                <description>
-                  <html:span class="content-blocking-warning-description" data-l10n-id="content-blocking-and-isolating-etp-warning-description-3"></html:span>
-                  <html:a is="moz-support-link"
-                          class="learnMore"
-                          data-l10n-id="content-blocking-warning-learn-how"
-                          support-page="turn-off-etp-desktop"
-                  />
-                </description>
-              </vbox>
+              <description>
+                <html:span class="content-blocking-warning-description" data-l10n-id="content-blocking-and-isolating-etp-warning-description-4"></html:span>
+                <html:a is="moz-support-link"
+                        class="learnMore"
+                        data-l10n-id="content-blocking-warning-learn-how"
+                        support-page="turn-off-etp-desktop"
+                />
+              </description>
             </vbox>
           </vbox>
         </vbox>
@@ -334,17 +337,21 @@
                       </menulist>
                     </vbox>
                   </hbox>
-              <vbox>
+            </vbox>
+          </vbox>
+          <vbox class="privacy-extra-information">
+              <vbox class="content-blocking-exceptions">
                 <html:moz-checkbox id="contentBlockingBaselineExceptionsCustom"
                                    class="content-blocking-checkbox"
                                    flex="1"
-                                   data-l10n-id="content-blocking-baseline-exceptions"
-                                   preference="privacy.trackingprotection.allow_list.baseline.enabled">
+                                   data-l10n-id="content-blocking-baseline-exceptions-3"
+                                   preference="privacy.trackingprotection.allow_list.baseline.enabled"
+                                   support-page="manage-enhanced-tracking-protection-exceptions">
                   <html:moz-checkbox id="contentBlockingConvenienceExceptionsCustom"
                                      slot="nested"
                                      class="content-blocking-checkbox"
                                      flex="1"
-                                     data-l10n-id="content-blocking-convenience-exceptions"
+                                     data-l10n-id="content-blocking-convenience-exceptions-3"
                                      preference="privacy.trackingprotection.allow_list.convenience.enabled"/>
                 </html:moz-checkbox>
               </vbox>
@@ -363,10 +370,10 @@
               <vbox class="content-blocking-warning info-box-container">
                 <hbox>
                   <image class="content-blocking-warning-image"/>
-                  <label class="content-blocking-warning-title" data-l10n-id="content-blocking-warning-title"/>
+                  <label class="content-blocking-warning-title" data-l10n-id="content-blocking-warning-title-custom"/>
                 </hbox>
                 <description>
-                  <html:span class="content-blocking-warning-description" data-l10n-id="content-blocking-and-isolating-etp-warning-description-3"></html:span>
+                  <html:span class="content-blocking-warning-description" data-l10n-id="content-blocking-and-isolating-etp-warning-description-4"></html:span>
                   <html:a is="moz-support-link"
                           class="learnMore"
                           data-l10n-id="content-blocking-warning-learn-how"
@@ -374,7 +381,6 @@
                   />
                 </description>
               </vbox>
-            </vbox>
           </vbox>
         </vbox>
       </radiogroup>
@@ -383,24 +389,7 @@
 </groupbox>
 <groupbox id="nonTechnicalPrivacyGroup" data-category="panePrivacy" hidden="true">
   <label id="nonTechnicalPrivacyHeader"><html:h2 data-l10n-id="non-technical-privacy-header"/></label>
-  <vbox id="nonTechnicalPrivacyBox">
-    <hbox id="globalPrivacyControlBox" flex="1" align="center">
-      <checkbox id="globalPrivacyControlCheckbox"
-              class="tail-with-learn-more"
-              preference="privacy.globalprivacycontrol.enabled"
-              data-l10n-id="global-privacy-control-description"
-              search-l10n-ids="global-privacy-control-search" />
-      <html:a is="moz-support-link"
-          id="globalPrivacyControlLearnMoreLink"
-          support-page="global-privacy-control" />
-    </hbox>
-    <hbox id="doNotTrackBox" flex="1" align="center" hidden="true">
-      <html:a is="moz-support-link"
-          id="doNotTrackRemoval"
-          support-page="how-do-i-turn-do-not-track-feature"
-          data-l10n-id="do-not-track-removal" />
-    </hbox>
-  </vbox>
+  <html:setting-group groupid="nonTechnicalPrivacy"/>
 </groupbox>
 
 <!-- Site Data -->
@@ -930,7 +919,7 @@
 
   <hbox data-subcategory="permissions-block-popups">
     <checkbox id="popupPolicy" preference="dom.disable_open_during_load"
-              data-l10n-id="permissions-block-popups"
+              data-l10n-id="permissions-block-popups2"
               flex="1" />
     <button id="popupPolicyButton"
             is="highlightable-button"
@@ -939,8 +928,8 @@
             data-l10n-attrs="searchkeywords"
             search-l10n-ids="
               permissions-address,
-              permissions-exceptions-popup-window2.title,
-              permissions-exceptions-popup-desc,
+              permissions-exceptions-popup-window3.title,
+              permissions-exceptions-popup-desc2,
             " />
   </hbox>
 

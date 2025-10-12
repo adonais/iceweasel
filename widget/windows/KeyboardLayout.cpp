@@ -749,10 +749,10 @@ static const nsCString ToString(const MSG& aMSG) {
           "transition state=%s",
           GetVirtualKeyCodeName(aMSG.wParam).get(), aMSG.lParam & 0xFFFF,
           WinUtils::GetScanCode(aMSG.lParam),
-          GetBoolName(WinUtils::IsExtendedScanCode(aMSG.lParam)),
-          GetBoolName((aMSG.lParam & (1 << 29)) != 0),
-          GetBoolName((aMSG.lParam & (1 << 30)) != 0),
-          GetBoolName((aMSG.lParam & (1 << 31)) != 0));
+          TrueOrFalse(WinUtils::IsExtendedScanCode(aMSG.lParam)),
+          TrueOrFalse((aMSG.lParam & (1 << 29)) != 0),
+          TrueOrFalse((aMSG.lParam & (1 << 30)) != 0),
+          TrueOrFalse((aMSG.lParam & (1 << 31)) != 0));
       break;
     case WM_CHAR:
     case WM_DEADCHAR:
@@ -766,10 +766,10 @@ static const nsCString ToString(const MSG& aMSG) {
           "transition state=%s",
           GetCharacterCodeName(aMSG.wParam).get(), aMSG.lParam & 0xFFFF,
           WinUtils::GetScanCode(aMSG.lParam),
-          GetBoolName(WinUtils::IsExtendedScanCode(aMSG.lParam)),
-          GetBoolName((aMSG.lParam & (1 << 29)) != 0),
-          GetBoolName((aMSG.lParam & (1 << 30)) != 0),
-          GetBoolName((aMSG.lParam & (1 << 31)) != 0));
+          TrueOrFalse(WinUtils::IsExtendedScanCode(aMSG.lParam)),
+          TrueOrFalse((aMSG.lParam & (1 << 29)) != 0),
+          TrueOrFalse((aMSG.lParam & (1 << 30)) != 0),
+          TrueOrFalse((aMSG.lParam & (1 << 31)) != 0));
       break;
     case WM_APPCOMMAND:
       result.AppendPrintf(
@@ -1318,11 +1318,11 @@ NativeKey::NativeKey(nsWindow* aWidget, const MSG& aMessage,
            ToString(mShiftedString).get(), ToString(mUnshiftedString).get(),
            GetCharacterCodeName(mShiftedLatinChar).get(),
            GetCharacterCodeName(mUnshiftedLatinChar).get(), mScanCode,
-           GetBoolName(mIsExtended), GetBoolName(mIsRepeat),
-           GetBoolName(mIsDeadKey), GetBoolName(mIsPrintableKey),
-           GetBoolName(mIsSkippableInRemoteProcess),
-           GetBoolName(mCharMessageHasGone),
-           GetBoolName(mIsOverridingKeyboardLayout)));
+           TrueOrFalse(mIsExtended), TrueOrFalse(mIsRepeat),
+           TrueOrFalse(mIsDeadKey), TrueOrFalse(mIsPrintableKey),
+           TrueOrFalse(mIsSkippableInRemoteProcess),
+           TrueOrFalse(mCharMessageHasGone),
+           TrueOrFalse(mIsOverridingKeyboardLayout)));
 }
 
 void NativeKey::InitIsSkippableForKeyOrChar(const MSG& aLastKeyMSG) {
@@ -2137,7 +2137,7 @@ nsEventStatus NativeKey::InitKeyEvent(
        GetDOMKeyCodeName(aKeyEvent.mKeyCode).get(),
        GetKeyLocationName(aKeyEvent.mLocation).get(),
        GetModifiersName(aKeyEvent.mModifiers).get(),
-       GetBoolName(aKeyEvent.DefaultPrevented())));
+       TrueOrFalse(aKeyEvent.DefaultPrevented())));
 
   return aKeyEvent.DefaultPrevented() ? nsEventStatus_eConsumeNoDefault
                                       : nsEventStatus_eIgnore;
@@ -2230,7 +2230,7 @@ bool NativeKey::DispatchCommandEvent(uint32_t aEventCommand) const {
       gKeyLog, LogLevel::Info,
       ("%p   NativeKey::DispatchCommandEvent(), dispatched app command event, "
        "result=%s, mWidget->Destroyed()=%s",
-       this, GetBoolName(ok), GetBoolName(mWidget->Destroyed())));
+       this, SucceededOrFailed(ok), TrueOrFalse(mWidget->Destroyed())));
   return ok;
 }
 
@@ -2306,7 +2306,7 @@ bool NativeKey::HandleAppCommandMessage() const {
     MOZ_LOG(gKeyLog, LogLevel::Info,
             ("%p   NativeKey::HandleAppCommandMessage(), keydown event was "
              "dispatched, consumed=%s",
-             this, GetBoolName(consumed)));
+             this, TrueOrFalse(consumed)));
     sDispatchedKeyOfAppCommand = mVirtualKeyCode;
     if (mWidget->Destroyed()) {
       MOZ_LOG(
@@ -2553,7 +2553,7 @@ bool NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const {
         gKeyLog, LogLevel::Info,
         ("%p   NativeKey::HandleKeyDownMessage(), dispatched keydown event, "
          "dispatched=%s, defaultPrevented=%s",
-         this, GetBoolName(dispatched), GetBoolName(defaultPrevented)));
+         this, TrueOrFalse(dispatched), TrueOrFalse(defaultPrevented)));
 
     // If IMC wasn't associated to the window but is associated it now (i.e.,
     // focus is moved from a non-editable editor to an editor by keydown
@@ -2621,7 +2621,7 @@ bool NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const {
             ("%p   NativeKey::HandleKeyDownMessage(), not dispatching keypress "
              "event because the key was already handled by IME, "
              "defaultPrevented=%s",
-             this, GetBoolName(defaultPrevented)));
+             this, TrueOrFalse(defaultPrevented)));
     return defaultPrevented;
   }
 
@@ -2825,7 +2825,7 @@ bool NativeKey::HandleCharMessage(const MSG& aCharMsg,
   MOZ_LOG(gKeyLog, LogLevel::Info,
           ("%p   NativeKey::HandleCharMessage(), dispatched keypress event, "
            "dispatched=%s, consumed=%s",
-           this, GetBoolName(dispatched), GetBoolName(consumed)));
+           this, TrueOrFalse(dispatched), TrueOrFalse(consumed)));
   return consumed;
 }
 
@@ -2898,7 +2898,7 @@ bool NativeKey::HandleKeyUpMessage(bool* aEventDispatched) const {
   MOZ_LOG(gKeyLog, LogLevel::Info,
           ("%p   NativeKey::HandleKeyUpMessage(), dispatched keyup event, "
            "dispatched=%s, consumed=%s",
-           this, GetBoolName(dispatched), GetBoolName(consumed)));
+           this, TrueOrFalse(dispatched), TrueOrFalse(consumed)));
   return consumed;
 }
 
@@ -3617,7 +3617,7 @@ bool NativeKey::DispatchKeyPressEventsWithRetrievedCharMessages() const {
   MOZ_LOG(gKeyLog, LogLevel::Info,
           ("%p   NativeKey::DispatchKeyPressEventsWithRetrievedCharMessages(), "
            "dispatched keypress event(s), dispatched=%s, consumed=%s",
-           this, GetBoolName(dispatched), GetBoolName(consumed)));
+           this, TrueOrFalse(dispatched), TrueOrFalse(consumed)));
   return consumed;
 }
 
@@ -3666,7 +3666,7 @@ bool NativeKey::DispatchKeyPressEventsWithoutCharMessage() const {
       gKeyLog, LogLevel::Info,
       ("%p   NativeKey::DispatchKeyPressEventsWithoutCharMessage(), dispatched "
        "keypress event(s), dispatched=%s, consumed=%s",
-       this, GetBoolName(dispatched), GetBoolName(consumed)));
+       this, TrueOrFalse(dispatched), TrueOrFalse(consumed)));
   return consumed;
 }
 

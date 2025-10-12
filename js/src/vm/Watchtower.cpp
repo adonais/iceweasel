@@ -622,7 +622,8 @@ static void MaybePopRealmFuses(JSContext* cx, NativeObject* obj, jsid id) {
 // static
 bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
                                          Handle<NativeObject*> obj, HandleId id,
-                                         PropertyInfo propInfo) {
+                                         PropertyInfo propInfo,
+                                         bool* wasTrackedObjectFuseProp) {
   MOZ_ASSERT(watchesPropertyRemove(obj));
 
   if (obj->isUsedAsPrototype() && !id.isInt()) {
@@ -638,7 +639,7 @@ bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
   }
   if (obj->hasObjectFuse()) {
     if (auto* objFuse = cx->zone()->objectFuses.get(obj)) {
-      objFuse->handlePropertyRemove(cx, propInfo);
+      objFuse->handlePropertyRemove(cx, propInfo, wasTrackedObjectFuseProp);
     }
   }
 

@@ -335,6 +335,7 @@ static const char* gExactCallbackPrefs[] = {
     "layout.css.devPixelsPerPx",
     "layout.css.dpi",
     "layout.css.letter-spacing.model",
+    "layout.css.ruby.normalize-metrics-factor",
     "layout.css.text-transform.uppercase-eszett.enabled",
     "privacy.trackingprotection.enabled",
     nullptr,
@@ -602,6 +603,11 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
     changeHint |= NS_STYLE_HINT_REFLOW;
   }
 
+  if (prefName.EqualsLiteral("layout.css.ruby.normalize-metrics-factor")) {
+    mRubyPositioningFactor = -1;  // mark as uninitialized
+    changeHint |= NS_STYLE_HINT_REFLOW;
+  }
+
   // Same, this just frees a bunch of memory.
   StaticPresData::Get()->InvalidateFontPrefs();
   Document()->SetMayNeedFontPrefsUpdate();
@@ -621,6 +627,23 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
   }
 
   InvalidatePaintedLayers();
+}
+
+bool nsPresContext::NormalizeRubyMetrics() {
+  if (mRubyPositioningFactor < 0.0f) {
+    // Expected pref values are 0 or [100..200], treated as a percentage.
+    // We store the value divided by 100, to use as a scaling factor.
+    mRubyPositioningFactor =
+        StaticPrefs::layout_css_ruby_normalize_metrics_factor() / 100.0f;
+    // Clamp to the range of reasonable values.
+    if (mRubyPositioningFactor <= 0.0f) {
+      mRubyPositioningFactor = 0.0f;
+    } else {
+      mRubyPositioningFactor =
+          std::max(1.0f, std::min(2.0f, mRubyPositioningFactor));
+    }
+  }
+  return mRubyPositioningFactor > 0.0f;
 }
 
 nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
@@ -764,94 +787,8 @@ bool nsPresContext::ForcingColors() const {
 
 bool nsPresContext::UpdateFontVisibility() {
   FontVisibility oldValue = mFontVisibility;
-
-  /*
-   * Expected behavior in order of precedence:
-   *  1  Chrome Rules give User Level (3)
-   *  2  RFP gives Highest Level (1 aka Base)
-   *  3  An RFPTarget of Base gives Base Level (1)
-   *  4  An RFPTarget of LangPack gives LangPack Level (2)
-   *  5  The value of the Standard Font Visibility Pref
-   *
-   * If the ETP toggle is disabled (aka
-   * ContentBlockingAllowList::Check is true), it will only override 3-5,
-   * not rules 1 or 2.
-   */
-
-  // Rule 1: Allow all font access for privileged contexts, including
-  // chrome and devtools contexts.
-  if (Document()->ChromeRulesEnabled()) {
-    mFontVisibility = FontVisibility::User;
-    return mFontVisibility != oldValue;
-  }
-
-  // Is this a private browsing context?
-  bool isPrivate = false;
-  if (nsCOMPtr<nsILoadContext> loadContext = mDocument->GetLoadContext()) {
-    isPrivate = loadContext->UsePrivateBrowsing();
-  }
-
-  int32_t level;
-  // Rule 3
-  if (mDocument->ShouldResistFingerprinting(
-          RFPTarget::FontVisibilityBaseSystem)) {
-    // Rule 2: Check RFP pref
-    // This is inside Rule 3 in case this document is exempted from RFP.
-    // But if it is not exempted, and RFP is enabled, we return immediately
-    // to prevent the override below from occurring.
-    if (nsRFPService::IsRFPPrefEnabled(isPrivate)) {
-      mFontVisibility = FontVisibility::Base;
-      return mFontVisibility != oldValue;
-    }
-
-    level = int32_t(FontVisibility::Base);
-  }
-  // Rule 4
-  else if (mDocument->ShouldResistFingerprinting(
-               RFPTarget::FontVisibilityLangPack)) {
-    level = int32_t(FontVisibility::LangPack);
-  }
-  // Rule 5
-  else {
-    level = StaticPrefs::layout_css_font_visibility();
-  }
-
-  // Override Rules 3-5 Only: Determine if the user has exempted the
-  // domain from tracking protections, if so, use the default value.
-  if (level != StaticPrefs::layout_css_font_visibility() &&
-      ContentBlockingAllowList::Check(mDocument->CookieJarSettings())) {
-    level = StaticPrefs::layout_css_font_visibility();
-  }
-
-  // Clamp result to the valid range of levels.
-  level = std::clamp(level, int32_t(FontVisibility::Base),
-                     int32_t(FontVisibility::User));
-
-  mFontVisibility = FontVisibility(level);
+  mFontVisibility = ComputeFontVisibility();
   return mFontVisibility != oldValue;
-}
-
-void nsPresContext::ReportBlockedFontFamilyName(const nsCString& aFamily,
-                                                FontVisibility aVisibility) {
-  if (!mBlockedFonts.EnsureInserted(aFamily)) {
-    return;
-  }
-  nsAutoString msg;
-  msg.AppendPrintf(
-      "Request for font \"%s\" blocked at visibility level %d (requires %d)\n",
-      aFamily.get(), int(GetFontVisibility()), int(aVisibility));
-  nsContentUtils::ReportToConsoleNonLocalized(msg, nsIScriptError::warningFlag,
-                                              "Security"_ns, mDocument);
-}
-
-void nsPresContext::ReportBlockedFontFamily(const fontlist::Family& aFamily) {
-  auto* fontList = gfxPlatformFontList::PlatformFontList()->SharedFontList();
-  const nsCString& name = aFamily.DisplayName().AsString(fontList);
-  ReportBlockedFontFamilyName(name, aFamily.Visibility());
-}
-
-void nsPresContext::ReportBlockedFontFamily(const gfxFontFamily& aFamily) {
-  ReportBlockedFontFamilyName(aFamily.Name(), aFamily.Visibility());
 }
 
 void nsPresContext::InitFontCache() {
@@ -1093,19 +1030,23 @@ void nsPresContext::FinishedContainerQueryUpdate() {
   mUpdatedContainerQueryContents.Clear();
 }
 
-bool nsPresContext::UpdateContainerQueryStyles() {
+void nsPresContext::UpdateContainerQueryStylesAndAnchorPosLayout() {
+  const auto result = PresShell()->UpdateAnchorPosLayout();
   if (mContainerQueryFrames.IsEmpty()) {
-    return false;
+    return;
   }
 
   AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("Container Query Styles Update", LAYOUT);
   AUTO_PROFILER_MARKER_UNTYPED("UpdateContainerQueryStyles", LAYOUT, {});
 
-  PresShell()->DoFlushLayout(/* aInterruptible = */ false);
+  using AnchorPosUpdateResult = PresShell::AnchorPosUpdateResult;
+  if (result == AnchorPosUpdateResult::NotApplicable ||
+      result == AnchorPosUpdateResult::NeedReflow) {
+    PresShell()->DoFlushLayout(/* aInterruptible = */ false);
+  }
 
   AutoTArray<nsIFrame*, 8> framesToUpdate;
 
-  bool anyChanged = false;
   for (nsIFrame* frame : mContainerQueryFrames.IterFromShallowest()) {
     MOZ_ASSERT(frame->IsPrimaryFrame());
 
@@ -1160,9 +1101,7 @@ bool nsPresContext::UpdateContainerQueryStyles() {
     RestyleManager()->PostRestyleEvent(frame->GetContent()->AsElement(),
                                        RestyleHint::RestyleSubtree(),
                                        nsChangeHint(0));
-    anyChanged = true;
   }
-  return anyChanged;
 }
 
 void nsPresContext::DocumentCharSetChanged(NotNull<const Encoding*> aCharSet) {
@@ -2544,7 +2483,7 @@ void nsPresContext::NotifyDidPaintForSubtree(
 }
 
 already_AddRefed<nsITimer> nsPresContext::CreateTimer(
-    nsTimerCallbackFunc aCallback, const char* aName, uint32_t aDelay) {
+    nsTimerCallbackFunc aCallback, const nsACString& aName, uint32_t aDelay) {
   nsCOMPtr<nsITimer> timer;
   NS_NewTimerWithFuncCallback(getter_AddRefs(timer), aCallback, this, aDelay,
                               nsITimer::TYPE_ONE_SHOT, aName,
@@ -3168,6 +3107,33 @@ void nsPresContext::ValidatePresShellAndDocumentReleation() const {
 }
 
 #endif  // #ifdef DEBUG
+
+// FontVisibilityProvider implementation
+FontVisibility nsPresContext::GetFontVisibility() const {
+  return mFontVisibility;
+}
+
+bool nsPresContext::ShouldResistFingerprinting(RFPTarget aTarget) const {
+  return Document()->ShouldResistFingerprinting(aTarget);
+}
+
+void nsPresContext::ReportBlockedFontFamily(const nsCString& aMsg) const {
+  nsContentUtils::ReportToConsoleNonLocalized(NS_ConvertUTF8toUTF16(aMsg),
+                                              nsIScriptError::warningFlag,
+                                              "Security"_ns, Document());
+}
+
+bool nsPresContext::IsPrivateBrowsing() const {
+  return Document()->IsInPrivateBrowsing();
+}
+
+nsICookieJarSettings* nsPresContext::GetCookieJarSettings() const {
+  return Document()->CookieJarSettings();
+}
+
+Maybe<FontVisibility> nsPresContext::MaybeInheritFontVisibility() const {
+  return Nothing();
+}
 
 nsRootPresContext::nsRootPresContext(dom::Document* aDocument,
                                      nsPresContextType aType)

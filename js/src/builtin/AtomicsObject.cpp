@@ -1060,67 +1060,72 @@ static FutexThread::WaitResult AtomicsWaitAsyncCriticalSection(
   // We need to initialize an OffThreadPromiseTask inside this critical section.
   // To avoid deadlock, we claim the helper thread lock first.
   AutoLockHelperThreadState helperThreadLock;
-  AutoLockFutexAPI futexLock;
-
-  // Steps 18-20:
-  SharedMem<T*> addr =
-      sarb->dataPointerShared().cast<T*>() + (byteOffset / sizeof(T));
-  if (jit::AtomicOperations::loadSafeWhenRacy(addr) != value) {
-    return FutexThread::WaitResult::NotEqual;
-  }
-
-  // Step 21
-  bool hasTimeout = timeout.isSome();
-  if (hasTimeout && timeout.value().IsZero()) {
-    return FutexThread::WaitResult::TimedOut;
-  }
-
-  // Steps 22-30
-  // To handle potential failures, we split this up into two phases:
-  // First, we allocate everything: the notify task, the waiter, and
-  // (if necessary) the timeout task. The allocations are managed
-  // using unique pointers, which will free them on failure. This
-  // phase has no external side-effects.
-
-  // Second, we transfer ownership of the allocations to the right places:
-  // the waiter owns the notify task, the shared array buffer owns the waiter,
-  // and the event loop owns the timeout task. This phase is infallible.
-  auto notifyTask = js::MakeUnique<WaitAsyncNotifyTask>(cx, promise);
-  if (!notifyTask) {
-    JS_ReportOutOfMemory(cx);
-    return FutexThread::WaitResult::Error;
-  }
-  auto waiter = js::MakeUnique<AsyncFutexWaiter>(cx, byteOffset);
-  if (!waiter) {
-    JS_ReportOutOfMemory(cx);
-    return FutexThread::WaitResult::Error;
-  }
-
-  notifyTask->setWaiter(waiter.get());
-  waiter->setNotifyTask(notifyTask.get());
 
   UniquePtr<WaitAsyncTimeoutTask> timeoutTask;
-  if (hasTimeout) {
-    timeoutTask = js::MakeUnique<WaitAsyncTimeoutTask>(waiter.get());
-    if (!timeoutTask) {
+  {
+    AutoLockFutexAPI futexLock;
+
+    // Steps 18-20:
+    SharedMem<T*> addr =
+        sarb->dataPointerShared().cast<T*>() + (byteOffset / sizeof(T));
+    if (jit::AtomicOperations::loadSafeWhenRacy(addr) != value) {
+      return FutexThread::WaitResult::NotEqual;
+    }
+
+    // Step 21
+    bool hasTimeout = timeout.isSome();
+    if (hasTimeout && timeout.value().IsZero()) {
+      return FutexThread::WaitResult::TimedOut;
+    }
+
+    // Steps 22-30
+    // To handle potential failures, we split this up into two phases:
+    // First, we allocate everything: the notify task, the waiter, and
+    // (if necessary) the timeout task. The allocations are managed
+    // using unique pointers, which will free them on failure. This
+    // phase has no external side-effects.
+
+    // Second, we transfer ownership of the allocations to the right places:
+    // the waiter owns the notify task, the shared array buffer owns the waiter,
+    // and the event loop owns the timeout task. This phase is infallible.
+    auto notifyTask = js::MakeUnique<WaitAsyncNotifyTask>(cx, promise);
+    if (!notifyTask) {
       JS_ReportOutOfMemory(cx);
       return FutexThread::WaitResult::Error;
     }
-    waiter->setTimeoutTask(timeoutTask.get());
-  }
+    auto waiter = js::MakeUnique<AsyncFutexWaiter>(cx, byteOffset);
+    if (!waiter) {
+      JS_ReportOutOfMemory(cx);
+      return FutexThread::WaitResult::Error;
+    }
 
-  // This is the last fallible operation. If it fails, all allocations
-  // will be freed. init has no side-effects if it fails.
-  if (!js::OffThreadPromiseTask::InitCancellable(cx, helperThreadLock,
-                                                 std::move(notifyTask))) {
-    return FutexThread::WaitResult::Error;
-  }
+    notifyTask->setWaiter(waiter.get());
+    waiter->setNotifyTask(notifyTask.get());
 
-  // Below this point, everything is infallible.
-  AddWaiter(sarb, waiter.release(), futexLock);
+    if (hasTimeout) {
+      timeoutTask = js::MakeUnique<WaitAsyncTimeoutTask>(waiter.get());
+      if (!timeoutTask) {
+        JS_ReportOutOfMemory(cx);
+        return FutexThread::WaitResult::Error;
+      }
+      waiter->setTimeoutTask(timeoutTask.get());
+    }
 
-  if (hasTimeout) {
-    MOZ_ASSERT(!!timeoutTask);
+    // This is the last fallible operation. If it fails, all allocations
+    // will be freed. init has no side-effects if it fails.
+    if (!js::OffThreadPromiseTask::InitCancellable(cx, helperThreadLock,
+                                                   std::move(notifyTask))) {
+      return FutexThread::WaitResult::Error;
+    }
+
+    // Below this point, everything is infallible.
+    AddWaiter(sarb, waiter.release(), futexLock);
+  }  // End of futexLock critical section
+
+  // We dispatch the task after leaving the critical section to avoid
+  // potential deadlock if the dispatch callback has internal locking.
+  // See bug 1980271.
+  if (timeoutTask) {
     OffThreadPromiseRuntimeState& state =
         cx->runtime()->offThreadPromiseState.ref();
     // We are not tracking the dispatch of the timeout task using the

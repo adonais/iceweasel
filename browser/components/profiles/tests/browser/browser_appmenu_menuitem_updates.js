@@ -35,6 +35,7 @@ add_task(async function test_appmenu_updates_on_edit() {
 
   SelectableProfileService.currentProfile.name = INITIAL_NAME;
   await promiseAppMenuOpened();
+
   let view = PanelMultiView.getViewNode(document, "appMenu-profiles-button");
   Assert.equal(view.label, INITIAL_NAME, "expected the initial name");
 

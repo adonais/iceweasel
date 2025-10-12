@@ -5,11 +5,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 DIRS += ["build", "decoders", "encoders"]
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["test/gtest"]
+TEST_DIRS += ["test/gtest"]
 
 if CONFIG["FUZZING_INTERFACES"]:
-    DIRS += ["test/fuzzing"]
+    TEST_DIRS += ["test/fuzzing"]
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Graphics: ImageLib")

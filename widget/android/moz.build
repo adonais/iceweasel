@@ -15,10 +15,9 @@ DIRS += [
     "jni",
 ]
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += [
-        "tests",
-    ]
+TEST_DIRS += [
+    "tests",
+]
 
 EXPORTS += [
     "AndroidBridge.h",

@@ -193,6 +193,16 @@ export const FormAutofillHeuristics = {
           .length
       ) {
         scanner.updateFieldName(idx - 1, otherFieldName);
+      } else {
+        // If there are two given name or family name fields, yet only one
+        // of the other type of name field, assume that the second field
+        // is meant to be an additional name.
+        let fields = scanner.getFieldsMatching(
+          field => field.fieldName == otherFieldName
+        );
+        if (fields.length == 1) {
+          scanner.updateFieldName(idx, "additional-name");
+        }
       }
 
       scanner.parsingIndex++;

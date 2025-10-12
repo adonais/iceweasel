@@ -1915,31 +1915,25 @@ struct GPOSProxy
 
 static inline bool
 apply_forward (OT::hb_ot_apply_context_t *c,
-	       const OT::hb_ot_layout_lookup_accelerator_t &accel,
-	       unsigned subtable_count)
+	       const OT::hb_ot_layout_lookup_accelerator_t &accel)
 {
-  bool use_cache = accel.cache_enter (c);
+  bool use_hot_subtable_cache = accel.cache_enter (c);
 
   bool ret = false;
   hb_buffer_t *buffer = c->buffer;
   while (buffer->idx < buffer->len && buffer->successful)
   {
-    bool applied = false;
     auto &cur = buffer->cur();
     if (accel.digest.may_have (cur.codepoint) &&
 	(cur.mask & c->lookup_mask) &&
-	c->check_glyph_property (&cur, c->lookup_props))
-     {
-       applied = accel.apply (c, subtable_count, use_cache);
-     }
-
-    if (applied)
+	c->check_glyph_property (&cur, c->lookup_props) &&
+        accel.apply (c, use_hot_subtable_cache))
       ret = true;
     else
       (void) buffer->next_glyph ();
   }
 
-  if (use_cache)
+  if (use_hot_subtable_cache)
     accel.cache_leave (c);
 
   return ret;
@@ -1947,8 +1941,7 @@ apply_forward (OT::hb_ot_apply_context_t *c,
 
 static inline bool
 apply_backward (OT::hb_ot_apply_context_t *c,
-	       const OT::hb_ot_layout_lookup_accelerator_t &accel,
-	       unsigned subtable_count)
+	       const OT::hb_ot_layout_lookup_accelerator_t &accel)
 {
   bool ret = false;
   hb_buffer_t *buffer = c->buffer;
@@ -1958,11 +1951,10 @@ apply_backward (OT::hb_ot_apply_context_t *c,
     if (accel.digest.may_have (cur.codepoint) &&
 	(cur.mask & c->lookup_mask) &&
 	c->check_glyph_property (&cur, c->lookup_props))
-      ret |= accel.apply (c, subtable_count, false);
+      ret |= accel.apply (c, false);
 
     /* The reverse lookup doesn't "advance" cursor (for good reason). */
     buffer->idx--;
-
   }
   while ((int) buffer->idx >= 0);
   return ret;
@@ -1975,7 +1967,6 @@ apply_string (OT::hb_ot_apply_context_t *c,
 	      const OT::hb_ot_layout_lookup_accelerator_t &accel)
 {
   hb_buffer_t *buffer = c->buffer;
-  unsigned subtable_count = lookup.get_subtable_count ();
 
   if (unlikely (!buffer->len || !c->lookup_mask))
     return false;
@@ -1991,7 +1982,7 @@ apply_string (OT::hb_ot_apply_context_t *c,
       buffer->clear_output ();
 
     buffer->idx = 0;
-    ret = apply_forward (c, accel, subtable_count);
+    ret = apply_forward (c, accel);
 
     if (!Proxy::always_inplace)
       buffer->sync ();
@@ -2001,7 +1992,7 @@ apply_string (OT::hb_ot_apply_context_t *c,
     /* in-place backward substitution/positioning */
     assert (!buffer->have_output);
     buffer->idx = buffer->len - 1;
-    ret = apply_backward (c, accel, subtable_count);
+    ret = apply_backward (c, accel);
   }
 
   return ret;

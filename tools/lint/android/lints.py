@@ -367,11 +367,9 @@ def javadoc(_paths, config, **lintargs):
             issues = json.load(f)
 
             for issue in issues:
-                # We want warnings to be errors for linting purposes.
-                # TODO: Bug 1316188 - resolve missing javadoc comments
-                issue["level"] = (
-                    "error" if issue["message"] != ": no comment" else "warning"
-                )
+                # We want all warnings to be errors for linting purposes.
+                # This ensures javadoc warnings can no longer be ignored.
+                issue["level"] = "error"
                 results.append(result.from_config(config, **issue))
 
     return results

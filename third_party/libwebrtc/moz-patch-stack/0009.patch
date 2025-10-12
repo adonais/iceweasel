@@ -19,7 +19,7 @@ diff --git a/modules/desktop_capture/mac/screen_capturer_mac.mm b/modules/deskto
 index 82c07d777a..955a13f435 100644
 --- a/modules/desktop_capture/mac/screen_capturer_mac.mm
 +++ b/modules/desktop_capture/mac/screen_capturer_mac.mm
-@@ -287,7 +287,8 @@ DesktopRect GetExcludedWindowPixelBounds(CGWindowID window,
+@@ -287,7 +287,8 @@ bool ScreenCapturerMac::GetSourceList(SourceList* screens) {
    for (MacDisplayConfigurations::iterator it = desktop_config_.displays.begin();
         it != desktop_config_.displays.end();
         ++it) {

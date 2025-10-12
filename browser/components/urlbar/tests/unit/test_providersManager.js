@@ -3,6 +3,10 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  ProvidersManager: "resource:///modules/UrlbarProvidersManager.sys.mjs",
+});
+
 add_task(async function test_providers() {
   Assert.throws(
     () => UrlbarProvidersManager.registerProvider(),
@@ -67,7 +71,7 @@ add_task(async function test_providers() {
 
 add_task(async function test_criticalSection() {
   // Just a sanity check, this shouldn't throw.
-  await UrlbarProvidersManager.runInCriticalSection(async () => {
+  await ProvidersManager.runInCriticalSection(async () => {
     let db = await PlacesUtils.promiseLargeCacheDBConnection();
     await db.execute(`PRAGMA page_cache`);
   });

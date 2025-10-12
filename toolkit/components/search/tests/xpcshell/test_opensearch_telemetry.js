@@ -3,10 +3,6 @@ http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
 const openSearchEngineFiles = [
   "secure-and-securely-updated1.xml",
   "secure-and-securely-updated2.xml",
@@ -26,14 +22,13 @@ const openSearchEngineFiles = [
 ];
 
 async function verifyTelemetry(probeNameFragment, engineCount, type) {
-  Services.telemetry.clearScalars();
+  Services.fog.testResetFOG();
   await Services.search.runBackgroundChecks();
 
-  TelemetryTestUtils.assertScalar(
-    TelemetryTestUtils.getProcessScalars("parent"),
-    `browser.searchinit.${probeNameFragment}`,
+  Assert.equal(
+    Glean.browserSearchinit[probeNameFragment].testGetValue(),
     engineCount,
-    `Count of ${type} engines: ${engineCount}`
+    `Count of ${type} engines should be ${engineCount}`
   );
 }
 
@@ -50,8 +45,8 @@ add_setup(async function () {
 });
 
 add_task(async function () {
-  verifyTelemetry("secure_opensearch_engine_count", 10, "secure");
-  verifyTelemetry("insecure_opensearch_engine_count", 4, "insecure");
-  verifyTelemetry("secure_opensearch_update_count", 5, "securely updated");
-  verifyTelemetry("insecure_opensearch_update_count", 4, "insecurely updated");
+  verifyTelemetry("secureOpensearchEngineCount", 10, "secure");
+  verifyTelemetry("insecureOpensearchEngineCount", 4, "insecure");
+  verifyTelemetry("secureOpensearchUpdateCount", 5, "securely updated");
+  verifyTelemetry("insecureOpensearchUpdateCount", 4, "insecurely updated");
 });

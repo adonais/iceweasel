@@ -139,7 +139,6 @@
 #include "mozilla/dom/IdleRequest.h"
 #include "mozilla/dom/ImageBitmap.h"
 #include "mozilla/dom/ImageBitmapSource.h"
-#include "mozilla/dom/InstallTriggerBinding.h"
 #include "mozilla/dom/IntlUtils.h"
 #include "mozilla/dom/JSExecutionUtils.h"  // mozilla::dom::Compile, mozilla::dom::EvaluationExceptionToNSResult
 #include "mozilla/dom/LSObject.h"
@@ -1093,11 +1092,6 @@ nsGlobalWindowInner::~nsGlobalWindowInner() {
   MOZ_LOG(gDOMLeakPRLogInner, LogLevel::Debug,
           ("DOMWINDOW %p destroyed", this));
 
-  glean::dom::innerwindows_with_mutation_listeners
-      .EnumGet(static_cast<glean::dom::InnerwindowsWithMutationListenersLabel>(
-          mMutationBits ? 1 : 0))
-      .Add();
-
   // An inner window is destroyed, pull it out of the outer window's
   // list if inner windows.
 
@@ -1288,7 +1282,6 @@ void nsGlobalWindowInner::FreeInnerObjects() {
   mPaintWorklet = nullptr;
 
   mExternal = nullptr;
-  mInstallTrigger = nullptr;
 
   if (mLocalStorage) {
     mLocalStorage->Disconnect();
@@ -1482,7 +1475,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindowInner)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCookieStore)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPaintWorklet)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mExternal)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mInstallTrigger)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIntlUtils)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mVisualViewport)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCurrentPasteDataTransfer)
@@ -1599,7 +1591,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsGlobalWindowInner)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCookieStore)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPaintWorklet)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mExternal)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mInstallTrigger)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mIntlUtils)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mVisualViewport)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCurrentPasteDataTransfer)
@@ -1880,14 +1871,6 @@ void nsGlobalWindowInner::InitDocumentDependentState(JSContext* aCx) {
 #ifdef DEBUG
   mLastOpenedURI = mDoc->GetDocumentURI();
 #endif
-
-  glean::dom::innerwindows_with_mutation_listeners
-      .EnumGet(static_cast<glean::dom::InnerwindowsWithMutationListenersLabel>(
-          mMutationBits ? 1 : 0))
-      .Add();
-
-  // Clear our mutation bitfield.
-  mMutationBits = 0;
 }
 
 nsresult nsGlobalWindowInner::EnsureClientSource() {
@@ -2580,36 +2563,53 @@ bool nsGlobalWindowInner::ShouldReportForServiceWorkerScope(
   return result;
 }
 
-InstallTriggerImpl* nsGlobalWindowInner::GetInstallTrigger() {
-  if (!mInstallTrigger &&
-      !StaticPrefs::extensions_InstallTriggerImpl_enabled()) {
-    // Return nullptr when InstallTriggerImpl is disabled by pref,
-    // which does not yet break the "typeof InstallTrigger !== 'undefined"
-    // "UA detection" use case, but prevents access to the InstallTriggerImpl
-    // methods and properties.
-    //
-    // NOTE: a separate pref ("extensions.InstallTrigger.enabled"), associated
-    // to this property using the [Pref] extended attribute in Window.webidl,
-    // does instead hide the entire InstallTrigger property.
-    //
-    // See Bug 1754441 for more details about this deprecation.
-    return nullptr;
-  }
-  if (!mInstallTrigger) {
-    ErrorResult rv;
-    mInstallTrigger = ConstructJSImplementation<InstallTriggerImpl>(
-        "@mozilla.org/addons/installtrigger;1", this, rv);
-    if (rv.Failed()) {
-      rv.SuppressException();
-      return nullptr;
-    }
-  }
-
-  return mInstallTrigger;
+void nsGlobalWindowInner::GetInstallTrigger(
+    JSContext* aCx, JS::MutableHandle<JSObject*> aResult) {
+  // Return nullptr, to avoid breaking "typeof InstallTrigger !== 'undefined"
+  // "UA detection" use case.
+  //
+  // A pref ("extensions.InstallTrigger.enabled"), associated to this
+  // property using the [Pref] extended attribute in Window.webidl, hides the
+  // entire InstallTrigger property.
+  //
+  // See Bug 1754441 for more details about this deprecation.
+  aResult.set(nullptr);
 }
 
 nsIDOMWindowUtils* nsGlobalWindowInner::GetWindowUtils(ErrorResult& aRv) {
   FORWARD_TO_OUTER_OR_THROW(WindowUtils, (), aRv, nullptr);
+}
+
+bool nsGlobalWindowInner::SynthesizeMouseEvent(
+    const nsAString& aType, float aOffsetX, float aOffsetY,
+    const SynthesizeMouseEventData& aMouseEventData,
+    const SynthesizeMouseEventOptions& aOptions,
+    const Optional<OwningNonNull<VoidFunction>>& aCallback,
+    ErrorResult& aError) {
+  nsIDocShell* docShell = GetDocShell();
+  RefPtr<PresShell> presShell = docShell ? docShell->GetPresShell() : nullptr;
+  if (!presShell) {
+    aError.Throw(NS_ERROR_FAILURE);
+    return false;
+  }
+
+  nsPoint offset;
+  nsCOMPtr<nsIWidget> widget = nsContentUtils::GetWidget(presShell, &offset);
+  if (!widget) {
+    aError.Throw(NS_ERROR_FAILURE);
+    return false;
+  }
+
+  LayoutDeviceIntPoint refPoint = nsContentUtils::ToWidgetPoint(
+      CSSPoint(aOffsetX, aOffsetY), offset, presShell->GetPresContext());
+  auto result = nsContentUtils::SynthesizeMouseEvent(
+      presShell, widget, aType, refPoint, aMouseEventData, aOptions, aCallback);
+  if (result.isErr()) {
+    aError.Throw(result.unwrapErr());
+    return false;
+  }
+
+  return result.unwrap();
 }
 
 CallState nsGlobalWindowInner::ShouldReportForServiceWorkerScopeInternal(
@@ -3650,7 +3650,7 @@ void nsGlobalWindowInner::RefreshReduceTimerPrecisionCallerType() {
       RTPCallerTypeToToken(GetRTPCallerType()));
 }
 
-already_AddRefed<nsIWidget> nsGlobalWindowInner::GetMainWidget() {
+already_AddRefed<nsIWidget> nsGlobalWindowInner::GetMainWidget() const {
   FORWARD_TO_OUTER(GetMainWidget, (), nullptr);
 }
 
@@ -7046,6 +7046,14 @@ void nsGlobalWindowInner::MoveToWorkspace(const nsAString& workspaceID) {
   if (nsCOMPtr<nsIWidget> widget = GetMainWidget()) {
     widget->MoveToWorkspace(workspaceID);
   }
+}
+
+bool nsGlobalWindowInner::IsCloaked() const {
+  if (nsCOMPtr<nsIWidget> widget = GetMainWidget()) {
+    return widget->IsCloaked();
+  }
+  // Assume that it is not, since most windows are not cloaked.
+  return false;
 }
 
 void nsGlobalWindowInner::GetAttention(ErrorResult& aResult) {

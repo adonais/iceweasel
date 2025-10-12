@@ -511,29 +511,6 @@ const ctrModelDataNoDP = {
   },
 };
 
-const ctrModelDataWithDP = {
-  model_type: "ctr",
-  noise_scale: 1,
-  day_time_weighting: {
-    days: [3, 14, 45],
-    relative_weight: [1, 0.5, 0.3],
-  },
-  interest_vector: {
-    news_reader: {
-      features: { pub_nytimes_com: 0.5, pub_cnn_com: 0.5 },
-      thresholds: [0.3, 0.4],
-      diff_p: 1,
-      diff_q: 0,
-    },
-    parenting: {
-      features: { parenting: 1 },
-      thresholds: [0.3, 0.4],
-      diff_p: 1,
-      diff_q: 0,
-    },
-  },
-};
-
 add_task(function test_computeCTRInterestVectorsNoNoise() {
   const model = FeatureModel.fromJSON(ctrModelDataNoDP);
 
@@ -556,70 +533,4 @@ add_task(function test_computeCTRInterestVectorsNoNoise() {
   Assert.equal(result.inferredInterests.parenting, 0.5);
   Assert.equal(result.inferredInterests.news_reader, 0);
   Assert.ok(!result.coarseInferredInterests, "No coarse inferred interests");
-});
-
-add_task(function test_computCTRInterestVectorsWithNoise() {
-  const model = FeatureModel.fromJSON(ctrModelDataWithDP);
-  model.clipZero = false;
-  model.laplaceNoiseFn = () => 0.42;
-
-  const clickInferredInterests2 = { parenting: 1 };
-  const impressionInferredInterests2 = { parenting: 2, news_reader: 4 };
-
-  const result = model.computeCTRInterestVectors({
-    clicks: clickInferredInterests2,
-    impressions: impressionInferredInterests2,
-    model_id: "test-ctr-model",
-  });
-
-  Assert.equal(
-    result.inferredInterests.model_id,
-    "test-ctr-model",
-    "Model id is CTR"
-  );
-  // Assert the stubbed noise is added
-  Assert.equal(result.inferredInterests.parenting, 0.5 + 0.42);
-  Assert.equal(result.inferredInterests.news_reader, 0 + 0.42);
-  Assert.ok(result.coarseInferredInterests, "Coarse inferred interests exist");
-  Assert.ok(
-    result.coarsePrivateInferredInterests,
-    "Non coarse interests exist"
-  );
-  Assert.equal(result.coarseInferredInterests.parenting, 2);
-  Assert.equal(result.coarseInferredInterests.news_reader, 0);
-});
-
-add_task(function test_applyLaplaceNoise_clampsWhenClipZero() {
-  const model = FeatureModel.fromJSON(ctrModelDataWithDP);
-  model.noiseScale = 1;
-  model.laplaceNoiseFn = () => 0.05;
-  const input = { a: 0.03, b: 0.0, c: 0.04, d: "n/a" };
-  model.applyLaplaceNoise(input); // clipzero is the default
-
-  // min(max(x + 0.05, 0), 0.04)
-  Assert.equal(input.a, 0.04, "a is capped to 0.04");
-  Assert.equal(input.b, 0.04, "b becomes 0.05 then capped to 0.04");
-  Assert.equal(input.c, 0.04, "c stays capped at 0.04");
-  Assert.equal(input.d, "n/a", "non-number unaffected");
-});
-
-add_task(function test_applyLaplaceNoise_noClampWhenClipZeroFalse() {
-  const model = FeatureModel.fromJSON(ctrModelDataWithDP);
-  model.noiseScale = 1;
-  model.laplaceNoiseFn = _scale => -0.02;
-
-  const input = { a: 0.03 };
-  model.applyLaplaceNoise(input, /* clipZero */ false);
-
-  Assert.less(Math.abs(input.a - 0.01), 1e-9, "no clamp when clipZero=false");
-});
-
-add_task(function test_applyLaplaceNoise_EarlyReturn() {
-  const model = FeatureModel.fromJSON(ctrModelDataWithDP);
-  model.noiseScale = null;
-
-  const input = { a: 0.03 };
-  model.applyLaplaceNoise(input, /* clipZero */ false);
-
-  Assert.equal(input.a, 0.03, "a is unchanged with null noiseScale");
 });

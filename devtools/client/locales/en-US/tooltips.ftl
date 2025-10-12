@@ -49,6 +49,8 @@ inactive-css-only-non-grid-or-flex-item = <strong>{ $property }</strong> has no 
 
 inactive-css-not-block = <strong>{ $property }</strong> has no effect on this element because it only applies to block-level elements.
 
+inactive-css-not-block-container = <strong>{ $property }</strong> has no effect on this element because it only applies to block container elements.
+
 inactive-css-not-floated = <strong>{ $property }</strong> has no effect because it only applies to floated elements.
 
 inactive-css-property-is-impossible-to-override-in-visited = It’s impossible to override <strong>{ $property }</strong> due to <strong>:visited</strong> restriction.
@@ -133,6 +135,8 @@ inactive-css-not-display-block-on-floated-fix = Try removing <strong>float</stro
 inactive-css-only-non-grid-or-flex-item-fix = Try changing the value of <strong>display</strong> of the element’s container to something else than <strong>flex</strong>, <strong>grid</strong>, <strong>inline-flex</strong>, or <strong>inline-grid</strong>, or removing <strong>float</strong>. { learn-more }
 
 inactive-css-not-block-fix = Try adding properties like <strong>display:block</strong> or <strong>float:left</strong>. { learn-more }
+
+inactive-css-not-block-container-fix = Try adding <strong>display:block</strong>, <strong>display:inline-block</strong> or <strong>display:flow-root</strong>. { learn-more }
 
 inactive-css-not-floated-fix = Try adding the <strong>float</strong> property with a value other than <strong>none</strong>. { learn-more }
 

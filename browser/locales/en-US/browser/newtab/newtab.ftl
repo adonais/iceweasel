@@ -232,11 +232,6 @@ newtab-toast-dismiss-button =
     .title = Dismiss
     .aria-label = Dismiss
 
-## Pocket content onboarding experience dialog and modal for new users seeing the Pocket section for the first time, shown as the first item in the Pocket section.
-
-newtab-pocket-onboarding-discover = Discover the best of the web
-newtab-pocket-onboarding-cta = { -pocket-brand-name } explores a diverse range of publications to bring the most informative, inspirational, and trustworthy content right to your { -brand-product-name } browser.
-
 ## Error Fallback Content.
 ## This message and suggested action link are shown in each section of UI that fails to render.
 
@@ -259,6 +254,9 @@ newtab-custom-row-selector =
 newtab-custom-stories-toggle =
   .label = Recommended stories
   .description = Exceptional content curated by the { -brand-product-name } family
+newtab-custom-stories-personalized-toggle =
+  .label = Stories
+newtab-custom-stories-personalized-checkbox-label = Personalized stories based on your activity
 newtab-custom-weather-toggle =
   .label = Weather
   .description = Today’s forecast at a glance
@@ -289,7 +287,7 @@ newtab-wallpaper-custom-color = Choose a color
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = The image exceeded the file size limit of { $file_size }MB. Please try uploading a smaller file.
-newtab-wallpaper-error-file-type = We couldn’t upload your file. Please try again with different file type.
+newtab-wallpaper-error-upload-file-type = We couldn’t upload your file. Please try again with an image file.
 newtab-wallpaper-light-red-panda = Red panda
 newtab-wallpaper-light-mountain = White mountain
 newtab-wallpaper-light-sky = Sky with purple and pink clouds
@@ -603,10 +601,10 @@ newtab-widget-timer-mode-focus =
     .label = Focus
 newtab-widget-timer-mode-break =
     .label = Break
-newtab-widget-timer-play =
-    .title = Play
-newtab-widget-timer-pause =
-    .title = Pause
+newtab-widget-timer-label-play =
+    .label = Play
+newtab-widget-timer-label-pause =
+    .label = Pause
 newtab-widget-timer-reset =
     .title = Reset
 newtab-widget-timer-menu-notifications = Turn off notifications
@@ -616,6 +614,10 @@ newtab-widget-timer-menu-learn-more = Learn more
 
 # Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
 newtab-widget-keep-scrolling = Scroll for more
+
+newtab-widget-message-title = Stay focused with lists and a built-in timer
+# to-dos stands for "things to do".
+newtab-widget-message-copy = From quick reminders to daily to-dos, focus sessions to stretch breaks — stay on task and on time.
 
 # Strings for the default promo card
 

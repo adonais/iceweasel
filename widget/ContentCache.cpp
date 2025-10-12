@@ -753,7 +753,7 @@ void ContentCacheInParent::AssignContent(const ContentCache& aOther,
        PrintStringDetail(mText, PrintStringDetail::kMaxLengthForEditor).get(),
        ToString(mSelection).c_str(), ToString(mFirstCharRect).c_str(),
        ToString(mCaret).c_str(), ToString(mTextRectArray).c_str(),
-       GetBoolName(WidgetHasComposition()), mHandlingCompositions.Length(),
+       TrueOrFalse(WidgetHasComposition()), mHandlingCompositions.Length(),
        ToString(mCompositionStart).c_str(), mPendingCommitLength,
        ToString(mEditorRect).c_str(),
        ToString(mLastCommitStringTextRectArray).c_str()));
@@ -800,8 +800,8 @@ bool ContentCacheInParent::HandleQueryContentEvent(
          "mCompositionStart=%" PRIu32 ", "
          "mPendingCommitLength=%" PRIu32 ", mSelection=%s",
          this, ToChar(aEvent.mMessage), aEvent.mInput.mOffset,
-         aEvent.mInput.mLength, GetBoolName(WidgetHasComposition()),
-         GetBoolName(HasPendingCommit()), mCompositionStart.valueOr(UINT32_MAX),
+         aEvent.mInput.mLength, TrueOrFalse(WidgetHasComposition()),
+         TrueOrFalse(HasPendingCommit()), mCompositionStart.valueOr(UINT32_MAX),
          mPendingCommitLength, ToString(mSelection).c_str()));
     if (WidgetHasComposition() || HasPendingCommit()) {
       if (NS_WARN_IF(mCompositionStart.isNothing()) ||
@@ -1058,7 +1058,7 @@ bool ContentCacheInParent::GetTextRect(uint32_t aOffset,
       sContentCacheLog, LogLevel::Info,
       ("0x%p GetTextRect(aOffset=%u, aRoundToExistingOffset=%s), "
        "mTextRectArray=%s, mSelection=%s, mLastCommitStringTextRectArray=%s",
-       this, aOffset, GetBoolName(aRoundToExistingOffset),
+       this, aOffset, TrueOrFalse(aRoundToExistingOffset),
        ToString(mTextRectArray).c_str(), ToString(mSelection).c_str(),
        ToString(mLastCommitStringTextRectArray).c_str()));
 
@@ -1145,7 +1145,7 @@ bool ContentCacheInParent::GetUnionTextRects(
           ("0x%p GetUnionTextRects(aOffset=%u, "
            "aLength=%u, aRoundToExistingOffset=%s), mTextRectArray=%s, "
            "mSelection=%s, mLastCommitStringTextRectArray=%s",
-           this, aOffset, aLength, GetBoolName(aRoundToExistingOffset),
+           this, aOffset, aLength, TrueOrFalse(aRoundToExistingOffset),
            ToString(mTextRectArray).c_str(), ToString(mSelection).c_str(),
            ToString(mLastCommitStringTextRectArray).c_str()));
 
@@ -1269,7 +1269,7 @@ bool ContentCacheInParent::GetCaretRect(uint32_t aOffset,
   MOZ_LOG(sContentCacheLog, LogLevel::Info,
           ("0x%p GetCaretRect(aOffset=%u, aRoundToExistingOffset=%s), "
            "mCaret=%s, mTextRectArray=%s, mSelection=%s, mFirstCharRect=%s",
-           this, aOffset, GetBoolName(aRoundToExistingOffset),
+           this, aOffset, TrueOrFalse(aRoundToExistingOffset),
            ToString(mCaret).c_str(), ToString(mTextRectArray).c_str(),
            ToString(mSelection).c_str(), ToString(mFirstCharRect).c_str()));
 
@@ -1321,9 +1321,9 @@ bool ContentCacheInParent::OnCompositionEvent(
                          PrintStringDetail::kMaxLengthForCompositionString)
            .get(),
        aCompositionEvent.mRanges ? aCompositionEvent.mRanges->Length() : 0,
-       PendingEventsNeedingAck(), GetBoolName(WidgetHasComposition()),
-       mHandlingCompositions.Length(), GetBoolName(HasPendingCommit()),
-       GetBoolName(mIsChildIgnoringCompositionEvents), mCommitStringByRequest));
+       PendingEventsNeedingAck(), TrueOrFalse(WidgetHasComposition()),
+       mHandlingCompositions.Length(), TrueOrFalse(HasPendingCommit()),
+       TrueOrFalse(mIsChildIgnoringCompositionEvents), mCommitStringByRequest));
 
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED
   mDispatchedEventMessages.AppendElement(aCompositionEvent.mMessage);
@@ -1404,12 +1404,12 @@ void ContentCacheInParent::OnSelectionEvent(
            "mHandlingCompositions.Length()=%zu, HasPendingCommit()=%s, "
            "mIsChildIgnoringCompositionEvents=%s",
            this, ToChar(aSelectionEvent.mMessage), aSelectionEvent.mOffset,
-           aSelectionEvent.mLength, GetBoolName(aSelectionEvent.mReversed),
-           GetBoolName(aSelectionEvent.mExpandToClusterBoundary),
-           GetBoolName(aSelectionEvent.mUseNativeLineBreak),
-           PendingEventsNeedingAck(), GetBoolName(WidgetHasComposition()),
-           mHandlingCompositions.Length(), GetBoolName(HasPendingCommit()),
-           GetBoolName(mIsChildIgnoringCompositionEvents)));
+           aSelectionEvent.mLength, TrueOrFalse(aSelectionEvent.mReversed),
+           TrueOrFalse(aSelectionEvent.mExpandToClusterBoundary),
+           TrueOrFalse(aSelectionEvent.mUseNativeLineBreak),
+           PendingEventsNeedingAck(), TrueOrFalse(WidgetHasComposition()),
+           mHandlingCompositions.Length(), TrueOrFalse(HasPendingCommit()),
+           TrueOrFalse(mIsChildIgnoringCompositionEvents)));
 
 #if MOZ_DIAGNOSTIC_ASSERT_ENABLED && !defined(FUZZING_SNAPSHOT)
   mDispatchedEventMessages.AppendElement(aSelectionEvent.mMessage);
@@ -1428,8 +1428,8 @@ void ContentCacheInParent::OnContentCommandEvent(
            ToString(aContentCommandEvent.mString).c_str(),
            ToString(aContentCommandEvent.mSelection.mReplaceSrcString).c_str(),
            aContentCommandEvent.mSelection.mOffset,
-           GetBoolName(aContentCommandEvent.mSelection.mPreventSetSelection),
-           GetBoolName(aContentCommandEvent.mOnlyEnabledCheck)));
+           TrueOrFalse(aContentCommandEvent.mSelection.mPreventSetSelection),
+           TrueOrFalse(aContentCommandEvent.mOnlyEnabledCheck)));
 
   MOZ_ASSERT(!aContentCommandEvent.mOnlyEnabledCheck);
 
@@ -1485,9 +1485,9 @@ void ContentCacheInParent::OnEventNeedingAckHandled(nsIWidget* aWidget,
            "mHandlingCompositions.Length()=%zu, HasPendingCommit()=%s, "
            "mIsChildIgnoringCompositionEvents=%s, handlingCompositionData=0x%p",
            this, aWidget, ToChar(aMessage), aCompositionId,
-           PendingEventsNeedingAck(), GetBoolName(WidgetHasComposition()),
-           mHandlingCompositions.Length(), GetBoolName(HasPendingCommit()),
-           GetBoolName(mIsChildIgnoringCompositionEvents),
+           PendingEventsNeedingAck(), TrueOrFalse(WidgetHasComposition()),
+           mHandlingCompositions.Length(), TrueOrFalse(HasPendingCommit()),
+           TrueOrFalse(mIsChildIgnoringCompositionEvents),
            handlingCompositionData));
 
   // If we receive composition event messages for older one or invalid one,
@@ -1674,12 +1674,12 @@ bool ContentCacheInParent::RequestIMEToCommitComposition(
        "IMEStateManager::DoesBrowserParentHaveIMEFocus(&mBrowserParent)=%s, "
        "WidgetHasComposition()=%s, mCommitStringByRequest=%p, "
        "handlingCompositionData=0x%p",
-       this, aWidget, GetBoolName(aCancel), aCompositionId,
-       mHandlingCompositions.Length(), GetBoolName(HasPendingCommit()),
-       GetBoolName(mIsChildIgnoringCompositionEvents),
-       GetBoolName(
+       this, aWidget, TrueOrFalse(aCancel), aCompositionId,
+       mHandlingCompositions.Length(), TrueOrFalse(HasPendingCommit()),
+       TrueOrFalse(mIsChildIgnoringCompositionEvents),
+       TrueOrFalse(
            IMEStateManager::DoesBrowserParentHaveIMEFocus(&mBrowserParent)),
-       GetBoolName(WidgetHasComposition()), mCommitStringByRequest,
+       TrueOrFalse(WidgetHasComposition()), mCommitStringByRequest,
        handlingCompositionData));
 
   MOZ_ASSERT(!mCommitStringByRequest);
@@ -1785,7 +1785,7 @@ bool ContentCacheInParent::RequestIMEToCommitComposition(
       sContentCacheLog, LogLevel::Info,
       ("  0x%p RequestToCommitComposition(), "
        "WidgetHasComposition()=%s, the composition %s committed synchronously",
-       this, GetBoolName(WidgetHasComposition()),
+       this, TrueOrFalse(WidgetHasComposition()),
        composition->Destroyed() ? "WAS" : "has NOT been"));
 
   if (!composition->Destroyed()) {

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -38,7 +37,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
  *
  * @param onLearnMoreClick Invoked when the user clicks on the who can see my activity link.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun PrivateBrowsingDescription(
     onLearnMoreClick: () -> Unit,

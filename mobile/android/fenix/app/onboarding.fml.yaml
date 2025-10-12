@@ -5,6 +5,10 @@ features:
     description: A feature that shows the onboarding flow.
 
     variables:
+      use-onboarding-redesign:
+        description: If true, use the onboarding redesign.
+        type: Boolean
+        default: false
       conditions:
         description: >
           A collection of out the box conditional expressions to be
@@ -139,6 +143,25 @@ features:
                   line-two-link-text: onboarding_term_of_service_line_two_link_text
                   line-three-text: onboarding_term_of_service_line_three
                   line-three-link-text: onboarding_term_of_service_line_three_link_text
+
+            terms-of-service-redesign:
+              card-type: terms-of-service
+              enabled: false
+              title: onboarding_redesign_tou_title
+              ordering: 0
+              image-res: ic_firefox
+              primary-button-label: onboarding_redesign_tou_agree_and_continue_button_label
+              extra-data:
+                term-of-service-data:
+                  subheader-one-text: onboarding_redesign_tou_subheader_one
+                  subheader-two-text: onboarding_redesign_tou_subheader_two
+                  subheader-three-text: onboarding_redesign_tou_subheader_three
+                  line-one-text: onboarding_redesign_tou_body_one
+                  line-one-link-text: onboarding_redesign_tou_body_one_link_text
+                  line-two-text: onboarding_redesign_tou_body_two
+                  line-two-link-text: onboarding_redesign_tou_body_two_link_text
+                  line-three-text: onboarding_redesign_tou_body_three
+                  line-three-link-text: onboarding_redesign_tou_body_three_link_text
 
             default-browser:
               card-type: default-browser
@@ -306,7 +329,6 @@ objects:
         type: List<CustomizationThemeData>
         description: An optional list of theme choices for the theme selection card.
         default: []
-
       term-of-service-data:
         type: Option<TermsOfServiceData>
         description: >
@@ -359,6 +381,18 @@ objects:
   TermsOfServiceData:
     description: An object to describe the terms of service onboarding card.
     fields:
+      subheader-one-text:
+        type: Option<Text>
+        description: Optional text for the first subheader of the card.
+        default: null
+      subheader-two-text:
+        type: Option<Text>
+        description: Optional text for the second subheader of the card.
+        default: null
+      subheader-three-text:
+        type: Option<Text>
+        description: Optional text for the third subheader of the card.
+        default: null
       line-one-text:
         type: Text
         description: The text for line one.

@@ -135,6 +135,8 @@ policy-FirefoxHome2 = Configure { -firefox-home-brand-name }.
 
 policy-FirefoxSuggest = Configure { -firefox-suggest-brand-name }.
 
+policy-GenerativeAI = Configure generative AI features.
+
 policy-GoToIntranetSiteForSingleWordEntryInAddressBar = Force direct intranet site navigation instead of searching when typing single word entries in the address bar.
 
 policy-Handlers = Configure default application handlers.
@@ -199,7 +201,7 @@ policy-Permissions2 = Configure permissions for camera, microphone, location, no
 
 policy-PictureInPicture = Enable or disable Picture-in-Picture.
 
-policy-PopupBlocking = Allow certain websites to display popups by default.
+policy-PopupBlocking2 = Allow certain websites to display popups and be redirected by third-party frames.
 
 policy-Preferences = Set and lock the value for a subset of preferences.
 
@@ -240,6 +242,8 @@ policy-TranslateEnabled = Enable or disable webpage translation.
 policy-UserMessaging = Don’t show certain messages to the user.
 
 policy-UseSystemPrintDialog = Print using the system print dialog.
+
+policy-VisualSearchEnabled = Enable or disable visual search.
 
 # “format” refers to the format used for the value of this policy.
 policy-WebsiteFilter = Block websites from being visited. See documentation for more details on the format.

@@ -4,22 +4,37 @@
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   ObliviousHTTP: "resource://gre/modules/ObliviousHTTP.sys.mjs",
   SkippableTimer: "resource:///modules/UrlbarUtils.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
 });
 
-const SEARCH_PARAMS = {
+/**
+ * @import {SkippableTimer} from "resource:///modules/UrlbarUtils.sys.mjs"
+ * @import {OHTTPResponse} from "resource://gre/modules/ObliviousHTTP.sys.mjs"
+ */
+
+/**
+ * @typedef {object} MerinoClientBaseSuggestion
+ * @property {string} request_id
+ *   The request id associated with the suggestion.
+ * @property {string} source
+ *   The source of the suggestion.
+ *
+ * @typedef {{[key: string]:any} & MerinoClientBaseSuggestion} MerinoClientSuggestion
+ *   Details of a suggestion received from Merino. Whilst the base properties are
+ *   consistent the suggestion properties may vary depending on the provider.
+ */
+
+const SEARCH_PARAMS = Object.freeze({
   CLIENT_VARIANTS: "client_variants",
   PROVIDERS: "providers",
   QUERY: "q",
   SEQUENCE_NUMBER: "seq",
   SESSION_ID: "sid",
-};
+});
 
 const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -35,11 +50,21 @@ export class MerinoClient {
   });
 
   /**
-   * @returns {object}
-   *   The names of URL search params.
+   * The names of URL search params.
    */
   static get SEARCH_PARAMS() {
     return { ...SEARCH_PARAMS };
+  }
+
+  /**
+   * @returns {boolean}
+   *   Returns true if the OHTTP Prefs are defined for use.
+   */
+  static get hasOHTTPPrefs() {
+    return (
+      lazy.UrlbarPrefs.get("merinoOhttpConfigURL") &&
+      lazy.UrlbarPrefs.get("merinoOhttpRelayURL")
+    );
   }
 
   /**
@@ -111,10 +136,8 @@ export class MerinoClient {
     this.#sessionTimeoutMs = value;
   }
 
-  /**
-   * @returns {number}
-   *   The current session ID. Null when there is no active session.
-   */
+  // Note: Cannot be JSDoc due to https://github.com/pyodide/sphinx-js/issues/242
+  // The current session ID. Null when there is no active session.
   get sessionID() {
     return this.#sessionID;
   }
@@ -128,11 +151,9 @@ export class MerinoClient {
     return this.#sequenceNumber;
   }
 
-  /**
-   * @returns {string}
-   *   A string that indicates the status of the last fetch. Possible values:
-   *   success, timeout, network_error, http_error
-   */
+  // Note: Cannot be JSDoc due to https://github.com/pyodide/sphinx-js/issues/242
+  // A string that indicates the status of the last fetch. Possible values:
+  // success, timeout, network_error, http_error
   get lastFetchStatus() {
     return this.#lastFetchStatus;
   }
@@ -144,7 +165,7 @@ export class MerinoClient {
    *   Options object
    * @param {string} options.query
    *   The search string.
-   * @param {Array} options.providers
+   * @param {string[]} options.providers
    *   Array of provider names to request from Merino. If this is given it will
    *   override the `merinoProviders` Nimbus variable and its fallback pref
    *   `browser.urlbar.merino.providers`.
@@ -152,10 +173,10 @@ export class MerinoClient {
    *   Timeout in milliseconds. This method will return once the timeout
    *   elapses, a response is received, or an error occurs, whichever happens
    *   first.
-   * @param {object} options.otherParams
+   * @param {{[key: string]: string}} options.otherParams
    *   If specified, the otherParams will be added as a query params. Currently
    *   used for accuweather's location autocomplete endpoint
-   * @returns {Promise<object[]>}
+   * @returns {Promise<MerinoClientSuggestion[]>}
    *   The Merino suggestions or null if there's an error or unexpected
    *   response.
    */
@@ -218,7 +239,6 @@ export class MerinoClient {
     // params.
 
     let details = { query, providers, timeoutMs, url: url.toString() };
-    this.#lazy.logger.debug("Fetch details", details);
 
     // If caching is enabled, generate the cache key for this request URL.
     let cacheKey;
@@ -232,7 +252,7 @@ export class MerinoClient {
         Date.now() < this.#cache.dateMs + this.#cachePeriodMs &&
         this.#cache.key == cacheKey
       ) {
-        this.#lazy.logger.debug("Fetch served from cache");
+        this.#lazy.logger.debug("Fetch served from cache", details);
         return this.#cache.suggestions;
       }
     }
@@ -263,6 +283,12 @@ export class MerinoClient {
     );
     this.#sequenceNumber++;
 
+    this.#lazy.logger.debug("Fetch details", {
+      ...details,
+      url: url.toString(),
+    });
+
+    /** @type {(category: string) => void} */
     let recordResponse = category => {
       this.#lazy.logger.debug("Fetch done", { status: category });
       this.#lastFetchStatus = category;
@@ -291,7 +317,7 @@ export class MerinoClient {
     }
 
     // Do the fetch.
-    /** @type {?Response} */
+    /** @type {?OHTTPResponse|?Response} */
     let response;
     let controller = (this.#fetchController = new AbortController());
     await Promise.race([
@@ -349,7 +375,7 @@ export class MerinoClient {
     }
 
     // Get the response body as an object.
-    /** @type {{suggestions: object[], request_id: string }} */
+    /** @type {{suggestions: MerinoClientSuggestion[], request_id: string }} */
     let body;
     try {
       body = /** @type {any} */ (await response.json());
@@ -414,7 +440,7 @@ export class MerinoClient {
    * Returns a promise that's resolved when the next response is received or a
    * network error occurs.
    *
-   * @returns {Promise}
+   * @returns {Promise<?Response|?OHTTPResponse>}
    *   The promise is resolved with the `Response` object or undefined if a
    *   network error occurred.
    */
@@ -429,7 +455,7 @@ export class MerinoClient {
    * Returns a promise that's resolved when the session is next reset, including
    * on session timeout.
    *
-   * @returns {Promise}
+   * @returns {Promise<void>}
    */
   waitForNextSessionReset() {
     if (!this.#nextSessionResetDeferred) {
@@ -448,7 +474,7 @@ export class MerinoClient {
    *   Options object.
    * @param {AbortSignal} options.signal
    *   An `AbortController.signal` for the fetch.
-   * @returns {Promise<?Response>}
+   * @returns {Promise<?OHTTPResponse|?Response>}
    *   The fetch `Response` or null if a response can't be fetched.
    */
   async #fetch(url, { signal }) {
@@ -462,7 +488,7 @@ export class MerinoClient {
     let useOhttp = configUrl && relayUrl;
 
     let response;
-    let startMs = Cu.now();
+    let startMs = ChromeUtils.now();
     if (!useOhttp) {
       response = await fetch(url, { signal });
     } else {
@@ -479,7 +505,7 @@ export class MerinoClient {
       });
     }
 
-    let elapsedMs = Cu.now() - startMs;
+    let elapsedMs = ChromeUtils.now() - startMs;
     let label = response.status.toString();
     if (useOhttp) {
       label += "_ohttp";
@@ -506,16 +532,23 @@ export class MerinoClient {
   }
 
   // State related to the current session.
+  /** @type {string} */
   #sessionID = null;
   #sequenceNumber = 0;
+  /** @type {SkippableTimer} */
   #sessionTimer = null;
   #sessionTimeoutMs = SESSION_TIMEOUT_MS;
 
   #name;
+  /** @type {SkippableTimer} */
   #timeoutTimer = null;
+  /** @type {AbortController} */
   #fetchController = null;
+  /** @type {string} */
   #lastFetchStatus = null;
+  /** @type {PromiseWithResolvers<?Response|?OHTTPResponse>} */
   #nextResponseDeferred = null;
+  /** @type {PromiseWithResolvers<void>} */
   #nextSessionResetDeferred = null;
   #cachePeriodMs = 0;
   #allowOhttp = false;
@@ -523,12 +556,20 @@ export class MerinoClient {
   // When caching is enabled, we cache response suggestions from the most recent
   // successful request.
   #cache = {
-    // The cached suggestions array.
+    /**
+     * @type {MerinoClientSuggestion[]}
+     *   The cached suggestions array.
+     */
     suggestions: null,
-    // The cache key: the stringified request URL without session-related params
-    // (session ID and sequence number).
+    /**
+     * @type {string}
+     *   The cache key: the stringified request URL without session-related
+     *   params (session ID and sequence number).
+     */
     key: null,
-    // The date the suggestions were cached as returned by `Date.now()`.
+    /**
+     * The date the suggestions were cached as returned by `Date.now()`.
+     */
     dateMs: 0,
   };
 }

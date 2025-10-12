@@ -14,8 +14,7 @@
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/css/Rule.h"
 #include "mozilla/dom/BindingUtils.h"
-#include "mozilla/dom/CSS2PropertiesBinding.h"
-#include "mozilla/dom/MutationEventBinding.h"
+#include "mozilla/dom/CSSStylePropertiesBinding.h"
 #include "nsCOMPtr.h"
 #include "nsCSSProps.h"
 #include "nsQueryObject.h"
@@ -28,7 +27,7 @@ nsDOMCSSDeclaration::~nsDOMCSSDeclaration() = default;
 /* virtual */
 JSObject* nsDOMCSSDeclaration::WrapObject(JSContext* aCx,
                                           JS::Handle<JSObject*> aGivenProto) {
-  return CSS2Properties_Binding::Wrap(aCx, this, aGivenProto);
+  return CSSStyleProperties_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 NS_IMPL_QUERY_INTERFACE(nsDOMCSSDeclaration, nsICSSDeclaration)

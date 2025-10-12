@@ -331,7 +331,6 @@ skip-if = [
 ["browser_webconsole_context_menu_copy_link_location.js"]
 https_first_disabled = true
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && asan", # Bug 1473120
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1473120
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1473120
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298

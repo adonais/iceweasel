@@ -138,7 +138,7 @@ void SocketTransportServiceTest::SetUp() {
   // Register ourselves as a listener for the read side of the
   // socket. The registration has to happen on the STS thread,
   // hence this event stuff.
-  rv = target_->Dispatch(new RegisterEvent(this), 0);
+  rv = target_->Dispatch(new RegisterEvent(this), NS_DISPATCH_NORMAL);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_TRUE_WAIT(registered_, 10000);
 }
@@ -155,7 +155,7 @@ void SocketTransportServiceTest::RegisterHandler() {
 void SocketTransportServiceTest::SendEvent() {
   nsresult rv;
 
-  rv = target_->Dispatch(new EventReceived(this), 0);
+  rv = target_->Dispatch(new EventReceived(this), NS_DISPATCH_NORMAL);
   ASSERT_TRUE(NS_SUCCEEDED(rv));
   ASSERT_TRUE_WAIT(Received() == 1, 10000);
 }

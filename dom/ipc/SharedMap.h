@@ -153,7 +153,7 @@ class SharedMap : public DOMEventTargetHelper {
      * which it takes ownership. The passed StructuredCloneData object must not
      * be used after this call.
      */
-    void TakeData(StructuredCloneData&&);
+    void TakeData(UniquePtr<StructuredCloneData> aHolder);
 
     /**
      * This is called while building a new snapshot of the SharedMap. aDestPtr
@@ -187,12 +187,12 @@ class SharedMap : public DOMEventTargetHelper {
 
    private:
     // Returns a pointer to the entry value's structured clone data within the
-    // SharedMap's mapped memory region. This is *only* valid shen mData
+    // SharedMap's mapped memory region. This is *only* valid when mData
     // contains a uint32_t.
     const char* Data() const { return mMap.Data() + DataOffset(); }
 
     // Returns the offset of the entry value's structured clone data within the
-    // SharedMap's mapped memory region. This is *only* valid shen mData
+    // SharedMap's mapped memory region. This is *only* valid when mData
     // contains a uint32_t.
     uint32_t& DataOffset() { return mData.as<uint32_t>(); }
     const uint32_t& DataOffset() const { return mData.as<uint32_t>(); }
@@ -202,18 +202,18 @@ class SharedMap : public DOMEventTargetHelper {
     uint16_t BlobCount() const { return mBlobCount; }
 
     Span<const RefPtr<BlobImpl>> Blobs() {
-      if (mData.is<StructuredCloneData>()) {
-        return mData.as<StructuredCloneData>().BlobImpls();
+      if (mData.is<UniquePtr<StructuredCloneData>>()) {
+        return mData.as<UniquePtr<StructuredCloneData>>()->BlobImpls();
       }
       return {&mMap.mBlobImpls[mBlobOffset], BlobCount()};
     }
 
    private:
     // Returns the temporary StructuredCloneData object containing the entry's
-    // value. This is *only* value when mData contains a StructuredCloneDAta
+    // value. This is *only* valid when mData contains a StructuredCloneData
     // object.
     const StructuredCloneData& Holder() const {
-      return mData.as<StructuredCloneData>();
+      return *mData.as<UniquePtr<StructuredCloneData>>();
     }
 
     SharedMap& mMap;
@@ -234,7 +234,7 @@ class SharedMap : public DOMEventTargetHelper {
      *   data. This will be discarded the next time the map is serialized, and
      *   replaced with a buffer offset, as described above.
      */
-    Variant<uint32_t, StructuredCloneData> mData;
+    Variant<uint32_t, UniquePtr<StructuredCloneData>> mData;
 
     // The size, in bytes, of the entry's structured clone data.
     uint32_t mSize = 0;

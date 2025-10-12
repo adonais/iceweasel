@@ -29,6 +29,7 @@
 #include "mozilla/dom/PolicyContainerMessageUtils.h"
 #include "mozilla/dom/DocumentBinding.h"
 #include "mozilla/dom/DOMTypes.h"
+#include "mozilla/dom/NavigationAPIIPCUtils.h"
 #include "mozilla/dom/nsCSPContext.h"
 #include "mozilla/dom/nsCSPUtils.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
@@ -1728,6 +1729,8 @@ void IPDLParamTraits<dom::LoadingSessionHistoryInfo>::Write(
     const dom::LoadingSessionHistoryInfo& aParam) {
   WriteIPDLParam(aWriter, aActor, aParam.mInfo);
   WriteIPDLParam(aWriter, aActor, aParam.mContiguousEntries);
+  WriteIPDLParam(aWriter, aActor, aParam.mTriggeringEntry);
+  WriteIPDLParam(aWriter, aActor, aParam.mTriggeringNavigationType);
   WriteIPDLParam(aWriter, aActor, aParam.mLoadId);
   WriteIPDLParam(aWriter, aActor, aParam.mLoadIsFromSessionHistory);
   WriteIPDLParam(aWriter, aActor, aParam.mOffset);
@@ -1740,6 +1743,8 @@ bool IPDLParamTraits<dom::LoadingSessionHistoryInfo>::Read(
     dom::LoadingSessionHistoryInfo* aResult) {
   if (!ReadIPDLParam(aReader, aActor, &aResult->mInfo) ||
       !ReadIPDLParam(aReader, aActor, &aResult->mContiguousEntries) ||
+      !ReadIPDLParam(aReader, aActor, &aResult->mTriggeringEntry) ||
+      !ReadIPDLParam(aReader, aActor, &aResult->mTriggeringNavigationType) ||
       !ReadIPDLParam(aReader, aActor, &aResult->mLoadId) ||
       !ReadIPDLParam(aReader, aActor, &aResult->mLoadIsFromSessionHistory) ||
       !ReadIPDLParam(aReader, aActor, &aResult->mOffset) ||

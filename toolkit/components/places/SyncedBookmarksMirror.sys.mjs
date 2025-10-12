@@ -2077,9 +2077,9 @@ function validateTag(rawTag) {
 async function withTiming(name, func, recordTiming) {
   lazy.MirrorLog.debug(name);
 
-  let startTime = Cu.now();
+  let startTime = ChromeUtils.now();
   let result = await func();
-  let elapsedTime = Cu.now() - startTime;
+  let elapsedTime = ChromeUtils.now() - startTime;
 
   lazy.MirrorLog.debug(`${name} took ${elapsedTime.toFixed(3)}ms`);
   if (typeof recordTiming == "function") {

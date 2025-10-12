@@ -7,7 +7,6 @@
 package org.mozilla.fenix.home.recenttabs.view
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -33,7 +32,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -74,7 +72,6 @@ private const val THUMBNAIL_SIZE = 108
  * @param backgroundColor The background [Color] of each item.
  * @param onRecentTabClick Invoked when the user clicks on a recent tab.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun RecentTabs(
     recentTabs: List<RecentTab>,
@@ -114,10 +111,6 @@ fun RecentTabs(
  * @param backgroundColor The background [Color] of the item.
  * @param onRecentTabClick Invoked when the user clicks on a recent tab.
  */
-@OptIn(
-    ExperimentalFoundationApi::class,
-    ExperimentalComposeUiApi::class,
-)
 @Composable
 @Suppress("LongMethod")
 private fun RecentTabItem(

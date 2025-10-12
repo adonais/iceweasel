@@ -641,6 +641,38 @@ void MacroAssembler::sqrtDouble(FloatRegister src, FloatRegister dest) {
   as_fsqrt_d(dest, src);
 }
 
+void MacroAssembler::min32(Register lhs, Register rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::min32(Register lhs, Imm32 rhs, Register dest) {
+  minMaxPtr(lhs, ImmWord(rhs.value), dest, /* isMax = */ false);
+}
+
+void MacroAssembler::max32(Register lhs, Register rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::max32(Register lhs, Imm32 rhs, Register dest) {
+  minMaxPtr(lhs, ImmWord(rhs.value), dest, /* isMax = */ true);
+}
+
+void MacroAssembler::minPtr(Register lhs, Register rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::minPtr(Register lhs, ImmWord rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ false);
+}
+
+void MacroAssembler::maxPtr(Register lhs, Register rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ true);
+}
+
+void MacroAssembler::maxPtr(Register lhs, ImmWord rhs, Register dest) {
+  minMaxPtr(lhs, rhs, dest, /* isMax = */ true);
+}
+
 void MacroAssembler::minFloat32(FloatRegister other, FloatRegister srcDest,
                                 bool handleNaN) {
   minMaxFloat32(srcDest, other, handleNaN, false);
@@ -1090,24 +1122,12 @@ void MacroAssembler::branch16(Condition cond, const Address& lhs, Imm32 rhs,
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Register rhs,
-                              Label* label, LhsHighBitsAreClean clean) {
-  if (clean == LhsHighBitsAreClean::No) {
-    ScratchRegisterScope scratch(asMasm());
-    as_slli_w(scratch, lhs, 0);
-    ma_b(scratch, rhs, label, cond);
-    return;
-  }
+                              Label* label) {
   ma_b(lhs, rhs, label, cond);
 }
 
 void MacroAssembler::branch32(Condition cond, Register lhs, Imm32 imm,
-                              Label* label, LhsHighBitsAreClean clean) {
-  if (clean == LhsHighBitsAreClean::No) {
-    SecondScratchRegisterScope scratch(asMasm());
-    as_slli_w(scratch, lhs, 0);
-    ma_b(scratch, imm, label, cond);
-    return;
-  }
+                              Label* label) {
   ma_b(lhs, imm, label, cond);
 }
 

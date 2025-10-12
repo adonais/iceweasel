@@ -24,6 +24,7 @@ class PlatformInfo:
         "12.0": "31",
         "12L": "32",
         "13.0": "33",
+        "14": "34",
         "14.0": "34",
     }
 
@@ -141,7 +142,7 @@ class PlatformInfo:
 
         # if running locally via `./mach ...`, assuming running from root of repo
         filename = (
-            os.environ.get("GECKO_PATH", ".") + "/taskcluster/kinds/test/variants.yml"
+            os.environ.get("GECKO_PATH", ".") + "/taskcluster/test_configs/variants.yml"
         )
         with open(filename) as f:
             PlatformInfo.variant_data = yaml.safe_load(f.read())

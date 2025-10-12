@@ -783,7 +783,10 @@ bool DataChannelConnectionUsrsctp::SendBufferedMessages(
 void DataChannelConnectionUsrsctp::OnStreamOpen(uint16_t stream) {
   MOZ_ASSERT(mSTS->IsOnCurrentThread());
 
-  mQueuedData.RemoveElementsBy([stream, this](const auto& dataItem) {
+  nsTArray<UniquePtr<QueuedDataMessage>> temp;
+  std::swap(temp, mQueuedData);
+
+  temp.RemoveElementsBy([stream, this](const auto& dataItem) {
     const bool match = dataItem->mStream == stream;
     if (match) {
       DC_DEBUG(("Delivering queued data for stream %u, length %zu", stream,
@@ -795,6 +798,18 @@ void DataChannelConnectionUsrsctp::OnStreamOpen(uint16_t stream) {
     }
     return match;
   });
+
+  std::swap(temp, mQueuedData);
+}
+
+bool DataChannelConnectionUsrsctp::HasQueuedData(uint16_t aStream) const {
+  MOZ_ASSERT(mSTS->IsOnCurrentThread());
+  for (const auto& data : mQueuedData) {
+    if (data->mStream == aStream) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void DataChannelConnectionUsrsctp::HandleDataMessageChunk(
@@ -810,7 +825,7 @@ void DataChannelConnectionUsrsctp::HandleDataMessageChunk(
   // NOTE: the updated spec from the IETF says we should set in-order until we
   // receive an ACK. That would make this code moot.  Keep it for now for
   // backwards compatibility.
-  if (!channel) {
+  if (!channel || HasQueuedData(stream)) {
     // In the updated 0-RTT open case, the sender can send data immediately
     // after Open, and doesn't set the in-order bit (since we don't have a
     // response or ack).  Also, with external negotiation, data can come in

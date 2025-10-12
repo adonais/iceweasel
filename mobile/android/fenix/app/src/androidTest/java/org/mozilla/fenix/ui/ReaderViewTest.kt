@@ -19,6 +19,7 @@ import org.mozilla.fenix.helpers.ViewVisibilityIdlingResource
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
+import mozilla.components.browser.toolbar.R as toolbarR
 
 /**
  *  Tests for verifying basic functionality of content context menus
@@ -63,7 +64,7 @@ class ReaderViewTest : TestSetup() {
 
         registerAndCleanupIdlingResources(
             ViewVisibilityIdlingResource(
-                activityIntentTestRule.activity.findViewById(R.id.mozac_browser_toolbar_page_actions),
+                activityIntentTestRule.activity.findViewById(toolbarR.id.mozac_browser_toolbar_page_actions),
                 View.VISIBLE,
             ),
         ) {}
@@ -91,7 +92,7 @@ class ReaderViewTest : TestSetup() {
 
         registerAndCleanupIdlingResources(
             ViewVisibilityIdlingResource(
-                activityIntentTestRule.activity.findViewById(R.id.mozac_browser_toolbar_page_actions),
+                activityIntentTestRule.activity.findViewById(toolbarR.id.mozac_browser_toolbar_page_actions),
                 View.VISIBLE,
             ),
         ) {}

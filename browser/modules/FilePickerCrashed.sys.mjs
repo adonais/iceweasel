@@ -31,7 +31,9 @@ export const FilePickerCrashed = {
       // extension window or the History window or the like), just grab the
       // topmost browser window.
       if (!window?.gBrowser) {
-        window = lazy.BrowserWindowTracker.getTopWindow();
+        window = lazy.BrowserWindowTracker.getTopWindow({
+          allowFromInactiveWorkspace: true,
+        });
       }
 
       // If there _is_ no topmost browser window... throw an error and hope it

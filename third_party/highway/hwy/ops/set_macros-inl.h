@@ -1,5 +1,7 @@
 // Copyright 2020 Google LLC
+// Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
 // SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: BSD-3-Clause
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,13 +43,42 @@
 #undef HWY_HAVE_FLOAT64
 #undef HWY_MEM_OPS_MIGHT_FAULT
 #undef HWY_NATIVE_FMA
+#undef HWY_NATIVE_DOT_BF16
 #undef HWY_CAP_GE256
 #undef HWY_CAP_GE512
+
+#undef HWY_TARGET_IS_SVE
+#if HWY_TARGET & HWY_ALL_SVE
+#define HWY_TARGET_IS_SVE 1
+#else
+#define HWY_TARGET_IS_SVE 0
+#endif
+
+#undef HWY_TARGET_IS_NEON
+#if HWY_TARGET & HWY_ALL_NEON
+#define HWY_TARGET_IS_NEON 1
+#else
+#define HWY_TARGET_IS_NEON 0
+#endif
+
+#undef HWY_TARGET_IS_PPC
+#if HWY_TARGET & HWY_ALL_PPC
+#define HWY_TARGET_IS_PPC 1
+#else
+#define HWY_TARGET_IS_PPC 0
+#endif
+
+#undef HWY_TARGET_IS_AVX10_2
+#if HWY_TARGET == HWY_AVX10_2
+#define HWY_TARGET_IS_AVX10_2 1
+#else
+#define HWY_TARGET_IS_AVX10_2 0
+#endif
 
 // Supported on all targets except RVV (requires GCC 14 or upcoming Clang)
 #if HWY_TARGET == HWY_RVV &&                                        \
     ((HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1400) || \
-     (HWY_COMPILER_CLANG))
+     (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 1700))
 #define HWY_HAVE_TUPLE 0
 #else
 #define HWY_HAVE_TUPLE 1
@@ -109,14 +140,61 @@
 // Include previous targets, which are the half-vectors of the next target.
 #define HWY_TARGET_STR_AVX2 \
   HWY_TARGET_STR_SSE4 ",avx,avx2" HWY_TARGET_STR_BMI2_FMA HWY_TARGET_STR_F16C
-#define HWY_TARGET_STR_AVX3 \
-  HWY_TARGET_STR_AVX2 ",avx512f,avx512cd,avx512vl,avx512dq,avx512bw"
-#define HWY_TARGET_STR_AVX3_DL                                       \
-  HWY_TARGET_STR_AVX3                                                \
+
+#if (HWY_COMPILER_GCC_ACTUAL >= 1400 && HWY_COMPILER_GCC_ACTUAL < 1600) || \
+    HWY_COMPILER_CLANG >= 1800
+#define HWY_TARGET_STR_AVX3_VL512 ",evex512"
+#else
+#define HWY_TARGET_STR_AVX3_VL512
+#endif
+
+#define HWY_TARGET_STR_AVX3_256 \
+  HWY_TARGET_STR_AVX2           \
+  ",avx512f,avx512cd,avx512vl,avx512dq,avx512bw" HWY_TARGET_STR_AVX3_VL512
+
+#define HWY_TARGET_STR_AVX3 HWY_TARGET_STR_AVX3_256 HWY_TARGET_STR_AVX3_VL512
+
+#define HWY_TARGET_STR_AVX3_DL_256                                   \
+  HWY_TARGET_STR_AVX3_256                                            \
   ",vpclmulqdq,avx512vbmi,avx512vbmi2,vaes,avx512vnni,avx512bitalg," \
   "avx512vpopcntdq,gfni"
 
-#define HWY_TARGET_STR_AVX3_SPR HWY_TARGET_STR_AVX3_DL ",avx512fp16"
+#define HWY_TARGET_STR_AVX3_DL \
+  HWY_TARGET_STR_AVX3_DL_256 HWY_TARGET_STR_AVX3_VL512
+
+// Force-disable for compilers that do not properly support avx512bf16.
+#if !defined(HWY_AVX3_DISABLE_AVX512BF16) &&                        \
+    (HWY_COMPILER_CLANGCL ||                                        \
+     (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1000) || \
+     (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 900))
+#define HWY_AVX3_DISABLE_AVX512BF16
+#endif
+
+#if !defined(HWY_AVX3_DISABLE_AVX512BF16)
+#define HWY_TARGET_STR_AVX3_ZEN4_256 HWY_TARGET_STR_AVX3_DL ",avx512bf16"
+#else
+#define HWY_TARGET_STR_AVX3_ZEN4_256 HWY_TARGET_STR_AVX3_DL
+#endif
+
+#define HWY_TARGET_STR_AVX3_ZEN4 \
+  HWY_TARGET_STR_AVX3_ZEN4_256 HWY_TARGET_STR_AVX3_VL512
+
+#if HWY_COMPILER_GCC_ACTUAL >= 1200 || HWY_COMPILER_CLANG >= 1400
+#define HWY_TARGET_STR_AVX3_SPR_256 HWY_TARGET_STR_AVX3_ZEN4_256 ",avx512fp16"
+#else
+#define HWY_TARGET_STR_AVX3_SPR_256 HWY_TARGET_STR_AVX3_ZEN4_256
+#endif
+
+#define HWY_TARGET_STR_AVX3_SPR \
+  HWY_TARGET_STR_AVX3_SPR_256 HWY_TARGET_STR_AVX3_VL512
+
+#if HWY_COMPILER_GCC_ACTUAL >= 1500
+#define HWY_TARGET_STR_AVX10_2 HWY_TARGET_STR_AVX3_SPR ",avx10.2"
+#elif HWY_COMPILER_CLANG >= 2000
+#define HWY_TARGET_STR_AVX10_2 HWY_TARGET_STR_AVX3_SPR ",avx10.2-512"
+#else
+#define HWY_TARGET_STR_AVX10_2 HWY_TARGET_STR_AVX3_SPR
+#endif
 
 #if defined(HWY_DISABLE_PPC8_CRYPTO)
 #define HWY_TARGET_STR_PPC8_CRYPTO ""
@@ -164,6 +242,7 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
+#define HWY_NATIVE_DOT_BF16 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -183,6 +262,7 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
+#define HWY_NATIVE_DOT_BF16 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -203,6 +283,7 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
+#define HWY_NATIVE_DOT_BF16 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -228,6 +309,7 @@
 #else
 #define HWY_NATIVE_FMA 1
 #endif
+#define HWY_NATIVE_DOT_BF16 0
 
 #define HWY_CAP_GE256 1
 #define HWY_CAP_GE512 0
@@ -235,9 +317,10 @@
 #define HWY_TARGET_STR HWY_TARGET_STR_AVX2
 
 //-----------------------------------------------------------------------------
-// AVX3[_DL]
-#elif HWY_TARGET == HWY_AVX3 || HWY_TARGET == HWY_AVX3_DL || \
-    HWY_TARGET == HWY_AVX3_ZEN4 || HWY_TARGET == HWY_AVX3_SPR
+// AVX3[_DL]/AVX10
+#elif HWY_TARGET == HWY_AVX3 || HWY_TARGET == HWY_AVX3_DL ||     \
+    HWY_TARGET == HWY_AVX3_ZEN4 || HWY_TARGET == HWY_AVX3_SPR || \
+    HWY_TARGET == HWY_AVX10_2
 
 #define HWY_ALIGN alignas(64)
 #define HWY_MAX_BYTES 64
@@ -245,10 +328,9 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#if HWY_TARGET == HWY_AVX3_SPR && HWY_COMPILER_GCC_ACTUAL && \
+#if HWY_TARGET <= HWY_AVX3_SPR &&                              \
+    (HWY_COMPILER_GCC_ACTUAL || HWY_COMPILER_CLANG >= 1901) && \
     HWY_HAVE_SCALAR_F16_TYPE
-// TODO: enable F16 for AVX3_SPR target with Clang once compilation issues are
-// fixed
 #define HWY_HAVE_FLOAT16 1
 #else
 #define HWY_HAVE_FLOAT16 0
@@ -256,8 +338,18 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 0
 #define HWY_NATIVE_FMA 1
+#if (HWY_TARGET <= HWY_AVX3_ZEN4) && !defined(HWY_AVX3_DISABLE_AVX512BF16)
+#define HWY_NATIVE_DOT_BF16 1
+#else
+#define HWY_NATIVE_DOT_BF16 0
+#endif
 #define HWY_CAP_GE256 1
+
+#if HWY_MAX_BYTES >= 64
 #define HWY_CAP_GE512 1
+#else
+#define HWY_CAP_GE512 0
+#endif
 
 #if HWY_TARGET == HWY_AVX3
 
@@ -272,13 +364,17 @@
 #elif HWY_TARGET == HWY_AVX3_ZEN4
 
 #define HWY_NAMESPACE N_AVX3_ZEN4
-// Currently the same as HWY_AVX3_DL: both support Icelake.
-#define HWY_TARGET_STR HWY_TARGET_STR_AVX3_DL
+#define HWY_TARGET_STR HWY_TARGET_STR_AVX3_ZEN4
 
 #elif HWY_TARGET == HWY_AVX3_SPR
 
 #define HWY_NAMESPACE N_AVX3_SPR
 #define HWY_TARGET_STR HWY_TARGET_STR_AVX3_SPR
+
+#elif HWY_TARGET == HWY_AVX10_2
+
+#define HWY_NAMESPACE N_AVX10_2
+#define HWY_TARGET_STR HWY_TARGET_STR_AVX10_2
 
 #else
 #error "Logic error"
@@ -286,8 +382,7 @@
 
 //-----------------------------------------------------------------------------
 // PPC8, PPC9, PPC10
-#elif HWY_TARGET == HWY_PPC8 || HWY_TARGET == HWY_PPC9 || \
-    HWY_TARGET == HWY_PPC10
+#elif HWY_TARGET_IS_PPC
 
 #define HWY_ALIGN alignas(16)
 #define HWY_MAX_BYTES 16
@@ -299,6 +394,7 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 1
+#define HWY_NATIVE_DOT_BF16 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -319,7 +415,7 @@
 
 #else
 #error "Logic error"
-#endif  // HWY_TARGET == HWY_PPC10
+#endif  // HWY_TARGET
 
 //-----------------------------------------------------------------------------
 // Z14, Z15
@@ -335,6 +431,7 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 1
+#define HWY_NATIVE_DOT_BF16 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -354,7 +451,30 @@
 
 //-----------------------------------------------------------------------------
 // NEON
-#elif HWY_TARGET == HWY_NEON || HWY_TARGET == HWY_NEON_WITHOUT_AES
+#elif HWY_TARGET_IS_NEON
+
+// Clang 17 crashes with bf16, see github.com/llvm/llvm-project/issues/64179.
+#undef HWY_NEON_HAVE_BFLOAT16
+#if HWY_HAVE_SCALAR_BF16_TYPE &&                              \
+    ((HWY_TARGET == HWY_NEON_BF16 &&                          \
+      (!HWY_COMPILER_CLANG || HWY_COMPILER_CLANG >= 1800)) || \
+     defined(__ARM_FEATURE_BF16_VECTOR_ARITHMETIC))
+#define HWY_NEON_HAVE_BFLOAT16 1
+#else
+#define HWY_NEON_HAVE_BFLOAT16 0
+#endif
+
+// HWY_NEON_HAVE_F32_TO_BF16C is defined if NEON vcvt_bf16_f32 and
+// vbfdot_f32 are available, even if the __bf16 type is disabled due to
+// GCC/Clang bugs.
+#undef HWY_NEON_HAVE_F32_TO_BF16C
+#if HWY_NEON_HAVE_BFLOAT16 || HWY_TARGET == HWY_NEON_BF16 || \
+    (defined(__ARM_FEATURE_BF16_VECTOR_ARITHMETIC) &&        \
+     (HWY_COMPILER_GCC_ACTUAL >= 1000 || HWY_COMPILER_CLANG >= 1100))
+#define HWY_NEON_HAVE_F32_TO_BF16C 1
+#else
+#define HWY_NEON_HAVE_F32_TO_BF16C 0
+#endif
 
 #define HWY_ALIGN alignas(16)
 #define HWY_MAX_BYTES 16
@@ -362,7 +482,7 @@
 
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
-#if defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC)
+#if defined(__ARM_FEATURE_FP16_VECTOR_ARITHMETIC) || HWY_TARGET == HWY_NEON_BF16
 #define HWY_HAVE_FLOAT16 1
 #else
 #define HWY_HAVE_FLOAT16 0
@@ -376,10 +496,16 @@
 
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 
-#if defined(__ARM_VFPV4__) || HWY_ARCH_ARM_A64
+#if defined(__ARM_FEATURE_FMA) || defined(__ARM_VFPV4__) || HWY_ARCH_ARM_A64
 #define HWY_NATIVE_FMA 1
 #else
 #define HWY_NATIVE_FMA 0
+#endif
+
+#if HWY_NEON_HAVE_F32_TO_BF16C
+#define HWY_NATIVE_DOT_BF16 1
+#else
+#define HWY_NATIVE_DOT_BF16 0
 #endif
 
 #define HWY_CAP_GE256 0
@@ -387,9 +513,13 @@
 
 #if HWY_TARGET == HWY_NEON_WITHOUT_AES
 #define HWY_NAMESPACE N_NEON_WITHOUT_AES
-#else
+#elif HWY_TARGET == HWY_NEON
 #define HWY_NAMESPACE N_NEON
-#endif
+#elif HWY_TARGET == HWY_NEON_BF16
+#define HWY_NAMESPACE N_NEON_BF16
+#else
+#error "Logic error, missing case"
+#endif  // HWY_TARGET
 
 // Can use pragmas instead of -march compiler flag
 #if HWY_HAVE_RUNTIME_DISPATCH
@@ -404,21 +534,43 @@
 
 #else  // !HWY_ARCH_ARM_V7
 
+#if (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1300) || \
+    (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 1300)
+// GCC 12 or earlier and Clang 12 or earlier require +crypto be added to the
+// target string to enable AArch64 AES intrinsics
+#define HWY_TARGET_STR_NEON "+crypto"
+#else
+#define HWY_TARGET_STR_NEON "+aes"
+#endif
+
+// Clang >= 16 requires +fullfp16 instead of fp16, but Apple Clang 15 = 1600
+// fails to parse unless the string starts with armv8, whereas 1700 refuses it.
+#if HWY_COMPILER_CLANG >= 1700
+#define HWY_TARGET_STR_FP16 "+fullfp16"
+#elif HWY_COMPILER_CLANG >= 1600 && defined(__apple_build_version__)
+#define HWY_TARGET_STR_FP16 "armv8.4-a+fullfp16"
+#else
+#define HWY_TARGET_STR_FP16 "+fp16"
+#endif
+
 #if HWY_TARGET == HWY_NEON_WITHOUT_AES
 // Do not define HWY_TARGET_STR (no pragma).
+#elif HWY_TARGET == HWY_NEON
+#define HWY_TARGET_STR HWY_TARGET_STR_NEON
+#elif HWY_TARGET == HWY_NEON_BF16
+#define HWY_TARGET_STR HWY_TARGET_STR_FP16 "+bf16+dotprod" HWY_TARGET_STR_NEON
 #else
-#define HWY_TARGET_STR "+crypto"
-#endif  // HWY_TARGET == HWY_NEON_WITHOUT_AES
+#error "Logic error, missing case"
+#endif  // HWY_TARGET
 
-#endif  // HWY_ARCH_ARM_V7
+#endif  // !HWY_ARCH_ARM_V7
 #else   // !HWY_HAVE_RUNTIME_DISPATCH
 // HWY_TARGET_STR remains undefined
 #endif
 
 //-----------------------------------------------------------------------------
 // SVE[2]
-#elif HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE || \
-    HWY_TARGET == HWY_SVE_256 || HWY_TARGET == HWY_SVE2_128
+#elif HWY_TARGET_IS_SVE
 
 // SVE only requires lane alignment, not natural alignment of the entire vector.
 #define HWY_ALIGN alignas(8)
@@ -432,6 +584,11 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 0
 #define HWY_NATIVE_FMA 1
+#if HWY_SVE_HAVE_BF16_FEATURE
+#define HWY_NATIVE_DOT_BF16 1
+#else
+#define HWY_NATIVE_DOT_BF16 0
+#endif
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -459,9 +616,9 @@
 // Static dispatch with -march=armv8-a+sve2+aes, or no baseline, hence dynamic
 // dispatch, which checks for AES support at runtime.
 #if defined(__ARM_FEATURE_SVE2_AES) || (HWY_BASELINE_SVE2 == 0)
-#define HWY_TARGET_STR "+sve2-aes"
+#define HWY_TARGET_STR "+sve2+sve2-aes,+sve"
 #else  // SVE2 without AES
-#define HWY_TARGET_STR "+sve2"
+#define HWY_TARGET_STR "+sve2,+sve"
 #endif
 #else  // not SVE2 target
 #define HWY_TARGET_STR "+sve"
@@ -484,6 +641,7 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
+#define HWY_NATIVE_DOT_BF16 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -502,9 +660,10 @@
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
 #define HWY_HAVE_FLOAT16 0
-#define HWY_HAVE_FLOAT64 0
+#define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
+#define HWY_NATIVE_DOT_BF16 0
 #define HWY_CAP_GE256 1
 #define HWY_CAP_GE512 0
 
@@ -532,6 +691,7 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 0
 #define HWY_NATIVE_FMA 1
+#define HWY_NATIVE_DOT_BF16 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -543,8 +703,50 @@
 
 #define HWY_NAMESPACE N_RVV
 
+#if HWY_COMPILER_CLANG >= 1900
+// https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#181-zvl-minimum-vector-length-standard-extensions
+#define HWY_TARGET_STR "arch=+v"
+#else
 // HWY_TARGET_STR remains undefined so HWY_ATTR is a no-op.
-// (rv64gcv is not a valid target)
+#endif
+
+//-----------------------------------------------------------------------------
+// LSX/LASX
+#elif HWY_TARGET == HWY_LSX || HWY_TARGET == HWY_LASX
+
+#if HWY_TARGET == HWY_LSX
+#define HWY_ALIGN alignas(16)
+#define HWY_MAX_BYTES 16
+#else
+#define HWY_ALIGN alignas(32)
+#define HWY_MAX_BYTES 32
+#endif
+
+#define HWY_LANES(T) (HWY_MAX_BYTES / sizeof(T))
+
+#define HWY_HAVE_SCALABLE 0
+#define HWY_HAVE_INTEGER64 1
+#define HWY_HAVE_FLOAT16 0
+#define HWY_HAVE_FLOAT64 1
+#define HWY_MEM_OPS_MIGHT_FAULT 1
+#define HWY_NATIVE_FMA 1
+#define HWY_NATIVE_DOT_BF16 0
+
+#if HWY_TARGET == HWY_LSX
+#define HWY_CAP_GE256 0
+#else
+#define HWY_CAP_GE256 1
+#endif
+
+#define HWY_CAP_GE512 0
+
+#if HWY_TARGET == HWY_LSX
+#define HWY_NAMESPACE N_LSX
+#else
+#define HWY_NAMESPACE N_LASX
+#endif
+
+// HWY_TARGET_STR remains undefined so HWY_ATTR is a no-op.
 
 //-----------------------------------------------------------------------------
 // EMU128
@@ -560,6 +762,7 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
+#define HWY_NATIVE_DOT_BF16 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -581,6 +784,7 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 0
 #define HWY_NATIVE_FMA 0
+#define HWY_NATIVE_DOT_BF16 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 

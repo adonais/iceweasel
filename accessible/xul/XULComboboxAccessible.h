@@ -21,7 +21,7 @@ class XULComboboxAccessible : public AccessibleWrap {
   XULComboboxAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   // LocalAccessible
-  void Description(nsString& aDescription) const override;
+  EDescriptionValueFlag Description(nsString& aDescription) const override;
   void Value(nsString& aValue) const override;
   a11y::role NativeRole() const override;
   uint64_t NativeState() const override;

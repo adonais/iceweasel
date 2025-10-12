@@ -13,8 +13,11 @@ class nsIFrame;
 
 namespace mozilla {
 
-// A flag that can be used to annotate a frame to distinguish coordinates
+// A flag that can be used to distinguish between the visual and layout
+// viewports. In layout code, this is often used to annotate coordinates
 // relative to the viewport frame as being in layout or visual coordinates.
+// However, it may also be used to e.g. specify whether a scroll operation
+// should apply to the layout or visual viewport.
 enum class ViewportType { Layout, Visual };
 
 // A struct that combines a frame with a ViewportType annotation. The

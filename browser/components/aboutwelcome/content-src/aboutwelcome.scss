@@ -624,6 +624,15 @@ html {
         }
       }
 
+      .secondary-buttons-top-container {
+        .secondary-cta.top {
+          position: relative;
+          padding-top: 0;
+          top: 0;
+          inset-inline-end: 0;
+        }
+      }
+
       .section-main {
         flex-direction: row;
         display: block;
@@ -1564,7 +1573,7 @@ html {
         // Reposition the "Sign in" button on the welcome screen to move inside
         // the screen when it would otherwise overlap the screen.
         @mixin extra-narrow-secondary-cta {
-          .section-main .secondary-cta.top {
+          .section-main .secondary-buttons-top-container {
             position: absolute;
             padding: 0;
             top: 0;
@@ -2375,6 +2384,21 @@ html {
     span {
       color: var(--grey-subtitle-1);
       margin: 0 4px;
+    }
+  }
+
+  .secondary-buttons-top-container {
+    display: flex;
+    flex-direction: row-reverse;
+    position: fixed;
+    top: 10px;
+    inset-inline-end: 10px;
+    width: auto;
+    height: auto;
+
+    .secondary-cta.top {
+      position: relative;
+      padding-top: 0;
     }
   }
 

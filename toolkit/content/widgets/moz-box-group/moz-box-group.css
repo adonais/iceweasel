@@ -2,12 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-::slotted(*:not(:last-child)) {
+::slotted(*:not(.last)) {
   --box-border-radius-end: 0;
   --box-border-width-end: 0;
 }
 
-::slotted(*:not(:first-child)) {
+::slotted(*:not(.first)) {
   --box-border-radius-start: 0;
 }
 

@@ -242,9 +242,14 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
 
     shaders.insert("ps_quad_textured", vec![base_prim_features.finish()]);
 
-    shaders.insert("ps_quad_radial_gradient", vec![base_prim_features.finish()]);
+    let mut maybe_dithering = FeatureList::new();
+    if flags.contains(ShaderFeatureFlags::DITHERING) {
+        maybe_dithering.add("DITHERING");
+    }
 
-    shaders.insert("ps_quad_conic_gradient", vec![base_prim_features.finish()]);
+    shaders.insert("ps_quad_radial_gradient", vec![base_prim_features.concat(&maybe_dithering).finish()]);
+
+    shaders.insert("ps_quad_conic_gradient", vec![base_prim_features.concat(&maybe_dithering).finish()]);
 
     shaders.insert("ps_clear", vec![base_prim_features.finish()]);
 

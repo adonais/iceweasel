@@ -11,6 +11,15 @@ const OFFLINE_REMOTE_SETTINGS = [
       },
     ],
   },
+  {
+    type: "dynamic-suggestions",
+    suggestion_type: "yelpRealtime_opt_in",
+    attachment: [
+      {
+        keywords: ["coffee"],
+      },
+    ],
+  },
 ];
 
 const TEST_MERINO_SINGLE = [
@@ -38,7 +47,10 @@ add_setup(async function () {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
     remoteSettingsRecords: OFFLINE_REMOTE_SETTINGS,
     merinoSuggestions: TEST_MERINO_SINGLE,
-    prefs: [["market.featureGate", true]],
+    prefs: [
+      ["market.featureGate", true],
+      ["yelpRealtime.featureGate", true],
+    ],
   });
 
   registerCleanupFunction(async () => {
@@ -49,6 +61,40 @@ add_setup(async function () {
     await QuickSuggestTestUtils.forceSync();
   });
 });
+
+add_task(async function messages() {
+  await doMessagesTest({
+    input: "stock",
+    expected: {
+      title: "Get stock market data right in your search bar",
+      description:
+        "Show market updates and more from our partners when you share search query data with Mozilla. Learn more",
+    },
+  });
+  await doMessagesTest({
+    input: "coffee",
+    expected: {
+      title: "Find great places nearby and more",
+      description:
+        "Get suggestions for nearby places and services — plus updates on stocks, sports scores, and more from our partners by sharing search query data with Mozilla. Learn more",
+    },
+  });
+});
+
+async function doMessagesTest({ input, expected }) {
+  UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
+
+  let { element } = await openRealtimeSuggestion({ input });
+  let title = element.row.querySelector(".urlbarView-title");
+  Assert.equal(title.textContent, expected.title);
+  let description = element.row.querySelector(
+    ".urlbarView-row-body-description"
+  );
+  Assert.equal(description.textContent, expected.description);
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  UrlbarPrefs.clear("quicksuggest.dataCollection.enabled");
+}
 
 add_task(async function optIn_mouse() {
   await doOptInTest(false);

@@ -21,7 +21,7 @@ class SettingsTurnOnSyncPage(composeRule: AndroidComposeTestRule<HomeActivityInt
             steps = listOf(
                 NavigationStep.Click(HomeSelectors.MAIN_MENU_BUTTON),
                 NavigationStep.Click(MainMenuSelectors.SETTINGS_BUTTON),
-                NavigationStep.Click(SettingsSelectors.SYNC_AND_SAVE_YOUR_DATA_BUTTON),
+                NavigationStep.Click(SettingsSelectors.SIGN_IN_BUTTON),
             ),
         )
     }

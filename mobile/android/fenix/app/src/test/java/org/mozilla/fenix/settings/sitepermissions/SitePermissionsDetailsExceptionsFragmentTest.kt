@@ -6,8 +6,6 @@ package org.mozilla.fenix.settings.sitepermissions
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.bundleOf
-import androidx.fragment.app.FragmentActivity
 import androidx.preference.Preference
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -15,7 +13,6 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.spyk
 import io.mockk.verify
 import mozilla.components.concept.engine.permission.SitePermissions
-import mozilla.components.support.test.robolectric.createAddedTestFragment
 import mozilla.components.support.test.robolectric.createAddedTestFragmentWithActivity
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -24,13 +21,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.requirePreference
 import org.mozilla.fenix.utils.Settings
-import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)

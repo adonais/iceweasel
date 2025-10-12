@@ -399,6 +399,11 @@ export function removePrettyPrintedSource(source) {
       location = await getGeneratedLocation(location, thunkArgs);
     }
 
+    dispatch({
+      type: "REMOVE_PRETTY_PRINTED_SOURCE",
+      source,
+    });
+
     // Prevent resetting the currently selected source to avoid blinking.
     // The minimized source will be selected right after the reducers are cleaned up
     await dispatch(

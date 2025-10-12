@@ -42,17 +42,14 @@ struct FileIOMarker {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable,
               MS::Location::TimelineFileIO};
-    schema.AddKeyLabelFormatSearchable("operation", "Operation",
-                                       MS::Format::String,
-                                       MS::Searchable::Searchable);
-    schema.AddKeyLabelFormatSearchable("source", "Source", MS::Format::String,
-                                       MS::Searchable::Searchable);
-    schema.AddKeyLabelFormatSearchable("filename", "Filename",
-                                       MS::Format::FilePath,
-                                       MS::Searchable::Searchable);
-    schema.AddKeyLabelFormatSearchable("threadId", "Thread ID",
-                                       MS::Format::String,
-                                       MS::Searchable::Searchable);
+    schema.AddKeyLabelFormat("operation", "Operation", MS::Format::String,
+                             MS::PayloadFlags::Searchable);
+    schema.AddKeyLabelFormat("source", "Source", MS::Format::String,
+                             MS::PayloadFlags::Searchable);
+    schema.AddKeyLabelFormat("filename", "Filename", MS::Format::FilePath,
+                             MS::PayloadFlags::Searchable);
+    schema.AddKeyLabelFormat("threadId", "Thread ID", MS::Format::String,
+                             MS::PayloadFlags::Searchable);
     return schema;
   }
 };

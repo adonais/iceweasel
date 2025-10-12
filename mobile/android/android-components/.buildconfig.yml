@@ -1138,6 +1138,7 @@ projects:
     - components:support-test
     - components:support-utils
     - components:tooling-lint
+    - components:ui-icons
   components:feature-readerview:
     description: Feature implementation providing a Reader View WebExtension.
     path: components/feature/readerview
@@ -1899,6 +1900,7 @@ projects:
     - components:support-ktx
     - components:support-utils
     - components:tooling-lint
+    - components:ui-icons
   components:samples-glean:
     description: An app demoing how to use the Glean library to collect and send telemetry
       data.

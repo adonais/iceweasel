@@ -72,7 +72,7 @@ class TimeZone final {
    * Create a TimeZone.
    */
   static Result<UniquePtr<TimeZone>, ICUError> TryCreate(
-      Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{});
+      Maybe<Span<const char>> aTimeZoneOverride = Nothing{});
 
   /**
    * A number indicating the raw offset from GMT in milliseconds.

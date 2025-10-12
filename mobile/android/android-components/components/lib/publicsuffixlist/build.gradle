@@ -34,14 +34,15 @@ android {
 }
 
 dependencies {
-    implementation libs.kotlin.coroutines
     implementation libs.androidx.annotation
+    implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
+
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
-    testImplementation libs.testing.coroutines
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

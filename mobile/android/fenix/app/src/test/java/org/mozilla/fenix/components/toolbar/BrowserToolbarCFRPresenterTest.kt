@@ -34,6 +34,7 @@ import org.mozilla.fenix.ext.isLargeWindow
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
+import mozilla.components.browser.toolbar.R as toolbarR
 
 @RunWith(RobolectricTestRunner::class)
 class BrowserToolbarCFRPresenterTest {
@@ -179,10 +180,10 @@ class BrowserToolbarCFRPresenterTest {
             every { hasShownTabSwipeCFR } returns false
         },
         toolbar: BrowserToolbar = mockk {
-            every { findViewById<View>(R.id.mozac_browser_toolbar_background) } returns anchor
-            every { findViewById<View>(R.id.mozac_browser_toolbar_site_info_indicator) } returns anchor
-            every { findViewById<View>(R.id.mozac_browser_toolbar_page_actions) } returns anchor
-            every { findViewById<View>(R.id.mozac_browser_toolbar_navigation_actions) } returns anchor
+            every { findViewById<View>(toolbarR.id.mozac_browser_toolbar_background) } returns anchor
+            every { findViewById<View>(toolbarR.id.mozac_browser_toolbar_site_info_indicator) } returns anchor
+            every { findViewById<View>(toolbarR.id.mozac_browser_toolbar_page_actions) } returns anchor
+            every { findViewById<View>(toolbarR.id.mozac_browser_toolbar_navigation_actions) } returns anchor
         },
         sessionId: String? = null,
         isPrivate: Boolean = false,

@@ -50,35 +50,14 @@ function sameUrlIgnoringRef(url1, url2) {
 /**
  * A provider that returns the Top Sites shown on about:newtab.
  */
-class ProviderTopSites extends UrlbarProvider {
+export class UrlbarProviderTopSites extends UrlbarProvider {
   constructor() {
     super();
-
-    this._topSitesListeners = [];
-    let callListeners = () => this._callTopSitesListeners();
-    if (Services.prefs.getBoolPref("browser.topsites.component.enabled")) {
-      Services.obs.addObserver(callListeners, "topsites-refreshed");
-    } else {
-      Services.obs.addObserver(callListeners, "newtab-top-sites-changed");
-    }
-    for (let pref of TOP_SITES_ENABLED_PREFS) {
-      Services.prefs.addObserver(pref, callListeners);
-    }
   }
 
-  get PRIORITY() {
+  static get PRIORITY() {
     // Top sites are prioritized over the UrlbarProviderPlaces provider.
     return 1;
-  }
-
-  /**
-   * Unique name for the provider, used by the context to filter on providers.
-   * Not using a unique name will cause the newest registration to win.
-   *
-   * @returns {string}
-   */
-  get name() {
-    return "UrlbarProviderTopSites";
   }
 
   /**
@@ -109,7 +88,7 @@ class ProviderTopSites extends UrlbarProvider {
    * @returns {number} The provider's priority for the given query.
    */
   getPriority() {
-    return this.PRIORITY;
+    return UrlbarProviderTopSites.PRIORITY;
   }
 
   /**
@@ -156,9 +135,9 @@ class ProviderTopSites extends UrlbarProvider {
     // This is done here, rather than in the global scope, because
     // TOP_SITES_DEFAULT_ROWS causes import of topsites constants.mjs, and we want to
     // do that only when actually querying for Top Sites.
-    if (this.topSitesRows === undefined) {
+    if (UrlbarProviderTopSites.topSitesRows === undefined) {
       XPCOMUtils.defineLazyPreferenceGetter(
-        this,
+        UrlbarProviderTopSites,
         "topSitesRows",
         "browser.newtabpage.activity-stream.topSitesRows",
         lazy.TOP_SITES_DEFAULT_ROWS
@@ -170,7 +149,7 @@ class ProviderTopSites extends UrlbarProvider {
     // additional ones couldn't be managed from the page.
     let numTopSites = Math.min(
       lazy.UrlbarPrefs.get("maxRichResults"),
-      lazy.TOP_SITES_MAX_SITES_PER_ROW * this.topSitesRows
+      lazy.TOP_SITES_MAX_SITES_PER_ROW * UrlbarProviderTopSites.topSitesRows
     );
     sites = sites.slice(0, numTopSites);
 
@@ -376,6 +355,14 @@ class ProviderTopSites extends UrlbarProvider {
   }
 
   /**
+   * Once initialized, contains an array of weak
+   * references of top sites listener functions.
+   *
+   * @type {?{get: Function}[]}
+   */
+  static #topSitesListeners = null;
+
+  /**
    * Adds a listener function that will be called when the top sites change or
    * they are enabled/disabled. This class will hold a weak reference to the
    * listener, so you do not need to unregister it, but you or someone else must
@@ -385,16 +372,31 @@ class ProviderTopSites extends UrlbarProvider {
    * @param {Function} callback
    *   The listener function. This class will hold a weak reference to it.
    */
-  addTopSitesListener(callback) {
-    this._topSitesListeners.push(Cu.getWeakReference(callback));
+  static addTopSitesListener(callback) {
+    // Lazily init observers.
+    if (!UrlbarProviderTopSites.#topSitesListeners) {
+      UrlbarProviderTopSites.#topSitesListeners = [];
+      let callListeners = UrlbarProviderTopSites.#callTopSitesListeners;
+      if (Services.prefs.getBoolPref("browser.topsites.component.enabled")) {
+        Services.obs.addObserver(callListeners, "topsites-refreshed");
+      } else {
+        Services.obs.addObserver(callListeners, "newtab-top-sites-changed");
+      }
+      for (let pref of TOP_SITES_ENABLED_PREFS) {
+        Services.prefs.addObserver(pref, callListeners);
+      }
+    }
+    UrlbarProviderTopSites.#topSitesListeners.push(
+      Cu.getWeakReference(callback)
+    );
   }
 
-  _callTopSitesListeners() {
-    for (let i = 0; i < this._topSitesListeners.length; ) {
-      let listener = this._topSitesListeners[i].get();
+  static #callTopSitesListeners() {
+    for (let i = 0; i < UrlbarProviderTopSites.#topSitesListeners.length; ) {
+      let listener = UrlbarProviderTopSites.#topSitesListeners[i].get();
       if (!listener) {
         // The listener has been GC'ed, so remove it from our list.
-        this._topSitesListeners.splice(i, 1);
+        UrlbarProviderTopSites.#topSitesListeners.splice(i, 1);
       } else {
         listener();
         ++i;
@@ -407,7 +409,5 @@ class ProviderTopSites extends UrlbarProvider {
    *
    * @type {number|undefined}
    */
-  topSitesRows = undefined;
+  static topSitesRows;
 }
-
-export var UrlbarProviderTopSites = new ProviderTopSites();

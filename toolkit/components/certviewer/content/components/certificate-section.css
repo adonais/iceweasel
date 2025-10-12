@@ -12,7 +12,7 @@ h1 {
   display: flex;
   text-align: center;
   border: 1px solid var(--border-color-card);
-  border-radius: 4px 4px 0 0;
+  border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
   border-bottom: 1px solid var(--border-color-card);
   box-shadow: var(--box-shadow-card);
 }

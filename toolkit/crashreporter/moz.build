@@ -106,7 +106,6 @@ if CONFIG["MOZ_CRASHREPORTER"]:
     if CONFIG["OS_TARGET"] == "Android":
         DEFINES["ANDROID_NDK_MAJOR_VERSION"] = CONFIG["ANDROID_NDK_MAJOR_VERSION"]
         DEFINES["ANDROID_NDK_MINOR_VERSION"] = CONFIG["ANDROID_NDK_MINOR_VERSION"]
-        DEFINES["ANDROID_PACKAGE_NAME"] = '"%s"' % CONFIG["ANDROID_PACKAGE_NAME"]
         LOCAL_INCLUDES += [
             "/toolkit/crashreporter/google-breakpad/src/common/android/include",
         ]

@@ -369,7 +369,7 @@
       background-color: var(--button-background-color);
       justify-content: center;
       align-items: center;
-      border-radius: 50%;
+      border-radius: var(--border-radius-circle);
       width: var(--icon-size-xsmall);
       height: var(--icon-size-xsmall);
       font-size: 10px;
@@ -403,7 +403,7 @@
   background-repeat: no-repeat;
   margin-inline: 4px;
   -moz-context-properties: fill, fill-opacity;
-  border-radius: 100%;
+  border-radius: var(--border-radius-circle);
 
   &:not(:hover, [selected], [primary], [open]) {
     @media (prefers-contrast) {
@@ -859,7 +859,7 @@
   border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
   padding: 0 4px;
   margin-inline-start: 0.4em;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 }
 
 /* Rich suggestions */
@@ -1180,7 +1180,7 @@
 .urlbarView-results[actionmode] {
   white-space: wrap;
 
-  > .urlbarView-row[dynamicType="actions"] {
+  > .urlbarView-row {
     display: inline-flex;
   }
 }

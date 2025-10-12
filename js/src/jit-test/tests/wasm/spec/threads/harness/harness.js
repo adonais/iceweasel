@@ -351,10 +351,8 @@ function formatResult(result) {
 
 function formatExpected(expected) {
   if (
-    expected === `f32_canonical_nan` ||
-    expected === `f32_arithmetic_nan` ||
-    expected === `f64_canonical_nan` ||
-    expected === `f64_arithmetic_nan`
+    expected === `canonical_nan` ||
+    expected === `arithmetic_nan`
   ) {
     return expected;
   } else if (expected instanceof F32x4Pattern) {

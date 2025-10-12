@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">خيارات أكثر</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">فعّل التصفّح الخاص</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">عطّل التصفّح الخاص</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">التصفح الخاص</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">ابحث أو أدخِل عنوانا</string>
@@ -259,8 +255,6 @@
   <string name="browser_menu_new_private_tab">لسان خاص جديد</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">كلمات السر</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">التبديل إلى الموقع المحمول</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
   <string name="browser_main_menu_content_description_help_button">المساعدة</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
@@ -338,10 +332,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">الألسنة تزامن الآن! تابع عملك في جهازك الآخر.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">أغلق</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -555,7 +547,7 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">خصّص</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">لِج لمزامنة ألسنتك و علاماتك و كلمات السر والمزيد.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">لِج لمزامنة ألسنتك و علاماتك و كلمات السر والمزيد.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">حساب Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -783,8 +775,6 @@
   <string name="exceptions_empty_message_description">تتيح لك الاستثناءات تعطيل الحماية من التعقّب لمواقع تختارها.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">اطّلع على المزيد</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">تعرف على المزيد حول تقارير الأعطال</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">الدراسات</string>
   <!-- Summary for studies preferences -->
@@ -794,7 +784,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">زامِن واحفظ بياناتك</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">زامِن واحفظ بياناتك</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">لِج لإعادة الاتصال</string>
   <!-- Preference for removing FxA account -->
@@ -1025,9 +1015,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">احذف التأريخ</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">حُذف التأريخ</string>
+  <string name="history_delete_multiple_items_snackbar">حُذف التأريخ</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">حُذف %1$s</string>
+  <string name="history_delete_single_item_snackbar">حُذف %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">احذف</string>
   <!--
@@ -1278,12 +1268,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">الألسنة المحدّدة: %d</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">حُفظت الألسنة!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">حُفظت التجميعة!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">حُفظت التجميعة!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">حُفظ اللسان!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">حُفظ اللسان!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">أغلِق</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1330,7 +1318,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">لِج إلى «المزامنة»</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">زامِن واحفظ البيانات</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">زامِن واحفظ البيانات</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">أرسله إلى كل الأجهزة</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1426,8 +1414,6 @@
   <string name="tab_collection_dialog_message">أمتأكّد من حذف %1$s؟</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">احذف</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">نُسخ المسار</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">هذه عينة من نص، وتعرض لك شكل النص حين تزيد مقاسه باستعمال هذا الإعداد، أو تقلّله.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1514,9 +1500,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">أُرسلت الألسنة!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">أُرسلت الألسنة!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">أُرسل اللسان!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">أُرسل اللسان!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">تعذر الإرسال</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1892,12 +1878,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">أدخِل نص البحث</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">تحقق من أن نص البحث يطابق تنسيق المثال</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">أُنشئ %s</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">حُفظ %s</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">حُذف %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">لتسمح بالتصريح:</string>
   <!-- First step for the allowing a permission -->

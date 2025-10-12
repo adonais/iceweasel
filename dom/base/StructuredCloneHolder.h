@@ -211,11 +211,30 @@ class StructuredCloneHolder : public StructuredCloneHolderBase {
             JS::MutableHandle<JS::Value> aValue,
             const JS::CloneDataPolicy& aCloneDataPolicy, ErrorResult& aRv);
 
+  // Create a statement for each of the side DOM-ish data members.
+  // mTransferredPorts is not included because it is part of the
+  // deserialized state.
+#define CLONED_DATA_MEMBERS  \
+  STMT(mBlobImplArray);      \
+  STMT(mWasmModuleArray);    \
+  STMT(mInputStreamArray);   \
+  STMT(mClonedSurfaces);     \
+  STMT(mVideoFrames);        \
+  STMT(mAudioData);          \
+  STMT(mEncodedVideoChunks); \
+  STMT(mEncodedAudioChunks); \
+  STMT(mPortIdentifiers);
+
   // Call this method to know if this object is keeping some DOM object alive.
   bool HasClonedDOMObjects() const {
-    return !mBlobImplArray.IsEmpty() || !mWasmModuleArray.IsEmpty() ||
-           !mClonedSurfaces.IsEmpty() || !mInputStreamArray.IsEmpty() ||
-           !mVideoFrames.IsEmpty() || !mEncodedVideoChunks.IsEmpty();
+#define STMT(_member)         \
+  if (!(_member).IsEmpty()) { \
+    return true;              \
+  }
+
+    CLONED_DATA_MEMBERS
+#undef STMT
+    return false;
   }
 
   nsTArray<RefPtr<BlobImpl>>& BlobImpls() {

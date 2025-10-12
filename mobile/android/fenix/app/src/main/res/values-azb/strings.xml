@@ -10,10 +10,6 @@
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
   <string name="content_description_menu">داها چوخ سئچه‌نک</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">گیزلی مورورو گوجلندیر</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">گیزلی مورورو گوجدن سال</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">آختارین یا آدرسی گیرین</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -246,8 +242,6 @@
   <string name="browser_menu_new_private_tab">یئنی گیزلی تاغ</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">رمز‌لر</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">موبایل سایتا گئچین</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">بوکمارک دوز‌ه‌لیشی</string>
   <!--
@@ -308,10 +302,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">تاغلارینیز دونگل‌لنیر! آیری جهازینیزدا قالدیغینیز یئردن دوام ائدین.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">باغلا</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -522,7 +514,7 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">اؤزللشدیرمک</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">تاغلاریْ، بوکمارک‌لاریْ، رمزلری و داها چوْخوُنو دؤنگل ائتمک اوچون گیریش ائله‌یین.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">تاغلاریْ، بوکمارک‌لاریْ، رمزلری و داها چوْخوُنو دؤنگل ائتمک اوچون گیریش ائله‌یین.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">موْزیلا حسابی</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -781,7 +773,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">دیتالارینیزیْ دؤنگل ائدین و ساخلایین</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">دیتالارینیزیْ دؤنگل ائدین و ساخلایین</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">یئنی‌دن باغلانماق اوچون گیریش ائدین</string>
   <!-- Preference for removing FxA account -->
@@ -1019,9 +1011,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">گئچمیشی سیل</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">گئچمیش سیلیندی</string>
+  <string name="history_delete_multiple_items_snackbar">گئچمیش سیلیندی</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s سیلیندی</string>
+  <string name="history_delete_single_item_snackbar">%1$s سیلیندی</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">سیل</string>
   <!--
@@ -1258,12 +1250,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d تاغ سئچیلدی</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">تاغ‌لار ساخلاندیْ!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">مجموعه ساخلاندیْ!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">مجموعه ساخلاندیْ!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">تاغ ساخلاندیْ!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">تاغ ساخلاندیْ!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">باغلا</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1310,7 +1300,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">دؤنگله گیریش</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">دیتا دؤنگلی و ساخلاماسی</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">دیتا دؤنگلی و ساخلاماسی</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">بوتون جهازلارا گؤندر</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1422,8 +1412,6 @@
   <string name="tab_collection_dialog_message">%1$s مجموعه‌سینی سیلمه‌گه آرخایینسیز؟</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">سیل</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">اینترنت آدرسی کوْپی اوْلدو</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">بو نمونه متن‌دیر. بو تنظیم‌له اؤلچونو آرتیردیغینیزدا ویا آزالتیغینیزدا متن‌ین نئجه گؤرونه‌جگینی گؤسترمک اوچون بورادادیر.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1510,9 +1498,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">تاغلار گؤندریلدی</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">تاغلار گؤندریلدی</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">تاغ گؤندریلدی!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">تاغ گؤندریلدی!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">گؤندری‌لنمه‌دی</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1947,12 +1935,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">بیر آختاریش عبارتی وئر</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">آختاریش عبارتین نمونه فرمتینه اویغون اوْلدوغونو یوْخلایین</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s یارادیلدیْ</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s ساخلاندیْ</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s سیلیندی</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">اجازه وئرمک اوچون:</string>
   <!-- First step for the allowing a permission -->

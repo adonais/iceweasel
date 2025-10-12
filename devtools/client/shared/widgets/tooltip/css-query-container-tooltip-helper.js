@@ -22,7 +22,7 @@ class CssQueryContainerTooltipHelper {
     tooltip.panel.appendChild(fragment);
 
     // Size the content.
-    tooltip.setContentSize({ width: 267, height: Infinity });
+    tooltip.setContentSize({ width: 267 });
   }
 
   /**

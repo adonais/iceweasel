@@ -13,6 +13,7 @@ import android.os.DeadObjectException;
 import android.os.RemoteException;
 import android.util.Log;
 import android.util.SparseArray;
+import androidx.annotation.ChecksSdkIntAtLeast;
 import androidx.annotation.RequiresApi;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -483,6 +484,7 @@ public final class CodecProxy {
     return buffer;
   }
 
+  @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.N_MR1)
   @WrapForJNI
   public static boolean supportsCBCS() {
     // Android N/API-24 supports CBCS but there seems to be a bug.

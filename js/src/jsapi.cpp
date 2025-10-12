@@ -1777,21 +1777,36 @@ JS::RealmCreationOptions& JS::RealmCreationOptions::setCoopAndCoepEnabled(
   return *this;
 }
 
-JS::RealmCreationOptions& JS::RealmCreationOptions::setLocaleCopyZ(
-    const char* locale) {
-  const size_t size = strlen(locale) + 1;
+template <class RefCountedString>
+static RefCountedString* CopyStringZ(const char* str) {
+  MOZ_ASSERT(str);
+
+  const size_t size = strlen(str) + 1;
 
   AutoEnterOOMUnsafeRegion oomUnsafe;
-  char* memoryPtr = js_pod_malloc<char>(sizeof(LocaleString) + size);
+  char* memoryPtr = js_pod_malloc<char>(sizeof(RefCountedString) + size);
   if (!memoryPtr) {
-    oomUnsafe.crash("RealmCreationOptions::setLocaleCopyZ");
+    oomUnsafe.crash("CopyStringZ");
   }
 
-  char* localePtr = memoryPtr + sizeof(LocaleString);
-  memcpy(localePtr, locale, size);
+  char* strPtr = memoryPtr + sizeof(RefCountedString);
+  memcpy(strPtr, str, size);
 
-  locale_ = new (memoryPtr) LocaleString(localePtr);
+  return new (memoryPtr) RefCountedString(strPtr);
+}
 
+JS::RealmCreationOptions& JS::RealmCreationOptions::setLocaleCopyZ(
+    const char* locale) {
+  locale_ = CopyStringZ<JS::LocaleString>(locale);
+  return *this;
+}
+
+JS::RealmBehaviors& JS::RealmBehaviors::setTimeZoneCopyZ(const char* timeZone) {
+  if (timeZone) {
+    timeZone_ = CopyStringZ<JS::TimeZoneString>(timeZone);
+  } else {
+    timeZone_ = nullptr;
+  }
   return *this;
 }
 
@@ -1801,6 +1816,14 @@ const JS::RealmBehaviors& JS::RealmBehaviorsRef(JS::Realm* realm) {
 
 const JS::RealmBehaviors& JS::RealmBehaviorsRef(JSContext* cx) {
   return cx->realm()->behaviors();
+}
+
+void JS::SetRealmLocaleOverride(Realm* realm, const char* locale) {
+  realm->setLocaleOverride(locale);
+}
+
+void JS::SetRealmTimezoneOverride(Realm* realm, const char* timezone) {
+  realm->setTimeZone(timezone);
 }
 
 void JS::SetRealmNonLive(Realm* realm) { realm->setNonLive(); }
@@ -2173,11 +2196,13 @@ JS_PUBLIC_API void JS_SetAllNonReservedSlotsToUndefined(JS::HandleObject obj) {
 
   NativeObject& nobj = obj->as<NativeObject>();
 
-  // XPConnect calls this for global objects that won't be used anymore. Globals
-  // can have an associated ObjectFuse but we can ignore that here because the
-  // global is effectively dead (after clearing all slots below it'd be hard to
-  // execute JS code in this global without breaking JS semantics).
+  // XPConnect calls this for global objects and global lexical environments
+  // that won't be used anymore. These objects can have an associated ObjectFuse
+  // but we can ignore them here because the objects are effectively dead (after
+  // clearing all slots below it'd be hard to execute JS code without breaking
+  // JS semantics).
   MOZ_RELEASE_ASSERT(nobj.is<GlobalObject>() ||
+                     nobj.is<GlobalLexicalEnvironmentObject>() ||
                      !Watchtower::watchesPropertyValueChange(&nobj));
 
   const JSClass* clasp = obj->getClass();

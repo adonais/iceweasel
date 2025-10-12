@@ -227,6 +227,23 @@ inline void TraceRoot(JSTracer* trc, const HeapPtr<T>* thingp,
   TraceRoot(trc, thingp->unbarrieredAddress(), name);
 }
 
+// Buffers are typically owned by other GC things. Permit creation of 'tenured
+// owned' buffers as part of creating the owning GC thing.
+template <typename T>
+void TraceBufferRoot(JSTracer* trc, JS::Zone* zone, T** bufferp,
+                     const char* name) {
+  void** ptrp = reinterpret_cast<void**>(bufferp);
+  gc::TraceBufferEdgeInternal(trc, zone, ptrp, name);
+}
+
+template <typename T>
+void BufferHolder<T>::trace(JSTracer* trc) {
+  if (buffer) {
+    TraceBufferRoot(trc, zone, &buffer, "BufferHolder buffer");
+    JS::GCPolicy<T>::trace(trc, buffer, "BufferHolder data");
+  }
+}
+
 // Idential to TraceRoot, except that this variant will not crash if |*thingp|
 // is null.
 
@@ -262,15 +279,6 @@ inline void TraceManuallyBarrieredNullableEdge(JSTracer* trc, T* thingp,
   }
 }
 
-// Trace through a weak edge. If *thingp is not marked at the end of marking,
-// it is replaced by nullptr, and this method will return false to indicate that
-// the edge no longer exists.
-template <typename T>
-inline bool TraceManuallyBarrieredWeakEdge(JSTracer* trc, T* thingp,
-                                           const char* name) {
-  return gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
-}
-
 // The result of tracing a weak edge, which can be either:
 //
 //  - the target is dead (and the edge has been cleared), or
@@ -290,10 +298,7 @@ struct TraceWeakResult {
 
   MOZ_IMPLICIT operator bool() const { return isLive(); }
 
-  T initialTarget() const {
-    MOZ_ASSERT(isDead());
-    return initial_;
-  }
+  T initialTarget() const { return initial_; }
 
   T finalTarget() const {
     MOZ_ASSERT(isLive());
@@ -301,6 +306,9 @@ struct TraceWeakResult {
   }
 };
 
+// Trace through a weak edge. If *thingp is not marked at the end of marking, it
+// is replaced by nullptr. Returns a TraceWeakResult to describe what happened
+// and allow cleanup.
 template <typename T>
 inline TraceWeakResult<T> TraceWeakEdge(JSTracer* trc, BarrieredBase<T>* thingp,
                                         const char* name) {
@@ -309,6 +317,15 @@ inline TraceWeakResult<T> TraceWeakEdge(JSTracer* trc, BarrieredBase<T>* thingp,
   bool live = !InternalBarrierMethods<T>::isMarkable(initial) ||
               gc::TraceEdgeInternal(trc, gc::ConvertToBase(addr), name);
   return TraceWeakResult<T>{live, initial, *addr};
+}
+template <typename T>
+inline TraceWeakResult<T> TraceManuallyBarrieredWeakEdge(JSTracer* trc,
+                                                         T* thingp,
+                                                         const char* name) {
+  T initial = *thingp;
+  bool live = !InternalBarrierMethods<T>::isMarkable(initial) ||
+              gc::TraceEdgeInternal(trc, gc::ConvertToBase(thingp), name);
+  return TraceWeakResult<T>{live, initial, *thingp};
 }
 
 // Trace all edges contained in the given array.

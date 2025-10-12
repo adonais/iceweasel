@@ -22,7 +22,6 @@ module.exports = {
         "../shared/worker-utils.js",
       ],
       presets: [
-        "@babel/preset-react",
         [
           "@babel/preset-env",
           {

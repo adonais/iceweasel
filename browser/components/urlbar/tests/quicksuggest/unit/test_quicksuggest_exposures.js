@@ -356,6 +356,7 @@ add_task(async function maxResults_exposuresAmp() {
         keyword: "maxresults",
         title: "maxresults 0",
         url: "https://example.com/maxresults/0",
+        suggestedIndex: -1,
       }),
       ...exposureResults,
     ],
@@ -387,12 +388,13 @@ add_task(async function maxResults_exposuresHistoryAmp() {
     includeAmp: true,
     includeHistory: true,
     expectedResults: [
+      ...historyResults.slice(0, maxResults - 1),
       QuickSuggestTestUtils.ampResult({
         keyword: "maxresults",
         title: "maxresults 0",
         url: "https://example.com/maxresults/0",
+        suggestedIndex: -1,
       }),
-      ...historyResults.slice(0, maxResults - 1),
       ...exposureResults,
     ],
   });

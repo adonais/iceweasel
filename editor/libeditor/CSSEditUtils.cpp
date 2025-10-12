@@ -6,6 +6,7 @@
 #include "CSSEditUtils.h"
 
 #include "ChangeStyleTransaction.h"
+#include "EditorDOMAPIWrapper.h"
 #include "HTMLEditHelpers.h"
 #include "HTMLEditor.h"
 #include "HTMLEditUtils.h"
@@ -407,8 +408,9 @@ nsresult CSSEditUtils::SetCSSPropertyInternal(HTMLEditor& aHTMLEditor,
                                               nsAtom& aProperty,
                                               const nsAString& aValue,
                                               bool aSuppressTxn) {
-  RefPtr<ChangeStyleTransaction> transaction =
-      ChangeStyleTransaction::Create(aStyledElement, aProperty, aValue);
+  const RefPtr<ChangeStyleTransaction> transaction =
+      ChangeStyleTransaction::Create(aHTMLEditor, aStyledElement, aProperty,
+                                     aValue);
   if (aSuppressTxn) {
     nsresult rv = transaction->DoTransaction();
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -439,10 +441,8 @@ nsresult CSSEditUtils::SetCSSPropertyPixelsWithTransaction(
 
 // static
 nsresult CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
-    nsStyledElement& aStyledElement, const nsAtom& aProperty,
-    int32_t aIntValue) {
-  nsCOMPtr<nsICSSDeclaration> cssDecl = aStyledElement.Style();
-
+    HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement,
+    const nsAtom& aProperty, int32_t aIntValue) {
   nsAutoCString propertyNameString;
   aProperty.ToUTF8String(propertyNameString);
 
@@ -450,11 +450,11 @@ nsresult CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
   s.AppendInt(aIntValue);
   s.AppendLiteral("px");
 
-  ErrorResult error;
-  cssDecl->SetProperty(propertyNameString, s, EmptyCString(), error);
-  if (error.Failed()) {
-    NS_WARNING("nsICSSDeclaration::SetProperty() failed");
-    return error.StealNSResult();
+  nsresult rv = AutoCSSDeclarationAPIWrapper(aHTMLEditor, aStyledElement)
+                    .SetProperty(propertyNameString, s, EmptyCString());
+  if (NS_FAILED(rv)) {
+    NS_WARNING("AutoCSSDeclarationAPIWrapper::SetProperty() failed");
+    return rv;
   }
 
   return NS_OK;
@@ -468,8 +468,9 @@ nsresult CSSEditUtils::SetCSSPropertyPixelsWithoutTransaction(
 nsresult CSSEditUtils::RemoveCSSPropertyInternal(
     HTMLEditor& aHTMLEditor, nsStyledElement& aStyledElement, nsAtom& aProperty,
     const nsAString& aValue, bool aSuppressTxn) {
-  RefPtr<ChangeStyleTransaction> transaction =
-      ChangeStyleTransaction::CreateToRemove(aStyledElement, aProperty, aValue);
+  const RefPtr<ChangeStyleTransaction> transaction =
+      ChangeStyleTransaction::CreateToRemove(aHTMLEditor, aStyledElement,
+                                             aProperty, aValue);
   if (aSuppressTxn) {
     nsresult rv = transaction->DoTransaction();
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),

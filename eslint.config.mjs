@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import sdl from "@microsoft/eslint-plugin-sdl";
-import eslintConfigPrettier from "eslint-config-prettier";
+import eslintConfigPrettier from "eslint-config-prettier/flat";
 import html from "eslint-plugin-html";
 import importPlugin from "eslint-plugin-import";
 import json from "eslint-plugin-json";
@@ -133,6 +133,7 @@ let config = [
     rules: {
       "lit/quoted-expressions": ["error", "never"],
       "lit/no-invalid-html": "error",
+      "lit/no-value-attribute": "error",
     },
   },
   {
@@ -412,6 +413,20 @@ let config = [
     name: "mozilla/require-jsdoc",
     files: wrapPaths({ paths: ["**"] }),
     ...mozilla.configs["flat/valid-jsdoc"],
+  },
+  {
+    name: "no-newtab-refs-outside-newtab",
+    files: ["**/*.mjs", "**/*.js", "**/*.sys.mjs"],
+    ignores: [
+      "tools/@types/generated/**",
+      "browser/base/content/test/static/browser_all_files_referenced.js",
+      "tools/lint/eslint/eslint-plugin-mozilla/lib/rules/no-newtab-refs-outside-newtab.mjs",
+      "tools/lint/eslint/eslint-plugin-mozilla/tests/no-newtab-refs-outside-newtab.mjs",
+    ],
+    plugins: { mozilla },
+    rules: {
+      "mozilla/no-newtab-refs-outside-newtab": "error",
+    },
   },
 
   ...wrapPathsInConfig(subdirConfigs),

@@ -43,7 +43,6 @@ gecko_parameters_schema = {
     Required("try_task_config"): {
         Optional("tasks"): [str],
         Optional("browsertime"): bool,
-        Optional("chemspill-prio"): bool,
         Optional("disable-pgo"): bool,
         Optional("env"): {str: str},
         Optional("gecko-profile"): bool,
@@ -71,6 +70,7 @@ gecko_parameters_schema = {
             description="Record an rr trace on supported tasks using the Pernosco debugging "
             "service.",
         ): bool,
+        Optional("priority"): Any("lowest", "very-low", "low"),
         Optional("rebuild"): int,
         Optional("tasks-regex"): {
             "include": Any(None, [str]),

@@ -788,13 +788,14 @@ export class UniFFICallbackHandler {
    * @param {int} methodId - Method index (0-based)
    * @param {UniFFIScaffoldingValue[]} args - Arguments to pass to the method
    */
-  call(handle, methodId, ...args) {
+  callSync(handle, methodId, ...args) {
+    const callbackObj = this.getCallbackObj(handle);
+    const methodHandler = this.getMethodHandler(methodId);
     try {
-      const callbackObj = this.getCallbackObj(handle);
-      const methodHandler = this.getMethodHandler(methodId);
-      methodHandler.call(callbackObj, args);
+      const returnValue = methodHandler.call(callbackObj, args);
+      return methodHandler.lowerReturn(returnValue);
     } catch (e) {
-      console.error(`internal error invoking callback: ${e}`);
+      return methodHandler.lowerError(e);
     }
   }
 

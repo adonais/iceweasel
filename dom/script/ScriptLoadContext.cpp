@@ -49,7 +49,8 @@ NS_IMPL_ADDREF_INHERITED(ScriptLoadContext, JS::loader::LoadContextBase)
 NS_IMPL_RELEASE_INHERITED(ScriptLoadContext, JS::loader::LoadContextBase)
 
 ScriptLoadContext::ScriptLoadContext(
-    nsIScriptElement* aScriptElement /* = nullptr */)
+    nsIScriptElement* aScriptElement /* = nullptr */,
+    const nsAString& aSourceText /* = VoidString() */)
     : JS::loader::LoadContextBase(JS::loader::ContextKind::Window),
       mScriptMode(ScriptMode::eBlocking),
       mScriptFromHead(false),
@@ -65,6 +66,7 @@ ScriptLoadContext::ScriptLoadContext(
       mColumnNo(0),
       mIsPreload(false),
       mScriptElement(aScriptElement),
+      mSourceText(aSourceText),
       mUnreportedPreloadError(NS_OK) {}
 
 ScriptLoadContext::~ScriptLoadContext() {
@@ -147,7 +149,11 @@ bool ScriptLoadContext::HasScriptElement() const { return !!mScriptElement; }
 
 void ScriptLoadContext::GetInlineScriptText(nsAString& aText) const {
   MOZ_ASSERT(mIsInline);
-  mScriptElement->GetScriptText(aText);
+  if (mSourceText.IsVoid()) {
+    mScriptElement->GetScriptText(aText);
+  } else {
+    aText.Append(mSourceText);
+  }
 }
 
 void ScriptLoadContext::GetHintCharset(nsAString& aCharset) const {

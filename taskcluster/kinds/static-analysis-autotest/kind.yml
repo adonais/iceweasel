@@ -5,6 +5,7 @@
 loader: taskgraph.loader.transform:loader
 
 kind-dependencies:
+    - fetch
     - toolchain
 
 transforms:
@@ -98,5 +99,6 @@ tasks:
                 - win64-dump_syms
                 - win64-winchecksec
                 - vs
-                - windows-rs
                 - sysroot-wasm32-wasi
+            fetch:
+                - windows-rs

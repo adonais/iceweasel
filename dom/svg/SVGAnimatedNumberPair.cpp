@@ -32,15 +32,13 @@ class MOZ_RAII AutoChangeNumberPairNotifier {
     MOZ_ASSERT(mSVGElement, "Expecting non-null element");
 
     if (mDoSetAttr) {
-      mEmptyOrOldValue =
-          mSVGElement->WillChangeNumberPair(mNumberPair->mAttrEnum);
+      mSVGElement->WillChangeNumberPair(mNumberPair->mAttrEnum);
     }
   }
 
   ~AutoChangeNumberPairNotifier() {
     if (mDoSetAttr) {
-      mSVGElement->DidChangeNumberPair(mNumberPair->mAttrEnum,
-                                       mEmptyOrOldValue);
+      mSVGElement->DidChangeNumberPair(mNumberPair->mAttrEnum);
     }
     if (mNumberPair->mIsAnimated) {
       mSVGElement->AnimationNeedsResample();
@@ -50,7 +48,6 @@ class MOZ_RAII AutoChangeNumberPairNotifier {
  private:
   SVGAnimatedNumberPair* const mNumberPair;
   SVGElement* const mSVGElement;
-  nsAttrValue mEmptyOrOldValue;
   bool mDoSetAttr;
 };
 

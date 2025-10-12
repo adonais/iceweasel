@@ -56,6 +56,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.onboarding.store.OnboardingStore
 import org.mozilla.fenix.onboarding.store.applyThemeIfRequired
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The default ratio of the image height to the parent height.
@@ -286,7 +287,7 @@ private fun SelectableImageItem(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.mozac_ic_checkmark_24),
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_checkmark_24),
                     contentDescription = null, // decorative only.
                     modifier = Modifier.size(12.dp),
                     tint = PhotonColors.White,

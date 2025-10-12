@@ -280,7 +280,7 @@ void ClientWebGLContext::OnContextLoss(
       if (!ext) continue;
       ext->mContext = nullptr;  // Detach.
     }
-    mNotLost = {};  // Lost now!
+    mNotLost = nullptr;  // Lost now!
     mNextError = LOCAL_GL_CONTEXT_LOST_WEBGL;
   }
 
@@ -846,7 +846,7 @@ static bool IsWebglOutOfProcessEnabled() {
 }
 
 bool ClientWebGLContext::CreateHostContext(const uvec2& requestedSize) {
-  const auto pNotLost = std::make_shared<webgl::NotLostData>(*this);
+  const auto pNotLost = MakeRefPtr<webgl::NotLostData>(*this);
   auto& notLost = *pNotLost;
 
   auto res = [&]() -> Result<Ok, std::string> {
@@ -1011,17 +1011,17 @@ std::unordered_map<GLenum, bool> webgl::MakeIsEnabledMap(const bool webgl2) {
 
 uvec2 ClientWebGLContext::DrawingBufferSize() {
   if (IsContextLost()) return {};
-  const auto notLost =
-      mNotLost;  // Hold a strong-ref to prevent LoseContext=>UAF.
+  RefPtr<webgl::NotLostData> notLost(
+      mNotLost);  // Hold a strong-ref to prevent LoseContext=>UAF.
   auto& state = State();
   auto& size = state.mDrawingBufferSize;
 
   if (!size) {
-    const auto& inProcess = mNotLost->inProcess;
+    const auto& inProcess = notLost->inProcess;
     if (inProcess) {
       size = Some(inProcess->DrawingBufferSize());
     } else {
-      const auto& child = mNotLost->outOfProcess;
+      const auto& child = notLost->outOfProcess;
       child->FlushPendingCmds();
       uvec2 actual = {};
       if (!child->SendDrawingBufferSize(&actual)) return {};
@@ -1104,15 +1104,15 @@ already_AddRefed<gfx::SourceSurface> ClientWebGLContext::GetSurfaceSnapshot(
     gfxAlphaType* const out_alphaType) {
   const FuncScope funcScope(*this, "<GetSurfaceSnapshot>");
   if (IsContextLost()) return nullptr;
-  const auto notLost =
-      mNotLost;  // Hold a strong-ref to prevent LoseContext=>UAF.
+  RefPtr<webgl::NotLostData> notLost(
+      mNotLost);  // Hold a strong-ref to prevent LoseContext=>UAF.
 
   auto ret = BackBufferSnapshot();
   if (!ret) return nullptr;
 
   // -
 
-  const auto& options = mNotLost->info.options;
+  const auto& options = notLost->info.options;
 
   auto srcAlphaType = gfxAlphaType::Opaque;
   if (options.alpha) {
@@ -1153,10 +1153,10 @@ RefPtr<gfx::SourceSurface> ClientWebGLContext::GetFrontBufferSnapshot(
     const bool requireAlphaPremult) {
   const FuncScope funcScope(*this, "<GetSurfaceSnapshot>");
   if (IsContextLost()) return nullptr;
-  const auto notLost =
-      mNotLost;  // Hold a strong-ref to prevent LoseContext=>UAF.
+  RefPtr<webgl::NotLostData> notLost(
+      mNotLost);  // Hold a strong-ref to prevent LoseContext=>UAF.
 
-  const auto& options = mNotLost->info.options;
+  const auto& options = notLost->info.options;
 
   const auto surfFormat = options.alpha ? gfx::SurfaceFormat::B8G8R8A8
                                         : gfx::SurfaceFormat::B8G8R8X8;
@@ -1256,10 +1256,10 @@ RefPtr<gfx::SourceSurface> ClientWebGLContext::GetFrontBufferSnapshot(
 
 RefPtr<gfx::DataSourceSurface> ClientWebGLContext::BackBufferSnapshot() {
   if (IsContextLost()) return nullptr;
-  const auto notLost =
-      mNotLost;  // Hold a strong-ref to prevent LoseContext=>UAF.
+  RefPtr<webgl::NotLostData> notLost(
+      mNotLost);  // Hold a strong-ref to prevent LoseContext=>UAF.
 
-  const auto& options = mNotLost->info.options;
+  const auto& options = notLost->info.options;
   const auto& state = State();
 
   const auto drawFbWas = state.mBoundDrawFb;
@@ -2771,8 +2771,8 @@ void ClientWebGLContext::GetUniform(JSContext* const cx,
     EnqueueError(LOCAL_GL_INVALID_OPERATION, "Program is not linked.");
     return;
   }
-  const auto& uniformLinkResult = loc.mParent.lock();
-  if (uniformLinkResult.get() != &progLinkResult) {
+
+  if (loc.mParent != &progLinkResult) {
     EnqueueError(
         LOCAL_GL_INVALID_OPERATION,
         "UniformLocation is not from the most recent linking of Program.");
@@ -4964,9 +4964,7 @@ void ClientWebGLContext::UniformData(const GLenum funcElemType,
     }
 
     // -
-
-    const auto& reqLinkInfo = loc->mParent.lock();
-    if (reqLinkInfo.get() != activeLinkResult) {
+    if (loc->mParent != activeLinkResult) {
       nogc.reset();
       EnqueueError(LOCAL_GL_INVALID_OPERATION,
                    "UniformLocation is not from the current active Program.");
@@ -6474,7 +6472,7 @@ already_AddRefed<WebGLUniformLocationJS> ClientWebGLContext::GetUniformLocation(
     return nullptr;
   }
 
-  return AsAddRefed(new WebGLUniformLocationJS(*this, prog.mResult,
+  return AsAddRefed(new WebGLUniformLocationJS(*this, prog.mResult.get(),
                                                loc->location, loc->elemType));
 }
 
@@ -6961,10 +6959,9 @@ void ImplCycleCollectionUnlink(const RefPtr<WebGLShaderJS>& field) {
 
 // ----------------------
 
-void ImplCycleCollectionTraverse(
-    nsCycleCollectionTraversalCallback& callback,
-    const std::shared_ptr<webgl::NotLostData>& field, const char* name,
-    uint32_t flags) {
+void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& callback,
+                                 const RefPtr<webgl::NotLostData>& field,
+                                 const char* name, uint32_t flags) {
   if (!field) return;
 
   ImplCycleCollectionTraverse(callback, field->extensions,
@@ -7005,7 +7002,7 @@ void ImplCycleCollectionTraverse(
   }
 }
 
-void ImplCycleCollectionUnlink(std::shared_ptr<webgl::NotLostData>& field) {
+void ImplCycleCollectionUnlink(RefPtr<webgl::NotLostData>& field) {
   if (!field) return;
   const auto keepAlive = field;
   keepAlive->extensions = {};

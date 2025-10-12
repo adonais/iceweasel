@@ -8,7 +8,6 @@ import android.content.Intent
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,7 +56,6 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
-import org.mozilla.fenix.settings.deletebrowsingdata.deleteAndQuit
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.webcompat.WEB_COMPAT_REPORTER_URL
 
@@ -87,6 +85,7 @@ class DefaultBrowserToolbarMenuController(
     private val tabCollectionStorage: TabCollectionStorage,
     private val topSitesStorage: DefaultTopSitesStorage,
     private val pinnedSiteStorage: PinnedSiteStorage,
+    private val deleteAndQuit: (HomeActivity) -> Unit,
 ) : BrowserToolbarMenuController {
 
     private val currentSession
@@ -162,7 +161,7 @@ class DefaultBrowserToolbarMenuController(
                 }
             }
             is ToolbarMenu.Item.Quit -> {
-                deleteAndQuit(activity, activity.lifecycleScope)
+                deleteAndQuit(activity)
             }
             is ToolbarMenu.Item.CustomizeReaderView -> {
                 readerModeController.showControls()
@@ -416,8 +415,6 @@ class DefaultBrowserToolbarMenuController(
                             }
                         }.join()
                     }
-
-                    appStore.dispatch(ShortcutAction.ShortcutRemoved)
                 }
             }
             is ToolbarMenu.Item.ReportBrokenSite -> {

@@ -94,13 +94,13 @@
 #include "rtc_base/event.h"
 #include "rtc_base/experiments/encoder_info_settings.h"
 #include "rtc_base/experiments/rate_control_settings.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
+#include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/encoder_settings.h"
 #include "test/fake_encoder.h"
@@ -8314,7 +8314,9 @@ TEST_F(VideoStreamEncoderTest,
       .WillByDefault(Return(WEBRTC_VIDEO_CODEC_ENCODER_FAILURE));
 
   Event encode_attempted;
-  EXPECT_CALL(switch_callback, RequestEncoderFallback())
+  EXPECT_CALL(switch_callback,
+              RequestEncoderSwitch(Field(&SdpVideoFormat::name, "VP8"),
+                                   /*allow_default_fallback=*/true))
       .WillOnce([&encode_attempted]() { encode_attempted.Set(); });
 
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
@@ -8387,6 +8389,9 @@ TEST_F(VideoStreamEncoderTest, NoPreferenceDefaultFallbackToVP8Disabled) {
   constexpr int kDontCare = 100;
   constexpr int kNumFrames = 8;
 
+  webrtc::test::ScopedKeyValueConfig field_trials(
+      field_trials_, "WebRTC-SwitchEncoderFollowCodecPreferenceOrder/Enabled/");
+
   NiceMock<MockVideoEncoder> video_encoder;
   StrictMock<MockEncoderSwitchRequestCallback> switch_callback;
   video_send_config_.encoder_settings.encoder_switch_request_callback =
@@ -8443,10 +8448,6 @@ TEST_F(VideoStreamEncoderTest, NoPreferenceDefaultFallbackToVP8Disabled) {
 TEST_F(VideoStreamEncoderTest, NoPreferenceDefaultFallbackToVP8Enabled) {
   constexpr int kSufficientBitrateToNotDrop = 1000;
   constexpr int kDontCare = 100;
-
-  webrtc::test::ScopedKeyValueConfig field_trials(
-      field_trials_,
-      "WebRTC-SwitchEncoderFollowCodecPreferenceOrder/Disabled/");
 
   NiceMock<MockVideoEncoder> video_encoder;
   StrictMock<MockEncoderSwitchRequestCallback> switch_callback;

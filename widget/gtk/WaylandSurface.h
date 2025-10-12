@@ -179,6 +179,7 @@ class WaylandSurface final {
                              const gfx::IntRegion& aRegion);
   void SetOpaqueLocked(const WaylandSurfaceLock& aProofOfLock);
   void ClearOpaqueRegionLocked(const WaylandSurfaceLock& aProofOfLock);
+  void OpaqueCallbackHandler();
 
   bool DisableUserInputLocked(const WaylandSurfaceLock& aProofOfLock);
   void InvalidateRegionLocked(const WaylandSurfaceLock& aProofOfLock,
@@ -201,14 +202,9 @@ class WaylandSurface final {
   }
 
   // Returns scale as float point number. If WaylandSurface is not mapped,
-  // return fractional scale of parent surface.
-  // Returns sNoScale is we can't get it.
+  // return fractional scale of parent surface or monitor.
   static constexpr const double sNoScale = -1;
   double GetScale();
-
-  // The same as GetScale() but returns monitor scale if window scale is
-  // missing.
-  double GetScaleSafe();
 
   // Called when screen ceiled scale changed or set initial scale before we map
   // and paint the surface.
@@ -410,6 +406,9 @@ class WaylandSurface final {
 
   // Frame callback handler called every frame
   FrameCallback mFrameCallbackHandler;
+
+  wl_region* mPendingOpaqueRegion = nullptr;
+  wl_callback* mOpaqueRegionFrameCallback = nullptr;
 
   // WaylandSurface is used from Compositor/Rendering/Main threads.
   mozilla::Mutex mMutex{"WaylandSurface"};

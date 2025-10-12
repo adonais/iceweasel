@@ -121,6 +121,15 @@ pub enum RelativeDependencyInvalidationKind {
     AncestorEarlierSibling,
 }
 
+/// The kind of invalidation the subject of this dependency triggers.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, MallocSizeOf)]
+pub enum ScopeDependencyInvalidationKind {
+    /// This dependency's subject is an explicit scope root
+    ExplicitScope,
+    /// This dependency's subject is an implicit scope root
+    ImplicitScope,
+}
+
 /// Invalidation kind merging normal and relative dependencies.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, MallocSizeOf)]
 pub enum DependencyInvalidationKind {
@@ -131,48 +140,59 @@ pub enum DependencyInvalidationKind {
     Normal(NormalDependencyInvalidationKind),
     /// This dependency is a relative dependency.
     Relative(RelativeDependencyInvalidationKind),
+    /// This dependency is a scope dependency.
+    Scope(ScopeDependencyInvalidationKind),
+}
+
+/// The type of invalidation a non-relative selector can generate.
+#[derive(Clone, Copy, Debug, MallocSizeOf)]
+pub enum GeneratedInvalidation<'a> {
+    /// Generates a normal invalidation.
+    Normal,
+    /// Generates a scope invalidation.
+    Scope(Option<&'a ThinArc<(), Dependency>>),
 }
 
 /// Return the type of normal invalidation given a selector & an offset.
-fn get_normal_invalidation_kind(
+#[inline(always)]
+fn get_non_relative_invalidation_kind(
     selector: &Selector<SelectorImpl>,
     selector_offset: usize,
+    is_scope: bool,
 ) -> DependencyInvalidationKind {
-    if selector_offset == 0 || selector.len() <= selector_offset {
+    if is_scope {
+        return DependencyInvalidationKind::Scope(ScopeDependencyInvalidationKind::ExplicitScope);
+    }
+    if selector_offset == 0 {
         return DependencyInvalidationKind::Normal(NormalDependencyInvalidationKind::Element);
     }
-    let combinator = Some(selector.combinator_at_match_order(selector_offset - 1));
+    let combinator = selector.combinator_at_match_order(selector_offset - 1);
     DependencyInvalidationKind::Normal(match combinator {
-        None => NormalDependencyInvalidationKind::Element,
-        Some(Combinator::Child) | Some(Combinator::Descendant) => {
-            NormalDependencyInvalidationKind::Descendants
-        },
-        Some(Combinator::LaterSibling) | Some(Combinator::NextSibling) => {
+        Combinator::Child | Combinator::Descendant => NormalDependencyInvalidationKind::Descendants,
+        Combinator::LaterSibling | Combinator::NextSibling => {
             NormalDependencyInvalidationKind::Siblings
         },
-        Some(Combinator::PseudoElement) => NormalDependencyInvalidationKind::ElementAndDescendants,
-        Some(Combinator::SlotAssignment) => NormalDependencyInvalidationKind::SlottedElements,
-        Some(Combinator::Part) => NormalDependencyInvalidationKind::Parts,
+        Combinator::PseudoElement => NormalDependencyInvalidationKind::ElementAndDescendants,
+        Combinator::SlotAssignment => NormalDependencyInvalidationKind::SlottedElements,
+        Combinator::Part => NormalDependencyInvalidationKind::Parts,
     })
 }
 
-/// Return the relative invalidation kind given a match hint
-fn get_relative_kind(match_hint: RelativeSelectorMatchHint) -> RelativeDependencyInvalidationKind {
-    match match_hint {
-        RelativeSelectorMatchHint::InChild => RelativeDependencyInvalidationKind::Parent,
-        RelativeSelectorMatchHint::InSubtree => RelativeDependencyInvalidationKind::Ancestors,
-        RelativeSelectorMatchHint::InNextSibling => RelativeDependencyInvalidationKind::PrevSibling,
-        RelativeSelectorMatchHint::InSibling => RelativeDependencyInvalidationKind::EarlierSibling,
-        RelativeSelectorMatchHint::InNextSiblingSubtree => {
-            RelativeDependencyInvalidationKind::AncestorPrevSibling
-        },
-        RelativeSelectorMatchHint::InSiblingSubtree => {
-            RelativeDependencyInvalidationKind::AncestorEarlierSibling
-        },
-    }
-}
-
 impl Dependency {
+    /// Generate a new dependency
+    pub fn new(
+        selector: Selector<SelectorImpl>,
+        selector_offset: usize,
+        next: Option<ThinArc<(), Dependency>>,
+        kind: DependencyInvalidationKind,
+    ) -> Self {
+        Self {
+            selector,
+            selector_offset,
+            next,
+            kind,
+        }
+    }
     /// Creates a dummy dependency to invalidate the whole selector.
     ///
     /// This is necessary because document state invalidation wants to
@@ -197,6 +217,16 @@ impl Dependency {
             return kind;
         }
         unreachable!("Querying normal invalidation kind on non-normal dependency.");
+    }
+
+    /// The kind of relative invalidation that this would generate. The dependency
+    /// in question must be a relative dependency.
+    #[inline(always)]
+    pub fn relative_invalidation_kind(&self) -> RelativeDependencyInvalidationKind {
+        if let DependencyInvalidationKind::Relative(kind) = self.kind {
+            return kind;
+        }
+        unreachable!("Querying relative invalidation kind on non-relative dependency.");
     }
 
     /// The kind of invalidation that this would generate.
@@ -409,18 +439,22 @@ impl InvalidationMap {
 
     /// Returns the number of dependencies stored in the invalidation map.
     pub fn len(&self) -> usize {
-        self.state_affecting_selectors.len() +
-            self.document_state_selectors.len() +
-            self.other_attribute_affecting_selectors
+        self.state_affecting_selectors.len()
+            + self.document_state_selectors.len()
+            + self
+                .other_attribute_affecting_selectors
                 .iter()
-                .fold(0, |accum, (_, ref v)| accum + v.len()) +
-            self.id_to_selector
+                .fold(0, |accum, (_, ref v)| accum + v.len())
+            + self
+                .id_to_selector
                 .iter()
-                .fold(0, |accum, (_, ref v)| accum + v.len()) +
-            self.class_to_selector
+                .fold(0, |accum, (_, ref v)| accum + v.len())
+            + self
+                .class_to_selector
                 .iter()
-                .fold(0, |accum, (_, ref v)| accum + v.len()) +
-            self.custom_state_affecting_selectors
+                .fold(0, |accum, (_, ref v)| accum + v.len())
+            + self
+                .custom_state_affecting_selectors
                 .iter()
                 .fold(0, |accum, (_, ref v)| accum + v.len())
     }
@@ -770,7 +804,11 @@ fn next_dependency(
             selector: selector.clone(),
             selector_offset,
             next: dependencies_from(previous, next_outer_dependency, next_scope_dependencies),
-            kind: get_normal_invalidation_kind(selector, selector_offset),
+            kind: get_non_relative_invalidation_kind(
+                selector,
+                selector_offset,
+                next_scope_dependencies.is_some(),
+            ),
         };
 
         Some(
@@ -796,17 +834,23 @@ impl<'a, 'b, 'c> Collector for SelectorDependencyCollector<'a, 'b, 'c> {
 
         let offset = self.compound_state.offset;
 
+        let scope_dependencies = self.inner_scope_dependencies();
+
         let next = next_dependency(
             self.next_selectors,
             optional_dependency,
-            self.inner_scope_dependencies().as_ref(),
+            scope_dependencies.as_ref(),
         );
 
         Dependency {
             selector: self.selector.clone(),
             selector_offset: offset,
             next: next,
-            kind: get_normal_invalidation_kind(self.selector, offset),
+            kind: get_non_relative_invalidation_kind(
+                self.selector,
+                offset,
+                scope_dependencies.is_some(),
+            ),
         }
     }
 
@@ -1238,9 +1282,9 @@ impl<'a, 'b> RelativeSelectorDependencyCollector<'a, 'b> {
 
         self.additional_relative_selector_invalidation_map
             .needs_ancestors_traversal |= match self.selector.match_hint {
-            RelativeSelectorMatchHint::InNextSiblingSubtree |
-            RelativeSelectorMatchHint::InSiblingSubtree |
-            RelativeSelectorMatchHint::InSubtree => true,
+            RelativeSelectorMatchHint::InNextSiblingSubtree
+            | RelativeSelectorMatchHint::InSiblingSubtree
+            | RelativeSelectorMatchHint::InSubtree => true,
             _ => false,
         };
         loop {
@@ -1304,11 +1348,9 @@ impl<'a, 'b> RelativeSelectorDependencyCollector<'a, 'b> {
 
 impl<'a, 'b> Collector for RelativeSelectorDependencyCollector<'a, 'b> {
     fn dependency(&mut self) -> Dependency {
-        let next = next_dependency(
-            self.next_selectors,
-            None,
-            self.inner_scope_dependencies().as_ref(),
-        );
+        let scope_dependencies = self.inner_scope_dependencies();
+
+        let next = next_dependency(self.next_selectors, None, scope_dependencies.as_ref());
         debug_assert!(
             next.as_ref().is_some_and(|d| !matches!(
                 d.slice()[0].kind,
@@ -1324,9 +1366,28 @@ impl<'a, 'b> Collector for RelativeSelectorDependencyCollector<'a, 'b> {
         Dependency {
             selector: self.selector.selector.clone(),
             selector_offset: self.compound_state.offset,
-            kind: DependencyInvalidationKind::Relative(get_relative_kind(
-                self.combinator_count.get_match_hint(),
-            )),
+            kind: DependencyInvalidationKind::Relative(
+                match self.combinator_count.get_match_hint() {
+                    RelativeSelectorMatchHint::InChild => {
+                        RelativeDependencyInvalidationKind::Parent
+                    },
+                    RelativeSelectorMatchHint::InSubtree => {
+                        RelativeDependencyInvalidationKind::Ancestors
+                    },
+                    RelativeSelectorMatchHint::InNextSibling => {
+                        RelativeDependencyInvalidationKind::PrevSibling
+                    },
+                    RelativeSelectorMatchHint::InSibling => {
+                        RelativeDependencyInvalidationKind::EarlierSibling
+                    },
+                    RelativeSelectorMatchHint::InNextSiblingSubtree => {
+                        RelativeDependencyInvalidationKind::AncestorPrevSibling
+                    },
+                    RelativeSelectorMatchHint::InSiblingSubtree => {
+                        RelativeDependencyInvalidationKind::AncestorEarlierSibling
+                    },
+                },
+            ),
             next: next,
         }
     }

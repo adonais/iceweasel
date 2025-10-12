@@ -105,7 +105,6 @@ Not intended for user configuration, but is programmatically updated. Used for t
 - Default:
   ```json
   {
-    "api_key_pref": "extensions.pocket.oAuthConsumerKey",
     "collapsible": true,
     "enabled": true,
     "personalized": true,

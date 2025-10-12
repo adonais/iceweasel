@@ -27,6 +27,8 @@ MOZCONFIG=mozconfig.in
 
 USE_SNAP_FROM_STORE_OR_MC=${USE_SNAP_FROM_STORE_OR_MC:-0}
 
+sudo mkdir -p /run/user/1000 && sudo chown 1000:1000 /run/user/1000
+
 TRY=0
 if [ "${BRANCH}" = "try" ]; then
   if [ "${SOURCE_BRANCH}" = "try" ]; then

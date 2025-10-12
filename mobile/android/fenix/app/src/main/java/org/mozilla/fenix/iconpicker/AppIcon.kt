@@ -8,6 +8,7 @@ import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import org.mozilla.fenix.R
+import mozilla.components.ui.colors.R as colorsR
 
 /**
  * Enum that represents app launcher icons available for the user to set as an alternative launcher
@@ -29,7 +30,7 @@ import org.mozilla.fenix.R
 enum class AppIcon(
     val aliasSuffix: String,
     @param:DrawableRes val iconForegroundId: Int = R.drawable.ic_firefox,
-    val iconBackground: IconBackground = IconBackground.Color(colorResId = R.color.photonWhite),
+    val iconBackground: IconBackground = IconBackground.Color(colorResId = colorsR.color.photonWhite),
     @param:StringRes val titleId: Int,
     @param:StringRes val subtitleId: Int? = null,
 ) {
@@ -44,7 +45,7 @@ enum class AppIcon(
     ),
     AppSolidDark(
         aliasSuffix = "AppSolidDark",
-        iconBackground = IconBackground.Color(colorResId = R.color.photonBlack),
+        iconBackground = IconBackground.Color(colorResId = colorsR.color.photonBlack),
         titleId = R.string.alternative_app_icon_option_dark,
     ),
     AppSolidRed(
@@ -109,39 +110,47 @@ enum class AppIcon(
     ),
     AppRetro2004(
         aliasSuffix = "AppRetro2004",
-        iconForegroundId = R.drawable.ic_launcher_foreground_retro_2004,
+        iconForegroundId = R.drawable.ic_retro_2004,
         titleId = R.string.alternative_app_icon_option_retro_2004,
-    ),
-    AppRetro2017(
-        aliasSuffix = "AppRetro2017",
-        iconForegroundId = R.drawable.ic_launcher_foreground_retro_2017,
-        titleId = R.string.alternative_app_icon_option_retro_2017,
     ),
     AppPixelated(
         aliasSuffix = "AppPixelated",
-        iconForegroundId = R.drawable.ic_launcher_foreground_pixelated,
+        iconForegroundId = R.drawable.ic_pixelated,
         titleId = R.string.alternative_app_icon_option_pixelated,
     ),
-    AppMinimal(
-        aliasSuffix = "AppMinimal",
-        iconForegroundId = R.drawable.ic_launcher_foreground_minimal,
-        titleId = R.string.alternative_app_icon_option_minimal,
+    AppCuddling(
+        aliasSuffix = "AppCuddling",
+        iconBackground = IconBackground.Drawable(drawableResId = R.drawable.ic_launcher_background_cuddling),
+        iconForegroundId = R.drawable.ic_cuddling,
+        titleId = R.string.alternative_app_icon_option_cuddling,
     ),
     AppPride(
         aliasSuffix = "AppPride",
-        iconForegroundId = R.drawable.ic_launcher_foreground_pride,
+        iconForegroundId = R.drawable.ic_pride,
         titleId = R.string.alternative_app_icon_option_pride,
     ),
-    AppCute(
-        aliasSuffix = "AppCute",
-        iconForegroundId = R.drawable.ic_launcher_foreground_cute,
-        titleId = R.string.alternative_app_icon_option_cute,
+    AppFlaming(
+        aliasSuffix = "AppFlaming",
+        iconBackground = IconBackground.Color(colorResId = colorsR.color.photonBlack),
+        iconForegroundId = R.drawable.ic_flaming,
+        titleId = R.string.alternative_app_icon_option_flaming,
+    ),
+    AppMinimal(
+        aliasSuffix = "AppMinimal",
+        iconForegroundId = R.drawable.ic_minimal,
+        titleId = R.string.alternative_app_icon_option_minimal,
     ),
     AppMomo(
         aliasSuffix = "AppMomo",
-        iconForegroundId = R.drawable.ic_launcher_foreground_momo,
+        iconForegroundId = R.drawable.ic_momo,
         titleId = R.string.alternative_app_icon_option_momo,
         subtitleId = R.string.alternative_app_icon_option_momo_subtitle,
+    ),
+    AppCool(
+        aliasSuffix = "AppCool",
+        iconBackground = IconBackground.Drawable(drawableResId = R.drawable.ic_launcher_background_cool),
+        iconForegroundId = R.drawable.ic_cool,
+        titleId = R.string.alternative_app_icon_option_cool,
     ),
     ;
 

@@ -169,6 +169,15 @@ export class SidebarState {
    * @returns {XULElement}
    */
   get #toolsContainer() {
+    return this.#controller.sidebarMain?.buttonsWrapper;
+  }
+
+  /**
+   * Get the tools button-group element.
+   *
+   * @returns {XULElement}
+   */
+  get #toolsButtonGroup() {
     return this.#controller.sidebarMain?.buttonGroup;
   }
 
@@ -588,6 +597,12 @@ export class SidebarState {
         ).height;
       this.toolsHeight =
         buttonGroupHeight > maxToolsHeight ? maxToolsHeight : buttonGroupHeight;
+      if (
+        buttonGroupHeight > maxToolsHeight &&
+        this.#controller.sidebarRevampVisibility !== "expand-on-hover"
+      ) {
+        this.#launcherEl.shouldShowOverflowButton = false;
+      }
       // Store the user-preferred tools height.
       if (this.#props.launcherExpanded) {
         this.expandedToolsHeight = this.toolsHeight;
@@ -598,29 +613,29 @@ export class SidebarState {
   }
 
   get maxToolsHeight() {
-    const INLINE_PADDING = 8.811; // The inline padding for the tools button-group
-    const GAP_SIZE = 1.4685; // The size of the gap between each row of tools
-    if (!this.#toolsContainer) {
+    const FIRST_LAST_TAB_PADDING = 5.8833;
+    if (!this.#toolsButtonGroup) {
       return null;
     }
-    let toolRect = this.#controllerGlobal.windowUtils.getBoundsWithoutFlushing(
-      this.#toolsContainer.children[0]
-    );
-    let sidebarRect =
+    let referenceToolButton;
+    if (this.#toolsButtonGroup.children.length > 1) {
+      referenceToolButton = this.#toolsButtonGroup.children[1];
+    } else {
+      referenceToolButton = this.#toolsButtonGroup.children[0];
+    }
+    let toolRect =
       this.#controllerGlobal.windowUtils.getBoundsWithoutFlushing(
-        this.#launcherEl
+        referenceToolButton
       );
-    let numRows;
-    if (this.#props.launcherExpanded) {
-      let availableWidth =
-        (sidebarRect.width - INLINE_PADDING) / toolRect.width;
-      numRows = Math.ceil(
-        this.#toolsContainer.children.length / availableWidth
-      );
+    let extraPadding = 0;
+    if (this.#toolsButtonGroup.children.length >= 3) {
+      extraPadding = FIRST_LAST_TAB_PADDING * 2;
+    } else if (this.#toolsButtonGroup.children.length === 2) {
+      extraPadding = FIRST_LAST_TAB_PADDING;
     }
     return this.#props.launcherExpanded
-      ? toolRect.height * numRows + (numRows - 1) * GAP_SIZE
-      : toolRect.height * this.#toolsContainer.children.length;
+      ? "unset"
+      : toolRect.height * this.#toolsButtonGroup.children.length + extraPadding;
   }
 
   get launcherHoverActive() {

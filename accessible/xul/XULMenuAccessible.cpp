@@ -146,8 +146,11 @@ ENameValueFlag XULMenuitemAccessible::Name(nsString& aName) const {
   return flag;
 }
 
-void XULMenuitemAccessible::Description(nsString& aDescription) const {
+EDescriptionValueFlag XULMenuitemAccessible::Description(
+    nsString& aDescription) const {
   mContent->AsElement()->GetAttr(nsGkAtoms::description, aDescription);
+
+  return eDescriptionOK;
 }
 
 KeyBinding XULMenuitemAccessible::AccessKey() const {

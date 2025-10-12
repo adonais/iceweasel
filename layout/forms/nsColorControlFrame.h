@@ -41,7 +41,7 @@ class nsColorControlFrame final : public mozilla::ButtonControlFrame {
 
   // nsIFrame
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   // Refresh the color swatch, using associated input's value
   void UpdateColor();

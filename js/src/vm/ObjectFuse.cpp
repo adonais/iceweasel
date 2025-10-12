@@ -135,11 +135,14 @@ void ObjectFuse::handlePropertyValueChange(JSContext* cx, PropertyInfo prop) {
   }
 }
 
-void ObjectFuse::handlePropertyRemove(JSContext* cx, PropertyInfo prop) {
+void ObjectFuse::handlePropertyRemove(JSContext* cx, PropertyInfo prop,
+                                      bool* wasTrackedProp) {
   if (!prop.hasSlot() || isUntrackedProperty(prop)) {
+    MOZ_ASSERT(!*wasTrackedProp);
     return;
   }
 
+  *wasTrackedProp = true;
   bumpGeneration();
   invalidateDependentIonScriptsForProperty(cx, prop, "removed property");
 

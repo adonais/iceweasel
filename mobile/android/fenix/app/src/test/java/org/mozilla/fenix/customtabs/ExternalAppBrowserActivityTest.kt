@@ -76,7 +76,7 @@ class ExternalAppBrowserActivityTest {
         val activity = spyk(ExternalAppBrowserActivity())
         val navHostController: NavController = mockk()
 
-        activity.navigateToHome(navHostController, false)
+        activity.navigateToHome(navHostController)
         verify { navHostController wasNot Called }
     }
 

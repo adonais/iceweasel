@@ -110,7 +110,7 @@ class PopupExpirationTracker final
 
  public:
   PopupExpirationTracker()
-      : nsExpirationTracker(5000 /* ms */, "PopupExpirationTracker") {}
+      : nsExpirationTracker(5000 /* ms */, "PopupExpirationTracker"_ns) {}
   static PopupExpirationTracker* Get() { return sInstance.get(); }
   static PopupExpirationTracker& GetOrCreate() {
     if (!sInstance) {
@@ -2086,7 +2086,7 @@ nsIWidget* nsMenuPopupFrame::GetWidget() const {
 
 nsresult nsMenuPopupFrame::AttributeChanged(int32_t aNameSpaceID,
                                             nsAtom* aAttribute,
-                                            int32_t aModType)
+                                            AttrModType aModType)
 
 {
   nsresult rv =

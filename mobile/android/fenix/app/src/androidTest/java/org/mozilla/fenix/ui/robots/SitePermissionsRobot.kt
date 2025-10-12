@@ -21,6 +21,7 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.click
+import mozilla.components.feature.sitepermissions.R as sitepermissionsR
 
 class SitePermissionsRobot {
     fun verifyMicrophonePermissionPrompt(host: String) {
@@ -152,7 +153,7 @@ class SitePermissionsRobot {
         onView(ViewMatchers.withText("Allow $originHost to use its cookies on $currentHost?")).check(matches(isDisplayed()))
         Log.i(TAG, "verifyCrossOriginCookiesPermissionPrompt: Verified that the the storage access permission prompt title is displayed")
         Log.i(TAG, "verifyCrossOriginCookiesPermissionPrompt: Trying to verify that the storage access permission prompt message is displayed")
-        onView(ViewMatchers.withText(getStringResource(R.string.mozac_feature_sitepermissions_storage_access_message, originHost))).check(matches(isDisplayed()))
+        onView(ViewMatchers.withText(getStringResource(sitepermissionsR.string.mozac_feature_sitepermissions_storage_access_message, originHost))).check(matches(isDisplayed()))
         Log.i(TAG, "verifyCrossOriginCookiesPermissionPrompt: Verified that the storage access permission prompt message is displayed")
         Log.i(TAG, "verifyCrossOriginCookiesPermissionPrompt: Trying to verify that the storage access permission prompt learn more link is displayed")
         onView(ViewMatchers.withText("Learn more")).check(matches(isDisplayed()))
@@ -171,7 +172,7 @@ class SitePermissionsRobot {
             .waitForExists(waitingTime)
         Log.i(TAG, "selectRememberPermissionDecision: Waited for $waitingTime ms for the \"Remember decision for this site\" check box to exist")
         Log.i(TAG, "selectRememberPermissionDecision: Trying to click the \"Remember decision for this site\" check box")
-        onView(withId(R.id.do_not_ask_again))
+        onView(withId(sitepermissionsR.id.do_not_ask_again))
             .check(matches(isDisplayed()))
             .click()
         Log.i(TAG, "selectRememberPermissionDecision: Clicked the \"Remember decision for this site\" check box")

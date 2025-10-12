@@ -49,6 +49,13 @@ class nsRubyTextContainerFrame final : public nsContainerFrame {
     return HasAnyStateBits(NS_RUBY_TEXT_CONTAINER_IS_SPAN);
   }
 
+  // For ruby text container frames, these values also include any block-axis
+  // margin/border/padding that applies to the children, so that positioning
+  // of the annotations will take these into account.
+  // This relies on GetUsed{Margin,Border,Padding} of the children, so they
+  // should be reflowed before querying the container's RubyMetrics.
+  mozilla::RubyMetrics RubyMetrics(float aRubyMetricsFactor) const override;
+
  protected:
   friend nsContainerFrame* NS_NewRubyTextContainerFrame(
       mozilla::PresShell* aPresShell, ComputedStyle* aStyle);

@@ -674,3 +674,161 @@ add_task(
     sinon.restore();
   }
 );
+
+add_task(
+  async function test_canUpload_unblocked_by_tou_accepted_and_uploadEnabled() {
+    if (AppConstants.platform === "linux") {
+      info("Skipping test for Linux where TOU flow is disabled by default");
+      return;
+    }
+    TelemetryReportingPolicy.reset();
+
+    registerCleanupFunction(() => {
+      Services.prefs.clearUserPref(
+        TelemetryUtils.Preferences.BypassNotification
+      );
+      Services.prefs.clearUserPref("datareporting.healthreport.uploadEnabled");
+      Services.prefs.clearUserPref("termsofuse.acceptedDate");
+      Services.prefs.clearUserPref("termsofuse.acceptedVersion");
+      TelemetryReportingPolicy.reset();
+    });
+
+    Services.prefs.setBoolPref(
+      TelemetryUtils.Preferences.BypassNotification,
+      false
+    );
+
+    // This is true by default for most users
+    Services.prefs.setBoolPref(
+      "datareporting.healthreport.uploadEnabled",
+      true
+    );
+
+    Assert.ok(
+      !TelemetryReportingPolicy.canUpload(),
+      "Before accepting TOU legacy upload is blocked"
+    );
+
+    Assert.ok(
+      !Services.prefs.getIntPref(
+        "datareporting.policy.dataSubmissionPolicyAcceptedVersion",
+        0
+      ),
+      "Legacy policy flow accepted version not set"
+    );
+
+    Assert.ok(
+      !Services.prefs.getBoolPref(
+        "datareporting.policy.dataSubmissionPolicyNotifiedDate",
+        0
+      ),
+      "Legacy policy flow accepted date not set"
+    );
+
+    Services.prefs.setStringPref("termsofuse.acceptedDate", String(Date.now()));
+    Services.prefs.setIntPref(
+      "termsofuse.acceptedVersion",
+      Services.prefs.getIntPref(TOU_CURRENT_VERSION_PREF)
+    );
+
+    Assert.ok(
+      TelemetryReportingPolicy.userHasAcceptedTOU(),
+      "TOU acceptance is recorded"
+    );
+
+    Assert.ok(TelemetryReportingPolicy.canUpload(), "Legacy upload allowed");
+
+    Services.prefs.setBoolPref(
+      "datareporting.healthreport.uploadEnabled",
+      false
+    );
+
+    Assert.ok(
+      !TelemetryReportingPolicy.canUpload(),
+      "Legacy upload blocked when user opts out of sharing interaction data"
+    );
+  }
+);
+
+add_task(async function test_canUpload_allowed_when_both_bypass_prefs_true() {
+  TelemetryReportingPolicy.reset();
+
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(TelemetryUtils.Preferences.BypassNotification);
+    Services.prefs.clearUserPref("termsofuse.bypassNotification");
+    Services.prefs.clearUserPref("browser.preonboarding.enabled");
+    TelemetryReportingPolicy.reset();
+  });
+
+  Services.prefs.setBoolPref(
+    TelemetryUtils.Preferences.BypassNotification,
+    true
+  );
+  Services.prefs.setBoolPref("termsofuse.bypassNotification", true);
+
+  Assert.ok(
+    TelemetryReportingPolicy.canUpload(),
+    "Upload allowed when both legacy and TOU notification flows are bypassed"
+  );
+
+  Services.prefs.setBoolPref("termsofuse.bypassNotification", false);
+
+  Services.prefs.setBoolPref("browser.preonboarding.enabled", true);
+  Assert.ok(
+    !TelemetryReportingPolicy.canUpload(),
+    "Upload blocked when only one bypass is true and no other allow path conditions are met"
+  );
+  Services.prefs.setBoolPref("browser.preonboarding.enabled", false);
+  Assert.ok(
+    TelemetryReportingPolicy.canUpload(),
+    "Upload NOT blocked when only one bypass is true and no other allow path conditions are met"
+  );
+});
+
+add_task(
+  async function test_canUpload_allowed_when_tou_bypass_and_legacy_notified() {
+    TelemetryReportingPolicy.reset();
+
+    registerCleanupFunction(() => {
+      Services.prefs.clearUserPref(
+        TelemetryUtils.Preferences.BypassNotification
+      );
+      Services.prefs.clearUserPref("termsofuse.bypassNotification");
+      Services.prefs.clearUserPref(
+        "datareporting.policy.dataSubmissionPolicyNotifiedDate"
+      );
+      Services.prefs.clearUserPref(
+        "TelemetryUtils.Preferences.DataSubmissionEnabled"
+      );
+      TelemetryReportingPolicy.reset();
+    });
+
+    Services.prefs.setBoolPref("termsofuse.bypassNotification", true);
+    Services.prefs.setBoolPref(
+      TelemetryUtils.Preferences.BypassNotification,
+      false
+    );
+    Services.prefs.setBoolPref(
+      TelemetryUtils.Preferences.DataSubmissionEnabled,
+      true
+    );
+
+    Assert.ok(
+      !TelemetryReportingPolicy.canUpload(),
+      "Upload not allowed when TOU bypass is true, legacy bypass is false, and legacy policy has NOT been notified"
+    );
+    // Mark legacy “notified” via the actual code path triggered via
+    // testInfobarShown. This calls _recordNotificationData, which updates the
+    // legacy notification accepted time and version prefs. It also calls
+    // _userNotified which in turn calls lazy.TelemetrySend.notifyCanUpload.
+    // This simulates the user being notified of the legacy infobar flow.
+    TelemetryReportingPolicy.testInfobarShown();
+    // Ensure the policy re-reads state after pref mutations.
+    TelemetryReportingPolicy.reset();
+
+    Assert.ok(
+      TelemetryReportingPolicy.canUpload(),
+      "Upload allowed when TOU bypass is true, legacy bypass is false, and legacy policy has been notified"
+    );
+  }
+);

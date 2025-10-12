@@ -155,7 +155,7 @@ interface nsIUrlClassifierUtils : nsISupports
    *
    * @param aListNames An array of list names represented in string.
    * @param aListStatesBase64 An array of list states represented in base64.
-   * @param aPrefixes An array of prefixes for which we'd like to find full hashes..
+   * @param aPrefixes An array of prefixes for which we'd like to find full hashes.
    *
    * The aListNames and aListStatesBase64 arrays must be the same length.
    *
@@ -164,6 +164,16 @@ interface nsIUrlClassifierUtils : nsISupports
   ACString makeFindFullHashRequestV4(in Array<ACString> aListNames,
                                      in Array<ACString> aListStatesBase64,
                                      in Array<ACString> aPrefixes);
+
+  /**
+   * Make "hashes:search" request by for the given prefixes.
+   *
+   * @param aHashPrefixes An array of prefixes for which we'd like to find full
+   *                      hashes.
+   *
+   * @returns A query parameter string for the "hashes:search" request.
+   */
+  ACString makeFindFullHashRequestV5(in Array<ACString> aHashPrefixes);
 
   /**
    * Make ThreatHit report request body.

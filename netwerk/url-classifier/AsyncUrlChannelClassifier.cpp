@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Classifier.h"
+#include "HttpBaseChannel.h"
 #include "mozilla/Components.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/net/AsyncUrlChannelClassifier.h"
@@ -911,19 +912,43 @@ nsresult AsyncUrlChannelClassifier::CheckChannel(
     return NS_ERROR_FAILURE;
   }
 
+  // raise the priority of URLClassifier's return dispatch to the MainThread if
+  // the channel is considered important
+  EventQueuePriority eventPriority = EventQueuePriority::Normal;
+  if (nsCOMPtr<HttpBaseChannel> baseChannel = do_QueryInterface(aChannel)) {
+    uint32_t classOfServiceFlags = 0;
+    baseChannel->GetClassFlags(&classOfServiceFlags);
+    if (classOfServiceFlags &
+        (nsIClassOfService::Leader | nsIClassOfService::UrgentStart |
+         nsIClassOfService::Unblocked)) {
+      eventPriority = EventQueuePriority::MediumHigh;
+    }
+  }
+  if (nsCOMPtr<nsISupportsPriority> supportsPriority =
+          do_QueryInterface(aChannel)) {
+    int32_t priority = nsISupportsPriority::PRIORITY_NORMAL;
+    supportsPriority->GetPriority(&priority);
+    // note that higher priorities have lower numeric values
+    if (priority <= nsISupportsPriority::PRIORITY_HIGH) {
+      eventPriority = EventQueuePriority::MediumHigh;
+    }
+  }
+
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       "AsyncUrlChannelClassifier::CheckChannel",
-      [task, workerClassifier]() -> void {
+      [task, workerClassifier, eventPriority]() -> void {
         MOZ_ASSERT(!NS_IsMainThread());
         task->DoLookup(workerClassifier);
 
-        nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
-            "AsyncUrlChannelClassifier::CheckChannel - return",
-            [task]() -> void { task->CompleteClassification(); });
-
-        NS_DispatchToMainThread(r);
+        NS_DispatchToMainThreadQueue(
+            NS_NewRunnableFunction(
+                "AsyncUrlChannelClassifier::CheckChannel - return",
+                [task]() -> void { task->CompleteClassification(); }),
+            eventPriority);
       });
 
+  // no need to prioritize the dispatch to the URLClassifier thread
+  // since overriding prioritization is ignored if we aren't on the MainThread
   return nsUrlClassifierDBService::BackgroundThread()->Dispatch(
       r, NS_DISPATCH_NORMAL);
 }

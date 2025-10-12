@@ -37,7 +37,6 @@ UNIFIED_SOURCES += [
 
 include("/ipc/chromium/chromium-config.mozbuild")
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["tests/gtest"]
+TEST_DIRS += ["tests/gtest"]
 
 FINAL_LIBRARY = "xul"

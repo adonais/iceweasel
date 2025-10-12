@@ -28,6 +28,7 @@
 #include "js/AllocationRecording.h"
 #include "js/BuildId.h"  // JS::BuildIdOp
 #include "js/Context.h"
+#include "js/DOMEventDispatch.h"
 #include "js/experimental/CTypes.h"     // JS::CTypesActivityCallback
 #include "js/friend/StackLimits.h"      // js::ReportOverRecursed
 #include "js/friend/UsageStatistics.h"  // JSAccumulateTelemetryDataCallback
@@ -480,6 +481,9 @@ struct JSRuntime {
   js::MainThreadData<JSSizeOfIncludingThisCompartmentCallback>
       sizeOfIncludingThisCompartmentCallback;
 
+  /* DOM event dispatch callback for testing. */
+  js::MainThreadData<JS::DispatchDOMEventCallback> dispatchDOMEventCallback;
+
   /* Callback for creating ubi::Nodes representing DOM node objects. Set by
    * JS::ubi::SetConstructUbiNodeForDOMObjectCallback. Refer to
    * js/public/UbiNode.h.
@@ -592,6 +596,9 @@ struct JSRuntime {
  public:
   void setTrustedPrincipals(const JSPrincipals* p) { trustedPrincipals_ = p; }
   const JSPrincipals* trustedPrincipals() const { return trustedPrincipals_; }
+
+  void commitPendingWrapperPreservations();
+  void commitPendingWrapperPreservations(JS::Zone* zone);
 
   js::MainThreadData<const JSWrapObjectCallbacks*> wrapObjectCallbacks;
   js::MainThreadData<js::PreserveWrapperCallback> preserveWrapperCallback;

@@ -609,6 +609,78 @@ void nsWaylandDisplay::SetColorRepresentationManager(
   }
 }
 
+static void output_handle_geometry(void* data, struct wl_output* wl_output,
+                                   int x, int y, int physical_width,
+                                   int physical_height, int subpixel,
+                                   const char* make, const char* model,
+                                   int32_t transform) {
+  auto* monitor = static_cast<nsWaylandDisplay::MonitorConfig*>(data);
+  LOG("nsWaylandDisplay ID %d geometry position %d %d physical size %d %d "
+      "subpixel %d transform %d",
+      monitor->id, x, y, physical_width, physical_height, subpixel, transform);
+  monitor->x = x;
+  monitor->y = y;
+}
+
+static void output_handle_done(void* data, struct wl_output* wl_output) {}
+
+static void output_handle_scale(void* data, struct wl_output* wl_output,
+                                int32_t scale) {}
+
+static void output_handle_mode(void* data, struct wl_output* wl_output,
+                               uint32_t flags, int width, int height,
+                               int refresh) {
+  auto* monitor = static_cast<nsWaylandDisplay::MonitorConfig*>(data);
+  LOG("nsWaylandDisplay ID %d mode output size %d x %d", monitor->id, width,
+      height);
+  if ((flags & WL_OUTPUT_MODE_CURRENT) == 0) {
+    return;
+  }
+  monitor->pixelWidth = width;
+  monitor->pixelHeight = height;
+}
+
+static const struct wl_output_listener output_listener = {
+    output_handle_geometry,
+    output_handle_mode,
+    output_handle_done,
+    output_handle_scale,
+};
+
+void nsWaylandDisplay::AddWlOutput(wl_output* aWlOutput, int aId) {
+  wl_output_add_listener(aWlOutput, &output_listener, AddMonitorConfig(aId));
+}
+
+nsWaylandDisplay::MonitorConfig* nsWaylandDisplay::AddMonitorConfig(int aId) {
+  LOG("nsWaylandDisplay add monitor ID %d num %zu", aId, mMonitors.Length());
+  UniquePtr<MonitorConfig> monitor = MakeUnique<MonitorConfig>(aId);
+  mMonitors.AppendElement(std::move(monitor));
+  return mMonitors.LastElement().get();
+}
+
+bool nsWaylandDisplay::RemoveMonitorConfig(int aId) {
+  for (unsigned int i = 0; i < mMonitors.Length(); i++) {
+    if (mMonitors[i]->id == aId) {
+      LOG("nsWaylandDisplay remove Monitor ID %d num %d", aId, i);
+      mMonitors.RemoveElementAt(i);
+      return true;
+    }
+  }
+  return false;
+}
+
+nsWaylandDisplay::MonitorConfig* nsWaylandDisplay::GetMonitorConfig(int x,
+                                                                    int y) {
+  for (const auto& monitor : mMonitors) {
+    if (monitor->x == x && monitor->y == y) {
+      LOG("nsWaylandDisplay::GetMonitorConfig() %d, %d matches", x, y);
+      return monitor.get();
+    }
+  }
+  LOG("nsWaylandDisplay::GetMonitorConfig() %d, %d missing!", x, y);
+  return nullptr;
+}
+
 static void global_registry_handler(void* data, wl_registry* registry,
                                     uint32_t id, const char* interface,
                                     uint32_t version) {
@@ -703,6 +775,10 @@ static void global_registry_handler(void* data, wl_registry* registry,
     auto* xdgWm = WaylandRegistryBind<xdg_wm_base>(
         registry, id, &xdg_wm_base_interface, version);
     display->SetXdgWm(xdgWm);
+  } else if (iface.EqualsLiteral("wl_output") && version > 1) {
+    auto* output =
+        WaylandRegistryBind<wl_output>(registry, id, &wl_output_interface, 2);
+    display->AddWlOutput(output, id);
   }
 }
 
@@ -710,6 +786,9 @@ static void global_registry_remover(void* data, wl_registry* registry,
                                     uint32_t id) {
   auto* display = static_cast<nsWaylandDisplay*>(data);
   if (!display) {
+    return;
+  }
+  if (display->RemoveMonitorConfig(id)) {
     return;
   }
   display->RemoveSeat(id);

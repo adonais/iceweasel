@@ -191,16 +191,6 @@ NS_EVENT_MESSAGE(eLegacyMousePixelScroll)
 NS_EVENT_MESSAGE(eScrollPortUnderflow)
 NS_EVENT_MESSAGE(eScrollPortOverflow)
 
-NS_EVENT_MESSAGE(eLegacySubtreeModified)
-NS_EVENT_MESSAGE(eLegacyNodeInserted)
-NS_EVENT_MESSAGE(eLegacyNodeRemoved)
-NS_EVENT_MESSAGE(eLegacyNodeRemovedFromDocument)
-NS_EVENT_MESSAGE(eLegacyNodeInsertedIntoDocument)
-NS_EVENT_MESSAGE(eLegacyAttrModified)
-NS_EVENT_MESSAGE(eLegacyCharacterDataModified)
-NS_EVENT_MESSAGE_FIRST_LAST(eLegacyMutationEvent, eLegacySubtreeModified,
-                            eLegacyCharacterDataModified)
-
 NS_EVENT_MESSAGE(eUnidentifiedEvent)
 
 // composition events

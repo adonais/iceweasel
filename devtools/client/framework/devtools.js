@@ -509,7 +509,7 @@ DevTools.prototype = {
    *        Options for host specifically
    * @param {Number} options.startTime
    *        Indicates the time at which the user event related to
-   *        this toolbox opening started. This is a `Cu.now()` timing.
+   *        this toolbox opening started. This is a `ChromeUtils.now()` timing.
    * @param {string} options.reason
    *        Reason the tool was opened
    * @param {boolean} options.raise
@@ -694,11 +694,11 @@ DevTools.prototype = {
    *        Toolbox instance.
    * @param {Number} startTime
    *        Indicates the time at which the user event related to the toolbox
-   *        opening started. This is a `Cu.now()` timing.
+   *        opening started. This is a `ChromeUtils.now()` timing.
    */
   logToolboxOpenTime(toolbox, startTime) {
     const toolId = toolbox.currentToolId || toolbox.defaultToolId;
-    const delay = Cu.now() - startTime;
+    const delay = ChromeUtils.now() - startTime;
     const panelName = this.makeToolIdHumanReadable(toolId);
 
     if (this._firstShowToolbox) {
@@ -861,7 +861,7 @@ DevTools.prototype = {
    *        BrowsingContext ID and a numeric ID.
    * @param {Number} startTime
    *        Optional, indicates the time at which the user event related to this node
-   *        inspection started. This is a `Cu.now()` timing.
+   *        inspection started. This is a `ChromeUtils.now()` timing.
    * @return {Promise} a promise that resolves when the node is selected in the inspector
    *         markup view.
    */
@@ -918,7 +918,7 @@ DevTools.prototype = {
    *        BrowsingContext ID and a numeric ID.
    * @param {Number} startTime
    *        Optional, indicates the time at which the user event related to this
-   *        node inspection started. This is a `Cu.now()` timing.
+   *        node inspection started. This is a `ChromeUtils.now()` timing.
    * @return {Promise} a promise that resolves when the accessible object is
    *         selected in the accessibility inspector.
    */

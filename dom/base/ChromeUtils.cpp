@@ -23,6 +23,7 @@
 #include "jsfriendapi.h"
 #include "mozJSModuleLoader.h"
 #include "mozilla/Base64.h"
+#include "mozilla/ControllerCommand.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/EventStateManager.h"
@@ -48,7 +49,6 @@
 #include "mozilla/dom/JSActorService.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/dom/PBrowserParent.h"
-#include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PopupBlocker.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/Record.h"
@@ -67,6 +67,7 @@
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "nsContentUtils.h"
+#include "nsControllerCommandTable.h"
 #include "nsDocShell.h"
 #include "nsIException.h"
 #include "nsIRFPTargetSetIDL.h"
@@ -278,31 +279,9 @@ void ChromeUtils::AddProfilerMarker(
     }
   }
   if (startTime) {
-    RefPtr<Performance> performance;
-
-    if (NS_IsMainThread()) {
-      nsCOMPtr<nsPIDOMWindowInner> ownerWindow =
-          do_QueryInterface(aGlobal.GetAsSupports());
-      if (ownerWindow) {
-        performance = ownerWindow->GetPerformance();
-      }
-    } else {
-      JSContext* cx = aGlobal.Context();
-      WorkerPrivate* workerPrivate = GetWorkerPrivateFromContext(cx);
-      if (workerPrivate) {
-        performance = workerPrivate->GlobalScope()->GetPerformance();
-      }
-    }
-
-    if (performance) {
-      options.Set(MarkerTiming::IntervalUntilNowFrom(
-          performance->CreationTimeStamp() +
-          TimeDuration::FromMilliseconds(startTime)));
-    } else {
-      options.Set(MarkerTiming::IntervalUntilNowFrom(
-          TimeStamp::ProcessCreation() +
-          TimeDuration::FromMilliseconds(startTime)));
-    }
+    options.Set(MarkerTiming::IntervalUntilNowFrom(
+        TimeStamp::ProcessCreation() +
+        TimeDuration::FromMilliseconds(startTime)));
   }
 
   if (innerWindowId) {
@@ -2505,6 +2484,11 @@ bool ChromeUtils::IsDarkBackground(GlobalObject&, Element& aElement) {
 double ChromeUtils::DateNow(GlobalObject&) { return JS_Now() / 1000.0; }
 
 /* static */
+double ChromeUtils::Now(GlobalObject&) {
+  return (TimeStamp::Now() - TimeStamp::ProcessCreation()).ToMilliseconds();
+}
+
+/* static */
 void ChromeUtils::EnsureJSOracleStarted(GlobalObject&) {
   if (StaticPrefs::browser_opaqueResponseBlocking_javascriptValidator()) {
     JSOracleParent::WithJSOracle([](JSOracleParent* aParent) {});
@@ -2641,27 +2625,25 @@ void ChromeUtils::CallFunctionAndLogException(
   }
 }
 
-std::atomic<uint32_t> ChromeUtils::sDevToolsOpenedCount = 0;
+static Atomic<uint32_t, Relaxed> sDevToolsOpenedCount{0};
 
 /* static */
-bool ChromeUtils::IsDevToolsOpened() {
-  return ChromeUtils::sDevToolsOpenedCount > 0;
-}
+bool ChromeUtils::IsDevToolsOpened() { return sDevToolsOpenedCount > 0; }
 
 /* static */
 bool ChromeUtils::IsDevToolsOpened(GlobalObject& aGlobal) {
-  return ChromeUtils::IsDevToolsOpened();
+  return IsDevToolsOpened();
 }
 
 /* static */
 void ChromeUtils::NotifyDevToolsOpened(GlobalObject& aGlobal) {
-  ChromeUtils::sDevToolsOpenedCount++;
+  sDevToolsOpenedCount++;
 }
 
 /* static */
 void ChromeUtils::NotifyDevToolsClosed(GlobalObject& aGlobal) {
-  MOZ_ASSERT(ChromeUtils::sDevToolsOpenedCount >= 1);
-  ChromeUtils::sDevToolsOpenedCount--;
+  MOZ_ASSERT(sDevToolsOpenedCount >= 1);
+  sDevToolsOpenedCount--;
 }
 
 /* static */
@@ -2709,6 +2691,42 @@ already_AddRefed<nsIContentSecurityPolicy> ChromeUtils::CreateCSPFromHeader(
     GlobalObject& aGlobal, const nsAString& aHeader, nsIURI* aSelfURI,
     nsIPrincipal* aLoadingPrincipal, ErrorResult& aRv) {
   return CSP_CreateFromHeader(aHeader, aSelfURI, aLoadingPrincipal, aRv);
+}
+
+Nullable<bool> ChromeUtils::GetGlobalWindowCommandEnabled(
+    GlobalObject&, const nsACString& aName) {
+  const auto* table = nsControllerCommandTable::WindowCommandTable();
+  RefPtr handler = table->FindCommandHandler(aName);
+  if (!handler) {
+    return nullptr;
+  }
+  return handler->IsCommandEnabled(aName, nullptr);
+}
+
+void ChromeUtils::EncodeURIForSrcset(GlobalObject&, const nsACString& aIn,
+                                     nsACString& aOut) {
+  const auto inputLen = aIn.Length();
+  if (!inputLen) {
+    return;
+  }
+  size_t start = 0;
+  while (true) {
+    auto idx = aIn.View().find_first_of(nsContentUtils::kHTMLWhitespace, start);
+    if (idx == std::string_view::npos) {
+      break;
+    }
+    aOut.Append(Substring(aIn, start, idx - start));
+    aOut.AppendPrintf("%%%x", aIn.CharAt(idx));
+    start = idx + 1;
+    if (start == inputLen) {
+      return;
+    }
+  }
+  if (start == 0) {
+    aOut.Assign(aIn);
+  } else {
+    aOut.Append(Substring(aIn, start));
+  }
 }
 
 }  // namespace mozilla::dom

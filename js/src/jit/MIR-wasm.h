@@ -679,7 +679,9 @@ class MWasmLoadInstance : public MUnaryInstruction, public NoTypePolicy::Data {
   }
 
   HashNumber valueHash() const override {
-    return addU32ToHash(HashNumber(op()), offset());
+    HashNumber hash = MUnaryInstruction::valueHash();
+    hash = addU32ToHash(hash, offset());
+    return hash;
   }
 
   AliasSet getAliasSet() const override { return aliases_; }
@@ -1460,6 +1462,11 @@ class MWasmDerivedPointer : public MUnaryInstruction,
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 
+  HashNumber valueHash() const override {
+    HashNumber hash = MUnaryInstruction::valueHash();
+    hash = addU32ToHash(hash, offset());
+    return hash;
+  }
   bool congruentTo(const MDefinition* ins) const override {
     return congruentIfOperandsEqual(ins) &&
            ins->toWasmDerivedPointer()->offset() == offset();

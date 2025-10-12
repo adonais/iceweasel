@@ -489,7 +489,9 @@ var BrowserCommands = {
     // In the case of popups, we need to find a non-popup browser window.
     if (!tabBrowser || !window.toolbar.visible) {
       // This returns only non-popup browser windows by default.
-      const browserWindow = BrowserWindowTracker.getTopWindow();
+      const browserWindow =
+        BrowserWindowTracker.getTopWindow() ??
+        (await BrowserWindowTracker.promiseOpenWindow());
       tabBrowser = browserWindow.gBrowser;
     }
 

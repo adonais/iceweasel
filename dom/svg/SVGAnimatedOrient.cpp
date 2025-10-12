@@ -51,14 +51,14 @@ class MOZ_RAII AutoChangeOrientNotifier {
     MOZ_ASSERT(mOrient, "Expecting non-null orient");
     if (mSVGElement && mDoSetAttr) {
       mUpdateBatch.emplace(mSVGElement->GetComposedDoc(), true);
-      mEmptyOrOldValue = mSVGElement->WillChangeOrient(mUpdateBatch.ref());
+      mSVGElement->WillChangeOrient(mUpdateBatch.ref());
     }
   }
 
   ~AutoChangeOrientNotifier() {
     if (mSVGElement) {
       if (mDoSetAttr) {
-        mSVGElement->DidChangeOrient(mEmptyOrOldValue, mUpdateBatch.ref());
+        mSVGElement->DidChangeOrient(mUpdateBatch.ref());
       }
       if (mOrient->mIsAnimated) {
         mSVGElement->AnimationNeedsResample();
@@ -70,7 +70,6 @@ class MOZ_RAII AutoChangeOrientNotifier {
   Maybe<mozAutoDocUpdate> mUpdateBatch;
   SVGAnimatedOrient* const mOrient;
   SVGElement* const mSVGElement;
-  nsAttrValue mEmptyOrOldValue;
   bool mDoSetAttr;
 };
 

@@ -254,7 +254,6 @@ pkix::Result AppTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
 pkix::Result AppTrustDomain::CheckRevocation(EndEntityOrCA, const CertID&, Time,
                                              Duration,
                                              /*optional*/ const Input*,
-                                             /*optional*/ const Input*,
                                              /*optional*/ const Input*) {
   // We don't currently do revocation checking. If we need to distrust an Apps
   // certificate, we will use the active distrust mechanism.

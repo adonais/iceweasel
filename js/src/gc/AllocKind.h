@@ -99,7 +99,7 @@ namespace gc {
     D(ATOM,                String,       js::NormalAtom,        js::NormalAtom,        Background, false,  false) \
     D(SYMBOL,              Symbol,       JS::Symbol,            JS::Symbol,            None,       false,  false) \
     D(JITCODE,             JitCode,      js::jit::JitCode,      js::jit::JitCode,      Foreground, false,  false) \
-    D(SCOPE,               Scope,        js::Scope,             js::Scope,             Background, false,  true) \
+    D(SCOPE,               Scope,        js::Scope,             js::Scope,             None,       false,  true) \
     D(REGEXP_SHARED,       RegExpShared, js::RegExpShared,      js::RegExpShared,      Background, false,  true)
 
 #define FOR_EACH_NONOBJECT_NURSERY_ALLOCKIND(D) \

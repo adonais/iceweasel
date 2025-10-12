@@ -1996,10 +1996,13 @@ class AddonPermissionsList extends HTMLElement {
     ];
 
     this.textContent = "";
-    let frag = importTemplate("addon-permissions-list");
+    let permissionsFrag = importTemplate("addon-permissions-list");
+    let dataCollectionFrag = importTemplate("addon-permissions-list");
 
     if (permissions.msgs.length) {
-      let section = frag.querySelector(".addon-permissions-required");
+      let section = permissionsFrag.querySelector(
+        ".addon-permissions-required"
+      );
       section.hidden = false;
       let list = section.querySelector(".addon-permissions-list");
       for (const msg of permissions.msgs) {
@@ -2010,9 +2013,12 @@ class AddonPermissionsList extends HTMLElement {
       }
     }
 
-    if (permissions.dataCollectionPermissions?.msg) {
-      let section = frag.querySelector(
-        ".addon-data-collection-permissions-required"
+    if (
+      permissions.dataCollectionPermissions?.msg &&
+      !permissions.dataCollectionPermissions.hasNone
+    ) {
+      let section = dataCollectionFrag.querySelector(
+        ".addon-permissions-required"
       );
       section.hidden = false;
       let list = section.querySelector(".addon-permissions-list");
@@ -2025,12 +2031,14 @@ class AddonPermissionsList extends HTMLElement {
     }
 
     if (optionalEntries.length) {
-      let section = frag.querySelector(".addon-permissions-optional");
-      let list = section.querySelector(".addon-permissions-list");
-
-      let dataCollectionSection = frag.querySelector(
-        ".addon-data-collection-permissions-optional"
+      let section = permissionsFrag.querySelector(
+        ".addon-permissions-optional"
       );
+      let dataCollectionSection = dataCollectionFrag.querySelector(
+        ".addon-permissions-optional"
+      );
+
+      let list = section.querySelector(".addon-permissions-list");
       let dataCollectionList = dataCollectionSection.querySelector(
         ".addon-permissions-list"
       );
@@ -2088,16 +2096,70 @@ class AddonPermissionsList extends HTMLElement {
       }
     }
 
-    if (
-      !permissions.msgs.length &&
-      !optionalEntries.length &&
-      !permissions.dataCollectionPermissions?.msg
-    ) {
-      let row = frag.querySelector(".addon-permissions-empty");
-      row.hidden = false;
-    }
+    let configureSection = ({
+      fragment,
+      headerL10n,
+      subheaderL10n,
+      emptyL10n,
+      supportPage,
+      supportL10n,
+    }) => {
+      let header = fragment.querySelector(".permission-header");
+      let subheader = fragment.querySelector(".permission-subheader");
+      let footer = fragment.querySelector(".addon-permissions-footer");
+      let requiredSection = fragment.querySelector(
+        ".addon-permissions-required"
+      );
+      let optionalSection = fragment.querySelector(
+        ".addon-permissions-optional"
+      );
+      let emptySection = fragment.querySelector(".addon-permissions-empty");
+      let isPopulated = !(requiredSection.hidden && optionalSection.hidden);
 
-    this.appendChild(frag);
+      header.setAttribute("data-l10n-id", headerL10n);
+
+      let supportUrl = document.createElement("a", {
+        is: "moz-support-link",
+      });
+      supportUrl.setAttribute("support-page", supportPage);
+      supportUrl.setAttribute("data-l10n-id", supportL10n);
+      footer.append(supportUrl);
+
+      if (subheaderL10n) {
+        subheader.setAttribute("data-l10n-id", subheaderL10n);
+        subheader.hidden = !isPopulated;
+      }
+
+      if (isPopulated) {
+        emptySection.hidden = true;
+        emptySection.removeAttribute("data-l10n-id");
+      } else {
+        emptySection.setAttribute("data-l10n-id", emptyL10n);
+        emptySection.hidden = false;
+      }
+    };
+
+    configureSection({
+      fragment: permissionsFrag,
+      headerL10n: "addon-permissions-heading",
+      emptyL10n: "addon-permissions-empty2",
+      supportPage: "extension-permissions",
+      supportL10n: "addon-permissions-learnmore",
+    });
+
+    configureSection({
+      fragment: dataCollectionFrag,
+      headerL10n: "addon-permissions-data-collection-heading",
+      subheaderL10n: "addon-data-collection-provided",
+      emptyL10n: "addon-permissions-data-collection-empty",
+      supportPage: "extension-data-collection",
+      supportL10n: "addon-data-collection-learnmore",
+    });
+
+    this.appendChild(permissionsFrag);
+    if (this.addon.hasDataCollectionPermissions) {
+      this.appendChild(dataCollectionFrag);
+    }
   }
 }
 customElements.define("addon-permissions-list", AddonPermissionsList);

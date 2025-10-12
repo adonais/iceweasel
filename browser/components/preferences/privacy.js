@@ -195,8 +195,9 @@ Preferences.addAll([
   { id: "privacy.clearOnShutdown.siteSettings", type: "bool" },
   { id: "privacy.clearOnShutdown_v2.siteSettings", type: "bool" },
 
-  // Do not track
+  // Do not track and Global Privacy Control
   { id: "privacy.donottrackheader.enabled", type: "bool" },
+  { id: "privacy.globalprivacycontrol.functionality.enabled", type: "bool" },
 
   // Global Privacy Control
   { id: "privacy.globalprivacycontrol.enabled", type: "bool" },
@@ -307,6 +308,30 @@ if (AppConstants.MOZ_CRASHREPORTER) {
     type: "bool",
   });
 }
+
+Preferences.addSetting({
+  id: "gpcFunctionalityEnabled",
+  pref: "privacy.globalprivacycontrol.functionality.enabled",
+});
+Preferences.addSetting({
+  id: "gpcEnabled",
+  pref: "privacy.globalprivacycontrol.enabled",
+  deps: ["gpcFunctionalityEnabled"],
+  visible: ({ gpcFunctionalityEnabled }) => {
+    return gpcFunctionalityEnabled.value;
+  },
+});
+Preferences.addSetting({
+  id: "dntHeaderEnabled",
+  pref: "privacy.donottrackheader.enabled",
+});
+Preferences.addSetting({
+  id: "dntRemoval",
+  deps: ["dntHeaderEnabled"],
+  visible: ({ dntHeaderEnabled }) => {
+    return dntHeaderEnabled.value;
+  },
+});
 
 function setEventListener(aId, aEventType, aCallback) {
   document
@@ -942,10 +967,49 @@ var gPrivacyPane = {
   },
 
   /**
+   * Hides non technical privacy section when all controls within are hidden.
+   */
+  updateNonTechnicalPrivacySectionVisibility() {
+    let allDisabled =
+      !Preferences.get("privacy.globalprivacycontrol.functionality.enabled")
+        .value && !Preferences.get("privacy.donottrackheader.enabled").value;
+    let nonTechnicalPrivacyGroup = document.getElementById(
+      "nonTechnicalPrivacyGroup"
+    );
+    if (allDisabled) {
+      nonTechnicalPrivacyGroup.style.display = "none";
+    } else {
+      nonTechnicalPrivacyGroup.style.display = "";
+    }
+  },
+
+  /**
+   * Sets up listeners to control non technical privacy section visibility.
+   */
+  initNonTechnicalPrivacySection() {
+    // When prefs change that can cause all settings in the section to be hidden
+    // update visibility state of the entire section.
+    Preferences.get("privacy.globalprivacycontrol.functionality.enabled").on(
+      "change",
+      gPrivacyPane.updateNonTechnicalPrivacySectionVisibility.bind(gPrivacyPane)
+    );
+    Preferences.get("privacy.donottrackheader.enabled").on(
+      "change",
+      gPrivacyPane.updateNonTechnicalPrivacySectionVisibility.bind(gPrivacyPane)
+    );
+    // Initial visiblity state.
+    gPrivacyPane.updateNonTechnicalPrivacySectionVisibility();
+  },
+
+  /**
    * Sets up the UI for the number of days of history to keep, and updates the
    * label of the "Clear Now..." button.
    */
   init() {
+    initSettingGroup("nonTechnicalPrivacy");
+
+    this.initNonTechnicalPrivacySection();
+
     this._updateSanitizeSettingsButton();
     this.initDeleteOnCloseBox();
     this.syncSanitizationPrefsWithDeleteOnClose();
@@ -1082,7 +1146,6 @@ var gPrivacyPane = {
 
     this._pane = document.getElementById("panePrivacy");
 
-    this._initGlobalPrivacyControlUI();
     this._initPasswordGenerationUI();
     this._initRelayIntegrationUI();
     this._initMasterPasswordUI();
@@ -1265,8 +1328,28 @@ var gPrivacyPane = {
         privateBrowsingPref.value;
     }
 
-    setSyncFromPrefListener("contentBlockingBaselineExceptionsCustom", () =>
-      this.readBaselineExceptionState()
+    setEventListener(
+      "contentBlockingBaselineExceptionsStrict",
+      "change",
+      gPrivacyPane.onBaselineCheckboxChange
+    );
+
+    setEventListener(
+      "contentBlockingBaselineExceptionsCustom",
+      "change",
+      gPrivacyPane.onBaselineCheckboxChange
+    );
+
+    setEventListener(
+      "contentBlockingConvenienceExceptionsStrict",
+      "change",
+      gPrivacyPane.maybeNotifyUserToReload
+    );
+
+    setEventListener(
+      "contentBlockingConvenienceExceptionsCustom",
+      "change",
+      gPrivacyPane.maybeNotifyUserToReload
     );
 
     /* init HTTPS-Only mode */
@@ -1359,6 +1442,15 @@ var gPrivacyPane = {
     // If any relevant content blocking pref changes, show a warning that the changes will
     // not be implemented until they refresh their tabs.
     for (let pref of CONTENT_BLOCKING_PREFS) {
+      // Skip registering change listeners for baseline and convenience allow list prefs.
+      // Their UI is handled in gPrivacyPane.onBaselineCheckboxChange to prevent redundant reload
+      // warnings when user toggles the checkboxes.
+      if (
+        pref == "privacy.trackingprotection.allow_list.baseline.enabled" ||
+        pref == "privacy.trackingprotection.allow_list.convenience.enabled"
+      ) {
+        continue;
+      }
       Preferences.get(pref).on("change", gPrivacyPane.maybeNotifyUserToReload);
       // If the value changes, run populateCategoryContents, since that change might have been
       // triggered by a default value changing in the standard category.
@@ -2468,7 +2560,7 @@ var gPrivacyPane = {
    * tabs, tabs with beforeunload listeners), are reloaded.
    */
   reloadAllOtherTabs() {
-    let ourTab = BrowserWindowTracker.getTopWindow().gBrowser.selectedTab;
+    let ourTab = window.browsingContext.topChromeWindow.gBrowser.selectedTab;
     BrowserWindowTracker.orderedWindows.forEach(win => {
       let otherGBrowser = win.gBrowser;
       for (let tab of otherGBrowser.tabs) {
@@ -2499,7 +2591,7 @@ var gPrivacyPane = {
     if (window.BrowserWindowTracker.orderedWindows.length > 1) {
       shouldShow = true;
     } else {
-      let tabbrowser = window.BrowserWindowTracker.getTopWindow().gBrowser;
+      let tabbrowser = window.browsingContext.topChromeWindow.gBrowser;
       if (tabbrowser.tabs.length > 1) {
         shouldShow = true;
       }
@@ -3020,34 +3112,6 @@ var gPrivacyPane = {
       features: "resizable=no",
       closingCallback: this._initMasterPasswordUI.bind(this),
     });
-  },
-
-  /**
-   * Set up the initial state for the GPC/DNT UI.
-   * The GPC part should only appear if the functionality is
-   * enabled.
-   */
-  _initGlobalPrivacyControlUI() {
-    let gpcEnabledPrefValue = Services.prefs.getBoolPref(
-      "privacy.globalprivacycontrol.functionality.enabled",
-      false
-    );
-    let dntEnabledPrefValue = Services.prefs.getBoolPref(
-      "privacy.donottrackheader.enabled",
-      false
-    );
-    document.getElementById("doNotTrackBox").hidden = !dntEnabledPrefValue;
-    // We can't rely on the hidden attribute for groupboxes because the pane
-    // hiding/showing code can interfere (and fires after this).
-    if (gpcEnabledPrefValue) {
-      document
-        .getElementById("nonTechnicalPrivacyGroup")
-        .removeAttribute("style");
-    } else {
-      document
-        .getElementById("nonTechnicalPrivacyGroup")
-        .setAttribute("style", "display: none !important");
-    }
   },
 
   /**
@@ -3607,20 +3671,69 @@ var gPrivacyPane = {
   },
 
   /**
-   * Checks the "privacy.trackingprotection.allow_list.baseline.enabled" pref.
-   * If the baseline is disabled, update the convenience exceptions pref to false, as convenience
-   * exceptions are only allowed when the baseline is enabled.
+   * Handles change events on baseline and convenience exception checkboxes for content blocking preferences.
+   *
+   * - For baseline checkboxes: If the user attempts to uncheck, shows a confirmation dialog.
+   *   If confirmed, disables the baseline allow list preference.
+   * - For other cases: Toggles the checkbox and updates the corresponding preference.
+   *
+   * @param {Event} event - The change event triggered by the checkbox.
    */
-  readBaselineExceptionState() {
-    const isBaselineEnabled = Preferences.get(
-      "privacy.trackingprotection.allow_list.baseline.enabled"
-    ).value;
+  async onBaselineCheckboxChange(event) {
+    // Ignore events from nested checkboxes
+    if (event.target.slot === "nested") {
+      return;
+    }
 
-    // If the baseline is disabled, disable the convenience exceptions preference.
-    if (!isBaselineEnabled) {
+    // If the user is checking the checkbox, don't show a confirmation prompt.
+    if (event.target.checked) {
+      this.maybeNotifyUserToReload();
+      return;
+    }
+
+    let [title, body, okButtonText, cancelButtonText] =
+      await document.l10n.formatValues([
+        { id: "content-blocking-baseline-uncheck-warning-dialog-title" },
+        { id: "content-blocking-baseline-uncheck-warning-dialog-body" },
+        { id: "content-blocking-baseline-uncheck-warning-dialog-ok-button" },
+        {
+          id: "content-blocking-baseline-uncheck-warning-dialog-cancel-button",
+        },
+      ]);
+
+    let flags =
+      Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_1 +
+      Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +
+      Services.prompt.BUTTON_POS_0_DEFAULT;
+
+    const result = await Services.prompt.asyncConfirmEx(
+      window.browsingContext,
+      Services.prompt.MODAL_TYPE_CONTENT,
+      title,
+      body,
+      flags,
+      cancelButtonText,
+      okButtonText,
+      null,
+      null,
+      false,
+      {
+        useTitle: true,
+      }
+    );
+
+    const propertyBag = result.QueryInterface(Ci.nsIPropertyBag2);
+
+    if (propertyBag.get("buttonNumClicked") == 1) {
+      // User confirmed, set the checkbox to false.
+      event.target.checked = false;
+      this.maybeNotifyUserToReload();
+    } else {
+      // User cancelled, set the checkbox and the baseline pref to true.
+      event.target.checked = true;
       Services.prefs.setBoolPref(
-        "privacy.trackingprotection.allow_list.convenience.enabled",
-        false
+        "privacy.trackingprotection.allow_list.baseline.enabled",
+        true
       );
     }
   },

@@ -88,6 +88,14 @@ newtab-confirm-delete-history-p2 = This action cannot be undone.
 
 newtab-topsite-sponsored = Sponsored
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (pinned)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -315,9 +323,6 @@ newtab-custom-pocket-sponsored = Sponsored stories
 newtab-custom-pocket-show-recent-saves = Show recent saves
 newtab-custom-recent-title = Recent activity
 newtab-custom-recent-subtitle = A selection of recent sites and content
-newtab-custom-recent-toggle =
-    .label = Recent activity
-    .description = A selection of recent sites and content
 newtab-custom-weather-toggle =
     .label = Weather
     .description = Today’s forecast at a glance
@@ -441,7 +446,6 @@ newtab-weather-menu-change-location = Change location
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Search location
     .aria-label = Search location
-newtab-weather-change-location-search-input = Search location
 newtab-weather-menu-weather-display = Weather display
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -542,6 +546,12 @@ newtab-custom-wallpaper-title = Custom wallpapers are here
 newtab-custom-wallpaper-subtitle = Upload your own wallpaper or pick a custom colour to make { -brand-product-name } yours.
 newtab-custom-wallpaper-cta = Try it
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Choose a wallpaper to make { -brand-product-name } yours
+newtab-new-user-custom-wallpaper-subtitle = Make every new tab feel like home with custom wallpapers and colours.
+newtab-new-user-custom-wallpaper-cta = Try it now
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Download { -brand-product-name } for mobile
@@ -582,8 +592,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Trending on Google
 newtab-trending-searches-show-trending =
     .title = Show trending searches
 newtab-trending-searches-hide-trending =

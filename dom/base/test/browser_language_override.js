@@ -41,6 +41,33 @@ add_task(async function test_set_language_override() {
   BrowserTestUtils.removeTab(tab);
 });
 
+add_task(async function test_set_language_override_and_navigate() {
+  const tab = BrowserTestUtils.addTab(gBrowser, PAGE_URL);
+  const browser = gBrowser.getBrowserForTab(tab);
+
+  await BrowserTestUtils.browserLoaded(browser);
+
+  info("Get default language");
+  const defaultLanguage = await getIntlLanguage(browser);
+
+  const browsingContext = browser.browsingContext;
+
+  const languageOverride = getLanguageToOverride(defaultLanguage);
+
+  info("Set language override");
+  browsingContext.languageOverride = languageOverride;
+  await assertLanguageOverridden(browser, languageOverride);
+
+  info("Navigate browsing context");
+  const url = "https://example.com/chrome/dom/base/test/dummy.html";
+  const loaded = BrowserTestUtils.browserLoaded(browser, false, url, false);
+  BrowserTestUtils.startLoadingURIString(browser, url);
+  await loaded;
+  await assertLanguageOverridden(browser, languageOverride);
+
+  BrowserTestUtils.removeTab(tab);
+});
+
 add_task(async function test_set_language_override_in_different_contexts() {
   const tab1 = BrowserTestUtils.addTab(gBrowser, PAGE_URL);
   const browser1 = gBrowser.getBrowserForTab(tab1);
@@ -89,7 +116,7 @@ function getSecondLanguageToOverride(defaultLanguage, secondLanguage) {
 
 async function getIntlLanguage(browser) {
   return SpecialPowers.spawn(browser, [], () => {
-    return new Intl.DateTimeFormat().resolvedOptions().locale;
+    return content.eval(`Intl.DateTimeFormat().resolvedOptions().locale`);
   });
 }
 

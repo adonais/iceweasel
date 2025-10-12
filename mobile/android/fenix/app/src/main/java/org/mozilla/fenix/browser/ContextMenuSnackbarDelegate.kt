@@ -26,6 +26,7 @@ class ContextMenuSnackbarDelegate : SnackbarDelegate {
         duration: Int,
         isError: Boolean,
         @StringRes action: Int,
+        withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ) = show(
         snackBarParentView,
@@ -37,6 +38,7 @@ class ContextMenuSnackbarDelegate : SnackbarDelegate {
             true -> snackBarParentView.context.getString(action)
             else -> null
         },
+        withDismissAction = withDismissAction,
         listener = listener,
     )
 
@@ -48,6 +50,7 @@ class ContextMenuSnackbarDelegate : SnackbarDelegate {
         duration: Int,
         isError: Boolean,
         action: String?,
+        withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ) {
         val snackbarAction: Action? = if (action != null && listener != null) {
@@ -74,6 +77,7 @@ class ContextMenuSnackbarDelegate : SnackbarDelegate {
                 message = text,
                 subMessage = subMessage,
                 duration = SnackbarState.Duration.Preset.Short,
+                withDismissAction = withDismissAction,
                 action = snackbarAction,
             ),
         ).show()

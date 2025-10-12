@@ -138,10 +138,10 @@ index d59b67c090..88ebb163e4 100644
    RTC_CHECK_NOTREACHED();
  }
 diff --git a/test/fuzzers/rtp_packet_fuzzer.cc b/test/fuzzers/rtp_packet_fuzzer.cc
-index 8eeed5cf5a..c9a3899b6f 100644
+index 0048dab074..edf3f82db6 100644
 --- a/test/fuzzers/rtp_packet_fuzzer.cc
 +++ b/test/fuzzers/rtp_packet_fuzzer.cc
-@@ -88,11 +88,13 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
+@@ -89,11 +89,13 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
          packet.GetExtension<AudioLevelExtension>(&audio_level);
          break;
        }
@@ -155,7 +155,7 @@ index 8eeed5cf5a..c9a3899b6f 100644
        case kRtpExtensionAbsoluteSendTime:
          uint32_t sendtime;
          packet.GetExtension<AbsoluteSendTime>(&sendtime);
-@@ -179,11 +181,13 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
+@@ -183,11 +185,13 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
          CorruptionDetectionMessage message;
          packet.GetExtension<CorruptionDetectionExtension>(&message);
          break;

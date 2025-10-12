@@ -29,9 +29,9 @@ HTMLPictureElement::~HTMLPictureElement() = default;
 
 NS_IMPL_ELEMENT_CLONE(HTMLPictureElement)
 
-void HTMLPictureElement::RemoveChildNode(nsIContent* aKid, bool aNotify,
-                                         const BatchRemovalState* aState,
-                                         nsINode* aNewParent) {
+void HTMLPictureElement::RemoveChildNode(
+    nsIContent* aKid, bool aNotify, const BatchRemovalState* aState,
+    nsINode* aNewParent, MutationEffectOnScript aMutationEffectOnScript) {
   MOZ_ASSERT(aKid);
 
   if (auto* img = HTMLImageElement::FromNode(aKid)) {
@@ -48,15 +48,15 @@ void HTMLPictureElement::RemoveChildNode(nsIContent* aKid, bool aNotify,
     }
   }
 
-  nsGenericHTMLElement::RemoveChildNode(aKid, aNotify, aState, aNewParent);
+  nsGenericHTMLElement::RemoveChildNode(aKid, aNotify, aState, aNewParent,
+                                        aMutationEffectOnScript);
 }
 
-void HTMLPictureElement::InsertChildBefore(nsIContent* aKid,
-                                           nsIContent* aBeforeThis,
-                                           bool aNotify, ErrorResult& aRv,
-                                           nsINode* aOldParent) {
+void HTMLPictureElement::InsertChildBefore(
+    nsIContent* aKid, nsIContent* aBeforeThis, bool aNotify, ErrorResult& aRv,
+    nsINode* aOldParent, MutationEffectOnScript aMutationEffectOnScript) {
   nsGenericHTMLElement::InsertChildBefore(aKid, aBeforeThis, aNotify, aRv,
-                                          aOldParent);
+                                          aOldParent, aMutationEffectOnScript);
   if (aRv.Failed() || !aKid) {
     return;
   }

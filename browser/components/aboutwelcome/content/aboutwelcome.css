@@ -1498,6 +1498,12 @@ html {
 .onboardingContainer .screen[pos=split] .secondary-cta.top button {
   padding: 7px 15px;
 }
+.onboardingContainer .screen[pos=split] .secondary-buttons-top-container .secondary-cta.top {
+  position: relative;
+  padding-top: 0;
+  top: 0;
+  inset-inline-end: 0;
+}
 .onboardingContainer .screen[pos=split] .section-main {
   flex-direction: row;
   display: block;
@@ -2496,7 +2502,7 @@ html {
   }
 }
 @media only screen and (height <= 650px) and (width <= 620px) {
-  .onboardingContainer .screen[pos=split] .section-main .secondary-cta.top {
+  .onboardingContainer .screen[pos=split] .section-main .secondary-buttons-top-container {
     position: absolute;
     padding: 0;
     top: 0;
@@ -2504,7 +2510,7 @@ html {
   }
 }
 @media only screen and (height <= 650px) and (width <= 620px) {
-  [narrow] .onboardingContainer .screen[pos=split] .section-main .secondary-cta.top {
+  [narrow] .onboardingContainer .screen[pos=split] .section-main .secondary-buttons-top-container {
     position: absolute;
     padding: 0;
     top: 0;
@@ -3172,6 +3178,19 @@ html {
 .onboardingContainer .secondary-cta span {
   color: var(--grey-subtitle-1);
   margin: 0 4px;
+}
+.onboardingContainer .secondary-buttons-top-container {
+  display: flex;
+  flex-direction: row-reverse;
+  position: fixed;
+  top: 10px;
+  inset-inline-end: 10px;
+  width: auto;
+  height: auto;
+}
+.onboardingContainer .secondary-buttons-top-container .secondary-cta.top {
+  position: relative;
+  padding-top: 0;
 }
 .onboardingContainer .message-text {
   transition: var(--transition);

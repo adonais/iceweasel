@@ -21,6 +21,7 @@ import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.browser.toolbar.display.DisplayToolbar
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.concept.toolbar.ScrollableToolbar
+import mozilla.components.feature.customtabs.getConfiguredColorSchemeParams
 import mozilla.components.support.ktx.util.URLStringUtils
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.toolbar.interactor.BrowserToolbarInteractor
@@ -30,6 +31,7 @@ import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.ToolbarPopupWindow
+import org.mozilla.fenix.utils.getAppNightMode
 import java.lang.ref.WeakReference
 
 /**
@@ -158,6 +160,11 @@ class BrowserToolbarView(
             }
 
             toolbarIntegration = if (customTabSession != null) {
+                val colorSchemeParams = customTabSession.config.getConfiguredColorSchemeParams(
+                    currentNightMode = context.resources.configuration.uiMode,
+                    preferredNightMode = settings.getAppNightMode(),
+                )
+
                 CustomTabToolbarIntegration(
                     context = this,
                     toolbar = toolbar,
@@ -166,6 +173,7 @@ class BrowserToolbarView(
                     interactor = interactor,
                     customTabId = customTabSession.id,
                     isPrivate = customTabSession.content.private,
+                    backgroundColor = colorSchemeParams?.toolbarColor,
                 )
             } else {
                 DefaultToolbarIntegration(

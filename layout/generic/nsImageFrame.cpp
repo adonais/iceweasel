@@ -2374,17 +2374,18 @@ nsRect nsDisplayImage::GetDestRectViewTransition() const {
   // elements principal border box. In order to render the captured overflow to
   // its appropiate position and scale, we must internally map and scale the
   // destRect with respect to the captured element's inkOverflowRect.
-  nsPoint inkOverflowOffset;
-  nsSize inkOverflowBoxSize, borderBoxSize;
+  nsRect inkOverflowRect;
+  nsSize borderBoxSize;
+  Maybe<nsRect> activeRect;
 
   if (image->Style()->GetPseudoType() == PseudoStyleType::viewTransitionOld) {
-    inkOverflowOffset = vt->GetOldInkOverflowOffset(name).value();
-    inkOverflowBoxSize = vt->GetOldInkOverflowBoxSize(name).value();
+    inkOverflowRect = vt->GetOldInkOverflowRect(name).value();
     borderBoxSize = vt->GetOldBorderBoxSize(name).value();
+    activeRect = vt->GetOldActiveRect(name);
   } else {
-    inkOverflowOffset = vt->GetNewInkOverflowOffset(name).value();
-    inkOverflowBoxSize = vt->GetNewInkOverflowBoxSize(name).value();
+    inkOverflowRect = vt->GetNewInkOverflowRect(name).value();
     borderBoxSize = vt->GetNewBorderBoxSize(name).value();
+    activeRect = vt->GetNewActiveRect(name);
   }
 
   if (borderBoxSize.IsEmpty()) {
@@ -2393,26 +2394,32 @@ nsRect nsDisplayImage::GetDestRectViewTransition() const {
 
   // Scale the ink overflow offset to maintain its position relative to
   // the destination border box, as if the offset scaled with the element.
-  auto xRatio =
-      static_cast<float>(inkOverflowOffset.X()) / borderBoxSize.Width();
+  auto xRatio = static_cast<float>(inkOverflowRect.X()) / borderBoxSize.Width();
   auto yRatio =
-      static_cast<float>(inkOverflowOffset.Y()) / borderBoxSize.Height();
+      static_cast<float>(inkOverflowRect.Y()) / borderBoxSize.Height();
   auto scaledX = std::round(xRatio * destRect.Width());
   auto scaledY = std::round(yRatio * destRect.Height());
 
-  inkOverflowOffset = nsPoint(scaledX, scaledY);
+  const nsPoint scaledInkOverflowOffset(scaledX, scaledY);
 
   // Scale destRect’s size to match the captured element’s relative ink overflow
   // size.
   auto widthRatio =
-      static_cast<float>(inkOverflowBoxSize.Width()) / borderBoxSize.Width();
+      static_cast<float>(inkOverflowRect.Width()) / borderBoxSize.Width();
   auto heightRatio =
-      static_cast<float>(inkOverflowBoxSize.Height()) / borderBoxSize.Height();
-  auto scaledWidth = std::round(widthRatio * destRect.Width());
-  auto scaledHeight = std::round(heightRatio * destRect.Height());
+      static_cast<float>(inkOverflowRect.Height()) / borderBoxSize.Height();
+  const nsSize scaledInkOverflowSize(
+      std::round(widthRatio * destRect.Width()),
+      std::round(heightRatio * destRect.Height()));
 
-  return nsRect(destRect.TopLeft() + inkOverflowOffset,
-                nsSize(scaledWidth, scaledHeight));
+  destRect = nsRect(destRect.TopLeft() + scaledInkOverflowOffset,
+                    scaledInkOverflowSize);
+
+  if (activeRect) {
+    destRect = destRect.Intersect(activeRect.value());
+  }
+
+  return destRect;
 }
 
 nsRegion nsDisplayImage::GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
@@ -2647,12 +2654,12 @@ void nsImageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   auto clipAxes = ShouldApplyOverflowClipping(StyleDisplay());
   if (!clipAxes.isEmpty()) {
     nsRect clipRect;
-    nscoord radii[8];
+    nsRectCornerRadii radii;
     bool haveRadii =
         ComputeOverflowClipRectRelativeToSelf(clipAxes, clipRect, radii);
     clipState.ClipContainingBlockDescendants(
         clipRect + aBuilder->ToReferenceFrame(this),
-        haveRadii ? radii : nullptr);
+        haveRadii ? &radii : nullptr);
   } else if (!isViewTransition) {
     // Allow overflow by default for view transitions, but not for other image
     // types, for historical reasons.
@@ -2929,7 +2936,8 @@ nsIFrame::Cursor nsImageFrame::GetCursor(const nsPoint& aPoint) {
 }
 
 nsresult nsImageFrame::AttributeChanged(int32_t aNameSpaceID,
-                                        nsAtom* aAttribute, int32_t aModType) {
+                                        nsAtom* aAttribute,
+                                        AttrModType aModType) {
   nsresult rv = nsAtomicContainerFrame::AttributeChanged(aNameSpaceID,
                                                          aAttribute, aModType);
   if (NS_FAILED(rv)) {

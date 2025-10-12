@@ -63,7 +63,7 @@ export var SiteDataTestUtils = {
         tx.oncomplete = resolve;
         let buffer = new ArrayBuffer(size);
         let blob = new Blob([buffer]);
-        store.add(blob, Cu.now());
+        store.add(blob, ChromeUtils.now());
       };
     });
   },

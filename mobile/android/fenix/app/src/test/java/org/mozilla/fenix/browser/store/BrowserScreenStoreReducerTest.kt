@@ -47,7 +47,8 @@ class BrowserScreenStoreReducerTest {
     fun `WHEN custom tab colors are updated THEN update the state`() {
         val customColorsUpdate = CustomTabColors(
             toolbarColor = Color.RED,
-            systemBarsColor = Color.BLUE,
+            statusBarColor = Color.BLUE,
+            navigationBarColor = Color.WHITE,
             navigationBarDividerColor = Color.GREEN,
             readableColor = Color.BLACK,
         )

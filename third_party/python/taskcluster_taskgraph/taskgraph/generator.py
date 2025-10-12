@@ -37,12 +37,14 @@ class Kind:
     config: Dict
     graph_config: GraphConfig
 
-    def _get_loader(self):
+    def _get_loader(self) -> Callable:
         try:
-            loader = self.config["loader"]
+            loader_path = self.config["loader"]
         except KeyError:
-            loader = "taskgraph.loader.default:loader"
-        return find_object(loader)
+            loader_path = "taskgraph.loader.default:loader"
+        loader = find_object(loader_path)
+        assert callable(loader)
+        return loader
 
     def load_tasks(self, parameters, loaded_tasks, write_artifacts):
         loader = self._get_loader()
@@ -123,6 +125,7 @@ class TaskGraphGenerator:
         parameters: Union[Parameters, Callable[[GraphConfig], Parameters]],
         decision_task_id: str = "DECISION-TASK",
         write_artifacts: bool = False,
+        enable_verifications: bool = True,
     ):
         """
         @param root_dir: root directory containing the Taskgraph config.yml file
@@ -136,6 +139,7 @@ class TaskGraphGenerator:
         self._parameters = parameters
         self._decision_task_id = decision_task_id
         self._write_artifacts = write_artifacts
+        self._enable_verifications = enable_verifications
 
         # start the generator
         self._run = self._run()  # type: ignore
@@ -258,7 +262,7 @@ class TaskGraphGenerator:
         graph_config.register()
 
         # Initial verifications that don't depend on any generation state.
-        verifications("initial")
+        self.verify("initial")
 
         if callable(self._parameters):
             parameters = self._parameters(graph_config)
@@ -289,7 +293,7 @@ class TaskGraphGenerator:
         kinds = {
             kind.name: kind for kind in self._load_kinds(graph_config, target_kinds)
         }
-        verifications("kinds", kinds)
+        self.verify("kinds", kinds)
 
         edges = set()
         for kind in kinds.values():
@@ -306,7 +310,14 @@ class TaskGraphGenerator:
         all_tasks = {}
         for kind_name in kind_graph.visit_postorder():
             logger.debug(f"Loading tasks for kind {kind_name}")
-            kind = kinds[kind_name]
+
+            kind = kinds.get(kind_name)
+            if not kind:
+                message = f'Could not find the kind "{kind_name}"\nAvailable kinds:\n'
+                for k in sorted(kinds):
+                    message += f' - "{k}"\n'
+                raise Exception(message)
+
             try:
                 new_tasks = kind.load_tasks(
                     parameters,
@@ -365,7 +376,7 @@ class TaskGraphGenerator:
         if parameters["enable_always_target"]:
             always_target_tasks = {
                 t.label
-                for t in full_task_graph.tasks.values()  # type: ignore
+                for t in full_task_graph.tasks.values()
                 if t.attributes.get("always_target")
                 if parameters["enable_always_target"] is True
                 or t.kind in parameters["enable_always_target"]
@@ -379,7 +390,7 @@ class TaskGraphGenerator:
         target_graph = full_task_graph.graph.transitive_closure(requested_tasks)
         target_task_graph = TaskGraph(
             {l: all_tasks[l] for l in target_graph.nodes},
-            target_graph,  # type: ignore
+            target_graph,
         )
         yield self.verify(
             "target_task_graph", target_task_graph, graph_config, parameters
@@ -430,9 +441,29 @@ class TaskGraphGenerator:
             self._run_results[k] = v
         return self._run_results[name]
 
-    def verify(self, name, obj, *args, **kwargs):
-        verifications(name, obj, *args, **kwargs)
-        return name, obj
+    def verify(self, name, *args, **kwargs):
+        if self._enable_verifications:
+            verifications(name, *args, **kwargs)
+        if args:
+            return name, args[0]
+
+
+def load_tasks_for_kinds(parameters, kinds, root_dir=None):
+    """
+    Get all the tasks of the given kinds.
+
+    This function is designed to be called from outside of taskgraph.
+    """
+    # make parameters read-write
+    parameters = dict(parameters)
+    parameters["target-kinds"] = kinds
+    parameters = parameters_loader(spec=None, strict=False, overrides=parameters)
+    tgg = TaskGraphGenerator(root_dir=root_dir, parameters=parameters)
+    return {
+        task.task["metadata"]["name"]: task
+        for task in tgg.full_task_set
+        if task.kind in kinds
+    }
 
 
 def load_tasks_for_kind(parameters, kind, root_dir=None):
@@ -441,13 +472,4 @@ def load_tasks_for_kind(parameters, kind, root_dir=None):
 
     This function is designed to be called from outside of taskgraph.
     """
-    # make parameters read-write
-    parameters = dict(parameters)
-    parameters["target-kinds"] = [kind]
-    parameters = parameters_loader(spec=None, strict=False, overrides=parameters)
-    tgg = TaskGraphGenerator(root_dir=root_dir, parameters=parameters)
-    return {
-        task.task["metadata"]["name"]: task
-        for task in tgg.full_task_set
-        if task.kind == kind
-    }
+    return load_tasks_for_kinds(parameters, [kind], root_dir)

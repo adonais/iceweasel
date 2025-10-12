@@ -250,6 +250,9 @@ class DistributionIdManagerTest {
 
         testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.AURA_001.id)
         assertEquals(true, subject.isPartnershipDistribution())
+
+        testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.XIAOMI_001.id)
+        assertEquals(true, subject.isPartnershipDistribution())
     }
 
     @Test
@@ -607,6 +610,7 @@ class DistributionIdManagerTest {
         verify(exactly = 0) { testDistributionMetricsProvider.recordDt003LegacyDetected() }
     }
 
+    @Test
     fun `WHEN the play install referrer response has a vivo india campaign THEN the distribution ID is updated`() {
         val subject = DistributionIdManager(
             testContext,
@@ -632,7 +636,32 @@ class DistributionIdManagerTest {
     }
 
     @Test
-    fun `WHEN the play install referrer response does not have a vivo india campaign THEN the distribution ID is not updated`() {
+    fun `WHEN the play install referrer response has a xiaomi campaign THEN the distribution ID is updated`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            distributionProviderChecker = testDistributionProviderChecker,
+            legacyDistributionProviderChecker = testLegacyDistributionProviderChecker,
+            distributionSettings = testDistributionSettings,
+        )
+
+        subject.updateDistributionIdFromUtmParams(
+            UTMParams(
+                source = "source",
+                medium = "medium",
+                campaign = "xiaomi-001",
+                content = "content",
+                term = "term",
+            ),
+        )
+
+        val distributionId = subject.getDistributionId()
+
+        assertEquals("xiaomi-001", distributionId)
+    }
+
+    @Test
+    fun `WHEN the play install referrer response does not have a distribution campaign THEN the distribution ID is not updated`() {
         val subject = DistributionIdManager(
             testContext,
             testBrowserStoreProvider,

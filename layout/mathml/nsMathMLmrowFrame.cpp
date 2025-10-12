@@ -36,7 +36,7 @@ nsMathMLmrowFrame::InheritAutomaticData(nsIFrame* aParent) {
 
 nsresult nsMathMLmrowFrame::AttributeChanged(int32_t aNameSpaceID,
                                              nsAtom* aAttribute,
-                                             int32_t aModType) {
+                                             AttrModType aModType) {
   // Special for <mtable>: In the frame construction code, we also use
   // this frame class as a wrapper for mtable. Hence, we should pass the
   // notification to the real mtable

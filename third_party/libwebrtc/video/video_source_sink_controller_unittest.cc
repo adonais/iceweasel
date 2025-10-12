@@ -11,8 +11,10 @@
 #include "video/video_source_sink_controller.h"
 
 #include <limits>
+#include <optional>
 
 #include "api/video/video_frame.h"
+#include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "test/gmock.h"
@@ -41,13 +43,9 @@ class MockVideoSourceWithVideoFrame : public VideoSourceInterface<VideoFrame> {
 
   MOCK_METHOD(void,
               AddOrUpdateSink,
-              (webrtc::VideoSinkInterface<VideoFrame>*,
-               const webrtc::VideoSinkWants&),
+              (VideoSinkInterface<VideoFrame>*, const VideoSinkWants&),
               (override));
-  MOCK_METHOD(void,
-              RemoveSink,
-              (webrtc::VideoSinkInterface<VideoFrame>*),
-              (override));
+  MOCK_METHOD(void, RemoveSink, (VideoSinkInterface<VideoFrame>*), (override));
   MOCK_METHOD(void, RequestRefreshFrame, (), (override));
 };
 

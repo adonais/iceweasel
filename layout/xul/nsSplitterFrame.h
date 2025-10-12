@@ -41,7 +41,7 @@ class nsSplitterFrame final : public mozilla::SimpleXULLeafFrame {
 
   // nsIFrame overrides
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
             nsIFrame* aPrevInFlow) override;

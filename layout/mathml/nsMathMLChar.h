@@ -87,8 +87,8 @@ class nsMathMLChar {
     mComputedStyle = nullptr;
     mUnscaledAscent = 0;
     mScaleX = mScaleY = 1.0;
-    mDraw = DRAW_NORMAL;
-    mMirrored = false;
+    mDrawingMethod = DrawingMethod::Normal;
+    mMirroringMethod = MirroringMethod::None;
   }
 
   // not a virtual destructor: this class is not intended to be subclassed
@@ -177,16 +177,28 @@ class nsMathMLChar {
   // mScaleX, mScaleY are the factors by which we scale the char.
   float mScaleX, mScaleY;
 
-  // mDraw indicates how we draw the stretchy operator:
-  // - DRAW_NORMAL: we render the mData string normally.
-  // - DRAW_VARIANT: we draw a larger size variant given by mGlyphs[0].
-  // - DRAW_PARTS: we assemble several parts given by mGlyphs[0], ... mGlyphs[4]
+  // mDrawingMethod indicates how we draw the stretchy operator:
+  // - Normal: we render the mData string normally.
+  // - Variant: we draw a larger size variant given by mGlyphs[0].
+  // - Parts: we assemble several parts given by mGlyphs[0], ... mGlyphs[4]
   // XXXfredw: the MATH table can have any numbers of parts and extenders.
-  enum DrawingMethod { DRAW_NORMAL, DRAW_VARIANT, DRAW_PARTS };
-  DrawingMethod mDraw;
+  enum class DrawingMethod { Normal, Variant, Parts };
+  DrawingMethod mDrawingMethod;
 
-  // mMirrored indicates whether the character is mirrored.
-  bool mMirrored;
+  // mMirroringMethod indicates whether the character is mirrored.
+  // - None: shouldn't be mirrored.
+  // - Character: using unicode character mirroring.
+  // - Glyph: using rtlm glyph mirroring.
+  // - ScaleFallback: the font doesn't support this character, fall back
+  //                  to applying a scale of -1 on the X axis and a scale
+  //                  of 1 on the Y axis.
+  enum class MirroringMethod : uint8_t {
+    None,
+    Character,
+    Glyph,
+    ScaleFallback,
+  };
+  MirroringMethod mMirroringMethod;
 
   class StretchEnumContext;
   friend class StretchEnumContext;

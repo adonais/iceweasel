@@ -19,6 +19,5 @@
       android:pathData="M3.988,2.818L22.25,21.08L21.012,22.318L2.75,4.056L3.988,2.818Z"
       android:fillColor="@color/mozac_ui_lock_slash_fill_critical"
       android:fillType="evenOdd"
-      tools:targetApi="n"
       tools:ignore="VectorRaster" />
 </vector>

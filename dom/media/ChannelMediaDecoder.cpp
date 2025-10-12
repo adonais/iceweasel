@@ -114,7 +114,7 @@ void ChannelMediaDecoder::ResourceCallback::NotifyDataArrived() {
   mTimerArmed = true;
   mTimer->InitWithNamedFuncCallback(
       TimerCallback, this, sDelay, nsITimer::TYPE_ONE_SHOT,
-      "ChannelMediaDecoder::ResourceCallback::TimerCallback");
+      "ChannelMediaDecoder::ResourceCallback::TimerCallback"_ns);
 }
 
 void ChannelMediaDecoder::ResourceCallback::NotifyDataEnded(nsresult aStatus) {

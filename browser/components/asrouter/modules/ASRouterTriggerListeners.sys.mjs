@@ -2,9 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
+// eslint-disable-next-line mozilla/use-static-import
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
 
-ChromeUtils.defineESModuleGetters(lazy, {
+const lazy = XPCOMUtils.declareLazy({
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
@@ -13,13 +16,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
-});
 
-ChromeUtils.defineLazyGetter(lazy, "log", () => {
-  const { Logger } = ChromeUtils.importESModule(
-    "resource://messaging-system/lib/Logger.sys.mjs"
-  );
-  return new Logger("ASRouterTriggerListeners");
+  log: () => {
+    const { Logger } = ChromeUtils.importESModule(
+      "resource://messaging-system/lib/Logger.sys.mjs"
+    );
+    return new Logger("ASRouterTriggerListeners");
+  },
+
+  newtabPageEnabled: {
+    pref: "browser.newtabpage.enabled",
+    default: true,
+  },
 });
 
 const FEW_MINUTES = 15 * 60 * 1000; // 15 mins
@@ -94,6 +102,86 @@ function createMatchPatternSet(patterns, flags) {
  * have idempotent `init` and `uninit` methods.
  */
 export const ASRouterTriggerListeners = new Map([
+  [
+    "selectableProfilesUpdated",
+    {
+      id: "selectableProfilesUpdated",
+      _initialized: false,
+      _triggerHandler: null,
+      // Preferences that manage the "Data Collection and Use" section in
+      // about:preferences#privacy. Changes to these are shared across profiles
+      // in a profile group and should show an infobar in other profiles.
+      _trackedPrefs: [
+        "datareporting.healthreport.uploadEnabled",
+        "datareporting.usage.uploadEnabled",
+        "datareporting.policy.dataSubmissionEnabled",
+        "browser.urlbar.quicksuggest.dataCollection.enabled",
+        "app.shield.optoutstudies.enabled",
+        "browser.crashReports.unsubmittedCheck.autoSubmit2",
+        "browser.discovery.enabled",
+      ],
+      _lastValues: null,
+
+      init(triggerHandler) {
+        if (!this._initialized) {
+          Services.obs.addObserver(this, "sps-profiles-updated");
+          this._initialized = true;
+          this._lastValues = new Map();
+          for (const pref of this._trackedPrefs) {
+            const value = Services.prefs.getBoolPref(pref, false);
+            this._lastValues.set(pref, value);
+          }
+        }
+        this._triggerHandler = triggerHandler;
+      },
+
+      observe(_aSubject, aTopic, aData) {
+        if (aTopic !== "sps-profiles-updated") {
+          return;
+        }
+        // We only react to changes made by another running instance (other profiles open)
+        if (aData !== "remote") {
+          return;
+        }
+        // Diff the tracked prefs and if any changed, fire the trigger
+        let anyChanged = false;
+        for (const pref of this._trackedPrefs) {
+          const current = Services.prefs.getBoolPref(pref, false);
+          const previous = this._lastValues.get(pref);
+          if (current !== previous) {
+            anyChanged = true;
+            this._lastValues.set(pref, current);
+          }
+        }
+        if (!anyChanged) {
+          return;
+        }
+
+        const browser =
+          Services.wm.getMostRecentBrowserWindow()?.gBrowser?.selectedBrowser;
+        if (browser) {
+          this._triggerHandler(browser, {
+            id: this.id,
+            param: { type: aData },
+          });
+        }
+      },
+
+      uninit() {
+        if (this._initialized) {
+          Services.obs.removeObserver(this, "sps-profiles-updated");
+          this._initialized = false;
+          this._triggerHandler = null;
+          this._lastValues = null;
+        }
+      },
+
+      QueryInterface: ChromeUtils.generateQI([
+        "nsIObserver",
+        "nsISupportsWeakReference",
+      ]),
+    },
+  ],
   [
     "openArticleURL",
     {
@@ -1569,7 +1657,8 @@ export const ASRouterTriggerListeners = new Map([
         const existingCallout = this._callouts.get(win);
         const isNewtabOrHome =
           browser.currentURI.spec.startsWith("about:home") ||
-          browser.currentURI.spec.startsWith("about:newtab");
+          (browser.currentURI.spec.startsWith("about:newtab") &&
+            lazy.newtabPageEnabled);
         if (
           existingCallout &&
           (existingCallout.panelId !== tab.linkedPanel || !isNewtabOrHome)
@@ -1602,7 +1691,8 @@ export const ASRouterTriggerListeners = new Map([
             const existingCallout = this._callouts.get(win);
             const isNewtabOrHome =
               browser.currentURI.spec.startsWith("about:home") ||
-              browser.currentURI.spec.startsWith("about:newtab");
+              (browser.currentURI.spec.startsWith("about:newtab") &&
+                lazy.newtabPageEnabled);
             if (
               existingCallout &&
               (existingCallout.panelId !== tab.linkedPanel || !isNewtabOrHome)

@@ -264,7 +264,7 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
                               nsAttrValue& aResult) override;
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
-                                      int32_t aModType) const override;
+                                      AttrModType aModType) const override;
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
 
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;

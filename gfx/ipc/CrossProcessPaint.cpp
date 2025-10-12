@@ -17,6 +17,7 @@
 #include "mozilla/dom/WindowGlobalActorsBinding.h"
 #include "mozilla/gfx/DrawEventRecorder.h"
 #include "mozilla/gfx/InlineTranslator.h"
+#include "mozilla/gfx/RecordedEvent.h"
 #include "mozilla/Logging.h"
 #include "mozilla/PresShell.h"
 

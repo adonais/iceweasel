@@ -46,6 +46,7 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
   // All methods run on the task queue, except for GetDescriptionName.
   RefPtr<InitPromise> Init() override = 0;  // Implemented in the sub-classes.
   RefPtr<EncodePromise> Encode(const MediaData* aSample) override;
+  RefPtr<EncodePromise> Encode(nsTArray<RefPtr<MediaData>>&& aSamples) override;
   RefPtr<ReconfigurationPromise> Reconfigure(
       const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges)
       override;
@@ -62,7 +63,7 @@ class FFmpegDataEncoder<LIBAV_VER> : public MediaDataEncoder {
       AVPacket* aPacket);
 
   // Methods only called on mTaskQueue.
-  RefPtr<EncodePromise> ProcessEncode(RefPtr<const MediaData> aSample);
+  RefPtr<EncodePromise> ProcessEncode(nsTArray<RefPtr<MediaData>>&& aSamples);
   RefPtr<ReconfigurationPromise> ProcessReconfigure(
       const RefPtr<const EncoderConfigurationChangeList>&
           aConfigurationChanges);

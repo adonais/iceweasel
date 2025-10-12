@@ -356,9 +356,9 @@ nsresult nsDragSession::StartInvokingDragSession(nsIWidget* aWidget,
       "[%p] %s | mSentLocalDropEvent: %s | mDataTransfer->DropEffectInt: %d | "
       "mUserCancelled: %s | dragEndPoint: (%ld,%ld) | modifier-keys: %u | "
       "Exited nested drag event loop.  Ending Gecko-initiated drag session.",
-      this, __FUNCTION__, GetBoolName(mSentLocalDropEvent),
+      this, __FUNCTION__, TrueOrFalse(mSentLocalDropEvent),
       mDataTransfer ? mDataTransfer->DropEffectInt() : INT_MAX,
-      GetBoolName(mUserCancelled), cpos.x, cpos.y,
+      TrueOrFalse(mUserCancelled), cpos.x, cpos.y,
       modifierKeyState.GetModifiers());
   EndDragSession(true, modifierKeyState.GetModifiers());
 

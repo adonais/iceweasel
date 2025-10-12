@@ -146,24 +146,22 @@ nsresult nsWindowRoot::GetControllers(bool aForVisibleWindow,
   nsIContent* focusedContent = nsFocusManager::GetFocusedDescendant(
       mWindow, searchRange, getter_AddRefs(focusedWindow));
   if (focusedContent) {
-    RefPtr<nsXULElement> xulElement = nsXULElement::FromNode(focusedContent);
-    if (xulElement) {
-      ErrorResult rv;
-      *aResult = xulElement->GetControllers(rv);
+    if (auto* xulElement = nsXULElement::FromNode(focusedContent)) {
+      *aResult = xulElement->GetExtantControllers();
       NS_IF_ADDREF(*aResult);
-      return rv.StealNSResult();
+      return NS_OK;
     }
-
-    HTMLTextAreaElement* htmlTextArea =
-        HTMLTextAreaElement::FromNode(focusedContent);
-    if (htmlTextArea) return htmlTextArea->GetControllers(aResult);
-
-    HTMLInputElement* htmlInputElement =
-        HTMLInputElement::FromNode(focusedContent);
-    if (htmlInputElement) return htmlInputElement->GetControllers(aResult);
-
-    if (focusedContent->IsEditable() && focusedWindow)
+    auto* htmlTextArea = HTMLTextAreaElement::FromNode(focusedContent);
+    if (htmlTextArea) {
+      return htmlTextArea->GetControllers(aResult);
+    }
+    auto* htmlInputElement = HTMLInputElement::FromNode(focusedContent);
+    if (htmlInputElement) {
+      return htmlInputElement->GetControllers(aResult);
+    }
+    if (focusedContent->IsEditable() && focusedWindow) {
       return focusedWindow->GetControllers(aResult);
+    }
   } else {
     return focusedWindow->GetControllers(aResult);
   }

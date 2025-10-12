@@ -14,27 +14,8 @@
 
 namespace mozilla {
 
-CodecType EncoderConfig::CodecTypeForMime(const nsACString& aMimeType) {
-  if (MP4Decoder::IsH264(aMimeType)) {
-    return CodecType::H264;
-  }
-  if (VPXDecoder::IsVPX(aMimeType, VPXDecoder::VP8)) {
-    return CodecType::VP8;
-  }
-  if (VPXDecoder::IsVPX(aMimeType, VPXDecoder::VP9)) {
-    return CodecType::VP9;
-  }
-  MOZ_ASSERT_UNREACHABLE("Unsupported Mimetype");
-  return CodecType::Unknown;
-}
-
-const char* CodecTypeStrings[] = {
-    "BeginVideo", "H264", "VP8", "VP9",  "EndVideo", "Opus",   "Vorbis",
-    "Flac",       "AAC",  "PCM", "G722", "EndAudio", "Unknown"};
-
 nsCString EncoderConfig::ToString() const {
-  nsCString rv;
-  rv.Append(CodecTypeStrings[UnderlyingValue(mCodec)]);
+  nsCString rv(EnumValueToString(mCodec));
   rv.AppendLiteral(mBitrateMode == BitrateMode::Constant ? " (CBR)" : " (VBR)");
   rv.AppendPrintf("%" PRIu32 "bps", mBitrate);
   if (mUsage == Usage::Realtime) {
@@ -42,7 +23,7 @@ nsCString EncoderConfig::ToString() const {
   } else {
     rv.AppendLiteral(", record");
   }
-  if (mCodec > CodecType::_BeginVideo_ && mCodec < CodecType::_EndVideo_) {
+  if (IsVideo()) {
     rv.AppendPrintf(" [%dx%d]", mSize.Width(), mSize.Height());
     if (mHardwarePreference == HardwarePreference::RequireHardware) {
       rv.AppendLiteral(", hw required");
@@ -60,6 +41,7 @@ nsCString EncoderConfig::ToString() const {
     rv.AppendPrintf(", %" PRIu8 " fps", mFramerate);
     rv.AppendPrintf(", kf interval: %zu", mKeyframeInterval);
   } else {
+    MOZ_ASSERT(IsAudio());
     rv.AppendPrintf(", ch: %" PRIu32 ", %" PRIu32 "Hz", mNumberOfChannels,
                     mSampleRate);
   }
@@ -81,10 +63,6 @@ nsCString EncoderConfig::ToString() const {
   rv.AppendPrintf(" (w/%s codec specific)", specificStr);
   return rv;
 };
-
-const char* EncoderConfig::CodecString() const {
-  return CodecTypeStrings[UnderlyingValue(mCodec)];
-}
 
 const char* ColorRangeToString(const gfx::ColorRange& aColorRange) {
   switch (aColorRange) {

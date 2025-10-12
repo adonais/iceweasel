@@ -253,7 +253,7 @@ class SitePermissionsDialogFragmentTest {
                 permissionRequestId = permissionRequestId,
                 feature = feature,
                 shouldShowDoNotAskAgainCheckBox = false,
-                shouldShowLearnMoreLink = true,
+                learnMoreLink = "https://mozilla.org",
             ),
         )
         doNothing().`when`(fragment).dismiss()
@@ -268,7 +268,11 @@ class SitePermissionsDialogFragmentTest {
         assertFalse("Learn more link should not be long clickable", learnMoreLink.isLongClickable)
         learnMoreLink.callOnClick()
         verify(fragment).dismiss()
-        verify(feature).onLearnMorePress(permissionRequestId, "sessionId")
+        verify(feature).onLearnMorePress(
+            permissionId = permissionRequestId,
+            sessionId = "sessionId",
+            learnMoreLink = "https://mozilla.org",
+        )
     }
 
     @Test

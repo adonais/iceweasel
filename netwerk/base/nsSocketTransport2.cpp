@@ -1262,16 +1262,9 @@ nsresult nsSocketTransport::InitiateSocket() {
   // we need to disable access to 0.0.0.0 for non-test purposes
   if (mNetAddr.IsIPAddrAny() && !mProxyTransparentResolvesHost) {
     if (StaticPrefs::network_socket_ip_addr_any_disabled()) {
-      mozilla::glean::networking::http_ip_addr_any_count
-          .Get("blocked_requests"_ns)
-          .Add(1);
       SOCKET_LOG(("connection refused NS_ERROR_CONNECTION_REFUSED\n"));
       return NS_ERROR_CONNECTION_REFUSED;
     }
-
-    mozilla::glean::networking::http_ip_addr_any_count
-        .Get("not_blocked_requests"_ns)
-        .Add(1);
   }
 
   if (gIOService->IsOffline()) {

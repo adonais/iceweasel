@@ -219,7 +219,7 @@ add_task(async function test_model_download_telemetry_success() {
       rootUrl: modelHubRootUrl,
     });
 
-    const result = await mlEngineWorker.getModelFile(url).catch(() => {});
+    const result = await mlEngineWorker.getModelFile({url}).catch(() => {});
 
     // Download Another file using engineId as revision
     const url2 = lazy.createFileUrl({
@@ -229,7 +229,7 @@ add_task(async function test_model_download_telemetry_success() {
       urlTemplate: modelHubUrlTemplate,
       rootUrl: modelHubRootUrl,
     });
-    const result2 = await mlEngineWorker.getModelFile(url2).catch(() => {});
+    const result2 = await mlEngineWorker.getModelFile({url: url2}).catch(() => {});
 
     return {
       run: () => {},
@@ -343,7 +343,7 @@ add_task(async function test_model_download_telemetry_fail() {
       rootUrl: modelHubRootUrl,
     });
 
-    const result = await mlEngineWorker.getModelFile(url).catch(() => {});
+    const result = await mlEngineWorker.getModelFile({url}).catch(() => {});
 
     // Download Another file using engineId as revision
     const url2 = lazy.createFileUrl({
@@ -353,7 +353,7 @@ add_task(async function test_model_download_telemetry_fail() {
       urlTemplate: modelHubUrlTemplate,
       rootUrl: modelHubRootUrl,
     });
-    const result2 = await mlEngineWorker.getModelFile(url2).catch(() => {});
+    const result2 = await mlEngineWorker.getModelFile({url: url2}).catch(() => {});
 
     return {
       run: () => {},
@@ -467,7 +467,7 @@ add_task(async function test_model_download_telemetry_mixed() {
       rootUrl: modelHubRootUrl,
     });
 
-    const result = await mlEngineWorker.getModelFile(url).catch(() => {});
+    const result = await mlEngineWorker.getModelFile({url}).catch(() => {});
 
     // Download Another file using engineId as revision
     const url2 = lazy.createFileUrl({
@@ -477,7 +477,7 @@ add_task(async function test_model_download_telemetry_mixed() {
       urlTemplate: modelHubUrlTemplate,
       rootUrl: modelHubRootUrl,
     });
-    const result2 = await mlEngineWorker.getModelFile(url2).catch(() => {});
+    const result2 = await mlEngineWorker.getModelFile({url: url2}).catch(() => {});
 
     return {
       run: () => {},

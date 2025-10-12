@@ -69,7 +69,7 @@ object BrowserToolbarStoreBuilder {
         components: Components,
         browsingModeManager: BrowsingModeManager,
         browserAnimator: BrowserAnimator,
-        thumbnailsFeature: BrowserThumbnails?,
+        thumbnailsFeature: () -> BrowserThumbnails?,
         readerModeController: ReaderModeController,
         settings: Settings,
         customTabSession: CustomTabSessionState? = null,
@@ -115,11 +115,13 @@ object BrowserToolbarStoreBuilder {
                     CustomTabBrowserToolbarMiddleware(
                         requireNotNull(customTabSession).id,
                         browserStore = browserStore,
+                        appStore = appStore,
                         permissionsStorage = components.core.geckoSitePermissionsStorage,
                         cookieBannersStorage = components.core.cookieBannersStorage,
                         useCases = components.useCases.customTabsUseCases,
                         trackingProtectionUseCases = components.useCases.trackingProtectionUseCases,
                         publicSuffixList = components.publicSuffixList,
+                        clipboard = activity.components.clipboardHandler,
                         settings = settings,
                     ),
                 )

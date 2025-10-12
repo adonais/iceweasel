@@ -1024,13 +1024,15 @@ nsresult Http3Session::ProcessOutputAndEvents(nsIUDPSocket* socket) {
 
   MOZ_ASSERT(mTimerShouldTrigger);
 
-  auto now = TimeStamp::Now();
-  if (mTimerShouldTrigger > now) {
-    // See bug 1935459
-    glean::http3::timer_delayed.AccumulateRawDuration(0);
-  } else {
-    glean::http3::timer_delayed.AccumulateRawDuration(now -
-                                                      mTimerShouldTrigger);
+  if (Telemetry::CanRecordPrereleaseData()) {
+    auto now = TimeStamp::Now();
+    if (mTimerShouldTrigger > now) {
+      // See bug 1935459
+      glean::http3::timer_delayed.AccumulateRawDuration(0);
+    } else {
+      glean::http3::timer_delayed.AccumulateRawDuration(now -
+                                                        mTimerShouldTrigger);
+    }
   }
 
   mTimerShouldTrigger = TimeStamp();

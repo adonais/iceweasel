@@ -20,7 +20,6 @@ task-defaults:
             - 'build/clang-plugin/*.py'
             - 'build/clang-plugin/*.txt'
             - 'build/clang-plugin/moz.build'
-            - 'build/clang-plugin/Makefile.in'
             - 'build/build-clang/build-clang.py'
     fetches:
         fetch:
@@ -42,6 +41,7 @@ linux64-clang-tidy:
     fetches:
         toolchain:
             - linux64-clang-toolchain
+            - linux64-libxml2
             - linux64-toolchain-sysroot
 
 macosx64-clang-tidy:

@@ -256,9 +256,9 @@ void MenuModel::ContentAppended(nsIContent* aChild, const ContentAppendInfo&) {
   }
 }
 
-void MenuModel::AttributeChanged(dom::Element* aElement, int32_t aNameSpaceID,
-                                 nsAtom* aAttribute, int32_t aModType,
-                                 const nsAttrValue* aOldValue) {
+void MenuModel::AttributeChanged(dom::Element* aElement, int32_t,
+                                 nsAtom* aAttribute, AttrModType,
+                                 const nsAttrValue*) {
   if (NodeIsRelevant(*aElement) &&
       (aAttribute == nsGkAtoms::label || aAttribute == nsGkAtoms::aria_label ||
        aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::hidden)) {
@@ -632,17 +632,26 @@ static void ConnectActivated(DbusmenuMenuitem* aItem,
                    const_cast<dom::Element*>(aContent));
 }
 
-static MOZ_CAN_RUN_SCRIPT void DBusAboutToShowCallback(
-    DbusmenuMenuitem* aMenuitem, gpointer aUserData) {
+static MOZ_CAN_RUN_SCRIPT bool DBusEventCallback(DbusmenuMenuitem* aMenuItem,
+                                                 const gchar* name,
+                                                 GVariant* variant,
+                                                 guint timestamp,
+                                                 gpointer aUserData) {
   RefPtr element = static_cast<dom::Element*>(aUserData);
-  FireEvent(element, eXULPopupShowing);
-  FireEvent(element, eXULPopupShown);
+  if (strcmp(name, "opened") == 0) {
+    FireEvent(element, eXULPopupShowing);
+    FireEvent(element, eXULPopupShown);
+  } else if (strcmp(name, "closed") == 0) {
+    FireEvent(element, eXULPopupHiding);
+    FireEvent(element, eXULPopupHidden);
+  }
+  return false;
 }
 
-static void ConnectAboutToShow(DbusmenuMenuitem* aItem,
-                               const dom::Element* aContent) {
-  g_signal_connect(G_OBJECT(aItem), DBUSMENU_MENUITEM_SIGNAL_ABOUT_TO_SHOW,
-                   G_CALLBACK(DBusAboutToShowCallback),
+static void ConnectEvent(DbusmenuMenuitem* aItem,
+                         const dom::Element* aContent) {
+  g_signal_connect(G_OBJECT(aItem), DBUSMENU_MENUITEM_SIGNAL_EVENT,
+                   G_CALLBACK(DBusEventCallback),
                    const_cast<dom::Element*>(aContent));
 }
 
@@ -681,7 +690,7 @@ void MenubarModelDBus::AppendSubmenu(DbusmenuMenuitem* aParent,
   }
   nsAutoString label;
   aMenu->GetAttr(nsGkAtoms::label, label);
-  ConnectAboutToShow(submenu, aPopup);
+  ConnectEvent(submenu, aPopup);
   dbusmenu_menuitem_property_set(submenu, DBUSMENU_MENUITEM_PROP_LABEL,
                                  NS_ConvertUTF16toUTF8(label).get());
   dbusmenu_menuitem_child_append(aParent, submenu);

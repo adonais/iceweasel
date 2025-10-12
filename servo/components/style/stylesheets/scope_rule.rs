@@ -75,9 +75,9 @@ impl ScopeRule {
     /// Measure heap usage.
     #[cfg(feature = "gecko")]
     pub fn size_of(&self, guard: &SharedRwLockReadGuard, ops: &mut MallocSizeOfOps) -> usize {
-        self.rules.unconditional_shallow_size_of(ops) +
-            self.rules.read_with(guard).size_of(guard, ops) +
-            self.bounds.size_of(ops)
+        self.rules.unconditional_shallow_size_of(ops)
+            + self.rules.read_with(guard).size_of(guard, ops)
+            + self.bounds.size_of(ops)
     }
 }
 
@@ -269,6 +269,25 @@ pub struct ScopeRootCandidate {
     pub root: OpaqueElement,
     /// Ancestor hop from the element under consideration to this scope root.
     pub proximity: ScopeProximity,
+}
+
+impl ScopeRootCandidate {
+    /// Get the element corresponding to this scope root candidate.
+    pub fn get_scope_root_element<E>(&self, originating_element: E) -> Option<E>
+    where
+        E: TElement,
+    {
+        // Could just unsafe-convert from opaque element - technically
+        // faster as well, but it doesn't seem worth having to manually
+        // assure safety every time.
+        let mut e = originating_element;
+        let hops = self.proximity.get()?;
+        for _ in 0..hops {
+            e = e.parent_element()?;
+        }
+        debug_assert_eq!(e.opaque(), self.root);
+        Some(e)
+    }
 }
 
 /// Collect potential scope roots for a given element and its scope target.
@@ -468,13 +487,13 @@ pub fn scope_selector_list_is_trivial(list: &SelectorList<SelectorImpl>) -> bool
         loop {
             while let Some(c) = iter.next() {
                 match c {
-                    Component::ID(_) |
-                    Component::Nth(_) |
-                    Component::NthOf(_) |
-                    Component::Has(_) => return false,
-                    Component::Is(ref list) |
-                    Component::Where(ref list) |
-                    Component::Negation(ref list) => {
+                    Component::ID(_)
+                    | Component::Nth(_)
+                    | Component::NthOf(_)
+                    | Component::Has(_) => return false,
+                    Component::Is(ref list)
+                    | Component::Where(ref list)
+                    | Component::Negation(ref list) => {
                         if !scope_selector_list_is_trivial(list) {
                             return false;
                         }

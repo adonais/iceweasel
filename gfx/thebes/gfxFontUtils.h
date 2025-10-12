@@ -1105,46 +1105,6 @@ class gfxFontUtils {
     return aCh == kBlackFlag && aNext >= kTagLetterA && aNext <= kTagLetterZ;
   }
 
-  static inline bool IsInvalid(uint32_t ch) { return (ch == 0xFFFD); }
-
-  // Font code may want to know if there is the potential for bidi behavior
-  // to be triggered by any of the characters in a text run; this can be
-  // used to test that possibility.
-  enum {
-    kUnicodeBidiScriptsStart = 0x0590,
-    kUnicodeBidiScriptsEnd = 0x08FF,
-    kUnicodeBidiPresentationStart = 0xFB1D,
-    kUnicodeBidiPresentationEnd = 0xFEFC,
-    kUnicodeFirstHighSurrogateBlock = 0xD800,
-    kUnicodeRLM = 0x200F,
-    kUnicodeRLE = 0x202B,
-    kUnicodeRLO = 0x202E
-  };
-
-  static inline bool PotentialRTLChar(char16_t aCh) {
-    if (aCh >= kUnicodeBidiScriptsStart && aCh <= kUnicodeBidiScriptsEnd)
-      // bidi scripts Hebrew, Arabic, Syriac, Thaana, N'Ko are all encoded
-      // together
-      return true;
-
-    if (aCh == kUnicodeRLM || aCh == kUnicodeRLE || aCh == kUnicodeRLO)
-      // directional controls that trigger bidi layout
-      return true;
-
-    if (aCh >= kUnicodeBidiPresentationStart &&
-        aCh <= kUnicodeBidiPresentationEnd)
-      // presentation forms of Arabic and Hebrew letters
-      return true;
-
-    if ((aCh & 0xFF00) == kUnicodeFirstHighSurrogateBlock)
-      // surrogate that could be part of a bidi supplementary char
-      // (Cypriot, Aramaic, Phoenecian, etc)
-      return true;
-
-    // otherwise we know this char cannot trigger bidi reordering
-    return false;
-  }
-
   // parse a simple list of font family names into
   // an array of strings
   static void ParseFontList(const nsACString& aFamilyList,

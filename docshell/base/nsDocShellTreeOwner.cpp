@@ -1154,7 +1154,8 @@ nsresult ChromeTooltipListener::MouseMove(Event* aMouseEvent) {
       nsresult rv = NS_NewTimerWithFuncCallback(
           getter_AddRefs(mTooltipTimer), sTooltipCallback, this,
           StaticPrefs::ui_tooltip_delay_ms(), nsITimer::TYPE_ONE_SHOT,
-          "ChromeTooltipListener::MouseMove", GetMainThreadSerialEventTarget());
+          "ChromeTooltipListener::MouseMove"_ns,
+          GetMainThreadSerialEventTarget());
       if (NS_FAILED(rv)) {
         mPossibleTooltipNode = nullptr;
         NS_WARNING("Could not create a timer for tooltip tracking");

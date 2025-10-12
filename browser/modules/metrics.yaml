@@ -43,9 +43,11 @@ browser.engagement:
       - baseline
       - metrics
       - usage-reporting
+      - events
     telemetry_mirror: BROWSER_ENGAGEMENT_ACTIVE_TICKS
     no_lint:
       - BASELINE_PING
+      - METRIC_ON_EVENTS_LIFETIME
 
   uri_count:
     type: counter
@@ -76,8 +78,10 @@ browser.engagement:
       - baseline
       - metrics
       - usage-reporting
+      - events
     no_lint:
       - BASELINE_PING
+      - METRIC_ON_EVENTS_LIFETIME
     telemetry_mirror: BROWSER_ENGAGEMENT_TOTAL_URI_COUNT_NORMAL_AND_PRIVATE_MODE
 
   uri_count_normal_mode:
@@ -140,6 +144,11 @@ browser.engagement:
       - rweiss@mozilla.com
     expires: never
     unit: tabs
+    send_in_pings:
+      - metrics
+      - events
+    no_lint:
+      - METRIC_ON_EVENTS_LIFETIME
     telemetry_mirror: BROWSER_ENGAGEMENT_MAX_CONCURRENT_TAB_COUNT
 
   max_concurrent_vertical_tab_count:
@@ -229,6 +238,11 @@ browser.engagement:
     notification_emails:
       - vsabino@mozilla.com
     expires: never
+    send_in_pings:
+      - metrics
+      - events
+    no_lint:
+      - METRIC_ON_EVENTS_LIFETIME
     telemetry_mirror: BROWSER_ENGAGEMENT_TAB_OPEN_EVENT_COUNT
 
   vertical_tab_open_event_count:

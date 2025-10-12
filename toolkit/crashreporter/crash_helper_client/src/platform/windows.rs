@@ -44,8 +44,8 @@ impl CrashHelperClient {
                 program,
                 breakpad_data,
                 minidump_path,
-                listener,
                 server_endpoint,
+                listener,
             )
         });
 
@@ -60,8 +60,8 @@ impl CrashHelperClient {
         program: OsString,
         breakpad_data: BreakpadData,
         minidump_path: OsString,
-        listener: IPCListener,
         endpoint: IPCConnector,
+        listener: IPCListener,
     ) -> Result<OwnedHandle> {
         // SAFETY: `GetCurrentProcessId()` takes no arguments and should always work
         let pid = OsString::from(unsafe { GetCurrentProcessId() }.to_string());
@@ -74,9 +74,9 @@ impl CrashHelperClient {
         cmd_line.push(" ");
         cmd_line.push(escape_cmd_line_arg(&minidump_path));
         cmd_line.push(" ");
-        cmd_line.push(escape_cmd_line_arg(&listener.serialize()));
-        cmd_line.push(" ");
         cmd_line.push(escape_cmd_line_arg(&endpoint.serialize()));
+        cmd_line.push(" ");
+        cmd_line.push(escape_cmd_line_arg(&listener.serialize()));
         cmd_line.push("\0");
         let mut cmd_line: Vec<u16> = cmd_line.encode_wide().collect();
 

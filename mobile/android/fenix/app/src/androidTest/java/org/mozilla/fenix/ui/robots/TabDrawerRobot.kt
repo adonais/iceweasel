@@ -15,7 +15,6 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.hasAnyChild
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasParent
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
@@ -42,6 +41,7 @@ import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.HomeActivityComposeTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
+import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -98,11 +98,11 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun verifySyncedTabsListWhenUserIsNotSignedIn() {
-        verifySyncedTabsList()
+        verifyUnauthenticatedSyncedTabsPage()
         assertUIObjectExists(
-            itemContainingText(getStringResource(R.string.synced_tabs_sign_in_message)),
-            itemContainingText(getStringResource(R.string.sync_sign_in)),
-            itemContainingText(getStringResource(R.string.tab_drawer_fab_sync)),
+            itemContainingText(getStringResource(R.string.tab_manager_empty_synced_tabs_page_header)),
+            itemContainingText(getStringResource(R.string.tab_manager_empty_synced_tabs_page_description)),
+            itemWithText(getStringResource(R.string.tab_manager_empty_synced_tabs_page_sign_in_cta)),
         )
     }
 
@@ -177,6 +177,12 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifySyncedTabsList: Verified that the synced tabs list exists")
     }
 
+    fun verifyUnauthenticatedSyncedTabsPage() {
+        Log.i(TAG, "verifyUnauthenticatedSyncedTabsPage: Trying to verify that the unauthenticated synced tabs page exists")
+        composeTestRule.unauthenticatedSyncedTabsPage().assertExists()
+        Log.i(TAG, "verifyUnauthenticatedSyncedTabsPage: Verified that the the unauthenticated synced tabs page exists")
+    }
+
     fun verifyNoOpenTabsInNormalBrowsing() {
         Log.i(TAG, "verifyNoOpenTabsInNormalBrowsing: Trying to verify that the empty normal tabs list exists")
         composeTestRule.emptyNormalTabsList().assertExists()
@@ -207,10 +213,10 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifySelectTabsButton: Verified that the \"Select tabs\" menu button exists")
     }
 
-    fun verifyShareAllTabsButton() {
-        Log.i(TAG, "verifyShareAllTabsButton: Trying to verify that the \"Share all tabs\" menu button exists")
-        composeTestRule.dropdownMenuItemShareAllTabs().assertExists()
-        Log.i(TAG, "verifyShareAllTabsButton: Verified that the \"Share all tabs\" menu button exists")
+    fun verifyShareTabsButton() {
+        Log.i(TAG, "verifyShareTabsButton: Trying to verify that the \"Share\" menu button exists")
+        composeTestRule.dropdownMenuItemShare().assertExists()
+        Log.i(TAG, "verifyShareTabsButton: Verified that the \"Share\" menu button exists")
     }
 
     fun verifyRecentlyClosedTabsButton() {
@@ -332,6 +338,10 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
             selectTab(tab, numberOfSelectedTabs = tabTitles.indexOf(tab) + 1)
         }
 
+        Log.i(TAG, "createCollection: Trying to click the three dot button")
+        composeTestRule.threeDotButton().performClick()
+        Log.i(TAG, "createCollection: Clicked the three dot button")
+
         clickCollectionsButton(composeTestRule) {
             if (!firstCollection) {
                 clickAddNewCollection()
@@ -448,7 +458,7 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
 
         fun clickSignInToSyncButton(interact: SyncSignInRobot.() -> Unit): SyncSignInRobot.Transition {
             Log.i(TAG, "clickSignInToSyncButton: Trying to click the sign in to sync button and wait for $waitingTimeShort ms for a new window")
-            itemContainingText(getStringResource(R.string.sync_sign_in))
+            itemWithText(getStringResource(R.string.tab_manager_empty_synced_tabs_page_sign_in_cta))
                 .clickAndWaitForNewWindow(waitingTimeShort)
             Log.i(TAG, "clickSignInToSyncButton: Clicked the sign in to sync button and waited for $waitingTimeShort ms for a new window")
             SyncSignInRobot().interact()
@@ -539,10 +549,19 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
             return CollectionRobot.Transition()
         }
 
-        fun clickShareAllTabsButton(interact: ShareOverlayRobot.() -> Unit): ShareOverlayRobot.Transition {
-            Log.i(TAG, "clickShareAllTabsButton: Trying to click the \"Share all tabs\" menu button button")
-            composeTestRule.dropdownMenuItemShareAllTabs().performClick()
-            Log.i(TAG, "clickShareAllTabsButton: Clicked the \"Share all tabs\" menu button button")
+        fun clickSelectTabsButton(interact: TabDrawerRobot.() -> Unit): Transition {
+            Log.i(TAG, "clickSelectTabsButton: Trying to click the \"Select tabs\" menu button")
+            composeTestRule.dropdownMenuItemSelectTabs().performClick()
+            Log.i(TAG, "clickSelectTabsButton: Clicked the \"Select tabs\" menu button")
+
+            TabDrawerRobot(composeTestRule).interact()
+            return Transition(composeTestRule)
+        }
+
+        fun clickShareTabsButton(interact: ShareOverlayRobot.() -> Unit): ShareOverlayRobot.Transition {
+            Log.i(TAG, "clickShareTabsButton: Trying to click the \"Share\" menu button")
+            composeTestRule.dropdownMenuItemShare().performClick()
+            Log.i(TAG, "clickShareTabsButton: Clicked the \"Share\" menu button button")
 
             ShareOverlayRobot().interact()
             return ShareOverlayRobot.Transition()
@@ -617,6 +636,11 @@ private fun ComposeTestRule.privateTabsList() = onNodeWithTag(TabsTrayTestTag.PR
 private fun ComposeTestRule.syncedTabsList() = onNodeWithTag(TabsTrayTestTag.SYNCED_TABS_LIST)
 
 /**
+ * Obtains the unauthenticated synced tabs page.
+ */
+private fun ComposeTestRule.unauthenticatedSyncedTabsPage() = onNodeWithTag(TabsTrayTestTag.UNAUTHENTICATED_SYNCED_TABS_PAGE)
+
+/**
  * Obtains the empty normal tabs list.
  */
 private fun ComposeTestRule.emptyNormalTabsList() = onNodeWithTag(TabsTrayTestTag.EMPTY_NORMAL_TABS_LIST)
@@ -677,14 +701,14 @@ private fun ComposeTestRule.dropdownMenuItemRecentlyClosedTabs() = onNodeWithTag
 private fun ComposeTestRule.dropdownMenuItemSelectTabs() = onNodeWithTag(TabsTrayTestTag.SELECT_TABS)
 
 /**
- * Obtains the dropdown menu item to share all tabs.
- */
-private fun ComposeTestRule.dropdownMenuItemShareAllTabs() = onNodeWithTag(TabsTrayTestTag.SHARE_ALL_TABS)
-
-/**
  * Obtains the dropdown menu item to access tab settings.
  */
 private fun ComposeTestRule.dropdownMenuItemTabSettings() = onNodeWithTag(TabsTrayTestTag.TAB_SETTINGS)
+
+/**
+ * Obtains the dropdown menu item to share tabs.
+ */
+private fun ComposeTestRule.dropdownMenuItemShare() = onNodeWithTag(TabsTrayTestTag.SHARE_BUTTON)
 
 /**
  * Obtains the normal tabs counter.

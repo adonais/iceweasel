@@ -94,28 +94,6 @@ impl Quantity for QuantityMetric {
 
     /// **Test-only API.**
     ///
-    /// Get the currently stored value.
-    /// This doesn't clear the stored value.
-    ///
-    /// ## Arguments
-    ///
-    /// * `ping_name` - the storage name to look into.
-    ///
-    /// ## Return value
-    ///
-    /// Returns the stored value or `None` if nothing stored.
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i64> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
-        match self {
-            QuantityMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            QuantityMetric::Child(_) => {
-                panic!("Cannot get test value for quantity metric in non-main process!",)
-            }
-        }
-    }
-
-    /// **Test-only API.**
-    ///
     /// Gets the number of recorded errors for the given metric and error type.
     ///
     /// # Arguments
@@ -137,6 +115,30 @@ impl Quantity for QuantityMetric {
     }
 }
 
+#[inherent]
+impl glean::TestGetValue<i64> for QuantityMetric {
+    /// **Test-only API.**
+    ///
+    /// Get the currently stored value.
+    /// This doesn't clear the stored value.
+    ///
+    /// ## Arguments
+    ///
+    /// * `ping_name` - the storage name to look into.
+    ///
+    /// ## Return value
+    ///
+    /// Returns the stored value or `None` if nothing stored.
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<i64> {
+        match self {
+            QuantityMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            QuantityMetric::Child(_) => {
+                panic!("Cannot get test value for quantity metric in non-main process!",)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::{common_test::*, ipc, metrics};
@@ -148,7 +150,7 @@ mod test {
         let metric = &metrics::test_only_ipc::a_quantity;
         metric.set(14);
 
-        assert_eq!(14, metric.test_get_value("test-ping").unwrap());
+        assert_eq!(14, metric.test_get_value(Some("test-ping".to_string())).unwrap());
     }
 
     #[test]

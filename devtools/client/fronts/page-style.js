@@ -35,6 +35,10 @@ class PageStyleFront extends FrontClassWithSpec(pageStyleSpec) {
     return this.inspector.walker;
   }
 
+  get traits() {
+    return this._form.traits;
+  }
+
   get supportsFontStretchLevel4() {
     return this._form.traits && this._form.traits.fontStretchLevel4;
   }

@@ -1,35 +1,20 @@
 [DEFAULT]
 support-files = [
   "amosigned.xpi",
-  "bug540558.html",
-  "bug638292.html",
-  "bug645699.html",
   "cookieRedirect.sjs",
   "corrupt.xpi",
   "empty.xpi",
-  "enabled.html",
   "hashRedirect.sjs",
   "head.js",
   "incompatible.xpi",
-  "installchrome.html",
-  "installtrigger.html",
-  "installtrigger_frame.html",
   "mozaddonmanager.html",
   "navigate.html",
   "recommended.xpi",
   "redirect.sjs",
-  "startsoftwareupdate.html",
-  "triggerredirect.html",
   "unsigned.xpi",
   "unsigned_mv3.xpi",
   "../xpcshell/data/signing_checks/privileged.xpi",
 ]
-
-["browser_amosigned_trigger.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_amosigned_trigger_iframe.js"]
-https_first_disabled = true # Bug 1737265
 
 ["browser_amosigned_url.js"]
 https_first_disabled = true # Bug 1737265
@@ -37,28 +22,8 @@ https_first_disabled = true # Bug 1737265
 ["browser_auth.js"]
 https_first_disabled = true # Bug 1737265
 
-["browser_badargs.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_badargs2.js"]
-https_first_disabled = true # Bug 1737265
-
 ["browser_block_fullscreen_prompt.js"]
 https_first_disabled = true # Bug 1737265
-
-["browser_bug540558.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_bug611242.js"]
-
-["browser_bug638292.js"]
-
-["browser_bug645699.js"]
-
-["browser_bug645699_postDownload.js"]
-
-["browser_bug672485.js"]
-skip-if = ["true"] # disabled due to a leak. See bug 682410.
 
 ["browser_containers.js"]
 
@@ -73,19 +38,11 @@ https_first_disabled = true # Bug 1737265
 https_first_disabled = true # Bug 1737265
 skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt"] # Bug 1815128
 
-
 ["browser_empty.js"]
-
-["browser_enabled.js"]
 
 ["browser_httphash.js"]
 
-["browser_installchrome.js"]
-https_first_disabled = true # Bug 1737265
-
 ["browser_localfile.js"]
-
-["browser_localfile2.js"]
 
 ["browser_localfile3.js"]
 
@@ -100,27 +57,7 @@ run-if = ["debug"]  # This is a test for leaks, see comment in the test.
 
 ["browser_privatebrowsing.js"]
 
-["browser_relative.js"]
-https_first_disabled = true # Bug 1737265
-
 ["browser_required_useractivation.js"]
-
-["browser_softwareupdate.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_trigger_redirect.js"]
-https_first_disabled = true # Bug 1737265
-
-["browser_unsigned_trigger.js"]
-https_first_disabled = true # Bug 1737265
-run-if = ["!require_signing"]
-
-["browser_unsigned_trigger_iframe.js"]
-https_first_disabled = true # Bug 1737265
-run-if = ["!require_signing"]
-
-["browser_unsigned_trigger_xorigin.js"]
-https_first_disabled = true # Bug 1737265
 
 ["browser_unsigned_url.js"]
 https_first_disabled = true # Bug 1737265

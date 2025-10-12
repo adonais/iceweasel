@@ -45,15 +45,25 @@ class TaskbarTab {
   #userContextId;
   // URL opened when a Taskbar Tab is opened from the Taskbar.
   #startUrl;
+  // Human-readable name of this Taskbar Tab.
+  #name;
   // The path to the shortcut associated with this Taskbar Tab, *relative
   // to the `Start Menu\Programs` folder.*
   #shortcutRelativePath;
 
-  constructor({ id, scopes, startUrl, userContextId, shortcutRelativePath }) {
+  constructor({
+    id,
+    scopes,
+    startUrl,
+    name,
+    userContextId,
+    shortcutRelativePath,
+  }) {
     this.#id = id;
     this.#scopes = scopes;
     this.#userContextId = userContextId;
     this.#startUrl = startUrl;
+    this.#name = name;
 
     this.#shortcutRelativePath = shortcutRelativePath ?? null;
   }
@@ -72,6 +82,10 @@ class TaskbarTab {
 
   get startUrl() {
     return this.#startUrl;
+  }
+
+  get name() {
+    return this.#name;
   }
 
   get shortcutRelativePath() {
@@ -111,6 +125,7 @@ class TaskbarTab {
       scopes: this.scopes,
       userContextId: this.userContextId,
       startUrl: this.startUrl,
+      name: this.name,
       ...maybe(this, "shortcutRelativePath"),
     };
   }
@@ -191,7 +206,9 @@ export class TaskbarTabsRegistry {
           Current Version: ${kStorageVersion}
           File Version: ${jsonObject.version}`);
     }
-    this.#taskbarTabs = jsonObject.taskbarTabs.map(tt => new TaskbarTab(tt));
+    this.#taskbarTabs = jsonObject.taskbarTabs.map(
+      tt => new TaskbarTab(migrateStoredTaskbarTab(tt))
+    );
   }
 
   toJSON() {
@@ -208,9 +225,13 @@ export class TaskbarTabsRegistry {
    *
    * @param {nsIURI} aUrl - The URL to match or derive the scope and start URL from.
    * @param {number} aUserContextId - The container to start a Taskbar Tab in.
+   * @param {object} aDetails - Additional options to use if it needs to be
+   * created.
+   * @param {object} aDetails.manifest - The Web app manifest that should be
+   * associated with this Taskbar Tab.
    * @returns {TaskbarTab} The matching or created Taskbar Tab.
    */
-  findOrCreateTaskbarTab(aUrl, aUserContextId) {
+  findOrCreateTaskbarTab(aUrl, aUserContextId, { manifest = {} } = {}) {
     let taskbarTab = this.findTaskbarTab(aUrl, aUserContextId);
     if (taskbarTab) {
       return taskbarTab;
@@ -221,7 +242,8 @@ export class TaskbarTabsRegistry {
       id,
       scopes: [{ hostname: aUrl.host }],
       userContextId: aUserContextId,
-      startUrl: aUrl.prePath,
+      name: manifest.name ?? generateName(aUrl),
+      startUrl: manifest.start_url ?? aUrl.prePath,
     });
     this.#taskbarTabs.push(taskbarTab);
 
@@ -432,4 +454,59 @@ export class TaskbarTabsRegistryStorage {
 
     return this.#saveQueue;
   }
+}
+
+/**
+ * Mutates the provided Taskbar Tab object from storage so it contains all
+ * current properties.
+ *
+ * @param {object} aStored - The object stored in the database; this will be
+ * mutated as part of migrating it.
+ * @returns {object} aStored exactly.
+ */
+function migrateStoredTaskbarTab(aStored) {
+  if (typeof aStored.name !== "string") {
+    try {
+      aStored.name = generateName(Services.io.newURI(aStored.startUrl));
+    } catch (e) {
+      lazy.logConsole.warn(`Migrating ${aStored.id} failed:`, e);
+    }
+  }
+
+  return aStored;
+}
+
+/**
+ * Generates a name for the Taskbar Tab appropriate for user facing UI.
+ *
+ * @param {nsIURI} aUri - The URI to derive the name from.
+ * @returns {string} A name suitable for user facing UI.
+ */
+function generateName(aUri) {
+  // https://www.subdomain.example.co.uk/test
+
+  // ["www", "subdomain", "example", "co", "uk"]
+  let hostParts = aUri.host.split(".");
+
+  // ["subdomain", "example", "co", "uk"]
+  if (hostParts[0] === "www") {
+    hostParts.shift();
+  }
+
+  let suffixDomainCount = Services.eTLD
+    .getKnownPublicSuffix(aUri)
+    .split(".").length;
+
+  // ["subdomain", "example"]
+  hostParts.splice(-suffixDomainCount);
+
+  let name = hostParts
+    // ["example", "subdomain"]
+    .reverse()
+    // ["Example", "Subdomain"]
+    .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+    // "Example Subdomain"
+    .join(" ");
+
+  return name;
 }

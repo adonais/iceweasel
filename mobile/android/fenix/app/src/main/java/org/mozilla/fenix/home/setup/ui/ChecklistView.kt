@@ -32,6 +32,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 import org.mozilla.fenix.home.sessioncontrol.SetupChecklistInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 private const val ROTATE_180 = 180F
 
@@ -79,7 +80,7 @@ private fun Task(
     ) {
         if (task.isCompleted) {
             Icon(
-                painter = painterResource(id = R.drawable.mozac_ic_checkmark_24),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_checkmark_24),
                 contentDescription = stringResource(R.string.a11y_completed_task_description),
                 modifier = Modifier.padding(16.dp),
                 tint = AcornTheme.colors.iconPrimary,

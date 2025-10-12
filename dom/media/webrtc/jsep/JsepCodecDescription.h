@@ -274,7 +274,7 @@ class JsepCodecDescription {
   bool mStronglyPreferred;
   sdp::Direction mDirection;
   // Will hold constraints from both fmtp and rid
-  EncodingConstraints mConstraints;
+  VideoEncodingConstraints mConstraints;
 };
 
 class JsepAudioCodecDescription final : public JsepCodecDescription {

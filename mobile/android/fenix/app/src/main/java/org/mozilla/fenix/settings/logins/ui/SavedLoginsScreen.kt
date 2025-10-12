@@ -4,18 +4,24 @@
 
 package org.mozilla.fenix.settings.logins.ui
 
+import android.view.WindowManager
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,21 +31,25 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -60,6 +70,7 @@ import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.compose.list.SelectableFaviconListItem
 import org.mozilla.fenix.settings.logins.ui.LoginsSortOrder.Alphabetical.isGuidToDelete
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The UI host for the Saved Logins list screen and related sub screens.
@@ -73,12 +84,45 @@ internal fun SavedLoginsScreen(
     buildStore: (NavHostController) -> LoginsStore,
     startDestination: String = LoginsDestinations.LIST,
 ) {
+    val activityContext = LocalActivity.current as ComponentActivity
     val navController = rememberNavController()
     val store = buildStore(navController)
 
     DisposableEffect(LocalLifecycleOwner.current) {
+        val observer = object : DefaultLifecycleObserver {
+            override fun onPause(owner: LifecycleOwner) {
+                super.onPause(owner)
+                activityContext.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
+                if (store.state.pinVerificationState != PinVerificationState.Started) {
+                    store.dispatch(BiometricAuthenticationAction.AuthenticationFailed)
+                    store.dispatch(BiometricAuthenticationDialogAction(false))
+                } else {
+                    store.dispatch(PinVerificationAction.Duplicate)
+                }
+            }
+
+            override fun onResume(owner: LifecycleOwner) {
+                super.onResume(owner)
+                activityContext.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+
+                val noPinVerification =
+                    store.state.pinVerificationState == PinVerificationState.Inert
+                val pinVerificationDuplicated =
+                    store.state.pinVerificationState == PinVerificationState.Duplicated
+                if (noPinVerification || pinVerificationDuplicated) {
+                    store.dispatch(BiometricAuthenticationDialogAction(true))
+                } else {
+                    store.dispatch(PinVerificationAction.None)
+                }
+            }
+        }
+        ProcessLifecycleOwner.get().lifecycle.addObserver(observer)
+
         onDispose {
+            activityContext.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             store.dispatch(ViewDisposed)
+            ProcessLifecycleOwner.get().lifecycle.removeObserver(observer)
         }
     }
 
@@ -127,39 +171,49 @@ private fun LoginsList(store: LoginsStore) {
         contentWindowInsets = WindowInsets(0.dp),
     ) { paddingValues ->
 
+        if (state.biometricAuthenticationDialogState.shouldShow) {
+            BiometricAuthenticationDialog(store = store)
+        }
+
         if (state.searchText.isNullOrEmpty() && state.loginItems.isEmpty()) {
-            EmptyList(dispatcher = store::dispatch)
+            EmptyList(dispatcher = store::dispatch, paddingValues = paddingValues)
             return@Scaffold
         }
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f, false)
-                    .padding(paddingValues)
-                    .padding(vertical = 16.dp)
-                    .semantics {
-                        collectionInfo =
-                            CollectionInfo(rowCount = state.loginItems.size, columnCount = 1)
-                    },
-            ) {
-                itemsIndexed(state.loginItems) { _, item ->
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (state.biometricAuthenticationState == BiometricAuthenticationState.Authorized) {
+                LazyColumn(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .width(FirefoxTheme.layout.size.containerMaxWidth)
+                        .weight(1f, false)
+                        .semantics {
+                            collectionInfo =
+                                CollectionInfo(rowCount = state.loginItems.size, columnCount = 1)
+                        },
+                ) {
+                    itemsIndexed(state.loginItems) { _, item ->
 
-                    if (state.isGuidToDelete(item.guid)) {
-                        return@itemsIndexed
+                        if (state.isGuidToDelete(item.guid)) {
+                            return@itemsIndexed
+                        }
+
+                        SelectableFaviconListItem(
+                            label = item.url.trimmed(),
+                            url = item.url,
+                            isSelected = false,
+                            onClick = { store.dispatch(LoginClicked(item)) },
+                            description = item.username.trimmed(),
+                        )
                     }
-
-                    SelectableFaviconListItem(
-                        label = item.url.trimmed(),
-                        url = item.url,
-                        isSelected = false,
-                        onClick = { store.dispatch(LoginClicked(item)) },
-                        description = item.username.trimmed(),
-                    )
                 }
             }
 
             AddPasswordItem(
+                modifier = Modifier.width(FirefoxTheme.layout.size.containerMaxWidth),
                 onAddPasswordClicked = { store.dispatch(AddLoginAction.InitAdd) },
             )
         }
@@ -168,11 +222,13 @@ private fun LoginsList(store: LoginsStore) {
 
 @Composable
 private fun AddPasswordItem(
+    modifier: Modifier = Modifier,
     onAddPasswordClicked: () -> Unit,
 ) {
     IconListItem(
         label = stringResource(R.string.preferences_logins_add_login_2),
-        beforeIconPainter = painterResource(R.drawable.ic_new),
+        modifier = modifier,
+        beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_plus_24),
         onClick = { onAddPasswordClicked() },
     )
 }
@@ -181,17 +237,21 @@ private fun AddPasswordItem(
 @Suppress("MaxLineLength")
 private fun EmptyList(
     dispatcher: (LoginsAction) -> Unit,
+    paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
+            .padding(paddingValues)
             .fillMaxSize(),
-        contentAlignment = Alignment.TopStart,
+        contentAlignment = Alignment.TopCenter,
     ) {
         Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .width(FirefoxTheme.layout.size.containerMaxWidth),
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = modifier.padding(16.dp),
         ) {
             Text(
                 text = String.format(
@@ -251,6 +311,8 @@ private fun LoginsListTopBar(
                         style = FirefoxTheme.typography.headline6,
                         text = stringResource(R.string.preferences_passwords_saved_logins_2),
                     )
+                } else {
+                    SearchBar(text, store)
                 }
             },
             navigationIcon = {
@@ -265,7 +327,7 @@ private fun LoginsListTopBar(
                     contentDescription = null,
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.mozac_ic_back_24),
+                        painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                         contentDescription = stringResource(R.string.logins_navigate_back_button_content_description),
                         tint = iconColor,
                     )
@@ -305,48 +367,66 @@ private fun LoginsListTopBar(
                             tint = iconColor,
                         )
                     }
-                } else {
-                    Box {
-                        TextField(
-                            value = text,
-                            placeholder = stringResource(R.string.preferences_passwords_saved_logins_search_2),
-                            onValueChange = {
-                                store.dispatch(SearchLogins(it, store.state.loginItems))
-                            },
-                            errorText = "",
-                            modifier = Modifier
-                                .background(color = FirefoxTheme.colors.layer1)
-                                .fillMaxWidth(),
-                            trailingIcons = {
-                                if (text.isNotBlank()) {
-                                    IconButton(
-                                        onClick = {
-                                            store.dispatch(
-                                                SearchLogins(
-                                                    "",
-                                                    store.state.loginItems,
-                                                ),
-                                            )
-                                        },
-                                        contentDescription = null,
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.mozac_ic_cross_24),
-                                            contentDescription = null,
-                                            tint = iconColor,
-                                        )
-                                    }
-                                }
-                            },
-                            colors = TextFieldColors.default(
-                                placeholderColor = FirefoxTheme.colors.textPrimary,
-                                cursorColor = Color.DarkGray,
-                            ),
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                }
+            },
+        )
+    }
+}
+
+private val IconButtonHeight = 48.dp
+
+@Composable
+private fun SearchBar(
+    text: String,
+    store: LoginsStore,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+) {
+    val focusRequester = remember { FocusRequester() }
+    SideEffect {
+        focusRequester.requestFocus()
+    }
+
+    Box {
+        TextField(
+            value = text,
+            placeholder = stringResource(R.string.preferences_passwords_saved_logins_search_2),
+            onValueChange = {
+                store.dispatch(SearchLogins(searchText = it, loginItems = store.state.loginItems))
+            },
+            errorText = "",
+            modifier = Modifier
+                .background(color = FirefoxTheme.colors.layer1)
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
+            minHeight = IconButtonHeight,
+            trailingIcons = {
+                if (text.isNotBlank()) {
+                    IconButton(
+                        onClick = {
+                            store.dispatch(
+                                SearchLogins(
+                                    searchText = "",
+                                    loginItems = store.state.loginItems,
+                                ),
+                            )
+                        },
+                        contentDescription = null,
+                    ) {
+                        Icon(
+                            painter = painterResource(iconsR.drawable.mozac_ic_cross_24),
+                            contentDescription = null,
+                            tint = FirefoxTheme.colors.iconPrimary,
                         )
                     }
                 }
             },
+            colors = TextFieldColors.default(
+                placeholderColor = FirefoxTheme.colors.textPrimary,
+                cursorColor = FirefoxTheme.colors.layerAccent,
+            ),
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions,
         )
     }
 }

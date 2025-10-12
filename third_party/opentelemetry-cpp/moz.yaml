@@ -43,6 +43,12 @@ vendoring:
    - exporters/memory/include/opentelemetry/exporters/memory/in_memory_data.h
    - exporters/memory/include/opentelemetry/exporters/memory/in_memory_span*.h
    - exporters/memory/src/in_memory_span_exporter_factory.cc
+   - exporters/otlp/include/opentelemetry/exporters/otlp/otlp_populate_attribute_utils.h
+   - exporters/otlp/include/opentelemetry/exporters/otlp/otlp_recordable*.h
+   - exporters/otlp/include/opentelemetry/exporters/otlp/protobuf_include_prefix.h
+   - exporters/otlp/include/opentelemetry/exporters/otlp/protobuf_include_suffix.h
+   - exporters/otlp/src/otlp_populate_attribute_utils.cc
+   - exporters/otlp/src/otlp_recordable*.cc
    - sdk/include/opentelemetry/*.h
    - sdk/include/opentelemetry/sdk/common/*.h
    - sdk/include/opentelemetry/sdk/instrumentationscope/*.h
@@ -61,6 +67,7 @@ vendoring:
 
   keep:
    - opentelemetry-config.mozbuild
+   - third_party/
 
   patches:
    - patches/fix-ambiguous-holds_alternative.patch # Maybe we should upstream this

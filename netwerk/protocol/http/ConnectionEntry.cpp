@@ -265,7 +265,10 @@ bool ConnectionEntry::RestrictConnections() {
   // There is a concern that a host is using a mix of HTTP/1 and SPDY.
   // In that case we don't want to restrict connections just because
   // there is a single active HTTP/1 session in use.
-  if (mUsingSpdy && mActiveConns.Length()) {
+  // When a tunnel is used, we should avoid bypassing connection restrictions.
+  // Otherwise, we might create too many unused tunnels.
+  if (mUsingSpdy && mActiveConns.Length() &&
+      !(mConnInfo->UsingHttpsProxy() && mConnInfo->UsingConnect())) {
     bool confirmedRestrict = false;
     for (uint32_t index = 0; index < mActiveConns.Length(); ++index) {
       HttpConnectionBase* conn = mActiveConns[index];

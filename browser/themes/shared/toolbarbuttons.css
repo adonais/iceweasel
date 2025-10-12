@@ -6,8 +6,6 @@
 
 :root {
   --toolbar-start-end-padding: 8px;
-  --toolbarbutton-outer-padding: 2px;
-  --toolbarbutton-inner-padding: 8px;
 
   --toolbarbutton-hover-background: color-mix(in srgb, currentColor 17%, transparent);
   --toolbarbutton-active-background: color-mix(in srgb, currentColor 30%, transparent);
@@ -36,24 +34,42 @@
 
   --toolbarseparator-color: color-mix(in srgb, currentColor 60%, transparent);
 
+  /*** Button sizes w/ adjustments for small windows and uidensity modes. ***/
+
+  --toolbarbutton-outer-padding: 2px;
+  --toolbarbutton-inner-padding: 8px;
   --bookmark-block-padding: 4px;
 
-  &[uidensity="compact"] {
-    --toolbarbutton-outer-padding: 3px;
-    --toolbarbutton-inner-padding: 6px;
-    --bookmark-block-padding: 1px;
-  }
-
-  &[uidensity="touch"] {
+  &:where([uidensity="touch"]) {
     --toolbarbutton-inner-padding: 9px;
     --bookmark-block-padding: 7px;
+  }
+  @media (width <= 900px) {
+    --toolbarbutton-outer-padding: 1px;
+  }
+  @media (width <= 800px) {
+    --toolbarbutton-inner-padding: 7px;
+    &:where([uidensity="touch"]) {
+      --toolbarbutton-inner-padding: 8px;
+    }
+  }
+  /* 700px is just above half of the popular 1366px screen width, so two browser
+     windows put next to each other will be below this threshold. */
+  @media (width <= 700px) {
+    --toolbarbutton-inner-padding: 6px;
+  }
+  &:where([uidensity="compact"]) {
+    --toolbarbutton-inner-padding: 6px;
+    --bookmark-block-padding: 1px;
   }
 }
 
 #TabsToolbar {
   /* Override the inner padding to ensure the dimensions match the tabs, but also making sure
      different types of buttons (combined-buttons-dropmarker or text) still look correct. */
-  --toolbarbutton-inner-padding: calc((var(--tab-min-height) - 16px) / 2);
+  @media (width > 900px) {
+    --toolbarbutton-inner-padding: calc((var(--tab-min-height) - 16px) / 2);
+  }
 }
 
 /* Primary toolbar buttons */
@@ -223,6 +239,10 @@ toolbar .toolbaritem-combined-buttons {
       content: "";
       border-inline-start: 1px solid currentColor;
     }
+
+    toolbar & {
+      color: light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 30%, transparent));
+    }
   }
 
   > separator:has(+ toolbarbutton:not([disabled]):hover),
@@ -231,8 +251,11 @@ toolbar .toolbaritem-combined-buttons {
   }
 }
 
-toolbar .toolbaritem-combined-buttons > separator {
-  color: light-dark(color-mix(in srgb, currentColor 20%, transparent), color-mix(in srgb, currentColor 30%, transparent));
+.toolbarbutton-combined-buttons-dropmarker {
+  appearance: none;
+  -moz-context-properties: fill;
+  fill: currentColor;
+  list-style-image: url("chrome://global/skin/icons/arrow-down-12.svg");
 }
 
 /* Toolbar button animations */

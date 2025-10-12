@@ -10,10 +10,6 @@
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
   <string name="content_description_menu">Pilihan séjén</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Hurungkeun langlangan pribadi</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Pareuman langlangan pribadi</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Paluruh atawa asupkeun alamat</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -248,8 +244,6 @@
   <string name="browser_menu_new_private_tab">Tab nyamuni anyar</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Kecap sandi</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Pindah ka situs mobile</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">Édit markah</string>
   <!--
@@ -318,10 +312,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Tab anjeun keur disingkronkeun! Pilih ti nu ditinggalkeun dina séjén parabot anjeun.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Tutup</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -532,7 +524,7 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Sesuaikeun</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Asup pikeun nyingkronkeun tab, markah, kecap sandi, jeung sajabana.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Asup pikeun nyingkronkeun tab, markah, kecap sandi, jeung sajabana.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Akun Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -791,7 +783,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Singkronkeun tur simpen data anjeun</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Singkronkeun tur simpen data anjeun</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Asup pikeun nyambungkeun deui</string>
   <!-- Preference for removing FxA account -->
@@ -1029,9 +1021,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Hapus jujutan</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Mupus jujutan</string>
+  <string name="history_delete_multiple_items_snackbar">Mupus jujutan</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Mupus %1$s</string>
+  <string name="history_delete_single_item_snackbar">Mupus %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Pupus</string>
   <!--
@@ -1068,8 +1060,6 @@
   <string name="tab_crash_close">Tutup tab</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Malikkeun tab</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s kudu dimimitian deui</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">Kirimkeun laporan kagagalan kalawan otomatis</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
@@ -1292,12 +1282,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d tab dipilih</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Tab diteundeun!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Koléksi diteundeun!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Koléksi diteundeun!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Tab disimpen!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Tab disimpen!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Tutup</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1344,7 +1332,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Asup ka Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Singkronkeun tur simpen data</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Singkronkeun tur simpen data</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Kirim ka sadaya parangkat</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1456,8 +1444,6 @@
   <string name="tab_collection_dialog_message">Anjeun yakin rék mupus %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Pupus</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL ditiron</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Ieu mangrupikeun conto téks. Di dieu pikeun nunjukkeun kumaha téks bakal némbongan nalika anjeun ningkatkeun atanapi ngirangan ukuran dina sétélan ieu.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1544,9 +1530,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Tab dikirim!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Tab dikirim!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Tab dikirim!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Tab dikirim!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Teu tiasa ngirim</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1981,12 +1967,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Asupkeun string pamaluruhan</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Pariksa yén string pamaluruhan akur jeung format Conto</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Nyieun %s</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Neundeun %s</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Mupus %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Ngarah bisa:</string>
   <!-- First step for the allowing a permission -->

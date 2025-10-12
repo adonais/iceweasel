@@ -48,7 +48,7 @@ InProcessBrowserChildMessageManager::Create(nsDocShell* aShell,
 
 bool InProcessBrowserChildMessageManager::DoSendBlockingMessage(
     const nsAString& aMessage, StructuredCloneData& aData,
-    nsTArray<StructuredCloneData>* aRetVal) {
+    nsTArray<UniquePtr<StructuredCloneData>>* aRetVal) {
   SameProcessMessageQueue* queue = SameProcessMessageQueue::Get();
   queue->Flush();
 

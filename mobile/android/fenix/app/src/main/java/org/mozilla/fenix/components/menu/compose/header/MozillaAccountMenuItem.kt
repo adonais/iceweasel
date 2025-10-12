@@ -48,6 +48,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Image
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
 
 private val BUTTON_HEIGHT = 56.dp
 private val BUTTON_SHAPE = RoundedCornerShape(size = 4.dp)
@@ -133,7 +134,7 @@ internal fun MozillaAccountMenuItem(
                         FirefoxTheme.colors.textSecondary
                     },
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = 1,
+                    maxLines = 2,
                     style = FirefoxTheme.typography.body2
                         .merge(
                             textDirection = TextDirection.Content,
@@ -148,7 +149,7 @@ internal fun MozillaAccountMenuItem(
 @Composable
 private fun FallbackAvatarIcon() {
     Icon(
-        painter = painterResource(id = R.drawable.mozac_ic_avatar_circle_24),
+        painter = painterResource(id = iconsR.drawable.mozac_ic_avatar_circle_24),
         contentDescription = null,
         tint = FirefoxTheme.colors.iconPrimary,
     )
@@ -157,7 +158,7 @@ private fun FallbackAvatarIcon() {
 @Composable
 private fun PrivateWarningAvatarIcon() {
     Icon(
-        painter = painterResource(id = R.drawable.mozac_ic_avatar_warning_circle_fill_critical_private_24),
+        painter = painterResource(id = iconsR.drawable.mozac_ic_avatar_warning_circle_fill_critical_private_24),
         contentDescription = null,
         tint = Color.Unspecified,
     )
@@ -166,7 +167,7 @@ private fun PrivateWarningAvatarIcon() {
 @Composable
 private fun WarningAvatarIcon() {
     Icon(
-        painter = painterResource(id = R.drawable.mozac_ic_avatar_warning_circle_fill_critical_24),
+        painter = painterResource(id = iconsR.drawable.mozac_ic_avatar_warning_circle_fill_critical_24),
         contentDescription = null,
         tint = Color.Unspecified,
     )

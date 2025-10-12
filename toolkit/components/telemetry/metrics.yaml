@@ -49,6 +49,7 @@ legacy.telemetry:
       - 'nimbus-targeting-context'
       - 'third-party-modules'
       - 'temp-fog-initial-state'
+      - 'captcha-detection'
 
   profile_group_id:
     type: uuid
@@ -1081,6 +1082,7 @@ usage:
       - usage-reporting
       - baseline
       - onboarding-opt-out
+      - events
     no_lint:
       - BASELINE_PING
     description: |

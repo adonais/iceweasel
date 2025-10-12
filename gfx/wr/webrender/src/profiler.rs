@@ -20,6 +20,8 @@
 //! - A '_' token to start a new row.
 
 use api::{ColorF, ColorU};
+#[cfg(feature = "debugger")]
+use api::debugger::{ProfileCounterUpdate, ProfileCounterId};
 use glyph_rasterizer::profiler::GlyphRasterizeProfiler;
 use crate::renderer::DebugRenderer;
 use crate::device::query::GpuTimer;
@@ -629,6 +631,22 @@ impl Profiler {
         }
     }
 
+    #[cfg(feature = "debugger")]
+    pub fn collect_updates_for_debugger(&self) -> Vec<ProfileCounterUpdate> {
+        let mut updates = Vec::new();
+
+        for (i, counter) in self.counters.iter().enumerate() {
+            if let Some(value) = counter.get() {
+                updates.push(ProfileCounterUpdate {
+                    id: ProfileCounterId(i),
+                    value,
+                });
+            }
+        }
+
+        updates
+    }
+
     // Call at the end of every frame, after setting the counter values and before drawing the counters.
     pub fn update(&mut self) {
         let now = zeitstempel::now();
@@ -832,6 +850,11 @@ impl Profiler {
             }
             *evt = Event::None;
         }
+    }
+
+    #[cfg(feature = "debugger")]
+    pub fn counters(&self) -> &[Counter] {
+        &self.counters
     }
 
     pub fn get(&self, id: usize) -> Option<f64> {

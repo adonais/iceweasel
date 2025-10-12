@@ -81,10 +81,7 @@ bool Gecko_IsSignificantChild(const nsINode*, bool whitespace_is_significant);
 const nsINode* Gecko_GetLastChild(const nsINode*);
 const nsINode* Gecko_GetFlattenedTreeParentNode(const nsINode*);
 void Gecko_GetAnonymousContentForElement(const mozilla::dom::Element*,
-                                         nsIContent** stack_buffer,
-                                         size_t stack_buffer_cap,
-                                         size_t* stack_buffer_len,
-                                         nsTArray<nsIContent*>* excess_array);
+                                         nsTArray<nsIContent*>*);
 
 const nsTArray<RefPtr<nsINode>>* Gecko_GetAssignedNodes(
     const mozilla::dom::Element*);
@@ -594,6 +591,7 @@ float Gecko_MediaFeatures_GetResolution(const mozilla::dom::Document*);
 bool Gecko_MediaFeatures_PrefersReducedMotion(const mozilla::dom::Document*);
 bool Gecko_MediaFeatures_PrefersReducedTransparency(
     const mozilla::dom::Document*);
+bool Gecko_MediaFeatures_MacRTL(const mozilla::dom::Document*);
 mozilla::StylePrefersContrast Gecko_MediaFeatures_PrefersContrast(
     const mozilla::dom::Document*);
 mozilla::StylePrefersColorScheme Gecko_MediaFeatures_PrefersColorScheme(

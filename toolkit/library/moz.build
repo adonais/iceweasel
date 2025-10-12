@@ -141,8 +141,9 @@ if CONFIG["OS_ARCH"] == "WINNT" and CONFIG["CC_TYPE"] not in ("clang", "gcc"):
 DIRS += [
     "build",
     "buildid_reader",
-    "gtest",
 ]
+
+TEST_DIRS += ["gtest"]
 
 # js needs to come after xul for now, because it is an archive and its content
 # is discarded when it comes first.

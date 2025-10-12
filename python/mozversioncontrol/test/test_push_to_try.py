@@ -155,7 +155,7 @@ def test_push_to_try(repo, monkeypatch):
                 "new",
                 "-m",
                 "commit message",
-                "latest((@ ~ (empty() & description(exact:'')) ~ bookmarks()) | @-)",
+                'coalesce(@ ~ (empty() & description(exact:"")) ~ bookmarks(), @-)',
             ),
             (str(tool), "log", "-n0"),
             (

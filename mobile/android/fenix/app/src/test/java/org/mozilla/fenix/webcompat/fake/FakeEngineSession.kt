@@ -65,6 +65,8 @@ internal class FakeEngineSession(
 
     override fun restoreState(state: EngineSessionState): Boolean { return false }
 
+    override fun flushSessionState() {}
+
     override fun updateTrackingProtection(policy: TrackingProtectionPolicy) {}
 
     override fun toggleDesktopMode(enable: Boolean, reload: Boolean) {}

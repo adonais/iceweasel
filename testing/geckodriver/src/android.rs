@@ -438,20 +438,41 @@ impl AndroidHandler {
             "Launching {}/{}",
             self.process.package, self.process.activity
         );
-        self.process
-            .device
-            .launch(
+
+        // A counter to how many times to try launching the package.
+        let max_start_attempts = 2;
+        let mut n = 0;
+
+        loop {
+            match self.process.device.launch(
                 &self.process.package,
                 &self.process.activity,
                 &intent_arguments,
-            )
-            .map_err(|e| {
-                let message = format!(
-                    "Could not launch Android {}/{}: {}",
-                    self.process.package, self.process.activity, e
-                );
-                mozdevice::DeviceError::Adb(message)
-            })?;
+            ) {
+                Ok(_) => break,
+                Err(e) => {
+                    n += 1;
+                    if n < max_start_attempts
+                        && e.to_string().contains("Resource temporarily unavailable")
+                    {
+                        debug!(
+                            "Failed the {} attempt to launch Android {}/{}: {}, wait for 2 seconds and try starting again",
+                            n, self.process.package, self.process.activity, e
+                        );
+
+                        std::thread::sleep(std::time::Duration::from_secs(2));
+
+                        continue;
+                    } else {
+                        let message = format!(
+                            "Could not launch Android {}/{}: {}",
+                            self.process.package, self.process.activity, e
+                        );
+                        return Err(AndroidError::from(mozdevice::DeviceError::Adb(message)));
+                    }
+                }
+            }
+        }
 
         Ok(())
     }

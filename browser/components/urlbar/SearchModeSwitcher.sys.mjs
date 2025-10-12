@@ -51,7 +51,9 @@ export class SearchModeSwitcher {
 
     lazy.UrlbarPrefs.addObserver(this);
 
-    this.#popup = input.querySelector(".searchmode-switcher-popup");
+    this.#popup = /** @type {XULPopupElement} */ (
+      input.querySelector(".searchmode-switcher-popup")
+    );
 
     this.#toolbarbutton = input.querySelector(".searchmode-switcher");
 
@@ -137,12 +139,12 @@ export class SearchModeSwitcher {
       return;
     }
     if (event.type == "popupshowing") {
-      this.#toolbarbutton.setAttribute("aria-expanded", true);
+      this.#toolbarbutton.setAttribute("aria-expanded", "true");
       this.#onPopupShowing();
       return;
     }
     if (event.type == "popuphiding") {
-      this.#toolbarbutton.setAttribute("aria-expanded", false);
+      this.#toolbarbutton.setAttribute("aria-expanded", "false");
       return;
     }
     if (event.type == "keydown") {
@@ -271,9 +273,13 @@ export class SearchModeSwitcher {
     }
 
     let iconUrl = icon ? `url(${icon})` : null;
-    this.#input.querySelector(
-      ".searchmode-switcher-icon"
-    ).style.listStyleImage = iconUrl;
+    // Bug 1984069 - This uses an intermediate variable to keep documentation
+    // generation happy.
+    let element = /** @type {HTMLImageElement} */ (
+      this.#input.querySelector(".searchmode-switcher-icon")
+    );
+    // @ts-expect-error Bug 1982726 - CSS2Properties aren't available as TypeScript types
+    element.style.listStyleImage = iconUrl;
 
     if (label) {
       this.#input.document.l10n.setAttributes(
@@ -389,7 +395,19 @@ export class SearchModeSwitcher {
       this.#popup.insertBefore(menuitem, separator);
     }
 
-    // Add local options.
+    await this.#buildLocalSearchModeList(separator);
+
+    this.#popup.dispatchEvent(new Event("rebuild"));
+  }
+
+  /**
+   * Adds local options to the popup.
+   */
+  async #buildLocalSearchModeList(separator) {
+    if (!this.#input.isAddressbar) {
+      return;
+    }
+
     for (let { source, pref, restrict } of lazy.UrlbarUtils
       .LOCAL_SEARCH_MODES) {
       if (!lazy.UrlbarPrefs.get(pref)) {
@@ -416,11 +434,8 @@ export class SearchModeSwitcher {
         }
       );
 
-      menuitem.restrict = restrict;
       this.#popup.insertBefore(menuitem, separator);
     }
-
-    this.#popup.dispatchEvent(new Event("rebuild"));
   }
 
   search({ engine = null, restrict = null, openEngineHomePage = false } = {}) {

@@ -8,5 +8,17 @@
     <style name="NormalTheme" parent="NormalThemeBase" >
         <item name="fenixWordmarkText">@drawable/ic_wordmark_text_private</item>
     </style>
+    <style name="BottomSheet" parent="BottomSheetBase">
+        <item name="android:windowLightStatusBar">false</item>
 
+        <!-- Style the navigation bar -->
+        <item name="android:navigationBarColor">?attr/layer1</item>
+    </style>
+
+    <style name="TabTrayDialogStyle" parent="TabTrayDialogStyleBase">
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Style the navigation bar -->
+        <item name="android:navigationBarColor">@color/fx_mobile_layer_color_1</item>
+    </style>
 </resources>

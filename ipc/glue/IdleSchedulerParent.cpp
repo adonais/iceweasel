@@ -431,7 +431,7 @@ void IdleSchedulerParent::EnsureStarvationTimer() {
     NS_NewTimerWithFuncCallback(
         &sStarvationPreventer, StarvationCallback, nullptr,
         StaticPrefs::page_load_deprioritization_period(),
-        nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, "StarvationCallback");
+        nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, "StarvationCallback"_ns);
   }
 }
 

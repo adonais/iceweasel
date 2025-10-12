@@ -21,18 +21,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -267,14 +264,7 @@ private fun FeedbackStep(onLeaveFeedbackButtonClick: () -> Unit, modifier: Modif
 @FlexibleWindowLightDarkPreview
 @Composable
 private fun BottomSheetPreview() {
-    val density = LocalDensity.current
-    val sheetState = remember {
-        SheetState(
-            initialValue = SheetValue.Expanded,
-            density = density,
-            skipPartiallyExpanded = true,
-        )
-    }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     FirefoxTheme {
         BottomSheet(
@@ -293,14 +283,7 @@ private fun BottomSheetPreview() {
 @PreviewLightDark
 @Composable
 private fun PrePromptPreview() {
-    val density = LocalDensity.current
-    val sheetState = remember {
-        SheetState(
-            initialValue = SheetValue.Expanded,
-            density = density,
-            skipPartiallyExpanded = true,
-        )
-    }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     FirefoxTheme {
         BottomSheet(
@@ -319,14 +302,7 @@ private fun PrePromptPreview() {
 @PreviewLightDark
 @Composable
 private fun RatePromptPreview() {
-    val density = LocalDensity.current
-    val sheetState = remember {
-        SheetState(
-            initialValue = SheetValue.Expanded,
-            density = density,
-            skipPartiallyExpanded = true,
-        )
-    }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     FirefoxTheme {
         BottomSheet(
@@ -345,14 +321,7 @@ private fun RatePromptPreview() {
 @PreviewLightDark
 @Composable
 private fun FeedbackPromptPreview() {
-    val density = LocalDensity.current
-    val sheetState = remember {
-        SheetState(
-            initialValue = SheetValue.Expanded,
-            density = density,
-            skipPartiallyExpanded = true,
-        )
-    }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     FirefoxTheme {
         BottomSheet(
@@ -389,14 +358,7 @@ private fun InteractiveBottomSheetPreview() {
     val store = CustomReviewPromptStore(PrePrompt)
     val promptState by store.observeAsState(PrePrompt) { it }
 
-    val density = LocalDensity.current
-    val sheetState = remember {
-        SheetState(
-            initialValue = SheetValue.Expanded,
-            density = density,
-            skipPartiallyExpanded = true,
-        )
-    }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     FirefoxTheme {
         Box(

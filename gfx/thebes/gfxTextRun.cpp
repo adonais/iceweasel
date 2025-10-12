@@ -860,8 +860,6 @@ void gfxTextRun::GetLineHeightMetrics(Range aRange, gfxFloat& aAscent,
   aDescent = accumulatedMetrics.mDescent;
 }
 
-#define MEASUREMENT_BUFFER_SIZE 100
-
 void gfxTextRun::ClassifyAutoHyphenations(uint32_t aStart, Range aRange,
                                           nsTArray<HyphenType>& aHyphenBuffer,
                                           HyphenationState* aWordState) {
@@ -943,9 +941,10 @@ uint32_t gfxTextRun::BreakAndMeasureText(
 
   NS_ASSERTION(aStart + aMaxLength <= GetLength(), "Substring out of range");
 
-  Range bufferRange(
-      aStart, aStart + std::min<uint32_t>(aMaxLength, MEASUREMENT_BUFFER_SIZE));
-  PropertyProvider::Spacing spacingBuffer[MEASUREMENT_BUFFER_SIZE];
+  constexpr uint32_t kMeasurementBufferSize = 100;
+  Range bufferRange(aStart,
+                    aStart + std::min(aMaxLength, kMeasurementBufferSize));
+  PropertyProvider::Spacing spacingBuffer[kMeasurementBufferSize];
   bool haveSpacing = !!(mFlags & gfx::ShapedTextFlags::TEXT_ENABLE_SPACING);
   if (haveSpacing) {
     GetAdjustedSpacing(this, bufferRange, aProvider, spacingBuffer);
@@ -999,7 +998,7 @@ uint32_t gfxTextRun::BreakAndMeasureText(
       uint32_t oldHyphenBufferLength = hyphenBuffer.Length();
       bufferRange.start = i;
       bufferRange.end =
-          std::min(aStart + aMaxLength, i + MEASUREMENT_BUFFER_SIZE);
+          std::min(aStart + aMaxLength, i + kMeasurementBufferSize);
       // For spacing, we always overwrite the old data with the newly
       // fetched one. However, for hyphenation, hyphenation data sometimes
       // depends on the context in every word (if "hyphens: auto" is set).
@@ -1841,14 +1840,16 @@ void gfxTextRun::Dump(FILE* out) {
 }
 #endif
 
-gfxFontGroup::gfxFontGroup(nsPresContext* aPresContext,
+gfxFontGroup::gfxFontGroup(FontVisibilityProvider* aFontVisibilityProvider,
                            const StyleFontFamilyList& aFontFamilyList,
                            const gfxFontStyle* aStyle, nsAtom* aLanguage,
                            bool aExplicitLanguage,
                            gfxTextPerfMetrics* aTextPerf,
                            gfxUserFontSet* aUserFontSet, gfxFloat aDevToCssSize,
                            StyleFontVariantEmoji aVariantEmoji)
-    : mPresContext(aPresContext),  // Note that aPresContext may be null!
+    : mFontVisibilityProvider(
+          aFontVisibilityProvider),  // Note that mFontVisibilityProvider may be
+                                     // null!
       mFamilyList(aFontFamilyList),
       mStyle(*aStyle),
       mLanguage(aLanguage),
@@ -1942,7 +1943,7 @@ void gfxFontGroup::EnsureFontList() {
           generic != StyleGenericFontFamily::SystemUi) {
         mFallbackGeneric = generic;
       }
-      pfl->AddGenericFonts(mPresContext, generic, mLanguage, fonts);
+      pfl->AddGenericFonts(mFontVisibilityProvider, generic, mLanguage, fonts);
       if (mTextPerf) {
         mTextPerf->current.genericLookups++;
       }
@@ -1953,8 +1954,8 @@ void gfxFontGroup::EnsureFontList() {
   if (mFallbackGeneric == StyleGenericFontFamily::None && !mStyle.systemFont) {
     auto defaultLanguageGeneric = GetDefaultGeneric(mLanguage);
 
-    pfl->AddGenericFonts(mPresContext, defaultLanguageGeneric, mLanguage,
-                         fonts);
+    pfl->AddGenericFonts(mFontVisibilityProvider, defaultLanguageGeneric,
+                         mLanguage, fonts);
     if (mTextPerf) {
       mTextPerf->current.genericLookups++;
     }
@@ -1991,7 +1992,8 @@ void gfxFontGroup::AddPlatformFont(const nsACString& aName, bool aQuotedName,
 
   // Not known in the user font set ==> check system fonts
   gfxPlatformFontList::PlatformFontList()->FindAndAddFamilies(
-      mPresContext, StyleGenericFontFamily::None, aName, &aFamilyList,
+      mFontVisibilityProvider, StyleGenericFontFamily::None, aName,
+      &aFamilyList,
       aQuotedName ? gfxPlatformFontList::FindFamiliesFlags::eQuotedFamilyName
                   : gfxPlatformFontList::FindFamiliesFlags(0),
       &mStyle, mLanguage.get(), mDevToCssSize);
@@ -2155,7 +2157,7 @@ already_AddRefed<gfxFont> gfxFontGroup::GetDefaultFont() {
   }
 
   gfxPlatformFontList* pfl = gfxPlatformFontList::PlatformFontList();
-  FontFamily family = pfl->GetDefaultFont(mPresContext, &mStyle);
+  FontFamily family = pfl->GetDefaultFont(mFontVisibilityProvider, &mStyle);
   MOZ_ASSERT(!family.IsNull(),
              "invalid default font returned by GetDefaultFont");
 
@@ -2893,9 +2895,9 @@ void gfxFontGroup::InitScriptRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
                      syntheticLower, syntheticUpper)) {
         // fallback for small-caps variant glyphs
         if (!matchedFont->InitFakeSmallCapsRun(
-                mPresContext, aDrawTarget, aTextRun, aString + runStart,
-                aOffset + runStart, matchedLength, range.matchType,
-                range.orientation, aRunScript,
+                mFontVisibilityProvider, aDrawTarget, aTextRun,
+                aString + runStart, aOffset + runStart, matchedLength,
+                range.matchType, range.orientation, aRunScript,
                 mExplicitLanguage ? mLanguage.get() : nullptr, syntheticLower,
                 syntheticUpper)) {
           matchedFont = nullptr;
@@ -3298,6 +3300,12 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   // Handle a candidate font that could support the character, returning true
   // if we should go ahead and return |f|, false to continue searching.
   auto CheckCandidate = [&](gfxFont* f, FontMatchType t) -> bool {
+    // If a given character is a Private Use Area Unicode codepoint, user
+    // agents must only match font families named in the font-family list that
+    // are not generic families.
+    if (t.generic != StyleGenericFontFamily::None && IsPUA(aCh)) {
+      return false;
+    }
     // If no preference, or if it's an explicitly-named family in the fontgroup
     // and font-variant-emoji is 'normal', then we accept the font.
     if (presentation == FontPresentation::Any ||
@@ -3468,8 +3476,9 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   // Also don't attempt any fallback for control characters or noncharacters,
   // where we won't be rendering a glyph anyhow, or for codepoints where global
   // fallback has already noted a failure.
-  FontVisibility level =
-      mPresContext ? mPresContext->GetFontVisibility() : FontVisibility::User;
+  FontVisibility level = mFontVisibilityProvider
+                             ? mFontVisibilityProvider->GetFontVisibility()
+                             : FontVisibility::User;
   auto* pfl = gfxPlatformFontList::PlatformFontList();
   if (pfl->SkipFontFallbackForChar(level, aCh) ||
       (!StaticPrefs::gfx_font_rendering_fallback_unassigned_chars() &&
@@ -3852,8 +3861,8 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichPrefFontSupportsChar(
         mFallbackGeneric != StyleGenericFontFamily::None
             ? mFallbackGeneric
             : pfl->GetDefaultGeneric(currentLang);
-    gfxPlatformFontList::PrefFontList* families =
-        pfl->GetPrefFontsLangGroup(mPresContext, generic, currentLang);
+    gfxPlatformFontList::PrefFontList* families = pfl->GetPrefFontsLangGroup(
+        mFontVisibilityProvider, generic, currentLang);
     NS_ASSERTION(families, "no pref font families found");
 
     // find the first pref font that includes the character
@@ -3932,7 +3941,7 @@ already_AddRefed<gfxFont> gfxFontGroup::WhichSystemFontSupportsChar(
     FontPresentation aPresentation) {
   FontVisibility visibility;
   return gfxPlatformFontList::PlatformFontList()->SystemFindFontForChar(
-      mPresContext, aCh, aNextCh, aRunScript, aPresentation, &mStyle,
+      mFontVisibilityProvider, aCh, aNextCh, aRunScript, aPresentation, &mStyle,
       &visibility);
 }
 

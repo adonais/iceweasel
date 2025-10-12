@@ -37,6 +37,7 @@ async function openTabPreview(tab, win = window) {
 
 async function closeTabPreviews(win = window) {
   const tabs = win.document.getElementById("tabbrowser-tabs");
+  const tabsRect = tabs.getBoundingClientRect();
   const previewHidden = BrowserTestUtils.waitForPopupEvent(
     win.document.getElementById(TAB_PREVIEW_PANEL_ID),
     "hidden"
@@ -44,7 +45,7 @@ async function closeTabPreviews(win = window) {
   EventUtils.synthesizeMouse(
     tabs,
     0,
-    tabs.outerHeight + 1,
+    tabsRect.height + 1,
     {
       type: "mouseout",
     },
@@ -73,6 +74,7 @@ async function openGroupPreview(group, win = window) {
 
 async function closeGroupPreviews(win = window) {
   const tabs = win.document.getElementById("tabbrowser-tabs");
+  const tabsRect = tabs.getBoundingClientRect();
   const previewHidden = BrowserTestUtils.waitForPopupEvent(
     win.document.getElementById(TAB_GROUP_PREVIEW_PANEL_ID),
     "hidden"
@@ -80,7 +82,7 @@ async function closeGroupPreviews(win = window) {
   EventUtils.synthesizeMouse(
     tabs,
     0,
-    tabs.outerHeight + 1,
+    tabsRect.height + 1,
     {
       type: "mouseout",
     },
@@ -743,6 +745,47 @@ add_task(
   }
 );
 
+// bug1983054: The panel moves correctly when moving between two adjacent tab groups
+add_task(async function moveBetweenTabGroupsTests() {
+  const tab1 = await addTabTo(gBrowser, "about:robots");
+  const group1 = gBrowser.addTabGroup([tab1]);
+  group1.collapsed = true;
+
+  const tab2 = await addTabTo(gBrowser, "about:logo");
+  const group2 = gBrowser.addTabGroup([tab2]);
+  group2.collapsed = true;
+
+  const previewPanel = window.document.getElementById(
+    TAB_GROUP_PREVIEW_PANEL_ID
+  );
+
+  await openGroupPreview(group1);
+  await BrowserTestUtils.waitForCondition(
+    () => previewPanel.anchorNode.parentElement == group1,
+    "Panel is anchored to group 1"
+  );
+  Assert.equal(
+    previewPanel.anchorNode.parentElement,
+    group1,
+    "Panel is anchored to group 1"
+  );
+
+  await openGroupPreview(group2);
+  await BrowserTestUtils.waitForCondition(
+    () => previewPanel.anchorNode.parentElement == group2,
+    "Panel is anchored to group 2"
+  );
+  Assert.equal(
+    previewPanel.anchorNode.parentElement,
+    group2,
+    "Panel is anchored to group 2"
+  );
+
+  await removeTabGroup(group1);
+  await removeTabGroup(group2);
+  await resetState();
+});
+
 /*
  * Shared tests
  * ------------
@@ -1186,10 +1229,11 @@ add_task(async function panelSuppressionOnPanelLazyLoadTests() {
 
   // Reset state: close the popup and move the mouse off the tab
   const tabs = fgWindow.document.getElementById("tabbrowser-tabs");
+  const tabsRect = tabs.getBoundingClientRect();
   EventUtils.synthesizeMouse(
     tabs,
     0,
-    tabs.outerHeight + 1,
+    tabsRect.height + 1,
     {
       type: "mouseout",
     },

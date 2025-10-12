@@ -206,6 +206,34 @@ add_task(async function test_load_and_save_consistency() {
   );
 });
 
+add_task(async function test_load_and_save_migrates_name() {
+  const loadFile = do_get_file("test_taskbarTabs_nonames.json");
+
+  const registry = await TaskbarTabsRegistry.create({ loadFile });
+  const tt = registry.findTaskbarTab(
+    Services.io.newURI("https://www.test.com"),
+    0
+  );
+  equal(
+    tt.id,
+    "4186657a-0fe5-492a-af64-dc628c232c4c",
+    "Taskbar Tab ID should match the one in the test JSON file."
+  );
+
+  equal(typeof tt.name, "string", "A name should be present in-memory.");
+
+  let file = testFile();
+  let storage = new TaskbarTabsRegistryStorage(registry, file);
+  await storage.save();
+
+  const outputData = await IOUtils.readJSON(file.path);
+  equal(
+    typeof outputData.taskbarTabs[0].name,
+    "string",
+    "A name should be saved to storage."
+  );
+});
+
 add_task(async function test_guards_against_commandline_strings() {
   const validUrl = Services.io.newURI("https://www.test.com/start");
   const invalidUrl = "https://www.test.com/start";

@@ -281,7 +281,6 @@ const DEFAULT_ENVIRONMENT_PREFS = new Map([
   ["dom.popup_allowed_events", { what: RECORD_PREF_VALUE }],
   ["editor.truncate_user_pastes", { what: RECORD_PREF_VALUE }],
   ["extensions.InstallTrigger.enabled", { what: RECORD_PREF_VALUE }],
-  ["extensions.InstallTriggerImpl.enabled", { what: RECORD_PREF_VALUE }],
   ["extensions.autoDisableScopes", { what: RECORD_PREF_VALUE }],
   ["extensions.blocklist.enabled", { what: RECORD_PREF_VALUE }],
   ["extensions.enabledScopes", { what: RECORD_PREF_VALUE }],

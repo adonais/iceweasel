@@ -23,6 +23,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.logins.SavedLoginsSortingStrategyMenu.Item
 import org.mozilla.fenix.settings.logins.interactor.SavedLoginsInteractor
 import org.robolectric.RobolectricTestRunner
+import androidx.appcompat.R as appcompatR
 
 @RunWith(RobolectricTestRunner::class)
 class SavedLoginsSortingStrategyMenuTest {
@@ -49,7 +50,7 @@ class SavedLoginsSortingStrategyMenuTest {
     fun `effect is set on alphabetical sort candidate`() {
         val (name, lastUsed) = menu.menuItems(Item.AlphabeticallySort)
         assertEquals(
-            HighPriorityHighlightEffect(context.getColorFromAttr(R.attr.colorControlHighlight)),
+            HighPriorityHighlightEffect(context.getColorFromAttr(appcompatR.attr.colorControlHighlight)),
             name.effect,
         )
         assertNull(lastUsed.effect)
@@ -60,7 +61,7 @@ class SavedLoginsSortingStrategyMenuTest {
         val (name, lastUsed) = menu.menuItems(Item.LastUsedSort)
         assertNull(name.effect)
         assertEquals(
-            HighPriorityHighlightEffect(context.getColorFromAttr(R.attr.colorControlHighlight)),
+            HighPriorityHighlightEffect(context.getColorFromAttr(appcompatR.attr.colorControlHighlight)),
             lastUsed.effect,
         )
     }

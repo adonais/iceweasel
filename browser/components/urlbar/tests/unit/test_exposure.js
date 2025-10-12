@@ -53,7 +53,7 @@ add_task(async function oneExposureResult_shown_matched() {
     context,
     matches: [
       {
-        ...QuickSuggestTestUtils.ampResult(),
+        ...QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
         exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
       },
     ],
@@ -93,7 +93,7 @@ add_task(async function oneExposureResult_hidden_matched() {
     context,
     matches: [
       {
-        ...QuickSuggestTestUtils.ampResult(),
+        ...QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
         exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
       },
     ],
@@ -138,7 +138,7 @@ add_task(async function manyExposureResults_shown_oneMatched_1() {
     context,
     matches: [
       {
-        ...QuickSuggestTestUtils.ampResult(),
+        ...QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
         exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
       },
     ],
@@ -192,7 +192,7 @@ add_task(async function manyExposureResults_shown_manyMatched() {
     context,
     matches: [
       {
-        ...QuickSuggestTestUtils.ampResult({ keyword }),
+        ...QuickSuggestTestUtils.ampResult({ keyword, suggestedIndex: -1 }),
         exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.SHOWN,
       },
     ],
@@ -217,7 +217,7 @@ add_task(async function manyExposureResults_hidden_oneMatched_1() {
     context,
     matches: [
       {
-        ...QuickSuggestTestUtils.ampResult(),
+        ...QuickSuggestTestUtils.ampResult({ suggestedIndex: -1 }),
         exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
       },
     ],
@@ -271,11 +271,11 @@ add_task(async function manyExposureResults_hidden_manyMatched() {
     context,
     matches: [
       {
-        ...QuickSuggestTestUtils.ampResult({ keyword }),
+        ...QuickSuggestTestUtils.wikipediaResult({ keyword }),
         exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
       },
       {
-        ...QuickSuggestTestUtils.wikipediaResult({ keyword }),
+        ...QuickSuggestTestUtils.ampResult({ keyword, suggestedIndex: -1 }),
         exposureTelemetry: UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
       },
     ],

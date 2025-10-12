@@ -777,6 +777,19 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
     }
     movl(ImmType(type), dest.typeReg());
   }
+  void boxNonDouble(Register type, Register src, const ValueOperand& dest) {
+    MOZ_ASSERT(type != dest.payloadReg() && src != dest.typeReg());
+
+    if (src != dest.payloadReg()) {
+      movl(src, dest.payloadReg());
+    }
+    if (type != dest.typeReg()) {
+      movl(Imm32(JSVAL_TAG_CLEAR), dest.typeReg());
+      orl(type, dest.typeReg());
+    } else {
+      orl(Imm32(JSVAL_TAG_CLEAR), dest.typeReg());
+    }
+  }
 
   void unboxNonDouble(const ValueOperand& src, Register dest, JSValueType type,
                       Register scratch = InvalidReg) {
@@ -886,12 +899,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
     unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
   }
   void unboxObject(const BaseIndex& src, Register dest) {
-    unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
-  }
-  template <typename T>
-  void unboxObjectOrNull(const T& src, Register dest) {
-    // Due to Spectre mitigation logic (see Value.h), if the value is an Object
-    // then this yields the object; otherwise it yields zero (null), as desired.
     unboxNonDouble(src, dest, JSVAL_TYPE_OBJECT);
   }
   template <typename T>
@@ -1145,21 +1152,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
   template <typename T>
   inline void loadUnboxedValue(const T& src, MIRType type, AnyRegister dest);
 
-  template <typename T>
-  void storeUnboxedPayload(ValueOperand value, T address, size_t nbytes,
-                           JSValueType) {
-    switch (nbytes) {
-      case 4:
-        storePtr(value.payloadReg(), address);
-        return;
-      case 1:
-        store8(value.payloadReg(), address);
-        return;
-      default:
-        MOZ_CRASH("Bad payload width");
-    }
-  }
-
   // Note: this function clobbers the source register.
   inline void convertUInt32ToDouble(Register src, FloatRegister dest);
 
@@ -1169,6 +1161,9 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
   void incrementInt32Value(const Address& addr) {
     addl(Imm32(1), payloadOf(addr));
   }
+
+  void minMax32(Register lhs, Register rhs, Register dest, bool isMax);
+  void minMax32(Register lhs, Imm32 rhs, Register dest, bool isMax);
 
  public:
   // Used from within an Exit frame to handle a pending exception.

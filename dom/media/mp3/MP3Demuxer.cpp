@@ -16,7 +16,6 @@
 #include "VideoUtils.h"
 #include "mozilla/Assertions.h"
 
-extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define MP3LOG(msg, ...) \
   DDMOZ_LOG(gMediaDemuxerLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 #define MP3LOGV(msg, ...) \

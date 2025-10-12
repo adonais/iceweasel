@@ -16,8 +16,7 @@
 #include "mozilla/dom/FontFaceBinding.h"
 #include "mozilla/dom/FontFaceSetImpl.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 // -- FontFaceBufferSource ---------------------------------------------------
 
@@ -122,7 +121,9 @@ void FontFaceImpl::InitializeSourceURL(const nsACString& aURL) {
   IgnoredErrorResult rv;
   SetDescriptor(eCSSFontDesc_Src, aURL, rv);
   if (rv.Failed()) {
-    mOwner->MaybeReject(NS_ERROR_DOM_SYNTAX_ERR);
+    mOwner->MaybeReject(FontFaceLoadedRejectReason::Syntax,
+                        nsPrintfCString("Invalid source url %s",
+                                        PromiseFlatCString(aURL).get()));
     SetStatus(FontFaceLoadStatus::Error);
   }
 }
@@ -402,9 +403,10 @@ void FontFaceImpl::UpdateOwnerPromise() {
     mOwner->MaybeResolve();
   } else if (mStatus == FontFaceLoadStatus::Error) {
     if (mSourceType == eSourceType_Buffer) {
-      mOwner->MaybeReject(NS_ERROR_DOM_SYNTAX_ERR);
+      mOwner->MaybeReject(FontFaceLoadedRejectReason::Syntax,
+                          nsCString("Invalid source buffer"_ns));
     } else {
-      mOwner->MaybeReject(NS_ERROR_DOM_NETWORK_ERR);
+      mOwner->MaybeReject(FontFaceLoadedRejectReason::Network, nsCString());
     }
   }
 
@@ -443,7 +445,10 @@ bool FontFaceImpl::SetDescriptor(nsCSSFontDesc aFontDesc,
   bool changed;
   if (!Servo_FontFaceRule_SetDescriptor(GetData(), aFontDesc, &aValue, url,
                                         &changed)) {
-    aRv.ThrowSyntaxError("Invalid font descriptor");
+    aRv.ThrowSyntaxError(
+        nsPrintfCString("Invalid font descriptor %s: %s",
+                        nsCSSProps::GetStringValue(aFontDesc).get(),
+                        PromiseFlatCString(aValue).get()));
     return false;
   }
 
@@ -465,11 +470,18 @@ bool FontFaceImpl::SetDescriptors(const nsACString& aFamily,
 
   mDescriptors = Servo_FontFaceRule_CreateEmpty().Consume();
 
+  nsCString errorMessage;
   // Helper to call SetDescriptor and return true on success, false on failure.
-  auto setDesc = [=](nsCSSFontDesc aDesc, const nsACString& aVal) -> bool {
+  auto setDesc = [&](nsCSSFontDesc aDesc, const nsACString& aVal) -> bool {
     IgnoredErrorResult rv;
     SetDescriptor(aDesc, aVal, rv);
-    return !rv.Failed();
+    if (!rv.Failed()) {
+      return true;
+    }
+    errorMessage = nsPrintfCString("Invalid font descriptor %s: %s",
+                                   nsCSSProps::GetStringValue(aDesc).get(),
+                                   PromiseFlatCString(aVal).get());
+    return false;
   };
 
   // Parse all of the mDescriptors in aInitializer, which are the values
@@ -497,7 +509,8 @@ bool FontFaceImpl::SetDescriptors(const nsACString& aFamily,
     mDescriptors = Servo_FontFaceRule_CreateEmpty().Consume();
 
     if (mOwner) {
-      mOwner->MaybeReject(NS_ERROR_DOM_SYNTAX_ERR);
+      mOwner->MaybeReject(FontFaceLoadedRejectReason::Syntax,
+                          std::move(errorMessage));
     }
 
     SetStatus(FontFaceLoadStatus::Error);
@@ -860,5 +873,4 @@ void FontFaceImpl::Entry::RemoveFontFace(FontFaceImpl* aFontFace) {
   CheckUserFontSetLocked();
 }
 
-}  // namespace dom
-}  // namespace mozilla
+}  // namespace mozilla::dom

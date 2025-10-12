@@ -390,7 +390,6 @@ abstract class EngineSession(
      * Represents a safe browsing policy, which is indicates with type of site should be alerted
      * to user as possible harmful.
      */
-    @Suppress("MagicNumber")
     enum class SafeBrowsingPolicy(val id: Int) {
         NONE(0),
 
@@ -482,7 +481,6 @@ abstract class EngineSession(
             ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS(5),
         }
 
-        @Suppress("MagicNumber")
         enum class TrackingCategory(val id: Int) {
 
             NONE(0),
@@ -699,7 +697,6 @@ abstract class EngineSession(
     /**
      * Represents settings options for bounce tracking protection.
      */
-    @Suppress("MagicNumber")
     enum class BounceTrackingProtectionMode(val mode: Int) {
         /**
          * Fully disabled.
@@ -945,6 +942,20 @@ abstract class EngineSession(
      * false otherwise.
      */
     abstract fun restoreState(state: EngineSessionState): Boolean
+
+    /**
+     * Flushes the session state of the engine session.
+     *
+     * This method triggers an asynchronous flush of the current
+     * session state. The most recent state is not returned directly
+     * by this call. Instead, the updated session state will be
+     * delivered asynchronously through the observer callbacks:
+     *
+     * [EngineSession.Observer.onStateUpdated]
+     *
+     * [EngineSession.Observer.onHistoryStateChanged]
+     */
+    abstract fun flushSessionState()
 
     /**
      * Updates the tracking protection [policy] for this engine session.

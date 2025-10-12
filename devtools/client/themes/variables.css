@@ -283,6 +283,8 @@
   --theme-search-results-color: var(--theme-contrast-color);
   --theme-search-results-border-color: var(--theme-contrast-border);
 
+  --table-zebra-background: light-dark(rgba(247, 247, 247, 0.8), rgba(255, 255, 255, 0.05));
+
   &[forced-colors-active] {
     /* Color picked from HCM palette created by a11y team */
     --theme-highlight-blue: light-dark(#0060df, #00ddff);

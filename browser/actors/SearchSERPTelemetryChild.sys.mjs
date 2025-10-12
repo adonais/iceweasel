@@ -233,7 +233,7 @@ class ListenerHelper {
       if (CONDITIONS[eventListenerParam.condition]) {
         let condition = CONDITIONS[eventListenerParam.condition];
         eventCallback = async event => {
-          let start = Cu.now();
+          let start = ChromeUtils.now();
           if (condition(event)) {
             callback({ action, target });
           }
@@ -1498,7 +1498,7 @@ export class SearchSERPTelemetryChild extends JSWindowActorChild {
       (eventType == "load" || eventType == "pageshow")
     ) {
       // Start performance measurements.
-      let start = Cu.now();
+      let start = ChromeUtils.now();
       let timerId = Glean.serp.categorizationDuration.start();
 
       let pageActionCallback = info => {
@@ -1544,7 +1544,7 @@ export class SearchSERPTelemetryChild extends JSWindowActorChild {
       providerInfo.domainExtraction &&
       (eventType == "load" || eventType == "pageshow")
     ) {
-      let start = Cu.now();
+      let start = ChromeUtils.now();
       let nonAdDomains = domainExtractor.extractDomainsFromDocument(
         doc,
         providerInfo.domainExtraction.nonAds,
@@ -1580,7 +1580,7 @@ export class SearchSERPTelemetryChild extends JSWindowActorChild {
     let providerInfo = this._getProviderInfoForUrl(url);
     if (providerInfo.components?.length) {
       searchAdImpression.providerInfo = providerInfo;
-      let start = Cu.now();
+      let start = ChromeUtils.now();
       let shoppingTabDisplayed = searchAdImpression.hasShoppingTab(
         this.document
       );

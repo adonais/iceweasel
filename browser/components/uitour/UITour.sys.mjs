@@ -195,6 +195,12 @@ export var UITour = {
         },
       },
     ],
+    [
+      "profilesAppMenuButton",
+      {
+        query: "#appMenu-profiles-button",
+      },
+    ],
   ]),
 
   init() {
@@ -1578,11 +1584,14 @@ export var UITour = {
         Services.search
           .getVisibleEngines()
           .then(engines => {
+            let { defaultEngine } = Services.search;
             this.sendPageCallback(aBrowser, aCallbackID, {
-              searchEngineIdentifier: Services.search.defaultEngine.identifier,
+              searchEngineIdentifier: defaultEngine.isAppProvided
+                ? defaultEngine.id
+                : null,
               engines: engines
-                .filter(engine => engine.identifier)
-                .map(engine => TARGET_SEARCHENGINE_PREFIX + engine.identifier),
+                .filter(engine => engine.isAppProvided)
+                .map(engine => TARGET_SEARCHENGINE_PREFIX + engine.id),
             });
           })
           .catch(() => {
@@ -1952,20 +1961,15 @@ export var UITour = {
     }
   },
 
-  selectSearchEngine(aID) {
-    return new Promise((resolve, reject) => {
-      Services.search.getVisibleEngines().then(engines => {
-        for (let engine of engines) {
-          if (engine.identifier == aID) {
-            Services.search
-              .setDefault(engine, Ci.nsISearchService.CHANGE_REASON_UITOUR)
-              .finally(resolve);
-            return;
-          }
-        }
-        reject("selectSearchEngine could not find engine with given ID");
-      });
-    });
+  async selectSearchEngine(id) {
+    let engine = Services.search.getEngineById(id);
+    if (!engine || engine.hidden) {
+      throw new Error("selectSearchEngine could not find engine with given ID");
+    }
+    return Services.search.setDefault(
+      engine,
+      Ci.nsISearchService.CHANGE_REASON_UITOUR
+    );
   },
 
   notify(eventName, params) {

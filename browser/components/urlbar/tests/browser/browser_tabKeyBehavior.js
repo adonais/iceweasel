@@ -14,11 +14,7 @@ add_setup(async function () {
     false
   );
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.suggest.quickactions", false],
-      ["browser.urlbar.scotchBonnet.enableOverride", false],
-      ["browser.urlbar.tabToSearch.onboard.interactionsLeft", 0],
-    ],
+    set: [["browser.urlbar.tabToSearch.onboard.interactionsLeft", 0]],
   });
 
   for (let i = 0; i < UrlbarPrefs.get("maxRichResults"); i++) {
@@ -188,6 +184,10 @@ add_task(async function tabSearchModePreview() {
 });
 
 add_task(async function tabTabToSearch() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.suggest.quickactions", false]],
+  });
+
   info("Tab past a tab-to-search result after focusing with the keyboard.");
   await SearchTestUtils.installSearchExtension();
 
@@ -210,7 +210,7 @@ add_task(async function tabTabToSearch() {
   ).result;
   Assert.equal(
     tabToSearchResult.providerName,
-    "TabToSearch",
+    "UrlbarProviderTabToSearch",
     "The second result is a tab-to-search result."
   );
 
@@ -221,6 +221,7 @@ add_task(async function tabTabToSearch() {
     await UrlbarTestUtils.assertSearchMode(window, null);
   });
   await PlacesUtils.history.clear();
+  await SpecialPowers.popPrefEnv();
 });
 
 add_task(async function tabNoSearchStringSearchMode() {
@@ -231,10 +232,24 @@ add_task(async function tabNoSearchStringSearchMode() {
     window,
     value: "",
   });
-  // Enter history search mode to avoid hitting the network.
-  await UrlbarTestUtils.enterSearchMode(window, {
+
+  let unifiedSearchButtonPopup =
+    await UrlbarTestUtils.openSearchModeSwitcher(window);
+  let unifiedSearchButtonPopupHidden =
+    UrlbarTestUtils.searchModeSwitcherPopupClosed(window);
+
+  let historyItem =
+    unifiedSearchButtonPopup.querySelector("menuitem[label=history]") ??
+    unifiedSearchButtonPopup.querySelector("menuitem[label=History]");
+
+  historyItem.click();
+  await unifiedSearchButtonPopupHidden;
+
+  await UrlbarTestUtils.assertSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    entry: "searchbutton",
   });
+
   await UrlbarTestUtils.promisePopupClose(window);
   await UrlbarTestUtils.promisePopupOpen(window, () => {
     EventUtils.synthesizeKey("l", { accelKey: true });
@@ -243,12 +258,9 @@ add_task(async function tabNoSearchStringSearchMode() {
 
   await expectTabThroughToolbar();
 
-  // We have to reopen the view to exit search mode.
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "",
-  });
-  await UrlbarTestUtils.exitSearchMode(window);
+  await exitSearchMode();
+
+  gURLBar.blur();
   await UrlbarTestUtils.promisePopupClose(window);
 });
 
@@ -281,10 +293,6 @@ add_task(async function tabOnTopSites() {
 });
 
 add_task(async function tabActionsSearchMode() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.searchRestrictKeywords.featureGate", true]],
-  });
-
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "@actions",
@@ -297,17 +305,15 @@ add_task(async function tabActionsSearchMode() {
     entry: "keywordoffer",
     restrictType: "keyword",
   });
+
+  await UrlbarTestUtils.promiseSearchComplete(window);
+
   await expectTabThroughResults();
 
-  // We have to reopen the view to exit search mode.
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "",
-  });
-  await UrlbarTestUtils.exitSearchMode(window);
+  await exitSearchMode();
 
+  gURLBar.blur();
   await UrlbarTestUtils.promisePopupClose(window);
-  await SpecialPowers.popPrefEnv();
 });
 
 async function expectTabThroughResults(options = { reverse: false }) {
@@ -326,6 +332,12 @@ async function expectTabThroughResults(options = { reverse: false }) {
   for (let i = initiallySelectedIndex + 1; i < resultCount; i++) {
     EventUtils.synthesizeKey("KEY_Tab", { shiftKey: options.reverse });
     if (
+      document.activeElement ==
+      document.querySelector("toolbarbutton#urlbar-searchmode-switcher")
+    ) {
+      EventUtils.synthesizeKey("KEY_Tab", { shiftKey: options.reverse });
+    }
+    if (
       UrlbarTestUtils.getButtonForResultIndex(
         window,
         "result-menu",
@@ -342,11 +354,14 @@ async function expectTabThroughResults(options = { reverse: false }) {
 
   EventUtils.synthesizeKey("KEY_Tab");
 
+  // Tab out of the unified search button
+  EventUtils.synthesizeKey("KEY_Tab");
+
   if (!options.reverse) {
     Assert.equal(
       UrlbarTestUtils.getSelectedRowIndex(window),
-      initiallySelectedIndex,
-      "Should be back at the initial selection."
+      0,
+      "Should be back at index 0 after tabbing out of the unified search button."
     );
   }
 
@@ -363,6 +378,15 @@ async function expectTabThroughToolbar(options = { reverse: false }) {
   } else {
     let focusPromise = waitForFocusOnNextFocusableElement(options.reverse);
     EventUtils.synthesizeKey("KEY_Tab", { shiftKey: options.reverse });
+
+    // Skip over unified search button.
+    if (
+      document.activeElement ==
+      document.querySelector("toolbarbutton#urlbar-searchmode-switcher")
+    ) {
+      EventUtils.synthesizeKey("KEY_Tab", { shiftKey: options.reverse });
+    }
+
     await focusPromise;
   }
   Assert.ok(!gURLBar.view.isOpen, "The urlbar view should be closed.");
@@ -413,4 +437,13 @@ async function waitForFocusOnNextFocusableElement(reverse = false) {
   return BrowserTestUtils.waitForCondition(
     () => nextFocusableElement.tabIndex == -1
   );
+}
+
+async function exitSearchMode() {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "",
+  });
+  EventUtils.synthesizeKey("KEY_Backspace");
+  await UrlbarTestUtils.assertSearchMode(window, null);
 }

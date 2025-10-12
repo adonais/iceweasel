@@ -71,7 +71,6 @@ class TabbedBrowsingTest : TestSetup() {
             verifyNormalTabsList()
         }.openThreeDotMenu {
             verifyCloseAllTabsButton()
-            verifyShareAllTabsButton()
             verifySelectTabsButton()
         }.closeAllTabs {
             verifyTabCounter("0")
@@ -113,24 +112,33 @@ class TabbedBrowsingTest : TestSetup() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/903604
     @Test
     fun swipeToCloseTabsTest() {
-        val genericURL = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val webPages = TestAssetHelper.getGenericAssets(mockWebServer)
 
-        navigationToolbar {
-        }.enterURLAndEnterToBrowser(genericURL.url) {
-            waitForPageToLoad()
-        }.openTabDrawer(composeTestRule) {
-            verifyExistingOpenTabs("Test_Page_1")
-            swipeTabRight("Test_Page_1")
-            verifySnackBarText("Tab closed")
-        }
+        MockBrowserDataHelper.createTabItem(webPages[0].url.toString())
+        MockBrowserDataHelper.createTabItem(webPages[1].url.toString())
+
         homeScreen {
-            verifyTabCounter("0")
-        }.openNavigationToolbar {
-        }.enterURLAndEnterToBrowser(genericURL.url) {
-            waitForPageToLoad()
         }.openTabDrawer(composeTestRule) {
-            verifyExistingOpenTabs("Test_Page_1")
-            swipeTabLeft("Test_Page_1")
+            verifyExistingOpenTabs(webPages[0].title)
+            verifyExistingOpenTabs(webPages[1].title)
+            swipeTabRight(webPages[0].title)
+            verifySnackBarText("Tab closed")
+            clickSnackbarButton(composeTestRule, "UNDO")
+            verifyExistingOpenTabs(webPages[0].title)
+            verifyExistingOpenTabs(webPages[1].title)
+            swipeTabRight(webPages[0].title)
+            verifySnackBarText("Tab closed")
+            verifyNoExistingOpenTabs(webPages[0].title)
+            verifyExistingOpenTabs(webPages[1].title)
+            swipeTabLeft(webPages[1].title)
+            verifySnackBarText("Tab closed")
+            clickSnackbarButton(composeTestRule, "UNDO")
+        }
+        browserScreen {
+            verifyPageContent(webPages[1].content)
+        }.openTabDrawer(composeTestRule) {
+            verifyExistingOpenTabs(webPages[1].title)
+            swipeTabLeft(webPages[1].title)
             verifySnackBarText("Tab closed")
         }
         homeScreen {
@@ -434,8 +442,13 @@ class TabbedBrowsingTest : TestSetup() {
             verifyExistingOpenTabs("Test_Page_1")
             verifyExistingOpenTabs("Test_Page_2")
         }.openThreeDotMenu {
-            verifyShareAllTabsButton()
-        }.clickShareAllTabsButton {
+            verifySelectTabsButton()
+        }.clickSelectTabsButton {
+            selectTab("Test_Page_1", 1)
+            selectTab("Test_Page_2", 2)
+        }.openThreeDotMenu {
+            verifyShareTabsButton()
+        }.clickShareTabsButton {
             verifyShareTabsOverlay(firstWebsiteTitle, secondWebsiteTitle)
             verifySharingWithSelectedApp(
                 sharingApp,

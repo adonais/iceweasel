@@ -45,10 +45,10 @@ std::atomic<TimeNowFunction> g_time_now_from_system_time_function{
 std::atomic<TimeTicksNowFunction> g_time_ticks_now_function{
     &subtle::TimeTicksNowIgnoringOverride};
 
+#if !defined(MOZ_ZUCCHINI)
 std::atomic<LiveTicksNowFunction> g_live_ticks_now_function{
     &subtle::LiveTicksNowIgnoringOverride};
 
-#if !defined(MOZ_ZUCCHINI)
 std::atomic<ThreadTicksNowFunction> g_thread_ticks_now_function{
     &subtle::ThreadTicksNowIgnoringOverride};
 #endif  // !defined(MOZ_ZUCCHINI)
@@ -271,6 +271,7 @@ std::ostream& operator<<(std::ostream& os, TimeTicks time_ticks) {
   return os << as_time_delta.InMicroseconds() << " bogo-microseconds";
 }
 
+#if !defined(MOZ_ZUCCHINI)
 // LiveTicks ------------------------------------------------------------------
 
 // static
@@ -293,7 +294,6 @@ LiveTicks LiveTicksNowIgnoringOverride() {
 // ThreadTicks ----------------------------------------------------------------
 
 // static
-#if !defined(MOZ_ZUCCHINI)
 ThreadTicks ThreadTicks::Now() {
   return internal::g_thread_ticks_now_function.load(
       std::memory_order_relaxed)();

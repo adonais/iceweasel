@@ -137,17 +137,17 @@ Orientation GetImageOrientation(const Mp4parseAvifInfo& aInfo) {
            static_cast<int>(mozRot), static_cast<int>(mozFlip)));
   return Orientation{mozRot, mozFlip};
 }
-bool AVIFDecoderStream::ReadAt(int64_t offset, void* data, size_t size,
-                               size_t* bytes_read) {
+nsresult AVIFDecoderStream::ReadAt(int64_t offset, void* data, size_t size,
+                                   size_t* bytes_read) {
   size = std::min(size, size_t(mBuffer->length() - offset));
 
   if (size <= 0) {
-    return false;
+    return NS_ERROR_DOM_MEDIA_RANGE_ERR;
   }
 
   memcpy(data, mBuffer->begin() + offset, size);
   *bytes_read = size;
-  return true;
+  return NS_OK;
 }
 
 bool AVIFDecoderStream::Length(int64_t* size) {
@@ -224,7 +224,7 @@ nsAVIFDecoder::DecodeResult AVIFParser::GetImage(AVIFImage& aImage) {
 
   // If the AVIF is animated, get next frame and yield if sequence is not done.
   if (IsAnimated()) {
-    aImage.mColorImage = mColorSampleIter->GetNext();
+    aImage.mColorImage = mColorSampleIter->GetNext().unwrapOr(nullptr);
 
     if (!aImage.mColorImage) {
       return AsVariant(nsAVIFDecoder::NonDecoderResult::NoSamples);
@@ -236,7 +236,7 @@ nsAVIFDecoder::DecodeResult AVIFParser::GetImage(AVIFImage& aImage) {
         static_cast<int32_t>(std::min<int64_t>(durationMs, INT32_MAX)));
 
     if (mAlphaSampleIter) {
-      aImage.mAlphaImage = mAlphaSampleIter->GetNext();
+      aImage.mAlphaImage = mAlphaSampleIter->GetNext().unwrapOr(nullptr);
       if (!aImage.mAlphaImage) {
         return AsVariant(nsAVIFDecoder::NonDecoderResult::NoSamples);
       }

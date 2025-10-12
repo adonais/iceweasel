@@ -1683,7 +1683,10 @@ void nsLineLayout::PlaceTopBottomFrames(PerSpanData* psd,
 static nscoord GetBSizeOfEmphasisMarks(nsIFrame* aSpanFrame, float aInflation) {
   RefPtr<nsFontMetrics> fm = nsLayoutUtils::GetFontMetricsOfEmphasisMarks(
       aSpanFrame->Style(), aSpanFrame->PresContext(), aInflation);
-  return fm->MaxHeight();
+  return aSpanFrame->PresContext()->NormalizeRubyMetrics()
+             ? (fm->TrimmedAscent() + fm->TrimmedDescent()) *
+                   aSpanFrame->PresContext()->RubyPositioningFactor()
+             : fm->MaxHeight();
 }
 
 void nsLineLayout::AdjustLeadings(nsIFrame* spanFrame, PerSpanData* psd,
@@ -1706,12 +1709,29 @@ void nsLineLayout::AdjustLeadings(nsIFrame* spanFrame, PerSpanData* psd,
     nscoord bsize = GetBSizeOfEmphasisMarks(spanFrame, aInflation);
     LogicalSide side = aStyleText->TextEmphasisSide(
         mRootSpan->mWritingMode, spanFrame->StyleFont()->mLanguage);
-    if (side == LogicalSide::BStart) {
-      requiredStartLeading += bsize;
+    if (spanFrame->PresContext()->NormalizeRubyMetrics()) {
+      // Add extra leading for emphasis marks only if their bsize exceeds the
+      // space built in to the font (difference between its max ascent/descent
+      // and the em-normalized metrics that are used to position the mark).
+      RefPtr fm = nsLayoutUtils::GetInflatedFontMetricsForFrame(spanFrame);
+      float factor = spanFrame->PresContext()->RubyPositioningFactor();
+      if (side == LogicalSide::BStart) {
+        requiredStartLeading += std::max(
+            0, bsize - (fm->MaxAscent() -
+                        nscoord(NS_round(factor * fm->TrimmedAscent()))));
+      } else {
+        requiredEndLeading += std::max(
+            0, bsize - (fm->MaxDescent() -
+                        nscoord(NS_round(factor * fm->TrimmedDescent()))));
+      }
     } else {
-      MOZ_ASSERT(side == LogicalSide::BEnd,
-                 "emphasis marks must be in block axis");
-      requiredEndLeading += bsize;
+      if (side == LogicalSide::BStart) {
+        requiredStartLeading += bsize;
+      } else {
+        MOZ_ASSERT(side == LogicalSide::BEnd,
+                   "emphasis marks must be in block axis");
+        requiredEndLeading += bsize;
+      }
     }
   }
 
@@ -2321,7 +2341,11 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
         nscoord blockEnd = blockStart + minimumLineBSize;
 
         if (mStyleText->HasEffectiveTextEmphasis()) {
-          nscoord fontMaxHeight = fm->MaxHeight();
+          nscoord fontMaxHeight =
+              mPresContext->NormalizeRubyMetrics()
+                  ? mPresContext->RubyPositioningFactor() *
+                        (fm->TrimmedAscent() + fm->TrimmedDescent())
+                  : fm->MaxHeight();
           nscoord emphasisHeight =
               GetBSizeOfEmphasisMarks(spanFrame, inflation);
           nscoord delta = fontMaxHeight + emphasisHeight - minimumLineBSize;

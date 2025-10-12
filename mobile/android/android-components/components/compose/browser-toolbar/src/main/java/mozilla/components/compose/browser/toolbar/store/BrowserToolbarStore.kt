@@ -106,6 +106,12 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
             ),
         )
 
+        is BrowserEditToolbarAction.PrivateModeUpdated -> state.copy(
+            editState = state.editState.copy(
+                isQueryPrivate = action.inPrivateMode,
+            ),
+        )
+
         is BrowserEditToolbarAction.AutocompleteProvidersUpdated -> state.copy(
             editState = state.editState.copy(
                 autocompleteProviders = action.autocompleteProviders,

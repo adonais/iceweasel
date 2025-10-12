@@ -158,10 +158,6 @@ pref("chrome.override_package.passwordmgr", "browser");
 // Allow Console API to log messages on stdout (bug 1480544)
 pref("devtools.console.stdout.chrome", true);
 
-// Absolute path to the devtools unix domain socket file used
-// to communicate with a usb cable via adb forward.
-pref("devtools.debugger.unix-domain-socket", "@ANDROID_PACKAGE_NAME@/firefox-debugger-socket");
-
 // Enable capture attribute for file input (bug 1553603)
 pref("dom.capture.enabled", true);
 
@@ -183,8 +179,8 @@ pref("dom.ipc.keepProcessesAlive.extension", 1);
 // Keep empty content process alive on Android (bug 1447393)
 pref("dom.ipc.keepProcessesAlive.web", 1);
 
-// Disable the preallocated process on Android
-pref("dom.ipc.processPrelaunch.enabled", false);
+// Enable the preallocated process on Android
+pref("dom.ipc.processPrelaunch.enabled", true);
 
 // Increase script timeouts (bug 485610)
 pref("dom.max_script_run_time", 20);

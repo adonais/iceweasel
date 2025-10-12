@@ -21,7 +21,7 @@
 
 #include "mozilla/ArrayUtils.h"
 
-#include "mozilla/MPSCQueue.h"
+#include "mozilla/BoundedMPSCQueue.h"
 
 #if defined(HAVE_REPORT_UPROFILER_PARENT) && \
     defined(HAVE_REPORT_UPROFILER_CHILD)
@@ -53,7 +53,7 @@ using SandboxProfilerPayload = struct {
   SandboxProfilerPayloadType mType;
 };
 
-using SandboxProfilerQueue = MPSCQueue<SandboxProfilerPayload>;
+using SandboxProfilerQueue = BoundedMPSCQueue<SandboxProfilerPayload>;
 
 extern struct UprofilerFuncPtrs uprofiler;
 extern bool uprofiler_initted;

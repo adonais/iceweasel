@@ -308,12 +308,11 @@ if CONFIG["MOZ_SANDBOX"] and CONFIG["OS_ARCH"] == "WINNT":
         "/security/sandbox/win/src/sandboxbroker",
     ]
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += [
-        "test/gtest",
-        "test/utility_process_xpcom",
-        "test/browser",
-    ]
+TEST_DIRS += [
+    "test/gtest",
+    "test/utility_process_xpcom",
+    "test/browser",
+]
 
 # Add libFuzzer configuration directives
 include("/tools/fuzzing/libfuzzer-config.mozbuild")

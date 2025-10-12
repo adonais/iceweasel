@@ -87,6 +87,7 @@ ios-non-unified/plain:
             extra_mozconfig_content:
                 - ac_add_options --disable-unified-build
         mozconfig-variant: opt
+    run-on-projects: ['integration']
     fetches:
         toolchain:
             - ios-sdk

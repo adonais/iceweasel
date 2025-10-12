@@ -321,6 +321,7 @@ class LandoAPI:
 
     access_token: str
     api_url: str
+    verify_tls: bool = True
 
     @property
     def lando_try_api_url(self) -> str:
@@ -365,11 +366,14 @@ class LandoAPI:
         return LandoAPI(
             api_url=parser.get(section, "api_domain"),
             access_token=token["access_token"],
+            verify_tls=parser.getboolean(section, "verify_tls", fallback=True),
         )
 
     def post(self, url: str, body: dict) -> dict:
         """Make a POST request to Lando."""
-        response = requests.post(url, headers=self.api_headers, json=body)
+        response = requests.post(
+            url, headers=self.api_headers, json=body, verify=self.verify_tls
+        )
 
         try:
             response_json = response.json()
@@ -465,10 +469,7 @@ def push_to_lando_try(
     duration = time.perf_counter() - push_start_time
 
     job_id = response_json["id"]
-    success_msg = (
-        f"Lando try submission success, took {duration:.1f} seconds. "
-        f"Landing job id: {job_id}."
-    )
+    success_msg = f"Lando try submission success, took {duration:.1f} seconds. Landing job id: {job_id}."
     print(success_msg)
 
     lando_api_status_url = lando_api.lando_try_status_api_url(job_id)

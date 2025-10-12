@@ -13,6 +13,9 @@ run-if = ["!msix"] # Does not work in MSIX builds.
 skip-if = ["os == 'android' && android_version == '24' && processor == 'x86_64' && debug"]
 
 ["test_autoconfig.js"]
+skip-if = [
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && debug && !fission", # Bug 1982954
+]
 
 ["test_autoconfig_custom_path.js"]
 run-if = ["os == 'linux'"]
@@ -22,6 +25,12 @@ run-if = ["os == 'linux'"]
 
 ["test_autoconfig_no_sandbox.js"]
 run-sequentially = "very high failure rate in parallel"
+skip-if = [
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && debug && !fission", # Bug 1982954
+]
 
 ["test_autoconfig_nonascii.js"]
 run-sequentially = "very high failure rate in parallel"
+skip-if = [
+  "os == 'android' && android_version == '34' && processor == 'x86_64' && debug && !fission", # Bug 1982954
+]

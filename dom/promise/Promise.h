@@ -227,6 +227,29 @@ class Promise : public SupportsWeakPtr, public JSHolderBase {
       PropagateUserInteraction aPropagateUserInteraction =
           eDontPropagateUserInteraction);
 
+  // Do the equivalent of Promise.resolve in the compartment of aGlobal.
+  // The promise is resolved with the JS value corresponding to aValue.
+  // If this fails, the promise is rejected with the exception.
+  template <typename T>
+  static already_AddRefed<Promise> Resolve(
+      nsIGlobalObject* aGlobal, T&& aValue, ErrorResult& aError,
+      PropagateUserInteraction aPropagateUserInteraction =
+          eDontPropagateUserInteraction) {
+    AutoJSAPI jsapi;
+    if (!jsapi.Init(aGlobal)) {
+      aError.Throw(NS_ERROR_UNEXPECTED);
+      return nullptr;
+    }
+
+    JSContext* cx = jsapi.cx();
+    JS::Rooted<JS::Value> val(cx);
+    if (!ToJSValue(cx, std::forward<T>(aValue), &val)) {
+      return Promise::RejectWithExceptionFromContext(aGlobal, cx, aError);
+    }
+
+    return Resolve(aGlobal, cx, val, aError, aPropagateUserInteraction);
+  }
+
   // Do the equivalent of Promise.reject in the compartment of aGlobal.  The
   // compartment of aCx is ignored.  Errors are reported on the ErrorResult; if
   // aRv comes back !Failed(), this function MUST return a non-null value.

@@ -84,6 +84,7 @@ async function reloadAndCheckNoBreakpointExists(dbg) {
   await reload(dbg, "pretty.js");
   await selectSource(dbg, "pretty.js");
   await togglePrettyPrint(dbg);
+
   info("Check that we do not pause on the removed breakpoint");
   invokeInTab("stuff");
   await waitForPaused(dbg);

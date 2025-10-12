@@ -66,7 +66,7 @@ class SVGGeometryFrame final : public nsIFrame, public ISVGDisplayableFrame {
             nsIFrame* aPrevInFlow) override;
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 

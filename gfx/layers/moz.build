@@ -327,7 +327,6 @@ UNIFIED_SOURCES += [
     "apz/src/FlingAccelerator.cpp",
     "apz/src/FocusState.cpp",
     "apz/src/FocusTarget.cpp",
-    "apz/src/GenericScrollAnimation.cpp",
     "apz/src/GestureEventListener.cpp",
     "apz/src/HitTestingTreeNode.cpp",
     "apz/src/IAPZHitTester.cpp",
@@ -341,9 +340,7 @@ UNIFIED_SOURCES += [
     "apz/src/SampledAPZCState.cpp",
     "apz/src/ScrollThumbUtils.cpp",
     "apz/src/SimpleVelocityTracker.cpp",
-    "apz/src/SmoothMsdScrollAnimation.cpp",
     "apz/src/SmoothScrollAnimation.cpp",
-    "apz/src/WheelScrollAnimation.cpp",
     "apz/src/WRHitTester.cpp",
     "apz/testutil/APZTestData.cpp",
     "apz/util/ActiveElementManager.cpp",
@@ -523,9 +520,7 @@ FINAL_LIBRARY = "xul"
 if CONFIG["MOZ_DEBUG"]:
     DEFINES["D3D_DEBUG_INFO"] = True
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["apz/test/gtest"]
-    DIRS += ["apz/test/gtest/mvm"]
+TEST_DIRS += ["apz/test/gtest", "apz/test/gtest/mvm"]
 
 MOCHITEST_MANIFESTS += ["apz/test/mochitest/mochitest.toml"]
 BROWSER_CHROME_MANIFESTS += [

@@ -570,7 +570,7 @@ nsresult PeerConnectionCtx::StartTelemetryTimer() {
   return NS_NewTimerWithFuncCallback(getter_AddRefs(mTelemetryTimer),
                                      EverySecondTelemetryCallback_m, this, 1000,
                                      nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP,
-                                     "EverySecondTelemetryCallback_m");
+                                     "EverySecondTelemetryCallback_m"_ns);
 }
 
 void PeerConnectionCtx::StopTelemetryTimer() {

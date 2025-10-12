@@ -113,6 +113,9 @@ PhaseKindGraphRoots = [
             addPhaseKind("PURGE", "Purge"),
             addPhaseKind("PURGE_PROP_MAP_TABLES", "Purge PropMapTables"),
             addPhaseKind("PURGE_SOURCE_URLS", "Purge Source URLs"),
+            addPhaseKind(
+                "PURGE_WRAPPER_PRESERVATION", "Purge Wrapper Preservation buffers"
+            ),
             addPhaseKind("JOIN_PARALLEL_TASKS", "Join Parallel Tasks"),
         ],
     ),

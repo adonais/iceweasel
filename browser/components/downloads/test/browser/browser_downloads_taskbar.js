@@ -165,69 +165,84 @@ async function resetBetweenTests() {
   gProgress = {};
 }
 
-// Ensures that the download progress is correctly assigned to the window
+// Ensures that the download progress is correctly assigned to all windows
 // that the download applies to. For example, a private download should go
 // to a private window.
-async function testActiveAndInactive({
+//
+// Note that this test is only valid on Windows, since it is in the only
+// platform that shows progress on multiple windows.
+async function testActiveAndInactiveOnWindows({
   isPrivateDownload,
-  publicWindow,
-  privateWindow,
-  platform,
+  publicWindows,
+  privateWindows,
 }) {
+  const PLATFORM = "windows";
   await resetBetweenTests();
 
-  if (publicWindow) {
-    await DownloadsTaskbar.registerIndicator(publicWindow, platform);
+  for (let publicWindow of publicWindows) {
+    await DownloadsTaskbar.registerIndicator(publicWindow, PLATFORM);
   }
 
-  if (privateWindow) {
-    await DownloadsTaskbar.registerIndicator(privateWindow, platform);
+  for (let privateWindow of privateWindows) {
+    await DownloadsTaskbar.registerIndicator(privateWindow, PLATFORM);
   }
 
-  // One bar will be 'active' and the other 'inactive'. If the download
-  // is public, then public will be active, and vice versa.
-  let activeWindow = isPrivateDownload ? privateWindow : publicWindow;
-  let inactiveWindow = isPrivateDownload ? publicWindow : privateWindow;
+  // One set of bars will be 'active' and the other 'inactive'. If the download
+  // is public, then all public bars will be active, and vice versa.
+  let activeWindows = isPrivateDownload ? privateWindows : publicWindows;
+  let inactiveWindows = isPrivateDownload ? publicWindows : privateWindows;
 
-  let activeProgress = gProgress[activeWindow.docShell.outerWindowID];
-  let inactiveProgress = gProgress[inactiveWindow.docShell.outerWindowID];
+  let activeProgresses = activeWindows.map(
+    window => gProgress[window.docShell.outerWindowID]
+  );
+  let inactiveProgresses = inactiveWindows.map(
+    window => gProgress[window.docShell.outerWindowID]
+  );
 
-  isProgressEqualTo(
-    activeProgress,
-    platform,
-    "active",
-    Ci.nsITaskbarProgress.STATE_NO_PROGRESS,
-    0
-  );
-  isProgressEqualTo(
-    inactiveProgress,
-    platform,
-    "inactive",
-    Ci.nsITaskbarProgress.STATE_NO_PROGRESS,
-    0
-  );
+  for (let activeProgress of activeProgresses) {
+    isProgressEqualTo(
+      activeProgress,
+      PLATFORM,
+      "active",
+      Ci.nsITaskbarProgress.STATE_NO_PROGRESS,
+      0
+    );
+  }
+  for (let inactiveProgress of inactiveProgresses) {
+    isProgressEqualTo(
+      inactiveProgress,
+      PLATFORM,
+      "inactive",
+      Ci.nsITaskbarProgress.STATE_NO_PROGRESS,
+      0
+    );
+  }
 
   let { download, downloadPromise, bumpProgress } = await addDownload({
     isPrivate: isPrivateDownload,
   });
   for (let i = 1; i <= 10; i++) {
     await bumpProgress();
-    isProgressEqualTo(
-      activeProgress,
-      platform,
-      "active",
-      i === 10
-        ? Ci.nsITaskbarProgress.STATE_NO_PROGRESS
-        : Ci.nsITaskbarProgress.STATE_NORMAL,
-      i === 10 ? 0 : i / 10
-    );
-    isProgressEqualTo(
-      inactiveProgress,
-      platform,
-      "inactive",
-      Ci.nsITaskbarProgress.STATE_NO_PROGRESS,
-      0
-    );
+    for (let activeProgress of activeProgresses) {
+      isProgressEqualTo(
+        activeProgress,
+        PLATFORM,
+        "active",
+        i === 10
+          ? Ci.nsITaskbarProgress.STATE_NO_PROGRESS
+          : Ci.nsITaskbarProgress.STATE_NORMAL,
+        i === 10 ? 0 : i / 10
+      );
+    }
+    for (let inactiveProgress of inactiveProgresses) {
+      isProgressEqualTo(
+        inactiveProgress,
+        PLATFORM,
+        "inactive",
+        Ci.nsITaskbarProgress.STATE_NO_PROGRESS,
+        0
+      );
+    }
   }
 
   await downloadPromise;
@@ -237,8 +252,8 @@ async function testActiveAndInactive({
 // Tests that a download is visible on the correct window.
 //
 // Linux (the GTK backend) only supports a single window to display progress
-// on. As such, it can't use testActiveAndInactive; this is a simplified version
-// of that test that checks whether _any_ progress is set.
+// on. As such, it can't use testActiveAndInactiveOnWindows; this is a
+// simplified version of that test that checks whether _any_ progress is set.
 async function testRepresentative({
   isPrivateDownload,
   representative,
@@ -348,42 +363,48 @@ async function testPerAppProgress(aWindow) {
 }
 
 add_task(async function test_downloadsTaskbar() {
-  let publicWindow = window;
-  let privateWindow = await BrowserTestUtils.openNewBrowserWindow({
-    private: true,
-  });
+  // Test with one public and two private windows just to make sure the single
+  // and multiple window cases work.
+  let publicWindows = [window];
+  let privateWindows = [
+    await BrowserTestUtils.openNewBrowserWindow({
+      private: true,
+    }),
+    await BrowserTestUtils.openNewBrowserWindow({
+      private: true,
+    }),
+  ];
 
   if (AppConstants.platform == "win") {
-    await testActiveAndInactive({
+    await testActiveAndInactiveOnWindows({
       isPrivateDownload: false,
-      publicWindow,
-      privateWindow,
-      platform: "windows",
+      publicWindows,
+      privateWindows,
     });
 
-    await testActiveAndInactive({
+    await testActiveAndInactiveOnWindows({
       isPrivateDownload: true,
-      publicWindow,
-      privateWindow,
-      platform: "windows",
+      publicWindows,
+      privateWindows,
     });
   }
 
   if (AppConstants.platform == "linux") {
     await testRepresentative({
       isPrivateDownload: false,
-      representative: publicWindow,
+      representative: publicWindows[0],
       platform: "linux",
     });
 
     await testRepresentative({
       isPrivateDownload: true,
-      representative: publicWindow,
+      representative: publicWindows[0],
       platform: "linux",
     });
   }
 
   await testPerAppProgress(window);
 
-  await BrowserTestUtils.closeWindow(privateWindow);
+  await BrowserTestUtils.closeWindow(privateWindows[0]);
+  await BrowserTestUtils.closeWindow(privateWindows[1]);
 });

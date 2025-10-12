@@ -50,6 +50,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.translations.preferences.downloadlanguages.DownloadLanguageFileDialog
 import org.mozilla.fenix.translations.preferences.downloadlanguages.DownloadLanguageFileDialogType
 import org.mozilla.fenix.translations.preferences.downloadlanguages.DownloadLanguagesFeature
+import com.google.android.material.R as materialR
 
 // Friction should be increased, since peek height on this dialog is to fill the screen.
 private const val DIALOG_FRICTION = .65f
@@ -85,7 +86,7 @@ class TranslationsDialogFragment : BottomSheetDialogFragment() {
         super.onCreateDialog(savedInstanceState).apply {
             setOnShowListener {
                 runIfFragmentIsAttached {
-                    val bottomSheet = findViewById<View?>(R.id.design_bottom_sheet)
+                    val bottomSheet = findViewById<View?>(materialR.id.design_bottom_sheet)
                     bottomSheet?.let {
                         it.setBackgroundResource(android.R.color.transparent)
                         behavior = BottomSheetBehavior.from(it)

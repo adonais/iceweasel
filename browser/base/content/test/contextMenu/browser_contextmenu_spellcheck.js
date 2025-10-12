@@ -14,6 +14,14 @@ const example_base =
   "http://example.com/browser/browser/base/content/test/contextMenu/";
 const MAIN_URL = example_base + "subtst_contextmenu_input.html";
 
+const askChatMenu = [
+  "context-ask-chat",
+  true,
+  // Need a blank entry here because the Ask Chat submenu is dynamically built with no ids.
+  "",
+  null,
+];
+
 add_task(async function test_setup() {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, MAIN_URL);
 
@@ -47,6 +55,7 @@ add_task(async function test_text_input_spellcheck() {
       null,
       "---",
       null,
+      ...askChatMenu,
       "spell-check-enabled",
       true,
       "spell-dictionaries",
@@ -74,6 +83,9 @@ add_task(async function test_text_input_spellcheck() {
             input.clientTop; // force layout flush
           }
         );
+      },
+      awaitOnMenuBuilt: {
+        id: "context-ask-chat",
       },
     }
   );
@@ -107,6 +119,7 @@ add_task(async function test_text_input_spellcheckwrong() {
       null,
       "---",
       null,
+      ...askChatMenu,
       "spell-check-enabled",
       true,
       "spell-dictionaries",
@@ -121,7 +134,12 @@ add_task(async function test_text_input_spellcheckwrong() {
       ],
       null,
     ],
-    { waitForSpellCheck: true }
+    {
+      waitForSpellCheck: true,
+      awaitOnMenuBuilt: {
+        id: "context-ask-chat",
+      },
+    }
   );
 });
 
@@ -144,6 +162,7 @@ const kCorrectItems = [
   null,
   "---",
   null,
+  ...askChatMenu,
   "spell-check-enabled",
   true,
   "spell-dictionaries",
@@ -162,6 +181,9 @@ const kCorrectItems = [
 add_task(async function test_text_input_spellcheckcorrect() {
   await test_contextmenu("#input_spellcheck_correct", kCorrectItems, {
     waitForSpellCheck: true,
+    awaitOnMenuBuilt: {
+      id: "context-ask-chat",
+    },
   });
 });
 
@@ -169,6 +191,9 @@ add_task(async function test_text_input_spellcheck_deadactor() {
   await test_contextmenu("#input_spellcheck_correct", kCorrectItems, {
     waitForSpellCheck: true,
     keepMenuOpen: true,
+    awaitOnMenuBuilt: {
+      id: "context-ask-chat",
+    },
   });
   let wgp = gBrowser.selectedBrowser.browsingContext.currentWindowGlobal;
 
@@ -196,6 +221,9 @@ add_task(async function test_text_input_spellcheck_deadactor() {
   await test_contextmenu("#input_spellcheck_correct", kCorrectItems, {
     waitForSpellCheck: true,
     keepMenuOpen: true,
+    awaitOnMenuBuilt: {
+      id: "context-ask-chat",
+    },
   });
 
   // Now navigate the tab, after ensuring there's an unload listener, so
@@ -223,6 +251,9 @@ add_task(async function test_text_input_spellcheck_deadactor() {
   await test_contextmenu("#input_spellcheck_correct", kCorrectItems, {
     waitForSpellCheck: true,
     keepMenuOpen: true,
+    awaitOnMenuBuilt: {
+      id: "context-ask-chat",
+    },
   });
 
   // Check what happens if the actor stays alive by loading the same page
@@ -240,10 +271,16 @@ add_task(async function test_text_input_spellcheck_deadactor() {
   // Check the menu still looks the same:
   await test_contextmenu("#input_spellcheck_correct", kCorrectItems, {
     waitForSpellCheck: true,
+    awaitOnMenuBuilt: {
+      id: "context-ask-chat",
+    },
   });
   // And test it a last time without any navigation:
   await test_contextmenu("#input_spellcheck_correct", kCorrectItems, {
     waitForSpellCheck: true,
+    awaitOnMenuBuilt: {
+      id: "context-ask-chat",
+    },
   });
 });
 
@@ -266,6 +303,9 @@ add_task(async function test_text_input_spellcheck_multilingual() {
   await test_contextmenu("#input_spellcheck_correct", kCorrectItems, {
     waitForSpellCheck: true,
     keepMenuOpen: true,
+    awaitOnMenuBuilt: {
+      id: "context-ask-chat",
+    },
   });
   sandbox
     .stub(InlineSpellCheckerUI.mRemote, "dictionaryList")

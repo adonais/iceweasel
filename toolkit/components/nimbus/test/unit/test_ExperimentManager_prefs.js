@@ -3429,6 +3429,150 @@ add_task(async function test_setPref_types() {
   await cleanup();
 });
 
+// Same as TYPED_FEATURE but in the "user" branch.
+const USER_TYPED_FEATURE = new ExperimentFeature("test-typed-prefs", {
+  description: "Test feature that sets each type of pref",
+  owner: "test@test.test",
+  hasExposure: false,
+  variables: {
+    string: {
+      type: "string",
+      description: "test string variable",
+      setPref: {
+        branch: "user",
+        pref: "nimbus.test-only.types.string",
+      },
+    },
+    int: {
+      type: "int",
+      description: "test int variable",
+      setPref: {
+        branch: "user",
+        pref: "nimbus.test-only.types.int",
+      },
+    },
+    boolean: {
+      type: "boolean",
+      description: "test boolean variable",
+      setPref: {
+        branch: "user",
+        pref: "nimbus.test-only.types.boolean",
+      },
+    },
+    json: {
+      type: "json",
+      description: "test json variable",
+      setPref: {
+        branch: "user",
+        pref: "nimbus.test-only.types.json",
+      },
+    },
+  },
+});
+
+function getPrefsFromMap(prefs) {
+  return prefs.map(([pref, value]) => {
+    if (!Services.prefs.prefHasUserValue(pref)) {
+      return [pref, undefined];
+    }
+    switch (typeof value) {
+      case "boolean":
+        return [pref, Services.prefs.getBoolPref(pref)];
+      case "number":
+        return [pref, Services.prefs.getIntPref(pref)];
+      case "string":
+        return [pref, Services.prefs.getStringPref(pref)];
+      default:
+        throw new Error("Unsupported pref type!");
+    }
+  });
+}
+
+function setPrefsFromMap(prefs) {
+  for (let [pref, value] of prefs) {
+    if (value === undefined) {
+      Services.prefs.clearUserPref(pref);
+      continue;
+    }
+
+    switch (typeof value) {
+      case "boolean":
+        Services.prefs.setBoolPref(pref, value);
+        break;
+      case "number":
+        Services.prefs.setIntPref(pref, value);
+        break;
+      case "string":
+        Services.prefs.setStringPref(pref, value);
+        break;
+      default:
+        throw new Error("Unsupported pref type!");
+    }
+  }
+}
+
+add_task(
+  async function test_setPref_getOriginalPrefValuesForAllActiveEnrollments() {
+    // Pre-set nimbus.test-only.* prefs so they have originalValues that
+    // getOriginalPrefValuesForAllActiveEnrollments can return.
+    const testPrefs = [
+      ["nimbus.test-only.types.boolean", false],
+      ["nimbus.test-only.types.int", 100],
+      ["nimbus.test-only.types.string", "bar"],
+    ];
+    const originalPrefs = getPrefsFromMap(testPrefs);
+    setPrefsFromMap(testPrefs);
+
+    const featureCleanup = NimbusTestUtils.addTestFeatures(USER_TYPED_FEATURE);
+
+    const { manager, cleanup } = await setupTest();
+
+    const json = {
+      foo: "foo",
+      bar: 12345,
+      baz: true,
+      qux: null,
+      quux: ["corge"],
+    };
+
+    const experimentCleanup = await NimbusTestUtils.enrollWithFeatureConfig(
+      {
+        featureId: USER_TYPED_FEATURE.featureId,
+        value: {
+          string: "hello, world",
+          int: 12345,
+          boolean: true,
+          json,
+        },
+      },
+      { manager }
+    );
+
+    let nimbusSetPrefs =
+      await ExperimentAPI.manager.store.getOriginalPrefValuesForAllActiveEnrollments();
+    Assert.equal(
+      nimbusSetPrefs.getEntry("nimbus.test-only.types.boolean"),
+      false
+    );
+    Assert.equal(nimbusSetPrefs.getEntry("nimbus.test-only.types.int"), 100);
+    Assert.equal(
+      nimbusSetPrefs.getEntry("nimbus.test-only.types.string"),
+      "bar"
+    );
+    // nimbus.test-only.types.json had no original value.
+    Assert.equal(nimbusSetPrefs.getEntry("nimbus.test-only.types.json"), null);
+    Assert.throws(
+      () => nimbusSetPrefs.getEntry("nimbus.test-only.types.does_not_exist"),
+      /NS_ERROR_DOM_NOT_FOUND_ERR/
+    );
+
+    await experimentCleanup();
+    featureCleanup();
+    await cleanup();
+    setPrefsFromMap(originalPrefs);
+  }
+);
+
 async function test_setPref_types_restore() {
   const featureCleanup = NimbusTestUtils.addTestFeatures(TYPED_FEATURE);
 

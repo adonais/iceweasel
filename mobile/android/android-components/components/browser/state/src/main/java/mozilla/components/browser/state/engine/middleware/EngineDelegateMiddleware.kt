@@ -46,6 +46,7 @@ internal class EngineDelegateMiddleware(
             is EngineAction.PrintContentAction -> printContent(context.store, action)
             is EngineAction.ClearDataAction -> clearData(context.store, action)
             is EngineAction.PurgeHistoryAction -> purgeHistory(context.state)
+            is EngineAction.FlushEngineSessionStateAction -> flushEngineSessionSate(context.store, action)
             is TranslationsAction.TranslateAction -> {
                 next(action)
                 translate(context.store, action)
@@ -191,6 +192,14 @@ internal class EngineDelegateMiddleware(
         state.allTabs
             .mapNotNull { tab -> tab.engineState.engineSession }
             .forEach { engineSession -> engineSession.purgeHistory() }
+    }
+
+    private fun flushEngineSessionSate(
+        store: Store<BrowserState, BrowserAction>,
+        action: EngineAction.FlushEngineSessionStateAction,
+    ) = scope.launch {
+        getEngineSessionOrDispatch(store, action)
+            ?.flushSessionState()
     }
 }
 

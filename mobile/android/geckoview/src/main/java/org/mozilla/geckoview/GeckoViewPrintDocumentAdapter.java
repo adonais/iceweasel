@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import org.mozilla.gecko.util.ThreadUtils;
 
+/** Print document adapter for GeckoView content. */
 public class GeckoViewPrintDocumentAdapter extends PrintDocumentAdapter {
   private static final String LOGTAG = "GVPrintDocumentAdapter";
   private static final String PRINT_NAME_DEFAULT = "Document";

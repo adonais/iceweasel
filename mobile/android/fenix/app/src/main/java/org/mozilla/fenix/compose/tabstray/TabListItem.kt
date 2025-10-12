@@ -6,7 +6,6 @@ package org.mozilla.fenix.compose.tabstray
 
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -57,6 +56,8 @@ import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.browser.tabstray.R as tabstrayR
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * List item used to display a tab that supports clicks,
@@ -76,7 +77,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param onClick Callback to handle when item is clicked.
  * @param onLongClick Optional callback to handle when item is long clicked.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TabListItem(
     tab: TabSessionState,
@@ -131,7 +131,6 @@ fun TabListItem(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Suppress("LongMethod", "LongParameterList")
 @Composable
 private fun TabContent(
@@ -228,7 +227,7 @@ private fun TabContent(
                     .testTag(TabsTrayTestTag.TAB_ITEM_CLOSE),
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.mozac_ic_cross_24),
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
                     contentDescription = stringResource(
                         id = R.string.close_tab_title,
                         tab.toDisplayTitle(),
@@ -264,7 +263,7 @@ private fun Thumbnail(
             modifier = Modifier
                 .size(width = 92.dp, height = 72.dp)
                 .testTag(TabsTrayTestTag.TAB_ITEM_THUMBNAIL),
-            contentDescription = stringResource(id = R.string.mozac_browser_tabstray_open_tab),
+            contentDescription = stringResource(id = tabstrayR.string.mozac_browser_tabstray_open_tab),
         )
 
         if (isSelected) {
@@ -283,7 +282,7 @@ private fun Thumbnail(
                 colors = CardDefaults.cardColors(containerColor = FirefoxTheme.colors.layerAccent),
             ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.mozac_ic_checkmark_24),
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_checkmark_24),
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(all = 8.dp),

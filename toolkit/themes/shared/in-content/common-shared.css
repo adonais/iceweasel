@@ -18,7 +18,6 @@
    */
 
   --in-content-box-border-color: color-mix(in srgb, currentColor 41%, transparent);
-  --in-content-box-info-background: light-dark(#f0f0f4, rgba(249, 249, 250, 0.15));
 
   --in-content-item-hover: color-mix(in srgb, var(--button-background-color-primary) 20%, transparent);
   --in-content-item-hover-text: var(--text-color);
@@ -77,7 +76,6 @@
   :host(.anonymous-content-host),
   :root {
     --in-content-box-border-color: -moz-DialogText;
-    --in-content-box-info-background: var(--background-color-box);
 
     --in-content-item-hover: SelectedItem;
     --in-content-item-hover-text: SelectedItemText;
@@ -186,7 +184,7 @@ xul|menulist {
   min-height: var(--button-min-height);
   color: var(--button-text-color);
   border: var(--button-border);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   background-color: var(--button-background-color);
   font-weight: 400;
   padding: 0.45em 1em;
@@ -442,7 +440,7 @@ html|input:where([type="email"], [type="tel"], [type="text"], [type="password"],
 html|textarea {
   appearance: none;
   border: 1px solid var(--in-content-box-border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   color: inherit;
   background-color: var(--background-color-box);
 }
@@ -516,7 +514,7 @@ html|a:focus-visible,
 ::part(support-link):focus-visible {
   outline: var(--focus-outline);
   outline-offset: var(--link-focus-outline-offset);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 }
 
 button.text-link {
@@ -602,7 +600,7 @@ html|*#categories {
 #categories > .category {
   border: var(--button-border);
   border-color: var(--button-border-color-primary);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   min-height: 48px;
   appearance: none;
   color: inherit;
@@ -766,7 +764,7 @@ xul|richlistbox {
   margin-inline: 0;
   background-color: var(--background-color-box);
   border: 1px solid var(--in-content-box-border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   color: var(--text-color);
 }
 
@@ -830,7 +828,7 @@ xul|richlistitem[selected] xul|menulist:focus-visible {
 @media (forced-colors) {
   xul|treechildren::-moz-tree-row(selected) {
     border: 2px solid currentColor;
-    border-radius: 4px;
+    border-radius: var(--border-radius-small);
   }
 }
 
@@ -846,7 +844,7 @@ xul|tree {
   appearance: none;
   font-size: 1em;
   border: 1px solid var(--in-content-box-border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   background-color: var(--background-color-box);
   color: inherit;
   margin: 0;
@@ -937,8 +935,8 @@ xul|treechildren::-moz-tree-image(selected) {
 
 /* Message bars */
 .message-bar {
-  background-color: var(--in-content-box-info-background);
-  border-radius: 4px;
+  background-color: var(--background-color-box-info);
+  border-radius: var(--border-radius-small);
   min-height: 32px;
   align-items: center;
   padding: 4px;
@@ -1006,7 +1004,7 @@ input[type="text"][warning]:enabled:not(:focus) {
   background: var(--background-color-box);
   /* Needed for high-contrast where the border will appear. */
   border: 1px solid var(--border-color-card);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   box-shadow: var(--box-shadow-card);
   margin: 0 0 8px;
   /* Remove the border from the overall padding. */
@@ -1041,7 +1039,7 @@ input[type="text"][warning]:enabled:not(:focus) {
   height: 36px;
   cursor: default;
   border: var(--button-border);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   display: flex;
   align-items: center;
 }

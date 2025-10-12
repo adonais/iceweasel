@@ -1312,7 +1312,12 @@ gfx::IntRect NativeLayerCA::CurrentSurfaceDisplayRect() {
 void NativeLayerCA::SetDisplayRect(const gfx::IntRect& aDisplayRect) {
   MutexAutoLock lock(mMutex);
   MOZ_ASSERT(!mSurfaceHandler, "Setting display rect will have no effect.");
-  mDisplayRect = aDisplayRect;
+  if (!mDisplayRect.IsEqualInterior(aDisplayRect)) {
+    mDisplayRect = aDisplayRect;
+
+    ForAllRepresentations(
+        [&](Representation& r) { r.mMutatedDisplayRect = true; });
+  }
 }
 
 void NativeLayerCA::SetSurfaceToPresent(CFTypeRefPtr<IOSurfaceRef> aSurfaceRef,
@@ -1327,9 +1332,8 @@ void NativeLayerCA::SetSurfaceToPresent(CFTypeRefPtr<IOSurfaceRef> aSurfaceRef,
   bool changedSurface = (mSurfaceToPresent != aSurfaceRef);
   mSurfaceToPresent = aSurfaceRef;
 
-  bool changedSizeAndDisplayRect = (mSize != aSize);
+  bool changedSize = (mSize != aSize);
   mSize = aSize;
-  mDisplayRect = IntRect(IntPoint{}, mSize);
 
   // Figure out if the surface is a video.
   if (mSurfaceToPresent) {
@@ -1362,8 +1366,7 @@ void NativeLayerCA::SetSurfaceToPresent(CFTypeRefPtr<IOSurfaceRef> aSurfaceRef,
 
   ForAllRepresentations([&](Representation& r) {
     r.mMutatedFrontSurface |= changedSurface;
-    r.mMutatedSize |= changedSizeAndDisplayRect;
-    r.mMutatedDisplayRect |= changedSizeAndDisplayRect;
+    r.mMutatedSize |= changedSize;
     r.mMutatedSpecializeVideo |= changedSpecializeVideo;
     r.mMutatedIsDRM |= changedIsDRM;
   });
@@ -1388,12 +1391,6 @@ NativeLayerCA::Representation::~Representation() {
   [mOpaquenessTintLayer release];
   [mWrappingCALayer release];
   [mRoundedClipCALayer release];
-}
-
-void NativeLayerCA::InvalidateRegionThroughoutSwapchain(
-    const MutexAutoLock& aProofOfLock, const IntRegion& aRegion) {
-  MOZ_ASSERT(mSurfaceHandler);
-  mSurfaceHandler->InvalidateRegionThroughoutSwapchain(aRegion);
 }
 
 template <typename F>

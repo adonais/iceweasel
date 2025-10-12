@@ -1160,18 +1160,6 @@ nsresult NS_CheckPortSafety(nsIURI* uri) {
   return NS_CheckPortSafety(port, scheme.get());
 }
 
-nsresult NS_NewProxyInfo(const nsACString& type, const nsACString& host,
-                         int32_t port, uint32_t flags, nsIProxyInfo** result) {
-  nsresult rv;
-  nsCOMPtr<nsIProtocolProxyService> pps;
-  pps = mozilla::components::ProtocolProxy::Service(&rv);
-  if (NS_SUCCEEDED(rv)) {
-    rv = pps->NewProxyInfo(type, host, port, ""_ns, ""_ns, flags, UINT32_MAX,
-                           nullptr, result);
-  }
-  return rv;
-}
-
 nsresult NS_GetFileProtocolHandler(nsIFileProtocolHandler** result,
                                    nsIIOService* ioService /* = nullptr */) {
   nsresult rv;

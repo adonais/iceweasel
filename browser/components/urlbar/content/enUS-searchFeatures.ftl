@@ -244,3 +244,21 @@ urlbar-search-mode-bookmarks-en = Bookmarks
 urlbar-search-mode-tabs-en = Tabs
 urlbar-search-mode-history-en = History
 urlbar-search-mode-actions-en = Actions
+
+## These strings are used for Yelp realtime suggestions in the urlbar.
+## Yelp realtime suggestions shows shops, places information etc nearby.
+## NOTE: Yelp is a service name, so please use this word as-is when translating.
+
+# This string is shown as title when Yelp realtime suggestion are disabled.
+urlbar-result-yelp-realtime-opt-in-title = Find great places nearby and more
+
+# This string is shown as description when Yelp realtime suggestion are disabled.
+urlbar-result-yelp-realtime-opt-in-description = Get suggestions for nearby places and services — plus updates on stocks, sports scores, and more from our partners by sharing search query data with { -vendor-short-name }. <a data-l10n-name="learn-more-link">Learn more</a>
+
+# This string is shown in the result menu.
+urlbar-result-menu-dont-show-yelp-realtime =
+  .label = Don’t show Yelp suggestions
+
+# A message that replaces a result when the user dismisses Yelp realtime
+# suggestions.
+urlbar-result-dismissal-acknowledgment-yelp-realtime = Thanks for your feedback. You won’t see Yelp suggestions anymore.

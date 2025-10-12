@@ -98,6 +98,10 @@
   }
 }
 
+input[readonly] {
+  caret-color: transparent;
+}
+
 :host([linetype="username"]),
 :host([linetype="password"]) {
   > .line-container.copied {

@@ -54,7 +54,8 @@ class DenseBitmap {
   uintptr_t& word(size_t i) { return data[i]; }
 
   bool getBit(size_t bit) const {
-    return word(bit / JS_BITS_PER_WORD) & (1 << (bit % JS_BITS_PER_WORD));
+    return word(bit / JS_BITS_PER_WORD) &
+           (uintptr_t(1) << (bit % JS_BITS_PER_WORD));
   }
 
   template <typename T>

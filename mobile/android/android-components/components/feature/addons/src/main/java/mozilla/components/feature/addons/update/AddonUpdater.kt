@@ -49,7 +49,6 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.ktx.android.notification.ChannelData
 import mozilla.components.support.ktx.android.notification.ensureNotificationChannelExists
-import mozilla.components.support.utils.PendingIntentUtils
 import mozilla.components.support.webextensions.WebExtensionSupport
 import java.util.Date
 import java.util.concurrent.TimeUnit
@@ -413,7 +412,7 @@ class DefaultAddonUpdater(
             applicationContext,
             requestCode,
             allowIntent,
-            PendingIntentUtils.defaultFlags,
+            PendingIntent.FLAG_IMMUTABLE,
         )
 
         val allowText =
@@ -433,7 +432,7 @@ class DefaultAddonUpdater(
             applicationContext,
             requestCode,
             denyIntent,
-            PendingIntentUtils.defaultFlags,
+            PendingIntent.FLAG_IMMUTABLE,
         )
 
         val denyText = applicationContext.getString(R.string.mozac_feature_addons_updater_notification_cancel_button)

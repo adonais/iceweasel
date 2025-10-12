@@ -300,6 +300,8 @@ ml-summarizer-perf:
             - qwen2.5-0.5-instruct
             - distilbart-cnn-12-6
     description: Run ML Models Perf Tests
+    worker:
+        max-run-time: 3000
     treeherder:
         symbol: perftest(ml-sum-perf)
         tier: 2
@@ -323,6 +325,7 @@ ml-llama-summarizer-perf:
         fetch:
             - wllama.wasm
             - smollm2-360-instruct-gguf
+            - Qwen3-0.6B-GGUF
     description: Run ML Summarizer Model Using Wllama
     treeherder:
         symbol: perftest(ml-llama-sum-perf)
@@ -587,6 +590,11 @@ perftest-accessibility:
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
             cd $MOZ_FETCHES_DIR &&
             python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            accessible/tests/browser/performance/browser_addManyIds.js
+            && python3 python/mozperftest/mozperftest/runner.py
             --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
             --flavor mochitest
             --output $MOZ_FETCHES_DIR/../artifacts

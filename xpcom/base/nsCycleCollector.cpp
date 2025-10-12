@@ -3641,6 +3641,9 @@ bool nsCycleCollector::Collect(CCReason aReason, ccIsManual aIsManual,
   }
   mActivelyCollecting = true;
 
+  js::CommitPendingWrapperPreservations(
+      CycleCollectedJSContext::Get()->Context());
+
   MOZ_ASSERT(!IsIncrementalGCInProgress());
 
   bool startedIdle = IsIdle();

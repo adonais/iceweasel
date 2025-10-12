@@ -178,7 +178,7 @@ export class WebDriverBiDiConnection extends WebSocketConnection {
     super.onPacket(packet);
 
     const { id, method, params } = packet;
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
 
     try {
       // First check for mandatory field in the command packet

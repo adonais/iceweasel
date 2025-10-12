@@ -262,6 +262,8 @@ struct FrameMetrics {
 
   void UpdatePendingScrollInfo(const ScrollPositionUpdate& aInfo);
 
+  bool ScrollLayoutViewportTo(const CSSPoint& aDestination);
+
  public:
   void SetPresShellResolution(float aPresShellResolution) {
     mPresShellResolution = aPresShellResolution;

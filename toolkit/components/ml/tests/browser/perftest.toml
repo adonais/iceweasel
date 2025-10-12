@@ -3,6 +3,9 @@ support-files = [
     "head.js",
     "shared-head.js"
 ]
+prefs = [
+    "gfx.webgpu.ignore-blocklist=true", # https://bugzilla.mozilla.org/show_bug.cgi?id=1985348
+]
 
 ["browser_ml_autofill_perf.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"

@@ -433,6 +433,15 @@ bool nsMathMLOperators::IsMirrorableOperator(const nsString& aOperator) {
 }
 
 /* static */
+nsString nsMathMLOperators::GetMirroredOperator(const nsString& aOperator) {
+  nsString result;
+  if (auto codePoint = ToUnicodeCodePoint(aOperator)) {
+    result.Assign(mozilla::intl::UnicodeProperties::CharMirror(codePoint));
+  }
+  return result;
+}
+
+/* static */
 bool nsMathMLOperators::IsIntegralOperator(const nsString& aOperator) {
   if (auto codePoint = ToUnicodeCodePoint(aOperator)) {
     return (0x222B <= codePoint && codePoint <= 0x2233) ||

@@ -1628,6 +1628,28 @@ ssl:
       - seceng-telemetry@mozilla.com
     expires: never
 
+  scts_from_tiled_logs_per_connection:
+    type: custom_distribution
+    description: >
+      Histogram of the number of Signed Certificate Timestamps from tiled logs
+      per TLS connection from all sources (embedded / OCSP Stapling / TLS
+      handshake). Bucket 0 counts the cases when no SCTs from tiled logs were
+      received, or none were extracted due to parsing errors.
+    range_min: 0
+    range_max: 10
+    bucket_count: 11
+    histogram_type: linear
+    data_sensitivity:
+      - technical
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1985598
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1985598
+    notification_emails:
+      - seceng-telemetry@mozilla.com
+      - jschanck@mozilla.com
+    expires: never
+
 oskeystore:
   return_codes:
     type: event

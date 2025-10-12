@@ -22,11 +22,8 @@ function WidgetsFeatureHighlight({ handleDismiss, handleBlock, dispatch }) {
             src="chrome://newtab/content/data/content/assets/widget-message.png"
             alt=""
           />
-          <h3>Stay focused with lists and a built-in timer</h3>
-          <p>
-            From quick reminders to daily to-dos, focus sessions to stretch
-            breaks — stay on task and on time.
-          </p>
+          <h3 data-l10n-id="newtab-widget-message-title" />
+          <p data-l10n-id="newtab-widget-message-copy" />
         </div>
       }
       dispatch={dispatch}

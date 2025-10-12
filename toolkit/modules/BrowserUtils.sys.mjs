@@ -536,7 +536,7 @@ export var BrowserUtils = {
     // Note that we deliberately don't await at the top level, so we
     // can guarantee all consumers get run/queued.
     let callSingleListener = async fn => {
-      let startTime = profilerMarker ? Cu.now() : 0;
+      let startTime = profilerMarker ? ChromeUtils.now() : 0;
       try {
         await fn(...args);
       } catch (ex) {

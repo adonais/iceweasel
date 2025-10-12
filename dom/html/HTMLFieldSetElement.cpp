@@ -107,10 +107,9 @@ nsIHTMLCollection* HTMLFieldSetElement::Elements() {
 
 nsresult HTMLFieldSetElement::Reset() { return NS_OK; }
 
-void HTMLFieldSetElement::InsertChildBefore(nsIContent* aChild,
-                                            nsIContent* aBeforeThis,
-                                            bool aNotify, ErrorResult& aRv,
-                                            nsINode* aOldParent) {
+void HTMLFieldSetElement::InsertChildBefore(
+    nsIContent* aChild, nsIContent* aBeforeThis, bool aNotify, ErrorResult& aRv,
+    nsINode* aOldParent, MutationEffectOnScript aMutationEffectOnScript) {
   bool firstLegendHasChanged = false;
 
   if (aChild->IsHTMLElement(nsGkAtoms::legend)) {
@@ -133,8 +132,8 @@ void HTMLFieldSetElement::InsertChildBefore(nsIContent* aChild,
     }
   }
 
-  nsGenericHTMLFormControlElement::InsertChildBefore(aChild, aBeforeThis,
-                                                     aNotify, aRv, aOldParent);
+  nsGenericHTMLFormControlElement::InsertChildBefore(
+      aChild, aBeforeThis, aNotify, aRv, aOldParent, aMutationEffectOnScript);
   if (aRv.Failed()) {
     return;
   }
@@ -144,9 +143,9 @@ void HTMLFieldSetElement::InsertChildBefore(nsIContent* aChild,
   }
 }
 
-void HTMLFieldSetElement::RemoveChildNode(nsIContent* aKid, bool aNotify,
-                                          const BatchRemovalState* aState,
-                                          nsINode* aNewParent) {
+void HTMLFieldSetElement::RemoveChildNode(
+    nsIContent* aKid, bool aNotify, const BatchRemovalState* aState,
+    nsINode* aNewParent, MutationEffectOnScript aMutationEffectOnScript) {
   bool firstLegendHasChanged = false;
 
   if (mFirstLegend && aKid == mFirstLegend) {
@@ -163,8 +162,8 @@ void HTMLFieldSetElement::RemoveChildNode(nsIContent* aKid, bool aNotify,
     }
   }
 
-  nsGenericHTMLFormControlElement::RemoveChildNode(aKid, aNotify, aState,
-                                                   aNewParent);
+  nsGenericHTMLFormControlElement::RemoveChildNode(
+      aKid, aNotify, aState, aNewParent, aMutationEffectOnScript);
 
   if (firstLegendHasChanged) {
     NotifyElementsForFirstLegendChange(aNotify);

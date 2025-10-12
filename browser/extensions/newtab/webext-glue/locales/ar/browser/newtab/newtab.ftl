@@ -309,9 +309,14 @@ newtab-custom-pocket-sponsored = قصص مموّلة
 newtab-custom-pocket-show-recent-saves = أظهِر عمليات الحفظ الأخيرة
 newtab-custom-recent-title = أحدث الأنشطة
 newtab-custom-recent-subtitle = مختارات من المواقع والمحتويات الحديثة
-newtab-custom-recent-toggle =
-    .label = أحدث الأنشطة
-    .description = مختارات من المواقع والمحتويات الحديثة
+newtab-custom-widget-weather-toggle =
+    .label = الطقس
+newtab-custom-widget-trending-search-toggle =
+    .label = عمليات البحث المُتداولة
+newtab-custom-widget-lists-toggle =
+    .label = قوائم
+newtab-custom-widget-timer-toggle =
+    .label = المؤقت
 newtab-custom-close-button = أغلِق
 newtab-custom-settings = أدِر المزيد من الإعدادات
 
@@ -391,6 +396,19 @@ newtab-weather-menu-change-weather-display-detailed = بدّل إلى العرض
 newtab-weather-menu-temperature-option-celsius = درجة مئوية
 newtab-weather-menu-learn-more = اطّلع على المزيد
 
+## Topic Labels
+
+newtab-topic-label-education = تعليم
+newtab-topic-label-health = صحة
+newtab-topic-label-hobbies = الألعاب
+# ”Money” = “Personal Finance”, refers to articles and stories that help readers better manage
+# and understand their personal finances – from saving money to buying a home. See the
+# “Curated by our editors“ section at the top of https://getpocket.com/explore/personal-finance for more context
+newtab-topic-label-finance = مال
+newtab-topic-label-society-parenting = تربية الأبناء
+newtab-topic-label-government = سياسة
+newtab-topic-label-education-science = علوم
+
 ## Topic Selection Modal
 
 newtab-topic-selection-save-button = احفظ
@@ -401,6 +419,7 @@ newtab-topic-selection-button-maybe-later = ربما لاحقا
 ## "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 ## e.g. Following the travel section of stories.
 
+newtab-section-follow-button = تابع
 newtab-section-unfollow-button = ألغِ المتابعة
 
 ## Button to block/unblock listed topics

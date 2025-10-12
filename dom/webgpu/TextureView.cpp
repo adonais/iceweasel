@@ -16,28 +16,13 @@ GPU_IMPL_CYCLE_COLLECTION(TextureView, mParent)
 GPU_IMPL_JS_WRAP(TextureView)
 
 TextureView::TextureView(Texture* const aParent, RawId aId)
-    : ChildOf(aParent), mId(aId) {
-  MOZ_RELEASE_ASSERT(aId);
-}
+    : ObjectBase(aParent->GetChild(), aId, ffi::wgpu_client_drop_texture_view),
+      ChildOf(aParent) {}
 
-TextureView::~TextureView() { Cleanup(); }
+TextureView::~TextureView() = default;
 
 WeakPtr<CanvasContext> TextureView::GetTargetContext() const {
   return mParent->mTargetContext;
 }  // namespace webgpu
-
-void TextureView::Cleanup() {
-  if (!mValid || !mParent || !mParent->GetDevice()) {
-    return;
-  }
-  mValid = false;
-
-  auto bridge = mParent->GetDevice()->GetBridge();
-  if (!bridge) {
-    return;
-  }
-
-  ffi::wgpu_client_drop_texture_view(bridge->GetClient(), mId);
-}
 
 }  // namespace mozilla::webgpu

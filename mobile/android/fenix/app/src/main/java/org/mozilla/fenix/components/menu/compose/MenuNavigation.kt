@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.components.menu.compose
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -30,7 +29,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
 
 @Suppress("LongParameterList")
 @Composable
@@ -79,7 +78,7 @@ internal fun MenuNavigation(
     ) {
         MenuNavItem(
             state = goBackState,
-            painter = painterResource(id = R.drawable.mozac_ic_back_24),
+            painter = painterResource(id = iconsR.drawable.mozac_ic_back_24),
             label = stringResource(id = R.string.browser_menu_back),
             onClick = { onBackButtonClick(false) },
             onLongClick = { onBackButtonClick(true) },
@@ -87,7 +86,7 @@ internal fun MenuNavigation(
 
         MenuNavItem(
             state = goForwardState,
-            painter = painterResource(id = R.drawable.mozac_ic_forward_24),
+            painter = painterResource(id = iconsR.drawable.mozac_ic_forward_24),
             label = stringResource(id = R.string.browser_menu_forward),
             onClick = { onForwardButtonClick(false) },
             onLongClick = { onForwardButtonClick(true) },
@@ -95,7 +94,7 @@ internal fun MenuNavigation(
 
         MenuNavItem(
             state = state,
-            painter = painterResource(id = R.drawable.mozac_ic_share_android_24),
+            painter = painterResource(id = iconsR.drawable.mozac_ic_share_android_24),
             label = stringResource(id = R.string.browser_menu_share),
             onClick = onShareButtonClick,
         )
@@ -103,14 +102,14 @@ internal fun MenuNavigation(
         if (isSiteLoading) {
             MenuNavItem(
                 state = state,
-                painter = painterResource(id = R.drawable.mozac_ic_stop),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_stop),
                 label = stringResource(id = R.string.browser_menu_stop),
                 onClick = onStopButtonClick,
             )
         } else {
             MenuNavItem(
                 state = state,
-                painter = painterResource(id = R.drawable.mozac_ic_arrow_clockwise_24),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_arrow_clockwise_24),
                 label = stringResource(id = R.string.browser_menu_refresh),
                 onClick = { onRefreshButtonClick(false) },
                 onLongClick = { onRefreshButtonClick(true) },
@@ -119,7 +118,6 @@ internal fun MenuNavigation(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MenuNavItem(
     state: MenuItemState = MenuItemState.ENABLED,
@@ -152,9 +150,7 @@ private fun MenuNavItem(
 
         Text(
             text = label,
-            style = FirefoxTheme.typography.caption.merge(
-                platformStyle = PlatformTextStyle(includeFontPadding = true),
-            ).copy(hyphens = Hyphens.Auto),
+            style = FirefoxTheme.typography.caption.copy(hyphens = Hyphens.Auto),
             color = getLabelTextColor(state = state),
             maxLines = 2,
             softWrap = true,

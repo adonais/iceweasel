@@ -22,6 +22,9 @@
 #define HIGHWAY_HWY_CONTRIB_MATVEC_MATVEC_INL_H_
 #endif
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "hwy/cache_control.h"
 #include "hwy/contrib/thread_pool/thread_pool.h"
 #include "hwy/highway.h"
@@ -30,9 +33,19 @@ HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
 
-template <size_t kOuter, size_t kInner, typename T>
-HWY_NOINLINE void MatVec(const T* HWY_RESTRICT mat, const T* HWY_RESTRICT vec,
-                         T* HWY_RESTRICT out, hwy::ThreadPool& pool) {
+template <typename TA, typename TB>
+TA AddScalar(TA a, TB b) {
+  return ConvertScalarTo<TA>(ConvertScalarTo<float>(a) +
+                             ConvertScalarTo<float>(b));
+}
+
+template <size_t kOuter, size_t kInner, typename T, bool kAdd>
+HWY_NOINLINE void MatVecAddImpl(const T* HWY_RESTRICT mat,
+                                const T* HWY_RESTRICT vec,
+                                const T* HWY_RESTRICT add, T* HWY_RESTRICT out,
+                                hwy::ThreadPool& pool) {
+  (void)add;
+
   // Process multiple rows at a time so that we write multiples of a cache line
   // to avoid false sharing (>= 64). 128 is better than 256. 512 has too little
   // parallelization potential.
@@ -101,6 +114,9 @@ HWY_NOINLINE void MatVec(const T* HWY_RESTRICT mat, const T* HWY_RESTRICT vec,
                sum0 = Add(sum0, sum1);
                sum0 = Add(sum0, sum2);
                buf[idx_row] = ReduceSum(d, sum0);
+               HWY_IF_CONSTEXPR(kAdd) {
+                 buf[idx_row] = AddScalar(buf[idx_row], add[begin + idx_row]);
+               }
              }  // idx_row
              HWY_UNROLL(4)  // 1..4 iterations
              for (size_t i = 0; i != kChunkSize; i += N) {
@@ -128,7 +144,40 @@ HWY_NOINLINE void MatVec(const T* HWY_RESTRICT mat, const T* HWY_RESTRICT vec,
       sum0 = MulAdd(a0, v0, sum0);
     }
     out[r] = ReduceSum(d, sum0);
+    HWY_IF_CONSTEXPR(kAdd) { out[r] = AddScalar(out[r], add[r]); }
   }  // r
+}
+
+// Multiplies mat with vec, adds add and puts the result in out.
+//
+// mat is a (kOuter, kInner)-shaped array, where element [i,j] is located at
+// index i * kInner + j.
+//
+// vec is a (kInner,)-shaped array.
+//
+// add is a (kOuter,)-shaped array.
+//
+// out is a (kOuter,)-shaped array that will set to mat @ vec + add.
+template <size_t kOuter, size_t kInner, typename T>
+HWY_NOINLINE void MatVecAdd(const T* HWY_RESTRICT mat,
+                            const T* HWY_RESTRICT vec,
+                            const T* HWY_RESTRICT add, T* HWY_RESTRICT out,
+                            hwy::ThreadPool& pool) {
+  MatVecAddImpl<kOuter, kInner, T, true>(mat, vec, add, out, pool);
+}
+
+// Multiplies mat with vec and puts the result in out.
+//
+// mat is a (kOuter, kInner)-shaped array, where element [i,j] is located at
+// index i * kInner + j.
+//
+// vec is a (kInner,)-shaped array.
+//
+// out is a (kOuter,)-shaped array that will set to mat @ vec.
+template <size_t kOuter, size_t kInner, typename T>
+HWY_NOINLINE void MatVec(const T* HWY_RESTRICT mat, const T* HWY_RESTRICT vec,
+                         T* HWY_RESTRICT out, hwy::ThreadPool& pool) {
+  MatVecAddImpl<kOuter, kInner, T, false>(mat, vec, /*add=*/nullptr, out, pool);
 }
 
 // This target lacks too many ops required in our implementation, use
@@ -136,15 +185,17 @@ HWY_NOINLINE void MatVec(const T* HWY_RESTRICT mat, const T* HWY_RESTRICT vec,
 #if HWY_TARGET != HWY_SCALAR
 
 // Specialization for bf16 matrix, which halves memory bandwidth requirements.
-template <size_t kOuter, size_t kInner>
-HWY_NOINLINE void MatVec(const hwy::bfloat16_t* HWY_RESTRICT mat,
-                         const float* HWY_RESTRICT vec, float* HWY_RESTRICT out,
-                         hwy::ThreadPool& pool) {
+template <size_t kOuter, size_t kInner, bool kAdd>
+HWY_NOINLINE void MatVecAddImpl(const hwy::bfloat16_t* HWY_RESTRICT mat,
+                                const float* HWY_RESTRICT vec,
+                                const float* HWY_RESTRICT add,
+                                float* HWY_RESTRICT out,
+                                hwy::ThreadPool& pool) {
   // Process multiple rows at a time so that we write multiples of a cache line
   // to avoid false sharing (>= 64). 128 is better than 256. 512 has too little
   // parallelization potential.
-  constexpr size_t kChunkSize = 64 / sizeof(float);
-  const uint64_t num_chunks = static_cast<uint64_t>(kOuter / kChunkSize);
+  constexpr size_t kChunkSize2 = 64 / sizeof(float);
+  const uint64_t num_chunks = static_cast<uint64_t>(kOuter / kChunkSize2);
 
   const ScalableTag<float> d;
   const Repartition<hwy::bfloat16_t, decltype(d)> d16;
@@ -156,7 +207,7 @@ HWY_NOINLINE void MatVec(const hwy::bfloat16_t* HWY_RESTRICT mat,
   using V16H = Vec<decltype(d16h)>;
   const size_t N = Lanes(d);
   // Required for Stream loop, otherwise we might have partial vectors.
-  HWY_DASSERT(kChunkSize >= N);
+  HWY_DASSERT(kChunkSize2 >= N);
   pool.Run(0, num_chunks,
            [&](const uint64_t chunk, size_t /*thread*/) HWY_ATTR {
              // MSVC workaround: duplicate to ensure constexpr.
@@ -222,6 +273,9 @@ HWY_NOINLINE void MatVec(const hwy::bfloat16_t* HWY_RESTRICT mat,
                sum0 = Add(sum0, sum1);
                sum0 = Add(sum0, sum2);
                buf[idx_row] = ReduceSum(d, sum0);
+               HWY_IF_CONSTEXPR(kAdd) {
+                 buf[idx_row] = AddScalar(buf[idx_row], add[begin + idx_row]);
+               }
              }  // idx_row
              HWY_UNROLL(4)  // 1..4 iterations
              for (size_t i = 0; i != kChunkSize; i += N) {
@@ -231,7 +285,7 @@ HWY_NOINLINE void MatVec(const hwy::bfloat16_t* HWY_RESTRICT mat,
   hwy::FlushStream();
 
   // Handle remainder rows which are not a multiple of the chunk size.
-  for (size_t r = num_chunks * kChunkSize; r < kOuter; ++r) {
+  for (size_t r = num_chunks * kChunkSize2; r < kOuter; ++r) {
     auto sum0 = Zero(d);
 
     const hwy::bfloat16_t* HWY_RESTRICT row = &mat[r * kInner];
@@ -251,26 +305,44 @@ HWY_NOINLINE void MatVec(const hwy::bfloat16_t* HWY_RESTRICT mat,
       sum0 = MulAdd(a0, v0, sum0);
     }
     out[r] = ReduceSum(d, sum0);
+    HWY_IF_CONSTEXPR(kAdd) { out[r] = AddScalar(out[r], add[r]); }
   }  // r
 }
 
-// Both mat and vec are bf16.
+template <size_t kOuter, size_t kInner>
+HWY_NOINLINE void MatVecAdd(const hwy::bfloat16_t* HWY_RESTRICT mat,
+                            const float* HWY_RESTRICT vec,
+                            const float* HWY_RESTRICT add,
+                            float* HWY_RESTRICT out, hwy::ThreadPool& pool) {
+  MatVecAddImpl<kOuter, kInner, true>(mat, vec, add, out, pool);
+}
+
 template <size_t kOuter, size_t kInner>
 HWY_NOINLINE void MatVec(const hwy::bfloat16_t* HWY_RESTRICT mat,
-                         const hwy::bfloat16_t* HWY_RESTRICT vec,
-                         float* HWY_RESTRICT out, hwy::ThreadPool& pool) {
+                         const float* HWY_RESTRICT vec, float* HWY_RESTRICT out,
+                         hwy::ThreadPool& pool) {
+  MatVecAddImpl<kOuter, kInner, false>(mat, vec, /*add=*/nullptr, out, pool);
+}
+
+// Both mat and vec are bf16.
+template <size_t kOuter, size_t kInner, bool kAdd>
+HWY_NOINLINE void MatVecAddImpl(const hwy::bfloat16_t* HWY_RESTRICT mat,
+                                const hwy::bfloat16_t* HWY_RESTRICT vec,
+                                const hwy::bfloat16_t* HWY_RESTRICT add,
+                                float* HWY_RESTRICT out,
+                                hwy::ThreadPool& pool) {
   // Process multiple rows at a time so that we write multiples of a cache line
   // to avoid false sharing (>= 64). 128 is better than 256. 512 has too little
   // parallelization potential.
-  constexpr size_t kChunkSize = 64 / sizeof(bfloat16_t);
-  const uint64_t num_chunks = static_cast<uint64_t>(kOuter / kChunkSize);
+  constexpr size_t kChunkSize2 = 64 / sizeof(bfloat16_t);
+  const uint64_t num_chunks = static_cast<uint64_t>(kOuter / kChunkSize2);
 
   const ScalableTag<float> df;
   const Repartition<hwy::bfloat16_t, decltype(df)> d16;
   using V16 = Vec<decltype(d16)>;
   const size_t N = Lanes(d16);
   // Required for Stream loop, otherwise we might have partial vectors.
-  HWY_DASSERT(kChunkSize >= N);
+  HWY_DASSERT(kChunkSize2 >= N);
   pool.Run(0, num_chunks,
            [&](const uint64_t chunk, size_t /*thread*/) HWY_ATTR {
              // MSVC workaround: duplicate to ensure constexpr.
@@ -320,6 +392,9 @@ HWY_NOINLINE void MatVec(const hwy::bfloat16_t* HWY_RESTRICT mat,
                sum2 = Add(sum2, sum3);
                sum0 = Add(sum0, sum2);
                buf[idx_row] = ReduceSum(df, sum0);
+               HWY_IF_CONSTEXPR(kAdd) {
+                 buf[idx_row] = AddScalar(buf[idx_row], add[begin + idx_row]);
+               }
              }  // idx_row
              HWY_UNROLL(4)  // 1..4 iterations
              for (size_t i = 0; i != kChunkSize; i += N / 2) {
@@ -329,7 +404,7 @@ HWY_NOINLINE void MatVec(const hwy::bfloat16_t* HWY_RESTRICT mat,
   hwy::FlushStream();
 
   // Handle remainder rows which are not a multiple of the chunk size.
-  for (size_t r = num_chunks * kChunkSize; r < kOuter; ++r) {
+  for (size_t r = num_chunks * kChunkSize2; r < kOuter; ++r) {
     auto sum0 = Zero(df);
     auto sum1 = Zero(df);
 
@@ -348,7 +423,23 @@ HWY_NOINLINE void MatVec(const hwy::bfloat16_t* HWY_RESTRICT mat,
       sum0 = ReorderWidenMulAccumulate(df, b0, v0, sum0, sum1);
     }
     out[r] = ReduceSum(df, Add(sum0, sum1));
+    HWY_IF_CONSTEXPR(kAdd) { out[r] = AddScalar(out[r], add[r]); }
   }  // r
+}
+
+template <size_t kOuter, size_t kInner>
+HWY_NOINLINE void MatVecAdd(const hwy::bfloat16_t* HWY_RESTRICT mat,
+                            const hwy::bfloat16_t* HWY_RESTRICT vec,
+                            const hwy::bfloat16_t* HWY_RESTRICT add,
+                            float* HWY_RESTRICT out, hwy::ThreadPool& pool) {
+  MatVecAddImpl<kOuter, kInner, true>(mat, vec, add, out, pool);
+}
+
+template <size_t kOuter, size_t kInner>
+HWY_NOINLINE void MatVec(const hwy::bfloat16_t* HWY_RESTRICT mat,
+                         const hwy::bfloat16_t* HWY_RESTRICT vec,
+                         float* HWY_RESTRICT out, hwy::ThreadPool& pool) {
+  MatVecAddImpl<kOuter, kInner, false>(mat, vec, /*add=*/nullptr, out, pool);
 }
 
 #endif  // HWY_TARGET != HWY_SCALAR

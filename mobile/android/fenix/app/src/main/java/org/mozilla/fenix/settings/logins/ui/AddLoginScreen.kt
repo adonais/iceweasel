@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -25,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.painterResource
@@ -42,28 +44,39 @@ import mozilla.components.support.ktx.util.URLStringUtils.isHttpOrHttps
 import mozilla.components.support.ktx.util.URLStringUtils.isValidHost
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 private val IconButtonHeight = 48.dp
 
 @Composable
 internal fun AddLoginScreen(store: LoginsStore) {
+    val state by store.observeAsState(store.state) { it }
+
     Scaffold(
         topBar = {
             AddLoginTopBar(store)
         },
         containerColor = FirefoxTheme.colors.layer1,
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .width(FirefoxTheme.layout.size.containerMaxWidth),
-        ) {
-            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
-            AddLoginHost(store = store)
-            Spacer(modifier = Modifier.height(8.dp))
-            AddLoginUsername(store = store)
-            Spacer(modifier = Modifier.height(8.dp))
-            AddLoginPassword(store = store)
+
+        if (state.biometricAuthenticationDialogState.shouldShow) {
+            BiometricAuthenticationDialog(store = store)
+        }
+
+        if (state.biometricAuthenticationState == BiometricAuthenticationState.Authorized) {
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+                AddLoginHost(store = store)
+                Spacer(modifier = Modifier.height(8.dp))
+                AddLoginUsername(store = store)
+                Spacer(modifier = Modifier.height(8.dp))
+                AddLoginPassword(store = store)
+            }
         }
     }
 }
@@ -100,7 +113,7 @@ private fun AddLoginTopBar(store: LoginsStore) {
                 ),
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.mozac_ic_back_24),
+                    painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                     contentDescription = null,
                     tint = FirefoxTheme.colors.iconPrimary,
                 )
@@ -122,7 +135,7 @@ private fun AddLoginTopBar(store: LoginsStore) {
                     enabled = isLoginValid,
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.mozac_ic_checkmark_24),
+                        painter = painterResource(iconsR.drawable.mozac_ic_checkmark_24),
                         contentDescription = null,
                         tint = if (isLoginValid) {
                             FirefoxTheme.colors.textPrimary
@@ -155,7 +168,8 @@ private fun AddLoginHost(store: LoginsStore) {
             .padding(
                 horizontal = FirefoxTheme.layout.space.static200,
                 vertical = FirefoxTheme.layout.space.static100,
-            ),
+            )
+            .width(FirefoxTheme.layout.size.containerMaxWidth),
         label = stringResource(R.string.preferences_passwords_saved_logins_site),
         minHeight = IconButtonHeight,
         trailingIcons = {
@@ -170,7 +184,9 @@ private fun AddLoginHost(store: LoginsStore) {
 
         Text(
             text = stringResource(R.string.add_login_hostname_invalid_text_3),
-            modifier = Modifier.padding(horizontal = FirefoxTheme.layout.space.static200),
+            modifier = Modifier
+                .padding(horizontal = FirefoxTheme.layout.space.static200)
+                .width(FirefoxTheme.layout.size.containerMaxWidth),
             style = TextFieldStyle.default().labelStyle,
             color = TextFieldColors.default().placeholderColor,
         )
@@ -197,7 +213,8 @@ private fun AddLoginUsername(store: LoginsStore) {
             .padding(
                 horizontal = FirefoxTheme.layout.space.static200,
                 vertical = FirefoxTheme.layout.space.static100,
-            ),
+            )
+            .width(FirefoxTheme.layout.size.containerMaxWidth),
         label = stringResource(R.string.preferences_passwords_saved_logins_username),
         minHeight = IconButtonHeight,
         trailingIcons = {
@@ -230,7 +247,8 @@ private fun AddLoginPassword(store: LoginsStore) {
             .padding(
                 horizontal = FirefoxTheme.layout.space.static200,
                 vertical = FirefoxTheme.layout.space.static100,
-            ),
+            )
+            .width(FirefoxTheme.layout.size.containerMaxWidth),
         label = stringResource(R.string.preferences_passwords_saved_logins_password),
         minHeight = IconButtonHeight,
         trailingIcons = {

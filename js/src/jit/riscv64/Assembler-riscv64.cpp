@@ -873,10 +873,10 @@ void Assembler::PatchWrite_Imm32(CodeLocationLabel label, Imm32 imm) {
   *(raw - 1) = imm.value;
 }
 
-void Assembler::target_at_put(BufferOffset pos, BufferOffset target_pos,
+bool Assembler::target_at_put(BufferOffset pos, BufferOffset target_pos,
                               bool trampoline) {
   if (m_buffer.oom()) {
-    return;
+    return true;
   }
   DEBUG_PRINTF("\ttarget_at_put: %p (%d) to %p (%d)\n",
                reinterpret_cast<Instr*>(editSrc(pos)), pos.getOffset(),
@@ -887,11 +887,18 @@ void Assembler::target_at_put(BufferOffset pos, BufferOffset target_pos,
   Instr instr = instruction->InstructionBits();
   switch (instruction->InstructionOpcodeType()) {
     case BRANCH: {
+      if (!is_intn(pos.getOffset() - target_pos.getOffset(),
+                   kBranchOffsetBits)) {
+        return false;
+      }
       instr = SetBranchOffset(pos.getOffset(), target_pos.getOffset(), instr);
       instr_at_put(pos, instr);
     } break;
     case JAL: {
       MOZ_ASSERT(IsJal(instr));
+      if (!is_intn(pos.getOffset() - target_pos.getOffset(), kJumpOffsetBits)) {
+        return false;
+      }
       instr = SetJalOffset(pos.getOffset(), target_pos.getOffset(), instr);
       instr_at_put(pos, instr);
     } break;
@@ -935,6 +942,7 @@ void Assembler::target_at_put(BufferOffset pos, BufferOffset target_pos,
       UNIMPLEMENTED_RISCV();
       break;
   }
+  return true;
 }
 
 const int kEndOfChain = -1;
@@ -1141,11 +1149,16 @@ int32_t Assembler::branch_long_offset(Label* L) {
     target_pos = L->offset();
   } else {
     if (L->used()) {
-      LabelCahe::Ptr p = label_cache_.lookup(L->offset());
+      LabelCache::Ptr p = label_cache_.lookup(L->offset());
       MOZ_ASSERT(p);
       MOZ_ASSERT(p->key() == L->offset());
       target_pos = p->value().getOffset();
-      target_at_put(BufferOffset(target_pos), next_instr_offset);
+      if (!target_at_put(BufferOffset(target_pos), next_instr_offset)) {
+        DEBUG_PRINTF("\tLabel  %p can't be added to link: %d -> %d\n", L,
+                     BufferOffset(target_pos).getOffset(),
+                     next_instr_offset.getOffset());
+        return kEndOfJumpChain;
+      }
       DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
                    next_instr_offset.getOffset());
       bool ok = label_cache_.put(L->offset(), next_instr_offset);
@@ -1193,11 +1206,16 @@ int32_t Assembler::branch_offset_helper(Label* L, OffsetSize bits) {
     m_buffer.registerBranchDeadline(OffsetSizeToImmBranchRangeType(bits),
                                     deadline);
     if (L->used()) {
-      LabelCahe::Ptr p = label_cache_.lookup(L->offset());
+      LabelCache::Ptr p = label_cache_.lookup(L->offset());
       MOZ_ASSERT(p);
       MOZ_ASSERT(p->key() == L->offset());
       target_pos = p->value().getOffset();
-      target_at_put(BufferOffset(target_pos), next_instr_offset);
+      if (!target_at_put(BufferOffset(target_pos), next_instr_offset)) {
+        DEBUG_PRINTF("\tLabel  %p can't be added to link: %d -> %d\n", L,
+                     BufferOffset(target_pos).getOffset(),
+                     next_instr_offset.getOffset());
+        return kEndOfJumpChain;
+      }
       DEBUG_PRINTF("\tLabel  %p added to link: %d\n", L,
                    next_instr_offset.getOffset());
       bool ok = label_cache_.put(L->offset(), next_instr_offset);

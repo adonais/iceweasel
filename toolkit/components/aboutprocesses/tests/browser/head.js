@@ -31,7 +31,7 @@ const MS_PER_NS = 1000000;
 
 // Wait for `about:processes` to be updated.
 async function promiseAboutProcessesUpdated({ doc, force, tabAboutProcesses }) {
-  let startTime = performance.now();
+  let startTime = ChromeUtils.now();
 
   let updatePromise = new Promise(resolve => {
     doc.addEventListener("AboutProcessesUpdated", resolve, { once: true });

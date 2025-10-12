@@ -16,6 +16,8 @@
     --background-color-information: light-dark(var(--color-blue-0), var(--color-blue-90));
     --background-color-success: light-dark(var(--color-green-0), var(--color-green-90));
     --background-color-warning: light-dark(var(--color-yellow-0), var(--color-yellow-90));
+    --promo-background-color: var(--background-color-box-info);
+    --table-row-background-color: var(--background-color-canvas);
 
     /** Border **/
     --border-color-card: color-mix(in srgb, currentColor 10%, transparent);
@@ -24,9 +26,10 @@
     --border-color-interactive-disabled: var(--border-color-interactive);
     --border-color-transparent: transparent;
     --border-radius-circle: 9999px;
+    --border-radius-xsmall: 2px;
     --border-radius-small: 4px;
     --border-radius-medium: 8px;
-    --border-radius-large: 12px;
+    --border-radius-large: 16px;
     --border-width: 1px;
 
     /** Box Shadow **/
@@ -286,9 +289,6 @@
     --space-xlarge: calc(6 * var(--space-xsmall)); /* 24px */
     --space-xxlarge: calc(8 * var(--space-xsmall)); /* 32px */
 
-    /** Table Row **/
-    --table-row-background-color: var(--background-color-canvas);
-
     /** Text **/
     --text-color-disabled: color-mix(in srgb, currentColor 40%, transparent);
     --text-color-deemphasized: color-mix(in srgb, currentColor 69%, transparent);
@@ -307,6 +307,7 @@
 
       /** Background Color **/
       --background-color-box: var(--background-color-canvas);
+      --background-color-box-info: var(--background-color-canvas);
       --background-color-canvas: Canvas;
       --background-color-critical: var(--background-color-canvas);
       --background-color-information: var(--background-color-canvas);
@@ -349,6 +350,9 @@
   @media (forced-colors) {
     :root,
     :host(.anonymous-content-host) {
+      /** Background Color **/
+      --table-row-background-color-alternate: var(--background-color-canvas); /* TODO Bug 1821203 - Gray use needs to be consolidated */
+
       /** Border **/
       --border-color-card: CanvasText;
       --border-color-deemphasized: ButtonText;
@@ -405,9 +409,6 @@
       --link-color-hover: LinkText;
       --link-color-active: ActiveText;
       --link-color-visited: var(--link-color);
-
-      /** Table Row **/
-      --table-row-background-color-alternate: var(--background-color-canvas); /* TODO Bug 1821203 - Gray use needs to be consolidated */
 
       /** Text **/
       --text-color-disabled: GrayText;

@@ -775,6 +775,45 @@ void MacroAssembler::newGCBigInt(Register result, Register temp,
   freeListAllocate(result, temp, allocKind, fail);
 }
 
+void MacroAssembler::preserveWrapper(Register wrapper, Register scratchSuccess,
+                                     Register scratch2,
+                                     const LiveRegisterSet& liveRegs) {
+  Label done, abiCall;
+  CompileZone* zone = realm()->zone();
+
+  loadPtr(AbsoluteAddress(zone->zone()->addressOfPreservedWrappersCount()),
+          scratchSuccess);
+  branchPtr(Assembler::Equal,
+            AbsoluteAddress(zone->zone()->addressOfPreservedWrappersCapacity()),
+            scratchSuccess, &abiCall);
+  loadPtr(AbsoluteAddress(zone->zone()->addressOfPreservedWrappers()),
+          scratch2);
+
+  storePtr(wrapper, BaseIndex(scratch2, scratchSuccess, ScalePointer));
+  addPtr(Imm32(1), scratchSuccess);
+  storePtr(scratchSuccess,
+           AbsoluteAddress(zone->zone()->addressOfPreservedWrappersCount()));
+  move32(Imm32(1), scratchSuccess);
+
+  jump(&done);
+  bind(&abiCall);
+  LiveRegisterSet save;
+  save.set() = RegisterSet::Intersect(liveRegs.set(), RegisterSet::Volatile());
+  PushRegsInMask(save);
+
+  using Fn = bool (*)(JSContext* cx, JSObject* wrapper);
+  setupUnalignedABICall(scratch2);
+  loadJSContext(scratch2);
+  passABIArg(scratch2);
+  passABIArg(wrapper);
+  callWithABI<Fn, js::jit::PreserveWrapper>();
+  storeCallBoolResult(scratchSuccess);
+
+  MOZ_ASSERT(!save.has(scratchSuccess));
+  PopRegsInMask(save);
+  bind(&done);
+}
+
 void MacroAssembler::copySlotsFromTemplate(
     Register obj, const TemplateNativeObject& templateObj, uint32_t start,
     uint32_t end) {
@@ -3483,7 +3522,8 @@ void MacroAssembler::loadResizableArrayBufferViewLengthIntPtr(
 void MacroAssembler::dateFillLocalTimeSlots(
     Register obj, Register scratch, const LiveRegisterSet& volatileRegs) {
   // Inline implementation of the cache check from
-  // DateObject::fillLocalTimeSlots().
+  // DateObject::fillLocalTimeSlots(). Only used when no realm time zone
+  // override is active.
 
   Label callVM, done;
 
@@ -3492,8 +3532,7 @@ void MacroAssembler::dateFillLocalTimeSlots(
                       Address(obj, DateObject::offsetOfLocalTimeSlot()),
                       &callVM);
 
-  unboxInt32(Address(obj, DateObject::offsetOfUTCTimeZoneOffsetSlot()),
-             scratch);
+  unboxInt32(Address(obj, DateObject::offsetOfTimeZoneCacheKeySlot()), scratch);
 
   branch32(Assembler::Equal,
            AbsoluteAddress(DateTimeInfo::addressOfUTCToLocalOffsetSeconds()),
@@ -3873,7 +3912,7 @@ void MacroAssembler::generateBailoutTail(Register scratch,
             FramePointer);
 
     // Enter exit frame for the FinishBailoutToBaseline call.
-    pushFrameDescriptor(FrameType::BaselineJS);
+    push(FrameDescriptor(FrameType::BaselineJS));
     push(Address(bailoutInfo, offsetof(BaselineBailoutInfo, resumeAddr)));
     push(FramePointer);
     // No GC things to mark on the stack, push a bare token.
@@ -3929,25 +3968,42 @@ void MacroAssembler::loadJitCodeRaw(Register func, Register dest) {
   loadPtr(Address(dest, BaseScript::offsetOfJitCodeRaw()), dest);
 }
 
-void MacroAssembler::loadBaselineJitCodeRaw(Register func, Register dest,
-                                            Label* failure) {
-  // Load JitScript
+void MacroAssembler::loadJitCodeRawNoIon(Register func, Register dest,
+                                         Register scratch) {
+  // This is used when calling a trial-inlined script using a private
+  // ICScript to collect callsite-specific CacheIR. Ion doesn't use
+  // the baseline ICScript, so we want to enter at the highest
+  // available non-Ion tier.
+
+  Label useJitCodeRaw, done;
   loadPrivate(Address(func, JSFunction::offsetOfJitInfoOrScript()), dest);
-  if (failure) {
-    branchIfScriptHasNoJitScript(dest, failure);
-  }
-  loadJitScript(dest, dest);
+  branchIfScriptHasNoJitScript(dest, &useJitCodeRaw);
+  loadJitScript(dest, scratch);
 
-  // Load BaselineScript
-  loadPtr(Address(dest, JitScript::offsetOfBaselineScript()), dest);
-  if (failure) {
-    static_assert(DisabledScript < CompilingScript);
-    branchPtr(Assembler::BelowOrEqual, dest, ImmWord(CompilingScript), failure);
-  }
+  // If we have an IonScript, jitCodeRaw_ will point to it, so we have
+  // to load the baseline entry out of the BaselineScript.
+  branchPtr(Assembler::BelowOrEqual,
+            Address(scratch, JitScript::offsetOfIonScript()),
+            ImmPtr(IonCompilingScriptPtr), &useJitCodeRaw);
+  loadPtr(Address(scratch, JitScript::offsetOfBaselineScript()), scratch);
 
-  // Load Baseline jitcode
-  loadPtr(Address(dest, BaselineScript::offsetOfMethod()), dest);
-  loadPtr(Address(dest, JitCode::offsetOfCode()), dest);
+#ifdef DEBUG
+  // If we have an IonScript, we must also have a BaselineScript.
+  Label hasBaselineScript;
+  branchPtr(Assembler::Above, scratch, ImmPtr(BaselineCompilingScriptPtr),
+            &hasBaselineScript);
+  assumeUnreachable("JitScript has IonScript without BaselineScript");
+  bind(&hasBaselineScript);
+#endif
+
+  loadPtr(Address(scratch, BaselineScript::offsetOfMethod()), scratch);
+  loadPtr(Address(scratch, JitCode::offsetOfCode()), dest);
+  jump(&done);
+
+  // If there's no IonScript, we can just use jitCodeRaw_.
+  bind(&useJitCodeRaw);
+  loadPtr(Address(dest, BaseScript::offsetOfJitCodeRaw()), dest);
+  bind(&done);
 }
 
 void MacroAssembler::loadBaselineFramePtr(Register framePtr, Register dest) {
@@ -3955,10 +4011,6 @@ void MacroAssembler::loadBaselineFramePtr(Register framePtr, Register dest) {
     movePtr(framePtr, dest);
   }
   subPtr(Imm32(BaselineFrame::Size()), dest);
-}
-
-void MacroAssembler::storeICScriptInJSContext(Register icScript) {
-  storePtr(icScript, AbsoluteAddress(runtime()->addressOfInlinedICScript()));
 }
 
 void MacroAssembler::handleFailure() {
@@ -5253,6 +5305,45 @@ void MacroAssembler::randomDouble(Register rng, FloatRegister dest,
   mulDoublePtr(ImmPtr(&ScaleInv), s0Reg.scratchReg(), dest);
 }
 
+void MacroAssembler::roundFloat32(FloatRegister src, FloatRegister dest) {
+  MOZ_ASSERT(HasRoundInstruction(RoundingMode::Up));
+  MOZ_ASSERT(src != dest);
+
+  nearbyIntFloat32(RoundingMode::Up, src, dest);
+
+  ScratchFloat32Scope scratch(*this);
+  loadConstantFloat32(-0.5f, scratch);
+  addFloat32(dest, scratch);
+
+  Label done;
+  branchFloat(Assembler::DoubleLessThanOrEqualOrUnordered, scratch, src, &done);
+  {
+    loadConstantFloat32(1.0f, scratch);
+    subFloat32(scratch, dest);
+  }
+  bind(&done);
+}
+
+void MacroAssembler::roundDouble(FloatRegister src, FloatRegister dest) {
+  MOZ_ASSERT(HasRoundInstruction(RoundingMode::Up));
+  MOZ_ASSERT(src != dest);
+
+  nearbyIntDouble(RoundingMode::Up, src, dest);
+
+  ScratchDoubleScope scratch(*this);
+  loadConstantDouble(-0.5, scratch);
+  addDouble(dest, scratch);
+
+  Label done;
+  branchDouble(Assembler::DoubleLessThanOrEqualOrUnordered, scratch, src,
+               &done);
+  {
+    loadConstantDouble(1.0, scratch);
+    subDouble(scratch, dest);
+  }
+  bind(&done);
+}
+
 void MacroAssembler::sameValueDouble(FloatRegister left, FloatRegister right,
                                      FloatRegister temp, Register dest) {
   Label nonEqual, isSameValue, isNotSameValue;
@@ -5332,9 +5423,11 @@ void MacroAssembler::minMaxArrayInt32(Register array, Register result,
   fallibleUnboxInt32(Address(elements, 0), temp3, fail);
 
   // Update result if necessary.
-  Assembler::Condition cond =
-      isMax ? Assembler::GreaterThan : Assembler::LessThan;
-  cmp32Move32(cond, temp3, result, temp3, result);
+  if (isMax) {
+    max32(result, temp3, result);
+  } else {
+    min32(result, temp3, result);
+  }
 
   jump(&loop);
   bind(&done);

@@ -452,6 +452,15 @@ class OpenTabsInViewCard extends ViewPageContent {
     );
   }
 
+  isShowMoreLinkVisible() {
+    if (!this.classList.contains("height-limited")) {
+      return false;
+    }
+
+    let tabCount = (this.searchQuery ? this.searchResults : this.tabs).length;
+    return tabCount > OpenTabsInViewCard.MAX_TABS_FOR_COMPACT_HEIGHT;
+  }
+
   toggleShowMore(event) {
     if (
       event.type == "click" ||
@@ -582,9 +591,7 @@ class OpenTabsInViewCard extends ViewPageContent {
               data-l10n-id=${this.showMore
                 ? "firefoxview-show-less"
                 : "firefoxview-show-more"}
-              ?hidden=${!this.classList.contains("height-limited") ||
-              this.tabs.length <=
-                OpenTabsInViewCard.MAX_TABS_FOR_COMPACT_HEIGHT}
+              ?hidden=${!this.isShowMoreLinkVisible()}
               slot="footer"
               tabindex="0"
               role="link"

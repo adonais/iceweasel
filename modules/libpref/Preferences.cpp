@@ -23,6 +23,7 @@
 #include "mozilla/dom/PContent.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/RemoteType.h"
+#include "mozilla/dom/quota/ResultExtensions.h"
 #include "mozilla/glean/LibprefMetrics.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/HashTable.h"
@@ -65,6 +66,7 @@
 #include "nsIOutputStream.h"
 #include "nsIPrefBranch.h"
 #include "nsIPrefLocalizedString.h"
+#include "nsIPrefOverrideMap.h"
 #include "nsIRelativeFilePref.h"
 #include "nsISafeOutputStream.h"
 #include "nsISimpleEnumerator.h"
@@ -81,6 +83,7 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "nsTStringHasher.h"
 #include "nsUTF8Utils.h"
 #include "nsWeakReference.h"
 #include "nsXPCOMCID.h"
@@ -382,6 +385,33 @@ nsDependentCString PrefValue::Get() const {
   return nsDependentCString(mStringVal);
 }
 
+// Like PrefValue but strings are owned.
+class OwnedPrefValue {
+ public:
+  explicit OwnedPrefValue(bool aVal) : mPrefValue(aVal) {}
+  explicit OwnedPrefValue(int32_t aVal) : mPrefValue(aVal) {}
+  explicit OwnedPrefValue(const char* aVal)
+      : mOwnedStr(aVal), mPrefValue(mOwnedStr.get()) {}
+
+  PrefValue GetPrefValue() { return mPrefValue; }
+
+ private:
+  nsCString mOwnedStr;
+  PrefValue mPrefValue;
+};
+
+class nsPrefOverrideMap : public nsIPrefOverrideMap {
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPREFOVERRIDEMAP
+ public:
+  const HashMap<nsCString, Maybe<OwnedPrefValue>>& Ref() const { return mMap; }
+
+ private:
+  virtual ~nsPrefOverrideMap() = default;
+  // Map full pref name to value or Nothing if pref was not defined.
+  HashMap<nsCString, Maybe<OwnedPrefValue>> mMap;
+};
+
 #ifdef DEBUG
 const char* PrefTypeToString(PrefType aType) {
   switch (aType) {
@@ -494,8 +524,8 @@ struct PreferenceMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormatSearchable("prefName", "Name", MS::Format::String,
-                                       MS::Searchable::Searchable);
+    schema.AddKeyLabelFormat("prefName", "Name", MS::Format::String,
+                             MS::PayloadFlags::Searchable);
     schema.AddKeyLabelFormat("prefKind", "Kind", MS::Format::String);
     schema.AddKeyLabelFormat("prefType", "Type", MS::Format::String);
     schema.AddKeyLabelFormat("prefValue", "Value", MS::Format::String);
@@ -1270,20 +1300,40 @@ class MOZ_STACK_CLASS PrefWrapper : public PrefWrapperBase {
   }
 
   // Returns false if this pref doesn't have a user value worth saving.
-  bool UserValueToStringForSaving(nsCString& aStr) {
-    // Should we save the user value, if present? Only if it does not match the
+  bool UserValueToStringForSaving(nsCString& aStr,
+                                  const nsIPrefOverrideMap* aPrefOverrideMap) {
+    auto getPrefValue = [&]() -> Result<PrefValue, bool> {
+      if (aPrefOverrideMap) {
+        auto& overrideMap =
+            static_cast<const nsPrefOverrideMap*>(aPrefOverrideMap)->Ref();
+        if (auto it = overrideMap.lookup(NameString())) {
+          if (it->value().isNothing()) {
+            // Don't save pref if pref was not defined before Nimbus set it.
+            return Err(false);
+          }
+          return it->value()->GetPrefValue();
+        }
+      }
+      // Use the user value.
+      if (!HasUserValue()) {
+        return Err(false);
+      }
+      return GetValue();
+    };
+    PrefValue prefValue = MOZ_TRY(getPrefValue());
+
+    // Should we save the value, if present? Only if it does not match the
     // default value, or it is sticky.
-    if (HasUserValue() &&
-        (!ValueMatches(PrefValueKind::Default, Type(), GetValue()) ||
-         IsSticky())) {
+    if (!ValueMatches(PrefValueKind::Default, Type(), prefValue) ||
+        IsSticky()) {
       if (IsTypeString()) {
-        StrEscape(GetStringValue().get(), aStr);
+        StrEscape(prefValue.Get<nsDependentCString>().get(), aStr);
 
       } else if (IsTypeInt()) {
-        aStr.AppendInt(GetIntValue());
+        aStr.AppendInt(prefValue.Get<int32_t>());
 
       } else if (IsTypeBool()) {
-        aStr = GetBoolValue() ? "true" : "false";
+        aStr = prefValue.Get<bool>() ? "true" : "false";
       }
       return true;
     }
@@ -1495,7 +1545,7 @@ static void AddAccessCount(const char* aPrefName) {
   AddAccessCount(nsDependentCString(aPrefName));
 }
 #else
-static void MOZ_MAYBE_UNUSED AddAccessCount(const nsACString& aPrefName) {}
+[[maybe_unused]] static void AddAccessCount(const nsACString& aPrefName) {}
 
 static void AddAccessCount(const char* aPrefName) {}
 #endif
@@ -1594,11 +1644,11 @@ class PrefsIter {
     struct Matcher {                                                    \
       PrefsIter& mIter;                                                 \
       type operator()(HashElem& pos) {                                  \
-        HashElem& end MOZ_MAYBE_UNUSED = mIter.mEnd.as<HashElem>();     \
+        [[maybe_unused]] HashElem& end = mIter.mEnd.as<HashElem>();     \
         __VA_ARGS__;                                                    \
       }                                                                 \
       type operator()(SharedElem& pos) {                                \
-        SharedElem& end MOZ_MAYBE_UNUSED = mIter.mEnd.as<SharedElem>(); \
+        [[maybe_unused]] SharedElem& end = mIter.mEnd.as<SharedElem>(); \
         __VA_ARGS__;                                                    \
       }                                                                 \
     };                                                                  \
@@ -1729,14 +1779,14 @@ static void NotifyCallbacks(const nsCString& aPrefName,
 constexpr size_t kHashTableInitialLengthParent = 3000;
 constexpr size_t kHashTableInitialLengthContent = 64;
 
-static PrefSaveData pref_savePrefs() {
+static PrefSaveData pref_savePrefs(const nsIPrefOverrideMap* aPrefOverrideMap) {
   MOZ_ASSERT(NS_IsMainThread());
 
   PrefSaveData savedPrefs(HashTable()->count());
 
   for (auto& pref : PrefsIter(HashTable(), gSharedMap)) {
     nsAutoCString prefValueStr;
-    if (!pref->UserValueToStringForSaving(prefValueStr)) {
+    if (!pref->UserValueToStringForSaving(prefValueStr, aPrefOverrideMap)) {
       continue;
     }
 
@@ -3078,6 +3128,93 @@ nsresult nsPrefLocalizedString::Init() {
 }
 
 //----------------------------------------------------------------------------
+// nsPrefOverrideMap
+//----------------------------------------------------------------------------
+
+NS_IMPL_ISUPPORTS(nsPrefOverrideMap, nsIPrefOverrideMap)
+
+NS_IMETHODIMP
+nsPrefOverrideMap::AddEntry(const nsACString& aPrefName,
+                            JS::Handle<JS::Value> aPrefValue, JSContext* aCx) {
+  nsCString prefName(aPrefName);
+  auto maybePrefWrapper = pref_Lookup(prefName.get());
+  if (NS_WARN_IF(!maybePrefWrapper)) {
+    return NS_ERROR_DOM_NOT_FOUND_ERR;
+  }
+  nsAutoCString str;
+  auto jsValueToPrefValue = [&]() -> Result<Maybe<OwnedPrefValue>, nsresult> {
+    switch (aPrefValue.type()) {
+      case JS::ValueType::Boolean:
+        if (NS_WARN_IF(!maybePrefWrapper->IsTypeBool())) {
+          return Err(NS_ERROR_DOM_TYPE_MISMATCH_ERR);
+        }
+        return Some(OwnedPrefValue(aPrefValue.toBoolean()));
+      case JS::ValueType::Int32:
+        if (NS_WARN_IF(!maybePrefWrapper->IsTypeInt())) {
+          return Err(NS_ERROR_DOM_TYPE_MISMATCH_ERR);
+        }
+        return Some(OwnedPrefValue(aPrefValue.toInt32()));
+      case JS::ValueType::String: {
+        if (NS_WARN_IF(!maybePrefWrapper->IsTypeString())) {
+          return Err(NS_ERROR_DOM_TYPE_MISMATCH_ERR);
+        }
+        if (NS_WARN_IF(!AssignJSString(aCx, str, aPrefValue.toString()))) {
+          return Err(NS_ERROR_OUT_OF_MEMORY);
+        }
+        return Some(OwnedPrefValue(str.get()));
+      }
+      case JS::ValueType::Null:
+        return Result<Maybe<OwnedPrefValue>, nsresult>(Nothing());
+      default:
+        NS_WARNING("Invalid type in nsPrefOverrideMap::AddEntry");
+        return Err(NS_ERROR_DOM_TYPE_MISMATCH_ERR);
+    }
+  };
+  Maybe<OwnedPrefValue> prefValue = MOZ_TRY(jsValueToPrefValue());
+  if (NS_WARN_IF(!mMap.put(prefName, prefValue))) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPrefOverrideMap::GetEntry(const nsACString& aPrefName, JSContext* aCx,
+                            JS::MutableHandle<JS::Value> aPrefValue) {
+  nsCString prefName(aPrefName);
+  auto maybePrefWrapper = pref_Lookup(prefName.get());
+  if (NS_WARN_IF(!maybePrefWrapper)) {
+    return NS_ERROR_DOM_NOT_FOUND_ERR;
+  }
+  auto prefType = maybePrefWrapper->Type();
+  auto prefValueToJsValue = [&]() -> mozilla::Result<JS::Value, nsresult> {
+    if (auto it = mMap.lookup(prefName)) {
+      if (it->value().isNothing()) {
+        return JS::NullValue();
+      }
+      switch (prefType) {
+        case PrefType::Bool:
+          return JS::BooleanValue(it->value()->GetPrefValue().Get<bool>());
+        case PrefType::Int:
+          return JS::Int32Value(it->value()->GetPrefValue().Get<int32_t>());
+        case PrefType::String: {
+          auto str = it->value()->GetPrefValue().Get<nsDependentCString>();
+          return JS::StringValue(
+              JS_NewStringCopyN(aCx, str.get(), str.Length()));
+        }
+        default:
+          // Do not expect type NONE
+          NS_WARNING("Invalid type in nsPrefOverrideMap::GetEntry");
+          return Err(NS_ERROR_DOM_TYPE_MISMATCH_ERR);
+      }
+    }
+    return Err(NS_ERROR_ILLEGAL_VALUE);
+  };
+  auto ret = MOZ_TRY(prefValueToJsValue());
+  aPrefValue.set(ret);
+  return NS_OK;
+}
+
+//----------------------------------------------------------------------------
 // nsRelativeFilePref
 //----------------------------------------------------------------------------
 
@@ -3575,7 +3712,9 @@ class AddPreferencesMemoryReporterRunnable : public Runnable {
 static StaticAutoPtr<nsTArray<dom::Pref>> gChangedDomPrefs;
 
 static const char kTelemetryPref[] = "toolkit.telemetry.enabled";
+#if !(defined(MOZ_WIDGET_ANDROID) && defined(MOZ_TELEMETRY_ON_BY_DEFAULT))
 static const char kChannelPref[] = "app.update.channel";
+#endif
 
 #ifdef MOZ_WIDGET_ANDROID
 
@@ -4084,8 +4223,8 @@ Preferences::SavePrefFile(nsIFile* aFile) {
 }
 
 NS_IMETHODIMP
-Preferences::BackupPrefFile(nsIFile* aFile, JSContext* aCx,
-                            Promise** aPromise) {
+Preferences::BackupPrefFile(nsIFile* aFile, nsIPrefOverrideMap* aJSOverrideMap,
+                            JSContext* aCx, Promise** aPromise) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!aFile) {
@@ -4121,8 +4260,9 @@ Preferences::BackupPrefFile(nsIFile* aFile, JSContext* aCx,
   RefPtr<WritePrefFilePromise> writePrefPromise =
       mozPromiseHolder->Ensure(__func__);
 
+  // Write prefs, minus ExperimentAPI prefs and overrides.
   nsresult rv = WritePrefFile(aFile, SaveMethod::Asynchronous,
-                              std::move(mozPromiseHolder));
+                              std::move(mozPromiseHolder), aJSOverrideMap);
   if (NS_FAILED(rv)) {
     // WritePrefFile is responsible for rejecting the underlying MozPromise in
     // the event that it the method failed somewhere.
@@ -4495,7 +4635,8 @@ nsresult Preferences::SavePrefFileInternal(nsIFile* aFile,
 nsresult Preferences::WritePrefFile(
     nsIFile* aFile, SaveMethod aSaveMethod,
     UniquePtr<MozPromiseHolder<WritePrefFilePromise>>
-        aPromiseHolder /* = nullptr */) {
+        aPromiseHolder /* = nullptr */,
+    const nsIPrefOverrideMap* aPrefOverrideMap /* = nullptr */) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
 #define REJECT_IF_PROMISE_HOLDER_EXISTS(rv)       \
@@ -4511,7 +4652,8 @@ nsresult Preferences::WritePrefFile(
   AUTO_PROFILER_LABEL("Preferences::WritePrefFile", OTHER);
 
   if (AllowOffMainThreadSave()) {
-    UniquePtr<PrefSaveData> prefs = MakeUnique<PrefSaveData>(pref_savePrefs());
+    UniquePtr<PrefSaveData> prefs =
+        MakeUnique<PrefSaveData>(pref_savePrefs(aPrefOverrideMap));
 
     nsresult rv = NS_OK;
     bool writingToCurrent = false;
@@ -4582,7 +4724,7 @@ nsresult Preferences::WritePrefFile(
   // This will do a main thread write. It is safe to do it this way because
   // AllowOffMainThreadSave() returns a consistent value for the lifetime of
   // the parent process.
-  PrefSaveData prefsData = pref_savePrefs();
+  PrefSaveData prefsData = pref_savePrefs(aPrefOverrideMap);
 
   // If we were given a MozPromiseHolder, this means the caller is attempting
   // to write prefs asynchronously to the disk - but if we get here, it means
@@ -5903,7 +6045,7 @@ static void ShutdownAlwaysPrefs() {
 
 }  // namespace StaticPrefs
 
-static MOZ_MAYBE_UNUSED void SaveOncePrefToSharedMap(
+[[maybe_unused]] static void SaveOncePrefToSharedMap(
     SharedPrefMapBuilder& aBuilder, const nsACString& aName, bool aValue) {
   auto oncePref = MakeUnique<Pref>(aName);
   oncePref->SetType(PrefType::Bool);
@@ -5916,7 +6058,7 @@ static MOZ_MAYBE_UNUSED void SaveOncePrefToSharedMap(
   oncePref->AddToMap(aBuilder);
 }
 
-static MOZ_MAYBE_UNUSED void SaveOncePrefToSharedMap(
+[[maybe_unused]] static void SaveOncePrefToSharedMap(
     SharedPrefMapBuilder& aBuilder, const nsACString& aName, int32_t aValue) {
   auto oncePref = MakeUnique<Pref>(aName);
   oncePref->SetType(PrefType::Int);
@@ -5929,12 +6071,12 @@ static MOZ_MAYBE_UNUSED void SaveOncePrefToSharedMap(
   oncePref->AddToMap(aBuilder);
 }
 
-static MOZ_MAYBE_UNUSED void SaveOncePrefToSharedMap(
+[[maybe_unused]] static void SaveOncePrefToSharedMap(
     SharedPrefMapBuilder& aBuilder, const nsACString& aName, uint32_t aValue) {
   SaveOncePrefToSharedMap(aBuilder, aName, int32_t(aValue));
 }
 
-static MOZ_MAYBE_UNUSED void SaveOncePrefToSharedMap(
+[[maybe_unused]] static void SaveOncePrefToSharedMap(
     SharedPrefMapBuilder& aBuilder, const nsACString& aName, float aValue) {
   auto oncePref = MakeUnique<Pref>(aName);
   oncePref->SetType(PrefType::String);
@@ -6078,6 +6220,11 @@ NS_IMPL_COMPONENT_FACTORY(nsPrefLocalizedString) {
     return str.forget().downcast<nsISupports>();
   }
   return nullptr;
+}
+
+NS_IMPL_COMPONENT_FACTORY(nsPrefOverrideMap) {
+  auto comp = MakeRefPtr<nsPrefOverrideMap>();
+  return comp.forget().downcast<nsISupports>();
 }
 
 namespace mozilla {

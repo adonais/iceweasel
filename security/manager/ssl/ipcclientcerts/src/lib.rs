@@ -11,7 +11,7 @@ extern crate pkcs11_bindings;
 extern crate rsclientcerts;
 
 use pkcs11_bindings::*;
-use rsclientcerts::manager::Manager;
+use rsclientcerts::manager::{IsSearchingForClientCerts, Manager};
 use std::convert::TryInto;
 use std::sync::Mutex;
 
@@ -21,7 +21,7 @@ use backend::Backend;
 
 /// The singleton `Manager` that handles state with respect to PKCS #11. Only one thread
 /// may use it at a time, but there is no restriction on which threads may use it.
-static MANAGER: Mutex<Option<Manager<Backend>>> = Mutex::new(None);
+static MANAGER: Mutex<Option<Manager<Backend, IsGeckoSearchingForClientCerts>>> = Mutex::new(None);
 
 // Obtaining a handle on the manager is a two-step process. First the mutex must be locked, which
 // (if successful), results in a mutex guard object. We must then get a mutable refence to the
@@ -46,6 +46,18 @@ macro_rules! manager_guard_to_manager {
             None => return CKR_DEVICE_ERROR,
         }
     };
+}
+
+extern "C" {
+    fn IsGeckoSearchingForClientAuthCertificates() -> bool;
+}
+
+struct IsGeckoSearchingForClientCerts;
+
+impl IsSearchingForClientCerts for IsGeckoSearchingForClientCerts {
+    fn is_searching_for_client_certs() -> bool {
+        unsafe { IsGeckoSearchingForClientAuthCertificates() }
+    }
 }
 
 /// This gets called to initialize the module. For this implementation, this consists of
@@ -95,7 +107,7 @@ extern "C" fn C_GetInfo(pInfo: CK_INFO_PTR) -> CK_RV {
 /// This gets called twice: once with a null `pSlotList` to get the number of slots (returned via
 /// `pulCount`) and a second time to get the ID for each slot.
 extern "C" fn C_GetSlotList(
-    _tokenPresent: CK_BBOOL,
+    tokenPresent: CK_BBOOL,
     pSlotList: CK_SLOT_ID_PTR,
     pulCount: CK_ULONG_PTR,
 ) -> CK_RV {
@@ -104,7 +116,7 @@ extern "C" fn C_GetSlotList(
     }
     let mut manager_guard = try_to_get_manager_guard!();
     let manager = manager_guard_to_manager!(manager_guard);
-    let slot_ids = manager.get_slot_ids();
+    let slot_ids = manager.get_slot_ids(if tokenPresent == CK_TRUE { true } else { false });
     let slot_count: CK_ULONG = slot_ids.len().try_into().unwrap();
     if !pSlotList.is_null() {
         if unsafe { *pulCount } < slot_count {
@@ -217,8 +229,7 @@ extern "C" fn C_SetPIN(
     CKR_FUNCTION_NOT_SUPPORTED
 }
 
-/// This gets called to create a new session. This module defers to the `ManagerProxy` to implement
-/// this.
+/// This gets called to create a new session. This module defers to the `Manager` to implement this.
 extern "C" fn C_OpenSession(
     slotID: CK_SLOT_ID,
     _flags: CK_FLAGS,
@@ -241,7 +252,7 @@ extern "C" fn C_OpenSession(
     CKR_OK
 }
 
-/// This gets called to close a session. This is handled by the `ManagerProxy`.
+/// This gets called to close a session. This is handled by the `Manager`.
 extern "C" fn C_CloseSession(hSession: CK_SESSION_HANDLE) -> CK_RV {
     let mut manager_guard = try_to_get_manager_guard!();
     let manager = manager_guard_to_manager!(manager_guard);
@@ -251,7 +262,7 @@ extern "C" fn C_CloseSession(hSession: CK_SESSION_HANDLE) -> CK_RV {
     CKR_OK
 }
 
-/// This gets called to close all open sessions at once. This is handled by the `ManagerProxy`.
+/// This gets called to close all open sessions at once. This is handled by the `Manager`.
 extern "C" fn C_CloseAllSessions(slotID: CK_SLOT_ID) -> CK_RV {
     let mut manager_guard = try_to_get_manager_guard!();
     let manager = manager_guard_to_manager!(manager_guard);
@@ -331,8 +342,8 @@ extern "C" fn C_GetObjectSize(
 }
 
 /// This gets called to obtain the values of a number of attributes of an object identified by the
-/// given handle. This module implements this by requesting that the `ManagerProxy` find the object
-/// and attempt to get the value of each attribute. If a specified attribute is not defined on the
+/// given handle. This module implements this by requesting that the `Manager` find the object and
+/// attempt to get the value of each attribute. If a specified attribute is not defined on the
 /// object, the length of that attribute is set to -1 to indicate that it is not available.
 /// This gets called twice: once to obtain the lengths of the attributes and again to get the
 /// values.
@@ -406,8 +417,8 @@ const RELEVANT_ATTRIBUTES: &[CK_ATTRIBUTE_TYPE] = &[
 ];
 
 /// This gets called to initialize a search for objects matching a given list of attributes. This
-/// module implements this by gathering the attributes and passing them to the `ManagerProxy` to
-/// start the search.
+/// module implements this by gathering the attributes and passing them to the `Manager` to start
+/// the search.
 extern "C" fn C_FindObjectsInit(
     hSession: CK_SESSION_HANDLE,
     pTemplate: CK_ATTRIBUTE_PTR,
@@ -439,7 +450,7 @@ extern "C" fn C_FindObjectsInit(
 }
 
 /// This gets called after `C_FindObjectsInit` to get the results of a search. This module
-/// implements this by looking up the search in the `ManagerProxy` and copying out the matching
+/// implements this by looking up the search in the `Manager` and copying out the matching
 /// object handles.
 extern "C" fn C_FindObjects(
     hSession: CK_SESSION_HANDLE,
@@ -473,7 +484,7 @@ extern "C" fn C_FindObjects(
 }
 
 /// This gets called after `C_FindObjectsInit` and `C_FindObjects` to finish a search. The module
-/// tells the `ManagerProxy` to clear the search.
+/// tells the `Manager` to clear the search.
 extern "C" fn C_FindObjectsFinal(hSession: CK_SESSION_HANDLE) -> CK_RV {
     let mut manager_guard = try_to_get_manager_guard!();
     let manager = manager_guard_to_manager!(manager_guard);
@@ -591,7 +602,7 @@ extern "C" fn C_DigestFinal(
 }
 
 /// This gets called to set up a sign operation. The module essentially defers to the
-/// `ManagerProxy`.
+/// `Manager`.
 extern "C" fn C_SignInit(
     hSession: CK_SESSION_HANDLE,
     pMechanism: CK_MECHANISM_PTR,
@@ -622,7 +633,7 @@ extern "C" fn C_SignInit(
 
 /// NSS calls this after `C_SignInit` (there are more ways in the PKCS #11 specification to sign
 /// data, but this is the only way supported by this module). The module essentially defers to the
-/// `ManagerProxy` and copies out the resulting signature.
+/// `Manager` and copies out the resulting signature.
 extern "C" fn C_Sign(
     hSession: CK_SESSION_HANDLE,
     pData: CK_BYTE_PTR,

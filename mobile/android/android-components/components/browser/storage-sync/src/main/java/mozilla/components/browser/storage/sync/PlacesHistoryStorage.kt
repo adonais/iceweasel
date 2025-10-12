@@ -5,7 +5,6 @@
 package mozilla.components.browser.storage.sync
 
 import android.content.Context
-import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -254,9 +253,7 @@ open class PlacesHistoryStorage(
             ) {
                 constraints {
                     setRequiresBatteryNotLow(true)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        setRequiresDeviceIdle(true)
-                    }
+                    setRequiresDeviceIdle(true)
                 }
             },
         )

@@ -327,9 +327,9 @@ def get_posix_user_group(user, group):
 
 
 def write_audit_entry(path, msg):
-    now = datetime.datetime.utcnow().isoformat().encode("utf-8")
+    now = datetime.datetime.now(tz=datetime.timezone.utc).isoformat().encode("utf-8")
     with open(path, "ab") as fh:
-        fh.write(b"[%sZ %s] %s\n" % (now, os.environb.get(b"TASK_ID", b"UNKNOWN"), msg))
+        fh.write(b"[%s %s] %s\n" % (now, os.environb.get(b"TASK_ID", b"UNKNOWN"), msg))
 
 
 WANTED_DIR_MODE = stat.S_IXUSR | stat.S_IRUSR | stat.S_IWUSR
@@ -1028,10 +1028,25 @@ def install_pip_requirements(repositories):
     run_required_command(b"pip-install", cmd)
 
 
-def _display_python_version():
+def _display_python_versions():
     print_line(
         b"setup", b"Python version: %s\n" % platform.python_version().encode("utf-8")
     )
+    
+    print_line(b"setup", b"Subprocess python version: " + b"\n")
+
+    try:
+        subprocess.run(["uv", "python", "list","--no-cache","--only-installed"], check=True)
+
+    except (FileNotFoundError, subprocess.CalledProcessError):
+
+        python_versions = ["python","python3"]
+
+        for python_executable in python_versions:
+            try:
+                subprocess.run([python_executable, "-c", "import platform; print(platform.python_version())"], check=True)
+            except FileNotFoundError:
+                pass
 
 
 def main(args):
@@ -1044,7 +1059,7 @@ def main(args):
         b"setup",
         b"Invoked by command: %s\n" % " ".join(args).encode("utf-8"),
     )
-    _display_python_version()
+    _display_python_versions()
     running_as_root = IS_POSIX and os.getuid() == 0
 
     # Arguments up to '--' are ours. After are for the main task

@@ -7,8 +7,8 @@
 export const HeuristicsRegExp = {
   RULES: {
     email: undefined,
-    tel: undefined,
     "tel-country-code" : undefined,
+    tel: undefined,
     "address-housenumber": undefined,
     "street-address": undefined,
     "address-line1": undefined,
@@ -61,7 +61,7 @@ export const HeuristicsRegExp = {
         "città" + // it-IT
         "|miasto|miejscowosc|miejscowość", //pl-PL
       "address-housenumber":
-        "(house|building)\\s*number|hausnummer|haus|house[a-z\-]*n(r|o)" +
+        "(house|building)[\\s\-]*number|hausnummer|haus|house[a-z\-]*n(r|o)" +
         "|n[úu]mero" +
         "|domu", // pl-PL
       "address-level3":
@@ -105,7 +105,9 @@ export const HeuristicsRegExp = {
         "(\\bcvn\\b|\\bcvv\\b|\\bcvc\\b|\\bcsc\\b|\\bcvd\\b|\\bcid\\b|\\bccv\\b)",
       "tel-country-code":
         "phone.*country|country.*phone" +
-        "tel.*country|country.*tel",
+        "|tel.*country|country.*tel" +
+        "|phone(?!-local).*prefix|tel(?!-local).*prefix" +
+        "|prefix.*phone|prefix.*tel",
       "tel": "(numer|nr)?\\.?telefonu", //pl-PL
     },
 
@@ -609,7 +611,7 @@ export const HeuristicsRegExp = {
         "|月", // zh-CN
 
       "cc-exp-year":
-        "exp|^/|(add)?year" +
+        "exp(?![a-hj-z])|^/|(add)?year" +
         "|ablaufdatum|gueltig|gültig|jahr" + // de-DE
         "|fecha" + // es
         "|scadenza" + // it-IT

@@ -1800,6 +1800,32 @@ const BASE_MESSAGES = () => [
       id: "messagesLoaded",
     },
   },
+  {
+    id: "MULTIPROFILE_DATA_COLLECTION_CHANGED_INFOBAR",
+    template: "infobar",
+    targeting: "true",
+    content: {
+      priority: 3,
+      text: { string_id: "multiprofile-data-collection-message" },
+      buttons: [
+        {
+          label: { string_id: "multiprofile-data-collection-view-settings" },
+          action: {
+            type: "OPEN_PREFERENCES_PAGE",
+            data: { category: "privacy-reports" },
+            dismiss: true,
+          },
+        },
+        {
+          label: { string_id: "multiprofile-data-collection-dismiss" },
+          action: { type: "CANCEL", dismiss: true },
+        },
+      ],
+    },
+    trigger: {
+      id: "selectableProfilesUpdated",
+    },
+  },
 ];
 
 const PREONBOARDING_MESSAGES = () => [

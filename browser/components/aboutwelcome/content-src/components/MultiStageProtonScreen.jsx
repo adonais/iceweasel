@@ -237,6 +237,11 @@ export const ProtonScreenActionButtons = props => {
 
 export class ProtonScreen extends React.PureComponent {
   componentDidMount() {
+    // Don't focus on main content if it is a feature callout
+    // See Bug 1985939
+    if (this.props.content?.position === "callout") {
+      return;
+    }
     this.mainContentHeader.focus();
   }
 

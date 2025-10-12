@@ -102,7 +102,7 @@ class XULListitemAccessible : public XULMenuitemAccessible {
   XULListitemAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   // LocalAccessible
-  virtual void Description(nsString& aDesc) const override;
+  virtual EDescriptionValueFlag Description(nsString& aDesc) const override;
   virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
   virtual uint64_t NativeInteractiveState() const override;

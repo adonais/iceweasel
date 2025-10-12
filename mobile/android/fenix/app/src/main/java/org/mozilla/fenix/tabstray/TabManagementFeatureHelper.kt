@@ -39,10 +39,10 @@ interface TabManagementFeatureHelper {
 data object DefaultTabManagementFeatureHelper : TabManagementFeatureHelper {
 
     override val enhancementsEnabledNightly: Boolean
-        get() = false
+        get() = FxNimbus.features.tabManagementEnhancements.value().enabled
 
     override val enhancementsEnabledBeta: Boolean
-        get() = false
+        get() = FxNimbus.features.tabManagementEnhancements.value().enabled
 
     override val enhancementsEnabledRelease: Boolean
         get() = FxNimbus.features.tabManagementEnhancements.value().enabled

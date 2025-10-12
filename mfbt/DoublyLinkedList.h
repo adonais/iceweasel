@@ -380,7 +380,7 @@ class DoublyLinkedList final {
     }
     T* next = ElementAccess::Get(aElm).mNext;
     if (next) {
-      if (ElementAccess::Get(next).mPrev != aElm) {
+      if (ElementAccess::Get(next).mPrev != aElm || aElm == mTail) {
         return false;
       }
     } else {
@@ -390,7 +390,7 @@ class DoublyLinkedList final {
     }
     T* prev = ElementAccess::Get(aElm).mPrev;
     if (prev) {
-      if (ElementAccess::Get(prev).mNext != aElm) {
+      if (ElementAccess::Get(prev).mNext != aElm || aElm == mHead) {
         return false;
       }
     } else {

@@ -1226,7 +1226,9 @@ Tester.prototype = {
     let currentScope = currentTest.scope;
     let desc = isSetup ? "setup" : "test";
     currentScope.SimpleTest.info(`Entering ${desc} ${task.name}`);
-    let startTimestamp = performance.now();
+    // This newtab train-hop compatibility shim can be removed once Firefox 144
+    // makes it to the release channel.
+    let startTimestamp = ChromeUtils.now?.() || performance.now();
     let controller = new AbortController();
     currentScope.__signal = controller.signal;
     if (isSetup) {
@@ -1455,7 +1457,9 @@ Tester.prototype = {
 
     // Import the test script.
     try {
-      this.lastStartTimestamp = performance.now();
+      // This newtab train-hop compatibility shim can be removed once Firefox 144
+      // makes it to the release channel.
+      this.lastStartTimestamp = ChromeUtils.now?.() || performance.now();
       this.TestUtils.promiseTestFinished = new Promise(resolve => {
         this.resolveFinishTestPromise = resolve;
       });

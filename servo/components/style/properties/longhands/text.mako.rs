@@ -13,7 +13,7 @@ ${helpers.predefined_type(
     animation_type="discrete",
     boxed=True,
     spec="https://drafts.csswg.org/css-ui/#propdef-text-overflow",
-    servo_restyle_damage="rebuild_and_reflow",
+    servo_restyle_damage="rebuild_box",
     affects="paint",
 )}
 
@@ -24,7 +24,7 @@ ${helpers.single_keyword(
     gecko_enum_prefix="StyleUnicodeBidi",
     animation_type="none",
     spec="https://drafts.csswg.org/css-writing-modes/#propdef-unicode-bidi",
-    servo_restyle_damage="rebuild_and_reflow",
+    servo_restyle_damage="rebuild_box",
     affects="layout",
 )}
 
@@ -36,7 +36,7 @@ ${helpers.predefined_type(
     initial_specified_value="specified::TextDecorationLine::none()",
     animation_type="discrete",
     spec="https://drafts.csswg.org/css-text-decor/#propdef-text-decoration-line",
-    servo_restyle_damage="rebuild_and_reflow",
+    servo_restyle_damage="rebuild_box",
     affects="overflow",
 )}
 
@@ -54,7 +54,7 @@ ${helpers.predefined_type(
     "text-decoration-trim",
     "TextDecorationTrim",
     "computed::text::TextDecorationTrim::get_initial_value()",
-    engines="gecko servo",
+    engines="gecko",
     initial_specified_value="specified::text::TextDecorationTrim::get_initial_value()",
     boxed=True,
     gecko_pref="layout.css.text-decoration-trim.enabled",

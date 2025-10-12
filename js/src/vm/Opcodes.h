@@ -409,8 +409,11 @@
     MACRO(Typeof, typeof_, NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
     MACRO(TypeofExpr, typeof_expr, NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
     /*
-     * A compound opcode for `typeof val === "type"` or `typeof val !== "type"`,
-     * where `val` is single identifier.
+     * A compound opcode for the following, where `val` is single identifier:
+     *   * typeof val === "type"
+     *   * typeof val !== "type"
+     *   * typeof val > "u"      # minified `typeof val === "undefined"`
+     *   * typeof val < "u"      # minified `typeof val !== "undefined"`
      *
      * Infallible. The result is always a boolean that depends on the type of
      * `val` and `"type"` string, and the comparison operator.

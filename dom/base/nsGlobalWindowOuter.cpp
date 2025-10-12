@@ -213,6 +213,7 @@
 #include "mozilla/dom/PopupBlockedEvent.h"
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/RedirectBlockedEvent.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/ServiceWorkerRegistration.h"
 #include "mozilla/dom/VRDisplay.h"
@@ -1493,9 +1494,10 @@ void nsGlobalWindowOuter::ClearControllers() {
     while (count--) {
       nsCOMPtr<nsIController> controller;
       mControllers->GetControllerAt(count, getter_AddRefs(controller));
-
-      nsCOMPtr<nsIControllerContext> context = do_QueryInterface(controller);
-      if (context) context->SetCommandContext(nullptr);
+      if (nsCOMPtr<nsBaseCommandController> context =
+              do_QueryInterface(controller)) {
+        context->SetContext(nullptr);
+      }
     }
 
     mControllers = nullptr;
@@ -2031,7 +2033,9 @@ static nsresult CreateNativeGlobalForInner(
       options, principal->IsSystemPrincipal(), aIsSecureContext,
       aDocument->ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC),
       aDocument->ShouldResistFingerprinting(RFPTarget::JSMathFdlibm),
-      aDocument->ShouldResistFingerprinting(RFPTarget::JSLocale));
+      aDocument->ShouldResistFingerprinting(RFPTarget::JSLocale),
+      aDocument->GetBrowsingContext()->Top()->GetLanguageOverride(),
+      aDocument->GetBrowsingContext()->Top()->GetTimezoneOverride());
 
   // Determine if we need the Components object.
   bool needComponents = principal->IsSystemPrincipal();
@@ -3315,7 +3319,7 @@ nsIControllers* nsGlobalWindowOuter::GetControllersOuter(ErrorResult& aError) {
     }
 
     mControllers->InsertControllerAt(0, commandController);
-    commandController->SetCommandContext(static_cast<nsIDOMWindow*>(this));
+    commandController->SetContext(this);
   }
 
   return mControllers;
@@ -5408,9 +5412,12 @@ already_AddRefed<nsPIWindowRoot> nsGlobalWindowOuter::GetTopWindowRoot() {
 }
 
 void nsGlobalWindowOuter::FirePopupBlockedEvent(
-    Document* aDoc, nsIURI* aPopupURI, const nsAString& aPopupWindowName,
+    nsIURI* aPopupURI, const nsAString& aPopupWindowName,
     const nsAString& aPopupWindowFeatures) {
-  MOZ_ASSERT(aDoc);
+  Document* doc = GetDoc();
+  if (!doc) {
+    return;
+  }
 
   // Fire a "DOMPopupBlocked" event so that the UI can hear about
   // blocked popups.
@@ -5425,11 +5432,32 @@ void nsGlobalWindowOuter::FirePopupBlockedEvent(
   init.mPopupWindowFeatures = aPopupWindowFeatures;
 
   RefPtr<PopupBlockedEvent> event =
-      PopupBlockedEvent::Constructor(aDoc, u"DOMPopupBlocked"_ns, init);
-
+      PopupBlockedEvent::Constructor(doc, u"DOMPopupBlocked"_ns, init);
   event->SetTrusted(true);
 
-  aDoc->DispatchEvent(*event);
+  doc->DispatchEvent(*event);
+}
+
+void nsGlobalWindowOuter::FireRedirectBlockedEvent(nsIURI* aRedirectURI) {
+  Document* doc = GetDoc();
+  if (!doc) {
+    return;
+  }
+
+  // Fire a "DOMRedirectBlocked" event so that the UI can hear about
+  // blocked redirects.
+  RedirectBlockedEventInit init;
+  init.mBubbles = true;
+  init.mCancelable = true;
+  init.mRequestingWindow = GetCurrentInnerWindowInternal(this);
+  init.mRedirectURI = aRedirectURI;
+
+  RefPtr<RedirectBlockedEvent> event =
+      RedirectBlockedEvent::Constructor(doc, u"DOMRedirectBlocked"_ns, init);
+  event->SetTrusted(true);
+  event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
+
+  doc->DispatchEvent(*event);
 }
 
 // static
@@ -5442,32 +5470,6 @@ bool nsGlobalWindowOuter::CanSetProperty(const char* aPrefName) {
   // If the pref is set to true, we can not set the property
   // and vice versa.
   return !Preferences::GetBool(aPrefName, true);
-}
-
-/* If a window open is blocked, fire the appropriate DOM events. */
-void nsGlobalWindowOuter::FireAbuseEvents(
-    const nsACString& aPopupURL, const nsAString& aPopupWindowName,
-    const nsAString& aPopupWindowFeatures) {
-  // fetch the URI of the window requesting the opened window
-  nsCOMPtr<Document> currentDoc = GetDoc();
-  nsCOMPtr<nsIURI> popupURI;
-
-  // build the URI of the would-have-been popup window
-  // (see nsWindowWatcher::URIfromURL)
-
-  // first, fetch the opener's base URI
-
-  nsIURI* baseURL = nullptr;
-
-  nsCOMPtr<Document> doc = GetEntryDocument();
-  if (doc) baseURL = doc->GetDocBaseURI();
-
-  // use the base URI to build what would have been the popup's URI
-  Unused << NS_NewURI(getter_AddRefs(popupURI), aPopupURL, nullptr, baseURL);
-
-  // fire an event block full of informative URIs
-  FirePopupBlockedEvent(currentDoc, popupURI, aPopupWindowName,
-                        aPopupWindowFeatures);
 }
 
 Nullable<WindowProxyHolder> nsGlobalWindowOuter::OpenOuter(
@@ -6723,8 +6725,9 @@ nsresult nsGlobalWindowOuter::OpenInternal(
   nsCOMPtr<nsIURI> uri;
 
   // It's important to do this security check before determining whether this
-  // window opening should be blocked, to ensure that we don't FireAbuseEvents
-  // for a window opening that wouldn't have succeeded in the first place.
+  // window opening should be blocked, to ensure that we don't
+  // FirePopupBlockedEvent for a window opening that wouldn't have
+  // succeeded in the first place.
   if (!aUrl.IsEmpty()) {
     // It's safe to skip the security check below if we're a dialog because
     // window.openDialog is not callable from content script. See bug 56851.
@@ -6773,7 +6776,7 @@ nsresult nsGlobalWindowOuter::OpenInternal(
         }
       }
 
-      FireAbuseEvents(aUrl, windowName, aOptions);
+      FirePopupBlockedEvent(uri, windowName, aOptions);
       return aDoJSFixups ? NS_OK : NS_ERROR_FAILURE;
     }
   }

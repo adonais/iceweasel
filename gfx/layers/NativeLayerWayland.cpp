@@ -106,10 +106,19 @@ void NativeLayerRootWayland::Init() {
   if (!gfx::gfxVars::UseDMABufSurfaceExport()) {
     RefPtr<DMABufFormats> formats = WaylandDisplayGet()->GetDMABufFormats();
     if (formats) {
-      mDRMFormat = formats->GetFormat(GBM_FORMAT_ARGB8888,
-                                      /* aScanoutFormat */ true);
+      if (!(mDRMFormat = formats->GetFormat(GBM_FORMAT_ARGB8888,
+                                            /* aScanoutFormat */ true))) {
+        LOGVERBOSE(
+            "NativeLayerRootWayland::Init() missing scanout format, use global "
+            "one");
+        mDRMFormat = formats->GetFormat(GBM_FORMAT_ARGB8888,
+                                        /* aScanoutFormat */ false);
+      }
     }
     if (!mDRMFormat) {
+      LOGVERBOSE(
+          "NativeLayerRootWayland::Init() fallback to format without "
+          "modifiers");
       mDRMFormat = new DRMFormat(GBM_FORMAT_ARGB8888);
     }
   }
@@ -482,7 +491,7 @@ bool NativeLayerRootWayland::CommitToScreen() {
     RequestUpdateOnMainThreadLocked(lock);
   }
 
-  const double scale = mRootSurface->GetScaleSafe();
+  const double scale = mRootSurface->GetScale();
   mRootAllLayersRendered = true;
   for (RefPtr<NativeLayerWayland>& layer : mSublayers) {
     layer->RenderLayer(scale);
@@ -745,7 +754,10 @@ void NativeLayerWayland::SetScalelocked(
 
 void NativeLayerWayland::UpdateLayerPlacementLocked(
     const widget::WaylandSurfaceLock& aProofOfLock) {
-  MOZ_DIAGNOSTIC_ASSERT(IsMapped());
+  // It's possible that NativeLayerWayland is unmapped/waiting to unmap.
+  if (!IsMapped()) {
+    return;
+  }
 
   if (!mState.mMutatedPlacement) {
     return;

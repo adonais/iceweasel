@@ -292,9 +292,6 @@ newtab-custom-pocket-sponsored = Спонзорисане приче
 newtab-custom-pocket-show-recent-saves = Прикажи недавно сачувано
 newtab-custom-recent-title = Недавна активност
 newtab-custom-recent-subtitle = Избор недавних сајтова и садржаја
-newtab-custom-recent-toggle =
-    .label = Недавна активност
-    .description = Избор недавних сајтова и садржаја
 newtab-custom-weather-toggle =
     .label = Време
     .description = Временска прогноза за данас
@@ -386,7 +383,6 @@ newtab-weather-menu-change-location = Промени место
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Потражи место
     .aria-label = Потражи место
-newtab-weather-change-location-search-input = Потражи место
 newtab-weather-menu-weather-display = Приказ времена
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature

@@ -381,9 +381,19 @@ fn collect_directory_info(path: &PathBuf) {
 
             // Read the directory's contents
             let mut file_count = 0;
-            for entry in fs::read_dir(&dir_path).unwrap() {
-                let entry = entry.unwrap();
-                let metadata = entry.metadata().unwrap();
+            let Ok(entries) = fs::read_dir(&dir_path) else {
+                metrics::fog::subdir_err.get(subdir).set(true);
+                continue;
+            };
+            for entry in entries {
+                let Ok(entry) = entry else {
+                    metrics::fog::subdir_entry_err.get(subdir).add(1);
+                    continue;
+                };
+                let Ok(metadata) = entry.metadata() else {
+                    metrics::fog::subdir_entry_metadata_err.get(subdir).add(1);
+                    continue;
+                };
 
                 // Check if the entry is a file
                 if metadata.is_file() {

@@ -828,6 +828,10 @@ strong {
   margin: 0;
   font-size: 9px;
   line-height: 14px;
+  max-width: 20ch;
+  text-overflow: ellipsis;
+  overflow-x: hidden;
+  white-space: nowrap;
 }
 
 .event-tooltip-editor-frame {

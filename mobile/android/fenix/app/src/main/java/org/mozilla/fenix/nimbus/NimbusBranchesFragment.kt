@@ -27,6 +27,7 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.nimbus.controller.NimbusBranchesController
 import org.mozilla.fenix.nimbus.view.NimbusBranchesView
+import mozilla.components.service.nimbus.R as nimbusR
 
 /**
  * A fragment to show the branches of a Nimbus experiment.
@@ -44,7 +45,7 @@ class NimbusBranchesFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View? {
-        return inflater.inflate(R.layout.mozac_service_nimbus_experiment_details, container, false)
+        return inflater.inflate(nimbusR.layout.mozac_service_nimbus_experiment_details, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -62,7 +63,7 @@ class NimbusBranchesFragment : Fragment() {
         )
 
         nimbusBranchesView =
-            NimbusBranchesView(view.findViewById(R.id.nimbus_experiment_branches_list), controller)
+            NimbusBranchesView(view.findViewById(nimbusR.id.nimbus_experiment_branches_list), controller)
 
         loadExperimentBranches()
 

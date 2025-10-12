@@ -2145,6 +2145,19 @@ export var PlacesUtils = {
   },
 
   /**
+   * Converts an array of Float32 into a SQL bindable blob format.
+   *
+   * @param {Array<Number>} tensor
+   * @returns {Uint8ClampedArray} SQL bindable blob.
+   */
+  tensorToSQLBindable(tensor) {
+    if (!tensor || !Array.isArray(tensor)) {
+      throw new Error("tensorToSQLBindable received an invalid tensor");
+    }
+    return new Uint8ClampedArray(new Float32Array(tensor).buffer);
+  },
+
+  /**
    * The metadata API allows consumers to store simple key-value metadata in
    * Places. Keys are strings, values can be any type that SQLite supports:
    * numbers (integers and doubles), Booleans, strings, and blobs. Values are
@@ -3134,9 +3147,9 @@ ChromeUtils.defineLazyGetter(lazy, "gAsyncDBLargeCacheConnPromised", () =>
       // This should be kept in sync with nsPlacesTables.h.
       await conn.execute(`
         CREATE TEMP TABLE IF NOT EXISTS moz_openpages_temp (
-          url TEXT,
-          userContextId INTEGER,
-          groupId TEXT,
+          url TEXT NOT NULL,
+          userContextId INTEGER NOT NULL,
+          groupId TEXT NOT NULL,
           open_count INTEGER,
           PRIMARY KEY (url, userContextId, groupId)
         )`);
@@ -3149,7 +3162,7 @@ ChromeUtils.defineLazyGetter(lazy, "gAsyncDBLargeCacheConnPromised", () =>
           DELETE FROM moz_openpages_temp
           WHERE url = NEW.url
             AND userContextId = NEW.userContextId
-            AND groupId IS NEW.groupId;
+            AND groupId = NEW.groupId;
         END`);
       gAsyncDBLargeCacheConnDeferred.resolve(conn);
       return conn;

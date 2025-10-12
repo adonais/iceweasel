@@ -38,7 +38,7 @@ class InputButtonControlFrame final : public ButtonControlFrame {
 
  protected:
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
   void GetDefaultLabel(nsAString&) const;
   void GetLabel(nsAString& aLabel);
   void UpdateLabel();
@@ -158,7 +158,7 @@ void InputButtonControlFrame::UpdateLabel() {
 
 nsresult InputButtonControlFrame::AttributeChanged(int32_t aNameSpaceID,
                                                    nsAtom* aAttribute,
-                                                   int32_t aModType) {
+                                                   AttrModType aModType) {
   // If the value attribute is set, update the text of the label
   if (nsGkAtoms::value == aAttribute) {
     UpdateLabel();

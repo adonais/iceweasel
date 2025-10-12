@@ -29,6 +29,7 @@ import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Card asking the user to allow search suggestions in private mode.
@@ -54,7 +55,7 @@ internal fun PrivateSuggestionsCard(
             modifier = Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp, bottom = 10.dp),
         ) {
             Icon(
-                painter = painterResource(R.drawable.mozac_ic_information_24),
+                painter = painterResource(iconsR.drawable.mozac_ic_information_24),
                 tint = FirefoxTheme.colors.iconPrimary,
                 contentDescription = null,
             )

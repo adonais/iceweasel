@@ -1470,8 +1470,7 @@ static bool FailWithUnsupportedAttributeException(
     return false;
   }
 
-  ContinueModuleLoading(cx, state, nullptr, exnStack.exception());
-  return true;
+  return ContinueModuleLoading(cx, state, nullptr, exnStack.exception());
 }
 
 // https://tc39.es/ecma262/#sec-InnerModuleLoading

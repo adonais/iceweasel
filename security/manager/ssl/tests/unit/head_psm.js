@@ -221,6 +221,17 @@ function readFile(file) {
   return data;
 }
 
+function readBinaryFile(file) {
+  let fstream = Cc["@mozilla.org/network/file-input-stream;1"].createInstance(
+    Ci.nsIFileInputStream
+  );
+  fstream.init(file, -1, 0, 0);
+  let available = fstream.available();
+  let bytes = NetUtil.readInputStream(fstream, available);
+  fstream.close();
+  return new Uint8Array(bytes);
+}
+
 function addCertFromFile(certdb, filename, trustString) {
   let certFile = do_get_file(filename, false);
   let certBytes = readFile(certFile);
@@ -295,7 +306,8 @@ function checkCertErrorGenericAtTime(
   time,
   /* optional */ isEVExpected,
   /* optional */ hostname,
-  /* optional */ flags = NO_FLAGS
+  /* optional */ flags = NO_FLAGS,
+  /* optional */ sctsFromTls = []
 ) {
   return new Promise(resolve => {
     let result = new CertVerificationExpectedErrorResult(
@@ -304,7 +316,15 @@ function checkCertErrorGenericAtTime(
       isEVExpected,
       resolve
     );
-    certdb.asyncVerifyCertAtTime(cert, usage, flags, hostname, time, result);
+    certdb.asyncVerifyCertAtTime(
+      cert,
+      usage,
+      flags,
+      hostname,
+      time,
+      sctsFromTls,
+      result
+    );
   });
 }
 
@@ -374,6 +394,7 @@ function checkRootOfBuiltChain(
       flags,
       hostname,
       time,
+      [],
       result
     );
   });
@@ -1074,7 +1095,7 @@ function asyncTestCertificateUsages(certdb, cert, expectedUsages) {
         resolve
       );
       let flags = Ci.nsIX509CertDB.FLAG_LOCAL_ONLY;
-      certdb.asyncVerifyCertAtTime(cert, usage, flags, null, now, result);
+      certdb.asyncVerifyCertAtTime(cert, usage, flags, null, now, [], result);
     });
     promises.push(promise);
   });
@@ -1302,6 +1323,7 @@ function append_line_to_data_storage_file(
 }
 
 // Helper constants for setting security.pki.certificate_transparency.mode.
+const CT_MODE_DISABLE = 0;
 const CT_MODE_COLLECT_TELEMETRY = 1;
 const CT_MODE_ENFORCE = 2;
 

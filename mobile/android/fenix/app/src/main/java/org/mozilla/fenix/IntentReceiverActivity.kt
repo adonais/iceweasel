@@ -8,7 +8,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.StrictMode
 import androidx.annotation.VisibleForTesting
@@ -145,10 +144,6 @@ class IntentReceiverActivity : Activity() {
 
     private fun addReferrerInformation(intent: Intent) {
         // Pass along referrer information when possible.
-        // Referrer is supported for API>=22.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP_MR1) {
-            return
-        }
         // unfortunately you can get a RuntimeException thrown from android here
         @Suppress("TooGenericExceptionCaught")
         val r = try {
@@ -159,15 +154,12 @@ class IntentReceiverActivity : Activity() {
             return
         } ?: return
         intent.putExtra(EXTRA_ACTIVITY_REFERRER_PACKAGE, r.host)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Category is supported for API>=26.
-            r.host?.let { host ->
-                try {
-                    val category = packageManager.getApplicationInfoCompat(host, 0).category
-                    intent.putExtra(EXTRA_ACTIVITY_REFERRER_CATEGORY, category)
-                } catch (e: PackageManager.NameNotFoundException) {
-                    // At least we tried.
-                }
+        r.host?.let { host ->
+            try {
+                val category = packageManager.getApplicationInfoCompat(host, 0).category
+                intent.putExtra(EXTRA_ACTIVITY_REFERRER_CATEGORY, category)
+            } catch (_: PackageManager.NameNotFoundException) {
+                // At least we tried.
             }
         }
     }

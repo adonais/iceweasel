@@ -323,7 +323,7 @@
 
   &:not(.spotlightBox) {
     box-shadow: var(--box-shadow-popup);
-    border-radius: 8px;
+    border-radius: var(--border-radius-medium);
   }
 
   /*

@@ -2,6 +2,7 @@ import pytest
 
 URL = "https://www.copaair.com/en-gs/enrollment/"
 
+COOKIES_CSS = ".MuiBox-root:has(img[src*=Cookies])"
 CAPTCHA_CSS = "iframe[src*='Incapsula_Resource']"
 NAME_CSS = "#input-name"
 SURNAME_CSS = "#input-lastName"
@@ -38,7 +39,7 @@ async def get_accept_button(client, in_headless_mode):
     await client.make_preload_script(
         "Object.defineProperty(window, 'y', {get: () => document.head, configurable:true})"
     )
-    await client.navigate(URL, wait="none")
+    await client.navigate(URL)
     captcha, name = client.await_first_element_of(
         [
             client.css(CAPTCHA_CSS),
@@ -53,6 +54,7 @@ async def get_accept_button(client, in_headless_mode):
         print(
             "Please do Captcha...\a\n"
         )  # beep to let the user know to do the reCAPTCHA
+    client.hide_elements(COOKIES_CSS)
     client.await_css(NAME_CSS, is_displayed=True).send_keys("webcompat")
     client.await_css(SURNAME_CSS, is_displayed=True).send_keys("tester")
     client.click(client.await_css(YEAR_SELECTOR_CSS, is_displayed=True), force=True)
@@ -95,17 +97,24 @@ async def get_accept_button(client, in_headless_mode):
     """,
         create,
     )
-    client.click(create, force=True)
-    return client.await_css(DIALOG_BUTTONS_CSS, all=True, is_displayed=True)[1]
+    await client.stall(1)
+    client.soft_click(create)
+    return client.await_css(
+        DIALOG_BUTTONS_CSS,
+        condition=f"elem.innerText.includes('{ACCEPT_BUTTON_TEXT}')",
+        is_displayed=True,
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.with_interventions
+async def test_with_interventions(client, in_headless_mode):
+    client.soft_click(await get_accept_button(client, in_headless_mode))
+    assert client.await_css(OOPS_CSS, is_displayed=True)
 
 
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
-async def test_regression(client, in_headless_mode):
-    await get_accept_button(client, in_headless_mode)
-    client.await_css(
-        "button",
-        condition=f"elem.innerText.includes('{ACCEPT_BUTTON_TEXT}')",
-        is_displayed=True,
-    ).click()
-    assert client.await_css(OOPS_CSS, is_displayed=True)
+async def test_disabled(client, in_headless_mode):
+    client.soft_click(await get_accept_button(client, in_headless_mode))
+    await (await client.promise_console_message_listener(FAIL_MSG))

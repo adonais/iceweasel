@@ -41,7 +41,7 @@ class nsMathMLmtableWrapperFrame final : public nsTableWrapperFrame,
               nsReflowStatus& aStatus) override;
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
  protected:
   explicit nsMathMLmtableWrapperFrame(ComputedStyle* aStyle,
@@ -162,7 +162,7 @@ class nsMathMLmtrFrame final : public nsTableRowFrame {
   // overloaded nsTableRowFrame methods
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   void AppendFrames(ChildListID aListID, nsFrameList&& aFrameList) override {
     nsTableRowFrame::AppendFrames(aListID, std::move(aFrameList));
@@ -215,7 +215,7 @@ class nsMathMLmtdFrame final : public nsTableCellFrame {
             nsIFrame* aPrevInFlow) override;
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   mozilla::StyleVerticalAlignKeyword GetVerticalAlign() const override;
   void ProcessBorders(nsTableFrame* aFrame,

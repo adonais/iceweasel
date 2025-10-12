@@ -8,14 +8,12 @@
 
 #include "mozAutoDocUpdate.h"
 #include "mozilla/DeclarationBlock.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/css/Loader.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/CustomElementRegistry.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/ElementInlines.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/dom/StylePropertyMap.h"
 #include "nsAttrValue.h"
@@ -24,6 +22,7 @@
 #include "nsDOMCSSAttrDeclaration.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsGkAtoms.h"
+#include "nsIMutationObserver.h"
 #include "nsServiceManagerUtils.h"
 #include "nsStyleUtil.h"
 #include "nsXULElement.h"
@@ -85,8 +84,7 @@ void nsStyledElement::InlineStyleDeclarationWillChange(
   }
 
   aData.mModType =
-      modification ? static_cast<uint8_t>(MutationEvent_Binding::MODIFICATION)
-                   : static_cast<uint8_t>(MutationEvent_Binding::ADDITION);
+      modification ? AttrModType::Modification : AttrModType::Addition;
   MutationObservers::NotifyAttributeWillChange(
       this, kNameSpaceID_None, nsGkAtoms::style, aData.mModType);
 
@@ -101,9 +99,6 @@ nsresult nsStyledElement::SetInlineStyleDeclaration(
   MOZ_ASSERT(OwnerDoc()->UpdateNestingLevel(),
              "Should be inside document update!");
 
-  // Avoid dispatching mutation events for style attribute changes from CSSOM
-  const bool hasMutationEventListeners = false;
-
   nsAttrValue attrValue(do_AddRef(&aDeclaration), nullptr);
   SetMayHaveStyle();
 
@@ -111,8 +106,8 @@ nsresult nsStyledElement::SetInlineStyleDeclaration(
   mozAutoDocUpdate updateBatch(document, true);
   return SetAttrAndNotify(kNameSpaceID_None, nsGkAtoms::style, nullptr,
                           aData.mOldValue.ptrOr(nullptr), attrValue, nullptr,
-                          aData.mModType, hasMutationEventListeners, true,
-                          kDontCallAfterSetAttr, document, updateBatch);
+                          aData.mModType, true, kDontCallAfterSetAttr, document,
+                          updateBatch);
 }
 
 // ---------------------------------------------------------------

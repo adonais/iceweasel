@@ -26,6 +26,7 @@ import org.hamcrest.Matchers.not
 import org.json.JSONArray
 import org.junit.Assume.assumeThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -322,6 +323,7 @@ class SelectionActionDelegateTest : BaseSessionTest() {
         testThat(selectedContent, withResponse(ACTION_UNSELECT), clearsSelection())
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun multipleActions() = assumingEditable(false) {
         withClipboard("") {
             testThat(

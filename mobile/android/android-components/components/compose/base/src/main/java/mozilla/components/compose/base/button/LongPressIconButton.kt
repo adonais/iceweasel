@@ -5,7 +5,6 @@
 package mozilla.components.compose.base.button
 
 import android.view.SoundEffectConstants
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.Interaction
@@ -64,7 +63,6 @@ private val RippleRadius = 24.dp
  * still happen internally.
  * @param content The content to be shown inside this button.
  */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LongPressIconButton(
     onClick: () -> Unit,

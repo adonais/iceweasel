@@ -17,6 +17,8 @@ import androidx.preference.SwitchPreference
 import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.DefaultPendingIntentFactory
+import org.mozilla.fenix.components.DefaultShortcutManagerCompatWrapper
 import org.mozilla.fenix.components.PrivateShortcutCreateManager
 import org.mozilla.fenix.ext.registerForActivityResult
 import org.mozilla.fenix.ext.settings
@@ -53,7 +55,11 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
     private fun updatePreferences() {
         requirePreference<Preference>(R.string.pref_key_add_private_browsing_shortcut).apply {
             setOnPreferenceClickListener {
-                PrivateShortcutCreateManager.createPrivateShortcut(requireContext())
+                val privateShortcutCreateManager = PrivateShortcutCreateManager(
+                    shortcutManagerWrapper = DefaultShortcutManagerCompatWrapper(),
+                    pendingIntentFactory = DefaultPendingIntentFactory(),
+                )
+                privateShortcutCreateManager.createPrivateShortcut(requireContext())
                 true
             }
         }

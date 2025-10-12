@@ -778,7 +778,7 @@ class QATests(SnapTestsBase):
         self._driver.set_context("chrome")
         self._logger.info("Setting downloads loglevel to Debug")
         self._driver.execute_script(
-            "return Services.prefs.setStringPref('browser.download.loglevel', 'Debug');"
+            "return Services.prefs.setStringPref('toolkit.download.loglevel', 'Debug');"
         )
         self._driver.set_context("content")
 

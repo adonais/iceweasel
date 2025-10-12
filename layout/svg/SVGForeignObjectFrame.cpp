@@ -67,7 +67,7 @@ void SVGForeignObjectFrame::Init(nsIContent* aContent,
 
 nsresult SVGForeignObjectFrame::AttributeChanged(int32_t aNameSpaceID,
                                                  nsAtom* aAttribute,
-                                                 int32_t aModType) {
+                                                 AttrModType) {
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::transform) {
       // We don't invalidate for transform changes (the layers code does that).

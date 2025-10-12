@@ -29,9 +29,9 @@ export class SmartShortcutsFeed {
   isEnabled() {
     const { values } = this.store.getState().Prefs;
     const systemPref = values[PREF_SYSTEM_SHORTCUTS_PERSONALIZATION];
-    const experimentVariable = values.smartShortcutsConfig?.enabled;
+    const experimentVariable = values.trainhopConfig?.smartShortcuts?.enabled;
     const systemLogPref = values[PREF_SYSTEM_SHORTCUTS_LOG];
-    const experimentLogPref = values.smartShortcutsConfig?.force_log;
+    const experimentLogPref = values.trainhopConfig?.smartShortcuts?.force_log;
 
     return (
       systemPref || experimentVariable || systemLogPref || experimentLogPref
@@ -117,7 +117,7 @@ export class SmartShortcutsFeed {
         break;
       case at.PREF_CHANGED:
         this.onPrefChangedAction(action);
-        if (action.data.name === "smartShortcutsConfig") {
+        if (action.data.name === "trainhopConfig") {
           await this.init();
         }
         break;

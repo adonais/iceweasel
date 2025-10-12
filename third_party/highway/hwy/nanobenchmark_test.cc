@@ -15,9 +15,10 @@
 
 #include "hwy/nanobenchmark.h"
 
-#include <stdint.h>
+#include <stddef.h>
 #include <stdio.h>
 
+#include "hwy/tests/hwy_gtest.h"
 #include "hwy/tests/test_util-inl.h"
 
 namespace hwy {
@@ -71,11 +72,11 @@ void MeasureRandom(const FuncInput (&inputs)[N]) {
   p.verbose = false;
   const size_t num_results = Measure(&Random, nullptr, inputs, N, results, p);
   for (size_t i = 0; i < num_results; ++i) {
-    NANOBENCHMARK_CHECK(results[i].variability > 1E-3);
+    HWY_ASSERT(results[i].variability > 1E-3);
   }
 }
 
-TEST(NanobenchmarkTest, RunAll) {
+TEST(NanobenchmarkTest, RunTest) {
   const int unpredictable = Unpredictable1();  // == 1, unknown to compiler.
   static const FuncInput inputs[] = {static_cast<FuncInput>(unpredictable) + 2,
                                      static_cast<FuncInput>(unpredictable + 9)};
@@ -86,3 +87,5 @@ TEST(NanobenchmarkTest, RunAll) {
 
 }  // namespace
 }  // namespace hwy
+
+HWY_TEST_MAIN();

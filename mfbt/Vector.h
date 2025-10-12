@@ -18,12 +18,12 @@
 #include "mozilla/ArrayUtils.h"  // for PointerRangeSize
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/MulOverflowMask.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/ReentrancyGuard.h"
 #include "mozilla/Span.h"
-#include "mozilla/TemplateLib.h"
 
 namespace mozilla {
 
@@ -88,8 +88,7 @@ inline size_t GrowEltsByDoubling(size_t aOldElts, size_t aIncr) {
      *
      * for a Vector doesn't overflow ptrdiff_t (see bug 510319).
      */
-    if (MOZ_UNLIKELY(aOldElts &
-                     mozilla::tl::MulOverflowMask<4 * EltSize>::value)) {
+    if (MOZ_UNLIKELY(aOldElts & MulOverflowMask<4 * EltSize>())) {
       return 0;
     }
 
@@ -111,7 +110,7 @@ inline size_t GrowEltsByDoubling(size_t aOldElts, size_t aIncr) {
   /* Did aOldElts + aIncr overflow?  Will newMinCap * EltSize rounded up to the
    * next power of two overflow PTRDIFF_MAX? */
   if (MOZ_UNLIKELY(newMinCap < aOldElts ||
-                   newMinCap & tl::MulOverflowMask<4 * EltSize>::value)) {
+                   newMinCap & MulOverflowMask<4 * EltSize>())) {
     return 0;
   }
 
@@ -378,7 +377,7 @@ class MOZ_NON_PARAM MOZ_GSL_OWNER Vector final : private AllocPolicy {
   template <size_t MinimumInlineCapacity, size_t Dummy>
   struct ComputeCapacity {
     static constexpr size_t value =
-        tl::Min<MinimumInlineCapacity, kMaxInlineBytes / sizeof(T)>::value;
+        std::min(MinimumInlineCapacity, kMaxInlineBytes / sizeof(T));
   };
 
   template <size_t Dummy>
@@ -1048,8 +1047,7 @@ MOZ_NEVER_INLINE bool Vector<T, N, AP>::growStorageBy(size_t aIncr) {
 
   if (aIncr == 1 && usingInlineStorage()) {
     /* This case occurs in ~70--80% of the calls to this function. */
-    constexpr size_t newSize =
-        tl::RoundUpPow2<(kInlineCapacity + 1) * sizeof(T)>::value;
+    constexpr size_t newSize = RoundUpPow2((kInlineCapacity + 1) * sizeof(T));
     static_assert(newSize / sizeof(T) > 0,
                   "overflow when exceeding inline Vector storage");
     newCap = newSize / sizeof(T);

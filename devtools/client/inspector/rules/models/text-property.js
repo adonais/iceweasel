@@ -285,16 +285,30 @@ class TextProperty {
     return declaration.isValid;
   }
 
-  isUsed() {
+  /**
+   * Returns an object with properties explaining why the property is inactive, if it is.
+   * If it's not inactive, this returns undefined.
+   *
+   * @returns {Object|undefined}
+   */
+  getInactiveCssData() {
     const declaration = this.#getDomRuleDeclaration();
 
-    // StyleRuleActor's declarations may have a isUsed flag (if the server is the right
-    // version). Just return true if the information is missing.
-    if (!declaration?.isUsed) {
-      return { used: true };
+    if (!declaration) {
+      return undefined;
     }
 
-    return declaration.isUsed;
+    // @backward-compat { version 144 } When 144 reaches release, we can remove this
+    // whole if block.
+    if (!this.elementStyle.pageStyle.traits.newInactiveCssDataShape) {
+      if (!declaration.isUsed || declaration.isUsed?.used) {
+        return undefined;
+      }
+
+      return declaration.isUsed;
+    }
+
+    return declaration.inactiveCssData;
   }
 
   /**

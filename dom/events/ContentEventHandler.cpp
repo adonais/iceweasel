@@ -394,7 +394,7 @@ nsresult ContentEventHandler::InitRootContent(
 
   RefPtr<PresShell> presShell = mDocument->GetPresShell();
   mRootElement = Element::FromNodeOrNull(startNode->GetSelectionRootContent(
-      presShell, nsINode::IgnoreOwnIndependentSelection::No,
+      presShell, nsINode::IgnoreOwnIndependentSelection::Yes,
       nsINode::AllowCrossShadowBoundary::No));
   if (NS_WARN_IF(!mRootElement)) {
     return NS_ERROR_FAILURE;

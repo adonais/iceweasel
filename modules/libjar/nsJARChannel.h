@@ -6,7 +6,6 @@
 #ifndef nsJARChannel_h__
 #define nsJARChannel_h__
 
-#include "mozilla/net/MemoryDownloader.h"
 #include "nsIJARChannel.h"
 #include "nsIJARURI.h"
 #include "nsIEventTarget.h"

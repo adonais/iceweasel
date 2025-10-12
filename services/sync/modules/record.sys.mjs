@@ -18,7 +18,7 @@ import { Utils } from "resource://services-sync/util.sys.mjs";
 
 import { Async } from "resource://services-common/async.sys.mjs";
 import { CommonUtils } from "resource://services-common/utils.sys.mjs";
-import { CryptoUtils } from "resource://services-crypto/utils.sys.mjs";
+import { CryptoUtils } from "moz-src:///services/crypto/modules/utils.sys.mjs";
 
 /**
  * The base class for all Sync basic storage objects (BSOs). This is the format

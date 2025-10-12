@@ -345,6 +345,31 @@ export var ExtensionStorage = {
   },
 
   /**
+   * Asynchronously retrieves the bytes in use for the given storage items.
+   *
+   * @param {string} extensionId
+   * @param {Array<string>|string|null} [keys]
+   * @returns {Promise<number>}
+   */
+  async getBytesInUse(extensionId, keys) {
+    const jsonFile = await this.getFile(extensionId);
+    const dataObj = Object.assign({}, jsonFile.data.toJSON());
+    if (typeof keys === "string") {
+      keys = [keys];
+    }
+    let bytesInUse = 0;
+    const utf8Encoder = new TextEncoder();
+    for (let key in dataObj) {
+      if (keys === null || keys.includes(key)) {
+        bytesInUse += utf8Encoder.encode(
+          key + JSON.stringify(dataObj[key])
+        ).length;
+      }
+    }
+    return bytesInUse;
+  },
+
+  /**
    * Asynchronously retrieves the keys for the given extension ID.
    *
    * @param {string} extensionId

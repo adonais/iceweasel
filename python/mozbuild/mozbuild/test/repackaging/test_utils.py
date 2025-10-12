@@ -35,15 +35,15 @@ _APPLICATION_INI_CONTENT_DATA = {
 
 
 @pytest.mark.parametrize(
-    "number_of_application_ini_files, expectaction, expected_result",
+    "number_of_application_ini_files, expectation, expected_result",
     (
         (0, pytest.raises(ValueError), None),
         (1, does_not_raise(), _APPLICATION_INI_CONTENT_DATA),
         (2, pytest.raises(ValueError), None),
     ),
 )
-def test_extract_application_ini_data(
-    number_of_application_ini_files, expectaction, expected_result
+def test_application_ini_data_from_tar(
+    number_of_application_ini_files, expectation, expected_result
 ):
     with tempfile.TemporaryDirectory() as d:
         tar_path = os.path.join(d, "input.tar")
@@ -55,23 +55,23 @@ def test_extract_application_ini_data(
             for i in range(number_of_application_ini_files):
                 tar.add(application_ini_path, f"{i}/application.ini")
 
-        with expectaction:
-            assert utils._extract_application_ini_data(tar_path) == expected_result
+        with expectation:
+            assert utils.application_ini_data_from_tar(tar_path) == expected_result
 
 
-def test_extract_application_ini_data_from_directory():
+def test_application_ini_data_from_directory():
     with tempfile.TemporaryDirectory() as d:
         with open(os.path.join(d, "application.ini"), "w") as f:
             f.write(_APPLICATION_INI_CONTENT)
 
         assert (
-            utils._extract_application_ini_data_from_directory(d)
+            utils.application_ini_data_from_directory(d)
             == _APPLICATION_INI_CONTENT_DATA
         )
 
 
 @pytest.mark.parametrize(
-    "version, build_number, package_name_suffix, description_suffix, release_product, application_ini_data, expected, raises",
+    "version, build_number, package_name_suffix, description_suffix, product, application_ini_data, expected, raises",
     (
         (
             "112.0a1",
@@ -96,6 +96,8 @@ def test_extract_application_ini_data_from_directory():
                 "PKG_BUILD_NUMBER": 1,
                 "MANPAGE_DATE": "February 22, 2023",
                 "Icon": "firefox-nightly-try",
+                "REMOTING_NAME": "firefox-nightly-try",
+                "TIMESTAMP": datetime.datetime(2023, 2, 22, 0, 0),
             },
             does_not_raise(),
         ),
@@ -122,6 +124,8 @@ def test_extract_application_ini_data_from_directory():
                 "PKG_BUILD_NUMBER": 1,
                 "MANPAGE_DATE": "February 22, 2023",
                 "Icon": "firefox-nightly-try-l10n-fr",
+                "REMOTING_NAME": "firefox-nightly-try",
+                "TIMESTAMP": datetime.datetime(2023, 2, 22, 0, 0),
             },
             does_not_raise(),
         ),
@@ -148,6 +152,8 @@ def test_extract_application_ini_data_from_directory():
                 "PKG_BUILD_NUMBER": 1,
                 "MANPAGE_DATE": "February 22, 2023",
                 "Icon": "firefox-nightly-try",
+                "REMOTING_NAME": "firefox-nightly-try",
+                "TIMESTAMP": datetime.datetime(2023, 2, 22, 0, 0),
             },
             does_not_raise(),
         ),
@@ -174,6 +180,8 @@ def test_extract_application_ini_data_from_directory():
                 "PKG_BUILD_NUMBER": 2,
                 "MANPAGE_DATE": "February 22, 2023",
                 "Icon": "firefox-nightly-try",
+                "REMOTING_NAME": "firefox-nightly-try",
+                "TIMESTAMP": datetime.datetime(2023, 2, 22, 0, 0),
             },
             does_not_raise(),
         ),
@@ -187,7 +195,7 @@ def test_extract_application_ini_data_from_directory():
                 "name": "Firefox",
                 "display_name": "Firefox Developer Edition",
                 "vendor": "Mozilla",
-                "remoting_name": "firefox-aurora",
+                "remoting_name": "firefox-dev",
                 "build_id": "20230222000000",
             },
             {
@@ -200,6 +208,8 @@ def test_extract_application_ini_data_from_directory():
                 "PKG_BUILD_NUMBER": 1,
                 "MANPAGE_DATE": "February 22, 2023",
                 "Icon": "firefox-devedition",
+                "REMOTING_NAME": "firefox-dev",
+                "TIMESTAMP": datetime.datetime(2023, 2, 22, 0, 0),
             },
             does_not_raise(),
         ),
@@ -213,7 +223,7 @@ def test_extract_application_ini_data_from_directory():
                 "name": "Firefox",
                 "display_name": "Firefox Developer Edition",
                 "vendor": "Mozilla",
-                "remoting_name": "firefox-aurora",
+                "remoting_name": "firefox-dev",
                 "build_id": "20230222000000",
             },
             {
@@ -226,6 +236,8 @@ def test_extract_application_ini_data_from_directory():
                 "PKG_BUILD_NUMBER": 1,
                 "MANPAGE_DATE": "February 22, 2023",
                 "Icon": "firefox-devedition-l10n-ach",
+                "REMOTING_NAME": "firefox-dev",
+                "TIMESTAMP": datetime.datetime(2023, 2, 22, 0, 0),
             },
             does_not_raise(),
         ),
@@ -239,7 +251,7 @@ def test_extract_application_ini_data_from_directory():
                 "name": "Firefox",
                 "display_name": "Firefox Developer Edition",
                 "vendor": "Mozilla",
-                "remoting_name": "firefox-aurora",
+                "remoting_name": "firefox-dev",
                 "build_id": "20230222000000",
             },
             {
@@ -252,34 +264,10 @@ def test_extract_application_ini_data_from_directory():
                 "PKG_BUILD_NUMBER": 1,
                 "MANPAGE_DATE": "February 22, 2023",
                 "Icon": "firefox-devedition-l10n-ach",
+                "REMOTING_NAME": "firefox-dev",
+                "TIMESTAMP": datetime.datetime(2023, 2, 22, 0, 0),
             },
             does_not_raise(),
-        ),
-        (
-            "120.0b9",
-            1,
-            "-l10n-ach",
-            " - Firefox Developer Edition Language Pack for Acholi (ach) – Acoli",
-            "devedition",
-            {
-                "name": "Firefox",
-                "display_name": "Firefox Developer Edition",
-                "vendor": "Mozilla",
-                "remoting_name": "firefox-aurora",
-                "build_id": "20230222000000",
-            },
-            {
-                "DESCRIPTION": "Mozilla Firefox Developer Edition - Firefox Developer Edition Language Pack for Acholi (ach) – Acoli",
-                "PRODUCT_NAME": "Firefox",
-                "DISPLAY_NAME": "Firefox Developer Edition",
-                "PKG_INSTALL_PATH": "usr/lib/firefox-aurora",
-                "PKG_NAME": "firefox-aurora-l10n-ach",
-                "PKG_VERSION": "120.0b9",
-                "PKG_BUILD_NUMBER": 1,
-                "MANPAGE_DATE": "February 22, 2023",
-                "Icon": "firefox-aurora-l10n-ach",
-            },
-            pytest.raises(AssertionError),
         ),
     ),
 )
@@ -288,40 +276,25 @@ def test_get_build_variables(
     build_number,
     package_name_suffix,
     description_suffix,
-    release_product,
+    product,
     application_ini_data,
     expected,
     raises,
 ):
-    application_ini_data = utils._parse_application_ini_data(
-        application_ini_data,
-        version,
-        build_number,
-    )
     with raises:
-        if not package_name_suffix:
-            depends = "${shlibs:Depends},"
-        elif release_product == "devedition":
-            depends = f"firefox-devedition (= {application_ini_data['pkg_version']})"
-        else:
-            depends = f"{application_ini_data['remoting_name']} (= {application_ini_data['pkg_version']})"
-
         build_variables = utils.get_build_variables(
             application_ini_data,
             "x86",
             version,
-            depends=depends,
             package_name_suffix=package_name_suffix,
             description_suffix=description_suffix,
-            release_product=release_product,
+            product=product,
             build_number=build_number,
         )
 
         assert build_variables == {
             **{
-                "CHANGELOG_DATE": "Wed, 22 Feb 2023 00:00:00 -0000",
                 "ARCH_NAME": "x86",
-                "DEPENDS": depends,
             },
             **expected,
         }
@@ -413,7 +386,7 @@ ZH_TW_FTL = """\
 # The entry name is the label on the desktop icon, among other things.
 desktop-entry-name = { -brand-shortcut-name }
 # The comment usually appears as a tooltip when hovering over application menu entry.
-desktop-entry-comment = 瀏覽全球資訊網
+desktop-entry-comment-1 = 瀏覽全球資訊網
 desktop-entry-generic-name = 網頁瀏覽器
 # Keywords are search terms used to find this application.
 # The string is a list of keywords separated by semicolons:
@@ -443,14 +416,14 @@ StartupNotify=true
 Actions=new-window;new-private-window;open-profile-manager;
 Name=en-US-desktop-entry-name
 Name[zh_TW]=zh-TW-desktop-entry-name
-Comment=en-US-desktop-entry-comment
-Comment[zh_TW]=zh-TW-desktop-entry-comment
+Comment=en-US-desktop-entry-comment-1
+Comment[zh_TW]=zh-TW-desktop-entry-comment-1
 GenericName=en-US-desktop-entry-generic-name
 GenericName[zh_TW]=zh-TW-desktop-entry-generic-name
 Keywords=en-US-desktop-entry-keywords
 Keywords[zh_TW]=zh-TW-desktop-entry-keywords
-X-GNOME-FullName=en-US-desktop-entry-x-gnome-full-name
-X-GNOME-FullName[zh_TW]=zh-TW-desktop-entry-x-gnome-full-name
+X-GNOME-FullName=en-US-desktop-entry-x-gnome-full-name-1
+X-GNOME-FullName[zh_TW]=zh-TW-desktop-entry-x-gnome-full-name-1
 
 [Desktop Action new-window]
 Exec=firefox-nightly --new-window %u
@@ -476,21 +449,21 @@ Exec=firefox-devedition %u
 Terminal=false
 X-MultipleArgs=false
 Icon=firefox-devedition
-StartupWMClass=firefox-aurora
+StartupWMClass=firefox-dev
 Categories=GNOME;GTK;Network;WebBrowser;
 MimeType=application/json;application/pdf;application/rdf+xml;application/rss+xml;application/x-xpinstall;application/xhtml+xml;application/xml;audio/flac;audio/ogg;audio/webm;image/avif;image/gif;image/jpeg;image/png;image/svg+xml;image/webp;text/html;text/xml;video/ogg;video/webm;x-scheme-handler/chrome;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/mailto;
 StartupNotify=true
 Actions=new-window;new-private-window;open-profile-manager;
 Name=en-US-desktop-entry-name
 Name[zh_TW]=zh-TW-desktop-entry-name
-Comment=en-US-desktop-entry-comment
-Comment[zh_TW]=zh-TW-desktop-entry-comment
+Comment=en-US-desktop-entry-comment-1
+Comment[zh_TW]=zh-TW-desktop-entry-comment-1
 GenericName=en-US-desktop-entry-generic-name
 GenericName[zh_TW]=zh-TW-desktop-entry-generic-name
 Keywords=en-US-desktop-entry-keywords
 Keywords[zh_TW]=zh-TW-desktop-entry-keywords
-X-GNOME-FullName=en-US-desktop-entry-x-gnome-full-name
-X-GNOME-FullName[zh_TW]=zh-TW-desktop-entry-x-gnome-full-name
+X-GNOME-FullName=en-US-desktop-entry-x-gnome-full-name-1
+X-GNOME-FullName[zh_TW]=zh-TW-desktop-entry-x-gnome-full-name-1
 
 [Desktop Action new-window]
 Exec=firefox-devedition --new-window %u
@@ -515,7 +488,7 @@ def test_inject_desktop_entry_file(monkeypatch):
         "PRODUCT_NAME": "Firefox",
         "PKG_NAME": "firefox-nightly",
     }
-    release_product = "firefox"
+    product = "firefox"
     release_type = "nightly"
 
     desktop_entry_template_path = mozpath.join(
@@ -535,7 +508,7 @@ def test_inject_desktop_entry_file(monkeypatch):
     def mock_generate_browser_desktop_entry_file_text(
         log,
         build_variables,
-        release_product,
+        product,
         release_type,
         fluent_localization,
         fluent_resource_loader,
@@ -554,7 +527,7 @@ def test_inject_desktop_entry_file(monkeypatch):
             None,
             mozpath.join(source_dir, "debian"),
             build_variables,
-            release_product,
+            product,
             release_type,
             None,
             None,
@@ -563,64 +536,6 @@ def test_inject_desktop_entry_file(monkeypatch):
         assert os.path.exists(
             os.path.join(source_dir, "debian", desktop_entry_file_filename)
         )
-
-
-@pytest.mark.parametrize(
-    "version, build_number, expected",
-    (
-        (
-            "112.0a1",
-            1,
-            {
-                "build_id": "20230222000000",
-                "display_name": "Firefox Nightly",
-                "name": "Firefox",
-                "pkg_version": "112.0a1-1",
-                "remoting_name": "firefox-nightly-try",
-                "timestamp": datetime.datetime(2023, 2, 22, 0, 0),
-                "vendor": "Mozilla",
-            },
-        ),
-        (
-            "112.0b1",
-            1,
-            {
-                "build_id": "20230222000000",
-                "display_name": "Firefox Nightly",
-                "name": "Firefox",
-                "pkg_version": "112.0b1-1",
-                "remoting_name": "firefox-nightly-try",
-                "timestamp": datetime.datetime(2023, 2, 22, 0, 0),
-                "vendor": "Mozilla",
-            },
-        ),
-        (
-            "112.0",
-            2,
-            {
-                "build_id": "20230222000000",
-                "display_name": "Firefox Nightly",
-                "name": "Firefox",
-                "pkg_version": "112.0-2",
-                "remoting_name": "firefox-nightly-try",
-                "timestamp": datetime.datetime(2023, 2, 22, 0, 0),
-                "vendor": "Mozilla",
-            },
-        ),
-    ),
-)
-def test_load_application_ini_data(version, build_number, expected):
-    with tempfile.TemporaryDirectory() as d:
-        tar_path = os.path.join(d, "input.tar")
-        with tarfile.open(tar_path, "w") as tar:
-            application_ini_path = os.path.join(d, "application.ini")
-            with open(application_ini_path, "w") as application_ini_file:
-                application_ini_file.write(_APPLICATION_INI_CONTENT)
-            tar.add(application_ini_path)
-        application_ini_data = utils.load_application_ini_data(
-            tar_path, version, build_number
-        )
-        assert application_ini_data == expected
 
 
 _MINIMAL_MANIFEST_JSON = """{

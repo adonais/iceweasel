@@ -210,8 +210,6 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     DEFINES["UNICODE"] = True
     DEFINES["_UNICODE"] = True
 
-if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":
-    DEFINES["ANDROID_PACKAGE_NAME"] = '"%s"' % CONFIG["ANDROID_PACKAGE_NAME"]
 
 DEFINES["MOZ_DISTRIBUTION_ID"] = '"%s"' % CONFIG["MOZ_DISTRIBUTION_ID"]
 
@@ -282,5 +280,4 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
 DEFINES["TOPOBJDIR"] = TOPOBJDIR
 FINAL_TARGET_PP_FILES += ["platform.ini"]
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["test/gtest"]
+TEST_DIRS += ["test/gtest"]

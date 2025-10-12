@@ -8,7 +8,7 @@ task-defaults:
         name: xpcshell
     target:
         by-test-platform:
-            android-em-7.*: geckoview-test_runner.apk
+            android-em.*: geckoview-test_runner.apk
             windows11-64-24h2.*:
                 by-variant:
                     msix: target.installer.msix
@@ -24,6 +24,9 @@ task-defaults:
                 android-em-7.*:
                     - android/android_common.py
                     - android/android-x86_64.py
+                android-em-14.*:
+                    - android/android_common.py
+                    - android/android14-x86_64.py
                 linux.*:
                     - unittests/linux_unittest.py
                     - unittests/linux_dbus-python.py
@@ -79,7 +82,7 @@ xpcshell:
                     default: []
             no-fission:
                 by-test-platform:
-                    android-em-7.0-x86_64(-qr)?/debug-isolated-process: []
+                    android-em.*/debug-isolated-process: []
                     android.*: built-projects
                     linux1804-64.*: ['mozilla-central']
                     linux2404-64.*: ['mozilla-central']
@@ -91,7 +94,7 @@ xpcshell:
                     default: []
             geckoview-no-fission-no-ship:
                 by-test-platform:
-                    android-em-7.0-x86_64(-qr)?/debug-isolated-process: []
+                    android-em.*/debug-isolated-process: []
                     android-em.*: built-projects
                     default: []
             inc-origin-init: []
@@ -109,6 +112,8 @@ xpcshell:
                     .*-asan.*/opt: 4
                     .*-ccov.*: 8
                     .*-tsan(-qr)?/opt: 10
+                    android-em-14.*/debug: 16
+                    android-em-14.*/opt: 8
                     android.*/debug: 10
                     android.*/opt: 5
                     macosx.*: 2
@@ -138,14 +143,10 @@ xpcshell:
             default:
                 by-test-platform:
                     windows.*-asan.*: 3
-                    android-em-7.0-x86_64(-qr)?/debug-isolated-process: 2
+                    android-em.*/debug-isolated-process: 1
                     default: default
     mozharness:
-        extra-options:
-            by-test-platform:
-                windows1.*:
-                    - --threads=2
-                default: []
+        extra-options: []
     fetches:
         toolchain:
             by-test-platform:
@@ -186,6 +187,13 @@ xpcshell:
                 android-em-7.*:
                     - android-system-image-x86_64-linux
                     - android-avd-x86_64-linux
+                    - android-emulator-linux
+                    - linux64-node
+                    - linux64-minidump-stackwalk
+                    - linux64-hostutils
+                android-em-14.*:
+                    - android34-system-image-x86_64-linux
+                    - android34-avd-x86_64-linux
                     - android-emulator-linux
                     - linux64-node
                     - linux64-minidump-stackwalk

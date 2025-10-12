@@ -5,23 +5,30 @@
 package org.mozilla.fenix.downloads.listscreen.store
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.mockk.every
+import io.mockk.mockk
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.DownloadsUseCases
 import mozilla.components.support.test.libstate.ext.waitUntilIdle
+import mozilla.components.support.test.mock
+import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertSame
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.downloads.fake.FakeDateTimeProvider
 import org.mozilla.fenix.downloads.listscreen.middleware.DownloadDeleteMiddleware
 import org.mozilla.fenix.downloads.listscreen.middleware.DownloadUIMapperMiddleware
-import org.mozilla.fenix.downloads.listscreen.middleware.FakeDelayProvider
 import org.mozilla.fenix.downloads.listscreen.middleware.FakeFileItemDescriptionProvider
+import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.utils.Settings
+import org.mozilla.fenix.utils.getUndoDelay
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.time.Duration.Companion.milliseconds
@@ -39,6 +46,7 @@ class DownloadUIStoreTest {
     private val older = LocalDate.of(2025, 4, 20)
     private val fakeDateTimeProvider = FakeDateTimeProvider(today)
     private val zoneId = fakeDateTimeProvider.currentZoneId()
+    private var settings: Settings = mock()
 
     private val fileItem1 = FileItem(
         id = "1",
@@ -86,6 +94,14 @@ class DownloadUIStoreTest {
         directoryPath = "downloads",
         contentType = "jpg",
     )
+
+    @Before
+    fun setup() {
+        settings = mockk(relaxed = true) {
+            every { accessibilityServicesEnabled } returns false
+        }
+        every { testContext.settings() } returns settings
+    }
 
     @Test
     fun exitEditMode() {
@@ -980,7 +996,7 @@ class DownloadUIStoreTest {
         val browserStore = BrowserStore(initialState = initialState)
 
         val deleteMiddleware = DownloadDeleteMiddleware(
-            FakeDelayProvider(UNDO_DELAY),
+            testContext.getUndoDelay(),
             DownloadsUseCases.RemoveDownloadUseCase(browserStore),
             dispatcher,
         )
@@ -1027,7 +1043,6 @@ class DownloadUIStoreTest {
     )
 
     companion object {
-        private const val UNDO_DELAY = 5000L
         private const val UNDO_DELAY_PASSED = 6000L
     }
 }

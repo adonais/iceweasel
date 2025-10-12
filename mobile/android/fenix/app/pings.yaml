@@ -131,6 +131,20 @@ fx-suggest:
     - ttran@mozilla.com
     - najiang@mozilla.com
 
+fx-suggest-api:
+  description: |
+    A ping representing a single interaction event with Firefox Suggestions API.
+    Distinguishable by its `ping_type`.
+    Does not contain a `client_id`.
+  include_client_id: false
+  uploader_capabilities:
+    - ohttp
+  bugs:
+    - https://bugzilla.mozilla.org/show_bug.cgi?id=1984499
+  data_reviews: []
+  notification_emails:
+    - rmalicdem@mozilla.com
+
 fx-accounts:
   description: |
     A ping for information about Mozilla Account usage. Sent at the same cadence

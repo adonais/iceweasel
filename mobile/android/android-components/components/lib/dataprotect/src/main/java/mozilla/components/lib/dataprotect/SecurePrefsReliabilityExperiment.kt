@@ -45,7 +45,6 @@ class SecurePrefsReliabilityExperiment(private val context: Context) {
             const val RESET = "reset"
         }
 
-        @Suppress("MagicNumber")
         enum class Values(val v: Int) {
             SUCCESS_MISSING(1),
             SUCCESS_PRESENT(2),

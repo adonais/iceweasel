@@ -197,6 +197,10 @@ export class WindowRealm extends Realm {
     return this.#window.browsingContext;
   }
 
+  get globalObject() {
+    return this.#globalObject;
+  }
+
   get globalObjectReference() {
     return this.#globalObjectReference;
   }

@@ -4360,6 +4360,119 @@ HTMLMediaElement* HTMLMediaElement::LookupMediaElementURITable(nsIURI* aURI) {
   return nullptr;
 }
 
+// This GeckoView-specific observer ensures that suspended elements resume
+// downloading data after receiving a late autoplay permission grant, as
+// autoplay permissions are granted asynchronously on GeckoView.
+class HTMLMediaElement::GVAutoplayObserver final : public nsIObserver {
+  enum class Phase : int8_t { Init, Subscribed, Unsubscribed };
+
+ public:
+  NS_DECL_ISUPPORTS
+
+  explicit GVAutoplayObserver(HTMLMediaElement* aElement)
+      : mElement(aElement), mPhase(Phase::Init) {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(aElement);
+#if !defined(MOZ_WIDGET_ANDROID)
+    LOG(LogLevel::Error,
+        ("%p GVAutoplayObserver used outside Android!", mElement.get()));
+    MOZ_ASSERT_UNREACHABLE(
+        "GVAutoplayObserver should never be constructed outside of Android.");
+#endif
+    Subscribe();
+  }
+
+ private:
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t*) override {
+    if (!mElement || !aTopic || !aSubject || (mPhase != Phase::Subscribed) ||
+        strcmp(aTopic, kGVAutoplayAllowedTopic)) {
+      LOG(LogLevel::Debug, ("%p GVAutoplayObserver::Observe observer=%p "
+                            "Invalid element/topic/subject/phase, skip.",
+                            mElement.get(), this));
+      return NS_OK;
+    }
+
+    if ((mElement->NetworkState() >= NETWORK_LOADING) &&
+        (mElement->ReadyState() >= HAVE_CURRENT_DATA)) {
+      LOG(LogLevel::Debug, ("%p GVAutoplayObserver::Observe observer=%p "
+                            "Loading or has enough data, skip.",
+                            mElement.get(), this));
+      return NS_OK;
+    }
+
+    nsCOMPtr<nsPIDOMWindowInner> inner(do_QueryInterface(aSubject));
+    if (!inner) {
+      LOG(LogLevel::Debug, ("%p GVAutoplayObserver::Observe observer=%p "
+                            "Couldn't get inner window from subject, skip.",
+                            mElement.get(), this));
+      return NS_OK;
+    }
+
+    RefPtr<dom::BrowsingContext> bcSubject = inner->GetBrowsingContext();
+    if (!bcSubject) {
+      LOG(LogLevel::Debug, ("%p GVAutoplayObserver::Observe observer=%p "
+                            "Couldn't get subject browsing context, skip.",
+                            mElement.get(), this));
+      return NS_OK;
+    }
+
+    BrowsingContext* bcElem = mElement->OwnerDoc()->GetBrowsingContext();
+    if (!bcSubject || !bcElem || bcSubject->Top() != bcElem->Top()) {
+      LOG(LogLevel::Debug, ("%p GVAutoplayObserver::Observe observer=%p "
+                            "Contexts don't match, skip.",
+                            mElement.get(), this));
+      return NS_OK;
+    }
+
+    // Element needs more data and the autoplay message is valid - update.
+    LOG(LogLevel::Debug, ("%p GVAutoplayObserver::Observe observer=%p "
+                          "Updating preload action.",
+                          mElement.get(), this));
+    mElement->UpdatePreloadAction(JSCallingLocation::Get());
+    return NS_OK;
+  }
+
+  void Subscribe() {
+    MOZ_ASSERT(mPhase == Phase::Init);
+    MOZ_ASSERT(mElement);
+    LOG(LogLevel::Debug,
+        ("%p GVAutoplayObserver::Subscribe observer=%p", mElement.get(), this));
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+    if (mElement && observerService) {
+      observerService->AddObserver(this, kGVAutoplayAllowedTopic, false);
+    }
+    mPhase = Phase::Subscribed;
+  }
+
+  void Unsubscribe() {
+    MOZ_ASSERT(mPhase == Phase::Subscribed);
+    // mElement might be null
+    LOG(LogLevel::Debug, ("%p GVAutoplayObserver::Unsubscribe observer=%p",
+                          mElement.get(), this));
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+    if (observerService) {
+      observerService->RemoveObserver(this, kGVAutoplayAllowedTopic);
+    }
+    mElement = nullptr;
+    mPhase = Phase::Unsubscribed;
+  }
+
+  virtual ~GVAutoplayObserver() {
+    if (mPhase == Phase::Subscribed) {
+      Unsubscribe();
+    }
+    MOZ_ASSERT(!mElement);
+  }
+
+  WeakPtr<HTMLMediaElement> mElement = nullptr;
+  Phase mPhase = Phase::Init;
+};
+
+NS_IMPL_ISUPPORTS(HTMLMediaElement::GVAutoplayObserver, nsIObserver)
+
 class HTMLMediaElement::ShutdownObserver : public nsIObserver {
   enum class Phase : int8_t { Init, Subscribed, Unsubscribed };
 
@@ -4534,6 +4647,7 @@ void HTMLMediaElement::Init() {
 #if defined(MOZ_WIDGET_ANDROID)
   GVAutoplayPermissionRequestor::AskForPermissionIfNeeded(
       OwnerDoc()->GetInnerWindow());
+  StartObservingGVAutoplayIfNeeded();
 #endif
 
   OwnerDoc()->SetDocTreeHadMedia();
@@ -4552,6 +4666,10 @@ HTMLMediaElement::~HTMLMediaElement() {
                   TerminatingFlowMarker, Flow::FromPointer(this));
 
   mWatchManager.Shutdown();
+
+#if defined(MOZ_WIDGET_ANDROID)
+  mGVAutoplayObserver = nullptr;
+#endif
 
   mShutdownObserver->Unsubscribe();
 
@@ -4734,6 +4852,11 @@ void HTMLMediaElement::DispatchBlockEventForVideoControl() {
 }
 
 void HTMLMediaElement::PlayInternal(bool aHandlingUserInput) {
+#if defined(MOZ_WIDGET_ANDROID)
+  AUTOPLAY_LOG("Stop observing GV autoplay permission (PlayInternal starting)");
+  StopObservingGVAutoplayIfNeeded();
+#endif
+
   if (mPreloadAction == HTMLMediaElement::PRELOAD_NONE) {
     // The media load algorithm will be initiated by a user interaction.
     // We want to boost the channel priority for better responsiveness.
@@ -5075,6 +5198,9 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     } else if (aName == nsGkAtoms::autoplay) {
       if (aNotify) {
         if (aValue) {
+#if defined(MOZ_WIDGET_ANDROID)
+          StartObservingGVAutoplayIfNeeded();
+#endif
           StopSuspendingAfterFirstFrame();
           CheckAutoplayDataReady();
         }
@@ -6009,10 +6135,11 @@ void HTMLMediaElement::StartProgressTimer() {
   MOZ_ASSERT(mNetworkState == NETWORK_LOADING);
   NS_ASSERTION(!mProgressTimer, "Already started progress timer.");
 
-  NS_NewTimerWithFuncCallback(
-      getter_AddRefs(mProgressTimer), ProgressTimerCallback, this, PROGRESS_MS,
-      nsITimer::TYPE_REPEATING_SLACK, "HTMLMediaElement::ProgressTimerCallback",
-      GetMainThreadSerialEventTarget());
+  NS_NewTimerWithFuncCallback(getter_AddRefs(mProgressTimer),
+                              ProgressTimerCallback, this, PROGRESS_MS,
+                              nsITimer::TYPE_REPEATING_SLACK,
+                              "HTMLMediaElement::ProgressTimerCallback"_ns,
+                              GetMainThreadSerialEventTarget());
 }
 
 void HTMLMediaElement::StartProgress() {
@@ -6364,6 +6491,33 @@ void HTMLMediaElement::ChangeNetworkState(nsMediaNetworkState aState) {
   AddRemoveSelfReference();
 }
 
+void HTMLMediaElement::StartObservingGVAutoplayIfNeeded() {
+#if defined(MOZ_WIDGET_ANDROID)
+  if (mGVAutoplayObserver || !StaticPrefs::media_geckoview_autoplay_request()) {
+    return;
+  }
+  nsPIDOMWindowInner* inner = OwnerDoc()->GetInnerWindow();
+  RefPtr<BrowsingContext> ctx = inner ? inner->GetBrowsingContext() : nullptr;
+  if (ctx && GVAutoplayPermissionRequestor::HasUnresolvedRequest(inner)) {
+    mGVAutoplayObserver = MakeAndAddRef<GVAutoplayObserver>(this);
+  }
+#endif
+}
+
+void HTMLMediaElement::StopObservingGVAutoplayIfNeeded() {
+#if defined(MOZ_WIDGET_ANDROID)
+  if (!mGVAutoplayObserver) {
+    return;
+  }
+  nsPIDOMWindowInner* inner = OwnerDoc()->GetInnerWindow();
+  RefPtr<BrowsingContext> ctx = inner ? inner->GetBrowsingContext() : nullptr;
+  if (ctx == nullptr ||
+      !GVAutoplayPermissionRequestor::HasUnresolvedRequest(inner)) {
+    mGVAutoplayObserver = nullptr;
+  }
+#endif
+}
+
 bool HTMLMediaElement::IsEligibleForAutoplay() {
   // We also activate autoplay when playing a media source since the data
   // download is controlled by the script and there is no way to evaluate
@@ -6417,6 +6571,9 @@ void HTMLMediaElement::CheckAutoplayDataReady() {
     DispatchEventsWhenPlayWasNotAllowed();
     return;
   }
+#if defined(MOZ_WIDGET_ANDROID)
+  StopObservingGVAutoplayIfNeeded();
+#endif
   RunAutoplay();
 }
 

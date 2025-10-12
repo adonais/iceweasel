@@ -9,7 +9,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.content.res.Resources
-import android.os.Build
 import android.provider.Settings
 import android.view.ContextThemeWrapper
 import android.view.View
@@ -18,6 +17,7 @@ import android.view.accessibility.AccessibilityManager
 import androidx.annotation.DimenRes
 import androidx.annotation.StringRes
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
+import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.locale.LocaleManager
 import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.R
@@ -74,10 +74,10 @@ fun Context.getStringWithArgSafe(@StringRes resId: Int, formatArg: String): Stri
         format(getString(resId), formatArg)
     } catch (e: IllegalArgumentException) {
         // fallback to <en> string
-        logDebug(
-            "L10n",
+        Logger("L10n").debug(
             "String: " + resources.getResourceEntryName(resId) +
                 " not properly formatted in: " + LocaleManager.getSelectedLocale(this).language,
+            e,
         )
         val config = resources.configuration
         config.setLocale(Locale.Builder().setLanguage("en").build())
@@ -103,14 +103,8 @@ fun Context.navigateToNotificationsSettings(
 ) {
     val intent = Intent()
     intent.let {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            it.action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
-            it.putExtra(Settings.EXTRA_APP_PACKAGE, this.packageName)
-        } else {
-            it.action = "android.settings.APP_NOTIFICATION_SETTINGS"
-            it.putExtra("app_package", this.packageName)
-            it.putExtra("app_uid", this.applicationInfo.uid)
-        }
+        it.action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+        it.putExtra(Settings.EXTRA_APP_PACKAGE, this.packageName)
     }
     startExternalActivitySafe(intent, onError)
 }

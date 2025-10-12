@@ -4,6 +4,7 @@
 
 package mozilla.components.support.ktx.android.content
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.ActivityNotFoundException
 import android.content.ClipData
@@ -341,15 +342,19 @@ internal var isMainProcess: Boolean? = null
 /**
  *  Returns true if we are running in the main process false otherwise.
  */
+@SuppressLint("NewApi")
 fun Context.isMainProcess(): Boolean {
     if (isMainProcess != null) return isMainProcess as Boolean
 
     val pid = Process.myPid()
     val activityManager: ActivityManager? = getSystemService()
 
-    isMainProcess = activityManager?.runningAppProcesses.orEmpty().any { processInfo ->
-        processInfo.pid == pid && processInfo.processName == packageName
-    }
+    // SDK document says isIsolated is available since API 28, but it is actually available on older versions.
+    isMainProcess =
+        !android.os.Process.isIsolated() &&
+        activityManager?.runningAppProcesses.orEmpty().any { processInfo ->
+            processInfo.pid == pid && processInfo.processName == packageName
+        }
 
     return isMainProcess as Boolean
 }

@@ -6,6 +6,10 @@
 /* eslint complexity: ["error", 53] */
 
 /**
+ * @import {OpenedConnection} from "resource://gre/modules/Sqlite.sys.mjs"
+ */
+
+/**
  * This module exports a provider that provides results from the Places
  * database, including history, bookmarks, and open tabs.
  */
@@ -40,7 +44,7 @@ function defaultQuery(conditions = "") {
   let query = `
      SELECT h.url, h.title, ${SQL_BOOKMARK_TAGS_FRAGMENT}, h.id, t.open_count,
             ${lazy.PAGES_FRECENCY_FIELD} AS frecency, t.userContextId,
-            h.last_visit_date, t.groupId
+            h.last_visit_date, NULLIF(t.groupId, '') groupId
      FROM moz_places h
      LEFT JOIN moz_openpages_temp t
             ON t.url = h.url
@@ -72,7 +76,7 @@ function defaultQuery(conditions = "") {
 const SQL_SWITCHTAB_QUERY = `
     SELECT t.url, t.url AS title, 0 AS bookmarked, NULL AS btitle,
            NULL AS tags, NULL AS id, t.open_count, NULL AS frecency,
-           t.userContextId, NULL AS last_visit_date, t.groupId
+           t.userContextId, NULL AS last_visit_date, NULLIF(t.groupId, '') groupId
    FROM moz_openpages_temp t
    LEFT JOIN moz_places h ON h.url_hash = hash(t.url) AND h.url = t.url
    WHERE h.id IS NULL
@@ -99,7 +103,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
   UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
-  UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.sys.mjs",
+  ProvidersManager: "resource:///modules/UrlbarProvidersManager.sys.mjs",
   UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
@@ -422,7 +426,7 @@ const MATCH_TYPE = {
  * @param {Function} listener
  *   Called as: `listener(matches, searchOngoing)`
  * @param {UrlbarProviderPlaces} provider
- *   The singleton that contains Places information
+ *   The UrlbarProviderPlaces instance that started this search.
  */
 function Search(queryContext, listener, provider) {
   // We want to store the original string for case sensitive searches.
@@ -645,7 +649,7 @@ Search.prototype = {
   /**
    * Execute the search and populate results.
    *
-   * @param {mozIStorageAsyncConnection} conn
+   * @param {OpenedConnection} conn
    *        The Sqlite connection.
    */
   async execute(conn) {
@@ -657,7 +661,7 @@ Search.prototype = {
     // Used by stop() to interrupt an eventual running statement.
     this.interrupt = () => {
       // Interrupt any ongoing statement to run the search sooner.
-      if (!lazy.UrlbarProvidersManager.interruptLevel) {
+      if (!lazy.ProvidersManager.interruptLevel) {
         conn.interrupt();
       }
     };
@@ -1329,8 +1333,12 @@ Search.prototype = {
     ];
   },
 
-  // The result is notified to the search listener on a timer, to chunk multiple
-  // match updates together and avoid rebuilding the popup at every new match.
+  /**
+   * The result is notified to the search listener on a timer, to chunk multiple
+   * match updates together and avoid rebuilding the popup at every new match.
+   *
+   * @type {?nsITimer}
+   */
   _notifyTimer: null,
 
   /**
@@ -1370,21 +1378,21 @@ Search.prototype = {
 };
 
 /**
+ * Promise resolved when the database initialization has completed, or null
+ * if it has never been requested. This is shared between all instances.
+ *
+ * @type {?Promise<OpenedConnection>}
+ */
+let _promiseDatabase = null;
+
+/**
  * Class used to create the provider.
  */
-class ProviderPlaces extends UrlbarProvider {
-  // Promise resolved when the database initialization has completed, or null
-  // if it has never been requested.
-  _promiseDatabase = null;
-
-  /**
-   * Returns the name of this provider.
-   *
-   * @returns {string} the name of this provider.
-   */
-  get name() {
-    return "Places";
-  }
+export class UrlbarProviderPlaces extends UrlbarProvider {
+  /** @type {?PromiseWithResolvers<void>} */
+  #deferred = null;
+  /** @type {?Search} */
+  #currentSearch = null;
 
   /**
    * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
@@ -1401,8 +1409,8 @@ class ProviderPlaces extends UrlbarProvider {
    * @throws A javascript exception
    */
   getDatabaseHandle() {
-    if (!this._promiseDatabase) {
-      this._promiseDatabase = (async () => {
+    if (!_promiseDatabase) {
+      _promiseDatabase = (async () => {
         let conn = await lazy.PlacesUtils.promiseLargeCacheDBConnection();
 
         // We don't catch exceptions here as it is too late to block shutdown.
@@ -1410,7 +1418,7 @@ class ProviderPlaces extends UrlbarProvider {
           // Break a possible cycle through the
           // previous result, the controller and
           // ourselves.
-          this._currentSearch = null;
+          this.#currentSearch = null;
         });
 
         return conn;
@@ -1419,7 +1427,7 @@ class ProviderPlaces extends UrlbarProvider {
         this.logger.error(ex);
       });
     }
-    return this._promiseDatabase;
+    return _promiseDatabase;
   }
 
   /**
@@ -1459,18 +1467,18 @@ class ProviderPlaces extends UrlbarProvider {
         addCallback(this, result);
       }
     });
-    return this._deferred.promise;
+    return this.#deferred.promise;
   }
 
   /**
    * Cancels a running query.
    */
   cancelQuery() {
-    if (this._currentSearch) {
-      this._currentSearch.stop();
+    if (this.#currentSearch) {
+      this.#currentSearch.stop();
     }
-    if (this._deferred) {
-      this._deferred.resolve();
+    if (this.#deferred) {
+      this.#deferred.resolve();
     }
     // Don't notify since we are canceling this search.  This also means we
     // won't fire onSearchComplete for this search.
@@ -1486,7 +1494,7 @@ class ProviderPlaces extends UrlbarProvider {
    */
   finishSearch(notify = false) {
     // Clear state now to avoid race conditions, see below.
-    let search = this._currentSearch;
+    let search = this.#currentSearch;
     if (!search) {
       return;
     }
@@ -1513,13 +1521,14 @@ class ProviderPlaces extends UrlbarProvider {
     let { result } = details;
     if (details.selType == "dismiss") {
       switch (result.type) {
-        case UrlbarUtils.RESULT_TYPE.SEARCH:
+        case UrlbarUtils.RESULT_TYPE.SEARCH: {
           // URL restyled as a search suggestion. Generate the URL and remove it
           // from browsing history.
           let { url } = UrlbarUtils.getUrlFromResult(result);
           lazy.PlacesUtils.history.remove(url).catch(console.error);
           controller.removeResult(result);
           break;
+        }
         case UrlbarUtils.RESULT_TYPE.URL:
           // Remove browsing history entries from Places.
           lazy.PlacesUtils.history
@@ -1540,16 +1549,16 @@ class ProviderPlaces extends UrlbarProvider {
       }
     };
     this._startSearch(queryContext.searchString, listener, queryContext);
-    this._deferred = deferred;
+    this.#deferred = deferred;
   }
 
   _startSearch(searchString, listener, queryContext) {
     // Stop the search in case the controller has not taken care of it.
-    if (this._currentSearch) {
+    if (this.#currentSearch) {
       this.cancelQuery();
     }
 
-    let search = (this._currentSearch = new Search(
+    let search = (this.#currentSearch = new Search(
       queryContext,
       listener,
       this
@@ -1561,11 +1570,9 @@ class ProviderPlaces extends UrlbarProvider {
         this.logger.error(ex);
       })
       .then(() => {
-        if (search == this._currentSearch) {
+        if (search == this.#currentSearch) {
           this.finishSearch(true);
         }
       });
   }
 }
-
-export var UrlbarProviderPlaces = new ProviderPlaces();

@@ -494,8 +494,8 @@ struct AddRemoveTimerMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormatSearchable("name", "Name", MS::Format::String,
-                                       MS::Searchable::Searchable);
+    schema.AddKeyLabelFormat("name", "Name", MS::Format::String,
+                             MS::PayloadFlags::Searchable);
     schema.AddKeyLabelFormat("delay", "Delay", MS::Format::Milliseconds);
     schema.SetTableLabel(
         "{marker.name} - {marker.data.name} - {marker.data.delay}");
@@ -536,13 +536,11 @@ nsTimerEvent::Run() {
 
   if (profiler_thread_is_being_profiled_for_markers(mTimerThreadId)) {
     MutexAutoLock lock(mTimer->mMutex);
-    nsAutoCString name;
-    mTimer->GetName(name, lock);
     // This adds a marker with the timer name as the marker name, to make it
     // obvious which timers are being used. This marker will be useful to
     // understand which timers might be added and firing excessively often.
     profiler_add_marker(
-        name, geckoprofiler::category::TIMER,
+        mTimer->mName, geckoprofiler::category::TIMER,
         MarkerOptions(MOZ_LIKELY(mInitTime)
                           ? MarkerTiming::Interval(
                                 mTimer->mTimeout - mTimer->mDelay, mInitTime)
@@ -558,7 +556,7 @@ nsTimerEvent::Run() {
                           ? MarkerTiming::IntervalUntilNowFrom(mInitTime)
                           : MarkerTiming::InstantNow(),
                       MarkerThreadId(mTimerThreadId)),
-        AddRemoveTimerMarker{}, name, mTimer->mDelay.ToMilliseconds(),
+        AddRemoveTimerMarker{}, mTimer->mName, mTimer->mDelay.ToMilliseconds(),
         MarkerThreadId::CurrentThread());
   }
 
@@ -1001,17 +999,15 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
   }
 
   if (profiler_thread_is_being_profiled_for_markers(mProfilerThreadId)) {
-    nsAutoCString name;
-    aTimer->GetName(name, aProofOfLock);
-
     nsLiteralCString prefix("Anonymous_");
     profiler_add_marker(
         "AddTimer", geckoprofiler::category::OTHER,
-        MarkerOptions(MarkerThreadId(mProfilerThreadId),
-                      MarkerStack::MaybeCapture(
-                          name.Equals("nonfunction:JS") ||
-                          StringHead(name, prefix.Length()) == prefix)),
-        AddRemoveTimerMarker{}, name, aTimer->mDelay.ToMilliseconds(),
+        MarkerOptions(
+            MarkerThreadId(mProfilerThreadId),
+            MarkerStack::MaybeCapture(
+                aTimer->mName.Equals("nonfunction:JS") ||
+                StringHead(aTimer->mName, prefix.Length()) == prefix)),
+        AddRemoveTimerMarker{}, aTimer->mName, aTimer->mDelay.ToMilliseconds(),
         MarkerThreadId::CurrentThread());
   }
 
@@ -1046,23 +1042,21 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
   // pending timer, and will restart its wait until the following real timeout.
 
   if (profiler_thread_is_being_profiled_for_markers(mProfilerThreadId)) {
-    nsAutoCString name;
-    aTimer->GetName(name, aProofOfLock);
-
     nsLiteralCString prefix("Anonymous_");
     // This marker is meant to help understand the behavior of the timer thread.
     profiler_add_marker(
         "RemoveTimer", geckoprofiler::category::OTHER,
-        MarkerOptions(MarkerThreadId(mProfilerThreadId),
-                      MarkerStack::MaybeCapture(
-                          name.Equals("nonfunction:JS") ||
-                          StringHead(name, prefix.Length()) == prefix)),
-        AddRemoveTimerMarker{}, name, aTimer->mDelay.ToMilliseconds(),
+        MarkerOptions(
+            MarkerThreadId(mProfilerThreadId),
+            MarkerStack::MaybeCapture(
+                aTimer->mName.Equals("nonfunction:JS") ||
+                StringHead(aTimer->mName, prefix.Length()) == prefix)),
+        AddRemoveTimerMarker{}, aTimer->mName, aTimer->mDelay.ToMilliseconds(),
         MarkerThreadId::CurrentThread());
     // This adds a marker with the timer name as the marker name, to make it
     // obvious which timers are being used. This marker will be useful to
     // understand which timers might be added and removed excessively often.
-    profiler_add_marker(name, geckoprofiler::category::TIMER,
+    profiler_add_marker(aTimer->mName, geckoprofiler::category::TIMER,
                         MarkerOptions(MarkerTiming::IntervalUntilNowFrom(
                                           aTimer->mTimeout - aTimer->mDelay),
                                       MarkerThreadId(mProfilerThreadId)),
@@ -1430,13 +1424,13 @@ class nsReadOnlyTimer final : public nsITimer {
   NS_IMETHOD InitWithNamedFuncCallback(nsTimerCallbackFunc aCallback,
                                        void* aClosure, uint32_t aDelay,
                                        uint32_t aType,
-                                       const char* aName) override {
+                                       const nsACString& aName) override {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
   NS_IMETHOD InitHighResolutionWithNamedFuncCallback(
       nsTimerCallbackFunc aCallback, void* aClosure,
       const mozilla::TimeDuration& aDelay, uint32_t aType,
-      const char* aName) override {
+      const nsACString& aName) override {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 

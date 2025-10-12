@@ -35,6 +35,8 @@ namespace gc {
 
 class GCRuntime;
 
+static constexpr size_t MaxParallelWorkers = 8;
+
 static inline mozilla::TimeDuration TimeSince(mozilla::TimeStamp prev) {
   mozilla::TimeStamp now = mozilla::TimeStamp::Now();
   // Sadly this happens sometimes.

@@ -99,25 +99,27 @@ impl Numerator for NumeratorMetric {
         }
     }
 
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<Rate> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
-        match self {
-            NumeratorMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            NumeratorMetric::Child(meta) => {
-                panic!(
-                    "Cannot get test value for {:?} in non-parent process!",
-                    meta.id
-                );
-            }
-        }
-    }
-
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
             NumeratorMetric::Parent { inner, .. } => inner.test_get_num_recorded_errors(error),
             NumeratorMetric::Child(meta) => {
                 panic!(
                     "Cannot get the number of recorded errors for {:?} in non-parent process!",
+                    meta.id
+                );
+            }
+        }
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<Rate> for NumeratorMetric {
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<Rate> {
+        match self {
+            NumeratorMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            NumeratorMetric::Child(meta) => {
+                panic!(
+                    "Cannot get test value for {:?} in non-parent process!",
                     meta.id
                 );
             }
@@ -136,7 +138,7 @@ mod test {
         let metric = &metrics::test_only_ipc::rate_with_external_denominator;
         metric.add_to_numerator(1);
 
-        assert_eq!(1, metric.test_get_value("test-ping").unwrap().numerator);
+        assert_eq!(1, metric.test_get_value(Some("test-ping".to_string())).unwrap().numerator);
     }
 
     #[test]
@@ -169,7 +171,7 @@ mod test {
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
         assert!(
-            45 == parent_metric.test_get_value("test-ping").unwrap().numerator,
+            45 == parent_metric.test_get_value(Some("test-ping".to_string())).unwrap().numerator,
             "Values from the 'processes' should be summed"
         );
     }

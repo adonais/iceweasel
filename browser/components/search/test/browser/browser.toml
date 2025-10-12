@@ -124,6 +124,8 @@ skip-if = [
   "tsan", # Bug 1792718
 ]
 
+["browser_searchbar_ohttpSessions.js"]
+
 ["browser_searchbar_openpopup.js"]
 
 ["browser_searchbar_results.js"]

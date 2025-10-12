@@ -32,6 +32,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.directionsEq
 import org.mozilla.fenix.helpers.FenixGleanTestRule
@@ -40,6 +41,7 @@ import org.mozilla.fenix.library.history.HistoryItemTimeGroup
 import org.mozilla.fenix.library.historymetadata.HistoryMetadataGroupFragmentAction
 import org.mozilla.fenix.library.historymetadata.HistoryMetadataGroupFragmentDirections
 import org.mozilla.fenix.library.historymetadata.HistoryMetadataGroupFragmentStore
+import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import org.mozilla.fenix.GleanMetrics.History as GleanHistory
 
@@ -55,12 +57,15 @@ class HistoryMetadataGroupControllerTest {
 
     private val activity: HomeActivity = mockk(relaxed = true)
     private val context: Context = mockk(relaxed = true)
-    private val appStore: AppStore = mockk(relaxed = true)
     private val store: HistoryMetadataGroupFragmentStore = mockk(relaxed = true)
     private val browserStore: BrowserStore = mockk(relaxed = true)
     private val selectOrAddUseCase: TabsUseCases.SelectOrAddUseCase = mockk(relaxed = true)
+    private val fenixBrowserUseCases: FenixBrowserUseCases = mockk(relaxed = true)
     private val navController: NavController = mockk(relaxed = true)
+    private val settings: Settings = mockk(relaxed = true)
     private val historyStorage: PlacesHistoryStorage = mockk(relaxed = true)
+
+    private val appStore: AppStore = AppStore()
 
     private val searchTerm = "mozilla"
     private val historyMetadataKey = HistoryMetadataKey("http://www.mozilla.com", searchTerm, null)
@@ -107,6 +112,33 @@ class HistoryMetadataGroupControllerTest {
             selectOrAddUseCase.invoke(
                 mozillaHistoryMetadataItem.url,
                 mozillaHistoryMetadataItem.historyMetadataKey,
+            )
+            navController.navigate(R.id.browserFragment)
+        }
+        assertNotNull(GleanHistory.searchTermGroupOpenTab.testGetValue())
+        assertEquals(
+            1,
+            GleanHistory.searchTermGroupOpenTab.testGetValue()!!.size,
+        )
+        assertNull(
+            GleanHistory.searchTermGroupOpenTab.testGetValue()!!
+                .single().extra,
+        )
+    }
+
+    @Test
+    fun `GIVEN homepage as a new tab is enabled WHEN history item is opened THEN open the item in the existing tab`() {
+        every { settings.enableHomepageAsNewTab } returns true
+
+        assertNull(GleanHistory.searchTermGroupOpenTab.testGetValue())
+
+        controller.handleOpen(mozillaHistoryMetadataItem)
+
+        verify {
+            fenixBrowserUseCases.loadUrlOrSearch(
+                searchTermOrURL = mozillaHistoryMetadataItem.url,
+                newTab = false,
+                private = false,
             )
             navController.navigate(R.id.browserFragment)
         }
@@ -329,7 +361,9 @@ class HistoryMetadataGroupControllerTest {
             appStore = appStore,
             store = store,
             selectOrAddUseCase = selectOrAddUseCase,
+            fenixBrowserUseCases = fenixBrowserUseCases,
             navController = navController,
+            settings = settings,
             scope = scope,
             searchTerm = searchTerm,
             deleteSnackbar = deleteSnackbar,

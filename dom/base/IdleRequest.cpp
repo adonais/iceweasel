@@ -13,6 +13,7 @@
 #include "mozilla/dom/WebTaskScheduler.h"
 #include "mozilla/dom/WindowBinding.h"
 #include "nsComponentManagerUtils.h"
+#include "nsGlobalWindowInner.h"
 #include "nsPIDOMWindow.h"
 
 namespace mozilla::dom {

@@ -161,7 +161,7 @@ class WakeLockTopic {
 
   void DBusInhibitSucceeded(uint32_t aInhibitRequestID);
   void DBusInhibitFailed(bool aFatal);
-  void DBusUninhibitSucceeded();
+  void DBusUninhibitReset(bool aSuccess);
   void DBusUninhibitFailed();
   void ClearDBusInhibitToken();
 #endif
@@ -241,8 +241,8 @@ void WakeLockTopic::DBusInhibitFailed(bool aFatal) {
   mState = Uninhibited;
 }
 
-void WakeLockTopic::DBusUninhibitSucceeded() {
-  WAKE_LOCK_LOG("WakeLockTopic::DBusUninhibitSucceeded()");
+void WakeLockTopic::DBusUninhibitReset(bool aSuccess) {
+  WAKE_LOCK_LOG("WakeLockTopic::DBusUninhibitReset(%d)", aSuccess);
   mState = Uninhibited;
   mCancellable = nullptr;
   ClearDBusInhibitToken();
@@ -376,15 +376,18 @@ void WakeLockTopic::DBusUninhibitScreensaver(const char* aName,
                 ->Then(
                     target, __func__,
                     [s = RefPtr{this}, this](RefPtr<GVariant>&& aResult) {
-                      DBusUninhibitSucceeded();
+                      DBusUninhibitReset(true);
                     },
                     [s = RefPtr{this}, this,
                      aMethod](GUniquePtr<GError>&& aError) {
+                      // We may get a broken reply if the peer DBus service was
+                      // restarted. In such case the service is not inhibited
+                      // anymore so we do a DBusUninhibitReset(false).
                       WAKE_LOCK_LOG(
                           "WakeLockTopic::DBusUninhibitFailed() %s call failed "
                           ": %s\n",
                           aMethod, aError->message);
-                      DBusUninhibitFailed();
+                      DBusUninhibitReset(false);
                     });
           },
           [self = RefPtr{this}, this](GUniquePtr<GError>&& aError) {
@@ -521,17 +524,20 @@ void WakeLockTopic::UninhibitFreeDesktopPortal() {
                 ->Then(
                     target, __func__,
                     [s = RefPtr{this}, this](RefPtr<GVariant>&& aResult) {
-                      DBusUninhibitSucceeded();
+                      DBusUninhibitReset(true);
                       WAKE_LOCK_LOG(
                           "WakeLockTopic::UninhibitFreeDesktopPortal() Inhibit "
                           "removed\n");
                     },
                     [s = RefPtr{this}, this](GUniquePtr<GError>&& aError) {
-                      DBusUninhibitFailed();
+                      // We may get a broken reply if the peer DBus service was
+                      // restarted. In such case the service is not inhibited
+                      // anymore so we do a DBusUninhibitReset(false).
                       WAKE_LOCK_LOG(
                           "WakeLockTopic::UninhibitFreeDesktopPortal() "
                           "Removing inhibit failed: %s\n",
                           aError->message);
+                      DBusUninhibitReset(false);
                     });
           },
           [self = RefPtr{this}, this](GUniquePtr<GError>&& aError) {

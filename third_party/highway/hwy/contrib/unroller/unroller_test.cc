@@ -14,6 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cmath>  // std::abs
 #include <vector>
 
 #include "hwy/base.h"
@@ -30,33 +31,34 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
 template <typename T>
-T SimpleDot(const T* pa, const T* pb, size_t num) {
-  T sum = 0;
+T DoubleDot(const T* pa, const T* pb, size_t num) {
+  double sum = 0.0;
   for (size_t i = 0; i < num; ++i) {
     // For reasons unknown, fp16 += does not compile on clang (Arm).
-    sum = ConvertScalarTo<T>(sum + pa[i] * pb[i]);
+    sum += ConvertScalarTo<double>(pa[i]) * ConvertScalarTo<double>(pb[i]);
   }
-  return sum;
+  return ConvertScalarTo<T>(sum);
 }
 
 template <typename T>
-T SimpleAcc(const T* pa, size_t num) {
-  T sum = 0;
+T DoubleSum(const T* pa, size_t num) {
+  double sum = 0.0;
   for (size_t i = 0; i < num; ++i) {
-    sum += pa[i];
+    sum += ConvertScalarTo<double>(pa[i]);
   }
-  return sum;
+  return ConvertScalarTo<T>(sum);
 }
 
 template <typename T>
-T SimpleMin(const T* pa, size_t num) {
-  T min = HighestValue<T>();
+T DoubleMin(const T* pa, size_t num) {
+  double min = HighestValue<T>();
   for (size_t i = 0; i < num; ++i) {
-    if (min > pa[i]) min = pa[i];
+    min = HWY_MIN(min, ConvertScalarTo<double>(pa[i]));
   }
-  return min;
+  return ConvertScalarTo<T>(min);
 }
 
 template <typename T>
@@ -147,7 +149,7 @@ struct FindUnit : UnrollerUnit<FindUnit<T>, T, MakeSigned<T>> {
 
   hn::Vec<DI> YInitImpl() { return hn::Set(di, TI{-1}); }
 
-  hn::Vec<D> MaskLoadImpl(const ptrdiff_t idx, T* from,
+  hn::Vec<D> MaskLoadImpl(const ptrdiff_t idx, const T* from,
                           const ptrdiff_t places) {
     auto mask = hn::FirstN(d, static_cast<size_t>(places));
     auto maskneg = hn::Not(hn::FirstN(
@@ -235,7 +237,7 @@ struct MinUnit : UnrollerUnit<MinUnit<T>, T, T> {
 
   hn::Vec<TT> YInitImpl() { return hn::Set(d, HighestValue<T>()); }
 
-  hn::Vec<TT> MaskLoadImpl(const ptrdiff_t idx, T* from,
+  hn::Vec<TT> MaskLoadImpl(const ptrdiff_t idx, const T* from,
                            const ptrdiff_t places) {
     auto mask = hn::FirstN(d, static_cast<size_t>(places));
     auto maskneg = hn::Not(hn::FirstN(
@@ -267,7 +269,6 @@ struct MinUnit : UnrollerUnit<MinUnit<T>, T, T> {
   }
 
   ptrdiff_t ReduceImpl(const hn::Vec<TT> x, T* to) {
-    const hn::ScalableTag<T> d;
     auto minvect = hn::MinOfLanes(d, x);
     (*to) = hn::ExtractLane(minvect, 0);
     return 1;
@@ -370,30 +371,35 @@ struct TestDot {
         b[i] = ConvertScalarTo<T>(random_t());
       }
 
-      const T expected_dot = SimpleDot(a, b, num);
+      const T expected_dot = DoubleDot(a, b, num);
+      const double expected_dot_f64 = ConvertScalarTo<double>(expected_dot);
       MultiplyUnit<T> multfn;
       Unroller(multfn, a, b, y, static_cast<ptrdiff_t>(num));
       AccumulateUnit<T> accfn;
       T dot_via_mul_acc;
       Unroller(accfn, y, &dot_via_mul_acc, static_cast<ptrdiff_t>(num));
-      const double tolerance = 32.0 *
+      const double tolerance = 120.0 *
                                ConvertScalarTo<double>(hwy::Epsilon<T>()) *
-                               ScalarAbs(expected_dot);
-      HWY_ASSERT(ScalarAbs(expected_dot - dot_via_mul_acc) < tolerance);
+                               std::abs(expected_dot_f64);
+      HWY_ASSERT(std::abs(expected_dot_f64 - ConvertScalarTo<double>(
+                                                 dot_via_mul_acc)) < tolerance);
 
       DotUnit<T> dotfn;
       T dotr;
       Unroller(dotfn, a, b, &dotr, static_cast<ptrdiff_t>(num));
-      HWY_ASSERT(ConvertScalarTo<double>(ScalarAbs((expected_dot - dotr))) <
-                 tolerance);
+      const double dotr_f64 = ConvertScalarTo<double>(dotr);
+      HWY_ASSERT(std::abs(expected_dot_f64 - dotr_f64) < tolerance);
 
-      auto expected_min = SimpleMin(a, num);
+      const T expected_min = DoubleMin(a, num);
       MinUnit<T> minfn;
       T minr;
       Unroller(minfn, a, &minr, static_cast<ptrdiff_t>(num));
 
-      HWY_ASSERT(ConvertScalarTo<double>(ScalarAbs(expected_min - minr)) <
-                 1e-7);
+      const double l1 = std::abs(ConvertScalarTo<double>(expected_min) -
+                                 ConvertScalarTo<double>(minr));
+      // Unlike above, tolerance is absolute, there should be no numerical
+      // differences between T and double because we just compute the min.
+      HWY_ASSERT(l1 < 1E-7);
     }
 #endif
   }
@@ -452,7 +458,9 @@ struct TestFind {
 
       FindUnit<T> cvtfn(ConvertScalarTo<T>(num - 1));
       MakeSigned<T> idx = 0;
-      Unroller(cvtfn, a, &idx, static_cast<ptrdiff_t>(num));
+      // Explicitly test input can be const
+      const T* const_a = a;
+      Unroller(cvtfn, const_a, &idx, static_cast<ptrdiff_t>(num));
       HWY_ASSERT(static_cast<MakeUnsigned<T>>(idx) < num);
       HWY_ASSERT(a[idx] == ConvertScalarTo<T>(num - 1));
 
@@ -472,17 +480,20 @@ struct TestFind {
 
 void TestAllFind() { ForFloatTypes(ForPartialVectors<TestFind>()); }
 
+}  // namespace
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
-
 namespace hwy {
+namespace {
 HWY_BEFORE_TEST(UnrollerTest);
 HWY_EXPORT_AND_TEST_P(UnrollerTest, TestAllDot);
 HWY_EXPORT_AND_TEST_P(UnrollerTest, TestAllConvert);
 HWY_EXPORT_AND_TEST_P(UnrollerTest, TestAllFind);
+HWY_AFTER_TEST();
+}  // namespace
 }  // namespace hwy
-
-#endif
+HWY_TEST_MAIN();
+#endif  // HWY_ONCE

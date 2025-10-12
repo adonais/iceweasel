@@ -1551,6 +1551,13 @@ sealed class EngineAction : BrowserAction() {
      * Purges the back/forward history of all tabs and custom tabs.
      */
     object PurgeHistoryAction : EngineAction()
+
+    /**
+     * Flushes the most recent state of the session with the provided [tabId].
+     */
+    data class FlushEngineSessionStateAction(
+        override val tabId: String,
+    ) : EngineAction(), ActionWithTab
 }
 
 /**

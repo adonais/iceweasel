@@ -1853,16 +1853,6 @@
     "kind": "boolean",
     "description": "Whether a HTTP transaction was routed via Alt-Svc or not."
   },
-  "HTTP_ALTSVC_ENTRIES_PER_HEADER": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "bug_numbers": [1499149],
-    "alert_emails": ["necko@mozilla.com", "ddamjanovic@mozilla.com"],
-    "kind": "enumerated",
-    "n_values": 5,
-    "description": "How many alt-svc productions were seen in a single Alt-Svc header"
-  },
   "HTTP_ALTSVC_MAPPING_CHANGED_TARGET": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -2075,23 +2065,6 @@
     "n_buckets": 100,
     "bug_numbers": [1866739, 1858256],
     "description": "The upload throughput for http/3 requests larger than 100MB. Measured in megabits per second, Mbps."
-  },
-  "NETWORK_RACE_CACHE_WITH_NETWORK_USAGE_2": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "alert_emails": ["necko@mozilla.com", "mnovotny@mozilla.com"],
-    "bug_numbers": [1377340],
-    "kind": "categorical",
-    "labels": [
-      "NetworkNoRace",
-      "CacheNoRace",
-      "NetworkRace",
-      "CacheRace",
-      "NetworkDelayedRace",
-      "CacheDelayedRace"
-    ],
-    "description": "Whether we raced network with the cache."
   },
   "NETWORK_RACE_CACHE_WITH_NETWORK_SAVED_TIME": {
     "record_in_processes": ["main", "content"],
@@ -2572,58 +2545,6 @@
     "n_buckets": 250,
     "description": "SPDY: Streams recevied per connection"
   },
-  "SPDY_CHUNK_RECVD": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 100,
-    "description": "SPDY: Recvd Chunk Size (rounded to KB)"
-  },
-  "SPDY_SYN_SIZE": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 20,
-    "high": 20000,
-    "n_buckets": 50,
-    "description": "SPDY: SYN Frame Header Size"
-  },
-  "SPDY_SYN_RATIO": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 99,
-    "n_buckets": 20,
-    "description": "SPDY: SYN Frame Header Ratio (lower better)"
-  },
-  "SPDY_SYN_REPLY_SIZE": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 16,
-    "high": 20000,
-    "n_buckets": 50,
-    "description": "SPDY: SYN Reply Header Size"
-  },
-  "SPDY_SYN_REPLY_RATIO": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "linear",
-    "high": 99,
-    "n_buckets": 20,
-    "description": "SPDY: SYN Reply Header Ratio (lower better)"
-  },
   "SPDY_KBREAD_PER_CONN2": {
     "record_in_processes": ["main", "socket"],
     "products": ["firefox", "fennec"],
@@ -2645,16 +2566,6 @@
     "high": 5000,
     "n_buckets": 100,
     "description": "H2: Settings Max Streams parameter"
-  },
-  "SPDY_SETTINGS_IW": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["necko@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1000,
-    "n_buckets": 50,
-    "description": "H2: Settings Initial Window (rounded to KB)"
   },
   "SPDY_GOAWAY_LOCAL": {
     "record_in_processes": ["main", "socket"],
@@ -2685,116 +2596,6 @@
     "n_buckets": 75,
     "releaseChannelCollection": "opt-out",
     "description": "Size of continued H2 headers in bytes."
-  },
-  "HPACK_ELEMENTS_EVICTED_DECOMPRESSOR": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 256,
-    "n_buckets": 50,
-    "description": "HPACK: Number of items removed from dynamic table to make room for 1 new item",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1296280]
-  },
-  "HPACK_BYTES_EVICTED_DECOMPRESSOR": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 8192,
-    "n_buckets": 50,
-    "description": "HPACK: Number of bytes removed from dynamic table to make room for 1 new item",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1296280]
-  },
-  "HPACK_BYTES_EVICTED_RATIO_DECOMPRESSOR": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 256,
-    "n_buckets": 50,
-    "description": "HPACK: Ratio of bytes evicted to bytes added (* 100)",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1296280]
-  },
-  "HPACK_PEAK_COUNT_DECOMPRESSOR": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1024,
-    "n_buckets": 50,
-    "description": "HPACK: peak number of items in the dynamic table",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1296280]
-  },
-  "HPACK_PEAK_SIZE_DECOMPRESSOR": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 16384,
-    "n_buckets": 100,
-    "description": "HPACK: peak size in bytes of the table",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1296280]
-  },
-  "HPACK_ELEMENTS_EVICTED_COMPRESSOR": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 256,
-    "n_buckets": 50,
-    "description": "HPACK: Number of items removed from dynamic table to make room for 1 new item",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1296280]
-  },
-  "HPACK_BYTES_EVICTED_COMPRESSOR": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 8192,
-    "n_buckets": 50,
-    "description": "HPACK: Number of bytes removed from dynamic table to make room for 1 new item",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1296280]
-  },
-  "HPACK_BYTES_EVICTED_RATIO_COMPRESSOR": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 256,
-    "n_buckets": 50,
-    "description": "HPACK: Ratio of bytes evicted to bytes added (* 100)",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1296280]
-  },
-  "HPACK_PEAK_COUNT_COMPRESSOR": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 1024,
-    "n_buckets": 50,
-    "description": "HPACK: peak number of items in the dynamic table",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1296280]
-  },
-  "HPACK_PEAK_SIZE_COMPRESSOR": {
-    "record_in_processes": ["main", "socket"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "high": 16384,
-    "n_buckets": 100,
-    "description": "HPACK: peak size in bytes of the table",
-    "alert_emails": ["necko@mozilla.com"],
-    "bug_numbers": [1296280]
   },
   "HTTP2_FAIL_BEFORE_SETTINGS": {
     "record_in_processes": ["main"],
@@ -2974,17 +2775,6 @@
     "n_buckets": 100,
     "description": "Time from submission to dispatch of HTTP2 transaction that has received a respone from a server that addretizes HTTP3 support (ms)"
   },
-  "HTTP_SAW_QUIC_ALT_PROTOCOL_2": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox"],
-    "alert_emails": ["necko@mozilla.com", "ddamjanovic@mozilla.com"],
-    "bug_numbers": [1605099],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "enumerated",
-    "n_values": 3,
-    "description": "Does a response has a h3(1), other quic(2) or non(0) alt-protocol advertisement."
-  },
   "HTTP3_CONNECTION_CLOSE_CODE_3": {
     "record_in_processes": ["main", "socket"],
     "products": ["firefox"],
@@ -3017,6 +2807,7 @@
     "record_in_processes": ["main", "socket"],
     "products": ["firefox", "fennec"],
     "expires_in_version": "never",
+    "releaseChannelCollection": "opt-in",
     "alert_emails": ["necko@mozilla.com", "ddamjanovic@mozilla.com"],
     "kind": "exponential",
     "high": 60000,
@@ -6497,13 +6288,6 @@
     "bug_numbers": [1334615],
     "description": "The input method the user used to select a result in the searchbar. 'enter' => The user hit the Enter key without choosing a result in the popup. 'enterSelection' => The user chose a result and then hit the Enter key. 'click' => The user clicked a result with the mouse."
   },
-  "INNERWINDOWS_WITH_MUTATION_LISTENERS": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "description": "Deleted or to-be-reused innerwindow which has had mutation event listeners."
-  },
   "HTMLEDITORS_WITH_BEFOREINPUT_LISTENERS": {
     "record_in_processes": ["content"],
     "products": ["firefox", "fennec"],
@@ -6523,16 +6307,6 @@
     "kind": "boolean",
     "releaseChannelCollection": "opt-out",
     "description": "Number of HTML editors whose dispatching beforeinput events are canceled"
-  },
-  "HTMLEDITORS_WITH_MUTATION_LISTENERS_WITHOUT_BEFOREINPUT_LISTENERS": {
-    "record_in_processes": ["content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["mnakano.birchill@mozilla.com"],
-    "bug_numbers": [1668134, 1665530],
-    "expires_in_version": "never",
-    "kind": "boolean",
-    "releaseChannelCollection": "opt-out",
-    "description": "Number of HTML editors whose window or a node in it has had mutation event listeners, but has not had beforeinput event listeners"
   },
   "HTMLEDITORS_WITH_MUTATION_OBSERVERS_WITHOUT_BEFOREINPUT_LISTENERS": {
     "record_in_processes": ["content"],
@@ -10709,20 +10483,6 @@
     "n_values": 10,
     "description": "Media decoder backend (0=WMF Software, 1=DXVA2D3D9, 2=DXVA2D3D11)"
   },
-  "SANDBOX_HAS_USER_NAMESPACES": {
-    "record_in_processes": ["main"],
-    "products": ["firefox"],
-    "alert_emails": [
-      "gcp@mozilla.com",
-      "jld@mozilla.com",
-      "alissy@mozilla.com"
-    ],
-    "bug_numbers": [1098428, 1370578, 1461546, 1464220, 1885704],
-    "expires_in_version": "145",
-    "releaseChannelCollection": "opt-out",
-    "kind": "boolean",
-    "description": "Whether our process succedeed in creating a user namespace"
-  },
   "SANDBOX_REJECTED_SYSCALLS": {
     "record_in_processes": ["main", "content"],
     "products": ["firefox", "fennec"],
@@ -11319,8 +11079,8 @@
     "record_in_processes": ["main"],
     "products": ["firefox"],
     "alert_emails": ["addons-dev-internal@mozilla.com"],
-    "bug_numbers": [1803363, 1850890, 1881406, 1946276],
-    "expires_in_version": "145",
+    "bug_numbers": [1803363, 1850890, 1881406, 1946276, 1984461],
+    "expires_in_version": "155",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 100000,
@@ -11331,8 +11091,8 @@
     "record_in_processes": ["main"],
     "products": ["firefox"],
     "alert_emails": ["addons-dev-internal@mozilla.com"],
-    "bug_numbers": [1803363, 1850890, 1881406, 1946276],
-    "expires_in_version": "145",
+    "bug_numbers": [1803363, 1850890, 1881406, 1946276, 1984461],
+    "expires_in_version": "155",
     "kind": "exponential",
     "high": 50000000,
     "n_buckets": 50,
@@ -11342,8 +11102,8 @@
     "record_in_processes": ["main"],
     "products": ["firefox"],
     "alert_emails": ["addons-dev-internal@mozilla.com"],
-    "bug_numbers": [1803363, 1850890, 1881406, 1946276],
-    "expires_in_version": "145",
+    "bug_numbers": [1803363, 1850890, 1881406, 1946276, 1984461],
+    "expires_in_version": "155",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 100000,
@@ -11354,8 +11114,8 @@
     "record_in_processes": ["main"],
     "products": ["firefox"],
     "alert_emails": ["addons-dev-internal@mozilla.com"],
-    "bug_numbers": [1803363, 1850890, 1881406, 1946276],
-    "expires_in_version": "145",
+    "bug_numbers": [1803363, 1850890, 1881406, 1946276, 1984461],
+    "expires_in_version": "155",
     "kind": "exponential",
     "high": 50000000,
     "n_buckets": 50,
@@ -11365,8 +11125,8 @@
     "record_in_processes": ["main"],
     "products": ["firefox"],
     "alert_emails": ["addons-dev-internal@mozilla.com"],
-    "bug_numbers": [1803363, 1850890, 1881406, 1946276],
-    "expires_in_version": "145",
+    "bug_numbers": [1803363, 1850890, 1881406, 1946276, 1984461],
+    "expires_in_version": "155",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 100000,
@@ -11377,8 +11137,8 @@
     "record_in_processes": ["main"],
     "products": ["firefox"],
     "alert_emails": ["addons-dev-internal@mozilla.com"],
-    "bug_numbers": [1803363, 1850890, 1881406, 1946276],
-    "expires_in_version": "145",
+    "bug_numbers": [1803363, 1850890, 1881406, 1946276, 1984461],
+    "expires_in_version": "155",
     "kind": "exponential",
     "releaseChannelCollection": "opt-out",
     "high": 100000,

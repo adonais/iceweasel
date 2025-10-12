@@ -135,10 +135,6 @@ MOZ_RUNINIT static nsTArray<nsWindow*> gTopLevelWindows;
 
 static bool sFailedToCreateGLContext = false;
 
-// Multitouch swipe thresholds in inches
-static const double SWIPE_MAX_PINCH_DELTA_INCHES = 0.4;
-static const double SWIPE_MIN_DISTANCE_INCHES = 0.6;
-
 static const double kTouchResampleVsyncAdjustMs = 5.0;
 
 static const int32_t INPUT_RESULT_UNHANDLED =

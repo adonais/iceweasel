@@ -13,8 +13,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.unit.dp
-import org.mozilla.fenix.compose.SelectableChip
-import org.mozilla.fenix.compose.SelectableChipColors
+import mozilla.components.compose.base.SelectableChip
+import mozilla.components.compose.base.SelectableChipColors
 import org.mozilla.fenix.home.pocket.POCKET_STORIES_DEFAULT_CATEGORY_NAME
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesSelectedCategory

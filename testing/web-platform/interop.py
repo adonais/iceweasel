@@ -33,6 +33,8 @@ default_interop_task_filters = {
 
 def get_parser_fetch_logs() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.register("type", "list", lambda s: s.split(","))
+
     parser.add_argument(
         "--log-dir", action="store", help="Directory into which to download logs"
     )
@@ -47,10 +49,17 @@ def get_parser_fetch_logs() -> argparse.Namespace:
         action="store_true",
         help="Only download logs if the task is complete",
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
         "commits",
-        nargs="+",
+        nargs="*",
         help="repo:commit e.g. mozilla-central:fae24810aef1 for the runs to include",
+    )
+    group.add_argument(
+        "--local-logs",
+        action="store",
+        type="list",
+        help="Comma separated list of local log files to use",
     )
     return parser
 
@@ -266,6 +275,7 @@ def get_expected_failures(path: str) -> Mapping[str, set[Optional[str]]]:
 
 def score_runs(
     commits: list[str],
+    local_logs: list[str],
     task_filters: list[str],
     log_dir: Optional[str],
     year: int,
@@ -304,6 +314,12 @@ def score_runs(
                 print(f"Failed to get any logs for {repo}:{commit}", file=sys.stderr)
             else:
                 run_logs.append([item.path for item in task_data])
+
+        if not run_logs and local_logs:
+            runs = []
+            for log in local_logs:
+                run_logs.append([log])
+                runs.append(("local", log))
 
         if not run_logs:
             print("No logs to process", file=sys.stderr)

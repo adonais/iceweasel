@@ -199,7 +199,9 @@ export var WebNavigationManager = {
    * @param {boolean} [tabTransitionData.typed]
    */
   setRecentTabTransitionData(tabTransitionData) {
-    let window = lazy.BrowserWindowTracker.getTopWindow();
+    let window = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
     if (
       window &&
       window.gBrowser &&

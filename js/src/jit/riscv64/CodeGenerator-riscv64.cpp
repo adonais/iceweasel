@@ -537,7 +537,7 @@ void CodeGenerator::visitExtendInt32ToInt64(LExtendInt32ToInt64* lir) {
   if (lir->mir()->isUnsigned()) {
     masm.move32To64ZeroExtend(ToRegister(input), Register64(output));
   } else {
-    masm.slliw(output, ToRegister(input), 0);
+    masm.SignExtendWord(output, ToRegister(input));
   }
 }
 
@@ -1158,89 +1158,60 @@ void CodeGenerator::visitModI(LModI* ins) {
   Register dest = ToRegister(ins->output());
   Register callTemp = ToRegister(ins->temp0());
   MMod* mir = ins->mir();
-  Label done, prevent;
+  Label done;
 
   masm.move32(lhs, callTemp);
 
   // Prevent INT_MIN % -1;
   // The integer division will give INT_MIN, but we want -(double)INT_MIN.
   if (mir->canBeNegativeDividend()) {
-    masm.ma_b(lhs, Imm32(INT_MIN), &prevent, Assembler::NotEqual, ShortJump);
+    Label skip;
+    masm.ma_b(lhs, Imm32(INT_MIN), &skip, Assembler::NotEqual, ShortJump);
     if (mir->isTruncated()) {
       // (INT_MIN % -1)|0 == 0
-      Label skip;
       masm.ma_b(rhs, Imm32(-1), &skip, Assembler::NotEqual, ShortJump);
       masm.move32(Imm32(0), dest);
       masm.ma_branch(&done, ShortJump);
-      masm.bind(&skip);
     } else {
       MOZ_ASSERT(mir->fallible());
       bailoutCmp32(Assembler::Equal, rhs, Imm32(-1), ins->snapshot());
     }
-    masm.bind(&prevent);
+    masm.bind(&skip);
   }
 
-  // 0/X (with X < 0) is bad because both of these values *should* be
-  // doubles, and the result should be -0.0, which cannot be represented in
-  // integers. X/0 is bad because it will give garbage (or abort), when it
+  // X % Y (with X < 0, Y != 0) is bad because the result should
+  // have the sign of X, but -0 cannot be represented in
+  // integers.
+  // X % 0 is bad because it will give garbage, when it
   // should give either \infty, -\infty or NAN.
 
-  // Prevent 0 / X (with X < 0) and X / 0
-  // testing X / Y.  Compare Y with 0.
-  // There are three cases: (Y < 0), (Y == 0) and (Y > 0)
-  // If (Y < 0), then we compare X with 0, and bail if X == 0
-  // If (Y == 0), then we simply want to bail.
-  // if (Y > 0), we don't bail.
-
+  // Testing X % Y. Compare Y with 0.
+  // If Y == 0, we bailout.
   if (mir->canBeDivideByZero()) {
     if (mir->isTruncated()) {
+      Label yNonZero;
+      masm.ma_b(rhs, Imm32(0), &yNonZero, Assembler::NotEqual, ShortJump);
       if (mir->trapOnError()) {
-        Label nonZero;
-        masm.ma_b(rhs, rhs, &nonZero, Assembler::NonZero);
         masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-        masm.bind(&nonZero);
       } else {
-        Label skip;
-        masm.ma_b(rhs, Imm32(0), &skip, Assembler::NotEqual, ShortJump);
         masm.move32(Imm32(0), dest);
         masm.ma_branch(&done, ShortJump);
-        masm.bind(&skip);
       }
+      masm.bind(&yNonZero);
     } else {
       MOZ_ASSERT(mir->fallible());
-      bailoutCmp32(Assembler::Equal, rhs, Imm32(0), ins->snapshot());
+      bailoutCmp32(Assembler::Zero, rhs, rhs, ins->snapshot());
     }
-  }
-
-  if (mir->canBeNegativeDividend()) {
-    Label notNegative;
-    masm.ma_b(rhs, Imm32(0), &notNegative, Assembler::GreaterThan, ShortJump);
-    if (mir->isTruncated()) {
-      // NaN|0 == 0 and (0 % -X)|0 == 0
-      Label skip;
-      masm.ma_b(lhs, Imm32(0), &skip, Assembler::NotEqual, ShortJump);
-      masm.move32(Imm32(0), dest);
-      masm.ma_branch(&done, ShortJump);
-      masm.bind(&skip);
-    } else {
-      MOZ_ASSERT(mir->fallible());
-      bailoutCmp32(Assembler::Equal, lhs, Imm32(0), ins->snapshot());
-    }
-    masm.bind(&notNegative);
   }
 
   masm.ma_mod32(dest, lhs, rhs);
 
-  // If X%Y == 0 and X < 0, then we *actually* wanted to return -0.0
-  if (mir->canBeNegativeDividend()) {
-    if (mir->isTruncated()) {
-      // -0.0|0 == 0
-    } else {
-      MOZ_ASSERT(mir->fallible());
-      // See if X < 0
-      masm.ma_b(dest, Imm32(0), &done, Assembler::NotEqual, ShortJump);
-      bailoutCmp32(Assembler::Signed, callTemp, Imm32(0), ins->snapshot());
-    }
+  // If X%Y == 0 and X < 0, then we *actually* wanted to return -0, so bailing
+  // out. -0.0|0 == 0
+  if (mir->canBeNegativeDividend() && !mir->isTruncated()) {
+    MOZ_ASSERT(mir->fallible());
+    masm.ma_b(dest, Imm32(0), &done, Assembler::NotEqual, ShortJump);
+    bailoutCmp32(Assembler::Signed, callTemp, callTemp, ins->snapshot());
   }
   masm.bind(&done);
 }
@@ -1302,7 +1273,7 @@ void CodeGenerator::visitBitNotI(LBitNotI* ins) {
   const LDefinition* dest = ins->output();
   MOZ_ASSERT(!input->isConstant());
 
-  masm.nor(ToRegister(dest), ToRegister(input), zero);
+  masm.not_(ToRegister(dest), ToRegister(input));
 }
 
 void CodeGenerator::visitBitNotI64(LBitNotI64* ins) {
@@ -1310,7 +1281,7 @@ void CodeGenerator::visitBitNotI64(LBitNotI64* ins) {
   MOZ_ASSERT(!IsConstant(input));
   Register64 inputReg = ToRegister64(input);
   MOZ_ASSERT(inputReg == ToOutRegister64(ins));
-  masm.nor(inputReg.reg, inputReg.reg, zero);
+  masm.not_(inputReg.reg, inputReg.reg);
 }
 
 void CodeGenerator::visitBitOpI(LBitOpI* ins) {
@@ -1324,7 +1295,7 @@ void CodeGenerator::visitBitOpI(LBitOpI* ins) {
         masm.ma_or(ToRegister(dest), ToRegister(lhs), Imm32(ToInt32(rhs)));
       } else {
         masm.or_(ToRegister(dest), ToRegister(lhs), ToRegister(rhs));
-        masm.slliw(ToRegister(dest), ToRegister(dest), 0);
+        masm.SignExtendWord(ToRegister(dest), ToRegister(dest));
       }
       break;
     case JSOp::BitXor:
@@ -1333,7 +1304,7 @@ void CodeGenerator::visitBitOpI(LBitOpI* ins) {
       } else {
         masm.ma_xor(ToRegister(dest), ToRegister(lhs),
                     Operand(ToRegister(rhs)));
-        masm.slliw(ToRegister(dest), ToRegister(dest), 0);
+        masm.SignExtendWord(ToRegister(dest), ToRegister(dest));
       }
       break;
     case JSOp::BitAnd:
@@ -1341,7 +1312,7 @@ void CodeGenerator::visitBitOpI(LBitOpI* ins) {
         masm.ma_and(ToRegister(dest), ToRegister(lhs), Imm32(ToInt32(rhs)));
       } else {
         masm.and_(ToRegister(dest), ToRegister(lhs), ToRegister(rhs));
-        masm.slliw(ToRegister(dest), ToRegister(dest), 0);
+        masm.SignExtendWord(ToRegister(dest), ToRegister(dest));
       }
       break;
     default:
@@ -1419,18 +1390,15 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
         MOZ_CRASH("Unexpected shift op");
     }
   } else {
-    // The shift amounts should be AND'ed into the 0-31 range
-    masm.ma_and(dest, ToRegister(rhs), Imm32(0x1F));
-
     switch (ins->bitop()) {
       case JSOp::Lsh:
-        masm.sllw(dest, lhs, dest);
+        masm.sllw(dest, lhs, ToRegister(rhs));
         break;
       case JSOp::Rsh:
-        masm.sraw(dest, lhs, dest);
+        masm.sraw(dest, lhs, ToRegister(rhs));
         break;
       case JSOp::Ursh:
-        masm.srlw(dest, lhs, dest);
+        masm.srlw(dest, lhs, ToRegister(rhs));
         if (ins->mir()->toUrsh()->fallible()) {
           // x >>> 0 can overflow.
           bailoutCmp32(Assembler::LessThan, dest, Imm32(0), ins->snapshot());
@@ -2478,10 +2446,6 @@ void CodeGenerator::visitWasmAtomicBinopI64(LWasmAtomicBinopI64* lir) {
   masm.wasmAtomicFetchOp64(lir->mir()->access(), lir->mir()->operation(), value,
                            addr, temp, output);
 }
-
-void CodeGenerator::visitNearbyInt(LNearbyInt*) { MOZ_CRASH("NYI"); }
-
-void CodeGenerator::visitNearbyIntF(LNearbyIntF*) { MOZ_CRASH("NYI"); }
 
 void CodeGenerator::visitSimd128(LSimd128* ins) { MOZ_CRASH("No SIMD"); }
 

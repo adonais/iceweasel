@@ -194,18 +194,25 @@ BEGIN_TEST(testJitRangeAnalysis_MathSignBeta) {
   CHECK(EquivalentRanges(cm0->range(),
                          Range::NewDoubleSingletonRange(func.alloc, -0.0)));
 
-  // On the (p < 0) side, p is negative and not -0 (surprise!)
+  // As 0 == -0, checking for (p < 0) implies that negative zero is excluded as
+  // well. So normally we should exclude -0 from the output, except that
+  // denormals might introduce extra confusion.
+  //
+  // What appears as 0, could be non-zero when seen in Range Analysis, while
+  // being zero when executed. As such we have to be conservative and include
+  // every possible outcome.
   CHECK(EquivalentRanges(
       thenAdd->range(),
       new (func.alloc)
           Range(Range::NoInt32LowerBound, 0, Range::IncludesFractionalParts,
-                Range::ExcludesNegativeZero, Range::IncludesInfinity)));
+                Range::IncludesNegativeZero, Range::IncludesInfinity)));
 
-  // Consequently, its Math.sign value is not -0 either.
+  // Consequently, its Math.sign value is not -0 either, but as we are
+  // conservative, we should include it here too.
   CHECK(EquivalentRanges(thenSign->range(),
                          new (func.alloc)
                              Range(-1, 0, Range::ExcludesFractionalParts,
-                                   Range::ExcludesNegativeZero, 0)));
+                                   Range::IncludesNegativeZero, 0)));
 
   // On the (p >= 0) side, p is not negative and may be -0 (surprise!)
   CHECK(EquivalentRanges(
@@ -293,7 +300,7 @@ BEGIN_TEST(testJitRangeAnalysis_StrictCompareBeta) {
     return false;
   }
   CHECK(EquivalentRanges(thenAdd->range(),
-                         Range::NewDoubleRange(func.alloc, 0.0, 0.0)));
+                         Range::NewDoubleRange(func.alloc, -0.0, 0.0)));
 
   return true;
 }

@@ -34,6 +34,7 @@ import org.mozilla.gecko.mozglue.JNIObject;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.ThreadUtils;
 
+/** Accessibility support for GeckoSession. */
 @UiThread
 public class SessionAccessibility {
   private static final String LOGTAG = "GeckoAccessibility";

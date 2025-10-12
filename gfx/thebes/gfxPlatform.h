@@ -28,6 +28,7 @@
 #include "mozilla/layers/MemoryPressureObserver.h"
 #include "mozilla/layers/OverlayInfo.h"
 
+class FontVisibilityProvider;
 class gfxASurface;
 class gfxFont;
 class gfxFontGroup;
@@ -39,7 +40,6 @@ class gfxTextRun;
 class nsIURI;
 class nsAtom;
 class nsIObserver;
-class nsPresContext;
 class SRGBOverrideObserver;
 class gfxTextPerfMetrics;
 typedef struct FT_LibraryRec_* FT_Library;
@@ -398,7 +398,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
    * Ownership of the returned gfxFontEntry is passed to the caller,
    * who must either AddRef() or delete.
    */
-  gfxFontEntry* LookupLocalFont(nsPresContext* aPresContext,
+  gfxFontEntry* LookupLocalFont(FontVisibilityProvider* aFontVisibilityProvider,
                                 const nsACString& aFontName,
                                 WeightRange aWeightForEntry,
                                 StretchRange aStretchForEntry,
@@ -728,6 +728,13 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
    */
   static bool PerfWarnings();
 
+  static void DisableAcceleratedCanvasForFallback(
+      mozilla::gfx::FeatureStatus aStatus, const char* aMessage,
+      const nsACString& aFailureId);
+
+  static void DisableAllCanvasForFallback(mozilla::gfx::FeatureStatus aStatus,
+                                          const char* aMessage,
+                                          const nsACString& aFailureId);
   static void DisableGPUProcess();
 
   void NotifyCompositorCreated(mozilla::layers::LayersBackend aBackend);

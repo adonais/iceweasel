@@ -133,8 +133,8 @@ class InactivePropertyHelper {
    * If you add a new rule, also add a test for it in:
    * server/tests/chrome/test_inspector-inactive-property-helper.html
    *
-   * The main export is `isPropertyUsed()`, which can be used to check if a
-   * property is used or not, and why.
+   * The main export is `getInactiveCssDataForProperty()`, which can be used to check if a
+   * property is inactive or not, and why.
    *
    * NOTE: We should generally *not* add rules here for any CSS properties that
    * inherit by default, because it's hard for us to know whether such
@@ -386,6 +386,13 @@ class InactivePropertyHelper {
         when: () => !this.isBlockLevel(),
         fixId: "inactive-css-not-block-fix",
         msgId: "inactive-css-not-block",
+      },
+      // Block container properties used on non-block-container elements.
+      {
+        invalidProperties: ["text-overflow"],
+        when: () => !this.isBlockContainer(),
+        fixId: "inactive-css-not-block-container-fix",
+        msgId: "inactive-css-not-block-container",
       },
       // shape-image-threshold, shape-margin, shape-outside properties used on non-floated elements.
       {
@@ -657,7 +664,7 @@ class InactivePropertyHelper {
    * If you add a new rule, also add a test for it in:
    * server/tests/chrome/test_inspector-inactive-property-helper.html
    *
-   * The main export is `isPropertyUsed()`, which can be used to check if a
+   * The main export is `getInactiveCssDataForProperty()`, which can be used to check if a
    * property is used or not, and why.
    */
   ACCEPTED_PROPERTIES_VALIDATORS = [
@@ -792,7 +799,8 @@ class InactivePropertyHelper {
    * @param {String} property
    *        The CSS property name.
    *
-   * @return {Object} object
+   * @return {Object|null} object
+   *         if the property is active, this will return null
    * @return {String} object.display
    *         The element computed display value.
    * @return {String} object.fixId
@@ -806,13 +814,11 @@ class InactivePropertyHelper {
    * @return {String} object.learnMoreURL
    *         An optional link if we need to open an other link than
    *         the default MDN property one.
-   * @return {Boolean} object.used
-   *         true if the property is used.
    */
-  isPropertyUsed(el, elStyle, cssRule, property) {
+  getInactiveCssDataForProperty(el, elStyle, cssRule, property) {
     // Assume the property is used when the Inactive CSS pref is not enabled
     if (!INACTIVE_CSS_ENABLED) {
-      return { used: true };
+      return null;
     }
 
     let fixId = "";
@@ -863,7 +869,7 @@ class InactivePropertyHelper {
     // in the accepted properties validators, assume the property is used.
     if (!isNotAccepted && !this.invalidProperties.has(property)) {
       this.unselect();
-      return { used: true };
+      return null;
     }
 
     // Otherwise, if there was no issue from the accepted properties validators,
@@ -881,6 +887,10 @@ class InactivePropertyHelper {
       display = elStyle ? elStyle.display : null;
     } catch (e) {}
 
+    if (used) {
+      return null;
+    }
+
     return {
       display,
       fixId,
@@ -888,7 +898,6 @@ class InactivePropertyHelper {
       property,
       learnMoreURL,
       lineCount,
-      used,
     };
   }
 
@@ -981,6 +990,13 @@ class InactivePropertyHelper {
       "grid",
       "table",
     ]);
+  }
+
+  /**
+   *  Check if the current node is an block container.
+   */
+  isBlockContainer() {
+    return this.node ? InspectorUtils.isBlockContainer(this.node) : false;
   }
 
   /**
@@ -1664,7 +1680,8 @@ function computedStyle(node, window = node.ownerGlobal) {
 
 const inactivePropertyHelper = new InactivePropertyHelper();
 
-// The only public method from this module is `isPropertyUsed`.
-exports.isPropertyUsed = inactivePropertyHelper.isPropertyUsed.bind(
-  inactivePropertyHelper
-);
+// The only public method from this module is `getInactiveCssDataForProperty`.
+exports.getInactiveCssDataForProperty =
+  inactivePropertyHelper.getInactiveCssDataForProperty.bind(
+    inactivePropertyHelper
+  );

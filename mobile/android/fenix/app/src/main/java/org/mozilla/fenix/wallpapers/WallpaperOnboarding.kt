@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.wallpaper.WallpaperThumbnails
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A view that shows content of a WallpaperOnboarding dialog.
@@ -57,7 +58,7 @@ fun WallpaperOnboarding(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.mozac_ic_cross_24),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
                 contentDescription = stringResource(id = R.string.close_tab),
                 tint = FirefoxTheme.colors.iconPrimary,
                 modifier = Modifier

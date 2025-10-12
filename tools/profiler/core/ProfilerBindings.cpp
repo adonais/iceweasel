@@ -204,25 +204,24 @@ void gecko_profiler_marker_schema_add_key_label_format(
 #endif
 }
 
-void gecko_profiler_marker_schema_add_key_format_searchable(
+void gecko_profiler_marker_schema_add_key_format_with_flags(
     mozilla::MarkerSchema* aSchema, const char* aKey, size_t aKeyLength,
     mozilla::MarkerSchema::Format aFormat,
-    mozilla::MarkerSchema::Searchable aSearchable) {
+    mozilla::MarkerSchema::PayloadFlags aPayloadFlags) {
 #ifdef MOZ_GECKO_PROFILER
-  aSchema->AddKeyFormatSearchable(std::string(aKey, aKeyLength), aFormat,
-                                  aSearchable);
+  aSchema->AddKeyFormat(std::string(aKey, aKeyLength), aFormat, aPayloadFlags);
 #endif
 }
 
-void gecko_profiler_marker_schema_add_key_label_format_searchable(
+void gecko_profiler_marker_schema_add_key_label_format_with_flags(
     mozilla::MarkerSchema* aSchema, const char* aKey, size_t aKeyLength,
     const char* aLabel, size_t aLabelLength,
     mozilla::MarkerSchema::Format aFormat,
-    mozilla::MarkerSchema::Searchable aSearchable) {
+    mozilla::MarkerSchema::PayloadFlags aPayloadFlags) {
 #ifdef MOZ_GECKO_PROFILER
-  aSchema->AddKeyLabelFormatSearchable(std::string(aKey, aKeyLength),
-                                       std::string(aLabel, aLabelLength),
-                                       aFormat, aSearchable);
+  aSchema->AddKeyLabelFormat(std::string(aKey, aKeyLength),
+                             std::string(aLabel, aLabelLength), aFormat,
+                             aPayloadFlags);
 #endif
 }
 

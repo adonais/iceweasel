@@ -313,42 +313,53 @@ class TestEmitterBasic(unittest.TestCase):
             extra_substs={
                 "HOST_CXXFLAGS": ["-Wall", "-Werror"],
                 "HOST_CFLAGS": ["-Werror", "-Wall"],
+                "HOST_LDFLAGS": ["-Wl,--nostdlib"],
             },
         )
-        sources, ldflags, flags, lib, target_flags = self.read_topsrcdir(reader)
-        self.assertIsInstance(flags, ComputedFlags)
+        sources, ldflags, host_flags, host_ldflags, lib, target_flags = (
+            self.read_topsrcdir(reader)
+        )
+        self.assertIsInstance(host_flags, ComputedFlags)
         self.assertEqual(
-            flags.flags["HOST_CXXFLAGS"], reader.config.substs["HOST_CXXFLAGS"]
+            host_flags.flags["HOST_CXXFLAGS"], reader.config.substs["HOST_CXXFLAGS"]
         )
         self.assertEqual(
-            flags.flags["HOST_CFLAGS"], reader.config.substs["HOST_CFLAGS"]
+            host_flags.flags["HOST_CFLAGS"], reader.config.substs["HOST_CFLAGS"]
         )
         self.assertEqual(
-            set(flags.flags["HOST_DEFINES"]),
+            host_ldflags.flags["HOST_LDFLAGS"], reader.config.substs["HOST_LDFLAGS"]
+        )
+        self.assertEqual(
+            set(host_flags.flags["HOST_DEFINES"]),
             set(["-DFOO", '-DBAZ="abcd"', "-UQUX", "-DBAR=7", "-DVALUE=xyz"]),
         )
         self.assertEqual(
-            flags.flags["MOZBUILD_HOST_CFLAGS"], ["-funroll-loops", "-host-arg"]
+            host_flags.flags["MOZBUILD_HOST_CFLAGS"], ["-funroll-loops", "-host-arg"]
         )
-        self.assertEqual(flags.flags["MOZBUILD_HOST_CXXFLAGS"], [])
+        self.assertEqual(host_flags.flags["MOZBUILD_HOST_CXXFLAGS"], [])
+        self.assertEqual(host_ldflags.flags["MOZBUILD"], ["-Wl,--gc-sections"])
 
     def test_host_no_optimize_flags(self):
         reader = self.reader(
             "host-compile-flags",
             extra_substs={"MOZ_OPTIMIZE": "1", "MOZ_OPTIMIZE_FLAGS": ["-O2"]},
         )
-        sources, ldflags, flags, lib, target_flags = self.read_topsrcdir(reader)
-        self.assertIsInstance(flags, ComputedFlags)
-        self.assertEqual(flags.flags["HOST_OPTIMIZE"], [])
+        sources, ldflags, host_flags, host_ldflags, lib, target_flags = (
+            self.read_topsrcdir(reader)
+        )
+        self.assertIsInstance(host_flags, ComputedFlags)
+        self.assertEqual(host_flags.flags["HOST_OPTIMIZE"], [])
 
     def test_host_optimize_flags(self):
         reader = self.reader(
             "host-compile-flags",
             extra_substs={"HOST_OPTIMIZE_FLAGS": ["-O2"]},
         )
-        sources, ldflags, flags, lib, target_flags = self.read_topsrcdir(reader)
-        self.assertIsInstance(flags, ComputedFlags)
-        self.assertEqual(flags.flags["HOST_OPTIMIZE"], ["-O2"])
+        sources, ldflags, host_flags, host_ldflags, lib, target_flags = (
+            self.read_topsrcdir(reader)
+        )
+        self.assertIsInstance(host_flags, ComputedFlags)
+        self.assertEqual(host_flags.flags["HOST_OPTIMIZE"], ["-O2"])
 
     def test_cross_optimize_flags(self):
         reader = self.reader(
@@ -360,9 +371,11 @@ class TestEmitterBasic(unittest.TestCase):
                 "CROSS_COMPILE": "1",
             },
         )
-        sources, ldflags, flags, lib, target_flags = self.read_topsrcdir(reader)
-        self.assertIsInstance(flags, ComputedFlags)
-        self.assertEqual(flags.flags["HOST_OPTIMIZE"], ["-O3"])
+        sources, ldflags, host_flags, host_ldflags, lib, target_flags = (
+            self.read_topsrcdir(reader)
+        )
+        self.assertIsInstance(host_flags, ComputedFlags)
+        self.assertEqual(host_flags.flags["HOST_OPTIMIZE"], ["-O3"])
 
     def test_host_rtl_flag(self):
         reader = self.reader(
@@ -373,9 +386,11 @@ class TestEmitterBasic(unittest.TestCase):
                 "CC_TYPE": "clang-cl",
             },
         )
-        sources, ldflags, flags, lib, target_flags = self.read_topsrcdir(reader)
-        self.assertIsInstance(flags, ComputedFlags)
-        self.assertEqual(flags.flags["RTL"], ["-MDd"])
+        sources, ldflags, host_flags, host_ldflags, lib, target_flags = (
+            self.read_topsrcdir(reader)
+        )
+        self.assertIsInstance(host_flags, ComputedFlags)
+        self.assertEqual(host_flags.flags["RTL"], ["-MDd"])
 
     def test_compile_flags_validation(self):
         reader = self.reader("compile-flags-field-validation")
@@ -1351,6 +1366,9 @@ class TestEmitterBasic(unittest.TestCase):
         # This objdir will also generate host flags.
         host_flags = objs.pop()
         self.assertIsInstance(host_flags, ComputedFlags)
+        # and host ldflags,
+        host_ldflags = objs.pop()
+        self.assertIsInstance(host_ldflags, ComputedFlags)
         # ...and ldflags.
         ldflags = objs.pop()
         self.assertIsInstance(ldflags, ComputedFlags)
@@ -1653,11 +1671,12 @@ class TestEmitterBasic(unittest.TestCase):
         )
         objs = self.read_topsrcdir(reader)
 
-        self.assertEqual(len(objs), 4)
-        ldflags, host_cflags, lib, cflags = objs
+        self.assertEqual(len(objs), 5)
+        ldflags, host_cflags, host_ldflags, lib, cflags = objs
         self.assertIsInstance(ldflags, ComputedFlags)
         self.assertIsInstance(cflags, ComputedFlags)
         self.assertIsInstance(host_cflags, ComputedFlags)
+        self.assertIsInstance(host_ldflags, ComputedFlags)
         self.assertIsInstance(lib, RustLibrary)
         self.assertRegex(lib.lib_name, "random_crate")
         self.assertRegex(lib.import_name, "random_crate")
@@ -1682,11 +1701,12 @@ class TestEmitterBasic(unittest.TestCase):
         )
         objs = self.read_topsrcdir(reader)
 
-        self.assertEqual(len(objs), 4)
-        ldflags, host_cflags, lib, cflags = objs
+        self.assertEqual(len(objs), 5)
+        ldflags, host_cflags, host_ldflags, lib, cflags = objs
         self.assertIsInstance(ldflags, ComputedFlags)
         self.assertIsInstance(cflags, ComputedFlags)
         self.assertIsInstance(host_cflags, ComputedFlags)
+        self.assertIsInstance(host_ldflags, ComputedFlags)
         self.assertIsInstance(lib, RustLibrary)
         self.assertEqual(lib.features, ["musthave", "cantlivewithout"])
 
@@ -1736,11 +1756,12 @@ class TestEmitterBasic(unittest.TestCase):
         )
         objs = self.read_topsrcdir(reader)
 
-        self.assertEqual(len(objs), 4)
-        ldflags, host_cflags, cflags, prog = objs
+        self.assertEqual(len(objs), 5)
+        ldflags, host_cflags, host_ldflags, cflags, prog = objs
         self.assertIsInstance(ldflags, ComputedFlags)
         self.assertIsInstance(cflags, ComputedFlags)
         self.assertIsInstance(host_cflags, ComputedFlags)
+        self.assertIsInstance(host_ldflags, ComputedFlags)
         self.assertIsInstance(prog, RustProgram)
         self.assertEqual(prog.name, "some")
 
@@ -1754,12 +1775,13 @@ class TestEmitterBasic(unittest.TestCase):
         )
         objs = self.read_topsrcdir(reader)
 
-        self.assertEqual(len(objs), 4)
+        self.assertEqual(len(objs), 5)
         print(objs)
-        ldflags, cflags, hostflags, prog = objs
+        ldflags, cflags, host_cflags, host_ldflags, prog = objs
         self.assertIsInstance(ldflags, ComputedFlags)
         self.assertIsInstance(cflags, ComputedFlags)
-        self.assertIsInstance(hostflags, ComputedFlags)
+        self.assertIsInstance(host_cflags, ComputedFlags)
+        self.assertIsInstance(host_ldflags, ComputedFlags)
         self.assertIsInstance(prog, HostRustProgram)
         self.assertEqual(prog.name, "some")
 
@@ -1773,11 +1795,12 @@ class TestEmitterBasic(unittest.TestCase):
         )
         objs = self.read_topsrcdir(reader)
 
-        self.assertEqual(len(objs), 4)
-        ldflags, host_cflags, lib, cflags = objs
+        self.assertEqual(len(objs), 5)
+        ldflags, host_cflags, host_ldflags, lib, cflags = objs
         self.assertIsInstance(ldflags, ComputedFlags)
         self.assertIsInstance(cflags, ComputedFlags)
         self.assertIsInstance(host_cflags, ComputedFlags)
+        self.assertIsInstance(host_ldflags, ComputedFlags)
         self.assertIsInstance(lib, HostRustLibrary)
         self.assertRegex(lib.lib_name, "host_lib")
         self.assertRegex(lib.import_name, "host_lib")
@@ -1790,10 +1813,11 @@ class TestEmitterBasic(unittest.TestCase):
         )
         objs = self.read_topsrcdir(reader)
 
-        self.assertEqual(len(objs), 4)
-        ldflags, host_cflags, lib, cflags = objs
+        self.assertEqual(len(objs), 5)
+        ldflags, host_cflags, host_ldflags, lib, cflags = objs
         self.assertIsInstance(ldflags, ComputedFlags)
         self.assertIsInstance(cflags, ComputedFlags)
+        self.assertIsInstance(host_ldflags, ComputedFlags)
         self.assertIsInstance(host_cflags, ComputedFlags)
         self.assertIsInstance(lib, RustLibrary)
 

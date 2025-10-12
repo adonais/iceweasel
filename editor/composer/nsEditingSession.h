@@ -73,10 +73,11 @@ class nsEditingSession final : public nsIEditingSession,
 
   nsresult SetupEditorCommandController(
       ControllerCreatorFn aControllerCreatorFn, mozIDOMWindowProxy* aWindow,
-      nsISupports* aContext, uint32_t* aControllerId);
+      nsISupportsWeakReference* aContext, uint32_t* aControllerId);
 
   nsresult SetContextOnControllerById(nsIControllers* aControllers,
-                                      nsISupports* aContext, uint32_t aID);
+                                      nsISupportsWeakReference* aContext,
+                                      uint32_t aID);
 
   /**
    *  Set the editor on the controller(s) for this window

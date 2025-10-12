@@ -118,6 +118,9 @@ https_first_disabled = true
 ["browser_browsingContext_iframeWebProgress.js"]
 support-files = ["file_browsingContext_iframeWebProgress.html"]
 
+["browser_browsing_context_active_change.js"]
+https_first_disabled = true
+
 ["browser_browsing_context_attached.js"]
 https_first_disabled = true
 
@@ -302,6 +305,9 @@ https_first_disabled = true
 https_first_disabled = true
 
 ["browser_loadURI_postdata.js"]
+
+["browser_loadURI_forceMediaDocument.js"]
+support-files = ["file_image_header.sjs"]
 
 ["browser_multiple_pushState.js"]
 https_first_disabled = true

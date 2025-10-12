@@ -318,7 +318,7 @@ export class EditProfileCard extends MozLitElement {
       id="profile-name"
       size="64"
       aria-errormessage="error-message"
-      value=${this.profile.name}
+      .value=${this.profile.name}
       @input=${this.handleInputEvent}
     />`;
   }

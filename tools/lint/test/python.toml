@@ -5,6 +5,13 @@ subsuite = "mozlint"
 
 ["test_black.py"]
 
+["test_cargo-audit.py"]
+# testing it on linux is enough
+skip-if = [
+  "os == 'win'",
+  "os == 'mac'",
+]
+
 ["test_clang_format.py"]
 
 ["test_clippy.py"]
@@ -26,6 +33,10 @@ skip-if = ["os == 'win'"]
 ["test_file_whitespace.py"]
 
 ["test_fluent_lint.py"]
+
+["test_gecko_trace.py"]
+
+["test_glean_parser.py"]
 
 ["test_ignorefile.py"]
 
@@ -52,13 +63,6 @@ skip-if = ["os == 'win'"]
 ["test_ruff.py"]
 
 ["test_rustfmt.py"]
-
-["test_cargo-audit.py"]
-# testing it on linux is enough
-skip-if = [
-  "os == 'win'",
-  "os == 'mac'",
-]
 
 ["test_shellcheck.py"]
 

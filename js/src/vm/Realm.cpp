@@ -530,11 +530,43 @@ void Realm::clearScriptCounts() { zone()->clearScriptCounts(this); }
 void Realm::clearScriptLCov() { zone()->clearScriptLCov(this); }
 
 const char* Realm::getLocale() const {
+  if (RefPtr<LocaleString> locale = behaviors_.localeOverride()) {
+    return locale->chars();
+  }
+
   if (RefPtr<LocaleString> locale = creationOptions_.locale()) {
     return locale->chars();
   }
 
   return runtime_->getDefaultLocale();
+}
+
+js::DateTimeInfo* Realm::getDateTimeInfo() {
+#if JS_HAS_INTL_API
+  if (RefPtr<TimeZoneString> timeZone = behaviors_.timeZone()) {
+    if (!dateTimeInfo_) {
+      AutoEnterOOMUnsafeRegion oomUnsafe;
+
+      // Crash on OOM because we don't have a good way to handle it here.
+      dateTimeInfo_ = js::MakeUnique<js::DateTimeInfo>(timeZone);
+      if (!dateTimeInfo_) {
+        oomUnsafe.crash("getDateTimeInfo");
+      }
+    } else {
+      dateTimeInfo_->updateTimeZoneOverride(timeZone);
+    }
+    return dateTimeInfo_.get();
+  }
+#endif
+  return nullptr;
+}
+
+void Realm::setTimeZone(const char* timeZone) {
+  // Clear any jitcode in the runtime, because compiled code doesn't handle
+  // updates to a realm's time zone override.
+  ReleaseAllJITCode(runtime_->gcContext());
+
+  behaviors_.setTimeZoneCopyZ(timeZone);
 }
 
 void ObjectRealm::addSizeOfExcludingThis(

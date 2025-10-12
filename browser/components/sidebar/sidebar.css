@@ -50,17 +50,29 @@ moz-card {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  &:first-of-type {
+    margin-block-start: 0;
+  }
 }
 
 .sidebar-panel {
+  display: flex;
+  flex-direction: column;
   padding: var(--space-large);
-  height: 100%;
   box-sizing: border-box;
   border-radius: var(--border-radius-medium);
   width: 100%;
+  height: 100%;
 
-  > moz-input-search {
+  moz-input-search {
     display: block;
+  }
+
+  .sidebar-panel-scrollable-content {
+    overflow-y: auto;
+    height: 100%;
+    padding: var(--space-xsmall);
   }
 }
 
@@ -85,10 +97,20 @@ fxview-empty-state {
     max-width: 250px;
   }
 
-  /* these illustrations need a larger width otherwise they look too small */
-  &.synced-tabs::part(image-container) {
-    min-width: auto;
-    width: 100%;
-    max-width: 350px;
+  &.synced-tabs {
+    &::part(container) {
+      margin-block-start: 0;
+    }
+
+    /* these illustrations need a larger width otherwise they look too small */
+    &::part(image-container) {
+      min-width: auto;
+      width: 100%;
+      max-width: 350px;
+    }
   }
+}
+
+moz-input-search {
+  width: 100%;
 }

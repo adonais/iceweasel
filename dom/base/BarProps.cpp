@@ -58,7 +58,9 @@ bool BarProp::GetVisibleByFlag(uint32_t aChromeFlag, CallerType aCallerType,
   }
 
   nsCOMPtr<nsIWebBrowserChrome> browserChrome = GetBrowserChrome();
-  NS_ENSURE_TRUE(browserChrome, false);
+  if (!browserChrome) {
+    return false;
+  }
 
   uint32_t chromeFlags;
 

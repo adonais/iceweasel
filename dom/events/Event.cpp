@@ -15,7 +15,6 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/PointerLockManager.h"
@@ -160,9 +159,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Event)
         inputEvent->mTargetRanges.Clear();
         break;
       }
-      case eMutationEventClass:
-        tmp->mEvent->AsMutationEvent()->mRelatedNode = nullptr;
-        break;
       default:
         break;
     }
@@ -200,10 +196,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Event)
         cb.NoteXPCOMChild(tmp->mEvent->AsEditorInputEvent()->mDataTransfer);
         NS_IMPL_CYCLE_COLLECTION_TRAVERSE(
             mEvent->AsEditorInputEvent()->mTargetRanges);
-        break;
-      case eMutationEventClass:
-        NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mEvent->mRelatedNode");
-        cb.NoteXPCOMChild(tmp->mEvent->AsMutationEvent()->mRelatedNode);
         break;
       default:
         break;

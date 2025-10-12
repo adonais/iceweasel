@@ -41,10 +41,10 @@ struct JSActorMessageMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormatSearchable(
-        "actor", "Actor Name", MS::Format::String, MS::Searchable::Searchable);
-    schema.AddKeyLabelFormatSearchable(
-        "name", "Message Name", MS::Format::String, MS::Searchable::Searchable);
+    schema.AddKeyLabelFormat("actor", "Actor Name", MS::Format::String,
+                             MS::PayloadFlags::Searchable);
+    schema.AddKeyLabelFormat("name", "Message Name", MS::Format::String,
+                             MS::PayloadFlags::Searchable);
     schema.SetTooltipLabel("JSActor - {marker.name}");
     schema.SetTableLabel(
         "{marker.name} - [{marker.data.actor}] {marker.data.name}");
@@ -171,9 +171,9 @@ void JSActor::ThrowStateErrorForGetter(const char* aName,
   }
 }
 
-static Maybe<ipc::StructuredCloneData> TryClone(JSContext* aCx,
-                                                JS::Handle<JS::Value> aValue) {
-  Maybe<ipc::StructuredCloneData> data{std::in_place};
+static UniquePtr<ipc::StructuredCloneData> TryClone(
+    JSContext* aCx, JS::Handle<JS::Value> aValue) {
+  auto data = mozilla::MakeUnique<ipc::StructuredCloneData>();
 
   // Try to directly serialize the passed-in data, and return it to our caller.
   IgnoredErrorResult rv;
@@ -186,13 +186,13 @@ static Maybe<ipc::StructuredCloneData> TryClone(JSContext* aCx,
   return data;
 }
 
-static Maybe<ipc::StructuredCloneData> CloneJSStack(
+static UniquePtr<ipc::StructuredCloneData> CloneJSStack(
     JSContext* aCx, JS::Handle<JSObject*> aStack) {
   JS::Rooted<JS::Value> stackVal(aCx, JS::ObjectOrNullValue(aStack));
   return TryClone(aCx, stackVal);
 }
 
-static Maybe<ipc::StructuredCloneData> CaptureJSStack(JSContext* aCx) {
+static UniquePtr<ipc::StructuredCloneData> CaptureJSStack(JSContext* aCx) {
   JS::Rooted<JSObject*> stack(aCx, nullptr);
   if (JS::IsAsyncStackCaptureEnabledForRealm(aCx) &&
       !JS::CaptureCurrentStack(aCx, &stack)) {
@@ -208,7 +208,7 @@ void JSActor::SendAsyncMessage(JSContext* aCx, const nsAString& aMessageName,
                                ErrorResult& aRv) {
   profiler_add_marker("SendAsyncMessage", geckoprofiler::category::IPC, {},
                       JSActorMessageMarker{}, mName, aMessageName);
-  Maybe<ipc::StructuredCloneData> data{std::in_place};
+  auto data = MakeUnique<ipc::StructuredCloneData>();
   if (!nsFrameMessageManager::GetParamsForMessage(aCx, aObj, aTransfers,
                                                   *data)) {
     aRv.ThrowDataCloneError(nsPrintfCString(
@@ -231,7 +231,7 @@ already_AddRefed<Promise> JSActor::SendQuery(JSContext* aCx,
                                              ErrorResult& aRv) {
   profiler_add_marker("SendQuery", geckoprofiler::category::IPC, {},
                       JSActorMessageMarker{}, mName, aMessageName);
-  Maybe<ipc::StructuredCloneData> data{std::in_place};
+  auto data = MakeUnique<ipc::StructuredCloneData>();
   if (!nsFrameMessageManager::GetParamsForMessage(
           aCx, aObj, JS::UndefinedHandleValue, *data)) {
     aRv.ThrowDataCloneError(nsPrintfCString(
@@ -371,10 +371,10 @@ void JSActor::ReceiveQueryReply(JSContext* aCx,
   }
 }
 
-void JSActor::SendRawMessageInProcess(const JSActorMessageMeta& aMeta,
-                                      Maybe<ipc::StructuredCloneData>&& aData,
-                                      Maybe<ipc::StructuredCloneData>&& aStack,
-                                      OtherSideCallback&& aGetOtherSide) {
+void JSActor::SendRawMessageInProcess(
+    const JSActorMessageMeta& aMeta, UniquePtr<ipc::StructuredCloneData> aData,
+    UniquePtr<ipc::StructuredCloneData> aStack,
+    OtherSideCallback&& aGetOtherSide) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "JSActor Async Message",
@@ -421,7 +421,7 @@ void JSActor::QueryHandler::RejectedCallback(JSContext* aCx,
     }
   }
 
-  Maybe<ipc::StructuredCloneData> data = TryClone(aCx, value);
+  UniquePtr<ipc::StructuredCloneData> data = TryClone(aCx, value);
   if (!data) {
     // Failed to clone the rejection value. Make sure that this
     // rejection is reported, despite being "handled". This is done by
@@ -442,7 +442,7 @@ void JSActor::QueryHandler::ResolvedCallback(JSContext* aCx,
     return;
   }
 
-  Maybe<ipc::StructuredCloneData> data = TryClone(aCx, aValue);
+  UniquePtr<ipc::StructuredCloneData> data = TryClone(aCx, aValue);
   if (!data) {
     nsAutoCString msg;
     msg.Append(mActor->Name());
@@ -465,8 +465,9 @@ void JSActor::QueryHandler::ResolvedCallback(JSContext* aCx,
   SendReply(aCx, JSActorMessageKind::QueryResolve, std::move(data));
 }
 
-void JSActor::QueryHandler::SendReply(JSContext* aCx, JSActorMessageKind aKind,
-                                      Maybe<ipc::StructuredCloneData>&& aData) {
+void JSActor::QueryHandler::SendReply(
+    JSContext* aCx, JSActorMessageKind aKind,
+    UniquePtr<ipc::StructuredCloneData> aData) {
   MOZ_ASSERT(mActor);
   profiler_add_marker("SendQueryReply", geckoprofiler::category::IPC, {},
                       JSActorMessageMarker{}, mActor->Name(), mMessageName);

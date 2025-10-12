@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import org.mozilla.focus.R
 import org.mozilla.focus.ui.theme.FocusTheme
 import org.mozilla.focus.ui.theme.focusColors
+import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
@@ -102,7 +103,7 @@ fun CookieBannerReducerItem(
     ) {
         val painter =
             if (cookieBannerReducerStatus is CookieBannerReducerStatus.NoException) {
-                painterResource(id = R.drawable.mozac_ic_cookies_24)
+                painterResource(id = iconsR.drawable.mozac_ic_cookies_24)
             } else {
                 painterResource(id = R.drawable.ic_cookies_disable)
             }
@@ -149,7 +150,7 @@ fun CookieBannerReducerItem(
                     .padding(end = 0.dp)
                     .size(24.dp),
                 tint = focusColors.onPrimary,
-                painter = painterResource(id = R.drawable.mozac_ic_chevron_right_24),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_chevron_right_24),
                 contentDescription = null,
             )
         }

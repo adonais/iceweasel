@@ -314,7 +314,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=933681
   gStatefulProperties.SharedArrayBuffer = ["transfer", "transferToFixedLength"]
 
   gPrototypeProperties.Map =
-    ["constructor", "size", Symbol.toStringTag, "get", "has", "set", "delete",
+    ["constructor", "size", Symbol.toStringTag, "get", "getOrInsert", "getOrInsertComputed", "has", "set", "delete",
      "keys", "values", "clear", "forEach", "entries", Symbol.iterator];
   gConstructorProperties.Map =
     constructorProps(["groupBy", Symbol.species]);
@@ -328,7 +328,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=933681
     constructorProps([Symbol.species]);
 
   gPrototypeProperties.WeakMap =
-    ["constructor", Symbol.toStringTag, "get", "has", "set", "delete"];
+    ["constructor", Symbol.toStringTag, "get", "getOrInsert", "getOrInsertComputed", "has", "set", "delete"];
   gConstructorProperties.WeakMap =
     constructorProps([]);
 

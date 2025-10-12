@@ -156,7 +156,7 @@ export function resetSchemaVersion() {
 export function verifyPrefSchema() {
   if (prefs.debuggerPrefsSchemaVersion < prefsSchemaVersion) {
     asyncStore.pendingBreakpoints = {};
-    asyncStore.tabs = [];
+    asyncStore.openedURLs = [];
     asyncStore.xhrBreakpoints = [];
     asyncStore.eventListenerBreakpoints = undefined;
     asyncStore.blackboxedRanges = {};

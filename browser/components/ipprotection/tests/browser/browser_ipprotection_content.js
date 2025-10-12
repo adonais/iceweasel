@@ -15,8 +15,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/ipprotection/IPProtectionPanel.sys.mjs",
 });
 
-async function setAndUpdateIsSignedIn(content, isSignedIn) {
-  content.state.isSignedIn = isSignedIn;
+async function setAndUpdateIsSignedOut(content, isSignedOut) {
+  content.state.isSignedOut = isSignedOut;
   content.requestUpdate();
   await content.updateComplete;
 }
@@ -52,7 +52,7 @@ add_task(async function test_main_content() {
 
   let originalState = structuredClone(content.state);
 
-  await setAndUpdateIsSignedIn(content, true);
+  await setAndUpdateIsSignedOut(content, false);
 
   Assert.ok(
     BrowserTestUtils.isVisible(content),
@@ -82,27 +82,8 @@ add_task(async function test_main_content() {
 
   // Test content after user upgrade
   await setAndUpdateHasUpgraded(content, true);
+
   Assert.ok(!content.upgradeEl, "Upgrade vpn element should not be present");
-  Assert.ok(
-    content.activeSubscriptionEl,
-    "Active subscription element should be present"
-  );
-  Assert.ok(
-    content.activeSubscriptionEl.querySelector(
-      "#active-subscription-vpn-title"
-    ),
-    "Active subcription vpn title should be present"
-  );
-  Assert.ok(
-    content.activeSubscriptionEl.querySelector(
-      "#active-subscription-vpn-message"
-    ),
-    "Active subscription vpn paragraph should be present"
-  );
-  Assert.ok(
-    content.activeSubscriptionEl.querySelector("#download-vpn-button"),
-    "Download vpn button should be present"
-  );
 
   await resetStateToObj(content, originalState);
 
@@ -126,7 +107,7 @@ add_task(async function test_status_card() {
   };
 
   let content = await openPanel({
-    isSignedIn: true,
+    isSignedOut: false,
     protectionEnabledSince: enabledSince,
     location: mockLocation,
   });
@@ -233,7 +214,7 @@ add_task(async function test_ipprotection_events_on_toggle() {
 
   let content = panelView.querySelector(lazy.IPProtectionPanel.CONTENT_TAGNAME);
 
-  await setAndUpdateIsSignedIn(content, true);
+  await setAndUpdateIsSignedOut(content, false);
   IPProtectionService.isSignedIn = true;
 
   Assert.ok(
@@ -297,7 +278,7 @@ add_task(async function test_support_link() {
   let content = panelView.querySelector(lazy.IPProtectionPanel.CONTENT_TAGNAME);
   let originalState = structuredClone(content.state);
   content.state.hasUpgraded = false;
-  content.state.isSignedIn = true;
+  content.state.isSignedOut = false;
   content.requestUpdate();
   await content.updateComplete;
 

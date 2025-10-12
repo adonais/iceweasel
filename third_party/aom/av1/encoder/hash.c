@@ -10,6 +10,9 @@
  */
 
 #include "av1/encoder/hash.h"
+
+#include <stddef.h>
+
 #include "config/av1_rtcd.h"
 
 /* CRC-32C (iSCSI) polynomial in reversed bit order. */

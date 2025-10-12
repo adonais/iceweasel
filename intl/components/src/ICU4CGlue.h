@@ -9,6 +9,7 @@
 #include "unicode/utypes.h"
 #include "mozilla/Buffer.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/MulOverflowMask.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
@@ -315,7 +316,7 @@ template <typename Buffer>
 
   if constexpr (std::is_same_v<typename Buffer::CharType, char> ||
                 std::is_same_v<typename Buffer::CharType, unsigned char>) {
-    if (utf16Span.Length() & mozilla::tl::MulOverflowMask<3>::value) {
+    if (utf16Span.Length() & mozilla::MulOverflowMask<3>()) {
       // Tripling the size of the buffer overflows the size_t.
       return false;
     }

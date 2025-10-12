@@ -12,6 +12,6 @@ features: [Temporal]
 const apr2000 = new Temporal.PlainYearMonth(2000, 4, "gregory");
 
 TemporalHelpers.assertPlainYearMonth(apr2000.with({year: -271821}),
-                                     -271821, 4, "M04", "", "gregory-inverse", 271822);
+                                     -271821, 4, "M04", "", "bce", 271822);
 
 reportCompare(0, 0);

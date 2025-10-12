@@ -73,9 +73,7 @@ class AntiTrackingUtils final {
   // and the storage permission key.
   static bool CheckStoragePermission(nsIPrincipal* aPrincipal,
                                      const nsAutoCString& aType,
-                                     bool aIsInPrivateBrowsing,
-                                     uint32_t* aRejectedReason,
-                                     uint32_t aBlockedReason);
+                                     bool aIsInPrivateBrowsing);
 
   // Returns the number of sites that give this principal's origin storage
   // access.

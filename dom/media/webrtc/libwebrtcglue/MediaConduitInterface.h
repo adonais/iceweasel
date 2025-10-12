@@ -243,7 +243,8 @@ class WebrtcSendTransport : public webrtc::Transport {
                const webrtc::PacketOptions& aOptions) {
     return mConduit->SendRtp(aPacket.data(), aPacket.size(), aOptions);
   }
-  bool SendRtcp(webrtc::ArrayView<const uint8_t> aPacket) {
+  bool SendRtcp(webrtc::ArrayView<const uint8_t> aPacket,
+                const webrtc::PacketOptions& aOptions) {
     return mConduit->SendSenderRtcp(aPacket.data(), aPacket.size());
   }
 };
@@ -259,7 +260,8 @@ class WebrtcReceiveTransport : public webrtc::Transport {
                const webrtc::PacketOptions& aOptions) {
     MOZ_CRASH("Unexpected RTP packet");
   }
-  bool SendRtcp(webrtc::ArrayView<const uint8_t> aPacket) {
+  bool SendRtcp(webrtc::ArrayView<const uint8_t> aPacket,
+                const webrtc::PacketOptions& aOptions) {
     return mConduit->SendReceiverRtcp(aPacket.data(), aPacket.size());
   }
 };

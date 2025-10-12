@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">Dibarzhioù ouzhpenn</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Gweredekaat ar Merdeiñ Prevez</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Diweredekaat ar Merdeiñ Prevez</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Merdeiñ prevez</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Klask pe chomlecʼh</string>
@@ -267,10 +263,6 @@
   <string name="browser_menu_new_private_tab">Ivinell prevez nevez</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Gerioù-tremen</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Lec’hienn hezoug</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Serriñ panell al lañser pennañ</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">Merdeiñ</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
@@ -386,10 +378,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Goubredet eo hoc’h ivinelloù! Tapit an traoù en-dro lec’h m’ho peus laosket anezho e lec’h all.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Serriñ</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -693,7 +683,7 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Personelaat</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Kennaskit evit goubredañ an ivinelloù, sinedoù, gerioù-tremen ha muioc’h c’hoazh.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Kennaskit evit goubredañ an ivinelloù, sinedoù, gerioù-tremen ha muioc’h c’hoazh.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Kont Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1016,8 +1006,6 @@
   <string name="studies_data_category">Studioù</string>
   <string name="technical_data_category">Roadennoù teknikel</string>
   <string name="crash_reporting_description">Gant an danevelloù sac’hañ e c’hallomp kempenn ar c’hudennoù er merdeer. An danevelloù a c’hall kaout roadennoù personel pe kizidik eno.</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Gouzout hiroc\'h a-zivout an danevelloù sac\'hañ</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Studioù</string>
   <!-- Summary for studies preferences -->
@@ -1027,7 +1015,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Goubredañ hag enrollañ ho roadennoù</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Goubredañ hag enrollañ ho roadennoù</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Kennaskit en-dro</string>
   <!-- Preference for removing FxA account -->
@@ -1271,9 +1259,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Dilemel ar roll istor</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Roll istor dilamet</string>
+  <string name="history_delete_multiple_items_snackbar">Roll istor dilamet</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Dilamet %1$s</string>
+  <string name="history_delete_single_item_snackbar">Dilamet %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Dilemel</string>
   <!--
@@ -1421,8 +1409,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">Danevelliñ ul lec\'hienn torret</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">Sikourit da wellaat %1$s evit an holl. Implijidi Mozilla a c’hall arverañ ar roadennoù a gasit evit kempenn kudennoù al lec’hiennoù.</string>
   <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
   <string name="webcompat_reporter_learn_more">Gouzout hiroc’h</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
@@ -1431,8 +1417,6 @@
   <string name="webcompat_reporter_url_error_invalid">Enankit un URL reizh mar plij</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Petra eo ar gudenn?</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Dibab an abeg</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">Dibab un abeg</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
@@ -1446,9 +1430,9 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Kas</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">Kaset eo bet ho tanevell</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Kaset eo bet ho tanevell</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">Serriñ</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Serriñ</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -1471,8 +1455,6 @@
   <string name="tab_crash_close">Serriñ an ivinell</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Assav an ivinell</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">Ranket en deus %s adloc’hañ</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
   <string name="unsubmitted_crash_dialog_checkbox_label">Kas danevelloù sac’hañ ent emgefreek</string>
   <!-- Unsubmitted crash dialog negative button to dismiss the dialog -->
@@ -1726,12 +1708,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ivinell diuzet</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Ivinelloù enrollet!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Dastumad enrollet!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Dastumad enrollet!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Ivinell enrollet!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Ivinell enrollet!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Serriñ</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1778,7 +1758,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Kennaskañ ouzh Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Goubredañ hag enrollañ ar roadennoù</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Goubredañ hag enrollañ ar roadennoù</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Kas dʼan holl drevnadoù</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1868,7 +1848,7 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Ivinelloù serret: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">Sinedoù enrollet e “%s”!</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Sinedoù enrollet e “%s”!</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Ouzhpennet er berradennoù!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -1896,8 +1876,6 @@
   <string name="tab_collection_dialog_message">Sur ocʼh e fell deocʼh dilemel %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Dilemel</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL eilet</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Un destenn skouer an hini eo. Amañ emañ evit diskouez deocʼh penaos e vo skrammet an destenn pa greskit pe pa zigreskit ar ment gant an arventenn-mañ.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1986,9 +1964,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Ivinelloù kaset!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Ivinelloù kaset!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Ivinell kaset!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Ivinell kaset!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Ne c’haller ket kas</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2473,12 +2451,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Enankit un destenn da glask</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Gwiriekait e klot an destenn da glask gant ar mentrezh skouer</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s : krouet</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s : enrollet</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s : dilamet</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Evit e aotren:</string>
   <!-- First step for the allowing a permission -->
@@ -2930,12 +2902,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">Diogel</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">Diziogel</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">Taolit evezh war al lec’hienn-mañ</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">N’eo ket diogel ho kennask.</string>
@@ -2954,8 +2922,6 @@
   <string name="protection_panel_num_trackers_blocked">Heulierien stanket: %d</string>
   <!-- Text for when no trackers have been blocked. -->
   <string name="protection_panel_no_trackers_blocked">N’eo bet kavet heulier ebet</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">Arventennoù evit ho puhez prevez ha diogelroez</string>
   <!-- Title text for the protection panel permissions section. -->
   <string name="protection_panel_permissions_title">Aotreoù</string>
   <!--

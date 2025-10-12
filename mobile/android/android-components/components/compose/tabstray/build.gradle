@@ -31,26 +31,25 @@ android {
 }
 
 dependencies {
-    implementation project(":components:concept-tabstray")
-
     implementation project(":components:browser-state")
-
+    implementation project(":components:concept-tabstray")
+    implementation project(":components:feature-tabs")
     implementation project(":components:ui-icons")
 
-    implementation project(":components:feature-tabs")
-
-    implementation libs.androidx.compose.ui
-    implementation libs.androidx.compose.ui.tooling.preview
+    implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.foundation
     implementation libs.androidx.compose.material3
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.ui.tooling.preview
 
     debugImplementation libs.androidx.compose.ui.tooling
 
     testImplementation project(':components:support-test')
+
     testImplementation libs.androidx.compose.ui.test
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

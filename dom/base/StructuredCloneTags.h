@@ -161,6 +161,8 @@ enum StructuredCloneTags : uint32_t {
 
   SCTAG_DOM_ENCODEDAUDIOCHUNK,
 
+  SCTAG_DOM_RTCDATACHANNEL,
+
   // IMPORTANT: If you plan to add an new IDB tag, it _must_ be add before the
   // "less stable" tags!
 };

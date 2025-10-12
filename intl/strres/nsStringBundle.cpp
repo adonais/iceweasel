@@ -755,6 +755,7 @@ nsStringBundleService::Observe(nsISupports* aSubject, const char* aTopic,
       strcmp("chrome-flush-caches", aTopic) == 0 ||
       strcmp("intl:app-locales-changed", aTopic) == 0) {
     flushBundleCache(/* ignoreShared = */ false);
+    mBundleMap.Clear();
   } else if (strcmp("memory-pressure", aTopic) == 0) {
     flushBundleCache(/* ignoreShared = */ true);
   }

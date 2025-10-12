@@ -323,15 +323,25 @@ newtab-custom-pocket-sponsored = Szponzorált történetek
 newtab-custom-pocket-show-recent-saves = Legutóbbi mentések megjelenítése
 newtab-custom-recent-title = Legutóbbi tevékenység
 newtab-custom-recent-subtitle = Válogatás a legutóbbi webhelyekből és tartalmakból
-newtab-custom-recent-toggle =
-    .label = Legutóbbi tevékenység
-    .description = Válogatás a legutóbbi webhelyekből és tartalmakból
 newtab-custom-weather-toggle =
     .label = Időjárás
     .description = A mai előrejelzés egy pillantásra
 newtab-custom-trending-search-toggle =
     .label = Felkapott keresések
     .description = Népszerű és gyakran keresett témák
+newtab-custom-widget-weather-toggle =
+    .label = Időjárás
+newtab-custom-widget-trending-search-toggle =
+    .label = Felkapott keresések
+newtab-custom-widget-lists-toggle =
+    .label = Listák
+newtab-custom-widget-timer-toggle =
+    .label = Időzítő
+newtab-custom-widget-section-title = Felületi elemek
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Bezárás
+    .aria-label = Menü bezárása
 newtab-custom-close-button = Bezárás
 newtab-custom-settings = További beállítások kezelése
 
@@ -449,7 +459,6 @@ newtab-weather-menu-change-location = Hely módosítása
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Keresési hely
     .aria-label = Keresési hely
-newtab-weather-change-location-search-input = Keresési hely
 newtab-weather-menu-weather-display = Időjárás-kijelző
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -596,8 +605,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Felkapott a Google-ön
 newtab-trending-searches-show-trending =
     .title = Felkapott keresések megjelenítése
 newtab-trending-searches-hide-trending =
@@ -606,3 +613,73 @@ newtab-trending-searches-learn-more = További tudnivalók
 newtab-trending-searches-dismiss = Felkapott keresések elrejtése
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Felkapott keresések
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = A lehetőségek végtelenek. Adjon hozzá egyet.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Új
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Kész ({ $number })
+newtab-widget-task-list-menu-copy = Másolás
+newtab-widget-lists-menu-edit = Listanév szerkesztése
+newtab-widget-lists-menu-create = Új lista létrehozása
+newtab-widget-lists-menu-delete = Lista törlése
+newtab-widget-lists-menu-copy = Lista vágólapra másolása
+newtab-widget-lists-menu-hide = Összes lista elrejtése
+newtab-widget-lists-menu-learn-more = További tudnivalók
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Elem hozzáadása
+newtab-widget-lists-input-error = Elem hozzáadásához adjon meg szöveget.
+newtab-widget-lists-input-menu-open-link = Hivatkozás megnyitása
+newtab-widget-lists-input-menu-move-up = Mozgatás felfelé
+newtab-widget-lists-input-menu-move-down = Mozgatás lefelé
+newtab-widget-lists-input-menu-delete = Törlés
+newtab-widget-lists-input-menu-edit = Szerkesztés
+newtab-widget-lists-name-label-default =
+    .label = Feladatlista
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Feladatlista
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Új lista
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Időzítő
+newtab-widget-timer-notification-focus = Lejárt a fókuszidő. Szép munka. Szüksége van egy kis szünetre?
+newtab-widget-timer-notification-break = A szünete véget ért. Készen áll az összpontosításra?
+newtab-widget-timer-notification-warning = Az értesítések ki vannak kapcsolva
+newtab-widget-timer-mode-focus =
+    .label = Fókusz
+newtab-widget-timer-mode-break =
+    .label = Szünet
+newtab-widget-timer-play =
+    .title = Lejátszás
+newtab-widget-timer-pause =
+    .title = Szünet
+newtab-widget-timer-label-play =
+    .label = Lejátszás
+newtab-widget-timer-label-pause =
+    .label = Szünet
+newtab-widget-timer-reset =
+    .title = Visszaállítás
+newtab-widget-timer-menu-notifications = Értesítések kikapcsolása
+newtab-widget-timer-menu-notifications-on = Értesítések bekapcsolása
+newtab-widget-timer-menu-hide = Időzítő elrejtése
+newtab-widget-timer-menu-learn-more = További tudnivalók
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Görgessen a továbbiakért
+newtab-promo-card-title = Támogassa a { -brand-product-name }ot
+newtab-promo-card-body = Szponzoraink támogatják a küldetésünket, hogy jobb webet építsünk
+newtab-promo-card-cta = További tudnivalók
+newtab-promo-card-dismiss-button =
+    .title = Eltüntetés
+    .aria-label = Eltüntetés

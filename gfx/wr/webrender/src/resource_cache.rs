@@ -667,6 +667,21 @@ impl ResourceCache {
 
         let render_task = rg_builder.get_task_mut(task_id);
 
+        // Note: We are defaulting to `ImageRendering::Auto` and only support
+        // this mode here, because the desired rendering mode is known later
+        // when an image display item will read the produced snapshot. In theory,
+        // multiple image items with different rendering modes could refer to
+        // the snapshot's image key, or they could first appear in a later frame
+        // So delaying snapshotting logic until the we know about the rendering
+        // mode would, in addition to adding complexity, only work in certain
+        // cases.
+        // If supporting more rendering modes is important for snapshots, we could
+        // consider specifying it in the stacking context's snapshot params so
+        // that we have the information early enough.
+        // Here and in other parts of the code, this restriction manifests itself
+        // in the expectation that we are dealing with `ImageResult::UntiledAuto`
+        // which implicitly specifies the rendering mode.
+
         // Make sure to update the existing image info and texture cache handle
         // instead of overwriting them if they already exist for this key.
         let image_result = self.cached_images.entry(image_key).or_insert_with(|| {
@@ -678,7 +693,7 @@ impl ResourceCache {
         });
 
         let ImageResult::UntiledAuto(ref mut info) = *image_result else {
-            unreachable!("Expected untiled image for snapshot");
+            unreachable!("Expected untiled image with auto filter for snapshot");
         };
 
         let flags = if is_opaque {
@@ -694,9 +709,12 @@ impl ResourceCache {
             flags,
         );
 
-        // TODO: This is a workaround for bug 1975123 which affects (some flavors of)
-        // Windows with ANGLE. It would be much better to let small snapshots be
-        // stored in texture atlases.
+        // TODO(bug 1975123) We currently do not have a way to ensure that an
+        // atlas texture used as a destination for the snapshot will not be
+        // also used as an input by a primitive of the snapshot.
+        // We can't both read and write the same texture in a draw call
+        // so we work around it by preventing the snapshot from being placed
+        // in a texture atlas.
         let force_standalone_texture = true;
 
         // Allocate space in the texture cache, but don't supply
@@ -1082,7 +1100,7 @@ impl ResourceCache {
     /// returns the size in device pixel of the image or tile.
     pub fn request_image(
         &mut self,
-        request: ImageRequest,
+        mut request: ImageRequest,
         gpu_cache: &mut GpuCache,
     ) -> DeviceIntSize {
         debug_assert_eq!(self.state, State::AddResources);
@@ -1104,6 +1122,14 @@ impl ResourceCache {
         // Images that don't use the texture cache can early out.
         if !template.data.uses_texture_cache() {
             return size;
+        }
+
+        if template.data.is_snapshot() {
+            // We only Support `Auto` for snapshots. This is because we have
+            // to make the decision about the filtering mode earlier when
+            // producing the snapshot.
+            // See the comment at the top of `render_as_image`.
+            request.rendering = ImageRendering::Auto;
         }
 
         let side_size =

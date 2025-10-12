@@ -35,8 +35,7 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.ktx.android.content.share
 import mozilla.components.support.ktx.android.util.dpToPx
-import mozilla.components.support.ktx.android.view.setNavigationBarTheme
-import mozilla.components.support.ktx.android.view.setStatusBarTheme
+import mozilla.components.support.ktx.android.view.setSystemBarsBackground
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import mozilla.components.support.utils.ext.resizeMaintainingAspectRatio
 import mozilla.components.ui.icons.R as iconsR
@@ -212,14 +211,20 @@ class CustomTabsToolbarFeature(
             )
         }
 
-        if (customTabsColorsConfig.updateStatusBarColor && toolbarColor != null) {
-            window?.setStatusBarTheme(toolbarColor)
-        }
-
-        val areNavigationBarColorsAvailable = navigationBarColor != null || navigationBarDividerColor != null
-        if (customTabsColorsConfig.updateSystemNavigationBarColor && areNavigationBarColorsAvailable) {
-            window?.setNavigationBarTheme(navigationBarColor, navigationBarDividerColor)
-        }
+        window?.setSystemBarsBackground(
+            statusBarColor = when (customTabsColorsConfig.updateStatusBarColor) {
+                true -> toolbarColor
+                false -> null
+            },
+            navigationBarColor = when (customTabsColorsConfig.updateSystemNavigationBarColor) {
+                true -> navigationBarColor
+                false -> null
+            },
+            navigationBarDividerColor = when (customTabsColorsConfig.updateSystemNavigationBarColor) {
+                true -> navigationBarDividerColor
+                false -> null
+            },
+        )
     }
 
     /**

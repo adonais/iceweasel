@@ -86,6 +86,7 @@ class nsMathMLOperators {
 
   // Helper functions used by the nsMathMLChar class.
   static bool IsMirrorableOperator(const nsString& aOperator);
+  static nsString GetMirroredOperator(const nsString& aOperator);
 
   // Helper functions used by the nsMathMLChar class to determine whether
   // aOperator corresponds to an integral operator.

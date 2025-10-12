@@ -38,33 +38,27 @@ android {
 
 
 dependencies {
-    implementation platform(libs.androidx.compose.bom)
-
-    implementation project(':components:concept-engine')
-    implementation project(':components:concept-menu')
-    implementation project(':components:browser-toolbar')
+    implementation project(':components:browser-domains')
     implementation project(':components:browser-menu')
     implementation project(':components:browser-menu2')
-    implementation project(':components:browser-domains')
     implementation project(':components:browser-state')
+    implementation project(':components:browser-toolbar')
     implementation project(':components:compose-base')
     implementation project(':components:compose-browser-toolbar')
-
-    implementation project(':components:ui-colors')
-    implementation project(':components:ui-tabcounter')
-    implementation project(':components:ui-icons')
-
+    implementation project(':components:concept-engine')
+    implementation project(':components:concept-menu')
     implementation project(':components:feature-toolbar')
-
     implementation project(':components:support-ktx')
-
     implementation project(':components:support-utils')
-
-    implementation libs.kotlin.coroutines
+    implementation project(':components:ui-colors')
+    implementation project(':components:ui-icons')
+    implementation project(':components:ui-tabcounter')
 
     implementation libs.androidx.appcompat
-    implementation libs.androidx.compose.ui
+    implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.material3
+    implementation libs.androidx.compose.ui
     implementation libs.androidx.core.ktx
     implementation libs.androidx.recyclerview
+    implementation libs.kotlinx.coroutines
 }

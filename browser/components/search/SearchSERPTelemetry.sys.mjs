@@ -1644,7 +1644,7 @@ class ContentHandler {
 
       // Step 1: Check if the browser associated with the request was a
       // tracked SERP.
-      let start = Cu.now();
+      let start = ChromeUtils.now();
       let telemetryState;
       let isFromNewtab = false;
       if (item.browserTelemetryStateMap.has(browser)) {
@@ -1707,7 +1707,7 @@ class ContentHandler {
           isSerp = true;
         }
 
-        let startFindComponent = Cu.now();
+        let startFindComponent = ChromeUtils.now();
         let parsedUrl = new URL(url);
 
         // Organic links may contain query param values mapped to links shown

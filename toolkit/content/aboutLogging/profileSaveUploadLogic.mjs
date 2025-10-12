@@ -279,6 +279,43 @@ export class ProfileSaveOrUploadDialog {
         url: profileUrl,
       });
       this.#uploadedUrl.href = profileUrl;
+
+      // Save the uploaded profile information to IndexedDB
+      try {
+        const { saveUploadedProfile } = await import(
+          "chrome://global/content/aboutLogging/profileStorage.mjs"
+        );
+
+        const uploadDate = new Date();
+        const profileName = await document.l10n.formatValue(
+          "about-logging-uploaded-profile-name",
+          { date: uploadDate.getTime() }
+        );
+
+        await saveUploadedProfile({
+          jwtToken: uploadResult,
+          profileToken: hash,
+          profileUrl,
+          uploadDate,
+          profileName,
+        });
+
+        // Refresh the uploaded profiles list if it's visible
+        this.#refreshUploadedProfilesList();
+      } catch (storageError) {
+        console.error(
+          "Error saving uploaded profile to storage:",
+          storageError
+        );
+        this.#setState("error");
+        document.l10n.setAttributes(
+          this.#errorElement,
+          "about-logging-profile-storage-error",
+          { errorText: String(storageError) }
+        );
+        return;
+      }
+
       this.#setState("uploaded");
     } catch (e) {
       console.error("Error while uploading", e);
@@ -300,4 +337,15 @@ export class ProfileSaveOrUploadDialog {
     const url = this.#uploadedUrl.href;
     await navigator.share({ url });
   };
+
+  /**
+   * Refresh the uploaded profiles list if it exists.
+   */
+  #refreshUploadedProfilesList() {
+    // This method will be called from the main aboutLogging.mjs
+    // when the UploadedProfilesManager is available
+    if (window.gUploadedProfilesManager) {
+      window.gUploadedProfilesManager.refresh();
+    }
+  }
 }

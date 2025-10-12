@@ -447,6 +447,7 @@ PK11_SetSymKeyNickname
 PK11_Sign
 PK11_SignatureLen
 PK11_SignWithMechanism
+PK11_SignWithSymKey
 PK11_TokenKeyGenWithFlags
 PK11_UnwrapPrivKey
 PK11_UnwrapSymKey

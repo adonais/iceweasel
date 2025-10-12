@@ -175,18 +175,6 @@ const POLICIES_TESTS = [
     },
   },
 
-  // POLICY: Certificates (true)
-  {
-    policies: {
-      Certificates: {
-        ImportEnterpriseRoots: true,
-      },
-    },
-    lockedPrefs: {
-      "security.enterprise_roots.enabled": true,
-    },
-  },
-
   // POLICY: Certificates (false)
   {
     policies: {
@@ -1185,6 +1173,31 @@ const POLICIES_TESTS = [
       "termsofuse.acceptedVersion": 999,
       // "termsofuse.acceptedVersion" is a string of
       // the timestamp at which the policy was set
+    },
+  },
+
+  // POLICY: VisualSearchEnabled
+  {
+    policies: {
+      VisualSearchEnabled: false,
+    },
+    lockedPrefs: {
+      "browser.search.visualSearch.featureGate": false,
+    },
+  },
+
+  // Bug 1981587
+  {
+    policies: {
+      Preferences: {
+        "security.webauthn.always_allow_direct_attestation": {
+          Value: true,
+          Status: "locked",
+        },
+      },
+    },
+    lockedPrefs: {
+      "security.webauthn.always_allow_direct_attestation": true,
     },
   },
 ];

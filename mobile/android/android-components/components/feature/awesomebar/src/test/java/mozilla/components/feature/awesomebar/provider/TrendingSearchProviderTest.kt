@@ -23,7 +23,6 @@ import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.ui.icons.R
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert.assertEquals
@@ -34,6 +33,7 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
 import java.io.IOException
+import mozilla.components.ui.icons.R as iconsR
 
 private const val GOOGLE_MOCK_RESPONSE = "[\"firefox\",[\"firefox\",\"firefox for mac\",\"firefox quantum\",\"firefox update\",\"firefox esr\",\"firefox focus\",\"firefox addons\",\"firefox extensions\",\"firefox nightly\",\"firefox clear cache\"]]"
 private const val GOOGLE_MOCK_RESPONSE_WITH_DUPLICATES = "[\"firefox\",[\"firefox\",\"firefox\",\"firefox for mac\",\"firefox quantum\",\"firefox update\",\"firefox esr\",\"firefox esr\",\"firefox focus\",\"firefox addons\",\"firefox extensions\",\"firefox nightly\",\"firefox clear cache\"]]"
@@ -148,12 +148,12 @@ class TrendingSearchProviderTest {
     }
 
     private fun getDeviceDesktopIcon(): Bitmap {
-        val drawable = R.drawable.mozac_ic_device_desktop_24
+        val drawable = iconsR.drawable.mozac_ic_device_desktop_24
         return testContext.getDrawable(drawable)!!.toBitmap()
     }
 
     private fun getSearchIcon(): Bitmap {
-        val drawable = R.drawable.mozac_ic_search_24
+        val drawable = iconsR.drawable.mozac_ic_search_24
         return testContext.getDrawable(drawable)!!.toBitmap()
     }
 

@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import mozilla.components.compose.base.snackbar.SnackbarTimeout
 import mozilla.components.feature.downloads.DownloadsUseCases
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
@@ -20,12 +21,12 @@ import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
 /**
  * Middleware for deleting a Download from disk.
  *
- * @param undoDelayProvider The [UndoDelayProvider] used to provide the undo delay.
+ * @param undoDelay The recommended time an "undo" action should be available for.
  * @param removeDownloadUseCase The [DownloadsUseCases.RemoveDownloadUseCase] used to remove the download.
  * @param dispatcher The injected dispatcher used to run suspending operations on.
  */
 class DownloadDeleteMiddleware(
-    private val undoDelayProvider: UndoDelayProvider,
+    private val undoDelay: Long = SnackbarTimeout.Action.value,
     private val removeDownloadUseCase: DownloadsUseCases.RemoveDownloadUseCase,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : Middleware<DownloadUIState, DownloadUIAction> {
@@ -47,7 +48,7 @@ class DownloadDeleteMiddleware(
         next(action)
         when (action) {
             is DownloadUIAction.AddPendingDeletionSet ->
-                startDelayedRemoval(context, action.itemIds, undoDelayProvider.undoDelay)
+                startDelayedRemoval(context, action.itemIds, undoDelay)
 
             is DownloadUIAction.UndoPendingDeletion -> lastDeleteOperation?.cancel()
             else -> {

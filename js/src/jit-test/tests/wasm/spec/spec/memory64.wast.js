@@ -28,10 +28,10 @@ let $2 = instantiate(`(module (memory i64 1 256))`);
 let $3 = instantiate(`(module (memory i64 0 65536))`);
 
 // ./test/core/memory64.wast:8
-let _anon_7 = module(`(module (memory i64 0x1_0000_0000_0000))`);
+let _anon_7 = module(`(module (memory i64 137438953471))`);
 
 // ./test/core/memory64.wast:9
-let $4 = instantiate(`(module (memory i64 0 0x1_0000_0000_0000))`);
+let $4 = instantiate(`(module (memory i64 0 137438953471))`);
 
 // ./test/core/memory64.wast:11
 let $5 = instantiate(`(module (memory i64 (data)) (func (export "memsize") (result i64) (memory.size)))`);

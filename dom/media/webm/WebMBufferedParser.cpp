@@ -8,10 +8,10 @@
 
 #include <algorithm>
 
+#include "MediaDataDemuxer.h"
 #include "mozilla/CheckedInt.h"
 #include "nsThreadUtils.h"
 
-extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define WEBM_DEBUG(arg, ...)                          \
   MOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, \
           ("WebMBufferedParser(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
@@ -567,13 +567,6 @@ void WebMBufferedState::NotifyDataArrived(const unsigned char* aBuffer,
       i += 1;
     }
   }
-
-  if (mRangeParsers.IsEmpty()) {
-    return;
-  }
-
-  MutexAutoLock lock(mMutex);
-  mLastBlockOffset = mRangeParsers.LastElement().mBlockEndOffset;
 }
 
 void WebMBufferedState::Reset() {
@@ -637,12 +630,6 @@ int64_t WebMBufferedState::GetInitEndOffset() {
     return -1;
   }
   return mRangeParsers[0].mInitEndOffset;
-}
-
-int64_t WebMBufferedState::GetLastBlockOffset() {
-  MutexAutoLock lock(mMutex);
-
-  return mLastBlockOffset;
 }
 
 bool WebMBufferedState::GetStartTime(uint64_t* aTime) {

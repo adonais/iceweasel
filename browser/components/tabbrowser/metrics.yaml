@@ -221,6 +221,9 @@ tabgroup:
       layout:
         description: The layout of the tab strip when the tabs were added (either "horizontal" or "vertical")
         type: string
+      group_type:
+        description: The state of the tab group to which the tab(s) are being added ("expanded", "collapsed" or "saved")
+        type: string
     expires: never
 
   active_groups:
@@ -404,7 +407,8 @@ tabgroup:
     data_sensitivity:
       - interaction
     labels:
-      - activate
+      - activate_expanded
+      - activate_collapsed
       - add
       - duplicate
       - new

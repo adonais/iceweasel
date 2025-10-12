@@ -43,7 +43,6 @@
 using namespace mozilla::media;
 
 static mozilla::LazyLogModule sFormatDecoderLog("MediaFormatReader");
-mozilla::LazyLogModule gMediaDemuxerLog("MediaDemuxer");
 
 #define LOG(arg, ...)                                                  \
   DDMOZ_LOG(sFormatDecoderLog, mozilla::LogLevel::Debug, "::%s: " arg, \

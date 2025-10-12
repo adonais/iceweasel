@@ -36,9 +36,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.AcornTheme
-import mozilla.components.ui.icons.R
 import androidx.compose.material3.FloatingActionButton as M3FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Extended FAB
@@ -126,7 +126,7 @@ private fun ExtendedFloatingActionButtonPreview() {
     AcornTheme {
         ExtendedFloatingActionButton(
             label = "Primary",
-            icon = R.drawable.mozac_ic_plus_24,
+            icon = iconsR.drawable.mozac_ic_plus_24,
             contentDescription = "content description",
             onClick = { expanded = !expanded },
             expanded = expanded,
@@ -142,7 +142,7 @@ private fun CollapsedFloatingActionButtonPreview() {
     AcornTheme {
         ExtendedFloatingActionButton(
             label = "Primary",
-            icon = R.drawable.mozac_ic_plus_24,
+            icon = iconsR.drawable.mozac_ic_plus_24,
             contentDescription = "content description",
             onClick = { expanded = !expanded },
             expanded = expanded,
@@ -158,7 +158,7 @@ private fun SurfaceExtendedFloatingActionButtonPreview() {
     AcornTheme {
         ExtendedFloatingActionButton(
             label = "Surface",
-            icon = R.drawable.mozac_ic_plus_24,
+            icon = iconsR.drawable.mozac_ic_plus_24,
             contentDescription = "content description",
             onClick = { expanded = !expanded },
             expanded = expanded,
@@ -175,7 +175,7 @@ private fun CustomExtendedFloatingActionButtonPreview() {
     AcornTheme {
         ExtendedFloatingActionButton(
             label = "Surface",
-            icon = R.drawable.mozac_ic_plus_24,
+            icon = iconsR.drawable.mozac_ic_plus_24,
             contentDescription = "content description",
             onClick = { expanded = !expanded },
             expanded = expanded,

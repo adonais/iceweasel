@@ -45,7 +45,7 @@ object DataGenerationHelper {
         val appContext = InstrumentationRegistry.getInstrumentation()
             .targetContext
             .applicationContext
-        val pendingIntent = PendingIntent.getActivity(appContext, 0, Intent(), IntentUtils.defaultIntentPendingFlags)
+        val pendingIntent = PendingIntent.getActivity(appContext, 0, Intent(), IntentUtils.DEFAULT_PENDING_INTENT_FLAGS)
         val customTabsIntent = CustomTabsIntent.Builder()
             .addMenuItem(customMenuItemLabel, pendingIntent)
             .setShareState(CustomTabsIntent.SHARE_STATE_ON)

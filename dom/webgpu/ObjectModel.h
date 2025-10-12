@@ -6,6 +6,8 @@
 #ifndef GPU_OBJECT_MODEL_H_
 #define GPU_OBJECT_MODEL_H_
 
+#include "mozilla/webgpu/WebGPUTypes.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 #include "nsString.h"
 #include "nsWrapperCache.h"
 
@@ -26,48 +28,36 @@ class ChildOf {
   nsIGlobalObject* GetParentObject() const;
 };
 
-/// Most WebGPU DOM objects inherit from this class.
+/// This class is used to interface with the WebGPUChild IPDL actor.
 ///
-/// mValid should only be used in the destruction steps in Cleanup() to check
-/// whether they have already run. This is because the destruction steps can be
-/// triggered by either the object's destructor or the cycle collector
-/// attempting to break a cycle. As a result, all methods accessible from JS can
-/// assume that mValid is true.
+/// WebGPU DOM objects that have equivalents in wgpu-core need to
+/// communicate with the parent actor and should inherit from this class.
 ///
-/// Similarly, pointers to the device and the IPDL actor (bridge) can be assumed
-/// to be non-null whenever the object is accessible from JS but not during
-/// cleanup as they might have been snatched by cycle collection.
-///
-/// The general pattern is that all objects should implement Cleanup more or
-/// less the same way. Cleanup should be the only function sending the
-/// corresponding Drop message and cleanup should *never* be called by anything
-/// other than the object destructor or the cycle collector.
-///
-/// These rules guarantee that:
-/// - The Drop message is called only once and that no other IPC message
-/// referring
-///   to the same object is send after Drop.
-/// - Any method outside of the destruction sequence can assume the pointers are
-///   non-null. They only have to check that the IPDL actor can send messages
-///   using `WebGPUChild::CanSend()`.
-class ObjectBase : public nsWrapperCache {
+/// It provides access to the WebGPUChild, rust Client, object ID,
+/// and automatically sends a drop message on object destruction.
+class ObjectBase {
  protected:
-  virtual ~ObjectBase() = default;
-
-  /// False during the destruction sequence of the object. This is not the same
-  /// thing as an object's valid state in the WebGPU spec. In the case of
-  /// render/compute pass encoders, this can also be false if the pass encoder
-  /// was created by calling beginRenderPass/beginComputePass on a command
-  /// encoder in the "ended" state (i.e. the pass was never valid).
-  bool mValid = true;
+  virtual ~ObjectBase();
 
  public:
+  ObjectBase(WebGPUChild* const aChild, RawId aId,
+             void (*aDropFnPtr)(const struct ffi::WGPUClient* aClient,
+                                RawId aId));
+
   void GetLabel(nsAString& aValue) const;
   void SetLabel(const nsAString& aLabel);
 
   auto CLabel() const { return NS_ConvertUTF16toUTF8(mLabel); }
 
- protected:
+  WebGPUChild* GetChild() const;
+  ffi::WGPUClient* GetClient() const;
+  RawId GetId() const { return mId; };
+
+ private:
+  RefPtr<WebGPUChild> mChild;
+  RawId mId;
+  void (*mDropFnPtr)(const struct ffi::WGPUClient* aClient, RawId aId);
+
   // Object label, initialized from GPUObjectDescriptorBase.label.
   nsString mLabel;
 };
@@ -87,44 +77,8 @@ class ObjectBase : public nsWrapperCache {
     return dom::GPU##T##_Binding::Wrap(cx, this, givenProto);                \
   }
 
-// Note: we don't use `NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE` directly
-// because there is a custom action we need to always do.
-#define GPU_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(T, ...) \
-  NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(T)       \
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(T)             \
-    tmp->Cleanup();                                    \
-    NS_IMPL_CYCLE_COLLECTION_UNLINK(__VA_ARGS__)       \
-    NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER  \
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_END                  \
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(T)           \
-    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(__VA_ARGS__)     \
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
-#define GPU_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(T, ...) \
-  NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(T)                \
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(T)                      \
-    tmp->Cleanup();                                             \
-    NS_IMPL_CYCLE_COLLECTION_UNLINK(__VA_ARGS__)                \
-    NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER           \
-    NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR                    \
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_END                           \
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(T)                    \
-    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(__VA_ARGS__)              \
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
-#define GPU_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_INHERITED(T, P, ...) \
-  NS_IMPL_CYCLE_COLLECTION_CLASS(T)                                 \
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(T, P)             \
-    tmp->Cleanup();                                                 \
-    NS_IMPL_CYCLE_COLLECTION_UNLINK(__VA_ARGS__)                    \
-    NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER               \
-  NS_IMPL_CYCLE_COLLECTION_UNLINK_END                               \
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(T, P)           \
-    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(__VA_ARGS__)                  \
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
 #define GPU_IMPL_CYCLE_COLLECTION(T, ...) \
-  GPU_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(T, __VA_ARGS__)
+  NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(T, __VA_ARGS__)
 
 template <typename T>
 void ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& callback,

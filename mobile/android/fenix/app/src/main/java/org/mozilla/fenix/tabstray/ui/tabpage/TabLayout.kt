@@ -4,20 +4,16 @@
 
 package org.mozilla.fenix.tabstray.ui.tabpage
 
+import android.content.res.Configuration
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -41,11 +37,15 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.ContentState
@@ -84,6 +84,16 @@ private const val NUM_COLUMNS_TAB_GRID_PORTRAIT_THRESHOLD_3 = 4
 
 private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1 = 3
 private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 4
+private val TabListPadding = 16.dp
+private val TabListItemCornerRadius = 12.dp
+private val TabListFirstItemShape = RoundedCornerShape(
+    topStart = TabListItemCornerRadius,
+    topEnd = TabListItemCornerRadius,
+)
+private val TabListLastItemShape = RoundedCornerShape(
+    bottomStart = TabListItemCornerRadius,
+    bottomEnd = TabListItemCornerRadius,
+)
 
 /**
  * Top-level UI for displaying a list of tabs.
@@ -157,7 +167,6 @@ fun TabLayout(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Suppress("LongParameterList", "LongMethod")
 @Composable
 private fun TabGrid(
@@ -272,7 +281,6 @@ private fun TabGrid(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Suppress("LongParameterList", "LongMethod")
 @Composable
 private fun TabList(
@@ -326,11 +334,14 @@ private fun TabList(
                     listState = state,
                     reorderState = reorderState,
                     shouldLongPressToDrag = shouldLongPress,
-                )
-                .padding(all = 16.dp)
-                .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 24.dp),
+                ),
         state = state,
-        contentPadding = PaddingValues(bottom = tabListBottomPadding),
+        contentPadding = PaddingValues(
+            start = TabListPadding,
+            end = TabListPadding,
+            top = TabListPadding,
+            bottom = tabListBottomPadding,
+        ),
         ) {
             header?.let {
                 item(key = HEADER_ITEM_KEY) {
@@ -352,22 +363,12 @@ private fun TabList(
                         modifier = Modifier
                             .thenConditional(
                                 // Add top rounded corners to the first item
-                                modifier = Modifier.clip(
-                                    RoundedCornerShape(
-                                        topStart = 12.dp,
-                                        topEnd = 12.dp,
-                                    ),
-                                ),
+                                modifier = Modifier.clip(TabListFirstItemShape),
                                 predicate = { index == 0 },
                             )
                             .thenConditional(
                                 // Add bottom rounded corners to the final item
-                                modifier = Modifier.clip(
-                                    RoundedCornerShape(
-                                        bottomStart = 12.dp,
-                                        bottomEnd = 12.dp,
-                                    ),
-                                ),
+                                modifier = Modifier.clip(TabListLastItemShape),
                                 predicate = { index == tabs.size - 1 },
                             ),
                         isSelected = tab.id == selectedTabId,
@@ -395,11 +396,12 @@ private val numberOfGridColumns: Int
     @Composable
     @ReadOnlyComposable
     get() {
-        val context = LocalContext.current
-        val displayMetrics = context.resources.displayMetrics
-        val screenWidthDp = displayMetrics.widthPixels / displayMetrics.density
+        val configuration = LocalConfiguration.current
+        val screenWidthDp = with(LocalDensity.current) {
+                LocalWindowInfo.current.containerSize.width.toDp().value
+            }
 
-        return if (context.isLandscape()) {
+        return if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             numberOfGridColumnsLandscape(screenWidthDp = screenWidthDp)
         } else {
             numberOfGridColumnsPortrait(screenWidthDp = screenWidthDp)
@@ -419,20 +421,35 @@ private fun numberOfGridColumnsLandscape(screenWidthDp: Float): Int = when {
     else -> NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1
 }
 
-@PreviewLightDark
+private data class TabLayoutPreviewModel(
+    val tabCount: Int = 10,
+    val selectedTabIndex: Int = 0,
+)
+
+private class TabLayoutPreviewParameterProvider : PreviewParameterProvider<TabLayoutPreviewModel> {
+    override val values: Sequence<TabLayoutPreviewModel>
+        get() = sequenceOf(
+            TabLayoutPreviewModel(
+                tabCount = 50,
+                selectedTabIndex = 10,
+            ),
+            TabLayoutPreviewModel(),
+            TabLayoutPreviewModel(tabCount = 1),
+        )
+    }
+
+@FlexibleWindowLightDarkPreview
 @Composable
-private fun TabListPreview() {
-    val tabs = remember { generateFakeTabsList().toMutableStateList() }
+private fun TabListPreview(
+    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: TabLayoutPreviewModel,
+) {
+    val tabs = remember { generateFakeTabsList(tabCount = previewModel.tabCount).toMutableStateList() }
 
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(FirefoxTheme.colors.layer1),
-        ) {
+        Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
             TabLayout(
                 tabs = tabs,
-                selectedTabId = tabs[1].id,
+                selectedTabId = tabs[previewModel.selectedTabIndex].id,
                 selectionMode = TabsTrayState.Mode.Normal,
                 displayTabsInGrid = false,
                 onTabClose = tabs::remove,
@@ -447,61 +464,82 @@ private fun TabListPreview() {
 
 @FlexibleWindowLightDarkPreview
 @Composable
-private fun TabGridPreview() {
-    val tabs = remember { generateFakeTabsList().toMutableStateList() }
+private fun TabGridPreview(
+    @PreviewParameter(TabLayoutPreviewParameterProvider::class) previewModel: TabLayoutPreviewModel,
+) {
+    val tabs = remember { generateFakeTabsList(tabCount = previewModel.tabCount).toMutableStateList() }
 
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(FirefoxTheme.colors.layer1),
-        ) {
-            TabLayout(
-                tabs = tabs,
-                selectedTabId = tabs[0].id,
-                selectionMode = TabsTrayState.Mode.Normal,
-                displayTabsInGrid = true,
-                onTabClose = tabs::remove,
-                onTabClick = {},
-                onTabLongClick = {},
-                onTabDragStart = {},
-                onMove = { _, _, _ -> },
-            )
-        }
+        TabLayout(
+            tabs = tabs,
+            selectedTabId = tabs[previewModel.selectedTabIndex].id,
+            selectionMode = TabsTrayState.Mode.Normal,
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+            displayTabsInGrid = true,
+            onTabClose = tabs::remove,
+            onTabClick = {},
+            onTabLongClick = {},
+            onTabDragStart = {},
+            onMove = { _, _, _ -> },
+        )
     }
 }
 
-@Suppress("MagicNumber")
+private const val SELECTED_TAB_COUNT_PREVIEW = 4
+
 @PreviewLightDark
 @Composable
 private fun TabGridMultiSelectPreview() {
     val tabs = generateFakeTabsList()
-    val selectedTabs = remember { tabs.take(4).toMutableStateList() }
+    val selectedTabs = remember { tabs.take(SELECTED_TAB_COUNT_PREVIEW).toMutableStateList() }
 
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(FirefoxTheme.colors.layer1),
-        ) {
-            TabLayout(
-                tabs = tabs,
-                selectedTabId = tabs[0].id,
-                selectionMode = TabsTrayState.Mode.Select(selectedTabs.toSet()),
-                displayTabsInGrid = false,
-                onTabClose = {},
-                onTabClick = { tab ->
-                    if (selectedTabs.contains(tab)) {
-                        selectedTabs.remove(tab)
-                    } else {
-                        selectedTabs.add(tab)
-                    }
-                },
-                onTabLongClick = {},
-                onTabDragStart = {},
-                onMove = { _, _, _ -> },
-            )
-        }
+        TabLayout(
+            tabs = tabs,
+            selectedTabId = tabs[0].id,
+            selectionMode = TabsTrayState.Mode.Select(selectedTabs.toSet()),
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+            displayTabsInGrid = true,
+            onTabClose = {},
+            onTabClick = { tab ->
+                if (selectedTabs.contains(tab)) {
+                    selectedTabs.remove(tab)
+                } else {
+                    selectedTabs.add(tab)
+                }
+            },
+            onTabLongClick = {},
+            onTabDragStart = {},
+            onMove = { _, _, _ -> },
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun TabListMultiSelectPreview() {
+    val tabs = generateFakeTabsList()
+    val selectedTabs = remember { tabs.take(SELECTED_TAB_COUNT_PREVIEW).toMutableStateList() }
+
+    FirefoxTheme {
+        TabLayout(
+            tabs = tabs,
+            selectedTabId = tabs[0].id,
+            selectionMode = TabsTrayState.Mode.Select(selectedTabs.toSet()),
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+            displayTabsInGrid = false,
+            onTabClose = {},
+            onTabClick = { tab ->
+                if (selectedTabs.contains(tab)) {
+                    selectedTabs.remove(tab)
+                } else {
+                    selectedTabs.add(tab)
+                }
+            },
+            onTabLongClick = {},
+            onTabDragStart = {},
+            onMove = { _, _, _ -> },
+        )
     }
 }
 

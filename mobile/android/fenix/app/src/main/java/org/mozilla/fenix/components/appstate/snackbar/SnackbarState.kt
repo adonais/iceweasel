@@ -36,11 +36,6 @@ sealed class SnackbarState {
     data object ShortcutAdded : SnackbarState()
 
     /**
-     * Display a snackbar of the removed shortcut.
-     */
-    data object ShortcutRemoved : SnackbarState()
-
-    /**
      * Display a snackbar when deleting browsing data before quitting.
      */
     data object DeletingBrowserDataInProgress : SnackbarState()
@@ -126,11 +121,6 @@ sealed class SnackbarState {
      * Display a snackbar when the WebCompat report has been successfully submitted.
      */
     data object WebCompatReportSent : SnackbarState()
-
-    /**
-     * Display a snackbar when the current site's data has been deleted.
-     */
-    data object SiteDataCleared : SnackbarState()
 
     /**
      * Display a snackbar when the current tab has been closed.

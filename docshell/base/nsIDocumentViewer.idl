@@ -81,8 +81,9 @@ interface nsIDocumentViewer : nsISupports
    * to block the navigation, and the user should be prompted.
    */
   cenum PermitUnloadResult : 8 {
-    eAllowNavigation = 0,
-    eRequestBlockNavigation = 1,
+    eContinue = 0,
+    eCanceledByBeforeUnload = 1,
+    eCanceledByNavigate = 2,
   };
 
   /**

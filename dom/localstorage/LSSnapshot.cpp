@@ -1084,7 +1084,7 @@ LSSnapshot::Run() {
     MOZ_ALWAYS_SUCCEEDS(mIdleTimer->InitWithNamedFuncCallback(
         IdleTimerCallback, this,
         StaticPrefs::dom_storage_snapshot_idle_timeout_ms(),
-        nsITimer::TYPE_ONE_SHOT, "LSSnapshot::IdleTimerCallback"));
+        nsITimer::TYPE_ONE_SHOT, "LSSnapshot::IdleTimerCallback"_ns));
 
     mHasPendingIdleTimerCallback = true;
   }

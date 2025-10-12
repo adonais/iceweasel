@@ -450,6 +450,30 @@ HTMLTooltip.prototype = {
   },
 
   /**
+   * Update the HTMLTooltip content with a HTMLFragment using fluent for
+   * localization purposes. Force translation early before measuring the tooltip
+   * dimensions.
+   *
+   * @param {HTMLFragment} fragment
+   *     The HTMLFragment to use as tooltip content
+   * @param {object} contentSizeOptions
+   *     See setContentSize().
+   */
+  async setLocalizedFragment(fragment, contentSizeOptions) {
+    this.panel.innerHTML = "";
+
+    // Because Fluent is async we need to manually translate the fragment and
+    // then insert it into the tooltip. This is needed in order for the tooltip
+    // to size to the contents properly and for tests.
+    await this.doc.l10n.translateFragment(fragment);
+    this.doc.l10n.pauseObserving();
+    this.panel.append(fragment);
+    this.doc.l10n.resumeObserving();
+
+    this.setContentSize(contentSizeOptions);
+  },
+
+  /**
    * Show the tooltip next to the provided anchor element, or update the tooltip position
    * if it was already visible. A preferred position can be set.
    * The event "shown" will be fired after the tooltip is displayed.

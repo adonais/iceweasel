@@ -314,9 +314,10 @@ class SMILAnimationFunction {
 
   /**
    * Adjust the simple progress, that is, the point within the simple duration,
-   * by applying any keyTimes.
+   * by applying any keyTimes and number of values.
    */
-  double ScaleSimpleProgress(double aProgress, SMILCalcMode aCalcMode);
+  double ScaleSimpleProgress(double aProgress, SMILCalcMode aCalcMode,
+                             double aValueMultiplier);
   /**
    * Adjust the progress within an interval, that is, between two animation
    * values, by applying any keySplines.

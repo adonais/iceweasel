@@ -547,7 +547,7 @@ class nsWindow final : public nsBaseWidget {
   }
   bool IsForegroundWindow() const { return mWnd == ::GetForegroundWindow(); }
   bool IsPopup() const { return mWindowType == WindowType::Popup; }
-  bool IsCloaked() const { return mIsCloaked; }
+  bool IsCloaked() const override { return mIsCloaked; }
 
   /**
    * Event processing helpers

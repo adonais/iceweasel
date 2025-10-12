@@ -28,6 +28,7 @@
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsContentPermissionHelper.h"
 #include "nsContentUtils.h"
+#include "nsGlobalWindowInner.h"
 #include "nsIContentPermissionPrompt.h"
 #include "nsIScriptError.h"
 #include "nsNetUtil.h"

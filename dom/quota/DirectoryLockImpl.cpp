@@ -388,7 +388,7 @@ void DirectoryLockImpl::AcquireInternal(PrepareInfo&& aPrepareInfo) {
         lock->Log();
       },
       this, kAcquireTimeoutMs, nsITimer::TYPE_ONE_SHOT,
-      "quota::DirectoryLockImpl::AcquireInternal"));
+      "quota::DirectoryLockImpl::AcquireInternal"_ns));
 
   if (!mExclusive || !mInternal) {
     return;

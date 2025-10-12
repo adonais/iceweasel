@@ -41,7 +41,6 @@ source_test_description_schema = Schema(
         Required("worker"): optionally_keyed_by(
             "platform", job_description_schema["worker"]
         ),
-        Optional("python-version"): [int],
         Optional("dependencies"): {
             k: optionally_keyed_by("platform", v)
             for k, v in job_description_schema["dependencies"].items()
@@ -85,27 +84,6 @@ def expand_platforms(config, jobs):
             else:
                 pjob["label"] = "{}-{}".format(pjob["label"], platform)
             yield pjob
-
-
-@transforms.add
-def split_python(config, jobs):
-    for job in jobs:
-        key = "python-version"
-        versions = job.pop(key, [])
-        if not versions:
-            yield job
-            continue
-        for version in versions:
-            group = f"py{version}"
-            pyjob = copy.deepcopy(job)
-            if "name" in pyjob:
-                pyjob["name"] += f"-{group}"
-            else:
-                pyjob["label"] += f"-{group}"
-            symbol = split_symbol(pyjob["treeherder"]["symbol"])[1]
-            pyjob["treeherder"]["symbol"] = join_symbol(group, symbol)
-            pyjob["run"][key] = version
-            yield pyjob
 
 
 @transforms.add

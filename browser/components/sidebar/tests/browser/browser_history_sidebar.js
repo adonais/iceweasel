@@ -146,8 +146,8 @@ add_task(async function test_history_cards_created() {
   SidebarController.hide();
 });
 
-add_task(async function test_history_searchbox_focus() {
-  const { component } = await showHistorySidebar();
+add_task(async function test_history_searchbox_focus_and_context_menu() {
+  const { component, contentWindow } = await showHistorySidebar();
   const { searchTextbox } = component;
 
   ok(component.shadowRoot.activeElement, "check activeElement is present");
@@ -156,6 +156,24 @@ add_task(async function test_history_searchbox_focus() {
     searchTextbox,
     "Check search box is focused"
   );
+
+  const promisePopupShown = BrowserTestUtils.waitForEvent(
+    contentWindow,
+    "popupshown"
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    searchTextbox,
+    { type: "contextmenu", button: 2 },
+    contentWindow
+  );
+  const { target: menu } = await promisePopupShown;
+  Assert.equal(
+    menu.id,
+    "textbox-contextmenu",
+    "The correct context menu is shown."
+  );
+  menu.hidePopup();
+
   SidebarController.hide();
 });
 

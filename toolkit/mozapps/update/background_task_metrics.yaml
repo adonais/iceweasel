@@ -328,6 +328,23 @@ background_update:
     send_in_pings:
       - background-update
 
+  throttling_prevented_updates:
+    type: counter
+    description: >
+      The number of times an update was available and we prevented installation
+      due to throttling.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972105
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1972105
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - install-update@mozilla.com
+    expires: never
+    send_in_pings:
+      - background-update
+
 update:
   auto_download:
     type: boolean

@@ -71,7 +71,7 @@ void ElementAnimationData::ClearAllPseudos(bool aOnlyViewTransitions) {
 
     // Note: We cannot remove EffectSet because we expect there is a valid
     // EffectSet when unregistering the target.
-    // (See KeyframeEffect::UnregisterTarget() for more deatils).
+    // (See KeyframeEffect::UnregisterTarget() for more details).
     // So we rely on EffectSet::Destroy() to clear it.
     data->mAnimations = nullptr;
     data->mTransitions = nullptr;

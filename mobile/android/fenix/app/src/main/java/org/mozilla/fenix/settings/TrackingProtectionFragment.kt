@@ -4,8 +4,10 @@
 
 package org.mozilla.fenix.settings
 
+import android.content.DialogInterface
 import android.os.Bundle
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.app.AlertDialog
 import androidx.navigation.findNavController
 import androidx.preference.CheckBoxPreference
 import androidx.preference.DropDownPreference
@@ -74,6 +76,9 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
 
     @VisibleForTesting
     internal lateinit var strictAllowListConvenienceTrackingProtection: CheckBoxPreference
+
+    @VisibleForTesting
+    lateinit var alertDialog: AlertDialog
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.tracking_protection_preferences, rootKey)
@@ -186,10 +191,12 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
 
         strictAllowListBaselineTrackingProtection.onPreferenceChangeListener = object : SharedPreferenceUpdater() {
             override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
+                // If user is unchecking the baseline protection, show dialog and prevent immediate update
                 if (!(newValue as Boolean)) {
-                    requireContext().settings().strictAllowListConvenienceTrackingProtection = false
-                    strictAllowListConvenienceTrackingProtection.isChecked = false
+                    showDisableBaselineDialog(isStrictTrackingMode = true)
+                    return false
                 }
+                // If user is checking the baseline protection, allow it and update policy
                 return super.onPreferenceChange(preference, newValue).also {
                     updateTrackingProtectionPolicy()
                 }
@@ -323,8 +330,8 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
         customAllowListBaselineTrackingProtection.onPreferenceChangeListener = object : SharedPreferenceUpdater() {
             override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
                 if (!(newValue as Boolean)) {
-                    requireContext().settings().customAllowListConvenienceTrackingProtection = false
-                    customAllowListConvenienceTrackingProtection.isChecked = false
+                    showDisableBaselineDialog(isStrictTrackingMode = false)
+                    return false
                 }
                 return super.onPreferenceChange(preference, newValue).also {
                     updateTrackingProtectionPolicy()
@@ -345,7 +352,8 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
         return radio
     }
 
-    private fun updateTrackingProtectionPolicy() {
+    @VisibleForTesting()
+    internal fun updateTrackingProtectionPolicy() {
         context?.components?.let {
             val policy = it.core.trackingProtectionPolicyFactory
                 .createTrackingProtectionPolicy()
@@ -399,5 +407,73 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
                 it.core.engine.settings.fingerprintingProtectionPrivateBrowsing = true
             }
         }
+    }
+
+    /**
+     * Shows a confirmation dialog when the user attempts to disable baseline tracking exceptions.
+     *
+     * @param isStrictTrackingMode `true` if the user is in strict tracking protection mode,
+     * `false` if in custom mode.
+     */
+    private fun showDisableBaselineDialog(isStrictTrackingMode: Boolean) {
+        alertDialog = AlertDialog.Builder(requireContext()).apply {
+            setTitle(R.string.preference_enhanced_tracking_protection_allow_list_dialog_title)
+            setMessage(
+                getString(
+                R.string.preference_enhanced_tracking_protection_allow_list_dialog_message,
+                getString(R.string.app_name),
+            ),
+            )
+            // We set positive to "cancel" and negative to "confirm" because we want to encourage
+            // users to keep the option on.
+            setPositiveButton(R.string.preference_enhanced_tracking_protection_allow_list_dialog_cancel) { dialog, _ ->
+                onDialogCancel(isStrictTrackingMode, dialog)
+            }
+            setNegativeButton(R.string.preference_enhanced_tracking_protection_allow_list_dialog_confirm) { dialog, _ ->
+                onDialogConfirm(isStrictTrackingMode, dialog)
+            }
+            setCancelable(false)
+        }.create()
+        alertDialog.show()
+    }
+
+    /**
+     * Handles the user's confirmation to disable baseline tracking exception.
+     *
+     * @param isStrictTrackingMode `true` if disabling strict baseline exceptions,
+     * `false` if disabling custom baseline exceptions
+     * @param dialog the dialog interface to dismiss after processing
+     */
+    @VisibleForTesting()
+    internal fun onDialogConfirm(isStrictTrackingMode: Boolean, dialog: DialogInterface) {
+        if (isStrictTrackingMode) {
+            strictAllowListBaselineTrackingProtection.isChecked = false
+            requireContext().settings().strictAllowListBaselineTrackingProtection = false
+        } else {
+            customAllowListBaselineTrackingProtection.isChecked = false
+            requireContext().settings().customAllowListBaselineTrackingProtection = false
+        }
+        updateTrackingProtectionPolicy()
+        dialog.dismiss()
+    }
+
+    /**
+     * Handles the user's cancellation of the baseline exception disable dialog.
+     *
+     * @param isStrictTrackingMode `true` if re-enabling strict baseline exceptions,
+     * `false` if re-enabling custom baseline exceptions
+     * @param dialog the dialog interface to dismiss after processing
+     */
+    @VisibleForTesting()
+    internal fun onDialogCancel(isStrictTrackingMode: Boolean, dialog: DialogInterface) {
+        if (isStrictTrackingMode) {
+            strictAllowListBaselineTrackingProtection.isChecked = true
+            requireContext().settings().strictAllowListBaselineTrackingProtection = true
+        } else {
+            customAllowListBaselineTrackingProtection.isChecked = true
+            requireContext().settings().customAllowListBaselineTrackingProtection = true
+        }
+        updateTrackingProtectionPolicy()
+        dialog.dismiss()
     }
 }

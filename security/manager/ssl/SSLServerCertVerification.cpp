@@ -502,6 +502,15 @@ void GatherCertificateTransparencyTelemetry(
   // but it failed to parse (e.g. due to unsupported CT protocol version).
   glean::ssl::scts_per_connection.AccumulateSingleSample(sctsCount);
 
+  uint32_t sctsFromTiledLogs = 0;
+  for (auto verifiedSCT : info.verifyResult.verifiedScts) {
+    if (verifiedSCT.logFormat == ct::CTLogFormat::Tiled) {
+      sctsFromTiledLogs++;
+    }
+  }
+  glean::ssl::scts_from_tiled_logs_per_connection.AccumulateSingleSample(
+      sctsFromTiledLogs);
+
   // Report CT Policy compliance by CA.
   if (info.policyCompliance.isSome() &&
       *info.policyCompliance != ct::CTPolicyCompliance::Compliant) {

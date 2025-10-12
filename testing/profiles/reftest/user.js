@@ -13,6 +13,8 @@ user_pref("browser.safebrowsing.provider.google.gethashURL", "http://127.0.0.1/s
 user_pref("browser.safebrowsing.provider.google.updateURL", "http://127.0.0.1/safebrowsing-dummyg/update");
 user_pref("browser.safebrowsing.provider.google4.gethashURL", "http://127.0.0.1/safebrowsing-dummyg4/gethash");
 user_pref("browser.safebrowsing.provider.google4.updateURL", "http://127.0.0.1/safebrowsing-dummyg4/update");
+user_pref("browser.safebrowsing.provider.google5.gethashURL", "http://127.0.0.1/safebrowsing-dummyg5/gethash");
+user_pref("browser.safebrowsing.provider.google5.updateURL", "http://127.0.0.1/safebrowsing-dummyg5/update");
 user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://127.0.0.1/safebrowsing-dummym/gethash");
 user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://127.0.0.1/safebrowsing-dummym/update");
 // use about:blank, not browser.startup.homepage

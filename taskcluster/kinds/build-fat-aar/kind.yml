@@ -31,11 +31,10 @@ task-defaults:
             # Online in order to download the per-architecture AARs.
             GRADLE_USER_HOME: "/builds/worker/checkouts/build/gecko/mobile/android/gradle/dotgradle-online"
             TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
-            MOZ_ANDROID_FAT_AAR_ARCHITECTURES: "armeabi-v7a,arm64-v8a,x86,x86_64"
+            MOZ_ANDROID_FAT_AAR_ARCHITECTURES: "armeabi-v7a,arm64-v8a,x86_64"
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
             MOZ_ANDROID_FAT_AAR_ARMEABI_V7A: "/builds/worker/fetches/armeabi-v7a/target.maven.zip"
             MOZ_ANDROID_FAT_AAR_ARM64_V8A: "/builds/worker/fetches/arm64-v8a/target.maven.zip"
-            MOZ_ANDROID_FAT_AAR_X86: "/builds/worker/fetches/x86/target.maven.zip"
             MOZ_ANDROID_FAT_AAR_X86_64: "/builds/worker/fetches/x86_64/target.maven.zip"
         artifacts:
             - name: public/build/maven
@@ -118,10 +117,6 @@ task-defaults:
             - artifact: target.maven.zip
               dest: arm64-v8a
               extract: false
-        x86:
-            - artifact: target.maven.zip
-              dest: x86
-              extract: false
         x86_64:
             - artifact: target.maven.zip
               dest: x86_64
@@ -145,7 +140,6 @@ tasks:
             platform: android-5-0-geckoview-fat-aar-shippable/opt
             symbol: B
         dependencies:
-            x86: build-android-x86-shippable/opt
             x86_64: build-android-x86_64-shippable/opt
             armeabi-v7a: build-android-arm-shippable/opt
             arm64-v8a: build-android-aarch64-shippable/opt
@@ -183,7 +177,6 @@ tasks:
             platform: android-5-0-geckoview-fat-aar-shippable/opt
             symbol: Bl
         dependencies:
-            x86: build-android-x86-shippable-lite/opt
             x86_64: build-android-x86_64-shippable-lite/opt
             armeabi-v7a: build-android-arm-shippable-lite/opt
             arm64-v8a: build-android-aarch64-shippable-lite/opt
@@ -214,7 +207,6 @@ tasks:
             platform: android-5-0-geckoview-fat-aar/opt
             symbol: B
         dependencies:
-            x86: build-android-x86/opt
             x86_64: build-android-x86_64/opt
             armeabi-v7a: build-android-arm/opt
             arm64-v8a: build-android-aarch64/opt

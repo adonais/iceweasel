@@ -27,6 +27,9 @@ geckoview-junit:
                 android-em-7.*:
                     - android/android_common.py
                     - android/android-x86_64.py
+                android-em-14.*:
+                    - android/android_common.py
+                    - android/android14-x86_64.py
         extra-options:
             - --test-suite=geckoview-junit
 
@@ -80,7 +83,7 @@ test-verify:
     built-projects-only: true
     target:
         by-test-platform:
-            android-em-7.*: geckoview-test_runner.apk
+            android-em.*: geckoview-test_runner.apk
             default: null
     optimization:
         test-verify: ["test-verify"]
@@ -95,6 +98,9 @@ test-verify:
                 android-em-7.*:
                     - android/android_common.py
                     - android/android-x86_64.py
+                android-em-14.*:
+                    - android/android_common.py
+                    - android/android14-x86_64.py
                 linux.*:
                     - unittests/linux_unittest.py
                     - unittests/linux_dbus-python.py
@@ -150,6 +156,14 @@ test-verify:
                     - linux64-minidump-stackwalk
                     - linux64-fix-stacks
                     - linux64-hostutils
+                android-em-14.*:
+                    - android34-system-image-x86_64-linux
+                    - android34-avd-x86_64-linux
+                    - android-emulator-linux
+                    - linux64-node
+                    - linux64-minidump-stackwalk
+                    - linux64-fix-stacks
+                    - linux64-hostutils
         fetch:
             - ort.jsep.wasm
             - translations.inference
@@ -196,6 +210,9 @@ test-verify-gpu:
                 android-em-7.*:
                     - android/android_common.py
                     - android/android-x86_64.py
+                android-em-14.*:
+                    - android/android_common.py
+                    - android/android14-x86_64.py
                 linux.*:
                     - unittests/linux_unittest.py
                     - remove_executables.py
@@ -234,6 +251,9 @@ test-coverage:
                 android-em-7.*:
                     - android/android_common.py
                     - android/android-x86_64.py
+                android-em-14.*:
+                    - android/android_common.py
+                    - android/android14-x86_64.py
                 linux.*:
                     - unittests/linux_unittest.py
                     - remove_executables.py
@@ -274,6 +294,14 @@ test-coverage:
                     - linux64-minidump-stackwalk
                     - linux64-fix-stacks
                     - linux64-hostutils
+                android-em-14.*:
+                    - android34-system-image-x86_64-linux
+                    - android34-avd-x86_64-linux
+                    - android-emulator-linux
+                    - linux64-node
+                    - linux64-minidump-stackwalk
+                    - linux64-fix-stacks
+                    - linux64-hostutils
 
 test-coverage-gpu:
     description: "Per-test coverage for tests that require gpu instances"
@@ -303,6 +331,9 @@ test-coverage-gpu:
                 android-em-7.*:
                     - android/android_common.py
                     - android/android-x86_64.py
+                android-em-14.*:
+                    - android/android_common.py
+                    - android/android14-x86_64.py
                 linux.*:
                     - unittests/linux_unittest.py
                     - remove_executables.py

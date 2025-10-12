@@ -350,7 +350,7 @@ void BoundStorageKeyCache::ExecuteOp(AutoChildOpArgs& aOpArgs,
                                      RefPtr<CachePromise>& aPromise,
                                      ErrorResult& aRv) {
   MOZ_DIAGNOSTIC_ASSERT(mActor);
-  // mActor->ExecuteOp(mGlobal, aPromise, this, aOpArgs.SendAsOpArgs());
+  mActor->ExecuteOp(mGlobal, aPromise, this, aOpArgs.SendAsOpArgs());
 }
 
 auto BoundStorageKeyCache::AddAll(const GlobalObject& aGlobal,

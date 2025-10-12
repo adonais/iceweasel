@@ -6,7 +6,6 @@ prefs = [
   "browser.newtabpage.activity-stream.discoverystream.endpoints=data:",
   "browser.newtabpage.activity-stream.feeds.system.topstories=true",
   "browser.newtabpage.activity-stream.feeds.section.topstories=true",
-  "browser.newtabpage.activity-stream.feeds.section.topstories.options={\"provider_name\":\"\"}",
   "messaging-system.log=all",
   "browser.newtabpage.sponsor-protection.enabled=true",
   "browser.newtabpage.sponsor-protection.debug=true",

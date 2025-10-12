@@ -5,6 +5,7 @@
 #include "GeckoTrace.h"
 
 #include "mozilla/Logging.h"
+#include "mozilla/StaticPrefs_toolkit.h"
 #include "nsXULAppAPI.h"
 
 #include <memory>
@@ -12,6 +13,10 @@
 
 #include "opentelemetry/context/runtime_context.h"
 #include "opentelemetry/sdk/common/global_log_handler.h"
+#include "opentelemetry/sdk/instrumentationscope/scope_configurator.h"
+#include "opentelemetry/sdk/trace/random_id_generator_factory.h"
+#include "opentelemetry/sdk/trace/samplers/always_on_factory.h"
+#include "opentelemetry/sdk/trace/tracer_config.h"
 #include "opentelemetry/sdk/trace/tracer_provider_factory.h"
 #include "opentelemetry/trace/provider.h"
 
@@ -189,8 +194,21 @@ void Init() {
 
   // Create tracer provider with empty processor list (for now)
   std::vector<std::unique_ptr<otel::sdk::trace::SpanProcessor>> processors{};
+
+  auto sampler = otel::sdk::trace::AlwaysOnSamplerFactory::Create();
+  auto idGenerator = otel::sdk::trace::RandomIdGeneratorFactory::Create();
+  auto configurator =
+      otel::sdk::instrumentationscope::
+          ScopeConfigurator<otel::sdk::trace::TracerConfig>::Builder(
+              StaticPrefs::toolkit_gecko_trace_enable()
+                  ? otel::sdk::trace::TracerConfig::Enabled()
+                  : otel::sdk::trace::TracerConfig::Disabled())
+              .Build();
   auto provider = otel::sdk::trace::TracerProviderFactory::Create(
-      std::move(processors), resource);
+      std::move(processors), resource, std::move(sampler),
+      std::move(idGenerator),
+      std::make_unique<otel::sdk::instrumentationscope::ScopeConfigurator<
+          otel::sdk::trace::TracerConfig>>(configurator));
 
   // Set as the global tracer provider
   otel::trace::Provider::SetTracerProvider(std::move(provider));

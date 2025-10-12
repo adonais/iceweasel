@@ -217,7 +217,7 @@ async function performGetDataRequest(gBrowser, events, size, gzip = false) {
     "Received the expected number of network events"
   );
   await BrowserTestUtils.waitForCondition(
-    () => events.at(-1).hasResponseContent
+    () => events.at(-1).hasResponseContentComplete
   );
 }
 

@@ -7,7 +7,6 @@ package mozilla.components.feature.contextmenu
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.DialogInterface
-import android.os.Build
 import android.os.Bundle
 import android.text.Html
 import android.view.LayoutInflater
@@ -102,12 +101,8 @@ class ContextMenuFragment : DialogFragment() {
         return view
     }
 
-    private fun getSpannedValueOfString(value: String) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    private fun getSpannedValueOfString(value: String) =
         Html.fromHtml(value, HtmlCompat.FROM_HTML_MODE_LEGACY)
-    } else {
-        @Suppress("Deprecation")
-        Html.fromHtml(value)
-    }
 
     internal fun onItemSelected(position: Int) {
         feature?.onMenuItemSelected(sessionId, itemIds[position])

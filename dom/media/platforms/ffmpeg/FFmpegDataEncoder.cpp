@@ -201,10 +201,23 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegDataEncoder<LIBAV_VER>::Encode(
   MOZ_ASSERT(aSample != nullptr);
 
   FFMPEG_LOG("Encode");
+  return InvokeAsync(
+      mTaskQueue, __func__,
+      [self = RefPtr<FFmpegDataEncoder<LIBAV_VER>>(this),
+       sample = RefPtr<MediaData>(const_cast<MediaData*>(aSample))]() {
+        return self->ProcessEncode({sample});
+      });
+}
+
+RefPtr<MediaDataEncoder::EncodePromise> FFmpegDataEncoder<LIBAV_VER>::Encode(
+    nsTArray<RefPtr<MediaData>>&& aSamples) {
+  MOZ_ASSERT(!aSamples.IsEmpty());
+
+  FFMPEG_LOG("Encode: %zu samples", aSamples.Length());
   return InvokeAsync(mTaskQueue, __func__,
                      [self = RefPtr<FFmpegDataEncoder<LIBAV_VER>>(this),
-                      sample = RefPtr<const MediaData>(aSample)]() {
-                       return self->ProcessEncode(sample);
+                      samples = std::move(aSamples)]() mutable {
+                       return self->ProcessEncode(std::move(samples));
                      });
 }
 
@@ -234,26 +247,28 @@ RefPtr<GenericPromise> FFmpegDataEncoder<LIBAV_VER>::SetBitrate(
   return GenericPromise::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED, __func__);
 }
 
-RefPtr<MediaDataEncoder::EncodePromise>
-FFmpegDataEncoder<LIBAV_VER>::ProcessEncode(RefPtr<const MediaData> aSample) {
+RefPtr<MediaDataEncoder::EncodePromise> FFmpegDataEncoder<
+    LIBAV_VER>::ProcessEncode(nsTArray<RefPtr<MediaData>>&& aSamples) {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
 
-  FFMPEG_LOG("ProcessEncode");
+  FFMPEG_LOG("ProcessEncode: %zu samples", aSamples.Length());
 
 #if LIBAVCODEC_VERSION_MAJOR < 58
   // TODO(Bug 1868253): implement encode with avcodec_encode_video2().
   MOZ_CRASH("FFmpegDataEncoder needs ffmpeg 58 at least.");
   return EncodePromise::CreateAndReject(NS_ERROR_NOT_IMPLEMENTED, __func__);
 #else
-
-  auto rv = EncodeInputWithModernAPIs(std::move(aSample));
-  if (rv.isErr()) {
-    MediaResult e = rv.unwrapErr();
-    FFMPEG_LOG("%s", e.Description().get());
-    return EncodePromise::CreateAndReject(e, __func__);
+  EncodedData output;
+  for (auto& sample : aSamples) {
+    auto rv = EncodeInputWithModernAPIs(sample);
+    if (rv.isErr()) {
+      MediaResult e = rv.unwrapErr();
+      FFMPEG_LOG("%s", e.Description().get());
+      return EncodePromise::CreateAndReject(e, __func__);
+    }
+    output.AppendElements(rv.unwrap());
   }
-
-  return EncodePromise::CreateAndResolve(rv.unwrap(), __func__);
+  return EncodePromise::CreateAndResolve(std::move(output), __func__);
 #endif
 }
 

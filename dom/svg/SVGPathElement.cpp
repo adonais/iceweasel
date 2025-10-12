@@ -41,11 +41,11 @@ class MOZ_RAII AutoChangePathSegListNotifier : public mozAutoDocUpdate {
       : mozAutoDocUpdate(aSVGPathElement->GetComposedDoc(), true),
         mSVGElement(aSVGPathElement) {
     MOZ_ASSERT(mSVGElement, "Expecting non-null value");
-    mEmptyOrOldValue = mSVGElement->WillChangePathSegList(*this);
+    mSVGElement->WillChangePathSegList(*this);
   }
 
   ~AutoChangePathSegListNotifier() {
-    mSVGElement->DidChangePathSegList(mEmptyOrOldValue, *this);
+    mSVGElement->DidChangePathSegList(*this);
     if (mSVGElement->GetAnimPathSegList()->IsAnimating()) {
       mSVGElement->AnimationNeedsResample();
     }
@@ -53,7 +53,6 @@ class MOZ_RAII AutoChangePathSegListNotifier : public mozAutoDocUpdate {
 
  private:
   SVGPathElement* const mSVGElement;
-  nsAttrValue mEmptyOrOldValue;
 };
 
 JSObject* SVGPathElement::WrapNode(JSContext* aCx,

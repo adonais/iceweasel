@@ -48,7 +48,6 @@
 
 namespace webrtc {
 namespace {
-using ::webrtc::TimeDelta;
 
 // TODO(juberti): Move this all to a future turnmessage.h
 //  static const int IPPROTO_UDP = 17;
@@ -90,8 +89,8 @@ static void InitErrorResponse(int code,
 TurnServer::TurnServer(TaskQueueBase* thread)
     : thread_(thread),
       nonce_key_(CreateRandomString(kNonceKeySize)),
-      auth_hook_(NULL),
-      redirect_hook_(NULL),
+      auth_hook_(nullptr),
+      redirect_hook_(nullptr),
       enable_otu_nonce_(false) {}
 
 TurnServer::~TurnServer() {
@@ -153,7 +152,7 @@ void TurnServer::AcceptConnection(Socket* server_socket) {
   // Check if someone is trying to connect to us.
   SocketAddress accept_addr;
   Socket* accepted_socket = server_socket->Accept(&accept_addr);
-  if (accepted_socket != NULL) {
+  if (accepted_socket != nullptr) {
     const ServerSocketInfo& info = server_listen_sockets_[server_socket];
     if (info.ssl_adapter_factory) {
       SSLAdapter* ssl_adapter =
@@ -187,7 +186,7 @@ void TurnServer::OnInternalPacket(AsyncPacketSocket* socket,
   InternalSocketMap::iterator iter = server_sockets_.find(socket);
   RTC_DCHECK(iter != server_sockets_.end());
   TurnServerConnection conn(packet.source_address(), iter->second, socket);
-  uint16_t msg_type = webrtc::GetBE16(packet.payload().data());
+  uint16_t msg_type = GetBE16(packet.payload().data());
   if (!IsTurnChannelData(msg_type)) {
     // This is a STUN message.
     HandleStunMessage(&conn, packet.payload());
@@ -223,7 +222,7 @@ void TurnServer::HandleStunMessage(TurnServerConnection* conn,
     return;
   }
 
-  if (redirect_hook_ != NULL && msg.type() == STUN_ALLOCATE_REQUEST) {
+  if (redirect_hook_ != nullptr && msg.type() == STUN_ALLOCATE_REQUEST) {
     SocketAddress address;
     if (redirect_hook_->ShouldRedirect(conn->src(), &address)) {
       SendErrorResponseWithAlternateServer(conn, &msg, address);
@@ -277,7 +276,7 @@ bool TurnServer::GetKey(const StunMessage* msg, std::string* key) {
     return false;
   }
 
-  return (auth_hook_ != NULL &&
+  return (auth_hook_ != nullptr &&
           auth_hook_->GetKey(std::string(username_attr->string_view()), realm_,
                              key));
 }
@@ -430,9 +429,9 @@ TurnServerAllocation* TurnServer::CreateAllocation(TurnServerConnection* conn,
   AsyncPacketSocket* external_socket =
       (external_socket_factory_)
           ? external_socket_factory_->CreateUdpSocket(external_addr_, 0, 0)
-          : NULL;
+          : nullptr;
   if (!external_socket) {
-    return NULL;
+    return nullptr;
   }
 
   // The Allocation takes ownership of the socket.
@@ -512,7 +511,7 @@ void TurnServer::DestroyAllocation(TurnServerAllocation* allocation) {
   // by all allocations.
   // Note: We may not find a socket if it's a TCP socket that was closed, and
   // the allocation is only now timing out.
-  if (iter != server_sockets_.end() && iter->second != webrtc::PROTO_UDP) {
+  if (iter != server_sockets_.end() && iter->second != PROTO_UDP) {
     DestroyInternalSocket(socket);
   }
 
@@ -590,7 +589,7 @@ std::string TurnServerAllocation::ToString() const {
 
 void TurnServerAllocation::HandleTurnMessage(const TurnMessage* msg) {
   RTC_DCHECK_RUN_ON(thread_);
-  RTC_DCHECK(msg != NULL);
+  RTC_DCHECK(msg != nullptr);
   switch (msg->type()) {
     case STUN_ALLOCATE_REQUEST:
       HandleAllocateRequest(msg);
@@ -620,7 +619,7 @@ void TurnServerAllocation::HandleAllocateRequest(const TurnMessage* msg) {
   transaction_id_ = msg->transaction_id();
   const StunByteStringAttribute* username_attr =
       msg->GetByteString(STUN_ATTR_USERNAME);
-  RTC_DCHECK(username_attr != NULL);
+  RTC_DCHECK(username_attr != nullptr);
   username_ = std::string(username_attr->string_view());
 
   // Figure out the lifetime and start the allocation timer.
@@ -703,7 +702,7 @@ void TurnServerAllocation::HandleCreatePermissionRequest(
   }
 
   if (server_->reject_private_addresses_ &&
-      webrtc::IPIsPrivate(peer_attr->GetAddress().ipaddr())) {
+      IPIsPrivate(peer_attr->GetAddress().ipaddr())) {
     SendErrorResponse(msg, STUN_ERROR_FORBIDDEN, STUN_ERROR_REASON_FORBIDDEN);
     return;
   }
@@ -781,7 +780,7 @@ void TurnServerAllocation::HandleChannelBindRequest(const TurnMessage* msg) {
 
 void TurnServerAllocation::HandleChannelData(ArrayView<const uint8_t> payload) {
   // Extract the channel number from the data.
-  uint16_t channel_id = webrtc::GetBE16(payload.data());
+  uint16_t channel_id = GetBE16(payload.data());
   auto channel = FindChannel(channel_id);
   if (channel != channels_.end()) {
     // Send the data to the peer address.

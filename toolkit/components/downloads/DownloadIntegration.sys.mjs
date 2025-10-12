@@ -216,7 +216,7 @@ export var DownloadIntegration = {
     // even if the load operation failed. We wait for a complete initialization
     // so other callers cannot modify the list without being detected. The
     // DownloadAutoSaveView is kept alive by the underlying DownloadList.
-    await new DownloadAutoSaveView(list, this._store).initialize();
+    new DownloadAutoSaveView(list, this._store).initialize();
   },
 
   /**
@@ -1276,8 +1276,8 @@ var DownloadObserver = {
       },
     };
 
-    // We register the view asynchronously.
-    aList.addView(downloadsView).catch(console.error);
+    // Register the view asynchronously.
+    aList.addView(downloadsView);
   },
 
   /**
@@ -1569,15 +1569,12 @@ DownloadAutoSaveView.prototype = {
 
   /**
    * Registers the view and loads the current state from disk.
-   *
-   * @return {Promise}
-   * @resolves When the view has been registered.
-   * @rejects JavaScript exception.
    */
   initialize() {
     // We set _initialized to true after adding the view, so that
     // onDownloadAdded doesn't cause a save to occur.
-    return this._list.addView(this).then(() => (this._initialized = true));
+    this._list.addView(this);
+    this._initialized = true;
   },
 
   /**

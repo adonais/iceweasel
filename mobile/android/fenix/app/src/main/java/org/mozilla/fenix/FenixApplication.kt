@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
@@ -30,10 +31,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import mozilla.appservices.autofill.AutofillApiException
 import mozilla.components.browser.state.action.SystemAction
-import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.selector.selectedTab
-import mozilla.components.browser.state.state.searchEngines
-import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.GlobalPlacesDependencyProvider
 import mozilla.components.concept.base.crash.Breadcrumb
@@ -88,6 +86,7 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.initializeGlean
 import org.mozilla.fenix.components.metrics.MozillaProductDetector
 import org.mozilla.fenix.components.startMetricsIfEnabled
+import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.experiments.maybeFetchExperiments
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.containsQueryParameters
@@ -142,7 +141,20 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
     override fun onCreate() {
         super.onCreate()
 
-        initialize()
+        initializeWithStartupCrashCheck()
+    }
+
+    /**
+     * Initializes Fenix, unless a startup crash was detected on the previous launch,
+     * in which case returns early to allow for the [HomeActivity] to enter the startup crash
+     * flow. See [HomeActivity.onCreate] for more context.
+     */
+    open fun initializeWithStartupCrashCheck() {
+        if (StartupCrashCanary.build(applicationContext).startupCrashDetected) {
+            setupInAllProcesses()
+        } else {
+            initialize()
+        }
     }
 
     /**
@@ -194,10 +206,14 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         }
     }
 
+    @SuppressLint("NewApi")
     @VisibleForTesting
     protected open fun setupInAllProcesses() {
-        setupCrashReporting()
-
+        // See Bug 1969818: Crash reporting requires updates to be compatible with
+        // isolated content process.
+        if (!android.os.Process.isIsolated()) {
+            setupCrashReporting()
+        }
         // We want the log messages of all builds to go to Android logcat
         Log.addSink(FenixLogSink(logsDebug = Config.channel.isDebug, AndroidLogSink()))
     }
@@ -379,13 +395,11 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         }
 
         fun queueMetrics() {
-            if (SDK_INT >= Build.VERSION_CODES.O) { // required by StorageStatsMetrics.
-                queue.runIfReadyOrQueue {
-                    // Because it may be slow to capture the storage stats, it might be preferred to
-                    // create a WorkManager task for this metric, however, I ran out of
-                    // implementation time and WorkManager is harder to test.
-                    StorageStatsMetrics.report(this.applicationContext)
-                }
+            queue.runIfReadyOrQueue {
+                // Because it may be slow to capture the storage stats, it might be preferred to
+                // create a WorkManager task for this metric, however, I ran out of
+                // implementation time and WorkManager is harder to test.
+                StorageStatsMetrics.report(this.applicationContext)
             }
         }
 
@@ -499,7 +513,15 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
         components
             .analytics
             .crashReporter
-            .install(this)
+            .install(this, ::handleCaughtException)
+    }
+
+    private fun handleCaughtException() {
+        if (isMainProcess() && !components.performance.visualCompletenessQueue.isReady()) {
+            CoroutineScope(IO).launch {
+                StartupCrashCanary.build(applicationContext).createCanary()
+            }
+        }
     }
 
     protected open fun initializeNimbus() {
@@ -608,21 +630,6 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
                         AppCompatDelegate.MODE_NIGHT_NO,
                     )
                     settings.shouldUseLightTheme = true
-                }
-            }
-        }
-    }
-
-    /**
-     * Migrate the topic specific engine to the first general or custom search engine available.
-     */
-    private fun migrateTopicSpecificSearchEngines() {
-        components.core.store.state.search.selectedOrDefaultSearchEngine.let { currentSearchEngine ->
-            if (currentSearchEngine?.isGeneral == false) {
-                components.core.store.state.search.searchEngines.firstOrNull { nextSearchEngine ->
-                    nextSearchEngine.isGeneral
-                }?.let {
-                    components.useCases.searchUseCases.selectSearchEngine(it)
                 }
             }
         }
@@ -837,8 +844,6 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
                         name.set("custom")
                     }
                 }
-
-                migrateTopicSpecificSearchEngines()
             }
         }
 
@@ -879,6 +884,8 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
     ) {
         with(Preferences) {
             searchSuggestionsEnabled.set(settings.shouldShowSearchSuggestions)
+            showSponsorSuggestionsEnabled.set(settings.showSponsoredSuggestions)
+            showNonSponsorSuggestionsEnabled.set(settings.showNonSponsoredSuggestions)
             remoteDebuggingEnabled.set(settings.isRemoteDebuggingEnabled)
             studiesEnabled.set(settings.isExperimentationEnabled)
             telemetryEnabled.set(settings.isTelemetryEnabled)
@@ -889,6 +896,7 @@ open class FenixApplication : LocaleAwareApplication(), Provider {
             voiceSearchEnabled.set(settings.shouldShowVoiceSearch)
             openLinksInAppEnabled.set(settings.openLinksInExternalApp)
             signedInSync.set(settings.signedInFxaAccount)
+            isolatedContentProcessesEnabled.set(settings.isIsolatedProcessEnabled)
 
             val syncedItems = SyncEnginesStorage(applicationContext).getStatus().entries.filter {
                 it.value

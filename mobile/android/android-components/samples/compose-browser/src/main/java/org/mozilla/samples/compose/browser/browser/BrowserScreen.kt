@@ -43,6 +43,8 @@ import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.samples.compose.browser.browser.BrowserToolbarMiddleware.Companion.Dependencies
 import org.mozilla.samples.compose.browser.components
+import mozilla.components.feature.awesomebar.R as awesomebarR
+import mozilla.components.feature.fxsuggest.R as fxsuggestR
 
 /**
  * The main browser screen.
@@ -186,7 +188,7 @@ private fun Suggestions(
             components.store,
             components.tabsUseCases.selectTab,
             switchToTabDescription = context.getString(
-                mozilla.components.feature.awesomebar.R.string.switch_to_tab_description,
+                awesomebarR.string.switch_to_tab_description,
             ),
         )
     }
@@ -201,7 +203,7 @@ private fun Suggestions(
             includeSponsoredSuggestions = false,
             includeNonSponsoredSuggestions = true,
             sponsoredSuggestionDescription = context.getString(
-                mozilla.components.feature.fxsuggest.R.string.sponsored_suggestion_description,
+                fxsuggestR.string.sponsored_suggestion_description,
             ),
         )
     }

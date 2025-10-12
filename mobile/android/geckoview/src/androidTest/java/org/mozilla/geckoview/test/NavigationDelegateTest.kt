@@ -364,6 +364,7 @@ class NavigationDelegateTest : BaseSessionTest() {
         }
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun loadWithHTTPSOnlyMode() {
         sessionRule.runtime.settings.setAllowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
 
@@ -496,6 +497,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     // Due to Bug 1692578 we currently cannot test bypassing of the error
     // the URI loading process takes the desktop path for iframes
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun loadHTTPSOnlyInSubframe() {
         sessionRule.runtime.settings.setAllowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
 

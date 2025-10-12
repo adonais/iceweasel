@@ -86,15 +86,16 @@ bool gfxAndroidPlatform::IsFontAPIDisabled(bool aDontCheckPref) {
     return false;
   }
 
-  // OPPO, realme and OnePlus device seem to crash when using font match API
-  // (Bug 1787551).
+  // Some manufacturer devices seem to crash when using font match API
+  // (Bug 1787551 / Bug 1990734).
 
   if (sManufacturer.IsEmpty()) {
     sManufacturer = java::sdk::Build::MANUFACTURER()->ToCString();
   }
   return (sManufacturer.EqualsLiteral("OPPO") ||
           sManufacturer.EqualsLiteral("realme") ||
-          sManufacturer.EqualsLiteral("OnePlus"));
+          sManufacturer.EqualsLiteral("OnePlus") ||
+          sManufacturer.EqualsLiteral("HONOR"));
 }
 
 // static

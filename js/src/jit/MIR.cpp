@@ -34,7 +34,6 @@
 #include "util/Text.h"
 #include "util/Unicode.h"
 #include "vm/BigIntType.h"
-#include "vm/ConstantCompareOperand.h"
 #include "vm/Float16.h"
 #include "vm/Iteration.h"    // js::NativeIterator
 #include "vm/PlainObject.h"  // js::PlainObject
@@ -1703,7 +1702,7 @@ void MParameter::printOpcode(GenericPrinter& out) const {
 #endif
 
 HashNumber MParameter::valueHash() const {
-  HashNumber hash = MDefinition::valueHash();
+  HashNumber hash = MNullaryInstruction::valueHash();
   hash = addU32ToHash(hash, index_);
   return hash;
 }
@@ -2299,6 +2298,13 @@ void MTrunc::trySpecializeFloat32(TempAllocator& alloc) {
 }
 
 void MNearbyInt::trySpecializeFloat32(TempAllocator& alloc) {
+  if (EnsureFloatConsumersAndInputOrConvert(this, alloc)) {
+    specialization_ = MIRType::Float32;
+    setResultType(MIRType::Float32);
+  }
+}
+
+void MRoundToDouble::trySpecializeFloat32(TempAllocator& alloc) {
   if (EnsureFloatConsumersAndInputOrConvert(this, alloc)) {
     specialization_ = MIRType::Float32;
     setResultType(MIRType::Float32);
@@ -6013,6 +6019,67 @@ void MCompare::trySpecializeFloat32(TempAllocator& alloc) {
   }
 }
 
+MDefinition* MStrictConstantCompareInt32::foldsTo(TempAllocator& alloc) {
+  if (!value()->isBox()) {
+    return this;
+  }
+  MDefinition* unboxed = value()->toBox()->input();
+
+  if (unboxed->type() == MIRType::Int32) {
+    if (unboxed->isConstant()) {
+      bool result =
+          FoldComparison(jsop(), unboxed->toConstant()->toInt32(), constant());
+      return MConstant::NewBoolean(alloc, result);
+    }
+
+    auto* cst = MConstant::NewInt32(alloc, constant());
+    block()->insertBefore(this, cst);
+
+    return MCompare::New(alloc, unboxed, cst, jsop(), MCompare::Compare_Int32);
+  }
+
+  if (unboxed->type() == MIRType::Double) {
+    if (unboxed->isConstant()) {
+      bool result = FoldComparison(jsop(), unboxed->toConstant()->toDouble(),
+                                   double(constant()));
+      return MConstant::NewBoolean(alloc, result);
+    }
+
+    auto* cst = MConstant::NewDouble(alloc, constant());
+    block()->insertBefore(this, cst);
+
+    return MCompare::New(alloc, unboxed, cst, jsop(), MCompare::Compare_Double);
+  }
+
+  MOZ_ASSERT(!IsNumberType(unboxed->type()));
+  return MConstant::NewBoolean(alloc, jsop() == JSOp::StrictNe);
+}
+
+MDefinition* MStrictConstantCompareBoolean::foldsTo(TempAllocator& alloc) {
+  if (!value()->isBox()) {
+    return this;
+  }
+  MDefinition* unboxed = value()->toBox()->input();
+
+  if (unboxed->type() == MIRType::Boolean) {
+    if (unboxed->isConstant()) {
+      bool result = (jsop() == JSOp::StrictEq) ==
+                    (unboxed->toConstant()->toBoolean() == constant());
+      return MConstant::NewBoolean(alloc, result);
+    }
+
+    auto* inputI32 = MBooleanToInt32::New(alloc, unboxed);
+    block()->insertBefore(this, inputI32);
+
+    auto* cst = MConstant::NewInt32(alloc, int32_t(constant()));
+    block()->insertBefore(this, cst);
+
+    return MCompare::New(alloc, inputI32, cst, jsop(), MCompare::Compare_Int32);
+  }
+
+  return MConstant::NewBoolean(alloc, jsop() == JSOp::StrictNe);
+}
+
 MDefinition* MSameValue::foldsTo(TempAllocator& alloc) {
   MDefinition* lhs = left();
   if (lhs->isBox()) {
@@ -6379,6 +6446,12 @@ MDefinition::AliasType MLoadFixedSlot::mightAlias(
   return AliasType::MayAlias;
 }
 
+HashNumber MLoadFixedSlot::valueHash() const {
+  HashNumber hash = MUnaryInstruction::valueHash();
+  hash = addU32ToHash(hash, slot());
+  return hash;
+}
+
 MDefinition* MLoadFixedSlot::foldsTo(TempAllocator& alloc) {
   if (MDefinition* def = foldsToStore(alloc)) {
     return def;
@@ -6428,7 +6501,7 @@ MDefinition::AliasType MLoadDynamicSlot::mightAlias(
 }
 
 HashNumber MLoadDynamicSlot::valueHash() const {
-  HashNumber hash = MDefinition::valueHash();
+  HashNumber hash = MUnaryInstruction::valueHash();
   hash = addU32ToHash(hash, slot_);
   return hash;
 }
@@ -7303,6 +7376,12 @@ bool MMegamorphicHasProp::congruentTo(const MDefinition* ins) const {
 AliasSet MMegamorphicHasProp::getAliasSet() const {
   return AliasSet::Load(AliasSet::ObjectFields | AliasSet::FixedSlot |
                         AliasSet::DynamicSlot);
+}
+
+HashNumber MNurseryObject::valueHash() const {
+  HashNumber hash = MNullaryInstruction::valueHash();
+  hash = addU32ToHash(hash, nurseryObjectIndex());
+  return hash;
 }
 
 bool MNurseryObject::congruentTo(const MDefinition* ins) const {

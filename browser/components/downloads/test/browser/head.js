@@ -502,13 +502,13 @@ async function simulateDropAndCheck(win, dropTarget, urls) {
         }
         succeeded.add(download.source.url);
         if (succeeded.size == urls.length) {
-          list.removeView(view).then(resolve);
+          list.removeView(view);
+          resolve();
         }
       },
     };
-    list.addView(view).then(function () {
-      EventUtils.synthesizeDrop(dropTarget, dropTarget, dragData, "link", win);
-    });
+    list.addView(view);
+    EventUtils.synthesizeDrop(dropTarget, dropTarget, dragData, "link", win);
   });
 
   for (let url of urls) {

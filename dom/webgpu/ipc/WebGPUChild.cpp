@@ -37,8 +37,6 @@
 
 namespace mozilla::webgpu {
 
-NS_IMPL_CYCLE_COLLECTION(WebGPUChild)
-
 void WebGPUChild::JsWarning(nsIGlobalObject* aGlobal,
                             const nsACString& aMessage) {
   const auto& flatString = PromiseFlatCString(aMessage);
@@ -88,6 +86,15 @@ RawId WebGPUChild::RenderBundleEncoderFinishError(RawId aDeviceId,
 }
 
 namespace ffi {
+void wgpu_child_send_messages(WGPUWebGPUChildPtr aChild, uint32_t aNrOfMessages,
+                              struct WGPUByteBuf aSerializedMessages) {
+  auto* c = static_cast<WebGPUChild*>(aChild);
+  auto messages =
+      ipc::ByteBuf(aSerializedMessages.data, aSerializedMessages.len,
+                   aSerializedMessages.capacity);
+  c->SendSerializedMessages(aNrOfMessages, std::move(messages));
+}
+
 void wgpu_child_resolve_request_adapter_promise(
     WGPUWebGPUChildPtr aChild, RawId aAdapterId,
     const struct WGPUAdapterInformation* aAdapterInfo) {
@@ -219,7 +226,7 @@ void wgpu_child_resolve_create_shader_module_promise(
   auto pending_promise = std::move(pending_promises.front());
   pending_promises.pop_front();
 
-  MOZ_RELEASE_ASSERT(pending_promise.shader_module->mId == aShaderModuleId);
+  MOZ_RELEASE_ASSERT(pending_promise.shader_module->GetId() == aShaderModuleId);
 
   auto ffi_messages = Span(aMessages.data, aMessages.length);
 
@@ -342,11 +349,16 @@ void WebGPUChild::FlushQueuedMessages() {
     return;
   }
 
-  PROFILER_MARKER_FMT("WebGPU: FlushQueuedMessages", GRAPHICS_WebGPU, {},
-                      "messages: {}", nr_of_messages);
+  SendSerializedMessages(nr_of_messages, std::move(serialized_messages));
+}
+
+void WebGPUChild::SendSerializedMessages(uint32_t aNrOfMessages,
+                                         ipc::ByteBuf aSerializedMessages) {
+  PROFILER_MARKER_FMT("WebGPU: SendSerializedMessages", GRAPHICS_WebGPU, {},
+                      "messages: {}", aNrOfMessages);
 
   bool sent =
-      SendMessages(nr_of_messages, std::move(serialized_messages),
+      SendMessages(aNrOfMessages, std::move(aSerializedMessages),
                    std::move(mQueuedDataBuffers), std::move(mQueuedHandles));
   mQueuedDataBuffers.Clear();
   mQueuedHandles.Clear();
@@ -358,13 +370,18 @@ void WebGPUChild::FlushQueuedMessages() {
 
 ipc::IPCResult WebGPUChild::RecvUncapturedError(RawId aDeviceId,
                                                 const nsACString& aMessage) {
-  RefPtr<Device> device;
-  if (aDeviceId) {
-    const auto itr = mDeviceMap.find(aDeviceId);
-    if (itr != mDeviceMap.end()) {
-      device = itr->second.get();
-    }
+  MOZ_RELEASE_ASSERT(aDeviceId);
+
+  WeakPtr<Device> device;
+  const auto itr = mDeviceMap.find(aDeviceId);
+  if (itr != mDeviceMap.end()) {
+    device = itr->second;
   }
+
+  if (!device) {
+    return IPC_OK();
+  }
+
   // We don't want to spam the errors to the console indefinitely
   if (device->CheckNewWarning(aMessage)) {
     JsWarning(device->GetOwnerGlobal(), aMessage);
@@ -397,7 +414,11 @@ ipc::IPCResult WebGPUChild::RecvDeviceLost(RawId aDeviceId, uint8_t aReason,
 
     const auto itr = mDeviceMap.find(aDeviceId);
     if (itr != mDeviceMap.end()) {
-      auto* device = itr->second.get();
+      WeakPtr<Device> device = itr->second;
+
+      if (!device) {
+        return IPC_OK();
+      }
 
       dom::GPUDeviceLostReason reason =
           static_cast<dom::GPUDeviceLostReason>(aReason);
@@ -424,12 +445,10 @@ void WebGPUChild::SwapChainPresent(RawId aTextureId,
 }
 
 void WebGPUChild::RegisterDevice(Device* const aDevice) {
-  mDeviceMap.insert({aDevice->mId, aDevice});
+  mDeviceMap.insert({aDevice->GetId(), aDevice});
 }
 
 void WebGPUChild::UnregisterDevice(RawId aDeviceId) {
-  ffi::wgpu_client_drop_device(GetClient(), aDeviceId);
-
   mDeviceMap.erase(aDeviceId);
 }
 
@@ -481,11 +500,13 @@ void WebGPUChild::ClearActorState() {
     // Empty device map and resolve all lost promises with an "unknown" reason.
     else if (!mDeviceMap.empty()) {
       auto device_map_entry = mDeviceMap.begin();
-      auto device = std::move(device_map_entry->second);
+      WeakPtr<Device> device = device_map_entry->second;
       mDeviceMap.erase(device_map_entry->first);
 
-      device->ResolveLost(dom::GPUDeviceLostReason::Unknown,
-                          u"WebGPUChild destroyed"_ns);
+      if (device) {
+        device->ResolveLost(dom::GPUDeviceLostReason::Unknown,
+                            u"WebGPUChild destroyed"_ns);
+      }
     }
     // Pretend this worked and there is no error, per spec.
     else if (!mPendingPopErrorScopePromises.empty()) {
@@ -561,13 +582,16 @@ void WebGPUChild::ClearActorState() {
   }
 }
 
-void WebGPUChild::QueueSubmit(RawId aSelfId, RawId aDeviceId,
-                              nsTArray<RawId>& aCommandBuffers) {
+void WebGPUChild::QueueSubmit(
+    RawId aSelfId, RawId aDeviceId, nsTArray<RawId>& aCommandBuffers,
+    const nsTArray<RawId>& aUsedExternalTextureSources) {
   ffi::wgpu_client_queue_submit(
       GetClient(), aDeviceId, aSelfId,
       {aCommandBuffers.Elements(), aCommandBuffers.Length()},
       {mSwapChainTexturesWaitingForSubmit.Elements(),
-       mSwapChainTexturesWaitingForSubmit.Length()});
+       mSwapChainTexturesWaitingForSubmit.Length()},
+      {aUsedExternalTextureSources.Elements(),
+       aUsedExternalTextureSources.Length()});
   mSwapChainTexturesWaitingForSubmit.Clear();
 
   PROFILER_MARKER_UNTYPED("WebGPU: QueueSubmit", GRAPHICS_WebGPU);

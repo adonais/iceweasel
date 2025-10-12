@@ -31,6 +31,7 @@ const MODIFIED_PREFS = Object.freeze([
   "browser.engagement.home-button.has-removed",
   "browser.engagement.home-button.has-removed",
   "browser.engagement.sidebar-button.has-used",
+  "browser.toolbarbuttons.introduced.sidebar-button",
   "sidebar.verticalTabs.dragToPinPromo.dismissed",
 ]);
 
@@ -166,6 +167,30 @@ async function toggleSidebarPanel(win, commandID) {
   const promiseFocused = BrowserTestUtils.waitForEvent(win, "SidebarFocused");
   win.SidebarController.toggle(commandID);
   await promiseFocused;
+}
+
+async function ensureSidebarLauncherIsVisible(win = window) {
+  const {
+    promiseInitialized,
+    toolbarButton,
+    sidebarMain: sidebarLauncher,
+    sidebarContainer,
+  } = win.SidebarController;
+  await promiseInitialized;
+  // Show the sidebar launcher if the container is hidden
+  if (sidebarContainer.hidden) {
+    toolbarButton.doCommand();
+    await sidebarLauncher.updateComplete;
+    await BrowserTestUtils.waitForMutationCondition(
+      sidebarContainer,
+      { attributes: true, attributeFilter: ["hidden"] },
+      () => !sidebarContainer.hidden
+    );
+  }
+  Assert.ok(
+    BrowserTestUtils.isVisible(sidebarLauncher),
+    "Sidebar launcher is visible"
+  );
 }
 
 async function waitForTabstripOrientation(

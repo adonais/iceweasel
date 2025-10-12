@@ -83,6 +83,7 @@
     sharing an URL.
   -->
   <string name="share_dialog_title">Ixusï kwankurhini</string>
+  <string name="notification_erase_title_android_14">Jirinhantskwa ampe mirikurhini?</string>
   <string name="notification_erase_text">Jirinhantskwa ampe mirikurhini</string>
   <!-- Notification action to open Focus and resume the current browsing session. -->
   <string name="notification_action_open">Inchani</string>

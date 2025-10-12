@@ -52,6 +52,150 @@ function automaticRestartFound(commandLine) {
 }
 
 /**
+ * Verify that pre-conditions to update this installation (both persistent and
+ * transient) are fulfilled, and if they are all fulfilled, pump the update
+ * loop.
+ *
+ * This means checking for, downloading, and potentially applying updates.
+ *
+ * @param   {object} Optional parameters
+ *   {boolean} checkOnly
+ *     If specified as `true`, checks for updates but does not download them
+ *     unless a flag from Balrog specifically overrides this behavior.
+ * @returns {any} - Returns AppUpdater status upon update loop exit.
+ */
+async function attemptBackgroundUpdate({ checkOnly = false } = {}) {
+  let SLUG = "attemptBackgroundUpdate";
+
+  lazy.log.debug(
+    `${SLUG}: checking for preconditions necessary to update this installation`
+  );
+  let reasons = await BackgroundUpdate._reasonsToNotUpdateInstallation();
+
+  if (BackgroundUpdate._force()) {
+    // We want to allow developers and testers to monkey with the system.
+    lazy.log.debug(
+      `${SLUG}: app.update.background.force=true, ignoring reasons: ${JSON.stringify(
+        reasons
+      )}`
+    );
+    reasons = [];
+  }
+
+  reasons.sort();
+  for (let reason of reasons) {
+    Glean.backgroundUpdate.reasons.add(reason);
+  }
+
+  let enabled = !reasons.length;
+  if (!enabled) {
+    lazy.log.info(
+      `${SLUG}: not running background update task: '${JSON.stringify(
+        reasons
+      )}'`
+    );
+
+    return lazy.AppUpdater.STATUS.NEVER_CHECKED;
+  }
+
+  let result = new Promise(resolve => {
+    let appUpdater = new lazy.AppUpdater();
+
+    let _appUpdaterListener = async (status, progress, progressMax) => {
+      let exitUpdateLoop = () => {
+        appUpdater.removeListener(_appUpdaterListener);
+        appUpdater.stop();
+        resolve(status);
+      };
+
+      let stringStatus = lazy.AppUpdater.STATUS.debugStringFor(status);
+      Glean.backgroundUpdate.states.add(stringStatus);
+      Glean.backgroundUpdate.finalState.set(stringStatus);
+
+      if (lazy.AppUpdater.STATUS.isTerminalStatus(status)) {
+        lazy.log.debug(
+          `${SLUG}: background update transitioned to terminal status ${status}: ${stringStatus}`
+        );
+        exitUpdateLoop();
+      } else if (status == lazy.AppUpdater.STATUS.CHECKING) {
+        // The usual initial flow for the Background Update Task is to kick off
+        // the update download and immediately exit. For consistency, we are
+        // going to enforce this flow. So if we are just now checking for
+        // updates, we will limit the updater such that it cannot start staging,
+        // even if we immediately download the entire update.
+        lazy.log.debug(
+          `${SLUG}: This session will be limited to downloading updates only.`
+        );
+        lazy.UpdateService.onlyDownloadUpdatesThisSession = true;
+      } else if (
+        status == lazy.AppUpdater.STATUS.DOWNLOADING &&
+        (lazy.UpdateService.onlyDownloadUpdatesThisSession ||
+          (progress !== undefined && progressMax !== undefined))
+      ) {
+        // We get a DOWNLOADING callback with no progress or progressMax values
+        // when we initially switch to the DOWNLOADING state. But when we get
+        // onProgress notifications, progress and progressMax will be defined.
+        // Remember to keep in mind that progressMax is a required value that
+        // we can count on being meaningful, but it will be set to -1 for BITS
+        // transfers that haven't begun yet.
+        if (
+          lazy.UpdateService.onlyDownloadUpdatesThisSession ||
+          progressMax < 0 ||
+          progress != progressMax
+        ) {
+          lazy.log.debug(
+            `${SLUG}: Download in progress. Exiting task while download ` +
+              `transfers`
+          );
+          // If the download is still in progress, we don't want the Background
+          // Update Task to hang around waiting for it to complete.
+          lazy.UpdateService.onlyDownloadUpdatesThisSession = true;
+          exitUpdateLoop();
+        } else {
+          lazy.log.debug(`${SLUG}: Download has completed!`);
+        }
+      } else if (status == lazy.AppUpdater.STATUS.DOWNLOAD_AND_INSTALL) {
+        // This can happen in two situations:
+        //  1. This function was called with `checkOnly = true` and we are done
+        //     checking.
+        //  2. The user turned off automatic updates ("Check for updates but
+        //     let me choose to install them") and we didn't update the task for
+        //     whatever reason (maybe the global setting was changed from a
+        //     different user account and the current user account hasn't run
+        //     since).
+        // In case (1), we want to take a look at the response to the update
+        // check and possibly act on it. In case (2), we should do nothing and
+        // wait for user permission.
+        let updateAuto = await lazy.UpdateUtils.getAppUpdateAutoEnabled();
+        if (!updateAuto || lazy.UpdateService.manualUpdateOnly) {
+          lazy.log.debug(`${SLUG}: Need to wait for user permission`);
+          exitUpdateLoop();
+        } else {
+          lazy.log.debug(`${SLUG}: Check completed with checkOnly set`);
+          if (appUpdater.update.getProperty("forceBackgroundUpdate") != null) {
+            lazy.log.debug(`${SLUG}: forceBackgroundUpdate set`);
+            appUpdater.allowUpdateDownload();
+          } else {
+            lazy.log.debug(`${SLUG}: Update throttled`);
+            Glean.backgroundUpdate.throttlingPreventedUpdates.add();
+            exitUpdateLoop();
+          }
+        }
+      } else {
+        lazy.log.debug(
+          `${SLUG}: background update transitioned to status ${status}: ${stringStatus}`
+        );
+      }
+    };
+    appUpdater.addListener(_appUpdaterListener);
+
+    appUpdater.check({ checkOnly });
+  });
+
+  return result;
+}
+
+/**
  * Functions implementing the possible high level actions that the Background
  * Update Task may be performing (depending on prefs, policies, Nimbus
  * configuration, etc).
@@ -67,106 +211,16 @@ export var Actions = {
    * @returns {any} - Returns AppUpdater status upon update loop exit.
    */
   async attemptBackgroundUpdate() {
-    let SLUG = "attemptBackgroundUpdate";
+    return attemptBackgroundUpdate();
+  },
 
-    lazy.log.debug(
-      `${SLUG}: checking for preconditions necessary to update this installation`
-    );
-    let reasons = await BackgroundUpdate._reasonsToNotUpdateInstallation();
-
-    if (BackgroundUpdate._force()) {
-      // We want to allow developers and testers to monkey with the system.
-      lazy.log.debug(
-        `${SLUG}: app.update.background.force=true, ignoring reasons: ${JSON.stringify(
-          reasons
-        )}`
-      );
-      reasons = [];
-    }
-
-    reasons.sort();
-    for (let reason of reasons) {
-      Glean.backgroundUpdate.reasons.add(reason);
-    }
-
-    let enabled = !reasons.length;
-    if (!enabled) {
-      lazy.log.info(
-        `${SLUG}: not running background update task: '${JSON.stringify(
-          reasons
-        )}'`
-      );
-
-      return lazy.AppUpdater.STATUS.NEVER_CHECKED;
-    }
-
-    let result = new Promise(resolve => {
-      let appUpdater = new lazy.AppUpdater();
-
-      let _appUpdaterListener = (status, progress, progressMax) => {
-        let stringStatus = lazy.AppUpdater.STATUS.debugStringFor(status);
-        Glean.backgroundUpdate.states.add(stringStatus);
-        Glean.backgroundUpdate.finalState.set(stringStatus);
-
-        if (lazy.AppUpdater.STATUS.isTerminalStatus(status)) {
-          lazy.log.debug(
-            `${SLUG}: background update transitioned to terminal status ${status}: ${stringStatus}`
-          );
-          appUpdater.removeListener(_appUpdaterListener);
-          appUpdater.stop();
-          resolve(status);
-        } else if (status == lazy.AppUpdater.STATUS.CHECKING) {
-          // The usual initial flow for the Background Update Task is to kick off
-          // the update download and immediately exit. For consistency, we are
-          // going to enforce this flow. So if we are just now checking for
-          // updates, we will limit the updater such that it cannot start staging,
-          // even if we immediately download the entire update.
-          lazy.log.debug(
-            `${SLUG}: This session will be limited to downloading updates only.`
-          );
-          lazy.UpdateService.onlyDownloadUpdatesThisSession = true;
-        } else if (
-          status == lazy.AppUpdater.STATUS.DOWNLOADING &&
-          (lazy.UpdateService.onlyDownloadUpdatesThisSession ||
-            (progress !== undefined && progressMax !== undefined))
-        ) {
-          // We get a DOWNLOADING callback with no progress or progressMax values
-          // when we initially switch to the DOWNLOADING state. But when we get
-          // onProgress notifications, progress and progressMax will be defined.
-          // Remember to keep in mind that progressMax is a required value that
-          // we can count on being meaningful, but it will be set to -1 for BITS
-          // transfers that haven't begun yet.
-          if (
-            lazy.UpdateService.onlyDownloadUpdatesThisSession ||
-            progressMax < 0 ||
-            progress != progressMax
-          ) {
-            lazy.log.debug(
-              `${SLUG}: Download in progress. Exiting task while download ` +
-                `transfers`
-            );
-            // If the download is still in progress, we don't want the Background
-            // Update Task to hang around waiting for it to complete.
-            lazy.UpdateService.onlyDownloadUpdatesThisSession = true;
-
-            appUpdater.removeListener(_appUpdaterListener);
-            appUpdater.stop();
-            resolve(status);
-          } else {
-            lazy.log.debug(`${SLUG}: Download has completed!`);
-          }
-        } else {
-          lazy.log.debug(
-            `${SLUG}: background update transitioned to status ${status}: ${stringStatus}`
-          );
-        }
-      };
-      appUpdater.addListener(_appUpdaterListener);
-
-      appUpdater.check();
-    });
-
-    return result;
+  /**
+   * Verify that pre-conditions to update this installation (both persistent and
+   * transient) are fulfilled, and if they are all fulfilled, check for an
+   * update but, unless there is a Balrog override, do not install it.
+   */
+  async checkForUpdate() {
+    return attemptBackgroundUpdate({ checkOnly: true });
   },
 
   /**
@@ -253,11 +307,17 @@ export async function runActions(
   await lazy.UpdateService.init();
 
   let attemptAutomaticRestart = false;
+  let mightUpdate =
+    actionSet.has(ACTION.UPDATE) || actionSet.has(ACTION.UPDATE_CHECK);
   try {
-    if (actionSet.has(ACTION.UPDATE)) {
+    if (mightUpdate) {
       // Return AppUpdater status from attemptBackgroundUpdate() to
       // check if the status is STATUS.READY_FOR_RESTART.
-      updateStatus = await Actions.attemptBackgroundUpdate();
+      if (actionSet.has(ACTION.UPDATE)) {
+        updateStatus = await Actions.attemptBackgroundUpdate();
+      } else {
+        updateStatus = await Actions.checkForUpdate();
+      }
 
       lazy.log.info(`${SLUG}: attempted background update`);
 
@@ -328,7 +388,7 @@ export async function runActions(
   // 1700846), so better safe than sorry.
   await lazy.ExtensionUtils.promiseTimeout(1000);
 
-  if (actionSet.has(ACTION.UPDATE)) {
+  if (mightUpdate) {
     // If we're in a staged background update, we need to restart Firefox to complete the update.
     lazy.log.debug(
       `${SLUG}: Checking if staged background update is ready for restart`

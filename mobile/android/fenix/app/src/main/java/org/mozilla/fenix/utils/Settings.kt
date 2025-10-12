@@ -10,7 +10,6 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
 import android.content.pm.ShortcutManager
-import android.os.Build
 import android.view.accessibility.AccessibilityManager
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
@@ -24,6 +23,7 @@ import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.AutoplayAction
 import mozilla.components.lib.crash.store.CrashReportOption
+import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.PreferencesHolder
 import mozilla.components.support.ktx.android.content.booleanPreference
 import mozilla.components.support.ktx.android.content.doesDeviceHaveHinge
@@ -34,6 +34,7 @@ import mozilla.components.support.ktx.android.content.stringPreference
 import mozilla.components.support.ktx.android.content.stringSetPreference
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.utils.BrowsersCache
+import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.FeatureFlags
@@ -50,7 +51,6 @@ import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.home.pocket.ContentRecommendationsFeatureHelper
 import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_MAX_COUNT
-import org.mozilla.fenix.iconpicker.AppIcon
 import org.mozilla.fenix.nimbus.CookieBannersSection
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.HomeScreenSection
@@ -71,6 +71,7 @@ import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
 import org.mozilla.fenix.wallpapers.Wallpaper
 import java.security.InvalidParameterException
 import java.util.UUID
+import java.util.concurrent.TimeUnit.MILLISECONDS
 
 private const val AUTOPLAY_USER_SETTING = "AUTOPLAY_USER_SETTING"
 
@@ -173,6 +174,8 @@ class Settings(private val appContext: Context) : PreferencesHolder {
          */
         private const val CLOUDFLARE_URI = "https://mozilla.cloudflare-dns.com/dns-query"
     }
+
+    private val logger = Logger("Settings")
 
     @VisibleForTesting
     internal val isCrashReportEnabledInBuild: Boolean =
@@ -323,10 +326,36 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         default = 0,
     )
 
-    var lastReviewPromptTimeInMillis by longPreference(
-        appContext.getPreferenceKey(R.string.pref_key_last_review_prompt_shown_time),
-        default = 0L,
-    )
+    /**
+     * In bug 1979885 we switched from manually tracking displaying review prompt
+     * to recording it as an event in Nimbus which let's us check if later
+     * with a JEXL expression.
+     *
+     * If a previously tracked value exists then this migrates it to an event.
+     */
+    fun migrateLastReviewPromptTimePrefIfNeeded(nimbusEventStore: NimbusEventStore) {
+        val oldKey = "pref_key_last_review_prompt_shown_time"
+
+        if (!preferences.contains(oldKey)) return
+
+        val lastReviewPromptTimeInMillis = try {
+            preferences.getLong(oldKey, 0L)
+        } catch (e: ClassCastException) {
+            logger.warn("Unexpected pref type when trying to migrate last review prompt time", e)
+            0
+        }
+
+        preferences.edit { remove(oldKey) }
+
+        if (lastReviewPromptTimeInMillis != 0L) {
+            val millisAgo = timeNowInMillis() - lastReviewPromptTimeInMillis
+            nimbusEventStore.recordPastEvent(
+                eventId = "review_prompt_shown",
+                timeAgo = millisAgo,
+                timeUnit = MILLISECONDS,
+            )
+        }
+    }
 
     /**
      * Indicates if the custom review prompt feature should be enabled. `True` if the feature is
@@ -566,6 +595,28 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
+     * Returns true if the terms of use feature flag is enabled
+     */
+    var isTermsOfUsePromptEnabled by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_terms_prompt_enabled),
+        default = { FxNimbus.features.termsOfUsePrompt.value().enabled },
+        featureFlag = true,
+    )
+
+    /**
+     * The maximum number of times the Terms of Use prompt should be displayed.
+     */
+    var termsOfUseMaxDisplayCount = FxNimbus.features.termsOfUsePrompt.value().maxDisplayCount
+
+    /**
+     * The total number of times the Terms of Use prompt has been displayed.
+     */
+    var termsOfUsePromptDisplayedCount by intPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_terms_prompt_displayed_count),
+        default = 0,
+    )
+
+    /**
      * Timestamp in milliseconds when the terms of use prompt was last shown to the user.
      * A value of 0L indicates that the prompt has never been shown.
      */
@@ -587,6 +638,22 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         appContext.getPreferenceKey(R.string.pref_key_debug_terms_trigger_time),
         default = false,
         persistDefaultIfNotExists = true,
+    )
+
+    /**
+     * Used to determine users who have interacted with any links from the Terms of Use prompt.
+     */
+    var hasClickedTermOfUsePromptLink by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_terms_clicked_link),
+        default = false,
+    )
+
+    /**
+     * Used to determine users who clicked the "remind me later" action.
+     */
+    var hasClickedTermOfUsePromptRemindMeLater by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_terms_clicked_remind_me_later),
+        default = false,
     )
 
     /**
@@ -674,7 +741,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     val shortcutSuggestionsEnabled by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_show_shortcuts_suggestions),
-        default = true,
+        default = false,
     )
 
     /**
@@ -802,9 +869,19 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      * This refers to whether or not we are blocking or allowing requests that originate from
      * remote origins targeting either localhost addresses or local network addresses.
      */
-    var isLnaBlockingEnabled by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_enable_lna_blocking_enabled),
-        default = false,
+    var isLnaBlockingEnabled by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_lna_blocking_enabled),
+        featureFlag = true,
+        default = { FxNimbus.features.lnaBlocking.value().enabled },
+    )
+
+    /**
+     * Indicates whether isolated content processes are enabled or not.
+     */
+    var isIsolatedProcessEnabled by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_isolated_process),
+        featureFlag = true,
+        default = { FxNimbus.features.isolatedContentProcesses.value().enabled },
     )
 
     /**
@@ -1300,6 +1377,16 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         persistDefaultIfNotExists = true,
     )
 
+    var shouldShowSimpleToolbarCustomization by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_simple_toolbar_customization),
+        default = { FxNimbus.features.toolbarRedesignOption.value().showSimpleCustomization },
+    )
+
+    var shouldShowExpandedToolbarCustomization by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_expanded_toolbar_customization),
+        default = { FxNimbus.features.toolbarRedesignOption.value().showExpandedCustomization },
+    )
+
     val toolbarPosition: ToolbarPosition
         get() = if (isTabStripEnabled) {
             ToolbarPosition.TOP
@@ -1446,7 +1533,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
             if (userNeedsToVisitInstallableSites) return false
 
             // ShortcutManager::pinnedShortcuts is only available on Oreo+
-            if (!userKnowsAboutPwas && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!userKnowsAboutPwas) {
                 val manager = appContext.getSystemService(ShortcutManager::class.java)
                 val alreadyHavePwaInstalled = manager != null && manager.pinnedShortcuts.size > 0
 
@@ -2052,6 +2139,15 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     var onboardingFeatureEnabled = FeatureFlags.onboardingFeatureEnabled
 
     /**
+     * Indicates if the onboarding redesign should be used.
+     */
+    var useOnboardingRedesign by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_use_onboarding_redesign),
+        featureFlag = true,
+        default = { FxNimbus.features.junoOnboarding.value().useOnboardingRedesign },
+    )
+
+    /**
      * Indicates if the marketing onboarding card should be shown to the user.
      */
     var shouldShowMarketingOnboarding by booleanPreference(
@@ -2203,11 +2299,20 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
+     * Indicates if the Homepage "Discover more" stories is enabled.
+     */
+    var enableDiscoverMoreStories by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_discover_more_stories),
+        default = FeatureFlags.DISCOVER_MORE_STORIES,
+    )
+
+    /**
      * Indicates if the Unified Trust Panel is enabled.
      */
-    var enableUnifiedTrustPanel by booleanPreference(
+    var enableUnifiedTrustPanel by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_unified_trust_panel),
-        default = FeatureFlags.UNIFIED_TRUST_PANEL,
+        default = { FxNimbus.features.unifiedTrustPanel.value().enabled },
+        featureFlag = true,
     )
 
     /**
@@ -2401,30 +2506,6 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         )
 
     /**
-     * Returns the height of the bottom toolbar container.
-     *
-     * The bottom toolbar container can consist of a navigation bar, the microsurvey prompt
-     * a combination of a navigation and microsurvey prompt, or be absent.
-     */
-    fun getBottomToolbarContainerHeight(): Int {
-        val isMicrosurveyEnabled = shouldShowMicrosurveyPrompt
-
-        val microsurveyHeight = if (isMicrosurveyEnabled) {
-            appContext.pixelSizeFor(R.dimen.browser_microsurvey_height)
-        } else {
-            0
-        }
-
-        val navBarHeight = if (shouldUseExpandedToolbar) {
-            appContext.pixelSizeFor(R.dimen.browser_navbar_height)
-        } else {
-            0
-        }
-
-        return microsurveyHeight + navBarHeight
-    }
-
-    /**
      * Indicates if the microsurvey feature is enabled.
      */
     var microsurveyFeatureEnabled by lazyFeatureFlagPreference(
@@ -2520,7 +2601,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     var useNewCrashReporterDialog by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_use_new_crash_reporter),
-        default = false,
+        default = Config.channel.isNightlyOrDebug,
     )
 
     /**
@@ -2697,19 +2778,11 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
-     * Suffix of the currently selected app icon (launcher alias).
-     */
-    var selectedAppIcon by stringPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_selected_app_icon),
-        default = AppIcon.AppDefault.aliasSuffix,
-    )
-
-    /**
      * Whether the Tab Manager enhancements are enabled.
      */
     var tabManagerEnhancementsEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_tab_manager_enhancements),
-        default = DefaultTabManagementFeatureHelper.enhancementsEnabled,
+        default = { DefaultTabManagementFeatureHelper.enhancementsEnabled },
     )
 
     /**

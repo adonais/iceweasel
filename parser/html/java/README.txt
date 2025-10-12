@@ -42,6 +42,7 @@ cd parser/html/java/
 make sync
 # now you have a clone of https://github.com/validator/htmlparser/tree/master in parser/html/java/htmlparser/
 cd htmlparser/src/
+# Open the nu/validator/htmlparser/impl/AttributeName.java file and start editing it
 $EDITOR nu/validator/htmlparser/impl/AttributeName.java
 # Perform case-insensitive searches for "uncomment" and uncomment stuff according to the comments that talk about uncommenting
 # Duplicate the declaration a normal attribute (nothings special in SVG mode, etc.). Let's use "alt", since it's the first one.
@@ -66,6 +67,7 @@ cd parser/html/java/
 make sync
 # now you have a clone of https://github.com/validator/htmlparser/tree/master in parser/html/java/htmlparser/
 cd htmlparser/src/
+# Open the nu/validator/htmlparser/impl/ElementName.java file and start editing it
 $EDITOR nu/validator/htmlparser/impl/ElementName.java
 # Perform case-insensitive searches for "uncomment and uncomment stuff according to the comments that talk about uncommenting
 # Duplicate the declaration a normal element. Let's use "bdo", since it's the first normal one.

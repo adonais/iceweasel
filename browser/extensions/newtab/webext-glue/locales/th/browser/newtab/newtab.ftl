@@ -88,6 +88,14 @@ newtab-confirm-delete-history-p2 = การกระทำนี้ไม่ส
 
 newtab-topsite-sponsored = ได้รับการสนับสนุน
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (ปักหมุดอยู่)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -310,19 +318,31 @@ newtab-custom-pocket-subtitle = เนื้อหาคัดสรรพิเ
 newtab-custom-stories-toggle =
     .label = เรื่องราวแนะนำ
     .description = เนื้อหาคัดสรรพิเศษโดยผลิตภัณฑ์ตระกูล { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = เรื่องราว
 newtab-custom-pocket-sponsored = เรื่องราวที่ได้รับการสนับสนุน
 newtab-custom-pocket-show-recent-saves = แสดงบันทึกล่าสุด
 newtab-custom-recent-title = กิจกรรมล่าสุด
 newtab-custom-recent-subtitle = ไซต์และเนื้อหาล่าสุดที่คัดสรรมา
-newtab-custom-recent-toggle =
-    .label = กิจกรรมล่าสุด
-    .description = ไซต์และเนื้อหาล่าสุดที่คัดสรรมา
 newtab-custom-weather-toggle =
     .label = พยากรณ์อากาศ
     .description = ดูพยากรณ์อากาศประจำวันนี้ได้อย่างรวดเร็ว
 newtab-custom-trending-search-toggle =
     .label = การค้นหาที่กำลังมาแรง
     .description = หัวข้อที่มีการค้นหาซึ่งได้รับความนิยมและพบบ่อย
+newtab-custom-widget-weather-toggle =
+    .label = พยากรณ์อากาศ
+newtab-custom-widget-trending-search-toggle =
+    .label = การค้นหาที่กำลังนิยม
+newtab-custom-widget-lists-toggle =
+    .label = รายการ
+newtab-custom-widget-timer-toggle =
+    .label = ตัวจับเวลา
+newtab-custom-widget-section-title = วิดเจ็ต
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = ปิด
+    .aria-label = ปิดเมนู
 newtab-custom-close-button = ปิด
 newtab-custom-settings = จัดการการตั้งค่าเพิ่มเติม
 
@@ -440,7 +460,6 @@ newtab-weather-menu-change-location = เปลี่ยนตำแหน่ง
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = ค้นหาตำแหน่งที่ตั้ง
     .aria-label = ค้นหาตำแหน่งที่ตั้ง
-newtab-weather-change-location-search-input = ค้นหาตำแหน่งที่ตั้ง
 newtab-weather-menu-weather-display = การแสดงผลพยากรณ์อากาศ
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -506,6 +525,9 @@ newtab-topic-selection-button-pick-interests = เลือกความสน
 newtab-section-follow-button = ติดตาม
 newtab-section-following-button = ติดตามอยู่
 newtab-section-unfollow-button = เลิกติดตาม
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = ปรับแต่งฟีดของคุณ
+newtab-section-follow-highlight-subtitle = ติดตามในสิ่งที่คุณสนใจ เพื่อดูสิ่งที่คุณชอบได้มากขึ้น
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -538,6 +560,12 @@ newtab-custom-wallpaper-title = รูปพื้นหลังกำหนด
 newtab-custom-wallpaper-subtitle = อัปโหลดรูปพื้นหลังของคุณเองหรือเลือกสีกำหนดเองเพื่อปรับแต่ง { -brand-product-name } ในแบบของคุณ
 newtab-custom-wallpaper-cta = ลองเลย
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = เลือกวอลล์เปเปอร์เพื่อทำให้ { -brand-product-name } เป็นสไตล์ของคุณ
+newtab-new-user-custom-wallpaper-subtitle = ตกแต่งแท็บใหม่ให้เป็นแบบของคุณด้วยวอลล์เปเปอร์และสีสันที่เลือกเอง
+newtab-new-user-custom-wallpaper-cta = ลองเลย
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = ดาวน์โหลด { -brand-product-name } สำหรับมือถือ
@@ -547,6 +575,11 @@ newtab-download-mobile-highlight-body-variant-b = ท่องเว็บต่
 newtab-download-mobile-highlight-body-variant-c = คุณรู้ไหมว่าคุณสามารถใช้ { -brand-product-name } ขณะเดินทางได้? นำเบราว์เซอร์ตัวเดียวกันนี้มาไว้ในกระเป๋าของคุณ
 newtab-download-mobile-highlight-image =
     .aria-label = คิวอาร์โค้ดสำหรับดาวน์โหลด { -brand-product-name } สำหรับมือถือ
+
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = รายการโปรดของคุณอยู่แค่ปลายนิ้ว
+newtab-shortcuts-highlight-subtitle = เพิ่มทางลัดเพื่อให้เข้าถึงไซต์โปรดของคุณได้ในคลิกเดียว
 
 ## Strings for reporting ads and content
 
@@ -573,8 +606,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = กำลังมาแรงบน Google
 newtab-trending-searches-show-trending =
     .title = แสดงการค้นหาที่กำลังมาแรง
 newtab-trending-searches-hide-trending =
@@ -583,3 +614,76 @@ newtab-trending-searches-learn-more = เรียนรู้เพิ่มเ
 newtab-trending-searches-dismiss = ซ่อนการค้นหาที่กำลังมาแรง
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = การค้นหาที่กำลังมาแรง
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = ความเป็นไปได้ไม่มีที่สิ้นสุด เพิ่มมาสักหนึ่งอย่างเลย
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = ใหม่
+newtab-widget-lists-label-beta =
+    .label = เบต้า
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = เสร็จสมบูรณ์ ({ $number })
+newtab-widget-task-list-menu-copy = คัดลอก
+newtab-widget-lists-menu-edit = แก้ไขชื่อรายการ
+newtab-widget-lists-menu-create = สร้างรายการใหม่
+newtab-widget-lists-menu-delete = ลบรายการนี้
+newtab-widget-lists-menu-copy = คัดลอกรายการไปยังคลิปบอร์ด
+newtab-widget-lists-menu-hide = ซ่อนรายการทั้งหมด
+newtab-widget-lists-menu-learn-more = เรียนรู้เพิ่มเติม
+newtab-widget-lists-input-add-an-item =
+    .placeholder = เพิ่มงาน
+newtab-widget-lists-input-error = โปรดระบุข้อความเพื่อเพิ่มงาน
+newtab-widget-lists-input-menu-open-link = เปิดลิงก์
+newtab-widget-lists-input-menu-move-up = เลื่อนขึ้น
+newtab-widget-lists-input-menu-move-down = เลื่อนลง
+newtab-widget-lists-input-menu-delete = ลบ
+newtab-widget-lists-input-menu-edit = แก้ไข
+newtab-widget-lists-name-label-default =
+    .label = รายการงาน
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = รายการงาน
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = รายการใหม่
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = ตัวจับเวลา
+newtab-widget-timer-notification-focus = หมดเวลาโฟกัสแล้ว ทำได้เยี่ยมเลย อยากพักสักหน่อยไหม?
+newtab-widget-timer-notification-break = หมดเวลาพักแล้ว พร้อมที่จะโฟกัสหรือยัง?
+newtab-widget-timer-notification-warning = การแจ้งเตือนปิดอยู่
+newtab-widget-timer-mode-focus =
+    .label = โฟกัส
+newtab-widget-timer-mode-break =
+    .label = พัก
+newtab-widget-timer-play =
+    .title = เล่น
+newtab-widget-timer-pause =
+    .title = หยุดชั่วคราว
+newtab-widget-timer-label-play =
+    .label = เล่น
+newtab-widget-timer-label-pause =
+    .label = หยุดชั่วคราว
+newtab-widget-timer-reset =
+    .title = ล้างค่า
+newtab-widget-timer-menu-notifications = ปิดการแจ้งเตือน
+newtab-widget-timer-menu-notifications-on = เปิดการแจ้งเตือน
+newtab-widget-timer-menu-hide = ซ่อนตัวจับเวลา
+newtab-widget-timer-menu-learn-more = เรียนรู้เพิ่มเติม
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = เลื่อนเพื่อดูเพิ่มเติม
+newtab-widget-message-title = มีสมาธิด้วยรายการสิ่งที่ต้องทำและตัวจับเวลาในตัว
+# to-dos stands for "things to do".
+newtab-widget-message-copy = ตั้งแต่เตือนความจำด่วน ๆ ไปจนถึงสิ่งที่ต้องทำในแต่ละวัน ช่วงเวลาโฟกัสไปจนถึงช่วงเวลาพัก ให้คุณอยู่กับงานและตรงเวลาเสมอ
+newtab-promo-card-title = ร่วมสนับสนุน { -brand-product-name }
+newtab-promo-card-body = ผู้สนับสนุนของเราสนับสนุนภารกิจที่จะสร้างเว็บที่ดีขึ้น
+newtab-promo-card-cta = เรียนรู้เพิ่มเติม
+newtab-promo-card-dismiss-button =
+    .title = ปิด
+    .aria-label = ปิด

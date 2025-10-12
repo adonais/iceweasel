@@ -21,11 +21,13 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <initializer_list>
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "hwy/base.h"
 #include "hwy/per_target.h"
@@ -37,8 +39,14 @@ namespace hwy {
 // Minimum alignment of allocated memory for use in HWY_ASSUME_ALIGNED, which
 // requires a literal. To prevent false sharing, this should be at least the
 // L1 cache line size, usually 64 bytes. However, Intel's L2 prefetchers may
-// access pairs of lines, and POWER8 also has 128.
+// access pairs of lines, and M1 L2 and POWER8 lines are also 128 bytes.
 #define HWY_ALIGNMENT 128
+
+// `align` is in bytes.
+template <typename T>
+HWY_API constexpr bool IsAligned(T* ptr, size_t align = HWY_ALIGNMENT) {
+  return reinterpret_cast<uintptr_t>(ptr) % align == 0;
+}
 
 // Pointers to functions equivalent to malloc/free with an opaque void* passed
 // to them.
@@ -126,6 +134,46 @@ AlignedUniquePtr<T> MakeUniqueAligned(Args&&... args) {
                              AlignedDeleter());
 }
 
+template <class T>
+struct AlignedAllocator {
+  using value_type = T;
+
+  AlignedAllocator() = default;
+
+  template <class V>
+  explicit AlignedAllocator(const AlignedAllocator<V>&) noexcept {}
+
+  template <class V>
+  value_type* allocate(V n) {
+    static_assert(std::is_integral<V>::value,
+                  "AlignedAllocator only supports integer types");
+    static_assert(sizeof(V) <= sizeof(std::size_t),
+                  "V n must be smaller or equal size_t to avoid overflow");
+    return static_cast<value_type*>(
+        AllocateAlignedBytes(static_cast<std::size_t>(n) * sizeof(value_type)));
+  }
+
+  template <class V>
+  void deallocate(value_type* p, HWY_MAYBE_UNUSED V n) {
+    return FreeAlignedBytes(p, nullptr, nullptr);
+  }
+};
+
+template <class T, class V>
+constexpr bool operator==(const AlignedAllocator<T>&,
+                          const AlignedAllocator<V>&) noexcept {
+  return true;
+}
+
+template <class T, class V>
+constexpr bool operator!=(const AlignedAllocator<T>&,
+                          const AlignedAllocator<V>&) noexcept {
+  return false;
+}
+
+template <class T>
+using AlignedVector = std::vector<T, AlignedAllocator<T>>;
+
 // Helpers for array allocators (avoids overflow)
 namespace detail {
 
@@ -136,14 +184,14 @@ static inline constexpr size_t ShiftCount(size_t n) {
 
 template <typename T>
 T* AllocateAlignedItems(size_t items, AllocPtr alloc_ptr, void* opaque_ptr) {
-  constexpr size_t size = sizeof(T);
+  constexpr size_t kSize = sizeof(T);
 
-  constexpr bool is_pow2 = (size & (size - 1)) == 0;
-  constexpr size_t bits = ShiftCount(size);
-  static_assert(!is_pow2 || (1ull << bits) == size, "ShiftCount is incorrect");
+  constexpr bool kIsPow2 = (kSize & (kSize - 1)) == 0;
+  constexpr size_t kBits = ShiftCount(kSize);
+  static_assert(!kIsPow2 || (1ull << kBits) == kSize, "ShiftCount has a bug");
 
-  const size_t bytes = is_pow2 ? items << bits : items * size;
-  const size_t check = is_pow2 ? bytes >> bits : bytes / size;
+  const size_t bytes = kIsPow2 ? items << kBits : items * kSize;
+  const size_t check = kIsPow2 ? bytes >> kBits : bytes / kSize;
   if (check != items) {
     return nullptr;  // overflowed
   }
@@ -187,7 +235,6 @@ class AlignedFreer {
 
   template <typename T>
   void operator()(T* aligned_pointer) const {
-    // TODO(deymo): assert that we are using a POD type T.
     FreeAlignedBytes(aligned_pointer, free_, opaque_ptr_);
   }
 
@@ -206,6 +253,10 @@ using AlignedFreeUniquePtr = std::unique_ptr<T, AlignedFreer>;
 template <typename T>
 AlignedFreeUniquePtr<T[]> AllocateAligned(const size_t items, AllocPtr alloc,
                                           FreePtr free, void* opaque) {
+  static_assert(std::is_trivially_copyable<T>::value,
+                "AllocateAligned: requires trivially copyable T");
+  static_assert(std::is_trivially_destructible<T>::value,
+                "AllocateAligned: requires trivially destructible T");
   return AlignedFreeUniquePtr<T[]>(
       detail::AllocateAlignedItems<T>(items, alloc, opaque),
       AlignedFreer(free, opaque));

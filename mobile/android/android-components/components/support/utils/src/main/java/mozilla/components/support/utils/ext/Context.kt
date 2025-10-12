@@ -16,7 +16,6 @@ import android.content.res.Configuration
 import android.os.Build
 import android.provider.Settings
 import android.view.Window
-import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import mozilla.components.support.base.log.logger.Logger
@@ -31,7 +30,6 @@ private val logger = Logger("navigateToDefaultBrowserAppsSettings")
 /**
  * Open OS settings for default browser.
  */
-@RequiresApi(Build.VERSION_CODES.N)
 fun Context.navigateToDefaultBrowserAppsSettings(buildManufacturerChecker: BuildManufacturerChecker) {
     val intent = when {
         buildManufacturerChecker.isHuawei() -> Intent(ACTION_MANAGE_DEFAULT_APPS_SETTINGS_HUAWEI)

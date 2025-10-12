@@ -68,10 +68,9 @@ def get_dependencies(config: TransformConfig, task: Dict) -> Iterator[Task]:
 
 
 def get_primary_dependency(config: TransformConfig, task: Dict) -> Optional[Task]:
-    """Return the ``Task`` object associated with the primary dependency.
-
-    This uses the task's ``primary-kind-dependency`` attribute to find the primary
-    dependency, or returns ``None`` if the attribute is unset.
+    """Return the ``Task`` object associated with the primary dependency,
+    which is assumed to be available in the ``primary-dependency`` attribute.
+    (Which is always the case for tasks created with ``from_deps``.)
 
     Args:
         config (TransformConfig): The ``TransformConfig`` object associated
@@ -83,10 +82,7 @@ def get_primary_dependency(config: TransformConfig, task: Dict) -> Optional[Task
             primary dependency or ``None``.
     """
     try:
-        primary_kind = task["attributes"]["primary-kind-dependency"]
+        label = task["attributes"]["primary-dependency-label"]
+        return config.kind_dependencies_tasks[label]
     except KeyError:
         return None
-
-    for dep in get_dependencies(config, task):
-        if dep.kind == primary_kind:
-            return dep

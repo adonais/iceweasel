@@ -103,7 +103,7 @@ private fun SuggestionTitleAndDescription(
             },
             color = colors.title,
             fontSize = 15.sp,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .width(IntrinsicSize.Max)

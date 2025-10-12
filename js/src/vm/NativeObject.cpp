@@ -1183,7 +1183,9 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHook(JSContext* cx,
     }
   }
   if (MOZ_UNLIKELY(obj->hasUnpreservedWrapper())) {
-    if (JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT).isUndefined()) {
+    JS::Value objectWrapperSlot =
+        JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT);
+    if (objectWrapperSlot.isUndefined() || !objectWrapperSlot.toPrivate()) {
       return true;
     }
 
@@ -1216,7 +1218,13 @@ static MOZ_ALWAYS_INLINE bool CallAddPropertyHookDense(
   }
 
   if (MOZ_UNLIKELY(obj->hasUnpreservedWrapper())) {
-    if (JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT).isUndefined()) {
+    JS::Value objectWrapperSlot =
+        JS::GetReservedSlot(obj, JS_OBJECT_WRAPPER_SLOT);
+    if (objectWrapperSlot.isUndefined() || !objectWrapperSlot.toPrivate()) {
+      return true;
+    }
+
+    if (objectWrapperSlot.isUndefined() || !objectWrapperSlot.toPrivate()) {
       return true;
     }
 

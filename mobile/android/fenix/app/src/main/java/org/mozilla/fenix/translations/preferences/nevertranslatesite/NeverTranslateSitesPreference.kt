@@ -30,6 +30,7 @@ import org.mozilla.fenix.compose.InfoCard
 import org.mozilla.fenix.compose.InfoType
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Never Translate Site preference screen.
@@ -90,7 +91,7 @@ fun NeverTranslateSitesPreference(
                             .defaultMinSize(minHeight = 56.dp)
                             .wrapContentHeight(),
                         onClick = { onItemClick(item) },
-                        iconPainter = painterResource(R.drawable.mozac_ic_delete_24),
+                        iconPainter = painterResource(iconsR.drawable.mozac_ic_delete_24),
                         onIconClick = { onItemClick(item) },
                     )
                 }

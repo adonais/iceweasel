@@ -13,6 +13,22 @@ exclude: true
 
 ⚠️  breaking change and deprecation notices
 
+## v144
+- Added [`GeckoSession.flushSessionState()`][144.1] to immediately notify the registered [`GeckoSession.ProgressDelegate`][144.2] and [`GeckoSession.HistoryDelegate`][144.3] of the current session state.
+- Added [`GeckoRuntimeSettings.getIsolatedProcessEnabled`][144.4] and [`GeckoRuntimeSettings.Builder.isolatedProcessEnabled`][144.5] to control whether content service runs on isolated process or not.
+- Added [`ContentBlocking.GOOGLE_SAFE_BROWSING_V5_PROVIDER`][144.6] for the configuration of the SafeBrowsing V5 provider
+- ⚠️ Removed deprecated `onOptionalPrompt` function signature. ([bug 1972510]({{bugzilla}}1972510))
+- ⚠️ Removed deprecated `onUpdatePrompt` function signature. ([bug 1974744]({{bugzilla}}1974744))
+- Added [`RequiresApi`][144.7] annotations to APIs.
+
+[144.1]: {{javadoc_uri}}/GeckoSession.html#flushSessionState()
+[144.2]: {{javadoc_uri}}/GeckoSession.ProgressDelegate.html
+[144.3]: {{javadoc_uri}}/GeckoSession.HistoryDelegate.html
+[144.4]: {{javadoc_uri}}/GeckoRuntimeSettings.html#getIsolatedProcessEnabled
+[144.5]: {{javadoc_uri}}/GeckoRuntimeSettings.Builder.html#isolatedProcessEnabled(boolean)
+[144.6]: {{javadoc_uri}}/ContentBlocking.SafeBrowsingProvider.html
+[144.7]: https://developer.android.com/reference/androidx/annotation/RequiresApi
+
 ## v143
 - Added an option to set multiple preferences on [`GeckoPreferenceController`][140.1] as [`checkStateAndSetGeckoPrefs`][143.1].
 - Added [`WebNotification.origin`][143.2] that shows the origin of the notification. ([bug 1976269]({{bugzilla}}1976269))
@@ -1813,4 +1829,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: 7399148f72d1aa06b77a489ded963c9b90abb6ea
+[api-version]: a65be4cb5d4141092fe8845b560ab94d164005d9

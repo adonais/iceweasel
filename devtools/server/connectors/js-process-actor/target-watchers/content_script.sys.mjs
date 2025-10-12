@@ -134,6 +134,11 @@ function createTargetsForWatcher(watcherDataObject, _isProcessActorStartup) {
 
   const sandboxes = lazy.ExtensionContent.getAllContentScriptGlobals();
   for (const contentScriptSandbox of sandboxes) {
+    if (!contentScriptSandbox || Cu.isDeadWrapper(contentScriptSandbox)) {
+      // Bug 1979448: Skip invalid or dead sandboxes.
+      continue;
+    }
+
     const metadata = Cu.getSandboxMetadata(contentScriptSandbox);
     // Accept all the content scripts if we are debugging everything (session context type == all)
     //

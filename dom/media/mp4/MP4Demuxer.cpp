@@ -26,9 +26,6 @@
 #include "mozilla/StaticPrefs_media.h"
 #include "nsPrintfCString.h"
 
-extern mozilla::LazyLogModule gMediaDemuxerLog;
-mozilla::LogModule* GetDemuxerLog() { return gMediaDemuxerLog; }
-
 #define LOG(arg, ...)                                                 \
   DDMOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, "::%s: " arg, \
             __func__, ##__VA_ARGS__)
@@ -66,7 +63,7 @@ class MP4TrackDemuxer : public MediaTrackDemuxer,
   void NotifyDataArrived();
 
  private:
-  already_AddRefed<MediaRawData> GetNextSample();
+  Result<already_AddRefed<MediaRawData>, MediaResult> GetNextSample();
   void EnsureUpToDateIndex();
   void SetNextKeyFrameTime();
   RefPtr<MediaResource> mResource;
@@ -384,11 +381,11 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
 
   // Check what time we actually seeked to.
   do {
-    RefPtr<MediaRawData> sample = GetNextSample();
-    if (!sample) {
-      return SeekPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_END_OF_STREAM,
-                                          __func__);
+    auto next = GetNextSample();
+    if (next.isErr()) {
+      return SeekPromise::CreateAndReject(next.unwrapErr(), __func__);
     }
+    RefPtr<MediaRawData> sample = next.unwrap();
     if (!sample->Size()) {
       // This sample can't be decoded, continue searching.
       continue;
@@ -405,11 +402,14 @@ RefPtr<MP4TrackDemuxer::SeekPromise> MP4TrackDemuxer::Seek(
   return SeekPromise::CreateAndResolve(seekTime, __func__);
 }
 
-already_AddRefed<MediaRawData> MP4TrackDemuxer::GetNextSample() {
-  RefPtr<MediaRawData> sample = mIterator->GetNext();
-  if (!sample) {
-    return nullptr;
+Result<already_AddRefed<MediaRawData>, MediaResult>
+MP4TrackDemuxer::GetNextSample() {
+  auto next = mIterator->GetNext();
+  if (next.isErr()) {
+    return next;
   }
+  RefPtr<MediaRawData> sample = next.unwrap();
+
   if (mInfo->GetAsVideoInfo()) {
     sample->mExtraData = mInfo->GetAsVideoInfo()->mExtraData;
     if (mType == kH264 && !sample->mCrypto.IsEncrypted()) {
@@ -487,7 +487,8 @@ already_AddRefed<MediaRawData> MP4TrackDemuxer::GetNextSample() {
         totalMediaDurationIncludingTrimming.IsPositive()) {
       // Seek backward a bit.
       mIterator->Seek(sample->mTime - sample->mDuration);
-      RefPtr<MediaRawData> previousSample = mIterator->GetNext();
+      RefPtr<MediaRawData> previousSample =
+          mIterator->GetNext().unwrapOr(nullptr);
       if (previousSample) {
         TimeInterval fullPacketDuration{previousSample->mTime,
                                         previousSample->GetEndTime()};
@@ -497,11 +498,11 @@ already_AddRefed<MediaRawData> MP4TrackDemuxer::GetNextSample() {
       // Seek back so we're back at the original location -- there's no packet
       // left anyway.
       mIterator->Seek(sample->mTime);
-      RefPtr<MediaRawData> dummy = mIterator->GetNext();
+      RefPtr<MediaRawData> dummy = mIterator->GetNext().unwrapOr(nullptr);
     }
   }
 
-  if (MOZ_LOG_TEST(GetDemuxerLog(), LogLevel::Verbose)) {
+  if (MOZ_LOG_TEST(gMediaDemuxerLog, LogLevel::Verbose)) {
     bool isAudio = mInfo->GetAsAudioInfo();
     TimeUnit originalStart = TimeUnit::Invalid();
     TimeUnit originalEnd = TimeUnit::Invalid();
@@ -535,19 +536,24 @@ RefPtr<MP4TrackDemuxer::SamplesPromise> MP4TrackDemuxer::GetSamples(
     MOZ_ASSERT(!mQueuedSample);
     aNumSamples--;
   }
-  RefPtr<MediaRawData> sample;
-  while (aNumSamples && (sample = GetNextSample())) {
+  while (aNumSamples) {
+    auto next = GetNextSample();
+    if (next.isErr()) {
+      nsresult rv = next.inspectErr().Code();
+      if ((rv != NS_ERROR_DOM_MEDIA_END_OF_STREAM &&
+           rv != NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA) ||
+          samples->GetSamples().IsEmpty()) {
+        return SamplesPromise::CreateAndReject(next.unwrapErr(), __func__);
+      }
+      break;
+    }
+    RefPtr<MediaRawData> sample = next.unwrap();
     if (!sample->Size()) {
       continue;
     }
     MOZ_DIAGNOSTIC_ASSERT(sample->HasValidTime());
     samples->AppendSample(std::move(sample));
     aNumSamples--;
-  }
-
-  if (samples->GetSamples().IsEmpty()) {
-    return SamplesPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_END_OF_STREAM,
-                                           __func__);
   }
 
   if (mNextKeyframeTime.isNothing() ||
@@ -587,22 +593,26 @@ MP4TrackDemuxer::SkipToNextRandomAccessPoint(const TimeUnit& aTimeThreshold) {
   mQueuedSample = nullptr;
   // Loop until we reach the next keyframe after the threshold.
   uint32_t parsed = 0;
-  bool found = false;
-  RefPtr<MediaRawData> sample;
-  while (!found && (sample = GetNextSample())) {
+  Maybe<SkipFailureHolder> failure;
+  while (true) {
+    auto next = GetNextSample();
+    if (next.isErr()) {
+      failure.emplace(next.unwrapErr(), parsed);
+      break;
+    }
+    RefPtr<MediaRawData> sample = next.unwrap();
     parsed++;
     MOZ_DIAGNOSTIC_ASSERT(sample->HasValidTime());
     if (sample->mKeyframe && sample->mTime >= aTimeThreshold) {
-      found = true;
       mQueuedSample = sample;
+      break;
     }
   }
   SetNextKeyFrameTime();
-  if (found) {
-    return SkipAccessPointPromise::CreateAndResolve(parsed, __func__);
+  if (failure.isSome()) {
+    return SkipAccessPointPromise::CreateAndReject(failure.extract(), __func__);
   }
-  SkipFailureHolder failure(NS_ERROR_DOM_MEDIA_END_OF_STREAM, parsed);
-  return SkipAccessPointPromise::CreateAndReject(std::move(failure), __func__);
+  return SkipAccessPointPromise::CreateAndResolve(parsed, __func__);
 }
 
 TimeIntervals MP4TrackDemuxer::GetBuffered() {

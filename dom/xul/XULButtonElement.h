@@ -71,7 +71,7 @@ class XULButtonElement : public nsXULElement {
   bool IsMenu() const;
 
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
-                                      int32_t aModType) const override;
+                                      AttrModType aModType) const override;
   void AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                     const nsAttrValue* aValue, const nsAttrValue* aOldValue,
                     nsIPrincipal* aSubjectPrincipal, bool aNotify) override;

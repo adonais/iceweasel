@@ -13,6 +13,7 @@
 #include "mozilla/PermissionManager.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
+#include "nsGlobalWindowInner.h"
 
 namespace mozilla::dom {
 

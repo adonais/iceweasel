@@ -7,6 +7,7 @@
 #ifndef dom_base_MessageManagerCallback_h__
 #define dom_base_MessageManagerCallback_h__
 
+#include "mozilla/UniquePtr.h"
 #include "nsError.h"
 #include "nsStringFwd.h"
 #include "nsTArrayForwardDeclare.h"
@@ -35,9 +36,9 @@ class MessageManagerCallback {
     return true;
   }
 
-  virtual bool DoSendBlockingMessage(const nsAString& aMessage,
-                                     StructuredCloneData& aData,
-                                     nsTArray<StructuredCloneData>* aRetVal) {
+  virtual bool DoSendBlockingMessage(
+      const nsAString& aMessage, StructuredCloneData& aData,
+      nsTArray<UniquePtr<StructuredCloneData>>* aRetVal) {
     return true;
   }
 

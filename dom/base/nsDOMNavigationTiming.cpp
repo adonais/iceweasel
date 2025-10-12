@@ -297,7 +297,7 @@ void nsDOMNavigationTiming::TTITimeout(nsITimer* aTimer) {
         (TTI_WINDOW_SIZE_MS + 100) -
             delta.ToMilliseconds(),  // slightly after the window ends
         nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
-        "nsDOMNavigationTiming::TTITimeout");
+        "nsDOMNavigationTiming::TTITimeout"_ns);
     return;
   }
 
@@ -433,7 +433,7 @@ void nsDOMNavigationTiming::NotifyContentfulCompositeForRootContentDocument(
   mTTITimer->InitWithNamedFuncCallback(TTITimeoutCallback, this,
                                        TTI_WINDOW_SIZE_MS,
                                        nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
-                                       "nsDOMNavigationTiming::TTITimeout");
+                                       "nsDOMNavigationTiming::TTITimeout"_ns);
 
   if (mDocShellHasBeenActiveSinceNavigationStart) {
     glean::performance_time::to_first_contentful_paint.AccumulateRawDuration(

@@ -17,6 +17,7 @@ import org.mozilla.experiments.nimbus.internal.getCalculatedAttributes
 import org.mozilla.fenix.GleanMetrics.NimbusSystem
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.home.pocket.ContentRecommendationsFeatureHelper
 import org.mozilla.fenix.utils.Settings
 import java.io.File
 
@@ -60,7 +61,9 @@ class RecordedNimbusContext(
     val deviceManufacturer: String = Build.MANUFACTURER,
     val deviceModel: String = Build.MODEL,
     val userAcceptedTou: Boolean,
-    val noShortcutsStoriesMkt: Boolean,
+    val noShortcutsOrStoriesOptOuts: Boolean,
+    val userClickedTouPromptLink: Boolean,
+    val userClickedTouPromptRemindMeLater: Boolean,
 ) : RecordedContext {
     /**
      * [getEventQueries] is called by the Nimbus SDK Rust code to retrieve the map of event
@@ -100,7 +103,9 @@ class RecordedNimbusContext(
                 deviceManufacturer = deviceManufacturer,
                 deviceModel = deviceModel,
                 userAcceptedTou = userAcceptedTou,
-                noShortcutsStoriesMkt = noShortcutsStoriesMkt,
+                noShortcutsOrStoriesOptOuts = noShortcutsOrStoriesOptOuts,
+                userClickedTouPromptLink = userClickedTouPromptLink,
+                userClickedTouPromptRemindMeLater = userClickedTouPromptRemindMeLater,
             ),
         )
         Pings.nimbus.submit()
@@ -145,7 +150,9 @@ class RecordedNimbusContext(
                 "device_manufacturer" to deviceManufacturer,
                 "device_model" to deviceModel,
                 "user_accepted_tou" to userAcceptedTou,
-                "no_shortcuts_stories_mkt" to noShortcutsStoriesMkt,
+                "no_shortcuts_or_stories_opt_outs" to noShortcutsOrStoriesOptOuts,
+                "user_clicked_tou_prompt_link" to userClickedTouPromptLink,
+                "user_clicked_tou_prompt_remind_me_later" to userClickedTouPromptRemindMeLater,
             ),
         )
         return obj
@@ -192,21 +199,36 @@ class RecordedNimbusContext(
                 language = calculatedAttributes.language,
                 region = calculatedAttributes.region,
                 userAcceptedTou = settings.hasAcceptedTermsOfService,
-                noShortcutsStoriesMkt = settings.noShortcutsStoriesMkt,
+                noShortcutsOrStoriesOptOuts = settings.noShortcutsOrStoriesOptOuts(context),
+                userClickedTouPromptLink = settings.hasClickedTermOfUsePromptLink,
+                userClickedTouPromptRemindMeLater = settings.hasClickedTermOfUsePromptRemindMeLater,
             )
         }
 
-        private val Settings.noShortcutsStoriesMkt: Boolean
-            get() = hasMarketing && hasSponsoredHomepageShortcuts && hasStoriesOnHomepage
+        /**
+         * Checks whether an eligible user has opted out of any sponsored top sites or stories.
+         *
+         *  @return `true` if the user has opted out of any sponsored top sites or stories,
+         * `false` otherwise.
+         */
+        private fun Settings.noShortcutsOrStoriesOptOuts(context: Context) =
+            !optedOutOfSponsoredTopSites() && !optedOutOfSponsoredStories(context)
 
-        private val Settings.hasMarketing: Boolean
-            get() = isMarketingTelemetryEnabled || shouldShowMarketingOnboarding
+        /**
+         * Checks whether an eligible user has opted out of the sponsored top sites feature.
+         *
+         * This is not entirely self evident from the API descriptions, please note:
+         * [Settings.showContileFeature] indicates whether the sponsored shortcuts are shown.
+         * [Settings.showTopSitesFeature] indicates whether the feature should be shown at all.
+         */
+        private fun Settings.optedOutOfSponsoredTopSites() =
+            !showContileFeature || !showTopSitesFeature
 
-        private val Settings.hasSponsoredHomepageShortcuts: Boolean
-            get() = showTopSitesFeature || showContileFeature
+        private fun Settings.optedOutOfSponsoredStories(context: Context) =
+            isEligibleForStories(context) && (!showPocketSponsoredStories || !showPocketRecommendationsFeature)
 
-        private val Settings.hasStoriesOnHomepage: Boolean
-            get() = showPocketRecommendationsFeature || showPocketSponsoredStories
+        private fun isEligibleForStories(context: Context): Boolean =
+            ContentRecommendationsFeatureHelper.isContentRecommendationsFeatureEnabled(context)
 
         /**
          * Creates a RecordedNimbusContext instance for test purposes
@@ -235,7 +257,9 @@ class RecordedNimbusContext(
                 language = "en",
                 region = "US",
                 userAcceptedTou = true,
-                noShortcutsStoriesMkt = true,
+                noShortcutsOrStoriesOptOuts = true,
+                userClickedTouPromptLink = true,
+                userClickedTouPromptRemindMeLater = true,
             )
         }
     }

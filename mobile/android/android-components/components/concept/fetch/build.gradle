@@ -29,14 +29,14 @@ android {
 }
 
 dependencies {
-    testImplementation libs.kotlin.coroutines
-
-    testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
-    testImplementation libs.testing.mockwebserver
-    testImplementation libs.testing.coroutines
+    testImplementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')
+
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.mockwebserver
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

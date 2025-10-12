@@ -53,7 +53,7 @@ ChromeUtils.defineLazyGetter(lazy, "DownloadsLogger", () => {
     "resource://gre/modules/Console.sys.mjs"
   );
   let consoleOptions = {
-    maxLogLevelPref: "browser.download.loglevel",
+    maxLogLevelPref: "toolkit.download.loglevel",
     prefix: "Downloads",
   };
   return new ConsoleAPI(consoleOptions);
@@ -833,7 +833,7 @@ function DownloadsDataCtor({ isPrivate, isHistory, maxHistoryResults } = {}) {
     let list = await lazy.Downloads.getList(
       isPrivate ? lazy.Downloads.PRIVATE : lazy.Downloads.PUBLIC
     );
-    await list.addView(this);
+    list.addView(this);
     return list;
   })();
 }
@@ -1003,6 +1003,7 @@ DownloadsDataCtor.prototype = {
     // Show the panel in the most recent browser window, if present.
     let browserWin = lazy.BrowserWindowTracker.getTopWindow({
       private: this._isPrivate,
+      allowFromInactiveWorkspace: true,
     });
     if (!browserWin) {
       return;

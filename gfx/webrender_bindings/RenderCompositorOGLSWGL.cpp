@@ -274,8 +274,9 @@ bool RenderCompositorOGLSWGL::Resume() {
 bool RenderCompositorOGLSWGL::IsPaused() {
 #ifdef MOZ_WIDGET_ANDROID
   return mEGLSurface == EGL_NO_SURFACE;
-#endif
+#else
   return false;
+#endif
 }
 
 LayoutDeviceIntSize RenderCompositorOGLSWGL::GetBufferSize() {

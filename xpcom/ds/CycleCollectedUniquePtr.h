@@ -11,10 +11,23 @@
 #include "nsCycleCollectionContainerParticipant.h"
 
 namespace mozilla {
+
+namespace dom {
+
 template <typename T>
-inline void ImplCycleCollectionUnlink(mozilla::UniquePtr<T>& aField) {
+inline void ImplCycleCollectionUnlink(std::unique_ptr<T>& aField) {
   aField.reset();
 }
+template <typename T>
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    const std::unique_ptr<T>& aPtr, const char* aName, uint32_t aFlags = 0) {
+  if (aPtr) {
+    ImplCycleCollectionTraverse(aCallback, *aPtr, aName, aFlags);
+  }
+}
+
+}  // namespace dom
 
 template <typename Container, typename Callback,
           EnableCycleCollectionIf<Container, std::unique_ptr> = nullptr>

@@ -13,7 +13,6 @@
 
 #include "mozAutoDocUpdate.h"
 #include "mozilla/AsyncEventDispatcher.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/DirectionalityUtils.h"
@@ -105,22 +104,21 @@ void CharacterData::GetNodeValueInternal(nsAString& aNodeValue) {
   GetData(aNodeValue);
 }
 
-void CharacterData::SetNodeValueInternal(const nsAString& aNodeValue,
-                                         ErrorResult& aError) {
+void CharacterData::SetNodeValueInternal(
+    const nsAString& aNodeValue, ErrorResult& aError,
+    MutationEffectOnScript aMutationEffectOnScript) {
   aError = SetTextInternal(0, mBuffer.GetLength(), aNodeValue.BeginReading(),
-                           aNodeValue.Length(), true);
+                           aNodeValue.Length(), true, aMutationEffectOnScript);
 }
 
 //----------------------------------------------------------------------
 
 // Implementation of CharacterData
 
-void CharacterData::SetTextContentInternal(const nsAString& aTextContent,
-                                           nsIPrincipal* aSubjectPrincipal,
-                                           ErrorResult& aError) {
-  // Batch possible DOMSubtreeModified events.
-  mozAutoSubtreeModified subtree(OwnerDoc(), nullptr);
-  return SetNodeValueInternal(aTextContent, aError);
+void CharacterData::SetTextContentInternal(
+    const nsAString& aTextContent, nsIPrincipal* aSubjectPrincipal,
+    ErrorResult& aError, MutationEffectOnScript aMutationEffectOnScript) {
+  return SetNodeValueInternal(aTextContent, aError, aMutationEffectOnScript);
 }
 
 void CharacterData::GetData(nsAString& aData) const {
@@ -141,9 +139,11 @@ void CharacterData::GetData(nsAString& aData) const {
   }
 }
 
-void CharacterData::SetData(const nsAString& aData, ErrorResult& aRv) {
+void CharacterData::SetDataInternal(
+    const nsAString& aData, MutationEffectOnScript aMutationEffectOnScript,
+    ErrorResult& aRv) {
   nsresult rv = SetTextInternal(0, mBuffer.GetLength(), aData.BeginReading(),
-                                aData.Length(), true);
+                                aData.Length(), true, aMutationEffectOnScript);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
   }
@@ -177,31 +177,37 @@ void CharacterData::SubstringData(uint32_t aStart, uint32_t aCount,
 
 //----------------------------------------------------------------------
 
-void CharacterData::AppendData(const nsAString& aData, ErrorResult& aRv) {
-  InsertData(mBuffer.GetLength(), aData, aRv);
+void CharacterData::AppendDataInternal(
+    const nsAString& aData, MutationEffectOnScript aMutationEffectOnScript,
+    ErrorResult& aRv) {
+  InsertDataInternal(mBuffer.GetLength(), aData, aMutationEffectOnScript, aRv);
 }
 
-void CharacterData::InsertData(uint32_t aOffset, const nsAString& aData,
-                               ErrorResult& aRv) {
-  nsresult rv =
-      SetTextInternal(aOffset, 0, aData.BeginReading(), aData.Length(), true);
+void CharacterData::InsertDataInternal(
+    uint32_t aOffset, const nsAString& aData,
+    MutationEffectOnScript aMutationEffectOnScript, ErrorResult& aRv) {
+  nsresult rv = SetTextInternal(aOffset, 0, aData.BeginReading(),
+                                aData.Length(), true, aMutationEffectOnScript);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
   }
 }
 
-void CharacterData::DeleteData(uint32_t aOffset, uint32_t aCount,
-                               ErrorResult& aRv) {
-  nsresult rv = SetTextInternal(aOffset, aCount, nullptr, 0, true);
+void CharacterData::DeleteDataInternal(
+    uint32_t aOffset, uint32_t aCount,
+    MutationEffectOnScript aMutationEffectOnScript, ErrorResult& aRv) {
+  nsresult rv = SetTextInternal(aOffset, aCount, nullptr, 0, true,
+                                aMutationEffectOnScript);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
   }
 }
 
-void CharacterData::ReplaceData(uint32_t aOffset, uint32_t aCount,
-                                const nsAString& aData, ErrorResult& aRv) {
+void CharacterData::ReplaceDataInternal(
+    uint32_t aOffset, uint32_t aCount, const nsAString& aData,
+    MutationEffectOnScript aMutationEffectOnScript, ErrorResult& aRv) {
   nsresult rv = SetTextInternal(aOffset, aCount, aData.BeginReading(),
-                                aData.Length(), true);
+                                aData.Length(), true, aMutationEffectOnScript);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
   }
@@ -210,6 +216,7 @@ void CharacterData::ReplaceData(uint32_t aOffset, uint32_t aCount,
 nsresult CharacterData::SetTextInternal(
     uint32_t aOffset, uint32_t aCount, const char16_t* aBuffer,
     uint32_t aLength, bool aNotify,
+    MutationEffectOnScript aMutationEffectOnScript,
     CharacterDataChangeInfo::Details* aDetails) {
   MOZ_ASSERT(aBuffer || !aLength, "Null buffer passed to SetTextInternal!");
 
@@ -233,22 +240,10 @@ nsresult CharacterData::SetTextInternal(
   Document* document = GetComposedDoc();
   mozAutoDocUpdate updateBatch(document, aNotify);
 
-  bool haveMutationListeners =
-      aNotify && nsContentUtils::WantMutationEvents(
-                     this, NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED, this);
-
-  RefPtr<nsAtom> oldValue;
-  if (haveMutationListeners) {
-    oldValue = GetCurrentValueAtom();
-  }
-
   if (aNotify) {
-    CharacterDataChangeInfo info = {aOffset == textLength,
-                                    aOffset,
-                                    endOffset,
-                                    aLength,
-                                    MutationEffectOnScript::DropTrustWorthiness,
-                                    aDetails};
+    CharacterDataChangeInfo info = {
+        aOffset == textLength,   aOffset, endOffset, aLength,
+        aMutationEffectOnScript, aDetails};
     MutationObservers::NotifyCharacterDataWillChange(this, info);
   }
 
@@ -321,27 +316,10 @@ nsresult CharacterData::SetTextInternal(
 
   // Notify observers
   if (aNotify) {
-    CharacterDataChangeInfo info = {aOffset == textLength,
-                                    aOffset,
-                                    endOffset,
-                                    aLength,
-                                    MutationEffectOnScript::DropTrustWorthiness,
-                                    aDetails};
+    CharacterDataChangeInfo info = {
+        aOffset == textLength,   aOffset, endOffset, aLength,
+        aMutationEffectOnScript, aDetails};
     MutationObservers::NotifyCharacterDataChanged(this, info);
-
-    if (haveMutationListeners) {
-      InternalMutationEvent mutation(true, eLegacyCharacterDataModified);
-
-      mutation.mPrevAttrValue = oldValue;
-      if (aLength > 0) {
-        nsAutoString val;
-        mBuffer.AppendTo(val);
-        mutation.mNewAttrValue = NS_Atomize(val);
-      }
-
-      mozAutoSubtreeModified subtree(OwnerDoc(), this);
-      AsyncEventDispatcher::RunDOMEventWhenSafe(*this, mutation);
-    }
   }
 
   return NS_OK;
@@ -517,12 +495,14 @@ void CharacterData::UnbindFromTree(UnbindContext& aContext) {
 
 nsresult CharacterData::SetText(const char16_t* aBuffer, uint32_t aLength,
                                 bool aNotify) {
-  return SetTextInternal(0, mBuffer.GetLength(), aBuffer, aLength, aNotify);
+  return SetTextInternal(0, mBuffer.GetLength(), aBuffer, aLength, aNotify,
+                         MutationEffectOnScript::KeepTrustWorthiness);
 }
 
 nsresult CharacterData::AppendText(const char16_t* aBuffer, uint32_t aLength,
                                    bool aNotify) {
-  return SetTextInternal(mBuffer.GetLength(), 0, aBuffer, aLength, aNotify);
+  return SetTextInternal(mBuffer.GetLength(), 0, aBuffer, aLength, aNotify,
+                         MutationEffectOnScript::KeepTrustWorthiness);
 }
 
 bool CharacterData::TextIsOnlyWhitespace() {

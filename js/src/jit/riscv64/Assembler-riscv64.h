@@ -82,6 +82,16 @@ struct ScratchDoubleScope : public AutoFloatRegisterScope {
       : AutoFloatRegisterScope(masm, ScratchDoubleReg) {}
 };
 
+struct ScratchFloat32Scope2 : public AutoFloatRegisterScope {
+  explicit ScratchFloat32Scope2(MacroAssembler& masm)
+      : AutoFloatRegisterScope(masm, ScratchFloat32Reg2) {}
+};
+
+struct ScratchDoubleScope2 : public AutoFloatRegisterScope {
+  explicit ScratchDoubleScope2(MacroAssembler& masm)
+      : AutoFloatRegisterScope(masm, ScratchDoubleReg2) {}
+};
+
 struct ScratchRegisterScope : public AutoRegisterScope {
   explicit ScratchRegisterScope(MacroAssembler& masm)
       : AutoRegisterScope(masm, ScratchRegister) {}
@@ -131,10 +141,10 @@ class Assembler : public AssemblerShared,
 
  protected:
   using LabelOffset = int32_t;
-  using LabelCahe =
+  using LabelCache =
       HashMap<LabelOffset, BufferOffset, js::DefaultHasher<LabelOffset>,
               js::SystemAllocPolicy>;
-  LabelCahe label_cache_;
+  LabelCache label_cache_;
   void NoEnoughLabelCache() { enoughLabelCache_ = false; }
   CompactBufferWriter jumpRelocations_;
   CompactBufferWriter dataRelocations_;
@@ -362,9 +372,10 @@ class Assembler : public AssemblerShared,
   uint32_t next_link(Label* label, bool is_internal);
   static uint64_t target_address_at(Instruction* pos);
   static void set_target_value_at(Instruction* pc, uint64_t target);
-  void target_at_put(BufferOffset pos, BufferOffset target_pos,
+  // Returns true if the target was successfully assembled and spewed.
+  bool target_at_put(BufferOffset pos, BufferOffset target_pos,
                      bool trampoline = false);
-  virtual int32_t branch_offset_helper(Label* L, OffsetSize bits);
+  int32_t branch_offset_helper(Label* L, OffsetSize bits);
   int32_t branch_long_offset(Label* L);
 
   // Determines if Label is bound and near enough so that branch instruction
@@ -382,7 +393,7 @@ class Assembler : public AssemblerShared,
   virtual BufferOffset emit(Instr x) {
     MOZ_ASSERT(hasCreator());
     BufferOffset offset = m_buffer.putInt(x);
-#ifdef DEBUG
+#if defined(DEBUG) || defined(JS_JITSPEW)
     if (!oom()) {
       DEBUG_PRINTF(
           "0x%" PRIx64 "(%" PRIxPTR "):",
@@ -469,7 +480,16 @@ class Assembler : public AssemblerShared,
     return Assembler::ExtractLoad64Value(inst);
   }
 
-  static bool HasRoundInstruction(RoundingMode) { return false; }
+  static bool HasRoundInstruction(RoundingMode mode) {
+    switch (mode) {
+      case RoundingMode::Up:
+      case RoundingMode::Down:
+      case RoundingMode::NearestTiesToEven:
+      case RoundingMode::TowardsZero:
+        return true;
+    }
+    MOZ_CRASH("unexpected mode");
+  }
 
   void verifyHeapAccessDisassembly(uint32_t begin, uint32_t end,
                                    const Disassembler::HeapAccess& heapAccess) {
@@ -571,7 +591,7 @@ class UseScratchRegisterScope {
   Register Acquire();
   bool hasAvailable() const;
   void Include(const GeneralRegisterSet& list) {
-    *available_ = GeneralRegisterSet::Intersect(*available_, list);
+    *available_ = GeneralRegisterSet::Union(*available_, list);
   }
   void Exclude(const GeneralRegisterSet& list) {
     *available_ = GeneralRegisterSet::Subtract(*available_, list);

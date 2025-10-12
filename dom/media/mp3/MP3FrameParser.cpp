@@ -10,6 +10,7 @@
 
 #include <algorithm>
 
+#include "MediaDataDemuxer.h"
 #include "TimeUnits.h"
 #include "VideoUtils.h"
 #include "mozilla/Assertions.h"
@@ -18,7 +19,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Try.h"
 
-extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define MP3LOG(msg, ...) \
   MOZ_LOG(gMediaDemuxerLog, LogLevel::Debug, ("MP3Demuxer " msg, ##__VA_ARGS__))
 #define MP3LOGV(msg, ...)                      \

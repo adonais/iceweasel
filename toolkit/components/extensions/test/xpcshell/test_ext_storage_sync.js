@@ -30,3 +30,7 @@ add_task(async function test_bytes_in_use() {
 add_task(async function test_storage_onChanged_event_page() {
   await test_storage_change_event_page("sync");
 });
+
+add_task(async function test_storage_session_getBytesInUse() {
+  await test_get_bytes_in_use("sync");
+});

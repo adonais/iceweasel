@@ -374,21 +374,6 @@ NON_IDL_EVENT(MozMouseHittest, eMouseHitTest, EventNameType_None,
 NON_IDL_EVENT(MozMouseExploreByTouch, eMouseExploreByTouch, EventNameType_None,
               eMouseEventClass)
 
-NON_IDL_EVENT(DOMAttrModified, eLegacyAttrModified, EventNameType_HTMLXUL,
-              eMutationEventClass)
-NON_IDL_EVENT(DOMCharacterDataModified, eLegacyCharacterDataModified,
-              EventNameType_HTMLXUL, eMutationEventClass)
-NON_IDL_EVENT(DOMNodeInserted, eLegacyNodeInserted, EventNameType_HTMLXUL,
-              eMutationEventClass)
-NON_IDL_EVENT(DOMNodeRemoved, eLegacyNodeRemoved, EventNameType_HTMLXUL,
-              eMutationEventClass)
-NON_IDL_EVENT(DOMNodeInsertedIntoDocument, eLegacyNodeInsertedIntoDocument,
-              EventNameType_HTMLXUL, eMutationEventClass)
-NON_IDL_EVENT(DOMNodeRemovedFromDocument, eLegacyNodeRemovedFromDocument,
-              EventNameType_HTMLXUL, eMutationEventClass)
-NON_IDL_EVENT(DOMSubtreeModified, eLegacySubtreeModified, EventNameType_HTMLXUL,
-              eMutationEventClass)
-
 NON_IDL_EVENT(DOMActivate, eLegacyDOMActivate, EventNameType_HTMLXUL,
               eUIEventClass)
 NON_IDL_EVENT(DOMFocusIn, eLegacyDOMFocusIn, EventNameType_HTMLXUL,

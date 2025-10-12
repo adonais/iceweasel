@@ -301,8 +301,7 @@ void SVGRenderingObserver::NotifyEvictedFromRenderingObserverSet() {
 
 void SVGRenderingObserver::AttributeChanged(dom::Element* aElement,
                                             int32_t aNameSpaceID,
-                                            nsAtom* aAttribute,
-                                            int32_t aModType,
+                                            nsAtom* aAttribute, AttrModType,
                                             const nsAttrValue* aOldValue) {
   if (aElement->IsInNativeAnonymousSubtree()) {
     // Don't observe attribute changes in native-anonymous subtrees like
@@ -696,7 +695,7 @@ void SVGMarkerObserver::OnRenderingChange() {
   // Because mRect for SVG frames includes the bounds of any markers
   // (see the comment for nsIFrame::GetRect), the referencing frame must be
   // reflowed for any marker changes.
-  if (!frame->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
+  if (!SVGUtils::OuterSVGIsCallingReflowSVG(frame)) {
     // XXXjwatt: We need to unify SVG into standard reflow so we can just use
     // nsChangeHint_NeedReflow | nsChangeHint_NeedDirtyReflow here.
     // XXXSDL KILL THIS!!!

@@ -70,7 +70,6 @@ bool CheckContentProcessSecurity(ThreadsafeContentParentHandle* aParent,
 CookieStoreParent::CookieStoreParent() { AssertIsOnBackgroundThread(); }
 
 CookieStoreParent::~CookieStoreParent() {
-  AssertIsOnBackgroundThread();
   CookieStoreNotificationWatcher::ReleaseOnMainThread(
       mNotificationWatcherOnMainThread.forget());
 }

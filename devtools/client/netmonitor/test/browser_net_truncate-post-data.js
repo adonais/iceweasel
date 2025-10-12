@@ -3,11 +3,48 @@
 
 "use strict";
 
+// Get the default limit
+const defaultRequestBodyLimit = Services.prefs.getIntPref(
+  "devtools.netmonitor.requestBodyLimit"
+);
+
 /**
- * Bug 1542172 -
- * Verifies that requests with large post data are truncated and error is displayed.
+ * Bug 1986196 -
+ * Verifies that requests with large post data are not truncated if
+ * devtools.netmonitor.requestBodyLimit is 0.
  */
 add_task(async function () {
+  await pushPref("devtools.netmonitor.requestBodyLimit", 0);
+
+  await checkPostDataRequest(false);
+});
+
+/**
+ * Bug 1542172 -
+ * Verifies that requests with large post data which are over
+ * the limit are truncated and an error is displayed.
+ */
+add_task(async function () {
+  await pushPref("devtools.netmonitor.requestBodyLimit", 1000);
+
+  await checkPostDataRequest(true);
+});
+
+/**
+ * Bug 1542172 -
+ * Verifies that requests with large post data which are within the limit
+ * are not truncated and no error is displayed.
+ */
+add_task(async function () {
+  // Set a limit over the size of the post data which is 2 * defaultRequestBodyLimit
+  await pushPref(
+    "devtools.netmonitor.requestBodyLimit",
+    defaultRequestBodyLimit * 3
+  );
+  await checkPostDataRequest(false);
+});
+
+async function checkPostDataRequest(expectErrorDisplay) {
   const { monitor, tab } = await initNetMonitor(POST_JSON_URL, {
     requestCount: 1,
   });
@@ -45,15 +82,17 @@ add_task(async function () {
 
   const tabpanel = document.querySelector("#request-panel");
   is(
-    tabpanel.querySelector(".request-error-header") === null,
-    false,
+    !!tabpanel.querySelector(".request-error-header"),
+    expectErrorDisplay,
     "The request error header doesn't have the intended visibility."
   );
-  is(
-    tabpanel.querySelector(".request-error-header").textContent,
-    "Request has been truncated",
-    "The error message shown is incorrect"
-  );
+  if (expectErrorDisplay) {
+    is(
+      tabpanel.querySelector(".request-error-header").textContent,
+      "Request has been truncated",
+      "The error message shown is incorrect"
+    );
+  }
   const jsonView = tabpanel.querySelector(".data-label") || {};
   is(
     jsonView.textContent === L10N.getStr("jsonScopeName"),
@@ -66,8 +105,12 @@ add_task(async function () {
     "The Request Payload has the intended visibility."
   );
 
+  await pushPref(
+    "devtools.netmonitor.requestBodyLimit",
+    defaultRequestBodyLimit
+  );
   return teardown(monitor);
-});
+}
 
 async function performRequestsAndWait(monitor, tab) {
   const wait = waitForNetworkEvents(monitor, 1);

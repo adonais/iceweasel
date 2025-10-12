@@ -27,6 +27,7 @@ import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction.PositivePrePrompt
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction.RateButtonClicked
 import org.mozilla.fenix.reviewprompt.ui.CustomReviewPrompt
 import org.mozilla.fenix.theme.FirefoxTheme
+import com.google.android.material.R as materialR
 
 /** A bottom sheet fragment for displaying [CustomReviewPrompt]. */
 class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
@@ -43,7 +44,7 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return super.onCreateDialog(savedInstanceState).apply {
             setOnShowListener {
-                val bottomSheet = findViewById<View?>(R.id.design_bottom_sheet)
+                val bottomSheet = findViewById<View?>(materialR.id.design_bottom_sheet)
                 bottomSheet?.setBackgroundResource(android.R.color.transparent)
             }
         }

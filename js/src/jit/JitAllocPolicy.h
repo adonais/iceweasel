@@ -10,8 +10,8 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
+#include "mozilla/MulOverflowMask.h"
 #include "mozilla/OperatorNewExtensions.h"
-#include "mozilla/TemplateLib.h"
 
 #include <algorithm>
 #include <stddef.h>
@@ -103,7 +103,7 @@ class JitAllocPolicy {
     if (MOZ_UNLIKELY(!n)) {
       return n;
     }
-    MOZ_ASSERT(!(oldSize & mozilla::tl::MulOverflowMask<sizeof(T)>::value));
+    MOZ_ASSERT(!(oldSize & mozilla::MulOverflowMask<sizeof(T)>()));
     memcpy(n, p, std::min(oldSize * sizeof(T), newSize * sizeof(T)));
     return n;
   }

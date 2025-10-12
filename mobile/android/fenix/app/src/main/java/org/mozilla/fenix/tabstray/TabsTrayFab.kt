@@ -14,10 +14,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.button.FloatingActionButton
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Floating action button for tabs tray.
@@ -53,7 +54,7 @@ fun TabsTrayFab(
 
     when (currentPage) {
         Page.NormalTabs -> {
-            icon = painterResource(id = R.drawable.ic_new)
+            icon = painterResource(id = iconsR.drawable.mozac_ic_plus_24)
             contentDescription = stringResource(id = R.string.add_tab)
             label = null
             onClick = onNormalTabsFabClicked
@@ -71,7 +72,7 @@ fun TabsTrayFab(
         }
 
         Page.PrivateTabs -> {
-            icon = painterResource(id = R.drawable.ic_new)
+            icon = painterResource(id = iconsR.drawable.mozac_ic_plus_24)
             contentDescription = stringResource(id = R.string.add_private_tab)
             label = stringResource(id = R.string.tab_drawer_fab_content).uppercase()
             onClick = onPrivateTabsFabClicked

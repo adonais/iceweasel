@@ -115,17 +115,34 @@ add_task(async function test_tabInteractionsBasic() {
   let initialTab = window.gBrowser.tabs[0];
   await resetTelemetry();
 
-  let tab = BrowserTestUtils.addTab(window.gBrowser, "https://example.com");
-  let group = window.gBrowser.addTabGroup([tab]);
+  let groupedTab = BrowserTestUtils.addTab(
+    window.gBrowser,
+    "https://example.com"
+  );
+  let group = window.gBrowser.addTabGroup([groupedTab]);
+  group.collapsed = true;
 
   info(
-    "Test that selecting a tab in a group records tab_interactions.activate"
+    "Test that selecting a tab in a collapsed group records tab_interactions.activate_collapsed"
   );
-  await assertMetricEmpty("activate");
-  const tabSelectEvent = BrowserTestUtils.waitForEvent(window, "TabSelect");
-  window.gBrowser.selectTabAtIndex(1);
+  await assertMetricEmpty("activate_collapsed");
+  let tabSelectEvent = BrowserTestUtils.waitForEvent(window, "TabSelect");
+  gBrowser.selectedTab = groupedTab;
   await tabSelectEvent;
-  await assertMetricFoundFor("activate");
+  await assertMetricFoundFor("activate_collapsed");
+
+  info(
+    "Test that selecting a tab in an expanded group records tab_interactions.activate_expanded"
+  );
+  tabSelectEvent = BrowserTestUtils.waitForEvent(window, "TabSelect");
+  gBrowser.selectedTab = initialTab;
+  await tabSelectEvent;
+  group.collapsed = false;
+  await assertMetricEmpty("activate_expanded");
+  tabSelectEvent = BrowserTestUtils.waitForEvent(window, "TabSelect");
+  gBrowser.selectedTab = groupedTab;
+  await tabSelectEvent;
+  await assertMetricFoundFor("activate_expanded");
 
   info(
     "Test that moving an existing tab into a tab group records tab_interactions.add"

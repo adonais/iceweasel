@@ -88,6 +88,14 @@ newtab-confirm-delete-history-p2 = Questa acziun na po betg vegnir revocada.
 
 newtab-topsite-sponsored = Sponsurisà
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (fixà)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -311,19 +319,32 @@ newtab-custom-pocket-subtitle = Cuntegn excepziunal, tschernì da { -pocket-bran
 newtab-custom-stories-toggle =
     .label = Istorgias recumandadas
     .description = Cuntegn excepziunal curà da { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Artitgels
+newtab-custom-stories-personalized-checkbox-label = Artitgels persunalisads a basa da tia activitad
 newtab-custom-pocket-sponsored = Artitgels sponsurads
 newtab-custom-pocket-show-recent-saves = Mussar ils elements memorisads dacurt
 newtab-custom-recent-title = Activitad recenta
 newtab-custom-recent-subtitle = Ina selecziun da websites e cuntegn visità dacurt
-newtab-custom-recent-toggle =
-    .label = Activitad recenta
-    .description = Ina selecziun da websites e cuntegn visità dacurt
 newtab-custom-weather-toggle =
     .label = Aura
     .description = La previsiun da l’aura actuala en in’egliada
 newtab-custom-trending-search-toggle =
     .label = Tschertgas frequentas
     .description = Temas populars tschertgads frequentamain
+newtab-custom-widget-weather-toggle =
+    .label = Aura
+newtab-custom-widget-trending-search-toggle =
+    .label = Tschertgas frequentas
+newtab-custom-widget-lists-toggle =
+    .label = Glistas
+newtab-custom-widget-timer-toggle =
+    .label = Svegliarin
+newtab-custom-widget-section-title = Widgets
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Serrar
+    .aria-label = Serrar il menu
 newtab-custom-close-button = Serrar
 newtab-custom-settings = Administrar ulteriurs parameters
 
@@ -336,6 +357,7 @@ newtab-wallpaper-custom-color = Tscherner ina colur
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Il maletg surpassa la grondezza maximala permessa da { $file_size } MB. Emprova per plaschair da transferir ina datoteca pli pitschna.
+newtab-wallpaper-error-upload-file-type = I n’è betg reussì da transferir tia datoteca. Emprova per plaschair anc ina giada cun ina datoteca grafica.
 newtab-wallpaper-error-file-type = I n’è betg reussì da transferir tia datoteca. Emprova per plaschair anc ina giada cun in auter tip da datoteca.
 newtab-wallpaper-light-red-panda = Panda cotschen
 newtab-wallpaper-light-mountain = Muntogna alva
@@ -441,7 +463,6 @@ newtab-weather-menu-change-location = Midar la posiziun
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Tschertgar in lieu
     .aria-label = Tschertgar in lieu
-newtab-weather-change-location-search-input = Tschertgar in lieu
 newtab-weather-menu-weather-display = Visualisaziun da l’aura
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -542,6 +563,12 @@ newtab-custom-wallpaper-title = Ussa pos ti utilisar funds davos persunalisads
 newtab-custom-wallpaper-subtitle = Transferescha tes agen maletg per il fund davos u tscherna ina colur tenor giavisch per persunalisar tes { -brand-product-name }.
 newtab-custom-wallpaper-cta = Empruvar
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Tscherna in maletg dal fund davos per persunalisar { -brand-product-name }
+newtab-new-user-custom-wallpaper-subtitle = Persunalisescha novs tabs cun tscherner tes agen maletg dal fund davos ed atgnas colurs.
+newtab-new-user-custom-wallpaper-cta = Ussa empruvar
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Telechargia { -brand-product-name } per apparats mobils
@@ -555,6 +582,7 @@ newtab-download-mobile-highlight-image =
 ## Strings for shortcuts highlight
 
 newtab-shortcuts-highlight-title = Tes favurits adina per mauns
+newtab-shortcuts-highlight-subtitle = Agiuntescha ina nova scursanida per acceder a tias websites preferidas cun in singul clic.
 
 ## Strings for reporting ads and content
 
@@ -576,3 +604,89 @@ newtab-report-content-spam-misleading =
     .label = Spam u engianus
 newtab-report-cancel = Interrumper
 newtab-report-submit = Trametter
+newtab-toast-thanks-for-reporting =
+    .message = Grazia per l’annunzia.
+
+## Strings for trending searches
+
+newtab-trending-searches-show-trending =
+    .title = Mussar tschertgas frequentas
+newtab-trending-searches-hide-trending =
+    .title = Zuppentar tschertas frequentas
+newtab-trending-searches-learn-more = Ulteriuras infurmaziuns
+newtab-trending-searches-dismiss = Zuppentar tschertgas frequentas
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Tschertgas frequentas
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Las pussaivladads èn infinitas. Agiuntescha anc ina.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nov
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Cumplettadas ({ $number })
+newtab-widget-task-list-menu-copy = Copiar
+newtab-widget-lists-menu-edit = Modifitgar il num da la glista
+newtab-widget-lists-menu-create = Crear ina nova glista
+newtab-widget-lists-menu-delete = Stizzar questa glista
+newtab-widget-lists-menu-copy = Copiar la glista en l’archiv provisoric
+newtab-widget-lists-menu-hide = Zuppentar tut las glistas
+newtab-widget-lists-menu-learn-more = Ulteriuras infurmaziuns
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Agiuntar in element
+newtab-widget-lists-input-error = Endatescha per plaschair text per agiuntar in element.
+newtab-widget-lists-input-menu-open-link = Avrir la colliaziun
+newtab-widget-lists-input-menu-move-up = Spustar ensi
+newtab-widget-lists-input-menu-move-down = Spustar engiu
+newtab-widget-lists-input-menu-delete = Stizzar
+newtab-widget-lists-input-menu-edit = Modifitgar
+newtab-widget-lists-name-label-default =
+    .label = Glista d’incumbensas
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Glista d’incumbensas
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Nova glista
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Svegliarin
+newtab-widget-timer-notification-focus = L’interval da concentraziun è a fin. Buna lavur. Dovras ina pausa?
+newtab-widget-timer-notification-break = Tia pausa è a fin. Pront per ta concentrar?
+newtab-widget-timer-notification-warning = Notificaziuns èn deactivadas
+newtab-widget-timer-mode-focus =
+    .label = Concentraziun
+newtab-widget-timer-mode-break =
+    .label = Pausa
+newtab-widget-timer-play =
+    .title = Far ir
+newtab-widget-timer-pause =
+    .title = Pausa
+newtab-widget-timer-label-play =
+    .label = Far ir
+newtab-widget-timer-label-pause =
+    .label = Pausa
+newtab-widget-timer-reset =
+    .title = Reinizialisar
+newtab-widget-timer-menu-notifications = Deactivar las notificaziuns
+newtab-widget-timer-menu-notifications-on = Activar las notificaziuns
+newtab-widget-timer-menu-hide = Zuppentar il svegliarin
+newtab-widget-timer-menu-learn-more = Ulteriuras infurmaziuns
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Fa defilar per dapli infurmaziuns
+newtab-widget-message-title = Mantegna la concentraziun cun agid da glistas ed in svegliarin integrà
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Cun agid da promemorias ed incumbensas quotidianas, intervals da concentraziun e pausas per relaxar – na perda ni il fil ni il temp.
+newtab-promo-card-title = Sustegnair { -brand-product-name }
+newtab-promo-card-body = Noss sponsurs sustegnan noss engaschi per crear in meglier web
+newtab-promo-card-cta = Ulteriuras infurmaziuns
+newtab-promo-card-dismiss-button =
+    .title = Serrar
+    .aria-label = Serrar

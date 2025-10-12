@@ -1289,8 +1289,9 @@ static already_AddRefed<DataSourceSurface> ApplyMorphology(
     if (MOZ2D_WARN_IF(!sourceMap.IsMapped() || !tmpMap.IsMapped())) {
       return nullptr;
     }
-    uint8_t* sourceData = DataAtOffset(aInput, sourceMap.GetMappedSurface(),
-                                       destRect.TopLeft() - srcRect.TopLeft());
+    const uint8_t* sourceData =
+        DataAtOffset(aInput, sourceMap.GetMappedSurface(),
+                     destRect.TopLeft() - srcRect.TopLeft());
     uint8_t* tmpData = DataAtOffset(tmp, tmpMap.GetMappedSurface(),
                                     destRect.TopLeft() - tmpRect.TopLeft());
 
@@ -1315,8 +1316,8 @@ static already_AddRefed<DataSourceSurface> ApplyMorphology(
       return nullptr;
     }
     int32_t tmpStride = tmpMap.GetStride();
-    uint8_t* tmpData = DataAtOffset(tmp, tmpMap.GetMappedSurface(),
-                                    destRect.TopLeft() - tmpRect.TopLeft());
+    const uint8_t* tmpData = DataAtOffset(
+        tmp, tmpMap.GetMappedSurface(), destRect.TopLeft() - tmpRect.TopLeft());
 
     int32_t destStride = destMap.GetStride();
     uint8_t* destData = destMap.GetData();
@@ -1412,7 +1413,7 @@ static already_AddRefed<DataSourceSurface> Premultiply(
     return nullptr;
   }
 
-  uint8_t* inputData = inputMap.GetData();
+  const uint8_t* inputData = inputMap.GetData();
   int32_t inputStride = inputMap.GetStride();
   uint8_t* targetData = targetMap.GetData();
   int32_t targetStride = targetMap.GetStride();

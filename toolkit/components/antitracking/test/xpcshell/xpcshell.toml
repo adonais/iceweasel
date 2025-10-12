@@ -48,6 +48,8 @@ skip-if = ["os == 'android'"] # Bug 1697936
 
 ["test_url_classifier_allow_list_category_pref_migration.js"]
 
+["test_user_interaction_pref.js"]
+
 ["test_validate_strip_on_share_list.js"]
 
 ["test_view_source.js"]

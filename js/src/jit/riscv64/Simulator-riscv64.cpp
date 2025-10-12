@@ -35,6 +35,7 @@
 #  include "mozilla/Likely.h"
 #  include "mozilla/MathAlgorithms.h"
 
+#  include <cinttypes>
 #  include <float.h>
 #  include <iostream>
 #  include <limits>
@@ -1557,7 +1558,7 @@ bool Simulator::overRecursedWithExtra(uint32_t extra) const {
 
 // Unsupported instructions use format to print an error and stop execution.
 void Simulator::format(SimInstruction* instr, const char* format) {
-  printf("Simulator found unsupported instruction:\n 0x%016lx: %s\n",
+  printf("Simulator found unsupported instruction:\n 0x%016" PRIxPTR ": %s\n",
          reinterpret_cast<intptr_t>(instr), format);
   MOZ_CRASH();
 }
@@ -1617,11 +1618,11 @@ void Simulator::SoftwareInterrupt() {
       single_step_callback_(single_step_callback_arg_, this, nullptr);
     }
     if (FLAG_trace_sim) {
-      printf(
-          "Call to host function at %p with args %ld, %ld, %ld, %ld, %ld, %ld, "
-          "%ld, %ld\n",
-          reinterpret_cast<void*>(external), arg0, arg1, arg2, arg3, arg4, arg5,
-          arg6, arg7);
+      printf("Call to host function at %p with args %" PRIdPTR ", %" PRIdPTR
+             ", %" PRIdPTR ", %" PRIdPTR ", %" PRIdPTR ", %" PRIdPTR
+             ", %" PRIdPTR ", %" PRIdPTR "\n",
+             reinterpret_cast<void*>(external), arg0, arg1, arg2, arg3, arg4,
+             arg5, arg6, arg7);
     }
     switch (redirection->type()) {
       ABI_FUNCTION_TYPE_RISCV64_SIM_DISPATCH

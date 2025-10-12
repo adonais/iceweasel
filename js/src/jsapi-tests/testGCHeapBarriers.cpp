@@ -30,10 +30,10 @@ static js::gc::CellColor GetColor(const JS::ArrayBufferOrView& view) {
   return view.asObjectUnbarriered()->color();
 }
 
-static MOZ_MAYBE_UNUSED bool IsInsideNursery(gc::Cell* cell) {
+[[maybe_unused]] static bool IsInsideNursery(gc::Cell* cell) {
   return !cell->isTenured();
 }
-static MOZ_MAYBE_UNUSED bool IsInsideNursery(
+[[maybe_unused]] static bool IsInsideNursery(
     const JS::ArrayBufferOrView& view) {
   return IsInsideNursery(view.asObjectUnbarriered());
 }

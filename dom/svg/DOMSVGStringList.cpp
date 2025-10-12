@@ -60,7 +60,7 @@ class MOZ_RAII AutoChangeStringListNotifier : public mozAutoDocUpdate {
       : mozAutoDocUpdate(aStringList->mElement->GetComposedDoc(), true),
         mStringList(aStringList) {
     MOZ_ASSERT(mStringList, "Expecting non-null stringList");
-    mEmptyOrOldValue = mStringList->mElement->WillChangeStringList(
+    mStringList->mElement->WillChangeStringList(
         mStringList->mIsConditionalProcessingAttribute, mStringList->mAttrEnum,
         *this);
   }
@@ -68,12 +68,11 @@ class MOZ_RAII AutoChangeStringListNotifier : public mozAutoDocUpdate {
   ~AutoChangeStringListNotifier() {
     mStringList->mElement->DidChangeStringList(
         mStringList->mIsConditionalProcessingAttribute, mStringList->mAttrEnum,
-        mEmptyOrOldValue, *this);
+        *this);
   }
 
  private:
   DOMSVGStringList* const mStringList;
-  nsAttrValue mEmptyOrOldValue;
 };
 
 /* static */

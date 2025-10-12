@@ -49,7 +49,7 @@ const EXPECTED_PREFS_BY_REGION = {
   US: {
     "quicksuggest.enabled": true,
     "quicksuggest.dataCollection.enabled": false,
-    "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.FULL,
+    "quicksuggest.settingsUi": QuickSuggest.SETTINGS_UI.OFFLINE_ONLY,
     "suggest.quicksuggest.nonsponsored": true,
     "suggest.quicksuggest.sponsored": true,
     "addons.featureGate": true,

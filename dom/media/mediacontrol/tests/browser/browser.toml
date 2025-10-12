@@ -47,6 +47,7 @@ skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bu
 ["browser_media_control_metadata.js"]
 
 ["browser_media_control_non_eligible_media.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan"] # Bug 1673527
 
 ["browser_media_control_playback_state.js"]
 

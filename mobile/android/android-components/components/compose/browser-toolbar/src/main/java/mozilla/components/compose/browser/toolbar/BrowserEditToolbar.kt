@@ -51,7 +51,9 @@ private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(90.dp)
  * URL ("edit mode").
  *
  * @param query The current query.
+ * @param hint Hint to show in the absence of a query.
  * @param isQueryPrefilled Whether [query] is prefilled and not user entered.
+ * @param usePrivateModeQueries Whether queries should be done in private / incognito mode.
  * @param gravity [ToolbarGravity] for where the toolbar is being placed on the screen.
  * @param autocompleteProviders Optional list of [AutocompleteProvider]s to be used for
  * inline autocompleting the current query.
@@ -75,6 +77,7 @@ fun BrowserEditToolbar(
     query: String,
     hint: String,
     isQueryPrefilled: Boolean = false,
+    usePrivateModeQueries: Boolean = false,
     gravity: ToolbarGravity = Top,
     autocompleteProviders: List<AutocompleteProvider> = emptyList(),
     useComposeTextField: Boolean = false,
@@ -160,6 +163,7 @@ fun BrowserEditToolbar(
                     query = query,
                     hint = hint,
                     showQueryAsPreselected = isQueryPrefilled,
+                    usePrivateModeQueries = usePrivateModeQueries,
                     autocompleteProviders = autocompleteProviders,
                     modifier = Modifier.weight(1f),
                     onUrlEdit = onUrlEdit,

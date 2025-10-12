@@ -5,10 +5,11 @@
 <script>
   SimpleTest.waitForExplicitFinish();
 
+  // eslint-disable-next-line no-unused-vars
   async function testLoaded() {
     await import("./import_circular.mjs").then(() => {
       ok(false, "Should have thrown a error");
-    }).catch((error) => {
+    }).catch((_error) => {
       ok(true, "Error has been thrown");
     }).finally(() => {
       SimpleTest.finish();

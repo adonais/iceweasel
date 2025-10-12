@@ -43,7 +43,7 @@ class SearchShortcutsFragment : Fragment(R.layout.fragment_search_shortcuts) {
 
         binding.root.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         binding.root.setContent {
-            FirefoxTheme(theme = Theme.getTheme(allowPrivateTheme = false)) {
+            FirefoxTheme(theme = Theme.getTheme(allowPrivateTheme = true)) {
                 SearchEngineShortcuts(
                     getString(R.string.preferences_category_engines_in_search_menu),
                     requireComponents.core.store,

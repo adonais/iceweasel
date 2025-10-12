@@ -80,6 +80,18 @@
           "description": "Should the infobar include an X dismiss button, defaults to true",
           "type": "boolean"
         },
+        "dismissOnPrefChange": {
+          "description": "If set, one or more prefs to observe. The infobar will automatically dismiss when any of these prefs is set for the first time or when its value changes.",
+          "oneOf": [
+            { "type": "string" },
+            {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          ]
+        },
         "impression_action": {
           "oneOf": [
             { "$ref": "#/$defs/impressionActionItem" },
@@ -104,6 +116,12 @@
               "additionalProperties": false
             }
           ]
+        },
+        "canReplace": {
+          "description": "IDs of other infobar messages this infobar may replace",
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
         },
         "buttons": {
           "type": "array",
@@ -166,7 +184,11 @@
                 "type": "string",
                 "description": "SpecialMessageActions action type"
               },
-              "data": { "type": "object" }
+              "data": { "type": "object" },
+              "dismiss": {
+                "type": "boolean",
+                "description": "If true, dismiss the infobar after handling this link’s action. Defaults to false."
+              }
             },
             "required": ["type"]
           }

@@ -509,7 +509,7 @@ nsresult DeferredDNSPrefetches::Add(nsIDNSService::DNSFlags flags,
     mTimerArmed = true;
     mTimer->InitWithNamedFuncCallback(
         Tick, this, 2000, nsITimer::TYPE_ONE_SHOT,
-        "HTMLDNSPrefetch::DeferredDNSPrefetches::Tick");
+        "HTMLDNSPrefetch::DeferredDNSPrefetches::Tick"_ns);
   }
 
   return NS_OK;

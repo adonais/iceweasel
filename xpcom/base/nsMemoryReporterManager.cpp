@@ -2001,7 +2001,7 @@ nsresult nsMemoryReporterManager::StartGettingReports() {
     rv = NS_NewTimerWithFuncCallback(
         getter_AddRefs(timer), TimeoutCallback, this, kTimeoutLengthMS,
         nsITimer::TYPE_ONE_SHOT,
-        "nsMemoryReporterManager::StartGettingReports");
+        "nsMemoryReporterManager::StartGettingReports"_ns);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       FinishReporting();
       return rv;

@@ -308,6 +308,9 @@ this.storage = class extends ExtensionAPIPersistent {
             get(spec) {
               return ExtensionStorage.get(extension.id, spec);
             },
+            getBytesInUse(keys) {
+              return ExtensionStorage.getBytesInUse(extension.id, keys);
+            },
             getKeys() {
               return ExtensionStorage.getKeys(extension.id);
             },
@@ -410,6 +413,12 @@ this.storage = class extends ExtensionAPIPersistent {
             enforceNoTemporaryAddon(extension.id);
             let data = await getManagedStorageManifestData(extension, context);
             return ExtensionStorage._filterProperties(extension.id, data, keys);
+          },
+          async getBytesInUse() {
+            enforceNoTemporaryAddon(extension.id);
+            // Always returns 0 for consistency with other browsers. For details
+            // see https://bugzilla.mozilla.org/show_bug.cgi?id=1385832#c27
+            return 0;
           },
           async getKeys() {
             enforceNoTemporaryAddon(extension.id);

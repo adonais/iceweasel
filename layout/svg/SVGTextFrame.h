@@ -203,7 +203,7 @@ class SVGTextFrame final : public SVGDisplayContainerFrame {
   void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
   nsresult AttributeChanged(int32_t aNamespaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   nsContainerFrame* GetContentInsertionFrame() override {
     return PrincipalChildList().FirstChild()->GetContentInsertionFrame();

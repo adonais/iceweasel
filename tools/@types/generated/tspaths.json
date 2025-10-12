@@ -83,6 +83,9 @@
       "chrome://browser/content/ipprotection/ipprotection-header.mjs": [
         "browser/components/ipprotection/content/ipprotection-header.mjs"
       ],
+      "chrome://browser/content/ipprotection/ipprotection-message-bar.mjs": [
+        "browser/components/ipprotection/content/ipprotection-message-bar.mjs"
+      ],
       "chrome://browser/content/ipprotection/ipprotection-signedout.mjs": [
         "browser/components/ipprotection/content/ipprotection-signedout.mjs"
       ],
@@ -97,6 +100,9 @@
       ],
       "chrome://browser/content/preferences/widgets/dialog-button.mjs": [
         "browser/components/preferences/widgets/dialog-button/dialog-button.mjs"
+      ],
+      "chrome://browser/content/preferences/widgets/nav-notice.mjs": [
+        "browser/components/preferences/widgets/nav-notice/nav-notice.mjs"
       ],
       "chrome://browser/content/preferences/widgets/setting-control.mjs": [
         "browser/components/preferences/widgets/setting-control/setting-control.mjs"
@@ -136,9 +142,6 @@
       ],
       "chrome://browser/content/tabbrowser/tab-hover-preview.mjs": [
         "browser/components/tabbrowser/content/tab-hover-preview.mjs"
-      ],
-      "chrome://browser/content/tabbrowser/tabgroup-hover-preview.mjs": [
-        "browser/components/tabbrowser/content/tabgroup-hover-preview.mjs"
       ],
       "chrome://browser/content/translations/TranslationsPanelShared.sys.mjs": [
         "browser/components/translations/content/TranslationsPanelShared.sys.mjs"
@@ -1304,6 +1307,12 @@
       "resource:///modules/firefox-view-tabs-setup-manager.sys.mjs": [
         "browser/components/firefoxview/firefox-view-tabs-setup-manager.sys.mjs"
       ],
+      "resource:///modules/ipprotection/GuardianClient.sys.mjs": [
+        "browser/components/ipprotection/GuardianClient.sys.mjs"
+      ],
+      "resource:///modules/ipprotection/IPPChannelFilter.sys.mjs": [
+        "browser/components/ipprotection/IPPChannelFilter.sys.mjs"
+      ],
       "resource:///modules/ipprotection/IPProtection.sys.mjs": [
         "browser/components/ipprotection/IPProtection.sys.mjs"
       ],
@@ -1456,6 +1465,9 @@
       ],
       "resource:///modules/urlbar/private/MLSuggest.sys.mjs": [
         "browser/components/urlbar/private/MLSuggest.sys.mjs"
+      ],
+      "resource:///modules/urlbar/private/RealtimeSuggestProvider.sys.mjs": [
+        "browser/components/urlbar/private/RealtimeSuggestProvider.sys.mjs"
       ],
       "resource:///modules/urlbar/private/SuggestBackendRust.sys.mjs": [
         "browser/components/urlbar/private/SuggestBackendRust.sys.mjs"
@@ -6533,6 +6545,9 @@
       "resource://newtab/common/Reducers.sys.mjs": [
         "browser/extensions/newtab/common/Reducers.sys.mjs"
       ],
+      "resource://newtab/data/content/activity-stream.bundle.js": [
+        "browser/extensions/newtab/data/content/activity-stream.bundle.js"
+      ],
       "resource://newtab/lib/AboutPreferences.sys.mjs": [
         "browser/extensions/newtab/lib/AboutPreferences.sys.mjs"
       ],
@@ -6874,12 +6889,6 @@
       ],
       "resource://services-common/uptake-telemetry.sys.mjs": [
         "services/common/uptake-telemetry.sys.mjs"
-      ],
-      "resource://services-crypto/WeaveCrypto.sys.mjs": [
-        "services/crypto/modules/WeaveCrypto.sys.mjs"
-      ],
-      "resource://services-crypto/jwcrypto.sys.mjs": [
-        "services/crypto/modules/jwcrypto.sys.mjs"
       ],
       "resource://services-settings/Attachments.sys.mjs": [
         "services/settings/Attachments.sys.mjs"
@@ -7495,9 +7504,6 @@
       ],
       "resource://services-common/utils.sys.mjs": [
         "services/common/utils.sys.mjs"
-      ],
-      "resource://services-crypto/utils.sys.mjs": [
-        "services/crypto/modules/utils.sys.mjs"
       ],
       "resource://services-settings/Utils.sys.mjs": [
         "services/settings/Utils.sys.mjs"

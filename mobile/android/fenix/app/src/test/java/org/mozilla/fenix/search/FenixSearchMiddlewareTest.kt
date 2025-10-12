@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.search
 
-import android.os.Handler
 import android.os.Looper
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.navigation.NavController
@@ -15,9 +14,6 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.android.asCoroutineDispatcher
-import kotlinx.coroutines.test.setMain
 import mozilla.components.browser.state.action.AwesomeBarAction
 import mozilla.components.browser.state.action.AwesomeBarAction.EngagementFinished
 import mozilla.components.browser.state.action.BrowserAction
@@ -27,7 +23,8 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction
+import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.PrivateModeUpdated
+import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchQueryUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
@@ -95,7 +92,9 @@ class FenixSearchMiddlewareTest {
         every { speculativeCreateSession(any(), any()) } just Runs
     }
     private val fenixBrowserUseCasesMock: FenixBrowserUseCases = mockk(relaxed = true)
-    private val browsingModeManager: BrowsingModeManager = mockk(relaxed = true)
+    private val browsingModeManager: BrowsingModeManager = mockk(relaxed = true) {
+        every { mode } returns BrowsingMode.Normal
+    }
     private val useCases: UseCases = mockk {
         every { fenixBrowserUseCases } returns fenixBrowserUseCasesMock
         every { tabsUseCases } returns mockk()
@@ -126,7 +125,8 @@ class FenixSearchMiddlewareTest {
     }
 
     @Test
-    fun `WHEN search is started THEN warmup http engine and configure search providers`() {
+    fun `WHEN search is started THEN update private mode, warmup http engine and configure search providers`() {
+        every { browsingModeManager.mode } returns BrowsingMode.Private
         val defaultSearchEngine = fakeSearchEnginesState().selectedOrDefaultSearchEngine
         val preselectedSearchEngine = SearchEngine("engine-a", "Engine A", mockk(), type = SearchEngine.Type.BUNDLED)
         val wasEngineSelectedByUser = false
@@ -140,6 +140,7 @@ class FenixSearchMiddlewareTest {
 
         store.dispatch(SearchStarted(preselectedSearchEngine, wasEngineSelectedByUser, isSearchInPrivateMode, false))
 
+        verify { toolbarStore.dispatch(PrivateModeUpdated(true)) }
         verify { engine.speculativeCreateSession(isSearchInPrivateMode) }
         assertEquals(expectedSearchSuggestionsProvider, middleware.suggestionsProvidersBuilder)
         assertEquals(expectedSuggestionProviders.toList(), store.state.searchSuggestionsProviders.toList())
@@ -446,7 +447,6 @@ class FenixSearchMiddlewareTest {
 
     @Test
     fun `WHEN the user selects a specific search engine THEN update the search engine to be used for future searches and record telemetry`() {
-        Dispatchers.setMain(Handler(Looper.getMainLooper()).asCoroutineDispatcher())
         val defaultSearchEngine = fakeSearchEnginesState().selectedOrDefaultSearchEngine
         val searchEngineClicked = SearchEngine(
             id = BOOKMARKS_SEARCH_ENGINE_ID,
@@ -497,7 +497,7 @@ class FenixSearchMiddlewareTest {
         store.dispatch(SuggestionClicked(clickedSuggestion))
 
         assertTrue(wasSuggestionClickHandled)
-        verify { toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated("")) }
+        verify { toolbarStore.dispatch(SearchQueryUpdated("")) }
         browserActionsCaptor.assertLastAction(AwesomeBarAction.SuggestionClicked::class) {
             assertEquals(clickedSuggestion, it.suggestion)
         }
@@ -534,7 +534,7 @@ class FenixSearchMiddlewareTest {
 
         store.dispatch(SuggestionSelected(selectedSuggestion))
 
-        verify { toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated("test")) }
+        verify { toolbarStore.dispatch(SearchQueryUpdated("test")) }
     }
 
     @Test

@@ -29,6 +29,12 @@ export class BackupUIChild extends JSWindowActorChild {
     if (event.type == "BackupUI:InitWidget") {
       this.#inittedWidgets.add(event.target);
       this.sendAsyncMessage("RequestState");
+    } else if (event.type == "BackupUI:TriggerCreateBackup") {
+      let result = await this.sendQuery("TriggerCreateBackup", event.detail);
+
+      if (!result.success) {
+        // TODO: show the error in backup settings (Bug 1985557)
+      }
     } else if (event.type == "BackupUI:EnableScheduledBackups") {
       const target = event.target;
 
@@ -124,6 +130,8 @@ export class BackupUIChild extends JSWindowActorChild {
       } else {
         target.rerunEncryptionErrorCode = result.errorCode;
       }
+    } else if (event.type == "BackupUI:FindIfABackupFileExists") {
+      this.sendAsyncMessage("FindIfABackupFileExists");
     } else if (event.type == "BackupUI:ShowBackupLocation") {
       this.sendAsyncMessage("ShowBackupLocation");
     } else if (event.type == "BackupUI:EditBackupLocation") {

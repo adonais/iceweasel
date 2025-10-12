@@ -56,6 +56,10 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_dbg-no-duplicate-breakpoints-on-frame-reload.js"]
 
 ["browser_dbg-old-breakpoint.js"]
+skip-if = [
+  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan",  # Bug 1904034
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1904034
+]
 
 ["browser_dbg-outline-filter.js"]
 
@@ -147,7 +151,8 @@ skip-if = [
 ]
 
 ["browser_dbg-preview-wrapped-lines.js"]
-fail-if = ["a11y_checks"] # Bug 1860733 splitter element is not focusable
+skip-if = ["true"] # Bug 1985564 the test is flaky
+# fail-if = ["a11y_checks"] # Bug 1860733 splitter element is not focusable
 
 ["browser_dbg-preview.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled

@@ -51,20 +51,14 @@ tags = "os_integration"
 
 ["test_bug238987.html"]
 
-["test_bug288392.html"]
-
 ["test_bug299673-1.html"]
 
 ["test_bug299673-2.html"]
 
 ["test_bug322588.html"]
 
-["test_bug328885.html"]
-
 ["test_bug336682_1.html"]
 support-files = ["test_bug336682.js"]
-
-["test_bug367781.html"]
 
 ["test_bug379120.html"]
 
@@ -175,9 +169,6 @@ skip-if = ["os == 'android'"] #CRASH_DUMP, RANDOM
 ["test_bug648573.html"]
 skip-if = ["os == 'android'"] #CRASH_DUMP, RANDOM
 
-["test_bug650493.html"]
-skip-if = ["os == 'android'"] #CRASH_DUMP, RANDOM
-
 ["test_bug656379-1.html"]
 skip-if = ["os == 'android'"]
 
@@ -261,8 +252,6 @@ support-files = ["bug1017086_inner.html"]
 ["test_bug1037990.html"]
 
 ["test_bug1079236.html"]
-
-["test_bug1127588.html"]
 
 ["test_bug1145910.html"]
 
@@ -515,6 +504,8 @@ support-files = ["window_empty_document.html"]
 ["test_onerror_handler_args.html"]
 
 ["test_passive_listeners.html"]
+
+["test_query_content_when_selection_in_text_control.html"]
 
 ["test_scroll_per_page.html"]
 support-files = ["window_empty_document.html"]

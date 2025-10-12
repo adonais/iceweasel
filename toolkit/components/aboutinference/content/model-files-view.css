@@ -31,7 +31,7 @@ table {
   border-collapse: collapse;
   margin-block-end: var(--space-large);
   border-spacing: 0;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   overflow: hidden;
 }
 
@@ -73,7 +73,7 @@ td {
   width: 40px;
   height: 40px;
   margin-inline-end: var(--space-large);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 }
 
 .header {

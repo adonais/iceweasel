@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "rtc_base/containers/flat_tree.h"  // IWYU pragma: export
-#include "rtc_base/containers/identity.h"
+#include "rtc_base/containers/identity.h"  // Mozilla: remove when fixing Bug 1980501
 
 namespace webrtc {
 
@@ -159,7 +159,7 @@ template <class Key,
           class Compare = std::less<>,
           class Container = std::vector<Key>>
 using flat_set = typename ::webrtc::flat_containers_internal::
-    flat_tree<Key, webrtc::identity, Compare, Container>;
+    flat_tree<Key, std::identity, Compare, Container>;
 
 // ----------------------------------------------------------------------------
 // General operations.

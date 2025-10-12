@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
- * A class which represents a fragment of text (eg inside a text
+ * A class which represents a buffer of text (eg inside a text
  * node); if only codepoints below 256 are used, the text is stored as
  * a char*; otherwise the text is stored as a char16_t*
  */
@@ -24,10 +24,9 @@
 
 // XXX should this normalize the code to keep a \u0000 at the end?
 
-// XXX nsTextFragmentPool?
 namespace mozilla::dom {
 /**
- * A fragment of text. If mIs2b is 1 then the m2b pointer is valid
+ * A buffer of text. If mIs2b is 1 then the m2b pointer is valid
  * otherwise the m1b pointer is valid. If m1b is used then each byte
  * of data represents a single ucs2 character with the high byte being
  * zero.
@@ -49,7 +48,7 @@ class CharacterDataBuffer final {
   static void Shutdown();
 
   /**
-   * Default constructor. Initialize the fragment to be empty.
+   * Default constructor. Initialize the buffer to be empty.
    */
   CharacterDataBuffer() : m1b(nullptr), mAllBits(0) {
     MOZ_COUNT_CTOR(CharacterDataBuffer);
@@ -59,18 +58,18 @@ class CharacterDataBuffer final {
   ~CharacterDataBuffer();
 
   /**
-   * Change the contents of this fragment to be a copy of the
-   * the argument fragment, or to "" if unable to allocate enough memory.
+   * Change the contents of this buffer to be a copy of the
+   * the argument buffer, or to "" if unable to allocate enough memory.
    */
   CharacterDataBuffer& operator=(const CharacterDataBuffer& aOther);
 
   /**
-   * Return true if this fragment is represented by char16_t data
+   * Return true if this buffer is represented by char16_t data
    */
   bool Is2b() const { return mState.mIs2b; }
 
   /**
-   * Return true if this fragment contains Bidi text
+   * Return true if this buffer contains Bidi text
    * For performance reasons this flag is only set if explicitely requested (by
    * setting the aUpdateBidi argument on SetTo or Append to true).
    */
@@ -104,7 +103,7 @@ class CharacterDataBuffer final {
   }
 
   /**
-   * Get the length of the fragment. The length is the number of logical
+   * Get the length of the buffer. The length is the number of logical
    * characters, not the number of bytes to store the characters.
    */
   uint32_t GetLength() const { return mState.mLength; }
@@ -116,8 +115,8 @@ class CharacterDataBuffer final {
   }
 
   /**
-   * Change the contents of this fragment to be a copy of the given
-   * buffer. If aUpdateBidi is true, contents of the fragment will be scanned,
+   * Change the contents of this buffer to be a copy of the given
+   * buffer. If aUpdateBidi is true, contents of the buffer will be scanned,
    * and mState.mIsBidi will be turned on if it includes any Bidi characters.
    * If aForce2b is true, aBuffer will be stored as char16_t as is.  Then,
    * you can access the value faster but may waste memory if all characters
@@ -145,8 +144,8 @@ class CharacterDataBuffer final {
   }
 
   /**
-   * Append aData to the end of this fragment. If aUpdateBidi is true, contents
-   * of the fragment will be scanned, and mState.mIsBidi will be turned on if
+   * Append aData to the end of this buffer. If aUpdateBidi is true, contents
+   * of the buffer will be scanned, and mState.mIsBidi will be turned on if
    * it includes any Bidi characters.
    * If aForce2b is true, the string will be stored as char16_t as is.  Then,
    * you can access the value faster but may waste memory if all characters
@@ -156,7 +155,7 @@ class CharacterDataBuffer final {
               bool aForce2b);
 
   /**
-   * Append the contents of this string fragment to aString
+   * Append the contents of this data buffer to aString
    */
   void AppendTo(nsAString& aString) const {
     if (!AppendTo(aString, mozilla::fallible)) {
@@ -165,7 +164,7 @@ class CharacterDataBuffer final {
   }
 
   /**
-   * Append the contents of this string fragment to aString
+   * Append the contents of this data buffer to aString
    * @return false if an out of memory condition is detected, true otherwise
    */
   [[nodiscard]] bool AppendTo(nsAString& aString,
@@ -182,8 +181,8 @@ class CharacterDataBuffer final {
   }
 
   /**
-   * Append a substring of the contents of this string fragment to aString.
-   * @param aOffset where to start the substring in this text fragment
+   * Append a substring of the contents of this data buffer to aString.
+   * @param aOffset where to start the substring in this data buffer
    * @param aLength the length of the substring
    */
   void AppendTo(nsAString& aString, uint32_t aOffset, uint32_t aLength) const {
@@ -193,9 +192,9 @@ class CharacterDataBuffer final {
   }
 
   /**
-   * Append a substring of the contents of this string fragment to aString.
+   * Append a substring of the contents of this data buffer to aString.
    * @param aString the string in which to append
-   * @param aOffset where to start the substring in this text fragment
+   * @param aOffset where to start the substring in this data buffer
    * @param aLength the length of the substring
    * @return false if an out of memory condition is detected, true otherwise
    */
@@ -224,7 +223,7 @@ class CharacterDataBuffer final {
   void CopyTo(char16_t* aDest, uint32_t aOffset, uint32_t aCount);
 
   /**
-   * Return the character in the text-fragment at the given
+   * Return the character in the data buffer at the given
    * index. This always returns a char16_t.
    */
   [[nodiscard]] char16_t CharAt(uint32_t aIndex) const {
@@ -233,13 +232,13 @@ class CharacterDataBuffer final {
                         : static_cast<unsigned char>(m1b[aIndex]);
   }
   [[nodiscard]] char16_t SafeCharAt(uint32_t aIndex) const {
-    return MOZ_LIKELY(mState.mLength < aIndex) ? CharAt(aIndex)
+    return MOZ_LIKELY(aIndex < mState.mLength) ? CharAt(aIndex)
                                                : static_cast<char16_t>(0);
   }
 
   /**
    * Return the first char, but if you're not sure whether this is empty, you
-   * should use GetFirstChar() instead.
+   * should use SafeFirstChar() instead.
    */
   [[nodiscard]] char16_t FirstChar() const {
     MOZ_ASSERT(mState.mLength);
@@ -248,9 +247,10 @@ class CharacterDataBuffer final {
   [[nodiscard]] char16_t SafeFirstChar() const {
     return MOZ_LIKELY(mState.mLength) ? FirstChar() : static_cast<char16_t>(0);
   }
+
   /**
    * Return the last char, but if you're not sure whether this is empty, you
-   * should use GetLastChar() instead.
+   * should use SafeLastChar() instead.
    */
   [[nodiscard]] char16_t LastChar() const {
     MOZ_ASSERT(mState.mLength);
@@ -327,8 +327,8 @@ class CharacterDataBuffer final {
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   /**
-   * Check whether the text in this fragment is the same as the text in the
-   * other fragment.
+   * Check whether the text in this buffer is the same as the text in the
+   * other buffer.
    */
   [[nodiscard]] bool BufferEquals(const CharacterDataBuffer& aOther) const;
 
@@ -514,7 +514,7 @@ class CharacterDataBuffer final {
   }
 
   /**
-   * Return first different char offset in this fragment after
+   * Return first different char offset in this buffer after
    * aOffsetInFragment. For example, if we have "abcdefg", aStr is "bXYe" and
    * aOffsetInFragment is 1, scan from "b" and return the offset of "c",
    * i.e., 2.
@@ -531,10 +531,10 @@ class CharacterDataBuffer final {
   }
 
   /**
-   * Return first different char offset in this fragment before
+   * Return first different char offset in this buffer before
    * aOffsetInFragment (from backward scanning point of view).
    * For example, if we have "abcdef", aStr is "bXYe" and aOffsetInFragment is
-   * 5, scan from "e" and return the offset of "d" (vs. "Y") in this fragment,
+   * 5, scan from "e" and return the offset of "d" (vs. "Y") in this buffer,
    * i.e., 3.  In other words, aOffsetInFragment should be the next offset of
    * you start to scan. I.e., at least 1 and at most the length of this.  So,
    * if you want to compare with start of this, you should specify
@@ -556,7 +556,7 @@ class CharacterDataBuffer final {
   void ReleaseBuffer();
 
   /**
-   * Scan the contents of the fragment and turn on mState.mIsBidi if it
+   * Scan the contents of the buffer and turn on mState.mIsBidi if it
    * includes any Bidi characters.
    */
   void UpdateBidiFlag(const char16_t* aBuffer, uint32_t aLength);

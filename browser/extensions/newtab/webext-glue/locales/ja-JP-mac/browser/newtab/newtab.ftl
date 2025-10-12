@@ -88,6 +88,14 @@ newtab-confirm-delete-history-p2 = この操作は取り消せません。
 
 newtab-topsite-sponsored = 広告
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (ピン留め)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -309,15 +317,25 @@ newtab-custom-pocket-sponsored = 広告記事
 newtab-custom-pocket-show-recent-saves = 最近保存したものを表示
 newtab-custom-recent-title = 最近のアクティビティ
 newtab-custom-recent-subtitle = 最近のサイトとコンテンツの抜粋
-newtab-custom-recent-toggle =
-    .label = 最近のアクティビティ
-    .description = 最近のサイトとコンテンツの抜粋
 newtab-custom-weather-toggle =
     .label = 天気予報
     .description = 一目でわかる今日の天気
 newtab-custom-trending-search-toggle =
     .label = トレンド検索
     .description = 人気があり頻繁に検索されているトピックです
+newtab-custom-widget-weather-toggle =
+    .label = 天気予報
+newtab-custom-widget-trending-search-toggle =
+    .label = トレンド検索
+newtab-custom-widget-lists-toggle =
+    .label = ToDo リスト
+newtab-custom-widget-timer-toggle =
+    .label = タイマー
+newtab-custom-widget-section-title = ウィジェット
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = 閉じる
+    .aria-label = メニューを閉じる
 newtab-custom-close-button = 閉じる
 newtab-custom-settings = 他の設定を管理
 
@@ -435,7 +453,6 @@ newtab-weather-menu-change-location = 予報地点を変更
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = 場所を検索
     .aria-label = 場所を検索
-newtab-weather-change-location-search-input = 場所を検索
 newtab-weather-menu-weather-display = 天気表示
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -582,8 +599,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Google のトレンド
 newtab-trending-searches-show-trending =
     .title = トレンド検索を表示します
 newtab-trending-searches-hide-trending =
@@ -592,3 +607,73 @@ newtab-trending-searches-learn-more = 詳細情報
 newtab-trending-searches-dismiss = トレンド検索を隠す
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = トレンド検索
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = 可能性は限りなく。リストを作りましょう。
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = 新機能
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = 完了 ({ $number })
+newtab-widget-task-list-menu-copy = コピー
+newtab-widget-lists-menu-edit = リスト名を編集
+newtab-widget-lists-menu-create = 新規を作成
+newtab-widget-lists-menu-delete = このリストを削除
+newtab-widget-lists-menu-copy = リストをクリップボードにコピー
+newtab-widget-lists-menu-hide = すべてのリストを隠す
+newtab-widget-lists-menu-learn-more = 詳細情報
+newtab-widget-lists-input-add-an-item =
+    .placeholder = アイテムを追加してください
+newtab-widget-lists-input-error = 追加するアイテムにテキストを含めてください
+newtab-widget-lists-input-menu-open-link = リンクを開く
+newtab-widget-lists-input-menu-move-up = 上へ移動
+newtab-widget-lists-input-menu-move-down = 下へ移動
+newtab-widget-lists-input-menu-delete = 削除
+newtab-widget-lists-input-menu-edit = 編集
+newtab-widget-lists-name-label-default =
+    .label = ToDo リスト
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = ToDo リスト
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = 新規リスト
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = タイマー
+newtab-widget-timer-notification-focus = 時間内に良い仕事をしましょう。休憩はいかが？
+newtab-widget-timer-notification-break = 休憩時間が終わりました。準備はよいですか？
+newtab-widget-timer-notification-warning = 通知がオフになっています
+newtab-widget-timer-mode-focus =
+    .label = 集中
+newtab-widget-timer-mode-break =
+    .label = 休憩
+newtab-widget-timer-play =
+    .title = 再生
+newtab-widget-timer-pause =
+    .title = 一時停止
+newtab-widget-timer-label-play =
+    .label = 再生
+newtab-widget-timer-label-pause =
+    .label = 一時停止
+newtab-widget-timer-reset =
+    .title = リセット
+newtab-widget-timer-menu-notifications = 通知をオフにする
+newtab-widget-timer-menu-notifications-on = 通知をオンにする
+newtab-widget-timer-menu-hide = タイマーを隠す
+newtab-widget-timer-menu-learn-more = 詳細情報
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = 続きはスクロールしてください
+newtab-promo-card-title = { -brand-product-name } を支援
+newtab-promo-card-body = 私たちのスポンサーはより良いウェブを作り上げるという私たちの使命を支援します
+newtab-promo-card-cta = 詳細情報
+newtab-promo-card-dismiss-button =
+    .title = 閉じる
+    .aria-label = 閉じる

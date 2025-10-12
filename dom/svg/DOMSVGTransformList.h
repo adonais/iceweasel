@@ -36,15 +36,13 @@ class MOZ_RAII AutoChangeTransformListNotifier {
     // If we don't have an owner then changes don't affect anything else.
     if (mValue->HasOwner()) {
       mUpdateBatch.emplace(mValue->Element()->GetComposedDoc(), true);
-      mEmptyOrOldValue =
-          mValue->Element()->WillChangeTransformList(mUpdateBatch.ref());
+      mValue->Element()->WillChangeTransformList(mUpdateBatch.ref());
     }
   }
 
   ~AutoChangeTransformListNotifier() {
     if (mValue->HasOwner()) {
-      mValue->Element()->DidChangeTransformList(mEmptyOrOldValue,
-                                                mUpdateBatch.ref());
+      mValue->Element()->DidChangeTransformList(mUpdateBatch.ref());
       if (mValue->IsAnimating()) {
         mValue->Element()->AnimationNeedsResample();
       }
@@ -54,7 +52,6 @@ class MOZ_RAII AutoChangeTransformListNotifier {
  private:
   T* const mValue;
   Maybe<mozAutoDocUpdate> mUpdateBatch;
-  nsAttrValue mEmptyOrOldValue;
 };
 
 /**

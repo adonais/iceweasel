@@ -132,7 +132,7 @@ void MutationObservers::NotifyCharacterDataChanged(
 void MutationObservers::NotifyAttributeWillChange(Element* aElement,
                                                   int32_t aNameSpaceID,
                                                   nsAtom* aAttribute,
-                                                  int32_t aModType) {
+                                                  AttrModType aModType) {
   Notify(aElement,
          NOTIFIER(AttributeWillChange, aElement, aNameSpaceID, aAttribute,
                   aModType),
@@ -142,7 +142,7 @@ void MutationObservers::NotifyAttributeWillChange(Element* aElement,
 void MutationObservers::NotifyAttributeChanged(Element* aElement,
                                                int32_t aNameSpaceID,
                                                nsAtom* aAttribute,
-                                               int32_t aModType,
+                                               AttrModType aModType,
                                                const nsAttrValue* aOldValue) {
   aElement->OwnerDoc()->Changed();
   Notify(aElement,
@@ -191,7 +191,7 @@ void MutationObservers::NotifyContentWillBeRemoved(
 }
 
 void MutationObservers::NotifyARIAAttributeDefaultWillChange(
-    mozilla::dom::Element* aElement, nsAtom* aAttribute, int32_t aModType) {
+    mozilla::dom::Element* aElement, nsAtom* aAttribute, AttrModType aModType) {
   Notify<NotifyPresShell::No>(
       aElement,
       NOTIFIER(ARIAAttributeDefaultWillChange, aElement, aAttribute, aModType),
@@ -199,7 +199,7 @@ void MutationObservers::NotifyARIAAttributeDefaultWillChange(
 }
 
 void MutationObservers::NotifyARIAAttributeDefaultChanged(
-    mozilla::dom::Element* aElement, nsAtom* aAttribute, int32_t aModType) {
+    mozilla::dom::Element* aElement, nsAtom* aAttribute, AttrModType aModType) {
   Notify<NotifyPresShell::No>(
       aElement,
       NOTIFIER(ARIAAttributeDefaultChanged, aElement, aAttribute, aModType),

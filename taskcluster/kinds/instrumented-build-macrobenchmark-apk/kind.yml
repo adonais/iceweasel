@@ -15,13 +15,12 @@ kind-dependencies:
     - generate-baseline-profile-firebase
 
 task-defaults:
-    attributes:
-        retrigger: true
     fetches:
         toolchain:
             - linux64-android-sdk-linux-repack
             - linux64-jdk-repack
             - linux64-node
+    run-on-projects: []
     run:
         using: gradlew
     treeherder:

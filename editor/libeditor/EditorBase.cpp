@@ -17,8 +17,9 @@
 #include "DeleteNodeTransaction.h"
 #include "DeleteRangeTransaction.h"
 #include "DeleteTextTransaction.h"
-#include "EditAction.h"      // for EditSubAction
-#include "EditorDOMPoint.h"  // for EditorDOMPoint
+#include "EditAction.h"           // for EditSubAction
+#include "EditorDOMAPIWrapper.h"  // for AutoCharacterDataAPIWrapper, etc
+#include "EditorDOMPoint.h"       // for EditorDOMPoint
 #include "EditorForwards.h"
 #include "EditorUtils.h"          // for various helper classes.
 #include "EditTransactionBase.h"  // for EditTransactionBase
@@ -46,13 +47,12 @@
 #include "mozilla/DebugOnly.h"                // for DebugOnly
 #include "mozilla/EditorSpellCheck.h"         // for EditorSpellCheck
 #include "mozilla/Encoding.h"  // for Encoding (used in Document::GetDocumentCharacterSet)
-#include "mozilla/EventDispatcher.h"     // for EventChainPreVisitor, etc.
-#include "mozilla/FlushType.h"           // for FlushType::Frames
-#include "mozilla/IMEContentObserver.h"  // for IMEContentObserver
-#include "mozilla/IMEStateManager.h"     // for IMEStateManager
-#include "mozilla/InputEventOptions.h"   // for InputEventOptions
-#include "mozilla/IntegerRange.h"        // for IntegerRange
-#include "mozilla/InternalMutationEvent.h"  // for NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED
+#include "mozilla/EventDispatcher.h"        // for EventChainPreVisitor, etc.
+#include "mozilla/FlushType.h"              // for FlushType::Frames
+#include "mozilla/IMEContentObserver.h"     // for IMEContentObserver
+#include "mozilla/IMEStateManager.h"        // for IMEStateManager
+#include "mozilla/InputEventOptions.h"      // for InputEventOptions
+#include "mozilla/IntegerRange.h"           // for IntegerRange
 #include "mozilla/Logging.h"                //for MOZ_LOG
 #include "mozilla/mozalloc.h"               // for operator new, etc.
 #include "mozilla/mozInlineSpellChecker.h"  // for mozInlineSpellChecker
@@ -363,6 +363,24 @@ nsresult EditorBase::InitInternal(Document& aDocument, Element* aRootElement,
   SelectionRef().AddSelectionListener(this);
 
   return NS_OK;
+}
+
+bool EditorBase::MaybeNodeRemovalsObservedByDevTools() const {
+  if (IsTextEditor()) {
+    // DOM mutation event listeners cannot catch the changes of
+    // <input type="text"> nor <textarea>.
+    return false;
+  }
+#ifdef DEBUG
+  // On debug build, this should always return true for testing complicated
+  // path without mutation event listeners because when mutation event
+  // listeners do not touch the DOM, editor needs to run as there is no
+  // mutation event listeners.
+  return true;
+#else   // #ifdef DEBUG
+  Document* const doc = GetDocument();
+  return doc && doc->MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc();
+#endif  // #ifdef DEBUG #else
 }
 
 nsresult EditorBase::EnsureEmptyTextFirstChild() {
@@ -2278,8 +2296,8 @@ NS_IMETHODIMP EditorBase::SetAttribute(Element* aElement,
 nsresult EditorBase::SetAttributeWithTransaction(Element& aElement,
                                                  nsAtom& aAttribute,
                                                  const nsAString& aValue) {
-  RefPtr<ChangeAttributeTransaction> transaction =
-      ChangeAttributeTransaction::Create(aElement, aAttribute, aValue);
+  const RefPtr<ChangeAttributeTransaction> transaction =
+      ChangeAttributeTransaction::Create(*this, aElement, aAttribute, aValue);
   nsresult rv = DoTransactionInternal(transaction);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::DoTransactionInternal() failed");
@@ -2312,8 +2330,8 @@ nsresult EditorBase::RemoveAttributeWithTransaction(Element& aElement,
   if (!aElement.HasAttr(&aAttribute)) {
     return NS_OK;
   }
-  RefPtr<ChangeAttributeTransaction> transaction =
-      ChangeAttributeTransaction::CreateToRemove(aElement, aAttribute);
+  const RefPtr<ChangeAttributeTransaction> transaction =
+      ChangeAttributeTransaction::CreateToRemove(*this, aElement, aAttribute);
   nsresult rv = DoTransactionInternal(transaction);
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
@@ -2323,17 +2341,17 @@ nsresult EditorBase::RemoveAttributeWithTransaction(Element& aElement,
   return rv;
 }
 
-nsresult EditorBase::MarkElementDirty(Element& aElement) const {
+nsresult EditorBase::MarkElementDirty(Element& aElement) {
   // Mark the node dirty, but not for webpages (bug 599983)
   if (!OutputsMozDirty()) {
     return NS_OK;
   }
-  DebugOnly<nsresult> rvIgnored =
-      aElement.SetAttr(kNameSpaceID_None, nsGkAtoms::mozdirty, u""_ns, false);
+  nsresult rv = AutoElementAttrAPIWrapper(*this, aElement)
+                    .SetAttr(nsGkAtoms::mozdirty, EmptyString(), false);
   NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rvIgnored),
-      "Element::SetAttr(nsGkAtoms::mozdirty) failed, but ignored");
-  return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
+      NS_SUCCEEDED(rv),
+      "AutoElementAttrAPIWrapper::SetAttr() failed, but ignored");
+  return rv;
 }
 
 NS_IMETHODIMP EditorBase::GetInlineSpellChecker(
@@ -3081,14 +3099,15 @@ nsresult EditorBase::OnEndHandlingTopLevelEditSubAction() {
 void EditorBase::DoInsertText(Text& aText, uint32_t aOffset,
                               const nsAString& aStringToInsert,
                               ErrorResult& aRv) {
-  aText.InsertData(aOffset, aStringToInsert, aRv);
-  if (NS_WARN_IF(Destroyed())) {
-    aRv = NS_ERROR_EDITOR_DESTROYED;
-    return;
-  }
-  if (aRv.Failed()) {
-    NS_WARNING("Text::InsertData() failed");
-    return;
+  {
+    AutoCharacterDataAPIWrapper charDataWrapper(*this, aText);
+    aRv = charDataWrapper.InsertData(aOffset, aStringToInsert);
+    if (MOZ_UNLIKELY(aRv.Failed())) {
+      NS_WARNING("AutoCharacterDataAPIWrapper::InsertData() failed");
+      return;
+    }
+    NS_WARNING_ASSERTION(charDataWrapper.IsExpectedResult(aStringToInsert),
+                         "Inserting data caused other mutations, but ignored");
   }
   if (IsTextEditor() && !aStringToInsert.IsEmpty()) {
     aRv = MOZ_KnownLive(AsTextEditor())
@@ -3103,12 +3122,14 @@ void EditorBase::DoDeleteText(Text& aText, uint32_t aOffset, uint32_t aCount,
   if (IsTextEditor() && aCount > 0) {
     AsTextEditor()->WillDeleteText(aText.TextLength(), aOffset, aCount);
   }
-  aText.DeleteData(aOffset, aCount, aRv);
-  if (NS_WARN_IF(Destroyed())) {
-    aRv = NS_ERROR_EDITOR_DESTROYED;
+  AutoCharacterDataAPIWrapper charDataWrapper(*this, aText);
+  aRv = charDataWrapper.DeleteData(aOffset, aCount);
+  if (MOZ_UNLIKELY(aRv.Failed())) {
+    NS_WARNING("AutoCharacterDataAPIWrapper::DeleteData() failed");
     return;
   }
-  NS_WARNING_ASSERTION(!aRv.Failed(), "Text::DeleteData() failed");
+  NS_WARNING_ASSERTION(charDataWrapper.IsExpectedResult(EmptyString()),
+                       "Deleting data caused other mutations, but ignored");
 }
 
 void EditorBase::DoReplaceText(Text& aText, uint32_t aOffset, uint32_t aCount,
@@ -3117,14 +3138,15 @@ void EditorBase::DoReplaceText(Text& aText, uint32_t aOffset, uint32_t aCount,
   if (IsTextEditor() && aCount > 0) {
     AsTextEditor()->WillDeleteText(aText.TextLength(), aOffset, aCount);
   }
-  aText.ReplaceData(aOffset, aCount, aStringToInsert, aRv);
-  if (NS_WARN_IF(Destroyed())) {
-    aRv = NS_ERROR_EDITOR_DESTROYED;
-    return;
-  }
-  if (aRv.Failed()) {
-    NS_WARNING("Text::ReplaceData() failed");
-    return;
+  {
+    AutoCharacterDataAPIWrapper charDataWrapper(*this, aText);
+    aRv = charDataWrapper.ReplaceData(aOffset, aCount, aStringToInsert);
+    if (MOZ_UNLIKELY(aRv.Failed())) {
+      NS_WARNING("AutoCharacterDataAPIWrapper::ReplaceData() failed");
+      return;
+    }
+    NS_WARNING_ASSERTION(charDataWrapper.IsExpectedResult(aStringToInsert),
+                         "Replacing data caused other mutations, but ignored");
   }
   if (IsTextEditor() && !aStringToInsert.IsEmpty()) {
     aRv = MOZ_KnownLive(AsTextEditor())
@@ -3142,14 +3164,15 @@ void EditorBase::DoSetText(Text& aText, const nsAString& aStringToSet,
       AsTextEditor()->WillDeleteText(length, 0, length);
     }
   }
-  aText.SetData(aStringToSet, aRv);
-  if (NS_WARN_IF(Destroyed())) {
-    aRv = NS_ERROR_EDITOR_DESTROYED;
-    return;
-  }
-  if (aRv.Failed()) {
-    NS_WARNING("Text::SetData() failed");
-    return;
+  {
+    AutoCharacterDataAPIWrapper charDataWrapper(*this, aText);
+    aRv = charDataWrapper.SetData(aStringToSet);
+    if (MOZ_UNLIKELY(aRv.Failed())) {
+      NS_WARNING("AutoCharacterDataAPIWrapper::SetData() failed");
+      return;
+    }
+    NS_WARNING_ASSERTION(charDataWrapper.IsExpectedResult(aStringToSet),
+                         "Setting data caused other mutations, but ignored");
   }
   if (IsTextEditor() && !aStringToSet.IsEmpty()) {
     aRv = MOZ_KnownLive(AsTextEditor())
@@ -3206,8 +3229,8 @@ void EditorBase::CloneAttributesWithTransaction(Element& aDestElement,
     return;
   }
 
-  OwningNonNull<Element> destElement(aDestElement);
-  OwningNonNull<Element> sourceElement(aSourceElement);
+  const OwningNonNull<Element> destElement(aDestElement);
+  const OwningNonNull<Element> sourceElement(aSourceElement);
   bool isDestElementInBody = rootElement->Contains(destElement);
 
   // Clear existing attributes
@@ -3229,10 +3252,15 @@ void EditorBase::CloneAttributesWithTransaction(Element& aDestElement,
           NS_SUCCEEDED(rvIgnored),
           "EditorBase::RemoveAttributeWithTransaction() failed, but ignored");
     } else {
-      DebugOnly<nsresult> rvIgnored =
-          destElement->UnsetAttr(kNameSpaceID_None, attr, true);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                           "Element::UnsetAttr() failed, but ignored");
+      AutoElementAttrAPIWrapper elementWrapper(*this, destElement);
+      if (NS_FAILED(elementWrapper.UnsetAttr(MOZ_KnownLive(attr), true))) {
+        NS_WARNING(
+            "AutoElementAttrAPIWrapper::UnsetAttr() failed, but ignored");
+      } else {
+        NS_WARNING_ASSERTION(
+            elementWrapper.IsExpectedResult(EmptyString()),
+            "Removing attribute caused other mutations, but ignored");
+      }
     }
   }
 
@@ -3424,59 +3452,15 @@ Result<InsertTextResult, nsresult> EditorBase::InsertTextWithTransaction(
                           EditorDOMPoint::AtEndOf(*newTextNode));
 }
 
-static bool TextFragmentBeginsWithStringAtOffset(
-    const CharacterDataBuffer& aCharacterDataBuffer, const uint32_t aOffset,
-    const nsAString& aString) {
-  const uint32_t stringLength = aString.Length();
-
-  if (aOffset + stringLength > aCharacterDataBuffer.GetLength()) {
-    return false;
-  }
-
-  if (aCharacterDataBuffer.Is2b()) {
-    return aString.Equals(aCharacterDataBuffer.Get2b() + aOffset);
-  }
-
-  return aString.EqualsLatin1(aCharacterDataBuffer.Get1b() + aOffset,
-                              stringLength);
-}
-
-static std::tuple<EditorDOMPointInText, EditorDOMPointInText>
-AdjustTextInsertionRange(const EditorDOMPointInText& aInsertedPoint,
-                         const nsAString& aInsertedString) {
-  if (TextFragmentBeginsWithStringAtOffset(
-          aInsertedPoint.ContainerAs<Text>()->DataBuffer(),
-          aInsertedPoint.Offset(), aInsertedString)) {
-    return {aInsertedPoint,
-            EditorDOMPointInText(
-                aInsertedPoint.ContainerAs<Text>(),
-                aInsertedPoint.Offset() + aInsertedString.Length())};
-  }
-
-  return {EditorDOMPointInText(aInsertedPoint.ContainerAs<Text>(), 0),
-          EditorDOMPointInText::AtEndOf(*aInsertedPoint.ContainerAs<Text>())};
-}
-
 std::tuple<EditorDOMPointInText, EditorDOMPointInText>
 EditorBase::ComputeInsertedRange(const EditorDOMPointInText& aInsertedPoint,
                                  const nsAString& aInsertedString) const {
   MOZ_ASSERT(aInsertedPoint.IsSet());
 
-  // The DOM was potentially modified during the transaction. This is possible
-  // through mutation event listeners. That is, the node could've been removed
-  // from the doc or otherwise modified.
-  if (!MayHaveMutationEventListeners(
-          NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED)) {
-    EditorDOMPointInText endOfInsertion(
-        aInsertedPoint.ContainerAs<Text>(),
-        aInsertedPoint.Offset() + aInsertedString.Length());
-    return {aInsertedPoint, endOfInsertion};
-  }
-  if (aInsertedPoint.ContainerAs<Text>()->IsInComposedDoc()) {
-    EditorDOMPointInText begin, end;
-    return AdjustTextInsertionRange(aInsertedPoint, aInsertedString);
-  }
-  return {EditorDOMPointInText(), EditorDOMPointInText()};
+  EditorDOMPointInText endOfInsertion(
+      aInsertedPoint.ContainerAs<Text>(),
+      aInsertedPoint.Offset() + aInsertedString.Length());
+  return {aInsertedPoint, endOfInsertion};
 }
 
 Result<InsertTextResult, nsresult>
@@ -6072,7 +6056,7 @@ void EditorBase::SwitchTextDirectionTo(TextDirection aTextDirection) {
 }
 
 nsresult EditorBase::SetTextDirectionTo(TextDirection aTextDirection) {
-  Element* const editingHostOrTextControlElement =
+  const RefPtr<Element> editingHostOrTextControlElement =
       IsHTMLEditor() ? AsHTMLEditor()->ComputeEditingHost(
                            HTMLEditor::LimitInBodyElement::No)
                      : GetExposedRoot();
@@ -6085,10 +6069,11 @@ nsresult EditorBase::SetTextDirectionTo(TextDirection aTextDirection) {
     NS_ASSERTION(!IsLeftToRight(), "Unexpected mutually exclusive flag");
     mFlags &= ~nsIEditor::eEditorRightToLeft;
     mFlags |= nsIEditor::eEditorLeftToRight;
-    nsresult rv = editingHostOrTextControlElement->SetAttr(
-        kNameSpaceID_None, nsGkAtoms::dir, u"ltr"_ns, true);
+    nsresult rv =
+        AutoElementAttrAPIWrapper(*this, *editingHostOrTextControlElement)
+            .SetAttr(nsGkAtoms::dir, u"ltr"_ns, true);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "Element::SetAttr(nsGkAtoms::dir, ltr) failed");
+                         "AutoElementAttrAPIWrapper::SetAttr() failed");
     return rv;
   }
 
@@ -6096,10 +6081,11 @@ nsresult EditorBase::SetTextDirectionTo(TextDirection aTextDirection) {
     NS_ASSERTION(!IsRightToLeft(), "Unexpected mutually exclusive flag");
     mFlags |= nsIEditor::eEditorRightToLeft;
     mFlags &= ~nsIEditor::eEditorLeftToRight;
-    nsresult rv = editingHostOrTextControlElement->SetAttr(
-        kNameSpaceID_None, nsGkAtoms::dir, u"rtl"_ns, true);
+    nsresult rv =
+        AutoElementAttrAPIWrapper(*this, *editingHostOrTextControlElement)
+            .SetAttr(nsGkAtoms::dir, u"rtl"_ns, true);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "Element::SetAttr(nsGkAtoms::dir, rtl) failed");
+                         "AutoElementAttrAPIWrapper::SetAttr() failed");
     return rv;
   }
 

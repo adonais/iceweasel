@@ -1,8 +1,8 @@
 [Application]
 name=org.mozilla.firefox
-runtime=org.freedesktop.Platform/${ARCH}/${FREEDESKTOP_VERSION}
-sdk=org.freedesktop.Sdk/${ARCH}/${FREEDESKTOP_VERSION}
-base=app/org.mozilla.firefox.BaseApp/${ARCH}/${FIREFOX_BASEAPP_CHANNEL}
+runtime=org.freedesktop.Platform/${ARCH_NAME}/${FREEDESKTOP_VERSION}
+sdk=org.freedesktop.Sdk/${ARCH_NAME}/${FREEDESKTOP_VERSION}
+base=app/org.mozilla.firefox.BaseApp/${ARCH_NAME}/${FIREFOX_BASEAPP_CHANNEL}
 [Extension org.mozilla.firefox.Locale]
 directory=share/runtime/langpack
 autodelete=true

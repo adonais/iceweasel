@@ -57,8 +57,8 @@ export class IPProtectionPanel {
    *  True if IP Protection via the proxy is enabled
    * @property {Date} protectionEnabledSince
    *  The timestamp in milliseconds since IP Protection was enabled
-   * @property {boolean} isSignedIn
-   *  True if signed in to account
+   * @property {boolean} isSignedOut
+   *  True if not signed in to account
    * @property {object} location
    *  Data about the server location the proxy is connected to
    * @property {string} location.name
@@ -113,7 +113,7 @@ export class IPProtectionPanel {
     } = lazy.IPProtectionService;
 
     this.state = {
-      isSignedIn,
+      isSignedOut: !isSignedIn,
       isProtectionEnabled,
       protectionEnabledSince,
       location: {
@@ -377,11 +377,11 @@ export class IPProtectionPanel {
       this.close();
     } else if (event.type == "IPProtectionService:SignedIn") {
       this.setState({
-        isSignedIn: true,
+        isSignedOut: false,
       });
     } else if (event.type == "IPProtectionService:SignedOut") {
       this.setState({
-        isSignedIn: false,
+        isSignedOut: true,
       });
     } else if (event.type == "IPProtectionService:Started") {
       this.setState({

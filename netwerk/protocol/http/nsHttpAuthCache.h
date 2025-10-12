@@ -94,8 +94,8 @@ class nsHttpAuthEntry {
 
   friend class nsHttpAuthNode;
   friend class nsHttpAuthCache;
-  friend class mozilla::DefaultDelete<nsHttpAuthEntry>;  // needs to call the
-                                                         // destructor
+  friend mozilla::DefaultDelete<nsHttpAuthEntry>;  // needs to call the
+                                                   // destructor
 };
 
 //-----------------------------------------------------------------------------
@@ -134,8 +134,8 @@ class nsHttpAuthNode {
   EntryList mList;
 
   friend class nsHttpAuthCache;
-  friend class mozilla::DefaultDelete<nsHttpAuthNode>;  // needs to call the
-                                                        // destructor
+  friend mozilla::DefaultDelete<nsHttpAuthNode>;  // needs to call the
+                                                  // destructor
 };
 
 //-----------------------------------------------------------------------------

@@ -865,7 +865,11 @@ class MarkerSchema {
   };
 
   // Flags which describe additional information for a PayloadField.
-  enum class PayloadFlags : uint32_t { None = 0, Searchable = 1 };
+  enum class PayloadFlags : uint32_t {
+    None = 0,
+    Searchable = 1 << 0,
+    Hidden = 1 << 1,
+  };
 
   // This is one field of payload to be used for additional marker data.
   struct PayloadField {
@@ -881,7 +885,6 @@ class MarkerSchema {
     PayloadFlags Flags = PayloadFlags::None;
   };
 
-  enum class Searchable { NotSearchable, Searchable };
   enum class GraphType { Line, Bar, FilledLine };
   enum class GraphColor {
     Blue,
@@ -954,40 +957,24 @@ class MarkerSchema {
   // - `aKey`: Element property name as streamed by `StreamJSONMarkerData()`.
   // - `aLabel`: Optional prefix. Defaults to the key name.
   // - `aFormat`: How to format the data element value, see `Format` above.
-  // - `aSearchable`: Optional, indicates if the value is used in searches,
-  //   defaults to false.
+  // - `aPayloadFlags`: Optional, indicates additinal flags to serialize inside
+  // the marker schema object. Defaults to `PayloadFlags::None`.
 
-  MarkerSchema& AddKeyFormat(std::string aKey, Format aFormat) {
+  MarkerSchema& AddKeyFormat(std::string aKey, Format aFormat,
+                             PayloadFlags aPayloadFlags = PayloadFlags::None) {
     mData.emplace_back(mozilla::VariantType<DynamicData>{},
                        DynamicData{std::move(aKey), mozilla::Nothing{}, aFormat,
-                                   mozilla::Nothing{}});
+                                   aPayloadFlags});
     return *this;
   }
 
-  MarkerSchema& AddKeyLabelFormat(std::string aKey, std::string aLabel,
-                                  Format aFormat) {
+  MarkerSchema& AddKeyLabelFormat(
+      std::string aKey, std::string aLabel, Format aFormat,
+      PayloadFlags aPayloadFlags = PayloadFlags::None) {
     mData.emplace_back(
         mozilla::VariantType<DynamicData>{},
         DynamicData{std::move(aKey), mozilla::Some(std::move(aLabel)), aFormat,
-                    mozilla::Nothing{}});
-    return *this;
-  }
-
-  MarkerSchema& AddKeyFormatSearchable(std::string aKey, Format aFormat,
-                                       Searchable aSearchable) {
-    mData.emplace_back(mozilla::VariantType<DynamicData>{},
-                       DynamicData{std::move(aKey), mozilla::Nothing{}, aFormat,
-                                   mozilla::Some(aSearchable)});
-    return *this;
-  }
-
-  MarkerSchema& AddKeyLabelFormatSearchable(std::string aKey,
-                                            std::string aLabel, Format aFormat,
-                                            Searchable aSearchable) {
-    mData.emplace_back(
-        mozilla::VariantType<DynamicData>{},
-        DynamicData{std::move(aKey), mozilla::Some(std::move(aLabel)), aFormat,
-                    mozilla::Some(aSearchable)});
+                    aPayloadFlags});
     return *this;
   }
 
@@ -1035,7 +1022,7 @@ class MarkerSchema {
     std::string mKey;
     mozilla::Maybe<std::string> mLabel;
     Format mFormat;
-    mozilla::Maybe<Searchable> mSearchable;
+    PayloadFlags mPayloadFlags;
   };
   struct StaticData {
     std::string mLabel;
@@ -1143,19 +1130,10 @@ struct BaseMarkerType {
     }
     for (const MS::PayloadField field : T::PayloadFields) {
       if (field.Label) {
-        if (uint32_t(field.Flags) & uint32_t(MS::PayloadFlags::Searchable)) {
-          schema.AddKeyLabelFormatSearchable(field.Key, field.Label, field.Fmt,
-                                             MS::Searchable::Searchable);
-        } else {
-          schema.AddKeyLabelFormat(field.Key, field.Label, field.Fmt);
-        }
+        schema.AddKeyLabelFormat(field.Key, field.Label, field.Fmt,
+                                 field.Flags);
       } else {
-        if (uint32_t(field.Flags) & uint32_t(MS::PayloadFlags::Searchable)) {
-          schema.AddKeyFormatSearchable(field.Key, field.Fmt,
-                                        MS::Searchable::Searchable);
-        } else {
-          schema.AddKeyFormat(field.Key, field.Fmt);
-        }
+        schema.AddKeyFormat(field.Key, field.Fmt, field.Flags);
       }
     }
     if (T::Description) {

@@ -510,13 +510,10 @@ class GCRuntime {
 
   bool addFinalizationRegistry(JSContext* cx,
                                Handle<FinalizationRegistryObject*> registry);
-  bool registerWithFinalizationRegistry(JSContext* cx, HandleObject target,
-                                        HandleObject record);
+  bool registerWithFinalizationRegistry(
+      JSContext* cx, HandleValue target,
+      Handle<FinalizationRecordObject*> record);
   void queueFinalizationRegistryForCleanup(FinalizationQueueObject* queue);
-
-  void nukeFinalizationRecordWrapper(JSObject* wrapper,
-                                     FinalizationRecordObject* record);
-  void nukeWeakRefWrapper(JSObject* wrapper, WeakRefObject* weakRef);
 
   void setFullCompartmentChecks(bool enable);
 
@@ -678,7 +675,8 @@ class GCRuntime {
   size_t markingWorkerCount() const;
 
   // WeakRefs
-  bool registerWeakRef(HandleObject target, HandleObject weakRef);
+  bool registerWeakRef(JSContext* cx, HandleValue target,
+                       Handle<WeakRefObject*> weakRef);
   void traceKeptObjects(JSTracer* trc);
 
   JS::GCReason lastStartReason() const { return initialReason; }
@@ -824,6 +822,7 @@ class GCRuntime {
   void relazifyFunctionsForShrinkingGC();
   void purgePropMapTablesForShrinkingGC();
   void purgeSourceURLsForShrinkingGC();
+  void purgePendingWrapperPreservationBuffersForShrinkingGC();
   void traceRuntimeForMajorGC(JSTracer* trc, AutoGCSession& session);
   void traceRuntimeAtoms(JSTracer* trc);
   void traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrMark);

@@ -259,11 +259,12 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
   }
 
   bool fractionalScale = false;
-  if (StaticPrefs::widget_wayland_fractional_scale_enabled_AtStartup()) {
+  if (StaticPrefs::widget_wayland_fractional_scale_enabled()) {
     fractionalScale = surface->EnableFractionalScaleLocked(
         lock,
         [win = RefPtr{window}]() {
-          win->RefreshScale(/* aRefreshScreen */ true);
+          win->RefreshScale(/* aRefreshScreen */ true,
+                            /* aForceRefresh */ true);
         },
         /* aManageViewport */ true);
   }
@@ -301,12 +302,6 @@ struct wl_egl_window* moz_container_wayland_get_egl_window(
   nsIntSize unscaledSize(gdk_window_get_width(window),
                          gdk_window_get_height(window));
   return MOZ_WL_SURFACE(container)->GetEGLWindow(unscaledSize);
-}
-
-void moz_container_wayland_update_opaque_region(MozContainer* container) {
-  nsWindow* window = moz_container_get_nsWindow(container);
-  MOZ_WL_SURFACE(container)->SetOpaqueRegion(
-      window->GetOpaqueRegion().ToUnknownRegion());
 }
 
 gboolean moz_container_wayland_can_draw(MozContainer* container) {

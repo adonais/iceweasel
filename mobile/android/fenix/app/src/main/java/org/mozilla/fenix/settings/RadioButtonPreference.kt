@@ -19,6 +19,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.utils.view.GroupableRadioButton
 import org.mozilla.fenix.utils.view.uncheckAll
+import androidx.preference.R as preferenceR
 
 @Suppress("RestrictedApi")
 open class RadioButtonPreference @JvmOverloads constructor(
@@ -44,7 +45,7 @@ open class RadioButtonPreference @JvmOverloads constructor(
             R.styleable.RadioButtonPreference,
             getAttr(
                 context,
-                androidx.preference.R.attr.preferenceStyle,
+                preferenceR.attr.preferenceStyle,
                 android.R.attr.preferenceStyle,
             ),
             0,

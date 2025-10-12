@@ -368,16 +368,16 @@ function triggerSecondaryCommand(popup, index) {
 
 /**
  * The security delay calculation in PopupNotification.sys.mjs is dependent on
- * the monotonically increasing value of Cu.now. This timestamp is
+ * the monotonically increasing value of ChromeUtils.now. This timestamp is
  * not relative to a fixed date, but to runtime.
- * We need to wait for the value Cu.now() to be larger than the
+ * We need to wait for the value ChromeUtils.now() to be larger than the
  * security delay in order to observe the bug. Only then does the
  * timeSinceShown check in PopupNotifications.sys.mjs lead to a timeSinceShown
  * value that is unconditionally greater than lazy.buttonDelay for
  * notification.timeShown = null = 0.
  * See: https://searchfox.org/mozilla-central/rev/f32d5f3949a3f4f185122142b29f2e3ab776836e/toolkit/modules/PopupNotifications.sys.mjs#1870-1872
  *
- * When running in automation as part of a larger test suite Cu.now()
+ * When running in automation as part of a larger test suite ChromeUtils.now()
  * should usually be already sufficiently high in which case this check should
  * directly resolve.
  */
@@ -387,7 +387,7 @@ async function ensureSecurityDelayReady(timeNewWindowOpened = 0) {
   );
 
   await TestUtils.waitForCondition(
-    () => Cu.now() - timeNewWindowOpened > secDelay,
+    () => ChromeUtils.now() - timeNewWindowOpened > secDelay,
     "Wait for performance.now() > SECURITY_DELAY",
     500,
     50

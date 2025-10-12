@@ -927,28 +927,6 @@ network:
       - necko@mozilla.com
     expires: never
 
-  race_cache_with_network_usage:
-    type: labeled_counter
-    description: >
-      Whether we raced network with the cache.
-
-      This metric was generated to correspond to the Legacy Telemetry
-      categorical histogram NETWORK_RACE_CACHE_WITH_NETWORK_USAGE_2.
-    labels:
-      - NetworkNoRace
-      - CacheNoRace
-      - NetworkRace
-      - CacheRace
-      - NetworkDelayedRace
-      - CacheDelayedRace
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1377340
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1377340
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: h#NETWORK_RACE_CACHE_WITH_NETWORK_USAGE_2
 
   race_cache_with_network_saved_time:
     type: timing_distribution
@@ -1599,205 +1577,6 @@ orb:
     expires: never
     telemetry_mirror: h#ORB_BLOCK_INITIATOR
 
-hpack:
-  elements_evicted_decompressor:
-    type: custom_distribution
-    description: >
-      HPACK: Number of items removed from dynamic table to make room for 1 new
-      item
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HPACK_ELEMENTS_EVICTED_DECOMPRESSOR.
-    range_min: 1
-    range_max: 256
-    bucket_count: 50
-    histogram_type: exponential
-    unit: item
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HPACK_ELEMENTS_EVICTED_DECOMPRESSOR
-
-  bytes_evicted_decompressor:
-    type: memory_distribution
-    description: >
-      HPACK: Number of bytes removed from dynamic table to make room for 1 new
-      item
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HPACK_BYTES_EVICTED_DECOMPRESSOR.
-    memory_unit: byte
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HPACK_BYTES_EVICTED_DECOMPRESSOR
-
-  bytes_evicted_ratio_decompressor:
-    type: custom_distribution
-    description: >
-      HPACK: Ratio of bytes evicted to bytes added (* 100)
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HPACK_BYTES_EVICTED_RATIO_DECOMPRESSOR.
-    range_min: 1
-    range_max: 1024
-    bucket_count: 50
-    histogram_type: exponential
-    unit: percent
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HPACK_BYTES_EVICTED_RATIO_DECOMPRESSOR
-
-  peak_count_decompressor:
-    type: custom_distribution
-    description: >
-      HPACK: peak number of items in the dynamic table
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HPACK_PEAK_COUNT_DECOMPRESSOR.
-    range_min: 1
-    range_max: 1024
-    bucket_count: 50
-    histogram_type: exponential
-    unit: item
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HPACK_PEAK_COUNT_DECOMPRESSOR
-
-  peak_size_decompressor:
-    type: memory_distribution
-    description: >
-      HPACK: peak size in bytes of the table
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HPACK_PEAK_SIZE_DECOMPRESSOR.
-    memory_unit: byte
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HPACK_PEAK_SIZE_DECOMPRESSOR
-
-  elements_evicted_compressor:
-    type: custom_distribution
-    description: >
-      HPACK: Number of items removed from dynamic table to make room for 1 new
-      item
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HPACK_ELEMENTS_EVICTED_COMPRESSOR.
-    range_min: 1
-    range_max: 256
-    bucket_count: 50
-    histogram_type: exponential
-    unit: item
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HPACK_ELEMENTS_EVICTED_COMPRESSOR
-
-  bytes_evicted_compressor:
-    type: memory_distribution
-    description: >
-      HPACK: Number of bytes removed from dynamic table to make room for 1 new
-      item
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HPACK_BYTES_EVICTED_COMPRESSOR.
-    memory_unit: byte
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HPACK_BYTES_EVICTED_COMPRESSOR
-
-  bytes_evicted_ratio_compressor:
-    type: custom_distribution
-    description: >
-      HPACK: Ratio of bytes evicted to bytes added (* 100)
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HPACK_BYTES_EVICTED_RATIO_COMPRESSOR.
-    range_min: 1
-    range_max: 1024
-    bucket_count: 50
-    histogram_type: exponential
-    unit: percent
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HPACK_BYTES_EVICTED_RATIO_COMPRESSOR
-
-  peak_count_compressor:
-    type: custom_distribution
-    description: >
-      HPACK: peak number of items in the dynamic table
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HPACK_PEAK_COUNT_COMPRESSOR.
-    range_min: 1
-    range_max: 1024
-    bucket_count: 50
-    histogram_type: exponential
-    unit: item
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HPACK_PEAK_COUNT_COMPRESSOR
-
-  peak_size_compressor:
-    type: memory_distribution
-    description: >
-      HPACK: peak size in bytes of the table
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram HPACK_PEAK_SIZE_COMPRESSOR.
-    memory_unit: byte
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1296280
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HPACK_PEAK_SIZE_COMPRESSOR
-
 spdy:
   parallel_streams:
     type: custom_distribution
@@ -1862,98 +1641,10 @@ spdy:
     expires: never
     telemetry_mirror: SPDY_SERVER_INITIATED_STREAMS
 
-  chunk_recvd:
-    type: memory_distribution
-    description: >
-      SPDY: Recvd Chunk Size (rounded to KB)
 
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram SPDY_CHUNK_RECVD.
-    memory_unit: kilobyte
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: SPDY_CHUNK_RECVD
 
-  syn_size:
-    type: memory_distribution
-    description: >
-      SPDY: SYN Frame Header Size
 
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram SPDY_SYN_SIZE.
-    memory_unit: byte
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: SPDY_SYN_SIZE
 
-  syn_ratio:
-    type: custom_distribution
-    description: >
-      SPDY: SYN Frame Header Ratio (lower better)
-
-      This metric was generated to correspond to the Legacy Telemetry linear
-      histogram SPDY_SYN_RATIO.
-    range_min: 1
-    range_max: 99
-    bucket_count: 20
-    histogram_type: linear
-    unit: percent
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: SPDY_SYN_RATIO
-
-  syn_reply_size:
-    type: memory_distribution
-    description: >
-      SPDY: SYN Reply Header Size
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram SPDY_SYN_REPLY_SIZE.
-    memory_unit: byte
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: SPDY_SYN_REPLY_SIZE
-
-  syn_reply_ratio:
-    type: custom_distribution
-    description: >
-      SPDY: SYN Reply Header Ratio (lower better)
-
-      This metric was generated to correspond to the Legacy Telemetry linear
-      histogram SPDY_SYN_REPLY_RATIO.
-    range_min: 1
-    range_max: 99
-    bucket_count: 20
-    histogram_type: linear
-    unit: percent
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: SPDY_SYN_REPLY_RATIO
 
   kbread_per_conn:
     type: memory_distribution
@@ -1991,23 +1682,6 @@ spdy:
       - necko@mozilla.com
     expires: never
     telemetry_mirror: SPDY_SETTINGS_MAX_STREAMS
-
-  settings_iw:
-    type: memory_distribution
-    description: >
-      H2: Settings Initial Window (rounded to KB)
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram SPDY_SETTINGS_IW.
-    memory_unit: kilobyte
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935420
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: SPDY_SETTINGS_IW
 
   goaway_local:
     type: custom_distribution
@@ -2238,25 +1912,6 @@ http:
     expires: never
     telemetry_mirror: h#HTTP_TRANSACTION_USE_ALTSVC
 
-  altsvc_entries_per_header:
-    type: custom_distribution
-    description: >
-      How many alt-svc productions were seen in a single Alt-Svc header
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram HTTP_ALTSVC_ENTRIES_PER_HEADER.
-    range_min: 0
-    range_max: 5
-    bucket_count: 6
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1499149
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1499149
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HTTP_ALTSVC_ENTRIES_PER_HEADER
 
   altsvc_mapping_changed_target:
     type: labeled_counter
@@ -2426,26 +2081,6 @@ http:
     expires: never
     telemetry_mirror: h#HTTP_CONNECTION_ENTRY_CACHE_HIT_1
 
-  saw_quic_alt_protocol:
-    type: custom_distribution
-    description: >
-      Does a response has a h3(1), other quic(2) or non(0) alt-protocol
-      advertisement.
-
-      This metric was generated to correspond to the Legacy Telemetry enumerated
-      histogram HTTP_SAW_QUIC_ALT_PROTOCOL_2.
-    range_min: 0
-    range_max: 3
-    bucket_count: 4
-    histogram_type: linear
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1605099
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1605099
-    notification_emails:
-      - necko@mozilla.com
-    expires: never
-    telemetry_mirror: HTTP_SAW_QUIC_ALT_PROTOCOL_2
 
   content_encoding:
     type: custom_distribution

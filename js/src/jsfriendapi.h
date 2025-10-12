@@ -451,6 +451,8 @@ JS_PUBLIC_API void SetPreserveWrapperCallbacks(
     JSContext* cx, PreserveWrapperCallback preserveWrapper,
     HasReleasedWrapperCallback hasReleasedWrapper);
 
+JS_PUBLIC_API void CommitPendingWrapperPreservations(JSContext* cx);
+
 JS_PUBLIC_API bool IsObjectInContextCompartment(JSObject* obj,
                                                 const JSContext* cx);
 
@@ -777,11 +779,8 @@ using SharedMemoryMap =
 extern JS_PUBLIC_API const gc::SharedMemoryMap& GetSharedMemoryUsageForZone(
     JS::Zone* zone);
 
-/**
- * This function only reports GC heap memory,
- * and not malloc allocated memory associated with GC things.
- * It reports the total of all memory for the whole Runtime.
- */
+// Get the total amount of GC heap memory used by the runtime, including malloc
+// memory.
 extern JS_PUBLIC_API uint64_t GetGCHeapUsage(JSContext* cx);
 
 class JS_PUBLIC_API CompartmentTransplantCallback {

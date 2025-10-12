@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import org.mozilla.fenix.compose.SelectableChip
+import mozilla.components.compose.base.SelectableChip
 import org.mozilla.fenix.compose.ext.isItemPartiallyVisible
 import org.mozilla.fenix.downloads.listscreen.store.FileItem
 import org.mozilla.fenix.theme.FirefoxTheme

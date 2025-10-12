@@ -60,36 +60,30 @@ SyncModuleLoader::SyncModuleLoader(SyncScriptLoader* aScriptLoader,
 
 SyncModuleLoader::~SyncModuleLoader() { MOZ_ASSERT(mLoadRequests.isEmpty()); }
 
-already_AddRefed<ModuleLoadRequest> SyncModuleLoader::CreateStaticImport(
-    nsIURI* aURI, JS::ModuleType aModuleType,
-    JS::loader::ModuleScript* aReferrerScript,
-    const mozilla::dom::SRIMetadata& aSriMetadata,
-    JS::loader::LoadContextBase* aLoadContext,
-    JS::loader::ModuleLoaderBase* aLoader) {
+already_AddRefed<ModuleLoadRequest> SyncModuleLoader::CreateRequest(
+    JSContext* aCx, nsIURI* aURI, JS::Handle<JSObject*> aModuleRequest,
+    JS::Handle<JS::Value> aHostDefined, JS::Handle<JS::Value> aPayload,
+    bool aIsDynamicImport, ScriptFetchOptions* aOptions,
+    dom::ReferrerPolicy aReferrerPolicy, nsIURI* aBaseURL,
+    const dom::SRIMetadata& aSriMetadata) {
   RefPtr<SyncLoadContext> context = new SyncLoadContext();
+  JS::ModuleType moduleType = GetModuleRequestType(aCx, aModuleRequest);
+
+  ModuleLoadRequest::Kind kind;
+  ModuleLoadRequest* root = nullptr;
+  if (aIsDynamicImport) {
+    kind = ModuleLoadRequest::Kind::DynamicImport;
+  } else {
+    MOZ_ASSERT(!aHostDefined.isUndefined());
+    root = static_cast<ModuleLoadRequest*>(aHostDefined.toPrivate());
+    MOZ_ASSERT(root);
+    kind = ModuleLoadRequest::Kind::StaticImport;
+  }
+
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aModuleType, aReferrerScript->ReferrerPolicy(),
-      aReferrerScript->GetFetchOptions(), dom::SRIMetadata(),
-      aReferrerScript->GetURI(), context, ModuleLoadRequest::Kind::StaticImport,
-      this, aLoadContext->mRequest->AsModuleRequest()->GetRootModule());
+      aURI, moduleType, aReferrerPolicy, aOptions, dom::SRIMetadata(), aBaseURL,
+      context, kind, this, root);
   request->NoCacheEntryFound();
-  return request.forget();
-}
-
-already_AddRefed<ModuleLoadRequest> SyncModuleLoader::CreateDynamicImport(
-    JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
-    JS::Handle<JSObject*> aModuleRequestObj, JS::Handle<JSObject*> aPromise) {
-  JS::ModuleType moduleType = JS::GetModuleRequestType(aCx, aModuleRequestObj);
-  RefPtr<SyncLoadContext> context = new SyncLoadContext();
-  RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, moduleType, aMaybeActiveScript->ReferrerPolicy(),
-      aMaybeActiveScript->GetFetchOptions(), dom::SRIMetadata(),
-      aMaybeActiveScript->BaseURL(), context,
-      ModuleLoadRequest::Kind::DynamicImport, this, nullptr);
-
-  request->SetDynamicImport(aMaybeActiveScript, aModuleRequestObj, aPromise);
-  request->NoCacheEntryFound();
-
   return request.forget();
 }
 

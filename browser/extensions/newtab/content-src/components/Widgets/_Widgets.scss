@@ -16,7 +16,6 @@
 
 .discovery-stream.ds-layout.ds-layout-widgets {
   margin-inline: 0;
-  margin-block-end: var(--space-xlarge);
 }
 
 .widgets-wrapper {
@@ -25,22 +24,28 @@
   align-items: center;
   justify-content: center;
   position: relative;
+  // Bug 1967304 - Large number (48px)
+  padding-block-end: calc(var(--space-xlarge) * 2);
 
   .widgets-scroll-message {
     @include wallpaper-contrast-fix;
 
     color: var(--newtab-text-primary-color);
     position: absolute;
-    bottom: calc(var(--space-xxlarge) * -2);
-    animation: fade-in 0.25s ease-out 0.7s both;
+    bottom: 0;
     border-radius: var(--button-border-radius);
     background: var(--button-background-color);
-    padding: var(--space-small) var(--space-xlarge);
+    padding: var(--space-small) var(--space-large);
 
     p {
       margin: 0;
       font-weight: var(--font-weight-bold);
     }
+
+    @media (prefers-reduced-motion: no-preference) {
+      animation: fade-in 0.25s ease-out 0.7s both;
+    }
+
   }
 }
 

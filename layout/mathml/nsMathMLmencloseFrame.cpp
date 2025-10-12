@@ -595,7 +595,7 @@ nscoord nsMathMLmencloseFrame::FixInterFrameSpacing(
 
 nsresult nsMathMLmencloseFrame::AttributeChanged(int32_t aNameSpaceID,
                                                  nsAtom* aAttribute,
-                                                 int32_t aModType) {
+                                                 AttrModType aModType) {
   if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::notation) {
     InitNotations();
     PresShell()->FrameNeedsReflow(this, IntrinsicDirty::FrameAndAncestors,

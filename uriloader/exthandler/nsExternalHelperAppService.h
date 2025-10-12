@@ -130,6 +130,14 @@ class nsExternalHelperAppService : public nsIExternalHelperAppService,
   static nsresult EscapeURI(nsIURI* aURI, nsIURI** aResult);
 
   /**
+   * Check whether `aBrowsingContext` is sandboxed such that external
+   * protocol navigations performed in that context would be blocked.
+   */
+  static bool ExternalProtocolIsBlockedBySandbox(
+      mozilla::dom::BrowsingContext* aBrowsingContext,
+      const bool aHasValidUserGestureActivation);
+
+  /**
    * Logging Module. Usage: set MOZ_LOG=HelperAppService:level, where level
    * should be 2 for errors, 3 for debug messages from the cross- platform
    * nsExternalHelperAppService, and 4 for os-specific debug messages.

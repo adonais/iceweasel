@@ -15,27 +15,32 @@
 #include <string.h>  // memset
 
 #include <algorithm>
+#include <cstdint>
+#include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
-#include <vector>
+#include <utility>
 
 #include "absl/flags/flag.h"
+#include "api/array_view.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/rtp_headers.h"
+#include "api/units/time_delta.h"
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "modules/audio_coding/neteq/test/neteq_decoding_test.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
+#include "modules/audio_coding/neteq/tools/audio_sink.h"
+#include "modules/audio_coding/neteq/tools/neteq_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_rtp_dump_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
 #include "modules/include/module_common_types_public.h"
-#include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/message_digest.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/arch.h"
-#include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
@@ -46,7 +51,7 @@ namespace webrtc {
 // TODO(bugs.webrtc.org/345525069): Either fix/enable or remove.
 TEST_F(NetEqDecodingTest, DISABLED_TestBitExactness) {
   const std::string input_rtp_file =
-      webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
+      test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
 
   const std::string output_checksum =
       "dee7a10ab92526876a70a85bc48a4906901af3df";
@@ -67,7 +72,7 @@ TEST_F(NetEqDecodingTest, DISABLED_TestBitExactness) {
 #endif
 TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
   const std::string input_rtp_file =
-      webrtc::test::ResourcePath("audio_coding/neteq_opus", "rtp");
+      test::ResourcePath("audio_coding/neteq_opus", "rtp");
 
   const std::string output_checksum =
       "434bdc4ec08546510ee903d001c8be1a01c44e24|"
@@ -91,7 +96,7 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
 #endif
 TEST_F(NetEqDecodingTest, MAYBE_TestOpusDtxBitExactness) {
   const std::string input_rtp_file =
-      webrtc::test::ResourcePath("audio_coding/neteq_opus_dtx", "rtp");
+      test::ResourcePath("audio_coding/neteq_opus_dtx", "rtp");
 
   const std::string output_checksum =
       "7eddce841cbfa500964c91cdae78b01b9f448948|"
@@ -317,10 +322,10 @@ class NetEqBgnTest : public NetEqDecodingTest {
     // We are using the same 32 kHz input file for all tests, regardless of
     // `sampling_rate_hz`. The output may sound weird, but the test is still
     // valid.
-    ASSERT_TRUE(input.Init(
-        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"),
-        10 * sampling_rate_hz,  // Max 10 seconds loop length.
-        expected_samples_per_channel));
+    ASSERT_TRUE(
+        input.Init(test::ResourcePath("audio_coding/testfile32kHz", "pcm"),
+                   10 * sampling_rate_hz,  // Max 10 seconds loop length.
+                   expected_samples_per_channel));
 
     // Payload of 10 ms of PCM16 32 kHz.
     uint8_t payload[kBlockSize32kHz * sizeof(int16_t)];
@@ -996,7 +1001,7 @@ TEST(NetEqNoTimeStretchingMode, RunTest) {
       {7, kRtpExtensionVideoContentType},
       {8, kRtpExtensionVideoTiming}};
   std::unique_ptr<NetEqInput> input = CreateNetEqRtpDumpInput(
-      webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp"),
+      test::ResourcePath("audio_coding/neteq_universal_new", "rtp"),
       rtp_ext_map, std::nullopt /*No SSRC filter*/);
   std::unique_ptr<TimeLimitedNetEqInput> input_time_limit(
       new TimeLimitedNetEqInput(std::move(input), 20000));

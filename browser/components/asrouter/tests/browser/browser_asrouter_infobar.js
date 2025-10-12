@@ -15,6 +15,9 @@ const { ASRouter } = ChromeUtils.importESModule(
 const { SpecialMessageActions } = ChromeUtils.importESModule(
   "resource://messaging-system/lib/SpecialMessageActions.sys.mjs"
 );
+const { RemoteL10n } = ChromeUtils.importESModule(
+  "resource:///modules/asrouter/RemoteL10n.sys.mjs"
+);
 
 // Helper to record impressions in ASRouter state when dispatching an IMPRESSION
 // action
@@ -588,10 +591,6 @@ add_task(async function test_buildMessageFragment_withInlineAnchors() {
   const browser = win.gBrowser.selectedBrowser;
   const doc = browser.ownerGlobal.document;
 
-  // Stub out the Fluent call to return a string with an inline anchor
-  const { RemoteL10n } = ChromeUtils.importESModule(
-    "resource:///modules/asrouter/RemoteL10n.sys.mjs"
-  );
   sinon
     .stub(RemoteL10n, "formatLocalizableText")
     .resolves('<a data-l10n-name="foo">Click Here</a>');
@@ -659,9 +658,6 @@ add_task(async function test_buildMessageFragment_withoutInlineAnchors() {
   const doc = browser.ownerGlobal.document;
 
   // Stub Fluent to return plain text (no <a data-l10n-name>)
-  const { RemoteL10n } = ChromeUtils.importESModule(
-    "resource:///modules/asrouter/RemoteL10n.sys.mjs"
-  );
   sinon.stub(RemoteL10n, "formatLocalizableText").resolves("Just plain text");
 
   let { infobar } = await showInfobar(
@@ -701,9 +697,6 @@ add_task(
     const win = BrowserWindowTracker.getTopWindow();
     const browser = win.gBrowser.selectedBrowser;
 
-    const { RemoteL10n } = ChromeUtils.importESModule(
-      "resource:///modules/asrouter/RemoteL10n.sys.mjs"
-    );
     sinon
       .stub(RemoteL10n, "formatLocalizableText")
       .resolves('<a data-l10n-name="foo">Click Me</a>');
@@ -1092,4 +1085,400 @@ add_task(async function test_impression_action_multi_action_once_and_every() {
   );
 
   handleStub.restore();
+});
+
+add_task(
+  async function inline_anchor_with_dismiss_closes_and_sends_telemetry() {
+    const sandbox = sinon.createSandbox();
+
+    sandbox
+      .stub(RemoteL10n, "formatLocalizableText")
+      .resolves('<a data-l10n-name="test">Open</a>');
+    const handle = sandbox.stub(SpecialMessageActions, "handleAction");
+
+    const browser =
+      BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser;
+    const message = {
+      id: "TEST_INLINE_DISMISS",
+      content: {
+        type: "global",
+        text: { string_id: "test" },
+        linkUrls: { test: "https://example.com" },
+        linkActions: {
+          test: {
+            type: "SET_PREF",
+            data: { pref: { name: "embedded-link-sma", value: true } },
+            dismiss: true,
+          },
+        },
+        buttons: [],
+      },
+    };
+
+    const dispatch = sandbox.stub();
+    const infobar = await InfoBar.showInfoBarMessage(
+      browser,
+      message,
+      dispatch
+    );
+
+    // Ignore impression ping.
+    dispatch.resetHistory();
+
+    infobar.notification.messageText
+      .querySelector('a[data-l10n-name="test"]')
+      .click();
+
+    await BrowserTestUtils.waitForCondition(
+      () => !infobar.notification,
+      "Infobar dismissed by inline anchor configured to dismiss"
+    );
+    Assert.equal(
+      handle.callCount,
+      2,
+      "Two SMAs handled (OPEN_URL and SET_PREF)"
+    );
+    Assert.ok(
+      dispatch.calledWith(
+        sinon.match({
+          type: "INFOBAR_TELEMETRY",
+          data: sinon.match.has("event", "DISMISSED"),
+        })
+      ),
+      "DISMISSED telemetry sent"
+    );
+
+    sandbox.restore();
+  }
+);
+
+add_task(async function dismiss_on_pref_first_set() {
+  const PREF = "messaging-system-action.dismissOnChange.first";
+
+  const browser = BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser;
+  const message = {
+    id: "TEST_DISMISS_ON_PREF_FIRST_SET",
+    content: {
+      type: "global",
+      text: "pref first-set",
+      dismissable: true,
+      buttons: [],
+      dismissOnPrefChange: PREF,
+    },
+  };
+
+  const dispatch = sinon.stub();
+  const infobar = await InfoBar.showInfoBarMessage(browser, message, dispatch);
+
+  // Ignore initial impression ping(s)
+  dispatch.resetHistory();
+
+  Services.prefs.setBoolPref(PREF, true);
+
+  await BrowserTestUtils.waitForCondition(
+    () => !infobar.notification,
+    "Infobar dismissed by first time pref set"
+  );
+
+  Assert.ok(
+    dispatch.calledWith(
+      sinon.match({
+        type: "INFOBAR_TELEMETRY",
+        data: sinon.match.has("event", "DISMISSED"),
+      })
+    ),
+    "DISMISSED telemetry sent on first time pref set"
+  );
+
+  Services.prefs.clearUserPref(PREF);
+});
+
+add_task(async function dismiss_on_pref_value_change() {
+  const PREF = "messaging-system-action.dismissOnChange.flip";
+  Services.prefs.setBoolPref(PREF, false);
+
+  const browser = BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser;
+  const message = {
+    id: "TEST_DISMISS_ON_PREF_CHANGE",
+    content: {
+      type: "global",
+      text: "pref change",
+      dismissable: true,
+      buttons: [],
+      dismissOnPrefChange: PREF,
+    },
+  };
+
+  const dispatch = sinon.stub();
+  const infobar = await InfoBar.showInfoBarMessage(browser, message, dispatch);
+
+  // Ignore initial impression ping(s)
+  dispatch.resetHistory();
+
+  Services.prefs.setBoolPref(PREF, true);
+
+  await BrowserTestUtils.waitForCondition(
+    () => !infobar.notification,
+    "Infobar dismissed by subsequent pref change"
+  );
+
+  Assert.ok(
+    dispatch.calledWith(
+      sinon.match({
+        type: "INFOBAR_TELEMETRY",
+        data: sinon.match.has("event", "DISMISSED"),
+      })
+    ),
+    "DISMISSED telemetry sent on pref change"
+  );
+
+  Services.prefs.clearUserPref(PREF);
+});
+
+add_task(async function global_does_not_replace_without_permission() {
+  const sandbox = sinon.createSandbox();
+
+  const windowWithInfobar = BrowserWindowTracker.getTopWindow();
+  const browserInWindow = windowWithInfobar.gBrowser.selectedBrowser;
+
+  const removeById = id => {
+    const node =
+      windowWithInfobar.gNotificationBox.getNotificationWithValue(id);
+    if (node) {
+      windowWithInfobar.gNotificationBox.removeNotification(node);
+    }
+  };
+
+  const originalGlobalMessage = {
+    id: "TEST_GLOBAL_ORIGINAL",
+    content: {
+      type: "global",
+      text: "original global message",
+      buttons: [],
+      // no canReplace
+    },
+  };
+
+  const secondGlobalMessage = {
+    id: "TEST_GLOBAL_ATTEMPT_REPLACE",
+    content: {
+      type: "global",
+      text: "attempted replacement global message",
+      buttons: [],
+      // no canReplace
+    },
+  };
+
+  const getNotification = id =>
+    windowWithInfobar.gNotificationBox.getNotificationWithValue(id);
+
+  const dispatchOriginal = sandbox.stub();
+  await InfoBar.showInfoBarMessage(
+    browserInWindow,
+    originalGlobalMessage,
+    dispatchOriginal
+  );
+
+  await BrowserTestUtils.waitForCondition(
+    () => !!getNotification(originalGlobalMessage.id),
+    "Original global infobar is visible"
+  );
+  Assert.ok(
+    dispatchOriginal.calledWith(
+      sinon.match({
+        type: "IMPRESSION",
+        data: sinon.match.has("id", originalGlobalMessage.id),
+      })
+    ),
+    "Impression recorded for the original global message"
+  );
+
+  const dispatchAttempt = sandbox.stub();
+  const result = await InfoBar.showInfoBarMessage(
+    browserInWindow,
+    secondGlobalMessage,
+    dispatchAttempt
+  );
+
+  Assert.equal(
+    result,
+    null,
+    "showInfoBarMessage returned null because stacking was prevented (replacement not allowed)"
+  );
+  Assert.ok(
+    !!getNotification(originalGlobalMessage.id),
+    "Original global infobar remains visible because replacement was not allowed"
+  );
+  Assert.ok(
+    dispatchAttempt.notCalled,
+    "No impression recorded for the unpermitted replacement attempt"
+  );
+
+  // Cleanup
+  removeById(originalGlobalMessage.id);
+  removeById(secondGlobalMessage.id);
+  InfoBar._activeInfobar = null;
+  InfoBar._universalInfobars = [];
+  sandbox.restore();
+});
+
+add_task(async function replace_global_with_global_and_record_impressions() {
+  const sandbox = sinon.createSandbox();
+
+  const getFromWin = (win, id) =>
+    win.gNotificationBox?.getNotificationWithValue(id);
+
+  const removeByIdInWin = (win, id) => {
+    const box = win.gNotificationBox;
+    if (!box) {
+      return;
+    }
+    const node = box.getNotificationWithValue(id);
+    if (node) {
+      box.removeNotification(node);
+    }
+  };
+
+  const win = BrowserWindowTracker.getTopWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  const firstGlobalMessage = {
+    id: "TEST_REPLACE_GLOBAL_WITH_GLOBAL_FIRST",
+    content: {
+      type: "global",
+      text: "first global message",
+      buttons: [],
+      canReplace: ["TEST_REPLACE_GLOBAL_WITH_GLOBAL_SECOND"],
+    },
+  };
+
+  const secondGlobalMessage = {
+    id: "TEST_REPLACE_GLOBAL_WITH_GLOBAL_SECOND",
+    content: {
+      type: "global",
+      text: "second global message",
+      buttons: [],
+      canReplace: ["TEST_REPLACE_GLOBAL_WITH_GLOBAL_FIRST"],
+    },
+  };
+
+  const dispatchFirstGlobal = sandbox.stub();
+  await InfoBar.showInfoBarMessage(
+    browser,
+    firstGlobalMessage,
+    dispatchFirstGlobal
+  );
+
+  await BrowserTestUtils.waitForCondition(
+    () => !!getFromWin(win, firstGlobalMessage.id),
+    "First global visible"
+  );
+  Assert.ok(
+    dispatchFirstGlobal.calledWith(
+      sinon.match({
+        type: "IMPRESSION",
+        data: sinon.match.has("id", firstGlobalMessage.id),
+      })
+    ),
+    "Impression recorded for the first global"
+  );
+
+  const dispatchSecondGlobal = sandbox.stub();
+  await InfoBar.showInfoBarMessage(
+    browser,
+    secondGlobalMessage,
+    dispatchSecondGlobal
+  );
+
+  await BrowserTestUtils.waitForCondition(
+    () => !!getFromWin(win, secondGlobalMessage.id),
+    "Second global visible"
+  );
+  await BrowserTestUtils.waitForCondition(
+    () => !getFromWin(win, firstGlobalMessage.id),
+    "First global removed"
+  );
+  Assert.ok(
+    dispatchSecondGlobal.calledWith(
+      sinon.match({
+        type: "IMPRESSION",
+        data: sinon.match.has("id", secondGlobalMessage.id),
+      })
+    ),
+    "Impression recorded for the second global"
+  );
+
+  const dispatchFirstGlobalAgain = sandbox.stub();
+  await InfoBar.showInfoBarMessage(
+    browser,
+    firstGlobalMessage,
+    dispatchFirstGlobalAgain
+  );
+
+  await BrowserTestUtils.waitForCondition(
+    () => !!getFromWin(win, firstGlobalMessage.id),
+    "First global visible again"
+  );
+  await BrowserTestUtils.waitForCondition(
+    () => !getFromWin(win, secondGlobalMessage.id),
+    "Second global removed"
+  );
+  Assert.ok(
+    dispatchFirstGlobalAgain.calledWith(
+      sinon.match({
+        type: "IMPRESSION",
+        data: sinon.match.has("id", firstGlobalMessage.id),
+      })
+    ),
+    "Impression recorded again for the first global when shown again"
+  );
+
+  removeByIdInWin(win, firstGlobalMessage.id);
+  removeByIdInWin(win, secondGlobalMessage.id);
+  sandbox.restore();
+  InfoBar._activeInfobar = null;
+  InfoBar._universalInfobars = [];
+});
+
+add_task(async function dismiss_on_any_pref_in_array_change() {
+  const PREF1 = "messaging-system-action.dismissOnChange.array.one";
+  const PREF2 = "messaging-system-action.dismissOnChange.array.two";
+
+  const browser = BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser;
+  const message = {
+    id: "TEST_DISMISS_ON_ANY_PREF_IN_ARRAY",
+    content: {
+      type: "global",
+      text: "array pref change",
+      dismissable: true,
+      buttons: [],
+      dismissOnPrefChange: [PREF1, PREF2],
+    },
+  };
+
+  const dispatch = sinon.stub();
+  const infobar = await InfoBar.showInfoBarMessage(browser, message, dispatch);
+
+  // ignore initial impression
+  dispatch.resetHistory();
+
+  Services.prefs.setBoolPref(PREF2, true);
+
+  await BrowserTestUtils.waitForCondition(
+    () => !infobar.notification,
+    "Infobar dismissed when pref in the array changes"
+  );
+
+  Assert.ok(
+    dispatch.calledWith(
+      sinon.match({
+        type: "INFOBAR_TELEMETRY",
+        data: sinon.match.has("event", "DISMISSED"),
+      })
+    ),
+    "DISMISSED telemetry sent on array pref change"
+  );
+
+  Services.prefs.clearUserPref(PREF1);
+  Services.prefs.clearUserPref(PREF2);
 });

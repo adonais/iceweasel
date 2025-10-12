@@ -18,13 +18,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
 const RESULT_MENU_COMMANDS = {
   DISMISS: "dismiss",
 };
-const CLIPBOARD_IMPRESSION_LIMIT = 2;
+export const CLIPBOARD_IMPRESSION_LIMIT = 2;
 
 /**
  * A provider that returns a suggested url to the user based
  * on a valid URL stored in the clipboard.
  */
-class ProviderClipboard extends UrlbarProvider {
+export class UrlbarProviderClipboard extends UrlbarProvider {
   #previousClipboard = {
     value: "",
     impressionsLeft: CLIPBOARD_IMPRESSION_LIMIT,
@@ -32,10 +32,6 @@ class ProviderClipboard extends UrlbarProvider {
 
   constructor() {
     super();
-  }
-
-  get name() {
-    return "UrlbarProviderClipboard";
   }
 
   /**
@@ -154,6 +150,3 @@ class ProviderClipboard extends UrlbarProvider {
     }
   }
 }
-
-const UrlbarProviderClipboard = new ProviderClipboard();
-export { UrlbarProviderClipboard, CLIPBOARD_IMPRESSION_LIMIT };

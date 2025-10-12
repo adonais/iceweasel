@@ -8734,7 +8734,7 @@ BytecodeEmitter::parseNodeToConstantCompareOperand(ParseNode* constant) {
       int32_t ival;
       if (NumberEqualsInt32(d, &ival)) {
         if (ConstantCompareOperand::CanEncodeInt32ValueAsOperand(ival)) {
-          return Some(ConstantCompareOperand((int8_t)ival));
+          return Some(ConstantCompareOperand(int8_t(ival)));
         }
       }
       return Nothing();
@@ -11634,15 +11634,20 @@ bool BytecodeEmitter::emitTypeof(UnaryNode* typeofNode, JSOp op) {
 }
 
 bool BytecodeEmitter::tryEmitTypeofEq(ListNode* node, bool* emitted) {
-  // Emit specialized opcode for `typeof val == "type` or `typeof val != "type`
-  // if possible.
+  // Emit specialized opcode for the following if possible:
+  //  * typeof val == "type"
+  //  * typeof val != "type"
+  //  * typeof val > "u"     # minified `typeof val === "undefined"`
+  //  * typeof val < "u"     # minified `typeof val !== "undefined"`
   //
   // NOTE: Given the comparison is done for string, `==` and `===` have
   //       no difference. Same for `!=` and `!==`.
   MOZ_ASSERT(node->isKind(ParseNodeKind::StrictEqExpr) ||
              node->isKind(ParseNodeKind::EqExpr) ||
              node->isKind(ParseNodeKind::StrictNeExpr) ||
-             node->isKind(ParseNodeKind::NeExpr));
+             node->isKind(ParseNodeKind::NeExpr) ||
+             node->isKind(ParseNodeKind::LtExpr) ||
+             node->isKind(ParseNodeKind::GtExpr));
 
   if (node->count() != 2) {
     *emitted = false;
@@ -11656,50 +11661,88 @@ bool BytecodeEmitter::tryEmitTypeofEq(ListNode* node, bool* emitted) {
   UnaryNode* typeofNode;
   NameNode* typenameNode;
   JSOp op;
-
-  if (node->isKind(ParseNodeKind::StrictEqExpr) ||
-      node->isKind(ParseNodeKind::EqExpr)) {
-    op = JSOp::Eq;
-  } else {
-    op = JSOp::Ne;
-  }
-
-  // NOTE: ParseNodeKind::TypeOfExpr cannot use JSOp::TypeofEq.
-  //       See JSOp::GetName document.
-  if (left->isKind(ParseNodeKind::TypeOfNameExpr) &&
-      right->isKind(ParseNodeKind::StringExpr)) {
-    typeofNode = &left->as<UnaryNode>();
-    typenameNode = &right->as<NameNode>();
-  } else if (right->isKind(ParseNodeKind::TypeOfNameExpr) &&
-             left->isKind(ParseNodeKind::StringExpr)) {
-    typeofNode = &right->as<UnaryNode>();
-    typenameNode = &left->as<NameNode>();
-  } else {
-    *emitted = false;
-    return true;
-  }
-
   JSType type;
-  TaggedParserAtomIndex typeName = typenameNode->atom();
-  if (typeName == TaggedParserAtomIndex::WellKnown::undefined()) {
-    type = JSTYPE_UNDEFINED;
-  } else if (typeName == TaggedParserAtomIndex::WellKnown::object()) {
-    type = JSTYPE_OBJECT;
-  } else if (typeName == TaggedParserAtomIndex::WellKnown::function()) {
-    type = JSTYPE_FUNCTION;
-  } else if (typeName == TaggedParserAtomIndex::WellKnown::string()) {
-    type = JSTYPE_STRING;
-  } else if (typeName == TaggedParserAtomIndex::WellKnown::number()) {
-    type = JSTYPE_NUMBER;
-  } else if (typeName == TaggedParserAtomIndex::WellKnown::boolean()) {
-    type = JSTYPE_BOOLEAN;
-  } else if (typeName == TaggedParserAtomIndex::WellKnown::symbol()) {
-    type = JSTYPE_SYMBOL;
-  } else if (typeName == TaggedParserAtomIndex::WellKnown::bigint()) {
-    type = JSTYPE_BIGINT;
+
+  if (node->isKind(ParseNodeKind::LtExpr) ||
+      node->isKind(ParseNodeKind::GtExpr)) {
+    if (left->isKind(ParseNodeKind::TypeOfNameExpr) &&
+        right->isKind(ParseNodeKind::StringExpr)) {
+      typeofNode = &left->as<UnaryNode>();
+      typenameNode = &right->as<NameNode>();
+
+      if (node->isKind(ParseNodeKind::LtExpr)) {
+        op = JSOp::Ne;
+      } else {
+        op = JSOp::Eq;
+      }
+    } else if (left->isKind(ParseNodeKind::TypeOfNameExpr) &&
+               right->isKind(ParseNodeKind::StringExpr)) {
+      typeofNode = &left->as<UnaryNode>();
+      typenameNode = &right->as<NameNode>();
+
+      if (node->isKind(ParseNodeKind::LtExpr)) {
+        op = JSOp::Eq;
+      } else {
+        op = JSOp::Ne;
+      }
+    } else {
+      *emitted = false;
+      return true;
+    }
+
+    TaggedParserAtomIndex typeName = typenameNode->atom();
+    if (typeName.isLength1StaticParserString() &&
+        typeName.toLength1StaticParserString() ==
+            Length1StaticParserString('u')) {
+      type = JSTYPE_UNDEFINED;
+    } else {
+      *emitted = false;
+      return true;
+    }
   } else {
-    *emitted = false;
-    return true;
+    if (node->isKind(ParseNodeKind::StrictEqExpr) ||
+        node->isKind(ParseNodeKind::EqExpr)) {
+      op = JSOp::Eq;
+    } else {
+      op = JSOp::Ne;
+    }
+
+    // NOTE: ParseNodeKind::TypeOfExpr cannot use JSOp::TypeofEq.
+    //       See JSOp::GetName document.
+    if (left->isKind(ParseNodeKind::TypeOfNameExpr) &&
+        right->isKind(ParseNodeKind::StringExpr)) {
+      typeofNode = &left->as<UnaryNode>();
+      typenameNode = &right->as<NameNode>();
+    } else if (right->isKind(ParseNodeKind::TypeOfNameExpr) &&
+               left->isKind(ParseNodeKind::StringExpr)) {
+      typeofNode = &right->as<UnaryNode>();
+      typenameNode = &left->as<NameNode>();
+    } else {
+      *emitted = false;
+      return true;
+    }
+
+    TaggedParserAtomIndex typeName = typenameNode->atom();
+    if (typeName == TaggedParserAtomIndex::WellKnown::undefined()) {
+      type = JSTYPE_UNDEFINED;
+    } else if (typeName == TaggedParserAtomIndex::WellKnown::object()) {
+      type = JSTYPE_OBJECT;
+    } else if (typeName == TaggedParserAtomIndex::WellKnown::function()) {
+      type = JSTYPE_FUNCTION;
+    } else if (typeName == TaggedParserAtomIndex::WellKnown::string()) {
+      type = JSTYPE_STRING;
+    } else if (typeName == TaggedParserAtomIndex::WellKnown::number()) {
+      type = JSTYPE_NUMBER;
+    } else if (typeName == TaggedParserAtomIndex::WellKnown::boolean()) {
+      type = JSTYPE_BOOLEAN;
+    } else if (typeName == TaggedParserAtomIndex::WellKnown::symbol()) {
+      type = JSTYPE_SYMBOL;
+    } else if (typeName == TaggedParserAtomIndex::WellKnown::bigint()) {
+      type = JSTYPE_BIGINT;
+    } else {
+      *emitted = false;
+      return true;
+    }
   }
 
   if (!updateSourceCoordNotes(typeofNode->pn_pos.begin)) {
@@ -12627,7 +12670,9 @@ bool BytecodeEmitter::emitTree(
     case ParseNodeKind::StrictEqExpr:
     case ParseNodeKind::EqExpr:
     case ParseNodeKind::StrictNeExpr:
-    case ParseNodeKind::NeExpr: {
+    case ParseNodeKind::NeExpr:
+    case ParseNodeKind::LtExpr:
+    case ParseNodeKind::GtExpr: {
       bool emitted;
       if (!tryEmitTypeofEq(&pn->as<ListNode>(), &emitted)) {
         return false;
@@ -12643,9 +12688,7 @@ bool BytecodeEmitter::emitTree(
     case ParseNodeKind::BitOrExpr:
     case ParseNodeKind::BitXorExpr:
     case ParseNodeKind::BitAndExpr:
-    case ParseNodeKind::LtExpr:
     case ParseNodeKind::LeExpr:
-    case ParseNodeKind::GtExpr:
     case ParseNodeKind::GeExpr:
     case ParseNodeKind::InExpr:
     case ParseNodeKind::InstanceOfExpr:

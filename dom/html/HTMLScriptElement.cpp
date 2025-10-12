@@ -151,6 +151,8 @@ void HTMLScriptElement::GetInnerHTML(nsAString& aInnerHTML,
 void HTMLScriptElement::SetInnerHTMLTrusted(const nsAString& aInnerHTML,
                                             nsIPrincipal* aSubjectPrincipal,
                                             ErrorResult& aError) {
+  // aInnerHTML is trusted HTML, but not trusted script so we must not preserve
+  // trustworthiness.
   aError = nsContentUtils::SetNodeTextContent(this, aInnerHTML, true);
 }
 
@@ -178,8 +180,9 @@ void HTMLScriptElement::SetText(const TrustedScriptOrString& aValue,
   if (aRv.Failed()) {
     return;
   }
-
-  aRv = nsContentUtils::SetNodeTextContent(this, *compliantString, true);
+  aRv = nsContentUtils::SetNodeTextContent(
+      this, *compliantString, true,
+      MutationEffectOnScript::KeepTrustWorthiness);
 }
 
 void HTMLScriptElement::GetInnerText(
@@ -205,7 +208,8 @@ void HTMLScriptElement::SetInnerText(
   if (aError.Failed()) {
     return;
   }
-  nsGenericHTMLElement::SetInnerText(*compliantString);
+  nsGenericHTMLElement::SetInnerTextInternal(
+      *compliantString, MutationEffectOnScript::KeepTrustWorthiness);
 }
 
 void HTMLScriptElement::GetTrustedScriptOrStringTextContent(
@@ -233,7 +237,8 @@ void HTMLScriptElement::SetTrustedScriptOrStringTextContent(
   if (aError.Failed()) {
     return;
   }
-  SetTextContentInternal(*compliantString, aSubjectPrincipal, aError);
+  SetTextContentInternal(*compliantString, aSubjectPrincipal, aError,
+                         MutationEffectOnScript::KeepTrustWorthiness);
 }
 
 void HTMLScriptElement::GetSrc(OwningTrustedScriptURLOrUSVString& aSrc) {

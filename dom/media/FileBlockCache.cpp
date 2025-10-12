@@ -381,8 +381,8 @@ void FileBlockCache::PerformBlockIOs() {
   mIsWriteScheduled = false;
 }
 
-nsresult FileBlockCache::Read(int64_t aOffset, uint8_t* aData, int32_t aLength,
-                              int32_t* aBytes) {
+nsresult FileBlockCache::Read(int64_t aOffset, uint8_t* aData,
+                              int32_t aLength) {
   MutexAutoLock mon(mDataMutex);
 
   if (!mBackgroundET || (aOffset / BLOCK_SIZE) > INT32_MAX) {
@@ -449,7 +449,6 @@ nsresult FileBlockCache::Read(int64_t aOffset, uint8_t* aData, int32_t aLength,
     offset += bytesRead;
     bytesToRead -= bytesRead;
   }
-  *aBytes = aLength - bytesToRead;
   return NS_OK;
 }
 

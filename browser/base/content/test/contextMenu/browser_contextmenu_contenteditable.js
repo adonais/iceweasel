@@ -17,6 +17,14 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+const askChatMenu = [
+  "context-ask-chat",
+  true,
+  // Need a blank entry here because the Ask Chat submenu is dynamically built with no ids.
+  "",
+  null,
+];
+
 async function openMenuAndPaste(browser, useFormatting) {
   const kElementToUse = "test-contenteditable-spellcheck-false";
   let oldText = await SpecialPowers.spawn(browser, [kElementToUse], elemID => {
@@ -45,9 +53,15 @@ async function openMenuAndPaste(browser, useFormatting) {
       false,
       "context-selectall",
       true,
+      "---",
+      null,
+      ...askChatMenu,
     ],
     {
       keepMenuOpen: true,
+      awaitOnMenuBuilt: {
+        id: "context-ask-chat",
+      },
     }
   );
   let popupHidden = BrowserTestUtils.waitForPopupEvent(contextMenu, "hidden");

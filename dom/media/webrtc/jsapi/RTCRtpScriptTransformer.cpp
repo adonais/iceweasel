@@ -360,7 +360,7 @@ already_AddRefed<Promise> RTCRtpScriptTransformer::GenerateKeyFrame(
       mGenerateKeyFramePromises.LookupOrInsert(key);
   if (!promises.Length()) {
     // No pending keyframe generation request for this rid. Make one.
-    if (!mProxy || !mProxy->GenerateKeyFrame(utf8Rid)) {
+    if (mProxy && !mProxy->GenerateKeyFrame(utf8Rid)) {
       ErrorResult rv;
       rv.ThrowInvalidStateError(
           "RTCRtpScriptTransformer is not associated with a video sender");
@@ -398,7 +398,7 @@ void RTCRtpScriptTransformer::GenerateKeyFrameError(
 
 already_AddRefed<Promise> RTCRtpScriptTransformer::SendKeyFrameRequest() {
   if (!mKeyFrameRequestPromises.Length()) {
-    if (!mProxy || !mProxy->RequestKeyFrame()) {
+    if (mProxy && !mProxy->RequestKeyFrame()) {
       ErrorResult rv;
       rv.ThrowInvalidStateError(
           "RTCRtpScriptTransformer is not associated with a video receiver");

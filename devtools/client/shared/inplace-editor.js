@@ -211,14 +211,16 @@ function editableItem(options, callback) {
   const trigger = options.trigger || "click";
   const element = options.element;
   element.addEventListener(trigger, function (evt) {
-    if (evt.target.nodeName !== "a") {
-      const win = this.ownerDocument.defaultView;
-      const selection = win.getSelection();
-      if (trigger != "click" || selection.isCollapsed) {
-        callback(element, evt);
-      }
-      evt.stopPropagation();
+    if (!isValidTargetForEditableItemCallback(evt.target)) {
+      return;
     }
+
+    const win = this.ownerDocument.defaultView;
+    const selection = win.getSelection();
+    if (trigger != "click" || selection.isCollapsed) {
+      callback(element, evt);
+    }
+    evt.stopPropagation();
   });
 
   // If focused by means other than a click, start editing by
@@ -226,7 +228,7 @@ function editableItem(options, callback) {
   element.addEventListener(
     "keypress",
     function (evt) {
-      if (evt.target.nodeName === "button") {
+      if (!isValidTargetForEditableItemCallback(evt.target)) {
         return;
       }
 
@@ -236,23 +238,6 @@ function editableItem(options, callback) {
     },
     true
   );
-
-  // Ugly workaround - the element is focused on mousedown but
-  // the editor is activated on click/mouseup.  This leads
-  // to an ugly flash of the focus ring before showing the editor.
-  // So hide the focus ring while the mouse is down.
-  element.addEventListener("mousedown", function (evt) {
-    if (evt.target.nodeName !== "a") {
-      const cleanup = function () {
-        element.style.removeProperty("outline-style");
-        element.removeEventListener("mouseup", cleanup);
-        element.removeEventListener("mouseout", cleanup);
-      };
-      element.style.setProperty("outline-style", "none");
-      element.addEventListener("mouseup", cleanup);
-      element.addEventListener("mouseout", cleanup);
-    }
-  });
 
   // Mark the element editable field for tab
   // navigation while editing.
@@ -272,6 +257,19 @@ function editableItem(options, callback) {
 }
 
 exports.editableItem = editableItem;
+
+/**
+ * Returns false if the passed event target should not trigger the callback passed
+ * to the editable item.
+ *
+ * @param {Element} eventTarget
+ * @returns {Boolean}
+ */
+function isValidTargetForEditableItemCallback(eventTarget) {
+  const { nodeName } = eventTarget;
+  // If the event happened on a link or a button, we shouldn't trigger the callback
+  return nodeName !== "a" && nodeName !== "button";
+}
 
 /*
  * Various API consumers (especially tests) sometimes want to grab the

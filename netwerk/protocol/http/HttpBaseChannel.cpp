@@ -40,6 +40,7 @@
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FetchPriority.h"
+#include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "mozilla/dom/Performance.h"
@@ -110,6 +111,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "nsQueryObject.h"
 
+using mozilla::dom::ForceMediaDocument;
 using mozilla::dom::RequestMode;
 
 #define LOGORB(msg, ...)                \
@@ -328,9 +330,7 @@ static bool isSecureOrTrustworthyURL(nsIURI* aURI) {
 nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
                                nsProxyInfo* aProxyInfo,
                                uint32_t aProxyResolveFlags, nsIURI* aProxyURI,
-                               uint64_t aChannelId,
-                               ExtContentPolicyType aContentPolicyType,
-                               nsILoadInfo* aLoadInfo) {
+                               uint64_t aChannelId, nsILoadInfo* aLoadInfo) {
   LOG1(("HttpBaseChannel::Init [this=%p]\n", this));
 
   MOZ_ASSERT(aURI, "null uri");
@@ -375,8 +375,26 @@ nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
   rv = mRequestHead.SetHeader(nsHttp::Host, hostLine);
   if (NS_FAILED(rv)) return rv;
 
+  // Override the Accept header if a specific MediaDocument kind is forced.
+  ExtContentPolicy contentPolicyType =
+      mLoadInfo->GetExternalContentPolicyType();
+  // TRRLoadInfo doesn't implement GetForceMediaDocument.
+  ForceMediaDocument forceMediaDocument;
+  if (NS_SUCCEEDED(mLoadInfo->GetForceMediaDocument(&forceMediaDocument))) {
+    switch (forceMediaDocument) {
+      case ForceMediaDocument::Image:
+        contentPolicyType = ExtContentPolicy::TYPE_IMAGE;
+        break;
+      case ForceMediaDocument::Video:
+        contentPolicyType = ExtContentPolicy::TYPE_MEDIA;
+        break;
+      case ForceMediaDocument::None:
+        break;
+    }
+  }
+
   rv = gHttpHandler->AddStandardRequestHeaders(
-      &mRequestHead, isHTTPS, aContentPolicyType,
+      &mRequestHead, isHTTPS, contentPolicyType,
       nsContentUtils::ShouldResistFingerprinting(this,
                                                  RFPTarget::HttpUserAgent));
   if (NS_FAILED(rv)) return rv;
@@ -670,6 +688,11 @@ HttpBaseChannel::SetContentCharset(const nsACString& aContentCharset) {
 
 NS_IMETHODIMP
 HttpBaseChannel::GetContentDisposition(uint32_t* aContentDisposition) {
+  if (mLoadInfo->GetForceMediaDocument() != ForceMediaDocument::None) {
+    *aContentDisposition = nsIChannel::DISPOSITION_FORCE_INLINE;
+    return NS_OK;
+  }
+
   // See bug 1658877. If mContentDispositionHint is already
   // DISPOSITION_ATTACHMENT, it means this channel is created from a
   // download attribute. In this case, we should prefer the value from the
@@ -4934,42 +4957,23 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
   }
 
   if (config.uploadStream) {
-    nsCOMPtr<nsIUploadChannel> uploadChannel = do_QueryInterface(httpChannel);
     nsCOMPtr<nsIUploadChannel2> uploadChannel2 = do_QueryInterface(httpChannel);
-    if (uploadChannel2 || uploadChannel) {
-      // replicate original call to SetUploadStream...
-      if (uploadChannel2) {
-        const nsACString& ctype =
-            config.contentType ? *config.contentType : VoidCString();
-        // If header is not present mRequestHead.HasHeaderValue will truncated
-        // it.  But we want to end up with a void string, not an empty string,
-        // because ExplicitSetUploadStream treats the former as "no header" and
-        // the latter as "header with empty string value".
-
-        const nsACString& method =
-            config.method ? *config.method : VoidCString();
-
-        uploadChannel2->ExplicitSetUploadStream(
-            config.uploadStream, ctype, config.uploadStreamLength, method,
-            config.uploadStreamHasHeaders);
-      } else {
-        if (config.uploadStreamHasHeaders) {
-          uploadChannel->SetUploadStream(config.uploadStream, ""_ns,
-                                         config.uploadStreamLength);
-        } else {
-          nsAutoCString ctype;
-          if (config.contentType) {
-            ctype = *config.contentType;
-          } else {
-            ctype = "application/octet-stream"_ns;
-          }
-          if (config.contentLength && !config.contentLength->IsEmpty()) {
-            uploadChannel->SetUploadStream(
-                config.uploadStream, ctype,
-                nsCRT::atoll(config.contentLength->get()));
-          }
-        }
-      }
+    // replicate original call to SetUploadStream...
+    if (uploadChannel2) {
+      const nsACString& ctype =
+          config.contentType ? *config.contentType : VoidCString();
+      // If header is not present mRequestHead.HasHeaderValue will truncated
+      // it.  But we want to end up with a void string, not an empty string,
+      // because ExplicitSetUploadStream treats the former as "no header" and
+      // the latter as "header with empty string value".
+      const nsACString& method = config.method ? *config.method : VoidCString();
+      uploadChannel2->ExplicitSetUploadStream(config.uploadStream, ctype,
+                                              config.uploadStreamLength, method,
+                                              config.uploadStreamHasHeaders);
+    } else if (nsCOMPtr<nsIUploadChannel> uploadChannel =
+                   do_QueryInterface(httpChannel)) {
+      MOZ_ASSERT(false,
+                 "Should not QI to nsIUploadChannel but not nsIUploadChannel2");
     }
   }
 

@@ -122,11 +122,7 @@ private fun ComponentOnBoardingSecondScreenButtons(
         ),
     ) {
         Text(
-            text = AnnotatedString(
-                LocalContext.current.resources.getString(
-                    R.string.onboarding_second_screen_default_browser_button_text,
-                ),
-            ),
+            text = AnnotatedString(stringResource(id = R.string.onboarding_second_screen_default_browser_button_text)),
             color = PhotonColors.White,
         )
     }
@@ -140,11 +136,7 @@ private fun ComponentOnBoardingSecondScreenButtons(
         ),
     ) {
         Text(
-            text = AnnotatedString(
-                LocalContext.current.resources.getString(
-                    R.string.onboarding_second_screen_skip_button_text,
-                ),
-            ),
+            text = AnnotatedString(stringResource(id = R.string.onboarding_second_screen_skip_button_text)),
             color = PhotonColors.Black,
         )
     }

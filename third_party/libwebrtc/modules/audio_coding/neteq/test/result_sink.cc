@@ -34,8 +34,8 @@
 namespace webrtc {
 
 #ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
-void Convert(const webrtc::NetEqNetworkStatistics& stats_raw,
-             webrtc::neteq_unittest::NetEqNetworkStatistics* stats) {
+void Convert(const NetEqNetworkStatistics& stats_raw,
+             neteq_unittest::NetEqNetworkStatistics* stats) {
   stats->set_current_buffer_size_ms(stats_raw.current_buffer_size_ms);
   stats->set_preferred_buffer_size_ms(stats_raw.preferred_buffer_size_ms);
   stats->set_jitter_peaks_found(stats_raw.jitter_peaks_found);
@@ -69,7 +69,7 @@ ResultSink::ResultSink(absl::string_view output_file)
     : output_fp_(nullptr), digest_(MessageDigestFactory::Create(DIGEST_SHA_1)) {
   if (!output_file.empty()) {
     output_fp_ = fopen(std::string(output_file).c_str(), "wb");
-    EXPECT_TRUE(output_fp_ != NULL);
+    EXPECT_TRUE(output_fp_ != nullptr);
   }
 }
 

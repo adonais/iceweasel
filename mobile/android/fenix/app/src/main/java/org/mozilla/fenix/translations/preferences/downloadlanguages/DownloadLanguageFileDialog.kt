@@ -124,7 +124,6 @@ fun DownloadLanguageFileDialog(
 
             TextButton(
                 text = stringResource(id = R.string.download_language_file_dialog_negative_button_text),
-                upperCaseText = false,
                 modifier = Modifier
                     .fillMaxWidth(),
                 onClick = {

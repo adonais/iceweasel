@@ -110,7 +110,7 @@ void XPathResult::CharacterDataChanged(nsIContent* aContent,
 }
 
 void XPathResult::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
-                                   nsAtom* aAttribute, int32_t aModType,
+                                   nsAtom* aAttribute, AttrModType,
                                    const nsAttrValue* aOldValue) {
   Invalidate(aElement);
 }

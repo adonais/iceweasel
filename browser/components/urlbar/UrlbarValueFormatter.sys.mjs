@@ -168,12 +168,12 @@ export class UrlbarValueFormatter {
       );
     } catch (ex) {}
     // Ignore if we couldn't make a URI out of this, the URI resulted in a search,
-    // or the URI has a non-http(s)/ftp protocol.
+    // or the URI has a non-http(s) protocol.
     if (
       !uriInfo ||
       !uriInfo.fixedURI ||
       uriInfo.keywordProviderName ||
-      !["http", "https", "ftp"].includes(uriInfo.fixedURI.scheme)
+      !["http", "https"].includes(uriInfo.fixedURI.scheme)
     ) {
       return null;
     }

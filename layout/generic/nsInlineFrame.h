@@ -81,7 +81,7 @@ class nsInlineFrame : public nsContainerFrame {
               nsReflowStatus& aStatus) override;
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   bool CanContinueTextRun() const override;
 

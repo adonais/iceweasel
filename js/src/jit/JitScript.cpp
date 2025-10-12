@@ -220,7 +220,8 @@ void ICScript::trace(JSTracer* trc) {
   // Mark all IC stub codes hanging off the IC stub entries.
   for (size_t i = 0; i < numICEntries(); i++) {
     ICEntry& ent = icEntry(i);
-    ent.trace(trc);
+    ICFallbackStub* fallback = fallbackStub(i);
+    ent.trace(trc, fallback);
   }
 
   for (gc::AllocSite* site : allocSites_) {
@@ -233,7 +234,8 @@ bool ICScript::traceWeak(JSTracer* trc) {
   bool allSurvived = true;
   for (size_t i = 0; i < numICEntries(); i++) {
     ICEntry& ent = icEntry(i);
-    if (!ent.traceWeak(trc)) {
+    ICFallbackStub* fallback = fallbackStub(i);
+    if (!ent.traceWeak(trc, fallback)) {
       allSurvived = false;
     }
   }

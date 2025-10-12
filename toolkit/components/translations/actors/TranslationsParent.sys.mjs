@@ -1627,7 +1627,7 @@ export class TranslationsParent extends JSWindowActorParent {
    * @returns {Promise<TranslationsEnginePayload>}
    */
   static async getTranslationsEnginePayload(languagePair) {
-    const wasmStartTime = Cu.now();
+    const wasmStartTime = ChromeUtils.now();
     const bergamotWasmArrayBufferPromise =
       TranslationsParent.#getBergamotWasmArrayBuffer();
     bergamotWasmArrayBufferPromise
@@ -1642,7 +1642,7 @@ export class TranslationsParent extends JSWindowActorParent {
         // Do nothing.
       });
 
-    const modelStartTime = Cu.now();
+    const modelStartTime = ChromeUtils.now();
 
     /** @type {TranslationModelPayload[]} */
     const translationModelPayloads = [];

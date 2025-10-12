@@ -112,9 +112,19 @@ function fetchNetworkUpdatePacket(requestData, request, updateTypes) {
   const promises = [];
   if (request) {
     updateTypes.forEach(updateType => {
-      // Only stackTrace will be handled differently
+      // stackTrace needs to be handled specially as the property to lookup
+      // on the request object follows a slightly different convention.
+      // i.e `stacktrace` not `stackTrace`
       if (updateType === "stackTrace") {
         if (request.cause.stacktraceAvailable && !request.stacktrace) {
+          promises.push(requestData(request.id, updateType));
+        }
+        return;
+      }
+      // responseContent only checks the availiability flag as there can
+      // be multiple response content events
+      if (updateType === "responseContent") {
+        if (request.responseContentAvailable) {
           promises.push(requestData(request.id, updateType));
         }
         return;
@@ -351,9 +361,9 @@ function getUrlDetails(url) {
   // IPv6 parsing is a little sloppy; it assumes that the address has
   // been validated before it gets here.
   const isLocal =
-    hostname.match(/(.+\.)?localhost$/) ||
-    hostname.match(/^127\.\d{1,3}\.\d{1,3}\.\d{1,3}/) ||
-    hostname.match(/\[[0:]+1\]/);
+    /^(.+\.)?localhost$/.test(hostname) ||
+    /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname) ||
+    /^\[[0:]+1\]$/.test(hostname);
 
   return {
     baseNameWithQuery,

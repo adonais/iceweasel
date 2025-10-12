@@ -44,6 +44,7 @@ exclude = [
   "media/mp4parse-rust/mp4parse",
   "media/mp4parse-rust/mp4parse_capi",
   "xpcom/rust/gkrust_utils",
+  "toolkit/components/protobuf/scripts",
   "toolkit/crashreporter/minidump-analyzer",
   "tools/lint/test/files/clippy",
   "tools/fuzzing/rust",
@@ -70,7 +71,7 @@ uniffi_pipeline = "0.29.3"
 # Shared across multiple application-services consumers.
 rusqlite = "0.37"
 # Shared across multiple glean consumers.
-glean = "=64.5.5"
+glean = "=65.0.2"
 
 # Explicitly specify what our profiles use.  The opt-level setting here is
 # a total fiction; see the setup of MOZ_RUST_DEFAULT_FLAGS for what the
@@ -156,9 +157,11 @@ wasi_0_11 = { package = "wasi", path = "build/rust/wasi" }
 # else we do use requires backtrace, so dummy it out for now.
 backtrace = { path = "build/rust/backtrace" }
 
-# Locally patch bindgen for https://github.com/rust-lang/rust-bindgen/pull/2824
-# and for bug 1945218
-bindgen = { path = "third_party/rust/bindgen" }
+# Locally patch bindgen to a yet-unreleased version.
+bindgen_0_72 = { package = "bindgen", git = "https://github.com/rust-lang/rust-bindgen", rev = "9366e0af8da529c958b4cd4fcbe492d951c86f5c" }
+
+# Patch bindgen 0.69 to 0.72
+bindgen = { path = "build/rust/bindgen" }
 
 # Patch nix 0.29 to 0.30+
 nix = { path = "build/rust/nix" }
@@ -186,6 +189,9 @@ hashbrown_0_14 = { package = "hashbrown", path = "build/rust/hashbrown" }
 
 # Patch `thiserror` 1 to 2.
 thiserror = { path = "build/rust/thiserror" }
+
+# Patch thin_vec with not-yet-published changes.
+thin-vec = { path = "third_party/rust/thin-vec" }
 
 # The following overrides point to dummy projects, as a temporary measure until this is resolved:
 # https://github.com/rust-lang/cargo/issues/6179
@@ -249,19 +255,28 @@ objc = { git = "https://github.com/glandium/rust-objc", rev = "4de89f5aa9851ceca
 allocator-api2 = { git = "https://github.com/glandium/allocator-api2", rev = "ad5f3d56a5a4519eff52af4ff85293431466ef5c" }
 
 # application-services overrides to make updating them all simpler.
-context_id = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-error-support = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-filter_adult = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-interrupt-support = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-relevancy = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-search = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-sql-support = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-suggest = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-sync15 = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-tabs = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-tracing-support = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-viaduct = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
-webext-storage = { git = "https://github.com/mozilla/application-services", branch = "desktop-143" }
+context_id = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+error-support = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+filter_adult = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+interrupt-support = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+relevancy = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+search = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+sql-support = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+suggest = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+sync15 = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+tabs = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+tracing-support = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+viaduct = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
+webext-storage = { git = "https://github.com/mozilla/application-services", rev = "b6ac0de028caa151a21860616c2bccf86e0eaab1" }
 
 # Patched version of zip 2.4.2 to allow for reading omnijars.
 zip = { path = "third_party/rust/zip" }
+
+# Patch libcrux-traits to avoid unnecessary unused dependencies and conflicts.
+libcrux-traits = { path = "build/rust/libcrux-traits" }
+
+# Patch neqo-crypto (and neqo-common to avoid duplicating it) to cherry-pick
+# https://github.com/mozilla/neqo/pull/2913
+[patch."https://github.com/mozilla/neqo"]
+neqo-crypto = { path = "third_party/rust/neqo-crypto" }
+neqo-common = { path = "third_party/rust/neqo-common" }

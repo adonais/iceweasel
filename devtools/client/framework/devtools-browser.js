@@ -252,7 +252,7 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
    *         - `id` used to identify any other key shortcuts like about:debugging
    * @param {Number} startTime
    *        Optional, indicates the time at which the key event fired. This is a
-   *        `Cu.now()` timing.
+   *        `ChromeUtils.now()` timing.
    */
   async onKeyShortcut(window, key, startTime) {
     // Avoid to open devtools when the about:devtools-toolbox page is showing

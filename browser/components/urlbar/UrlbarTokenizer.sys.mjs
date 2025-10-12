@@ -65,7 +65,10 @@ export var UrlbarTokenizer = {
 
   TYPE: {
     TEXT: 1,
-    POSSIBLE_ORIGIN: 2, // It may be an ip, a domain, but even just a single word used as host.
+    // `looksLikeOrigin()` returned a value for this token that was neither
+    // `LOOKS_LIKE_ORIGIN.NONE` nor `LOOKS_LIKE_ORIGIN.OTHER`. It sure looks
+    // like an origin.
+    POSSIBLE_ORIGIN: 2,
     POSSIBLE_URL: 3, // Consumers should still check this with a fixup.
     RESTRICT_HISTORY: 4,
     RESTRICT_BOOKMARK: 5,
@@ -75,6 +78,9 @@ export var UrlbarTokenizer = {
     RESTRICT_TITLE: 9,
     RESTRICT_URL: 10,
     RESTRICT_ACTION: 11,
+    // `looksLikeOrigin()` returned `LOOKS_LIKE_ORIGIN.OTHER` for this token. It
+    // may or may not be an origin.
+    POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED: 12,
   },
 
   // The special characters below can be typed into the urlbar to restrict
@@ -227,7 +233,7 @@ export var UrlbarTokenizer = {
   /**
    * Returns whether the passed in token looks like an origin.
    * This is based on guessing and heuristics, that means if this function
-   * returns false, it's surely not an origin, if it returns true, the result
+   * returns `NONE`, it's surely not an origin, but otherwise the result
    * must still be verified through URIFixup.
    *
    * @param {string} token
@@ -237,33 +243,36 @@ export var UrlbarTokenizer = {
    *        in the known domain list
    * @param {boolean} [options.noIp] If true, the origin cannot be an IP address
    * @param {boolean} [options.noPort] If true, the origin cannot have a port number
-   * @returns {boolean} whether the token looks like an origin.
+   * @returns {number}
+   *   A `UrlbarTokenizer.LOOKS_LIKE_ORIGIN` value.
    */
   looksLikeOrigin(
     token,
     { ignoreKnownDomains = false, noIp = false, noPort = false } = {}
   ) {
     if (!token.length) {
-      return false;
+      return this.LOOKS_LIKE_ORIGIN.NONE;
     }
     let atIndex = token.indexOf("@");
     if (atIndex != -1 && this.REGEXP_COMMON_EMAIL.test(token)) {
       // We prefer handling it as an email rather than an origin with userinfo.
-      return false;
+      return this.LOOKS_LIKE_ORIGIN.NONE;
     }
+
     let userinfo = atIndex != -1 ? token.slice(0, atIndex) : "";
     let hostPort = atIndex != -1 ? token.slice(atIndex + 1) : token;
     let hasPort = this.REGEXP_HAS_PORT.test(hostPort);
     lazy.logger.debug("userinfo", userinfo);
     lazy.logger.debug("hostPort", hostPort);
     if (noPort && hasPort) {
-      return false;
+      return this.LOOKS_LIKE_ORIGIN.NONE;
     }
+
     if (
       this.REGEXP_HOSTPORT_IPV4.test(hostPort) ||
       this.REGEXP_HOSTPORT_IPV6.test(hostPort)
     ) {
-      return !noIp;
+      return noIp ? this.LOOKS_LIKE_ORIGIN.NONE : this.LOOKS_LIKE_ORIGIN.IP;
     }
 
     // Check for invalid chars.
@@ -275,7 +284,7 @@ export var UrlbarTokenizer = {
         this.REGEXP_HOSTPORT_IP_LIKE.test(hostPort) &&
         this.REGEXP_HOSTPORT_INVALID_IP.test(hostPort))
     ) {
-      return false;
+      return this.LOOKS_LIKE_ORIGIN.NONE;
     }
 
     // If it looks like a single word host, check the known domains.
@@ -285,10 +294,30 @@ export var UrlbarTokenizer = {
       !hasPort &&
       this.REGEXP_SINGLE_WORD_HOST.test(hostPort)
     ) {
-      return Services.uriFixup.isDomainKnown(hostPort);
+      return Services.uriFixup.isDomainKnown(hostPort)
+        ? this.LOOKS_LIKE_ORIGIN.KNOWN_DOMAIN
+        : this.LOOKS_LIKE_ORIGIN.NONE;
     }
 
-    return true;
+    if (atIndex != -1 || hasPort) {
+      return this.LOOKS_LIKE_ORIGIN.USERINFO_OR_PORT;
+    }
+
+    return this.LOOKS_LIKE_ORIGIN.OTHER;
+  },
+
+  LOOKS_LIKE_ORIGIN: {
+    // The value cannot be an origin.
+    NONE: 0,
+    // The value may be an origin but it's not one of the other types.
+    // Example: "mozilla.org"
+    OTHER: 1,
+    // The value is an IP address (that may or may not be reachable).
+    IP: 2,
+    // The value is a domain known to URI fixup.
+    KNOWN_DOMAIN: 3,
+    // The value appears to be an origin with a userinfo or port.
+    USERINFO_OR_PORT: 4,
   },
 
   /**
@@ -438,10 +467,18 @@ function filterTokens(tokens) {
     let restrictionType = CHAR_TO_TYPE_MAP.get(token);
     if (restrictionType) {
       restrictions.push({ index: i, type: restrictionType });
-    } else if (UrlbarTokenizer.looksLikeOrigin(token)) {
-      tokenObj.type = UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN;
-    } else if (UrlbarTokenizer.looksLikeUrl(token, { requirePath: true })) {
-      tokenObj.type = UrlbarTokenizer.TYPE.POSSIBLE_URL;
+    } else {
+      let looksLikeOrigin = UrlbarTokenizer.looksLikeOrigin(token);
+      if (
+        looksLikeOrigin == UrlbarTokenizer.LOOKS_LIKE_ORIGIN.OTHER &&
+        lazy.UrlbarPrefs.get("allowSearchSuggestionsForSimpleOrigins")
+      ) {
+        tokenObj.type = UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED;
+      } else if (looksLikeOrigin != UrlbarTokenizer.LOOKS_LIKE_ORIGIN.NONE) {
+        tokenObj.type = UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN;
+      } else if (UrlbarTokenizer.looksLikeUrl(token, { requirePath: true })) {
+        tokenObj.type = UrlbarTokenizer.TYPE.POSSIBLE_URL;
+      }
     }
     filtered.push(tokenObj);
   }

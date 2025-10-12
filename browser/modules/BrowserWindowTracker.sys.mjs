@@ -174,6 +174,9 @@ export const BrowserWindowTracker = {
 
   /**
    * Get the most recent browser window.
+   * Note that with the default options this may return null on Windows if
+   * there are no open windows in the current virtual desktop. To prevent this,
+   * set `options.allowFromInactiveWorkspace` to true.
    *
    * @param {Object} options - An object accepting the arguments for the search.
    * @param {boolean} [options.private]
@@ -185,11 +188,15 @@ export const BrowserWindowTracker = {
    *   permitted.
    * @param {boolean} [options.allowTaskbarTabs] true if taskbar tab windows
    *  are permitted.
+   * @param {boolean} [options.allowFromInactiveWorkspace] true if window is allowed to
+   *  be from a different virtual desktop (what Windows calls workspaces).
+   *  Only has an effect on Windows.
    *
    * @returns {Window | null} The current top/selected window.
    *  Can return null on MacOS when there is no open window.
    */
   getTopWindow(options = {}) {
+    let cloakedWin = null;
     for (let win of _trackedWindows) {
       if (
         !win.closed &&
@@ -200,10 +207,22 @@ export const BrowserWindowTracker = {
           lazy.PrivateBrowsingUtils.permanentPrivateBrowsing ||
           lazy.PrivateBrowsingUtils.isWindowPrivate(win) == options.private)
       ) {
+        // On Windows, windows on a different virtual desktop (what Windows calls
+        // workspaces) are cloaked.
+        if (win.isCloaked) {
+          // Even if we allow from an inactive workspace, prefer windows that
+          // are not cloaked, so that we don't switch workspaces unnecessarily.
+          if (!cloakedWin && options.allowFromInactiveWorkspace) {
+            cloakedWin = win;
+          }
+          continue;
+        }
         return win;
       }
     }
-    return null;
+    // If we didn't find a non-cloaked window, return the cloaked one if it exists and
+    // the options allow us to do so.
+    return cloakedWin;
   },
 
   /**

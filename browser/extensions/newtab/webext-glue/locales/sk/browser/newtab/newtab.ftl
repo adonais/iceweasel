@@ -80,7 +80,7 @@ newtab-topsites-add-button = Pridať
 
 ## Top Sites - Delete history confirmation dialog.
 
-newtab-confirm-delete-history-p1 = Ste si istí, že chcete odstrániť všetky výskyty tejto stránky zo svojej histórie prehliadania?
+newtab-confirm-delete-history-p1 = Naozaj chcete odstrániť všetky výskyty tejto stránky z histórie prehliadania?
 # "This action" refers to deleting a page from history.
 newtab-confirm-delete-history-p2 = Túto akciu nie je možné vrátiť späť.
 
@@ -316,19 +316,32 @@ newtab-custom-pocket-subtitle = Výnimočný obsah vybraný službou { -pocket-b
 newtab-custom-stories-toggle =
     .label = Odporúčané príbehy
     .description = Výnimočný obsah spravovaný rodinou { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Príbehy
+newtab-custom-stories-personalized-checkbox-label = Prispôsobené príbehy na základe vašej aktivity
 newtab-custom-pocket-sponsored = Sponzorované príbehy
 newtab-custom-pocket-show-recent-saves = Zobraziť nedávno uložené položky
 newtab-custom-recent-title = Nedávna aktivita
 newtab-custom-recent-subtitle = Výber z nedávno navštívených stránok a obsahu
-newtab-custom-recent-toggle =
-    .label = Nedávna aktivita
-    .description = Výber z nedávno navštívených stránok a obsahu
 newtab-custom-weather-toggle =
     .label = Počasie
     .description = Dnešná predpoveď v skratke
 newtab-custom-trending-search-toggle =
     .label = Populárne vyhľadávania
     .description = Populárne a často hľadané témy
+newtab-custom-widget-weather-toggle =
+    .label = Počasie
+newtab-custom-widget-trending-search-toggle =
+    .label = Populárne vyhľadávania
+newtab-custom-widget-lists-toggle =
+    .label = Zoznamy
+newtab-custom-widget-timer-toggle =
+    .label = Časovač
+newtab-custom-widget-section-title = Miniaplikácie
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Zavrieť
+    .aria-label = Ponuka Zavrieť
 newtab-custom-close-button = Zavrieť
 newtab-custom-settings = Ďalšie nastavenia
 
@@ -341,6 +354,7 @@ newtab-wallpaper-custom-color = Zvoľte farbu
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Obrázok prekročil limit veľkosti súboru { $file_size } MB. Skúste nahrať menší súbor.
+newtab-wallpaper-error-upload-file-type = Nepodarilo sa nám nahrať váš súbor. Skúste to znova so súborom obrázka.
 newtab-wallpaper-error-file-type = Nepodarilo sa nám nahrať váš súbor. Skúste to znova s iným typom súboru.
 newtab-wallpaper-light-red-panda = Červená panda
 newtab-wallpaper-light-mountain = Biela hora
@@ -446,7 +460,6 @@ newtab-weather-menu-change-location = Zmeniť oblasť
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Hľadať oblasť
     .aria-label = Hľadať oblasť
-newtab-weather-change-location-search-input = Hľadať oblasť
 newtab-weather-menu-weather-display = Zobrazenie počasia
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -593,8 +606,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Trendy na Googli
 newtab-trending-searches-show-trending =
     .title = Zobraziť populárne vyhľadávania
 newtab-trending-searches-hide-trending =
@@ -603,3 +614,76 @@ newtab-trending-searches-learn-more = Ďalšie informácie
 newtab-trending-searches-dismiss = Skryť populárne vyhľadávania
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Populárne vyhľadávania
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Možnosti sú nekonečné. Pridajte si svoju.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nový
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Dokončené ({ $number })
+newtab-widget-task-list-menu-copy = Kopírovať
+newtab-widget-lists-menu-edit = Upraviť názov zoznamu
+newtab-widget-lists-menu-create = Vytvoriť nový zoznam
+newtab-widget-lists-menu-delete = Odstrániť tento zoznam
+newtab-widget-lists-menu-copy = Kopírovať zoznam do schránky
+newtab-widget-lists-menu-hide = Skryť všetky zoznamy
+newtab-widget-lists-menu-learn-more = Ďalšie informácie
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Pridať položku
+newtab-widget-lists-input-error = Položku pridáte zadaním textu
+newtab-widget-lists-input-menu-open-link = Otvoriť odkaz
+newtab-widget-lists-input-menu-move-up = Posunúť nahor
+newtab-widget-lists-input-menu-move-down = Posunúť nadol
+newtab-widget-lists-input-menu-delete = Odstrániť
+newtab-widget-lists-input-menu-edit = Upraviť
+newtab-widget-lists-name-label-default =
+    .label = Zoznam úloh
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Zoznam úloh
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Nový zoznam
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Časovač
+newtab-widget-timer-notification-focus = Čas na sústredenie vypršal. Dobrá práca. Potrebujete si oddýchnuť?
+newtab-widget-timer-notification-break = Vaša prestávka sa skončila. Ste pripravení sústrediť sa?
+newtab-widget-timer-notification-warning = Upozornenia sú vypnuté
+newtab-widget-timer-mode-focus =
+    .label = Sústredenie
+newtab-widget-timer-mode-break =
+    .label = Prestávka
+newtab-widget-timer-play =
+    .title = Spustiť
+newtab-widget-timer-pause =
+    .title = Pozastaviť
+newtab-widget-timer-label-play =
+    .label = Spustiť
+newtab-widget-timer-label-pause =
+    .label = Pozastaviť
+newtab-widget-timer-reset =
+    .title = Vynulovať
+newtab-widget-timer-menu-notifications = Vypnúť upozornenia
+newtab-widget-timer-menu-notifications-on = Zapnúť upozornenia
+newtab-widget-timer-menu-hide = Skryť časovač
+newtab-widget-timer-menu-learn-more = Ďalšie informácie
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Rolovaním zobrazíte ďalšie položky
+newtab-widget-message-title = Zostaňte sústredení vďaka zoznamom a vstavanému časovaču
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Od rýchlych pripomienok až po denné úlohy, od sústredených stretnutí až po prestávky – sústreďte sa na úlohy a dodržujte čas.
+newtab-promo-card-title = Podporiť { -brand-product-name }
+newtab-promo-card-body = Naši sponzori podporujú našu misiu budovať lepší web
+newtab-promo-card-cta = Ďalšie informácie
+newtab-promo-card-dismiss-button =
+    .title = Zavrieť
+    .aria-label = Zavrieť

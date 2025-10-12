@@ -1339,41 +1339,34 @@ async function validateRequests(requests, monitor, options = {}) {
       // if "stack" is array, check the details about the top stack frames
       if (Array.isArray(stack)) {
         stack.forEach((frame, j) => {
-          // If the `fn` is "*", it means the request is triggered from chrome
-          // resources, e.g. `resource:///modules/XX.jsm`, so we skip checking
-          // the function name for now (bug 1280266).
-          if (frame.file.startsWith("resource:///")) {
-            todo(false, "Requests from chrome resource should not be included");
-          } else {
-            let value = stacktrace[j].functionName;
-            if (Object.is(value, null)) {
-              value = undefined;
-            }
-            is(
-              value,
-              frame.fn,
-              `Request #${i} has the correct function on JS stack frame #${j}`
-            );
-            is(
-              stacktrace[j].filename.split("/").pop(),
-              frame.file.split("/").pop(),
-              `Request #${i} has the correct file on JS stack frame #${j}`
-            );
-            is(
-              stacktrace[j].lineNumber,
-              frame.line,
-              `Request #${i} has the correct line number on JS stack frame #${j}`
-            );
-            value = stacktrace[j].asyncCause;
-            if (Object.is(value, null)) {
-              value = undefined;
-            }
-            is(
-              value,
-              frame.asyncCause,
-              `Request #${i} has the correct async cause on JS stack frame #${j}`
-            );
+          let value = stacktrace[j].functionName;
+          if (Object.is(value, null)) {
+            value = undefined;
           }
+          is(
+            value,
+            frame.fn,
+            `Request #${i} has the correct function on JS stack frame #${j}`
+          );
+          is(
+            stacktrace[j].filename.split("/").pop(),
+            frame.file.split("/").pop(),
+            `Request #${i} has the correct file on JS stack frame #${j}`
+          );
+          is(
+            stacktrace[j].lineNumber,
+            frame.line,
+            `Request #${i} has the correct line number on JS stack frame #${j}`
+          );
+          value = stacktrace[j].asyncCause;
+          if (Object.is(value, null)) {
+            value = undefined;
+          }
+          is(
+            value,
+            frame.asyncCause,
+            `Request #${i} has the correct async cause on JS stack frame #${j}`
+          );
         });
       }
     } else {

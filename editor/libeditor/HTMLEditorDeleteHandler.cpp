@@ -12,6 +12,7 @@
 #include "AutoClonedRangeArray.h"
 #include "CSSEditUtils.h"
 #include "EditAction.h"
+#include "EditorDOMAPIWrapper.h"
 #include "EditorDOMPoint.h"
 #include "EditorLineBreak.h"
 #include "EditorUtils.h"
@@ -24,7 +25,6 @@
 #include "ErrorList.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/ContentIterator.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
@@ -1154,10 +1154,7 @@ Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::Run(
           if (NS_WARN_IF(rangesToDelete.Ranges().IsEmpty())) {
             return Err(NS_ERROR_FAILURE);
           }
-          if (aHTMLEditor.MayHaveMutationEventListeners(
-                  NS_EVENT_BITS_MUTATION_SUBTREEMODIFIED |
-                  NS_EVENT_BITS_MUTATION_NODEREMOVED |
-                  NS_EVENT_BITS_MUTATION_NODEREMOVEDFROMDOCUMENT)) {
+          if (aHTMLEditor.MaybeNodeRemovalsObservedByDevTools()) {
             // Let's check whether there is new invisible `<br>` element
             // for avoiding infinite recursive calls.
             const WSRunScanner wsRunScannerAtCaret(
@@ -3090,7 +3087,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
       return EditActionResult::HandledResult();
     }
     if (NS_WARN_IF(!aRangesToDelete.FirstRangeRef()->IsPositioned()) ||
-        (aHTMLEditor.MayHaveMutationEventListeners() &&
+        (aHTMLEditor.MaybeNodeRemovalsObservedByDevTools() &&
          NS_WARN_IF(!aRangesToDelete.IsFirstRangeEditable(aEditingHost)))) {
       NS_WARNING(
           "WhiteSpaceVisibilityKeeper::PrepareToDeleteRange() made the first "
@@ -3136,10 +3133,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
           rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
           "CaretPoint::SuggestCaretPointTo() failed, but ignored");
       if (NS_WARN_IF(!aRangesToDelete.FirstRangeRef()->IsPositioned()) ||
-          (aHTMLEditor.MayHaveMutationEventListeners(
-               NS_EVENT_BITS_MUTATION_NODEREMOVED |
-               NS_EVENT_BITS_MUTATION_NODEREMOVEDFROMDOCUMENT |
-               NS_EVENT_BITS_MUTATION_SUBTREEMODIFIED) &&
+          (aHTMLEditor.MaybeNodeRemovalsObservedByDevTools() &&
            NS_WARN_IF(!aRangesToDelete.IsFirstRangeEditable(aEditingHost)))) {
         NS_WARNING(
             "HTMLEditor::DeleteRangesWithTransaction() made the first range "
@@ -4899,9 +4893,9 @@ HTMLEditor::AutoDeleteRangesHandler::DeleteParentBlocksWithTransactionIfEmpty(
 
   // Otherwise, we need to check whether we're still in empty block or not.
 
-  // If we have mutation event listeners, the next point is now outside of
-  // editing host or editing hos has been changed.
-  if (aHTMLEditor.MayHaveMutationEventListeners()) {
+  // If the mutations in the document is observed by DevTools, the next point
+  // may be now outside of editing host or editing hos has been changed.
+  if (aHTMLEditor.MaybeNodeRemovalsObservedByDevTools()) {
     if (NS_WARN_IF(nextSibling &&
                    !nextSibling->IsInclusiveDescendantOf(&aEditingHost)) ||
         NS_WARN_IF(!parentNode->IsInclusiveDescendantOf(&aEditingHost))) {
@@ -6240,7 +6234,7 @@ Result<MoveNodeResult, nsresult> HTMLEditor::AutoMoveOneLineHandler::Run(
     }
     // And also if pointToInsert has been made invalid with removing preceding
     // children, we should move the content to the end of the container.
-    else if (aHTMLEditor.MayHaveMutationEventListeners() &&
+    else if (aHTMLEditor.MaybeNodeRemovalsObservedByDevTools() &&
              MOZ_UNLIKELY(!moveContentsInLineResult.NextInsertionPointRef()
                                .IsSetAndValid())) {
       mPointToInsert.SetToEndOf(mPointToInsert.GetContainer());
@@ -6254,7 +6248,7 @@ Result<MoveNodeResult, nsresult> HTMLEditor::AutoMoveOneLineHandler::Run(
           moveContentsInLineResult.NextInsertionPointRef().IsSet());
       mPointToInsert = moveContentsInLineResult.NextInsertionPointRef();
       pointToInsert = NextInsertionPointRef();
-      if (!aHTMLEditor.MayHaveMutationEventListeners() ||
+      if (!aHTMLEditor.MaybeNodeRemovalsObservedByDevTools() ||
           movedContentRange.EndRef().IsBefore(pointToInsert)) {
         MOZ_ASSERT(pointToInsert.IsSet());
         MOZ_ASSERT(
@@ -6632,7 +6626,7 @@ Result<MoveNodeResult, nsresult> HTMLEditor::MoveNodeOrChildrenWithTransaction(
       return Err(rv);
     }
   }
-  if (!MayHaveMutationEventListeners()) {
+  if (!MaybeNodeRemovalsObservedByDevTools()) {
     return std::move(unwrappedMoveNodeResult);
   }
   // Mutation event listener may make `offset` value invalid with
@@ -6698,15 +6692,20 @@ nsresult HTMLEditor::MoveAllChildren(nsINode& aContainer,
   if (!aContainer.HasChildren()) {
     return NS_OK;
   }
-  nsIContent* firstChild = aContainer.GetFirstChild();
+  nsIContent* const firstChild = aContainer.GetFirstChild();
   if (NS_WARN_IF(!firstChild)) {
     return NS_ERROR_FAILURE;
   }
-  nsIContent* lastChild = aContainer.GetLastChild();
+  nsIContent* const lastChild = aContainer.GetLastChild();
   if (NS_WARN_IF(!lastChild)) {
     return NS_ERROR_FAILURE;
   }
-  nsresult rv = MoveChildrenBetween(*firstChild, *lastChild, aPointToInsert);
+  nsresult rv = MoveChildrenBetween(
+      // MOZ_KnownLive is okay for here because MoveChildrenBetween() will grab
+      // all children with an array of strong pointer.  Therefore, we don't need
+      // to guarantee the lifetime of firstChild and lastChild here unless we'd
+      // start to refer after this call.
+      MOZ_KnownLive(*firstChild), MOZ_KnownLive(*lastChild), aPointToInsert);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::MoveChildrenBetween() failed");
   return rv;
@@ -6736,9 +6735,9 @@ nsresult HTMLEditor::MoveChildrenBetween(
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsCOMPtr<nsIContent> newContainer = aPointToInsert.ContainerAs<nsIContent>();
+  const nsCOMPtr<nsIContent> newContainer =
+      aPointToInsert.ContainerAs<nsIContent>();
   nsCOMPtr<nsIContent> nextNode = aPointToInsert.GetChild();
-  IgnoredErrorResult error;
   for (size_t i = children.Length(); i > 0; --i) {
     nsCOMPtr<nsIContent>& child = children[i - 1];
     if (child->GetParentNode() != oldContainer) {
@@ -6749,39 +6748,26 @@ nsresult HTMLEditor::MoveChildrenBetween(
     if (NS_WARN_IF(!HTMLEditUtils::IsRemovableNode(*child))) {
       return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
     }
-    oldContainer->RemoveChild(*child, error);
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    if (error.Failed()) {
-      NS_WARNING("nsINode::RemoveChild() failed");
-      return error.StealNSResult();
-    }
-    if (nextNode) {
-      // If we're not appending the children to the new container, we should
-      // check if referring next node of insertion point is still in the new
-      // container.
-      EditorRawDOMPoint pointToInsert(nextNode);
-      if (NS_WARN_IF(!pointToInsert.IsSet()) ||
-          NS_WARN_IF(pointToInsert.GetContainer() != newContainer)) {
-        // The next node of insertion point has been moved by mutation observer.
-        // Let's stop moving the remaining nodes.
-        // XXX Or should we move remaining children after the last moved child?
-        return NS_ERROR_FAILURE;
+    {
+      nsresult rv = AutoNodeAPIWrapper(*this, *oldContainer)
+                        .RemoveChild(MOZ_KnownLive(*child));
+      if (NS_FAILED(rv)) {
+        NS_WARNING("AutoNodeAPIWrapper::RemoveChild() failed");
+        return rv;
       }
     }
-    if (NS_WARN_IF(
-            newContainer->IsInComposedDoc() &&
-            !EditorUtils::IsEditableContent(*newContainer, EditorType::HTML))) {
-      return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
+    if (NS_WARN_IF(nextNode && nextNode->GetParentNode() != newContainer) ||
+        NS_WARN_IF(newContainer->IsInComposedDoc() &&
+                   !HTMLEditUtils::IsSimplyEditableNode(*newContainer))) {
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
-    newContainer->InsertBefore(*child, nextNode, error);
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    if (error.Failed()) {
-      NS_WARNING("nsINode::InsertBefore() failed");
-      return error.StealNSResult();
+    {
+      nsresult rv = AutoNodeAPIWrapper(*this, *newContainer)
+                        .InsertBefore(MOZ_KnownLive(*child), nextNode);
+      if (NS_FAILED(rv)) {
+        NS_WARNING("AutoNodeAPIWrapper::InsertBefore() failed");
+        return rv;
+      }
     }
     // If the child was inserted or appended properly, the following children
     // should be inserted before it.  Otherwise, keep using current position.
@@ -6797,16 +6783,21 @@ nsresult HTMLEditor::MovePreviousSiblings(
   if (NS_WARN_IF(!aChild.GetParentNode())) {
     return NS_ERROR_INVALID_ARG;
   }
-  nsIContent* firstChild = aChild.GetParentNode()->GetFirstChild();
+  nsIContent* const firstChild = aChild.GetParentNode()->GetFirstChild();
   if (NS_WARN_IF(!firstChild)) {
     return NS_ERROR_FAILURE;
   }
-  nsIContent* lastChild =
+  nsIContent* const lastChild =
       &aChild == firstChild ? firstChild : aChild.GetPreviousSibling();
   if (NS_WARN_IF(!lastChild)) {
     return NS_ERROR_FAILURE;
   }
-  nsresult rv = MoveChildrenBetween(*firstChild, *lastChild, aPointToInsert);
+  nsresult rv = MoveChildrenBetween(
+      // MOZ_KnownLive is okay for here because MoveChildrenBetween() will grab
+      // all children with an array of strong pointer.  Therefore, we don't need
+      // to guarantee the lifetime of firstChild and lastChild here unless we'd
+      // start to refer after this call.
+      MOZ_KnownLive(*firstChild), MOZ_KnownLive(*lastChild), aPointToInsert);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::MoveChildrenBetween() failed");
   return rv;
@@ -6817,11 +6808,16 @@ nsresult HTMLEditor::MoveInclusiveNextSiblings(
   if (NS_WARN_IF(!aChild.GetParentNode())) {
     return NS_ERROR_INVALID_ARG;
   }
-  nsIContent* lastChild = aChild.GetParentNode()->GetLastChild();
+  nsIContent* const lastChild = aChild.GetParentNode()->GetLastChild();
   if (NS_WARN_IF(!lastChild)) {
     return NS_ERROR_FAILURE;
   }
-  nsresult rv = MoveChildrenBetween(aChild, *lastChild, aPointToInsert);
+  nsresult rv = MoveChildrenBetween(
+      // MOZ_KnownLive is okay for here because MoveChildrenBetween() will grab
+      // all children with an array of strong pointer.  Therefore, we don't need
+      // to guarantee the lifetime of lastChild here unless we'd start to refer
+      // after this call.
+      aChild, MOZ_KnownLive(*lastChild), aPointToInsert);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::MoveChildrenBetween() failed");
   return rv;

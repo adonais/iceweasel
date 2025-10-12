@@ -213,7 +213,7 @@ class DcSctpTimeout : public Timeout {
                     static_cast<unsigned>(timeout_id.value())));
           connection->HandleTimeout(timeout_id);
         },
-        duration.value(), nsITimer::TYPE_ONE_SHOT, "DcSctpTimeout::Start");
+        duration.value(), nsITimer::TYPE_ONE_SHOT, "DcSctpTimeout::Start"_ns);
     if (result.isOk()) {
       mTimer = result.unwrap();
     }
@@ -275,7 +275,7 @@ void DataChannelConnectionDcSctp::OnMessageReceived(DcSctpMessage aMessage) {
   msg.Append(aMessage.payload().data(), aMessage.payload().size());
   if (msg.GetPpid() == DATA_CHANNEL_PPID_CONTROL) {
     HandleDCEPMessage(std::move(msg));
-  } else if (channel) {
+  } else if (channel && !HasPreChannelData(msg.GetStreamId())) {
     HandleDataMessage(std::move(msg));
   } else {
     mPreChannelData.push_back(std::move(msg));
@@ -439,6 +439,15 @@ void DataChannelConnectionDcSctp::OnDCEPMessageDone(LifecycleId aLifecycleId) {
   UpdateBufferedAmount(StreamID(stream));
 
   mBufferedDCEPBytes.erase(it);
+}
+
+bool DataChannelConnectionDcSctp::HasPreChannelData(uint16_t aStream) const {
+  for (const auto& msg : mPreChannelData) {
+    if (msg.GetStreamId() == aStream) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace mozilla

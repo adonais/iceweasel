@@ -26,12 +26,18 @@ function sendPing(addEnvironment = false) {
   return TelemetryController.submitExternalPing(TEST_PING_TYPE, {}, options);
 }
 
+registerCleanupFunction(async () => {
+  Services.prefs.clearUserPref("termsofuse.bypassNotification");
+});
+
 add_task(async function test_setup() {
   // Addon manager needs a profile directory
   do_get_profile();
   // Make sure we don't generate unexpected pings due to pref changes.
   await setEmptyPrefWatchlist();
 
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
+  //Services.prefs.setBoolPref("termsofuse.bypassNotification", true);
   Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 
   await new Promise(resolve =>

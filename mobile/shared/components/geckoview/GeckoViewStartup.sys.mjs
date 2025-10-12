@@ -250,29 +250,6 @@ export class GeckoViewStartup {
           }
         );
 
-        GeckoViewUtils.addLazyPrefObserver(
-          {
-            name: "network.android_doh.autoselect_enabled",
-            default: false,
-          },
-          {
-            handler: _ => {
-              if (
-                Services.prefs.getBoolPref(
-                  "network.android_doh.autoselect_enabled"
-                )
-              ) {
-                lazy.DoHController.init();
-              } else {
-                // When the autoselect isn't enabled, these prefs should be
-                // cleared. Otherwise doh-rollout.mode will override
-                // network.trr.mode forever as DoHController isn't running.
-                lazy.DoHController.cleanupPrefs();
-              }
-            },
-          }
-        );
-
         GeckoViewUtils.addLazyGetter(this, "DownloadTracker", {
           module: "resource://gre/modules/GeckoViewWebExtension.sys.mjs",
           ged: ["GeckoView:WebExtension:DownloadChanged"],
@@ -330,6 +307,24 @@ export class GeckoViewStartup {
         // moved into the foreground later. That is because "application-foreground"
         // is only going to be notified when the application was first paused.
         Services.obs.notifyObservers(null, "geckoview-initial-foreground");
+
+        // This pref is set when during GeckoEngine initialization
+        // and holds the value of FxNimbus.doh.autoselect-enabled (see nimbus.fml.yaml)
+        // We check it here insead of using GeckoViewUtils.addLazyPrefObserver
+        // because GeckoView:ResetUserPrefs also clears it during startup.
+        if (
+          Services.prefs.getBoolPref("network.android_doh.autoselect_enabled")
+        ) {
+          debug`init DoH controller`;
+          lazy.DoHController.init();
+        } else {
+          // When the autoselect isn't enabled, these prefs should be
+          // cleared. Otherwise doh-rollout.mode will override
+          // network.trr.mode forever as DoHController isn't running.
+          debug`cleanup DoH prefs`;
+          lazy.DoHController.cleanupPrefs();
+        }
+
         break;
       }
       case "GeckoView:ResetUserPrefs": {

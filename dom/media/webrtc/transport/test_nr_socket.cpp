@@ -384,7 +384,7 @@ int TestNrSocket::sendto(const void* msg, size_t len, int flags,
     };
     auto result = NS_NewTimerWithCallback(
         std::move(callback), nat_->network_delay_ms_, nsITimer::TYPE_ONE_SHOT,
-        "TestNrSocket::sendto");
+        "TestNrSocket::sendto"_ns);
     if (result.isOk()) {
       mTimers.AppendElement(result.unwrap());
     }

@@ -97,9 +97,10 @@ class FragmentOrElement : public nsIContent {
   // nsINode interface methods
   virtual void GetTextContentInternal(nsAString& aTextContent,
                                       mozilla::OOMReporter& aError) override;
-  virtual void SetTextContentInternal(const nsAString& aTextContent,
-                                      nsIPrincipal* aSubjectPrincipal,
-                                      mozilla::ErrorResult& aError) override;
+  virtual void SetTextContentInternal(
+      const nsAString& aTextContent, nsIPrincipal* aSubjectPrincipal,
+      mozilla::ErrorResult& aError,
+      MutationEffectOnScript aMutationEffectOnScript) override;
 
   // nsIContent interface methods
   const CharacterDataBuffer* GetCharacterDataBuffer() const override;
@@ -127,13 +128,6 @@ class FragmentOrElement : public nsIContent {
   }
 
  public:
-  /**
-   * If there are listeners for DOMNodeInserted event, fires the event on all
-   * aNodes
-   */
-  static void FireNodeInserted(Document* aDoc, nsINode* aParent,
-                               const nsTArray<nsCOMPtr<nsIContent>>& aNodes);
-
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_WRAPPERCACHE_CLASS_INHERITED(
       FragmentOrElement, nsIContent)
 
@@ -219,6 +213,12 @@ class FragmentOrElement : public nsIContent {
      * PopoverData for the element.
      */
     UniquePtr<PopoverData> mPopoverData;
+
+    /**
+     * The association to a popover that this element was the source
+     * showing a popover, e.g. the source in `el.showPopover({source})`.
+     */
+    nsWeakPtr mAssociatedPopover;
 
     /**
      * CustomStates for the element.

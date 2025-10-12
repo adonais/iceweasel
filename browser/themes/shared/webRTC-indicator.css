@@ -279,7 +279,7 @@ xul|menu {
     background-position: center -5px;
     padding: 8px;
     border: 1px solid transparent;
-    border-radius: 1000px;
+    border-radius: var(--border-radius-circle);
   }
 }
 

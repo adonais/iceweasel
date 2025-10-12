@@ -302,9 +302,6 @@ newtab-custom-pocket-sponsored = Sponsorētie stāsti
 newtab-custom-pocket-show-recent-saves = Rādīt nesen saglabāto
 newtab-custom-recent-title = Nesenās aktivitātes
 newtab-custom-recent-subtitle = Neseno vietņu un satura izlase
-newtab-custom-recent-toggle =
-    .label = Nesenās aktivitātes
-    .description = Neseno vietņu un satura izlase
 newtab-custom-weather-toggle =
     .label = Laikapstākļi
     .description = Šodienas prognoze ātrā acu uzmetienā
@@ -396,7 +393,6 @@ newtab-weather-menu-change-location = Mainīt atrašanās vietu
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Meklēt atrašanās vietu
     .aria-label = Meklēt atrašanās vietu
-newtab-weather-change-location-search-input = Meklēt atrašanās vietu
 newtab-weather-menu-weather-display = Laikapstākļu attēlotājs
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature

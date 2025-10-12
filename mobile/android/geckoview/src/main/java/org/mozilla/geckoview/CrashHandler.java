@@ -33,6 +33,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.GeckoAppShell;
 
+/** Handler for processing application crashes and sending crash reports. */
 public class CrashHandler implements Thread.UncaughtExceptionHandler {
 
   private static final String LOGTAG = "GeckoCrashHandler";

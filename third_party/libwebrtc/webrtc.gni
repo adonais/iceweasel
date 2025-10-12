@@ -11,7 +11,7 @@ import("//chromium/build/config/mips.gni")
 import("//chromium/build/config/ozone.gni")
 import("//chromium/build/config/sanitizers/sanitizers.gni")
 import("//chromium/build/config/sysroot.gni")
-import("//libwebrtc/build_overrides/build.gni")
+import("//build_overrides/build.gni")
 
 if (!build_with_chromium && is_component_build) {
   print("The Gn argument `is_component_build` is currently " +
@@ -341,6 +341,9 @@ declare_args() {
 
   # Set this to true to disable webrtc metrics.
   rtc_disable_metrics = false
+
+  # Enables an experimental rust version of base64 for building and testing.
+  rtc_rusty_base64 = !build_with_mozilla
 }
 
 declare_args() {
@@ -391,6 +394,7 @@ if (is_mac || is_ios) {
 
 if (build_with_chromium) {
   rtc_use_perfetto = true
+  rtc_allow_deprecated_namespaces = false
 }
 
 # Global public configuration that should be applied to all WebRTC targets. You
@@ -605,6 +609,12 @@ template("rtc_source_set") {
     forward_variables_from(invoker, [ "visibility" ])
     if (!defined(visibility)) {
       visibility = webrtc_default_visibility
+    }
+
+    if (defined(invoker.sources)) {
+      nonheader_sources = filter_include(invoker.sources, [ "*.cc" ])
+      assert(nonheader_sources == [],
+             "rtc_source_set shall not contain cc files")
     }
 
     # What's your poison?

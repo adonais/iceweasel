@@ -614,14 +614,14 @@ hb_ensure_native_direction (hb_buffer_t *buffer)
     for (unsigned i = 0; i < count; i++)
     {
       auto gc = _hb_glyph_info_get_general_category (&info[i]);
-      if (gc == HB_UNICODE_GENERAL_CATEGORY_DECIMAL_NUMBER)
-	found_number = true;
-      else if (HB_UNICODE_GENERAL_CATEGORY_IS_LETTER (gc))
+      if (HB_UNICODE_GENERAL_CATEGORY_IS_LETTER (gc))
       {
 	found_letter = true;
 	break;
       }
-      else if (_hb_codepoint_is_regional_indicator (info[i].codepoint))
+      else if (gc == HB_UNICODE_GENERAL_CATEGORY_DECIMAL_NUMBER)
+	found_number = true;
+      else if (unlikely (_hb_codepoint_is_regional_indicator (info[i].codepoint)))
 	found_ri = true;
     }
     if ((found_number || found_ri) && !found_letter)
@@ -788,7 +788,13 @@ hb_ot_zero_width_default_ignorables (const hb_buffer_t *buffer)
   unsigned int i = 0;
   for (i = 0; i < count; i++)
     if (unlikely (_hb_glyph_info_is_default_ignorable (&info[i])))
-      pos[i].x_advance = pos[i].y_advance = pos[i].x_offset = pos[i].y_offset = 0;
+    {
+      pos[i].x_advance = pos[i].y_advance = 0;
+      if (HB_DIRECTION_IS_HORIZONTAL (buffer->props.direction))
+	pos[i].x_offset = 0;
+      else
+        pos[i].y_offset = 0;
+    }
 }
 
 static void
@@ -843,11 +849,11 @@ hb_ot_hide_default_ignorables (hb_buffer_t *buffer,
 static inline void
 hb_ot_map_glyphs_fast (hb_buffer_t  *buffer)
 {
-  /* Normalization process sets up glyph_index(), we just copy it. */
+  /* Normalization process sets up normalizer_glyph_index(), we just copy it. */
   unsigned int count = buffer->len;
   hb_glyph_info_t *info = buffer->info;
   for (unsigned int i = 0; i < count; i++)
-    info[i].codepoint = info[i].glyph_index();
+    info[i].codepoint = info[i].normalizer_glyph_index();
 
   buffer->content_type = HB_BUFFER_CONTENT_TYPE_GLYPHS;
 }
@@ -885,7 +891,7 @@ hb_ot_substitute_default (const hb_ot_shape_context_t *c)
 
   hb_ot_rotate_chars (c);
 
-  HB_BUFFER_ALLOCATE_VAR (buffer, glyph_index);
+  HB_BUFFER_ALLOCATE_VAR (buffer, normalizer_glyph_index);
 
   _hb_ot_shape_normalize (c->plan, buffer, c->font);
 
@@ -897,7 +903,7 @@ hb_ot_substitute_default (const hb_ot_shape_context_t *c)
 
   hb_ot_map_glyphs_fast (buffer);
 
-  HB_BUFFER_DEALLOCATE_VAR (buffer, glyph_index);
+  HB_BUFFER_DEALLOCATE_VAR (buffer, normalizer_glyph_index);
 }
 
 static inline void
@@ -1171,8 +1177,6 @@ hb_ot_shape_internal (hb_ot_shape_context_t *c)
   _hb_buffer_deallocate_unicode_vars (c->buffer);
 
   c->buffer->props.direction = c->target_direction;
-
-  c->buffer->leave ();
 }
 
 

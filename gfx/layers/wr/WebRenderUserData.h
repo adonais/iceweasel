@@ -8,7 +8,7 @@
 #define GFX_WEBRENDERUSERDATA_H
 
 #include <vector>
-#include "mozilla/gfx/DrawEventRecorder.h"
+#include "mozilla/gfx/DrawEventRecorderTypes.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/image/WebRenderImageProvider.h"
 #include "mozilla/layers/AnimationInfo.h"
@@ -236,7 +236,7 @@ class WebRenderFallbackData : public WebRenderUserData {
   /// into.
   WebRenderImageData* PaintIntoImage();
 
-  gfx::DrawEventRecorderPrivate::ExternalSurfacesHolder mExternalSurfaces;
+  gfx::DrawEventRecorderPrivate_ExternalSurfacesHolder mExternalSurfaces;
   UniquePtr<nsDisplayItemGeometry> mGeometry;
   DisplayItemClip mClip;
   nsRect mBounds;
@@ -328,7 +328,7 @@ class WebRenderMaskData : public WebRenderUserData {
 
   Maybe<wr::BlobImageKey> mBlobKey;
   std::vector<RefPtr<gfx::ScaledFont>> mFonts;
-  gfx::DrawEventRecorderPrivate::ExternalSurfacesHolder mExternalSurfaces;
+  gfx::DrawEventRecorderPrivate_ExternalSurfacesHolder mExternalSurfaces;
   LayerIntRect mItemRect;
   nsPoint mMaskOffset;
   nsStyleImageLayers mMaskStyle;

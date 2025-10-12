@@ -231,7 +231,7 @@ class NotificationMessageBar extends MozLitElement {
   #renderUpdateLoginSuccess(id) {
     const dataL10nId =
       id == "update-username-success"
-        ? "contextual-manager-passwords-update-username-success-heading-2"
+        ? "contextual-manager-passwords-update-username-success-heading-3"
         : "contextual-manager-passwords-update-password-success-heading";
     return html`
       ${notificationShell({

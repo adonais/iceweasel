@@ -23,6 +23,7 @@ import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorA
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.ContentDescription as MenuItemDescription
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Icon as MenuItemIcon
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Text as MenuItemText
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Assert the [expected] search selector (and its menu items) is the same as [actual]
@@ -149,7 +150,7 @@ fun buildExpectedSearchSelectorMenuItems(
     )
     add(
         BrowserToolbarMenuButton(
-            icon = MenuItemIcon.DrawableResIcon(R.drawable.mozac_ic_settings_24),
+            icon = MenuItemIcon.DrawableResIcon(iconsR.drawable.mozac_ic_settings_24),
             text = MenuItemText.StringResText(R.string.search_settings_menu_item),
             contentDescription = MenuItemDescription.StringResContentDescription(R.string.search_settings_menu_item),
             onClick = SearchSettingsItemClicked,

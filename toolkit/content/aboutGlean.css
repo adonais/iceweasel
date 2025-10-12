@@ -4,6 +4,11 @@
 
 @import url("chrome://global/skin/in-content/common.css");
 
+:root {
+  --content-width-offset: 340px;
+  --table-width: calc(100vw - var(--content-width-offset));
+}
+
 body {
   display: flex;
   align-items: stretch;
@@ -42,4 +47,41 @@ body {
 #log-pings {
   vertical-align: text-top;
   margin-inline-end: 0;
+}
+
+#metrics-table-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+#metrics-table {
+  width: var(--table-width);
+}
+
+#metrics-table table {
+  width: var(--table-width);
+}
+
+#metrics-table table td {
+  vertical-align: middle;
+}
+
+#metrics-table-instance {
+  max-height: calc(100vh - 205px);
+  overflow-y: scroll;
+}
+
+td[data-d3-cell="actions"] > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+td[data-d3-cell="value"] > pre {
+  background-color: var(--background-color-box);
+  padding: 5px;
+  border-radius: var(--border-radius-small);
+  overflow-x: scroll;
+  width: fit-content;
 }

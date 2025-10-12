@@ -493,7 +493,7 @@ data class ContextMenuCandidate(
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    putExtra(Intent.EXTRA_TEXT, hitResult.getLink())
+                    putExtra(Intent.EXTRA_TEXT, hitResult.getUrl())
                 }
 
                 try {
@@ -572,7 +572,7 @@ data class ContextMenuCandidate(
                 clipPlainText(
                     context,
                     hitResult.getLink(),
-                    hitResult.getLink(),
+                    hitResult.getUrl(),
                     R.string.mozac_feature_contextmenu_snackbar_link_copied,
                     snackBarParentView,
                     snackbarDelegate,
@@ -688,6 +688,15 @@ internal fun HitResult.getLink(): String = when (this) {
         if (title.isNullOrBlank()) src else title.toString()
     is HitResult.AUDIO ->
         if (title.isNullOrBlank()) src else title.toString()
+    else -> "about:blank"
+}
+
+internal fun HitResult.getUrl(): String = when (this) {
+    is HitResult.UNKNOWN -> src
+    is HitResult.IMAGE_SRC -> uri
+    is HitResult.IMAGE -> src
+    is HitResult.VIDEO -> src
+    is HitResult.AUDIO -> src
     else -> "about:blank"
 }
 

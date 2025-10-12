@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
-import mozilla.components.ui.icons.R
+import mozilla.components.ui.icons.R as iconsR
 
 const val DEFAULT_MAX_LINES = 2
 
@@ -263,25 +263,25 @@ private fun ButtonPreview() {
         ) {
             PrimaryButton(
                 text = "Label",
-                icon = painterResource(R.drawable.mozac_ic_collection_24),
+                icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
                 onClick = {},
             )
 
             SecondaryButton(
                 text = "Label",
-                icon = painterResource(R.drawable.mozac_ic_collection_24),
+                icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
                 onClick = {},
             )
 
             TertiaryButton(
                 text = "Label",
-                icon = painterResource(R.drawable.mozac_ic_collection_24),
+                icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
                 onClick = {},
             )
 
             DestructiveButton(
                 text = "Label",
-                icon = painterResource(R.drawable.mozac_ic_collection_24),
+                icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
                 onClick = {},
             )
         }

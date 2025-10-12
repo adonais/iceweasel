@@ -13,6 +13,7 @@ $tags:
 addons:
   active_addons:
     type: object
+    lifetime: application
     description: |
       The list of currently enabled addons.
 
@@ -28,8 +29,10 @@ addons:
       have values.
     bugs:
       - https://bugzilla.mozilla.org/1950416
+      - https://bugzilla.mozilla.org/1991924
     data_reviews:
       - https://bugzilla.mozilla.org/1950416
+      - https://bugzilla.mozilla.org/1991924
     data_sensitivity:
       - technical
       - interaction
@@ -89,6 +92,7 @@ addons:
 
   theme:
     type: object
+    lifetime: application
     description: |
       The currently active theme.
 
@@ -103,8 +107,10 @@ addons:
       values.
     bugs:
       - https://bugzilla.mozilla.org/1950416
+      - https://bugzilla.mozilla.org/1991924
     data_reviews:
       - https://bugzilla.mozilla.org/1950416
+      - https://bugzilla.mozilla.org/1991924
     data_sensitivity:
       - technical
       - interaction
@@ -145,6 +151,7 @@ addons:
 
   active_g_m_plugins:
     type: object
+    lifetime: application
     description: |
       The list of currently enabled Gecko Media Plugins.
 
@@ -159,8 +166,10 @@ addons:
       have values.
     bugs:
       - https://bugzilla.mozilla.org/1950416
+      - https://bugzilla.mozilla.org/1991924
     data_reviews:
       - https://bugzilla.mozilla.org/1950416
+      - https://bugzilla.mozilla.org/1991924
     data_sensitivity:
       - technical
       - interaction

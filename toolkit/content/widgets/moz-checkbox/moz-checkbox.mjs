@@ -52,7 +52,7 @@ export default class MozCheckbox extends MozBaseInputElement {
       id="input"
       type="checkbox"
       name=${this.name}
-      value=${this.value}
+      .value=${this.value}
       .checked=${this.checked}
       @click=${this.handleStateChange}
       @change=${this.redispatchEvent}

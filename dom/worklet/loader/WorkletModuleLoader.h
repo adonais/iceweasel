@@ -30,13 +30,7 @@ class WorkletScriptLoader : public JS::loader::ScriptLoaderInterface {
 
   nsresult FillCompileOptionsForRequest(
       JSContext* cx, ScriptLoadRequest* aRequest, JS::CompileOptions* aOptions,
-      JS::MutableHandle<JSScript*> aIntroductionScript) override {
-    aOptions->setIntroductionType("Worklet");
-    aOptions->setFileAndLine(aRequest->mURL.get(), 1);
-    aOptions->setIsRunOnce(true);
-    aOptions->setNoScriptRval(true);
-    return NS_OK;
-  }
+      JS::MutableHandle<JSScript*> aIntroductionScript) override;
 
  private:
   ~WorkletScriptLoader() = default;
@@ -63,17 +57,14 @@ class WorkletModuleLoader : public JS::loader::ModuleLoaderBase {
  private:
   ~WorkletModuleLoader() = default;
 
-  already_AddRefed<JS::loader::ModuleLoadRequest> CreateStaticImport(
-      nsIURI* aURI, JS::ModuleType aModuleType,
-      JS::loader::ModuleScript* aReferrerScript,
-      const mozilla::dom::SRIMetadata& aSriMetadata,
-      JS::loader::LoadContextBase* aLoadContext,
-      JS::loader::ModuleLoaderBase* aLoader) override;
+  already_AddRefed<ModuleLoadRequest> CreateRequest(
+      JSContext* aCx, nsIURI* aURI, JS::Handle<JSObject*> aModuleRequest,
+      JS::Handle<JS::Value> aHostDefined, JS::Handle<JS::Value> aPayload,
+      bool aIsDynamicImport, JS::loader::ScriptFetchOptions* aOptions,
+      dom::ReferrerPolicy aReferrerPolicy, nsIURI* aBaseURL,
+      const dom::SRIMetadata& aSriMetadata) override;
 
-  already_AddRefed<JS::loader::ModuleLoadRequest> CreateDynamicImport(
-      JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
-      JS::Handle<JSObject*> aModuleRequestObj,
-      JS::Handle<JSObject*> aPromise) override;
+  bool IsDynamicImportSupported() override { return false; }
 
   bool CanStartLoad(JS::loader::ModuleLoadRequest* aRequest,
                     nsresult* aRvOut) override;

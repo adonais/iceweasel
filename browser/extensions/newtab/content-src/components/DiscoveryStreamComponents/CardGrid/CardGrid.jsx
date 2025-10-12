@@ -4,17 +4,13 @@
 
 import { DSCard, PlaceholderDSCard } from "../DSCard/DSCard.jsx";
 import { DSEmptyState } from "../DSEmptyState/DSEmptyState.jsx";
-import { DSDismiss } from "content-src/components/DiscoveryStreamComponents/DSDismiss/DSDismiss";
 import { TopicsWidget } from "../TopicsWidget/TopicsWidget.jsx";
 import { ListFeed } from "../ListFeed/ListFeed.jsx";
 import { AdBanner } from "../AdBanner/AdBanner.jsx";
 import { FluentOrText } from "../../FluentOrText/FluentOrText.jsx";
-import { actionCreators as ac } from "common/Actions.mjs";
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useRef } from "react";
 import { connect } from "react-redux";
 import { TrendingSearches } from "../TrendingSearches/TrendingSearches.jsx";
-const PREF_ONBOARDING_EXPERIENCE_DISMISSED =
-  "discoverystream.onboardingExperience.dismissed";
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
 const PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
 const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
@@ -35,9 +31,6 @@ const PREF_TRENDING_SEARCH = "trendingSearch.enabled";
 const PREF_TRENDING_SEARCH_SYSTEM = "system.trendingSearch.enabled";
 const PREF_SEARCH_ENGINE = "trendingSearch.defaultSearchEngine";
 const PREF_TRENDING_SEARCH_VARIANT = "trendingSearch.variant";
-const INTERSECTION_RATIO = 0.5;
-const VISIBLE = "visible";
-const VISIBILITY_CHANGE_EVENT = "visibilitychange";
 const WIDGET_IDS = {
   TOPICS: 1,
 };
@@ -46,119 +39,6 @@ export function DSSubHeader({ children }) {
   return (
     <div className="section-top-bar ds-sub-header">
       <h3 className="section-title-container">{children}</h3>
-    </div>
-  );
-}
-
-export function OnboardingExperience({ dispatch, windowObj = globalThis }) {
-  const [dismissed, setDismissed] = useState(false);
-  const [maxHeight, setMaxHeight] = useState(null);
-  const heightElement = useRef(null);
-
-  const onDismissClick = useCallback(() => {
-    // We update this as state and redux.
-    // The state update is for this newtab,
-    // and the redux update is for other tabs, offscreen tabs, and future tabs.
-    // We need the state update for this tab to support the transition.
-    setDismissed(true);
-    dispatch(ac.SetPref(PREF_ONBOARDING_EXPERIENCE_DISMISSED, true));
-    dispatch(
-      ac.DiscoveryStreamUserEvent({
-        event: "BLOCK",
-        source: "POCKET_ONBOARDING",
-      })
-    );
-  }, [dispatch]);
-
-  useEffect(() => {
-    const resizeObserver = new windowObj.ResizeObserver(() => {
-      if (heightElement.current) {
-        setMaxHeight(heightElement.current.offsetHeight);
-      }
-    });
-
-    const options = { threshold: INTERSECTION_RATIO };
-    const intersectionObserver = new windowObj.IntersectionObserver(entries => {
-      if (
-        entries.some(
-          entry =>
-            entry.isIntersecting &&
-            entry.intersectionRatio >= INTERSECTION_RATIO
-        )
-      ) {
-        dispatch(
-          ac.DiscoveryStreamUserEvent({
-            event: "IMPRESSION",
-            source: "POCKET_ONBOARDING",
-          })
-        );
-        // Once we have observed an impression, we can stop for this instance of newtab.
-        intersectionObserver.unobserve(heightElement.current);
-      }
-    }, options);
-
-    const onVisibilityChange = () => {
-      intersectionObserver.observe(heightElement.current);
-      windowObj.document.removeEventListener(
-        VISIBILITY_CHANGE_EVENT,
-        onVisibilityChange
-      );
-    };
-
-    if (heightElement.current) {
-      resizeObserver.observe(heightElement.current);
-      // Check visibility or setup a visibility event to make
-      // sure we don't fire this for off screen pre loaded tabs.
-      if (windowObj.document.visibilityState === VISIBLE) {
-        intersectionObserver.observe(heightElement.current);
-      } else {
-        windowObj.document.addEventListener(
-          VISIBILITY_CHANGE_EVENT,
-          onVisibilityChange
-        );
-      }
-      setMaxHeight(heightElement.current.offsetHeight);
-    }
-
-    // Return unmount callback to clean up observers.
-    return () => {
-      resizeObserver?.disconnect();
-      intersectionObserver?.disconnect();
-      windowObj.document.removeEventListener(
-        VISIBILITY_CHANGE_EVENT,
-        onVisibilityChange
-      );
-    };
-  }, [dispatch, windowObj]);
-
-  const style = {};
-  if (dismissed) {
-    style.maxHeight = "0";
-    style.opacity = "0";
-    style.transition = "max-height 0.26s ease, opacity 0.26s ease";
-  } else if (maxHeight) {
-    style.maxHeight = `${maxHeight}px`;
-  }
-
-  return (
-    <div style={style}>
-      <div className="ds-onboarding-ref" ref={heightElement}>
-        <div className="ds-onboarding-container">
-          <DSDismiss
-            onDismissClick={onDismissClick}
-            extraClasses={`ds-onboarding`}
-          >
-            <div>
-              <header>
-                <span className="icon icon-pocket" />
-                <span data-l10n-id="newtab-pocket-onboarding-discover" />
-              </header>
-              <p data-l10n-id="newtab-pocket-onboarding-cta" />
-            </div>
-            <div className="ds-onboarding-graphic" />
-          </DSDismiss>
-        </div>
-      </div>
     </div>
   );
 }
@@ -201,17 +81,13 @@ export class _CardGrid extends React.PureComponent {
     const prefs = this.props.Prefs.values;
     const {
       items,
-      onboardingExperience,
       ctaButtonSponsors,
       ctaButtonVariant,
-      spocMessageVariant,
       widgets,
       DiscoveryStream,
     } = this.props;
 
     const { topicsLoading } = DiscoveryStream;
-    const isOnboardingExperienceDismissed =
-      prefs[PREF_ONBOARDING_EXPERIENCE_DISMISSED];
     const mayHaveSectionsCards = prefs[PREF_SECTIONS_CARDS_ENABLED];
     const mayHaveThumbsUpDown = prefs[PREF_THUMBS_UP_DOWN_ENABLED];
     const showTopics = prefs[PREF_TOPICS_ENABLED];
@@ -277,7 +153,6 @@ export class _CardGrid extends React.PureComponent {
             bookmarkGuid={rec.bookmarkGuid}
             ctaButtonSponsors={ctaButtonSponsors}
             ctaButtonVariant={ctaButtonVariant}
-            spocMessageVariant={spocMessageVariant}
             recommendation_id={rec.recommendation_id}
             firstVisibleTimestamp={this.props.firstVisibleTimestamp}
             mayHaveThumbsUpDown={mayHaveThumbsUpDown}
@@ -421,12 +296,7 @@ export class _CardGrid extends React.PureComponent {
     const gridClassName = this.renderGridClassName();
 
     return (
-      <>
-        {!isOnboardingExperienceDismissed && onboardingExperience && (
-          <OnboardingExperience dispatch={this.props.dispatch} />
-        )}
-        {cards?.length > 0 && <div className={gridClassName}>{cards}</div>}
-      </>
+      <>{cards?.length > 0 && <div className={gridClassName}>{cards}</div>}</>
     );
   }
 

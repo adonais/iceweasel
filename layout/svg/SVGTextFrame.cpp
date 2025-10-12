@@ -2314,7 +2314,7 @@ bool CharIterator::IsOriginalCharTrimmed() const {
       (index >= mTrimmedOffset + mTrimmedLength &&
        mFrameForTrimCheck->StyleText()->NewlineIsSignificant(
            mFrameForTrimCheck) &&
-       mFrameForTrimCheck->CharacterDataBuffer()->CharAt(index) == '\n'));
+       mFrameForTrimCheck->CharacterDataBuffer().CharAt(index) == '\n'));
 }
 
 gfxFloat CharIterator::GetAdvance(nsPresContext* aContext) const {
@@ -2804,7 +2804,7 @@ void SVGTextFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
 }
 
 nsresult SVGTextFrame::AttributeChanged(int32_t aNameSpaceID,
-                                        nsAtom* aAttribute, int32_t aModType) {
+                                        nsAtom* aAttribute, AttrModType) {
   if (aNameSpaceID != kNameSpaceID_None) {
     return NS_OK;
   }
@@ -2914,8 +2914,8 @@ void SVGTextFrame::MutationObserver::CharacterDataChanged(
 }
 
 void SVGTextFrame::MutationObserver::AttributeChanged(
-    Element* aElement, int32_t aNameSpaceID, nsAtom* aAttribute,
-    int32_t aModType, const nsAttrValue* aOldValue) {
+    Element* aElement, int32_t aNameSpaceID, nsAtom* aAttribute, AttrModType,
+    const nsAttrValue* aOldValue) {
   if (!aElement->IsSVGElement()) {
     return;
   }

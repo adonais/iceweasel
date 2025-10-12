@@ -152,7 +152,7 @@ var gViewSourceUtils = {
    * @param aBrowsingContext:
    *        The child browsing context containing the document to view the source of.
    * @param aGetBrowserFn
-   *        A function that will return a browser to open the source in.
+   *        An async function that will return a browser to open the source in.
    */
   async viewPartialSourceInBrowser(aBrowsingContext, aGetBrowserFn) {
     let sourceActor = this.getViewSourceActor(aBrowsingContext);
@@ -160,7 +160,7 @@ var gViewSourceUtils = {
       let data = await sourceActor.sendQuery("ViewSource:GetSelection", {});
 
       let targetActor = this.getViewSourceActor(
-        aGetBrowserFn().browsingContext
+        (await aGetBrowserFn()).browsingContext
       );
       targetActor.sendAsyncMessage("ViewSource:LoadSourceWithSelection", data);
     }

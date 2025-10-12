@@ -112,10 +112,10 @@ struct HostResolverMarker {
     using MS = MarkerSchema;
     MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
     schema.SetTableLabel("{marker.name} - {marker.data.host}");
-    schema.AddKeyFormatSearchable("host", MS::Format::SanitizedString,
-                                  MS::Searchable::Searchable);
-    schema.AddKeyFormatSearchable("originSuffix", MS::Format::SanitizedString,
-                                  MS::Searchable::Searchable);
+    schema.AddKeyFormat("host", MS::Format::SanitizedString,
+                        MS::PayloadFlags::Searchable);
+    schema.AddKeyFormat("originSuffix", MS::Format::SanitizedString,
+                        MS::PayloadFlags::Searchable);
     schema.AddKeyFormat("qtype", MS::Format::Integer);
     schema.AddKeyFormat("flags", MS::Format::String);
     return schema;
@@ -1581,12 +1581,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupLocked(
     MutexAutoLock lock(addrRec->addr_info_lock);
     RefPtr<AddrInfo> old_addr_info;
     bool isDifferentRRSet = different_rrset(addrRec->addr_info, newRRSet);
-    bool isRenewal = addrRec->addr_info;
-    if (isRenewal) {
-      glean::dns::grace_period_renewal
-          .Get(isDifferentRRSet ? "different_record"_ns : "same_record"_ns)
-          .Add(1);
-    }
     if (isDifferentRRSet) {
       LOG(("nsHostResolver record %p new gencnt\n", addrRec.get()));
       old_addr_info = addrRec->addr_info;

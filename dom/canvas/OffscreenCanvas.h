@@ -7,6 +7,7 @@
 #ifndef MOZILLA_DOM_OFFSCREENCANVAS_H_
 #define MOZILLA_DOM_OFFSCREENCANVAS_H_
 
+#include "FontVisibilityProvider.h"
 #include "gfxTypes.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/Maybe.h"
@@ -62,7 +63,8 @@ struct OffscreenCanvasCloneData final {
 };
 
 class OffscreenCanvas final : public DOMEventTargetHelper,
-                              public CanvasRenderingContextHelper {
+                              public CanvasRenderingContextHelper,
+                              public FontVisibilityProvider {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(OffscreenCanvas,
@@ -70,6 +72,8 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
 
   IMPL_EVENT_HANDLER(contextlost);
   IMPL_EVENT_HANDLER(contextrestored);
+
+  FONT_VISIBILITY_PROVIDER_IMPL
 
   OffscreenCanvas(nsIGlobalObject* aGlobal, uint32_t aWidth, uint32_t aHeight);
 
@@ -109,7 +113,7 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
                                    JS::Handle<JS::Value> aParams,
                                    ErrorResult& aRv);
 
-  Maybe<uint64_t> GetWindowID();
+  Maybe<uint64_t> GetWindowID() const;
 
   nsICanvasRenderingContextInternal* GetContext() const {
     return mCurrentContext;
@@ -166,8 +170,6 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
     return mCompositorBackendType;
   }
 
-  bool ShouldResistFingerprinting(mozilla::RFPTarget aTarget) const;
-
   bool IsTransferredFromElement() const { return !!mDisplay; }
 
  private:
@@ -194,6 +196,7 @@ class OffscreenCanvas final : public DOMEventTargetHelper,
   RefPtr<CancelableRunnable> mPendingCommit;
   RefPtr<nsIPrincipal> mExpandedReader;
   Maybe<OffscreenCanvasDisplayData> mPendingUpdate;
+  const FontVisibility mFontVisibility;
 };
 
 }  // namespace dom

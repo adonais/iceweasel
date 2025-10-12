@@ -10,9 +10,18 @@
 #include "mozilla/Maybe.h"
 
 namespace mozilla {
-class EncodingConstraints {
+class AudioEncodingConstraints {
  public:
-  EncodingConstraints()
+  bool operator==(const AudioEncodingConstraints& constraints) const {
+    return maxBitrateBps == constraints.maxBitrateBps;
+  }
+
+  Maybe<uint32_t> maxBitrateBps;
+};
+
+class VideoEncodingConstraints {
+ public:
+  VideoEncodingConstraints()
       : maxWidth(0),
         maxHeight(0),
         maxFs(0),
@@ -23,7 +32,7 @@ class EncodingConstraints {
         maxDpb(0),
         scaleDownBy(1.0) {}
 
-  bool operator==(const EncodingConstraints& constraints) const {
+  bool operator==(const VideoEncodingConstraints& constraints) const {
     return maxWidth == constraints.maxWidth &&
            maxHeight == constraints.maxHeight && maxFps == constraints.maxFps &&
            maxFs == constraints.maxFs && maxBr == constraints.maxBr &&
@@ -35,7 +44,7 @@ class EncodingConstraints {
   /**
    * This returns true if the constraints affecting resolution are equal.
    */
-  bool ResolutionEquals(const EncodingConstraints& constraints) const {
+  bool ResolutionEquals(const VideoEncodingConstraints& constraints) const {
     return maxWidth == constraints.maxWidth &&
            maxHeight == constraints.maxHeight && maxFs == constraints.maxFs &&
            scaleDownBy == constraints.scaleDownBy;

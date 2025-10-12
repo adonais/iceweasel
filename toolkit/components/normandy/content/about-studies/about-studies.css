@@ -38,7 +38,7 @@ button > .button-box {
 
 .info-box-content {
   align-items: center;
-  background: var(--in-content-box-info-background);
+  background: var(--background-color-box-info);
   border: 1px solid var(--in-content-border-color);
   display: inline-flex;
   padding: 10px 15px;

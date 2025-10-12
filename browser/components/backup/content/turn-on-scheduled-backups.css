@@ -82,7 +82,7 @@
   }
 
   #passwords {
-    margin-inline-start: var(--margin-inline-start-checkbox-content);
+    margin-inline: var(--margin-inline-start-checkbox-content);
   }
 
   #backup-turn-on-scheduled-button-group {

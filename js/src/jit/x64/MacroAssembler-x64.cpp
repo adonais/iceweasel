@@ -505,6 +505,33 @@ void MacroAssemblerX64::boxValue(JSValueType type, Register src,
   orq(src, dest);
 }
 
+void MacroAssemblerX64::boxValue(Register type, Register src, Register dest) {
+  MOZ_ASSERT(src != dest);
+
+#ifdef DEBUG
+  Label check, done;
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_INT32), &check);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BOOLEAN), &check);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_NULL), &check);
+  asMasm().branch32(Assembler::NotEqual, type, Imm32(JSVAL_TYPE_UNDEFINED),
+                    &done);
+  {
+    bind(&check);
+    asMasm().branchPtr(Assembler::BelowOrEqual, src, ImmWord(UINT32_MAX),
+                       &done);
+    breakpoint();
+  }
+  bind(&done);
+#endif
+
+  if (type != dest) {
+    movq(type, dest);
+  }
+  orq(Imm32(JSVAL_TAG_MAX_DOUBLE), dest);
+  shlq(Imm32(JSVAL_TAG_SHIFT), dest);
+  orq(src, dest);
+}
+
 void MacroAssemblerX64::handleFailureWithHandlerTail(
     Label* profilerExitTail, Label* bailoutTail,
     uint32_t* returnValueCheckOffset) {
@@ -914,6 +941,11 @@ void MacroAssembler::moveValue(const ValueOperand& src,
 }
 
 void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
+  if (!src.isGCThing()) {
+    movePtr(ImmWord(src.asRawBits()), dest.valueReg());
+    return;
+  }
+
   movWithPatch(ImmWord(src.asRawBits()), dest.valueReg());
   writeDataRelocation(src);
 }
@@ -992,10 +1024,15 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
   MOZ_ASSERT(!rhs.isNaN());
-  ScratchRegisterScope scratch(*this);
-  MOZ_ASSERT(lhs.valueReg() != scratch);
-  moveValue(rhs, ValueOperand(scratch));
-  cmpPtr(lhs.valueReg(), scratch);
+
+  if (!rhs.isGCThing()) {
+    cmpPtr(lhs.valueReg(), ImmWord(rhs.asRawBits()));
+  } else {
+    ScratchRegisterScope scratch(*this);
+    MOZ_ASSERT(lhs.valueReg() != scratch);
+    moveValue(rhs, ValueOperand(scratch));
+    cmpPtr(lhs.valueReg(), scratch);
+  }
   j(cond, label);
 }
 
@@ -1739,6 +1776,8 @@ void MacroAssembler::wasmCheckSlowCallsite(Register ra, Label* notSlow,
   j(Assembler::NotEqual, notSlow);
 }
 
+//}}} check_macroassembler_style
+
 // ========================================================================
 // Integer compare-then-conditionally-load/move operations.
 
@@ -1885,4 +1924,116 @@ template void MacroAssemblerX64::cmpLoad<64, 64>(Condition cond, Register lhs,
                                                  const Address& falseVal,
                                                  Register trueValAndDest);
 
-//}}} check_macroassembler_style
+void MacroAssemblerX64::minMax32(Register lhs, Register rhs, Register dest,
+                                 bool isMax) {
+  if (rhs == dest) {
+    std::swap(lhs, rhs);
+  }
+
+  auto cond = isMax ? Assembler::GreaterThan : Assembler::LessThan;
+  if (lhs != dest) {
+    movl(lhs, dest);
+  }
+  cmpl(lhs, rhs);
+  cmovCCl(cond, rhs, dest);
+}
+
+void MacroAssemblerX64::minMax32(Register lhs, Imm32 rhs, Register dest,
+                                 bool isMax) {
+  ScratchRegisterScope scratch(asMasm());
+
+  if (rhs.value == 0) {
+    if (isMax) {
+      // dest = ~(lhs >> 31) & lhs
+      if (HasBMI1()) {
+        movl(lhs, scratch);
+        sarl(Imm32(31), scratch);
+        andnl(scratch, lhs, dest);
+      } else {
+        if (lhs != dest) {
+          movl(lhs, dest);
+        }
+        movl(lhs, scratch);
+        sarl(Imm32(31), scratch);
+        notl(scratch);
+        andl(scratch, dest);
+      }
+    } else {
+      // dest = (lhs >> 31) & lhs
+      if (lhs != dest) {
+        movl(lhs, dest);
+      }
+      movl(lhs, scratch);
+      sarl(Imm32(31), scratch);
+      andl(scratch, dest);
+    }
+    return;
+  }
+
+  auto cond = isMax ? Assembler::LessThan : Assembler::GreaterThan;
+  move32(rhs, scratch);
+  if (lhs != dest) {
+    movl(lhs, dest);
+  }
+  cmpl(rhs, lhs);
+  cmovCCl(cond, scratch, dest);
+}
+
+void MacroAssemblerX64::minMaxPtr(Register lhs, Register rhs, Register dest,
+                                  bool isMax) {
+  if (rhs == dest) {
+    std::swap(lhs, rhs);
+  }
+
+  auto cond = isMax ? Assembler::GreaterThan : Assembler::LessThan;
+  if (lhs != dest) {
+    movq(lhs, dest);
+  }
+  cmpq(lhs, rhs);
+  cmovCCq(cond, rhs, dest);
+}
+
+void MacroAssemblerX64::minMaxPtr(Register lhs, ImmWord rhs, Register dest,
+                                  bool isMax) {
+  ScratchRegisterScope scratch(asMasm());
+
+  if (rhs.value == 0) {
+    if (isMax) {
+      // dest = ~(lhs >> 63) & lhs
+      if (HasBMI1()) {
+        movq(lhs, scratch);
+        sarq(Imm32(63), scratch);
+        andnq(scratch, lhs, dest);
+      } else {
+        if (lhs != dest) {
+          movq(lhs, dest);
+        }
+        movq(lhs, scratch);
+        sarq(Imm32(63), scratch);
+        notq(scratch);
+        andq(scratch, dest);
+      }
+    } else {
+      // dest = (lhs >> 63) & lhs
+      if (lhs != dest) {
+        movq(lhs, dest);
+      }
+      movq(lhs, scratch);
+      sarq(Imm32(63), scratch);
+      andq(scratch, dest);
+    }
+    return;
+  }
+
+  auto cond = isMax ? Assembler::LessThan : Assembler::GreaterThan;
+  movePtr(rhs, scratch);
+  if (lhs != dest) {
+    movq(lhs, dest);
+  }
+  if (intptr_t(rhs.value) <= INT32_MAX && intptr_t(rhs.value) >= INT32_MIN) {
+    cmpq(Imm32(int32_t(rhs.value)), lhs);
+  } else {
+    cmpq(scratch, lhs);
+  }
+  cmovCCq(cond, scratch, dest);
+}

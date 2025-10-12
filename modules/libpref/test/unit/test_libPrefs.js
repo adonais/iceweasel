@@ -743,3 +743,76 @@ add_task(function test_deleteBranch_weak_observers() {
 
   ps.removeObserver("WeakTest.", observer);
 });
+
+/**
+ * Tests the reported bug where creating a preference value, clearing it,
+ * then creating it again as a different type raises an exception.
+ */
+add_task(function test_pref_type_change_after_clear() {
+  const ps = Services.prefs;
+  const prefName = "TypeChangeTest.pref";
+
+  // Test 1: Boolean -> Integer
+  ps.setBoolPref(prefName, true);
+  Assert.equal(ps.getBoolPref(prefName), true);
+  Assert.equal(ps.getPrefType(prefName), PREF_BOOL);
+
+  ps.clearUserPref(prefName);
+  Assert.ok(!ps.prefHasUserValue(prefName));
+
+  // This should work without throwing an exception
+  ps.setIntPref(prefName, 42);
+  Assert.equal(ps.getIntPref(prefName), 42);
+  Assert.equal(ps.getPrefType(prefName), PREF_INT);
+
+  // Test 2: Integer -> String
+  ps.clearUserPref(prefName);
+  Assert.ok(!ps.prefHasUserValue(prefName));
+
+  ps.setCharPref(prefName, "test_string");
+  Assert.equal(ps.getCharPref(prefName), "test_string");
+  Assert.equal(ps.getPrefType(prefName), PREF_STRING);
+
+  // Test 3: String -> Boolean
+  ps.clearUserPref(prefName);
+  Assert.ok(!ps.prefHasUserValue(prefName));
+
+  ps.setBoolPref(prefName, false);
+  Assert.equal(ps.getBoolPref(prefName), false);
+  Assert.equal(ps.getPrefType(prefName), PREF_BOOL);
+
+  // Test 4: Test all combinations with prefBranch interface
+  const pb = ps.getBranch("TypeChangeTest.");
+  const branchPrefName = "branch_pref";
+
+  // Boolean -> Integer via branch
+  pb.setBoolPref(branchPrefName, true);
+  Assert.equal(pb.getBoolPref(branchPrefName), true);
+  Assert.equal(pb.getPrefType(branchPrefName), PREF_BOOL);
+
+  pb.clearUserPref(branchPrefName);
+  Assert.ok(!pb.prefHasUserValue(branchPrefName));
+
+  pb.setIntPref(branchPrefName, 123);
+  Assert.equal(pb.getIntPref(branchPrefName), 123);
+  Assert.equal(pb.getPrefType(branchPrefName), PREF_INT);
+
+  // Integer -> String via branch
+  pb.clearUserPref(branchPrefName);
+  Assert.ok(!pb.prefHasUserValue(branchPrefName));
+
+  pb.setCharPref(branchPrefName, "branch_test");
+  Assert.equal(pb.getCharPref(branchPrefName), "branch_test");
+  Assert.equal(pb.getPrefType(branchPrefName), PREF_STRING);
+
+  // String -> Boolean via branch
+  pb.clearUserPref(branchPrefName);
+  Assert.ok(!pb.prefHasUserValue(branchPrefName));
+
+  pb.setBoolPref(branchPrefName, true);
+  Assert.equal(pb.getBoolPref(branchPrefName), true);
+  Assert.equal(pb.getPrefType(branchPrefName), PREF_BOOL);
+
+  // Clean up
+  ps.deleteBranch("TypeChangeTest");
+});

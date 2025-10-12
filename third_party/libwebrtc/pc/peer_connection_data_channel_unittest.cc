@@ -19,7 +19,6 @@
 #include "api/peer_connection_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/sctp_transport_interface.h"
-#include "api/task_queue/default_task_queue_factory.h"
 #include "p2p/base/p2p_constants.h"
 #include "pc/media_session.h"
 #include "pc/peer_connection.h"
@@ -56,7 +55,6 @@ PeerConnectionFactoryDependencies CreatePeerConnectionFactoryDependencies() {
   deps.network_thread = Thread::Current();
   deps.worker_thread = Thread::Current();
   deps.signaling_thread = Thread::Current();
-  deps.task_queue_factory = CreateDefaultTaskQueueFactory();
   EnableFakeMedia(deps);
   deps.sctp_factory = std::make_unique<FakeSctpTransportFactory>();
   return deps;
@@ -210,11 +208,9 @@ TEST_P(PeerConnectionDataChannelTest, SctpContentAndTransportNameSetCorrectly) {
 
   auto offer = caller->CreateOffer();
   const auto& offer_contents = offer->description()->contents();
-  ASSERT_EQ(webrtc::MediaType::AUDIO,
-            offer_contents[0].media_description()->type());
+  ASSERT_EQ(MediaType::AUDIO, offer_contents[0].media_description()->type());
   auto audio_mid = offer_contents[0].mid();
-  ASSERT_EQ(webrtc::MediaType::DATA,
-            offer_contents[2].media_description()->type());
+  ASSERT_EQ(MediaType::DATA, offer_contents[2].media_description()->type());
   auto data_mid = offer_contents[2].mid();
 
   ASSERT_TRUE(

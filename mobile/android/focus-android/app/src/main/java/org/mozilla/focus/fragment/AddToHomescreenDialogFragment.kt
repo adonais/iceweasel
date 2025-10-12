@@ -25,6 +25,7 @@ import org.mozilla.focus.R
 import org.mozilla.focus.ext.components
 import org.mozilla.focus.shortcut.HomeScreen
 import org.mozilla.focus.shortcut.IconGenerator
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Fragment displaying a dialog where a user can change the title for a homescreen shortcut
@@ -52,7 +53,7 @@ class AddToHomescreenDialogFragment : DialogFragment() {
         )
 
         val blockIcon = dialogView.findViewById<ImageView>(R.id.homescreen_dialog_block_icon)
-        blockIcon.setImageResource(R.drawable.mozac_ic_shield_slash_24)
+        blockIcon.setImageResource(iconsR.drawable.mozac_ic_shield_slash_24)
         val warning =
             dialogView.findViewById<ConstraintLayout>(R.id.homescreen_dialog_warning_layout)
         warning.isVisible = !blockingEnabled

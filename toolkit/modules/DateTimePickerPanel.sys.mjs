@@ -10,6 +10,8 @@ export var DateTimePickerPanel = class {
     this.TIME_PICKER_HEIGHT = "22em";
     this.DATE_PICKER_WIDTH = "24em";
     this.DATE_PICKER_HEIGHT = "27em";
+    this.DATETIME_PICKER_WIDTH = "40em";
+    this.DATETIME_PICKER_HEIGHT = "27em";
   }
 
   get dateTimePopupFrame() {
@@ -23,34 +25,36 @@ export var DateTimePickerPanel = class {
   }
 
   openPicker(type, rect, detail) {
-    if (type == "datetime-local") {
+    if (
+      type == "datetime-local" &&
+      !Services.prefs.getBoolPref("dom.forms.datetime.timepicker")
+    ) {
       type = "date";
     }
-    this.type = type;
     this.pickerState = {};
     // TODO: Resize picker according to content zoom level
     this.element.style.fontSize = "10px";
+    this.type = type;
+    this.detail = detail;
+    this.dateTimePopupFrame.addEventListener("load", this, true);
+    this.dateTimePopupFrame.setAttribute(
+      "src",
+      "chrome://global/content/datetimepicker.xhtml"
+    );
     switch (type) {
       case "time": {
-        this.detail = detail;
-        this.dateTimePopupFrame.addEventListener("load", this, true);
-        this.dateTimePopupFrame.setAttribute(
-          "src",
-          "chrome://global/content/timepicker.xhtml"
-        );
         this.dateTimePopupFrame.style.width = this.TIME_PICKER_WIDTH;
         this.dateTimePopupFrame.style.height = this.TIME_PICKER_HEIGHT;
         break;
       }
       case "date": {
-        this.detail = detail;
-        this.dateTimePopupFrame.addEventListener("load", this, true);
-        this.dateTimePopupFrame.setAttribute(
-          "src",
-          "chrome://global/content/datepicker.xhtml"
-        );
         this.dateTimePopupFrame.style.width = this.DATE_PICKER_WIDTH;
         this.dateTimePopupFrame.style.height = this.DATE_PICKER_HEIGHT;
+        break;
+      }
+      case "datetime-local": {
+        this.dateTimePopupFrame.style.width = this.DATETIME_PICKER_WIDTH;
+        this.dateTimePopupFrame.style.height = this.DATETIME_PICKER_HEIGHT;
         break;
       }
     }
@@ -81,28 +85,13 @@ export var DateTimePickerPanel = class {
   }
 
   setPopupValue(data) {
-    switch (this.type) {
-      case "time": {
-        this.postMessageToPicker({
-          name: "PickerSetValue",
-          detail: data.value,
-        });
-        break;
-      }
-      case "date": {
-        const { year, month, day } = data.value;
-        this.postMessageToPicker({
-          name: "PickerSetValue",
-          detail: {
-            year,
-            // Month value from input box starts from 1 instead of 0
-            month: month == undefined ? undefined : month - 1,
-            day,
-          },
-        });
-        break;
-      }
-    }
+    const detail = data.value;
+    // Month value from input box starts from 1 instead of 0
+    detail.month = detail.month == undefined ? undefined : detail.month - 1;
+    this.postMessageToPicker({
+      name: "PickerSetValue",
+      detail,
+    });
   }
 
   initPicker(detail) {
@@ -121,125 +110,121 @@ export var DateTimePickerPanel = class {
 
     const dir = Services.locale.isAppLocaleRTL ? "rtl" : "ltr";
 
-    switch (this.type) {
-      case "time": {
-        const { hour, minute } = detail.value;
-        const format = detail.format || "12";
+    const { year, month, day, hour, minute } = detail.value;
+    const flattenDetail = {
+      type: this.type,
+      year,
+      // Month value from input box starts from 1 instead of 0
+      month: month == undefined ? undefined : month - 1,
+      day,
+      hour,
+      minute,
+      locale,
+      dir,
+      format: detail.format || "12",
+      min: detail.min,
+      max: detail.max,
+      step: detail.step,
+      stepBase: detail.stepBase,
+    };
 
-        this.postMessageToPicker({
-          name: "PickerInit",
-          detail: {
-            hour,
-            minute,
-            format,
-            locale,
-            min: detail.min,
-            max: detail.max,
-            step: detail.step,
-          },
-        });
-        break;
-      }
-      case "date": {
-        const { year, month, day } = detail.value;
-        const { firstDayOfWeek, weekends } = this.getCalendarInfo(locale);
+    if (this.type !== "time") {
+      const { firstDayOfWeek, weekends } = this.getCalendarInfo(locale);
 
-        const monthDisplayNames = new Services.intl.DisplayNames(locale, {
-          type: "month",
-          style: "short",
-          calendar: "gregory",
-        });
-        const monthStrings = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(
-          month => monthDisplayNames.of(month)
-        );
+      const monthDisplayNames = new Services.intl.DisplayNames(locale, {
+        type: "month",
+        style: "short",
+        calendar: "gregory",
+      });
+      const monthStrings = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(
+        monthNumber => monthDisplayNames.of(monthNumber)
+      );
 
-        const weekdayDisplayNames = new Services.intl.DisplayNames(locale, {
-          type: "weekday",
-          style: "abbreviated",
-          calendar: "gregory",
-        });
-        const weekdayStrings = [
-          // Weekdays starting Sunday (7) to Saturday (6).
-          7, 1, 2, 3, 4, 5, 6,
-        ].map(weekday => weekdayDisplayNames.of(weekday));
-
-        this.postMessageToPicker({
-          name: "PickerInit",
-          detail: {
-            year,
-            // Month value from input box starts from 1 instead of 0
-            month: month == undefined ? undefined : month - 1,
-            day,
-            firstDayOfWeek,
-            weekends,
-            monthStrings,
-            weekdayStrings,
-            locale,
-            dir,
-            min: detail.min,
-            max: detail.max,
-            step: detail.step,
-            stepBase: detail.stepBase,
-          },
-        });
-        break;
-      }
+      const weekdayDisplayNames = new Services.intl.DisplayNames(locale, {
+        type: "weekday",
+        style: "abbreviated",
+        calendar: "gregory",
+      });
+      const weekdayStrings = [
+        // Weekdays starting Sunday (7) to Saturday (6).
+        7, 1, 2, 3, 4, 5, 6,
+      ].map(weekday => weekdayDisplayNames.of(weekday));
+      Object.assign(flattenDetail, {
+        firstDayOfWeek,
+        weekends,
+        monthStrings,
+        weekdayStrings,
+      });
     }
+    this.postMessageToPicker({
+      name: "PickerInit",
+      detail: flattenDetail,
+    });
   }
 
   /**
    * @param {Boolean} passAllValues: Pass spinner values regardless if they've been set/changed or not
    */
   setInputBoxValue(passAllValues) {
-    switch (this.type) {
-      case "time": {
-        const { hour, minute, isHourSet, isMinuteSet, isDayPeriodSet } =
-          this.pickerState;
-        const isAnyValueSet = isHourSet || isMinuteSet || isDayPeriodSet;
-        if (passAllValues && isAnyValueSet) {
-          this.sendPickerValueChanged({ hour, minute });
-        } else {
-          this.sendPickerValueChanged({
-            hour: isHourSet || isDayPeriodSet ? hour : undefined,
-            minute: isMinuteSet ? minute : undefined,
-          });
-        }
-        break;
-      }
-      case "date": {
-        this.sendPickerValueChanged(this.pickerState);
-        break;
+    const value = {
+      year: this.pickerState.year,
+      month: this.pickerState.month,
+      day: this.pickerState.day,
+      hour: this.pickerState.hour,
+      minute: this.pickerState.minute,
+    };
+    if (this.type !== "date") {
+      const isNoValueSet =
+        this.pickerState.isHourSet ||
+        this.pickerState.isMinuteSet ||
+        this.pickerState.isDayPeriodSet;
+      if (!passAllValues || isNoValueSet) {
+        value.hour =
+          this.pickerState.isHourSet || this.pickerState.isDayPeriodSet
+            ? value.hour
+            : undefined;
+        value.minute = this.pickerState.isMinuteSet ? value.minute : undefined;
       }
     }
+    this.sendPickerValueChanged(value);
   }
 
   sendPickerValueChanged(value) {
+    let detail = {};
     switch (this.type) {
       case "time": {
-        this.element.dispatchEvent(
-          new CustomEvent("DateTimePickerValueChanged", {
-            detail: {
-              hour: value.hour,
-              minute: value.minute,
-            },
-          })
-        );
+        detail = {
+          hour: value.hour,
+          minute: value.minute,
+        };
         break;
       }
       case "date": {
-        this.element.dispatchEvent(
-          new CustomEvent("DateTimePickerValueChanged", {
-            detail: {
-              year: value.year,
-              // Month value from input box starts from 1 instead of 0
-              month: value.month == undefined ? undefined : value.month + 1,
-              day: value.day,
-            },
-          })
-        );
+        detail = {
+          year: value.year,
+          // Month value from input box starts from 1 instead of 0
+          month: value.month == undefined ? undefined : value.month + 1,
+          day: value.day,
+        };
+        break;
+      }
+      case "datetime-local": {
+        detail = {
+          year: value.year,
+          // Month value from input box starts from 1 instead of 0
+          month: value.month == undefined ? undefined : value.month + 1,
+          day: value.day,
+          hour: value.hour,
+          minute: value.minute,
+        };
         break;
       }
     }
+    this.element.dispatchEvent(
+      new CustomEvent("DateTimePickerValueChanged", {
+        detail,
+      })
+    );
   }
 
   getCalendarInfo(locale) {

@@ -147,7 +147,7 @@ pub mod shader_source {
 extern crate bincode;
 extern crate byteorder;
 pub extern crate euclid;
-extern crate fxhash;
+extern crate rustc_hash;
 extern crate gleam;
 extern crate num_traits;
 extern crate plane_split;
@@ -197,3 +197,6 @@ pub use bump_allocator::ChunkPool;
 
 #[cfg(feature = "sw_compositor")]
 pub use crate::compositor::sw_compositor;
+
+#[cfg(feature = "debugger")]
+mod debugger;

@@ -10,13 +10,6 @@
  * designed to be used as input to the C preprocessor *only*.
  */
 
-DEPRECATED_OPERATION(DOMSubtreeModified)
-DEPRECATED_OPERATION(DOMNodeInserted)
-DEPRECATED_OPERATION(DOMNodeRemoved)
-DEPRECATED_OPERATION(DOMNodeRemovedFromDocument)
-DEPRECATED_OPERATION(DOMNodeInsertedIntoDocument)
-DEPRECATED_OPERATION(DOMAttrModified)
-DEPRECATED_OPERATION(DOMCharacterDataModified)
 DEPRECATED_OPERATION(Components)
 DEPRECATED_OPERATION(NodeIteratorDetach)
 DEPRECATED_OPERATION(LenientThis)
@@ -26,7 +19,6 @@ DEPRECATED_OPERATION(SyncXMLHttpRequestDeprecated)
 DEPRECATED_OPERATION(Window_Cc_ontrollers)
 DEPRECATED_OPERATION(ImportXULIntoContent)
 DEPRECATED_OPERATION(InstallTriggerDeprecated)
-DEPRECATED_OPERATION(InstallTriggerInstallDeprecated)
 DEPRECATED_OPERATION(NavigatorGetUserMedia)
 DEPRECATED_OPERATION(WebrtcDeprecatedPrefix)
 DEPRECATED_OPERATION(RTCPeerConnectionGetStreams)

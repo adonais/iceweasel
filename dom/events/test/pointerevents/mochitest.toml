@@ -1,7 +1,6 @@
 [DEFAULT]
 prefs = [
   "gfx.font_loader.delay=0",
-  "dom.w3c_pointer_events.getcoalescedevents_only_in_securecontext=false",
   "ui.dragThresholdX=4", # Bug 1873142
   "ui.dragThresholdY=4", # Bug 1873142
 ]
@@ -79,12 +78,15 @@ skip-if = [
 ]
 
 ["test_getCoalescedEvents.html"]
+scheme = "https"
 skip-if = ["xorigin"] # Bug 1953695, Bug 1958029
 
 ["test_getCoalescedEvents_during_button_press.html"]
+scheme = "https"
 skip-if = ["xorigin"] # Bug 1953695, Bug 1958029
 
 ["test_getCoalescedEvents_touch.html"]
+scheme = "https"
 skip-if = [
   "os == 'android'", # Bug 1312791
   "win11_2009", # Bug 1781388

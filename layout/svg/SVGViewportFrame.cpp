@@ -158,8 +158,7 @@ SVGBBox SVGViewportFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
 }
 
 nsresult SVGViewportFrame::AttributeChanged(int32_t aNameSpaceID,
-                                            nsAtom* aAttribute,
-                                            int32_t aModType) {
+                                            nsAtom* aAttribute, AttrModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
       !HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
     SVGViewportElement* content =

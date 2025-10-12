@@ -169,8 +169,8 @@ namespace {
 class LinuxSandboxStarter : public mozilla::gmp::SandboxStarter {
  private:
   LinuxSandboxStarter() = default;
-  friend mozilla::detail::UniqueSelector<LinuxSandboxStarter>::SingleObject
-  mozilla::MakeUnique<LinuxSandboxStarter>();
+  friend std::unique_ptr<LinuxSandboxStarter>
+  std::make_unique<LinuxSandboxStarter>();
 
  public:
   static UniquePtr<SandboxStarter> Make() {

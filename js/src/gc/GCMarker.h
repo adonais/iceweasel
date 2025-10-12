@@ -50,7 +50,7 @@ class AutoSetMarkColor;
 class AutoUpdateMarkStackRanges;
 struct Cell;
 class MarkStackIter;
-class ParallelMarker;
+class ParallelMarkTask;
 class UnmarkGrayTracer;
 
 // Ephemeron edges have two source nodes and one target, and mark the target
@@ -395,7 +395,7 @@ class GCMarker {
   bool enterWeakMarkingMode();
   void leaveWeakMarkingMode();
 
-  void enterParallelMarkingMode(gc::ParallelMarker* pm);
+  void enterParallelMarkingMode();
   void leaveParallelMarkingMode();
 
   // Do not use linear-time weak marking for the rest of this collection.
@@ -413,7 +413,8 @@ class GCMarker {
   bool markOneObjectForTest(JSObject* obj);
 #endif
 
-  bool markCurrentColorInParallel(JS::SliceBudget& budget);
+  bool markCurrentColorInParallel(gc::ParallelMarkTask* task,
+                                  JS::SliceBudget& budget);
 
   template <uint32_t markingOptions, gc::MarkColor>
   bool markOneColor(JS::SliceBudget& budget);
@@ -578,8 +579,6 @@ class GCMarker {
 
   // The current mark stack color.
   MainThreadOrGCTaskData<gc::MarkColor> markColor_;
-
-  MainThreadOrGCTaskData<gc::ParallelMarker*> parallelMarker_;
 
   Vector<JS::GCCellPtr, 0, SystemAllocPolicy> unmarkGrayStack;
   friend class gc::UnmarkGrayTracer;

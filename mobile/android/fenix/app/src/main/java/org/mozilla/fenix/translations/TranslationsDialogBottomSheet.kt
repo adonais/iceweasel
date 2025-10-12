@@ -49,6 +49,7 @@ import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.theme.FirefoxTheme
 import java.util.Locale
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Firefox Translations bottom sheet dialog.
@@ -471,7 +472,7 @@ private fun TranslationsDialogHeader(
                     modifier = Modifier.size(24.dp),
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.mozac_ic_settings_24),
+                        painter = painterResource(id = iconsR.drawable.mozac_ic_settings_24),
                         contentDescription = stringResource(
                             id = R.string.translation_option_bottom_sheet_title_heading,
                         ),
@@ -617,7 +618,6 @@ private fun TranslationsDialogActionButtons(
             text = negativeButtonText,
             modifier = Modifier,
             onClick = onNegativeButtonClicked,
-            upperCaseText = false,
         )
 
         Spacer(modifier = Modifier.width(10.dp))
@@ -629,7 +629,7 @@ private fun TranslationsDialogActionButtons(
                     contentDescription = stringResource(
                         id = R.string.translations_bottom_sheet_translating_in_progress_content_description,
                     ),
-                    icon = painterResource(id = R.drawable.mozac_ic_sync_24),
+                    icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
                 )
             }
 

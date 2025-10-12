@@ -14,6 +14,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 /**
+ * @import {SearchEngine} from "moz-src:///toolkit/components/search/SearchEngine.sys.mjs"
+ */
+
+/**
  * This class handles saving search telemetry related to the url bar,
  * search bar and other areas as per the sources above.
  */
@@ -185,6 +189,10 @@ class BrowserSearchTelemetryHandler {
       let searchUrlType =
         details.searchUrlType ?? lazy.SearchUtils.URL_TYPE.SEARCH;
 
+      let unwrappedEngine = /** @type {SearchEngine} */ (
+        engine.wrappedJSObject
+      );
+
       // Strict equality is used because we want to only match against the
       // empty string and not other values. We would have `engine.partnerCode`
       // return `undefined`, but the XPCOM interfaces force us to return an
@@ -192,7 +200,7 @@ class BrowserSearchTelemetryHandler {
       let reportPartnerCode =
         !isOverridden &&
         engine.partnerCode !== "" &&
-        !engine.wrappedJSObject.getURLOfType(searchUrlType)
+        !unwrappedEngine.getURLOfType(searchUrlType)
           ?.excludePartnerCodeFromTelemetry;
 
       Glean.sap.counts.record({

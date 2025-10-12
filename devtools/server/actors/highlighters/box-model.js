@@ -783,23 +783,9 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
       return;
     }
 
-    const { bindingElement: node, pseudo } = getBindingElementAndPseudo(
+    const { bindingElement: node } = getBindingElementAndPseudo(
       this.currentNode
     );
-
-    // Update the tag, id, classes, pseudo-classes and dimensions
-    const displayName = getNodeDisplayName(node);
-
-    const id = node.id ? "#" + node.id : "";
-
-    const classList = (node.classList || []).length
-      ? "." + [...node.classList].join(".")
-      : "";
-
-    let pseudos = this._getPseudoClasses(node).join("");
-    if (pseudo) {
-      pseudos += pseudo;
-    }
 
     // We want to display the original `width` and `height`, instead of the ones affected
     // by any zoom. Since the infobar can be displayed also for text nodes, we can't
@@ -821,10 +807,8 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     const gridLayoutTextType = this._getLayoutTextType("gridtype", gridType);
     const flexLayoutTextType = this._getLayoutTextType("flextype", flexType);
 
-    this.getElement("box-model-infobar-tagname").setTextContent(displayName);
-    this.getElement("box-model-infobar-id").setTextContent(id);
-    this.getElement("box-model-infobar-classes").setTextContent(classList);
-    this.getElement("box-model-infobar-pseudo-classes").setTextContent(pseudos);
+    // Update the tag, id, classes, pseudo-classes and dimensions
+    this._updateInfobarNodeData();
     this.getElement("box-model-infobar-dimensions").setTextContent(dim);
     this.getElement("box-model-infobar-grid-type").setTextContent(
       gridLayoutTextType
@@ -834,6 +818,49 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     );
 
     this._moveInfobar();
+  }
+
+  _updateInfobarNodeData() {
+    if (!this.currentNode) {
+      return;
+    }
+
+    // The binding element of a pseudo element can also be a pseudo element (for example
+    // ::before::marker), so walk up through the tree until we get a non pseudo binding
+    // element.
+    let node = this.currentNode,
+      pseudo = "";
+    while (true) {
+      const res = getBindingElementAndPseudo(node);
+
+      // Stop as soon as the binding element is the same as the passed node, meaning we
+      // found the ultimate originating element (https://drafts.csswg.org/selectors-4/#ultimate-originating-element).
+      if (res.bindingElement === node) {
+        break;
+      }
+
+      node = res.bindingElement;
+      pseudo = res.pseudo + pseudo;
+    }
+
+    // Update the tag, id, classes, pseudo-classes and dimensions
+    const displayName = getNodeDisplayName(node);
+
+    const id = node.id ? "#" + node.id : "";
+
+    const classList = node.classList?.length
+      ? "." + [...node.classList].join(".")
+      : "";
+
+    let pseudos = this._getPseudoClasses(node).join("");
+    if (pseudo) {
+      pseudos += pseudo;
+    }
+
+    this.getElement("box-model-infobar-tagname").setTextContent(displayName);
+    this.getElement("box-model-infobar-id").setTextContent(id);
+    this.getElement("box-model-infobar-classes").setTextContent(classList);
+    this.getElement("box-model-infobar-pseudo-classes").setTextContent(pseudos);
   }
 
   _getLayoutTextType(layoutTypeKey, { isContainer, isItem }) {

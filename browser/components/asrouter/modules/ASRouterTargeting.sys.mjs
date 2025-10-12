@@ -38,6 +38,11 @@ const { ClientID } = ChromeUtils.importESModule(
   "resource://gre/modules/ClientID.sys.mjs"
 );
 
+// eslint-disable-next-line mozilla/use-static-import
+const { PlacesUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/PlacesUtils.sys.mjs"
+);
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -212,7 +217,12 @@ const { activityStreamProvider: asProvider } = NewTabUtils;
 const FRECENT_SITES_UPDATE_INTERVAL = 6 * 60 * 60 * 1000; // Six hours
 const FRECENT_SITES_IGNORE_BLOCKED = false;
 const FRECENT_SITES_NUM_ITEMS = 25;
-const FRECENT_SITES_MIN_FRECENCY = 100;
+// 2 visits, 30 days ago.
+const FRECENT_SITES_MIN_FRECENCY = PlacesUtils.history.pageFrecencyThreshold(
+  30,
+  2,
+  false
+);
 
 const CACHE_EXPIRATION = 5 * 60 * 1000;
 const jexlEvaluationCache = new Map();
@@ -720,13 +730,18 @@ const TargetingGetters = {
       return Promise.resolve(NONE);
     }
     return new Promise(resolve => {
-      // Note: calling init ensures this code is only executed after Search has been initialized
+      // Note: calling getAppProvidedEngines, calls Services.search.init which
+      // ensures this code is only executed after Search has been initialized.
       Services.search
         .getAppProvidedEngines()
         .then(engines => {
+          let { defaultEngine } = Services.search;
           resolve({
-            current: Services.search.defaultEngine.identifier,
-            installed: engines.map(engine => engine.identifier),
+            // Skip reporting the id for third party engines.
+            current: defaultEngine.isAppProvided ? defaultEngine.id : null,
+            // We don't need to filter the id here, as getAppProvidedEngines has
+            // already done that for us.
+            installed: engines.map(engine => engine.id),
           });
         })
         .catch(() => resolve(NONE));
@@ -787,7 +802,9 @@ const TargetingGetters = {
     return lazy.SessionStore.getSavedTabGroups().length;
   },
   get currentTabGroups() {
-    let win = lazy.BrowserWindowTracker.getTopWindow();
+    let win = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
     // If there's no window, there can't be any current tab groups.
     if (!win) {
       return 0;
@@ -913,7 +930,9 @@ const TargetingGetters = {
       return false;
     }
 
-    let window = lazy.BrowserWindowTracker.getTopWindow();
+    let window = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
 
     // Technically this doesn't mean we have active notifications,
     // but because we use !activeNotifications to check for conflicts, this should return true

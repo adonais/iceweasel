@@ -316,19 +316,32 @@ newtab-custom-pocket-subtitle = Conținut excepțional, creat de { -pocket-brand
 newtab-custom-stories-toggle =
     .label = Articole recomandate
     .description = Conținut excepțional îngrijit de familia { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Povești
+newtab-custom-stories-personalized-checkbox-label = Povești personalizate bazate pe activitatea ta
 newtab-custom-pocket-sponsored = Articole sponsorizate
 newtab-custom-pocket-show-recent-saves = Afișează salvările recente
 newtab-custom-recent-title = Activitate recentă
 newtab-custom-recent-subtitle = O selecție de site-uri și conținut recente
-newtab-custom-recent-toggle =
-    .label = Activitate recentă
-    .description = O selecție de site-uri și conținut recente
 newtab-custom-weather-toggle =
     .label = Meteo
     .description = Vremea de astăzi dintr-o privire
 newtab-custom-trending-search-toggle =
     .label = Căutări în tendințe
     .description = Subiecte populare și căutate frecvent
+newtab-custom-widget-weather-toggle =
+    .label = Meteo
+newtab-custom-widget-trending-search-toggle =
+    .label = Căutări în tendințe
+newtab-custom-widget-lists-toggle =
+    .label = Liste
+newtab-custom-widget-timer-toggle =
+    .label = Cronometru
+newtab-custom-widget-section-title = Widgeturi
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Închide
+    .aria-label = Închide meniul
 newtab-custom-close-button = Închide
 newtab-custom-settings = Gestionează mai multe setări
 
@@ -341,6 +354,7 @@ newtab-wallpaper-custom-color = Alege o culoare
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Imaginea a depășit limita de dimensiune a fișierului de { $file_size } MB. Te rugăm să încerci să încarci un fișier mai mic.
+newtab-wallpaper-error-upload-file-type = Nu am putut încărca fișierul. Te rugăm să încerci din nou cu un fișier de imagine.
 newtab-wallpaper-error-file-type = Nu am putut încărca fișierul. Te rugăm să încerci din nou cu un alt tip de fișier.
 newtab-wallpaper-light-red-panda = Panda roșu
 newtab-wallpaper-light-mountain = Multe alb
@@ -446,15 +460,14 @@ newtab-weather-menu-change-location = Schimbă locația
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Caută locație
     .aria-label = Caută locație
-newtab-weather-change-location-search-input = Caută locație
 newtab-weather-menu-weather-display = Afișaj meteo
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
 # - Detailed: Include simple information plus a short text summary: e.g. "Mostly cloudy"
 newtab-weather-menu-weather-display-option-simple = Simplă
-newtab-weather-menu-change-weather-display-simple = Comută pe vizualizare simplă
+newtab-weather-menu-change-weather-display-simple = Afișează vizualizarea simplificată
 newtab-weather-menu-weather-display-option-detailed = Detaliată
-newtab-weather-menu-change-weather-display-detailed = Comută pe vizualizare detaliată
+newtab-weather-menu-change-weather-display-detailed = Afișează vizualizarea detaliată
 newtab-weather-menu-temperature-units = Unități de temperatură
 newtab-weather-menu-temperature-option-fahrenheit = Fahrenheit
 newtab-weather-menu-temperature-option-celsius = Celsius
@@ -593,8 +606,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = În tendințe pe Google
 newtab-trending-searches-show-trending =
     .title = Afișează căutări în tendințe
 newtab-trending-searches-hide-trending =
@@ -603,3 +614,76 @@ newtab-trending-searches-learn-more = Află mai multe
 newtab-trending-searches-dismiss = Ascunde căutări în tendințe
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Căutări în tendințe
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Posibilitățile sunt nelimitate. Adaugă una.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nou
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Finalizat ({ $number })
+newtab-widget-task-list-menu-copy = Copiază
+newtab-widget-lists-menu-edit = Editează denumirea listei
+newtab-widget-lists-menu-create = Creează o listă nouă
+newtab-widget-lists-menu-delete = Șterge lista
+newtab-widget-lists-menu-copy = Copiază lista în clipboard
+newtab-widget-lists-menu-hide = Ascunde toate listele
+newtab-widget-lists-menu-learn-more = Află mai multe
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Adaugă un element
+newtab-widget-lists-input-error = Te rugăm să incluzi text ca să adaugi un element.
+newtab-widget-lists-input-menu-open-link = Deschide linkul
+newtab-widget-lists-input-menu-move-up = Mută în sus
+newtab-widget-lists-input-menu-move-down = Mută în jos
+newtab-widget-lists-input-menu-delete = Șterge
+newtab-widget-lists-input-menu-edit = Editează
+newtab-widget-lists-name-label-default =
+    .label = Listă de sarcini
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Listă de sarcini
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Listă nouă
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Cronometru
+newtab-widget-timer-notification-focus = Timpul de concentrare a expirat. Ai lucrat bine. Ai nevoie de o pauză?
+newtab-widget-timer-notification-break = Pauza s-a terminat. Ești gata de concentrare?
+newtab-widget-timer-notification-warning = Notificările sunt dezactivate
+newtab-widget-timer-mode-focus =
+    .label = Concentrează-te
+newtab-widget-timer-mode-break =
+    .label = Pauză
+newtab-widget-timer-play =
+    .title = Redă
+newtab-widget-timer-pause =
+    .title = Pauză
+newtab-widget-timer-label-play =
+    .label = Redă
+newtab-widget-timer-label-pause =
+    .label = Pauză
+newtab-widget-timer-reset =
+    .title = Resetează
+newtab-widget-timer-menu-notifications = Oprește notificările
+newtab-widget-timer-menu-notifications-on = Activează notificările
+newtab-widget-timer-menu-hide = Ascunde cronometrul
+newtab-widget-timer-menu-learn-more = Află mai multe
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Derulează pentru mai multe
+newtab-widget-message-title = Stai concentrat(ă) cu liste și un cronometru încorporat
+# to-dos stands for "things to do".
+newtab-widget-message-copy = De la mementouri rapide la liste zilnice de sarcini, sesiuni de concentrare până la pauze de întindere — stai concentrat(ă) pe sarcină și o termini la timp.
+newtab-promo-card-title = Susține { -brand-product-name }
+newtab-promo-card-body = Sponsorii noștri ne susțin misiunea de a construi un web mai bun
+newtab-promo-card-cta = Află mai multe
+newtab-promo-card-dismiss-button =
+    .title = Respinge
+    .aria-label = Respinge

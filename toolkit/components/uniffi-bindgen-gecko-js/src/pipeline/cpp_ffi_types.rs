@@ -10,6 +10,12 @@ pub fn pass(root: &mut Root) -> Result<()> {
     root.visit_mut(|node: &mut FfiTypeNode| {
         node.type_name = ffi_type_name(&node.ty);
     });
+    root.visit_mut(|return_handler: &mut CallbackReturnHandlerClass| {
+        return_handler.return_type_name = match &return_handler.return_ty {
+            Some(return_ty) => return_ty.ty.type_name.clone(),
+            None => "void".to_string(),
+        };
+    });
     root.visit_mut(|return_ty: &mut FfiReturnType| {
         return_ty.type_name = match &return_ty.ty {
             Some(type_node) => type_node.type_name.clone(),

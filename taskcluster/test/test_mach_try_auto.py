@@ -17,7 +17,7 @@ PARAMS.update(
         ],
         "head_repository": "https://hg.mozilla.org/try",
         "project": "try",
-        "target_kind": "test",
+        "target_kind": "mochitest",
         # These ensure this isn't considered a backstop. The pushdate must
         # be slightly higher than the one in data/pushes.json, and
         # pushlog_id must not be a multiple of 10.
@@ -41,7 +41,7 @@ def test_only_important_manifests(params, full_task_graph, filter_tasks):
     }
 
     # Ensure we don't schedule unimportant manifests.
-    for task in filter_tasks(full_task_graph, lambda t: t.kind == "test"):
+    for task in filter_tasks(full_task_graph, lambda t: t.kind == "mochitest"):
         attr = task.attributes.get
 
         if "test_manifests" in task.attributes:
@@ -61,7 +61,7 @@ def test_only_important_manifests(params, full_task_graph, filter_tasks):
     (
         pytest.param(
             lambda t: (
-                t.kind == "test"
+                t.kind == "mochitest"
                 and t.attributes["unittest_suite"] == "mochitest-browser-chrome"
             ),
             5,

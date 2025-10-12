@@ -22,8 +22,7 @@ if CONFIG["GECKO_TRACE_ENABLE"]:
 
     UNIFIED_SOURCES += ["GeckoTrace.cpp"]
 
-if CONFIG["ENABLE_TESTS"]:
-    DIRS += ["tests/gtest"]
+TEST_DIRS += ["tests/gtest"]
 
 FINAL_LIBRARY = "xul"
 

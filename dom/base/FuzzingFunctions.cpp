@@ -399,7 +399,7 @@ void FuzzingFunctions::SpinEventLoopFor(const GlobalObject&,
   nsCOMPtr<nsITimer> timer = NS_NewTimer();
   nsresult rv = timer->InitWithNamedFuncCallback(
       SpinEventLoopForCallback, &didRun, aMilliseconds, nsITimer::TYPE_ONE_SHOT,
-      "FuzzingFunctions::SpinEventLoopFor");
+      "FuzzingFunctions::SpinEventLoopFor"_ns);
   if (NS_FAILED(rv)) {
     return;
   }

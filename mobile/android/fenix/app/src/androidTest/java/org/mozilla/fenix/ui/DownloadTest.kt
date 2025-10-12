@@ -74,12 +74,13 @@ class DownloadTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2299405
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1987355")
     @Test
     fun verifyTheDownloadFailedNotificationsTest() {
         downloadRobot {
             openPageAndDownloadFile(url = downloadTestPage.toUri(), downloadFile = "1GB.zip")
             setNetworkEnabled(enabled = false)
-            verifyDownloadFailedSnackbar(fileName = "1GB.zip")
+            verifyDownloadFailedSnackbar(activityTestRule, fileName = "1GB.zip")
             clickSnackbarButton(composeTestRule = activityTestRule, "DETAILS")
         }.openNotificationShade {
             verifySystemNotificationExists("Download failed")
@@ -180,7 +181,7 @@ class DownloadTest : TestSetup() {
             verifyDownloadedFileExistsInDownloadsList(activityTestRule, "smallZip.zip")
             clickDownloadItemMenuIcon(activityTestRule, "smallZip.zip")
             deleteDownloadedItem(activityTestRule, "smallZip.zip")
-            clickSnackbarButton(activityTestRule, "UNDO")
+            clickSnackbarButton(activityTestRule, "Undo")
             verifyDownloadedFileExistsInDownloadsList(activityTestRule, "smallZip.zip")
             clickDownloadItemMenuIcon(activityTestRule, "smallZip.zip")
             deleteDownloadedItem(activityTestRule, "smallZip.zip")
@@ -213,7 +214,7 @@ class DownloadTest : TestSetup() {
             openMultiSelectMoreOptionsMenu(activityTestRule)
             clickMultiSelectRemoveButton(activityTestRule)
             clickMultiSelectDeleteDialogButton(activityTestRule)
-            clickSnackbarButton(activityTestRule, "UNDO")
+            clickSnackbarButton(activityTestRule, "Undo")
             verifyDownloadedFileExistsInDownloadsList(activityTestRule, firstDownloadedFile)
             verifyDownloadedFileExistsInDownloadsList(activityTestRule, secondDownloadedFile)
             longClickDownloadedItem(activityTestRule, firstDownloadedFile)
@@ -278,12 +279,13 @@ class DownloadTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2299297
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1987355")
     @Test
     fun notificationCanBeDismissedIfDownloadIsInterruptedTest() {
         downloadRobot {
             openPageAndDownloadFile(url = downloadTestPage.toUri(), downloadFile = "1GB.zip")
             setNetworkEnabled(enabled = false)
-            verifyDownloadFailedSnackbar(fileName = "1GB.zip")
+            verifyDownloadFailedSnackbar(activityTestRule, fileName = "1GB.zip")
         }
         browserScreen {
         }.openNotificationShade {
@@ -371,6 +373,7 @@ class DownloadTest : TestSetup() {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/244125
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1983769")
     @Test
     fun restartDownloadFromAppNotificationAfterConnectionIsInterruptedTest() {
         downloadFile = "3GB.zip"
@@ -378,7 +381,7 @@ class DownloadTest : TestSetup() {
         downloadRobot {
             openPageAndDownloadFile(url = downloadTestPage.toUri(), downloadFile = "3GB.zip")
             setNetworkEnabled(false)
-            verifyDownloadFailedSnackbar(fileName = "3GB.zip")
+            verifyDownloadFailedSnackbar(activityTestRule, fileName = "3GB.zip")
             setNetworkEnabled(true)
             clickSnackbarButton(composeTestRule = activityTestRule, "DETAILS")
             verifyDownloadFileFailedMessage(activityTestRule, "3GB.zip")
@@ -434,6 +437,31 @@ class DownloadTest : TestSetup() {
             verifyAndroidShareLayout()
             clickSharingApp("Gmail", GMAIL_APP)
             assertNativeAppOpens(GMAIL_APP)
+        }
+    }
+
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/457111
+    @Ignore("Failing, see https://bugzilla.mozilla.org/show_bug.cgi?id=1983769")
+    @Test
+    fun downloadRestartAfterConnectionIsReestablishedTest() {
+        downloadFile = "3GB.zip"
+
+        downloadRobot {
+            openPageAndDownloadFile(url = downloadTestPage.toUri(), downloadFile = "3GB.zip")
+            downloadRobot {
+            }.openNotificationShade {
+                expandNotificationMessage("3GB.zip")
+                clickDownloadNotificationControlButton("PAUSE")
+                setNetworkEnabled(false)
+                verifySystemNotificationExists("Download paused")
+                clickDownloadNotificationControlButton("RESUME")
+                verifySystemNotificationExists("Download failed")
+                setNetworkEnabled(enabled = true)
+                clickDownloadNotificationControlButton("TRY AGAIN")
+                expandNotificationMessage("3GB.zip")
+                clickDownloadNotificationControlButton("CANCEL")
+                verifySystemNotificationDoesNotExist("3GB.zip")
+            }
         }
     }
 }

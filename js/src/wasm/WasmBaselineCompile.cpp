@@ -498,6 +498,7 @@ bool BaseCompiler::beginFunction() {
     }
   }
 
+  perfSpewer_.startRecording();
   perfSpewer_.markStartOffset(masm.currentOffset());
   perfSpewer_.recordOffset(masm, "Prologue");
   GenerateFunctionPrologue(
@@ -742,6 +743,8 @@ bool BaseCompiler::endFunction() {
   if (!fr.checkStackHeight()) {
     return decoder_.fail(decoder_.beginOffset(), "stack frame is too large");
   }
+
+  perfSpewer_.endRecording();
 
   JitSpew(JitSpew_Codegen, "# endFunction: end of OOL code for index %d",
           (int)func_.index);

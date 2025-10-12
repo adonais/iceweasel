@@ -57,7 +57,7 @@ export var FirstStartup = {
 
     this._state = this.IN_PROGRESS;
     const timeout = Services.prefs.getIntPref(PREF_TIMEOUT, 30000); // default to 30 seconds
-    let startingTime = Cu.now();
+    let startingTime = ChromeUtils.now();
     let initialized = false;
 
     let promises = [];
@@ -66,7 +66,7 @@ export var FirstStartup = {
     if (AppConstants.MOZ_NORMANDY) {
       promises.push(
         lazy.Normandy.init({ runAsync: false }).finally(() => {
-          normandyInitEndTime = Cu.now();
+          normandyInitEndTime = ChromeUtils.now();
         })
       );
     }
@@ -79,7 +79,7 @@ export var FirstStartup = {
         lazy.TaskScheduler.deleteAllTasks()
           .catch(() => {})
           .finally(() => {
-            deleteTasksEndTime = Cu.now();
+            deleteTasksEndTime = ChromeUtils.now();
           })
       );
     }
@@ -89,7 +89,7 @@ export var FirstStartup = {
 
       this.elapsed = 0;
       Services.tm.spinEventLoopUntil("FirstStartup.sys.mjs:init", () => {
-        this.elapsed = Math.round(Cu.now() - startingTime);
+        this.elapsed = Math.round(ChromeUtils.now() - startingTime);
         if (this.elapsed >= timeout) {
           this._state = this.TIMED_OUT;
           return true;
@@ -105,13 +105,13 @@ export var FirstStartup = {
 
     if (AppConstants.MOZ_NORMANDY) {
       Glean.firstStartup.normandyInitTime.set(
-        Math.ceil(normandyInitEndTime || Cu.now() - startingTime)
+        Math.ceil(normandyInitEndTime || ChromeUtils.now() - startingTime)
       );
     }
 
     if (AppConstants.MOZ_UPDATE_AGENT) {
       Glean.firstStartup.deleteTasksTime.set(
-        Math.ceil(deleteTasksEndTime || Cu.now() - startingTime)
+        Math.ceil(deleteTasksEndTime || ChromeUtils.now() - startingTime)
       );
     }
 

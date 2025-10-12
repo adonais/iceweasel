@@ -10,6 +10,8 @@ support-files = [
 
 ["browser_NavigationManager.js"]
 
+["browser_NavigationManager_committed.js"]
+
 ["browser_NavigationManager_failed_navigation.js"]
 
 ["browser_NavigationManager_no_navigation.js"]

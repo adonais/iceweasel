@@ -11,6 +11,7 @@ run-using handlers in `taskcluster/taskgraph/transforms/run`.
 
 import copy
 import logging
+from textwrap import dedent
 
 from voluptuous import Exclusive, Extra, Optional, Required
 
@@ -36,16 +37,31 @@ fetches_schema = {
     Optional("verify-hash"): bool,
 }
 
-# Schema for a build description
+#: Schema for a run transforms
 run_description_schema = Schema(
     {
-        # The name of the task and the task's label.  At least one must be specified,
-        # and the label will be generated from the name if necessary, by prepending
-        # the kind.
-        Optional("name"): str,
-        Optional("label"): str,
+        Optional(
+            "name",
+            description=dedent(
+                """
+                The name of the task. At least one of 'name' or 'label' must be
+                specified. If 'label' is not provided, it will be generated from
+                the 'name' by prepending the kind.
+                """
+            ),
+        ): str,
+        Optional(
+            "label",
+            description=dedent(
+                """
+                The label of the task. At least one of 'name' or 'label' must be
+                specified. If 'label' is not provided, it will be generated from
+                the 'name' by prepending the kind.
+                """
+            ),
+        ): str,
         # the following fields are passed directly through to the task description,
-        # possibly modified by the run implementation.  See
+        # possibly modified by the run implementation. See
         # taskcluster/taskgraph/transforms/task.py for the schema details.
         Required("description"): task_description_schema["description"],
         Optional("priority"): task_description_schema["priority"],
@@ -72,37 +88,80 @@ run_description_schema = Schema(
             "optimization"
         ],
         Optional("needs-sccache"): task_description_schema["needs-sccache"],
-        # The "when" section contains descriptions of the circumstances under which
-        # this task should be included in the task graph.  This will be converted
-        # into an optimization, so it cannot be specified in a run description that
-        # also gives 'optimization'.
-        Exclusive("when", "optimization"): {
-            # This task only needs to be run if a file matching one of the given
-            # patterns has changed in the push.  The patterns use the mozpack
-            # match function (python/mozbuild/mozpack/path.py).
-            Optional("files-changed"): [str],
+        Exclusive(
+            "when",
+            "optimization",
+            description=dedent(
+                """
+                The "when" section contains descriptions of the circumstances under
+                which this task should be included in the task graph. This will be
+                converted into an optimization, so it cannot be specified in a run
+                description that also gives 'optimization'.
+                """
+            ),
+        ): {
+            Optional(
+                "files-changed",
+                description=dedent(
+                    """
+                    This task only needs to be run if a file matching one of the given
+                    patterns has changed in the push. The patterns use the mozpack
+                    match function (python/mozbuild/mozpack/path.py).
+                    """
+                ),
+            ): [str],
         },
-        # A list of artifacts to install from 'fetch' tasks.
-        Optional("fetches"): {
+        Optional(
+            "fetches",
+            description=dedent(
+                """
+                A list of artifacts to install from 'fetch' tasks.
+                """
+            ),
+        ): {
             str: [
                 str,
                 fetches_schema,
             ],
         },
-        # A description of how to run this task.
-        "run": {
-            # The key to a run implementation in a peer module to this one
-            "using": str,
-            # Base work directory used to set up the task.
-            Optional("workdir"): str,
+        Required(
+            "run",
+            description=dedent(
+                """
+                A description of how to run this task.
+                """
+            ),
+        ): {
+            Required(
+                "using",
+                description=dedent(
+                    """
+                    The key to a run implementation in a peer module to this one.
+                    """
+                ),
+            ): str,
+            Optional(
+                "workdir",
+                description=dedent(
+                    """
+                    Base work directory used to set up the task.
+                    """
+                ),
+            ): str,
             # Any remaining content is verified against that run implementation's
             # own schema.
             Extra: object,
         },
         Required("worker-type"): task_description_schema["worker-type"],
-        # This object will be passed through to the task description, with additions
-        # provided by the task's run-using function
-        Optional("worker"): dict,
+        Optional(
+            "worker",
+            description=dedent(
+                """
+                This object will be passed through to the task description, with additions
+                provided by the task's run-using function.
+                """
+            ),
+        ): dict,
     }
 )
 

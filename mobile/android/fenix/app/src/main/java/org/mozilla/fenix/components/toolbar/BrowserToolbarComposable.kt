@@ -115,10 +115,11 @@ class BrowserToolbarComposable(
                         null -> firefoxColors.layer3 // show a different background only for normal tabs
                         else -> customColors.value?.toolbarColor?.let { Color(it) } ?: firefoxColors.layer1
                     },
-                    // All text but the title
+                    // All text but the title and URL subdomain
                     textPrimary = customColors.value?.readableColor?.let { Color(it) } ?: firefoxColors.textPrimary,
-                    // Title
-                    textSecondary = customColors.value?.readableColor?.let { Color(it) } ?: firefoxColors.textSecondary,
+                    // Title and URL subdomain
+                    textSecondary =
+                        customColors.value?.secondaryReadableColor?.let { Color(it) } ?: firefoxColors.textSecondary,
                     // All icons tint
                     iconPrimary = customColors.value?.readableColor?.let { Color(it) } ?: firefoxColors.iconPrimary,
                 )

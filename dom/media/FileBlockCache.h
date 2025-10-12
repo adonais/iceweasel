@@ -78,8 +78,7 @@ class FileBlockCache : public MediaBlockCacheBase {
   // Synchronously reads data from file. May read from file or memory
   // depending on whether written blocks have been flushed to file yet.
   // Not recommended to be called from the main thread, as can cause jank.
-  nsresult Read(int64_t aOffset, uint8_t* aData, int32_t aLength,
-                int32_t* aBytes) override;
+  nsresult Read(int64_t aOffset, uint8_t* aData, int32_t aLength) override;
 
   // Moves a block asynchronously. Can be called on any thread.
   // This defers file I/O to a non-main thread.

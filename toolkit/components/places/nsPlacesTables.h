@@ -193,9 +193,9 @@
 #define CREATE_MOZ_OPENPAGES_TEMP                   \
   nsLiteralCString(                                 \
       "CREATE TEMP TABLE moz_openpages_temp ("      \
-      "  url TEXT"                                  \
-      ", userContextId INTEGER"                     \
-      ", groupId TEXT"                              \
+      "  url TEXT NOT NULL"                         \
+      ", userContextId INTEGER NOT NULL"            \
+      ", groupId TEXT NOT NULL"                     \
       ", open_count INTEGER"                        \
       ", PRIMARY KEY (url, userContextId, groupId)" \
       ")")

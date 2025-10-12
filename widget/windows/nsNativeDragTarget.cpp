@@ -362,7 +362,7 @@ nsNativeDragTarget::DragOver(DWORD grfKeyState, POINTL ptl, LPDWORD pdwEffect) {
       "[%p] %s | grfKeyState: %lu | ptl: (%ld, %ld) | *pdwEffect: %lu | "
       "mEffectsAllowed: %lu | dragImageChanged: %s",
       this, __FUNCTION__, grfKeyState, ptl.x, ptl.y, *pdwEffect,
-      mEffectsAllowed, GetBoolName(dragImageChanged));
+      mEffectsAllowed, TrueOrFalse(dragImageChanged));
   LOGI("[%p] %s | Firing 'drag' event at drag source, if available", this,
        __FUNCTION__);
 

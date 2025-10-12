@@ -65,80 +65,80 @@ perf:
     expires: never
     extra_keys:
       load_time:
-        description:
-          "Time between loadEventStart and navigationStart, in ms."
+        description: |
+          Time between loadEventStart and navigationStart, in ms.
         type: quantity
         unit: ms
       dns_lookup_time:
-        description:
-          "Time taken to perform dns lookup of the top level document, in ms."
+        description: |
+          Time taken to perform dns lookup of the top level document, in ms.
         type: quantity
         unit: ms
       time_to_request_start:
-        description:
-          "Time between requestStart and navigationStart, in ms."
+        description: |
+          Time between requestStart and navigationStart, in ms.
         type: quantity
         unit: ms
       response_time:
-        description:
-          "Time between responseStart and navigationStart, in ms."
+        description: |
+          Time between responseStart and navigationStart, in ms.
         type: quantity
         unit: ms
       fcp_time:
-        description:
-          "Time between firstContentfulPaint and navigationStart, in ms."
+        description: |
+          Time between firstContentfulPaint and navigationStart, in ms.
         type: quantity
         unit: ms
       lcp_time:
-        description:
-          "Time between largestContentfulPaint and navigationStart, at the point of onLoad firing, in ms. This may differ from the final LCP value as reported through the LCP histogram."
+        description: |
+          Time between largestContentfulPaint and navigationStart, at the point of onLoad firing, in ms. This may differ from the final LCP value as reported through the LCP histogram.
         type: quantity
         unit: ms
       js_exec_time:
-        description:
-          "Time spent executing JS during page load, in ms."
+        description: |
+          Time spent executing JS during page load, in ms.
         type: quantity
         unit: ms
       delazify_time:
-        description:
-          "Time spent delazifying JS during page load, in ms."
+        description: |
+          Time spent delazifying JS during page load, in ms.
         type: quantity
         unit: ms
       redirect_time:
         type: quantity
-        description:
-          "Time spent in redirections for the top level document."
+        description: |
+          Time spent in redirections for the top level document.
         unit: ms
       tls_handshake_time:
         type: quantity
-        description:
-          "Time spent in TLS handshake for the top level document."
+        description: |
+          Time spent in TLS handshake for the top level document.
         unit: ms
       redirect_count:
-        description:
-          "Number of redirections for the top level document."
+        description: |
+          Number of redirections for the top level document.
         type: quantity
         unit: integer
       load_type:
-        description:
-          "One of normal,reload,stop,link,history,error or other."
+        description: |
+          One of normal,reload,stop,link,history,error or other.
         type: string
       same_origin_nav:
-        description:
-          "If true, a normal navigation was performed on the same origin."
+        description: |
+          If true, a normal navigation was performed on the same origin.
         type: boolean
       using_webdriver:
-        description:
-          "If true, a webdriver is running on the client."
+        description: |
+          If true, a webdriver is running on the client.
         type: boolean
       http_ver:
-        description:
-          "Version of HTTP protocol used."
+        description: |
+          Version of HTTP protocol used.
         type: quantity
         unit: integer
       trr_domain:
-        description:
-          "TRR domain used."
+        description: |
+          TRR domain used.
         type: string
       document_features:
         description: >
@@ -153,23 +153,23 @@ perf:
         type: quantity
         unit: integer
       has_ssd:
-        description:
-          "Whether the user has SSD in their hardware or not. Only available on Windows, after startup-idle-tasks are done"
+        description: |
+          Whether the user has SSD in their hardware or not. Only available on Windows, after startup-idle-tasks are done
         type: boolean
       cache_disposition:
-        description:
-          "cache disposition for the top level document"
+        description: |
+          cache disposition for the top level document
         type: quantity
         unit: integer
       network_type:
-        description:
-          "Network link type from nsINetworkLinkService, only available on android. Values as:
-	     - 0 unknown
-	     - 1 ethernet
-	     - 2 usb
-	     - 3 wifi
-	     - 4 wifimax
-	     - 9 mobile"
+        description: |
+          Network link type from nsINetworkLinkService, only available on android. Values as:
+            - 0 unknown
+            - 1 ethernet
+            - 2 usb
+            - 3 wifi
+            - 4 wifimax
+            - 9 mobile
         type: quantity
         unit: integer
     send_in_pings:
@@ -189,21 +189,21 @@ perf:
     expires: never
     extra_keys:
       lcp_time:
-        description:
-          "Time between largestContentfulPaint and navigationStart, at the point of onLoad firing, in ms. This may differ from the final LCP value as reported through the LCP histogram."
+        description: |
+          Time between largestContentfulPaint and navigationStart, at the point of onLoad firing, in ms. This may differ from the final LCP value as reported through the LCP histogram.
         type: quantity
         unit: ms
       load_type:
-        description:
-          "One of normal,reload,stop,link,history,error or other."
+        description: |
+          One of normal,reload,stop,link,history,error or other.
         type: string
       same_origin_nav:
-        description:
-          "If true, a normal navigation was performed on the same origin."
+        description: |
+          If true, a normal navigation was performed on the same origin.
         type: boolean
       http_ver:
-        description:
-          "Version of HTTP protocol used."
+        description: |
+          Version of HTTP protocol used.
         type: quantity
         unit: integer
       document_features:
@@ -213,11 +213,27 @@ perf:
         type: quantity
         unit: integer
       domain:
-        description:
-          "ETLD+1 domain of website visited."
+        description: |
+          ETLD+1 domain of website visited.
         type: string
     send_in_pings:
       - pageload-base-domain
+
+  js_exec_asm_js:
+    type: timing_distribution
+    description: >
+      Time in milliseconds spent executing Javascript for top level
+      documents that contain the asm.js use counter.  Measures 5min
+      of activity after the use counter is set then records
+      the value in this histogram.
+    time_unit: millisecond
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1980396
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D259436
+    notification_emails:
+      - perf-telemetry-alerts@mozilla.com
+    expires: never
 
   http3_page_load_time:
     type: labeled_timing_distribution
@@ -723,7 +739,7 @@ security:
       - https://bugzil.la/1955578
     notification_emails:
       - tschuster@mozilla.com
-    expires: 145
+    expires: 148
     extra_keys:
       name:
         description: >
@@ -1133,26 +1149,6 @@ dom:
       - dev-telemetry-gc-alerts@mozilla.org
     expires: never
     telemetry_mirror: GC_SLICE_DURING_IDLE
-
-  innerwindows_with_mutation_listeners:
-    type: labeled_counter
-    description: >
-      Deleted or to-be-reused innerwindow which has had mutation event
-      listeners.
-
-      This metric was generated to correspond to the Legacy Telemetry boolean
-      histogram INNERWINDOWS_WITH_MUTATION_LISTENERS.
-    labels:
-      - "false"
-      - "true"
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1956726
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1956726
-    notification_emails:
-      - dom-core@mozilla.com
-    expires: never
-    telemetry_mirror: h#INNERWINDOWS_WITH_MUTATION_LISTENERS
 
   xmlhttprequest_async_or_sync:
     type: labeled_counter

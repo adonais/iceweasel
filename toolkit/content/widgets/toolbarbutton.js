@@ -35,8 +35,7 @@
       // Note: if you remove 'wrap' or 'label' from the inherited attributes,
       // you'll need to add them to observedAttributes.
       return {
-        ".toolbarbutton-icon":
-          "validate,src=image,label,type,consumeanchor,triggeringprincipal=iconloadingprincipal",
+        ".toolbarbutton-icon": "validate,src=image,label,type,consumeanchor",
         ".toolbarbutton-text": "accesskey,crop,dragover-top,wrap",
 
         ".toolbarbutton-badge": "text=badge,style=badgeStyle",

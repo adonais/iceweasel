@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.home.pocket.ui
 
-import android.content.res.Configuration
 import android.graphics.Rect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -24,15 +23,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -43,7 +40,6 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.core.net.toUri
 import mozilla.components.compose.base.modifier.onShown
 import mozilla.components.compose.base.utils.inComposePreview
@@ -54,7 +50,6 @@ import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.IMAGE_SIZE
-import org.mozilla.fenix.compose.ITEM_WIDTH
 import org.mozilla.fenix.compose.ListItemTabSurface
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
@@ -329,9 +324,9 @@ fun Stories(
                                 // Check if this is in a preview because `.settings()` breaks previews
                                 if (!inComposePreview) {
                                     val verticalOffset =
-                                        LocalContext.current.resources.getDimensionPixelSize(
-                                            R.dimen.browser_toolbar_height,
-                                        )
+                                        with(LocalDensity.current) {
+                                            dimensionResource(id = R.dimen.browser_toolbar_height).roundToPx()
+                                        }
 
                                     if (LocalContext.current.settings().shouldUseBottomToolbar) {
                                         bottom -= verticalOffset
@@ -387,9 +382,9 @@ fun Stories(
                                 // Check if this is in a preview because `settings()` breaks previews
                                 if (!inComposePreview) {
                                     val verticalOffset =
-                                        LocalContext.current.resources.getDimensionPixelSize(
-                                            R.dimen.browser_toolbar_height,
-                                        )
+                                        with(LocalDensity.current) {
+                                            dimensionResource(id = R.dimen.browser_toolbar_height).roundToPx()
+                                        }
 
                                     if (LocalContext.current.settings().shouldUseBottomToolbar) {
                                         bottom -= verticalOffset

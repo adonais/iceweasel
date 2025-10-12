@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_NavigationActivation_h___
 #define mozilla_dom_NavigationActivation_h___
 
+#include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
 
@@ -22,16 +23,29 @@ class NavigationActivation final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(NavigationActivation)
 
-  already_AddRefed<NavigationHistoryEntry> GetFrom() const { return {}; }
-  already_AddRefed<NavigationHistoryEntry> Entry() const { return {}; }
-  enum NavigationType NavigationType() const { return {}; }
+  NavigationActivation(nsIGlobalObject* aGlobal,
+                       NavigationHistoryEntry* aNewEntry,
+                       NavigationHistoryEntry* aOldEntry, NavigationType aType);
+
+  already_AddRefed<NavigationHistoryEntry> GetFrom() const;
+  already_AddRefed<NavigationHistoryEntry> Entry() const;
+  // https://html.spec.whatwg.org/#dom-navigationactivation-navigationtype
+  enum NavigationType NavigationType() const { return mType; }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
-  nsIGlobalObject* GetParentObject() const { return {}; }
+  nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
  private:
   ~NavigationActivation() = default;
+
+  nsCOMPtr<nsIGlobalObject> mGlobal;
+  // https://html.spec.whatwg.org/#nav-activation-new-entry
+  RefPtr<NavigationHistoryEntry> mNewEntry;
+  // https://html.spec.whatwg.org/#nav-activation-old-entry
+  RefPtr<NavigationHistoryEntry> mOldEntry;
+  // https://html.spec.whatwg.org/#nav-activation-navigation-type
+  enum NavigationType mType;
 };
 
 }  // namespace mozilla::dom

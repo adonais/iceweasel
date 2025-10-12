@@ -420,7 +420,7 @@ const char* ToChar(Command aCommand);
  *                              additional parameter and sets this to nullptr,
  *                              will return Command::DoNothing with warning.
  */
-Command GetInternalCommand(const char* aCommandName,
+Command GetInternalCommand(const nsACString& aCommandName,
                            const nsCommandParams* aCommandParams = nullptr);
 
 }  // namespace mozilla

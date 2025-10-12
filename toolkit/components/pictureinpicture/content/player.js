@@ -204,6 +204,11 @@ let Player = {
   deferredResize: null,
 
   /**
+   * Set a shortcut that can be used for unpiping without pausing
+   */
+  isUnpipWithoutPauseShortcut: e => e.shiftKey === true,
+
+  /**
    * Initializes the player browser, and sets up the initial state.
    *
    * @param {Number} id
@@ -444,7 +449,7 @@ let Player = {
             document.exitFullscreen();
           } else {
             // We handle the ESC key, as an intent to leave the picture-in-picture modus
-            this.onClose();
+            this.onClose(this.isUnpipWithoutPauseShortcut(event));
           }
         } else if (
           Services.prefs.getBoolPref(KEYBOARD_CONTROLS_ENABLED_PREF, false) &&
@@ -692,7 +697,7 @@ let Player = {
       }
 
       case "close": {
-        this.onClose();
+        this.onClose(this.isUnpipWithoutPauseShortcut(event));
         break;
       }
 
@@ -798,10 +803,15 @@ let Player = {
     }
   },
 
-  onClose() {
-    this.actor.sendAsyncMessage("PictureInPicture:Pause", {
-      reason: "pip-closed",
-    });
+  onClose(bypassPause = false) {
+    // By default, we want to pause the video on close, unless the user
+    // used the assigned isUnpipWithoutPauseShortcut
+    if (!bypassPause) {
+      this.actor.sendAsyncMessage("PictureInPicture:Pause", {
+        reason: "pip-closed",
+      });
+    }
+
     this.closePipWindow({ reason: "CloseButton" });
   },
 

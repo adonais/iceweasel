@@ -111,3 +111,6 @@ with Files("fmt"):
 
 with Files("zucchini/**"):
     BUG_COMPONENT = ("Toolkit", "Application Update")
+
+with Files("llama.cpp"):
+    BUG_COMPONENT = ("Core", "Machine Learning")

@@ -14,9 +14,12 @@ if CONFIG["TARGET_CPU"] in ("ppc64", "s390x") and CONFIG["OS_TARGET"] == "Linux"
     DEFINES["TOOLCHAIN_MISS_ASM_HWCAP_H"] = True
 
 SOURCES += [
+    "/third_party/highway/hwy/abort.cc",
     "/third_party/highway/hwy/aligned_allocator.cc",
     "/third_party/highway/hwy/contrib/image/image.cc",
     "/third_party/highway/hwy/per_target.cc",
+    "/third_party/highway/hwy/profiler.cc",
+    "/third_party/highway/hwy/stats.cc",
     "/third_party/highway/hwy/targets.cc",
 ]
 
@@ -38,16 +41,19 @@ EXPORTS.hwy.ops += [
     "/third_party/highway/hwy/ops/arm_sve-inl.h",
     "/third_party/highway/hwy/ops/emu128-inl.h",
     "/third_party/highway/hwy/ops/generic_ops-inl.h",
+    "/third_party/highway/hwy/ops/inside-inl.h",
+    "/third_party/highway/hwy/ops/loongarch_lasx-inl.h",
+    "/third_party/highway/hwy/ops/loongarch_lsx-inl.h",
     "/third_party/highway/hwy/ops/ppc_vsx-inl.h",
     "/third_party/highway/hwy/ops/rvv-inl.h",
     "/third_party/highway/hwy/ops/scalar-inl.h",
     "/third_party/highway/hwy/ops/set_macros-inl.h",
     "/third_party/highway/hwy/ops/shared-inl.h",
-    "/third_party/highway/hwy/ops/tuple-inl.h",
     "/third_party/highway/hwy/ops/wasm_128-inl.h",
     "/third_party/highway/hwy/ops/x86_128-inl.h",
     "/third_party/highway/hwy/ops/x86_256-inl.h",
     "/third_party/highway/hwy/ops/x86_512-inl.h",
+    "/third_party/highway/hwy/ops/x86_avx3-inl.h",
 ]
 
 FINAL_LIBRARY = "xul"

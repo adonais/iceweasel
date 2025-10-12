@@ -679,8 +679,15 @@ def _github_submodule_required(repo: str, commit: str):
     try:
         status_code = urllib.request.urlopen(url).getcode()
         return status_code == 200
-    except:
-        return False
+    except urllib.error.HTTPError as e:
+        if e.status == 404:
+            return False
+        # If we get a non 2xx status code that isn't a 404, something has gone horribly wrong on the github side, log it and return True
+        log("Got {} from github while checking for submodules in {} which was unexpected. Cannot check whether the repo has submodules or not".format(e.status, repo))
+        return True
+    except Exception as e:
+        log("Got an unexpected `{}` exception while checking for submodules in {}. Cannot check whether the repo has submodules or not".format(e, repo))
+        return True
 
 
 def git_checkout_archive(

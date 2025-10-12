@@ -514,8 +514,6 @@ Parent<Super>::Parent()
 
 template <class Super>
 Parent<Super>::~Parent() {
-  NS_ReleaseOnMainThread("Parent<Super>::mOriginKeyStore",
-                         mOriginKeyStore.forget());
   LOG(("~media::Parent: %p", this));
 }
 

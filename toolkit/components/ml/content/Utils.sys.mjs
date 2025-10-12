@@ -472,16 +472,19 @@ export async function fetchUrl(url, options) {
  * Reads the body of a fetch `Response` object and writes it to a provided `WritableStream`,
  * tracking progress and reporting it via a callback.
  *
- * @param {Response} response - The fetch `Response` object containing the body to read.
- * @param {WritableStream} writableStream - The destination stream where the response body
+ * @param {object}  params - Parameters object.
+ * @param {Response} params.response - The fetch `Response` object containing the body to read.
+ * @param {WritableStream} params.writableStream - The destination stream where the response body
  *                                          will be written.
- * @param {?function(ProgressAndStatusCallbackParams):void} progressCallback The function to call with progress updates.
+ * @param {?function(ProgressAndStatusCallbackParams):void} params.progressCallback The function to call with progress updates.
+ * @param {?AbortSignal} params.abortSignal - AbortSignal to cancel the read.
  */
-export async function readResponseToWriter(
+export async function readResponseToWriter({
   response,
   writableStream,
-  progressCallback
-) {
+  progressCallback,
+  abortSignal,
+} = {}) {
   // Attempts to retrieve the `Content-Length` header from the response to estimate total size.
   const contentLength = response.headers.get("Content-Length");
   if (!contentLength) {
@@ -514,7 +517,9 @@ export async function readResponseToWriter(
   });
 
   // Pipes the response body through the progress stream into the writable stream and close the stream on completion/error.
-  await response.body.pipeThrough(progressStream).pipeTo(writableStream);
+  await response.body
+    .pipeThrough(progressStream, { signal: abortSignal })
+    .pipeTo(writableStream, { signal: abortSignal });
 }
 
 // Create a "namespace" to make it easier to import multiple names.
@@ -1209,3 +1214,7 @@ export async function computeHash(
 
   return hash;
 }
+
+// Utils operations
+export var MLUtils = MLUtils || {};
+MLUtils.fetchUrl = fetchUrl;

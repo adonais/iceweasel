@@ -7,6 +7,8 @@
 #ifndef mozilla_dom_navigation_api_ipc_utils_h__
 #define mozilla_dom_navigation_api_ipc_utils_h__
 #include "ipc/EnumSerializer.h"
+#include "mozilla/dom/BindingIPCUtils.h"
+#include "mozilla/dom/NavigationBinding.h"
 #include "mozilla/dom/UserNavigationInvolvement.h"
 
 namespace IPC {
@@ -16,5 +18,10 @@ struct ParamTraits<mozilla::dom::UserNavigationInvolvement>
           mozilla::dom::UserNavigationInvolvement,
           mozilla::dom::UserNavigationInvolvement::None,
           mozilla::dom::UserNavigationInvolvement::BrowserUI> {};
+
+template <>
+struct ParamTraits<mozilla::dom::NavigationType>
+    : public mozilla::dom::WebIDLEnumSerializer<mozilla::dom::NavigationType> {
+};
 }  // namespace IPC
 #endif

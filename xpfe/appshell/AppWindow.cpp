@@ -1572,8 +1572,9 @@ void AppWindow::SyncAttributesToWidget() {
     NS_ENSURE_TRUE_VOID(mWindow);
   }
 
-  // "drawtitle" attribute
-  mWindow->SetDrawsTitle(windowElement->GetBoolAttr(nsGkAtoms::drawtitle));
+  // "hidetitlebarseparator" attribute
+  mWindow->SetHideTitlebarSeparator(
+      windowElement->GetBoolAttr(nsGkAtoms::hidetitlebarseparator));
   NS_ENSURE_TRUE_VOID(mWindow);
 
   // "toggletoolbar" attribute

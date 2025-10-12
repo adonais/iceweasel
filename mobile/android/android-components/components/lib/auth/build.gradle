@@ -25,13 +25,15 @@ android {
 
 dependencies {
     implementation project(':components:support-base')
+
     implementation libs.androidx.biometric
     implementation libs.androidx.core.ktx
 
     testImplementation project(':components:support-test')
+
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

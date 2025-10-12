@@ -88,6 +88,13 @@ export class BackupUIParent extends JSWindowActorParent {
   async receiveMessage(message) {
     if (message.name == "RequestState") {
       this.sendState();
+    } else if (message.name == "TriggerCreateBackup") {
+      try {
+        await this.#bs.createBackup();
+      } catch (e) {
+        return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
+      }
+      return { success: true };
     } else if (message.name == "EnableScheduledBackups") {
       try {
         let { parentDirPath, password } = message.data;
@@ -227,6 +234,8 @@ export class BackupUIParent extends JSWindowActorParent {
        * this time with the new password.
        */
       return { success: true };
+    } else if (message.name == "FindIfABackupFileExists") {
+      this.#bs.findIfABackupFileExists();
     } else if (message.name == "ShowBackupLocation") {
       this.#bs.showBackupLocation();
     } else if (message.name == "EditBackupLocation") {

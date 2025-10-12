@@ -34,6 +34,8 @@ import org.mozilla.focus.ext.settings
 import org.mozilla.focus.fragment.UrlInputFragment
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.ui.theme.focusTypography
+import androidx.cardview.R as cardViewR
+import mozilla.components.browser.toolbar.R as toolbarR
 
 class InputToolbarIntegration(
     private val toolbar: BrowserToolbar,
@@ -147,7 +149,9 @@ class InputToolbarIntegration(
                 .collect { showStartBrowsingCfr ->
                     if (showStartBrowsingCfr) {
                         CFRPopup(
-                            anchor = toolbar.findViewById<AppCompatEditText>(R.id.mozac_browser_toolbar_background),
+                            anchor = toolbar.findViewById<AppCompatEditText>(
+                                toolbarR.id.mozac_browser_toolbar_background,
+                            ),
                             properties = CFRPopupProperties(
                                 popupWidth = 256.dp,
                                 popupAlignment = CFRPopup.PopupAlignment.BODY_TO_ANCHOR_START,
@@ -163,7 +167,7 @@ class InputToolbarIntegration(
                                 ),
                                 dismissButtonColor = ContextCompat.getColor(
                                     fragment.requireContext(),
-                                    R.color.cardview_light_background,
+                                    cardViewR.color.cardview_light_background,
                                 ),
                                 popupVerticalOffset = 0.dp,
                             ),

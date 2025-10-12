@@ -99,7 +99,7 @@ class AboutFragment : BaseComposeFragment() {
     }
 
     private fun getAboutHeader(): String {
-        val gecko = if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) " \uD83E\uDD8E " else " GV: "
+        val gecko = " \uD83E\uDD8E "
         val engineIndicator =
             gecko + GeckoViewBuildConfig.MOZ_APP_VERSION + "-" + GeckoViewBuildConfig.MOZ_APP_BUILDID
         val servicesAbbreviation = getString(R.string.services_abbreviation)

@@ -3686,24 +3686,34 @@ bool MediaManager::IsWindowListenerStillActive(
   return aListener && aListener == GetWindowListener(aListener->WindowID());
 }
 
-void MediaManager::GetPref(nsIPrefBranch* aBranch, const char* aPref,
-                           const char* aData, int32_t* aVal) {
-  int32_t temp;
-  if (aData == nullptr || strcmp(aPref, aData) == 0) {
-    if (NS_SUCCEEDED(aBranch->GetIntPref(aPref, &temp))) {
-      *aVal = temp;
-    }
+nsresult MediaManager::GetPref(nsIPrefBranch* aBranch, const char* aPref,
+                               const char* aData, int32_t* aVal) {
+  if (aData && strcmp(aPref, aData) != 0) {
+    return NS_ERROR_INVALID_ARG;
   }
+
+  int32_t temp;
+  nsresult rv = aBranch->GetIntPref(aPref, &temp);
+  if (NS_SUCCEEDED(rv)) {
+    *aVal = temp;
+  }
+
+  return rv;
 }
 
-void MediaManager::GetPrefBool(nsIPrefBranch* aBranch, const char* aPref,
-                               const char* aData, bool* aVal) {
-  bool temp;
-  if (aData == nullptr || strcmp(aPref, aData) == 0) {
-    if (NS_SUCCEEDED(aBranch->GetBoolPref(aPref, &temp))) {
-      *aVal = temp;
-    }
+nsresult MediaManager::GetPrefBool(nsIPrefBranch* aBranch, const char* aPref,
+                                   const char* aData, bool* aVal) {
+  if (aData && strcmp(aPref, aData) != 0) {
+    return NS_ERROR_INVALID_ARG;
   }
+
+  bool temp;
+  nsresult rv = aBranch->GetBoolPref(aPref, &temp);
+  if (NS_SUCCEEDED(rv)) {
+    *aVal = temp;
+  }
+
+  return rv;
 }
 
 #ifdef MOZ_WEBRTC
@@ -3727,9 +3737,10 @@ void MediaManager::GetPrefs(nsIPrefBranch* aBranch, const char* aData) {
   GetPrefBool(aBranch, "media.navigator.video.resize_mode.enabled", aData,
               &mPrefs.mResizeModeEnabled);
   int32_t resizeMode{};
-  GetPref(aBranch, "media.navigator.video.default_resize_mode", aData,
-          &resizeMode);
-  mPrefs.mResizeMode = ClampEnum<VideoResizeModeEnum>(resizeMode);
+  if (NS_SUCCEEDED(GetPref(aBranch, "media.navigator.video.default_resize_mode",
+                           aData, &resizeMode))) {
+    mPrefs.mResizeMode = ClampEnum<VideoResizeModeEnum>(resizeMode);
+  }
   GetPrefBool(aBranch, "media.getusermedia.audio.processing.platform.enabled",
               aData, &mPrefs.mUsePlatformProcessing);
   GetPrefBool(aBranch, "media.getusermedia.audio.processing.aec.enabled", aData,
@@ -4728,10 +4739,10 @@ RefPtr<DeviceListener::DeviceListenerPromise> DeviceListener::ApplyConstraints(
     return DeviceListenerPromise::CreateAndResolve(false, __func__);
   }
 
-  return MediaManager::Dispatch<DeviceListenerPromise>(
-      __func__,
+  return InvokeAsync(
+      mgr->mMediaThread, __func__,
       [device = mDeviceState->mDevice, aConstraints, prefs = mgr->mPrefs,
-       aCallerType](MozPromiseHolder<DeviceListenerPromise>& aHolder) mutable {
+       aCallerType]() mutable -> RefPtr<DeviceListenerPromise> {
         MOZ_ASSERT(MediaManager::IsInMediaThread());
         MediaManager* mgr = MediaManager::GetIfExists();
         MOZ_RELEASE_ASSERT(mgr);  // Must exist while media thread is alive
@@ -4755,14 +4766,14 @@ RefPtr<DeviceListener::DeviceListenerPromise> DeviceListener::ApplyConstraints(
                 static_cast<uint32_t>(rv));
           }
 
-          aHolder.Reject(MakeRefPtr<MediaMgrError>(
-                             MediaMgrError::Name::OverconstrainedError, "",
-                             NS_ConvertASCIItoUTF16(badConstraint)),
-                         __func__);
-          return;
+          return DeviceListenerPromise::CreateAndReject(
+              MakeRefPtr<MediaMgrError>(
+                  MediaMgrError::Name::OverconstrainedError, "",
+                  NS_ConvertASCIItoUTF16(badConstraint)),
+              __func__);
         }
         // Reconfigure was successful
-        aHolder.Resolve(false, __func__);
+        return DeviceListenerPromise::CreateAndResolve(false, __func__);
       });
 }
 

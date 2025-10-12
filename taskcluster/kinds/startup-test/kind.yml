@@ -101,7 +101,6 @@ tasks:
             repackage: repackage-macosx64-shippable/opt
         run:
             using: mach
-            python-version: 3
         extra-config:
             upstream_kind: repackage
             upstream_artifact: target.dmg
@@ -118,7 +117,6 @@ tasks:
             repackage-signing: repackage-signing-win32-shippable/opt
         run:
             using: mach
-            python-version: 3
         extra-config:
             upstream_kind: repackage-signing
             upstream_artifact: target.installer.exe
@@ -135,7 +133,6 @@ tasks:
             repackage-signing: repackage-signing-win64-shippable/opt
         run:
             using: mach
-            python-version: 3
         extra-config:
             upstream_kind: repackage-signing
             upstream_artifact: target.installer.exe
@@ -152,7 +149,6 @@ tasks:
             repackage-signing: repackage-signing-win64-aarch64-shippable/opt
         run:
             using: mach
-            python-version: 3
         extra-config:
             upstream_kind: repackage-signing
             upstream_artifact: target.installer.exe

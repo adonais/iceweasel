@@ -5,7 +5,6 @@
 
 package org.mozilla.geckoview;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Matrix;
@@ -30,6 +29,7 @@ import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.view.inputmethod.InputContentInfo;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -814,7 +814,7 @@ import org.mozilla.gecko.util.ThreadUtils;
     am.dispatchMediaKeyEvent(event);
   }
 
-  @TargetApi(Build.VERSION_CODES.N_MR1)
+  @RequiresApi(Build.VERSION_CODES.N_MR1)
   @Override
   public boolean commitContent(
       final InputContentInfo inputContentInfo, final int flags, final Bundle opts) {

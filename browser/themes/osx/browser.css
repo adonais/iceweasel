@@ -86,13 +86,6 @@
   font-size: 1.25em;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
-@media -moz-pref("browser.urlbar.experimental.expandTextOnFocus") {
-  #urlbar[breakout-extend] {
-    font-size: 1.36em;
-  }
-}
-
 /* ----- AUTOCOMPLETE ----- */
 
 #PopupAutoComplete > richlistbox > richlistitem[originaltype~="datalist-first"] {

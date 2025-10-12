@@ -309,7 +309,8 @@ var gPlayTests = [
   { name: "seek-short.webm", type: "video/webm", duration: 0.23 },
 
   // Test playback of a webm file with 'matroska' doctype
-  { name: "bug1377278.webm", type: "video/webm", duration: 4.0 },
+  // TODO : re-enable this in bug 1985419 after MKV is supported.
+  // { name: "bug1377278.webm", type: "video/webm", duration: 4.0 },
 
   // Test playback of a WebM file with non-zero start time.
   { name: "split.webm", type: "video/webm", duration: 1.967 },
@@ -478,6 +479,97 @@ if (!win32) {
   gPlayTests.push({ name: "av1.mp4", type: "video/mp4", duration: 1.0 });
 }
 
+var gMKVtests = [
+  // ffmpeg -f lavfi -i "sine=frequency=440:duration=1" \
+  // -c:a aac -b:a 128k output-aac.mkv
+  {
+    name: "output_aac.mkv",
+    type: "audio/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg -f lavfi -i "smptebars=size=1280x720:rate=30:duration=1" \
+  // -c:v libx264 -pix_fmt yuv420p output-avc.mkv
+  {
+    name: "output_avc.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg \
+  // -f lavfi -i "testsrc2=size=1920x1080:rate=30:duration=1" \
+  // -f lavfi -i "sine=frequency=440:duration=1" \
+  // -c:v libx264 -profile:v high -level:v 4.1 -pix_fmt yuv420p -g 60 \
+  // -c:a aac -ar 44100 -b:a 128k output_avc_hl41_1080p_aaclc_44100.mkv
+  {
+    name: "output_avc_hl41_1080p_aaclc_44100.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
+];
+
+// The following files should be added to gMKVtests once they are supported.
+var gUnsupportedMKVtests = [
+  // ffmpeg -f lavfi -i testsrc=size=320x240:rate=30 -t 1 -c:v libvpx output_vp8.mkv
+  {
+    name: "output_vp8.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg -f lavfi -i testsrc=size=320x240:rate=30 -t 1 -c:v libvpx-vp9 output_vp9.mkv
+  {
+    name: "output_vp9.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg -f lavfi -i testsrc=size=320x240:rate=30 -t 1 -c:v libaom-av1 output_av1.mkv
+  {
+    name: "output_av1.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg -f lavfi -i testsrc=size=320x240:rate=30 -t 1 -c:v libaom-av1 output_av1.mkv
+  {
+    name: "output_av1.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg -f lavfi -i testsrc=size=320x240:rate=30 -t 1 -c:v libx265 output_hevc.mkv
+  {
+    name: "output_hevc.mkv",
+    type: "video/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg -f lavfi -i sine=frequency=1000:duration=1 -c:a libvorbis output_vorbis.mkv
+  {
+    name: "output_vorbis.mkv",
+    type: "audio/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg -f lavfi -i sine=frequency=1000:duration=1 -c:a libopus output_opus.mkv
+  {
+    name: "output_opus.mkv",
+    type: "audio/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg -f lavfi -i sine=frequency=1000:duration=1 -c:a flac output_flac.mkv
+  {
+    name: "output_flac.mkv",
+    type: "audio/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg -f lavfi -i sine=frequency=1000:duration=1 -c:a libmp3lame output_mp3.mkv
+  {
+    name: "output_mp3.mkv",
+    type: "audio/matroska",
+    duration: 1.0,
+  },
+  // ffmpeg -f lavfi -i sine=frequency=1000:duration=1 -c:a pcm_s16le output_pcm.mkv
+  {
+    name: "output_pcm.mkv",
+    type: "audio/matroska",
+    duration: 1.0,
+  },
+];
+
 // AAC files with different sample rates. We add these here as some are added
 // conditionally.
 gPlayTests.push(
@@ -503,18 +595,19 @@ gPlayTests.push(
   }
 );
 
-if (
-  AppConstants.isPlatformAndVersionAtLeast("win", "11") ||
-  AppConstants.isPlatformAndVersionAtLeast("macosx", "10.15") ||
-  // Android 9
-  AppConstants.isPlatformAndVersionAtLeast("android", "28")
-) {
-  gPlayTests.push({
-    name: "sine-3s-xhe-aac-44khz-mono.mp4",
-    type: 'audio/mp4; codecs="mp4a.40.42"',
-    duration: 3.0,
-  });
-}
+// Disabled for now, will be reenabled in 1982387
+// if (
+//   AppConstants.isPlatformAndVersionAtLeast("win", "11") ||
+//   AppConstants.isPlatformAndVersionAtLeast("macosx", "10.15") ||
+//   // Android 9
+//   AppConstants.isPlatformAndVersionAtLeast("android", "28")
+// ) {
+//   gPlayTests.push({
+//     name: "sine-3s-xhe-aac-44khz-mono.mp4",
+//     type: 'audio/mp4; codecs="mp4a.40.42"',
+//     duration: 3.0,
+//   });
+// }
 
 if (AppConstants.platform != "win") {
   // Windows WMF decoder doesn't do >48K everywhere. See bug 1698639.
@@ -2276,6 +2369,7 @@ function MediaTestManager() {
         test.type &&
         !document.createElement("video").canPlayType(test.type)
       ) {
+        SimpleTest.info(`Skipping ${token} type=${test.type}`);
         continue;
       }
 

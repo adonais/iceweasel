@@ -105,7 +105,7 @@ class PageloadEventData {
   mozilla::glean::perf::PageLoadDomainExtra ToPageLoadDomainExtra() const;
 };
 #undef DEFINE_METRIC
-#undef ASSIGN_METRIC
+#undef DEFINE_SETTER
 
 }  // namespace mozilla::performance::pageload_event
 

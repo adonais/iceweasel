@@ -20,7 +20,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -38,6 +37,7 @@ import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_OFF
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_ON
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Wrapper column containing the main menu items.
@@ -62,7 +62,6 @@ import org.mozilla.fenix.theme.Theme
  * @param onStopButtonClick Invoked when the user clicks on the stop button.
  * @param onShareButtonClick Invoked when the user clicks on the share button.
  */
-@OptIn(ExperimentalComposeUiApi::class)
 @Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod")
 @Composable
 internal fun CustomTabMenu(
@@ -159,7 +158,7 @@ internal fun CustomTabMenu(
                     id = R.string.browser_menu_open_in_fenix,
                     stringResource(id = R.string.app_name),
                 ),
-                beforeIconPainter = painterResource(id = R.drawable.mozac_ic_open_in),
+                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_open_in),
                 onClick = onOpenInFirefoxMenuClick,
                 state = if (isSandboxCustomTab) {
                     MenuItemState.DISABLED
@@ -170,7 +169,7 @@ internal fun CustomTabMenu(
 
             MenuItem(
                 label = stringResource(id = R.string.browser_menu_find_in_page),
-                beforeIconPainter = painterResource(id = R.drawable.mozac_ic_search_24),
+                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_search_24),
                 onClick = onFindInPageMenuClick,
             )
 
@@ -183,7 +182,7 @@ internal fun CustomTabMenu(
                     }
                 },
                 label = stringResource(id = R.string.browser_menu_desktop_site),
-                beforeIconPainter = painterResource(id = R.drawable.mozac_ic_device_mobile_24),
+                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_device_mobile_24),
                 state = menuItemState,
                 onClick = onSwitchToDesktopSiteMenuClick,
             ) {

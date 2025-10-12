@@ -46,7 +46,7 @@ abstract class LearnMoreSwitchPreference(context: Context, attrs: AttributeSet?)
         }
 
         val backgroundDrawableArray =
-            context.obtainStyledAttributes(intArrayOf(R.attr.selectableItemBackground))
+            context.obtainStyledAttributes(intArrayOf(android.R.attr.selectableItemBackground))
         val backgroundDrawable = backgroundDrawableArray.getDrawable(0)
         backgroundDrawableArray.recycle()
         learnMoreLink.background = backgroundDrawable

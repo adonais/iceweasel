@@ -237,10 +237,10 @@ export default [
   {
     // These tests use old React. We should accept deprecated API usages
     files: [
-      "client/inspector/markup/test/doc_markup_events_react_development_15.4.1.html",
-      "client/inspector/markup/test/doc_markup_events_react_development_15.4.1_jsx.html",
-      "client/inspector/markup/test/doc_markup_events_react_production_15.3.1.html",
-      "client/inspector/markup/test/doc_markup_events_react_production_15.3.1_jsx.html",
+      "client/inspector/markup/test/events/doc_markup_events_react_development_15.4.1.html",
+      "client/inspector/markup/test/events/doc_markup_events_react_development_15.4.1_jsx.html",
+      "client/inspector/markup/test/events/doc_markup_events_react_production_15.3.1.html",
+      "client/inspector/markup/test/events/doc_markup_events_react_production_15.3.1_jsx.html",
     ],
     rules: {
       "react/no-deprecated": "off",
@@ -273,7 +273,9 @@ export default [
     },
   },
   {
-    files: ["client/inspector/markup/test/doc_markup_events_react_*_jsx.html"],
+    files: [
+      "client/inspector/markup/test/events/doc_markup_events_react_*_jsx.html",
+    ],
     languageOptions: {
       parserOptions: {
         ecmaFeatures: {

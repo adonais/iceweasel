@@ -8,8 +8,6 @@ import android.content.Context
 import android.graphics.Paint
 import android.graphics.Paint.ANTI_ALIAS_FLAG
 import android.graphics.Rect
-import android.os.Build
-import android.os.Build.VERSION.SDK_INT
 import androidx.core.graphics.applyCanvas
 import androidx.core.graphics.createBitmap
 import mozilla.components.browser.icons.Icon
@@ -33,9 +31,6 @@ class AdaptiveIconProcessor : IconProcessor {
         desiredSize: DesiredSize,
     ): Icon {
         val maskable = resource?.maskable == true
-        if (!maskable && SDK_INT < Build.VERSION_CODES.O) {
-            return icon
-        }
 
         val originalBitmap = icon.bitmap
 

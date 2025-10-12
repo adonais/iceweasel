@@ -18,6 +18,19 @@ import { TaskbarTabsWindowManager } from "resource:///modules/taskbartabs/Taskba
 import { TaskbarTabsPin } from "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs";
 import { TaskbarTabsUtils } from "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs";
 
+let lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  ManifestObtainer: "resource://gre/modules/ManifestObtainer.sys.mjs",
+});
+
+ChromeUtils.defineLazyGetter(lazy, "logConsole", () => {
+  return console.createInstance({
+    prefix: "TaskbarTabs",
+    maxLogLevel: "Warn",
+  });
+});
+
 /**
  * A Taskbar Tabs singleton which ensures the system has been initialized before
  * it can be interacted with. Methods on this object pass through to the Taskbar
@@ -61,7 +74,20 @@ export const TaskbarTabs = new (class {
     let url = browser.currentURI;
     let userContextId = aTab.userContextId;
 
-    let taskbarTab = await this.findOrCreateTaskbarTab(url, userContextId);
+    let [, manifest] = await Promise.all([
+      this.#ready,
+      lazy.ManifestObtainer.browserObtainManifest(browser).catch(e => {
+        lazy.logConsole.error(e);
+        return {};
+      }),
+    ]);
+
+    let taskbarTab = await this.findOrCreateTaskbarTab(
+      url,
+      userContextId,
+      // 'manifest' can be null if the site doesn't have a manifest.
+      manifest ? { manifest } : {}
+    );
 
     let win = await this.replaceTabWithWindow(taskbarTab, aTab);
     return {

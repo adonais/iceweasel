@@ -1048,7 +1048,7 @@ bool SdpRidAttributeList::PushEntry(const std::string& raw, std::string* error,
 
 void SdpRidAttributeList::PushEntry(const std::string& id, sdp::Direction dir,
                                     const std::vector<uint16_t>& formats,
-                                    const EncodingConstraints& constraints,
+                                    const VideoEncodingConstraints& constraints,
                                     const std::vector<std::string>& dependIds) {
   SdpRidAttributeList::Rid rid;
 

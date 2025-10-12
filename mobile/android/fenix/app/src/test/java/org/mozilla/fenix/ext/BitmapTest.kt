@@ -8,10 +8,12 @@ import android.view.View
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
+import org.junit.Ignore
 import org.junit.Test
 
 class BitmapTest {
     @Test
+    @Ignore("this relies on static mocking and need refactoring")
     fun `WHEN keyboard is considered closed THEN safeHeight returns the same value as the given view height`() {
         val view = mockk<View>(relaxed = true) {
             every { height } returns 100
@@ -21,6 +23,7 @@ class BitmapTest {
     }
 
     @Test
+    @Ignore("this relies on static mocking and need refactoring")
     fun `WHEN keyboard is considered open THEN safeHeight returns the given view height plus the keyboard height`() {
         val view = mockk<View>(relaxed = true) {
             every { height } returns 100

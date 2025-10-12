@@ -21,6 +21,8 @@ support-files = [
   "silentAudioTrack.webm",
 ]
 
+["browser_about_glean.js"]
+
 ["browser_about_logging.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1804081 # Bug 1869961

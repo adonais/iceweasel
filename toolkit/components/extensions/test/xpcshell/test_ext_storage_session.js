@@ -310,3 +310,7 @@ add_task(
     await test_storage_session_quota({ quotaEnforced: true });
   }
 );
+
+add_task(async function test_storage_session_getBytesInUse() {
+  await test_get_bytes_in_use("session");
+});

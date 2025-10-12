@@ -5,6 +5,7 @@ run-if = ["os == 'win'"]
 ["test_TaskbarTabsRegistry.js"]
 support-files = [
     "test_taskbarTabs.json",
+    "test_taskbarTabs_nonames.json",
 ]
 
 ["test_taskbarTabs_pin.js"]

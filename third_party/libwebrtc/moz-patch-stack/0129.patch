@@ -1,35 +1,23 @@
-From: Nico Grunbaum <na-g@nostrum.com>
-Date: Wed, 27 Nov 2024 03:41:00 +0000
-Subject: Bug 1921154 - workaround older AV1;r=mjf,webrtc-reviewers
+From: Michael Froman <mfroman@mozilla.com>
+Date: Mon, 13 Jan 2025 08:14:00 -0600
+Subject: Bug 1942428 - (fix-69cc695699) uncomment an arg that upstream thinks
+ is unused
 
-Differential Revision: https://phabricator.services.mozilla.com/D228740
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/275786a9d6482996002fe1be24e8c6708430d892
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/73f9e0e64eb65e9f2579b0f3eb34b88e2b5e5d74
 ---
- modules/video_coding/codecs/av1/libaom_av1_encoder.cc | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
+ modules/rtp_rtcp/source/rtcp_sender.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
-index d0c513e91b..cd54b9e6ff 100644
---- a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
-+++ b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
-@@ -305,8 +305,9 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
-   } else {
-     SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_ENABLE_PALETTE, 0);
-   }
--
-+#if !defined(WEBRTC_MOZILLA_BUILD) // Mozilla: Need to update AV1 to enable this
-   SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_AUTO_TILES, 1);
-+#endif
-   SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_ROW_MT, 1);
-   SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_ENABLE_OBMC, 0);
-   SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_NOISE_SENSITIVITY, 0);
-@@ -337,7 +338,9 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
-   SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_ENABLE_SMOOTH_INTERINTRA, 0);
-   SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_ENABLE_TX64, 0);
-   SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_MAX_REFERENCE_FRAMES, 3);
-+#if !defined(WEBRTC_MOZILLA_BUILD) // Mozilla: Need to update AV1 to enable this
-   SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_MAX_CONSEC_FRAME_DROP_MS_CBR, 250);
-+#endif
+diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
+index ccb145412e..7bbd5ba0e7 100644
+--- a/modules/rtp_rtcp/source/rtcp_sender.cc
++++ b/modules/rtp_rtcp/source/rtcp_sender.cc
+@@ -221,7 +221,7 @@ bool RTCPSender::Sending() const {
+   return sending_;
+ }
  
-   if (post_encode_frame_drop_) {
-     SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_POSTENCODE_DROP_RTC, 1);
+-void RTCPSender::SetSendingStatus(const FeedbackState& /* feedback_state */,
++void RTCPSender::SetSendingStatus(const FeedbackState& feedback_state,
+                                   bool sending) {
+   bool sendRTCPBye = false;
+   {

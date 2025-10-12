@@ -15,7 +15,9 @@ namespace mozilla::webgpu {
 class CompilationInfo;
 class Device;
 
-class ShaderModule final : public ObjectBase, public ChildOf<Device> {
+class ShaderModule final : public nsWrapperCache,
+                           public ObjectBase,
+                           public ChildOf<Device> {
  public:
   GPU_DECL_CYCLE_COLLECTION(ShaderModule)
   GPU_DECL_JS_WRAP(ShaderModule)
@@ -24,11 +26,8 @@ class ShaderModule final : public ObjectBase, public ChildOf<Device> {
                const RefPtr<dom::Promise>& aCompilationInfo);
   already_AddRefed<dom::Promise> GetCompilationInfo(ErrorResult& aRv);
 
-  const RawId mId;
-
  private:
   virtual ~ShaderModule();
-  void Cleanup();
 
   RefPtr<dom::Promise> mCompilationInfo;
 };

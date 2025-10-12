@@ -16,9 +16,6 @@ const ADDON_ID = "amosigned-xpi@tests.mozilla.org";
 // This verifies bug 312473.
 
 async function testAuthRequiredInstall({ authInfo, expectFailure }) {
-  // This test depends on InstallTrigger.install availability.
-  setInstallTriggerPrefs();
-
   const deferredInstallCompleted = Promise.withResolvers();
 
   let promiseAddonStarted;

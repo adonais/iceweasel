@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">കൂടുതൽ ഐച്ഛികങ്ങൾ</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">സ്വകാര്യ തിരയൽ സജ്ജമാക്കുക</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">സ്വകാര്യ തിരയൽ നിർജ്ജീവമാക്കുക</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">സ്വകാര്യ തിരയൽ</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">തിരയുക അല്ലെങ്കിൽ വിലാസം നൽകുക</string>
@@ -289,10 +285,6 @@
   <string name="browser_menu_new_private_tab">പുതിയ സ്വകാര്യ ടാബ്</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">ഒളിവാക്കുകൾ</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">മൊപൈൽ സൈറ്റിലേക്കു് മാറുക</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">പ്രധാന കുറിപ്പടി താളു് അടയ്ക്കുക</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">കുറിപ്പടി അടയ്ക്കുക</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -339,8 +331,6 @@
   <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">ഞൊടികൾ മാത്രമെടുക്കും. എപ്പോഴെങ്കിലും മാറ്റാം.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">ഉടൻ, സ്വകാര്യം, താങ്ങൾക്കുവേണ്ടി\u0020</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">കളയുക</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss_promotion">പ്രചരണം നിരസിക്കുക</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -433,10 +423,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">താങ്ങളുടെ ടാബുകൾ സമന്വയിപ്പിക്കുന്നു! താങ്ങളുടെ മറ്റു് ഉപകരണത്തിൽ നിർത്തിയിടത്തു് നിന്നു് വീണ്ടും തുടങ്ങുക.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">അടയ്ക്കുക</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -539,6 +527,39 @@
   <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">അന്വേഷിയന്ത്രത്തിനെ മെച്ചപ്പെുടത്താൻ ഫയർഫോക്സു് മോസില്ലക്കു് നിദാനനിർണയനീയും ഇടപാടുനീയ ദത്ത അയയ്ക്കാരുണ്ടു്. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">കൈകാര്യം ചെയ്യുക</string>
+  <!-- Terms of use (ToU) second subheader. -->
+  <string name="onboarding_redesign_tou_subheader_two">താനെ പിന്തുടൎച്ച പരിരക്ഷണം</string>
+  <!--
+    Terms of use (ToU) first body text. %1$s is replaced by an active link,
+    using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="onboarding_redesign_tou_body_one">തുടരുന്നതിലൂടെ, താങ്ങൾ %1$s അംഗീകരിക്കുന്നു.</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">Firefox ഉപയോഗനിബന്ധനകൾ</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
+  <string name="onboarding_redesign_tou_body_two_link_text">സ്വകാര്യത അറിയിപ്പു്</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
+  <string name="onboarding_redesign_tou_body_three_link_text">ക്രമീകരണങ്ങൾ നിയന്ത്രിക്കുക</string>
+  <!-- Terms of use (ToU) onboarding page continue button label. -->
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label">തുടരുക</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">താങ്ങൾക്കു വിലാസപ്പട്ട എവിടെയാണു വേണ്ടതു് ?</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">തുടരുക</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">ഫയൎഫോക്സിനെ ഉയൎത്താൻ ഞങ്ങളെ സഹായിക്കുക</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">തീൎച്ചപ്പെടുത്തുക</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title">താനെ പിന്തുടൎച്ച പരിരക്ഷണം തനിമട്ടായി നേടൂ.\u0020</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">ഫയൎഫോക്സ് ഉപയോഗിക്കുന്നയെല്ലായിടത്തും സമന്വയിപ്പിക്കുക</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body">ഏതുപകരണത്തിലും അടയാളക്കുറിപ്പുകളും ടാബുകളും ഒളിവാക്കുകളും നേടുക. എല്ലാം രൂപമാറ്റത്തിലൂടെ പരിരക്ഷിച്ചിരിക്കുന്നതു്.\u0020</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button">സമന്വയിപ്പിക്കാൻ തുടങ്ങുക</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">ഇപ്പോഴല്ല</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">ഫയൎഫോക്സിനെ ഉയൎത്താൻ ഞങ്ങൾ സഹായിക്കുക</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -738,7 +759,9 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">ഇച്ഛാനുസൃതമാക്കുക</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">ടാബുകളും അടയാളക്കുറിപ്പുകളും ഒളിവാക്കുകളും മറ്റും സമന്വയിപ്പിക്കാൻ പ്രവേശിക്കുക.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">ടാബുകളും അടയാളക്കുറിപ്പുകളും ഒളിവാക്കുകളും മറ്റും സമന്വയിപ്പിക്കാൻ പ്രവേശിക്കുക.</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">അടയാളക്കുറിപ്പുകളും ഒളിവാക്കുകളും ടാബുകളും എന്നിവയും മറ്റും സമന്വയിപ്പിക്കുക.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">മോസില്ല അക്കൗണ്ട്</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -951,6 +974,8 @@
   <string name="restart_warning_dialog_title">പ്രയോഗയടയാളം മാറ്റണോ?</string>
   <!-- Dialog button text for confirming the app restart to apply the selected icon -->
   <string name="restart_warning_dialog_button_positive" tools:ignore="UnusedResources" moz:removedIn="144">ഉടന്‍ വീണ്ടും തുടങ്ങുക</string>
+  <!-- Dialog button text for confirming the possible app restart and new icon selection -->
+  <string name="restart_warning_dialog_button_positive_2">അടയാളം മാറ്റുക</string>
   <!-- Dialog button text for cancelling app icon change -->
   <string name="restart_warning_dialog_button_negative">റദ്ദാക്കുക</string>
   <!--
@@ -1060,8 +1085,6 @@
   <!-- Preference switch for daily usage ping data collection -->
   <string name="preferences_daily_usage_ping_title">പ്രതിദിന ഉപയോഗ പിംഗ്</string>
   <string name="preferences_daily_usage_ping_description">സജീവ ഉപയോക്താക്കളുടെ കണക്കെടുക്കാൻ ഇതു് മോസ്സില്ലയെ സഹായിക്കുന്നു.</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">തകർച്ച വിവരങ്ങൾ തന്നെതാന്നെ അയയ്ക്കുക</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">അറിയിപ്പയച്ചു</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
@@ -1074,8 +1097,6 @@
   <string name="crash_reporting_description">തകൎച്ച റിപ്പോർട്ടുകൾ ഞങ്ങൾക്കു് അന്വേഷിയന്ത്രത്തിന്റെ കൂടെയുള്ള എല്ലാ പ്രശ്നങ്ങളെ കണ്ടുപിടിക്കാനും പരിഹരിക്കാനും സഹായിക്കുന്നു. റിപ്പോർട്ടുകളിൽ തനതായ അല്ലെങ്കിൽ സൂക്ഷിച്ചുവയ്ക്കാനുള്ള ദത്തയും ഉൾപ്പെടാം.</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">വില്പനദത്തയെ കുറിച്ചു് കൂടുതൽ അറിയുക</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">തകർച്ചവിവരങ്ങളെ കുറിച്ചു് അറിയുക</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">പഠനങ്ങൾ</string>
   <!-- Summary for studies preferences -->
@@ -1085,7 +1106,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">ദത്ത സമന്വയിപ്പിച്ച് കരുതിവയ്ക്കുക</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">ദത്ത സമന്വയിപ്പിച്ച് കരുതിവയ്ക്കുക</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">വീണ്ടും ബന്ധിപ്പിക്കുന്നതിന് പ്രവേശിക്കുക</string>
   <!-- Preference for removing FxA account -->
@@ -1384,9 +1405,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">നാള്‍വഴികൾ ഇല്ലാതാക്കുക</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">നാൾവഴി മായച്ചു</string>
+  <string name="history_delete_multiple_items_snackbar">നാൾവഴി മായച്ചു</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s നീക്കം ചെയ്തു</string>
+  <string name="history_delete_single_item_snackbar">%1$s നീക്കം ചെയ്തു</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">നീക്കം ചെയ്യുക</string>
   <!--
@@ -1557,8 +1578,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">പൊട്ടിയ സൈറ്റിന്റെ വിവരം അറിയിക്കുക</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">എല്ലാവൎക്കുമായി %1$s-നെ മെച്ചപ്പെടുത്താൻ സഹായിക്കുക. മോസില്ല ഉദ്യോഗസ്ഥന്മാർ താങ്ങൾ അയയ്ക്കുന്ന വിവരങ്ങൾ വെബ്സ്ഥാനക്കുഴപ്പങ്ങളെ പരിഹരിക്കാൻ ഉപയോഗിക്കുന്നു.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">%1$s-ലുള്ള കുഴപ്പങ്ങൾ നന്നാക്കാനും എല്ലാവൎക്കതു മെച്ചപ്പെടുത്താനും താങ്ങളുടെ റിപ്പോർട്ട് ഞങ്ങളെ തുണയ്ക്കുന്നു. കൂടുതലറിയുക</string>
   <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
@@ -1569,8 +1588,6 @@
   <string name="webcompat_reporter_url_error_invalid">ശരിയായൊരു യുആര്‍എല്‍ നല്‍കുക</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">എന്താണു് തകൎന്നപോയതു്?</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">കാരണം തിരഞ്ഞെടുക്കുക</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">കാരണം നല്കുക</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
@@ -1586,9 +1603,9 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">അയയ്ക്കുക</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">താങ്ങളുടെ റിപ്പോർട്ട് അയച്ചു</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">താങ്ങളുടെ റിപ്പോർട്ട് അയച്ചു</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">അടയ്ക്കുക</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">അടയ്ക്കുക</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">എന്താണു പറ്റിയതു്. പറ്റേണ്ടതെന്തായിരുന്നു?</string>
   <!--
@@ -1623,8 +1640,6 @@
   <string name="tab_crash_close">ടാബ് അടയ്ക്കുക</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">ടാബ് പുനസ്ഥാപിക്കുക</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s-നു വീണ്ടും തുടങ്ങണ്ടി വന്നു</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">%s തകൎന്നു. ഇതിന്റെ വിവരം അറിയിക്കണോ?</string>
   <!-- Unsubmitted crash dialog checkbox label for automatically sending reports in the future -->
@@ -1898,12 +1913,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ടാബ് തിരഞ്ഞെടുത്തു</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ടാബുകൾ സൂക്ഷിച്ചു!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">ശേഖരം കരുതിവച്ചു!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">ശേഖരം കരുതിവച്ചു!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">ടാബ് സൂക്ഷിച്ചു!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">ടാബ് സൂക്ഷിച്ചു!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">അടയ്ക്കുക</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1950,7 +1963,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">സമന്വയിപ്പിക്കാനായി പ്രവേശിക്കുക</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">ദത്ത സമന്വയിപ്പിച്ച് കരുതിവയ്ക്കുക</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">ദത്ത സമന്വയിപ്പിച്ച് കരുതിവയ്ക്കുക</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">എല്ലാ ഉപകരണങ്ങളിലേക്കും അയയ്ക്കുക</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2040,7 +2053,7 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">അടച്ച ടാബുകൾ: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">അടയാളക്കുറിപ്പു് \"%s\"-ൽ കരുതിവച്ചു</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">അടയാളക്കുറിപ്പു് \"%s\"-ൽ കരുതിവച്ചു</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">കുറുക്കുവഴികളിലേക്കു് ചേർത്തു!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -2068,8 +2081,6 @@
   <string name="tab_collection_dialog_message">%1$s നീക്കം ചെയ്യണമെന്ന് താങ്കൾക്ക് ഉറപ്പാണോ?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">നീക്കം ചെയ്യുക</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL പകർത്തി</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">ഇതൊരു ഉദാഹരണ വാചകമാണ്. നിങ്ങൾ അക്ഷരത്തിന്റെ വലുപ്പം കൂട്ടുകയോ കുറയ്ക്കുകയോ ചെയ്യുമ്പോൾ എങ്ങനെ ദൃശ്യമാകുമെന്ന് കാണിക്കാൻ ഇത് സഹായിക്കുന്നു.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2158,9 +2169,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">ടാബുകൾ അയച്ചു!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">ടാബുകൾ അയച്ചു!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">ടാബ് അയച്ചു!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">ടാബ് അയച്ചു!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">അയയ്ക്കാനായില്ല</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2660,12 +2671,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">തിരയുന്നതിനായി ഒരു വാചകം നൽകുക</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">തിരച്ചിൽ വാചകം ഉദാഹരണ ഘടനയുമായി പൊരുത്തപ്പെടുന്നുണ്ടോ എന്ന് പരിശോധിക്കുക</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s സൃഷ്ടിച്ചു</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s സൂക്ഷിച്ചു</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s നീക്കം ചെയ്തു</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">ഇത് അനുവദിക്കുന്നതിന്:</string>
   <!-- First step for the allowing a permission -->
@@ -3135,12 +3140,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">സുരക്ഷിതം</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">സുരക്ഷിതമല്ല</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">ഈ വെബ്സ്ഥാനത്തിൽ ശ്രദ്ധത്തോളം ഇരിക്കുക</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">താങ്കളുടെ സമ്പർക്കം സുരക്ഷിതമല്ല.</string>
@@ -3165,11 +3166,7 @@
   <!-- Toggle if Enhanced Tracking Protection is turned off -->
   <string name="protection_panel_etp_toggle_off">അണച്ചതു്</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">ഈ വെബ്സ്ഥാനത്തിൽ എന്തെങ്കിലും തകരാറുണ്ടെന്നു് തോന്നുന്നുണ്ടെങ്കിൽ പരിരക്ഷകളെ അണച്ചു് നോക്കൂ.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description_2">ഈ വെബ്ബിടത്തിൽ എന്തെങ്കിലും തകരാറുണ്ടെന്നു തോന്നുന്നുണ്ടെങ്കിൽ പരിരക്ഷകളെ അണച്ചു നോക്കൂ.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">സംരക്ഷണങ്ങൾ അണച്ചിരിക്കുന്നു. അവയെ വീണ്ടും തുടങ്ങിവയ്ക്കുന്നതിലാണു് ബുദ്ധി.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description_2">പിന്തുടൎച്ച പരിരക്ഷണം തുടങ്ങിവയ്ക്കുന്നതു ശുപാൎശചെയ്യപ്പെട്ടതാണു്.</string>
   <!--
@@ -3179,8 +3176,6 @@
   <string name="protection_panel_num_trackers_blocked">തടഞ്ഞിരിക്കുന്ന പിന്തുടർച്ചായന്ത്രങ്ങൾ: %d</string>
   <!-- Text for when no trackers have been blocked. -->
   <string name="protection_panel_no_trackers_blocked">പിന്തുടർച്ചയന്ത്രങ്ങൾ കണ്ടെത്താൻ കഴിഞ്ഞില്ല</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">സ്വകാര്യതയും സുരക്ഷ ക്രമീകരണങ്ങൾ</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">സ്വകാര്യത ക്രമീകരണങ്ങൾ</string>
   <!-- Title text for the protection panel permissions section. -->

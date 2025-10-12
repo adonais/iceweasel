@@ -3176,6 +3176,9 @@ async function doTimedCallbacks(callbacksBySecond) {
  *   The results that are expected from the search.
  */
 async function checkSearch({ name, searchString, expectedResults }) {
+  let quickSuggestProviderInstance = UrlbarProvidersManager.getProvider(
+    UrlbarProviderQuickSuggest.name
+  );
   info(`Preparing search "${name}" with search string "${searchString}"`);
   let context = createContext(searchString, {
     providers: [UrlbarProviderQuickSuggest.name],
@@ -3191,8 +3194,8 @@ async function checkSearch({ name, searchString, expectedResults }) {
   // Impression stats are updated only on engagement, so force one now.
   // `selIndex` doesn't really matter but since we're not trying to simulate a
   // click on the suggestion, pass in -1 to ensure we don't record a click.
-  if (UrlbarProviderQuickSuggest._resultFromLastQuery) {
-    UrlbarProviderQuickSuggest._resultFromLastQuery.isVisible = true;
+  if (quickSuggestProviderInstance._resultFromLastQuery) {
+    quickSuggestProviderInstance._resultFromLastQuery.isVisible = true;
   }
   const controller = UrlbarTestUtils.newMockController({
     input: {
@@ -3221,7 +3224,7 @@ async function checkSearch({ name, searchString, expectedResults }) {
 
   // If this test is ever re-enabled, this line will need to be updated for the
   // new engagement API (onEngagement())
-  UrlbarProviderQuickSuggest.onLegacyEngagement(
+  quickSuggestProviderInstance.onLegacyEngagement(
     "engagement",
     context,
     {

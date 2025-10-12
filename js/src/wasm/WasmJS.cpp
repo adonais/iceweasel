@@ -1557,8 +1557,23 @@ WasmModuleObject* WasmModuleObject::create(JSContext* cx, const Module& module,
   return obj;
 }
 
-static bool GetBufferSource(JSContext* cx, JSObject* obj, unsigned errorNumber,
-                            BytecodeSource* bytecode) {
+struct MOZ_STACK_CLASS AutoPinBufferSourceLength {
+  explicit AutoPinBufferSourceLength(JSContext* cx, JSObject* bufferSource)
+      : bufferSource_(cx, bufferSource),
+        wasPinned_(!JS::PinArrayBufferOrViewLength(bufferSource_, true)) {}
+  ~AutoPinBufferSourceLength() {
+    if (!wasPinned_) {
+      JS::PinArrayBufferOrViewLength(bufferSource_, false);
+    }
+  }
+
+ private:
+  Rooted<JSObject*> bufferSource_;
+  bool wasPinned_;
+};
+
+static bool GetBytecodeSource(JSContext* cx, Handle<JSObject*> obj,
+                              unsigned errorNumber, BytecodeSource* bytecode) {
   JSObject* unwrapped = CheckedUnwrapStatic(obj);
 
   SharedMem<uint8_t*> dataPointer;
@@ -1571,6 +1586,20 @@ static bool GetBufferSource(JSContext* cx, JSObject* obj, unsigned errorNumber,
   }
 
   *bytecode = BytecodeSource(dataPointer.unwrap(), byteLength);
+  return true;
+}
+
+static bool GetBytecodeBuffer(JSContext* cx, Handle<JSObject*> obj,
+                              unsigned errorNumber, BytecodeBuffer* bytecode) {
+  BytecodeSource source;
+  if (!GetBytecodeSource(cx, obj, errorNumber, &source)) {
+    return false;
+  }
+  AutoPinBufferSourceLength pin(cx, obj);
+  if (!BytecodeBuffer::fromSource(source, bytecode)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
   return true;
 }
 
@@ -1630,12 +1659,6 @@ bool WasmModuleObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  BytecodeSource source;
-  if (!GetBufferSource(cx, &callArgs[0].toObject(), JSMSG_WASM_BAD_BUF_ARG,
-                       &source)) {
-    return false;
-  }
-
   FeatureOptions options;
   if (!options.init(cx, callArgs.get(1))) {
     return false;
@@ -1647,10 +1670,20 @@ bool WasmModuleObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  BytecodeSource source;
+  Rooted<JSObject*> sourceObj(cx, &callArgs[0].toObject());
+  if (!GetBytecodeSource(cx, sourceObj, JSMSG_WASM_BAD_BUF_ARG, &source)) {
+    return false;
+  }
+
   UniqueChars error;
   UniqueCharsVector warnings;
-  SharedModule module = CompileBuffer(
-      *compileArgs, BytecodeBufferOrSource(source), &error, &warnings, nullptr);
+  SharedModule module;
+  {
+    AutoPinBufferSourceLength pin(cx, sourceObj.get());
+    module = CompileBuffer(*compileArgs, BytecodeBufferOrSource(source), &error,
+                           &warnings, nullptr);
+  }
 
   if (!ReportCompileWarnings(cx, warnings)) {
     return false;
@@ -4511,22 +4544,6 @@ static bool EnsurePromiseSupport(JSContext* cx) {
   return true;
 }
 
-static bool GetBufferSource(JSContext* cx, const CallArgs& callArgs,
-                            const char* name, BytecodeSource* bytecode) {
-  if (!callArgs.requireAtLeast(cx, name, 1)) {
-    return false;
-  }
-
-  if (!callArgs[0].isObject()) {
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                             JSMSG_WASM_BAD_BUF_ARG);
-    return false;
-  }
-
-  return GetBufferSource(cx, &callArgs[0].toObject(), JSMSG_WASM_BAD_BUF_ARG,
-                         bytecode);
-}
-
 static bool WebAssembly_compile(JSContext* cx, unsigned argc, Value* vp) {
   if (!EnsurePromiseSupport(cx)) {
     return false;
@@ -4561,18 +4578,25 @@ static bool WebAssembly_compile(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  BytecodeSource source;
-  if (!GetBufferSource(cx, callArgs, "WebAssembly.compile", &source)) {
+  if (!callArgs.requireAtLeast(cx, "WebAssembly.compile", 1)) {
     return RejectWithPendingException(cx, promise, callArgs);
-  }
-  if (!BytecodeBuffer::fromSource(source, &task->bytecode)) {
-    ReportOutOfMemory(cx);
-    return false;
   }
 
   FeatureOptions options;
   if (!options.init(cx, callArgs.get(1))) {
-    return false;
+    return RejectWithPendingException(cx, promise, callArgs);
+  }
+
+  if (!callArgs[0].isObject()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_BUF_ARG);
+    return RejectWithPendingException(cx, promise, callArgs);
+  }
+
+  Rooted<JSObject*> sourceObj(cx, &callArgs[0].toObject());
+  if (!GetBytecodeBuffer(cx, sourceObj, JSMSG_WASM_BAD_BUF_ARG,
+                         &task->bytecode)) {
+    return RejectWithPendingException(cx, promise, callArgs);
   }
 
   if (!task->init(cx, options, "WebAssembly.compile")) {
@@ -4665,13 +4689,9 @@ static bool WebAssembly_instantiate(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
 
-    BytecodeSource source;
-    if (!GetBufferSource(cx, firstArg, JSMSG_WASM_BAD_BUF_MOD_ARG, &source)) {
+    if (!GetBytecodeBuffer(cx, firstArg, JSMSG_WASM_BAD_BUF_MOD_ARG,
+                           &task->bytecode)) {
       return RejectWithPendingException(cx, promise, callArgs);
-    }
-    if (!BytecodeBuffer::fromSource(source, &task->bytecode)) {
-      ReportOutOfMemory(cx);
-      return false;
     }
 
     if (!StartOffThreadPromiseHelperTask(cx, std::move(task))) {
@@ -4686,8 +4706,7 @@ static bool WebAssembly_instantiate(JSContext* cx, unsigned argc, Value* vp) {
 static bool WebAssembly_validate(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs callArgs = CallArgsFromVp(argc, vp);
 
-  BytecodeSource source;
-  if (!GetBufferSource(cx, callArgs, "WebAssembly.validate", &source)) {
+  if (!callArgs.requireAtLeast(cx, "WebAssembly.validate", 1)) {
     return false;
   }
 
@@ -4696,8 +4715,24 @@ static bool WebAssembly_validate(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
+  if (!callArgs[0].isObject()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_BUF_ARG);
+    return false;
+  }
+
+  BytecodeSource source;
+  Rooted<JSObject*> sourceObj(cx, &callArgs[0].toObject());
+  if (!GetBytecodeSource(cx, sourceObj, JSMSG_WASM_BAD_BUF_ARG, &source)) {
+    return false;
+  }
+
   UniqueChars error;
-  bool validated = Validate(cx, source, options, &error);
+  bool validated;
+  {
+    AutoPinBufferSourceLength pin(cx, sourceObj.get());
+    validated = Validate(cx, source, options, &error);
+  }
 
   // If the reason for validation failure was OOM (signalled by null error
   // message), report out-of-memory so that validate's return is always

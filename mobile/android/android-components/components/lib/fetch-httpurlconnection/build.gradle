@@ -23,16 +23,16 @@ android {
 }
 
 dependencies {
-    implementation libs.kotlin.coroutines
-
     implementation project(':components:concept-fetch')
+
+    implementation libs.kotlinx.coroutines
+
+    testImplementation project(':components:tooling-fetch-tests')
 
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
-    testImplementation libs.testing.mockito
-
-    testImplementation project(':components:tooling-fetch-tests')
+    testImplementation libs.mockito
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

@@ -249,7 +249,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     display: flex;
     justify-content: space-between;
     flex-direction: column;
-    padding: var(--space-medium) var(--space-large);;
+    padding: var(--space-medium) var(--space-large);
     flex-grow: 1;
 
     .info-wrap {
@@ -482,7 +482,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
 
     .card-stp-button-hover-background {
       border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
-      background-color: transparent;
+      background-color: var(--button-background-color-ghost);
     }
 
     .ds-card-link:focus {
@@ -648,7 +648,7 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
   .card-stp-button-hover-background {
     height: 100%;
     padding-block-start: 0;
-    background: transparent;
+    background: var(--button-background-color-ghost);
 
     .card-stp-button-position-wrapper {
       inset-block-start: unset;
@@ -658,21 +658,21 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
     }
   }
 
+  .context-menu-button {
+    background-color: var(--button-background-color-ghost);
+  }
+
   &:hover,
   &.active {
     h3 {
       color: var(--color-accent-primary);
     }
 
-    .context-menu-button {
-      background-color: transparent;
-    }
-
     .context-menu-button:hover {
-      background-color: var(--newtab-button-static-hover-background);
+      background-color: var(--button-background-color-ghost-hover);
 
       &:active {
-        background-color: var(--newtab-button-static-active-background);
+        background-color: var(--button-background-color-ghost-active);
       }
     }
 

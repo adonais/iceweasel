@@ -112,7 +112,6 @@ if CONFIG["TARGET_OS"] == "WINNT":
     ]
 
     OS_LIBS += [
-        "mincore",
         "shell32",
         "shlwapi",
         "user32",
@@ -162,7 +161,6 @@ DIRS += [
     "executable",
 ]
 
-if CONFIG["ENABLE_TESTS"]:
-    TEST_DIRS += [
-        "tests/gtest",
-    ]
+TEST_DIRS += [
+    "tests/gtest",
+]

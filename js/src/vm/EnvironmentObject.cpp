@@ -1283,10 +1283,17 @@ GlobalLexicalEnvironmentObject* GlobalLexicalEnvironmentObject::create(
     return nullptr;
   }
 
-  auto* env = static_cast<GlobalLexicalEnvironmentObject*>(
+  Rooted<GlobalLexicalEnvironmentObject*> env(cx);
+  env = static_cast<GlobalLexicalEnvironmentObject*>(
       LexicalEnvironmentObject::create(cx, shape, global, gc::Heap::Tenured));
   if (!env) {
     return nullptr;
+  }
+
+  if (ShouldUseObjectFuses() && JS::Prefs::objectfuse_for_global()) {
+    if (!NativeObject::setHasObjectFuse(cx, env)) {
+      return nullptr;
+    }
   }
 
   env->initThisObject(global);

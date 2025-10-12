@@ -414,8 +414,14 @@ void SharedContextWebgl::ClearCachesIfNecessary() {
 // not exceed the available texture limits and that shader creation succeeded.
 bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
                            const RefPtr<SharedContextWebgl>& aSharedContext) {
-  MOZ_ASSERT(format == SurfaceFormat::B8G8R8A8 ||
-             format == SurfaceFormat::B8G8R8X8);
+  switch (format) {
+    case SurfaceFormat::B8G8R8A8:
+    case SurfaceFormat::B8G8R8X8:
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unsupported format for DrawTargetWebgl.");
+      return false;
+  }
 
   mSize = size;
   mFormat = format;
@@ -1404,6 +1410,8 @@ void SharedContextWebgl::ResetPathVertexBuffer() {
   }
 }
 
+// Sigma below which contribution of neighbor pixels is visually insignificant.
+#define BLUR_ACCEL_SIGMA_MIN 0.27f
 // Maximum blur sigma allowed by shadows and filters currently.
 #define BLUR_ACCEL_SIGMA_MAX 100
 #define BLUR_ACCEL_RADIUS(sigma) (int(ceil(1.5 * (sigma))) * 2)
@@ -1626,10 +1634,13 @@ bool SharedContextWebgl::CreateShaders() {
         "uniform vec4 u_clipbounds;\n"
         "uniform vec4 u_transform;\n"
         "uniform vec4 u_texmatrix;\n"
+        "uniform vec4 u_texbounds;\n"
+        "uniform vec2 u_offsetscale;\n"
         "uniform float u_sigma;\n"
         "in vec3 a_vertex;\n"
         "out vec2 v_cliptc;\n"
         "out vec2 v_texcoord;\n"
+        "out vec4 v_texbounds;\n"
         "out vec4 v_clipdist;\n"
         "flat out vec2 v_gauss_coeffs;\n"
         "flat out ivec2 v_support;\n"
@@ -1655,34 +1666,36 @@ bool SharedContextWebgl::CreateShaders() {
         "  v_clipdist = vec4(vertex - u_clipbounds.xy,\n"
         "                    u_clipbounds.zw - vertex);\n"
         "  v_texcoord = u_texmatrix.xy * a_vertex.xy + u_texmatrix.zw;\n"
+        "  vec4 texbounds = vec4(v_texcoord - u_texbounds.xy,\n"
+        "                        u_texbounds.zw - v_texcoord);\n"
+        "  v_texbounds = u_offsetscale.x != 0.0 ?\n"
+        "     vec4(texbounds.xz / u_offsetscale.x, texbounds.yw) :\n"
+        "     vec4(texbounds.yw / u_offsetscale.y, texbounds.xz);\n"
         "  v_support.x = " MOZ_STRINGIFY(BLUR_ACCEL_RADIUS(u_sigma)) ";\n"
         "  calculate_gauss_coeffs(u_sigma);\n"
         "}\n";
     auto fsSource =
         "#version 300 es\n"
         "precision mediump float;\n"
-        "uniform vec4 u_texbounds;\n"
         "uniform vec4 u_color;\n"
         "uniform float u_swizzle;\n"
-        "uniform vec2 u_offsetscale;\n"
+        "uniform highp vec4 u_texbounds;\n"
+        "uniform highp vec2 u_offsetscale;\n"
         "uniform sampler2D u_sampler;\n"
         "uniform sampler2D u_clipmask;\n"
         "in highp vec2 v_cliptc;\n"
         "in highp vec2 v_texcoord;\n"
+        "in highp vec4 v_texbounds;\n"
         "in vec4 v_clipdist;\n"
         "flat in vec2 v_gauss_coeffs;\n"
         "flat in ivec2 v_support;\n"
         "out vec4 out_FragColor;\n"
-        "bool check_bounds(vec2 tc) {\n"
-        "  return all(greaterThanEqual(\n"
-        "             vec4(tc, u_texbounds.zw), vec4(u_texbounds.xy, tc)));\n"
-        "}\n"
         "void main() {\n"
         "  vec3 gauss_coeff = vec3(v_gauss_coeffs,\n"
         "                          v_gauss_coeffs.y * v_gauss_coeffs.y);\n"
-        "  vec4 avg_color =\n"
-        "    texture(u_sampler, v_texcoord) * \n"
-        "      (check_bounds(v_texcoord) ? gauss_coeff.x : 0.0);\n"
+        "  bvec4 inside = greaterThanEqual(v_texbounds, vec4(0.0));\n"
+        "  vec4 avg_color = texture(u_sampler, v_texcoord) *\n"
+        "                   (all(inside.xy) ? gauss_coeff.x : 0.0);\n"
         "  int support = min(v_support.x,\n"
         "                    " MOZ_STRINGIFY(BLUR_ACCEL_RADIUS_MAX) ");\n"
         "  for (int i = 1; i <= support; i += 2) {\n"
@@ -1691,19 +1704,25 @@ bool SharedContextWebgl::CreateShaders() {
         "    gauss_coeff.xy *= gauss_coeff.yz;\n"
         "    gauss_coeff_subtotal += gauss_coeff.x;\n"
         "    float gauss_ratio = gauss_coeff.x / gauss_coeff_subtotal;\n"
-        "    vec2 offset = u_offsetscale * (float(i) + gauss_ratio);\n"
-        "    vec2 tc0 = v_texcoord - offset;\n"
-        "    vec2 tc1 = v_texcoord + offset;\n"
-        "    avg_color +=\n"
-        "      texture(u_sampler, tc0) * \n"
-        "        (check_bounds(tc0) ? gauss_coeff_subtotal : 0.0) + \n"
-        "      texture(u_sampler, tc1) * \n"
-        "        (check_bounds(tc1) ? gauss_coeff_subtotal : 0.0);\n"
+        "    vec4 curbounds = v_texbounds.xyxy + vec4(-1.0, 1.0, 1.0, -1.0) * float(i);\n"
+        "    bvec4 inside0 = greaterThanEqual(curbounds.xyxy, vec4(0.0, 0.0, 1.0, -1.0));\n"
+        "    bvec4 inside1 = greaterThanEqual(curbounds.zwzw, vec4(0.0, 0.0, -1.0, 1.0));\n"
+        "    vec2 weights0 =\n"
+        "      (all(inside0.xy) ? vec2(1.0, gauss_ratio) : vec2(gauss_ratio, 1.0)) -\n"
+        "        (all(inside0.zw) ? 0.0 : gauss_ratio);\n"
+        "    vec2 weights1 =\n"
+        "      (all(inside1.xy) ? vec2(1.0, gauss_ratio) : vec2(gauss_ratio, 1.0)) -\n"
+        "        (all(inside1.zw) ? 0.0 : gauss_ratio);\n"
+        "    vec2 tc0 = v_texcoord - u_offsetscale * (float(i) + weights0.y);\n"
+        "    vec2 tc1 = v_texcoord + u_offsetscale * (float(i) + weights1.y);\n"
+        "    avg_color += gauss_coeff_subtotal * (\n"
+        "      texture(u_sampler, tc0) * weights0.x +\n"
+        "      texture(u_sampler, tc1) * weights1.x);\n"
         "  }\n"
         "  float clip = texture(u_clipmask, v_cliptc).r;\n"
         "  vec2 dist = min(v_clipdist.xy, v_clipdist.zw);\n"
         "  float aa = clamp(min(dist.x, dist.y), 0.0, 1.0);\n"
-        "  out_FragColor = clip * aa * u_color * \n"
+        "  out_FragColor = clip * aa * u_color * float(all(inside.zw)) *\n"
         "                  mix(avg_color, avg_color.rrrr, u_swizzle);\n"
         "}\n";
     RefPtr<WebGLShader> vsId = mWebgl->CreateShader(LOCAL_GL_VERTEX_SHADER);
@@ -1966,6 +1985,10 @@ void DrawTargetWebgl::PushDeviceSpaceClipRects(const IntRect* aRects,
 }
 
 void DrawTargetWebgl::PopClip() {
+  if (mClipStack.empty()) {
+    return;
+  }
+
   mClipChanged = true;
   mRefreshClipState = true;
   mSkia->PopClip();
@@ -2235,10 +2258,29 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
                                        const IntPoint& aDstOffset, bool aInit,
                                        bool aZero,
                                        const RefPtr<WebGLTexture>& aTex) {
-  webgl::TexUnpackBlobDesc texDesc = {
-      LOCAL_GL_TEXTURE_2D,
-      {uint32_t(aSrcRect.width), uint32_t(aSrcRect.height), 1}};
+  webgl::TexUnpackBlobDesc texDesc = {LOCAL_GL_TEXTURE_2D};
+  IntRect srcRect(aSrcRect);
+  IntPoint dstOffset(aDstOffset);
+  if (srcRect.IsEmpty()) {
+    return true;
+  }
   if (aData) {
+    // If the source rect could not possibly overlap the surface, then it is
+    // effectively empty with nothing to upload.
+    srcRect = srcRect.SafeIntersect(IntRect(IntPoint(0, 0), aData->GetSize()));
+    if (srcRect.IsEmpty()) {
+      return true;
+    }
+    // If there is a non-empty rect remaining, then ensure the dest offset
+    // reflects the change in source rect.
+    dstOffset += srcRect.TopLeft() - aSrcRect.TopLeft();
+
+    // Ensure source data matches the expected format size.
+    int32_t bpp = BytesPerPixel(aFormat);
+    if (bpp != BytesPerPixel(aData->GetFormat())) {
+      return false;
+    }
+
     // The surface needs to be uploaded to its backing texture either to
     // initialize or update the texture handle contents. Map the data
     // contents of the surface so it can be read.
@@ -2247,13 +2289,11 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
       return false;
     }
     int32_t stride = map.GetStride();
-    int32_t bpp = BytesPerPixel(aFormat);
     // Get the data pointer range considering the sampling rect offset and
     // size.
     Span<const uint8_t> range(
-        map.GetData() + aSrcRect.y * size_t(stride) + aSrcRect.x * bpp,
-        std::max(aSrcRect.height - 1, 0) * size_t(stride) +
-            aSrcRect.width * bpp);
+        map.GetData() + srcRect.y * size_t(stride) + srcRect.x * bpp,
+        std::max(srcRect.height - 1, 0) * size_t(stride) + srcRect.width * bpp);
     texDesc.cpuData = Some(range);
     // If the stride happens to be 4 byte aligned, assume that is the
     // desired alignment regardless of format (even A8). Otherwise, we
@@ -2263,10 +2303,16 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
   } else if (aZero) {
     // Create a PBO filled with zero data to initialize the texture data and
     // avoid slow initialization inside WebGL.
-    MOZ_ASSERT(aSrcRect.TopLeft() == IntPoint(0, 0));
-    size_t size =
-        size_t(GetAlignedStride<4>(aSrcRect.width, BytesPerPixel(aFormat))) *
-        aSrcRect.height;
+    if (srcRect.TopLeft() != IntPoint(0, 0)) {
+      MOZ_ASSERT_UNREACHABLE("Invalid origin for texture initialization.");
+      return false;
+    }
+    int32_t stride = GetAlignedStride<4>(srcRect.width, BytesPerPixel(aFormat));
+    if (stride <= 0) {
+      MOZ_ASSERT_UNREACHABLE("Invalid stride for texture initialization.");
+      return false;
+    }
+    size_t size = size_t(stride) * srcRect.height;
     if (!mZeroBuffer || size > mZeroSize) {
       ClearZeroBuffer();
       mZeroBuffer = mWebgl->CreateBuffer();
@@ -2282,6 +2328,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
     }
     texDesc.pboOffset = Some(0);
   }
+  texDesc.size = uvec3(uint32_t(srcRect.width), uint32_t(srcRect.height), 1);
   // Upload as RGBA8 to avoid swizzling during upload. Surfaces provide
   // data as BGRA, but we manually swizzle that in the shader. An A8
   // surface will be stored as an R8 texture that will also be swizzled
@@ -2296,7 +2343,7 @@ bool SharedContextWebgl::UploadSurface(DataSourceSurface* aData,
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, aTex);
   }
   mWebgl->TexImage(0, aInit ? intFormat : 0,
-                   {uint32_t(aDstOffset.x), uint32_t(aDstOffset.y), 0}, texPI,
+                   {uint32_t(dstOffset.x), uint32_t(dstOffset.y), 0}, texPI,
                    texDesc);
   if (aTex) {
     mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, mLastTexture);
@@ -2966,7 +3013,9 @@ bool SharedContextWebgl::DrawRectAccel(
         if (!tex) {
           tex = backing->GetWebGLTexture();
         }
-        bounds = handle->GetBounds();
+        bounds = bounds.IsEmpty() ? handle->GetBounds()
+                                  : handle->GetBounds().SafeIntersect(
+                                        bounds + handle->GetBounds().TopLeft());
         backingSize = backing->GetSize();
       }
       if (mLastTexture != tex) {
@@ -3210,11 +3259,11 @@ bool SharedContextWebgl::BlurRectPass(
     // Disable any AA clipping.
     clipRect = xformRect;
   } else {
-    // Offset the clip AA bounds by 0.5 to ensure AA falls to 0 at pixel
-    // boundary.
     clipRect = mClipAARect;
-    clipRect.Inflate(0.5f);
   }
+  // Offset the clip AA bounds by 0.5 to ensure AA falls to 0 at pixel
+  // boundary.
+  clipRect.Inflate(0.5f);
   Array<float, 4> clipData = {clipRect.x, clipRect.y, clipRect.XMost(),
                               clipRect.YMost()};
   MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mBlurProgramClipBounds, clipData,
@@ -3237,7 +3286,9 @@ bool SharedContextWebgl::BlurRectPass(
     if (!tex) {
       tex = backing->GetWebGLTexture();
     }
-    bounds = handle->GetBounds();
+    bounds = bounds.IsEmpty() ? handle->GetBounds()
+                              : handle->GetBounds().SafeIntersect(
+                                    bounds + handle->GetBounds().TopLeft());
     backingSize = backing->GetSize();
   }
   if (mLastTexture != tex) {
@@ -3259,12 +3310,13 @@ bool SharedContextWebgl::BlurRectPass(
   MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mBlurProgramTexMatrix, uvData,
                    mBlurProgramUniformState.mTexMatrix);
 
-  // Clamp sampling to within the bounds of the backing texture subrect.
+  // Bounds for inclusion testing. These are not offset by half a pixel because
+  // they are not used for clamping, but rather denote pixel thresholds.
   Array<float, 4> texBounds = {
-      (bounds.x + 0.5f) / backingSizeF.width,
-      (bounds.y + 0.5f) / backingSizeF.height,
-      (bounds.XMost() - 0.5f) / backingSizeF.width,
-      (bounds.YMost() - 0.5f) / backingSizeF.height,
+      bounds.x / backingSizeF.width,
+      bounds.y / backingSizeF.height,
+      bounds.XMost() / backingSizeF.width,
+      bounds.YMost() / backingSizeF.height,
   };
   MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mBlurProgramTexBounds, texBounds,
                    mBlurProgramUniformState.mTexBounds);
@@ -3457,10 +3509,9 @@ bool DrawTargetWebgl::BlurSurface(float aSigma, SourceSurface* aSurface,
       aSurface->GetFormat() == SurfaceFormat::A8 ? Some(aColor) : Nothing();
   if (aSigma >= 0.0f && aSigma <= BLUR_ACCEL_SIGMA_MAX &&
       ShouldAccelPath(aOptions, nullptr)) {
-    int blurRadius = BLUR_ACCEL_RADIUS(aSigma);
     IntRect sourceRect =
         aSourceRect.IsEmpty() ? aSurface->GetRect() : aSourceRect;
-    if (blurRadius <= 0) {
+    if (aSigma < BLUR_ACCEL_SIGMA_MIN) {
       SurfacePattern maskPattern(aSurface, ExtendMode::CLAMP,
                                  Matrix::Translation(aDest));
       if (!sourceRect.IsEqualEdges(aSurface->GetRect())) {
@@ -3579,7 +3630,7 @@ already_AddRefed<TextureHandle> SharedContextWebgl::ResolveFilterInputAccel(
   SkRect skiaRect = SkRect::MakeEmpty();
   // Draw the path as a simple rectangle with a supported pattern when
   // possible.
-  if (skiaPath.isRect(&skiaRect)) {
+  if (!aStrokeOptions && skiaPath.isRect(&skiaRect)) {
     RectDouble rect = SkRectToRectDouble(skiaRect);
     RectDouble xformRect = aDT->TransformDouble(rect);
     if (aPattern.GetType() == PatternType::COLOR) {

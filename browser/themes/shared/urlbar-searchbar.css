@@ -10,17 +10,32 @@
   --urlbar-margin-inline: 5px;
   --urlbar-padding-block: 4px;
 
+  @media (max-width: 770px) {
+    --urlbar-container-min-width: 240px;
+  }
+  @media (max-width: 550px) {
+    --urlbar-container-min-width: 176px;
+  }
   &[taskbartab] {
     /* Taskbar tab windows are more size-constrained due to window controls
-       being in the nav bar, so we use the not-yet-default value from below as
-       if the trust panel was enabled. */
+       being in the nav bar, so we use the smaller not-yet-default value from
+       below as if the trust panel was enabled. */
     --urlbar-container-min-width: 275px;
   }
+  /* Enabling the trust panel saves up to two icons in the front part of the
+     address bar.
+     Vertical tab mode is more size-constrained due to window controls being in
+     the nav bar, so we use the smaller not-yet-default value as if the trust
+     panel was enabled. */
   /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.urlbar.trustPanel.featureGate") {
-    /* Enabling the trust panel saves up to two icons in the front part of the
-       address bar. */
+  @media -moz-pref("sidebar.verticalTabs") or -moz-pref("browser.urlbar.trustPanel.featureGate") {
     --urlbar-container-min-width: 275px;
+    @media (max-width: 770px) {
+      --urlbar-container-min-width: 205px;
+    }
+    @media (max-width: 550px) {
+      --urlbar-container-min-width: 140px;
+    }
   }
 }
 
@@ -45,8 +60,7 @@
   }
 }
 
-#urlbar-container,
-#search-container {
+.urlbar-container {
   padding-block: var(--urlbar-padding-block);
   margin-inline: var(--urlbar-margin-inline);
 
@@ -282,7 +296,7 @@
   min-width: 0;
 }
 
-#urlbar-container[breakout] {
+.urlbar-container[breakout] {
   min-height: var(--urlbar-container-height);
 }
 
@@ -397,18 +411,6 @@
 }
 
 @media (max-width: 770px) {
-  #urlbar-container {
-    width: calc(240px + 2 * (24px + 2 * var(--toolbarbutton-inner-padding)));
-  }
-  #nav-bar:is([downloadsbuttonshown], [unifiedextensionsbuttonshown]) #urlbar-container {
-    width: calc(240px + 24px + 2 * var(--toolbarbutton-inner-padding));
-  }
-  #nav-bar[downloadsbuttonshown][unifiedextensionsbuttonshown] #urlbar-container {
-    width: 240px;
-  }
-  :root[customizing] #urlbar-container {
-    width: 245px;
-  }
   #identity-icon-box {
     max-width: 80px;
   }
@@ -448,16 +450,6 @@
 }
 
 @media (max-width: 550px) {
-  #urlbar-container {
-    width: calc(176px + 2 * (24px + 2 * var(--toolbarbutton-inner-padding)));
-  }
-  #nav-bar[downloadsbuttonshown] #urlbar-container,
-  #nav-bar[unifiedextensionsbuttonshown] #urlbar-container {
-    width: calc(176px + 24px + 2 * var(--toolbarbutton-inner-padding));
-  }
-  #nav-bar[downloadsbuttonshown][unifiedextensionsbuttonshown] #urlbar-container {
-    width: 176px;
-  }
   #identity-icon-box {
     max-width: 70px;
   }
@@ -911,7 +903,7 @@
 #translations-button-locale {
   background-color: var(--toolbarbutton-icon-fill-attention);
   color: var(--toolbarbutton-icon-fill-attention-text);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   font-size: 0.8em;
   height: 20px;
   min-width: 20px;
@@ -1035,15 +1027,14 @@
   }
 }
 
-#searchbar-new {
-  display: none;
+/* stylelint-disable-next-line media-query-no-invalid */
+@media not -moz-pref("browser.search.widget.new") {
+  #searchbar-new {
+    display: none;
+  }
 }
-
 /* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.search.widget.new") {
-  #searchbar-new {
-    display: flex;
-  }
   #searchbar {
     display: none;
   }

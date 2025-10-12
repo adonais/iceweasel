@@ -1105,6 +1105,37 @@ interface nsINavHistoryService : nsISupports
   ACString makeGuid();
 
   /**
+   * Calculates a simplified frecency threshold score for filtering
+   * pages based on their frecency. This method assumes all visits
+   * have the same age and transition type.
+   *
+   * @param aVisitAgeInDays
+   *        The age of a visit in days. This is used to determine how much
+   *        the frecency should be decayed. A value of 0 means no decay.
+   *        Must be greater than or equal to 0.
+   * @param aNumVisits
+   *        The number of virtual visits to consider. This may increase the
+   *        score considerably. Each visit contributes to the total score
+   *        based on the age weight and visit bonuses.
+   *        Must be greater than or equal to 0.
+   * @param aBookmarked
+   *        Whether to apply a bookmarked page bonus, this may slightly
+   *        increase the score.
+   *
+   * @return A frecency threshold score. The score increases with:
+   *         - More visits
+   *         - More recent visits
+   *         - Bookmark status
+   *
+   * @note This is not the same as the full frecency calculation used for
+   *       individual pages, which considers actual visit history,
+   *       transition types, etc. This is meant for threshold comparisons.
+   */
+  long long pageFrecencyThreshold(in long aVisitAgeInDays,
+                                  in long aNumVisits,
+                                  in boolean aBookmarked);
+
+  /**
    * Returns a 48-bit hash for a URI spec.
    *
    * @param aSpec

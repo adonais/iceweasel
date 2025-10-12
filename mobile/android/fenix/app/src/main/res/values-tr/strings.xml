@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">Diğer seçenekler</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Gizli gezintiyi aç</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Gizli gezintiyi kapat</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Gizli gezinti</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Arama yap veya adres yaz</string>
@@ -293,10 +289,6 @@
   <string name="browser_menu_new_private_tab">Yeni gizli sekme</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Parolalar</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Mobil siteye geç</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Ana menüyü kapat</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">Menüyü kapat</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -343,8 +335,6 @@
   <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Yalnızca birkaç saniye sürer. İstediğiniz zaman değiştirebilirsiniz.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">Hızlı, gizli ve sizin için geliştirildi.</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Kapat</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss_promotion">Tanıtımı kapat</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -439,10 +429,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Sekmeleriniz eşitleniyor! Diğer cihazınızda kaldığınız yerden devam edin.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Kapat</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -553,6 +541,10 @@
   <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Firefox, tarayıcıyı geliştirmemize yardımcı olmak için Mozilla’ya tanı ve etkileşim verileri gönderir. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Yönet</string>
+  <!-- Terms of use (ToU) onboarding redesign title. -->
+  <string name="onboarding_redesign_tou_title">En gelişmiş Android tarayıcısını başlatın</string>
+  <!-- Terms of use (ToU) first subheader. -->
+  <string name="onboarding_redesign_tou_subheader_one">Işık hızında yüklenen siteler</string>
   <!-- Terms of use (ToU) second subheader. -->
   <string name="onboarding_redesign_tou_subheader_two">Otomatik izlenme koruması</string>
   <!-- Terms of use (ToU) third subheader. -->
@@ -580,6 +572,30 @@
   <string name="onboarding_redesign_tou_body_three_link_text">Ayarları yönet</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
   <string name="onboarding_redesign_tou_agree_and_continue_button_label">İleri</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">Adres çubuğunuz nerede dursun?</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">İleri</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Firefox’u büyütmemize yardım edin</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Firefox’u nasıl keşfettiğinizi ve kullandığınızı Mozilla’nın pazarlama iş ortaklarıyla paylaşın. Bu verileri asla satmayız.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">Bu verileri nasıl kullanıyoruz?</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">Onayla</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title">Otomatik izlenme koruması her an yanınızda</string>
+  <!-- Set to default browser onboarding redesign body. -->
+  <string name="onboarding_redesign_set_default_browser_body">Şirketlerin tıklamalarınızı gözetlemesini tek dokunuşla durdurabilirsiniz.</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage">Firefox’u kullandığınız her yerde eşitleyin</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body">Yer imlerinize, sekmelerinize ve parolalarınıza istediğiniz cihazdan ulaşın. Tüm bilgileriniz şifrelenerek korunur.</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button">Eşitlemeyi başlat</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">Şimdi değil</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Firefox’u büyütmemize yardım edin</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -705,7 +721,7 @@
   <!-- Preference for allowing screenshots to be taken while in a private tab -->
   <string name="preferences_allow_screenshots_in_private_mode">Gizli gezintide ekran görüntüsü almaya izin ver</string>
   <!-- Will inform the user of the risk of activating Allow screenshots in private browsing option -->
-  <string name="preferences_screenshots_in_private_mode_disclaimer">İzin verirseniz gizli sekmeler birden fazla uygulama açıkken de görünür olacak</string>
+  <string name="preferences_screenshots_in_private_mode_disclaimer">İzin verirseniz gizli sekmeler birden fazla uygulama açıkken de görünür olacaktır</string>
   <!-- Preference for adding private browsing shortcut -->
   <string name="preferences_add_private_browsing_shortcut">Gizli gezinti kısayolu ekle</string>
   <!-- Preference for enabling "HTTPS-Only" mode -->
@@ -713,7 +729,8 @@
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Gizli gezintide sekmeleri gizlemek için ekran kilidini kullan</string>
   <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">Sekmeleri parmak izi, PIN veya yüz tanıma ile görüntüleyebilirsiniz.</string>
+  <string name="preferences_pbm_lock_screen_summary_3">Sekmeleri parmak izi, PIN veya yüz tanıma ile görüntüleyebilirsiniz. Bu özelliği etkinleştirdiğinizde ekran görüntüsü alma ve paylaşma da engellenir.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Sekmeleri parmak izi, PIN veya yüz tanıma ile görüntüleyebilirsiniz.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Çerez bildirimi engelleyici</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -793,7 +810,9 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Özelleştir</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Sekmeleri, yer imlerini, parolaları ve daha fazlasını eşitlemek için giriş yapın.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Sekmeleri, yer imlerini, parolaları ve daha fazlasını eşitlemek için giriş yapın.</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">Sekmeleri, yer imlerini, parolaları ve daha fazlasını eşitleyin.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Mozilla hesabı</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1025,6 +1044,12 @@
   <string name="alternative_app_icon_option_momo">Momo</string>
   <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
   <string name="alternative_app_icon_option_momo_subtitle">Tasarım: @heyheymomodraws</string>
+  <!-- Title for the "Cuddling" themed alternative app icon variant in the icon picker screen. The app icon features a playful design with an adorable aesthetic. -->
+  <string name="alternative_app_icon_option_cuddling">Sarılma</string>
+  <!-- Title for the "Flaming" themed alternative app icon variant in the icon picker screen. The app icon features a fiery design, with the Firefox logo surrounded by flames for a bold, energetic look. -->
+  <string name="alternative_app_icon_option_flaming">Alevli</string>
+  <!-- Title for the "Cool" themed alternative app icon variant in the icon picker screen. The app icon uses a warm orange-to-yellow gradient background with a sleek, modern twist on the Firefox logo, giving it a fresh and stylish appearance. -->
+  <string name="alternative_app_icon_option_cool">Havalı</string>
   <!-- Title for the "Solid colors" group of alternative app icon variants in the icon picker screen. This group contains icons with flat, uniform color backgrounds. -->
   <string name="alternative_app_icon_group_solid_colors">Düz renkler</string>
   <!-- Title for the "Gradients" group of alternative app icon variants in the icon picker screen. This group contains icons with gradient backgrounds inspired by natural light conditions. -->
@@ -1159,12 +1184,8 @@
   <string name="preferences_daily_usage_ping_title">Günlük kullanım ping’i</string>
   <string name="preferences_daily_usage_ping_description">Bu sayede Mozilla aktif kullanıcı sayısını tahmin edebilir.</string>
   <string name="preferences_daily_usage_ping_learn_more">Günlük kullanım ping’i hakkında daha fazla bilgi alın</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Çökme raporlarını otomatik olarak gönder</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">Rapor gönderildi</string>
-  <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">Bu sayede tarayıcıyla ilgili sorunları tanılayıp düzeltebiliriz. Raporlar kişisel veya hassas veriler içerebilir.</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
   <string name="preferences_crashes_learn_more">Çökme raporları hakkında bilgi alın</string>
   <!-- Title Headers for data collection settings screen -->
@@ -1184,8 +1205,6 @@
   <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Firefox’u nasıl keşfettiğinizi ve kullandığınızı Mozilla’nın pazarlama teknolojileri iş ortaklarıyla paylaşın.</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">Pazarlama verileri ile ilgili daha fazla bilgi alın</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Çökme raporları hakkında bilgi alın</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Araştırmalar</string>
   <!-- Summary for studies preferences -->
@@ -1195,7 +1214,9 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Verilerinizi eşitleyin ve kaydedin</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Verilerinizi eşitleyin ve kaydedin</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">Giriş yap</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Yeniden bağlanmak için giriş yapın</string>
   <!-- Preference for removing FxA account -->
@@ -1344,6 +1365,8 @@
   <string name="close_tabs_after_one_month">Bir ay sonra</string>
   <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Açık sekmeleri otomatik kapat</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">Kapat</string>
   <!--
     Opening screen
 
@@ -1494,9 +1517,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Geçmişi sil</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Geçmiş silindi</string>
+  <string name="history_delete_multiple_items_snackbar">Geçmiş silindi</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s silindi</string>
+  <string name="history_delete_single_item_snackbar">%1$s silindi</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Sil</string>
   <!--
@@ -1667,8 +1690,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">Bozuk siteyi rapor et</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">%1$s tarayıcısını iyileştirmemize yardım edin. Mozilla çalışanları, gönderdiğiniz bilgileri web siteleriyle ilgili sorunlarını gidermek için kullanır.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">Raporunuz %1$s uygulamasındaki sorunları anlayıp düzeltmemize, böylece uygulamayı herkes için iyileştirmemize için yardımcı oluyor. Daha fazla bilgi alın</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
@@ -1681,8 +1702,6 @@
   <string name="webcompat_reporter_url_error_invalid">Lütfen geçerli bir adres girin</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Bozuk olan nedir?</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Neden seçin</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">Bir neden seçin</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
@@ -1698,9 +1717,11 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Gönder</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">Raporunuz gönderildi</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Raporunuz gönderildi</string>
+  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
+  <string name="webcompat_reporter_success_snackbar_text_2">Rapor gönderildi</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">Kapat</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Kapat</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Ne oldu? Ne olması gerekiyordu?</string>
   <!--
@@ -1737,8 +1758,6 @@
   <string name="tab_crash_close">Sekmeyi kapat</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Sekmeyi geri yükle</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s yeniden başlamak zorunda kaldı</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">%s çöktü. Rapor gönderilsin mi?</string>
   <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
@@ -1778,6 +1797,14 @@
   <string name="bookmark_add_folder">Klasör ekle</string>
   <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
   <string name="bookmark_saved_in_folder_snackbar">“%s” klasörüne kaydedildi</string>
+  <!-- Snackbar title describing failure to add a new folder -->
+  <string name="bookmark_error_add_folder">Klasör eklenemedi</string>
+  <!-- Snackbar title describing failure to edit an existing folder -->
+  <string name="bookmark_error_edit_folder">Klasör düzenlenemiyor</string>
+  <!-- Snackbar title describing failure to select a new parent folder for a bookmark or folder -->
+  <string name="bookmark_error_select_folder">Üst klasör değiştirilemedi</string>
+  <!-- Snackbar title describing failure to edit a bookmark -->
+  <string name="bookmark_error_edit_bookmark">Yer imi düzenlenemiyor</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">DÜZENLE</string>
   <!-- Bookmark menu move button -->
@@ -1878,6 +1905,8 @@
   <string name="bookmark_close_button_content_description">Yer imlerini kapat</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Henüz yer imi yok</string>
+  <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
+  <string name="bookmarks_folder_description">Yer imlerindeki klasör sayısı: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">Gezinirken siteleri kaydedin. Eşitlenen diğer cihazlardaki yer imlerinize erişmek için giriş yapın.</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -2022,12 +2051,14 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d sekme seçildi</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Sekmeler kaydedildi!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Koleksiyon kaydedildi!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Koleksiyon kaydedildi!</string>
+  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
+  <string name="create_collection_tabs_saved_new_collection_2">Koleksiyon kaydedildi</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Sekme kaydedildi!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Sekme kaydedildi!</string>
+  <!-- Text shown in snackbar when one tab has been saved in a collection -->
+  <string name="create_collection_tab_saved_2">Sekme kaydedildi</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Kapat</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -2074,7 +2105,9 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Sync’e giriş yap</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Verileri eşitle ve kaydet</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Verileri eşitle ve kaydet</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">Giriş yap</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Tüm cihazlara gönder</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2164,7 +2197,9 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Kapatılan sekmeler: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">Yer imleri “%s” klasörüne kaydedildi.</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Yer imleri “%s” klasörüne kaydedildi.</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in_2">Yer imleri “%s” klasörüne kaydedildi</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Kısayollara eklendi</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -2192,8 +2227,6 @@
   <string name="tab_collection_dialog_message">%1$s koleksiyonunu silmek istediğinize emin misiniz?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Sil</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Adres kopyalandı</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Bu örnek bir metindir. Bu ayarı kullanarak boyutu artırıp azalttığınızda sonucun nasıl görüneceğini görebilirsiniz.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2282,9 +2315,13 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Sekmeler gönderildi</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Sekmeler gönderildi</string>
+  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
+  <string name="sync_sent_tabs_snackbar_2">Sekmeler gönderildi</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Sekme gönderildi</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Sekme gönderildi</string>
+  <!-- Text shown in snackbar when one tab has been sent to device -->
+  <string name="sync_sent_tab_snackbar_2">Sekme gönderildi</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Gönderilemedi</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2337,6 +2374,18 @@
   <string name="preference_enhanced_tracking_protection_allow_list_baseline">Bazı sitelerin ciddi şekilde bozulmasını önlemek için %1$s gerekli istisnaları otomatik olarak uygulasın.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience">Yalnızca küçük sorunları düzeltmek ve kullanışlı özellikleri çalışır halde tutmak için gereken istisnalar da otomatik olarak uygulansın.</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">Düzeltmeleri kapatmak istediğinizden emin misiniz?</string>
+  <!-- Message for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">Bu ayar en yaygın site sorunlarını giderir. Bu ayarı kapatırsanız bazı siteler çalışmayabilir ve %1$s bu sorunları gidermenize yardımcı olamaz.</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">Düzeltmeleri kapat</string>
+  <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">Düzeltmeleri açık tut</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">Sıkı izlenme korumasında neler engellenir?</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2655,6 +2704,10 @@
   <string name="saved_login_hide_password">Parolayı gizle</string>
   <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their passwords -->
   <string name="logins_biometric_prompt_message_2">Kayıtlı parolalarınızı görmek için kilidi açın</string>
+  <!-- Button for unlocking logins on the biometric lock screen -->
+  <string name="logins_biometric_unlock_button">Kilidi aç</string>
+  <!-- Button for leaving logins on the biometric lock screen -->
+  <string name="logins_biometric_leave_button">Çık</string>
   <!-- Title of warning dialog if users have no device authentication set up -->
   <string name="logins_warning_dialog_title_2">Kayıtlı parolalarınızı güvence altına alın</string>
   <!-- Message of warning dialog if users have no device authentication set up -->
@@ -2833,12 +2886,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Bir arama dizgisi yazın</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Arama dizgisinin örnek biçimle uyumlu olduğundan emin olun</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s oluşturuldu</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s kaydedildi</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s silindi</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">İzin vermek için:</string>
   <!-- First step for the allowing a permission -->
@@ -2991,6 +3038,11 @@
     Title text displayed in the tabs tray when a tab has been unused for 14 days.
   -->
   <string name="inactive_tabs_title">Pasif sekmeler</string>
+  <!--
+    Text displayed in the tabs tray, indicating the number of inactive tabs.
+    %d is the number of inactive tabs.
+  -->
+  <string name="inactive_tabs_num_items">Sekme: %d</string>
   <!-- Content description for closing all inactive tabs -->
   <string name="inactive_tabs_delete_all">Tüm pasif sekmeleri kapat</string>
   <!-- Content description for expanding the inactive tabs section. -->
@@ -3334,12 +3386,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">Güvenli</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">Güvenli değil</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">Bu sitede dikkatli olun</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">Bağlantınız güvenli değil.</string>
@@ -3364,11 +3412,7 @@
   <!-- Toggle if Enhanced Tracking Protection is turned off -->
   <string name="protection_panel_etp_toggle_off">Kapalı</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Site bozuk görünüyorsa korumaları kapatmayı deneyin.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description_2">Site bozuk görünüyorsa kapatmayı deneyin.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Korumalar KAPALI. Yeniden açmanızı öneririz.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description_2">İzlenme korumasını açmanız önerilir.</string>
   <!--
@@ -3380,8 +3424,6 @@
   <string name="protection_panel_no_trackers_blocked">Hiç takip kodu bulunamadı</string>
   <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
   <string name="protection_panel_etp_disabled_no_trackers_blocked">Takip kodları engellenmiyor</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">Gizlilik ve güvenlik ayarları</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">Gizlilik ayarları</string>
   <!-- Title text for the protection panel permissions section. -->
@@ -3559,6 +3601,16 @@
   <string name="debug_drawer_add_new_address">Seçili dil için yeni adres ekle</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">Tüm adresleri sil</string>
+  <!--
+    Debug drawer credit cards
+
+    The title of the credit cards feature in the Debug Drawer.
+  -->
+  <string name="debug_drawer_credit_cards_title">Kredi kartları</string>
+  <!-- The title of the button in the debug drawer for adding a new credit card -->
+  <string name="debug_drawer_add_new_credit_card">Yeni kredi kartı ekle</string>
+  <!-- The title of the button for deleting in the debug drawer all addresses. -->
+  <string name="debug_drawer_delete_all_credit_cards">Tüm kredi kartlarını sil</string>
   <!--
     Debug drawer "contextual feature recommendation" (CFR) tools
 

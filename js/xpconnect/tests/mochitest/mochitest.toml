@@ -105,8 +105,6 @@ skip-if = [
 
 ["test_bug623437.html"]
 
-["test_bug628410.html"]
-
 ["test_bug628794.html"]
 
 ["test_bug629227.html"]

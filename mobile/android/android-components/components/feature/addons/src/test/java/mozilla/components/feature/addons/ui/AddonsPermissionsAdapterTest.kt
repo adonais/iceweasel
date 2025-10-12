@@ -13,10 +13,11 @@ import mozilla.components.feature.addons.ui.AddonPermissionsAdapter.Style
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
-import mozilla.components.ui.colors.R
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.verify
+import mozilla.components.feature.addons.R as addonsR
+import mozilla.components.ui.colors.R as colorsR
 
 @RunWith(AndroidJUnit4::class)
 class AddonsPermissionsAdapterTest {
@@ -26,7 +27,7 @@ class AddonsPermissionsAdapterTest {
         val textView: TextView = mock()
         val view = View(testContext)
         val permissions = listOf("permission")
-        val style = Style(itemsTextColor = R.color.photonBlue40)
+        val style = Style(itemsTextColor = colorsR.color.photonBlue40)
         val viewHolder = PermissionViewHolder(view, textView)
 
         whenever(textView.context).thenReturn(testContext)
@@ -37,7 +38,7 @@ class AddonsPermissionsAdapterTest {
 
         verify(textView).text = "permission"
         verify(textView).contentDescription = testContext.getString(
-            mozilla.components.feature.addons.R.string.mozac_feature_addons_permissions_content_description_item,
+            addonsR.string.mozac_feature_addons_permissions_content_description_item,
             "permission",
             1,
             1,

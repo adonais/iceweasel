@@ -8,14 +8,30 @@ import { html } from "lit.all.mjs";
 import "chrome://global/content/elements/moz-card.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "./restore-from-backup.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import { ERRORS } from "chrome://browser/content/backup/backup-constants.mjs";
 
 window.MozXULElement.insertFTLIfNeeded("locales-preview/backupSettings.ftl");
 window.MozXULElement.insertFTLIfNeeded("branding/brand.ftl");
 
+const SELECTABLE_ERRORS = {
+  "(none)": 0,
+  UNAUTHORIZED: ERRORS.UNAUTHORIZED,
+};
+
 export default {
   title: "Domain-specific UI Widgets/Backup/Restore from Backup",
   component: "restore-from-backup",
-  argTypes: {},
+  argTypes: {
+    backupFileToRestore: { control: "text" },
+    recoveryInProgress: { control: "boolean" },
+    recoveryErrorCode: {
+      options: Object.keys(SELECTABLE_ERRORS),
+      mapping: SELECTABLE_ERRORS,
+      control: { type: "select" },
+    },
+    backupFileInfo: { control: "object" },
+  },
 };
 
 const Template = ({
@@ -50,6 +66,13 @@ EncryptedBackupFound.args = {
   backupFileToRestore: "/Some/User/Documents/Firefox Backup/backup.html",
   backupFileInfo: { date: new Date(), isEncrypted: true },
   recoveryErrorCode: 0,
+};
+
+export const IncorrectPasswordError = Template.bind({});
+IncorrectPasswordError.args = {
+  backupFileToRestore: "/Some/User/Documents/Firefox Backup/backup.html",
+  backupFileInfo: { date: new Date(), isEncrypted: true },
+  recoveryErrorCode: ERRORS.UNAUTHORIZED,
 };
 
 export const RecoveryInProgress = Template.bind({});

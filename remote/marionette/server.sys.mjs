@@ -304,7 +304,7 @@ export class TCPConnection {
    *     A command's implementation may throw at any time.
    */
   async dispatch(cmd, resp) {
-    const startTime = Cu.now();
+    const startTime = ChromeUtils.now();
 
     let fn = this.driver.commands[cmd.name];
     if (typeof fn == "undefined") {

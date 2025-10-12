@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.AcornTheme
-import mozilla.components.ui.icons.R
+import mozilla.components.ui.icons.R as iconsR
 
 private val FocusedIndicatorLineThickness = 2.dp
 private val UnfocusedIndicatorLineThickness = 1.dp
@@ -204,7 +204,7 @@ fun TextField(
                             Spacer(modifier = Modifier.width(12.dp))
 
                             Icon(
-                                painter = painterResource(R.drawable.mozac_ic_warning_fill_24),
+                                painter = painterResource(iconsR.drawable.mozac_ic_warning_fill_24),
                                 contentDescription = null,
                                 tint = colors.errorTrailingIconColor,
                             )

@@ -648,6 +648,18 @@ features:
         type: Boolean
         default: false
 
+  terms-of-use-prompt:
+    description: Enables the terms of use prompt for users who have not accepted ToU
+    variables:
+      enabled:
+        description: When the feature is enabled then the prompt can show for users.
+        type: Boolean
+        default: false
+      max-display-count:
+        description: The maximum number of times to show the prompt.
+        type: Int
+        default: 2
+
   tab-strip:
     description: Enables tab strip.
     variables:
@@ -680,11 +692,11 @@ features:
         description: >
           Whether or not to enable trending searches.
         type: Boolean
-        default: false
+        default: true
       max-suggestions:
         description: The number of maximum suggestions.
         type: Int
-        default: 4
+        default: 5
 
   recent-searches:
     description: Enables recent searches.
@@ -693,11 +705,11 @@ features:
         description: >
           Whether or not to enable recent searches.
         type: Boolean
-        default: false
+        default: true
       max-suggestions:
         description: The number of maximum suggestions.
         type: Int
-        default: 4
+        default: 5
 
   top-sites-suggestions:
     description: Enables top sites suggestions.
@@ -706,11 +718,11 @@ features:
         description: >
           Whether or not to enable top sites suggestions.
         type: Boolean
-        default: false
+        default: true
       max-suggestions:
         description: The number of maximum suggestions.
         type: Int
-        default: 4
+        default: 2
 
   search-suggestions-on-homepage:
     description: Enables search suggestions on homepage.
@@ -747,6 +759,15 @@ features:
           Whether or not to hide frecent top sites on the homepage.
         type: Boolean
         default: false
+
+  unified-trust-panel:
+    description: Enables the unified trust panel.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable the unified trust panel.
+        type: Boolean
+        default: true
 
   user-characteristics:
     description: A feature for control user characteristic data collection
@@ -896,6 +917,9 @@ features:
       - channel: nightly
         value:
           enabled: true
+      - channel: beta
+        value:
+          enabled: true
 
   toolbar-redesign-option:
     description: Control the visibility of toolbar redesign option in settings.
@@ -915,6 +939,17 @@ features:
           Whether or not the expanded toolbar customization option is visible to the user.
         type: Boolean
         default: false
+    defaults:
+      - channel: developer
+        value:
+          show-options: true
+          show-simple-customization: false
+          show-expanded-customization: false
+      - channel: nightly
+        value:
+          show-options: true
+          show-simple-customization: false
+          show-expanded-customization: false
 
   tab-management-enhancements:
     description: Control the visibility of the tab management enhancements.
@@ -924,6 +959,16 @@ features:
           Whether or not to enable the tab management enhancements.
         type: Boolean
         default: false
+    defaults:
+      - channel: release
+        value:
+          enabled: false
+      - channel: beta
+        value:
+          enabled: false
+      - channel: nightly
+        value:
+          enabled: false
 
   address-sync:
     description: Turns on address sync.
@@ -946,6 +991,24 @@ features:
     variables:
       enabled:
         description: If true, new users won’t see sponsored tiles for 14 days.
+        type: Boolean
+        default: false
+
+  lna-blocking:
+    description: Feature that allows blocking local network or device access.
+    variables:
+      enabled:
+        description: >
+          Whether or not to turn on local network / device access blocking
+        type: Boolean
+        default: false
+
+  isolated-content-processes:
+    description: Feature that controls content process isolation.
+    variables:
+      enabled:
+        description: >
+          Whether or not to enable isolated content processes.
         type: Boolean
         default: false
 

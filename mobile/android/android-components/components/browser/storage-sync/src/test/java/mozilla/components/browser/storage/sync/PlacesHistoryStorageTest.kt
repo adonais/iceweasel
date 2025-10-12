@@ -601,7 +601,7 @@ class PlacesHistoryStorageTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.M])
+    @Config(sdk = [Build.VERSION_CODES.O])
     fun `When periodicStorageWorkRequest is called, worker with input specs is created`() {
         val request = history.periodicStorageWorkRequest<PlacesHistoryStorageWorker>(
             tag = PlacesHistoryStorageWorker.UNIQUE_NAME,
@@ -619,7 +619,7 @@ class PlacesHistoryStorageTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.M])
+    @Config(sdk = [Build.VERSION_CODES.O])
     fun `When storage maintenance work request is registered, the worker is enqueued`() {
         val config = Configuration.Builder().build()
         WorkManagerTestInitHelper.initializeTestWorkManager(testContext, config)

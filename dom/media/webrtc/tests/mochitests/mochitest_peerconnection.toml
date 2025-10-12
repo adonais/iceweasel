@@ -463,6 +463,7 @@ skip-if = ["os == 'android'"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1974205
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && opt", # 1974205
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan", # 1974205
   "os == 'win' && os_version == '11.26100' && processor == 'x86' && debug", # Bug 1974205
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # 1974205
 ]

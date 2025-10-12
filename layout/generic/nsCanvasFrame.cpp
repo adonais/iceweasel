@@ -370,7 +370,7 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       DisplayListClipState::AutoSaveRestore blendClip(aBuilder);
       thisItemList.AppendNewToTopWithIndex<nsDisplayBlendMode>(
           aBuilder, this, i + 1, &thisItemList, layers.mLayers[i].mBlendMode,
-          thisItemASR, true);
+          thisItemASR, nsDisplayItem::ContainerASRType::Constant, true);
       needBlendContainerForBackgroundBlendMode = true;
     }
     list.AppendToTop(&thisItemList);
@@ -380,7 +380,8 @@ void nsCanvasFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     const ActiveScrolledRoot* containerASR = contASRTracker.GetContainerASR();
     DisplayListClipState::AutoSaveRestore blendContainerClip(aBuilder);
     list.AppendToTop(nsDisplayBlendContainer::CreateForBackgroundBlendMode(
-        aBuilder, this, nullptr, &list, containerASR));
+        aBuilder, this, nullptr, &list, containerASR,
+        nsDisplayItem::ContainerASRType::AncestorOfContained));
   }
 
   aLists.BorderBackground()->AppendToTop(&list);

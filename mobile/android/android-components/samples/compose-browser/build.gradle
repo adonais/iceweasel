@@ -47,41 +47,36 @@ tasks.register("updateTestExtensionVersion", Copy) { task ->
 }
 
 dependencies {
-    implementation platform(libs.androidx.compose.bom)
-    implementation project(':components:compose-base')
-    implementation project(':components:concept-engine')
-    implementation project(':components:concept-awesomebar')
-    implementation project(':components:concept-tabstray')
-
     implementation project(':components:browser-engine-gecko')
-    implementation project(':components:browser-state')
     implementation project(':components:browser-icons')
-
+    implementation project(':components:browser-state')
     implementation project(':components:compose-awesomebar')
+    implementation project(':components:compose-base')
     implementation project(':components:compose-browser-toolbar')
     implementation project(':components:compose-engine')
     implementation project(':components:compose-tabstray')
-
+    implementation project(':components:concept-awesomebar')
+    implementation project(':components:concept-engine')
+    implementation project(':components:concept-tabstray')
     implementation project(':components:feature-awesomebar')
     implementation project(':components:feature-fxsuggest')
     implementation project(':components:feature-search')
     implementation project(':components:feature-session')
     implementation project(':components:feature-tabs')
-
     implementation project(':components:service-location')
+    implementation project(':components:support-appservices')
     implementation project(':components:support-ktx')
     implementation project(':components:support-remotesettings')
-    implementation project(':components:support-appservices')
-
     implementation project(':components:ui-icons')
 
     implementation libs.androidx.activity
     implementation libs.androidx.appcompat
     implementation libs.androidx.core.ktx
-    implementation libs.androidx.compose.ui
-    implementation libs.androidx.compose.ui.tooling
+    implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.foundation
     implementation libs.androidx.compose.material3
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.ui.tooling
     implementation libs.androidx.navigation.compose
 }
 

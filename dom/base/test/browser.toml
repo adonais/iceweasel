@@ -152,12 +152,16 @@ support-files = [
   "file_browser_refresh_iframe.sjs",
 ]
 
+["browser_screen_orientation_override.js"]
+
 ["browser_set_focus_after_reuse_bcg.js"]
 
 ["browser_state_notifications.js"]
 skip-if = ["true"] # Bug 1271028
 
 ["browser_timeout_throttling_with_audio_playback.js"]
+
+["browser_timezone_override.js"]
 
 ["browser_use_counters.js"]
 

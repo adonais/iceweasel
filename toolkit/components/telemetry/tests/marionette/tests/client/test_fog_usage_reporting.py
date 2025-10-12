@@ -32,11 +32,12 @@ class TestUsageReporting(FOGTestCase):
         )
         self.marionette.set_pref("datareporting.usage.uploadEnabled", True)
 
-    def test_deletion_request(self):
+    def test_usage_reporting_independent_from_telemetry(self):
         """
         Test that the "usage-reporting" ping behaviour is independent from general telemetry.
 
-        We do not expect a "usage-deletion-request" ping.  The "deletion-request" ping should not include the usage-id.
+        We do not expect a "usage-deletion-request" ping.
+        The "deletion-request" ping should not include the usage-id.
         The `usage.profile_id` stays the same across telemetry toggling.
         """
 
@@ -71,7 +72,8 @@ class TestUsageReporting(FOGTestCase):
             ping_server=self.fog_ping_server,
         )
 
-        self.enable_telemetry()
+        # Other telemetry stays disabled.
+        # We should still get the usage-reporting ping on a restart.
         ping3 = self.wait_for_ping(
             lambda: self.marionette.restart(in_app=True),
             FOG_USAGE_REPORTING,

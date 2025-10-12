@@ -112,9 +112,20 @@ export class ScreenshotsOverlay {
         <div id="screenshots-component">
           <div id="preview-container" hidden>
             <div id="face-container" tabindex="0" role="button" aria-label="${previewFaceAriaLabel.attributes[0].value}">
-              <div class="eye left"><div id="left-eye" class="eyeball"></div></div>
-              <div class="eye right"><div id="right-eye" class="eyeball"></div></div>
-              <div class="face"></div>
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+                <g>
+                  <path d="M11.4.9v2.9h-6c-.9 0-1.5.8-1.5 1.5v6H.8V3.8C.8 2.1 2.2.7 3.9.7h7.6v.2z" class="face-line-color"/>
+                  <path d="M63.2 11.4h-3.1v-6c0-.8-.6-1.5-1.5-1.5h-6v-3h7.6c1.7 0 3.1 1.4 3.1 3.1z" class="face-line-color"/>
+                  <path d="M52.6 63.2v-3.1h6c.9 0 1.5-.6 1.5-1.5v-6h3.1v7.6c0 1.7-1.4 3.1-3.1 3.1z" class="face-line-color"/>
+                  <path d="M.8 52.7h3.1v6c0 .9.6 1.5 1.5 1.5h6v3.1H3.8c-1.7 0-3.1-1.4-3.1-3.1z" class="face-line-color"/>
+                  <path d="M33.3 49.2H33c-4.6-.1-7.8-3.6-7.9-3.8-.6-.8-.6-2 .1-2.7.8-.8 1.9-.6 2.6.1 0 0 2.3 2.6 5.2 2.6 1.8 0 3.6-.9 5.2-2.6.8-.8 1.9-.8 2.7 0 .8.8.8 1.9 0 2.7-2.2 2.4-4.9 3.7-7.6 3.7z" class="face-line-color" style="display:inline"/>
+                  <ellipse id="leftEye" cx="23" cy="26" class="face-line-color" rx="5" ry="7"/>
+                  <ellipse id="rightEye" cx="43" cy="26" class="face-line-color" rx="5" ry="7"/>
+                  <ellipse id="leftPupil" cx="25" cy="30" class="face-pupil-color" rx="3" ry="3"/>
+                  <ellipse id="rightPupil" cx="45" cy="30" class="face-pupil-color" rx="3" ry="3"/>
+                </g>
+              </svg>
+
             </div>
             <div class="preview-instructions">${instructions.value}</div>
             <button class="screenshots-button ghost-button" id="screenshots-cancel-button" title="${cancelAttributes.attributes[0].value}" aria-label="${cancelAttributes.attributes[1].value}">${cancelLabel.value}</button>
@@ -263,8 +274,8 @@ export class ScreenshotsOverlay {
     this.buttonsContainer = this.getElementById("buttons-container");
     this.screenshotsContainer = this.getElementById("screenshots-component");
 
-    this.leftEye = this.getElementById("left-eye");
-    this.rightEye = this.getElementById("right-eye");
+    this.leftEye = this.getElementById("leftPupil");
+    this.rightEye = this.getElementById("rightPupil");
 
     this.leftBackgroundEl = this.getElementById("left-background");
     this.topBackgroundEl = this.getElementById("top-background");

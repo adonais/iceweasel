@@ -45,15 +45,13 @@ class MOZ_RAII AutoChangeLengthNotifier {
 
     if (mDoSetAttr) {
       mUpdateBatch.emplace(aSVGElement->GetComposedDoc(), true);
-      mEmptyOrOldValue =
-          mSVGElement->WillChangeLength(mLength->mAttrEnum, mUpdateBatch.ref());
+      mSVGElement->WillChangeLength(mLength->mAttrEnum, mUpdateBatch.ref());
     }
   }
 
   ~AutoChangeLengthNotifier() {
     if (mDoSetAttr) {
-      mSVGElement->DidChangeLength(mLength->mAttrEnum, mEmptyOrOldValue,
-                                   mUpdateBatch.ref());
+      mSVGElement->DidChangeLength(mLength->mAttrEnum, mUpdateBatch.ref());
     }
     if (mLength->mIsAnimated) {
       mSVGElement->AnimationNeedsResample();
@@ -64,7 +62,6 @@ class MOZ_RAII AutoChangeLengthNotifier {
   SVGAnimatedLength* const mLength;
   SVGElement* const mSVGElement;
   Maybe<mozAutoDocUpdate> mUpdateBatch;
-  nsAttrValue mEmptyOrOldValue;
   bool mDoSetAttr;
 };
 

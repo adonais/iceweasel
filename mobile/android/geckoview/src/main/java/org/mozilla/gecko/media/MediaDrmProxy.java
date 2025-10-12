@@ -4,11 +4,11 @@
 
 package org.mozilla.gecko.media;
 
-import android.annotation.SuppressLint;
 import android.media.MediaCrypto;
 import android.media.MediaDrm;
 import android.os.Build;
 import android.util.Log;
+import androidx.annotation.ChecksSdkIntAtLeast;
 import java.util.ArrayList;
 import java.util.UUID;
 import org.mozilla.gecko.annotation.WrapForJNI;
@@ -37,6 +37,7 @@ public final class MediaDrmProxy {
   private GeckoMediaDrm mImpl;
   private String mDrmStubId;
 
+  @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.M)
   private static boolean isSystemSupported() {
     // Support versions >= Marshmallow
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
@@ -47,7 +48,6 @@ public final class MediaDrmProxy {
     return true;
   }
 
-  @SuppressLint("NewApi")
   @WrapForJNI
   public static boolean isSchemeSupported(final String keySystem) {
     if (!isSystemSupported()) {
@@ -61,7 +61,6 @@ public final class MediaDrmProxy {
     return false;
   }
 
-  @SuppressLint("NewApi")
   @WrapForJNI
   public static boolean IsCryptoSchemeSupported(final String keySystem, final String container) {
     if (!isSystemSupported()) {

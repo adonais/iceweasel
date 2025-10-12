@@ -14,7 +14,7 @@ fuzzy(0-2,0-9450) fuzzy-if(!geckoview,0-1,0-6200) == background-blending-gradien
 fuzzy(0-1,0-10000) == background-blending-image-color-jpg.html background-blending-image-color-ref.html
 == background-blending-image-color-png.html background-blending-image-color-ref.html
 == background-blending-image-color-svg.html background-blending-image-color-ref.html
-== background-blending-image-gradient.html background-blending-gradient-color-ref.html
+fuzzy(0-1,0-6) == background-blending-image-gradient.html background-blending-gradient-color-ref.html
 == background-blending-image-image.html background-blending-image-color-ref.html
 == background-blending-isolation.html background-blending-isolation-ref.html
 random-if(useDrawSnapshot) == background-blending-list-repeat.html background-blending-list-repeat-ref.html

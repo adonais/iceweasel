@@ -17,7 +17,6 @@ SimpleTest.waitForFocus(async () => {
   await SpecialPowers.pushPrefEnv({"set": [
     ["dom.event.pointer.rawupdate.enabled", true],
     ["dom.events.coalesce.mousemove", true],
-    ["test.events.async.enabled", true],
   ]});
 
   const target0 = window.document.getElementById("target0");
@@ -27,7 +26,7 @@ SimpleTest.waitForFocus(async () => {
   info("Waiting for a click for waiting for stable state...");
   await new Promise(resolve => {
     target0.addEventListener("click", resolve, {once: true});
-    synthesizeMouseAtCenter(target0, {});
+    synthesizeMouseAtCenter(target0, { asyncEnabled: true });
   });
   info("Got a click which must be synthesized by us!");
 
@@ -74,10 +73,10 @@ SimpleTest.waitForFocus(async () => {
   });
 
   info("Synthesizing mouse moves....");
-  synthesizeMouse(target0, 5, 5, {type: "mousemove"});
-  synthesizeMouse(target0, 10, 10, {type: "mousemove"});
-  synthesizeMouse(target0, 15, 15, {type: "mousemove"});
-  synthesizeMouse(target0, 20, 20, {type: "mousemove"});
+  synthesizeMouse(target0, 5, 5, { type: "mousemove", asyncEnabled: true });
+  synthesizeMouse(target0, 10, 10, { type: "mousemove", asyncEnabled: true });
+  synthesizeMouse(target0, 15, 15, { type: "mousemove", asyncEnabled: true });
+  synthesizeMouse(target0, 20, 20, { type: "mousemove", asyncEnabled: true });
   info("Waiting for 4 coalesced pointermove events...");
   await waitForPointerMove;
 
@@ -121,7 +120,7 @@ SimpleTest.waitForFocus(async () => {
   info("Waiting for a click for waiting for stable state after the test...");
   await new Promise(resolve => {
     target0.addEventListener("click", resolve, {once: true});
-    synthesizeMouseAtCenter(target0, {});
+    synthesizeMouseAtCenter(target0, { asyncEnabled: true });
   });
   info("Got a click after the test!");
   utils.restoreNormalRefresh();

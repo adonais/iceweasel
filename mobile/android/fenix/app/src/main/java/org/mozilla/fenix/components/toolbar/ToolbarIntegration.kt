@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.toolbar
 
 import android.content.Context
+import androidx.annotation.ColorInt
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
@@ -22,6 +23,8 @@ import mozilla.components.feature.toolbar.ToolbarPresenter
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.ktx.android.view.hideKeyboard
+import mozilla.components.support.utils.ColorUtils.getReadableTextColor
+import mozilla.components.support.utils.ColorUtils.getSecondaryReadableTextColor
 import mozilla.components.ui.tabcounter.TabCounterMenu
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.AddressToolbar
@@ -32,6 +35,7 @@ import org.mozilla.fenix.components.toolbar.ui.createShareBrowserAction
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.theme.ThemeManager
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Feature configuring the toolbar when in display mode.
@@ -46,6 +50,7 @@ abstract class ToolbarIntegration(
     private val customTabId: String?,
     isPrivate: Boolean,
     renderStyle: ToolbarFeature.RenderStyle,
+    @param:ColorInt val backgroundColor: Int? = null,
 ) : LifecycleAwareFeature {
 
     val store = context.components.core.store
@@ -56,8 +61,16 @@ abstract class ToolbarIntegration(
         shouldDisplaySearchTerms = true,
         urlRenderConfiguration = ToolbarFeature.UrlRenderConfiguration(
             context.components.publicSuffixList,
-            context.getColorFromAttr(R.attr.textPrimary),
-            context.getColorFromAttr(R.attr.textSecondary),
+            if (backgroundColor != null && !isPrivate) {
+                getReadableTextColor(backgroundColor)
+            } else {
+                context.getColorFromAttr(R.attr.textPrimary)
+            },
+            if (backgroundColor != null && !isPrivate) {
+                getSecondaryReadableTextColor(backgroundColor)
+            } else {
+                context.getColorFromAttr(R.attr.textSecondary)
+            },
             renderStyle = renderStyle,
         ),
     )
@@ -99,7 +112,7 @@ abstract class ToolbarIntegration(
         val menuAction = Toolbar.ActionButton(
             imageDrawable = AppCompatResources.getDrawable(
                 context,
-                R.drawable.mozac_ic_ellipsis_vertical_24,
+                iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             )!!,
             contentDescription = context.getString(R.string.content_description_menu),
             visible = {
@@ -170,7 +183,7 @@ class DefaultToolbarIntegration(
 
     private fun addNewTabBrowserAction() {
         val newTabAction = BrowserToolbar.Button(
-            imageDrawable = AppCompatResources.getDrawable(context, R.drawable.mozac_ic_plus_24)!!,
+            imageDrawable = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_plus_24)!!,
             contentDescription = context.getString(R.string.library_new_tab),
             visible = { false },
             weight = { NEW_TAB_ACTION_WEIGHT },

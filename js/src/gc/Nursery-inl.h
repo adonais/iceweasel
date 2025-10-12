@@ -390,6 +390,22 @@ static inline T* ReallocateCellBuffer(JSContext* cx, gc::Cell* cell,
   return buffer;
 }
 
+template <typename T>
+static inline void FreeCellBuffer(Nursery& nursery, JS::Zone* zone,
+                                  gc::Cell* cell, T* buffer, uint32_t count) {
+  MOZ_ASSERT(zone == cell->zone());
+
+  size_t bytes = RoundUp(count * sizeof(T), sizeof(Value));
+
+  nursery.freeBuffer(zone, cell, buffer, bytes);
+}
+
+template <typename T>
+static inline void FreeCellBuffer(JSContext* cx, gc::Cell* cell, T* buffer,
+                                  uint32_t count) {
+  FreeCellBuffer<T>(cx->nursery(), cx->zone(), cell, buffer, count);
+}
+
 }  // namespace js
 
 #endif /* gc_Nursery_inl_h */

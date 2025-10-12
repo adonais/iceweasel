@@ -295,6 +295,9 @@ class nsIGlobalObject : public nsISupports {
 
   RTPCallerType GetRTPCallerType() const;
 
+  bool IsRFPTargetActive(const nsAString& aTargetName,
+                         mozilla::ErrorResult& aRv);
+
   /**
    * Get the module loader to use for this global, if any. By default this
    * returns null.

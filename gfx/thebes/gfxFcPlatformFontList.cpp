@@ -32,7 +32,9 @@
 #include "nsCharSeparatedTokenizer.h"
 #include "nsXULAppAPI.h"
 #include "SharedFontList-impl.h"
+#define StandardFonts
 #include "StandardFonts-linux.inc"
+#undef StandardFonts
 #include "mozilla/intl/Locale.h"
 
 #include "mozilla/gfx/HelpersCairo.h"
@@ -1375,7 +1377,7 @@ gfxFcPlatformFontList::gfxFcPlatformFontList()
       NS_NewTimerWithFuncCallback(
           getter_AddRefs(mCheckFontUpdatesTimer), CheckFontUpdates, this,
           (rescanInterval + 1) * 1000, nsITimer::TYPE_REPEATING_SLACK,
-          "gfxFcPlatformFontList::gfxFcPlatformFontList");
+          "gfxFcPlatformFontList::gfxFcPlatformFontList"_ns);
       if (!mCheckFontUpdatesTimer) {
         NS_WARNING("Failure to create font updates timer");
       }
@@ -2214,12 +2216,12 @@ void gfxFcPlatformFontList::GetFontList(nsAtom* aLangGroup,
 }
 
 FontFamily gfxFcPlatformFontList::GetDefaultFontForPlatform(
-    nsPresContext* aPresContext, const gfxFontStyle* aStyle,
+    FontVisibilityProvider* aFontVisibilityProvider, const gfxFontStyle* aStyle,
     nsAtom* aLanguage) {
   // Get the default font by using a fake name to retrieve the first
   // scalable font that fontconfig suggests for the given language.
   PrefFontList* prefFonts =
-      FindGenericFamilies(aPresContext, "-moz-default"_ns,
+      FindGenericFamilies(aFontVisibilityProvider, "-moz-default"_ns,
                           aLanguage ? aLanguage : nsGkAtoms::x_western);
   NS_ASSERTION(prefFonts, "null list of generic fonts");
   if (prefFonts && !prefFonts->IsEmpty()) {
@@ -2229,17 +2231,18 @@ FontFamily gfxFcPlatformFontList::GetDefaultFontForPlatform(
 }
 
 gfxFontEntry* gfxFcPlatformFontList::LookupLocalFont(
-    nsPresContext* aPresContext, const nsACString& aFontName,
-    WeightRange aWeightForEntry, StretchRange aStretchForEntry,
-    SlantStyleRange aStyleForEntry) {
+    FontVisibilityProvider* aFontVisibilityProvider,
+    const nsACString& aFontName, WeightRange aWeightForEntry,
+    StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) {
   AutoLock lock(mLock);
 
   nsAutoCString keyName(aFontName);
   ToLowerCase(keyName);
 
   if (SharedFontList()) {
-    return LookupInSharedFaceNameList(aPresContext, aFontName, aWeightForEntry,
-                                      aStretchForEntry, aStyleForEntry);
+    return LookupInSharedFaceNameList(aFontVisibilityProvider, aFontName,
+                                      aWeightForEntry, aStretchForEntry,
+                                      aStyleForEntry);
   }
 
   // if name is not in the global list, done
@@ -2273,10 +2276,10 @@ static bool UseCustomFontconfigLookupsForLocale(const Locale& aLocale) {
 }
 
 bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
-    nsPresContext* aPresContext, StyleGenericFontFamily aGeneric,
-    const nsACString& aFamily, nsTArray<FamilyAndGeneric>* aOutput,
-    FindFamiliesFlags aFlags, gfxFontStyle* aStyle, nsAtom* aLanguage,
-    gfxFloat aDevToCssSize) {
+    FontVisibilityProvider* aFontVisibilityProvider,
+    StyleGenericFontFamily aGeneric, const nsACString& aFamily,
+    nsTArray<FamilyAndGeneric>* aOutput, FindFamiliesFlags aFlags,
+    gfxFontStyle* aStyle, nsAtom* aLanguage, gfxFloat aDevToCssSize) {
   nsAutoCString familyName(aFamily);
   ToLowerCase(familyName);
 
@@ -2296,7 +2299,7 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
     if (isDeprecatedGeneric ||
         mozilla::StyleSingleFontFamily::Parse(familyName).IsGeneric()) {
       PrefFontList* prefFonts =
-          FindGenericFamilies(aPresContext, familyName, aLanguage);
+          FindGenericFamilies(aFontVisibilityProvider, familyName, aLanguage);
       if (prefFonts && !prefFonts->IsEmpty()) {
         aOutput->AppendElements(*prefFonts);
         return true;
@@ -2355,8 +2358,9 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
   cacheKey.Append(':');
 
   cacheKey.Append(familyName);
-  auto vis =
-      aPresContext ? aPresContext->GetFontVisibility() : FontVisibility::User;
+  auto vis = aFontVisibilityProvider
+                 ? aFontVisibilityProvider->GetFontVisibility()
+                 : FontVisibility::User;
   cacheKey.Append(':');
   cacheKey.AppendInt(int(vis));
   if (const auto& cached = mFcSubstituteCache.Lookup(cacheKey)) {
@@ -2415,8 +2419,9 @@ bool gfxFcPlatformFontList::FindAndAddFamiliesLocked(
       break;
     }
     gfxPlatformFontList::FindAndAddFamiliesLocked(
-        aPresContext, aGeneric, nsDependentCString(ToCharPtr(substName)),
-        &cachedFamilies, aFlags, aStyle, aLanguage);
+        aFontVisibilityProvider, aGeneric,
+        nsDependentCString(ToCharPtr(substName)), &cachedFamilies, aFlags,
+        aStyle, aLanguage);
   }
 
   const auto& insertedCachedFamilies =
@@ -2521,8 +2526,9 @@ bool gfxFcPlatformFontList::GetStandardFamilyName(const nsCString& aFontName,
 }
 
 void gfxFcPlatformFontList::AddGenericFonts(
-    nsPresContext* aPresContext, StyleGenericFontFamily aGenericType,
-    nsAtom* aLanguage, nsTArray<FamilyAndGeneric>& aFamilyList) {
+    FontVisibilityProvider* aFontVisibilityProvider,
+    StyleGenericFontFamily aGenericType, nsAtom* aLanguage,
+    nsTArray<FamilyAndGeneric>& aFamilyList) {
   const char* generic = GetGenericName(aGenericType);
   NS_ASSERTION(generic, "weird generic font type");
   if (!generic) {
@@ -2563,8 +2569,8 @@ void gfxFcPlatformFontList::AddGenericFonts(
 
   // when pref fonts exist, use standard pref font lookup
   if (usePrefFontList) {
-    gfxPlatformFontList::AddGenericFonts(aPresContext, aGenericType, aLanguage,
-                                         aFamilyList);
+    gfxPlatformFontList::AddGenericFonts(aFontVisibilityProvider, aGenericType,
+                                         aLanguage, aFamilyList);
     if (!isSystemUi) {
       return;
     }
@@ -2572,7 +2578,7 @@ void gfxFcPlatformFontList::AddGenericFonts(
 
   AutoLock lock(mLock);
   PrefFontList* prefFonts =
-      FindGenericFamilies(aPresContext, genericToLookup, aLanguage);
+      FindGenericFamilies(aFontVisibilityProvider, genericToLookup, aLanguage);
   NS_ASSERTION(prefFonts, "null generic font list");
   aFamilyList.SetCapacity(aFamilyList.Length() + prefFonts->Length());
   for (auto& f : *prefFonts) {
@@ -2587,7 +2593,8 @@ void gfxFcPlatformFontList::ClearLangGroupPrefFontsLocked() {
 }
 
 gfxPlatformFontList::PrefFontList* gfxFcPlatformFontList::FindGenericFamilies(
-    nsPresContext* aPresContext, const nsCString& aGeneric, nsAtom* aLanguage) {
+    FontVisibilityProvider* aFontVisibilityProvider, const nsCString& aGeneric,
+    nsAtom* aLanguage) {
   // set up name
   nsAutoCString fcLang;
   GetSampleLangForGroup(aLanguage, fcLang);
@@ -2663,7 +2670,7 @@ gfxPlatformFontList::PrefFontList* gfxFcPlatformFontList::FindGenericFamilies(
               nsAutoCString mappedGenericName(ToCharPtr(mappedGeneric));
               AutoTArray<FamilyAndGeneric, 1> genericFamilies;
               if (gfxPlatformFontList::FindAndAddFamiliesLocked(
-                      aPresContext, StyleGenericFontFamily::None,
+                      aFontVisibilityProvider, StyleGenericFontFamily::None,
                       mappedGenericName, &genericFamilies,
                       FindFamiliesFlags(0))) {
                 MOZ_ASSERT(genericFamilies.Length() == 1,

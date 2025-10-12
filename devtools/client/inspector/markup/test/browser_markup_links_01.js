@@ -137,7 +137,7 @@ const TEST_DATA = [
     attributes: [
       {
         attributeName: "src",
-        links: [{ type: "jsresource", value: "lib_jquery_1.0.js" }],
+        links: [{ type: "jsresource", value: "events/lib_jquery_1.0.js" }],
       },
     ],
   },

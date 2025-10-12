@@ -185,11 +185,11 @@ add_task(
         },
       });
     });
-    let start = Cu.now();
+    let start = ChromeUtils.now();
     EventUtils.sendString("x");
     EventUtils.synthesizeKey("KEY_Enter");
     await recievedResult;
-    Assert.less(Cu.now() - start, TIMEOUT);
+    Assert.less(ChromeUtils.now() - start, TIMEOUT);
   })
 );
 

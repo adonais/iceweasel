@@ -251,6 +251,10 @@ struct ParamTraits<mozilla::WidgetMouseEvent> {
                               aParam.mExitFrom.value()));
     }
     WriteParam(aWriter, aParam.mClickCount);
+    WriteParam(aWriter, aParam.mCallbackId);
+
+    // Mark the event as stopped to notify callback.
+    const_cast<mozilla::WidgetMouseEvent&>(aParam).mCallbackId.reset();
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -274,7 +278,8 @@ struct ParamTraits<mozilla::WidgetMouseEvent> {
       rv = rv && ReadParam(aReader, &exitFrom);
       aResult->mExitFrom = Some(static_cast<paramType::ExitFrom>(exitFrom));
     }
-    rv = rv && ReadParam(aReader, &aResult->mClickCount);
+    rv = rv && ReadParam(aReader, &aResult->mClickCount) &&
+         ReadParam(aReader, &aResult->mCallbackId);
     return rv;
   }
 };

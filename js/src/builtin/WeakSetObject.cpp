@@ -27,7 +27,7 @@ using namespace js;
 
 static bool AddWeakSetEntryImpl(JSContext* cx, Handle<WeakSetObject*> setObj,
                                 Handle<Value> keyVal) {
-  if (MOZ_UNLIKELY(!CanBeHeldWeakly(cx, keyVal))) {
+  if (MOZ_UNLIKELY(!CanBeHeldWeakly(keyVal))) {
     unsigned errorNum = GetErrorNumber(false);
     ReportValueError(cx, errorNum, JSDVG_IGNORE_STACK, keyVal, nullptr);
     return false;
@@ -69,7 +69,7 @@ bool WeakSetObject::add(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(is(args.thisv()));
 
   // Step 4.
-  if (!CanBeHeldWeakly(cx, args.get(0))) {
+  if (!CanBeHeldWeakly(args.get(0))) {
     args.rval().setBoolean(false);
     return true;
   }
@@ -105,7 +105,7 @@ bool WeakSetObject::delete_(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(is(args.thisv()));
 
   // Step 5.
-  if (!CanBeHeldWeakly(cx, args.get(0))) {
+  if (!CanBeHeldWeakly(args.get(0))) {
     args.rval().setBoolean(false);
     return true;
   }

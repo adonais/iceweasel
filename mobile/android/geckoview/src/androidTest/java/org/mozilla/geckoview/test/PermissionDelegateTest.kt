@@ -550,6 +550,7 @@ class PermissionDelegateTest : BaseSessionTest() {
 
     // Tests that all pages have a PERMISSION_TRACKING permission,
     // except for pages that belong to Gecko like about:blank or about:config.
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun trackingProtectionPermissionOnAllPages() {
         val settings = sessionRule.runtime.settings
         val aboutConfigEnabled = settings.aboutConfigEnabled

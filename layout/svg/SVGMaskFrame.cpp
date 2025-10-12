@@ -144,7 +144,8 @@ gfxRect SVGMaskFrame::GetMaskArea(nsIFrame* aMaskedFrame) {
 }
 
 nsresult SVGMaskFrame::AttributeChanged(int32_t aNameSpaceID,
-                                        nsAtom* aAttribute, int32_t aModType) {
+                                        nsAtom* aAttribute,
+                                        AttrModType aModType) {
   if (aNameSpaceID == kNameSpaceID_None &&
       (aAttribute == nsGkAtoms::x || aAttribute == nsGkAtoms::y ||
        aAttribute == nsGkAtoms::width || aAttribute == nsGkAtoms::height ||

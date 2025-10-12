@@ -5,6 +5,7 @@
 import logging
 import os
 import re
+from textwrap import dedent
 
 from voluptuous import Optional, Required
 
@@ -30,31 +31,81 @@ IMAGE_BUILDER_IMAGE = (
 
 transforms = TransformSequence()
 
+#: Schema for docker_image transforms
 docker_image_schema = Schema(
     {
-        # Name of the docker image.
-        Required("name"): str,
-        # Name of the parent docker image.
-        Optional("parent"): str,
-        # Treeherder symbol.
-        Optional("symbol"): str,
-        # relative path (from config.path) to the file the docker image was defined
-        # in.
-        Optional("task-from"): str,
-        # Arguments to use for the Dockerfile.
-        Optional("args"): {str: str},
-        # Name of the docker image definition under taskcluster/docker, when
-        # different from the docker image name.
-        Optional("definition"): str,
-        # List of package tasks this docker image depends on.
-        Optional("packages"): [str],
+        Required(
+            "name",
+            description=dedent(
+                """
+                Name of the docker image.
+                """
+            ).lstrip(),
+        ): str,
+        Optional(
+            "parent",
+            description=dedent(
+                """
+                Name of the parent docker image.
+                """
+            ).lstrip(),
+        ): str,
+        Optional(
+            "symbol",
+            description=dedent(
+                """
+                Treeherder symbol.
+                """
+            ).lstrip(),
+        ): str,
+        Optional(
+            "task-from",
+            description=dedent(
+                """
+                Relative path (from config.path) to the file the docker image was defined in.
+                """
+            ).lstrip(),
+        ): str,
+        Optional(
+            "args",
+            description=dedent(
+                """
+                Arguments to use for the Dockerfile.
+                """
+            ).lstrip(),
+        ): {str: str},
+        Optional(
+            "definition",
+            description=dedent(
+                """
+                Name of the docker image definition under taskcluster/docker, when
+                different from the docker image name.
+                """
+            ).lstrip(),
+        ): str,
+        Optional(
+            "packages",
+            description=dedent(
+                """
+                List of package tasks this docker image depends on.
+                """
+            ).lstrip(),
+        ): [str],
         Optional(
             "index",
-            description="information for indexing this build so its artifacts can be discovered",
+            description=dedent(
+                """
+                Information for indexing this build so its artifacts can be discovered.
+                """
+            ).lstrip(),
         ): task_description_schema["index"],
         Optional(
             "cache",
-            description="Whether this image should be cached based on inputs.",
+            description=dedent(
+                """
+                Whether this image should be cached based on inputs.
+                """
+            ).lstrip(),
         ): bool,
     }
 )

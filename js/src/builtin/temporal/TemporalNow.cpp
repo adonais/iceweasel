@@ -79,7 +79,7 @@ static bool SystemDateTime(JSContext* cx, Handle<Value> temporalTimeZoneLike,
 
     // Step 4.
     int32_t offsetMillis = DateTimeInfo::getOffsetMilliseconds(
-        DateTimeInfo::forceUTC(cx->realm()), epochMillis,
+        cx->realm()->getDateTimeInfo(), epochMillis,
         DateTimeInfo::TimeZoneOffset::UTC);
     MOZ_ASSERT(std::abs(offsetMillis) < ToMilliseconds(TemporalUnit::Day));
 

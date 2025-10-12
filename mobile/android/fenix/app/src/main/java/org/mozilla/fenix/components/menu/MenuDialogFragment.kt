@@ -68,6 +68,7 @@ import org.mozilla.fenix.Config
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.menu.compose.Addons
 import org.mozilla.fenix.components.menu.compose.CustomTabMenu
@@ -108,9 +109,9 @@ import org.mozilla.fenix.utils.exitSubmenu
 import org.mozilla.fenix.utils.lastSavedFolderCache
 import org.mozilla.fenix.utils.slideDown
 import org.mozilla.fenix.webcompat.DefaultWebCompatReporterMoreInfoSender
-import org.mozilla.fenix.webcompat.middleware.DefaultNimbusExperimentsProvider
 import org.mozilla.fenix.webcompat.middleware.DefaultWebCompatReporterRetrievalService
 import org.mozilla.fenix.webcompat.middleware.WebCompatInfoDeserializer
+import com.google.android.material.R as materialR
 
 // EXPANDED_MIN_RATIO is used for BottomSheetBehavior.halfExpandedRatio().
 // That value needs to be less than the PEEK_HEIGHT.
@@ -166,7 +167,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     )
                 }
 
-                val bottomSheet = findViewById<View?>(R.id.design_bottom_sheet)
+                val bottomSheet = findViewById<View?>(materialR.id.design_bottom_sheet)
                 if (Config.channel.isNightlyOrDebug) {
                     bottomSheet?.setBackgroundResource(R.drawable.bottom_sheet_with_top_rounded_corners)
                     bottomSheet?.let { sheet ->
@@ -241,9 +242,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                         ignoreUnknownKeys = true
                                         useAlternativeNames = false
                                     },
-                                ),
-                                nimbusExperimentsProvider = DefaultNimbusExperimentsProvider(
-                                    nimbusApi = requireComponents.nimbus.sdk,
                                 ),
                             ),
                     )
@@ -354,6 +352,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     onRequestDismiss = ::dismiss,
                     handlebarContentDescription = handlebarContentDescription,
                     isMenuDragBarDark = !settings.shouldUseBottomToolbar &&
+                            !settings.shouldUseExpandedToolbar &&
                             (isExtensionsExpanded || isMoreMenuExpanded),
                     cornerShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                     handleColor = FirefoxTheme.colors.borderInverted.copy(0.4f),
@@ -480,8 +479,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                     var shouldShowMenuBanner by
                     remember { mutableStateOf(settings.shouldShowMenuBanner) }
 
-                    var showBanner = shouldShowMenuBanner && !defaultBrowser
-
                     BackHandler {
                         this@MenuDialogFragment.dismissAllowingStateLoss()
                     }
@@ -548,12 +545,19 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     browserWebExtensionMenuItems = browserWebExtensionMenuItem,
                                 )
 
+                                val isDownloadHighlighted by appStore.observeAsState(
+                                    initialValue = false,
+                                ) { state ->
+                                    state.supportedMenuNotifications.contains(SupportedMenuNotifications.Downloads)
+                                }
+
                                 MainMenu(
                                     accessPoint = args.accesspoint,
                                     account = account,
                                     accountState = accountState,
                                     showQuitMenu = settings.shouldDeleteBrowsingDataOnQuit,
                                     isBottomToolbar = settings.shouldUseBottomToolbar,
+                                    isExpandedToolbarEnabled = settings.shouldUseExpandedToolbar,
                                     isSiteLoading = isSiteLoading,
                                     isExtensionsProcessDisabled = isExtensionsProcessDisabled,
                                     isExtensionsExpanded = isExtensionsExpanded,
@@ -567,7 +571,8 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     canGoForward = selectedTab?.content?.canGoForward ?: true,
                                     extensionsMenuItemDescription = extensionsMenuItemDescription,
                                     scrollState = scrollState,
-                                    showBanner = showBanner,
+                                    showBanner = shouldShowMenuBanner && !defaultBrowser,
+                                    isDownloadHighlighted = isDownloadHighlighted,
                                     webExtensionMenuCount = webExtensionsCount,
                                     allWebExtensionsDisabled = allWebExtensionsDisabled,
                                     onMozillaAccountButtonClick = {
@@ -604,8 +609,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     onBannerClick = {
                                         store.dispatch(MenuAction.MenuBanner)
                                         (context as? Activity)?.openSetDefaultBrowserOption()
-                                        showBanner = false
-                                        shouldShowMenuBanner = false
                                     },
                                     onBannerDismiss = {
                                         store.dispatch(MenuAction.DismissMenuBanner)
@@ -898,7 +901,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
     }
 
     private fun calculateMenuSheetHeight(): Int {
-        val bottomSheet = dialog?.findViewById<View?>(R.id.design_bottom_sheet)
+        val bottomSheet = dialog?.findViewById<View?>(materialR.id.design_bottom_sheet)
         val topBarHeight = bottomSheet?.getWindowInsets()?.top() ?: 0
 
         val orientationMaxHeight = if (requireContext().isLandscape()) {

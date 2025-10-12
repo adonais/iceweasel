@@ -92,7 +92,7 @@ nsresult txExprParser::createAVT(const nsAString& aAttrValue,
       while (iter != end) {
         if (*iter == '}') {
           rv = createExprInternal(Substring(start, iter), start - avtStart,
-                                  aContext, getter_Transfers(newExpr));
+                                  aContext, mozilla::getter_Transfers(newExpr));
           NS_ENSURE_SUCCESS(rv, rv);
 
           inExpr = false;
@@ -158,7 +158,7 @@ nsresult txExprParser::createExprInternal(const nsAString& aExpression,
     return rv;
   }
   UniquePtr<Expr> expr;
-  rv = createExpr(lexer, aContext, getter_Transfers(expr));
+  rv = createExpr(lexer, aContext, mozilla::getter_Transfers(expr));
   if (NS_SUCCEEDED(rv) && lexer.peek()->mType != Token::END) {
     rv = NS_ERROR_XPATH_BINARY_EXPECTED;
   }
@@ -277,7 +277,7 @@ nsresult txExprParser::createExpr(txExprLexer& lexer, txIParseContext* aContext,
       lexer.nextToken();
     }
 
-    rv = createUnionExpr(lexer, aContext, getter_Transfers(expr));
+    rv = createUnionExpr(lexer, aContext, mozilla::getter_Transfers(expr));
     if (NS_FAILED(rv)) {
       break;
     }
@@ -303,7 +303,7 @@ nsresult txExprParser::createExpr(txExprLexer& lexer, txIParseContext* aContext,
         UniquePtr<Expr> left(static_cast<Expr*>(exprs.pop()));
         UniquePtr<Expr> right(std::move(expr));
         rv = createBinaryExpr(left, right, static_cast<Token*>(ops.pop()),
-                              getter_Transfers(expr));
+                              mozilla::getter_Transfers(expr));
         if (NS_FAILED(rv)) {
           done = true;
           break;
@@ -320,7 +320,7 @@ nsresult txExprParser::createExpr(txExprLexer& lexer, txIParseContext* aContext,
     UniquePtr<Expr> left(static_cast<Expr*>(exprs.pop()));
     UniquePtr<Expr> right(std::move(expr));
     rv = createBinaryExpr(left, right, static_cast<Token*>(ops.pop()),
-                          getter_Transfers(expr));
+                          mozilla::getter_Transfers(expr));
   }
   // clean up on error
   while (!exprs.isEmpty()) {
@@ -343,7 +343,7 @@ nsresult txExprParser::createFilterOrStep(txExprLexer& lexer,
   UniquePtr<Expr> expr;
   switch (tok->mType) {
     case Token::FUNCTION_NAME_AND_PAREN:
-      rv = createFunctionCall(lexer, aContext, getter_Transfers(expr));
+      rv = createFunctionCall(lexer, aContext, mozilla::getter_Transfers(expr));
       NS_ENSURE_SUCCESS(rv, rv);
       break;
     case Token::VAR_REFERENCE:
@@ -359,7 +359,7 @@ nsresult txExprParser::createFilterOrStep(txExprLexer& lexer,
       break;
     case Token::L_PAREN:
       lexer.nextToken();
-      rv = createExpr(lexer, aContext, getter_Transfers(expr));
+      rv = createExpr(lexer, aContext, mozilla::getter_Transfers(expr));
       NS_ENSURE_SUCCESS(rv, rv);
 
       if (lexer.peek()->mType != Token::R_PAREN) {
@@ -423,7 +423,7 @@ nsresult txExprParser::createFunctionCall(txExprLexer& lexer,
   // check extension functions and xslt
   if (!fnCall) {
     rv = aContext->resolveFunctionCall(lName, namespaceID,
-                                       getter_Transfers(fnCall));
+                                       mozilla::getter_Transfers(fnCall));
 
     if (rv == NS_ERROR_NOT_IMPLEMENTED) {
       // this should just happen for unparsed-entity-uri()
@@ -535,7 +535,7 @@ nsresult txExprParser::createLocationStep(txExprLexer& lexer,
               ? static_cast<uint16_t>(txXPathNodeType::ATTRIBUTE_NODE)
               : static_cast<uint16_t>(txXPathNodeType::ELEMENT_NODE));
     } else {
-      rv = createNodeTypeTest(lexer, getter_Transfers(nodeTest));
+      rv = createNodeTypeTest(lexer, mozilla::getter_Transfers(nodeTest));
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }
@@ -624,7 +624,7 @@ nsresult txExprParser::createPathExpr(txExprLexer& lexer,
   // parse first step (possibly a FilterExpr)
   nsresult rv = NS_OK;
   if (tok->mType != Token::PARENT_OP && tok->mType != Token::ANCESTOR_OP) {
-    rv = createFilterOrStep(lexer, aContext, getter_Transfers(expr));
+    rv = createFilterOrStep(lexer, aContext, mozilla::getter_Transfers(expr));
     NS_ENSURE_SUCCESS(rv, rv);
 
     // is this a singlestep path expression?
@@ -661,7 +661,7 @@ nsresult txExprParser::createPathExpr(txExprLexer& lexer,
     }
     lexer.nextToken();
 
-    rv = createLocationStep(lexer, aContext, getter_Transfers(expr));
+    rv = createLocationStep(lexer, aContext, mozilla::getter_Transfers(expr));
     NS_ENSURE_SUCCESS(rv, rv);
 
     pathExpr->addExpr(expr.release(), pathOp);
@@ -680,7 +680,8 @@ nsresult txExprParser::createUnionExpr(txExprLexer& lexer,
   *aResult = nullptr;
 
   UniquePtr<Expr> expr;
-  nsresult rv = createPathExpr(lexer, aContext, getter_Transfers(expr));
+  nsresult rv =
+      createPathExpr(lexer, aContext, mozilla::getter_Transfers(expr));
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (lexer.peek()->mType != Token::UNION_OP) {
@@ -694,7 +695,7 @@ nsresult txExprParser::createUnionExpr(txExprLexer& lexer,
   while (lexer.peek()->mType == Token::UNION_OP) {
     lexer.nextToken();  //-- eat token
 
-    rv = createPathExpr(lexer, aContext, getter_Transfers(expr));
+    rv = createPathExpr(lexer, aContext, mozilla::getter_Transfers(expr));
     NS_ENSURE_SUCCESS(rv, rv);
 
     unionExpr->addExpr(expr.release());
@@ -733,7 +734,7 @@ nsresult txExprParser::parsePredicates(PredicateList* aPredicateList,
     //-- eat Token
     lexer.nextToken();
 
-    rv = createExpr(lexer, aContext, getter_Transfers(expr));
+    rv = createExpr(lexer, aContext, mozilla::getter_Transfers(expr));
     NS_ENSURE_SUCCESS(rv, rv);
 
     aPredicateList->add(expr.release());
@@ -765,7 +766,7 @@ nsresult txExprParser::parseParameters(FunctionCall* aFnCall,
   UniquePtr<Expr> expr;
   nsresult rv = NS_OK;
   while (1) {
-    rv = createExpr(lexer, aContext, getter_Transfers(expr));
+    rv = createExpr(lexer, aContext, mozilla::getter_Transfers(expr));
     NS_ENSURE_SUCCESS(rv, rv);
 
     if (aFnCall) {

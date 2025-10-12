@@ -103,25 +103,27 @@ impl Counter for DenominatorMetric {
         }
     }
 
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(&self, ping_name: S) -> Option<i32> {
-        let ping_name = ping_name.into().map(|s| s.to_string());
-        match self {
-            DenominatorMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
-            DenominatorMetric::Child(meta) => {
-                panic!(
-                    "Cannot get test value for {:?} in non-parent process!",
-                    meta.id
-                );
-            }
-        }
-    }
-
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
             DenominatorMetric::Parent { inner, .. } => inner.test_get_num_recorded_errors(error),
             DenominatorMetric::Child(meta) => {
                 panic!(
                     "Cannot get the number of recorded errors for {:?} in non-parent process!",
+                    meta.id
+                );
+            }
+        }
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<i32> for DenominatorMetric {
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<i32> {
+        match self {
+            DenominatorMetric::Parent { inner, .. } => inner.test_get_value(ping_name),
+            DenominatorMetric::Child(meta) => {
+                panic!(
+                    "Cannot get test value for {:?} in non-parent process!",
                     meta.id
                 );
             }
@@ -140,7 +142,7 @@ mod test {
         let metric = &metrics::test_only_ipc::an_external_denominator;
         metric.add(1);
 
-        assert_eq!(1, metric.test_get_value("test-ping").unwrap());
+        assert_eq!(1, metric.test_get_value(Some("test-ping".to_string())).unwrap());
     }
 
     #[test]
@@ -176,7 +178,7 @@ mod test {
 
         assert_eq!(
             45,
-            parent_metric.test_get_value("test-ping").unwrap(),
+            parent_metric.test_get_value(Some("test-ping".to_string())).unwrap(),
             "Values from the 'processes' should be summed"
         );
     }

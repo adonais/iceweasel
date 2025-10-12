@@ -231,15 +231,13 @@ class NetworkEventContentWatcher {
         {} /* offsets */
       );
       networkEventActor.addServerTimings({});
-      networkEventActor.addResponseContent(
-        {
-          mimeType: channel.contentType,
-          size: channel.contentLength,
-          text: "",
-          transferredSize: 0,
-        },
-        {}
-      );
+      networkEventActor.addResponseContent({
+        mimeType: channel.contentType,
+        size: channel.contentLength,
+        text: "",
+        transferredSize: 0,
+      });
+      networkEventActor.addResponseContentComplete({});
     } else if (type == RESOURCE_TYPES.DATA_CHANNEL) {
       lazy.NetworkUtils.handleDataChannel(channel, networkEventActor);
     }
@@ -301,7 +299,7 @@ class NetworkEventContentWatcher {
     // responseContent.
     const isResponseComplete =
       receivedUpdates.includes(NETWORK_EVENT_TYPES.RESPONSE_START) &&
-      receivedUpdates.includes(NETWORK_EVENT_TYPES.RESPONSE_CONTENT) &&
+      receivedUpdates.includes(NETWORK_EVENT_TYPES.RESPONSE_CONTENT_COMPLETE) &&
       receivedUpdates.includes(NETWORK_EVENT_TYPES.EVENT_TIMINGS);
 
     if (isResponseComplete) {
@@ -314,6 +312,7 @@ class NetworkEventContentWatcher {
 
     if (
       updateResource.updateType == NETWORK_EVENT_TYPES.RESPONSE_START ||
+      updateResource.updateType == NETWORK_EVENT_TYPES.RESPONSE_CONTENT ||
       isResponseComplete
     ) {
       this._emitUpdate(networkEvent);

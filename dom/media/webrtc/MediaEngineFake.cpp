@@ -25,19 +25,33 @@
 #  include "nsISupportsUtils.h"
 #endif
 
-#define VIDEO_WIDTH_MIN 160
-#define VIDEO_WIDTH_MAX 4096
-#define VIDEO_HEIGHT_MIN 90
-#define VIDEO_HEIGHT_MAX 2160
-#define DEFAULT_AUDIO_TIMER_MS 10
 namespace mozilla {
 
 using namespace mozilla::gfx;
+using dom::GetEnumString;
 using dom::MediaSourceEnum;
 using dom::MediaTrackCapabilities;
 using dom::MediaTrackConstraints;
 using dom::MediaTrackSettings;
 using dom::VideoFacingModeEnum;
+using dom::VideoResizeModeEnum;
+
+#ifdef DEBUG
+static constexpr int VIDEO_WIDTH_DEFAULT =
+    MediaEnginePrefs::DEFAULT_43_VIDEO_WIDTH / 2;
+#else
+static constexpr int VIDEO_WIDTH_DEFAULT =
+    MediaEnginePrefs::DEFAULT_43_VIDEO_WIDTH;
+#endif
+static constexpr int VIDEO_WIDTH_MAX = 4096;
+#ifdef DEBUG
+static constexpr int VIDEO_HEIGHT_DEFAULT =
+    MediaEnginePrefs::DEFAULT_43_VIDEO_HEIGHT / 2;
+#else
+static constexpr int VIDEO_HEIGHT_DEFAULT =
+    MediaEnginePrefs::DEFAULT_43_VIDEO_HEIGHT;
+#endif
+static constexpr int VIDEO_HEIGHT_MAX = 2160;
 
 static nsString FakeVideoName() {
   // For the purpose of testing we allow to change the name of the fake device
@@ -120,13 +134,13 @@ class MediaEngineFakeVideoSource : public MediaEngineSource {
 
 MediaEngineFakeVideoSource::MediaEngineFakeVideoSource()
     : mSettings(MakeAndAddRef<media::Refcountable<MediaTrackSettings>>()) {
-  mSettings->mWidth.Construct(
-      int32_t(MediaEnginePrefs::DEFAULT_43_VIDEO_WIDTH));
-  mSettings->mHeight.Construct(
-      int32_t(MediaEnginePrefs::DEFAULT_43_VIDEO_HEIGHT));
+  mSettings->mWidth.Construct(int32_t(VIDEO_WIDTH_DEFAULT));
+  mSettings->mHeight.Construct(int32_t(VIDEO_HEIGHT_DEFAULT));
   mSettings->mFrameRate.Construct(double(MediaEnginePrefs::DEFAULT_VIDEO_FPS));
   mSettings->mFacingMode.Construct(NS_ConvertASCIItoUTF16(
       dom::GetEnumString(VideoFacingModeEnum::Environment)));
+  mSettings->mResizeMode.Construct(NS_ConvertASCIItoUTF16(
+      dom::GetEnumString(dom::VideoResizeModeEnum::None)));
 }
 
 nsString MediaEngineFakeVideoSource::GetGroupId() {
@@ -144,23 +158,27 @@ uint32_t MediaEngineFakeVideoSource::GetBestFitnessDistance(
   // distance is read from first entry only
   if (aConstraintSets.Length() >= 1) {
     const auto* cs = aConstraintSets.ElementAt(0);
+    const auto resizeMode = MediaConstraintsHelper::GetResizeMode(*cs, aPrefs);
+    using H = MediaConstraintsHelper;
     Maybe<nsString> facingMode = Nothing();
-    distance +=
-        MediaConstraintsHelper::FitnessDistance(facingMode, cs->mFacingMode);
+    distance += H::FitnessDistance(facingMode, cs->mFacingMode);
 
-    if (cs->mWidth.mMax < VIDEO_WIDTH_MIN ||
-        cs->mWidth.mMin > VIDEO_WIDTH_MAX) {
-      distance += UINT32_MAX;
-    }
-
-    if (cs->mHeight.mMax < VIDEO_HEIGHT_MIN ||
-        cs->mHeight.mMin > VIDEO_HEIGHT_MAX) {
-      distance += UINT32_MAX;
+    if (resizeMode.valueOr(dom::VideoResizeModeEnum::None) ==
+        dom::VideoResizeModeEnum::None) {
+      distance +=
+          H::FitnessDistance(VIDEO_WIDTH_DEFAULT, cs->mWidth) +
+          H::FitnessDistance(VIDEO_HEIGHT_DEFAULT, cs->mHeight) +
+          H::FitnessDistance(AssertedCast<double>(aPrefs.mFPS), cs->mFrameRate);
+    } else {
+      distance += H::FeasibilityDistance(VIDEO_WIDTH_DEFAULT, cs->mWidth) +
+                  H::FeasibilityDistance(VIDEO_HEIGHT_DEFAULT, cs->mHeight) +
+                  H::FeasibilityDistance(AssertedCast<double>(aPrefs.mFPS),
+                                         cs->mFrameRate);
     }
   }
 #endif
 
-  return uint32_t(std::min(distance, uint64_t(UINT32_MAX)));
+  return SaturatingCast<uint32_t>(distance);
 }
 
 void MediaEngineFakeVideoSource::GetSettings(
@@ -179,14 +197,22 @@ void MediaEngineFakeVideoSource::GetCapabilities(
   facing.AppendElement(facingString);
   aOutCapabilities.mFacingMode.Construct(std::move(facing));
 
+  if (mOpts.mResizeModeEnabled) {
+    nsTArray<nsString> resizeModes{
+        NS_ConvertASCIItoUTF16(GetEnumString(dom::VideoResizeModeEnum::None)),
+        NS_ConvertASCIItoUTF16(
+            GetEnumString(dom::VideoResizeModeEnum::Crop_and_scale))};
+    aOutCapabilities.mResizeMode.Construct(std::move(resizeModes));
+  }
+
   dom::ULongRange widthRange;
   widthRange.mMax.Construct(VIDEO_WIDTH_MAX);
-  widthRange.mMin.Construct(VIDEO_WIDTH_MIN);
+  widthRange.mMin.Construct(1);
   aOutCapabilities.mWidth.Construct(widthRange);
 
   dom::ULongRange heightRange;
   heightRange.mMax.Construct(VIDEO_HEIGHT_MAX);
-  heightRange.mMin.Construct(VIDEO_HEIGHT_MIN);
+  heightRange.mMin.Construct(1);
   aOutCapabilities.mHeight.Construct(heightRange);
 
   dom::DoubleRange frameRateRange;
@@ -207,26 +233,23 @@ nsresult MediaEngineFakeVideoSource::Allocate(
   // emulator debug is very, very slow; reduce load on it with smaller/slower
   // fake video
   mOpts = aPrefs;
-  mOpts.mWidth =
-      c.mWidth.Get(aPrefs.mWidth ? aPrefs.mWidth :
-#ifdef DEBUG
-                                 MediaEnginePrefs::DEFAULT_43_VIDEO_WIDTH / 2
-#else
-                                 MediaEnginePrefs::DEFAULT_43_VIDEO_WIDTH
-#endif
-      );
-  mOpts.mHeight =
-      c.mHeight.Get(aPrefs.mHeight ? aPrefs.mHeight :
-#ifdef DEBUG
-                                   MediaEnginePrefs::DEFAULT_43_VIDEO_HEIGHT / 2
-#else
-                                   MediaEnginePrefs::DEFAULT_43_VIDEO_HEIGHT
-#endif
-      );
-  mOpts.mWidth =
-      std::clamp(mOpts.mWidth, VIDEO_WIDTH_MIN, VIDEO_WIDTH_MAX) & ~1;
-  mOpts.mHeight =
-      std::clamp(mOpts.mHeight, VIDEO_HEIGHT_MIN, VIDEO_HEIGHT_MAX) & ~1;
+  mOpts.mWidth = aPrefs.mWidth ? aPrefs.mWidth : VIDEO_WIDTH_DEFAULT;
+  mOpts.mHeight = aPrefs.mHeight ? aPrefs.mHeight : VIDEO_HEIGHT_DEFAULT;
+
+  const auto resizeMode = MediaConstraintsHelper::GetResizeMode(c, mOpts);
+  const auto resizeModeString = resizeMode.map(
+      [](auto aRM) { return NS_ConvertASCIItoUTF16(dom::GetEnumString(aRM)); });
+  if (resizeMode.valueOr(VideoResizeModeEnum::None) ==
+      VideoResizeModeEnum::Crop_and_scale) {
+    mOpts.mWidth = c.mWidth.Get(mOpts.mWidth);
+    mOpts.mHeight = c.mHeight.Get(mOpts.mHeight);
+    mOpts.mFPS = std::min(mOpts.mFPS, SaturatingCast<int32_t>(c.mFrameRate.Get(
+                                          AssertedCast<double>(mOpts.mFPS))));
+  }
+
+  mOpts.mWidth = std::clamp(mOpts.mWidth, 1, VIDEO_WIDTH_MAX);
+  mOpts.mHeight = std::clamp(mOpts.mHeight, 1, VIDEO_HEIGHT_MAX);
+  mOpts.mFPS = std::clamp(mOpts.mFPS, 0, MediaEnginePrefs::DEFAULT_VIDEO_FPS);
 
   nsCOMPtr<nsISerialEventTarget> target = GetCurrentSerialEventTarget();
   mCapturer = MakeRefPtr<FakeVideoSource>(target);
@@ -234,11 +257,15 @@ nsresult MediaEngineFakeVideoSource::Allocate(
       target, this, &MediaEngineFakeVideoSource::OnGeneratedImage);
 
   NS_DispatchToMainThread(NS_NewRunnableFunction(
-      __func__, [settings = mSettings, frameRate = mOpts.mFPS,
-                 width = mOpts.mWidth, height = mOpts.mHeight]() {
+      __func__,
+      [settings = mSettings, frameRate = mOpts.mFPS, width = mOpts.mWidth,
+       height = mOpts.mHeight, resizeModeString]() {
         settings->mFrameRate.Value() = frameRate;
         settings->mWidth.Value() = width;
         settings->mHeight.Value() = height;
+        settings->mResizeMode.Reset();
+        resizeModeString.apply(
+            [&](const auto& aStr) { settings->mResizeMode.Construct(aStr); });
       }));
 
   mState = kAllocated;

@@ -7,6 +7,7 @@ package mozilla.components.tooling.detekt
 import io.gitlab.arturbosch.detekt.api.Config
 import io.gitlab.arturbosch.detekt.api.RuleSet
 import io.gitlab.arturbosch.detekt.api.RuleSetProvider
+import mozilla.components.tooling.detekt.health.ForbiddenSuppressionRule
 
 /**
  * Set of custom mozilla rules to be loaded in detekt utility.
@@ -19,6 +20,7 @@ class MozillaRuleSetProvider : RuleSetProvider {
         ruleSetId,
         listOf(
             ProjectLicenseRule(config),
+            ForbiddenSuppressionRule(config),
         ),
     )
 }

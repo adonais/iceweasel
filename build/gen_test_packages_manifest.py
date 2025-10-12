@@ -117,6 +117,7 @@ def generate_package_data(args):
             continue
         harness_requirements[harness].append(pkg_name)
         harness_requirements[harness].append("target.condprof.tests.tar.gz")
+        harness_requirements[harness].append("target.trainhop.tests.tar.gz")
     return harness_requirements
 
 

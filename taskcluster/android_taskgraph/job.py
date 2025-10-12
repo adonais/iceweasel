@@ -95,7 +95,7 @@ def configure_gradlew(config, job, taskdesc):
         ),
     )
     worker["env"].setdefault(
-        "MOZ_ANDROID_FAT_AAR_ARCHITECTURES", "armeabi-v7a,arm64-v8a,x86,x86_64"
+        "MOZ_ANDROID_FAT_AAR_ARCHITECTURES", "armeabi-v7a,arm64-v8a,x86_64"
     )
 
     dummy_secrets = [

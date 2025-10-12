@@ -60,6 +60,14 @@ class DownloadTelemetryMiddleware : Middleware<DownloadUIState, DownloadUIAction
                 Downloads.retryDownload.record(NoExtras())
             }
 
+            is DownloadUIAction.AddPendingDeletionSet -> {
+                Downloads.deleteSnackbarShown.record(NoExtras())
+            }
+
+            is DownloadUIAction.UndoPendingDeletion -> {
+                Downloads.deleteSnackbarUndoClicked.record(NoExtras())
+            }
+
             else -> {}
         }
     }

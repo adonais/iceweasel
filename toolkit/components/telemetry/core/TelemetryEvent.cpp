@@ -73,15 +73,14 @@ struct EventMarker {
   using MS = mozilla::MarkerSchema;
   static MS MarkerTypeDisplay() {
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormatSearchable("cat", "Category",
-                                       MS::Format::UniqueString,
-                                       MS::Searchable::Searchable);
-    schema.AddKeyLabelFormatSearchable(
-        "met", "Method", MS::Format::UniqueString, MS::Searchable::Searchable);
-    schema.AddKeyLabelFormatSearchable(
-        "obj", "Object", MS::Format::UniqueString, MS::Searchable::Searchable);
-    schema.AddKeyLabelFormatSearchable("val", "Value", MS::Format::String,
-                                       MS::Searchable::Searchable);
+    schema.AddKeyLabelFormat("cat", "Category", MS::Format::UniqueString,
+                             MS::PayloadFlags::Searchable);
+    schema.AddKeyLabelFormat("met", "Method", MS::Format::UniqueString,
+                             MS::PayloadFlags::Searchable);
+    schema.AddKeyLabelFormat("obj", "Object", MS::Format::UniqueString,
+                             MS::PayloadFlags::Searchable);
+    schema.AddKeyLabelFormat("val", "Value", MS::Format::String,
+                             MS::PayloadFlags::Searchable);
     schema.SetTooltipLabel(
         "{marker.data.cat}.{marker.data.met}#{marker.data.obj} "
         "{marker.data.val}");

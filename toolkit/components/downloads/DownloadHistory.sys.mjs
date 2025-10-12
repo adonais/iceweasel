@@ -605,8 +605,9 @@ class DownloadHistoryList extends DownloadList {
     this._slotsForUrl = new Map();
     this._slotForDownload = new WeakMap();
 
-    // Start the asynchronous queries to retrieve history and session downloads.
-    publicList.addView(this).catch(console.error);
+    // Retrieve history and session downloads.
+    publicList.addView(this);
+
     let query = {},
       options = {};
     lazy.PlacesUtils.history.queryStringToQuery(place, query, options);

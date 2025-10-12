@@ -279,6 +279,10 @@ dictionary ShadowRootInit {
   SlotAssignmentMode slotAssignment = "named";
   boolean clonable = false;
   boolean serializable = false;
+
+  // https://github.com/whatwg/dom/pull/1353
+  [Pref="dom.shadowdom.referenceTarget.enabled"]
+  DOMString referenceTarget;
 };
 
 // https://dom.spec.whatwg.org/#element

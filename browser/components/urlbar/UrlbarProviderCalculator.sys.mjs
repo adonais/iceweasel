@@ -75,20 +75,11 @@ const FULL_NUMBER_MIN_THRESHOLD = 10 ** -5;
  * A provider that returns a suggested url to the user based on what
  * they have currently typed so they can navigate directly.
  */
-class ProviderCalculator extends UrlbarProvider {
+export class UrlbarProviderCalculator extends UrlbarProvider {
   constructor() {
     super();
     lazy.UrlbarResult.addDynamicResultType(DYNAMIC_RESULT_TYPE);
     lazy.UrlbarView.addDynamicViewTemplate(DYNAMIC_RESULT_TYPE, VIEW_TEMPLATE);
-  }
-
-  /**
-   * Returns the name of this provider.
-   *
-   * @returns {string} the name of this provider.
-   */
-  get name() {
-    return DYNAMIC_RESULT_TYPE;
   }
 
   /**
@@ -541,5 +532,3 @@ Calculator.addNumberSystem({
     return num;
   },
 });
-
-export var UrlbarProviderCalculator = new ProviderCalculator();

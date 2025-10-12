@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A search text field for the download list screen.
@@ -64,7 +65,7 @@ fun DownloadSearchField(
             onClick = onSearchDismissRequest,
         ) {
             Icon(
-                painter = painterResource(R.drawable.mozac_ic_back_24),
+                painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                 contentDescription = stringResource(R.string.download_close_search_description),
                 tint = FirefoxTheme.colors.iconPrimary,
                 modifier = Modifier.size(20.dp),
@@ -97,7 +98,7 @@ fun DownloadSearchField(
                 },
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.mozac_ic_cross_circle_fill_20),
+                    painter = painterResource(iconsR.drawable.mozac_ic_cross_circle_fill_20),
                     contentDescription = stringResource(R.string.download_clear_search_description),
                     tint = FirefoxTheme.colors.iconPrimary,
                 )

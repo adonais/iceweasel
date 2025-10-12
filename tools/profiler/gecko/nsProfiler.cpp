@@ -1056,7 +1056,7 @@ void nsProfiler::RestartGatheringTimer() {
         NS_FAILED(mGatheringTimer->InitWithNamedFuncCallback(
             GatheringTimerCallback, this, delayMs,
             nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
-            "nsProfilerGatheringTimer"))) {
+            "nsProfilerGatheringTimer"_ns))) {
       // Can't restart the timer, so we can't wait any longer.
       FinishGathering();
     }
@@ -1290,7 +1290,7 @@ RefPtr<nsProfiler::GatheringPromise> nsProfiler::StartGathering(
     Unused << NS_NewTimerWithFuncCallback(
         getter_AddRefs(mGatheringTimer), GatheringTimerCallback, this,
         childTimeoutMs, nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
-        "nsProfilerGatheringTimer", GetMainThreadSerialEventTarget());
+        "nsProfilerGatheringTimer"_ns, GetMainThreadSerialEventTarget());
 
     MOZ_ASSERT(mPendingProfiles.capacity() >= profiles.Length());
     for (const auto& profile : profiles) {

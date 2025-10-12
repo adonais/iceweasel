@@ -18,6 +18,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PluginManager: "resource:///actors/PluginParent.sys.mjs",
   UnexpectedScriptObserver:
     "moz-src:///browser/modules/UnexpectedScriptObserver.sys.mjs",
+  WebAuthnPromptHelper:
+    "moz-src:///browser/modules/WebAuthnPromptHelper.sys.mjs",
 });
 
 // Map from observer topic to a list of exported objects whose observe()
@@ -33,6 +35,8 @@ let gObservers = {
   "file-picker-crashed": ["FilePickerCrashed"],
   "gmp-plugin-crash": ["PluginManager"],
   "plugin-crashed": ["PluginManager"],
+
+  "webauthn-prompt": ["WebAuthnPromptHelper"],
 };
 if (Cu.isInAutomation) {
   gObservers["UnexpectedJavaScriptLoad-ResetNotification"] = [

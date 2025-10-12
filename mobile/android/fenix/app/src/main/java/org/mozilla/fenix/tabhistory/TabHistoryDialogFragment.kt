@@ -14,6 +14,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapNotNull
+import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.selector.findCustomTabOrSelectedTab
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.ktx.android.content.getColorFromAttr
@@ -50,6 +51,20 @@ class TabHistoryDialogFragment : BottomSheetDialogFragment() {
             expandDialog = ::expand,
             interactor = TabHistoryInteractor(controller),
         )
+
+        // flush the session state for showing the most recent the engine session state of the selected tab.
+        requireComponents.core.store.state.selectedTabId?.let {
+            requireComponents.core.store.dispatch(
+                EngineAction.FlushEngineSessionStateAction(it),
+            )
+        }
+
+        // flush the session state for showing the most recent the engine session state of the custom tab.
+        customTabSessionId?.let {
+            requireComponents.core.store.dispatch(
+                EngineAction.FlushEngineSessionStateAction(it),
+            )
+        }
 
         requireComponents.core.store.flowScoped(viewLifecycleOwner) { flow ->
             flow.mapNotNull { state -> state.findCustomTabOrSelectedTab(customTabSessionId)?.content?.history }

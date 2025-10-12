@@ -120,7 +120,6 @@ import org.mozilla.fenix.components.toolbar.TabCounterInteractions.AddNewTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.CloseCurrentTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterClicked
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterLongClicked
-import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.isLargeWindow
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.navigateSafe
@@ -130,8 +129,10 @@ import org.mozilla.fenix.tabstray.Page
 import org.mozilla.fenix.tabstray.ext.isActiveDownload
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.lastSavedFolderCache
+import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.lib.state.Action as MVIAction
 import mozilla.components.ui.icons.R as iconsR
+import mozilla.components.ui.tabcounter.R as tabcounterR
 
 private const val TALL_SCREEN_HEIGHT_DP = 480
 
@@ -292,7 +293,7 @@ class BrowserToolbarMiddleware(
 
             is TabCounterClicked -> {
                 runWithinEnvironment {
-                    thumbnailsFeature?.requestScreenshot()
+                    thumbnailsFeature()?.requestScreenshot()
 
                     if (settings.tabManagerEnhancementsEnabled) {
                         navController.nav(
@@ -371,10 +372,7 @@ class BrowserToolbarMiddleware(
             }
 
             is OriginClicked -> {
-                when (environment?.navController?.currentDestination?.id) {
-                    R.id.browserFragment -> Events.searchBarTapped.record(Events.SearchBarTappedExtra("BROWSER"))
-                    R.id.homeFragment -> Events.searchBarTapped.record(Events.SearchBarTappedExtra("HOME"))
-                }
+                Events.searchBarTapped.record(Events.SearchBarTappedExtra("BROWSER"))
 
                 val selectedTab = browserStore.state.selectedTab ?: return
                 val searchTerms = selectedTab.content.searchTerms
@@ -635,6 +633,7 @@ class BrowserToolbarMiddleware(
                                 sessionId = tab.id,
                                 url = tab.content.url,
                                 title = tab.content.title,
+                                isLocalPdf = tab.content.url.isContentUrl(),
                                 isSecured = tab.content.securityInfo.secure,
                                 sitePermissions = sitePermissions,
                                 certificateName = tab.content.securityInfo.issuer,
@@ -690,7 +689,9 @@ class BrowserToolbarMiddleware(
 
     private fun buildStartPageActions(): List<Action> {
         return listOf(
-            ToolbarActionConfig(ToolbarAction.SiteInfo),
+            ToolbarActionConfig(ToolbarAction.SiteInfo) {
+                !browserScreenStore.state.readerModeStatus.isActive
+            },
         ).filter { config ->
             config.isVisible()
         }.map { config ->
@@ -794,10 +795,14 @@ class BrowserToolbarMiddleware(
     }
 
     private suspend fun updateNavigationActions(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
-        val isBookmarked =
-            browserStore.state.selectedTab?.content?.url?.let {
-                bookmarksStorage.getBookmarksWithUrl(it).isNotEmpty()
-            } == true
+        val url = browserStore.state.selectedTab?.content?.url
+        val isBookmarked = if (url != null) {
+            withContext(Dispatchers.IO) {
+                bookmarksStorage.getBookmarksWithUrl(url).isNotEmpty()
+            }
+        } else {
+            false
+        }
 
         context.dispatch(
             NavigationActionsUpdated(
@@ -811,15 +816,15 @@ class BrowserToolbarMiddleware(
         listOf(
             BrowserToolbarMenuButton(
                 icon = DrawableResIcon(iconsR.drawable.mozac_ic_plus_24),
-                text = StringResText(R.string.mozac_browser_menu_new_tab),
-                contentDescription = StringResContentDescription(R.string.mozac_browser_menu_new_tab),
+                text = StringResText(tabcounterR.string.mozac_browser_menu_new_tab),
+                contentDescription = StringResContentDescription(tabcounterR.string.mozac_browser_menu_new_tab),
                 onClick = AddNewTab(source),
             ),
 
             BrowserToolbarMenuButton(
                 icon = DrawableResIcon(iconsR.drawable.mozac_ic_private_mode_24),
-                text = StringResText(R.string.mozac_browser_menu_new_private_tab),
-                contentDescription = StringResContentDescription(R.string.mozac_browser_menu_new_private_tab),
+                text = StringResText(tabcounterR.string.mozac_browser_menu_new_private_tab),
+                contentDescription = StringResContentDescription(tabcounterR.string.mozac_browser_menu_new_private_tab),
                 onClick = AddNewPrivateTab(source),
             ),
 
@@ -827,8 +832,8 @@ class BrowserToolbarMiddleware(
 
             BrowserToolbarMenuButton(
                 icon = DrawableResIcon(iconsR.drawable.mozac_ic_cross_24),
-                text = StringResText(R.string.mozac_close_tab),
-                contentDescription = StringResContentDescription(R.string.mozac_close_tab),
+                text = StringResText(tabcounterR.string.mozac_close_tab),
+                contentDescription = StringResContentDescription(tabcounterR.string.mozac_close_tab),
                 onClick = CloseCurrentTab,
             ),
         )
@@ -956,6 +961,7 @@ class BrowserToolbarMiddleware(
         browserScreenStore.observeWhileActive {
             distinctUntilChangedBy { it.readerModeStatus }
                 .collect {
+                    updateStartPageActions(context)
                     updateEndPageActions(context)
                 }
         }
@@ -1049,7 +1055,7 @@ class BrowserToolbarMiddleware(
         source: Source = Source.AddressBar,
     ): Action = when (toolbarAction) {
         ToolbarAction.NewTab -> ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_plus_24,
+            drawableResId = iconsR.drawable.mozac_ic_plus_24,
             contentDescription = if (environment?.browsingModeManager?.mode == Private) {
                 R.string.home_screen_shortcut_open_new_private_tab_2
             } else {
@@ -1063,7 +1069,7 @@ class BrowserToolbarMiddleware(
         )
 
         ToolbarAction.Back -> ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_back_24,
+            drawableResId = iconsR.drawable.mozac_ic_back_24,
             contentDescription = R.string.browser_menu_back,
             state = if (browserStore.state.selectedTab?.content?.canGoBack == true) {
                 ActionButton.State.DEFAULT
@@ -1075,7 +1081,7 @@ class BrowserToolbarMiddleware(
         )
 
         ToolbarAction.Forward -> ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_forward_24,
+            drawableResId = iconsR.drawable.mozac_ic_forward_24,
             contentDescription = R.string.browser_menu_forward,
             state = if (browserStore.state.selectedTab?.content?.canGoForward == true) {
                 ActionButton.State.DEFAULT
@@ -1089,14 +1095,14 @@ class BrowserToolbarMiddleware(
         ToolbarAction.RefreshOrStop -> {
             if (browserStore.state.selectedTab?.content?.loading != true) {
                 ActionButtonRes(
-                    drawableResId = R.drawable.mozac_ic_arrow_clockwise_24,
+                    drawableResId = iconsR.drawable.mozac_ic_arrow_clockwise_24,
                     contentDescription = R.string.browser_menu_refresh,
                     onClick = RefreshClicked(bypassCache = false),
                     onLongClick = RefreshClicked(bypassCache = true),
                 )
             } else {
                 ActionButtonRes(
-                    drawableResId = R.drawable.mozac_ic_cross_24,
+                    drawableResId = iconsR.drawable.mozac_ic_cross_24,
                     contentDescription = R.string.browser_menu_stop,
                     onClick = StopRefreshClicked,
                 )
@@ -1104,7 +1110,7 @@ class BrowserToolbarMiddleware(
         }
 
         ToolbarAction.Menu -> ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_ellipsis_vertical_24,
+            drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             contentDescription = R.string.content_description_menu,
             onClick = MenuClicked(source),
         )
@@ -1125,7 +1131,7 @@ class BrowserToolbarMiddleware(
         )
 
         ToolbarAction.Translate -> ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_translate_24,
+            drawableResId = iconsR.drawable.mozac_ic_translate_24,
             contentDescription = R.string.browser_toolbar_translate,
             state = if (browserScreenStore.state.pageTranslationStatus.isTranslated) {
                 ActionButton.State.ACTIVE
@@ -1141,15 +1147,9 @@ class BrowserToolbarMiddleware(
             val tabsCount = browserStore.state.getNormalOrPrivateTabs(isInPrivateMode).size
 
             val tabCounterDescription = if (isInPrivateMode) {
-                environment.context.getString(
-                    R.string.mozac_tab_counter_private,
-                    tabsCount.toString(),
-                )
+                environment.context.getString(tabcounterR.string.mozac_tab_counter_private, tabsCount.toString())
             } else {
-                environment.context.getString(
-                    R.string.mozac_tab_counter_open_tab_tray,
-                    tabsCount.toString(),
-                )
+                environment.context.getString(tabcounterR.string.mozac_tab_counter_open_tab_tray, tabsCount.toString())
             }
 
             TabCounterAction(
@@ -1164,20 +1164,20 @@ class BrowserToolbarMiddleware(
         ToolbarAction.SiteInfo -> {
             if (browserStore.state.selectedTab?.content?.url?.isContentUrl() == true) {
                 ActionButtonRes(
-                    drawableResId = R.drawable.mozac_ic_page_portrait_24,
-                    contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
+                    drawableResId = iconsR.drawable.mozac_ic_page_portrait_24,
+                    contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
                     onClick = StartPageActions.SiteInfoClicked,
                 )
             } else if (browserStore.state.selectedTab?.content?.securityInfo?.secure == true) {
                 ActionButtonRes(
-                    drawableResId = R.drawable.mozac_ic_shield_checkmark_24,
-                    contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
+                    drawableResId = iconsR.drawable.mozac_ic_shield_checkmark_24,
+                    contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
                     onClick = StartPageActions.SiteInfoClicked,
                 )
             } else {
                 ActionButtonRes(
-                    drawableResId = R.drawable.mozac_ic_shield_slash_24,
-                    contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
+                    drawableResId = iconsR.drawable.mozac_ic_shield_slash_24,
+                    contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
                     onClick = StartPageActions.SiteInfoClicked,
                 )
             }
@@ -1185,7 +1185,7 @@ class BrowserToolbarMiddleware(
 
         ToolbarAction.Bookmark -> {
             ActionButtonRes(
-                drawableResId = R.drawable.mozac_ic_bookmark_24,
+                drawableResId = iconsR.drawable.mozac_ic_bookmark_24,
                 contentDescription = R.string.browser_menu_bookmark_this_page_2,
                 onClick = AddBookmarkClicked(source),
             )
@@ -1193,14 +1193,14 @@ class BrowserToolbarMiddleware(
 
         ToolbarAction.EditBookmark -> {
             ActionButtonRes(
-                drawableResId = R.drawable.mozac_ic_bookmark_fill_24,
+                drawableResId = iconsR.drawable.mozac_ic_bookmark_fill_24,
                 contentDescription = R.string.browser_menu_edit_bookmark,
                 onClick = EditBookmarkClicked(source),
             )
         }
 
         ToolbarAction.Share -> ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_share_android_24,
+            drawableResId = iconsR.drawable.mozac_ic_share_android_24,
             contentDescription = R.string.browser_menu_share,
             onClick = ShareClicked(source),
         )

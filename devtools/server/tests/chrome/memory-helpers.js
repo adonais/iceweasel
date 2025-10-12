@@ -24,7 +24,7 @@ SimpleTest.registerCleanupFunction(function () {
 });
 
 async function getTargetForSelectedTab() {
-  const browserWindow = Services.wm.getMostRecentWindow("navigator:browser");
+  const browserWindow = Services.wm.getMostRecentBrowserWindow();
   const commands = await CommandsFactory.forTab(
     browserWindow.gBrowser.selectedTab
   );

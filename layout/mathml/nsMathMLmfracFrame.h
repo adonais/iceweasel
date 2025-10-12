@@ -70,7 +70,7 @@ class nsMathMLmfracFrame final : public nsMathMLContainerFrame {
                         const nsDisplayListSet& aLists) override;
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   NS_IMETHOD
   TransmitAutomaticData() override;

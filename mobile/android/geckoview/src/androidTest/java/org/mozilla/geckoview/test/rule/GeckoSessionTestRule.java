@@ -2272,7 +2272,7 @@ public class GeckoSessionTestRule implements TestRule {
 
     /**
      * When doContinuallyPost is set to true, @{@link #postLocation()} will post the location to the
-     * location manager every 3s. When set to false, @{@link #postLocation()} will only post the
+     * location manager every 2s. When set to false, @{@link #postLocation()} will only post the
      * location once. Purpose is to prevent the location from becoming stale.
      *
      * @param doContinuallyPost setting for continually posting the location after calling @{@link

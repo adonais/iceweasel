@@ -1637,14 +1637,15 @@ function colorAt(image, x, y) {
 
 let allDownloads = [];
 /**
- * Returns a Promise that resolves when a new screenshot is available in the download folder.
+ * Returns a Promise that resolves when a new file (e.g. screenshot, JSON, …) is available
+ * in the download folder.
  *
  * @param {Object} [options]
- * @param {Boolean} options.isWindowPrivate: Set to true if the window from which the screenshot
- *                  is taken is a private window. This will ensure that we check that the
- *                  screenshot appears in the private window, not the non-private one (See Bug 1783373)
+ * @param {Boolean} options.isWindowPrivate: Set to true if the window from which the file
+ *                  is downloaded is a private window. This will ensure that we check that the
+ *                  file appears in the private window, not the non-private one (See Bug 1783373)
  */
-async function waitUntilScreenshot({ isWindowPrivate = false } = {}) {
+async function waitUntilDownload({ isWindowPrivate = false } = {}) {
   const { Downloads } = ChromeUtils.importESModule(
     "resource://gre/modules/Downloads.sys.mjs"
   );
@@ -1707,7 +1708,7 @@ async function takeNodeScreenshot(inspector) {
   info(
     "Call screenshotNode() and wait until the screenshot is found in the Downloads"
   );
-  const whenScreenshotSucceeded = waitUntilScreenshot();
+  const whenScreenshotSucceeded = waitUntilDownload();
   inspector.screenshotNode();
   const filePath = await whenScreenshotSucceeded;
 

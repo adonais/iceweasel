@@ -351,7 +351,7 @@ a.hidden,
 #private-window-message {
   border: 1px solid var(--in-content-border-color);
   grid-area: 1 / 2 / 1 / 7;
-  background-color: var(--in-content-box-info-background);
+  background-color: var(--background-color-box-info);
   padding: 13px 45px;
   font-size: 13px;
   margin-bottom: 25px;
@@ -387,7 +387,7 @@ a.hidden,
 .graph-bar.empty {
   height: 0;
   border: 1px var(--graph-empty) solid;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   cursor: default;
 }
 
@@ -557,7 +557,7 @@ label:hover {
   display: none;
   padding: 22px 20px 20px;
   border-block-start: 1px solid var(--tab-highlight);
-  background-color: var(--in-content-box-info-background);
+  background-color: var(--background-color-box-info);
   font-size: 0.8em;
   line-height: 1.75;
 }
@@ -663,7 +663,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 
 .block {
   background-color: var(--grey-60);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   text-align: center;
   font-size: 1.125em;
   font-weight: bold;
@@ -753,7 +753,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 .progress-bar {
   grid-area: 2 / 1 / 2 / 7;
   margin-inline-start: 15px;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   height: 25px;
   box-shadow: 0 0 0 1px rgba(202, 201, 213, 0.5);
   border: none;
@@ -768,7 +768,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 
 .progress-bar::-moz-progress-bar {
   background: #ffffff;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 var(--border-radius-small) var(--border-radius-small) 0;
 }
 
 .monitor-partial-breaches-motivation-text {
@@ -868,7 +868,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 .monitor-block {
   display: flex;
   flex-direction: column;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   text-align: center;
   margin-inline-end: 15px;
 }
@@ -986,7 +986,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   background-color: var(--button-background-color-primary);
   border: var(--button-border);
   border-color: var(--button-border-color-primary);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   text-decoration: none;
   color: var(--button-text-color-primary);
   font-weight: 600;

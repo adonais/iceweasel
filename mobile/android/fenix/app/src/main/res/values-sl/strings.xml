@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">Več možnosti</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Omogoči zasebno brskanje</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Onemogoči zasebno brskanje</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Zasebno brskanje</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Iskanje ali naslov strani</string>
@@ -291,10 +287,6 @@
   <string name="browser_menu_new_private_tab">Nov zasebni zavihek</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Gesla</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Preklopi na mobilno stran</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Zapri glavni meni</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">Zapri meni</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -341,8 +333,6 @@
   <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Vzame vam sekundo. Kadarkoli lahko spremenite.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">Hiter, zaseben in ustvarjen za vas.</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Skrij</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss_promotion">Skrij promocijo</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -435,10 +425,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Vaši zavihki se sinhronizirajo! Nadaljujte tam, kjer ste končali na drugi napravi.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Zapri</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -499,7 +487,7 @@
     Description for add search widget screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
     Note: The word "Firefox" should NOT be translated
   -->
-  <string name="juno_onboarding_add_search_widget_description" tools:ignore="BrandUsage,UnusedResources">S Firefoxom na domačem zaslonu boste imeli hiter dostop do brskalnika, ki daje prednost zasebnosti in preprečuje sledilce med spletnimi mesti.</string>
+  <string name="juno_onboarding_add_search_widget_description" tools:ignore="BrandUsage,UnusedResources">S Firefoxom na domačem zaslonu boste imeli hiter dostop do brskalnika, ki daje prednost zasebnosti in preprečuje sledenje med spletnimi mesti.</string>
   <!--
     Text for the button to add search widget on the device used by Nimbus experiments. Nimbus experiments do not support string placeholders.
     Note: The word "Firefox" should NOT be translated
@@ -578,6 +566,18 @@
   <string name="onboarding_redesign_tou_body_three_link_text">Upravljanje nastavitev</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
   <string name="onboarding_redesign_tou_agree_and_continue_button_label">Nadaljuj</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">Kje naj bo prikazana naslovna vrstica?</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">Nadaljuj</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Pomagajte Firefoxu rasti</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Sporočite Mozillinim tehnološkim partnerjem za trženje, kako ste odkrili Firefox in da ga uporabljate. Ti podatki se nikoli ne bodo prodali.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">Kako uporabljamo te podatke</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">Potrdi</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Pomagajte Firefoxu rasti</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -603,9 +603,9 @@
   <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
   <string name="onboarding_save_and_continue_button">Shrani in nadaljuj</string>
   <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
-  <string name="onboarding_customize_toolbar_top_option">Vrh</string>
+  <string name="onboarding_customize_toolbar_top_option">Na vrhu</string>
   <!-- Onboarding toolbar selection card label for 'bottom' option, used by Nimbus experiments. -->
-  <string name="onboarding_customize_toolbar_bottom_option">Dno</string>
+  <string name="onboarding_customize_toolbar_bottom_option">Na dnu</string>
   <!-- Onboarding toolbar selection card content description for the main image. -->
   <string name="onboarding_customize_toolbar_main_image_content_description">Velika slika pogleda izbire orodne vrstice, ki prikazuje ilustrirano orodno vrstico.</string>
   <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
@@ -710,8 +710,7 @@
   <string name="preferences_https_only_title">Način \"samo HTTPS\"</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Uporabite zaklepanje zaslona za skrivanje zavihkov v zasebnem brskanju</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">Oglejte si zavihke s prstnim odtisom, PIN ali odklepanjem z obrazom.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Oglejte si zavihke s prstnim odtisom, PIN ali odklepanjem z obrazom.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Zavračanje pasic s piškotki</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -791,7 +790,9 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Prilagoditev</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Prijavite se in sinhronizirajte zavihke, zaznamke, gesla in še kaj.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Prijavite se in sinhronizirajte zavihke, zaznamke, gesla in še kaj.</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">Sinhronizirajte zavihke, zaznamke, gesla in drugo.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Račun Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1163,12 +1164,8 @@
   <string name="preferences_daily_usage_ping_title">Ping za dnevno uporabo</string>
   <string name="preferences_daily_usage_ping_description">To Mozilli pomaga oceniti število aktivnih uporabnikov.</string>
   <string name="preferences_daily_usage_ping_learn_more">Več o pingu za dnevno uporabo</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Samodejno pošlji poročila o sesutjih</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">Poročilo poslano</string>
-  <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">To nam omogoča ugotoviti vzroke težav z brskalnikom in jih odpraviti. Poročila lahko vključujejo osebne ali občutljive podatke.</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
   <string name="preferences_crashes_learn_more">Več o poročilih o sesutjih</string>
   <!-- Title Headers for data collection settings screen -->
@@ -1188,8 +1185,6 @@
   <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Objavite, kako ste odkrili Firefox in da ga uporabljate, z Mozillinimi tehnološkimi partnerji.</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">Več o podatkih za trženje</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Več o poročilih o sesutjih</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Raziskave</string>
   <!-- Summary for studies preferences -->
@@ -1199,7 +1194,9 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Sinhronizirajte in shranite podatke</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sinhronizirajte in shranite podatke</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">Prijava</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Prijavite se, če se želite ponovno povezati</string>
   <!-- Preference for removing FxA account -->
@@ -1348,6 +1345,8 @@
   <string name="close_tabs_after_one_month">Po enem mesecu</string>
   <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Samodejno zapiraj odprte zavihke</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">Zapri</string>
   <!--
     Opening screen
 
@@ -1498,9 +1497,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Izbriši zgodovino</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Zgodovina izbrisana</string>
+  <string name="history_delete_multiple_items_snackbar">Zgodovina izbrisana</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Izbrisan %1$s</string>
+  <string name="history_delete_single_item_snackbar">Izbrisan %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Izbriši</string>
   <!--
@@ -1671,8 +1670,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">Prijavi nedelujočo stran</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">Pomagajte izboljšati %1$s za vse. S pomočjo podatkov, ki jih pošljete, Mozillini zaposleni odpravljajo težave s spletnimi mesti.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">Vaše poročilo nam bo pomagalo razumeti in odpraviti težave v %1$su, s čimer ga bomo izboljšali za vse uporabnike. Več o tem</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
@@ -1685,8 +1682,6 @@
   <string name="webcompat_reporter_url_error_invalid">Vnesite veljaven naslov URL</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Kaj je narobe?</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Izberite razlog</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">Izberite razlog</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
@@ -1702,9 +1697,11 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Pošlji</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">Vaše poročilo je bilo poslano</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Vaše poročilo je bilo poslano</string>
+  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
+  <string name="webcompat_reporter_success_snackbar_text_2">Poročilo poslano</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">Zapri</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Zapri</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Kaj se je zgodilo? Kaj bi se moralo zgoditi?</string>
   <!--
@@ -1741,8 +1738,6 @@
   <string name="tab_crash_close">Zapri zavihek</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Obnovi zavihek</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s je bilo potrebno ponovno zagnati</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">%s se je sesul. Želite poslati poročilo?</string>
   <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
@@ -1782,6 +1777,14 @@
   <string name="bookmark_add_folder">Dodaj mapo</string>
   <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
   <string name="bookmark_saved_in_folder_snackbar">Shranjeno v \"%s\"</string>
+  <!-- Snackbar title describing failure to add a new folder -->
+  <string name="bookmark_error_add_folder">Mape ni bilo mogoče dodati</string>
+  <!-- Snackbar title describing failure to edit an existing folder -->
+  <string name="bookmark_error_edit_folder">Mape ni bilo mogoče urediti</string>
+  <!-- Snackbar title describing failure to select a new parent folder for a bookmark or folder -->
+  <string name="bookmark_error_select_folder">Ni bilo mogoče zamenjati nadrejene mape</string>
+  <!-- Snackbar title describing failure to edit a bookmark -->
+  <string name="bookmark_error_edit_bookmark">Zaznamka ni bilo mogoče urediti</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">UREDI</string>
   <!-- Bookmark menu move button -->
@@ -1882,6 +1885,8 @@
   <string name="bookmark_close_button_content_description">Zapri zaznamke</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Ni zaznamkov</string>
+  <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
+  <string name="bookmarks_folder_description">Zaznamki v mapi: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">Shranite spletna mesta med brskanjem. Prijavite se za uporabo zaznamkov iz drugih sinhroniziranih naprav.</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -2026,12 +2031,14 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d izbran zavihek</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Zavihki shranjeni!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Zbirka shranjena!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Zbirka shranjena!</string>
+  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
+  <string name="create_collection_tabs_saved_new_collection_2">Zbirka shranjena</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Zavihek shranjen!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Zavihek shranjen!</string>
+  <!-- Text shown in snackbar when one tab has been saved in a collection -->
+  <string name="create_collection_tab_saved_2">Zavihek shranjen</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Zapri</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -2078,7 +2085,9 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Prijava v Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Sinhroniziraj in shrani podatke</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sinhroniziraj in shrani podatke</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">Prijava</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Pošlji na vse naprave</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2168,7 +2177,9 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Zaprtih zavihkov: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">Zaznamki shranjeni v “%s”!</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Zaznamki shranjeni v “%s”!</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in_2">Zaznamki shranjeni v “%s”</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Dodano med bližnjice!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -2196,8 +2207,6 @@
   <string name="tab_collection_dialog_message">Ali ste prepričani, da želite izbrisati %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Izbriši</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Spletni naslov kopiran</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">To je vzorčno besedilo. Pokaže vam, kako bo besedilo prikazano, ko povečate ali zmanjšate velikost s to nastavitvijo.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2286,9 +2295,13 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Zavihki poslani!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Zavihki poslani!</string>
+  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
+  <string name="sync_sent_tabs_snackbar_2">Zavihki poslani</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Zavihek poslan!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Zavihek poslan!</string>
+  <!-- Text shown in snackbar when one tab has been sent to device -->
+  <string name="sync_sent_tab_snackbar_2">Zavihek poslan</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Napaka pri pošiljanju</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2341,6 +2354,18 @@
   <string name="preference_enhanced_tracking_protection_allow_list_baseline">Dovoli %1$su, da samodejno uveljavi izjeme, potrebne v izogib večjemu nedelovanju spletnega mesta.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience">Samodejno uporabi tudi izjeme, ki so potrebne samo za odpravljanje manjših težav in omogočanje razpoložljivih zmogljivosti.</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">Ali ste prepričani, da želite izklopiti popravke?</string>
+  <!-- Message for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">Ta nastavitev pomaga odpraviti najpogostejše težave s stranmi. Če jo boste izklopili, nekatere strani morda ne bodo delovale, %1$s pa pri odpravljanju teh težav ne bo mogel pomagati.</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">Izklopi popravke</string>
+  <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">Ohrani popravke vklopljene</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">Kaj je zavrnjeno s strogo zaščito pred sledenjem</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2837,12 +2862,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Vnesite iskalni niz</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Prepričajte se, da se iskalni niz ujema z obliko primera</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Ustvarjeno %s</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Shranjeno %s</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Izbrisano %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Če želite omogočiti:</string>
   <!-- First step for the allowing a permission -->
@@ -3338,12 +3357,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">Varno</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">Ni varno</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">Previdno na tem spletnem mestu</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">Vaša povezava ni zavarovana.</string>
@@ -3368,11 +3383,7 @@
   <!-- Toggle if Enhanced Tracking Protection is turned off -->
   <string name="protection_panel_etp_toggle_off">Izključena</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Če je videti, da spletno mesto ne deluje pravilno, poskusite izklopiti zaščite.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description_2">Če je videti, da spletno mesto ne deluje pravilno, jo poskusite izklopiti.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Zaščite so IZKLOPLJENE. Predlagamo, da jih znova vklopite.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description_2">Priporočamo, da vključite zaščito pred sledenjem.</string>
   <!--
@@ -3384,8 +3395,6 @@
   <string name="protection_panel_no_trackers_blocked">Ni najdenih sledilcev</string>
   <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
   <string name="protection_panel_etp_disabled_no_trackers_blocked">Sledilci niso blokirani</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">Nastavitve za zasebnost in varnost</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">Nastavitve zasebnosti</string>
   <!-- Title text for the protection panel permissions section. -->

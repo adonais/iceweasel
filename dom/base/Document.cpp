@@ -75,7 +75,6 @@
 #include "mozilla/IdentifierMapEntry.h"
 #include "mozilla/InputTaskManager.h"
 #include "mozilla/IntegerRange.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
 #include "mozilla/LookAndFeel.h"
@@ -1473,7 +1472,7 @@ Document::Document(const char* aContentType)
       mAllowDeclarativeShadowRoots(false),
       mSuspendDOMNotifications(false),
       mForceLoadAtTop(false),
-      mFireMutationEvents(true),
+      mSuppressNotifyingDevToolsOfNodeRemovals(false),
       mHasPolicyWithRequireTrustedTypesForDirective(false),
       mClipboardCopyTriggered(false),
       mXMLDeclarationBits(0),
@@ -1494,7 +1493,6 @@ Document::Document(const char* aContentType)
       mPartID(0),
       mMarkedCCGeneration(0),
       mPresShell(nullptr),
-      mSubtreeModifiedDepth(0),
       mPreloadPictureDepth(0),
       mEventsSuppressed(0),
       mIgnoreDestructiveWritesCounter(0),
@@ -2058,6 +2056,91 @@ void Document::LoadEventFired() {
   // potentially dispatch the encoding of the bytecode.
   if (ScriptLoader()) {
     ScriptLoader()->LoadEventFired();
+  }
+}
+
+static void RecordExecutionTimeForAsmJS(Document* aDoc) {
+  if (aDoc->GetScopeObject()) {
+    AutoJSAPI jsapi;
+    if (!jsapi.Init(aDoc->GetScopeObject())) {
+      return;
+    }
+
+    if (JSContext* cx = jsapi.cx()) {
+      // Disable the execution timer.
+      JS::SetMeasuringExecutionTimeEnabled(cx, false);
+
+      // Get the execution time and accumulate it.
+      JS::JSTimers timers = JS::GetJSTimers(cx);
+      mozilla::glean::perf::js_exec_asm_js.AccumulateRawDuration(
+          timers.executionTime);
+    }
+  }
+}
+
+class ASMJSExecutionTimeRecorder final : public nsITimerCallback,
+                                         public nsINamed {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSITIMERCALLBACK
+  NS_DECL_NSINAMED
+
+  explicit ASMJSExecutionTimeRecorder(Document* aDocument)
+      : mDocument(aDocument) {}
+
+ private:
+  ~ASMJSExecutionTimeRecorder() = default;
+  WeakPtr<Document> mDocument;
+};
+
+NS_IMPL_ISUPPORTS(ASMJSExecutionTimeRecorder, nsITimerCallback, nsINamed)
+
+NS_IMETHODIMP
+ASMJSExecutionTimeRecorder::Notify(nsITimer* aTimer) {
+  RefPtr<Document> doc(mDocument);
+  if (!doc) {
+    return NS_OK;
+  }
+
+  // Record the JS execution time to Glean.
+  RecordExecutionTimeForAsmJS(doc);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+ASMJSExecutionTimeRecorder::GetName(nsACString& aName) {
+  aName.AssignLiteral("ASMJSExecutionTimeRecorder");
+  return NS_OK;
+}
+
+// If an asm.js use counter is set, then enable the JS execution
+// timer and record it after 5 minutes of activity.
+void Document::RecordASMJSExecutionTime() {
+  // Skip if the document is being destroyed.
+  if (mIsGoingAway) {
+    return;
+  }
+
+  // If the timer has already fired, or the use counter is already set,
+  // then nothing more needs to be done.
+  if (mASMJSExecutionTimer || HasUseCounter(eUseCounter_custom_JS_use_asm)) {
+    return;
+  }
+
+  AutoJSContext cx;
+  if (static_cast<JSContext*>(cx)) {
+    JS::SetMeasuringExecutionTimeEnabled(cx, true);
+  }
+
+  RefPtr<ASMJSExecutionTimeRecorder> callback =
+      new ASMJSExecutionTimeRecorder(this);
+  nsresult rv =
+      NS_NewTimerWithCallback(getter_AddRefs(mASMJSExecutionTimer), callback,
+                              5 * 60 * 1000,  // 5min delay
+                              nsITimer::TYPE_ONE_SHOT);
+
+  if (NS_FAILED(rv)) {
+    mASMJSExecutionTimer = nullptr;
   }
 }
 
@@ -4064,7 +4147,7 @@ nsresult Document::InitIntegrityPolicy(nsIChannel* aChannel) {
   MOZ_ASSERT(mPolicyContainer,
              "Policy container must be initialized before IntegrityPolicy!");
 
-  if (mPolicyContainer->IntegrityPolicy()) {
+  if (mPolicyContainer->GetIntegrityPolicy()) {
     // We inherited the integrity policy.
     return NS_OK;
   }
@@ -7771,9 +7854,9 @@ Element* Document::GetRootElementInternal() const {
   return nullptr;
 }
 
-void Document::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
-                                 bool aNotify, ErrorResult& aRv,
-                                 nsINode* aOldParent) {
+void Document::InsertChildBefore(
+    nsIContent* aKid, nsIContent* aBeforeThis, bool aNotify, ErrorResult& aRv,
+    nsINode* aOldParent, MutationEffectOnScript aMutationEffectOnScript) {
   const bool isElementInsertion = aKid->IsElement();
   if (isElementInsertion && GetRootElement()) {
     NS_WARNING("Inserting root element when we already have one");
@@ -7781,7 +7864,8 @@ void Document::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
     return;
   }
 
-  nsINode::InsertChildBefore(aKid, aBeforeThis, aNotify, aRv, aOldParent);
+  nsINode::InsertChildBefore(aKid, aBeforeThis, aNotify, aRv, aOldParent,
+                             aMutationEffectOnScript);
   if (isElementInsertion && !aRv.Failed()) {
     CreateCustomContentContainerIfNeeded();
   }
@@ -7789,7 +7873,8 @@ void Document::InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
 
 void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
                                const BatchRemovalState* aState,
-                               nsINode* aNewParent) {
+                               nsINode* aNewParent,
+                               MutationEffectOnScript aMutationEffectOnScript) {
   Maybe<mozAutoDocUpdate> updateBatch;
   const bool removingRoot = aKid->IsElement();
   if (removingRoot) {
@@ -7818,7 +7903,8 @@ void Document::RemoveChildNode(nsIContent* aKid, bool aNotify,
     mCachedRootElement = nullptr;
   }
 
-  nsINode::RemoveChildNode(aKid, aNotify, nullptr, aNewParent);
+  nsINode::RemoveChildNode(aKid, aNotify, nullptr, aNewParent,
+                           aMutationEffectOnScript);
   MOZ_ASSERT(mCachedRootElement != aKid,
              "Stale pointer in mCachedRootElement, after we tried to clear it "
              "(maybe somebody called GetRootElement() too early?)");
@@ -8109,16 +8195,6 @@ void Document::SetScopeObject(nsIGlobalObject* aGlobal) {
     MOZ_ASSERT_IF(
         mNodeInfoManager->GetArenaAllocator(),
         mNodeInfoManager->GetArenaAllocator() == mDocGroup->ArenaAllocator());
-
-    // Update data document's mMutationEventsEnabled early on so that we can
-    // avoid extra IsURIInPrefList calls.
-    if (mLoadedAsData && window->GetExtantDoc() &&
-        window->GetExtantDoc() != this &&
-        window->GetExtantDoc()->NodePrincipal() == NodePrincipal() &&
-        mMutationEventsEnabled.isNothing()) {
-      mMutationEventsEnabled.emplace(
-          window->GetExtantDoc()->MutationEventsEnabled());
-    }
   }
 }
 
@@ -10302,10 +10378,13 @@ Document* Document::Open(const Optional<nsAString>& /* unused */,
   }
 
   // Steps 11, 12, 13, 14 --
-  // remove all our DOM kids without firing any mutation events.
+  // remove all our DOM kids without notifying DevTools of the node removals.
   {
-    bool oldFlag = FireMutationEvents();
-    SetFireMutationEvents(false);
+    // XXX I don't know we should keep hiding the node removals from DevTools.
+    // If it's safe even if the user updates the DOM tree from Inspector or
+    // Console, we can stop suppressing this.
+    AutoSuppressNotifyingDevToolsOfNodeRemovals suppressNotifyingDevTools(
+        *this);
 
     // We want to ignore any recursive calls to Open() that happen while
     // disconnecting the node tree.  The spec doesn't say to do this, but the
@@ -10314,7 +10393,6 @@ Document* Document::Open(const Optional<nsAString>& /* unused */,
     // <https://github.com/whatwg/html/issues/4611>.
     IgnoreOpensDuringUnload ignoreOpenGuard(this);
     DisconnectNodeTree();
-    SetFireMutationEvents(oldFlag);
   }
 
   // Step 15 -- if we're the current document in our docshell, do the
@@ -10764,12 +10842,8 @@ nsINode* Document::AdoptNode(nsINode& aAdoptedNode, ErrorResult& rv,
     return nullptr;
   }
 
-  // Scope firing mutation events so that we don't carry any state that
-  // might be stale
-  {
-    if (nsCOMPtr<nsINode> parent = adoptedNode->GetParentNode()) {
-      nsContentUtils::MaybeFireNodeRemoved(adoptedNode, parent);
-    }
+  if (adoptedNode->GetParentNode()) {
+    nsContentUtils::NotifyDevToolsOfNodeRemoval(*adoptedNode);
   }
 
   nsAutoScriptBlocker scriptBlocker;
@@ -12138,6 +12212,12 @@ void Document::Destroy() {
 
   mIsGoingAway = true;
 
+  if (mASMJSExecutionTimer) {
+    mASMJSExecutionTimer->Cancel();
+    mASMJSExecutionTimer = nullptr;
+    RecordExecutionTimeForAsmJS(this);
+  }
+
   ScriptLoader()->Destroy();
   SetScriptGlobalObject(nullptr);
   RemovedFromDocShell();
@@ -12579,68 +12659,6 @@ void Document::OnPageHide(bool aPersisted, EventTarget* aDispatchStartTarget,
     // The fullscreenchange event is to be queued in the refresh driver,
     // however a hidden page wouldn't trigger that again, so it makes no
     // sense to dispatch such event here.
-  }
-}
-
-void Document::WillDispatchMutationEvent(nsINode* aTarget) {
-  NS_ASSERTION(
-      mSubtreeModifiedDepth != 0 || mSubtreeModifiedTargets.Count() == 0,
-      "mSubtreeModifiedTargets not cleared after dispatching?");
-  ++mSubtreeModifiedDepth;
-  if (aTarget) {
-    // MayDispatchMutationEvent is often called just before this method,
-    // so it has already appended the node to mSubtreeModifiedTargets.
-    int32_t count = mSubtreeModifiedTargets.Count();
-    if (!count || mSubtreeModifiedTargets[count - 1] != aTarget) {
-      mSubtreeModifiedTargets.AppendObject(aTarget);
-    }
-  }
-}
-
-void Document::MutationEventDispatched(nsINode* aTarget) {
-  if (--mSubtreeModifiedDepth) {
-    return;
-  }
-
-  int32_t count = mSubtreeModifiedTargets.Count();
-  if (!count) {
-    return;
-  }
-
-  nsPIDOMWindowInner* window = GetInnerWindow();
-  if (window &&
-      !window->HasMutationListeners(NS_EVENT_BITS_MUTATION_SUBTREEMODIFIED)) {
-    mSubtreeModifiedTargets.Clear();
-    return;
-  }
-
-  nsCOMArray<nsINode> realTargets;
-  for (nsINode* possibleTarget : mSubtreeModifiedTargets) {
-    if (possibleTarget->ChromeOnlyAccess()) {
-      continue;
-    }
-
-    nsINode* commonAncestor = nullptr;
-    int32_t realTargetCount = realTargets.Count();
-    for (int32_t j = 0; j < realTargetCount; ++j) {
-      commonAncestor = nsContentUtils::GetClosestCommonInclusiveAncestor(
-          possibleTarget, realTargets[j]);
-      if (commonAncestor) {
-        realTargets.ReplaceObjectAt(commonAncestor, j);
-        break;
-      }
-    }
-    if (!commonAncestor) {
-      realTargets.AppendObject(possibleTarget);
-    }
-  }
-
-  mSubtreeModifiedTargets.Clear();
-
-  for (const nsCOMPtr<nsINode>& target : realTargets) {
-    InternalMutationEvent mutation(true, eLegacySubtreeModified);
-    // MOZ_KnownLive due to bug 1620312
-    AsyncEventDispatcher::RunDOMEventWhenSafe(MOZ_KnownLive(*target), mutation);
   }
 }
 
@@ -14940,8 +14958,7 @@ void DevToolsMutationObserver::FireEvent(nsINode* aTarget,
 
 void DevToolsMutationObserver::AttributeChanged(Element* aElement,
                                                 int32_t aNamespaceID,
-                                                nsAtom* aAttribute,
-                                                int32_t aModType,
+                                                nsAtom* aAttribute, AttrModType,
                                                 const nsAttrValue* aOldValue) {
   FireEvent(aElement, u"devtoolsattrmodified"_ns);
 }
@@ -19377,7 +19394,7 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
                 }
                 if (AntiTrackingUtils::CheckStoragePermission(
                         self->NodePrincipal(), type,
-                        self->IsInPrivateBrowsing(), nullptr, 0)) {
+                        self->IsInPrivateBrowsing())) {
                   return MozPromise<int, bool, true>::CreateAndResolve(
                       true, __func__);
                 }
@@ -19709,8 +19726,7 @@ already_AddRefed<Promise> Document::CompleteStorageAccessRequestFromSite(
                       false, __func__);
             }
             if (AntiTrackingUtils::CheckStoragePermission(
-                    self->NodePrincipal(), type, self->IsInPrivateBrowsing(),
-                    nullptr, 0)) {
+                    self->NodePrincipal(), type, self->IsInPrivateBrowsing())) {
               return StorageAccessAPIHelper::
                   StorageAccessPermissionGrantPromise::CreateAndResolve(
                       StorageAccessAPIHelper::eAllowAutoGrant, __func__);
@@ -20123,7 +20139,10 @@ bool Document::UsingStorageAccess() {
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
-  return loadInfo->GetStoragePermission() != nsILoadInfo::NoStoragePermission;
+  nsILoadInfo::StoragePermissionState storageAccess =
+      loadInfo->GetStoragePermission();
+  return storageAccess == nsILoadInfo::HasStoragePermission ||
+         storageAccess == nsILoadInfo::StoragePermissionAllowListed;
 }
 
 bool Document::IsOn3PCBExceptionList() const {
@@ -20336,7 +20355,9 @@ void Document::RemoveToplevelLoadingDocument(Document* aDoc) {
   }
 
   // Stop the JS execution timer once the page is loaded.
-  {
+  // If the asm.js counter is active, then continue the timer
+  // for telemetry purposes.
+  if (!aDoc->HasUseCounter(eUseCounter_custom_JS_use_asm)) {
     AutoJSContext cx;
     if (static_cast<JSContext*>(cx)) {
       JS::SetMeasuringExecutionTimeEnabled(cx, false);
@@ -20711,17 +20732,6 @@ already_AddRefed<Document> Document::ParseHTML(GlobalObject& aGlobal,
 
   // Step 6. Return document.
   return doc.forget();
-}
-
-bool Document::MutationEventsEnabled() {
-  if (StaticPrefs::dom_mutation_events_enabled()) {
-    return true;
-  }
-  if (mMutationEventsEnabled.isNothing()) {
-    mMutationEventsEnabled.emplace(
-        NodePrincipal()->IsURIInPrefList("dom.mutation_events.forceEnable"));
-  }
-  return mMutationEventsEnabled.value();
 }
 
 void Document::GetAllInProcessDocuments(

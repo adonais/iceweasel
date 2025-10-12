@@ -108,9 +108,31 @@ function getControlInstance(control = "moz-checkbox") {
   return controlInstances.get(control);
 }
 
+/**
+ * Mapping of parent control tag names to the literal tag name for their
+ * expected children. eg. "moz-radio-group"->literal`moz-radio`.
+ * @type Map<string, literal>
+ */
 const KNOWN_OPTIONS = new Map([
   ["moz-radio-group", literal`moz-radio`],
   ["moz-select", literal`moz-option`],
+]);
+
+/**
+ * Mapping of parent control tag names to the expected slot for their children.
+ * If there's no entry here for a control then it's expected that its children
+ * should go in the default slot.
+ * @type Map<string, string>
+ */
+const ITEM_SLOT_BY_PARENT = new Map([
+  ["moz-checkbox", "nested"],
+  ["moz-input-text", "nested"],
+  ["moz-input-search", "nested"],
+  ["moz-input-folder", "nested"],
+  ["moz-input-password", "nested"],
+  ["moz-radio-group", "nested"],
+  // NOTE: moz-select does not support the nested slot.
+  ["moz-toggle", "nested"],
 ]);
 
 export class SettingControl extends MozLitElement {
@@ -130,6 +152,10 @@ export class SettingControl extends MozLitElement {
 
   createRenderRoot() {
     return this;
+  }
+
+  focus() {
+    this.controlRef.value.focus();
   }
 
   get controlEl() {
@@ -160,24 +186,42 @@ export class SettingControl extends MozLitElement {
   }
 
   /**
-   * The default properties that a control accepts.
+   * The default properties that controls and options accept.
    */
-  getPropertyMapping(config) {
-    const props = {
+  getCommonPropertyMapping(config) {
+    return {
       id: config.id,
       "data-l10n-id": config.l10nId,
+      "data-l10n-args": config.l10nArgs
+        ? JSON.stringify(config.l10nArgs)
+        : undefined,
       ".iconSrc": config.iconSrc,
       ".supportPage": config.supportPage,
-      ".parentDisabled": this.parentDisabled,
-      ".control": this,
       "data-subcategory": config.subcategory,
-      "?disabled": this.setting.disabled || this.setting.locked,
       ...config.controlAttrs,
     };
+  }
 
-    if (config.l10nArgs) {
-      props["data-l10n-args"] = JSON.stringify(config.l10nArgs);
-    }
+  /**
+   * The default properties for an option.
+   */
+  getOptionPropertyMapping(config) {
+    const props = this.getCommonPropertyMapping(config);
+    props[".value"] = config.value;
+    return props;
+  }
+
+  /**
+   * The default properties for this control.
+   */
+  getControlPropertyMapping(config) {
+    const props = this.getCommonPropertyMapping(config);
+    props[".parentDisabled"] = this.parentDisabled;
+    props[".control"] = this;
+    props["?disabled"] =
+      this.setting.disabled ||
+      this.setting.locked ||
+      this.isControlledByExtension();
 
     // Set the value based on the control's API.
     let instance = getControlInstance(config.control);
@@ -212,10 +256,34 @@ export class SettingControl extends MozLitElement {
     this.setting.userChange(this.controlValue(el));
   }
 
+  onClick(event) {
+    this.setting.userClick(event);
+  }
+
+  async disableExtension() {
+    await this.setting.disableControllingExtension();
+  }
+
+  isControlledByExtension() {
+    return (
+      this.setting.controllingExtensionInfo?.id &&
+      this.setting.controllingExtensionInfo?.name
+    );
+  }
+
+  get extensionName() {
+    return this.setting.controllingExtensionInfo.name;
+  }
+
+  get extensionMessageId() {
+    return this.setting.controllingExtensionInfo.l10nId;
+  }
+
   render() {
     // Allow the Setting to override the static config if necessary.
     this.config = this.setting.getControlConfig(this.config);
     let { config } = this;
+    let control = config.control || "moz-checkbox";
     let getItemArgs = items =>
       items?.map(i => ({
         config: i,
@@ -229,7 +297,7 @@ export class SettingControl extends MozLitElement {
         .config=${opts.config}
         .setting=${opts.setting}
         .getSetting=${this.getSetting}
-        slot="nested"
+        slot=${ifDefined(ITEM_SLOT_BY_PARENT.get(control))}
       ></setting-control>`;
     let nestedSettings = itemArgs.map(itemTemplate);
 
@@ -239,26 +307,36 @@ export class SettingControl extends MozLitElement {
       controlChildren = config.options.map(opt => {
         let optionTag = opt.control
           ? unsafeStatic(opt.control)
-          : KNOWN_OPTIONS.get(config.control);
+          : KNOWN_OPTIONS.get(control);
         return staticHtml`<${optionTag}
-              id=${ifDefined(opt.id)}
-              .value=${opt.value}
-              .supportPage=${opt.supportPage}
-              .control=${this}
-              data-l10n-id=${opt.l10nId}
-              data-l10n-args=${ifDefined(
-                opt.l10nArgs && JSON.stringify(opt.l10nArgs)
-              )}
-            >${opt.items ? getItemArgs(opt.items).map(itemTemplate) : ""}</${optionTag}>`;
+          ${spread(this.getOptionPropertyMapping(opt))}
+        >${opt.items ? getItemArgs(opt.items).map(itemTemplate) : ""}</${optionTag}>`;
       });
     }
 
     // Get the properties for this element: id, fluent, disabled, etc.
     // These will be applied to the control using the spread directive.
-    let controlProps = this.getPropertyMapping(config);
+    let controlProps = this.getControlPropertyMapping(config);
 
-    let tag = unsafeStatic(config.control || "moz-checkbox");
-    return staticHtml`<${tag}
+    let tag = unsafeStatic(control);
+    let messageBar;
+    if (this.isControlledByExtension()) {
+      let args = { name: this.extensionName };
+      messageBar = html`<moz-message-bar
+        class="extension-controlled-message-bar"
+        .messageL10nId=${this.extensionMessageId}
+        .messageL10nArgs=${args}
+      >
+        <moz-button
+          slot="actions"
+          @click=${this.disableExtension}
+          data-l10n-id="disable-extension"
+        ></moz-button>
+      </moz-message-bar>`;
+    }
+    return staticHtml`
+    ${messageBar}
+    <${tag}
       ${spread(controlProps)}
       ${ref(this.controlRef)}
     >${controlChildren}${nestedSettings}</${tag}>`;

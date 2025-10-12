@@ -188,7 +188,7 @@ var generateRequestTypes = function (actorSpec) {
   actorSpec.methods.forEach(spec => {
     const handler = function (packet, conn) {
       try {
-        const startTime = isWorker ? null : Cu.now();
+        const startTime = isWorker ? null : ChromeUtils.now();
         let args;
         try {
           args = spec.request.read(packet, this);

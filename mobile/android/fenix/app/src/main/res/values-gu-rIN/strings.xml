@@ -10,10 +10,6 @@
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
   <string name="content_description_menu">વધુ વિકલ્પ</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">ખાનગી બ્રાઉઝિંગ સક્ષમ કરો</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">ખાનગી બ્રાઉઝિંગ નિષ્ક્રિય કરો</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">શોધ અથવા સરનામું દાખલ કરો</string>
   <!-- No Open Tabs Message Description -->
@@ -301,7 +297,7 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">ઇતિહાસ કાઢી નાખો</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">%1$s કાઢી નાખ્યું</string>
+  <string name="history_delete_single_item_snackbar">%1$s કાઢી નાખ્યું</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">કાઢો</string>
   <!--
@@ -465,10 +461,8 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ટેબ્સ પસંદ કરેલ</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">ટેબ્સ સાચવ્યા!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">ટેબ સાચવી!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">ટેબ સાચવી!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">બંધ કરો</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -553,8 +547,6 @@
   <string name="tab_collection_dialog_message">શું તમે ખરેખર %1$s ને કાઢી નાખવા માંગો છો?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">કાઢી નાખો</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL નકલ કરી</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_text_size_summary">વેબસાઇટ્સ પર ટેક્સ્ટ મોટા અથવા નાનાં બનાવો</string>
   <!-- Title for Accessibility Text Size Scaling Preference -->
@@ -615,9 +607,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">ટેબ્સ મોકલી!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">ટેબ્સ મોકલી!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">ટેબ મોકલી!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">ટેબ મોકલી!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">મોકલવામાં અસમર્થ</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -779,12 +771,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">શોધ શબ્દમાળા દાખલ કરો</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">તે તપાસણી કરો કે શોધ શબ્દમાળા ઉદાહરણ ફોર્મેટ સાથે મેળ ખાય છે</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s બનાવ્યું</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s સાચવ્યું</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">%s કાઢી નાખ્યું</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">તેને મંજૂરી આપવા માટે:</string>
   <!--

@@ -517,15 +517,18 @@ class SystemResourceMonitor:
             SystemResourceMonitor.instance.events.append((time.monotonic(), name))
 
     @staticmethod
-    def record_marker(name, start, end, text):
-        """Record a marker with a duration and an optional text
+    def record_marker(name, start, end, data):
+        """Record a marker with a duration and optional data payload
 
         Markers are typically used to record when a single command happened.
         For actions with a longer duration that justifies tracking resource use
         see the phase API below.
+
+        The data parameter can be either a dictionary containing a marker
+        payload (e.g., {"type": "Text", "text": "description"}) or a string.
         """
         if SystemResourceMonitor.instance:
-            SystemResourceMonitor.instance.markers.append((name, start, end, text))
+            SystemResourceMonitor.instance.markers.append((name, start, end, data))
 
     @staticmethod
     def begin_marker(name, text, disambiguator=None, timestamp=None):
@@ -552,7 +555,72 @@ class SystemResourceMonitor:
         if not id in SystemResourceMonitor.instance._active_markers:
             return
         start = SystemResourceMonitor.instance._active_markers.pop(id)
-        SystemResourceMonitor.instance.record_marker(name, start, end, text)
+        # Convert text to new data format for backward compatibility
+        data = {"type": "Text", "text": text}
+        SystemResourceMonitor.instance.record_marker(name, start, end, data)
+
+    @staticmethod
+    def begin_test(data):
+        """Begin tracking a test with enhanced metadata support.
+
+        Args:
+            data: Dictionary containing test data (e.g., {"test": "test_name"})
+        """
+        if SystemResourceMonitor.instance and "test" in data:
+            test_name = data["test"]
+            SystemResourceMonitor.instance._active_markers[test_name] = time.monotonic()
+
+    @staticmethod
+    def end_test(data):
+        """End tracking a test and record it with status and color.
+
+        Args:
+            data: Dictionary containing test data including:
+                  - "test": test name
+                  - "status": test status ("PASS", "OK", "FAIL", "TIMEOUT", "CRASH", etc.)
+                  - "expected": the expected status if it differs from "status"
+                  - "message": A string describing the status.
+        """
+        if not SystemResourceMonitor.instance or "test" not in data:
+            return
+
+        test_name = data["test"]
+        if test_name not in SystemResourceMonitor.instance._active_markers:
+            return
+
+        start = SystemResourceMonitor.instance._active_markers.pop(test_name)
+        end = time.monotonic()
+
+        # Create marker data with test information
+        marker_data = {
+            "type": "Test",
+            "test": test_name,
+            "name": test_name.split("/")[-1],
+        }
+
+        status = data.get("status", "")
+        if status:
+            marker_data["status"] = status
+            expected = data.get("expected")  # None if result was as expected
+            if expected is not None:
+                marker_data["expected"] = expected
+
+            # Determine color based on whether result matches expectations
+            # Special handling for retry case where expected=status artificially
+            message = data.get("message", "")
+            will_retry = "will retry" in message.lower()
+
+            if status in ("SKIP", "TIMEOUT"):
+                marker_data["color"] = "yellow"
+            elif status in ("CRASH", "ERROR"):
+                marker_data["color"] = "red"
+            elif expected is None and not will_retry:
+                # Expected result - green (including expected failures)
+                marker_data["color"] = "green"
+            else:
+                marker_data["color"] = "orange"
+
+        SystemResourceMonitor.instance.record_marker("test", start, end, marker_data)
 
     @contextmanager
     def phase(self, name):
@@ -956,8 +1024,42 @@ class SystemResourceMonitor:
                                 "key": "text",
                                 "label": "Description",
                                 "format": "string",
-                                "searchable": True,
                             }
+                        ],
+                    },
+                    {
+                        "name": "Test",
+                        "tooltipLabel": "{marker.data.name}",
+                        "tableLabel": "{marker.data.test} — {marker.data.status}",
+                        "chartLabel": "{marker.data.name}",
+                        "display": ["marker-chart", "marker-table"],
+                        "colorField": "color",
+                        "data": [
+                            {
+                                "key": "test",
+                                "label": "Test Name",
+                                "format": "string",
+                            },
+                            {
+                                "key": "name",
+                                "label": "Short Name",
+                                "format": "string",
+                                "hidden": True,
+                            },
+                            {
+                                "key": "status",
+                                "label": "Status",
+                                "format": "string",
+                            },
+                            {
+                                "key": "expected",
+                                "label": "Expected",
+                                "format": "string",
+                            },
+                            {
+                                "key": "color",
+                                "hidden": True,
+                            },
                         ],
                     },
                     {
@@ -1019,7 +1121,6 @@ class SystemResourceMonitor:
                                 "key": "cmd",
                                 "label": "Command line",
                                 "format": "string",
-                                "searchable": True,
                             },
                             {
                                 "key": "pid",
@@ -1287,10 +1388,11 @@ class SystemResourceMonitor:
             markerData = {"type": "Process", "pid": pid, "ppid": ppid, "cmd": cmd}
             add_marker(process_string_index, start, end, markerData)
         # Add generic markers
-        for name, start, end, text in self.markers:
-            markerData = {"type": "Text"}
-            if text:
-                markerData["text"] = text
+        for name, start, end, data in self.markers:
+            # data can be a dictionary containing the marker payload or a plain text value
+            markerData = (
+                data if isinstance(data, dict) else {"type": "Text", "text": str(data)}
+            )
             add_marker(get_string_index(name), start, end, markerData, TASK_CATEGORY, 3)
         if self.events:
             event_string_index = get_string_index("Event")

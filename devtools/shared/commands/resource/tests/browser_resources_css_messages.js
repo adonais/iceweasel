@@ -12,6 +12,7 @@ const { MESSAGE_CATEGORY } = require("resource://devtools/shared/constants.js");
 const httpServer = createTestHTTPServer();
 httpServer.registerPathHandler(`/test_css_messages.html`, (req, res) => {
   res.setStatusLine(req.httpVersion, 200, "OK");
+  res.setHeader("Content-Type", "text/html");
   res.write(`<meta charset=utf8>
     <style>
       html {

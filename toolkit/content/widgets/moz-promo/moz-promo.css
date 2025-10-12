@@ -10,7 +10,6 @@
     * color-violet-80 (message-text-color)
     * color-violet-0 (background-color)
     * color-violet-30 (border-color)
-  TODO: need a grey for default --promo-background-color
   TODO: need HCM styles
 */
 
@@ -39,8 +38,7 @@
 
 :host {
   --promo-message-text-color: var(--text-color);
-  --promo-heading-text-color: var(--color-violet-80);
-  --promo-background-color: light-dark(#f5f5f5, var(--color-gray-80));
+  --promo-heading-text-color: var(--promo-message-text-color);
   --promo-border: var(--promo-border-width) solid var(--promo-border-color);
   --promo-border-color: var(--border-color);
   --promo-border-width: var(--border-width);
@@ -48,7 +46,6 @@
 
   @media (prefers-contrast) {
     --promo-message-text-color: var(--text-color);
-    --promo-background-color: var(--background-color-box);
   }
 }
 

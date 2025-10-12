@@ -525,13 +525,8 @@ data class Addon(
                     ListFormatter.getInstance(Locale.getDefault(), ListFormatter.Type.AND, ListFormatter.Width.NARROW)
                         .format(localizedPermissions)
                 }
-
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
-                    ListFormatter.getInstance(Locale.getDefault()).format(localizedPermissions)
-                }
-
                 else -> {
-                    localizedPermissions.joinToString(", ")
+                    ListFormatter.getInstance(Locale.getDefault()).format(localizedPermissions)
                 }
             }
             return formattedList

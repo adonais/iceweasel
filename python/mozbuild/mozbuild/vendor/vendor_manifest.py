@@ -14,6 +14,7 @@ import tarfile
 import tempfile
 from collections import defaultdict
 
+import buildconfig
 import mozfile
 import mozpack.path as mozpath
 import requests
@@ -397,6 +398,8 @@ class VendorManifest(MozbuildObject):
             path = path.replace(
                 "{vendor_dir}", self.manifest["vendoring"]["vendor-directory"]
             )
+        elif "{topsrcdir}" in path:
+            path = path.replace("{topsrcdir}", buildconfig.topsrcdir)
         else:
             path = mozpath.join(self.manifest["vendoring"]["vendor-directory"], path)
         return os.path.abspath(path)
@@ -793,6 +796,7 @@ class VendorManifest(MozbuildObject):
                             "{vendor_dir}",
                             "{yaml_dir}",
                             "{tmpextractdir}",
+                            "{topsrcdir}",
                         ]
                     ):
                         args.append(self.get_full_path(a, support_cwd=True))

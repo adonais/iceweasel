@@ -30,10 +30,11 @@ dependencies {
     implementation project(':components:support-base')
 
     testImplementation project(':components:support-test')
+
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit4
-    testRuntimeOnly libs.junit.vintage
     testRuntimeOnly libs.junit.platform.launcher
+    testRuntimeOnly libs.junit.vintage
 }
 
 apply from: '../../../android-lint.gradle'

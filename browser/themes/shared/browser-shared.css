@@ -36,6 +36,20 @@ body {
 }
 
 :root {
+  --window-min-width: 500px;
+  /* Vertical tabs need extra room in the nav bar for window controls,
+     drag space, and the sidebar button. */
+  --window-min-width-increase-for-vertical-tabs: calc(var(--window-controls-size) + 23px);
+  --window-controls-size: 138px;
+  @media (-moz-platform: macos) {
+    --window-controls-size: 76px;
+  }
+  @media (-moz-platform: linux) {
+    /* FIXME: Use --titlebar-button-* variables to calculate the window
+              controls' size. */
+    --window-controls-size: 115px;
+  }
+
   user-select: none;
   color-scheme: light dark;
   text-rendering: optimizeLegibility;
@@ -51,28 +65,17 @@ body {
   }
 
   &:not([chromehidden~="toolbar"]) {
-    min-width: 450px;
+    min-width: var(--window-min-width);
     min-height: 120px;
 
     /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("sidebar.verticalTabs") {
-      min-width: 732px;
+      min-width: calc(var(--window-min-width) + var(--window-min-width-increase-for-vertical-tabs));
 
       /* If the Content Analysis icon is showing, we don't
          want to collapse it, so make a little more room. */
       &[contentanalysisactive] {
-        min-width: 768px;
-      }
-
-      @media (-moz-platform: macos) {
-        min-width: 670px;
-
-        /* If the Content Analysis icon is showing, we don't
-          want to collapse it, so make a little more room. */
-        /* stylelint-disable max-nesting-depth */
-        &[contentanalysisactive] {
-          min-width: 706px;
-        }
+        min-width: calc(var(--window-min-width) + var(--window-min-width-increase-for-vertical-tabs) + 36px);
       }
     }
   }
@@ -263,7 +266,7 @@ body {
   -moz-window-dragging: drag;
 
   :root[customtitlebar] &,
-  :root[customtitlebar] & #urlbar:popover-open {
+  :root[customtitlebar] & .urlbar:popover-open {
     will-change: opacity;
     transition: opacity var(--inactive-window-transition);
 

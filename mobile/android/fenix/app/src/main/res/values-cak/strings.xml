@@ -10,10 +10,6 @@
     Content description (not visible, for screen readers etc.): "Three dot" menu button.
   -->
   <string name="content_description_menu">Ch\'aqa\' chik taq cha\'oj</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Titzij ri ichinan okem pa k\'amaya\'l</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Tichup ri ichinan okem pa k\'amaya\'l</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Tikanöx o ketz\'ib\'äx ri taq ochochib\'äl</string>
   <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
@@ -298,10 +294,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">¡Najin yexim ri taq ruwi\'! Kasamäj chik el akuchi\' xaya\' wi kan pa jun chik okisaxel.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Titz\'apïx</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -499,7 +493,7 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Tichinäx</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Tatikirisaj molojri\'ïl richin ye\'axïm taq ruwi\', taq yaketal, ewan tzij chuqa\' juley chik.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Tatikirisaj molojri\'ïl richin ye\'axïm taq ruwi\', taq yaketal, ewan tzij chuqa\' juley chik.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Rub\'i\' rutaqoya\'l Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -695,7 +689,7 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Tixim chuqa\' Tiyak Atzij</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Tixim chuqa\' Tiyak Atzij</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Titikirisäx molojri\'ïl richin nok chik</string>
   <!-- Preference for removing FxA account -->
@@ -918,9 +912,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Tiyuj natab\'äl</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Xyuj Natab\'äl</string>
+  <string name="history_delete_multiple_items_snackbar">Xyuj Natab\'äl</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Xyuj %1$s</string>
+  <string name="history_delete_single_item_snackbar">Xyuj %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Tiyuj</string>
   <!--
@@ -1149,12 +1143,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ruwi\' cha\'on</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">¡Taq ruwi\' xeyak!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">¡Xyak ri mol!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">¡Xyak ri mol!</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">¡Ruwi\' xyak!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">¡Ruwi\' xyak!</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Titz\'apïx</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -1201,7 +1193,7 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Tatikirisaj molojri\'ïl pa Sync</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Tixim chuqa\' tiyak tzij</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Tixim chuqa\' tiyak tzij</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Titaq pa ronojel okisab\'äl</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1308,8 +1300,6 @@
   <string name="tab_collection_dialog_message">¿La kan nawajo\' nayuj %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Tiyuj</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">URL xwachib\'ëx</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Re re\' jun tz\'etb\'äl tz\'ib\'anïk. K\'o wawe\' richin nuk\'üt achi\'el xtiwachin ri tz\'ib\'anïk toq xtanimirisaj o xtach\'utinisaj rik\'in re runuk\'ulem re\'.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -1394,9 +1384,9 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">¡Xetaq taq ruwi\'!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">¡Xetaq taq ruwi\'!</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">¡Xtaq ruwi\'!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">¡Xtaq ruwi\'!</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Man nitaq ta</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -1772,12 +1762,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Titz\'ib\'äx jun rucholajil kanoxïk</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Tinik\'öx chi ri rucholajem ri nikanöx nuk\'äm ri\' rik\'in ri rub\'anikil tz\'etb\'äl</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Xtz\'uk %s</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Tiyak %s</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Xyuj %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Richin niya\' q\'ij chi re:</string>
   <!-- First step for the allowing a permission -->

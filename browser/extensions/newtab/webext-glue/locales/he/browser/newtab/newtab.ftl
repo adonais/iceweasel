@@ -313,19 +313,32 @@ newtab-custom-pocket-subtitle = תוכן יוצא דופן שנבחר בקפיד
 newtab-custom-stories-toggle =
     .label = סיפורים מומלצים
     .description = תוכן יוצא דופן שנבחר בקפידה על־ידי משפחת { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = סיפורים
+newtab-custom-stories-personalized-checkbox-label = סיפורים מותאמים אישית המבוססים על הפעילות שלך
 newtab-custom-pocket-sponsored = סיפורים ממומנים
 newtab-custom-pocket-show-recent-saves = הצגת שמירות אחרונות
 newtab-custom-recent-title = פעילות אחרונה
 newtab-custom-recent-subtitle = מבחר של אתרים ותכנים אחרונים
-newtab-custom-recent-toggle =
-    .label = פעילות אחרונה
-    .description = מבחר של אתרים ותכנים אחרונים
 newtab-custom-weather-toggle =
     .label = מזג אוויר
     .description = התחזית של היום
 newtab-custom-trending-search-toggle =
     .label = חיפושים פופולריים
     .description = נושאים נפוצים ובחיפוש תדיר
+newtab-custom-widget-weather-toggle =
+    .label = מזג אוויר
+newtab-custom-widget-trending-search-toggle =
+    .label = חיפושים פופולריים
+newtab-custom-widget-lists-toggle =
+    .label = רשימות
+newtab-custom-widget-timer-toggle =
+    .label = שעון עצר
+newtab-custom-widget-section-title = ווידג’טים
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = סגירה
+    .aria-label = סגירת תפריט
 newtab-custom-close-button = סגירה
 newtab-custom-settings = ניהול הגדרות נוספות
 
@@ -338,6 +351,7 @@ newtab-wallpaper-custom-color = בחירת צבע
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = התמונה חרגה ממגבלת גודל הקובץ של { $file_size } מ״ב. נא לנסות להעלות קובץ קטן יותר.
+newtab-wallpaper-error-upload-file-type = לא הצלחנו להעלות את הקובץ שלך. נא לנסות שוב עם קובץ תמונה.
 newtab-wallpaper-error-file-type = לא הצלחנו להעלות את הקובץ שלך. נא לנסות שוב עם סוג קובץ אחר.
 newtab-wallpaper-light-red-panda = פנדה אדומה
 newtab-wallpaper-light-mountain = הר לבן
@@ -443,7 +457,6 @@ newtab-weather-menu-change-location = שינוי מקום
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = חיפוש מקום
     .aria-label = חיפוש מקום
-newtab-weather-change-location-search-input = חיפוש מקום
 newtab-weather-menu-weather-display = תצוגת מזג אוויר
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -590,8 +603,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = פופולרי ב־Google
 newtab-trending-searches-show-trending =
     .title = הצגת חיפושים פופולריים
 newtab-trending-searches-hide-trending =
@@ -600,3 +611,76 @@ newtab-trending-searches-learn-more = מידע נוסף
 newtab-trending-searches-dismiss = הסתרת חיפושים פופולריים
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = חיפושים פופולריים
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = האפשרויות הן אינסופיות. בואו ונוסיף אחת כזאת.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = חדש
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = הושלמו ({ $number })
+newtab-widget-task-list-menu-copy = העתקה
+newtab-widget-lists-menu-edit = עריכת שם הרשימה
+newtab-widget-lists-menu-create = יצירת רשימה חדשה
+newtab-widget-lists-menu-delete = מחיקת רשימה זו
+newtab-widget-lists-menu-copy = העתקת הרשימה ללוח העריכה
+newtab-widget-lists-menu-hide = הסתרת כל הרשימות
+newtab-widget-lists-menu-learn-more = מידע נוסף
+newtab-widget-lists-input-add-an-item =
+    .placeholder = הוספת פריט
+newtab-widget-lists-input-error = נא לכלול טקסט כדי להוסיף פריט.
+newtab-widget-lists-input-menu-open-link = פתיחת קישור
+newtab-widget-lists-input-menu-move-up = להזיז מעלה
+newtab-widget-lists-input-menu-move-down = להזיז מטה
+newtab-widget-lists-input-menu-delete = מחיקה
+newtab-widget-lists-input-menu-edit = עריכה
+newtab-widget-lists-name-label-default =
+    .label = רשימת משימות
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = רשימת משימות
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = רשימה חדשה
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = שעון עצר
+newtab-widget-timer-notification-focus = זמן הריכוז נגמר. עבודה יפה. יש לך צורך בהפסקה?
+newtab-widget-timer-notification-break = ההפסקה שלך הסתיימה. נחזור בחזרה להתרכז?
+newtab-widget-timer-notification-warning = ההתרעות כבויות
+newtab-widget-timer-mode-focus =
+    .label = ריכוז
+newtab-widget-timer-mode-break =
+    .label = הפסקה
+newtab-widget-timer-play =
+    .title = הפעלה
+newtab-widget-timer-pause =
+    .title = השהייה
+newtab-widget-timer-label-play =
+    .label = הפעלה
+newtab-widget-timer-label-pause =
+    .label = השהייה
+newtab-widget-timer-reset =
+    .title = איפוס
+newtab-widget-timer-menu-notifications = כיבוי התרעות
+newtab-widget-timer-menu-notifications-on = הפעלת התרעות
+newtab-widget-timer-menu-hide = הסתרת שעון עצר
+newtab-widget-timer-menu-learn-more = מידע נוסף
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = יש לגלול כדי לראות עוד
+newtab-widget-message-title = להישאר מרוכז בעזרת רשימות ושעון עצר מובנה
+# to-dos stands for "things to do".
+newtab-widget-message-copy = מתזכורות מהירות ועד למשימות יומיות, מזמני התמקדות ועד להפסקות להתמתחות - כך ניתן להספיק את המשימות בזמן.
+newtab-promo-card-title = תמיכה ב־{ -brand-product-name }
+newtab-promo-card-body = נותני החסות שלנו תומכים במשימה שלנו לבנות אינטרנט טוב יותר
+newtab-promo-card-cta = מידע נוסף
+newtab-promo-card-dismiss-button =
+    .title = סגירה
+    .aria-label = סגירה

@@ -745,6 +745,24 @@
     offset: RawInt32Field
     val: ValueField
 
+- name: CheckWeakValueResultForFixedSlot
+  shared: true
+  transpile: true
+  cost_estimate: 1
+  args:
+    obj: ObjId
+    offset: RawInt32Field
+    val: WeakValueField
+
+- name: CheckWeakValueResultForDynamicSlot
+  shared: true
+  transpile: true
+  cost_estimate: 1
+  args:
+    obj: ObjId
+    offset: RawInt32Field
+    val: WeakValueField
+
 - name: LoadScriptedProxyHandler
   shared: true
   transpile: true
@@ -1086,6 +1104,7 @@
     offset: RawInt32Field
     rhs: ValId
     newShape: ShapeField
+    preserveWrapper: BoolImm
 
 - name: AddAndStoreDynamicSlot
   shared: false
@@ -1096,6 +1115,7 @@
     offset: RawInt32Field
     rhs: ValId
     newShape: ShapeField
+    preserveWrapper: BoolImm
 
 - name: AllocateAndStoreDynamicSlot
   shared: false
@@ -1107,6 +1127,7 @@
     rhs: ValId
     newShape: ShapeField
     numNewSlots: RawInt32Field
+    preserveWrapper: BoolImm
 
 - name: AddSlotAndCallAddPropHook
   shared: true
@@ -1715,6 +1736,13 @@
     input: NumberId
 
 - name: MathTruncNumberResult
+  shared: true
+  transpile: true
+  cost_estimate: 4
+  args:
+    input: NumberId
+
+- name: MathRoundNumberResult
   shared: true
   transpile: true
   cost_estimate: 4
@@ -3295,6 +3323,25 @@
   cost_estimate: 1
   args:
     val: ValueField
+
+# This instruction returns a Value stored in a WeakValueField to JS code. Weak
+# references normally require a weak barrier but this instruction doesn't have
+# any barriers in Baseline IC code. Only use this instruction if you know what
+# you're doing!
+- name: UncheckedLoadWeakValueResult
+  shared: false
+  transpile: true
+  cost_estimate: 1
+  args:
+    val: WeakValueField
+
+# See the warning for UncheckedLoadWeakValueResult above.
+- name: UncheckedLoadWeakObjectResult
+  shared: false
+  transpile: true
+  cost_estimate: 1
+  args:
+    obj: WeakObjectField
 
 - name: LoadOperandResult
   shared: true

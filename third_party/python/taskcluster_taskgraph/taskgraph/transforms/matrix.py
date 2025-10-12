@@ -10,12 +10,13 @@ matrix defined in the definition.
 from copy import deepcopy
 from textwrap import dedent
 
-from voluptuous import Extra, Optional, Required
+from voluptuous import ALLOW_EXTRA, Extra, Optional, Required
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import Schema
 from taskgraph.util.templates import substitute_task_fields
 
+#: Schema for matrix transforms
 MATRIX_SCHEMA = Schema(
     {
         Required("name"): str,
@@ -57,10 +58,9 @@ MATRIX_SCHEMA = Schema(
             ): [str],
             Extra: [str],
         },
-        Extra: object,
     },
+    extra=ALLOW_EXTRA,
 )
-"""Schema for matrix transforms."""
 
 transforms = TransformSequence()
 transforms.add_validate(MATRIX_SCHEMA)

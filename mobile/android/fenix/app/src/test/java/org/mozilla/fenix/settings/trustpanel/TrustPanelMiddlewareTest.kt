@@ -198,27 +198,6 @@ class TrustPanelMiddlewareTest {
     }
 
     @Test
-    fun `WHEN clear site data action is dispatched THEN site data is cleared`() = runTestOnMain {
-        val baseDomain = "mozilla.org"
-
-        val store = createStore(
-            trustPanelState = TrustPanelState(baseDomain = baseDomain),
-        )
-
-        store.dispatch(TrustPanelAction.ClearSiteData)
-        store.waitUntilIdle()
-
-        verify(engine).clearData(
-            host = baseDomain,
-            data = Engine.BrowsingData.select(
-                Engine.BrowsingData.AUTH_SESSIONS,
-                Engine.BrowsingData.ALL_SITE_DATA,
-            ),
-        )
-        verify(appStore).dispatch(AppAction.SiteDataCleared)
-    }
-
-    @Test
     fun `GIVEN toggleable permission is blocked by Android WHEN toggle toggleable permission action is dispatched THEN permission is requested`() = runTestOnMain {
         val toggleablePermission = WebsitePermission.Toggleable(
             isEnabled = true,
@@ -419,7 +398,6 @@ class TrustPanelMiddlewareTest {
         initialState = trustPanelState,
         middleware = listOf(
             TrustPanelMiddleware(
-                appStore = appStore,
                 engine = engine,
                 publicSuffixList = publicSuffixList,
                 sessionUseCases = sessionUseCases,

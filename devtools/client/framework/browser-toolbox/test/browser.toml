@@ -39,6 +39,8 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_browser_toolbox_netmonitor.js"]
 
+["browser_browser_toolbox_netmonitor_stackframes.js"]
+
 ["browser_browser_toolbox_print_preview.js"]
 
 ["browser_browser_toolbox_rtl.js"]

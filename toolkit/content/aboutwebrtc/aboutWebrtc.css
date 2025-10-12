@@ -77,7 +77,7 @@ table {
 }
 
 .peer-connection > h3 {
-  background-color: var(--in-content-box-info-background);
+  background-color: var(--background-color-box-info);
   padding: 4px;
 }
 
@@ -209,7 +209,7 @@ div.fold-trigger {
 }
 
 .sdp-history h5 {
-  background-color: var(--in-content-box-info-background);
+  background-color: var(--background-color-box-info);
 }
 
 .sdp-history div {

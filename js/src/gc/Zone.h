@@ -23,12 +23,14 @@
 #include "gc/ArenaList.h"
 #include "gc/Barrier.h"
 #include "gc/BufferAllocator.h"
+#include "gc/FinalizationObservers.h"
 #include "gc/FindSCCs.h"
 #include "gc/GCMarker.h"
 #include "gc/NurseryAwareHashMap.h"
 #include "gc/Policy.h"
 #include "gc/Pretenuring.h"
 #include "gc/Statistics.h"
+#include "gc/WeakMap.h"
 #include "gc/ZoneAllocator.h"
 #include "js/GCHashTable.h"
 #include "js/Vector.h"
@@ -530,17 +532,20 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadData<bool> keepPropMapTables_;
   js::MainThreadData<bool> wasCollected_;
 
+  js::MainThreadOrIonCompileData<JSObject**> preservedWrappers_;
+  js::MainThreadOrIonCompileData<size_t> preservedWrappersCount_;
+  js::MainThreadOrIonCompileData<size_t> preservedWrappersCapacity_;
+
   // Allow zones to be linked into a list
   js::MainThreadOrGCTaskData<Zone*> listNext_;
   static Zone* const NotOnList;
   friend class js::gc::ZoneList;
 
   using KeptAliveSet =
-      JS::GCHashSet<js::HeapPtr<JSObject*>,
-                    js::StableCellHasher<js::HeapPtr<JSObject*>>,
+      JS::GCHashSet<js::HeapPtr<Value>, js::gc::WeakTargetHasher,
                     js::ZoneAllocPolicy>;
   friend class js::WeakRefObject;
-  js::MainThreadOrGCTaskData<KeptAliveSet> keptObjects;
+  js::MainThreadOrGCTaskData<KeptAliveSet> keptAliveSet;
 
   // To support weak pointers in some special cases we keep a list of objects
   // that need to be traced weakly on GC. This is currently only used for the
@@ -677,6 +682,54 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::jit::JitZone* jitZone() { return jitZone_; }
 
   bool ensureJitZoneExists(JSContext* cx) { return !!getJitZone(cx); }
+
+  bool preserveWrapper(JSObject* obj) {
+    MOZ_ASSERT(preservedWrappersCount_ <= preservedWrappersCapacity_);
+    if (preservedWrappersCount_ >= preservedWrappersCapacity_) {
+      const size_t initialCapacity = 8;
+      const size_t maxCapacity = 8192;
+      size_t newCapacity =
+          std::max(size_t(initialCapacity), preservedWrappersCapacity_ * 2);
+      if (newCapacity > maxCapacity) {
+        return false;
+      }
+      JSObject** oldPtr = preservedWrappers_.ref();
+      JSObject** newPtr = js_pod_arena_realloc<JSObject*>(
+          js::MallocArena, oldPtr, preservedWrappersCapacity_, newCapacity);
+      if (!newPtr) {
+        return false;
+      }
+      preservedWrappersCapacity_ = newCapacity;
+      preservedWrappers_ = newPtr;
+    }
+    preservedWrappers_[preservedWrappersCount_++] = obj;
+    return true;
+  }
+
+  void purgePendingWrapperPreservationBuffer() {
+    MOZ_RELEASE_ASSERT(preservedWrappersCount_ == 0);
+    js_free(preservedWrappers_);
+    preservedWrappers_ = nullptr;
+    preservedWrappersCapacity_ = 0;
+  }
+
+  const void* addressOfPreservedWrappers() const {
+    return &preservedWrappers_.ref();
+  }
+
+  const size_t* addressOfPreservedWrappersCount() const {
+    return &preservedWrappersCount_.ref();
+  }
+
+  const size_t* addressOfPreservedWrappersCapacity() const {
+    return &preservedWrappersCapacity_.ref();
+  }
+
+  mozilla::Span<JSObject*> slurpPendingWrapperPreservations() {
+    size_t count = preservedWrappersCount_;
+    preservedWrappersCount_ = 0;
+    return mozilla::Span<JSObject*>(preservedWrappers_.ref(), count);
+  }
 
   void incNumRealmsWithAllocMetadataBuilder() {
     numRealmsWithAllocMetadataBuilder_++;
@@ -868,7 +921,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   // Add the target of JS WeakRef to a kept-alive set maintained by GC.
   // https://tc39.es/ecma262/#sec-addtokeptobjects
-  bool addToKeptObjects(HandleObject target);
+  bool addToKeptObjects(HandleValue target);
 
   void traceKeptObjects(JSTracer* trc);
 

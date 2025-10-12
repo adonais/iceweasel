@@ -808,11 +808,11 @@ void nsIFrame::HandlePrimaryFrameStyleChange(ComputedStyle* aOldStyle) {
     // TODO: Add invalidation.
     // TODO: Only remove/add the necessary names below.
     if (oldDisp && oldDisp->HasAnchorName()) {
-      for (auto& name : oldDisp->mAnchorName.AsSpan()) {
+      for (const auto& name : oldDisp->mAnchorName.AsSpan()) {
         PresShell()->RemoveAnchorPosAnchor(name.AsAtom(), this);
       }
     }
-    for (auto& name : disp->mAnchorName.AsSpan()) {
+    for (const auto& name : disp->mAnchorName.AsSpan()) {
       PresShell()->AddAnchorPosAnchor(name.AsAtom(), this);
     }
   }
@@ -894,7 +894,7 @@ void nsIFrame::Destroy(DestroyContext& aContext) {
   }
 
   if (HasAnchorPosName()) {
-    for (auto& name : disp->mAnchorName.AsSpan()) {
+    for (const auto& name : disp->mAnchorName.AsSpan()) {
       PresShell()->RemoveAnchorPosAnchor(name.AsAtom(), this);
     }
   }
@@ -1831,7 +1831,7 @@ nsRect nsIFrame::GetContentRect() const {
 bool nsIFrame::ComputeBorderRadii(const BorderRadius& aBorderRadius,
                                   const nsSize& aFrameSize,
                                   const nsSize& aBorderArea, Sides aSkipSides,
-                                  nscoord aRadii[8]) {
+                                  nsRectCornerRadii& aRadii) {
   // Percentages are relative to whichever side they're on.
   for (const auto i : mozilla::AllPhysicalHalfCorners()) {
     const LengthPercentage& c = aBorderRadius.Get(i);
@@ -1839,32 +1839,17 @@ bool nsIFrame::ComputeBorderRadii(const BorderRadius& aBorderRadius,
     aRadii[i] = std::max(0, c.Resolve(axis));
   }
 
-  if (aSkipSides.Top()) {
-    aRadii[eCornerTopLeftX] = 0;
-    aRadii[eCornerTopLeftY] = 0;
-    aRadii[eCornerTopRightX] = 0;
-    aRadii[eCornerTopRightY] = 0;
+  if (aSkipSides.Intersects(SideBits::eTop | SideBits::eLeft)) {
+    aRadii.TopLeft() = {};
   }
-
-  if (aSkipSides.Right()) {
-    aRadii[eCornerTopRightX] = 0;
-    aRadii[eCornerTopRightY] = 0;
-    aRadii[eCornerBottomRightX] = 0;
-    aRadii[eCornerBottomRightY] = 0;
+  if (aSkipSides.Intersects(SideBits::eTop | SideBits::eRight)) {
+    aRadii.TopRight() = {};
   }
-
-  if (aSkipSides.Bottom()) {
-    aRadii[eCornerBottomRightX] = 0;
-    aRadii[eCornerBottomRightY] = 0;
-    aRadii[eCornerBottomLeftX] = 0;
-    aRadii[eCornerBottomLeftY] = 0;
+  if (aSkipSides.Intersects(SideBits::eBottom | SideBits::eLeft)) {
+    aRadii.BottomLeft() = {};
   }
-
-  if (aSkipSides.Left()) {
-    aRadii[eCornerBottomLeftX] = 0;
-    aRadii[eCornerBottomLeftY] = 0;
-    aRadii[eCornerTopLeftX] = 0;
-    aRadii[eCornerTopLeftY] = 0;
+  if (aSkipSides.Intersects(SideBits::eBottom | SideBits::eRight)) {
+    aRadii.BottomRight() = {};
   }
 
   // css3-background specifies this algorithm for reducing
@@ -1872,8 +1857,8 @@ bool nsIFrame::ComputeBorderRadii(const BorderRadius& aBorderRadius,
   bool haveRadius = false;
   double ratio = 1.0f;
   for (const auto side : mozilla::AllPhysicalSides()) {
-    uint32_t hc1 = SideToHalfCorner(side, false, true);
-    uint32_t hc2 = SideToHalfCorner(side, true, true);
+    auto hc1 = SideToHalfCorner(side, false, true);
+    auto hc2 = SideToHalfCorner(side, true, true);
     nscoord length =
         SideIsVertical(side) ? aBorderArea.height : aBorderArea.width;
     nscoord sum = aRadii[hc1] + aRadii[hc2];
@@ -1894,35 +1879,6 @@ bool nsIFrame::ComputeBorderRadii(const BorderRadius& aBorderRadius,
   return haveRadius;
 }
 
-void nsIFrame::AdjustBorderRadii(nscoord aRadii[8], const nsMargin& aOffsets) {
-  auto AdjustOffset = [](const uint32_t aRadius, const nscoord aOffset) {
-    // Implement the cubic formula to adjust offset when aOffset > 0 and
-    // aRadius / aOffset < 1.
-    // https://drafts.csswg.org/css-shapes/#valdef-shape-box-margin-box
-    if (aOffset > 0) {
-      const double ratio = aRadius / double(aOffset);
-      if (ratio < 1.0) {
-        return nscoord(aOffset * (1.0 + std::pow(ratio - 1, 3)));
-      }
-    }
-    return aOffset;
-  };
-
-  for (const auto side : mozilla::AllPhysicalSides()) {
-    const nscoord offset = aOffsets.Side(side);
-    const uint32_t hc1 = SideToHalfCorner(side, false, false);
-    const uint32_t hc2 = SideToHalfCorner(side, true, false);
-    if (aRadii[hc1] > 0) {
-      const nscoord offset1 = AdjustOffset(aRadii[hc1], offset);
-      aRadii[hc1] = std::max(0, aRadii[hc1] + offset1);
-    }
-    if (aRadii[hc2] > 0) {
-      const nscoord offset2 = AdjustOffset(aRadii[hc2], offset);
-      aRadii[hc2] = std::max(0, aRadii[hc2] + offset2);
-    }
-  }
-}
-
 static inline bool RadiiAreDefinitelyZero(const BorderRadius& aBorderRadius) {
   for (const auto corner : mozilla::AllPhysicalHalfCorners()) {
     if (!aBorderRadius.Get(corner).IsDefinitelyZero()) {
@@ -1935,9 +1891,8 @@ static inline bool RadiiAreDefinitelyZero(const BorderRadius& aBorderRadius) {
 /* virtual */
 bool nsIFrame::GetBorderRadii(const nsSize& aFrameSize,
                               const nsSize& aBorderArea, Sides aSkipSides,
-                              nscoord aRadii[8]) const {
+                              nsRectCornerRadii& aRadii) const {
   if (!mMayHaveRoundedCorners) {
-    memset(aRadii, 0, sizeof(nscoord) * 8);
     return false;
   }
 
@@ -1949,9 +1904,6 @@ bool nsIFrame::GetBorderRadii(const nsSize& aFrameSize,
     // In an ideal world, we might have a way for the them to tell us an
     // border radius, but since we don't, we're better off assuming
     // zero.
-    for (const auto corner : mozilla::AllPhysicalHalfCorners()) {
-      aRadii[corner] = 0;
-    }
     return false;
   }
 
@@ -1969,38 +1921,36 @@ bool nsIFrame::GetBorderRadii(const nsSize& aFrameSize,
   return hasRadii;
 }
 
-bool nsIFrame::GetBorderRadii(nscoord aRadii[8]) const {
+bool nsIFrame::GetBorderRadii(nsRectCornerRadii& aRadii) const {
   nsSize sz = GetSize();
   return GetBorderRadii(sz, sz, GetSkipSides(), aRadii);
 }
 
-bool nsIFrame::GetMarginBoxBorderRadii(nscoord aRadii[8]) const {
-  return GetBoxBorderRadii(aRadii, GetUsedMargin());
-}
-
-bool nsIFrame::GetPaddingBoxBorderRadii(nscoord aRadii[8]) const {
-  return GetBoxBorderRadii(aRadii, -GetUsedBorder());
-}
-
-bool nsIFrame::GetContentBoxBorderRadii(nscoord aRadii[8]) const {
-  return GetBoxBorderRadii(aRadii, -GetUsedBorderAndPadding());
-}
-
-bool nsIFrame::GetBoxBorderRadii(nscoord aRadii[8],
-                                 const nsMargin& aOffsets) const {
+bool nsIFrame::GetMarginBoxBorderRadii(nsRectCornerRadii& aRadii) const {
   if (!GetBorderRadii(aRadii)) {
     return false;
   }
-  AdjustBorderRadii(aRadii, aOffsets);
-  for (const auto corner : mozilla::AllPhysicalHalfCorners()) {
-    if (aRadii[corner]) {
-      return true;
-    }
-  }
-  return false;
+  aRadii.AdjustOutwards(GetUsedMargin());
+  return true;
 }
 
-bool nsIFrame::GetShapeBoxBorderRadii(nscoord aRadii[8]) const {
+bool nsIFrame::GetPaddingBoxBorderRadii(nsRectCornerRadii& aRadii) const {
+  if (!GetBorderRadii(aRadii)) {
+    return false;
+  }
+  aRadii.AdjustInwards(GetUsedBorder());
+  return true;
+}
+
+bool nsIFrame::GetContentBoxBorderRadii(nsRectCornerRadii& aRadii) const {
+  if (!GetBorderRadii(aRadii)) {
+    return false;
+  }
+  aRadii.AdjustInwards(GetUsedBorderAndPadding());
+  return true;
+}
+
+bool nsIFrame::GetShapeBoxBorderRadii(nsRectCornerRadii& aRadii) const {
   using Tag = StyleShapeOutside::Tag;
   auto& shapeOutside = StyleDisplay()->mShapeOutside;
   auto box = StyleShapeBox::MarginBox;
@@ -2035,6 +1985,14 @@ nscoord nsIFrame::OneEmInAppUnits() const {
   return StyleFont()
       ->mFont.size.ScaledBy(nsLayoutUtils::FontSizeInflationFor(this))
       .ToAppUnits();
+}
+
+RubyMetrics nsIFrame::RubyMetrics(float aRubyMetricsFactor) const {
+  RefPtr<nsFontMetrics> fm =
+      nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
+  return mozilla::RubyMetrics{
+      nscoord(NS_round(fm->TrimmedAscent() * aRubyMetricsFactor)),
+      nscoord(NS_round(fm->TrimmedDescent() * aRubyMetricsFactor))};
 }
 
 ComputedStyle* nsIFrame::GetAdditionalComputedStyle(int32_t aIndex) const {
@@ -2795,17 +2753,17 @@ static void ApplyOverflowClipping(
     PhysicalAxes aClipAxes,
     DisplayListClipState::AutoClipMultiple& aClipState) {
   nsRect clipRect;
-  nscoord radii[8];
+  nsRectCornerRadii radii;
   bool haveRadii =
       aFrame->ComputeOverflowClipRectRelativeToSelf(aClipAxes, clipRect, radii);
   aClipState.ClipContainingBlockDescendantsExtra(
       clipRect + aBuilder->ToReferenceFrame(aFrame),
-      haveRadii ? radii : nullptr);
+      haveRadii ? &radii : nullptr);
 }
 
 bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
     const PhysicalAxes aClipAxes, nsRect& aOutRect,
-    nscoord aOutRadii[8]) const {
+    nsRectCornerRadii& aOutRadii) const {
   // Only 'clip' is handled here (and 'hidden' for table frames, and any
   // non-'visible' value for blocks in a paginated context).
   // We allow 'clip' to apply to any kind of frame. This is required by
@@ -2843,17 +2801,21 @@ bool nsIFrame::ComputeOverflowClipRectRelativeToSelf(
     // NOTE(mats) We shouldn't be clipping at all in this dimension really,
     // but clipping in just one axis isn't supported by our GFX APIs so we
     // clip to our visual overflow rect instead.
-    nsRect o = InkOverflowRect();
+    nsRect o = InkOverflowRectRelativeToSelf();
     aOutRect.x = o.x;
     aOutRect.width = o.width;
   }
   if (MOZ_UNLIKELY(!aClipAxes.contains(PhysicalAxis::Vertical))) {
     // See the note above.
-    nsRect o = InkOverflowRect();
+    nsRect o = InkOverflowRectRelativeToSelf();
     aOutRect.y = o.y;
     aOutRect.height = o.height;
   }
-  return GetBoxBorderRadii(aOutRadii, boxMargin);
+  if (!GetBorderRadii(aOutRadii)) {
+    return false;
+  }
+  aOutRadii.AdjustOutwards(boxMargin);
+  return true;
 }
 
 nsSize nsIFrame::OverflowClipMargin(PhysicalAxes aClipAxes) const {
@@ -3213,12 +3175,23 @@ void nsIFrame::BuildDisplayListForStackingContext(
     }
   }
 
-  // Elements with a view-transition name also form a backdrop-root.
-  // See https://www.w3.org/TR/css-view-transitions-1/#named-and-transitioning
-  // and https://github.com/w3c/csswg-drafts/issues/11772
-  const bool hasViewTransitionName =
-      style.StyleUIReset()->HasViewTransitionName() &&
+  // Root gets handled in
+  // ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems.
+  const bool capturedByViewTransition =
+      HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
       !style.IsRootElementStyle();
+
+  // Do not need to build the display list of the captured frames for event
+  // delivery (i.e. to determine if this frame is under the mouse position).
+  //
+  // Per spec, hit-testing is skipped because the element’s DOM location does
+  // not correspond to where its contents are rendered, so we could just skip
+  // the building of the display list for these frames, and then these APIs,
+  // e.g. elementFromPoint(), will skip these frames as well.
+  // https://drafts.csswg.org/css-view-transitions-1/#view-transition-stacking-layer
+  if (capturedByViewTransition && aBuilder->IsForEventDelivery()) {
+    return;
+  }
 
   if (aBuilder->IsForPainting() && disp->mWillChange.bits) {
     aBuilder->AddToWillChangeBudget(this, GetSize());
@@ -3360,12 +3333,6 @@ void nsIFrame::BuildDisplayListForStackingContext(
       }
     }
   }
-
-  // Root gets handled in
-  // ScrollContainerFrame::MaybeCreateTopLayerAndWrapRootItems.
-  const bool capturedByViewTransition =
-      HasAnyStateBits(NS_FRAME_CAPTURED_IN_VIEW_TRANSITION) &&
-      !style.IsRootElementStyle();
 
   const bool usingFilter = effects->HasFilters() && !style.IsRootElementStyle();
   const SVGUtils::MaskUsage maskUsage =
@@ -3609,6 +3576,12 @@ void nsIFrame::BuildDisplayListForStackingContext(
       // We don't need to isolate the root frame.
       return reasons;
     }
+    // Elements with a view-transition name also form a backdrop-root.
+    // See https://www.w3.org/TR/css-view-transitions-1/#named-and-transitioning
+    // and https://github.com/w3c/csswg-drafts/issues/11772
+    const bool hasViewTransitionName =
+        style.StyleUIReset()->HasViewTransitionName() &&
+        !style.IsRootElementStyle();
     if ((disp->mWillChange.bits & StyleWillChangeBits::BACKDROP_ROOT) ||
         hasViewTransitionName) {
       reasons |= StackingContextBits::ContainsBackdropFilter;
@@ -3643,7 +3616,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
   // isolate the containing element blending as well.
   if (aBuilder->ContainsBlendMode()) {
     resultList.AppendToTop(nsDisplayBlendContainer::CreateForMixBlendMode(
-        aBuilder, this, &resultList, containerItemASR));
+        aBuilder, this, &resultList, containerItemASR,
+        nsDisplayItem::ContainerASRType::AncestorOfContained));
     createdContainer = true;
     MarkAsIsolated();
   }
@@ -3701,7 +3675,11 @@ void nsIFrame::BuildDisplayListForStackingContext(
                                : containerItemASR;
       /* List now emptied, so add the new list to the top. */
       resultList.AppendNewToTop<nsDisplayMasksAndClipPaths>(
-          aBuilder, this, &resultList, maskASR, usingBackdropFilter);
+          aBuilder, this, &resultList, maskASR,
+          clipForMask.isSome()
+              ? nsDisplayItem::ContainerASRType::Constant
+              : nsDisplayItem::ContainerASRType::AncestorOfContained,
+          usingBackdropFilter);
       createdContainer = true;
       MarkAsIsolated();
     }
@@ -3722,8 +3700,10 @@ void nsIFrame::BuildDisplayListForStackingContext(
     const bool needsActiveOpacityLayer =
         nsDisplayOpacity::NeedsActiveLayer(aBuilder, this);
     resultList.AppendNewToTop<nsDisplayOpacity>(
-        aBuilder, this, &resultList, containerItemASR, opacityItemForEventsOnly,
-        needsActiveOpacityLayer, usingBackdropFilter, ShouldForceIsolation());
+        aBuilder, this, &resultList, containerItemASR,
+        nsDisplayItem::ContainerASRType::AncestorOfContained,
+        opacityItemForEventsOnly, needsActiveOpacityLayer, usingBackdropFilter,
+        ShouldForceIsolation());
     createdContainer = true;
   }
 
@@ -3860,6 +3840,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
           aBuilder, this,
           /* aIndex = */ nsDisplayOwnLayer::OwnLayerForTransformWithRoundedClip,
           &resultList, aBuilder->CurrentActiveScrolledRoot(),
+          nsDisplayItem::ContainerASRType::Constant,
           nsDisplayOwnLayerFlags::None, ScrollbarData{},
           /* aForceActive = */ false, false);
       createdContainer = true;
@@ -3882,7 +3863,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
     const ActiveScrolledRoot* fixedASR = ActiveScrolledRoot::PickAncestor(
         containerItemASR, aBuilder->CurrentActiveScrolledRoot());
     resultList.AppendNewToTop<nsDisplayFixedPosition>(
-        aBuilder, this, &resultList, fixedASR, containerItemASR,
+        aBuilder, this, &resultList, fixedASR,
+        nsDisplayItem::ContainerASRType::AncestorOfContained, containerItemASR,
         ShouldForceIsolation());
     createdContainer = true;
   } else if (useStickyPosition && !capturedByViewTransition) {
@@ -3904,6 +3886,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
     auto* stickyItem = MakeDisplayItem<nsDisplayStickyPosition>(
         aBuilder, this, &resultList, stickyASR,
+        nsDisplayItem::ContainerASRType::AncestorOfContained,
         aBuilder->CurrentActiveScrolledRoot(),
         clipState.IsClippedToDisplayPort());
 
@@ -3930,9 +3913,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
   if (effects->mMixBlendMode != StyleBlend::Normal) {
     stackingContextTracker.AddToParent(
         StackingContextBits::ContainsMixBlendMode);
-    resultList.AppendNewToTop<nsDisplayBlendMode>(aBuilder, this, &resultList,
-                                                  effects->mMixBlendMode,
-                                                  containerItemASR, false);
+    resultList.AppendNewToTop<nsDisplayBlendMode>(
+        aBuilder, this, &resultList, effects->mMixBlendMode, containerItemASR,
+        nsDisplayItem::ContainerASRType::AncestorOfContained, false);
     createdContainer = true;
     MarkAsIsolated();
   }
@@ -3951,7 +3934,9 @@ void nsIFrame::BuildDisplayListForStackingContext(
 
   if (!isolated && localIsolationReasons != StackingContextBits::None) {
     resultList.AppendToTop(nsDisplayBlendContainer::CreateForIsolation(
-        aBuilder, this, &resultList, containerItemASR, ShouldForceIsolation()));
+        aBuilder, this, &resultList, containerItemASR,
+        nsDisplayItem::ContainerASRType::AncestorOfContained,
+        ShouldForceIsolation()));
     createdContainer = true;
   }
 
@@ -3968,7 +3953,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
     nsDisplayItem* container = resultList.GetBottom();
     if (resultList.Length() > 1 || container->Frame() != this) {
       container = MakeDisplayItem<nsDisplayContainer>(
-          aBuilder, this, containerItemASR, &resultList);
+          aBuilder, this, containerItemASR,
+          nsDisplayItem::ContainerASRType::AncestorOfContained, &resultList);
     } else {
       MOZ_ASSERT(resultList.Length() == 1);
       resultList.Clear();
@@ -4042,8 +4028,9 @@ static nsDisplayItem* WrapInWrapList(nsDisplayListBuilder* aBuilder,
   // TODO:RetainedDisplayListBuilder's merge phase has the full list and
   // could strip them out.
 
-  return MakeDisplayItem<nsDisplayContainer>(aBuilder, aFrame, aContainerASR,
-                                             aList);
+  return MakeDisplayItem<nsDisplayContainer>(
+      aBuilder, aFrame, aContainerASR,
+      nsDisplayItem::ContainerASRType::AncestorOfContained, aList);
 }
 
 /**
@@ -7737,7 +7724,7 @@ nsresult nsIFrame::CharacterDataChanged(const CharacterDataChangeInfo&) {
 }
 
 nsresult nsIFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                    int32_t aModType) {
+                                    AttrModType) {
   return NS_OK;
 }
 
@@ -8765,14 +8752,6 @@ nsIFrame* nsIFrame::GetContainingBlock(
     f = f->GetParent();
   }
   return f;
-}
-
-nsIFrame* nsIFrame::FindAnchorPosAnchor(const nsAtom* aAnchorSpec) const {
-  if (!StyleDisplay()->IsAbsolutelyPositionedStyle()) {
-    return nullptr;
-  }
-
-  return PresShell()->GetAnchorPosAnchor(aAnchorSpec, this);
 }
 
 #ifdef DEBUG_FRAME_DUMP
@@ -11022,7 +11001,12 @@ bool nsIFrame::FinishAndStoreOverflow(OverflowAreas& aOverflowAreas,
       TransformReferenceBox refBox(this);
       for (const auto otype : AllOverflowTypes()) {
         nsRect& o = aOverflowAreas.Overflow(otype);
-        o = nsDisplayTransform::TransformRect(o, this, refBox);
+        // If the overflow is empty, it can still have a non-zero length in one axis.
+        // Transforming such axis-bound rect can cause the resulting rect to be non-empty,
+        // e.g. by rotating the rect.
+        if (!o.IsEmpty()) {
+          o = nsDisplayTransform::TransformRect(o, this, refBox);
+        }
       }
 
       /* If we're the root of the 3d context, then we want to include the

@@ -11,10 +11,6 @@
   -->
   <string name="content_description_menu">Fleiri stillingar</string>
   <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Virkja huliðsvafur</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
-  <string name="content_description_disable_private_browsing_button" moz:removedIn="142" tools:ignore="UnusedResources">Gera huliðsvafur óvirkt</string>
-  <!-- Content description (not visible, for screen readers etc.): "Private Browsing" menu button. -->
   <string name="content_description_private_browsing">Huliðsvafur</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
   <string name="search_hint">Leitaðu eða settu inn vistfang</string>
@@ -293,10 +289,6 @@
   <string name="browser_menu_new_private_tab">Nýr huliðsflipi</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Lykilorð</string>
-  <!-- Browser menu label that toggles the request for the mobile site of the currently visited page -->
-  <string name="browser_menu_switch_to_mobile_site" moz:removedIn="142" tools:ignore="UnusedResources">Skipta yfir á vefsvæði farsíma</string>
-  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar main menu. -->
-  <string name="browser_main_menu_handlebar_content_description" moz:removedIn="142" tools:ignore="UnusedResources">Loka spjaldi aðalvalmyndar</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">Loka valmynd</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
@@ -343,8 +335,6 @@
   <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">Tekur nokkrar sekúndur. Skiptu um hvenær sem er.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">Hraður, persónulegur og hannaður fyrir þig.</string>
-  <!-- Content description for the button that dismisses the set as default banner in the menu -->
-  <string name="browser_menu_default_banner_dismiss" moz:removedIn="142" tools:ignore="UnusedResources">Afgreiða</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
   <string name="browser_menu_default_banner_dismiss_promotion">Hunsa kynningu</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
@@ -439,10 +429,8 @@
   <!--
     Home onboarding
 
-    Onboarding home screen sync popup dialog message, shown on top of Recent Synced Tabs in the Jump back in section.
+    Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
-  <string name="sync_cfr_message" moz:removedIn="142" tools:ignore="UnusedResources">Fliparnir þínir eru að samstillast! Haltu áfram þar sem frá var horfið í hinu tækinu þínu.</string>
-  <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
   <string name="onboarding_home_content_description_close_button">Loka</string>
   <!--
     Juno first user onboarding flow experiment, strings are marked unused as they are only referenced by Nimbus experiments.
@@ -584,6 +572,22 @@
   <string name="onboarding_redesign_tou_body_three_link_text">Sýsla með stillingar</string>
   <!-- Terms of use (ToU) onboarding page continue button label. -->
   <string name="onboarding_redesign_tou_agree_and_continue_button_label">Halda áfram</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">Hvar viltu hafa veffangastikuna þína?</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">Halda áfram</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage">Hjálpaðu til við að láta Firefox dafna</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage">Deila því hvernig þú uppgötvaðir Firefox og að þú notar hann með markaðstækniaðilum Mozilla. Þessi gögn eru aldrei seld.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">Hvernig við notum gögnin</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">Staðfesta</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button">Hefja samstillingu</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">Ekki núna</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Hjálpaðu til við að láta Firefox dafna</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -716,8 +720,7 @@
   <string name="preferences_https_only_title">Einungis-HTTPS-hamur</string>
   <!-- Preference title for using the screen lock to hide tabs in private browsing -->
   <string name="preferences_pbm_lock_screen_title">Nota skjálás til að fela flipa í huliðsvafri</string>
-  <!-- Informs the user how to access the tabs when "Use screen lock to hide tabs in private browsing" is enabled -->
-  <string name="preferences_pbm_lock_screen_summary_2">Skoða flipa með fingrafari, PIN-númeri eða andlitsopnun.</string>
+  <string name="preferences_pbm_lock_screen_summary_2" tools:ignore="UnusedResources" moz:removedIn="144">Skoða flipa með fingrafari, PIN-númeri eða andlitsopnun.</string>
   <!-- Label for cookie banner section in quick settings panel. -->
   <string name="cookie_banner_blocker">Útilokun vefkökuborða</string>
   <!-- Preference for removing cookie/consent banners from sites automatically in private mode. See reduce_cookie_banner_summary for additional context. -->
@@ -797,7 +800,9 @@
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Sérsníða</string>
   <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2">Skráðu þig inn til að samstilla flipana þína, bókamerki, lykilorð og fleira.</string>
+  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Skráðu þig inn til að samstilla flipana þína, bókamerki, lykilorð og fleira.</string>
+  <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
+  <string name="preferences_sign_in_description">Samstilltu flipa, bókamerki, lykilorð og fleira.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Mozilla-reikningur</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1169,12 +1174,8 @@
   <string name="preferences_daily_usage_ping_title">Ping um daglega notkun</string>
   <string name="preferences_daily_usage_ping_description">Þetta hjálpar Mozilla að áætla virka notendur.</string>
   <string name="preferences_daily_usage_ping_learn_more">Frekari upplýsingar um notkunargögn</string>
-  <!-- Preference switch title for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_title" tools:ignore="UnusedResources" moz:removedIn="142">Senda hrunskýrslur inn sjálfkrafa</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">Skýrsla send</string>
-  <!-- Preference switch description for automatically submitting crash reports -->
-  <string name="preferences_automatically_send_crashes_description" tools:ignore="UnusedResources" moz:removedIn="142">Þetta gerir okkur kleift að greina og laga vandamál með vafrann. Slíkar skýrslur geta innihaldið persónuleg eða viðkvæm gögn.</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
   <string name="preferences_crashes_learn_more">Frekari upplýsingar um hrunskýrslur</string>
   <!-- Title Headers for data collection settings screen -->
@@ -1194,8 +1195,6 @@
   <string name="preferences_marketing_data_description_4" tools:ignore="BrandUsage">Deila því hvernig þú uppgötvaðir Firefox og að þú notar hann með markaðstæknifélögum Mozilla.</string>
   <!-- Learn more link for marketing data preference -->
   <string name="preferences_marketing_data_learn_more">Frekari upplýsingar um markaðsgögn</string>
-  <!-- Learn more link for crash reporting preference -->
-  <string name="onboarding_preferences_dialog_crash_reporting_learn_more" tools:ignore="UnusedResources" moz:removedIn="142">Frekari upplýsingar um hrunskýrslur</string>
   <!-- Title for studies preferences -->
   <string name="preference_experiments_2">Kannanir</string>
   <!-- Summary for studies preferences -->
@@ -1205,7 +1204,9 @@
 
     Header of the Sync and save your data preference view
   -->
-  <string name="preferences_sync_2">Samstilla og vista gögn</string>
+  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Samstilla og vista gögn</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">Skrá inn</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Skráðu þig inn til að tengjast aftur</string>
   <!-- Preference for removing FxA account -->
@@ -1354,6 +1355,8 @@
   <string name="close_tabs_after_one_month">Eftir einn mánuð</string>
   <!-- Title of preference that allows a user to specify the auto-close settings for open tabs -->
   <string name="preference_auto_close_tabs" tools:ignore="UnusedResources">Loka opnum flipum sjálfvirkt</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button -->
+  <string name="tab_manager_close_tabs">Loka</string>
   <!--
     Opening screen
 
@@ -1504,9 +1507,9 @@
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">Eyða ferli</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
-  <string name="history_delete_multiple_items_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Hreinsa feril</string>
+  <string name="history_delete_multiple_items_snackbar">Hreinsa feril</string>
   <!-- Text for the snackbar to confirm that a single browsing history item has been deleted. %1$s is the shortened URL of the deleted history item. -->
-  <string name="history_delete_single_item_snackbar" tools:ignore="UnusedResources" moz:removedIn="143">Eyða %1$s</string>
+  <string name="history_delete_single_item_snackbar">Eyða %1$s</string>
   <!-- Context description text for the button to delete a single history item -->
   <string name="history_delete_item">Eyða</string>
   <!--
@@ -1677,8 +1680,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">Tilkynna bilað vefsvæði</string>
-  <!-- The description of the Web Compat Reporter feature. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description" moz:removedIn="142" tools:ignore="UnusedResources">Hjálpaðu til við að gera %1$s betri fyrir alla. Starfsmenn Mozilla nota upplýsingarnar sem þú sendir til að laga vandamál varðandi vefsíður.</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
   <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">Skýrslan þín gerir okkur kleift að skilja og laga vandamál í %1$s til að gera það betra fyrir alla. Kanna nánar</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
@@ -1691,8 +1692,6 @@
   <string name="webcompat_reporter_url_error_invalid">Settu inn gilda slóð</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">Hvað er bilað?</string>
-  <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
-  <string name="webcompat_reporter_choose_reason" moz:removedIn="142" tools:ignore="UnusedResources">Veldu ástæðu</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_choose_reason_2">Veldu ástæðu</string>
   <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
@@ -1708,9 +1707,11 @@
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">Senda</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
-  <string name="webcompat_reporter_success_snackbar_text">Skýrslan þín var send</string>
+  <string name="webcompat_reporter_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Skýrslan þín var send</string>
+  <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
+  <string name="webcompat_reporter_success_snackbar_text_2">Skýrsla send</string>
   <!-- Button text for closing or dismissing the snackbar shown after successfully submitting a WebCompat report. -->
-  <string name="webcompat_reporter_dismiss_success_snackbar_text">Loka</string>
+  <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">Loka</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">Hvað gerðist? Hvað hefði átt að gerast?</string>
   <!--
@@ -1747,8 +1748,6 @@
   <string name="tab_crash_close">Loka flipa</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Endurheimta flipa</string>
-  <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
-  <string name="unsubmitted_crash_dialog_title" moz:removedIn="142" tools:ignore="UnusedResources">%s þurfti að endurræsa</string>
   <!-- Unsubmitted crash dialog title, %s is the name of the app (for example "Firefox"). -->
   <string name="unsubmitted_crash_dialog_title_2">%s hrundi. Senda skýrslu?</string>
   <!-- Single unsubmitted crash matching remote settings. %1$s is the name of the app (for example "Firefox"). -->
@@ -1788,6 +1787,14 @@
   <string name="bookmark_add_folder">Bæta við möppu</string>
   <!-- Snackbar title that confirms a bookmark was saved into a folder. %s is the name of the folder the bookmark was saved into. -->
   <string name="bookmark_saved_in_folder_snackbar">Vistað í „%s“</string>
+  <!-- Snackbar title describing failure to add a new folder -->
+  <string name="bookmark_error_add_folder">Gat ekki bætt við möppu</string>
+  <!-- Snackbar title describing failure to edit an existing folder -->
+  <string name="bookmark_error_edit_folder">Gat ekki breytt möppu</string>
+  <!-- Snackbar title describing failure to select a new parent folder for a bookmark or folder -->
+  <string name="bookmark_error_select_folder">Gat ekki breytt yfirmöppu</string>
+  <!-- Snackbar title describing failure to edit a bookmark -->
+  <string name="bookmark_error_edit_bookmark">Gat ekki breytt bókamerki</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">BREYTA</string>
   <!-- Bookmark menu move button -->
@@ -1888,6 +1895,8 @@
   <string name="bookmark_close_button_content_description">Loka bókamerkjum</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">Engin bókamerki ennþá</string>
+  <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
+  <string name="bookmarks_folder_description">Bókamerki í möppu: %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">Vistaðu vefsvæði þegar þú vafrar. Skráðu þig inn til að sækja bókamerki úr öðrum samstilltum tækjum.</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -2032,12 +2041,14 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d flipi valinn</string>
-  <!-- Text shown in snackbar when multiple tabs have been saved in a collection -->
-  <string name="create_collection_tabs_saved" tools:ignore="UnusedResources" moz:removedIn="142">Flipar vistaðir!</string>
   <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
-  <string name="create_collection_tabs_saved_new_collection">Safn vistað!</string>
+  <string name="create_collection_tabs_saved_new_collection" tools:ignore="UnusedResources" moz:removedIn="144">Safn vistað!</string>
+  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
+  <string name="create_collection_tabs_saved_new_collection_2">Safn vistað</string>
   <!-- Text shown in snackbar when one tab has been saved in a collection -->
-  <string name="create_collection_tab_saved">Flipi vistaður!</string>
+  <string name="create_collection_tab_saved" tools:ignore="UnusedResources" moz:removedIn="144">Flipi vistaður!</string>
+  <!-- Text shown in snackbar when one tab has been saved in a collection -->
+  <string name="create_collection_tab_saved_2">Flipi vistaður</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">Loka</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -2084,7 +2095,9 @@
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Skráðu þig inn til að samstilla</string>
   <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data">Samstilla og vista gögn</string>
+  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Samstilla og vista gögn</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">Innskráning</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Senda í öll tæki</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2174,7 +2187,9 @@
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">Flipum lokað: %1$s</string>
   <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
-  <string name="snackbar_message_bookmarks_saved_in">Bókamerki vistuð í „%s“!</string>
+  <string name="snackbar_message_bookmarks_saved_in" tools:ignore="UnusedResources" moz:removedIn="144">Bókamerki vistuð í „%s“!</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in_2">Bókamerki vistuð í „%s“</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">Bætt við flýtileiðir!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -2202,8 +2217,6 @@
   <string name="tab_collection_dialog_message">Ertu viss um að þú viljir eyða %1$s?</string>
   <!-- Tab collection deletion prompt dialog option to delete the collection -->
   <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Eyða</string>
-  <!-- Message for copying the URL via long press on the toolbar -->
-  <string name="url_copied" tools:ignore="UnusedResources" moz:removedIn="142">Vistfang afritað</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Þetta er sýnishorn af texta til að sýna hvernig texti mun birtast þegar þú eykur eða minnkar stærðina með þessari stillingu.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2292,9 +2305,13 @@
 
     Text shown in snackbar when multiple tabs have been sent to device
   -->
-  <string name="sync_sent_tabs_snackbar">Flipar sendir!</string>
+  <string name="sync_sent_tabs_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Flipar sendir!</string>
+  <!-- Text shown in snackbar when multiple tabs have been sent to device -->
+  <string name="sync_sent_tabs_snackbar_2">Flipar sendir</string>
   <!-- Text shown in snackbar when one tab has been sent to device -->
-  <string name="sync_sent_tab_snackbar">Flipi sendur!</string>
+  <string name="sync_sent_tab_snackbar" tools:ignore="UnusedResources" moz:removedIn="144">Flipi sendur!</string>
+  <!-- Text shown in snackbar when one tab has been sent to device -->
+  <string name="sync_sent_tab_snackbar_2">Flipi sendur</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">Ekki hægt að senda</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2347,6 +2364,16 @@
   <string name="preference_enhanced_tracking_protection_allow_list_baseline">Leyfa %1$s að beita sjálfkrafa undantekningum sem nauðsynlegar eru til að koma í veg fyrir stórfelld rof á vefsvæðinu.</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience">Einnig beita sjálfkrafa undantekningum sem eru aðeins nauðsynlegar til að laga minniháttar vandamál og gera aðgengileg ýmis þægindi.</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">Ertu viss um að þú viljir slökkva á lagfæringum?</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">Slökkva á lagfæringum</string>
+  <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">Halda lagfæringum</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">Hvað er útilokað með strangari rekjaravörnum</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2843,12 +2870,6 @@
   <string name="search_add_custom_engine_error_empty_search_string">Settu inn leitarstreng</string>
   <!-- Text shown when a user leaves out the required template string -->
   <string name="search_add_custom_engine_error_missing_template">Athugaðu hvort leitarstrengurinn sé í sama sniði og dæmið</string>
-  <!-- Text shown when a user creates a new search engine. %s is the url of the custom search engine. -->
-  <string name="search_add_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Stofnaði %s</string>
-  <!-- Text shown when a user successfully edits a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_edit_custom_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Vistaði %s</string>
-  <!-- Text shown when a user successfully deletes a custom search engine. %s is the url of the custom search engine. -->
-  <string name="search_delete_search_engine_success_message" tools:ignore="UnusedResources" moz:removedIn="142">Eyddi %s</string>
   <!-- Heading for the instructions to allow a permission -->
   <string name="phone_feature_blocked_intro">Til að leyfa það:</string>
   <!-- First step for the allowing a permission -->
@@ -3001,6 +3022,11 @@
     Title text displayed in the tabs tray when a tab has been unused for 14 days.
   -->
   <string name="inactive_tabs_title">Óvirkir flipar</string>
+  <!--
+    Text displayed in the tabs tray, indicating the number of inactive tabs.
+    %d is the number of inactive tabs.
+  -->
+  <string name="inactive_tabs_num_items">Atriði: %d</string>
   <!-- Content description for closing all inactive tabs -->
   <string name="inactive_tabs_delete_all">Lokaðu öllum óvirkum flipum</string>
   <!-- Content description for expanding the inactive tabs section. -->
@@ -3344,12 +3370,8 @@
   <!--
     Unified Trust Panel
 
-    Text for the protection panel header when the site is secure.
+    Title text for the protection panel banner when the site is not secure.
   -->
-  <string name="protection_panel_header_secure" moz:removedIn="142" tools:ignore="UnusedResources">Öruggt</string>
-  <!-- Text for the protection panel header when the site is not secure. -->
-  <string name="protection_panel_header_not_secure" moz:removedIn="142" tools:ignore="UnusedResources">Ekki öruggt</string>
-  <!-- Title text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_title">Farðu varlega á þessum vef</string>
   <!-- Description text for the protection panel banner when the site is not secure. -->
   <string name="protection_panel_banner_not_secure_description">Tengingin þín er ekki örugg.</string>
@@ -3374,11 +3396,7 @@
   <!-- Toggle if Enhanced Tracking Protection is turned off -->
   <string name="protection_panel_etp_toggle_off">Óvirkt</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
-  <string name="protection_panel_etp_toggle_enabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Ef eitthvað virðist bilað á þessu vefsvæði, skaltu prófa að slökkva á vörnum.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is enabled. -->
   <string name="protection_panel_etp_toggle_enabled_description_2">Ef eitthvað virðist bilað á þessu vefsvæði, skaltu prófa að slökkva á því.</string>
-  <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
-  <string name="protection_panel_etp_toggle_disabled_description" moz:removedIn="142" tools:ignore="UnusedResources">Slökkt er á vörnum. Við mælum með að kveikja aftur á þeim.</string>
   <!-- Description text for the Enhanced Tracking Protection toggle when tracking protection is disabled. -->
   <string name="protection_panel_etp_toggle_disabled_description_2">Mælt er með að kveikja á rakningarvörn.</string>
   <!--
@@ -3390,8 +3408,6 @@
   <string name="protection_panel_no_trackers_blocked">Engir rekjarar fundust</string>
   <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
   <string name="protection_panel_etp_disabled_no_trackers_blocked">Rekjarar sem ekki er lokað á</string>
-  <!-- Link text to navigate to privacy and security settings from the protection panel. -->
-  <string name="protection_panel_privacy_and_security_settings" moz:removedIn="142" tools:ignore="UnusedResources">Friðhelgi og öryggisstillingar</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">Persónuverndarstillingar</string>
   <!-- Title text for the protection panel permissions section. -->

@@ -26,7 +26,7 @@ nsresult txPatternParser::createPattern(const nsString& aPattern,
     return rv;
   }
   UniquePtr<txPattern> pattern;
-  rv = createUnionPattern(lexer, aContext, *getter_Transfers(pattern));
+  rv = createUnionPattern(lexer, aContext, *mozilla::getter_Transfers(pattern));
   if (NS_FAILED(rv)) {
     // XXX error report parsing error
     return rv;

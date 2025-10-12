@@ -1896,7 +1896,7 @@ void Selection::SelectFramesOf(nsIContent* aContent, bool aSelected) const {
   if (frame->IsTextFrame()) {
     nsTextFrame* textFrame = static_cast<nsTextFrame*>(frame);
     textFrame->SelectionStateChanged(
-        0, textFrame->CharacterDataBuffer()->GetLength(), aSelected,
+        0, textFrame->CharacterDataBuffer().GetLength(), aSelected,
         mSelectionType);
   } else {
     frame->SelectionStateChanged();

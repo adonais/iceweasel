@@ -1,8 +1,7 @@
 # Placeholder#1 for Guitar, do not remove
+# Placeholder for cc_test, do not remove
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_license//rules:license.bzl", "license")
-
-load("@rules_cc//cc:defs.bzl", "cc_test")
 # Placeholder#2 for Guitar, do not remove
 
 package(
@@ -33,26 +32,8 @@ config_setting(
 )
 
 config_setting(
-    name = "compiler_msvc_actual",
-    flag_values = {"@bazel_tools//tools/cpp:compiler": "msvc"},
-)
-
-# The above is insufficient for Bazel on Windows, which does not seem to
-# detect/set a compiler flag. This workaround prevents compile errors due to
-# passing clang-only warning flags to MSVC.
-config_setting(
-    name = "compiler_msvc_cpu",
-    values = {
-        "cpu": "x64_windows",
-    },
-)
-
-selects.config_setting_group(
     name = "compiler_msvc",
-    match_any = [
-        ":compiler_msvc_actual",
-        ":compiler_msvc_cpu",
-    ],
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "msvc-cl"},
 )
 
 config_setting(
@@ -87,10 +68,11 @@ selects.config_setting_group(
 
 # Additional warnings for Clang OR GCC (skip for MSVC)
 CLANG_GCC_COPTS = [
-    "-Wunused-parameter",
-    "-Wunused-variable",
+    "-Wunused",
     "-Wextra-semi",
     "-Wunreachable-code",
+    "-Wshadow",
+    "-Wmissing-declarations",
 ]
 
 # Warnings supported by Clang and Clang-cl
@@ -109,6 +91,7 @@ CLANG_OR_CLANGCL_OPTS = CLANG_GCC_COPTS + [
     "-Wtautological-overlap-compare",
     "-Wthread-safety-analysis",
     "-Wundefined-func-template",
+    "-Wunreachable-code-aggressive",
     "-Wunused-comparison",
 ]
 
@@ -156,6 +139,7 @@ COMPAT = [
 cc_library(
     name = "hwy",
     srcs = [
+        "hwy/abort.cc",
         "hwy/aligned_allocator.cc",
         "hwy/per_target.cc",
         "hwy/print.cc",
@@ -163,11 +147,13 @@ cc_library(
     ],
     # Normal headers with include guards
     hdrs = [
+        "hwy/abort.h",
         "hwy/aligned_allocator.h",
         "hwy/base.h",
         "hwy/cache_control.h",
         "hwy/detect_compiler_arch.h",  # private
         "hwy/print.h",
+        "hwy/x86_cpuid.h",
     ],
     compatible_with = [],
     copts = COPTS,
@@ -189,13 +175,14 @@ cc_library(
         "hwy/ops/arm_sve-inl.h",
         "hwy/ops/emu128-inl.h",
         "hwy/ops/generic_ops-inl.h",
+        "hwy/ops/inside-inl.h",
         "hwy/ops/scalar-inl.h",
         "hwy/ops/set_macros-inl.h",
         "hwy/ops/shared-inl.h",
-        "hwy/ops/tuple-inl.h",
         "hwy/ops/x86_128-inl.h",
         "hwy/ops/x86_256-inl.h",
         "hwy/ops/x86_512-inl.h",
+        "hwy/ops/x86_avx3-inl.h",
         # Select avoids recompiling native arch if only non-native changed
     ] + select({
         ":compiler_emscripten": [
@@ -210,36 +197,102 @@ cc_library(
 )
 
 cc_library(
-    name = "nanobenchmark",
-    srcs = [
-        "hwy/nanobenchmark.cc",
-        "hwy/timer.cc",
+    name = "stats",
+    srcs = ["hwy/stats.cc"],
+    hdrs = ["hwy/stats.h"],
+    compatible_with = [],
+    copts = COPTS,
+    deps = [":hwy"],
+)
+
+cc_library(
+    name = "robust_statistics",
+    hdrs = ["hwy/robust_statistics.h"],
+    compatible_with = [],
+    copts = COPTS,
+    deps = [":hwy"],
+)
+
+cc_library(
+    name = "timer",
+    srcs = ["hwy/timer.cc"],
+    hdrs = ["hwy/timer.h"],
+    compatible_with = [],
+    copts = COPTS,
+    # Deprecated.
+    textual_hdrs = [
+        "hwy/timer-inl.h",
     ],
+    deps = [
+        ":hwy",
+        ":robust_statistics",
+    ],
+)
+
+# Previously provided timer.*, use :timer instead.
+cc_library(
+    name = "nanobenchmark",
+    srcs = ["hwy/nanobenchmark.cc"],
     hdrs = [
         "hwy/nanobenchmark.h",
-        "hwy/robust_statistics.h",
+        # TODO(janwas): remove after users depend on :timer.
         "hwy/timer.h",
     ],
     compatible_with = [],
     copts = COPTS,
     local_defines = ["hwy_EXPORTS"],
-    textual_hdrs = [
-        "hwy/timer-inl.h",
+    deps = [
+        ":hwy",
+        ":robust_statistics",
+        ":timer",
     ],
-    deps = [":hwy"],
 )
 
 cc_library(
-    name = "profiler",
-    hdrs = [
-        "hwy/profiler.h",
+    name = "bit_set",
+    hdrs = ["hwy/bit_set.h"],
+    compatible_with = [],
+    copts = COPTS,
+    deps = [
+        ":hwy",  # HWY_DASSERT
     ],
+)
+
+cc_library(
+    name = "auto_tune",
+    hdrs = ["hwy/auto_tune.h"],
     compatible_with = [],
     copts = COPTS,
     deps = [
         ":hwy",
-        ":nanobenchmark",
-        # "//hwy/contrib/sort:vqsort",
+        "//hwy/contrib/sort:vqsort",
+    ],
+)
+
+cc_library(
+    name = "perf_counters",
+    srcs = ["hwy/perf_counters.cc"],
+    hdrs = ["hwy/perf_counters.h"],
+    compatible_with = [],
+    copts = COPTS,
+    deps = [
+        ":bit_set",
+        ":hwy",
+        ":timer",
+    ],
+)
+
+cc_library(
+    name = "profiler",
+    srcs = ["hwy/profiler.cc"],
+    hdrs = ["hwy/profiler.h"],
+    compatible_with = [],
+    copts = COPTS,
+    deps = [
+        ":bit_set",
+        ":hwy",
+        ":robust_statistics",
+        ":timer",
     ],
 )
 
@@ -249,8 +302,9 @@ cc_binary(
     copts = COPTS,
     deps = [
         ":hwy",
-        ":nanobenchmark",
         ":profiler",
+        ":thread_pool",
+        ":timer",
     ],
 )
 
@@ -293,15 +347,34 @@ cc_library(
 )
 
 cc_library(
+    name = "topology",
+    srcs = ["hwy/contrib/thread_pool/topology.cc"],
+    hdrs = ["hwy/contrib/thread_pool/topology.h"],
+    compatible_with = [],
+    copts = COPTS,
+    deps = [
+        ":bit_set",
+        ":hwy",
+    ],
+)
+
+cc_library(
     name = "thread_pool",
     hdrs = [
         "hwy/contrib/thread_pool/futex.h",
+        "hwy/contrib/thread_pool/spin.h",
         "hwy/contrib/thread_pool/thread_pool.h",
     ],
     compatible_with = [],
     copts = COPTS,
     deps = [
-        ":hwy",  # HWY_ASSERT
+        ":auto_tune",
+        ":bit_set",
+        ":hwy",
+        ":profiler",
+        ":stats",
+        ":timer",
+        ":topology",
     ],
 )
 
@@ -314,7 +387,6 @@ cc_library(
     ],
     deps = [
         ":hwy",
-        ":nanobenchmark",
         ":thread_pool",
     ],
 )
@@ -341,6 +413,18 @@ cc_library(
     copts = COPTS,
     textual_hdrs = [
         "hwy/contrib/math/math-inl.h",
+    ],
+    deps = [
+        ":hwy",
+    ],
+)
+
+cc_library(
+    name = "random",
+    compatible_with = [],
+    copts = COPTS,
+    textual_hdrs = [
+        "hwy/contrib/random/random-inl.h",
     ],
     deps = [
         ":hwy",
@@ -375,6 +459,7 @@ cc_library(
     # GUNIT_INTERNAL_BUILD_MODE defined by the test.
     deps = [
         ":hwy",
+        ":nanobenchmark",
     ],
 )
 
@@ -400,6 +485,19 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "abort_header_only",
+    hdrs = [
+        "hwy/abort.h",
+        "hwy/base.h",
+        "hwy/detect_compiler_arch.h",  # private
+        "hwy/highway_export.h",  # public
+    ],
+    compatible_with = [],
+    copts = COPTS,
+    local_defines = ["HWY_HEADER_ONLY"],
+)
+
 cc_test(
     name = "list_targets",
     size = "small",
@@ -407,67 +505,175 @@ cc_test(
     deps = [":hwy"],
 )
 
-# path, name
-HWY_TESTS = [
-    ("hwy/contrib/algo/", "copy_test"),
-    ("hwy/contrib/algo/", "find_test"),
-    ("hwy/contrib/algo/", "transform_test"),
-    ("hwy/contrib/bit_pack/", "bit_pack_test"),
-    ("hwy/contrib/dot/", "dot_test"),
-    ("hwy/contrib/image/", "image_test"),
-    ("hwy/contrib/math/", "math_test"),
-    ("hwy/contrib/matvec/", "matvec_test"),
-    ("hwy/contrib/thread_pool/", "thread_pool_test"),
-    ("hwy/contrib/unroller/", "unroller_test"),
+cc_test(
+    name = "abort_header_only_test",
+    size = "small",
+    srcs = ["hwy/abort_header_only_test.cc"],
+    deps = [
+        ":abort_header_only",
+        ":hwy_test_util",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+# path, name, deps
+HWY_CONTRIB_TESTS = (
+    (
+        "hwy/contrib/algo/",
+        "copy_test",
+        (":algo",),
+    ),
+    (
+        "hwy/contrib/algo/",
+        "find_test",
+        (":algo",),
+    ),
+    (
+        "hwy/contrib/algo/",
+        "transform_test",
+        (":algo",),
+    ),
+    (
+        "hwy/contrib/bit_pack/",
+        "bit_pack_test",
+        (":bit_pack",),
+    ),
+    (
+        "hwy/contrib/dot/",
+        "dot_test",
+        (":dot",),
+    ),
+    (
+        "hwy/contrib/image/",
+        "image_test",
+        (":image",),
+    ),
+    (
+        "hwy/contrib/math/",
+        "math_test",
+        (":math",),
+    ),
+    (
+        "hwy/contrib/random/",
+        "random_test",
+        (":random",),
+    ),
+    (
+        "hwy/contrib/matvec/",
+        "matvec_test",
+        (":matvec", ":algo", ":topology", ":thread_pool"),
+    ),
+    (
+        "hwy/contrib/thread_pool/",
+        "spin_test",
+        (":topology", ":thread_pool"),
+    ),
+    (
+        "hwy/contrib/thread_pool/",
+        "thread_pool_test",
+        (":topology", ":thread_pool", ":profiler"),
+    ),
+    (
+        "hwy/contrib/thread_pool/",
+        "topology_test",
+        (":thread_pool", ":topology"),
+    ),
+    (
+        "hwy/contrib/unroller/",
+        "unroller_test",
+        (":unroller",),
+    ),
     # contrib/sort has its own BUILD, we also add sort_test to GUITAR_TESTS.
     # To run bench_sort, specify --test=hwy/contrib/sort:bench_sort.
-    ("hwy/examples/", "skeleton_test"),
-    ("hwy/", "nanobenchmark_test"),
-    ("hwy/", "aligned_allocator_test"),
-    ("hwy/", "base_test"),
-    ("hwy/", "highway_test"),
-    ("hwy/", "targets_test"),
-    ("hwy/tests/", "arithmetic_test"),
-    ("hwy/tests/", "blockwise_shift_test"),
-    ("hwy/tests/", "blockwise_test"),
-    ("hwy/tests/", "cast_test"),
-    ("hwy/tests/", "combine_test"),
-    ("hwy/tests/", "compare_test"),
-    ("hwy/tests/", "compress_test"),
-    ("hwy/tests/", "convert_test"),
-    ("hwy/tests/", "count_test"),
-    ("hwy/tests/", "crypto_test"),
-    ("hwy/tests/", "demote_test"),
-    ("hwy/tests/", "dup128_vec_test"),
-    ("hwy/tests/", "expand_test"),
-    ("hwy/tests/", "float_test"),
-    ("hwy/tests/", "foreach_vec_test"),
-    ("hwy/tests/", "if_test"),
-    ("hwy/tests/", "interleaved_test"),
-    ("hwy/tests/", "logical_test"),
-    ("hwy/tests/", "mask_combine_test"),
-    ("hwy/tests/", "mask_convert_test"),
-    ("hwy/tests/", "mask_mem_test"),
-    ("hwy/tests/", "mask_test"),
-    ("hwy/tests/", "masked_arithmetic_test"),
-    ("hwy/tests/", "memory_test"),
-    ("hwy/tests/", "minmax_test"),
-    ("hwy/tests/", "mul_test"),
-    ("hwy/tests/", "reduction_test"),
-    ("hwy/tests/", "resize_test"),
-    ("hwy/tests/", "reverse_test"),
-    ("hwy/tests/", "shift_test"),
-    ("hwy/tests/", "shuffle4_test"),
-    ("hwy/tests/", "slide_up_down_test"),
-    ("hwy/tests/", "sums_abs_diff_test"),
-    ("hwy/tests/", "swizzle_block_test"),
-    ("hwy/tests/", "swizzle_test"),
-    ("hwy/tests/", "table_test"),
-    ("hwy/tests/", "test_util_test"),
-    ("hwy/tests/", "truncate_test"),
-    ("hwy/tests/", "tuple_test"),
-    ("hwy/tests/", "widen_mul_test"),
-]
+)
+
+# path, name, deps
+HWY_TESTS = HWY_CONTRIB_TESTS + (
+    (
+        "hwy/examples/",
+        "skeleton_test",
+        (":skeleton",),
+    ),
+    ("hwy/", "abort_test", []),
+    ("hwy/", "aligned_allocator_test", []),
+    (
+        "hwy/",
+        "auto_tune_test",
+        (":auto_tune",),
+    ),
+    ("hwy/", "base_test", []),
+    (
+        "hwy/",
+        "bit_set_test",
+        (":bit_set",),
+    ),
+    ("hwy/", "highway_test", []),
+    ("hwy/", "nanobenchmark_test", []),
+    (
+        "hwy/",
+        "perf_counters_test",
+        (":perf_counters", ":thread_pool"),
+    ),
+    ("hwy/", "targets_test", []),
+    ("hwy/tests/", "arithmetic_test", []),
+    ("hwy/tests/", "bit_permute_test", []),
+    ("hwy/tests/", "blockwise_combine_test", []),
+    ("hwy/tests/", "blockwise_shift_test", []),
+    ("hwy/tests/", "blockwise_test", []),
+    ("hwy/tests/", "cast_test", []),
+    ("hwy/tests/", "combine_test", []),
+    ("hwy/tests/", "compare_test", []),
+    ("hwy/tests/", "compress_test", []),
+    ("hwy/tests/", "complex_arithmetic_test", []),
+    ("hwy/tests/", "concat_test", []),
+    ("hwy/tests/", "convert_test", []),
+    ("hwy/tests/", "count_test", []),
+    ("hwy/tests/", "crypto_test", []),
+    ("hwy/tests/", "demote_test", []),
+    ("hwy/tests/", "div_test", []),
+    ("hwy/tests/", "dup128_vec_test", []),
+    ("hwy/tests/", "expand_test", []),
+    ("hwy/tests/", "float_test", []),
+    ("hwy/tests/", "fma_test", []),
+    ("hwy/tests/", "foreach_vec_test", []),
+    ("hwy/tests/", "if_test", []),
+    ("hwy/tests/", "in_range_float_to_int_conv_test", []),
+    ("hwy/tests/", "interleaved_test", []),
+    ("hwy/tests/", "logical_test", []),
+    ("hwy/tests/", "mask_combine_test", []),
+    ("hwy/tests/", "mask_convert_test", []),
+    ("hwy/tests/", "mask_mem_test", []),
+    ("hwy/tests/", "mask_set_test", []),
+    ("hwy/tests/", "mask_slide_test", []),
+    ("hwy/tests/", "mask_test", []),
+    ("hwy/tests/", "masked_arithmetic_test", []),
+    ("hwy/tests/", "masked_minmax_test", []),
+    ("hwy/tests/", "memory_test", []),
+    ("hwy/tests/", "minmax_magnitude_test", []),
+    ("hwy/tests/", "minmax_number_test", []),
+    ("hwy/tests/", "minmax_test", []),
+    ("hwy/tests/", "minmax128_test", []),
+    ("hwy/tests/", "mul_by_pow2_test", []),
+    ("hwy/tests/", "mul_pairwise_test", []),
+    ("hwy/tests/", "mul_test", []),
+    ("hwy/tests/", "reduction_test", []),
+    ("hwy/tests/", "resize_test", []),
+    ("hwy/tests/", "reverse_test", []),
+    ("hwy/tests/", "rotate_test", []),
+    ("hwy/tests/", "saturated_test", []),
+    ("hwy/tests/", "shift_test", []),
+    ("hwy/tests/", "shuffle4_test", []),
+    ("hwy/tests/", "sign_test", []),
+    ("hwy/tests/", "slide_up_down_test", []),
+    ("hwy/tests/", "sums_abs_diff_test", []),
+    ("hwy/tests/", "swizzle_block_test", []),
+    ("hwy/tests/", "swizzle_test", []),
+    ("hwy/tests/", "table_test", []),
+    ("hwy/tests/", "test_util_test", []),
+    ("hwy/tests/", "truncate_test", []),
+    ("hwy/tests/", "tuple_test", []),
+    ("hwy/tests/", "widen_mul_test", []),
+)
 
 HWY_TEST_COPTS = select({
     ":compiler_msvc": [],
@@ -479,22 +685,16 @@ HWY_TEST_COPTS = select({
     ],
 })
 
+# Common to all tests.
 HWY_TEST_DEPS = [
-    ":algo",
-    ":bit_pack",
-    ":dot",
-    ":hwy",
     ":hwy_test_util",
-    ":image",
-    ":math",
-    ":matvec",
+    ":hwy",
     ":nanobenchmark",
-    ":skeleton",
-    ":thread_pool",
-    ":unroller",
-    "//hwy/contrib/sort:vqsort",
-    "@com_google_googletest//:gtest_main",
-]
+    ":timer",
+] + select({
+    ":compiler_msvc": [],
+    "//conditions:default": ["@com_google_googletest//:gtest_main"],
+})
 
 [
     [
@@ -506,6 +706,11 @@ HWY_TEST_DEPS = [
                 subdir + test + ".cc",
             ],
             copts = COPTS + HWY_TEST_COPTS,
+            # Fixes OOM for matvec_test on RVV.
+            exec_properties = select({
+                "@platforms//cpu:riscv64": {"mem": "16g"},
+                "//conditions:default": None,
+            }),
             features = select({
                 "@platforms//cpu:riscv64": ["fully_static_link"],
                 "//conditions:default": [],
@@ -515,7 +720,6 @@ HWY_TEST_DEPS = [
                     "-s ASSERTIONS=2",
                     "-s ENVIRONMENT=node,shell,web",
                     "-s ERROR_ON_UNDEFINED_SYMBOLS=1",
-                    "-s DEMANGLE_SUPPORT=1",
                     "-s EXIT_RUNTIME=1",
                     "-s ALLOW_MEMORY_GROWTH=1",
                     "--pre-js $(location :preamble.js.lds)",
@@ -527,15 +731,16 @@ HWY_TEST_DEPS = [
                 "//conditions:default": False,
             }),
             local_defines = ["HWY_IS_TEST"],
+            # Placeholder for malloc, do not remove
             # for test_suite.
             tags = ["hwy_ops_test"],
-            deps = HWY_TEST_DEPS + select({
+            deps = HWY_TEST_DEPS + extra_deps + select({
                 ":compiler_emscripten": [":preamble.js.lds"],
                 "//conditions:default": [],
             }),
         ),
     ]
-    for subdir, test in HWY_TESTS
+    for subdir, test, extra_deps in HWY_TESTS
 ]
 
 # For manually building the tests we define here (:all does not work in --config=msvc)

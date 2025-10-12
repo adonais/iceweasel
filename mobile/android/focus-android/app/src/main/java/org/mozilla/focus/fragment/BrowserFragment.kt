@@ -604,7 +604,7 @@ class BrowserFragment :
         }
 
         val renderStyle = if (tab.isCustomTab()) {
-            ToolbarFeature.RenderStyle.RegistrableDomain
+            ToolbarFeature.RenderStyle.ColoredDomain
         } else {
             ToolbarFeature.RenderStyle.ColoredUrl
         }

@@ -30,11 +30,11 @@ class CustomTabColorsBindingTest {
     fun `WHEN colors for the system bars change THEN apply them to the system bars`() {
         binding.start()
 
-        store.dispatch(CustomTabColorsUpdated(CustomTabColors(1, 2, 3, 4)))
+        store.dispatch(CustomTabColorsUpdated(CustomTabColors(1, 2, 3, 4, 5)))
 
         verify { window.statusBarColor = 2 }
-        verify { window.navigationBarColor = 2 }
-        verify { window.navigationBarDividerColor = 3 }
+        verify { window.navigationBarColor = 3 }
+        verify { window.navigationBarDividerColor = 4 }
     }
 
     @Test

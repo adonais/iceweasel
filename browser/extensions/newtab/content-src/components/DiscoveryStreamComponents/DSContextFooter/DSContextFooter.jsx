@@ -3,7 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { cardContextTypes } from "../../Card/types.mjs";
-import { SponsoredContentHighlight } from "../FeatureHighlight/SponsoredContentHighlight";
 // eslint-disable-next-line no-shadow
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import { FluentOrText } from "../../FluentOrText/FluentOrText.jsx";
@@ -84,8 +83,6 @@ export class DSContextFooter extends React.PureComponent {
       sponsored_by_override,
       cta_button_variant,
       source,
-      spocMessageVariant,
-      dispatch,
       mayHaveSectionsCards,
     } = this.props;
 
@@ -125,12 +122,6 @@ export class DSContextFooter extends React.PureComponent {
       return (
         <div className="story-footer">
           {sponsorLabel}
-          {sponsorLabel && spocMessageVariant === "variant-b" && (
-            <SponsoredContentHighlight
-              dispatch={dispatch}
-              position="inset-block-end inset-inline-start"
-            />
-          )}
           {dsMessageLabel}
         </div>
       );

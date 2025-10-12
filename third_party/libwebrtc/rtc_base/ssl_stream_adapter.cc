@@ -13,8 +13,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
@@ -83,7 +86,7 @@ bool IsGcmCryptoSuite(int crypto_suite) {
 
 std::unique_ptr<SSLStreamAdapter> SSLStreamAdapter::Create(
     std::unique_ptr<StreamInterface> stream,
-    absl::AnyInvocable<void(webrtc::SSLHandshakeError)> handshake_error,
+    absl::AnyInvocable<void(SSLHandshakeError)> handshake_error,
     const FieldTrialsView* field_trials) {
   return std::make_unique<OpenSSLStreamAdapter>(
       std::move(stream), std::move(handshake_error), field_trials);
@@ -98,6 +101,76 @@ bool SSLStreamAdapter::IsAcceptableCipher(int cipher, KeyType key_type) {
 bool SSLStreamAdapter::IsAcceptableCipher(absl::string_view cipher,
                                           KeyType key_type) {
   return OpenSSLStreamAdapter::IsAcceptableCipher(cipher, key_type);
+}
+
+std::optional<std::string>
+SSLStreamAdapter::GetEphemeralKeyExchangeCipherGroupName(uint16_t group_id) {
+#if defined(OPENSSL_IS_BORINGSSL)
+  auto val = SSL_get_group_name(group_id);
+  if (val != nullptr) {
+    return std::string(val);
+  }
+#endif
+  return std::nullopt;
+}
+
+std::set<uint16_t>
+SSLStreamAdapter::GetSupportedEphemeralKeyExchangeCipherGroups() {
+  return {
+  // It would be nice if BoringSSL had a function like this!
+#ifdef SSL_GROUP_SECP224R1
+      SSL_GROUP_SECP224R1,
+#endif
+#ifdef SSL_GROUP_SECP256R1
+      SSL_GROUP_SECP256R1,
+#endif
+#ifdef SSL_GROUP_SECP384R1
+      SSL_GROUP_SECP384R1,
+#endif
+#ifdef SSL_GROUP_SECP521R1
+      SSL_GROUP_SECP521R1,
+#endif
+#ifdef SSL_GROUP_X25519
+      SSL_GROUP_X25519,
+#endif
+#ifdef SSL_GROUP_X25519_MLKEM768
+      SSL_GROUP_X25519_MLKEM768,
+#endif
+  };
+}
+
+std::vector<uint16_t>
+SSLStreamAdapter::GetDefaultEphemeralKeyExchangeCipherGroups(
+    const FieldTrialsView* field_trials) {
+  // It would be nice if BoringSSL had a function like this!
+  // from boringssl/src/ssl/extensions.cc kDefaultGroups.
+  if (field_trials && field_trials->IsEnabled("WebRTC-EnableDtlsPqc")) {
+    return {
+#ifdef SSL_GROUP_X25519_MLKEM768
+        SSL_GROUP_X25519_MLKEM768,
+#endif
+#ifdef SSL_GROUP_X25519
+        SSL_GROUP_X25519,
+#endif
+#ifdef SSL_GROUP_SECP256R1
+        SSL_GROUP_SECP256R1,
+#endif
+#ifdef SSL_GROUP_SECP384R1
+        SSL_GROUP_SECP384R1,
+#endif
+    };
+  }
+  return {
+#ifdef SSL_GROUP_X25519
+      SSL_GROUP_X25519,
+#endif
+#ifdef SSL_GROUP_SECP256R1
+      SSL_GROUP_SECP256R1,
+#endif
+#ifdef SSL_GROUP_SECP384R1
+      SSL_GROUP_SECP384R1,
+#endif
+  };
 }
 
 // Default shim for backward compat.

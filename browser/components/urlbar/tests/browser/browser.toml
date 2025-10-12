@@ -561,6 +561,12 @@ support-files = [
   "searchSuggestionEngine.sjs",
 ]
 
+["browser_searchSuggestions_ohttpSessions.js"]
+support-files = [
+  "searchSuggestionEngine.xml",
+  "searchSuggestionEngine.sjs",
+]
+
 ["browser_searchTelemetry.js"]
 support-files = [
   "searchSuggestionEngine.xml",
@@ -579,7 +585,6 @@ skip-if = [
 ["browser_search_history_from_history_panel.js"]
 
 ["browser_secondaryActions.js"]
-skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bug 1869788
 
 ["browser_selectStaleResults.js"]
 support-files = [
@@ -673,6 +678,7 @@ skip-if = [
 ["browser_switchToTab_fullUrl_repeatedKeydown.js"]
 
 ["browser_tabKeyBehavior.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan"] # Bug 1813675
 
 ["browser_tabMatchesInAwesomebar.js"]
 support-files = ["moz.png"]
@@ -696,6 +702,9 @@ https_first_disabled = true
 ["browser_top_sites_switchtab.js"]
 
 ["browser_trust_panel.js"]
+
+["browser_trust_panel_security_view.js"]
+https_first_disabled = true
 
 ["browser_typed_value.js"]
 

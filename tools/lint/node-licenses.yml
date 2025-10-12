@@ -6,6 +6,7 @@ node-licenses:
         # list for node-licenses in taskcluster/kinds/source-test/mozlint.yml
         - package.json
         - tools/lint/eslint/eslint-plugin-mozilla/package.json
+        - tools/lint/stylelint/stylelint-plugin-mozilla/package.json
     exclude: []
     extensions:
         - json

@@ -139,7 +139,7 @@ using Generation = Opaque<uint64_t>;
 //
 template <class Key, class Value, class HashPolicy = DefaultHasher<Key>,
           class AllocPolicy = MallocAllocPolicy>
-class HashMap {
+class MOZ_STANDALONE_DEBUG HashMap {
   // -- Implementation details -----------------------------------------------
 
   // HashMap is not copyable or assignable.
@@ -1212,7 +1212,7 @@ class EntrySlot {
 };
 
 template <class T, class HashPolicy, class AllocPolicy>
-class HashTable : private AllocPolicy {
+class MOZ_STANDALONE_DEBUG HashTable : private AllocPolicy {
   friend class mozilla::ReentrancyGuard;
 
   using NonConstT = std::remove_const_t<T>;

@@ -8,6 +8,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(
   lazy,
   {
+    HTMLSourcesCache:
+      "resource://devtools/server/actors/utils/HTMLSourcesCache.sys.mjs",
     isWindowGlobalPartOfContext:
       "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
     WEBEXTENSION_FALLBACK_DOC_URL:
@@ -175,6 +177,13 @@ function createTargetsForWatcher(watcherDataObject, isProcessActorStartup) {
       }
     }
   }
+
+  // Utility class to watch for HTML Sources text content emitted by the HTML Parser.
+  // As this can come from the previous WindowGlobal, we need this logic to be running outside
+  // of individual WindowGlobal targets.
+  if (sessionContext.type != "all") {
+    lazy.HTMLSourcesCache.watch(sessionContext.browserId);
+  }
 }
 
 function destroyTargetsForWatcher(watcherDataObject, options) {
@@ -192,6 +201,10 @@ function destroyTargetsForWatcher(watcherDataObject, options) {
       actor,
       options
     );
+  }
+
+  if (watcherDataObject.sessionContext.type != "all") {
+    lazy.HTMLSourcesCache.unwatch(watcherDataObject.sessionContext.browserId);
   }
 }
 
@@ -227,6 +240,14 @@ function onWindowGlobalCreated(
       "frame"
     )) {
       const { sessionContext } = watcherDataObject;
+      /*
+      try {
+        windowGlobal.browsingContext.watchedByDevTools = true;
+      } catch (e) {}
+      try {
+        windowGlobal.browsingContext.top.watchedByDevTools = true;
+      } catch (e) {}
+      */
       if (
         lazy.isWindowGlobalPartOfContext(windowGlobal, sessionContext, {
           forceAcceptTopLevelTarget,

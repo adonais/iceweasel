@@ -72,10 +72,10 @@ add_task(async function test_fast_heuristic() {
   // Do a search.
   const win = await BrowserTestUtils.openNewBrowserWindow();
 
-  let startTime = Cu.now();
+  let startTime = ChromeUtils.now();
   Assert.greater(
     longTimeoutMs,
-    Cu.now() - startTime,
+    ChromeUtils.now() - startTime,
     "Heuristic result is returned faster than CHUNK_RESULTS_DELAY_MS"
   );
 

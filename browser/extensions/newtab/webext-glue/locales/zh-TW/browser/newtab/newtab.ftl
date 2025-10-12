@@ -315,19 +315,32 @@ newtab-custom-pocket-subtitle = 由 { -brand-product-name } 的姊妹作 { -pock
 newtab-custom-stories-toggle =
     .label = 推薦的文章
     .description = 由 { -brand-product-name } 產品家族精選的內容文章
+newtab-custom-stories-personalized-toggle =
+    .label = 文章
+newtab-custom-stories-personalized-checkbox-label = 依照您的上網行為，提供個人化文章推薦
 newtab-custom-pocket-sponsored = 贊助內容
 newtab-custom-pocket-show-recent-saves = 顯示近期儲存項目
 newtab-custom-recent-title = 近期動態
 newtab-custom-recent-subtitle = 近期造訪過的網站與內容精選
-newtab-custom-recent-toggle =
-    .label = 近期動態
-    .description = 近期造訪過的網站與內容精選
 newtab-custom-weather-toggle =
     .label = 天氣
     .description = 快速了解本日天氣
 newtab-custom-trending-search-toggle =
     .label = 熱門搜尋
     .description = 熱門與常見搜尋主題
+newtab-custom-widget-weather-toggle =
+    .label = 天氣
+newtab-custom-widget-trending-search-toggle =
+    .label = 熱門搜尋
+newtab-custom-widget-lists-toggle =
+    .label = 清單
+newtab-custom-widget-timer-toggle =
+    .label = 計時器
+newtab-custom-widget-section-title = 小工具
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = 關閉
+    .aria-label = 關閉選單
 newtab-custom-close-button = 關閉
 newtab-custom-settings = 管理更多設定
 
@@ -340,6 +353,7 @@ newtab-wallpaper-custom-color = 選擇一種色彩
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = 圖片超過 { $file_size }MB 的檔案大小限制。請嘗試上傳小一點的檔案。
+newtab-wallpaper-error-upload-file-type = 無法上傳您的檔案，請稍後再重新上傳圖片。
 newtab-wallpaper-error-file-type = 無法上傳您的檔案，請稍後再以不同格式檔案上傳。
 newtab-wallpaper-light-red-panda = 小貓熊
 newtab-wallpaper-light-mountain = 白色山脈
@@ -377,7 +391,7 @@ newtab-wallpaper-brown = 棕色
 
 ## Abstract
 
-newtab-wallpaper-category-title-abstract = 抽象派
+newtab-wallpaper-category-title-abstract = 抽象圖片
 newtab-wallpaper-abstract-green = 綠色造型
 newtab-wallpaper-abstract-blue = 藍色造型
 newtab-wallpaper-abstract-purple = 紫色造型
@@ -445,7 +459,6 @@ newtab-weather-menu-change-location = 更改位置
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = 搜尋位置
     .aria-label = 搜尋位置
-newtab-weather-change-location-search-input = 搜尋位置
 newtab-weather-menu-weather-display = 顯示天氣
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -592,8 +605,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Google 上的熱門搜尋主題
 newtab-trending-searches-show-trending =
     .title = 顯示熱門搜尋主題
 newtab-trending-searches-hide-trending =
@@ -602,3 +613,76 @@ newtab-trending-searches-learn-more = 更多資訊
 newtab-trending-searches-dismiss = 隱藏熱門搜尋主題
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = 熱門搜尋
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = 有無限可能，請新增看看。
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = 新功能
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = 已完成（{ $number }）
+newtab-widget-task-list-menu-copy = 複製
+newtab-widget-lists-menu-edit = 編輯清單名稱
+newtab-widget-lists-menu-create = 新增清單
+newtab-widget-lists-menu-delete = 刪除此清單
+newtab-widget-lists-menu-copy = 複製清單到剪貼簿
+newtab-widget-lists-menu-hide = 隱藏所有清單
+newtab-widget-lists-menu-learn-more = 更多資訊
+newtab-widget-lists-input-add-an-item =
+    .placeholder = 新增項目
+newtab-widget-lists-input-error = 請加入文字來新增項目。
+newtab-widget-lists-input-menu-open-link = 開啟鏈結
+newtab-widget-lists-input-menu-move-up = 上移
+newtab-widget-lists-input-menu-move-down = 下移
+newtab-widget-lists-input-menu-delete = 刪除
+newtab-widget-lists-input-menu-edit = 編輯
+newtab-widget-lists-name-label-default =
+    .label = 任務清單
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = 任務清單
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = 新增清單
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = 計時器
+newtab-widget-timer-notification-focus = 專注時間已結束，做得好！要休息一下嗎？
+newtab-widget-timer-notification-break = 休息時間結束，準備好繼續專注了嗎？
+newtab-widget-timer-notification-warning = 通知已關閉
+newtab-widget-timer-mode-focus =
+    .label = 專注
+newtab-widget-timer-mode-break =
+    .label = 休息
+newtab-widget-timer-play =
+    .title = 播放
+newtab-widget-timer-pause =
+    .title = 暫停
+newtab-widget-timer-label-play =
+    .label = 播放
+newtab-widget-timer-label-pause =
+    .label = 暫停
+newtab-widget-timer-reset =
+    .title = 重設
+newtab-widget-timer-menu-notifications = 關閉通知
+newtab-widget-timer-menu-notifications-on = 開啟通知
+newtab-widget-timer-menu-hide = 隱藏計時器
+newtab-widget-timer-menu-learn-more = 更多資訊
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = 滾動顯示更多
+newtab-widget-message-title = 使用清單與內建的計時器，讓您保持專注
+# to-dos stands for "things to do".
+newtab-widget-message-copy = 從快速提醒到每日待辦事項，或是在專注時間之後休息一下伸伸懶腰，讓您及時完成工作。
+newtab-promo-card-title = 支持 { -brand-product-name }
+newtab-promo-card-body = 贊助商支持我們打造出一個更好的網路環境的使命
+newtab-promo-card-cta = 更多資訊
+newtab-promo-card-dismiss-button =
+    .title = 知道了！
+    .aria-label = 知道了！

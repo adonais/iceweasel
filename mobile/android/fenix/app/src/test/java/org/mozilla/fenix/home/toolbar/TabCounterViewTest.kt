@@ -12,7 +12,6 @@ import io.mockk.verify
 import io.mockk.verifyOrder
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
-import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.ui.tabcounter.TabCounterMenu
 import org.junit.Assert.assertEquals

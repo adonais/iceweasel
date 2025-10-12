@@ -188,7 +188,7 @@ already_AddRefed<nsITimer> DelayedKill(pid_t aPid) {
         // If the process was still running, it will exit and the
         // SIGCHLD handler will waitpid it.
       },
-      kMaxWaitMs, nsITimer::TYPE_ONE_SHOT, "ProcessWatcher::DelayedKill",
+      kMaxWaitMs, nsITimer::TYPE_ONE_SHOT, "ProcessWatcher::DelayedKill"_ns,
       XRE_GetAsyncIOEventTarget());
 
   // This should happen only during shutdown, in which case we're

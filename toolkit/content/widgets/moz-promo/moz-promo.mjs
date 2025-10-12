@@ -15,7 +15,7 @@ import { MozLitElement } from "../lit-utils.mjs";
  * @property {string} heading - The heading of the promo element.
  * @property {string} message - The message of the promo element.
  * @property {string} imageSrc - The main image of the promo element.
- * @property {string} iconAlignment - How the icon should be aligned. Can be "start", "end", "center".
+ * @property {string} imageAlignment - How the image should be aligned. Can be "start", "end", "center".
  */
 export default class MozPromo extends MozLitElement {
   static queries = {

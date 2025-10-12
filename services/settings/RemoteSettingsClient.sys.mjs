@@ -29,23 +29,6 @@ const TELEMETRY_COMPONENT = "Remotesettings";
 ChromeUtils.defineLazyGetter(lazy, "console", () => lazy.Utils.log);
 
 /**
- * cacheProxy returns an object Proxy that will memoize properties of the target.
- * @param {object} target the object to wrap.
- * @returns {Proxy}
- */
-function cacheProxy(target) {
-  const cache = new Map();
-  return new Proxy(target, {
-    get(innerTarget, prop) {
-      if (!cache.has(prop)) {
-        cache.set(prop, innerTarget[prop]);
-      }
-      return cache.get(prop);
-    },
-  });
-}
-
-/**
  * Minimalist event emitter.
  *
  * Note: we don't use `toolkit/modules/EventEmitter` because **we want** to throw
@@ -311,12 +294,24 @@ export class RemoteSettingsClient extends EventEmitter {
     return lazy.Database.EmptyDatabaseError;
   }
 
+  /**
+   * RemoteSettingsClient constructor.
+   *
+   * options.filterCreator is an optional function returning a filter object
+   * which can map and exclude the entries returned from `.get()`. You often
+   * want to set this to the default filter creator `jexlFilterCreator`.
+   * The function needs to have the shape
+   * `async (environment, collectionName) => RemoteSettingsEntryFilter`, where
+   * `RemoteSettingsEntryFilter` refers to an interface with a single method:
+   * `async filterEntry(entry)`. This method should return either the (mapped)
+   * entry or a falsy value if the entry should be filtered out.
+   */
   constructor(
     collectionName,
     {
       bucketName = AppConstants.REMOTE_SETTINGS_DEFAULT_BUCKET,
       signerName,
-      filterFunc,
+      filterCreator,
       localFields = [],
       keepAttachmentsIds = [],
       lastCheckTimePref,
@@ -343,7 +338,7 @@ export class RemoteSettingsClient extends EventEmitter {
     // The `bucketName` will contain the `-preview` suffix if the preview mode is enabled.
     this.bucketName = lazy.Utils.actualBucketName(bucketName);
     this.signerName = signerName;
-    this.filterFunc = filterFunc;
+    this.filterCreator = filterCreator;
     this.localFields = localFields;
     this.keepAttachmentsIds = keepAttachmentsIds;
     this._lastCheckTimePref = lastCheckTimePref;
@@ -491,7 +486,7 @@ export class RemoteSettingsClient extends EventEmitter {
               lazy.console.debug(
                 `${this.identifier} Local DB is empty, pull data from server`
               );
-              const waitedAt = Cu.now();
+              const waitedAt = ChromeUtils.now();
               const pulled = await lazy.RemoteSettings.pullStartupBundle();
               // If collection is not part of startup bundle, then sync it individually.
               if (!pulled.includes(this.identifier)) {
@@ -506,7 +501,7 @@ export class RemoteSettingsClient extends EventEmitter {
                 "get() with syncIfEmpty"
               );
 
-              const durationMilliseconds = Cu.now() - waitedAt;
+              const durationMilliseconds = ChromeUtils.now() - waitedAt;
               lazy.console.debug(
                 `${this.identifier} Waited ${durationMilliseconds}ms for 'syncIfEmpty' in 'get()'`
               );
@@ -635,7 +630,7 @@ export class RemoteSettingsClient extends EventEmitter {
       await this.validateCollectionSignature(localRecords, timestamp, metadata);
     }
 
-    // Filter the records based on `this.filterFunc` results.
+    // Filter the records based on `this.filterCreator` results.
     const final = await this._filterEntries(data);
     if (final.length != data.length) {
       lazy.console.debug(
@@ -897,7 +892,7 @@ export class RemoteSettingsClient extends EventEmitter {
         }
       }
       if (sendEvents) {
-        // Filter the synchronization results using `filterFunc` (ie. JEXL).
+        // Filter the synchronization results using `filterCreator` (ie. JEXL).
         const filteredSyncResult = await this._filterSyncResult(syncResult);
         // If every changed entry is filtered, we don't even fire the event.
         if (filteredSyncResult) {
@@ -1369,21 +1364,28 @@ export class RemoteSettingsClient extends EventEmitter {
   }
 
   /**
-   * Filter entries for which calls to `this.filterFunc` returns null.
+   * Filter entries for which calls to the filter's `filterEntry` method
+   * return null.
    *
    * @param {object[]} data
    * @returns {Promise<object[]>}
    */
   async _filterEntries(data) {
-    if (!this.filterFunc) {
+    if (!this.filterCreator) {
       return data;
     }
-    const environment = cacheProxy(lazy.ClientEnvironmentBase);
-    const dataPromises = data.map(e =>
-      this.filterFunc(e, environment, this.identifier)
+    const filter = await this.filterCreator(
+      lazy.ClientEnvironmentBase,
+      this.identifier
     );
-    const results = await Promise.all(dataPromises);
-    return results.filter(Boolean);
+    const results = [];
+    for (const entry of data) {
+      const filteredEntry = await filter.filterEntry(entry);
+      if (filteredEntry) {
+        results.push(filteredEntry);
+      }
+    }
+    return results;
   }
 
   /**

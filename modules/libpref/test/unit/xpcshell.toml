@@ -30,6 +30,8 @@ support-files = [
   "data/testPrefLocked.js", "data/testPrefLockedUser.js",
 ]
 
+["test_nsPrefOverrideMap.js"]
+
 ["test_parsePrefs.js"]
 support-files = ["data/testPrefUTF8.js"]
 head = ""

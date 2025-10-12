@@ -31,7 +31,6 @@
 #include "mozilla/ContentIterator.h"
 #include "mozilla/EditorForwards.h"
 #include "mozilla/IntegerRange.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
@@ -2479,12 +2478,6 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
           break;  // There is no more text which we need to delete.
         }
       }
-      if (MayHaveMutationEventListeners(
-              NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED) &&
-          (NS_WARN_IF(!trackingEndToDelete.IsSetAndValid()) ||
-           NS_WARN_IF(!trackingEndToDelete.IsInTextNode()))) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
       MOZ_ASSERT(trackingEndToDelete.IsInTextNode());
       endToDelete.Set(trackingEndToDelete.ContainerAs<Text>(),
                       trackingEndToDelete.Offset());
@@ -2492,11 +2485,6 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       // we should stop handling the deletion.
       startToDelete =
           EditorDOMPointInText::AtEndOf(*startToDelete.ContainerAs<Text>());
-      if (MayHaveMutationEventListeners(
-              NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED) &&
-          NS_WARN_IF(!startToDelete.IsBefore(endToDelete))) {
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
     }
     // Delete ASCII whiteSpaces in the range simpley if there are some text
     // nodes which we don't need to replace their text.
@@ -2532,11 +2520,7 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
         if (normalizedWhiteSpacesInLastNode.IsEmpty()) {
           break;  // There is no more text which we need to delete.
         }
-        if (MayHaveMutationEventListeners(
-                NS_EVENT_BITS_MUTATION_CHARACTERDATAMODIFIED |
-                NS_EVENT_BITS_MUTATION_NODEREMOVED |
-                NS_EVENT_BITS_MUTATION_NODEREMOVEDFROMDOCUMENT |
-                NS_EVENT_BITS_MUTATION_SUBTREEMODIFIED) &&
+        if (MaybeNodeRemovalsObservedByDevTools() &&
             (NS_WARN_IF(!endToDeleteExceptReplaceRange.IsSetAndValid()) ||
              NS_WARN_IF(!endToDelete.IsSetAndValid()) ||
              NS_WARN_IF(endToDelete.IsStartOfContainer()))) {
@@ -10965,18 +10949,6 @@ Result<EditActionResult, nsresult> HTMLEditor::AddZIndexAsSubAction(
   }
 
   return EditActionResult::HandledResult();
-}
-
-nsresult HTMLEditor::OnDocumentModified(
-    const nsIContent* aContentWillBeRemoved /* = nullptr */) {
-  if (mPendingDocumentModifiedRunner) {
-    return NS_OK;  // We've already posted same runnable into the queue.
-  }
-  mPendingDocumentModifiedRunner = new DocumentModifiedEvent(*this);
-  nsContentUtils::AddScriptRunner(do_AddRef(mPendingDocumentModifiedRunner));
-  // Be aware, if OnModifyDocument() may be called synchronously, the
-  // editor might have been destroyed here.
-  return NS_WARN_IF(Destroyed()) ? NS_ERROR_EDITOR_DESTROYED : NS_OK;
 }
 
 }  // namespace mozilla

@@ -6,7 +6,7 @@ BUTTON_CSS = "label[for=ipcheck_submit]"
 
 
 async def is_button_text_on_one_line(client):
-    await client.navigate(URL, wait="none")
+    await client.navigate(URL)
     return client.execute_script(
         """
         return arguments[0].getBoxQuads().length == 1;

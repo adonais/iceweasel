@@ -397,7 +397,8 @@ void gfxUserFontEntry::FontLoadComplete() {
   GetUserFontSets(fontSets);
   for (gfxUserFontSet* fontSet : fontSets) {
     fontSet->IncrementGeneration();
-    if (nsPresContext* ctx = dom::FontFaceSetImpl::GetPresContextFor(fontSet)) {
+    if (FontVisibilityProvider* ctx =
+            dom::FontFaceSetImpl::GetFontVisibilityProviderFor(fontSet)) {
       // Update layout for the presence of the new font.  Since this is
       // asynchronous, reflows will coalesce.
       ctx->UserFontSetUpdated(this);
@@ -459,8 +460,8 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
       gfxFontEntry* fe = nullptr;
       if (!pfl->IsFontFamilyWhitelistActive()) {
         fe = gfxPlatform::GetPlatform()->LookupLocalFont(
-            fontSet->GetPresContext(), currSrc.mLocalName, Weight(), Stretch(),
-            SlantStyle());
+            fontSet->GetFontVisibilityProvider(), currSrc.mLocalName, Weight(),
+            Stretch(), SlantStyle());
         // Note that we've attempted a local lookup, even if it failed,
         // as this means we are dependent on any updates to the font list.
         mSeenLocalSource = true;

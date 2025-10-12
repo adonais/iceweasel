@@ -139,7 +139,7 @@ already_AddRefed<AccAttributes> HTMLTableCellAccessible::NativeAttributes() {
 
 void HTMLTableCellAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                                   nsAtom* aAttribute,
-                                                  int32_t aModType,
+                                                  AttrModType aModType,
                                                   const nsAttrValue* aOldValue,
                                                   uint64_t aOldState) {
   HyperTextAccessible::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,
@@ -344,7 +344,7 @@ ENameValueFlag HTMLTableAccessible::NativeName(nsString& aName) const {
 
 void HTMLTableAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
-                                              int32_t aModType,
+                                              AttrModType aModType,
                                               const nsAttrValue* aOldValue,
                                               uint64_t aOldState) {
   HyperTextAccessible::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,
@@ -657,12 +657,13 @@ bool HTMLTableAccessible::IsProbablyLayoutTable() {
 ////////////////////////////////////////////////////////////////////////////////
 // HTMLTableAccessible: protected implementation
 
-void HTMLTableAccessible::Description(nsString& aDescription) const {
+EDescriptionValueFlag HTMLTableAccessible::Description(
+    nsString& aDescription) const {
   // Helpful for debugging layout vs. data tables
   aDescription.Truncate();
-  LocalAccessible::Description(aDescription);
+  EDescriptionValueFlag descFlag = LocalAccessible::Description(aDescription);
   if (!aDescription.IsEmpty()) {
-    return;
+    return descFlag;
   }
 
   // Use summary as description if it weren't used as a name.
@@ -688,6 +689,8 @@ void HTMLTableAccessible::Description(nsString& aDescription) const {
   }
   printf("\nTABLE: %s\n", NS_ConvertUTF16toUTF8(mLayoutHeuristic).get());
 #endif
+
+  return eDescriptionOK;
 }
 
 nsTableWrapperFrame* HTMLTableAccessible::GetTableWrapperFrame() const {

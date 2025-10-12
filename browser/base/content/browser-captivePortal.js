@@ -179,7 +179,7 @@ var CaptivePortalWatcher = {
     let win = BrowserWindowTracker.getTopWindow();
     // Used by tests: ignore the main test window in order to enable testing of
     // the case where we have no open windows.
-    if (win.document.documentElement.getAttribute("ignorecaptiveportal")) {
+    if (win?.document.documentElement.getAttribute("ignorecaptiveportal")) {
       win = null;
     }
 

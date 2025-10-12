@@ -11,8 +11,6 @@
 // - actions
 
 ChromeUtils.defineESModuleGetters(this, {
-  UrlbarProviderClipboard:
-    "resource:///modules/UrlbarProviderClipboard.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
 });
 
@@ -32,7 +30,7 @@ add_task(async function selected_result_autofill_about() {
       {
         selected_result: "autofill_about",
         selected_position: 1,
-        provider: "Autofill",
+        provider: "UrlbarProviderAutofill",
         results: "autofill_about",
       },
     ]);
@@ -54,7 +52,7 @@ add_task(async function selected_result_autofill_adaptive() {
       {
         selected_result: "autofill_adaptive",
         selected_position: 1,
-        provider: "Autofill",
+        provider: "UrlbarProviderAutofill",
         results: "autofill_adaptive",
       },
     ]);
@@ -74,7 +72,7 @@ add_task(async function selected_result_autofill_origin() {
       {
         selected_result: "autofill_origin",
         selected_position: 1,
-        provider: "Autofill",
+        provider: "UrlbarProviderAutofill",
         results: "autofill_origin,history",
       },
     ]);
@@ -92,7 +90,7 @@ add_task(async function selected_result_autofill_url() {
       {
         selected_result: "autofill_url",
         selected_position: 1,
-        provider: "Autofill",
+        provider: "UrlbarProviderAutofill",
         results: "autofill_url",
       },
     ]);
@@ -118,7 +116,7 @@ add_task(async function selected_result_bookmark() {
       {
         selected_result: "bookmark",
         selected_position: 2,
-        provider: "Places",
+        provider: "UrlbarProviderPlaces",
         results: "search_engine,bookmark",
       },
     ]);
@@ -141,7 +139,7 @@ add_task(async function selected_result_history() {
       {
         selected_result: "history",
         selected_position: 2,
-        provider: "Places",
+        provider: "UrlbarProviderPlaces",
         results: "search_engine,history",
       },
     ]);
@@ -164,7 +162,7 @@ add_task(async function selected_result_keyword() {
       {
         selected_result: "keyword",
         selected_position: 1,
-        provider: "BookmarkKeywords",
+        provider: "UrlbarProviderBookmarkKeywords",
         results: "keyword",
       },
     ]);
@@ -182,7 +180,7 @@ add_task(async function selected_result_search_engine() {
       {
         selected_result: "search_engine",
         selected_position: 1,
-        provider: "HeuristicFallback",
+        provider: "UrlbarProviderHeuristicFallback",
         results: "search_engine",
       },
     ]);
@@ -206,7 +204,7 @@ add_task(async function selected_result_search_suggest() {
       {
         selected_result: "search_suggest",
         selected_position: 2,
-        provider: "SearchSuggestions",
+        provider: "UrlbarProviderSearchSuggestions",
         results: "search_engine,search_suggest,search_suggest",
       },
     ]);
@@ -234,7 +232,7 @@ add_task(async function selected_result_search_history() {
       {
         selected_result: "search_history",
         selected_position: 3,
-        provider: "SearchSuggestions",
+        provider: "UrlbarProviderSearchSuggestions",
         results: "search_engine,search_history,search_history",
       },
     ]);
@@ -252,7 +250,7 @@ add_task(async function selected_result_url() {
       {
         selected_result: "url",
         selected_position: 1,
-        provider: "HeuristicFallback",
+        provider: "UrlbarProviderHeuristicFallback",
         results: "url",
       },
     ]);
@@ -264,7 +262,7 @@ add_task(async function selected_result_tab() {
 
   await doTest(async () => {
     await openPopup("example");
-    await selectRowByProvider("Places");
+    await selectRowByProvider("UrlbarProviderPlaces");
     EventUtils.synthesizeKey("KEY_Enter");
     await BrowserTestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
 
@@ -272,7 +270,7 @@ add_task(async function selected_result_tab() {
       {
         selected_result: "tab",
         selected_position: 4,
-        provider: "Places",
+        provider: "UrlbarProviderPlaces",
         results: "search_engine,search_suggest,search_suggest,tab",
       },
     ]);
@@ -287,14 +285,14 @@ add_task(async function selected_result_remote_tab() {
 
   await doTest(async () => {
     await openPopup("example");
-    await selectRowByProvider("RemoteTabs");
+    await selectRowByProvider("UrlbarProviderRemoteTabs");
     await doEnter();
 
     assertEngagementTelemetry([
       {
         selected_result: "remote_tab",
         selected_position: 2,
-        provider: "RemoteTabs",
+        provider: "UrlbarProviderRemoteTabs",
         results: "search_engine,remote_tab",
       },
     ]);
@@ -315,7 +313,7 @@ add_task(async function selected_result_addon() {
       {
         selected_result: "addon",
         selected_position: 1,
-        provider: "Omnibox",
+        provider: "UrlbarProviderOmnibox",
         results: "addon",
       },
     ]);
@@ -340,7 +338,7 @@ add_task(async function selected_result_tab_to_search() {
     }
 
     await openPopup("moze");
-    await selectRowByProvider("TabToSearch");
+    await selectRowByProvider("UrlbarProviderTabToSearch");
     const onComplete = UrlbarTestUtils.promiseSearchComplete(window);
     EventUtils.synthesizeKey("KEY_Enter");
     await onComplete;
@@ -349,7 +347,7 @@ add_task(async function selected_result_tab_to_search() {
       {
         selected_result: "tab_to_search",
         selected_position: 2,
-        provider: "TabToSearch",
+        provider: "UrlbarProviderTabToSearch",
         results: "search_engine,tab_to_search,history",
       },
     ]);
@@ -383,7 +381,7 @@ add_task(async function selected_result_calc() {
 
   await doTest(async () => {
     await openPopup("8*8");
-    await selectRowByProvider("calculator");
+    await selectRowByProvider("UrlbarProviderCalculator");
     await SimpleTest.promiseClipboardChange("64", () => {
       EventUtils.synthesizeKey("KEY_Enter");
     });
@@ -392,7 +390,7 @@ add_task(async function selected_result_calc() {
       {
         selected_result: "calc",
         selected_position: 2,
-        provider: "calculator",
+        provider: "UrlbarProviderCalculator",
         results: "search_engine,calc",
       },
     ]);
@@ -428,7 +426,9 @@ add_task(async function selected_result_clipboard() {
   });
 
   SpecialPowers.clipboardCopyString("");
-  UrlbarProviderClipboard.setPreviousClipboardValue("");
+  UrlbarProvidersManager.getProvider(
+    "UrlbarProviderClipboard"
+  ).setPreviousClipboardValue("");
   await SpecialPowers.popPrefEnv();
 });
 
@@ -439,7 +439,7 @@ add_task(async function selected_result_unit() {
 
   await doTest(async () => {
     await openPopup("1m to cm");
-    await selectRowByProvider("UnitConversion");
+    await selectRowByProvider("UrlbarProviderUnitConversion");
     await SimpleTest.promiseClipboardChange("100 cm", () => {
       EventUtils.synthesizeKey("KEY_Enter");
     });
@@ -448,7 +448,7 @@ add_task(async function selected_result_unit() {
       {
         selected_result: "unit",
         selected_position: 2,
-        provider: "UnitConversion",
+        provider: "UrlbarProviderUnitConversion",
         results: "search_engine,unit",
       },
     ]);
@@ -693,14 +693,14 @@ add_task(async function selected_result_trending() {
 
   await doTest(async () => {
     await openPopup("");
-    await selectRowByProvider("SearchSuggestions");
+    await selectRowByProvider("UrlbarProviderSearchSuggestions");
     await doEnter();
 
     assertEngagementTelemetry([
       {
         selected_result: "trending_search",
         selected_position: 1,
-        provider: "SearchSuggestions",
+        provider: "UrlbarProviderSearchSuggestions",
         results: "trending_search",
       },
     ]);
@@ -783,14 +783,14 @@ add_task(async function selected_result_trending_rich() {
 
   await doTest(async () => {
     await openPopup("");
-    await selectRowByProvider("SearchSuggestions");
+    await selectRowByProvider("UrlbarProviderSearchSuggestions");
     await doEnter();
 
     assertEngagementTelemetry([
       {
         selected_result: "trending_search_rich",
         selected_position: 1,
-        provider: "SearchSuggestions",
+        provider: "UrlbarProviderSearchSuggestions",
         results: "trending_search_rich",
       },
     ]);
@@ -956,7 +956,7 @@ add_task(async function selected_result_semantic() {
         {
           selected_result: "history_semantic",
           selected_position: 2,
-          provider: "SemanticHistorySearch",
+          provider: "UrlbarProviderSemanticHistorySearch",
           results: "search_engine,history_semantic,history_semantic_serp",
         },
       ]);

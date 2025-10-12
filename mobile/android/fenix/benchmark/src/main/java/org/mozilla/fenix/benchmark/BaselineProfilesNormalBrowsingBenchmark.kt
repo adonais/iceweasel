@@ -6,8 +6,6 @@ package org.mozilla.fenix.benchmark
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.benchmark.macro.BaselineProfileMode
 import androidx.benchmark.macro.CompilationMode
 import androidx.benchmark.macro.StartupMode
@@ -18,6 +16,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.mozilla.fenix.benchmark.utils.EXTRA_COMPOSABLE_TOOLBAR
+import org.mozilla.fenix.benchmark.utils.FENIX_HOME_DEEP_LINK
+import org.mozilla.fenix.benchmark.utils.HtmlAsset
+import org.mozilla.fenix.benchmark.utils.MockWebServerRule
 import org.mozilla.fenix.benchmark.utils.ParameterizedToolbarsTest
 import org.mozilla.fenix.benchmark.utils.TARGET_PACKAGE
 import org.mozilla.fenix.benchmark.utils.dismissWallpaperOnboarding
@@ -25,6 +26,7 @@ import org.mozilla.fenix.benchmark.utils.enterSearchMode
 import org.mozilla.fenix.benchmark.utils.isWallpaperOnboardingShown
 import org.mozilla.fenix.benchmark.utils.loadSite
 import org.mozilla.fenix.benchmark.utils.measureRepeatedDefault
+import org.mozilla.fenix.benchmark.utils.url
 
 /**
  * This test class benchmarks the speed of loading a website from the awesome bar in normal browsing
@@ -53,13 +55,15 @@ import org.mozilla.fenix.benchmark.utils.measureRepeatedDefault
  * and the [instrumentation arguments documentation](https://d.android.com/topic/performance/benchmarking/macrobenchmark-instrumentation-args).
  **/
 @RunWith(Parameterized::class)
-@RequiresApi(Build.VERSION_CODES.N)
 @BaselineProfileMacrobenchmark
 class BaselineProfilesNormalBrowsingBenchmark(
     private val useComposableToolbar: Boolean,
 ): ParameterizedToolbarsTest() {
     @get:Rule
     val benchmarkRule = MacrobenchmarkRule()
+
+    @get:Rule
+    val mockRule = MockWebServerRule()
 
     @Test
     fun normalBrowsingNone() = normalBrowsingBenchmark(CompilationMode.None())
@@ -81,7 +85,7 @@ class BaselineProfilesNormalBrowsingBenchmark(
                 killProcess()
             },
         ) {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("fenix-nightly://home"))
+            val intent = Intent(Intent.ACTION_VIEW, FENIX_HOME_DEEP_LINK)
                 .putExtra(EXTRA_COMPOSABLE_TOOLBAR, useComposableToolbar)
 
             startActivityAndWait(intent = intent)
@@ -91,7 +95,7 @@ class BaselineProfilesNormalBrowsingBenchmark(
             }
 
             device.enterSearchMode(useComposableToolbar)
-            device.loadSite(url = "example.com", useComposableToolbar)
+            device.loadSite(url = mockRule.url(HtmlAsset.SIMPLE), useComposableToolbar)
 
             killProcess()
         }

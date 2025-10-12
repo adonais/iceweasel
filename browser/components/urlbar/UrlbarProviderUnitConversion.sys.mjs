@@ -75,20 +75,11 @@ const VIEW_TEMPLATE = {
 /**
  * Provide a feature that converts given units.
  */
-class ProviderUnitConversion extends UrlbarProvider {
+export class UrlbarProviderUnitConversion extends UrlbarProvider {
   constructor() {
     super();
     lazy.UrlbarResult.addDynamicResultType(DYNAMIC_RESULT_TYPE);
     lazy.UrlbarView.addDynamicViewTemplate(DYNAMIC_RESULT_TYPE, VIEW_TEMPLATE);
-  }
-
-  /**
-   * Returns the name of this provider.
-   *
-   * @returns {string} the name of this provider.
-   */
-  get name() {
-    return "UnitConversion";
   }
 
   /**
@@ -176,5 +167,3 @@ class ProviderUnitConversion extends UrlbarProvider {
     lazy.ClipboardHelper.copyString(textContent);
   }
 }
-
-export const UrlbarProviderUnitConversion = new ProviderUnitConversion();

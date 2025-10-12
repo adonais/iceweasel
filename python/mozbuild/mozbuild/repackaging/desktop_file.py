@@ -268,13 +268,7 @@ def _generate_browser_desktop_entry(build_variables, localizations):
             },
             {
                 "key": "StartupWMClass",
-                "value": (
-                    "firefox-aurora"
-                    if build_variables["PKG_NAME"] == "firefox-devedition"
-                    else build_variables.get(
-                        "StartupWMClass", build_variables["PKG_NAME"]
-                    )
-                ),
+                "value": build_variables["REMOTING_NAME"],
             },
             {
                 "key": "DBusActivatable",
@@ -298,12 +292,12 @@ def _generate_browser_desktop_entry(build_variables, localizations):
                 "value": _desktop_entry_list([action["name"] for action in actions]),
             },
             {"key": "Name", "value": "desktop-entry-name", "l10n": True},
-            {"key": "Comment", "value": "desktop-entry-comment", "l10n": True},
+            {"key": "Comment", "value": "desktop-entry-comment-1", "l10n": True},
             {"key": "GenericName", "value": "desktop-entry-generic-name", "l10n": True},
             {"key": "Keywords", "value": "desktop-entry-keywords", "l10n": True},
             {
                 "key": "X-GNOME-FullName",
-                "value": "desktop-entry-x-gnome-full-name",
+                "value": "desktop-entry-x-gnome-full-name-1",
                 "l10n": True,
             },
         ],

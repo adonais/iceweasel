@@ -44,6 +44,13 @@ const kMockNativeShellService = {
 
 sinon.stub(ShellService, "shellService").value(kMockNativeShellService);
 
+sinon.stub(TaskbarTabsPin, "_getLocalization").returns({
+  formatValue(msg) {
+    // Slash must also be sanitized, so it should appear as '_' in paths.
+    return `[formatValue/${msg}]`;
+  },
+});
+
 registerCleanupFunction(() => {
   sinon.restore();
 });
@@ -239,8 +246,8 @@ add_task(async function test_pin_location() {
     "The shortcut went into the Start Menu folder"
   );
   Assert.equal(
-    spy.firstCall.args[7].split("\\", 2)[1],
-    "Test.lnk",
+    spy.firstCall.args[7],
+    `[formatValue_taskbar-tab-shortcut-folder]\\${taskbarTab.name}.lnk`,
     "The shortcut should be in a subdirectory and have a default name"
   );
 
@@ -268,11 +275,10 @@ add_task(async function test_pin_location_dos_name() {
   // 'Untitled' is the default selected by the MIME code, since
   // AUX is a reserved name on Windows.
   Assert.equal(
-    spy.firstCall.args[7].split("\\", 2)[1],
-    "Untitled.lnk",
+    spy.firstCall.args[7],
+    "[formatValue_taskbar-tab-shortcut-folder]\\Untitled.lnk",
     "The shortcut should be in a subdirectory and have a default name"
   );
-
   Assert.equal(
     invalidTaskbarTab.shortcutRelativePath,
     spy.firstCall.args[7],
@@ -280,7 +286,58 @@ add_task(async function test_pin_location_dos_name() {
   );
   Assert.equal(patchedSpy.callCount, 1, "A single patched event was emitted");
 
-  registry.removeTaskbarTab(invalidTaskbarTab);
+  registry.removeTaskbarTab(invalidTaskbarTab.id);
+});
+
+add_task(async function test_pin_location_bad_characters() {
+  const parsedURI = Services.io.newURI("https://another.test");
+  const invalidTaskbarTab = registry.findOrCreateTaskbarTab(parsedURI, 0, {
+    manifest: {
+      name: "** :\t\r\n \\\\ >> Not a valid. filename??! << // |||: **.",
+    },
+  });
+  sinon.resetHistory();
+
+  await TaskbarTabsPin.pinTaskbarTab(invalidTaskbarTab);
+  const spy = kMockNativeShellService.createShortcut;
+  ok(spy.calledOnce, "A shortcut was created");
+  Assert.equal(
+    spy.firstCall.args[6],
+    "Programs",
+    "The shortcut went into the Start Menu folder"
+  );
+  Assert.equal(
+    spy.firstCall.args[7],
+    "[formatValue_taskbar-tab-shortcut-folder]\\__ ____ __ __ Not a valid. filename__! __ __ ____ __..lnk",
+    "The shortcut should have invalid characters filtered out."
+  );
+  registry.removeTaskbarTab(invalidTaskbarTab.id);
+});
+
+add_task(async function test_pin_location_lnk_extension() {
+  const parsedURI = Services.io.newURI("https://another.test");
+  const invalidTaskbarTab = registry.findOrCreateTaskbarTab(parsedURI, 0, {
+    manifest: {
+      name: "coolstartup.lnk",
+    },
+  });
+  sinon.resetHistory();
+
+  await TaskbarTabsPin.pinTaskbarTab(invalidTaskbarTab);
+  const spy = kMockNativeShellService.createShortcut;
+  ok(spy.calledOnce, "A shortcut was created");
+  Assert.equal(
+    spy.firstCall.args[6],
+    "Programs",
+    "The shortcut went into the Start Menu folder"
+  );
+  Assert.equal(
+    spy.firstCall.args[7],
+    "[formatValue_taskbar-tab-shortcut-folder]\\coolstartup.lnk.lnk",
+    "The shortcut should keep the .lnk intact."
+  );
+
+  registry.removeTaskbarTab(invalidTaskbarTab.id);
 });
 
 add_task(async function test_unpin() {

@@ -1,0 +1,22 @@
+From: Michael Froman <mfroman@mozilla.com>
+Date: Fri, 8 Aug 2025 14:18:00 -0500
+Subject: Bug 1980479 - (fix-2f21adc141) turn off rtc_rusty_base64
+
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/6038962cc8531f7bac3a58170b052326f5fabf4a
+---
+ webrtc.gni | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/webrtc.gni b/webrtc.gni
+index 785492fe49..1e87de20e5 100644
+--- a/webrtc.gni
++++ b/webrtc.gni
+@@ -343,7 +343,7 @@ declare_args() {
+   rtc_disable_metrics = false
+ 
+   # Enables an experimental rust version of base64 for building and testing.
+-  rtc_rusty_base64 = true
++  rtc_rusty_base64 = !build_with_mozilla
+ }
+ 
+ declare_args() {

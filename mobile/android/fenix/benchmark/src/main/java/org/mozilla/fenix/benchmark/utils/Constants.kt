@@ -4,6 +4,9 @@
 
 package org.mozilla.fenix.benchmark.utils
 
+import androidx.core.net.toUri
+
 const val TARGET_PACKAGE = "org.mozilla.fenix"
 const val DEFAULT_ITERATIONS = 5
 const val EXTRA_COMPOSABLE_TOOLBAR = "EXTRA_COMPOSABLE_TOOLBAR"
+val FENIX_HOME_DEEP_LINK = "fenix-nightly://home".toUri()

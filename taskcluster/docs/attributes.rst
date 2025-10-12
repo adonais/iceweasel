@@ -439,6 +439,11 @@ If true, the digest for this task will also depend on if the branch is a
 release branch.  This will cause tasks like toolchains to be rebuilt as they
 move from e.g. autoland to mozilla-central.
 
+local-fetch
+===============
+This fetch is used for local development, so should be built on trunk, even
+if it does not have any in-graph consumers.
+
 local-toolchain
 ===============
 This toolchain is used for local development, so should be built on trunk, even
@@ -469,6 +474,11 @@ For tasks that were derived from a group of dependencies, this attribute
 denotes which dependent kind is the `primary one`_.
 
 Typically this is set by the ``taskgraph.transforms.from_deps`` transforms.
+
+primary-dependency-label
+========================
+
+This attribute denotes which upstream task is the `primary one`_, and is typically used to indicate which upstream task other attributes should be derived from.
 
 snap_test_type
 ==============
@@ -553,3 +563,8 @@ Used by source tests to support chunking and specify a current chunk.
 total_chunks
 =============
 Used by source tests to support chunking and specify a total amount of chunks.
+
+matrix
+======
+Used to generate several tasks from a task, using the substitution given in the
+matrix.

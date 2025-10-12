@@ -48,8 +48,8 @@ bool HTMLLegendElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                               aMaybeScriptedPrincipal, aResult);
 }
 
-nsChangeHint HTMLLegendElement::GetAttributeChangeHint(const nsAtom* aAttribute,
-                                                       int32_t aModType) const {
+nsChangeHint HTMLLegendElement::GetAttributeChangeHint(
+    const nsAtom* aAttribute, AttrModType aModType) const {
   nsChangeHint retval =
       nsGenericHTMLElement::GetAttributeChangeHint(aAttribute, aModType);
   if (aAttribute == nsGkAtoms::align) {

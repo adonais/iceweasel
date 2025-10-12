@@ -68,7 +68,8 @@ RUN apt-get update && \
       apt-get install python3-minimal libpython3-stdlib; \
       echo 'dir::bin::methods::http "/usr/local/sbin/snapshot-hack.py";' >> /etc/apt/apt.conf.d/99taskcluster; \
     fi && \
-    apt-get dist-upgrade && \
     apt-get install \
       apt-transport-https \
-      ca-certificates
+      ca-certificates && \
+    if [ -n "$SNAPSHOT" -a -f /etc/apt/sources.list.d/ubuntu.sources ]; then echo "APT::Snapshot \"$SNAPSHOT\";" > /etc/apt/apt.conf.d/99snapshot && apt-get update; fi && \
+    apt-get dist-upgrade

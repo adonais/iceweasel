@@ -800,10 +800,10 @@ class TrackingProtectionPolicyFactoryTest {
     }
 
     @Test
-    fun `WHEN policy is strict and strict baseline is false THEN strict convenience should be false`() {
+    fun `WHEN policy is strict and strict baseline is false THEN strict convenience should be unchanged`() {
         val expected = TrackingProtectionPolicy.select(
             allowListBaselineTrackingProtection = false,
-            allowListConvenienceTrackingProtection = false,
+            allowListConvenienceTrackingProtection = true,
         )
 
         val factory = TrackingProtectionPolicyFactory(

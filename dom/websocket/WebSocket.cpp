@@ -41,6 +41,7 @@
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
 #include "nsError.h"
+#include "nsGlobalWindowInner.h"
 #include "nsIAuthPrompt.h"
 #include "nsIAuthPrompt2.h"
 #include "nsIConsoleService.h"
@@ -2807,18 +2808,20 @@ class WorkerRunnableDispatcher final : public WorkerThreadRunnable {
 }  // namespace
 
 NS_IMETHODIMP
-WebSocketImpl::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags) {
-  nsCOMPtr<nsIRunnable> event(aEvent);
-  return Dispatch(event.forget(), aFlags);
+WebSocketImpl::DispatchFromScript(nsIRunnable* aEvent, DispatchFlags aFlags) {
+  return Dispatch(do_AddRef(aEvent), aFlags);
 }
 
 NS_IMETHODIMP
-WebSocketImpl::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags) {
+WebSocketImpl::Dispatch(already_AddRefed<nsIRunnable> aEvent,
+                        DispatchFlags aFlags) {
+  // FIXME: This dispatch implementation is inconsistent about whether or not
+  // failure causes a leak when the `NS_DISPATCH_FALLIBLE` flag is not set.
   nsCOMPtr<nsIRunnable> event_ref(aEvent);
   if (mIsMainThread) {
     nsISerialEventTarget* target = GetMainThreadSerialEventTarget();
     NS_ENSURE_TRUE(target, NS_ERROR_FAILURE);
-    return target->Dispatch(event_ref.forget());
+    return target->Dispatch(event_ref.forget(), aFlags);
   }
 
   MutexAutoLock lock(mMutex);

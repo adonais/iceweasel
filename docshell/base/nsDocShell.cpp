@@ -1134,8 +1134,10 @@ bool nsDocShell::MaybeHandleSubframeHistory(
   nsCOMPtr<nsISHEntry> currentChildEntry;
   GetCurrentSHEntry(getter_AddRefs(currentChildEntry), &oshe);
 
-  if (mCurrentURI && (!NS_IsAboutBlank(mCurrentURI) || currentChildEntry ||
-                      mLoadingEntry || mActiveEntry)) {
+  if (mCurrentURI &&
+      (!NS_IsAboutBlank(mCurrentURI) || currentChildEntry || mLoadingEntry ||
+       mActiveEntry) &&
+      !aLoadState->ShouldNotForceReplaceInOnLoad()) {
     // This is a pre-existing subframe. If
     // 1. The load of this frame was not originally initiated by session
     //    history directly (i.e. (!shEntry) condition succeeded, but it can
@@ -4222,7 +4224,8 @@ nsresult nsDocShell::StopInternal(
   RefPtr kungFuDeathGrip = this;
   if (RefPtr<Document> doc = GetDocument();
       aUnsetOngoingNavigation == UnsetOngoingNavigation::Yes && doc &&
-      !doc->ShouldIgnoreOpens()) {
+      !doc->ShouldIgnoreOpens() &&
+      mOngoingNavigation == Some(OngoingNavigation::NavigationID)) {
     SetOngoingNavigation(Nothing());
   }
 
@@ -4511,6 +4514,11 @@ nsDocShell::Destroy() {
     // the nsDSURIContentListener will block it.  All of which
     // means that we should do this before calling Stop(), of
     // course.
+  }
+
+  if (BrowsingContext* browsingContext = GetBrowsingContext();
+      browsingContext && !browsingContext->IsTop()) {
+    InformNavigationAPIAboutChildNavigableDestruction();
   }
 
   // Stop any URLs that are currently being loaded...
@@ -8920,6 +8928,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   // origin skip handling otherwise
   if (!IsSamePrincipalForDocumentURI(doc->NodePrincipal(), mCurrentURI,
                                      newURI)) {
+    aSameDocument = false;
     MOZ_LOG(gSHLog, LogLevel::Debug,
             ("nsDocShell[%p]: possible violation of the same origin policy "
              "during same document navigation",
@@ -8927,7 +8936,8 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
     return NS_OK;
   }
 
-  if (nsCOMPtr<nsPIDOMWindowInner> window = doc->GetInnerWindow()) {
+  if (nsCOMPtr<nsPIDOMWindowInner> window = doc->GetInnerWindow();
+      window && !aState.mHistoryNavBetweenSameDoc) {
     // https://html.spec.whatwg.org/#navigate-fragid
     // Step 1
     if (RefPtr<Navigation> navigation = window->Navigation()) {
@@ -9522,6 +9532,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   // process to have to trust the triggering process to do the appropriate
   // checks for the BrowsingContext's sandbox flags.
   MOZ_TRY(mBrowsingContext->CheckSandboxFlags(aLoadState));
+  MOZ_TRY(mBrowsingContext->CheckFramebusting(aLoadState));
 
   NS_ENSURE_STATE(!HasUnloadedParent());
 
@@ -9640,6 +9651,10 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
       mBrowsingContext->Focus(CallerType::System, IgnoreErrors());
     }
     if (sameDocument) {
+      if (aLoadState->LoadIsFromSessionHistory() &&
+          (mLoadType & LOAD_CMD_HISTORY)) {
+        SetOngoingNavigation(Nothing());
+      }
       return rv;
     }
   }
@@ -9677,7 +9692,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
 
   // Step 21
   if (RefPtr<Document> document = GetDocument();
-      document &&
+      !aLoadState->LoadIsFromSessionHistory() && document &&
       aLoadState->UserNavigationInvolvement() !=
           UserNavigationInvolvement::BrowserUI &&
       !document->IsInitialDocument() &&
@@ -9818,6 +9833,11 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
       // telemetry data correctly.
       document->DisallowBFCaching(flags);
     }
+
+    if (aLoadState->LoadIsFromSessionHistory() &&
+        (mLoadType & LOAD_CMD_HISTORY)) {
+      SetOngoingNavigation(Nothing());
+    }
   }
 
   // Don't stop current network activity for javascript: URL's since they might
@@ -9952,6 +9972,13 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   if (NS_FAILED(rv)) {
     nsCOMPtr<nsIChannel> chan(do_QueryInterface(req));
     UnblockEmbedderLoadEventForFailure();
+
+    // The spec says no exception should be raised for pre-navigation check
+    // failures.
+    if (NS_ERROR_DOM_SECURITY_ERR == rv) {
+      return NS_OK;
+    }
+
     nsCOMPtr<nsIURI> uri = aLoadState->URI();
     if (DisplayLoadError(rv, uri, nullptr, chan) &&
         // FIXME: At this point code was using internal load flags, but checking
@@ -9964,12 +9991,6 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     // reason behind this is that it will allow enumeration of external
     // protocols if we report an error for each unknown protocol.
     if (NS_ERROR_UNKNOWN_PROTOCOL == rv) {
-      return NS_OK;
-    }
-
-    // The spec says no exception should be raised for pre-navigation check
-    // failures.
-    if (NS_ERROR_DOM_SECURITY_ERR == rv) {
       return NS_OK;
     }
   }
@@ -10162,6 +10183,7 @@ nsIPrincipal* nsDocShell::GetInheritedPrincipal(
       aLoadState->HasInternalLoadFlags(INTERNAL_LOAD_FLAGS_ORIGINAL_FRAME_SRC));
   aLoadInfo->SetIsNewWindowTarget(
       aLoadState->HasInternalLoadFlags(INTERNAL_LOAD_FLAGS_FIRST_LOAD));
+  aLoadInfo->SetForceMediaDocument(aLoadState->GetForceMediaDocument());
 
   bool inheritAttrs = false;
   if (aLoadState->PrincipalToInherit()) {
@@ -10742,6 +10764,7 @@ nsresult nsDocShell::DoURILoad(nsDocShellLoadState* aLoadState,
         aLoadState->PartitionedPrincipalToInherit(),
         aLoadState->PolicyContainer(), mContentTypeHint);
     mozilla::dom::LoadingSessionHistoryInfo info(*entry);
+    info.mContiguousEntries.AppendElement(*entry);
     SetLoadingSessionHistoryInfo(info, true);
   }
 
@@ -12521,34 +12544,19 @@ void nsDocShell::MaybeFireTraverseHistory(nsDocShellLoadState* aLoadState) {
     return;
   }
 
-  if (!mActiveEntry) {
+  if (!mActiveEntry || !aLoadState->GetLoadingSessionHistoryInfo()) {
+    return;
+  }
+  if (mActiveEntry->NavigationKey() ==
+      aLoadState->GetLoadingSessionHistoryInfo()->mInfo.NavigationKey()) {
     return;
   }
 
-  if (aLoadState->GetLoadingSessionHistoryInfo()->mInfo.SharedId() ==
-      mActiveEntry->SharedId()) {
-    return;
-  }
-
-  nsCOMPtr<nsIPrincipal> oldPrincipal =
-      aLoadState->GetLoadingSessionHistoryInfo()->mInfo.GetResultPrincipalURI()
-          ? BasePrincipal::CreateContentPrincipal(
-                aLoadState->GetLoadingSessionHistoryInfo()
-                    ->mInfo.GetResultPrincipalURI(),
-                OriginAttributes{})
-          : nullptr;
-
-  nsCOMPtr<nsIPrincipal> currentPrincipal =
-      mActiveEntry->GetResultPrincipalURI()
-          ? BasePrincipal::CreateContentPrincipal(
-                mActiveEntry->GetResultPrincipalURI(), OriginAttributes{})
-          : nullptr;
-  if (!oldPrincipal || !currentPrincipal) {
-    // TODO it's not clear why these can be null https://bugzil.la/1976017
-    return;
-  }
-
-  if (!oldPrincipal->Equals(currentPrincipal)) {
+  if (NS_FAILED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
+          mActiveEntry->GetURI(),
+          aLoadState->GetLoadingSessionHistoryInfo()->mInfo.GetURI(),
+          /*reportError=*/true,
+          /*fromPrivateWindow=*/false))) {
     return;
   }
 
@@ -12562,6 +12570,33 @@ void nsDocShell::MaybeFireTraverseHistory(nsDocShellLoadState* aLoadState) {
       }
     }
   }
+}
+
+nsIDocumentViewer::PermitUnloadResult
+nsDocShell::MaybeFireTraversableTraverseHistory(
+    const SessionHistoryInfo& aInfo,
+    Maybe<UserNavigationInvolvement> aUserInvolvement) {
+  MOZ_DIAGNOSTIC_ASSERT(GetBrowsingContext());
+  MOZ_DIAGNOSTIC_ASSERT(GetBrowsingContext()->IsTop());
+
+  SetOngoingNavigation(Some(OngoingNavigation::Traversal));
+
+  nsIDocumentViewer::PermitUnloadResult finalStatus =
+      nsIDocumentViewer::eContinue;
+  if (RefPtr<nsPIDOMWindowInner> activeWindow = GetActiveWindow()) {
+    if (RefPtr navigation = activeWindow->Navigation()) {
+      if (AutoJSAPI jsapi; jsapi.Init(activeWindow)) {
+        bool shouldContinue = navigation->FireTraverseNavigateEvent(
+            jsapi.cx(), aInfo, aUserInvolvement);
+
+        if (!shouldContinue) {
+          finalStatus = nsIDocumentViewer::eCanceledByNavigate;
+        }
+      }
+    }
+  }
+
+  return finalStatus;
 }
 
 nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
@@ -14270,13 +14305,26 @@ void nsDocShell::MoveLoadingToActiveEntry(bool aExpired, uint32_t aCacheKey,
         GetWindow()->GetCurrentInnerWindow()) {
       if (RefPtr navigation =
               GetWindow()->GetCurrentInnerWindow()->Navigation()) {
-        // When the current load is finished the currently loading entry will be
-        // last in the list of entries. This works because we've created
-        // `mContiguousEntries` to only hold the entries up to the old current
-        // entry.
-        loadingEntry->mContiguousEntries.AppendElement(*mActiveEntry);
         navigation->InitializeHistoryEntries(loadingEntry->mContiguousEntries,
                                              mActiveEntry.get());
+
+        MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug,
+                    "Before creating NavigationActivation, "
+                    "triggeringEntry={}, triggeringType={}",
+                    fmt::ptr(loadingEntry->mTriggeringEntry
+                                 .map([](auto& entry) { return &entry; })
+                                 .valueOr(nullptr)),
+                    loadingEntry->mTriggeringNavigationType
+                        .map([](NavigationType type) {
+                          return fmt::format(FMT_STRING("{}"), type);
+                        })
+                        .valueOr("none"));
+        if (loadingEntry->mTriggeringEntry &&
+            loadingEntry->mTriggeringNavigationType) {
+          navigation->CreateNavigationActivationFrom(
+              &*loadingEntry->mTriggeringEntry,
+              *loadingEntry->mTriggeringNavigationType);
+        }
       }
     }
   }
@@ -14437,8 +14485,7 @@ nsPIDOMWindowInner* nsDocShell::GetActiveWindow() {
 // https://html.spec.whatwg.org/#inform-the-navigation-api-about-aborting-navigation
 void nsDocShell::InformNavigationAPIAboutAbortingNavigation() {
   // Step 1
-  // This becomes an assert since we have a common event loop.
-  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
+  // We really have no idea what this means.
 
   // No ongoing navigations if we don't have a window.
   RefPtr<nsPIDOMWindowInner> window = GetActiveWindow();
@@ -14464,6 +14511,31 @@ void nsDocShell::InformNavigationAPIAboutAbortingNavigation() {
 
   // Step 4
   navigation->AbortOngoingNavigation(jsapi.cx());
+}
+
+// https://html.spec.whatwg.org/#inform-the-navigation-api-about-child-navigable-destruction
+void nsDocShell::InformNavigationAPIAboutChildNavigableDestruction() {
+  // Step 1
+  InformNavigationAPIAboutAbortingNavigation();
+
+  // No ongoing navigations if we don't have a window.
+  RefPtr<nsPIDOMWindowInner> window = GetActiveWindow();
+  if (!window) {
+    return;
+  }
+
+  // Step 2
+  RefPtr<Navigation> navigation = window->Navigation();
+  if (!navigation) {
+    return;
+  }
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(navigation->GetOwnerGlobal())) {
+    return;
+  }
+
+  navigation->InformAboutChildNavigableDestruction(jsapi.cx());
 }
 
 // https://html.spec.whatwg.org/#set-the-ongoing-navigation

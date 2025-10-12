@@ -50,6 +50,7 @@ import org.mozilla.fenix.settings.doh.DohSettingsState
 import org.mozilla.fenix.settings.doh.ProtectionLevel
 import org.mozilla.fenix.settings.doh.Provider
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Composable function that displays the root screen of DoH settings.
@@ -202,7 +203,7 @@ private fun DohProtectionLevel(
 
         if (showInfoIcon) {
             Icon(
-                painter = painterResource(R.drawable.mozac_ic_information_24),
+                painter = painterResource(iconsR.drawable.mozac_ic_information_24),
                 contentDescription = stringResource(R.string.preference_doh_info_description),
                 tint = FirefoxTheme.colors.iconPrimary,
                 modifier = Modifier
@@ -481,14 +482,12 @@ private fun AlertDialogAddCustomProvider(
             TextButton(
                 text = stringResource(R.string.preference_doh_provider_custom_dialog_add),
                 onClick = { onCustomAddClicked(customProviderInput) },
-                upperCaseText = false,
             )
         },
         dismissButton = {
             TextButton(
                 text = stringResource(R.string.preference_doh_provider_custom_dialog_cancel),
                 onClick = onCustomCancelClicked,
-                upperCaseText = false,
             )
         },
     )

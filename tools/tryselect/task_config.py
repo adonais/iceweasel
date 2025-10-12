@@ -206,9 +206,18 @@ class Path(TryConfig):
                 "help": "Run tasks containing tests under the specified path(s).",
             },
         ],
+        [
+            ["--allow-testfile-path"],
+            {
+                "dest": "allow_testfile_path",
+                "action": "store_true",
+                "default": None,
+                "help": "Opt in to pass a specific testfile path (ie not only a folder)",
+            },
+        ],
     ]
 
-    def try_config(self, paths, **kwargs):
+    def try_config(self, paths, allow_testfile_path, **kwargs):
         if not paths:
             return
 
@@ -220,10 +229,10 @@ class Path(TryConfig):
             # Passing paths to specific tests doesn't work with the Treeherder
             # test path filter or test-verify. Re-write it to the containing
             # directory to avoid confusion.
-            if os.path.isfile(p):
+            if os.path.isfile(p) and not allow_testfile_path:
                 parent = os.path.dirname(p)
                 print(
-                    f"warning: paths to individual tests don't work, re-writing to {parent}"
+                    f"warning: paths to individual tests may not work, re-writing to {parent}. Pass --allow-testfile-path to override"
                 )
                 paths[i] = parent
 
@@ -433,17 +442,20 @@ class Routes(TryConfig):
 class ChemspillPrio(TryConfig):
     arguments = [
         [
-            ["--chemspill-prio"],
+            ["--chemspill", "--chemspill-priority"],
             {
                 "action": "store_true",
+                "dest": "chemspill",
                 "help": "Run at a higher priority than most try jobs (chemspills only).",
             },
         ],
     ]
 
-    def try_config(self, chemspill_prio, **kwargs):
-        if chemspill_prio:
-            return {"chemspill-prio": True}
+    def try_config(self, chemspill, **kwargs):
+        if chemspill:
+            # Despite being "low", this is still higher than other tasks on
+            # try, the equivalent of a push to autoland.
+            return {"priority": "low"}
 
 
 class GeckoProfile(TryConfig):

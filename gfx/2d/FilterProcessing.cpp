@@ -63,7 +63,7 @@ already_AddRefed<DataSourceSurface> FilterProcessing::ApplyBlending(
 }
 
 void FilterProcessing::ApplyMorphologyHorizontal(
-    uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
+    const uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
     int32_t aDestStride, const IntRect& aDestRect, int32_t aRadius,
     MorphologyOperator aOp) {
   if (Factory::HasSSE2()) {
@@ -78,7 +78,7 @@ void FilterProcessing::ApplyMorphologyHorizontal(
 }
 
 void FilterProcessing::ApplyMorphologyVertical(
-    uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
+    const uint8_t* aSourceData, int32_t aSourceStride, uint8_t* aDestData,
     int32_t aDestStride, const IntRect& aDestRect, int32_t aRadius,
     MorphologyOperator aOp) {
   if (Factory::HasSSE2()) {
@@ -200,11 +200,9 @@ already_AddRefed<DataSourceSurface> FilterProcessing::CombineColorChannels(
   return result.forget();
 }
 
-void FilterProcessing::DoPremultiplicationCalculation(const IntSize& aSize,
-                                                      uint8_t* aTargetData,
-                                                      int32_t aTargetStride,
-                                                      uint8_t* aSourceData,
-                                                      int32_t aSourceStride) {
+void FilterProcessing::DoPremultiplicationCalculation(
+    const IntSize& aSize, uint8_t* aTargetData, int32_t aTargetStride,
+    const uint8_t* aSourceData, int32_t aSourceStride) {
   if (Factory::HasSSE2()) {
 #ifdef USE_SSE2
     DoPremultiplicationCalculation_SSE2(aSize, aTargetData, aTargetStride,
@@ -216,11 +214,9 @@ void FilterProcessing::DoPremultiplicationCalculation(const IntSize& aSize,
   }
 }
 
-void FilterProcessing::DoUnpremultiplicationCalculation(const IntSize& aSize,
-                                                        uint8_t* aTargetData,
-                                                        int32_t aTargetStride,
-                                                        uint8_t* aSourceData,
-                                                        int32_t aSourceStride) {
+void FilterProcessing::DoUnpremultiplicationCalculation(
+    const IntSize& aSize, uint8_t* aTargetData, int32_t aTargetStride,
+    const uint8_t* aSourceData, int32_t aSourceStride) {
   if (Factory::HasSSE2()) {
 #ifdef USE_SSE2
     DoUnpremultiplicationCalculation_SSE2(aSize, aTargetData, aTargetStride,
@@ -234,7 +230,7 @@ void FilterProcessing::DoUnpremultiplicationCalculation(const IntSize& aSize,
 
 void FilterProcessing::DoOpacityCalculation(
     const IntSize& aSize, uint8_t* aTargetData, int32_t aTargetStride,
-    uint8_t* aSourceData, int32_t aSourceStride, Float aValue) {
+    const uint8_t* aSourceData, int32_t aSourceStride, Float aValue) {
   if (Factory::HasSSE2()) {
 #ifdef USE_SSE2
     DoOpacityCalculation_SSE2(aSize, aTargetData, aTargetStride, aSourceData,
@@ -248,7 +244,7 @@ void FilterProcessing::DoOpacityCalculation(
 
 void FilterProcessing::DoOpacityCalculationA8(
     const IntSize& aSize, uint8_t* aTargetData, int32_t aTargetStride,
-    uint8_t* aSourceData, int32_t aSourceStride, Float aValue) {
+    const uint8_t* aSourceData, int32_t aSourceStride, Float aValue) {
   DoOpacityCalculationA8_Scalar(aSize, aTargetData, aTargetStride, aSourceData,
                                 aSourceStride, aValue);
 }

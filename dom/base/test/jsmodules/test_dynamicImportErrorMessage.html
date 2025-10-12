@@ -5,6 +5,7 @@
 <script>
   SimpleTest.waitForExplicitFinish();
 
+  // eslint-disable-next-line no-unused-vars
   async function testLoaded() {
     await import("./404.js").catch((error) => {
       ok(error instanceof TypeError, "Should be a TypeError.");

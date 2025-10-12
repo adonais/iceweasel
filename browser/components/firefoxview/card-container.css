@@ -4,7 +4,7 @@
 
 .card-container {
   padding: 8px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-medium);
   background-color: var(--fxview-background-color-secondary);
   margin-block-end: 24px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
@@ -77,7 +77,7 @@
   border: none;
   background-color: transparent;
   background-repeat: no-repeat;
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 }
 
 .chevron-icon:hover {
@@ -168,5 +168,5 @@
 details.empty-state {
   box-shadow: none;
   border: 1px solid var(--fxview-border);
-  border-radius: 8px;
+  border-radius: var(--border-radius-medium);
 }

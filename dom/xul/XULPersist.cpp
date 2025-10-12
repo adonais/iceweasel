@@ -62,7 +62,7 @@ void XULPersist::DropDocumentReference() {
 }
 
 void XULPersist::AttributeChanged(dom::Element* aElement, int32_t aNameSpaceID,
-                                  nsAtom* aAttribute, int32_t aModType,
+                                  nsAtom* aAttribute, AttrModType,
                                   const nsAttrValue* aOldValue) {
   NS_ASSERTION(aElement->OwnerDoc() == mDocument, "unexpected doc");
 

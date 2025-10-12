@@ -46,6 +46,7 @@ import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.click
 import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.nimbus.FxNimbus
+import mozilla.components.browser.menu.R as menuR
 
 /**
  * Implementation of Robot Pattern for the three dot (main) menu.
@@ -112,7 +113,7 @@ class ThreeDotMenuMainRobot {
 
     fun expandMenu() {
         Log.i(TAG, "expandMenu: Trying to perform swipe up action on the three dot menu")
-        onView(withId(R.id.mozac_browser_menu_menuView)).perform(swipeUp())
+        onView(withId(menuR.id.mozac_browser_menu_menuView)).perform(swipeUp())
         Log.i(TAG, "expandMenu: Performed swipe up action on the three dot menu")
     }
 
@@ -132,7 +133,7 @@ class ThreeDotMenuMainRobot {
         assertUIObjectExists(addToShortcutsButton(), exists = shouldExist)
     fun verifyRemoveFromShortcutsButton() {
         Log.i(TAG, "verifyRemoveFromShortcutsButton: Trying to perform scroll action to the \"Settings\" button")
-        onView(withId(R.id.mozac_browser_menu_recyclerView))
+        onView(withId(menuR.id.mozac_browser_menu_recyclerView))
             .perform(
                 RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
                     hasDescendant(withText(R.string.browser_menu_settings)),
@@ -319,7 +320,7 @@ class ThreeDotMenuMainRobot {
             Log.i(TAG, "openSyncSignIn: Trying to perform swipe down action on the three dot menu")
             threeDotMenuRecyclerView().perform(swipeDown())
             Log.i(TAG, "openSyncSignIn: Performed swipe down action on the three dot menu")
-            mDevice.waitNotNull(Until.findObject(By.text("Sync and save data")), waitingTime)
+            mDevice.waitNotNull(Until.findObject(By.text("Sign in")), waitingTime)
             Log.i(TAG, "openSyncSignIn: Trying to click the \"Sync and save data\" button")
             syncAndSaveDataButton().click()
             Log.i(TAG, "openSyncSignIn: Clicked the \"Sync and save data\" button")
@@ -706,7 +707,7 @@ class ThreeDotMenuMainRobot {
     }
 }
 private fun threeDotMenuRecyclerView() =
-    onView(withId(R.id.mozac_browser_menu_recyclerView))
+    onView(withId(menuR.id.mozac_browser_menu_recyclerView))
 
 private fun editBookmarkButton() = onView(withText("Edit"))
 
@@ -737,7 +738,7 @@ private fun openInAppButton() =
 
 private fun clickAddonsManagerButton() {
     Log.i(TAG, "clickAddonsManagerButton: Trying to perform swipe down action on the three dot menu")
-    onView(withId(R.id.mozac_browser_menu_menuView)).perform(swipeDown())
+    onView(withId(menuR.id.mozac_browser_menu_menuView)).perform(swipeDown())
     Log.i(TAG, "clickAddonsManagerButton: Performed swipe down action on the three dot menu")
     Log.i(TAG, "clickAddonsManagerButton: Trying to click the \"Add-ons\" button")
     extensionsButton().click()
@@ -772,7 +773,7 @@ private fun customizeHomeButton() =
 private fun settingsButton(localizedText: String = getStringResource(R.string.browser_menu_settings)) =
     itemContainingText(localizedText)
 private fun syncAndSaveDataButton() =
-    itemContainingText(getStringResource(R.string.sync_menu_sync_and_save_data))
+    itemContainingText(getStringResource(R.string.sync_menu_sign_in))
 private fun normalBrowsingNewTabButton() =
     itemContainingText(getStringResource(R.string.library_new_tab))
 private fun addBookmarkButton() =

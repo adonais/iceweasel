@@ -107,6 +107,14 @@
         verifyStyles(boxItem, MIDDLE_ITEM_STYLES);
         verifyStyles(boxButton, MIDDLE_ITEM_STYLES);
         verifyStyles(secondButton, LAST_ITEM_STYLES);
+
+        // Verify that hiding items doesn't break the box-group styles.
+        secondItem.hidden = true;
+        await TestUtils.waitForTick();
+
+        verifyStyles(boxItem, FIRST_ITEM_STYLES);
+        verifyStyles(boxButton, MIDDLE_ITEM_STYLES);
+        verifyStyles(secondButton, LAST_ITEM_STYLES);
       });
 
       add_task(async function testMozBoxGroupList() {

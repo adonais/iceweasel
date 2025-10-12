@@ -133,7 +133,7 @@ public class IntentUtils {
     return intent;
   }
 
-  // We create a separate method to better encapsulate the @TargetApi use.
+  // We create a separate method to better encapsulate the @RequiresApi use.
   private static void nullIntentSelector(final Intent intent) {
     intent.setSelector(null);
   }

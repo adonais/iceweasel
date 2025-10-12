@@ -291,6 +291,11 @@ StylePrefersColorScheme Gecko_MediaFeatures_PrefersColorScheme(
                                      : StylePrefersColorScheme::Light;
 }
 
+bool Gecko_MediaFeatures_MacRTL(const Document* aDocument) {
+  auto* widget = nsContentUtils::WidgetForDocument(aDocument);
+  return widget && widget->IsMacTitlebarDirectionRTL();
+}
+
 // Neither Linux, Windows, nor Mac have a way to indicate that low contrast is
 // preferred so we use the presence of an accessibility theme or forced colors
 // as a signal.

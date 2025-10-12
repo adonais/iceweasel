@@ -10,31 +10,45 @@
 
 #include "modules/audio_coding/neteq/neteq_impl.h"
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
+#include "api/audio/audio_view.h"
+#include "api/audio_codecs/audio_decoder.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_format.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/environment/environment.h"
 #include "api/environment/environment_factory.h"
+#include "api/make_ref_counted.h"
 #include "api/neteq/default_neteq_controller_factory.h"
 #include "api/neteq/default_neteq_factory.h"
 #include "api/neteq/neteq.h"
 #include "api/neteq/neteq_controller.h"
+#include "api/neteq/tick_timer.h"
+#include "api/rtp_headers.h"
+#include "api/rtp_packet_info.h"
+#include "api/scoped_refptr.h"
 #include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
-#include "modules/audio_coding/neteq/accelerate.h"
 #include "modules/audio_coding/neteq/decision_logic.h"
 #include "modules/audio_coding/neteq/expand.h"
-#include "modules/audio_coding/neteq/histogram.h"
 #include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "modules/audio_coding/neteq/mock/mock_dtmf_buffer.h"
 #include "modules/audio_coding/neteq/mock/mock_dtmf_tone_generator.h"
 #include "modules/audio_coding/neteq/mock/mock_neteq_controller.h"
 #include "modules/audio_coding/neteq/mock/mock_packet_buffer.h"
 #include "modules/audio_coding/neteq/mock/mock_red_payload_splitter.h"
-#include "modules/audio_coding/neteq/preemptive_expand.h"
-#include "modules/audio_coding/neteq/statistics_calculator.h"
+#include "modules/audio_coding/neteq/packet.h"
+#include "modules/audio_coding/neteq/packet_buffer.h"
+#include "modules/audio_coding/neteq/red_payload_splitter.h"
 #include "modules/audio_coding/neteq/sync_buffer.h"
 #include "modules/audio_coding/neteq/timestamp_scaler.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/clock.h"
 #include "test/audio_decoder_proxy_factory.h"
@@ -143,13 +157,14 @@ class NetEqImplTest : public ::testing::Test {
         new TimestampScaler(*deps.decoder_database.get()));
 
     neteq_.reset(new NetEqImpl(config_, std::move(deps)));
-    ASSERT_TRUE(neteq_ != NULL);
+    ASSERT_TRUE(neteq_ != nullptr);
   }
 
   void CreateInstance() { CreateInstance(CreateBuiltinAudioDecoderFactory()); }
 
   void UseNoMocks() {
-    ASSERT_TRUE(neteq_ == NULL) << "Must call UseNoMocks before CreateInstance";
+    ASSERT_TRUE(neteq_ == nullptr)
+        << "Must call UseNoMocks before CreateInstance";
     use_mock_decoder_database_ = false;
     use_mock_neteq_controller_ = false;
     use_mock_dtmf_buffer_ = false;
@@ -555,7 +570,7 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // Check the timestamp for the last value in the sync buffer. This should
   // be one full frame length ahead of the RTP timestamp.
   const SyncBuffer* sync_buffer = neteq_->sync_buffer_for_test();
-  ASSERT_TRUE(sync_buffer != NULL);
+  ASSERT_TRUE(sync_buffer != nullptr);
   EXPECT_EQ(rtp_header.timestamp + kPayloadLengthSamples,
             sync_buffer->end_timestamp());
 
@@ -1583,8 +1598,17 @@ TEST_F(NetEqImplTest, NotifyControllerOfReorderedPacket) {
   EXPECT_EQ(NetEq::kOK, neteq_->InsertPacket(rtp_header, payload));
 }
 
-// When using a codec with 1000 channels, there should be no crashes.
-TEST_F(NetEqImplTest, NoCrashWith1000Channels) {
+#if RTC_DCHECK_IS_ON
+#if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+TEST(NetEqImplDeathTest, CrashWith1000Channels) {
+  EXPECT_DEATH(std::make_unique<AudioDecoderPcmU>(1000), "");
+}
+#endif  // GTEST_HAS_DEATH_TEST
+#endif
+
+// When using a codec with kMaxNumberOfAudioChannels channels, there should be
+// no crashes.
+TEST_F(NetEqImplTest, NoCrashWithMaxChannels) {
   using ::testing::AllOf;
   using ::testing::Field;
   UseNoMocks();
@@ -1614,7 +1638,8 @@ TEST_F(NetEqImplTest, NoCrashWith1000Channels) {
   EXPECT_CALL(*mock_decoder_factory, Create)
       .WillOnce(WithArg<1>([&](const SdpAudioFormat& format) {
         EXPECT_EQ("pcmu", format.name);
-        auto dec = std::make_unique<AudioDecoderPcmU>(1000);
+        auto dec =
+            std::make_unique<AudioDecoderPcmU>(kMaxNumberOfAudioChannels);
         decoder = dec.get();
         return dec;
       }));
@@ -1637,13 +1662,18 @@ TEST_F(NetEqImplTest, NoCrashWith1000Channels) {
   neteq_->InsertPacket(rtp_header, payload);
 
   AudioFrame audio_frame;
-  bool muted;
+  bool muted = false;
+  bool got_error = false;
 
   // Repeat 40 times to ensure we enter muted state.
-  for (int i = 0; i < 40; i++) {
+  for (int i = 0; i < 40 && !muted; i++) {
     // GetAudio should return an error, and not crash, even in muted state.
-    EXPECT_NE(0, neteq_->GetAudio(&audio_frame, &muted));
+    // EXPECT_NE(0, neteq_->GetAudio(&audio_frame, &muted));
+    if (neteq_->GetAudio(&audio_frame, &muted) == -1)
+      got_error = true;
   }
+  EXPECT_TRUE(got_error);
+  EXPECT_TRUE(muted);
 }
 
 // The test first inserts a packet with narrow-band CNG, then a packet with

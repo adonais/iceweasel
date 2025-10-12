@@ -35,19 +35,16 @@ class MediaFactoryImpl : public MediaFactory {
   ~MediaFactoryImpl() override = default;
 
   std::unique_ptr<Call> CreateCall(CallConfig config) override {
-    return webrtc::Call::Create(std::move(config));
+    return Call::Create(std::move(config));
   }
 
   std::unique_ptr<MediaEngineInterface> CreateMediaEngine(
       const Environment& env,
       PeerConnectionFactoryDependencies& deps) override {
-    absl_nullable scoped_refptr<AudioProcessing> audio_processing =
-        deps.audio_processing_builder != nullptr
-            ? std::move(deps.audio_processing_builder)->Build(env)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-            : std::move(deps.audio_processing);
-#pragma clang diagnostic pop
+    absl_nullable scoped_refptr<AudioProcessing> audio_processing;
+    if (deps.audio_processing_builder != nullptr) {
+      audio_processing = std::move(deps.audio_processing_builder)->Build(env);
+    }
 
     auto audio_engine = std::make_unique<WebRtcVoiceEngine>(
         env, std::move(deps.adm), std::move(deps.audio_encoder_factory),

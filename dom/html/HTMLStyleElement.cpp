@@ -158,7 +158,8 @@ void HTMLStyleElement::SetInnerHTMLTrusted(const nsAString& aInnerHTML,
 
 void HTMLStyleElement::SetTextContentInternal(const nsAString& aTextContent,
                                               nsIPrincipal* aScriptedPrincipal,
-                                              ErrorResult& aError) {
+                                              ErrorResult& aError,
+                                              MutationEffectOnScript) {
   // Per spec, if we're setting text content to an empty string and don't
   // already have any children, we should not trigger any mutation observers, or
   // re-parse the stylesheet.

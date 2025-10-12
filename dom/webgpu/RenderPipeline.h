@@ -8,7 +8,6 @@
 
 #include "ObjectModel.h"
 #include "mozilla/webgpu/WebGPUTypes.h"
-#include "nsTArray.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla::webgpu {
@@ -16,19 +15,18 @@ namespace mozilla::webgpu {
 class BindGroupLayout;
 class Device;
 
-class RenderPipeline final : public ObjectBase, public ChildOf<Device> {
+class RenderPipeline final : public nsWrapperCache,
+                             public ObjectBase,
+                             public ChildOf<Device> {
  public:
   GPU_DECL_CYCLE_COLLECTION(RenderPipeline)
   GPU_DECL_JS_WRAP(RenderPipeline)
-
-  const RawId mId;
 
   RenderPipeline(Device* const aParent, RawId aId);
   already_AddRefed<BindGroupLayout> GetBindGroupLayout(uint32_t index) const;
 
  private:
   virtual ~RenderPipeline();
-  void Cleanup();
 };
 
 }  // namespace mozilla::webgpu

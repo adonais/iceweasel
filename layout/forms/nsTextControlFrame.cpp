@@ -952,7 +952,7 @@ nsresult nsTextControlFrame::OffsetToDOMPoint(uint32_t aOffset,
 ////NSIFRAME
 nsresult nsTextControlFrame::AttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
-                                              int32_t aModType) {
+                                              AttrModType aModType) {
   if (aAttribute == nsGkAtoms::value && !mEditorHasBeenInitialized) {
     UpdateValueDisplay(true);
     return NS_OK;

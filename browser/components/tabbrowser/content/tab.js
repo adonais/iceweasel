@@ -90,7 +90,7 @@
         ".tab-icon-pending":
           "fadein,pinned,busy,progress,selected=visuallyselected,pendingicon",
         ".tab-icon-image":
-          "src=image,triggeringprincipal=iconloadingprincipal,requestcontextid,fadein,pinned,selected=visuallyselected,busy,crashed,sharing,pictureinpicture,pending,discarded",
+          "src=image,requestcontextid,fadein,pinned,selected=visuallyselected,busy,crashed,sharing,pictureinpicture,pending,discarded",
         ".tab-sharing-icon-overlay": "sharing,selected=visuallyselected,pinned",
         ".tab-icon-overlay":
           "sharing,pictureinpicture,crashed,busy,soundplaying,soundplaying-scheduledremoval,pinned,muted,blocked,selected=visuallyselected,activemedia-blocked",
@@ -374,6 +374,15 @@
     get group() {
       if (this.parentElement?.tagName == "tab-group") {
         return this.parentElement;
+      }
+      return null;
+    }
+
+    get splitview() {
+      if (
+        this.parentElement?.parentElement?.tagName == "tab-split-view-wrapper"
+      ) {
+        return this.parentElement.parentElement;
       }
       return null;
     }

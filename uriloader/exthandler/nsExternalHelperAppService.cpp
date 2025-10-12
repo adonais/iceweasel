@@ -187,11 +187,12 @@ static nsresult UnescapeFragment(const nsACString& aFragment, nsIURI* aURI,
   return rv;
 }
 
+#if !defined(ANDROID)
 static Result<nsCOMPtr<nsIFile>, nsresult> GetOsTmpDownloadDirectory() {
   nsCOMPtr<nsIFile> dir;
   MOZ_TRY(NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(dir)));
 
-#if !defined(XP_MACOSX) && defined(XP_UNIX)
+#  if !defined(XP_MACOSX) && defined(XP_UNIX)
   // Ensuring that only the current user can read the file names we end up
   // creating. Note that creating directories with a specified permission is
   // only supported on Unix platform right now. That's why the above check
@@ -256,7 +257,7 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetOsTmpDownloadDirectory() {
     }
   }
 
-#endif
+#  endif
   NS_ASSERTION(dir, "Somehow we didn't get a download directory!");
   return dir;
 }
@@ -272,6 +273,7 @@ static nsresult EnsureDirectoryExists(nsIFile* aDir) {
   }
   return rv;
 };
+#endif  // ANDROID
 
 /**
  * Obtains the final directory to save downloads to. This tends to vary per
@@ -285,8 +287,7 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetPreferredDownloadsDirectory(
     bool aSkipChecks = false) {
 #if defined(ANDROID)
   return Err(NS_ERROR_FAILURE);
-#endif
-
+#else
   nsresult rv;
   // Try to get the users download location, if it's set.
   switch (Preferences::GetInt(NS_PREF_DOWNLOAD_FOLDERLIST, -1)) {
@@ -376,6 +377,7 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetPreferredDownloadsDirectory(
   }
 
   return dir;
+#endif  // ANDROID
 }
 
 NS_IMETHODIMP nsExternalHelperAppService::GetPreferredDownloadsDirectory(
@@ -397,13 +399,13 @@ static Result<nsCOMPtr<nsIFile>, nsresult> GetInitialDownloadDirectory(
     bool aSkipChecks = false) {
 #if defined(ANDROID)
   return Err(NS_ERROR_FAILURE);
-#endif
-
+#else
   if (StaticPrefs::browser_download_start_downloads_in_tmp_dir()) {
     return GetOsTmpDownloadDirectory();
   }
 
   return GetPreferredDownloadsDirectory(aSkipChecks);
+#endif
 }
 
 /**
@@ -967,13 +969,9 @@ nsresult nsExternalHelperAppService::EscapeURI(nsIURI* aURI, nsIURI** aResult) {
   return ios->NewURI(escapedSpec, nullptr, nullptr, aResult);
 }
 
-bool ExternalProtocolIsBlockedBySandbox(
+bool nsExternalHelperAppService::ExternalProtocolIsBlockedBySandbox(
     BrowsingContext* aBrowsingContext,
     const bool aHasValidUserGestureActivation) {
-  if (!StaticPrefs::dom_block_external_protocol_navigation_from_sandbox()) {
-    return false;
-  }
-
   if (!aBrowsingContext || aBrowsingContext->IsTop()) {
     return false;
   }

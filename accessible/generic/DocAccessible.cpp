@@ -31,6 +31,7 @@
 #include "nsIFrame.h"
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsImageFrame.h"
+#include "nsIMutationObserver.h"
 #include "nsViewManager.h"
 #include "nsIURI.h"
 #include "nsIWebNavigation.h"
@@ -52,7 +53,6 @@
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLSelectElement.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/UserActivation.h"
 
 using namespace mozilla;
@@ -67,7 +67,7 @@ static nsStaticAtom* const kRelationAttrs[] = {
     nsGkAtoms::aria_controls,     nsGkAtoms::aria_flowto,
     nsGkAtoms::aria_errormessage, nsGkAtoms::_for,
     nsGkAtoms::control,           nsGkAtoms::popovertarget,
-    nsGkAtoms::commandfor};
+    nsGkAtoms::commandfor,        nsGkAtoms::aria_activedescendant};
 
 static const uint32_t kRelationAttrsLen = std::size(kRelationAttrs);
 
@@ -209,13 +209,14 @@ role DocAccessible::NativeRole() const {
   return roles::PANE;  // Fall back;
 }
 
-void DocAccessible::Description(nsString& aDescription) const {
+EDescriptionValueFlag DocAccessible::Description(nsString& aDescription) const {
   if (mParent) mParent->Description(aDescription);
 
   if (HasOwnContent() && aDescription.IsEmpty()) {
     nsTextEquivUtils::GetTextEquivFromIDRefs(this, nsGkAtoms::aria_describedby,
                                              aDescription);
   }
+  return eDescriptionFromARIA;
 }
 
 // LocalAccessible public method
@@ -748,7 +749,7 @@ void DocAccessible::HandleScroll(nsINode* aTarget) {
   }
   mScrollWatchTimer->InitWithNamedFuncCallback(
       ScrollTimerCallback, this, kScrollEventInterval, nsITimer::TYPE_ONE_SHOT,
-      "a11y::DocAccessible::ScrollPositionDidChange");
+      "a11y::DocAccessible::ScrollPositionDidChange"_ns);
 }
 
 std::pair<nsPoint, nsRect> DocAccessible::ComputeScrollData(
@@ -796,7 +797,7 @@ static bool sIsAttrElementChanging = false;
 
 void DocAccessible::AttributeWillChange(dom::Element* aElement,
                                         int32_t aNameSpaceID,
-                                        nsAtom* aAttribute, int32_t aModType) {
+                                        nsAtom* aAttribute, AttrModType) {
   if (sIsAttrElementChanging) {
     // See the comment above the definition of sIsAttrElementChanging.
     return;
@@ -816,7 +817,7 @@ void DocAccessible::AttributeWillChange(dom::Element* aElement,
   RemoveDependentElementsFor(accessible, aAttribute);
 
   if (aAttribute == nsGkAtoms::id) {
-    if (accessible->IsActiveDescendantId()) {
+    if (accessible->IsActiveDescendant()) {
       RefPtr<AccEvent> event =
           new AccStateChangeEvent(accessible, states::ACTIVE, false);
       FireDelayedEvent(event);
@@ -845,7 +846,7 @@ void DocAccessible::AttributeWillChange(dom::Element* aElement,
 
 void DocAccessible::AttributeChanged(dom::Element* aElement,
                                      int32_t aNameSpaceID, nsAtom* aAttribute,
-                                     int32_t aModType,
+                                     AttrModType aModType,
                                      const nsAttrValue* aOldValue) {
   if (sIsAttrElementChanging) {
     // See the comment above the definition of sIsAttrElementChanging.
@@ -883,7 +884,7 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
       // DocAccessible, so handle it as an attribute change on this.
       accessible = this;
     } else {
-      if (aModType == dom::MutationEvent_Binding::ADDITION &&
+      if (aModType == AttrModType::Addition &&
           aria::AttrCharacteristicsFor(aAttribute) & ATTR_GLOBAL) {
         // The element doesn't have an Accessible, but a global ARIA attribute
         // was just added, which means we should probably create an Accessible.
@@ -917,7 +918,6 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
     mNotificationController
         ->ScheduleNotification<DocAccessible, LocalAccessible>(
             this, &DocAccessible::ARIAActiveDescendantChanged, accessible);
-    return;
   }
 
   // Defer to accessible any needed actions like changing states or emiting
@@ -928,8 +928,7 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
   // Update dependent IDs cache. We handle elements with accessibles.
   // If the accessible or element with the ID doesn't exist yet the cache will
   // be updated when they are added.
-  if (aModType == dom::MutationEvent_Binding::MODIFICATION ||
-      aModType == dom::MutationEvent_Binding::ADDITION) {
+  if (IsAdditionOrModification(aModType)) {
     AddDependentIDsFor(accessible, aAttribute);
     AddDependentElementsFor(accessible, aAttribute);
   }
@@ -937,7 +936,7 @@ void DocAccessible::AttributeChanged(dom::Element* aElement,
 
 void DocAccessible::ARIAAttributeDefaultWillChange(dom::Element* aElement,
                                                    nsAtom* aAttribute,
-                                                   int32_t aModType) {
+                                                   AttrModType aModType) {
   NS_ASSERTION(!IsDefunct(),
                "Attribute changed called on defunct document accessible!");
 
@@ -950,7 +949,7 @@ void DocAccessible::ARIAAttributeDefaultWillChange(dom::Element* aElement,
 
 void DocAccessible::ARIAAttributeDefaultChanged(dom::Element* aElement,
                                                 nsAtom* aAttribute,
-                                                int32_t aModType) {
+                                                AttrModType aModType) {
   NS_ASSERTION(!IsDefunct(),
                "Attribute changed called on defunct document accessible!");
 
@@ -3027,7 +3026,7 @@ void DocAccessible::DispatchScrollingEvent(nsINode* aTarget,
 void DocAccessible::ARIAActiveDescendantIDMaybeMoved(
     LocalAccessible* aAccessible) {
   LocalAccessible* widget = nullptr;
-  if (aAccessible->IsActiveDescendantId(&widget) && widget) {
+  if (aAccessible->IsActiveDescendant(&widget) && widget) {
     // The active descendant might have just been inserted and may not be in the
     // tree yet. Therefore, schedule this async to ensure the tree is up to
     // date.
@@ -3120,7 +3119,7 @@ void DocAccessible::AttrElementWillChange(dom::Element* aElement,
                                           nsAtom* aAttr) {
   MOZ_ASSERT(!sIsAttrElementChanging);
   AttributeWillChange(aElement, kNameSpaceID_None, aAttr,
-                      dom::MutationEvent_Binding::MODIFICATION);
+                      AttrModType::Modification);
   // We might get notified about a related content attribute change. Ignore
   // it.
   sIsAttrElementChanging = true;
@@ -3132,7 +3131,7 @@ void DocAccessible::AttrElementChanged(dom::Element* aElement, nsAtom* aAttr) {
   // (if any) have been sent.
   sIsAttrElementChanging = false;
   AttributeChanged(aElement, kNameSpaceID_None, aAttr,
-                   dom::MutationEvent_Binding::MODIFICATION, nullptr);
+                   AttrModType::Modification, nullptr);
 }
 
 bool DocAccessible::ProcessAnchorJump() {

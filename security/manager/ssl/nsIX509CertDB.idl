@@ -312,6 +312,7 @@ interface nsIX509CertDB : nsISupports {
    * @param aFlags flags as described above
    * @param aHostname the (optional) hostname to verify for
    * @param aTime the time at which to verify, in seconds since the epoch
+   * @param aSctsFromTls an (optional) RFC6962 SignedCertificateTimestampList
    * @param aCallback the nsICertVerificationCallback that will receive the
                       results of this verification
    * @return a succeeding nsresult if the job was dispatched successfully
@@ -322,6 +323,7 @@ interface nsIX509CertDB : nsISupports {
                              in uint32_t aFlags,
                              in ACString aHostname,
                              in uint64_t aTime,
+                             in Array<uint8_t> aSctsFromTls,
                              in nsICertVerificationCallback aCallback);
 
   // Clears the OCSP cache for the current certificate verification

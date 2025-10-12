@@ -247,9 +247,6 @@ newtab-custom-row-selector =
     }
 newtab-custom-pocket-sponsored = ప్రాయోజిక కథనాలు
 newtab-custom-recent-title = ఇటీవలి కార్యకలాపం
-newtab-custom-recent-toggle =
-    .label = ఇటీవలి కార్యకలాపం
-    .description = ఇటీవలి సైట్లు, విషయం నుండి కొన్ని
 newtab-custom-weather-toggle =
     .label = వాతావరణం
     .description = నేటి వాతావరణ అంచనా

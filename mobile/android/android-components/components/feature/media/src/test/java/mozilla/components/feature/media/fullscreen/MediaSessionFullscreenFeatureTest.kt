@@ -179,7 +179,7 @@ class MediaSessionFullscreenFeatureTest {
 
     @Suppress("Deprecation")
     @Test
-    @Config(sdk = [Build.VERSION_CODES.N])
+    @Config(sdk = [Build.VERSION_CODES.O])
     fun `GIVEN the currently selected tab plays landscape media WHEN it enters pip mode THEN set orientation to unspecified`() {
         val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
         val elementMetadata = MediaSession.ElementMetadata(width = 100, height = 100)
@@ -218,7 +218,7 @@ class MediaSessionFullscreenFeatureTest {
 
     @Suppress("Deprecation")
     @Test
-    @Config(sdk = [Build.VERSION_CODES.N])
+    @Config(sdk = [Build.VERSION_CODES.O])
     fun `GIVEN the currently selected tab is in pip mode WHEN an external intent arrives THEN set orientation to default`() {
         val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
         val elementMetadata = MediaSession.ElementMetadata(width = 100, height = 100)
@@ -270,7 +270,7 @@ class MediaSessionFullscreenFeatureTest {
 
     @Suppress("Deprecation")
     @Test
-    @Config(sdk = [Build.VERSION_CODES.N])
+    @Config(sdk = [Build.VERSION_CODES.O])
     fun `GIVEN the currently selected tab is in pip mode WHEN it exits pip mode THEN set orientation to default`() {
         val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
         val elementMetadata = MediaSession.ElementMetadata(width = 100, height = 100)
@@ -320,7 +320,7 @@ class MediaSessionFullscreenFeatureTest {
 
     @Suppress("Deprecation")
     @Test
-    @Config(sdk = [Build.VERSION_CODES.N])
+    @Config(sdk = [Build.VERSION_CODES.O])
     fun `GIVEN the currently selected tab is in pip mode WHEN a custom tab loads THEN display custom tab in device's current orientation`() {
         val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
         val elementMetadata = MediaSession.ElementMetadata(width = 100, height = 100)

@@ -97,9 +97,8 @@ static std::atomic<bool> etwCollection = false;
 using namespace js;
 using namespace js::jit;
 
-enum class PerfModeType { None, Function, Source, IR, IROperands };
+enum class PerfModeType { None, Function, Source, IR, IROperands, IRGraph };
 
-static std::atomic<bool> geckoProfiling = false;
 static std::atomic<PerfModeType> PerfMode = PerfModeType::None;
 
 // Mutex to guard access to the profiler vectors and jitdump file if perf
@@ -156,10 +155,9 @@ static void WriteToJitDumpFile(const void* addr, uint32_t size,
 }
 
 static void WriteJitDumpDebugEntry(uint64_t addr, const char* filename,
-                                   uint32_t lineno,
-                                   JS::LimitedColumnNumberOneOrigin colno,
+                                   uint32_t lineno, uint32_t discrim,
                                    AutoLockPerfSpewer& lock) {
-  JitDumpDebugEntry entry = {addr, lineno, colno.oneOriginValue()};
+  JitDumpDebugEntry entry = {addr, lineno, discrim};
   WriteToJitDumpFile(&entry, sizeof(entry), lock);
   WriteToJitDumpFile(filename, strlen(filename) + 1, lock);
 }
@@ -261,12 +259,29 @@ static void CheckPerf() {
               "enabled, defaulting to IONPERF=ir\n");
       PerfMode = PerfModeType::IR;
 #  endif
+    } else if (!strcmp(env, "ir-graph")) {
+#  ifdef JS_JITSPEW
+      PerfMode = PerfModeType::IRGraph;
+#  else
+      fprintf(stderr,
+              "Warning: IONPERF=ir-graph requires --enable-jitspew to be "
+              "enabled, defaulting to IONPERF=ir\n");
+      PerfMode = PerfModeType::IR;
+#  endif
     } else if (!strcmp(env, "func")) {
       PerfMode = PerfModeType::Function;
     } else {
       fprintf(stderr, "Use IONPERF=func to record at function granularity\n");
       fprintf(stderr,
               "Use IONPERF=ir to record and annotate assembly with IR\n");
+#  ifdef JS_JITSPEW
+      fprintf(stderr,
+              "Use IONPERF=ir-ops to record and annotate assembly with IR that "
+              "shows operands\n");
+      fprintf(stderr,
+              "Use IONPERF=ir-graph to record structured IR graphs for "
+              "visualization\n");
+#  endif
       fprintf(stderr,
               "Use IONPERF=src to record and annotate assembly with source, if "
               "available locally\n");
@@ -328,7 +343,6 @@ void PerfSpewer::Init() {
 static void DisablePerfSpewer(AutoLockPerfSpewer& lock) {
   fprintf(stderr, "Warning: Disabling PerfSpewer.");
 
-  geckoProfiling = false;
 #ifdef XP_WIN
   etwCollection = false;
 #endif
@@ -346,26 +360,20 @@ static void DisablePerfSpewer() {
   DisablePerfSpewer(lock);
 }
 
-static bool PerfSrcEnabled() {
-  return PerfMode == PerfModeType::Source || geckoProfiling;
-}
+static bool PerfSrcEnabled() { return PerfMode == PerfModeType::Source; }
 
 #ifdef JS_JITSPEW
 static bool PerfIROpsEnabled() { return PerfMode == PerfModeType::IROperands; }
+static bool PerfIRGraphEnabled() { return PerfMode == PerfModeType::IRGraph; }
 #endif
 
 static bool PerfIREnabled() {
-  return (PerfMode == PerfModeType::IROperands) ||
-         (PerfMode == PerfModeType::IR) || geckoProfiling;
+  return (PerfMode == PerfModeType::IRGraph) ||
+         (PerfMode == PerfModeType::IROperands) ||
+         (PerfMode == PerfModeType::IR);
 }
 
-static bool PerfFuncEnabled() {
-  return PerfMode == PerfModeType::Function || geckoProfiling;
-}
-
-bool js::jit::PerfEnabled() {
-  return PerfSrcEnabled() || PerfIREnabled() || PerfFuncEnabled();
-}
+bool js::jit::PerfEnabled() { return PerfMode != PerfModeType::None; }
 
 void InlineCachePerfSpewer::recordInstruction(MacroAssembler& masm,
                                               const CacheOp& op) {
@@ -374,31 +382,96 @@ void InlineCachePerfSpewer::recordInstruction(MacroAssembler& masm,
   }
   AutoLockPerfSpewer lock;
 
-  if (!opcodes_.emplaceBack(masm.currentOffset() - startOffset_,
-                            static_cast<uint32_t>(op))) {
-    opcodes_.clear();
-    DisablePerfSpewer(lock);
-  }
+  recordOpcode(masm.currentOffset() - startOffset_, static_cast<uint32_t>(op));
 }
 
-#define CHECK_RETURN(x)  \
-  if (!(x)) {            \
-    DisablePerfSpewer(); \
-    return;              \
+#define CHECK_RETURN(x) \
+  if (!(x)) {           \
+    disable();          \
+    return;             \
   }
 
+void IonPerfSpewer::disable() {
+#ifdef JS_JITSPEW
+  if (graphSpewer_) {
+    graphPrinter_.finish();
+    graphSpewer_ = nullptr;
+  }
+#endif
+  PerfSpewer::disable();
+}
+
+void IonPerfSpewer::startRecording(const wasm::CodeMetadata* wasmCodeMeta) {
+  PerfSpewer::startRecording();
+#ifdef JS_JITSPEW
+  if (PerfIRGraphEnabled()) {
+    graphPrinter_.init(irFile_);
+    graphSpewer_ = MakeUnique<GraphSpewer>(graphPrinter_, wasmCodeMeta);
+    if (!graphSpewer_) {
+      disable();
+    }
+    graphSpewer_->begin();
+    graphSpewer_->beginAnonFunction();
+  }
+#endif
+}
+
+void IonPerfSpewer::endRecording() {
+#ifdef JS_JITSPEW
+  if (graphSpewer_) {
+    graphSpewer_->endFunction();
+    graphSpewer_->end();
+    graphPrinter_.finish();
+    graphSpewer_ = nullptr;
+  }
+#endif
+  PerfSpewer::endRecording();
+}
+
+void IonPerfSpewer::recordPass(const char* pass, MIRGraph* graph,
+                               BacktrackingAllocator* ra) {
+#ifdef JS_JITSPEW
+  if (PerfIRGraphEnabled() && graphSpewer_) {
+    graphSpewer_->spewPass(pass, graph, ra);
+  }
+#endif
+}
+
 void IonPerfSpewer::recordInstruction(MacroAssembler& masm, LInstruction* ins) {
-  if (!PerfIREnabled() && !PerfSrcEnabled()) {
+  uint32_t offset = masm.currentOffset() - startOffset_;
+
+  if (PerfSrcEnabled()) {
+    uint32_t line = 0;
+    uint32_t column = 0;
+    if (MDefinition* mir = ins->mirRaw()) {
+      jsbytecode* pc = mir->trackedSite()->pc();
+      JSScript* script = mir->trackedSite()->script();
+      JS::LimitedColumnNumberOneOrigin colno;
+      line = PCToLineNumber(script, pc, &colno);
+      column = colno.oneOriginValue();
+    }
+
+    if (!debugInfo_.emplaceBack(offset, line, column)) {
+      disable();
+    }
     return;
   }
 
+  if (!PerfIREnabled()) {
+    return;
+  }
+
+#ifdef JS_JITSPEW
+  if (PerfIRGraphEnabled()) {
+    if (!debugInfo_.emplaceBack(offset, ins->id(), 0)) {
+      disable();
+    }
+    return;
+  }
+#endif
+
   LNode::Opcode op = ins->op();
   UniqueChars opcodeStr;
-
-  jsbytecode* bytecodepc = nullptr;
-  if (MDefinition* mir = ins->mirRaw()) {
-    bytecodepc = mir->trackedSite()->pc();
-  }
 
 #ifdef JS_JITSPEW
   if (PerfIROpsEnabled()) {
@@ -409,11 +482,8 @@ void IonPerfSpewer::recordInstruction(MacroAssembler& masm, LInstruction* ins) {
     opcodeStr = buf.release();
   }
 #endif
-  if (!opcodes_.emplaceBack(masm.currentOffset() - startOffset_,
-                            static_cast<uint32_t>(op), opcodeStr, bytecodepc)) {
-    opcodes_.clear();
-    DisablePerfSpewer();
-  }
+
+  recordOpcode(offset, static_cast<uint32_t>(op), std::move(opcodeStr));
 }
 
 #ifdef JS_JITSPEW
@@ -489,16 +559,24 @@ void WasmBaselinePerfSpewer::recordInstruction(MacroAssembler& masm,
                                                const wasm::OpBytes& op) {
   MOZ_ASSERT(needsToRecordInstruction());
 
-  if (!opcodes_.emplaceBack(masm.currentOffset() - startOffset_,
-                            op.toPacked())) {
-    opcodes_.clear();
-    DisablePerfSpewer();
-  }
+  recordOpcode(masm.currentOffset() - startOffset_, op.toPacked());
 }
 
 void BaselinePerfSpewer::recordInstruction(MacroAssembler& masm, jsbytecode* pc,
+                                           JSScript* script,
                                            CompilerFrameInfo& frame) {
-  if (!PerfIREnabled() && !PerfSrcEnabled()) {
+  uint32_t offset = masm.currentOffset() - startOffset_;
+  if (PerfSrcEnabled()) {
+    JS::LimitedColumnNumberOneOrigin colno;
+    uint32_t line = PCToLineNumber(script, pc, &colno);
+    uint32_t column = colno.oneOriginValue();
+    if (!debugInfo_.emplaceBack(offset, line, column)) {
+      disable();
+    }
+    return;
+  }
+
+  if (!PerfIREnabled()) {
     return;
   }
 
@@ -550,11 +628,7 @@ void BaselinePerfSpewer::recordInstruction(MacroAssembler& masm, jsbytecode* pc,
   }
 #endif
 
-  if (!opcodes_.emplaceBack(masm.currentOffset() - startOffset_,
-                            static_cast<uint32_t>(op), opcodeStr, pc)) {
-    opcodes_.clear();
-    DisablePerfSpewer();
-  }
+  recordOpcode(offset, static_cast<uint32_t>(op), std::move(opcodeStr));
 }
 
 const char* BaselinePerfSpewer::CodeName(uint32_t op) {
@@ -567,6 +641,15 @@ const char* BaselineInterpreterPerfSpewer::CodeName(uint32_t op) {
 
 const char* IonPerfSpewer::CodeName(uint32_t op) {
   return js::jit::LIRCodeName(static_cast<LNode::Opcode>(op));
+}
+
+const char* IonPerfSpewer::IRFileExtension() {
+#ifdef JS_JITSPEW
+  if (PerfIRGraphEnabled()) {
+    return ".iongraph.json";
+  }
+#endif
+  return ".txt";
 }
 
 const char* WasmBaselinePerfSpewer::CodeName(uint32_t op) {
@@ -659,107 +742,67 @@ void PerfSpewer::recordOffset(MacroAssembler& masm, const char* msg) {
   if (!PerfIREnabled()) {
     return;
   }
+#ifdef JS_JITSPEW
+  if (PerfIRGraphEnabled()) {
+    return;
+  }
+#endif
 
   UniqueChars offsetStr = DuplicateString(msg);
-  if (!opcodes_.emplaceBack(masm.currentOffset() - startOffset_, offsetStr)) {
-    opcodes_.clear();
-    DisablePerfSpewer();
+  recordOpcode(masm.currentOffset() - startOffset_, std::move(offsetStr));
+}
+
+void PerfSpewer::recordOpcode(uint32_t offset, uint32_t opcode) {
+  recordOpcode(offset, opcode, JS::UniqueChars(nullptr));
+}
+
+void PerfSpewer::recordOpcode(uint32_t offset, uint32_t opcode,
+                              JS::UniqueChars&& str) {
+  if (!irFile_) {
+    // If we don't have a file, we can't record the opcode.
+    return;
+  }
+
+  irFileLines_ += 1;
+  if (!debugInfo_.emplaceBack(offset, irFileLines_)) {
+    disable();
+    return;
+  }
+
+  if (str.get()) {
+    fprintf(irFile_, "%s\n", str.get());
+  } else {
+    fprintf(irFile_, "%s\n", CodeName(opcode));
   }
 }
 
-void PerfSpewer::saveIRInfo(uintptr_t base, AutoLockPerfSpewer& lock) {
-#ifdef JS_ION_PERF
-  static uint32_t filenameCounter = 0;
-  UniqueChars scriptFilename;
-  FILE* scriptFile = nullptr;
+void PerfSpewer::recordOpcode(uint32_t offset, JS::UniqueChars&& str) {
+  recordOpcode(offset, 0, std::move(str));
+}
 
+void PerfSpewer::saveDebugInfo(const char* filename, uintptr_t base,
+                               AutoLockPerfSpewer& lock) {
+#ifdef JS_ION_PERF
   if (!IsPerfProfiling()) {
     return;
   }
 
-  scriptFilename = JS_smprintf("%s/jitdump-script-%u.%u.txt", spew_dir.get(),
-                               filenameCounter++, getpid());
-  scriptFile = fopen(scriptFilename.get(), "w");
-  if (!scriptFile) {
-    DisablePerfSpewer(lock);
-    return;
-  }
-
   JitDumpDebugRecord debug_record = {};
-  uint64_t n_records = opcodes_.length();
+
+  uint64_t n_records = debugInfo_.length();
 
   debug_record.header.id = JIT_CODE_DEBUG_INFO;
   debug_record.header.total_size =
-      sizeof(debug_record) + n_records * (sizeof(JitDumpDebugEntry) +
-                                          strlen(scriptFilename.get()) + 1);
+      sizeof(debug_record) +
+      n_records * (sizeof(JitDumpDebugEntry) + strlen(filename) + 1);
   debug_record.header.timestamp = GetMonotonicTimestamp();
   debug_record.code_addr = uint64_t(base);
   debug_record.nr_entry = n_records;
 
   WriteToJitDumpFile(&debug_record, sizeof(debug_record), lock);
-
-  for (size_t i = 0; i < opcodes_.length(); i++) {
-    OpcodeEntry& entry = opcodes_[i];
-    // If a string was recorded for this offset, use that instead.
-    if (entry.str) {
-      fprintf(scriptFile, "%s\n", entry.str.get());
-    } else {
-      fprintf(scriptFile, "%s\n", CodeName(entry.opcode));
-    }
-    uint64_t addr = uint64_t(base) + entry.offset;
-    uint64_t lineno = i + 1;
-    WriteJitDumpDebugEntry(addr, scriptFilename.get(), lineno,
-                           JS::LimitedColumnNumberOneOrigin(), lock);
-  }
-
-  opcodes_.clear();
-  fclose(scriptFile);
-#endif
-}
-
-void PerfSpewer::saveJitCodeSourceInfo(JSScript* script, JitCode* code,
-                                       AutoLockPerfSpewer& lock) {
-#ifdef JS_ION_PERF
-  if (IsPerfProfiling()) {
-    const char* filename = script->filename();
-    if (!filename) {
-      return;
-    }
-
-    JitDumpDebugRecord debug_record = {};
-
-    uint64_t n_records = 0;
-    for (OpcodeEntry& entry : opcodes_) {
-      if (entry.bytecodepc) {
-        n_records++;
-      }
-    }
-
-    debug_record.header.id = JIT_CODE_DEBUG_INFO;
-    debug_record.header.total_size =
-        sizeof(debug_record) +
-        n_records * (sizeof(JitDumpDebugEntry) + strlen(filename) + 1);
-    debug_record.header.timestamp = GetMonotonicTimestamp();
-    debug_record.code_addr = uint64_t(code->raw());
-    debug_record.nr_entry = n_records;
-
-    WriteToJitDumpFile(&debug_record, sizeof(debug_record), lock);
-
-    uint32_t lineno = 0;
-    JS::LimitedColumnNumberOneOrigin colno;
-
-    for (OpcodeEntry& entry : opcodes_) {
-      jsbytecode* pc = entry.bytecodepc;
-      if (!pc) {
-        continue;
-      }
-      // We could probably make this a bit faster by caching the previous pc
-      // offset, but it currently doesn't seem noticeable when testing.
-      lineno = PCToLineNumber(script, pc, &colno);
-
-      WriteJitDumpDebugEntry(uint64_t(code->raw()) + entry.offset, filename,
-                             lineno, colno, lock);
-    }
+  for (DebugEntry& entry : debugInfo_) {
+    WriteJitDumpDebugEntry(uint64_t(base) + entry.offset, filename, entry.line,
+                           entry.column, lock);
   }
 #endif
 }
@@ -787,18 +830,32 @@ static UniqueChars GetFunctionDesc(const char* tierName, JSContext* cx,
 void PerfSpewer::saveJitCodeDebugInfo(JSScript* script, JitCode* code,
                                       AutoLockPerfSpewer& lock) {
   MOZ_ASSERT(code);
+
+  // We should be done with the temp IR file, if we were using it.
+  MOZ_ASSERT(!irFile_);
+
   if (PerfIREnabled()) {
-    saveIRInfo(uintptr_t(code->raw()), lock);
-  } else if (PerfSrcEnabled() && script) {
-    saveJitCodeSourceInfo(script, code, lock);
+    // We should have generated a debug file to use here.
+    MOZ_ASSERT(irFileName_.get());
+    saveDebugInfo(irFileName_.get(), uintptr_t(code->raw()), lock);
+    return;
   }
+
+  if (!PerfSrcEnabled() || !script || !script->filename()) {
+    return;
+  }
+  saveDebugInfo(script->filename(), uintptr_t(code->raw()), lock);
 }
 
 void PerfSpewer::saveWasmCodeDebugInfo(uintptr_t base,
                                        AutoLockPerfSpewer& lock) {
-  if (PerfIREnabled()) {
-    saveIRInfo(base, lock);
+  // We should be done with the temp IR file, if we were using it.
+  MOZ_ASSERT(!irFile_);
+
+  if (!PerfIREnabled()) {
+    return;
   }
+  saveDebugInfo(irFileName_.get(), base, lock);
 }
 
 void PerfSpewer::saveJSProfile(JitCode* code, UniqueChars& desc,
@@ -822,57 +879,86 @@ void PerfSpewer::saveWasmProfile(uintptr_t base, size_t size,
                                  uint64_t(size), lock);
 }
 
-IonICPerfSpewer::IonICPerfSpewer(jsbytecode* pc) {
-  if (!PerfEnabled()) {
-    return;
-  }
-
-  if (!opcodes_.emplaceBack(pc)) {
-    opcodes_.clear();
-    DisablePerfSpewer();
-  }
+void PerfSpewer::disable(AutoLockPerfSpewer& lock) {
+  endRecording();
+  debugInfo_.clear();
+  irFileName_ = UniqueChars();
+  DisablePerfSpewer(lock);
 }
 
-void IonICPerfSpewer::saveJitCodeSourceInfo(JSScript* script, JitCode* code,
-                                            AutoLockPerfSpewer& lock) {
+void PerfSpewer::disable() {
+  AutoLockPerfSpewer lock;
+  disable(lock);
+}
+
+void PerfSpewer::startRecording(const wasm::CodeMetadata* wasmCodeMeta) {
+  MOZ_ASSERT(!irFile_ && !irFileName_);
+
 #ifdef JS_ION_PERF
-  if (!IsPerfProfiling()) {
+  static uint32_t filenameCounter = 0;
+
+  if (!IsPerfProfiling() || !PerfIREnabled()) {
     return;
   }
 
-  MOZ_ASSERT(script && code);
-  MOZ_ASSERT(opcodes_.length() == 1);
-  jsbytecode* pc = opcodes_[0].bytecodepc;
-
-  if (!pc) {
+  AutoLockPerfSpewer lock;
+  irFileName_ = JS_smprintf("%s/jitdump-ir-%u.%u%s", spew_dir.get(),
+                            filenameCounter++, getpid(), IRFileExtension());
+  if (!irFileName_) {
+    disable(lock);
     return;
   }
 
-  const char* filename = script->filename();
-  if (!filename) {
+  irFile_ = fopen(irFileName_.get(), "w");
+  if (!irFile_) {
+    disable(lock);
     return;
   }
+#endif
+}
 
-  JitDumpDebugRecord debug_record = {};
-  uint64_t n_records = 1;
+void PerfSpewer::endRecording() {
+  if (!irFile_) {
+    return;
+  }
+  fclose(irFile_);
+  irFile_ = nullptr;
+}
 
-  debug_record.header.id = JIT_CODE_DEBUG_INFO;
-  debug_record.header.total_size =
-      sizeof(debug_record) +
-      n_records * (sizeof(JitDumpDebugEntry) + strlen(filename) + 1);
+PerfSpewer::~PerfSpewer() {
+  // Close the file, if it hasn't yet.
+  endRecording();
+}
 
-  debug_record.header.timestamp = GetMonotonicTimestamp();
-  debug_record.code_addr = uint64_t(code->raw());
-  debug_record.nr_entry = n_records;
+PerfSpewer::PerfSpewer(PerfSpewer&& other) {
+  // Can only move a PerfSpewer after endRecording().
+  MOZ_RELEASE_ASSERT(!irFile_ && !other.irFile_);
+  debugInfo_ = std::move(other.debugInfo_);
+  irFileName_ = std::move(other.irFileName_);
+  startOffset_ = other.startOffset_;
+}
 
-  WriteToJitDumpFile(&debug_record, sizeof(debug_record), lock);
+PerfSpewer& PerfSpewer::operator=(PerfSpewer&& other) {
+  // Can only move a PerfSpewer after endRecording().
+  MOZ_RELEASE_ASSERT(!irFile_ && !other.irFile_);
+  debugInfo_ = std::move(other.debugInfo_);
+  irFileName_ = std::move(other.irFileName_);
+  startOffset_ = other.startOffset_;
+  return *this;
+}
+
+IonICPerfSpewer::IonICPerfSpewer(JSScript* script, jsbytecode* pc) {
+  if (!PerfSrcEnabled()) {
+    return;
+  }
 
   uint32_t lineno;
   JS::LimitedColumnNumberOneOrigin colno;
   lineno = PCToLineNumber(script, pc, &colno);
 
-  WriteJitDumpDebugEntry(uint64_t(code->raw()), filename, lineno, colno, lock);
-#endif
+  if (!debugInfo_.emplaceBack(0, lineno, colno.oneOriginValue())) {
+    disable();
+  }
 }
 
 void IonICPerfSpewer::saveProfile(JSContext* cx, JSScript* script,
@@ -921,6 +1007,10 @@ void BaselineInterpreterPerfSpewer::saveProfile(JitCode* code) {
   // For SingleSym, just emit one "BaselineInterpreter" symbol
   // and emit the opcodes as IR if IONPERF=ir is used.
   if (kind == SpewKind::SingleSym) {
+    for (Op& entry : ops_) {
+      recordOpcode(entry.offset, entry.opcode, std::move(entry.str));
+    }
+    ops_.clear();
     UniqueChars desc = DuplicateString("BaselineInterpreter");
     PerfSpewer::saveJSProfile(code, desc, nullptr);
     return;
@@ -929,21 +1019,20 @@ void BaselineInterpreterPerfSpewer::saveProfile(JitCode* code) {
   // For MultiSym, split up each opcode into its own symbol.
   // No IR is emitted in this case, so we can skip PerfSpewer::saveProfile.
   MOZ_ASSERT(kind == SpewKind::MultiSym);
-  for (size_t i = 1; i < opcodes_.length(); i++) {
-    uintptr_t base = uintptr_t(code->raw()) + opcodes_[i - 1].offset;
-    uintptr_t size = opcodes_[i].offset - opcodes_[i - 1].offset;
+  for (size_t i = 1; i < ops_.length(); i++) {
+    uintptr_t base = uintptr_t(code->raw()) + ops_[i - 1].offset;
+    uintptr_t size = ops_[i].offset - ops_[i - 1].offset;
 
     UniqueChars rangeName;
-    if (opcodes_[i - 1].str) {
-      rangeName = JS_smprintf("BlinterpOp: %s", opcodes_[i - 1].str.get());
+    if (ops_[i - 1].str) {
+      rangeName = JS_smprintf("BlinterpOp: %s", ops_[i - 1].str.get());
     } else {
-      rangeName =
-          JS_smprintf("BlinterpOp: %s", CodeName(opcodes_[i - 1].opcode));
+      rangeName = JS_smprintf("BlinterpOp: %s", CodeName(ops_[i - 1].opcode));
     }
 
     // If rangeName is empty, we probably went OOM.
     if (!rangeName) {
-      DisablePerfSpewer();
+      disable();
       return;
     }
 
@@ -959,10 +1048,10 @@ void BaselineInterpreterPerfSpewer::recordOffset(MacroAssembler& masm,
     return;
   }
 
-  if (!opcodes_.emplaceBack(masm.currentOffset() - startOffset_,
-                            unsigned(op))) {
-    opcodes_.clear();
-    DisablePerfSpewer();
+  if (!ops_.emplaceBack(masm.currentOffset() - startOffset_, unsigned(op))) {
+    disable();
+    ops_.clear();
+    return;
   }
 }
 
@@ -973,9 +1062,10 @@ void BaselineInterpreterPerfSpewer::recordOffset(MacroAssembler& masm,
   }
 
   UniqueChars desc = DuplicateString(name);
-  if (!opcodes_.emplaceBack(masm.currentOffset() - startOffset_, desc)) {
-    opcodes_.clear();
-    DisablePerfSpewer();
+  if (!ops_.emplaceBack(masm.currentOffset() - startOffset_, std::move(desc))) {
+    disable();
+    ops_.clear();
+    return;
   }
 }
 

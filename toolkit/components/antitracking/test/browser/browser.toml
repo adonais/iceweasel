@@ -92,6 +92,12 @@ support-files = [
 
 ["browser_fixed_ABA_partitionKey.js"]
 
+["browser_foreignWorker_eventSource.js"]
+support-files= [
+  "eventsource_worker.js",
+  "eventsource_message.sjs",
+]
+
 ["browser_hasStorageAccess.js"]
 
 ["browser_iframe_document_open.js"]

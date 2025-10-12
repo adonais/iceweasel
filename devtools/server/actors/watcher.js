@@ -236,8 +236,6 @@ exports.WatcherActor = class WatcherActor extends Actor {
       traits: {
         ...this.sessionContext.supportedTargets,
         resources: this.sessionContext.supportedResources,
-        // @backward-compat { version 142 } Supports emitting of multiple network event updates.
-        multipleNetworkEventUpdates: true,
       },
     };
   }

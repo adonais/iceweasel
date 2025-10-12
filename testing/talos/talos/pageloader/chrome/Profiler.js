@@ -182,7 +182,7 @@ var Profiler;
      * `subtestEnd`.
      */
     subtestStart: function Profiler__subtestStart(name, explicit) {
-      profilerSubtestStartTime = Cu.now();
+      profilerSubtestStartTime = ChromeUtils.now();
       if (_profiler) {
         ChromeUtils.addProfilerMarker(
           "Talos",

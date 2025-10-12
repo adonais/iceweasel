@@ -149,6 +149,7 @@ add_task(async function password_validation() {
     await hiddenPromise;
 
     Assert.ok(true, "Password rules tooltip should be hidden");
+    await SpecialPowers.popPrefEnv();
     sandbox.restore();
   });
 });

@@ -15,6 +15,23 @@ loader.lazyRequireGetter(
   true
 );
 
+class TargetBrowserFilter {
+  async filterEntry(record) {
+    if (
+      !TARGET_BROWSER_ID.includes(record.browserid) ||
+      !TARGET_BROWSER_STATUS.includes(record.status)
+    ) {
+      return null;
+    }
+    return {
+      id: record.browserid,
+      name: record.name,
+      version: record.version,
+      status: record.status,
+    };
+  }
+}
+
 /**
  * Returns the full list of browsers in the RemoteSetting devtools-compatibility-browsers
  * collection (which is a flat copy of MDN compat data), sorted by browser and version.
@@ -27,20 +44,7 @@ loader.lazyRequireGetter(
  */
 async function getBrowsersList() {
   const records = await RemoteSettings("devtools-compatibility-browsers", {
-    filterFunc: record => {
-      if (
-        !TARGET_BROWSER_ID.includes(record.browserid) ||
-        !TARGET_BROWSER_STATUS.includes(record.status)
-      ) {
-        return null;
-      }
-      return {
-        id: record.browserid,
-        name: record.name,
-        version: record.version,
-        status: record.status,
-      };
-    },
+    filterCreator: async () => new TargetBrowserFilter(),
   }).get();
 
   const numericCollator = new Intl.Collator([], { numeric: true });

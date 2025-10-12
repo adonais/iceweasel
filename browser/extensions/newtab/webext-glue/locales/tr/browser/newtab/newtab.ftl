@@ -72,7 +72,7 @@ newtab-topsites-image-validation = Resim yüklenemedi. Başka bir adres deneyin.
 
 ## Top Sites - General form dialog buttons. These are verbs/actions.
 
-newtab-topsites-cancel-button = İptal
+newtab-topsites-cancel-button = Vazgeç
 newtab-topsites-delete-history-button = Geçmişten sil
 newtab-topsites-save-button = Kaydet
 newtab-topsites-preview-button = Ön izleme yap
@@ -315,19 +315,32 @@ newtab-custom-pocket-subtitle = { -brand-product-name } ailesinin bir parçası 
 newtab-custom-stories-toggle =
     .label = Önerilen makaleler
     .description = { -brand-product-name } ailesinin seçtiği harika içerikler
+newtab-custom-stories-personalized-toggle =
+    .label = Haberler
+newtab-custom-stories-personalized-checkbox-label = Etkinliğinize göre kişiselleştirilmiş haberler
 newtab-custom-pocket-sponsored = Sponsorlu haberler
 newtab-custom-pocket-show-recent-saves = Son kaydedilenleri göster
 newtab-custom-recent-title = Son etkinlikler
 newtab-custom-recent-subtitle = Son kullanılan siteler ve içeriklerden bir seçki
-newtab-custom-recent-toggle =
-    .label = Son etkinlikler
-    .description = Son kullanılan siteler ve içeriklerden bir seçki
 newtab-custom-weather-toggle =
     .label = Hava durumu
     .description = Bugünkü hava durumu tahmini
 newtab-custom-trending-search-toggle =
     .label = Gündemdeki aramalar
     .description = Popüler ve sıkça aranan konular
+newtab-custom-widget-weather-toggle =
+    .label = Hava durumu
+newtab-custom-widget-trending-search-toggle =
+    .label = Gündemdeki aramalar
+newtab-custom-widget-lists-toggle =
+    .label = Listeler
+newtab-custom-widget-timer-toggle =
+    .label = Sayaç
+newtab-custom-widget-section-title = Widget’lar
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Kapat
+    .aria-label = Menüyü kapat
 newtab-custom-close-button = Kapat
 newtab-custom-settings = Diğer ayarları yönet
 
@@ -340,6 +353,7 @@ newtab-wallpaper-custom-color = Renk seç
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Bu resim, izin verilen { $file_size } MB boyut sınırını aşıyor. Lütfen daha küçük bir dosya yüklemeyi deneyin.
+newtab-wallpaper-error-upload-file-type = Dosyanızı yükleyemedik. Lütfen bir resim dosyasıyla yeniden deneyin.
 newtab-wallpaper-error-file-type = Dosyanızı yükleyemedik. Lütfen farklı bir dosya türüyle tekrar deneyin.
 newtab-wallpaper-light-red-panda = Kızıl panda
 newtab-wallpaper-light-mountain = Beyaz dağ
@@ -445,7 +459,6 @@ newtab-weather-menu-change-location = Konumu değiştir
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Konum ara
     .aria-label = Konum ara
-newtab-weather-change-location-search-input = Konum ara
 newtab-weather-menu-weather-display = Hava durumu göstergesi
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -592,8 +605,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Google Gündeminde
 newtab-trending-searches-show-trending =
     .title = Arama trendlerini göster
 newtab-trending-searches-hide-trending =
@@ -602,3 +613,76 @@ newtab-trending-searches-learn-more = Daha fazla bilgi al
 newtab-trending-searches-dismiss = Arama trendlerini gizle
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Gündemdeki aramalar
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Aklınızda ne var? Bir görev ekleyin.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Yeni
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Tamamlandı ({ $number })
+newtab-widget-task-list-menu-copy = Kopyala
+newtab-widget-lists-menu-edit = Liste adını düzenle
+newtab-widget-lists-menu-create = Yeni liste oluştur
+newtab-widget-lists-menu-delete = Bu listeyi sil
+newtab-widget-lists-menu-copy = Listeyi panoya kopyala
+newtab-widget-lists-menu-hide = Tüm listeleri gizle
+newtab-widget-lists-menu-learn-more = Daha fazla bilgi al
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Görev ekle
+newtab-widget-lists-input-error = Görev eklemek için lütfen metin yazın.
+newtab-widget-lists-input-menu-open-link = Bağlantıyı aç
+newtab-widget-lists-input-menu-move-up = Yukarı taşı
+newtab-widget-lists-input-menu-move-down = Aşağı taşı
+newtab-widget-lists-input-menu-delete = Sil
+newtab-widget-lists-input-menu-edit = Düzenle
+newtab-widget-lists-name-label-default =
+    .label = Görev listesi
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Görev listesi
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Yeni liste
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Sayaç
+newtab-widget-timer-notification-focus = Odaklanma süresi bitti. İyi iş çıkardınız. Ara vermek ister misiniz?
+newtab-widget-timer-notification-break = Molanız bitti. Odaklanmaya hazır mısınız?
+newtab-widget-timer-notification-warning = Bildirimler kapalı
+newtab-widget-timer-mode-focus =
+    .label = Odaklan
+newtab-widget-timer-mode-break =
+    .label = Mola ver
+newtab-widget-timer-play =
+    .title = Başlat
+newtab-widget-timer-pause =
+    .title = Duraklat
+newtab-widget-timer-label-play =
+    .label = Başlat
+newtab-widget-timer-label-pause =
+    .label = Duraklat
+newtab-widget-timer-reset =
+    .title = Sıfırla
+newtab-widget-timer-menu-notifications = Bildirimleri kapat
+newtab-widget-timer-menu-notifications-on = Bildirimleri aç
+newtab-widget-timer-menu-hide = Sayacı gizle
+newtab-widget-timer-menu-learn-more = Daha fazla bilgi al
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Daha fazlası için kaydırın
+newtab-widget-message-title = Listeler ve sayaçla işinize daha iyi odaklanın
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Küçük anımsatıcılar ve günlük görev listeleriyle, odaklanma oturumları ve molalarla zamanınızı daha iyi yönetin.
+newtab-promo-card-title = { -brand-product-name } tarayıcısını destekleyin
+newtab-promo-card-body = Sponsorlarımız daha iyi bir web inşa etme misyonumuzu destekliyor
+newtab-promo-card-cta = Daha fazla bilgi alın
+newtab-promo-card-dismiss-button =
+    .title = Kapat
+    .aria-label = Kapat

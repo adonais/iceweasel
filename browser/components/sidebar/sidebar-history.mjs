@@ -104,7 +104,9 @@ export class SidebarHistory extends SidebarPage {
   }
 
   handleContextMenuEvent(e) {
-    this.triggerNode = this.findTriggerNode(e, "sidebar-tab-row");
+    this.triggerNode =
+      this.findTriggerNode(e, "sidebar-tab-row") ||
+      this.findTriggerNode(e, "moz-input-search");
     if (!this.triggerNode) {
       e.preventDefault();
     }
@@ -398,26 +400,28 @@ export class SidebarHistory extends SidebarPage {
           data-l10n-attrs="heading"
           view="viewHistorySidebar"
         >
+          <div class="options-container">
+            <moz-input-search
+              data-l10n-id="firefoxview-search-text-box-history"
+              data-l10n-attrs="placeholder"
+              @MozInputSearch:search=${this.onSearchQuery}
+            ></moz-input-search>
+            <moz-button
+              class="menu-button"
+              @click=${this.openMenu}
+              data-l10n-id="sidebar-options-menu-button"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              view=${this.view}
+              type="icon ghost"
+              iconsrc="chrome://global/skin/icons/more.svg"
+            >
+            </moz-button>
+          </div>
         </sidebar-panel-header>
-        <div class="options-container">
-          <moz-input-search
-            data-l10n-id="firefoxview-search-text-box-history"
-            data-l10n-attrs="placeholder"
-            @MozInputSearch:search=${this.onSearchQuery}
-          ></moz-input-search>
-          <moz-button
-            class="menu-button"
-            @click=${this.openMenu}
-            data-l10n-id="sidebar-options-menu-button"
-            aria-haspopup="menu"
-            aria-expanded="false"
-            view=${this.view}
-            type="icon ghost"
-            iconsrc="chrome://global/skin/icons/more.svg"
-          >
-          </moz-button>
+        <div class="sidebar-panel-scrollable-content">
+          ${this.cardsTemplate}
         </div>
-        ${this.cardsTemplate}
       </div>
     `;
   }

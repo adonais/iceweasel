@@ -20,6 +20,7 @@ ChromeUtils.defineESModuleGetters(this, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusTestUtils: "resource://testing-common/NimbusTestUtils.sys.mjs",
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   QueryCache: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
@@ -490,7 +491,7 @@ add_task(async function check_needsUpdate() {
 add_task(async function checksearchEngines() {
   const result = await ASRouterTargeting.Environment.searchEngines;
   const expectedInstalled = (await Services.search.getAppProvidedEngines())
-    .map(engine => engine.identifier)
+    .map(engine => engine.id)
     .sort()
     .join(",");
   ok(
@@ -508,14 +509,14 @@ add_task(async function checksearchEngines() {
   );
   is(
     result.current,
-    (await Services.search.getDefault()).identifier,
+    (await Services.search.getDefault()).id,
     "searchEngines.current should be the current engine name"
   );
 
   const message = {
     id: "foo",
     targeting: `searchEngines[.current == ${
-      (await Services.search.getDefault()).identifier
+      (await Services.search.getDefault()).id
     }]`,
   };
   is(
@@ -527,7 +528,7 @@ add_task(async function checksearchEngines() {
   const message2 = {
     id: "foo",
     targeting: `searchEngines[${
-      (await Services.search.getAppProvidedEngines())[0].identifier
+      (await Services.search.getAppProvidedEngines())[0].id
     } in .installed]`,
   };
   is(
@@ -711,10 +712,12 @@ add_task(async function checkFrecentSites() {
   const timeDaysAgo = numDays => now - numDays * 24 * 60 * 60 * 1000;
 
   const visits = [];
+  // Create test data with varying frecency scores: high (frequent visits),
+  // medium (less frequent), and low (infrequent).
   for (const [uri, count, visitDate] of [
-    ["https://mozilla1.com/", 10, timeDaysAgo(0)], // frecency 1000
-    ["https://mozilla2.com/", 5, timeDaysAgo(1)], // frecency 500
-    ["https://mozilla3.com/", 1, timeDaysAgo(2)], // frecency 100
+    ["https://mozilla1.com/", 10, timeDaysAgo(0)],
+    ["https://mozilla2.com/", 5, timeDaysAgo(1)],
+    ["https://mozilla3.com/", 1, timeDaysAgo(2)],
   ]) {
     [...Array(count).keys()].forEach(() =>
       visits.push({
@@ -745,10 +748,13 @@ add_task(async function checkFrecentSites() {
     "should not select incorrect item by host in topFrecentSites"
   );
 
+  // Frecency threshold for 5 visits to mozilla2.com, 1 day ago.
+  let threshold = PlacesUtils.history.pageFrecencyThreshold(1, 5, false);
   message = {
     id: "foo",
-    targeting:
-      "'mozilla2.com' in topFrecentSites[.frecency >= 400]|mapToProperty('host')",
+    targeting: `'mozilla2.com' in topFrecentSites[.frecency >= ${
+      threshold
+    }]|mapToProperty('host')`,
   };
   is(
     await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
@@ -756,10 +762,13 @@ add_task(async function checkFrecentSites() {
     "should select correct item when filtering by frecency"
   );
 
+  let higherThreshold = PlacesUtils.history.pageFrecencyThreshold(1, 6, false);
+  Assert.greater(higherThreshold, threshold, "Threshold is higher.");
   message = {
     id: "foo",
-    targeting:
-      "'mozilla2.com' in topFrecentSites[.frecency >= 600]|mapToProperty('host')",
+    targeting: `'mozilla2.com' in topFrecentSites[.frecency >= ${
+      higherThreshold
+    }]|mapToProperty('host')`,
   };
   ok(
     !(await ASRouterTargeting.findMatchingMessage({ messages: [message] })),

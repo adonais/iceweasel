@@ -97,11 +97,11 @@ MOZ_END_EXTERN_C
 MOZ_BEGIN_EXTERN_C
 
 #if defined(ANDROID) && defined(MOZ_DUMP_ASSERTION_STACK)
-MOZ_MAYBE_UNUSED static void MOZ_ReportAssertionFailurePrintFrame(
+[[maybe_unused]] static void MOZ_ReportAssertionFailurePrintFrame(
     const char* aBuf) {
   __android_log_print(ANDROID_LOG_FATAL, "MOZ_Assert", "%s", aBuf);
 }
-MOZ_MAYBE_UNUSED static void MOZ_CrashPrintFrame(const char* aBuf) {
+[[maybe_unused]] static void MOZ_CrashPrintFrame(const char* aBuf) {
   __android_log_print(ANDROID_LOG_FATAL, "MOZ_Crash", "%s", aBuf);
 }
 #endif
@@ -115,7 +115,7 @@ MOZ_MAYBE_UNUSED static void MOZ_CrashPrintFrame(const char* aBuf) {
  * for use in implementing release-build assertions.
  */
 
-MOZ_MAYBE_UNUSED static MOZ_COLD MOZ_NEVER_INLINE void
+[[maybe_unused]] static MOZ_COLD MOZ_NEVER_INLINE void
 MOZ_ReportAssertionFailure(const char* aStr, const char* aFilename,
                            int aLine) MOZ_PRETEND_NORETURN_FOR_STATIC_ANALYSIS {
   MOZ_FUZZING_HANDLE_CRASH_EVENT4("MOZ_ASSERT", aFilename, aLine, aStr);
@@ -144,7 +144,7 @@ MOZ_ReportAssertionFailure(const char* aStr, const char* aFilename,
 #endif
 }
 
-MOZ_MAYBE_UNUSED static MOZ_COLD MOZ_NEVER_INLINE void MOZ_ReportCrash(
+[[maybe_unused]] static MOZ_COLD MOZ_NEVER_INLINE void MOZ_ReportCrash(
     const char* aStr, const char* aFilename,
     int aLine) MOZ_PRETEND_NORETURN_FOR_STATIC_ANALYSIS {
 #ifdef ANDROID
@@ -218,7 +218,7 @@ MOZ_MAYBE_UNUSED static MOZ_COLD MOZ_NEVER_INLINE void MOZ_ReportCrash(
  * by MSVC, so doing it this way reduces complexity.)
  */
 
-MOZ_MAYBE_UNUSED static MOZ_COLD MOZ_NORETURN MOZ_NEVER_INLINE void
+[[maybe_unused]] static MOZ_COLD MOZ_NORETURN MOZ_NEVER_INLINE void
 MOZ_NoReturn(int aLine) {
   *((volatile int*)NULL) = aLine;
   TerminateProcess(GetCurrentProcess(), 3);

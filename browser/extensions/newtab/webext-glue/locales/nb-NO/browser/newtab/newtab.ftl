@@ -220,7 +220,7 @@ newtab-section-menu-add-topsite = Legg til toppsted
 newtab-section-menu-add-search-engine = Legg til søkemotor
 newtab-section-menu-move-up = Flytt opp
 newtab-section-menu-move-down = Flytt ned
-newtab-section-menu-privacy-notice = Personvernbestemmelser
+newtab-section-menu-privacy-notice = Personvernerklæring
 
 ## Section aria-labels
 
@@ -318,19 +318,32 @@ newtab-custom-pocket-subtitle = Eksepsjonelt innhold satt sammen av { -pocket-br
 newtab-custom-stories-toggle =
     .label = Anbefalte artikler
     .description = Enestående innhold kuratert av { -brand-product-name }-familien
+newtab-custom-stories-personalized-toggle =
+    .label = Artikler
+newtab-custom-stories-personalized-checkbox-label = Personlige artikler basert på aktiviteten din
 newtab-custom-pocket-sponsored = Sponsede historier
 newtab-custom-pocket-show-recent-saves = Se sist lagrede
 newtab-custom-recent-title = Nylig aktivitet
 newtab-custom-recent-subtitle = Et utvalg av nylige nettsteder og innhold
-newtab-custom-recent-toggle =
-    .label = Nylig aktivitet
-    .description = Et utvalg av nylige nettsteder og innhold
 newtab-custom-weather-toggle =
     .label = Vær
     .description = Dagens værmelding i korte trekk
 newtab-custom-trending-search-toggle =
     .label = Populære søk
     .description = Populære og ofte søkte emner
+newtab-custom-widget-weather-toggle =
+    .label = Vær
+newtab-custom-widget-trending-search-toggle =
+    .label = Populære søk
+newtab-custom-widget-lists-toggle =
+    .label = Lister
+newtab-custom-widget-timer-toggle =
+    .label = Nedtelling
+newtab-custom-widget-section-title = Widgeter
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Lukk
+    .aria-label = Lukk meny
 newtab-custom-close-button = Lukk
 newtab-custom-settings = Behandle flere innstillinger
 
@@ -343,6 +356,7 @@ newtab-wallpaper-custom-color = Velg en farge
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Bildet overskred filstørrelsesgrensen på { $file_size } MB. Prøv å laste opp en mindre fil.
+newtab-wallpaper-error-upload-file-type = Vi kunne ikke laste opp filen din. Prøv igjen med en bildefil.
 newtab-wallpaper-error-file-type = Vi kunne ikke laste opp filen din. Prøv igjen med en annen filtype.
 newtab-wallpaper-light-red-panda = Rødpanda
 newtab-wallpaper-light-mountain = Hvitt fjell
@@ -448,7 +462,6 @@ newtab-weather-menu-change-location = Endre plassering
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Søk plassering
     .aria-label = Søk plassering
-newtab-weather-change-location-search-input = Søk plassering
 newtab-weather-menu-weather-display = Værvisning
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -595,8 +608,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Populært på Google
 newtab-trending-searches-show-trending =
     .title = Vis populære søk
 newtab-trending-searches-hide-trending =
@@ -605,3 +616,76 @@ newtab-trending-searches-learn-more = Les mer
 newtab-trending-searches-dismiss = Skjul populære søk
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Populære søk
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Mulighetene er uendelige. Legg til én.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Ny
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Fullført ({ $number })
+newtab-widget-task-list-menu-copy = Kopier
+newtab-widget-lists-menu-edit = Rediger listenavn
+newtab-widget-lists-menu-create = Opprett en ny liste
+newtab-widget-lists-menu-delete = Slett denne listen
+newtab-widget-lists-menu-copy = Kopier liste til utklippstavlen
+newtab-widget-lists-menu-hide = Skjul alle lister
+newtab-widget-lists-menu-learn-more = Les mer
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Legg til et element
+newtab-widget-lists-input-error = Legg til tekst for å legge til et element.
+newtab-widget-lists-input-menu-open-link = Åpne lenke
+newtab-widget-lists-input-menu-move-up = Flytt opp
+newtab-widget-lists-input-menu-move-down = Flytt ned
+newtab-widget-lists-input-menu-delete = Slett
+newtab-widget-lists-input-menu-edit = Rediger
+newtab-widget-lists-name-label-default =
+    .label = Oppgaveliste
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Oppgaveliste
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Ny liste
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Nedtelling
+newtab-widget-timer-notification-focus = Fokustiden er over. Bra jobbet. Trenger du en pause?
+newtab-widget-timer-notification-break = Pausen din er over. Klar til å fokusere?
+newtab-widget-timer-notification-warning = Varsler er av
+newtab-widget-timer-mode-focus =
+    .label = Fokus
+newtab-widget-timer-mode-break =
+    .label = Pause
+newtab-widget-timer-play =
+    .title = Spill av
+newtab-widget-timer-pause =
+    .title = Pause
+newtab-widget-timer-label-play =
+    .label = Spill av
+newtab-widget-timer-label-pause =
+    .label = Pause
+newtab-widget-timer-reset =
+    .title = Tilbakestill
+newtab-widget-timer-menu-notifications = Slå av varsler
+newtab-widget-timer-menu-notifications-on = Slå på varsler
+newtab-widget-timer-menu-hide = Skjul nedteller
+newtab-widget-timer-menu-learn-more = Les mer
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Rull for mer
+newtab-widget-message-title = Hold fokus med lister og en innebygd nedteller
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Fra kjappe påminnelser til daglige gjøremål, fokuserte arbeidsøkter til strekkpauser — hold deg til oppgaven og tidsplanen.
+newtab-promo-card-title = Støtt { -brand-product-name }
+newtab-promo-card-body = Våre sponsorer støtter vårt oppdrag om å bygge et bedre internett
+newtab-promo-card-cta = Les mer
+newtab-promo-card-dismiss-button =
+    .title = Avvis
+    .aria-label = Avvis

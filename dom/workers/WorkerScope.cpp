@@ -78,6 +78,7 @@
 #include "mozilla/dom/SimpleGlobalObject.h"
 #include "mozilla/dom/TestUtils.h"
 #include "mozilla/dom/TimeoutHandler.h"
+#include "mozilla/dom/TimeoutManager.h"
 #include "mozilla/dom/TrustedTypeUtils.h"
 #include "mozilla/dom/TrustedTypesConstants.h"
 #include "mozilla/dom/VsyncWorkerChild.h"

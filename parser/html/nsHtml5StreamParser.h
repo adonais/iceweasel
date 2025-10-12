@@ -767,6 +767,18 @@ class nsHtml5StreamParser final : public nsISupports {
   nsString mUUIDForDevtools;
 
   /**
+   * The browser element's Id for the currently parsed document communicated to
+   * devtools.
+   */
+  uint64_t mBrowserIdForDevtools;
+
+  /**
+   * The BrowsingContext ID for the currently parsed document communicated to
+   * devtools.
+   */
+  uint64_t mBrowsingContextIDForDevtools;
+
+  /**
    * prevent multiple calls to OnStopRequest
    * This field can be called from multiple threads and is protected by
    * nsHtml5StreamListener::mDelegateMonitor passed in the OnStopRequest

@@ -19,7 +19,6 @@
 #include "mozilla/dom/CacheExpirationTime.h"  // CacheExpirationTime
 #include "mozilla/dom/SRIMetadata.h"          // mozilla::dom::SRIMetadata
 #include "nsIMemoryReporter.h"  // nsIMemoryReporter, NS_DECL_NSIMEMORYREPORTER
-#include "nsIObserver.h"        // nsIObserver, NS_DECL_NSIOBSERVER
 #include "nsIPrincipal.h"       // nsIPrincipal
 #include "nsISupports.h"        // nsISupports, NS_DECL_ISUPPORTS
 #include "nsStringFwd.h"        // nsACString
@@ -177,15 +176,13 @@ struct SharedScriptCacheTraits {
 
 class SharedScriptCache final
     : public SharedSubResourceCache<SharedScriptCacheTraits, SharedScriptCache>,
-      public nsIMemoryReporter,
-      public nsIObserver {
+      public nsIMemoryReporter {
  public:
   using Base =
       SharedSubResourceCache<SharedScriptCacheTraits, SharedScriptCache>;
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
-  NS_DECL_NSIOBSERVER
 
   SharedScriptCache();
   void Init();

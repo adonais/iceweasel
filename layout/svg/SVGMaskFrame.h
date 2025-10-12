@@ -74,7 +74,7 @@ class SVGMaskFrame final : public SVGContainerFrame {
   gfxRect GetMaskArea(nsIFrame* aMaskedFrame);
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
 #ifdef DEBUG
   void Init(nsIContent* aContent, nsContainerFrame* aParent,

@@ -49,6 +49,7 @@
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/cpu_info.h"
 #include "rtc_base/cpu_time.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/memory_usage.h"
@@ -59,7 +60,6 @@
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/cpu_info.h"
 #include "test/gtest.h"
 #include "test/layer_filtering_transport.h"
 #include "test/rtp_file_reader.h"
@@ -78,10 +78,10 @@ ABSL_FLAG(bool,
 namespace webrtc {
 namespace {
 
-using ::webrtc::test::GetGlobalMetricsLogger;
-using ::webrtc::test::ImprovementDirection;
-using ::webrtc::test::Metric;
-using ::webrtc::test::Unit;
+using test::GetGlobalMetricsLogger;
+using test::ImprovementDirection;
+using test::Metric;
+using test::Unit;
 
 constexpr TimeDelta kSendStatsPollingInterval = TimeDelta::Seconds(1);
 constexpr size_t kMaxComparisons = 10;
@@ -169,8 +169,7 @@ VideoAnalyzer::VideoAnalyzer(test::LayerFilteringTransport* transport,
   // Also, don't allocate more than kMaxComparisonThreads, even if there are
   // spare cores.
 
-  uint32_t num_cores = CpuInfo::DetectNumberOfCores();
-  RTC_DCHECK_GE(num_cores, 1);
+  uint32_t num_cores = cpu_info::DetectNumberOfCores();
   static const uint32_t kMinCoresLeft = 4;
   static const uint32_t kMaxComparisonThreads = 8;
 
@@ -337,8 +336,9 @@ bool VideoAnalyzer::SendRtp(ArrayView<const uint8_t> packet,
   return result;
 }
 
-bool VideoAnalyzer::SendRtcp(ArrayView<const uint8_t> packet) {
-  return transport_->SendRtcp(packet);
+bool VideoAnalyzer::SendRtcp(ArrayView<const uint8_t> packet,
+                             const PacketOptions& options) {
+  return transport_->SendRtcp(packet, options);
 }
 
 void VideoAnalyzer::OnFrame(const VideoFrame& video_frame) {

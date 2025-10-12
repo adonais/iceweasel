@@ -88,6 +88,14 @@ newtab-confirm-delete-history-p2 = Custa atzione no dda podes annullare.
 
 newtab-topsite-sponsored = Patrotzinadu
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (apicadu)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -310,19 +318,32 @@ newtab-custom-pocket-subtitle = Cuntenutos de primore curados dae { -pocket-bran
 newtab-custom-stories-toggle =
     .label = Istòrias cussigiadas
     .description = Cuntenutu de primore curadu dae sa famìlia de { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Istòrias
+newtab-custom-stories-personalized-checkbox-label = Istòrias personalizadas basadas subra de is atividades tuas
 newtab-custom-pocket-sponsored = Istòrias patrotzinadas
 newtab-custom-pocket-show-recent-saves = Ammustra is elementos sarvados de reghente
 newtab-custom-recent-title = Atividade reghente
 newtab-custom-recent-subtitle = Una seletzione de sitos e cuntenutos reghentes
-newtab-custom-recent-toggle =
-    .label = Atividade reghente
-    .description = Una seletzione de sitos e cuntenutos reghentes
 newtab-custom-weather-toggle =
     .label = Tempus
     .description = Is previsiones de oe in curtzu
 newtab-custom-trending-search-toggle =
     .label = Chircas populares
     .description = Argumentos populares e chircados a s’ispissu
+newtab-custom-widget-weather-toggle =
+    .label = Tempus
+newtab-custom-widget-trending-search-toggle =
+    .label = Chircas populares
+newtab-custom-widget-lists-toggle =
+    .label = Listas
+newtab-custom-widget-timer-toggle =
+    .label = Temporizadore
+newtab-custom-widget-section-title = Widgets
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Serra
+    .aria-label = Serra su menù
 newtab-custom-close-button = Serra
 newtab-custom-settings = Gesti prus cunfiguratziones
 
@@ -332,6 +353,10 @@ newtab-wallpaper-title = Isfundos de ischermu
 newtab-wallpaper-reset = Ripristina comente predefinidu
 newtab-wallpaper-upload-image = Càrriga un’immàgine
 newtab-wallpaper-custom-color = Sèbera unu colore
+# Variables
+#   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
+newtab-wallpaper-error-max-file-size = S’immàgine bàrigat su lìmite de mannària de archìviu de { $file_size } MB. Torra·nche a proare carrighende un’archìviu prus piticu.
+newtab-wallpaper-error-upload-file-type = Impossìbile carrigare s’archìviu. Torra·nche a proare cun un’archìviu de immàgine.
 newtab-wallpaper-error-file-type = Impossìbile carrigare s’archìviu. Torra·nche a proare cun un’àtera genia de archìviu.
 newtab-wallpaper-light-red-panda = Panda ruju
 newtab-wallpaper-light-mountain = Monte biancu
@@ -345,6 +370,8 @@ newtab-wallpaper-dark-panda = Panda ruju cuadu in su padente
 newtab-wallpaper-dark-sky = Paesàgiu de tzitade cun chelu de note
 newtab-wallpaper-dark-mountain = Paesàgiu de monte
 newtab-wallpaper-dark-city = Paesàgiu de tzitade tanada
+newtab-wallpaper-dark-fox-anniversary = Unu margiane in s’impedradu a costadu de unu padente
+newtab-wallpaper-light-fox-anniversary = Unu margiane in unu campu de erba cun unu paesàgiu de monte nebidosu
 
 ## Solid Colors
 
@@ -374,6 +401,10 @@ newtab-wallpaper-abstract-purple = Formas tanadas
 newtab-wallpaper-abstract-orange = Formas arantzu
 newtab-wallpaper-gradient-orange = Gradatzione dae arantzu a rosa
 newtab-wallpaper-abstract-blue-purple = Formas asulas e tanadas
+newtab-wallpaper-abstract-white-curves = Biancu cun curvas afuscadas
+newtab-wallpaper-abstract-purple-green = Isfumadura de lughe tanada e birde
+newtab-wallpaper-abstract-blue-purple-waves = Formas a undas biaitas e tanadas
+newtab-wallpaper-abstract-black-waves = Formas a undas nieddas
 
 ## Celestial
 
@@ -384,6 +415,12 @@ newtab-wallpaper-storm-sky = Chelu in traschia
 newtab-wallpaper-sky-with-pink-clouds = Chelu cun nues rosas
 newtab-wallpaper-red-panda-yawns-in-a-tree = Panda ruju cascat a subra de un'àrbore
 newtab-wallpaper-white-mountains = Montes biancos
+newtab-wallpaper-hot-air-balloons = Bòcias de àera callente de colores diversos a de die
+newtab-wallpaper-starry-canyon = Note biaita de isteddos
+newtab-wallpaper-suspension-bridge = Fotografia de unu ponte murru chene arrimu a de die
+newtab-wallpaper-sand-dunes = Dunas de arena bianca
+newtab-wallpaper-palm-trees = Sàgama de matas de cocu a s’iscurigadòrgiu
+newtab-wallpaper-blue-flowers = Fotografia ammanniada de frores iscuguddados a fògia biaita
 # Variables
 #   $author_string (String) - The name of the creator of the photo.
 #   $webpage_string (String) - The name of the webpage where the photo is located.
@@ -399,6 +436,19 @@ feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
 
+## Celestial
+
+# “Celestial” referring to astronomy; positioned in or relating to the sky,
+# or outer space as observed in astronomy.
+# Not to be confused with religious definition of the word.
+newtab-wallpaper-category-title-celestial = De chelu
+newtab-wallpaper-celestial-lunar-eclipse = Eclisse de luna
+newtab-wallpaper-celestial-earth-night = Fotografia dae s’òrbita bàscia de sa Terra a de note
+newtab-wallpaper-celestial-starry-sky = Chelu cun isteddos
+newtab-wallpaper-celestial-eclipse-time-lapse = Secuèntzia de tempus de eclisse de luna
+newtab-wallpaper-celestial-black-hole = Disinnu de una galàssia a istampu nieddu
+newtab-wallpaper-celestial-river = Immàgine de satèllite de unu riu
+
 ## New Tab Weather
 
 # Variables:
@@ -412,7 +462,6 @@ newtab-weather-menu-change-location = Càmbia positzione
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Chirca positzione
     .aria-label = Chirca positzione
-newtab-weather-change-location-search-input = Chirca positzione
 newtab-weather-menu-weather-display = Vista de su tempus
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -444,6 +493,7 @@ newtab-topic-label-hobbies = Giogos
 # and understand their personal finances – from saving money to buying a home. See the
 # “Curated by our editors“ section at the top of https://getpocket.com/explore/personal-finance for more context
 newtab-topic-label-finance = Dinare
+newtab-topic-label-society-parenting = Criantza
 newtab-topic-label-government = Polìtica
 newtab-topic-label-education-science = Sièntzia
 # ”Life Hacks” = “Self Improvement”, refers to articles and stories aimed at helping readers improve various
@@ -460,6 +510,9 @@ newtab-topic-label-home = Domo e giardinu
 # “fine-tune” refers to the process of making small adjustments to something to get
 # the best or desired experience or performance.
 newtab-topic-selection-title = Seletziona un’argumentu pro personalizare su feed tuo
+# “tailored” refers to process of (a tailor) making (clothes) to fit individual customers.
+# In other words, “Our expert curators prioritize stories to fit your selected interests”
+newtab-topic-selection-subtitle = Sèbera duos o prus temas. Is persones espertas nostras donant prioridade a is istòrias chi ddi deghent a is interessos tuos. Ddos podes atualizare in cale si siat momentu.
 newtab-topic-selection-save-button = Sarva
 newtab-topic-selection-cancel-button = Annulla
 newtab-topic-selection-button-maybe-later = Forsis prus tardu
@@ -474,6 +527,9 @@ newtab-topic-selection-button-pick-interests = Sèbera is interessos tuos
 newtab-section-follow-button = Sighi
 newtab-section-following-button = Sighende
 newtab-section-unfollow-button = Non sigas prus
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Otimiza is cuntenutos tuos
+newtab-section-follow-highlight-subtitle = Sighi su chi t’interessat pro visualizare de prus de su chi ti praghet.
 
 ## Button to block/unblock listed topics
 ## "Block", "unblocked", and "blocked" are social media terms that refer to hiding a section of stories.
@@ -486,6 +542,8 @@ newtab-section-unblock-button = Isbloca
 ## Confirmation modal for blocking a section
 
 newtab-section-cancel-button = Immoe nono
+newtab-section-confirm-block-topic-p1 = Seguru chi boles blocare custu argumentu?
+newtab-section-confirm-block-topic-p2 = Is argumentos blocados no ant a apàrrere prus in sa lìnia de tempus tua.
 # Variables:
 #   $topic (string) - Name of topic that user is blocking
 newtab-section-block-topic-button = Bloca { $topic }
@@ -504,11 +562,26 @@ newtab-custom-wallpaper-title = Immoe podes impreare isfundos personalizados
 newtab-custom-wallpaper-subtitle = Càrriga un’isfundu tuo o sèbera unu colore pro personalizare { -brand-product-name }.
 newtab-custom-wallpaper-cta = Proa immoe
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Sèbera un’isfundu pro ti fàghere unu { -brand-product-name } totu tuo
+newtab-new-user-custom-wallpaper-subtitle = Intende·ti a domo cun is isfundos e is colores personalizados pro is ischedas noas.
+newtab-new-user-custom-wallpaper-cta = Proa·ddu immoe
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Iscàrriga { -brand-product-name } pro dispositivos mòbiles
 # "Scan the code" refers to scanning the QR code that appears above the body text that leads to Firefox for mobile download.
 newtab-download-mobile-highlight-body-variant-a = Iscansiona su còdighe pro navigare cun seguresa in ònnia logu.
+newtab-download-mobile-highlight-body-variant-b = Torra deretu a su puntu chi aias lassadu cando ti pones a sincronizare ischedas, craes e àteru.
+newtab-download-mobile-highlight-body-variant-c = Dd’ischias chi podes tènnere { -brand-product-name } semper cun tue? Semper su pròpiu navigadore, in sa butzaca.
+newtab-download-mobile-highlight-image =
+    .aria-label = Còdighe QR pro iscarrigare { -brand-product-name } pro dispositivos mòbiles
+
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Is preferidos tuos a unu clic
+newtab-shortcuts-highlight-subtitle = Agiunghe unu curtzadòrgiu pro mantènnere is sitos preferidos tuos a unu clic isceti.
 
 ## Strings for reporting ads and content
 
@@ -532,3 +605,87 @@ newtab-report-cancel = Annulla
 newtab-report-submit = Imbia
 newtab-toast-thanks-for-reporting =
     .message = Gràtzias de sa sinnalatzione.
+
+## Strings for trending searches
+
+newtab-trending-searches-show-trending =
+    .title = Ammustra is chircas populares
+newtab-trending-searches-hide-trending =
+    .title = Cua is chircas populares
+newtab-trending-searches-learn-more = Àteras informatziones
+newtab-trending-searches-dismiss = Cua is chircas populares
+# "Trending searches refers to popular searches from search engines
+newtab-trending-searches-title = Chircas populares
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Is possibilidades sunt infinitas. Agiunghe·nde una.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nou
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Cumpletadas ({ $number })
+newtab-widget-task-list-menu-copy = Còpia
+newtab-widget-lists-menu-edit = Modifica su nòmine de sa lista
+newtab-widget-lists-menu-create = Crea una lista noa
+newtab-widget-lists-menu-delete = Cantzella custa lista
+newtab-widget-lists-menu-copy = Còpia sa lista in punta de billete
+newtab-widget-lists-menu-hide = Cua totu is listas
+newtab-widget-lists-menu-learn-more = Àteras informatziones
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Agiunghe un’elementu
+newtab-widget-lists-input-error = Include testu pro agiùnghere un’elementu.
+newtab-widget-lists-input-menu-open-link = Aberi su ligòngiu
+newtab-widget-lists-input-menu-move-up = Move in artu
+newtab-widget-lists-input-menu-move-down = Move in bàsciu
+newtab-widget-lists-input-menu-delete = Cantzella
+newtab-widget-lists-input-menu-edit = Modifica
+newtab-widget-lists-name-label-default =
+    .label = Lista de tareas
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Lista de tareas
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Lista noa
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Temporizadore
+newtab-widget-timer-notification-focus = Su perìodu de cuntzentratzione est acabbadu. Bonu traballu! Ti serbit una pàusa?
+newtab-widget-timer-notification-break = Sa pàusa est ispatzada. Prepara·ti pro ti cuntzentrare torra!
+newtab-widget-timer-notification-warning = Notìficas disativadas
+newtab-widget-timer-mode-focus =
+    .label = Cuntzentratzione
+newtab-widget-timer-mode-break =
+    .label = Pàusa
+newtab-widget-timer-play =
+    .title = Avia
+newtab-widget-timer-pause =
+    .title = Pàusa
+newtab-widget-timer-label-play =
+    .label = Avia
+newtab-widget-timer-label-pause =
+    .label = Pàusa
+newtab-widget-timer-reset =
+    .title = Azera
+newtab-widget-timer-menu-notifications = Disativa is notìficas
+newtab-widget-timer-menu-notifications-on = Ativa is notìficas
+newtab-widget-timer-menu-hide = Cua su temporizadore
+newtab-widget-timer-menu-learn-more = Àteras informatziones
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Iscurre pro àteros cuntenutos
+newtab-widget-message-title = Mantene sa cuntzentratzione cun listas e cun unu temporizadore integradu
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Dae is promemòrias lestros a is fainas de ònnia die, dae is sessiones de cuntzentratzione a cussas de pasada: mantene s’atentzione e rispeta is oràrios.
+newtab-promo-card-title = Agiuda a { -brand-product-name }
+newtab-promo-card-body = Is patrotzinadores nostros nos agiudant in sa missione nostra de istantargiare unu web mègius
+newtab-promo-card-cta = Àteras informatziones
+newtab-promo-card-dismiss-button =
+    .title = Iscarta
+    .aria-label = Iscarta

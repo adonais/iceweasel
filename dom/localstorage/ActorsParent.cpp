@@ -1705,7 +1705,7 @@ class PreparedDatastore {
 
     MOZ_ALWAYS_SUCCEEDS(mTimer->InitWithNamedFuncCallback(
         TimerCallback, this, kPreparedDatastoreTimeoutMs,
-        nsITimer::TYPE_ONE_SHOT, "PreparedDatastore::TimerCallback"));
+        nsITimer::TYPE_ONE_SHOT, "PreparedDatastore::TimerCallback"_ns));
   }
 
   ~PreparedDatastore() {
@@ -1747,7 +1747,7 @@ class PreparedDatastore {
 
       MOZ_ALWAYS_SUCCEEDS(mTimer->InitWithNamedFuncCallback(
           TimerCallback, this, 0, nsITimer::TYPE_ONE_SHOT,
-          "PreparedDatastore::TimerCallback"));
+          "PreparedDatastore::TimerCallback"_ns));
     }
   }
 
@@ -4230,7 +4230,7 @@ void Connection::ScheduleFlush() {
 
   MOZ_ALWAYS_SUCCEEDS(mFlushTimer->InitWithNamedFuncCallback(
       FlushTimerCallback, this, kFlushTimeoutMs, nsITimer::TYPE_ONE_SHOT,
-      "Connection::FlushTimerCallback"));
+      "Connection::FlushTimerCallback"_ns));
 
   mFlushScheduled = true;
 }

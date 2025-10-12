@@ -6,7 +6,7 @@ package org.mozilla.fenix.reviewprompt
 
 import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.telemetry.glean.internal.RecordedEvent
+import mozilla.telemetry.glean.private.RecordedEvent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull

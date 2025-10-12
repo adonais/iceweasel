@@ -234,7 +234,11 @@ export class _Weather extends React.PureComponent {
 
     const WEATHER_SUGGESTION = Weather.suggestions?.[0];
 
-    const outerClassName = ["weather", Weather.searchActive && "search"]
+    const outerClassName = [
+      "weather",
+      Weather.searchActive && "search",
+      props.isInSection && "section-weather",
+    ]
       .filter(v => v)
       .join(" ");
 

@@ -237,16 +237,7 @@ export const FeatureManifest: {
                 fallbackPref: string;
                 description: string;
             };
-            fakespotMinKeywordLength: {
-                type: string;
-                description: string;
-            };
-            fakespotShowLessFrequentlyCap: {
-                type: string;
-                fallbackPref: string;
-                description: string;
-            };
-            fakespotSuggestedIndex: {
+            importantDatesFeatureGate: {
                 type: string;
                 fallbackPref: string;
                 description: string;
@@ -259,12 +250,9 @@ export const FeatureManifest: {
                 };
                 description: string;
             };
-            marketMinKeywordLength: {
+            marketFeatureGate: {
                 type: string;
-                description: string;
-            };
-            marketShowLessFrequentlyCap: {
-                type: string;
+                fallbackPref: string;
                 description: string;
             };
             mdnFeatureGate: {
@@ -449,6 +437,14 @@ export const FeatureManifest: {
                 fallbackPref: string;
                 description: string;
             };
+            realtimeMinKeywordLength: {
+                type: string;
+                description: string;
+            };
+            realtimeShowLessFrequentlyCap: {
+                type: string;
+                description: string;
+            };
             recentSearchesFeatureGate: {
                 type: string;
                 setPref: {
@@ -474,6 +470,14 @@ export const FeatureManifest: {
                 description: string;
             };
             semanticHistoryCompletionThreshold: {
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+                description: string;
+            };
+            semanticHistoryDefaultBatchChunksize: {
                 type: string;
                 setPref: {
                     branch: string;
@@ -1084,6 +1088,21 @@ export const FeatureManifest: {
             };
         };
     };
+    newtabOhttpImages: {
+        description: string;
+        owner: string;
+        hasExposure: boolean;
+        variables: {
+            enabled: {
+                type: string;
+                description: string;
+            };
+            includeTopStoriesSection: {
+                type: string;
+                description: string;
+            };
+        };
+    };
     newtabMobileDownloadPromotion: {
         description: string;
         owner: string;
@@ -1335,6 +1354,17 @@ export const FeatureManifest: {
             };
         };
     };
+    newtabInferredPersonalization: {
+        description: string;
+        owner: string;
+        hasExposure: boolean;
+        variables: {
+            iv_refresh_frequency_hours: {
+                type: string;
+                description: string;
+            };
+        };
+    };
     newtabSmartShortcuts: {
         description: string;
         owner: string;
@@ -1357,6 +1387,18 @@ export const FeatureManifest: {
                 description: string;
             };
             thom_weight: {
+                type: string;
+                description: string;
+            };
+            frec_weight: {
+                type: string;
+                description: string;
+            };
+            bias_weight: {
+                type: string;
+                description: string;
+            };
+            eta: {
                 type: string;
                 description: string;
             };
@@ -1691,16 +1733,6 @@ export const FeatureManifest: {
                 fallbackPref: string;
                 description: string;
             };
-            saveToPocketCard: {
-                type: string;
-                fallbackPref: string;
-                description: string;
-            };
-            saveToPocketCardRegions: {
-                type: string;
-                fallbackPref: string;
-                description: string;
-            };
             hideDescriptions: {
                 type: string;
                 fallbackPref: string;
@@ -1732,26 +1764,6 @@ export const FeatureManifest: {
                 description: string;
             };
             descLines: {
-                type: string;
-                fallbackPref: string;
-                description: string;
-            };
-            onboardingExperience: {
-                type: string;
-                fallbackPref: string;
-                description: string;
-            };
-            essentialReadsHeader: {
-                type: string;
-                fallbackPref: string;
-                description: string;
-            };
-            editorsPicksHeader: {
-                type: string;
-                fallbackPref: string;
-                description: string;
-            };
-            recentSavesEnabled: {
                 type: string;
                 fallbackPref: string;
                 description: string;
@@ -2004,14 +2016,6 @@ export const FeatureManifest: {
                 description: string;
             };
             emailButton: {
-                type: string;
-                setPref: {
-                    branch: string;
-                    pref: string;
-                };
-                description: string;
-            };
-            hideRecentSaves: {
                 type: string;
                 setPref: {
                     branch: string;
@@ -3089,6 +3093,22 @@ export const FeatureManifest: {
                     pref: string;
                 };
             };
+            lnaPromptsEnabled: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+            lnaFeatureEnabled: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
         };
     };
     essentialFallbackDomains: {
@@ -4028,6 +4048,21 @@ export const FeatureManifest: {
         };
     };
     mixedContentUpgrading: {
+        description: string;
+        owner: string;
+        hasExposure: boolean;
+        variables: {
+            enabled: {
+                description: string;
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+            };
+        };
+    };
+    unexpectedScriptLoadNotificationBar: {
         description: string;
         owner: string;
         hasExposure: boolean;
@@ -5006,7 +5041,23 @@ export const FeatureManifest: {
                 };
                 description: string;
             };
+            h3EnableBrotli: {
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+                description: string;
+            };
             tlsEnableZstd: {
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+                description: string;
+            };
+            h3EnableZstd: {
                 type: string;
                 setPref: {
                     branch: string;
@@ -5569,6 +5620,14 @@ export const FeatureManifest: {
         hasExposure: boolean;
         variables: {
             enabled: {
+                type: string;
+                setPref: {
+                    branch: string;
+                    pref: string;
+                };
+                description: string;
+            };
+            variant: {
                 type: string;
                 setPref: {
                     branch: string;

@@ -8,8 +8,13 @@ Release Notes
    :glob:
    :hidden:
 
+   nss_3_116.rst
+   nss_3_115_1.rst
+   nss_3_115.rst
+   nss_3_114_1.rst
    nss_3_114.rst
    nss_3_113.rst
+   nss_3_112_1.rst
    nss_3_112.rst
    nss_3_111.rst
    nss_3_110.rst
@@ -88,42 +93,33 @@ Release Notes
 
 .. note::
 
-   **NSS 3.114** is the latest version of NSS.
-   Complete release notes are available here: :ref:`mozilla_projects_nss_nss_3_114_release_notes`
+   **NSS 3.116** is the latest version of NSS.
+   Complete release notes are available here: :ref:`mozilla_projects_nss_nss_3_116_release_notes`
 
-   **NSS 3.101.4 (ESR)** is the latest ESR version of NSS.
-   Complete release notes are available here: :ref:`mozilla_projects_nss_nss_3_101_4_release_notes`
+   **NSS 3.112.1 (ESR)** is the latest ESR version of NSS.
+   Complete release notes are available here: :ref:`mozilla_projects_nss_nss_3_112_1_release_notes`
 
 .. container::
 
-   Changes in 3.114 included in this release:
+   Changes in 3.116 included in this release:
 
-   - Bug 1977376 - NSS 3.114 source distribution should include NSPR 4.37.
-   - Bug 1970079 - Prevent leaks during pkcs12 decoding.
-   - Bug 1953731 - Remove redundant assert in p7local.c.
-   - Bug 1974515 - Bump nssckbi version to 2.80.
-   - Bug 1961848 - Remove expired Baltimore CyberTrust Root.
-   - Bug 1972391 - Add TrustAsia Dedicated Roots to NSS.
-   - Bug 1974511 - Add SwissSign 2022 Roots to NSS.
-   - Bug 1836559 - Add backwards compatibility for CK_PKCS5_PBKD2_PARAMS.
-   - Bug 1965328 - Implement PKCS #11 v3.2 trust objects in softoken.
-   - Bug 1965328 - Implement PKCS #11 v3.2 trust objects - nss proper.
-   - Bug 1974331 - remove dead code in ssl3con.c.
-   - Bug 1934867 - DTLS (excl DTLS1.3) Changing Holddown timer logic.
-   - Bug 1974299 - Bump nssckbi version to 2.79.
-   - Bug 1967826 - remove unneccessary assertion.
-   - Bug 1948485 - Update mechanisms for Softoken PCT.
-   - Bug 1974299 - convert Chunghwa Telecom ePKI Root removal to a distrust after.
-   - Bug 1973925 - Ensure ssl_HaveRecvBufLock and friends respect opt.noLocks.
-   - Bug 1973930 - use -O2 for asan build.
-   - Bug 1973187 - Fix leaking locks when toggling SSL_NO_LOCKS.
-   - Bug 1973105 - remove out-of-function semicolon.
-   - Bug 1963009 - Extend pkcs8 fuzz target.
-   - Bug 1963008 - Extend pkcs7 fuzz target.
-   - Bug 1908763 - Remove unused assignment to pageno.
-   - Bug 1908762 - Remove unused assignment to nextChunk.
-   - Bug 1973490 - don't run commands as part of shell `local` declarations.
-   - Bug 1973490 - fix sanitizer setup.
-   - Bug 1973187 - don't silence ssl_gtests output when running with code coverage.
-   - Bug 1967411 - Release docs and housekeeping.
-   - Bug 1972768 - migrate to new linux tester pool
+   - Bug 1983308 - disable DSA in NSS script tests.
+   - Bug 1983308 - Disabling of some algorithms: generic cert.sh.
+   - Bug 1981046 - Need to update to new mechanisms.
+   - Bug 1983320 - Add ML-DSA public key printing support in NSS command-line utilities.
+   - Bug 1986802 - note embedded scts before revocation checks are performed.
+   - Bug 1983320 - Add support for ML-DSA keys and mechanisms in PKCS#11 interface.
+   - Bug 1983320 - Add support for ML-DSA key type and public key structure.
+   - Bug 1983320 - Enable ML-DSA integration via OIDs support and SECMOD flag.
+   - Bug 1983308 - disable kyber.
+   - Bug 1965329 - Implement PKCS #11 v3.2 PQ functions (use verify signature).
+   - Bug 1983308 - Disable dsa - gtests.
+   - Bug 1983313 - make group and scheme support in test tools generic.
+   - Bug 1983770 - Create GH workflow to automatically close PRs.
+   - Bug 1983308 - Disable dsa - base code.
+   - Bug 1983308 - Disabling of some algorithms: remove dsa from pk11_mode.
+   - Bug 1983308 - Disable seed and RC2 bug fixes.
+   - Bug 1982742 - restore support for finding certificates by decoded serial number.
+   - Bug 1984165 - avoid CKR_BUFFER_TO_SMALL error in trust lookups.
+   - Bug 1983399 - lib/softtoken/{sdb.c,sftkdbti.h}: Align sftkdb_known_attributes_size type.
+   - Bug 1965329 - Use PKCS #11 v3.2 KEM mechanisms and functions.

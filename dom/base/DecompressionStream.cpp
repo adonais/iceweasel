@@ -116,12 +116,24 @@ class ZLibDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ZLibDecompressionStreamAlgorithms,
                                            DecompressionStreamAlgorithms)
 
-  explicit ZLibDecompressionStreamAlgorithms(CompressionFormat format) {
+  static Result<already_AddRefed<ZLibDecompressionStreamAlgorithms>, nsresult>
+  Create(CompressionFormat format) {
+    RefPtr<ZLibDecompressionStreamAlgorithms> alg =
+        new ZLibDecompressionStreamAlgorithms();
+    MOZ_TRY(alg->Init(format));
+    return alg.forget();
+  }
+
+ private:
+  ZLibDecompressionStreamAlgorithms() = default;
+
+  [[nodiscard]] nsresult Init(CompressionFormat format) {
     int8_t err = inflateInit2(&mZStream, ZLibWindowBits(format));
     if (err == Z_MEM_ERROR) {
-      MOZ_CRASH("Out of memory");
+      return NS_ERROR_OUT_OF_MEMORY;
     }
     MOZ_ASSERT(err == Z_OK);
+    return NS_OK;
   }
 
  private:
@@ -285,19 +297,31 @@ class ZstdDecompressionStreamAlgorithms : public DecompressionStreamAlgorithms {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ZstdDecompressionStreamAlgorithms,
                                            DecompressionStreamAlgorithms)
 
-  ZstdDecompressionStreamAlgorithms() {
+  static Result<already_AddRefed<ZstdDecompressionStreamAlgorithms>, nsresult>
+  Create() {
+    RefPtr<ZstdDecompressionStreamAlgorithms> alg =
+        new ZstdDecompressionStreamAlgorithms();
+    MOZ_TRY(alg->Init());
+    return alg.forget();
+  }
+
+ private:
+  ZstdDecompressionStreamAlgorithms() = default;
+
+  [[nodiscard]] nsresult Init() {
     mDStream = ZSTD_createDStream();
     if (!mDStream) {
-      NS_ABORT_OOM(0);
+      return NS_ERROR_OUT_OF_MEMORY;
     }
 
     // Refuse any frame requiring larger than (1 << WINDOW_LOG_MAX) window size.
     // Note: 1 << 23 == 8 * 1024 * 1024
     static const uint8_t WINDOW_LOG_MAX = 23;
     ZSTD_DCtx_setParameter(mDStream, ZSTD_d_windowLogMax, WINDOW_LOG_MAX);
+
+    return NS_OK;
   }
 
- private:
   // Shared by:
   // https://wicg.github.io/compression/#decompress-and-enqueue-a-chunk
   // https://wicg.github.io/compression/#decompress-flush-and-enqueue
@@ -410,16 +434,16 @@ NS_INTERFACE_MAP_END_INHERITING(DecompressionStreamAlgorithms)
  * Constructs either a ZLibDecompressionStreamAlgorithms or a
  * ZstdDecompressionStreamAlgorithms, based on the CompressionFormat.
  */
-static already_AddRefed<DecompressionStreamAlgorithms>
+static Result<already_AddRefed<DecompressionStreamAlgorithms>, nsresult>
 CreateDecompressionStreamAlgorithms(CompressionFormat aFormat) {
   if (aFormat == CompressionFormat::Zstd) {
     RefPtr<DecompressionStreamAlgorithms> zstdAlgos =
-        new ZstdDecompressionStreamAlgorithms();
+        MOZ_TRY(ZstdDecompressionStreamAlgorithms::Create());
     return zstdAlgos.forget();
   }
 
   RefPtr<DecompressionStreamAlgorithms> zlibAlgos =
-      new ZLibDecompressionStreamAlgorithms(aFormat);
+      MOZ_TRY(ZLibDecompressionStreamAlgorithms::Create(aFormat));
   return zlibAlgos.forget();
 }
 
@@ -464,11 +488,17 @@ already_AddRefed<DecompressionStream> DecompressionStream::Constructor(
 
   // Step 6: Set up this's transform with transformAlgorithm set to
   // transformAlgorithm and flushAlgorithm set to flushAlgorithm.
-  RefPtr<DecompressionStreamAlgorithms> algorithms =
-      CreateDecompressionStreamAlgorithms(aFormat);
 
+  Result<already_AddRefed<DecompressionStreamAlgorithms>, nsresult> algorithms =
+      CreateDecompressionStreamAlgorithms(aFormat);
+  if (algorithms.isErr()) {
+    aRv.ThrowUnknownError("Not enough memory");
+    return nullptr;
+  }
+
+  RefPtr<DecompressionStreamAlgorithms> alg = algorithms.unwrap();
   RefPtr<TransformStream> stream =
-      TransformStream::CreateGeneric(aGlobal, *algorithms, aRv);
+      TransformStream::CreateGeneric(aGlobal, *alg, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }

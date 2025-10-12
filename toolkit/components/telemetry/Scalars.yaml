@@ -1946,13 +1946,14 @@ extensions.apis.dnr:
       - 1850890
       - 1881406
       - 1946276
+      - 1984461
     description: >
       Counters for startup cache data hits or misses on initializating
       DNR rules for extensions loaded on application startup.
       The expected keys are 'hit' and 'miss'.
       This probe is mirrored from a Glean metric with the same name.
     keyed: true
-    expires: '145'
+    expires: '155'
     kind: uint
     notification_emails:
       - addons-dev-internal@mozilla.com
@@ -1966,9 +1967,10 @@ extensions.apis.dnr:
       - 1850890
       - 1881406
       - 1946276
+      - 1984461
     description: >
       Max amount of DNR rules being evaluated.
-    expires: '145'
+    expires: '155'
     kind: uint
     notification_emails:
       - addons-dev-internal@mozilla.com
@@ -5176,91 +5178,6 @@ browser.search.adclicks:
       - 'firefox'
     record_in_processes:
       - main
-
-browser.searchinit:
-  secure_opensearch_engine_count:
-    bug_numbers:
-      - 1789438
-      - 1811158
-      - 1846899
-      - 1881408
-      - 1916866
-    description: >
-      Records the number of secure (i.e., using https) OpenSearch search
-      engines a given user has installed
-    expires: "145"
-    keyed: false
-    kind: uint
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - 'main'
-    release_channel_collection: opt-out
-
-  insecure_opensearch_engine_count:
-    bug_numbers:
-      - 1789438
-      - 1811158
-      - 1846899
-      - 1881408
-      - 1916866
-    description: >
-      Records the number of insecure (i.e., using http) OpenSearch search
-      engines a given user has installed
-    expires: "145"
-    keyed: false
-    kind: uint
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - 'main'
-    release_channel_collection: opt-out
-
-  secure_opensearch_update_count:
-    bug_numbers:
-      - 1789438
-      - 1811158
-      - 1846899
-      - 1881408
-      - 1916866
-    description: >
-      Records the number of OpenSearch search engines with secure updates
-      enabled (i.e., using https) a given user has installed
-    expires: "145"
-    keyed: false
-    kind: uint
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - 'main'
-    release_channel_collection: opt-out
-
-  insecure_opensearch_update_count:
-    bug_numbers:
-      - 1789438
-      - 1811158
-      - 1846899
-      - 1881408
-      - 1916866
-    description: >
-      Records the number of OpenSearch search engines with insecure updates
-      enabled (i.e., using http) a given user has installed
-    expires: "145"
-    keyed: false
-    kind: uint
-    notification_emails:
-      - fx-search-telemetry@mozilla.com
-    products:
-      - 'firefox'
-    record_in_processes:
-      - 'main'
-    release_channel_collection: opt-out
 
 startup:
   profile_selection_reason:

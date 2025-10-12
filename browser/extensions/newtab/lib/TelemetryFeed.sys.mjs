@@ -41,7 +41,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   NewTabContentPing: "resource://newtab/lib/NewTabContentPing.sys.mjs",
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
-  pktApi: "chrome://pocket/content/pktApi.sys.mjs",
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -85,10 +84,12 @@ export const USER_PREFS_ENCODING = {
   [PREF_SHOW_SPONSORED_TOPSITES]: 1 << 8,
 };
 
-const SURFACE_COUNTRY_MAP = {
+const PRIVATE_PING_SURFACE_COUNTRY_MAP = {
   // This will be expanded to other surfaces as we expand the reach of the private content ping
   NEW_TAB_EN_US: ["US", "CA"],
   NEW_TAB_DE_DE: ["DE", "CH", "AT"],
+  NEW_TAB_EN_GB: ["GB", "IE"],
+  NEW_TAB_FR_FR: ["FR", "BE"],
 };
 
 // Used as the missing value for timestamps in the session ping
@@ -240,7 +241,9 @@ export class TelemetryFeed {
   }
 
   browserOpenNewtabStart() {
-    let now = Cu.now();
+    // This shim can be removed once Firefox 144 makes it to the release
+    // channel.
+    let now = ChromeUtils.now?.() || Cu.now();
     this._browserOpenNewtabStart = Math.round(this.processStartTs + now);
 
     ChromeUtils.addProfilerMarker(
@@ -462,7 +465,9 @@ export class TelemetryFeed {
     }
 
     if (session.perf.visibility_event_rcvd_ts) {
-      let absNow = this.processStartTs + Cu.now();
+      // @backward-compat { version 144 } This newtab train-hop compatibility
+      // shim can be removed once Firefox 144 makes it to the release channel.
+      let absNow = this.processStartTs + (ChromeUtils.now?.() || Cu.now());
       session.session_duration = Math.round(
         absNow - session.perf.visibility_event_rcvd_ts
       );
@@ -564,6 +569,7 @@ export class TelemetryFeed {
       source,
       advertiser: advertiser_name,
       tile_id,
+      visible_topsites,
     } = data;
     // Legacy telemetry expects 1-based tile positions.
     const legacyTelemetryPosition = position + 1;
@@ -573,8 +579,8 @@ export class TelemetryFeed {
     );
 
     let pingType;
-
     const session = this.sessions.get(au.getPortIdOfSender(action));
+
     if (type === "impression") {
       pingType = "topsites-impression";
       Glean.contextualServicesTopsites.impression[
@@ -587,6 +593,7 @@ export class TelemetryFeed {
           newtab_visit_id: session.session_id,
           is_sponsored: true,
           position,
+          visible_topsites,
         });
       }
     } else if (type === "click") {
@@ -601,6 +608,7 @@ export class TelemetryFeed {
           newtab_visit_id: session.session_id,
           is_sponsored: true,
           position,
+          visible_topsites,
         });
       }
     } else {
@@ -633,6 +641,7 @@ export class TelemetryFeed {
     if (!session) {
       return;
     }
+    const visible_topsites = action.data?.visible_topsites;
 
     switch (action.data?.type) {
       case "impression":
@@ -640,6 +649,8 @@ export class TelemetryFeed {
           newtab_visit_id: session.session_id,
           is_sponsored: false,
           position: action.data.position,
+          is_pinned: !!action.data.isPinned,
+          visible_topsites,
         });
         break;
 
@@ -648,6 +659,8 @@ export class TelemetryFeed {
           newtab_visit_id: session.session_id,
           is_sponsored: false,
           position: action.data.position,
+          is_pinned: !!action.data.isPinned,
+          visible_topsites,
         });
         break;
 
@@ -706,15 +719,12 @@ export class TelemetryFeed {
   }
 
   handleDiscoveryStreamUserEvent(action) {
-    const pocket_logged_in_status = lazy.pktApi.isUserLoggedIn();
-    Glean.pocket.isSignedIn.set(pocket_logged_in_status);
     this.handleUserEvent({
       ...action,
       data: {
         ...(action.data || {}),
         value: {
           ...(action.data?.value || {}),
-          pocket_logged_in_status,
         },
       },
     });
@@ -735,6 +745,7 @@ export class TelemetryFeed {
           format,
           is_list_card,
           is_section_followed,
+          layout_name,
           matches_selected_topic,
           received_rank,
           recommendation_id,
@@ -772,6 +783,7 @@ export class TelemetryFeed {
                   section,
                   section_position,
                   is_section_followed,
+                  layout_name,
                 }
               : {}),
             matches_selected_topic,
@@ -1113,20 +1125,18 @@ export class TelemetryFeed {
    */
   async configureContentPing() {
     let privateMetrics = {};
-
+    const prefs = this.store.getState()?.Prefs.values; // Needed for experimenter configs
     const inferredInterests =
       this.privatePingInferredInterestsEnabled && this.inferredInterests;
     if (inferredInterests) {
       privateMetrics.inferredInterests = inferredInterests;
     }
-
     // When we have a coarse interest vector we want to make sure there isn't
     // anything additionaly identifable as a unique identifier. Therefore,
     // when interest vectors are used we reduce our context profile somewhat.
     const reduceTrackingInformation = !!inferredInterests;
 
     if (!reduceTrackingInformation) {
-      privateMetrics.coarseOs = lazy.NewTabUtils.normalizeOs();
       const followed = this.getFollowedSections();
       privateMetrics.followedSections = followed;
     }
@@ -1134,20 +1144,24 @@ export class TelemetryFeed {
     privateMetrics.surfaceId = surfaceId;
 
     const curCountry = lazy.Region.home;
-    if (
-      SURFACE_COUNTRY_MAP[surfaceId] &&
-      SURFACE_COUNTRY_MAP[surfaceId].includes(curCountry)
-    ) {
-      // Only include supported current countries for the surface to reduce identifiability
-      privateMetrics.country = curCountry;
+    if (PRIVATE_PING_SURFACE_COUNTRY_MAP[surfaceId]) {
+      // This is a market that supports inferred
+      // Only include supported current countries for the surface to reduce identifiability.
+      // Default to first country on the list
+      privateMetrics.country = PRIVATE_PING_SURFACE_COUNTRY_MAP[
+        surfaceId
+      ].includes(curCountry)
+        ? curCountry
+        : PRIVATE_PING_SURFACE_COUNTRY_MAP[surfaceId][0];
     }
-    privateMetrics.utcOffset = lazy.NewTabUtils.getUtcOffset(surfaceId);
 
-    // To prevent fingerprinting we only send current experiment / branch
+    if (prefs.inferredPersonalizationConfig?.normalized_time_zone_offset) {
+      privateMetrics.utcOffset = lazy.NewTabUtils.getUtcOffset(surfaceId);
+    }
+    // To prevent fingerprinting we only send one current experiment / branch
     const experimentMetadata =
       lazy.NimbusFeatures.pocketNewtab.getEnrollmentMetadata();
     privateMetrics.experimentName = experimentMetadata?.slug ?? "";
-
     privateMetrics.experimentBranch = experimentMetadata?.branch ?? "";
     privateMetrics.pingVersion = CONTENT_PING_VERSION;
     this.newtabContentPing.scheduleSubmission(privateMetrics);
@@ -1448,8 +1462,13 @@ export class TelemetryFeed {
   handleCardSectionUserEvent(action) {
     const session = this.sessions.get(au.getPortIdOfSender(action));
     if (session) {
-      const { section, section_position, event_source, is_section_followed } =
-        action.data;
+      const {
+        section,
+        section_position,
+        event_source,
+        is_section_followed,
+        layout_name,
+      } = action.data;
       const gleanDataForPrivatePing = {
         section,
         section_position,
@@ -1491,6 +1510,7 @@ export class TelemetryFeed {
               section,
               section_position,
               is_section_followed,
+              layout_name,
             })
           );
           if (this.privatePingEnabled) {
@@ -1816,6 +1836,7 @@ export class TelemetryFeed {
                 section: tile.section,
                 section_position: tile.section_position,
                 is_section_followed: tile.is_section_followed,
+                layout_name: tile.layout_name,
               }
             : {}),
           position: tile.pos,
@@ -1933,7 +1954,6 @@ export class TelemetryFeed {
       const fullPrefName = ACTIVITY_STREAM_PREF_BRANCH + pref;
       this._setNewtabPrefMetrics(fullPrefName, false);
     }
-    Glean.pocket.isSignedIn.set(lazy.pktApi.isUserLoggedIn());
 
     Services.prefs.addObserver(TOP_SITES_BLOCKED_SPONSORS_PREF, this);
     this._setBlockedSponsorsMetrics();

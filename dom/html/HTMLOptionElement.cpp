@@ -119,8 +119,8 @@ int32_t HTMLOptionElement::Index() {
   return index;
 }
 
-nsChangeHint HTMLOptionElement::GetAttributeChangeHint(const nsAtom* aAttribute,
-                                                       int32_t aModType) const {
+nsChangeHint HTMLOptionElement::GetAttributeChangeHint(
+    const nsAtom* aAttribute, AttrModType aModType) const {
   nsChangeHint retval =
       nsGenericHTMLElement::GetAttributeChangeHint(aAttribute, aModType);
 

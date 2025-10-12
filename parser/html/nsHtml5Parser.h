@@ -263,6 +263,11 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
   int32_t mScriptNestingLevel;
 
   /**
+   * True if Terminate() has been called.
+   */
+  bool mTerminationStarted;
+
+  /**
    * True if document.close() has been called.
    */
   bool mDocumentClosed;

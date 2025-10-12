@@ -30,10 +30,6 @@
     margin-block-start: var(--space-small);
     margin-block-end: var(--space-large);
     row-gap: var(--space-large);
-
-    & > #restore-from-backup-description {
-      width: 400px;
-    }
   }
 
   #backup-restore-controls {
@@ -93,5 +89,15 @@
 
   #restore-from-backup-button-group {
     grid-area: button-group;
+  }
+
+  #backup-password-input[aria-invalid="true"] {
+    border-color: var(--outline-color-error);
+  }
+
+  /* Small, red helper text under the field */
+  .field-error {
+    color: var(--text-color-error);
+    font-size: var(--font-size-small);
   }
 }

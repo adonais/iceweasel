@@ -279,6 +279,7 @@ impl Wrench {
             // `clear_caches_with_quads`, but scissored clears work well.
             clear_caches_with_quads: !window.is_software(),
             compositor_config,
+            enable_debugger: true,
             ..Default::default()
         };
 

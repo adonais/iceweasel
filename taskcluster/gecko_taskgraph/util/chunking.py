@@ -19,16 +19,17 @@ from requests.exceptions import RetryError
 from taskgraph.util import json
 from taskgraph.util.yaml import load_yaml
 
-from gecko_taskgraph import GECKO
+from gecko_taskgraph import GECKO, TEST_CONFIGS
 from gecko_taskgraph.util.bugbug import CT_LOW, BugbugTimeoutException, push_schedules
 
 logger = logging.getLogger(__name__)
 here = os.path.abspath(os.path.dirname(__file__))
 resolver = TestResolver.from_environment(cwd=here, loader_cls=TestManifestLoader)
 
+VARIANTS_YML = os.path.join(TEST_CONFIGS, "variants.yml")
 TEST_VARIANTS = {}
-if os.path.exists(os.path.join(GECKO, "taskcluster", "kinds", "test", "variants.yml")):
-    TEST_VARIANTS = load_yaml(GECKO, "taskcluster", "kinds", "test", "variants.yml")
+if os.path.exists(VARIANTS_YML):
+    TEST_VARIANTS = load_yaml(VARIANTS_YML)
 
 WPT_SUBSUITES = {
     "canvas": ["html/canvas"],
@@ -253,9 +254,10 @@ class DefaultLoader(BaseManifestLoader):
         if "web-platform-tests" in suite:
             manifests = set()
             subsuite = [x for x in WPT_SUBSUITES.keys() if mozinfo[x]]
+            mozinfo_tags = json.loads(mozinfo["tag"])
             for t in tests:
-                if json.loads(mozinfo["tag"]) and not any(
-                    x in t.get("tags", []) for x in json.loads(mozinfo["tag"])
+                if mozinfo_tags and not any(
+                    x in t.get("tags", []) for x in mozinfo_tags
                 ):
                     continue
                 if subsuite:

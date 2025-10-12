@@ -11,21 +11,27 @@
 #include "api/audio/audio_device.h"
 
 #include <algorithm>
+#include <cstdint>
+#include <cstdio>
 #include <cstring>
+#include <limits>
 #include <list>
-#include <memory>
 #include <numeric>
 #include <optional>
+#include <vector>
 
 #include "api/array_view.h"
+#include "api/audio/audio_device_defines.h"
+#include "api/audio/create_audio_device_module.h"
+#include "api/environment/environment.h"
+#include "api/environment/environment_factory.h"
 #include "api/scoped_refptr.h"
 #include "api/sequence_checker.h"
-#include "api/task_queue/default_task_queue_factory.h"
-#include "api/task_queue/task_queue_factory.h"
+#include "api/units/time_delta.h"
 #include "modules/audio_device/audio_device_impl.h"
 #include "modules/audio_device/include/mock_audio_transport.h"
-#include "rtc_base/arraysize.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -35,6 +41,7 @@
 #include "rtc_base/time_utils.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+
 #ifdef WEBRTC_WIN
 #include "modules/audio_device/include/audio_device_factory.h"
 #include "modules/audio_device/win/core_audio_utility_win.h"
@@ -515,11 +522,10 @@ class MockAudioTransport : public test::MockAudioTransport {
 #endif
 
 class MAYBE_AudioDeviceTest
-    : public ::testing::TestWithParam<webrtc::AudioDeviceModule::AudioLayer> {
+    : public ::testing::TestWithParam<AudioDeviceModule::AudioLayer> {
  protected:
   MAYBE_AudioDeviceTest()
-      : audio_layer_(GetParam()),
-        task_queue_factory_(CreateDefaultTaskQueueFactory()) {
+      : audio_layer_(GetParam()), env_(CreateEnvironment()) {
     LogMessage::LogToDebug(LS_INFO);
     // Add extra logging fields here if needed for debugging.
     LogMessage::LogTimestamps();
@@ -589,8 +595,7 @@ class MAYBE_AudioDeviceTest
     // The value of `audio_layer_` is set at construction by GetParam() and two
     // different layers are tested on Windows only.
     if (audio_layer_ == AudioDeviceModule::kPlatformDefaultAudio) {
-      return AudioDeviceModule::CreateForTest(audio_layer_,
-                                              task_queue_factory_.get());
+      return AudioDeviceModuleImpl::Create(env_, audio_layer_);
     } else if (audio_layer_ == AudioDeviceModule::kWindowsCoreAudio2) {
 #ifdef WEBRTC_WIN
       // We must initialize the COM library on a thread before we calling any of
@@ -602,7 +607,7 @@ class MAYBE_AudioDeviceTest
       EXPECT_TRUE(webrtc_win::core_audio_utility::IsSupported());
       EXPECT_TRUE(webrtc_win::core_audio_utility::IsMMCSSSupported());
       return CreateWindowsCoreAudioAudioDeviceModuleForTest(
-          task_queue_factory_.get(), true);
+          &env_.task_queue_factory(), true);
 #else
       return nullptr;
 #endif
@@ -659,7 +664,7 @@ class MAYBE_AudioDeviceTest
   std::unique_ptr<ScopedCOMInitializer> com_initializer_;
 #endif
   AudioDeviceModule::AudioLayer audio_layer_;
-  std::unique_ptr<TaskQueueFactory> task_queue_factory_;
+  const Environment env_;
   bool requirements_satisfied_ = true;
   Event event_;
   scoped_refptr<AudioDeviceModuleForTest> audio_device_;
@@ -669,13 +674,12 @@ class MAYBE_AudioDeviceTest
 // Instead of using the test fixture, verify that the different factory methods
 // work as intended.
 TEST(MAYBE_AudioDeviceTestWin, ConstructDestructWithFactory) {
-  std::unique_ptr<TaskQueueFactory> task_queue_factory =
-      CreateDefaultTaskQueueFactory();
+  const Environment env = CreateEnvironment();
   scoped_refptr<AudioDeviceModule> audio_device;
-  // The default factory should work for all platforms when a default ADM is
+  // The default environment should work for all platforms when a default ADM is
   // requested.
-  audio_device = AudioDeviceModule::Create(
-      AudioDeviceModule::kPlatformDefaultAudio, task_queue_factory.get());
+  audio_device =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kPlatformDefaultAudio);
   EXPECT_TRUE(audio_device);
   audio_device = nullptr;
 #ifdef WEBRTC_WIN
@@ -683,8 +687,8 @@ TEST(MAYBE_AudioDeviceTestWin, ConstructDestructWithFactory) {
   // specific parts are implemented by an AudioDeviceGeneric object. Verify
   // that the old factory can't be used in combination with the latest audio
   // layer AudioDeviceModule::kWindowsCoreAudio2.
-  audio_device = AudioDeviceModule::Create(
-      AudioDeviceModule::kWindowsCoreAudio2, task_queue_factory.get());
+  audio_device =
+      CreateAudioDeviceModule(env, AudioDeviceModule::kWindowsCoreAudio2);
   EXPECT_FALSE(audio_device);
   audio_device = nullptr;
   // Instead, ensure that the new dedicated factory method called
@@ -694,7 +698,7 @@ TEST(MAYBE_AudioDeviceTestWin, ConstructDestructWithFactory) {
   ScopedCOMInitializer com_initializer(ScopedCOMInitializer::kMTA);
   EXPECT_TRUE(com_initializer.Succeeded());
   audio_device =
-      CreateWindowsCoreAudioAudioDeviceModule(task_queue_factory.get());
+      CreateWindowsCoreAudioAudioDeviceModule(&env.task_queue_factory());
   EXPECT_TRUE(audio_device);
   AudioDeviceModule::AudioLayer audio_layer;
   EXPECT_EQ(0, audio_device->ActiveAudioLayer(&audio_layer));
@@ -827,8 +831,8 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopPlayoutWithRealDevice) {
   AudioDeviceModule::WindowsDeviceType device_role[] = {
       AudioDeviceModule::kDefaultDevice,
       AudioDeviceModule::kDefaultCommunicationDevice};
-  for (size_t i = 0; i < arraysize(device_role); ++i) {
-    EXPECT_EQ(0, audio_device()->SetPlayoutDevice(device_role[i]));
+  for (AudioDeviceModule::WindowsDeviceType device_type : device_role) {
+    EXPECT_EQ(0, audio_device()->SetPlayoutDevice(device_type));
     StartPlayout();
     StopPlayout();
   }
@@ -854,8 +858,8 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopRecordingWithRealDevice) {
   AudioDeviceModule::WindowsDeviceType device_role[] = {
       AudioDeviceModule::kDefaultDevice,
       AudioDeviceModule::kDefaultCommunicationDevice};
-  for (size_t i = 0; i < arraysize(device_role); ++i) {
-    EXPECT_EQ(0, audio_device()->SetRecordingDevice(device_role[i]));
+  for (AudioDeviceModule::WindowsDeviceType device_type : device_role) {
+    EXPECT_EQ(0, audio_device()->SetRecordingDevice(device_type));
     StartRecording();
     StopRecording();
   }

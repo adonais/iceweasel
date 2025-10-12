@@ -70,6 +70,14 @@ impl Command {
         self
     }
 
+    pub fn env_remove<K>(&mut self, key: K) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+    {
+        self.env.remove(key.as_ref().into());
+        self
+    }
+
     pub fn stdin<T: Into<Stdio>>(&mut self, _cfg: T) -> &mut Self {
         self
     }

@@ -442,6 +442,14 @@ internal class ReleaseMetricController(
             Unit
         }
 
+        Component.FEATURE_FXSUGGEST to FxSuggestFacts.Items.SUGGESTION_QUERY_COUNT -> {
+            FxSuggest.pingType.set("fxsuggest-query")
+            (metadata?.get("query_count") as? Long)?.let {
+                FxSuggest.queryCount.set(it)
+            }
+            Pings.fxSuggestApi.submit()
+        }
+
         Component.FEATURE_PWA to ProgressiveWebAppFacts.Items.HOMESCREEN_ICON_TAP -> {
             ProgressiveWebApp.homescreenTap.record(NoExtras())
         }

@@ -73,6 +73,7 @@ class EngineObserverTest {
             override fun reload(flags: LoadUrlFlags) {}
             override fun stopLoading() {}
             override fun restoreState(state: EngineSessionState): Boolean { return false }
+            override fun flushSessionState() {}
             override fun updateTrackingProtection(policy: TrackingProtectionPolicy) {}
             override fun toggleDesktopMode(enable: Boolean, reload: Boolean) {
                 notifyObservers { onDesktopModeChange(enable) }
@@ -166,6 +167,7 @@ class EngineObserverTest {
             override fun stopLoading() {}
             override fun reload(flags: LoadUrlFlags) {}
             override fun restoreState(state: EngineSessionState): Boolean { return false }
+            override fun flushSessionState() {}
             override fun updateTrackingProtection(policy: TrackingProtectionPolicy) {}
             override fun toggleDesktopMode(enable: Boolean, reload: Boolean) {}
             override fun hasCookieBannerRuleForSession(
@@ -253,6 +255,7 @@ class EngineObserverTest {
             override fun stopLoading() {}
             override fun reload(flags: LoadUrlFlags) {}
             override fun restoreState(state: EngineSessionState): Boolean { return false }
+            override fun flushSessionState() {}
             override fun updateTrackingProtection(policy: TrackingProtectionPolicy) {}
             override fun toggleDesktopMode(enable: Boolean, reload: Boolean) {}
             override fun hasCookieBannerRuleForSession(
@@ -338,6 +341,7 @@ class EngineObserverTest {
             override fun stopLoading() {}
             override fun reload(flags: LoadUrlFlags) {}
             override fun restoreState(state: EngineSessionState): Boolean { return false }
+            override fun flushSessionState() {}
             override fun updateTrackingProtection(policy: TrackingProtectionPolicy) {}
             override fun toggleDesktopMode(enable: Boolean, reload: Boolean) {}
             override fun hasCookieBannerRuleForSession(
@@ -420,6 +424,7 @@ class EngineObserverTest {
             override fun stopLoading() {}
             override fun reload(flags: LoadUrlFlags) {}
             override fun restoreState(state: EngineSessionState): Boolean { return false }
+            override fun flushSessionState() {}
             override fun updateTrackingProtection(policy: TrackingProtectionPolicy) {}
             override fun toggleDesktopMode(enable: Boolean, reload: Boolean) {}
             override fun hasCookieBannerRuleForSession(

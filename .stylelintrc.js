@@ -8,6 +8,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const rollouts = require("./stylelint-rollouts.config");
 
 function readFile(filePath) {
   return fs
@@ -269,9 +270,11 @@ module.exports = {
       },
     ],
     "stylelint-plugin-mozilla/no-base-design-tokens": true,
+    "stylelint-plugin-mozilla/use-border-radius-tokens": true,
   },
 
   overrides: [
+    ...rollouts,
     {
       files: "*.scss",
       customSyntax: "postcss-scss",
@@ -376,6 +379,33 @@ module.exports = {
               "Avoid literal values. Use variables (e.g. var(--font-size-small)) or inherit/unset/etc.",
           },
         ],
+      },
+    },
+    {
+      name: "design-token-rules-off",
+      files: [
+        // CSS files under browser/components/extensions are not using design tokens
+        "browser/components/extensions/**",
+        // Webcompat interventions are not expected to use design tokens
+        // They are intended to override existing styles for specific extension
+        "browser/extensions/webcompat/injections/css/**",
+        // Most of devtools does not use design tokens, so turn the appropriate rules off for devtools.
+        // Stylelint does not support negating the file glob within an overrides section,
+        // so these rules get re-enabled for some devtools files in the section below
+        "devtools/**",
+      ],
+      rules: {
+        "stylelint-plugin-mozilla/use-border-radius-tokens": false,
+      },
+    },
+    {
+      name: "design-token-rules-on",
+      files: [
+        // Enable design token related rules only on the parts of devtools that can use them
+        "devtools/client/aboutdebugging/src/**",
+      ],
+      rules: {
+        "stylelint-plugin-mozilla/use-border-radius-tokens": true,
       },
     },
   ],

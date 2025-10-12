@@ -10,6 +10,7 @@ import { EditProfileCard } from "chrome://browser/content/profiles/edit-profile-
 import "chrome://global/content/elements/moz-support-link.mjs";
 
 const DEFAULT_THEME_ID = "default-theme@mozilla.org";
+const TEN_MINUTES_IN_MS = 10 * 60 * 1000;
 
 /**
  * Element used for updating a profile's name, theme, and avatar.
@@ -20,11 +21,15 @@ export class NewProfileCard extends EditProfileCard {
       return;
     }
 
-    let { currentProfile, profiles, themes, isInAutomation } =
+    let { currentProfile, profiles, profileCreated, themes, isInAutomation } =
       await RPMSendQuery("Profiles:GetNewProfileContent");
 
     if (isInAutomation) {
       this.updateNameDebouncer.timeout = 50;
+    }
+
+    if (!isInAutomation) {
+      this.maybeRedirectExistingProfile(profileCreated);
     }
 
     this.profile = currentProfile;
@@ -43,13 +48,29 @@ export class NewProfileCard extends EditProfileCard {
     super.setFavicon();
   }
 
+  /**
+   * To avoid accidental data loss caused by the no-confirmation delete
+   * button, if the profile is more than 10 minutes old, redirect to
+   * about:editprofile instead.
+   *
+   * Extracted into a helper function to simplify testing.
+   *
+   * @param {number} profileCreated
+   *  Profile creation timestamp (milliseconds since epoch).
+   */
+  maybeRedirectExistingProfile(profileCreated) {
+    if (Date.now() - TEN_MINUTES_IN_MS > profileCreated) {
+      window.removeEventListener("beforeunload", this);
+      window.location.replace("about:editprofile");
+    }
+  }
+
   async setRandomTheme(isInAutomation) {
     if (this.profile.themeId !== DEFAULT_THEME_ID) {
       return;
     }
 
-    let isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    let possibleThemes = this.themes.filter(t => t.isDark === isDark);
+    let possibleThemes = this.themes;
     if (isInAutomation) {
       possibleThemes = possibleThemes.filter(t => t.useInAutomation);
     }
@@ -94,7 +115,7 @@ export class NewProfileCard extends EditProfileCard {
       size="64"
       aria-errormessage="error-message"
       data-l10n-id="new-profile-page-input-placeholder"
-      value=${this.profile.name}
+      .value=${this.profile.name}
       @input=${super.handleInputEvent}
     />`;
   }

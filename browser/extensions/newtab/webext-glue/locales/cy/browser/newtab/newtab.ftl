@@ -88,6 +88,14 @@ newtab-confirm-delete-history-p2 = Nid oes modd dadwneud y weithred hon.
 
 newtab-topsite-sponsored = Noddwyd
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } piniwyd
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -316,19 +324,32 @@ newtab-custom-pocket-subtitle = Cynnwys eithriadol wedi'i guradu gan { -pocket-b
 newtab-custom-stories-toggle =
     .label = Straeon cymeradwy
     .description = Cynnwys eithriadol wedi'i gasglu gan deulu { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Straeon
+newtab-custom-stories-personalized-checkbox-label = Straeon personol ar sail eich gweithgaredd
 newtab-custom-pocket-sponsored = Straeon wedi'u noddi
 newtab-custom-pocket-show-recent-saves = Dangos pethau gadwyd yn ddiweddar
 newtab-custom-recent-title = Gweithgaredd diweddar
 newtab-custom-recent-subtitle = Detholiad o wefannau a chynnwys diweddar
-newtab-custom-recent-toggle =
-    .label = Gweithgaredd diweddar
-    .description = Detholiad o wefannau a chynnwys diweddar
 newtab-custom-weather-toggle =
     .label = Y Tywydd
     .description = Cipolwg ar ragolygon tywydd heddiw
 newtab-custom-trending-search-toggle =
     .label = Tueddiadau chwilio
     .description = Pynciau chwilio aml a phoblogaidd
+newtab-custom-widget-weather-toggle =
+    .label = Y Tywydd
+newtab-custom-widget-trending-search-toggle =
+    .label = Tueddiadau chwilio
+newtab-custom-widget-lists-toggle =
+    .label = Rhestrau
+newtab-custom-widget-timer-toggle =
+    .label = Amserydd
+newtab-custom-widget-section-title = Teclynnau
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Cau
+    .aria-label = Cau'r ddewislen
 newtab-custom-close-button = Cau
 newtab-custom-settings = Rheoli rhagor o osodiadau
 
@@ -341,6 +362,7 @@ newtab-wallpaper-custom-color = Dewis lliw
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Mae'r ddelwedd yn fwy na'r terfyn maint ffeil { $file_size }MB. Ceisiwch lwytho ffeil lai.
+newtab-wallpaper-error-upload-file-type = Does dim modd i ni lwytho'ch ffeil. Ceisiwch eto gyda gwahanol fathau o ffeil.
 newtab-wallpaper-error-file-type = Nid oes modd i ni lwytho'ch ffeil. Ceisiwch eto gyda gwahanol fathau o ffeil.
 newtab-wallpaper-light-red-panda = Panda coch
 newtab-wallpaper-light-mountain = Mynydd gwyn
@@ -446,7 +468,6 @@ newtab-weather-menu-change-location = Newid lleoliad
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Chwilio am leoliad
     .aria-label = Chwilio am leoliad
-newtab-weather-change-location-search-input = Chwilio am leoliad
 newtab-weather-menu-weather-display = Dangos y tywydd
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -547,6 +568,12 @@ newtab-custom-wallpaper-title = Mae papurau wal cyfaddas yma
 newtab-custom-wallpaper-subtitle = Llwythwch i fyny eich papur wal eich hun neu dewiswch liw cyfaddas i wneud { -brand-product-name } deimlo'n gartrefol.
 newtab-custom-wallpaper-cta = Rhowch gynnig arni
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Dewiswch bapur wal i wneud { -brand-product-name } eich un chi
+newtab-new-user-custom-wallpaper-subtitle = Gwnewch i bob tab newydd deimlo fel adref gyda phapurau wal a lliwiau cyfaddas.
+newtab-new-user-custom-wallpaper-cta = Rhowch gynnig arno
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Llwytho { -brand-product-name } symudol i lawr
@@ -587,8 +614,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Y tuedd ar Google
 newtab-trending-searches-show-trending =
     .title = Dangos y tuedd chwilio
 newtab-trending-searches-hide-trending =
@@ -597,3 +622,76 @@ newtab-trending-searches-learn-more = Dysgu rhagor
 newtab-trending-searches-dismiss = Cuddio'r tuedd chwilio
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Tueddiadau chwilio
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Mae'r posibiliadau'n ddiddiwedd. Ychwanegwch un.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Newydd
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Wedi cwblhau ( { $number })
+newtab-widget-task-list-menu-copy = Copïo
+newtab-widget-lists-menu-edit = Golygu enw'r rhestr
+newtab-widget-lists-menu-create = Creu rhestr newydd
+newtab-widget-lists-menu-delete = Dileu'r rhestr hon
+newtab-widget-lists-menu-copy = Copïo'r rhestr i'r clipfwrdd
+newtab-widget-lists-menu-hide = Cuddio pob rhestr
+newtab-widget-lists-menu-learn-more = Dysgu rhagor
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Ychwanegu eitem
+newtab-widget-lists-input-error = Cynhwyswch destun i ychwanegu eitem.
+newtab-widget-lists-input-menu-open-link = Agor dolen
+newtab-widget-lists-input-menu-move-up = Symud i fyny
+newtab-widget-lists-input-menu-move-down = Symud i lawr
+newtab-widget-lists-input-menu-delete = Dileu
+newtab-widget-lists-input-menu-edit = Golygu
+newtab-widget-lists-name-label-default =
+    .label = Rhestr tasgau
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Rhestr tasgau
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Rhestr newydd
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Amserydd
+newtab-widget-timer-notification-focus = Mae'r amser canolbwyntio ar ben. Gwaith da. Angen seibiant?
+newtab-widget-timer-notification-break = Mae'ch seibiant drosodd. Barod i ganolbwyntio?
+newtab-widget-timer-notification-warning = Mae hysbysiadau wedi'u diffodd
+newtab-widget-timer-mode-focus =
+    .label = Canolbwyntio
+newtab-widget-timer-mode-break =
+    .label = Seibiant
+newtab-widget-timer-play =
+    .title = Chwarae
+newtab-widget-timer-pause =
+    .title = Oedi
+newtab-widget-timer-label-play =
+    .label = Chwarae
+newtab-widget-timer-label-pause =
+    .label = Oedi
+newtab-widget-timer-reset =
+    .title = Ailosod
+newtab-widget-timer-menu-notifications = Diffodd hysbysiadau
+newtab-widget-timer-menu-notifications-on = Troi hysbysiadau ymlaen
+newtab-widget-timer-menu-hide = Cuddio'r amserydd
+newtab-widget-timer-menu-learn-more = Dysgu rhagor
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Sgrolio am ragor
+newtab-widget-message-title = Canolbwyntio gyda rhestrau a'r amserydd mewnol
+# to-dos stands for "things to do".
+newtab-widget-message-copy = O negeseuon atgoffa cyflym i dasgau bob dydd, sesiynau canolbwyntio i egwyliau ymarfer corff — cadwch i'r dasg ac amser.
+newtab-promo-card-title = Cefnogwch { -brand-product-name }
+newtab-promo-card-body = Mae ein noddwyr yn cefnogi ein cenhadaeth i adeiladu gwe well
+newtab-promo-card-cta = Dysgu rhagor
+newtab-promo-card-dismiss-button =
+    .title = Cau
+    .aria-label = Cau

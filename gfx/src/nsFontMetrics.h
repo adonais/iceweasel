@@ -139,14 +139,14 @@ class nsFontMetrics final {
   nscoord EmHeight() const;
 
   /**
-   * Returns the ascent part of the em square.
+   * Returns the ascent with half the internal leading trimmed.
    */
-  nscoord EmAscent() const;
+  nscoord TrimmedAscent() const;
 
   /**
-   * Returns the descent part of the em square.
+   * Returns the descent with half the internal leading trimmed.
    */
-  nscoord EmDescent() const;
+  nscoord TrimmedDescent() const;
 
   /**
    * Returns the height of the bounding box.
@@ -185,6 +185,11 @@ class nsFontMetrics final {
    * Returns the often needed width of the space character
    */
   nscoord SpaceWidth() const;
+
+  /**
+   * Returns the inter-script spacing width for this font, in app units.
+   */
+  nscoord InterScriptSpacingWidth() const;
 
   /**
    * Returns the font associated with these metrics. The return value

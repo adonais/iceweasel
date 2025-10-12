@@ -39,11 +39,6 @@ object FeatureFlags {
     const val META_ATTRIBUTION_ENABLED = true
 
     /**
-     * Enables the Unified Trust Panel.
-     */
-    val UNIFIED_TRUST_PANEL = Config.channel.isNightlyOrDebug
-
-    /**
      * Disables the Onboarding feature for debug builds by default. Set this to `true` if you need
      * to access the Onboarding feature for development purposes.
      *
@@ -52,7 +47,7 @@ object FeatureFlags {
     val onboardingFeatureEnabled = !Config.channel.isDebug
 
     /**
-     * Enables the custom review pre-prompt.
+     * Enables the "Discover more" stories screen.
      */
-    const val CUSTOM_REVIEW_PROMPT_ENABLED = true
+    const val DISCOVER_MORE_STORIES = false
 }

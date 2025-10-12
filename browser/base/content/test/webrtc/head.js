@@ -66,7 +66,7 @@ function whenDelayedStartupFinished(aWindow) {
 }
 
 function promiseIndicatorWindow() {
-  let startTime = performance.now();
+  let startTime = ChromeUtils.now();
 
   return new Promise(resolve => {
     Services.obs.addObserver(function obs(win) {
@@ -344,7 +344,7 @@ function promiseMessage(
   aCount = 1,
   browser = gBrowser.selectedBrowser
 ) {
-  let startTime = performance.now();
+  let startTime = ChromeUtils.now();
   let promise = ContentTask.spawn(
     browser,
     [aMessage, aCount],
@@ -377,7 +377,7 @@ function promiseMessage(
 }
 
 function promisePopupNotificationShown(aName, aAction, aWindow = window) {
-  let startTime = performance.now();
+  let startTime = ChromeUtils.now();
   return new Promise(resolve => {
     aWindow.PopupNotifications.panel.addEventListener(
       "popupshown",
@@ -458,7 +458,7 @@ async function activateSecondaryAction(aAction) {
 }
 
 async function getMediaCaptureState() {
-  let startTime = performance.now();
+  let startTime = ChromeUtils.now();
 
   function gatherBrowsingContexts(aBrowsingContext) {
     let list = [aBrowsingContext];
@@ -1231,7 +1231,7 @@ async function runTests(tests, options = {}) {
   gObserveSubFrames = SpecialPowers.useRemoteSubframes ? options.subFrames : {};
 
   for (let testCase of tests) {
-    let startTime = performance.now();
+    let startTime = ChromeUtils.now();
     info(testCase.desc);
     if (
       !testCase.skipObserverVerification &&

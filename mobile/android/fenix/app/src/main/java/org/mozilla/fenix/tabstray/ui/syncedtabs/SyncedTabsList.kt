@@ -8,23 +8,30 @@ package org.mozilla.fenix.tabstray.ui.syncedtabs
 
 import android.content.res.Configuration
 import androidx.annotation.VisibleForTesting
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -34,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mozilla.components.browser.storage.sync.TabEntry
 import mozilla.components.compose.base.Divider
+import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.PrimaryButton
 import mozilla.components.compose.base.modifier.dashedBorder
 import mozilla.components.feature.syncedtabs.view.SyncedTabsView
@@ -44,8 +52,10 @@ import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.browser.storage.sync.Tab as SyncTab
+import mozilla.components.ui.icons.R as iconsR
 
 private const val EXPANDED_BY_DEFAULT = true
+private val CardRoundedCornerShape = RoundedCornerShape(12.dp)
 
 /**
  * A lambda invoked when the user clicks on a synced tab in the [SyncedTabsList].
@@ -65,7 +75,6 @@ typealias OnTabCloseClick = (deviceId: String, tab: SyncTab) -> Unit
  * @param onTabCloseClick The lambda for handling clicks on a synced tab's close button.
  */
 @SuppressWarnings("LongMethod")
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SyncedTabsList(
     syncedTabs: List<SyncedTabsListItem>,
@@ -76,71 +85,104 @@ fun SyncedTabsList(
     val expandedState =
         remember(syncedTabs) { syncedTabs.map { EXPANDED_BY_DEFAULT }.toMutableStateList() }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(TabsTrayTestTag.SYNCED_TABS_LIST),
-        state = listState,
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter,
     ) {
-        syncedTabs.forEachIndexed { index, syncedTabItem ->
-            when (syncedTabItem) {
-                is SyncedTabsListItem.DeviceSection -> {
-                    val sectionExpanded = expandedState[index]
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(FirefoxTheme.layout.size.containerMaxWidth)
+                .testTag(TabsTrayTestTag.SYNCED_TABS_LIST),
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            syncedTabs.forEachIndexed { index, syncedTabItem ->
+                when (syncedTabItem) {
+                    is SyncedTabsListItem.DeviceSection -> {
+                        val sectionExpanded = expandedState[index]
 
-                    stickyHeader {
-                        SyncedTabsSectionHeader(
-                            headerText = syncedTabItem.displayName,
-                            expanded = sectionExpanded,
-                        ) {
-                            expandedState[index] = !sectionExpanded
-                        }
-                    }
-
-                    if (sectionExpanded) {
-                        if (syncedTabItem.tabs.isNotEmpty()) {
-                            items(syncedTabItem.tabs) { syncedTab ->
-                                when (syncedTab.action) {
-                                    is SyncedTabsListItem.Tab.Action.Close -> FaviconListItem(
-                                        label = syncedTab.displayTitle,
-                                        url = syncedTab.displayURL,
-                                        description = syncedTab.displayURL,
-                                        onClick = { onTabClick(syncedTab.tab) },
-                                        iconDescription = stringResource(R.string.close_tab),
-                                        iconPainter = painterResource(R.drawable.ic_close),
-                                        onIconClick = { onTabCloseClick(syncedTab.action.deviceId, syncedTab.tab) },
-                                    )
-                                    is SyncedTabsListItem.Tab.Action.None -> FaviconListItem(
-                                        label = syncedTab.displayTitle,
-                                        url = syncedTab.displayURL,
-                                        description = syncedTab.displayURL,
-                                        onClick = { onTabClick(syncedTab.tab) },
-                                    )
-                                }
+                        item(key = "header-${syncedTabItem.displayName}-$index") {
+                            SyncedTabsSectionHeader(
+                                headerText = syncedTabItem.displayName,
+                                expanded = sectionExpanded,
+                            ) {
+                                expandedState[index] = !sectionExpanded
                             }
-                        } else {
-                            item { SyncedTabsNoTabsItem() }
+                        }
+
+                        if (sectionExpanded) {
+                            if (syncedTabItem.tabs.isNotEmpty()) {
+                                item(key = "card-${syncedTabItem.displayName}-$index") {
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp),
+                                        shape = CardRoundedCornerShape,
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                                        ),
+                                    ) {
+                                        syncedTabItem.tabs.forEachIndexed { index, syncedTab ->
+                                            val isLast = index == syncedTabItem.tabs.lastIndex
+                                            when (syncedTab.action) {
+                                                is SyncedTabsListItem.Tab.Action.Close -> FaviconListItem(
+                                                    label = syncedTab.displayTitle,
+                                                    url = syncedTab.displayURL,
+                                                    faviconShape = CircleShape,
+                                                    description = syncedTab.displayURL,
+                                                    onClick = { onTabClick(syncedTab.tab) },
+                                                    iconDescription = stringResource(R.string.close_tab),
+                                                    iconPainter = painterResource(iconsR.drawable.mozac_ic_cross_20),
+                                                    onIconClick = {
+                                                        onTabCloseClick(
+                                                            syncedTab.action.deviceId,
+                                                            syncedTab.tab,
+                                                        )
+                                                    },
+                                                )
+
+                                                is SyncedTabsListItem.Tab.Action.None -> FaviconListItem(
+                                                    label = syncedTab.displayTitle,
+                                                    url = syncedTab.displayURL,
+                                                    faviconShape = CircleShape,
+                                                    modifier = Modifier.padding(vertical = 2.dp),
+                                                    description = syncedTab.displayURL,
+                                                    onClick = { onTabClick(syncedTab.tab) },
+                                                )
+                                            }
+                                            if (!isLast) {
+                                                Divider(color = MaterialTheme.colorScheme.outlineVariant)
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                item(key = "no-tabs-${syncedTabItem.displayName}-$index") { SyncedTabsNoTabsItem() }
+                            }
                         }
                     }
-                }
 
-                is SyncedTabsListItem.Error -> {
-                    item {
-                        SyncedTabsErrorItem(
-                            errorText = syncedTabItem.errorText,
-                            errorButton = syncedTabItem.errorButton,
-                        )
+                    is SyncedTabsListItem.Error -> {
+                        item(key = "error-${syncedTabItem.errorText}-$index") {
+                            SyncedTabsErrorItem(
+                                errorText = syncedTabItem.errorText,
+                                errorButton = syncedTabItem.errorButton,
+                            )
+                        }
                     }
-                }
-                else -> {
-                    // no-op
+
+                    else -> {
+                        // no-op
+                    }
                 }
             }
-        }
 
-        item {
-            // The Spacer here is to act as a footer to add padding to the bottom of the list so
-            // the FAB or any potential SnackBar doesn't overlap with the items at the end.
-            Spacer(modifier = Modifier.height(240.dp))
+            item(key = "footer-spacer") {
+                // The Spacer here is to act as a footer to add padding to the bottom of the list so
+                // the FAB or any potential SnackBar doesn't overlap with the items at the end.
+                Spacer(modifier = Modifier.height(240.dp))
+            }
         }
     }
 }
@@ -161,17 +203,17 @@ fun SyncedTabsSectionHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(FirefoxTheme.colors.layer1),
+            .padding(horizontal = 16.dp),
     ) {
         ExpandableListHeader(
             headerText = headerText,
+            headerTextStyle = MaterialTheme.typography.bodyMedium,
+            headerTextColor = MaterialTheme.colorScheme.secondary,
             expanded = expanded,
             expandActionContentDescription = stringResource(R.string.synced_tabs_expand_group),
             collapseActionContentDescription = stringResource(R.string.synced_tabs_collapse_group),
             onClick = onClick,
         )
-
-        Divider()
     }
 }
 
@@ -182,7 +224,7 @@ fun SyncedTabsSectionHeader(
  * @param errorButton Optional class to set up and handle any clicks in the Error UI.
  */
 @Composable
-fun SyncedTabsErrorItem(
+private fun SyncedTabsErrorItem(
     errorText: String,
     errorButton: SyncedTabsListItem.ErrorButton? = null,
 ) {
@@ -191,7 +233,7 @@ fun SyncedTabsErrorItem(
             .padding(all = 8.dp)
             .height(IntrinsicSize.Min)
             .dashedBorder(
-                color = FirefoxTheme.colors.borderPrimary,
+                color = MaterialTheme.colorScheme.outlineVariant,
                 cornerRadius = 8.dp,
                 dashHeight = 2.dp,
                 dashWidth = 4.dp,
@@ -204,7 +246,7 @@ fun SyncedTabsErrorItem(
         ) {
             Text(
                 text = errorText,
-                color = FirefoxTheme.colors.textPrimary,
+                color = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 14.sp,
             )
@@ -227,23 +269,32 @@ fun SyncedTabsErrorItem(
  * UI to be displayed when a user's device has no synced tabs.
  */
 @Composable
-fun SyncedTabsNoTabsItem() {
-    Text(
-        text = stringResource(R.string.synced_tabs_no_open_tabs),
-        color = FirefoxTheme.colors.textSecondary,
+private fun SyncedTabsNoTabsItem() {
+    Card(
         modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .fillMaxWidth(),
-        fontSize = 16.sp,
-        maxLines = 1,
-    )
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = CardRoundedCornerShape,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        ),
+    ) {
+        Text(
+            text = stringResource(R.string.synced_tabs_no_open_tabs),
+            color = MaterialTheme.colorScheme.secondary,
+            style = FirefoxTheme.typography.body1,
+            modifier = Modifier
+                .padding(all = 16.dp)
+                .fillMaxWidth(),
+        )
+    }
 }
 
 @Composable
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
+@FlexibleWindowLightDarkPreview
 private fun SyncedTabsListItemsPreview() {
     FirefoxTheme {
-        Column(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Column(Modifier.background(MaterialTheme.colorScheme.surface)) {
             SyncedTabsSectionHeader(headerText = "Google Pixel Pro Max +Ultra 5000")
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -279,7 +330,7 @@ private fun SyncedTabsListItemsPreview() {
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 private fun SyncedTabsErrorPreview() {
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Box(Modifier.background(MaterialTheme.colorScheme.surface)) {
             SyncedTabsErrorItem(
                 errorText = stringResource(R.string.synced_tabs_no_tabs),
                 errorButton = SyncedTabsListItem.ErrorButton(
@@ -296,7 +347,7 @@ private fun SyncedTabsErrorPreview() {
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 private fun SyncedTabsListPreview() {
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Box(Modifier.background(MaterialTheme.colorScheme.surface)) {
             SyncedTabsList(
                 syncedTabs = getFakeSyncedTabList(),
                 onTabClick = { println("Tab clicked") },

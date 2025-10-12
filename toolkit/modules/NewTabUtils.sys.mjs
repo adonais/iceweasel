@@ -907,7 +907,9 @@ var ActivityStreamProvider = {
   _addFavicons(aLinks) {
     let win;
     if (BrowserWindowTracker) {
-      win = BrowserWindowTracker.getTopWindow();
+      win = BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      });
     }
     // We fetch two copies of a page's favicon: the largest available, for
     // Activity Stream; and a smaller size appropriate for the Urlbar.
@@ -2354,7 +2356,7 @@ export var NewTabUtils = {
    * @returns {Number} utc_offset. Output is clamped if surfaceID is specified, and 0 if surfaceID present and not supported.
    */
   getUtcOffset(surfaceID) {
-    const surfaceRestrictions = { NEW_TAB_EN_US: { min: 7, max: 10 } }; // Inclusive hour ranges
+    const surfaceRestrictions = { NEW_TAB_EN_US: { min: 24 - 8, max: 24 - 4 } }; // Inclusive hour ranges UTC-8 (PST), UTC-4 (EDT)
     const restriction = surfaceID && surfaceRestrictions[surfaceID];
     if (surfaceID && !restriction) {
       // Missing restriction for the surface

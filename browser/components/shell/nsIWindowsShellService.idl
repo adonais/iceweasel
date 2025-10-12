@@ -320,8 +320,6 @@ interface nsIWindowsShellService : nsIShellService
   /* This function can be used to convert compatible image formats into .ico
    * files to be used for .lnk files (see createShortcut).
    *
-   * This function should not be called unless it is certain that it's
-   * necessary given how few checks there are within.
    * @param  aFile
    *         Output file to be written
    * @param  aContainer

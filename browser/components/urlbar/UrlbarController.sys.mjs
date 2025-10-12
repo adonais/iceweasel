@@ -4,14 +4,18 @@
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
+/**
+ * @import {ProvidersManager} from "resource:///modules/UrlbarProvidersManager.sys.mjs"
+ */
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   Interactions: "moz-src:///browser/components/places/Interactions.sys.mjs",
-  ProviderSemanticHistorySearch:
-    "resource:///modules/UrlbarProviderSemanticHistorySearch.sys.mjs",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
+  UrlbarProviderSemanticHistorySearch:
+    "resource:///modules/UrlbarProviderSemanticHistorySearch.sys.mjs",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.sys.mjs",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
   UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
@@ -79,6 +83,9 @@ export class UrlbarController {
     this.input = options.input;
     this.browserWindow = options.input.window;
 
+    /**
+     * @type {ProvidersManager}
+     */
     this.manager = options.manager || lazy.UrlbarProvidersManager;
 
     this._listeners = new Set();
@@ -315,7 +322,7 @@ export class UrlbarController {
       }
 
       let { queryContext } = this._lastQueryContextWrapper;
-      let handled = this.view.oneOffSearchButtons.handleKeyDown(
+      let handled = this.view.oneOffSearchButtons?.handleKeyDown(
         event,
         this.view.visibleRowCount,
         this.view.allowEmptySelection,
@@ -496,7 +503,9 @@ export class UrlbarController {
           !event.shiftKey
         ) {
           this.input.searchMode = null;
-          this.input.view.oneOffSearchButtons.selectedButton = null;
+          if (this.input.view.oneOffSearchButtons) {
+            this.input.view.oneOffSearchButtons.selectedButton = null;
+          }
           this.input.startQuery({
             allowAutofill: false,
             event,
@@ -822,6 +831,7 @@ class TelemetryEvent {
       "input",
       "keydown",
       "mousedown",
+      "paste",
       "tabswitch",
       "focus",
     ];
@@ -831,7 +841,7 @@ class TelemetryEvent {
     }
 
     this._startEventInfo = {
-      timeStamp: event.timeStamp || Cu.now(),
+      timeStamp: event.timeStamp || ChromeUtils.now(),
       interactionType: this._getStartInteractionType(event, searchString),
       searchString,
     };
@@ -852,7 +862,7 @@ class TelemetryEvent {
    *        A DOM event.
    *        Note: event can be null, that usually happens for paste&go or drop&go.
    *        If there's no _startEventInfo this is a no-op.
-   * @param {object} details An object describing action details.
+   * @param {object} [details] An object describing action details.
    * @param {string} [details.searchString] The user's search string. Note that
    *        this string is not sent with telemetry data. It is only used
    *        locally to discern other data, such as the number of characters and
@@ -863,7 +873,7 @@ class TelemetryEvent {
    *        "switchtab", "remotetab", "extension", "oneoff", "dismiss".
    * @param {UrlbarResult} [details.result] The engaged result. This should be
    *        set to the result related to the picked element.
-   * @param {DOMElement} [details.element] The picked view element.
+   * @param {HTMLElement} [details.element] The picked view element.
    */
   record(event, details) {
     // Prevent re-entering `record()`. This can happen because
@@ -1177,7 +1187,8 @@ class TelemetryEvent {
     let sources = [];
     try {
       if (
-        lazy.ProviderSemanticHistorySearch.semanticManager.canUseSemanticSearch
+        lazy.UrlbarProviderSemanticHistorySearch.semanticManager
+          .canUseSemanticSearch
       ) {
         sources.push("history");
       }
@@ -1465,6 +1476,8 @@ class TelemetryEvent {
       return lazy.UrlbarUtils.isPasteEvent(event) ? "pasted" : "typed";
     } else if (event.type == "drop") {
       return "dropped";
+    } else if (event.type == "paste") {
+      return "pasted";
     } else if (searchString) {
       return "typed";
     }
@@ -1672,7 +1685,7 @@ class TelemetryEvent {
   }
 
   getCurrentTime() {
-    return Cu.now();
+    return ChromeUtils.now();
   }
 
   /**

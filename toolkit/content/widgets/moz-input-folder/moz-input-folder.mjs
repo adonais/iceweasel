@@ -165,6 +165,7 @@ export default class MozInputFolder extends MozInputText {
         <moz-button
           id="choose-folder-button"
           data-l10n-id="choose-folder-button"
+          data-l10n-attrs="accesskey"
           ?disabled=${this.disabled || this.parentDisabled}
           @click=${this.openFolderPicker}
         ></moz-button>

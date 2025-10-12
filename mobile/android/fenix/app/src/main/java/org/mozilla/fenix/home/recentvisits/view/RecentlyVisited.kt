@@ -4,13 +4,11 @@
 
 package org.mozilla.fenix.home.recentvisits.view
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowColumn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,7 +25,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -70,7 +67,6 @@ private val contentPadding = 16.dp
  * the [RecentlyVisitedItem] that was clicked and the second parameter is the "page" or column number
  * the item resides in.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RecentlyVisited(
     recentVisits: List<RecentlyVisitedItem>,
@@ -157,10 +153,6 @@ fun RecentlyVisited(
  * @param menuItems List of [RecentVisitMenuItem] to display in a recent visit dropdown menu.
  * @param onRecentVisitClick Invoked when the user clicks on a recent visit.
  */
-@OptIn(
-    ExperimentalFoundationApi::class,
-    ExperimentalComposeUiApi::class,
-)
 @Composable
 private fun RecentlyVisitedHistoryGroup(
     recentVisit: RecentHistoryGroup,
@@ -207,10 +199,6 @@ private fun RecentlyVisitedHistoryGroup(
  * @param menuItems List of [RecentVisitMenuItem] to display in a recent visit dropdown menu.
  * @param onRecentVisitClick Invoked when the user clicks on a recent visit.
  */
-@OptIn(
-    ExperimentalFoundationApi::class,
-    ExperimentalComposeUiApi::class,
-)
 @Composable
 private fun RecentlyVisitedHistoryHighlight(
     recentVisit: RecentHistoryHighlight,

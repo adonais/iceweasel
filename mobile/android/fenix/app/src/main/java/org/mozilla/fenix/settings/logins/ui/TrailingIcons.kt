@@ -25,7 +25,7 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
 import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.compose.base.theme.AcornTheme
-import mozilla.components.ui.icons.R
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * An eye trailing icon for a [TextField] that contains a password.
@@ -45,9 +45,9 @@ fun EyePasswordIconButton(
     ) {
         Icon(
             painter = if (!isPasswordVisible) {
-                painterResource(id = R.drawable.mozac_ic_eye_24)
+                painterResource(id = iconsR.drawable.mozac_ic_eye_24)
             } else {
-                painterResource(id = R.drawable.mozac_ic_eye_slash_24)
+                painterResource(id = iconsR.drawable.mozac_ic_eye_slash_24)
             },
             contentDescription = null,
             tint = AcornTheme.colors.textPrimary,

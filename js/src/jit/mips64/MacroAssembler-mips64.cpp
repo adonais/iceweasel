@@ -396,6 +396,15 @@ void MacroAssemblerMIPS64::ma_daddu(Register rd, Register rs, Imm32 imm) {
   }
 }
 
+void MacroAssemblerMIPS64::ma_daddu(Register rd, Register rs, ImmWord imm) {
+  if (Imm16::IsInSignedRange(imm.value)) {
+    as_daddiu(rd, rs, imm.value);
+  } else {
+    ma_li(ScratchRegister, imm);
+    as_daddu(rd, rs, ScratchRegister);
+  }
+}
+
 void MacroAssemblerMIPS64::ma_daddu(Register rd, Register rs) {
   as_daddu(rd, rd, rs);
 }
@@ -544,6 +553,15 @@ void MacroAssemblerMIPS64::ma_dsubu(Register rd, Register rs, Imm32 imm) {
   }
 }
 
+void MacroAssemblerMIPS64::ma_dsubu(Register rd, Register rs, ImmWord imm) {
+  if (Imm16::IsInSignedRange(-imm.value)) {
+    as_daddiu(rd, rs, -imm.value);
+  } else {
+    ma_li(ScratchRegister, imm);
+    as_dsubu(rd, rs, ScratchRegister);
+  }
+}
+
 void MacroAssemblerMIPS64::ma_dsubu(Register rd, Register rs) {
   as_dsubu(rd, rd, rs);
 }
@@ -596,15 +614,18 @@ void MacroAssemblerMIPS64::ma_subPtrTestOverflow(Register rd, Register rs,
   ma_subPtrTestOverflow(rd, rs, ScratchRegister, overflow);
 }
 
-void MacroAssemblerMIPS64::ma_dmult(Register rs, Imm32 imm) {
-  ma_li(ScratchRegister, imm);
+void MacroAssemblerMIPS64::ma_dmulu(Register rd, Register rs, Register rt) {
 #ifdef MIPSR6
-  as_dmul(rs, ScratchRegister, SecondScratchReg);
-  as_dmuh(rs, ScratchRegister, rs);
-  ma_move(rs, SecondScratchReg);
+  as_dmulu(rd, rs, rt);
 #else
-  as_dmult(rs, ScratchRegister);
+  as_dmultu(rs, rt);
+  as_mflo(rd);
 #endif
+}
+
+void MacroAssemblerMIPS64::ma_dmulu(Register rd, Register rs, ImmWord imm) {
+  ma_li(ScratchRegister, imm);
+  ma_dmulu(rd, rs, ScratchRegister);
 }
 
 void MacroAssemblerMIPS64::ma_mulPtrTestOverflow(Register rd, Register rs,
@@ -1180,7 +1201,7 @@ void MacroAssemblerMIPS64::ma_push(FloatRegister f) {
 }
 
 bool MacroAssemblerMIPS64Compat::buildOOLFakeExitFrame(void* fakeReturnAddr) {
-  asMasm().PushFrameDescriptor(FrameType::IonJS);  // descriptor_
+  asMasm().Push(FrameDescriptor(FrameType::IonJS));  // descriptor_
   asMasm().Push(ImmPtr(fakeReturnAddr));
   asMasm().Push(FramePointer);
   return true;
@@ -1676,6 +1697,46 @@ void MacroAssemblerMIPS64Compat::boxNonDouble(JSValueType type, Register src,
                                               const ValueOperand& dest) {
   MOZ_ASSERT(src != dest.valueReg());
   boxValue(type, src, dest.valueReg());
+}
+
+void MacroAssemblerMIPS64Compat::boxNonDouble(Register type, Register src,
+                                              const ValueOperand& dest) {
+  boxValue(type, src, dest.valueReg());
+}
+
+void MacroAssemblerMIPS64Compat::boxValue(Register type, Register src,
+                                          Register dest) {
+  MOZ_ASSERT(src != dest);
+
+#ifdef DEBUG
+  // Ensure |src| is sign-extended.
+  Label check, done;
+  ma_b(type, Imm32(JSVAL_TYPE_INT32), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_BOOLEAN), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_NULL), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_UNDEFINED), &done, Assembler::NotEqual,
+       ShortJump);
+  {
+    bind(&check);
+
+    ScratchRegisterScope scratch(asMasm());
+    ma_sll(scratch, src, Imm32(0));
+    ma_b(src, scratch, &done, Assembler::Equal, ShortJump);
+    breakpoint();
+  }
+  bind(&done);
+
+  // GCThing types aren't currently supported, because ma_dins truncates
+  // payloads above UINT32_MAX.
+  Label ok;
+  ma_b(type, Imm32(JSVAL_TYPE_NULL), &ok, Assembler::BelowOrEqual, ShortJump);
+  breakpoint();
+  bind(&ok);
+#endif
+
+  ma_or(dest, type, Imm32(JSVAL_TAG_MAX_DOUBLE));
+  ma_dsll(dest, dest, Imm32(JSVAL_TAG_SHIFT));
+  ma_dins(dest, src, Imm32(0), Imm32(32));
 }
 
 void MacroAssemblerMIPS64Compat::loadConstantFloat32(float f,
@@ -2335,10 +2396,15 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
   MOZ_ASSERT(!rhs.isNaN());
-  ScratchRegisterScope scratch(*this);
-  MOZ_ASSERT(lhs.valueReg() != scratch);
-  moveValue(rhs, ValueOperand(scratch));
-  ma_b(lhs.valueReg(), scratch, label, cond);
+
+  if (!rhs.isGCThing()) {
+    ma_b(lhs.valueReg(), ImmWord(rhs.asRawBits()), label, cond);
+  } else {
+    ScratchRegisterScope scratch(*this);
+    MOZ_ASSERT(lhs.valueReg() != scratch);
+    moveValue(rhs, ValueOperand(scratch));
+    ma_b(lhs.valueReg(), scratch, label, cond);
+  }
 }
 
 void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,

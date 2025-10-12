@@ -21,7 +21,7 @@ use selectors::matching::{
     SelectorCaches,
 };
 use selectors::parser::{Combinator, Component, LocalName};
-use selectors::{Element, SelectorList};
+use selectors::{Element, OpaqueElement, SelectorList};
 use smallvec::SmallVec;
 
 /// <https://dom.spec.whatwg.org/#dom-element-matches>
@@ -162,7 +162,7 @@ where
         true
     }
 
-    fn check_outer_dependency(&mut self, _: &Dependency, _: E) -> bool {
+    fn check_outer_dependency(&mut self, _: &Dependency, _: E, _:Option<OpaqueElement>) -> bool {
         debug_assert!(
             false,
             "How? We should only have parent-less dependencies here!"
@@ -202,6 +202,7 @@ where
             target_vector.push(Invalidation::new(
                 dependency,
                 self.matching_context.current_host.clone(),
+                self.matching_context.scope_element.clone(),
             ))
         }
 
@@ -692,20 +693,20 @@ where
     match simple_filter {
         SimpleFilter::Class(ref class) => {
             collect_all_elements::<E, Q, _>(root, results, |element| {
-                element.has_class(class, class_and_id_case_sensitivity) &&
-                    matching::matches_selector_list(selector_list, &element, matching_context)
+                element.has_class(class, class_and_id_case_sensitivity)
+                    && matching::matches_selector_list(selector_list, &element, matching_context)
             });
         },
         SimpleFilter::LocalName(ref local_name) => {
             collect_all_elements::<E, Q, _>(root, results, |element| {
-                local_name_matches(element, local_name) &&
-                    matching::matches_selector_list(selector_list, &element, matching_context)
+                local_name_matches(element, local_name)
+                    && matching::matches_selector_list(selector_list, &element, matching_context)
             });
         },
         SimpleFilter::Attr(ref local_name) => {
             collect_all_elements::<E, Q, _>(root, results, |element| {
-                has_attr(element, local_name) &&
-                    matching::matches_selector_list(selector_list, &element, matching_context)
+                has_attr(element, local_name)
+                    && matching::matches_selector_list(selector_list, &element, matching_context)
             });
         },
     }
@@ -786,8 +787,8 @@ pub fn query_selector<E, Q>(
     //
     // A selector with a combinator needs to have a length of at least 3: A
     // simple selector, a combinator, and another simple selector.
-    let invalidation_may_be_useful = may_use_invalidation == MayUseInvalidation::Yes &&
-        selector_list.slice().iter().any(|s| s.len() > 2);
+    let invalidation_may_be_useful = may_use_invalidation == MayUseInvalidation::Yes
+        && selector_list.slice().iter().any(|s| s.len() > 2);
 
     if root_element.is_some() || !invalidation_may_be_useful {
         query_selector_slow::<E, Q>(root, selector_list, results, &mut matching_context);

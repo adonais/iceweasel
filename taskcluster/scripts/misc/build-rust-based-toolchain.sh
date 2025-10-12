@@ -10,10 +10,13 @@ shift
 
 FEATURES="$@"
 
+export CARGO_PROFILE_RELEASE_LTO=fat
+rust_lto_flags="-C codegen-units=1"
+
 case "$TARGET" in
 x86_64-unknown-linux-gnu)
     # Native Linux Build
-    export RUSTFLAGS="-Clinker=$MOZ_FETCHES_DIR/clang/bin/clang++ -C link-arg=--sysroot=$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu -C link-arg=-fuse-ld=lld"
+    export RUSTFLAGS="-Clinker=$MOZ_FETCHES_DIR/clang/bin/clang++ -C link-arg=--sysroot=$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu -C link-arg=-fuse-ld=lld $rust_lto_flags"
     export CC=$MOZ_FETCHES_DIR/clang/bin/clang
     export CXX=$MOZ_FETCHES_DIR/clang/bin/clang++
     # Not using TARGET_C*FLAGS because that applies only on target compilations,
@@ -25,7 +28,7 @@ x86_64-unknown-linux-gnu)
     export CXXFLAGS_x86_64_unknown_linux_gnu="-D_GLIBCXX_USE_CXX11_ABI=0 --sysroot=$MOZ_FETCHES_DIR/sysroot-x86_64-linux-gnu -fuse-ld=lld"
     ;;
 aarch64-unknown-linux-gnu)
-    export RUSTFLAGS="-Clinker=$MOZ_FETCHES_DIR/clang/bin/clang++ -C link-arg=--sysroot=$MOZ_FETCHES_DIR/sysroot-aarch64-linux-gnu -C link-arg=-fuse-ld=lld -C link-arg=--target=$TARGET"
+    export RUSTFLAGS="-Clinker=$MOZ_FETCHES_DIR/clang/bin/clang++ -C link-arg=--sysroot=$MOZ_FETCHES_DIR/sysroot-aarch64-linux-gnu -C link-arg=-fuse-ld=lld -C link-arg=--target=$TARGET $rust_lto_flags"
     export CC=$MOZ_FETCHES_DIR/clang/bin/clang
     export CXX=$MOZ_FETCHES_DIR/clang/bin/clang++
     export TARGET_CFLAGS="--sysroot=$MOZ_FETCHES_DIR/sysroot-aarch64-linux-gnu -fuse-ld=lld"
@@ -40,7 +43,7 @@ aarch64-unknown-linux-gnu)
         export MACOSX_DEPLOYMENT_TARGET=10.12
     fi
     MACOS_SYSROOT=$MOZ_FETCHES_DIR/MacOSX15.4.sdk
-    export RUSTFLAGS="-Clinker=$MOZ_FETCHES_DIR/clang/bin/clang++ -C link-arg=-isysroot -C link-arg=$MACOS_SYSROOT -C link-arg=-fuse-ld=lld -C link-arg=--target=$TARGET"
+    export RUSTFLAGS="-Clinker=$MOZ_FETCHES_DIR/clang/bin/clang++ -C link-arg=-isysroot -C link-arg=$MACOS_SYSROOT -C link-arg=-fuse-ld=lld -C link-arg=--target=$TARGET $rust_lto_flags"
     export CC="$MOZ_FETCHES_DIR/clang/bin/clang"
     export CXX="$MOZ_FETCHES_DIR/clang/bin/clang++"
     export TARGET_CFLAGS="-isysroot $MACOS_SYSROOT -fuse-ld=lld"

@@ -20,6 +20,7 @@ static_freetype = ["glyph_rasterizer/static_freetype"]
 leak_checks = []
 gecko = ["firefox-on-glean", "glean", "glyph_rasterizer/gecko"]
 sw_compositor = ["swgl"]
+debugger = ["tiny_http", "serde_json", "url", "sha1", "base64", "api/debugger"]
 
 [build-dependencies]
 build-parallel = "0.1.2"
@@ -31,7 +32,7 @@ bincode = "1.0"
 bitflags = { version = "2", features = ["serde"] }
 byteorder = "1.0"
 euclid = { version = "0.22.10", features = ["serde"] }
-fxhash = "0.2.1"
+rustc-hash = "2.1.1"
 gleam = { workspace = true }
 lazy_static = "1"
 log = "0.4"
@@ -58,6 +59,11 @@ topological-sort = "0.1"
 peek-poke = { version = "0.3", path = "../peek-poke" }
 allocator-api2 = { version = "0.2.18", features = ["alloc", "serde"] }
 zeitstempel = "0.1.2"
+tiny_http = {  version = "0.12", optional=true }
+serde_json = { optional=true, version="1" }
+url = { optional=true, version="2.5" }
+sha1 = { optional=true, version="0.10" }
+base64 = { optional=true, version="0.22" }
 
 [dev-dependencies]
 mozangle = "0.5.2"

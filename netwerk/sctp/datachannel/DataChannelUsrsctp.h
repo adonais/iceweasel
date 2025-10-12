@@ -90,6 +90,7 @@ class DataChannelConnectionUsrsctp : public DataChannelConnection {
                               uint16_t stream, uint16_t messageId, int flags);
   void HandleDCEPMessageChunk(const void* buffer, size_t length, uint32_t ppid,
                               uint16_t stream, int flags);
+  bool HasQueuedData(uint16_t aStream) const;
 
   // All STS only
   bool mSendInterleaved = false;
@@ -98,6 +99,8 @@ class DataChannelConnectionUsrsctp : public DataChannelConnection {
   PendingType mPendingType = PendingType::None;
   // holds outgoing control messages if usrsctp is not ready to send them
   nsTArray<OutgoingMsg> mBufferedControl;
+  // For partial DCEP messages (should be _really_ rare, since they're small)
+  Maybe<IncomingMsg> mRecvBuffer;
   // holds data that's come in before a channel is open
   nsTArray<UniquePtr<QueuedDataMessage>> mQueuedData;
   // accessed from STS thread

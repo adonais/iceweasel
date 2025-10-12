@@ -56,3 +56,7 @@
     opacity: 100;
   }
 }
+
+#tabgroup-preview-panel > menuitem.active-tab {
+  font-weight: var(--font-weight-bold);
+}

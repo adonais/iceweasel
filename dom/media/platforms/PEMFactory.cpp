@@ -388,7 +388,7 @@ PEMFactory::CheckAndMaybeCreateEncoder(const EncoderConfig& aConfig,
   return PlatformEncoderModule::CreateEncoderPromise::CreateAndReject(
       MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                   nsPrintfCString("Error no encoder found for %s",
-                                  GetCodecTypeString(aConfig.mCodec))
+                                  EnumValueToString(aConfig.mCodec))
                       .get()),
       __func__);
 }
@@ -434,11 +434,11 @@ EncodeSupportSet PEMFactory::Supports(const EncoderConfig& aConfig) const {
     if (!supports.isEmpty()) {
       // TODO name
       LOG("Checking if %s supports codec %s: yes", m->GetName(),
-          GetCodecTypeString(aConfig.mCodec));
+          EnumValueToString(aConfig.mCodec));
       return supports;
     }
     LOG("Checking if %s supports codec %s: no", m->GetName(),
-        GetCodecTypeString(aConfig.mCodec));
+        EnumValueToString(aConfig.mCodec));
   }
   return EncodeSupportSet{};
 }

@@ -2138,6 +2138,11 @@ Variable.prototype = extend(Scope.prototype, {
     this._idString = generateId((this._nameString = aName));
     this._displayScope({ value: aName, targetClassName: this.targetClassName });
     this._displayVariable();
+
+    if (this.ownerView.contextMenuId) {
+      this._title.setAttribute("context", this.ownerView.contextMenuId);
+    }
+
     this._addEventListeners();
 
     if (

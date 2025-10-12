@@ -298,6 +298,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         })
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @Test fun restartInput_temporaryFocus() {
         // Our user action trick doesn't work for design-mode, so we can't test that here.
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
@@ -632,6 +633,7 @@ class TextInputDelegateTest : BaseSessionTest() {
         )
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     // Test deleteSurroundingText
     @WithDisplay(width = 512, height = 512)
     // Child process updates require having a display.
@@ -1052,6 +1054,7 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     // Bug 1275371 - shift+backspace should not forward delete on Android.
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @WithDisplay(width = 512, height = 512)
     // Child process updates require having a display.
     @Test

@@ -5,6 +5,19 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isNotDisplayed
+import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.compose.ui.test.onChildAt
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -31,10 +44,10 @@ import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.hasCousin
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
-import org.mozilla.fenix.helpers.TestHelper.scrollToElementByText
 import org.mozilla.fenix.helpers.click
+import org.mozilla.fenix.settings.address.ui.edit.EditAddressTestTag
 
-class SettingsSubMenuAutofillRobot {
+class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule) {
 
     fun verifyAutofillToolbarTitle() {
         assertUIObjectExists(autofillToolbarTitle())
@@ -95,7 +108,9 @@ class SettingsSubMenuAutofillRobot {
             addAddressButton(),
         )
         for (savedAddressDetail in savedAddressDetails) {
-            assertUIObjectExists(itemContainingText(savedAddressDetail))
+            Log.i(TAG, "verifyManageAddressesSection: Trying to verify that: $savedAddressDetail detail is displayed")
+            composeTestRule.onNodeWithText(savedAddressDetail).assertIsDisplayed()
+            Log.i(TAG, "verifyManageAddressesSection: Verified that: $savedAddressDetail detail is displayed")
         }
     }
 
@@ -149,33 +164,36 @@ class SettingsSubMenuAutofillRobot {
         Log.i(TAG, "verifySaveAndAutofillCreditCardsToggle: Verified that the \"Save and autofill cards\" toggle is checked: $enabled")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun verifyAddAddressView() {
         Log.i(TAG, "verifyAddAddressView: Trying to perform \"Close soft keyboard\" action")
         // Closing the keyboard to ensure full visibility of the "Add address" view
         closeSoftKeyboard()
         Log.i(TAG, "verifyAddAddressView: Performed \"Close soft keyboard\" action")
-        assertUIObjectExists(
-            addAddressToolbarTitle(),
-            navigateBackButton(),
-            toolbarCheckmarkButton(),
-            nameTextInput(),
-            streetAddressTextInput(),
-            cityTextInput(),
-            subRegionDropDown(),
-        )
-        assertUIObjectExists(
-            zipCodeTextInput(),
-            countryDropDown(),
-            phoneTextInput(),
-            emailTextInput(),
-        )
-        if (!saveButton().exists()) {
-            scrollToElementByText(getStringResource(R.string.addresses_save_button))
+        Log.i(TAG, "verifyAddAddressView: Trying to verify the \"Add address\" view items")
+        listOf(
+            composeTestRule.navigateBackButton(),
+            composeTestRule.addAddressToolbarTitle(),
+            composeTestRule.toolbarCheckmarkButton(),
+            composeTestRule.nameTextInput(),
+            composeTestRule.streetAddressTextInput(),
+            composeTestRule.cityTextInput(),
+            composeTestRule.subRegionDropDown(),
+            composeTestRule.zipCodeTextInput(),
+            composeTestRule.countryDropDown(),
+            composeTestRule.phoneTextInput(),
+            composeTestRule.emailTextInput(),
+        ).forEach { it.assertIsDisplayed() }
+
+        if (composeTestRule.saveButton().isNotDisplayed()) {
+            composeTestRule.saveButton().performScrollTo()
         }
-        assertUIObjectExists(
-            saveButton(),
-            cancelButton(),
-        )
+
+        listOf(
+            composeTestRule.saveButton(),
+            composeTestRule.cancelButton(),
+        ).forEach { it.assertIsDisplayed() }
+        Log.i(TAG, "verifyAddAddressView: Verified the \"Add address\" view items")
     }
 
     fun verifyCountryOption(country: String) {
@@ -187,12 +205,14 @@ class SettingsSubMenuAutofillRobot {
     }
 
     fun verifyStateOption(state: String) {
-        assertUIObjectExists(itemContainingText(state))
+        Log.i(TAG, "verifyStateOption: Trying to verify that state: $state is displayed")
+        composeTestRule.subRegionOption(state).assertIsDisplayed()
+        Log.i(TAG, "verifyStateOption: Verified that state: $state is displayed")
     }
 
     fun verifyCountryOptions(vararg countries: String) {
         Log.i(TAG, "verifyCountryOptions: Trying to click the \"Country or region\" dropdown")
-        countryDropDown().click()
+        composeTestRule.countryDropDown().performClick()
         Log.i(TAG, "verifyCountryOptions: Clicked the \"Country or region\" dropdown")
         for (country in countries) {
             assertUIObjectExists(itemContainingText(country))
@@ -201,44 +221,50 @@ class SettingsSubMenuAutofillRobot {
 
     fun selectCountry(country: String) {
         Log.i(TAG, "selectCountry: Trying to click the \"Country or region\" dropdown")
-        countryDropDown().click()
+        composeTestRule.countryDropDown().performClick()
         Log.i(TAG, "selectCountry: Clicked the \"Country or region\" dropdown")
         Log.i(TAG, "selectCountry: Trying to select $country dropdown option")
-        countryOption(country).click()
+        composeTestRule.countryOption(country).performClick()
         Log.i(TAG, "selectCountry: Selected $country dropdown option")
     }
 
     fun verifyEditAddressView() {
-        Log.i(TAG, "fillAndSaveAddress: Trying to click device back button to dismiss keyboard using device back button")
+        Log.i(TAG, "verifyEditAddressView: Trying to click device back button to dismiss keyboard using device back button")
         mDevice.pressBack()
-        Log.i(TAG, "fillAndSaveAddress: Clicked device back button to dismiss keyboard using device back button")
-        assertUIObjectExists(
-            editAddressToolbarTitle(),
-            navigateBackButton(),
-            toolbarDeleteAddressButton(),
-            toolbarCheckmarkButton(),
-            nameTextInput(),
-            streetAddressTextInput(),
-            cityTextInput(),
-            subRegionDropDown(),
-        )
-        if (!countryDropDown().exists()) {
-            scrollToElementByText(getStringResource(R.string.addresses_country))
+        Log.i(TAG, "verifyEditAddressView: Clicked device back button to dismiss keyboard using device back button")
+        Log.i(TAG, "verifyEditAddressView: Trying to verify that the \"Edit address\" items are displayed")
+        listOf(
+            composeTestRule.navigateBackButton(),
+            composeTestRule.editAddressToolbarTitle(),
+            composeTestRule.toolbarCheckmarkButton(),
+            composeTestRule.toolbarDeleteAddressButton(),
+            composeTestRule.nameTextInput().assertIsDisplayed(),
+            composeTestRule.streetAddressTextInput(),
+            composeTestRule.cityTextInput(),
+            composeTestRule.subRegionDropDown(),
+        ).forEach { it.assertIsDisplayed() }
+
+        if (composeTestRule.countryDropDown().isNotDisplayed()) {
+            composeTestRule.countryDropDown().performScrollTo()
         }
-        assertUIObjectExists(
-            zipCodeTextInput(),
-            countryDropDown(),
-            phoneTextInput(),
-            emailTextInput(),
-        )
-        if (!saveButton().exists()) {
-            scrollToElementByText(getStringResource(R.string.addresses_save_button))
+
+        listOf(
+            composeTestRule.zipCodeTextInput(),
+            composeTestRule.countryDropDown(),
+            composeTestRule.phoneTextInput(),
+            composeTestRule.emailTextInput(),
+        ).forEach { it.assertIsDisplayed() }
+
+        if (composeTestRule.saveButton().isNotDisplayed()) {
+            composeTestRule.saveButton().performScrollTo()
         }
-        assertUIObjectExists(
-            saveButton(),
-            cancelButton(),
-        )
-        assertUIObjectExists(deleteAddressButton())
+
+        listOf(
+            composeTestRule.saveButton(),
+            composeTestRule.cancelButton(),
+            composeTestRule.deleteAddressButton(),
+        ).forEach { it.assertIsDisplayed() }
+        Log.i(TAG, "verifyEditAddressView: Verified that the \"Edit address\" items are displayed")
     }
 
     fun clickSaveAndAutofillAddressesOption() {
@@ -256,52 +282,62 @@ class SettingsSubMenuAutofillRobot {
         manageAddressesButton().click()
         Log.i(TAG, "clickManageAddressesButton: Clicked the \"Manage addresses\" button")
     }
-    fun clickSavedAddress(name: String) {
+    fun clickSavedAddress(composeTestRule: ComposeTestRule, name: String) {
         Log.i(TAG, "clickSavedAddress: Trying to click the $name saved address and and wait for $waitingTime ms for a new window")
-        savedAddress(name).clickAndWaitForNewWindow(waitingTime)
+        composeTestRule.onNodeWithText(name, useUnmergedTree = true).performClick()
         Log.i(TAG, "clickSavedAddress: Clicked the $name saved address and and waited for $waitingTime ms for a new window")
     }
+
+    @OptIn(ExperimentalTestApi::class)
     fun clickDeleteAddressButton() {
         Log.i(TAG, "clickDeleteAddressButton: Waiting for $waitingTime ms for the delete address toolbar button to exist")
-        toolbarDeleteAddressButton().waitForExists(waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(EditAddressTestTag.TOPBAR_DELETE_BUTTON), waitingTime)
         Log.i(TAG, "clickDeleteAddressButton: Waited for $waitingTime ms for the delete address toolbar button to exist")
         Log.i(TAG, "clickDeleteAddressButton: Trying to click the delete address toolbar button")
-        toolbarDeleteAddressButton().click()
+        composeTestRule.toolbarDeleteAddressButton().performClick()
         Log.i(TAG, "clickDeleteAddressButton: Clicked the delete address toolbar button")
     }
     fun clickCancelDeleteAddressButton() {
         Log.i(TAG, "clickCancelDeleteAddressButton: Trying to click the \"CANCEL\" button from the delete address dialog")
-        cancelDeleteAddressButton().click()
+        composeTestRule.cancelDeleteAddressButton().performClick()
         Log.i(TAG, "clickCancelDeleteAddressButton: Clicked the \"CANCEL\" button from the delete address dialog")
     }
 
     fun clickConfirmDeleteAddressButton() {
         Log.i(TAG, "clickConfirmDeleteAddressButton: Trying to click the \"DELETE\" button from the delete address dialog")
-        confirmDeleteAddressButton().click()
+        composeTestRule.confirmDeleteAddressButton().performClick()
         Log.i(TAG, "clickConfirmDeleteAddressButton: Clicked \"DELETE\" button from the delete address dialog")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun clickSubRegionOption(subRegion: String) {
-        scrollToElementByText(subRegion)
-        subRegionOption(subRegion).also {
-            Log.i(TAG, "clickSubRegionOption: Waiting for $waitingTime ms for the \"State\" $subRegion dropdown option to exist")
-            it.waitForExists(waitingTime)
-            Log.i(TAG, "clickSubRegionOption: Waited for $waitingTime ms for the \"State\" $subRegion dropdown option to exist")
-            Log.i(TAG, "clickSubRegionOption: Trying to click the \"State\" $subRegion dropdown option")
-            it.click()
-            Log.i(TAG, "clickSubRegionOption: Clicked the \"State\" $subRegion dropdown option")
-        }
+        composeTestRule.subRegionOption(subRegion).performScrollTo()
+        Log.i(TAG, "clickSubRegionOption: Waiting for $waitingTime ms for the \"State\" $subRegion dropdown option to exist")
+        composeTestRule.waitUntilAtLeastOneExists(hasText(subRegion), waitingTime)
+        Log.i(TAG, "clickSubRegionOption: Waited for $waitingTime ms for the \"State\" $subRegion dropdown option to exist")
+        Log.i(TAG, "clickSubRegionOption: Trying to click the \"State\" $subRegion dropdown option")
+        composeTestRule.subRegionOption(subRegion).performClick()
+        Log.i(TAG, "clickSubRegionOption: Clicked the \"State\" $subRegion dropdown option")
     }
+
+    fun clickCountryDropdown() {
+        Log.i(TAG, "clickCountryDropdown: Trying to click \"Country or region\" dropdown")
+        composeTestRule.countryDropDown().performClick()
+        Log.i(TAG, "clickCountryDropdown: Clicked \"Country or region\" dropdown")
+    }
+
+    @OptIn(ExperimentalTestApi::class)
     fun clickCountryOption(country: String) {
         Log.i(TAG, "clickCountryOption: Waiting for $waitingTime ms for the \"Country or region\" $country dropdown option to exist")
-        countryOption(country).waitForExists(waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(hasText(country), waitingTime)
         Log.i(TAG, "clickCountryOption: Waited for $waitingTime ms for the \"Country or region\" $country dropdown option to exist")
         Log.i(TAG, "clickCountryOption: Trying to click \"Country or region\" $country dropdown option")
-        countryOption(country).click()
+        composeTestRule.countryOption(country).performClick()
         Log.i(TAG, "clickCountryOption: Clicked \"Country or region\" $country dropdown option")
     }
     fun verifyAddAddressButton() = assertUIObjectExists(addAddressButton())
 
+    @OptIn(ExperimentalTestApi::class)
     fun fillAndSaveAddress(
         navigateToAutofillSettings: Boolean,
         isAddressAutofillEnabled: Boolean = true,
@@ -319,52 +355,52 @@ class SettingsSubMenuAutofillRobot {
             homeScreen {
             }.openThreeDotMenu {
             }.openSettings {
-            }.openAutofillSubMenu {
+            }.openAutofillSubMenu(composeTestRule) {
                 verifyAddressAutofillSection(isAddressAutofillEnabled, userHasSavedAddress)
                 clickAddAddressButton()
             }
         }
         Log.i(TAG, "fillAndSaveAddress: Waiting for $waitingTime ms for \"Name\" text field to exist")
-        nameTextInput().waitForExists(waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag(EditAddressTestTag.NAME_FIELD), waitingTime)
         Log.i(TAG, "fillAndSaveAddress: Waited for $waitingTime ms for \"Name\" text field to exist")
         Log.i(TAG, "fillAndSaveAddress: Trying to click device back button to dismiss keyboard using device back button")
         mDevice.pressBack()
         Log.i(TAG, "fillAndSaveAddress: Clicked device back button to dismiss keyboard using device back button")
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Name\" to $name")
-        nameTextInput().setText(name)
+        composeTestRule.nameTextInput().performTextInput(name)
         Log.i(TAG, "fillAndSaveAddress: \"Name\" was set to $name")
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Street Address\" to $streetAddress")
-        streetAddressTextInput().setText(streetAddress)
+        composeTestRule.streetAddressTextInput().performTextInput(streetAddress)
         Log.i(TAG, "fillAndSaveAddress: \"Street Address\" was set to $streetAddress")
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"City\" to $city")
-        cityTextInput().setText(city)
+        composeTestRule.cityTextInput().performTextInput(city)
         Log.i(TAG, "fillAndSaveAddress: \"City\" was set to $city")
         Log.i(TAG, "fillAndSaveAddress: Trying to click \"State\" dropdown button")
-        subRegionDropDown().click()
+        composeTestRule.subRegionDropDown().performClick()
         Log.i(TAG, "fillAndSaveAddress: Clicked \"State\" dropdown button")
         Log.i(TAG, "fillAndSaveAddress: Trying to click the $state dropdown option")
         clickSubRegionOption(state)
         Log.i(TAG, "fillAndSaveAddress: Clicked $state dropdown option")
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Zip\" to $zipCode")
-        zipCodeTextInput().setText(zipCode)
+        composeTestRule.zipCodeTextInput().performTextInput(zipCode)
         Log.i(TAG, "fillAndSaveAddress: \"Zip\" was set to $zipCode")
         Log.i(TAG, "fillAndSaveAddress: Trying to click \"Country or region\" dropdown button")
-        countryDropDown().click()
+        composeTestRule.countryDropDown().performClick()
         Log.i(TAG, "fillAndSaveAddress: Clicked \"Country or region\" dropdown button")
         Log.i(TAG, "fillAndSaveAddress: Trying to click $country dropdown option")
         clickCountryOption(country)
         Log.i(TAG, "fillAndSaveAddress: Clicked $country dropdown option")
-        if (!saveButton().exists()) {
-            scrollToElementByText(getStringResource(R.string.addresses_save_button))
+        if (composeTestRule.saveButton().isNotDisplayed()) {
+            composeTestRule.saveButton().performScrollTo()
         }
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Phone\" to $phoneNumber")
-        phoneTextInput().setText(phoneNumber)
+        composeTestRule.phoneTextInput().performTextInput(phoneNumber)
         Log.i(TAG, "fillAndSaveAddress: \"Phone\" was set to $phoneNumber")
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Email\" to $emailAddress")
-        emailTextInput().setText(emailAddress)
+        composeTestRule.emailTextInput().performTextInput(emailAddress)
         Log.i(TAG, "fillAndSaveAddress: \"Email\" was set to $emailAddress")
         Log.i(TAG, "fillAndSaveAddress: Trying to click the \"Save\" button")
-        saveButton().click()
+        composeTestRule.saveButton().performClick()
         Log.i(TAG, "fillAndSaveAddress: Clicked the \"Save\" button")
         Log.i(TAG, "fillAndSaveAddress: Waiting for $waitingTime ms for for \"Manage addresses\" button to exist")
         manageAddressesButton().waitForExists(waitingTime)
@@ -547,7 +583,7 @@ class SettingsSubMenuAutofillRobot {
     fun verifyNameOnCreditCardErrorMessage() =
         assertUIObjectExists(itemContainingText(getStringResource(R.string.credit_cards_name_on_card_validation_error_message_2)))
 
-    class Transition {
+    class Transition(private val composeTestRule: ComposeTestRule) {
         fun goBack(interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
             Log.i(TAG, "goBack: Trying to click the device back button")
             mDevice.pressBack()
@@ -562,8 +598,17 @@ class SettingsSubMenuAutofillRobot {
             navigateBackButton().click()
             Log.i(TAG, "goBackToAutofillSettings: Clicked the navigate up toolbar button")
 
-            SettingsSubMenuAutofillRobot().interact()
-            return SettingsSubMenuAutofillRobot.Transition()
+            SettingsSubMenuAutofillRobot(composeTestRule).interact()
+            return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
+        }
+
+        fun goBackToAutofillSettings(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
+            Log.i(TAG, "goBackToAutofillSettings: Trying to click the navigate up toolbar button")
+            composeTestRule.navigateBackButton().performClick()
+            Log.i(TAG, "goBackToAutofillSettings: Clicked the navigate up toolbar button")
+
+            SettingsSubMenuAutofillRobot(composeTestRule).interact()
+            return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
         }
 
         fun goBackToSavedCreditCards(interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
@@ -571,8 +616,8 @@ class SettingsSubMenuAutofillRobot {
             navigateBackButton().click()
             Log.i(TAG, "goBackToSavedCreditCards: Clicked the navigate up toolbar button")
 
-            SettingsSubMenuAutofillRobot().interact()
-            return SettingsSubMenuAutofillRobot.Transition()
+            SettingsSubMenuAutofillRobot(composeTestRule).interact()
+            return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
         }
 
         fun goBackToBrowser(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
@@ -586,9 +631,9 @@ class SettingsSubMenuAutofillRobot {
     }
 }
 
-fun autofillScreen(interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
-    SettingsSubMenuAutofillRobot().interact()
-    return SettingsSubMenuAutofillRobot.Transition()
+fun autofillScreen(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
+    SettingsSubMenuAutofillRobot(composeTestRule).interact()
+    return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
 }
 
 private fun autofillToolbarTitle() = itemContainingText(getStringResource(R.string.preferences_autofill))
@@ -610,24 +655,25 @@ private fun manageAddressesButton() =
             .text(getStringResource(R.string.preferences_addresses_manage_addresses)),
     )
 
-private fun addAddressToolbarTitle() = itemContainingText(getStringResource(R.string.addresses_add_address))
-private fun editAddressToolbarTitle() = itemContainingText(getStringResource(R.string.addresses_edit_address))
-private fun toolbarCheckmarkButton() = itemWithResId("$packageName:id/save_address_button")
+private fun ComposeTestRule.addAddressToolbarTitle() = onNodeWithText(getStringResource(R.string.preferences_addresses_add_address))
+private fun ComposeTestRule.editAddressToolbarTitle() = onNodeWithText(getStringResource(R.string.addresses_edit_address))
+private fun ComposeTestRule.toolbarCheckmarkButton() = onNodeWithContentDescription(getStringResource(R.string.address_menu_save_address))
 private fun navigateBackButton() = itemWithDescription(getStringResource(R.string.action_bar_up_description))
-private fun nameTextInput() = itemWithResId("$packageName:id/name_input")
-private fun streetAddressTextInput() = itemWithResId("$packageName:id/street_address_input")
-private fun cityTextInput() = itemWithResId("$packageName:id/city_input")
-private fun subRegionDropDown() = itemWithResId("$packageName:id/subregion_drop_down")
-private fun zipCodeTextInput() = itemWithResId("$packageName:id/zip_input")
-private fun countryDropDown() = itemWithResId("$packageName:id/country_drop_down")
-private fun phoneTextInput() = itemWithResId("$packageName:id/phone_input")
-private fun emailTextInput() = itemWithResId("$packageName:id/email_input")
-private fun saveButton() = itemWithResId("$packageName:id/save_button")
-private fun cancelButton() = itemWithResId("$packageName:id/cancel_button")
-private fun deleteAddressButton() = itemContainingText(getStringResource(R.string.addressess_delete_address_button))
-private fun toolbarDeleteAddressButton() = itemWithResId("$packageName:id/delete_address_button")
-private fun cancelDeleteAddressButton() = onView(withId(android.R.id.button2)).inRoot(RootMatchers.isDialog())
-private fun confirmDeleteAddressButton() = onView(withId(android.R.id.button1)).inRoot(RootMatchers.isDialog())
+private fun ComposeTestRule.navigateBackButton() = onNodeWithContentDescription("Navigate back")
+private fun ComposeTestRule.nameTextInput() = onNodeWithTag(EditAddressTestTag.NAME_FIELD).onChildAt(0)
+private fun ComposeTestRule.streetAddressTextInput() = onNodeWithTag(EditAddressTestTag.STREET_ADDRESS_FIELD).onChildAt(0)
+private fun ComposeTestRule.cityTextInput() = onNodeWithTag(EditAddressTestTag.CITY_FIELD).onChildAt(0)
+private fun ComposeTestRule.subRegionDropDown() = onNodeWithTag(EditAddressTestTag.SUBREGION_FIELD)
+private fun ComposeTestRule.zipCodeTextInput() = onNodeWithTag(EditAddressTestTag.ZIP_FIELD).onChildAt(0)
+private fun ComposeTestRule.countryDropDown() = onNodeWithTag(EditAddressTestTag.COUNTRY_FIELD)
+private fun ComposeTestRule.phoneTextInput() = onNodeWithTag(EditAddressTestTag.PHONE_FIELD).onChildAt(0)
+private fun ComposeTestRule.emailTextInput() = onNodeWithTag(EditAddressTestTag.EMAIL_FIELD).onChildAt(0)
+private fun ComposeTestRule.saveButton() = onNodeWithTag(EditAddressTestTag.SAVE_BUTTON)
+private fun ComposeTestRule.cancelButton() = onNodeWithTag(EditAddressTestTag.CANCEL_BUTTON)
+private fun ComposeTestRule.deleteAddressButton() = onNodeWithTag(EditAddressTestTag.DELETE_BUTTON)
+private fun ComposeTestRule.toolbarDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.TOPBAR_DELETE_BUTTON)
+private fun ComposeTestRule.cancelDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.DIALOG_CANCEL_BUTTON)
+private fun ComposeTestRule.confirmDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.DIALOG_DELETE_BUTTON)
 
 private fun creditCardsSectionTitle() = itemContainingText(getStringResource(R.string.preferences_credit_cards_2))
 private fun saveAndAutofillCreditCardsOption() = itemContainingText(getStringResource(R.string.preferences_credit_cards_save_and_autofill_cards_2))
@@ -648,10 +694,11 @@ private fun deleteCreditCardMenuButton() = itemContainingText(getStringResource(
 private fun confirmDeleteCreditCardButton() = onView(withId(android.R.id.button1)).inRoot(RootMatchers.isDialog())
 private fun cancelDeleteCreditCardButton() = onView(withId(android.R.id.button2)).inRoot(RootMatchers.isDialog())
 private fun securedCreditCardsLaterButton() = onView(withId(android.R.id.button2)).inRoot(RootMatchers.isDialog())
-
+private fun saveButton() = itemWithResId("$packageName:id/save_button")
+private fun cancelButton() = itemWithResId("$packageName:id/cancel_button")
 private fun savedAddress(name: String) = mDevice.findObject(UiSelector().textContains(name))
-private fun subRegionOption(subRegion: String) = mDevice.findObject(UiSelector().textContains(subRegion))
-private fun countryOption(country: String) = mDevice.findObject(UiSelector().textContains(country))
+private fun ComposeTestRule.subRegionOption(subRegion: String) = onNodeWithText(subRegion)
+private fun ComposeTestRule.countryOption(country: String) = onNodeWithText(country)
 
 private fun expiryMonthOption(expiryMonth: String) = mDevice.findObject(UiSelector().textContains(expiryMonth))
 private fun expiryYearOption(expiryYear: String) = mDevice.findObject(UiSelector().textContains(expiryYear))

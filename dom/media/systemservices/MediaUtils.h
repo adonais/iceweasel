@@ -15,6 +15,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Result.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/UniquePtr.h"

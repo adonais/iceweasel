@@ -70,10 +70,6 @@ signed-out-vpn-title = Sign in to boost your browser’s privacy with free { -fi
 signed-out-vpn-message = You’ve been selected for early access to our new, <a data-l10n-name="learn-more-vpn-signed-out">built-in VPN</a>. Enhance your browser’s protection by hiding your location and encrypting your traffic.
 sign-in-vpn = Next
 
-active-subscription-vpn-title = Finish setting up { -mozilla-vpn-brand-name }
-active-subscription-vpn-message = Download it and install the extension to unlock your upgrade.
-get-vpn-button = Download
-
 ## Messages and errors
 
 ipprotection-message-generic-error =

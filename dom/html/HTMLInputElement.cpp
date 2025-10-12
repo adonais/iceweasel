@@ -18,7 +18,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
@@ -49,7 +48,6 @@
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/InputType.h"
 #include "mozilla/dom/MouseEvent.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/NumericInputTypes.h"
 #include "mozilla/dom/ProgressEvent.h"
 #include "mozilla/dom/UnionTypes.h"
@@ -70,6 +68,7 @@
 #include "nsIFilePicker.h"
 #include "nsIFormControl.h"
 #include "nsIFrame.h"
+#include "nsIMutationObserver.h"
 #include "nsIPromptCollection.h"
 #include "nsIStringBundle.h"
 #include "nsLayoutUtils.h"
@@ -3164,12 +3163,10 @@ bool HTMLInputElement::NeedToInitializeEditorForEvent(
   // because they are lazily initialized.  We don't need to initialize the
   // control for certain types of events, because we know that those events are
   // safe to be handled without the editor being initialized.  These events
-  // include: mousein/move/out, overflow/underflow, DOM mutation, and void
-  // events. Void events are dispatched frequently by async keyboard scrolling
-  // to focused elements, so it's important to handle them to prevent excessive
-  // DOM mutations.
-  if (!IsSingleLineTextControl(false) ||
-      aVisitor.mEvent->mClass == eMutationEventClass) {
+  // include: mousein/move/out, overflow/underflow, and void events. Void events
+  // are dispatched frequently by async keyboard scrolling to focused elements,
+  // so it's important to handle them to prevent excessive DOM mutations.
+  if (!IsSingleLineTextControl(false)) {
     return false;
   }
 
@@ -5535,16 +5532,13 @@ void HTMLInputElement::ImageInputMapAttributesIntoRule(
   nsGenericHTMLFormControlElementWithState::MapCommonAttributesInto(aBuilder);
 }
 
-nsChangeHint HTMLInputElement::GetAttributeChangeHint(const nsAtom* aAttribute,
-                                                      int32_t aModType) const {
+nsChangeHint HTMLInputElement::GetAttributeChangeHint(
+    const nsAtom* aAttribute, AttrModType aModType) const {
   nsChangeHint retval =
       nsGenericHTMLFormControlElementWithState::GetAttributeChangeHint(
           aAttribute, aModType);
 
-  const bool isAdditionOrRemoval =
-      aModType == MutationEvent_Binding::ADDITION ||
-      aModType == MutationEvent_Binding::REMOVAL;
-
+  const bool isAdditionOrRemoval = IsAdditionOrRemoval(aModType);
   const bool reconstruct = [&] {
     if (aAttribute == nsGkAtoms::type) {
       return true;

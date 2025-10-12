@@ -171,6 +171,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
   mozilla::StyleMathVariant mMathVariant;
   // math-style support (used for MathML displaystyle)
   mozilla::StyleMathStyle mMathStyle;
+  // math-shift support (used for MathML cramped mode)
+  mozilla::StyleMathShift mMathShift;
 
   // Was mLanguage set based on a lang attribute in the document?
   bool mExplicitLanguage = false;
@@ -393,7 +395,13 @@ struct AnchorPosResolutionData {
 // Mapping from a referenced anchor to its resolution (If a valid anchor is
 // found).
 class AnchorPosReferencedAnchors {
+ private:
+  using Map =
+      nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>;
+
  public:
+  using Value = mozilla::Maybe<AnchorPosResolutionData>;
+
   AnchorPosReferencedAnchors() = default;
   AnchorPosReferencedAnchors(const AnchorPosReferencedAnchors&) = delete;
   AnchorPosReferencedAnchors(AnchorPosReferencedAnchors&&) = default;
@@ -404,14 +412,19 @@ class AnchorPosReferencedAnchors {
 
   struct Result {
     bool mAlreadyResolved;
-    mozilla::Maybe<AnchorPosResolutionData>* mEntry;
+    Value* mEntry;
   };
 
-  Result Lookup(const nsAtom* aAnchorName, bool aNeedOffset);
+  Result InsertOrModify(const nsAtom* aAnchorName, bool aNeedOffset);
+  const Value* Lookup(const nsAtom* aAnchorName) const;
+
+  bool IsEmpty() const { return mMap.IsEmpty(); }
+
+  Map::const_iterator begin() const { return mMap.cbegin(); }
+  Map::const_iterator end() const { return mMap.cend(); }
 
  private:
-  nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>
-      mMap;
+  Map mMap;
 };
 
 // Base set of parameters required to resolve a reference to an anchor.
@@ -1208,6 +1221,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
  private:
   mozilla::StyleWordBreak mWordBreak = mozilla::StyleWordBreak::Normal;
   mozilla::StyleOverflowWrap mOverflowWrap = mozilla::StyleOverflowWrap::Normal;
+  mozilla::StyleTextAutospace mTextAutospace =
+      mozilla::StyleTextAutospace::NORMAL;
 
  public:
   mozilla::StyleHyphens mHyphens;
@@ -1247,9 +1262,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
   mozilla::StyleTextWrapStyle mTextWrapStyle =
       mozilla::StyleTextWrapStyle::Auto;
 
-  mozilla::StyleTextAutospace mTextAutospace =
-      mozilla::StyleTextAutospace::NORMAL;
-
   char16_t TextSecurityMaskChar() const {
     switch (mWebkitTextSecurity) {
       case mozilla::StyleTextSecurity::None:
@@ -1278,6 +1290,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
       return mozilla::StyleOverflowWrap::Anywhere;
     }
     return mOverflowWrap;
+  }
+
+  mozilla::StyleTextAutospace EffectiveTextAutospace() const {
+    if (!mozilla::StaticPrefs::layout_css_text_autospace_enabled()) {
+      return mozilla::StyleTextAutospace::NO_AUTOSPACE;
+    }
+    return mTextAutospace;
   }
 
   bool WhiteSpaceIsSignificant() const {

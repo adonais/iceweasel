@@ -14,6 +14,7 @@ import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.clickPageObject
 import org.mozilla.fenix.ui.robots.navigationToolbar
+import mozilla.components.feature.prompts.R as promptsR
 
 /**
  *  Tests for verifying basic functionality of prompts
@@ -51,4 +52,10 @@ class PromptTest : TestSetup() {
 }
 
 private fun verifyBeforeUnloadPromptExists() =
-    MatcherHelper.assertUIObjectExists(itemContainingText(getStringResource(R.string.mozac_feature_prompt_before_unload_dialog_body)))
+    MatcherHelper.assertUIObjectExists(
+        itemContainingText(
+            getStringResource(
+                promptsR.string.mozac_feature_prompt_before_unload_dialog_body,
+            ),
+        ),
+    )

@@ -495,11 +495,14 @@ class NodeHTTPSProxyServer extends BaseHTTPProxy {
 // HTTP2 proxy
 
 class HTTP2ProxyCode {
-  static async startServer(port, auth) {
+  static async startServer(port, auth, maxConcurrentStreams) {
     const fs = require("fs");
     const options = {
       key: fs.readFileSync(__dirname + "/proxy-cert.key"),
       cert: fs.readFileSync(__dirname + "/proxy-cert.pem"),
+      settings: {
+        maxConcurrentStreams,
+      },
     };
     const http2 = require("http2");
     global.proxy = http2.createSecureServer(options);
@@ -651,7 +654,7 @@ class NodeHTTP2ProxyServer extends BaseHTTPProxy {
   /// Starts the server
   /// @port - default 0
   ///    when provided, will attempt to listen on that port.
-  async start(port = 0, auth) {
+  async start(port = 0, auth, maxConcurrentStreams = 100) {
     this.processId = await NodeServer.fork();
 
     await this.execute(BaseProxyCode);
@@ -659,14 +662,14 @@ class NodeHTTP2ProxyServer extends BaseHTTPProxy {
     await this.execute(ADB);
     await this.execute(`global.connect_handler = null;`);
     this._port = await this.execute(
-      `HTTP2ProxyCode.startServer(${port}, ${auth})`
+      `HTTP2ProxyCode.startServer(${port}, ${auth}, ${maxConcurrentStreams})`
     );
 
     this.registerFilter();
   }
 
   async socketCount(port) {
-    let count = this.execute(`HTTP2ProxyCode.socketCount(${port})`);
+    let count = await this.execute(`HTTP2ProxyCode.socketCount(${port})`);
     return count;
   }
 }

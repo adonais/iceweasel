@@ -55,9 +55,12 @@ import android.view.WindowManager
 import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.content.ContextCompat.getColor
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentFactory
+import androidx.fragment.app.setFragmentResult
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.LuminanceSource
 import com.google.zxing.MultiFormatReader
@@ -123,6 +126,7 @@ class QrFragment : Fragment() {
     internal lateinit var textureView: AutoFitTextureView
     internal lateinit var customViewFinder: CustomViewFinder
     internal lateinit var cameraErrorView: TextView
+    internal lateinit var backButton: AppCompatImageButton
 
     @StringRes
     internal var scanMessage: Int? = null
@@ -229,7 +233,7 @@ class QrFragment : Fragment() {
             try {
                 image = reader.acquireNextImage()
                 val availableImage = image
-                if (availableImage != null && scanCompleteListener != null) {
+                if (availableImage != null) {
                     val source = readImageSource(availableImage)
                     if (qrState == STATE_FIND_QRCODE) {
                         qrState = STATE_DECODE_PROGRESS
@@ -270,6 +274,11 @@ class QrFragment : Fragment() {
         textureView = view.findViewById<View>(R.id.texture) as AutoFitTextureView
         customViewFinder = view.findViewById<View>(R.id.view_finder) as CustomViewFinder
         cameraErrorView = view.findViewById<View>(R.id.camera_error) as TextView
+        backButton = view.findViewById<View>(R.id.back_button) as AppCompatImageButton
+        backButton.setOnClickListener {
+            stopServices()
+            handleResult("")
+        }
 
         CustomViewFinder.setMessage(scanMessage)
         qrState = STATE_FIND_QRCODE
@@ -280,7 +289,7 @@ class QrFragment : Fragment() {
 
         view.handleBackEvents {
             stopServices()
-            scanCompleteListener?.onScanComplete("")
+            handleResult("")
         }
     }
 
@@ -585,7 +594,7 @@ class QrFragment : Fragment() {
         val imageSurface = imageReader?.surface ?: return
 
         if (surface == null) {
-            scanCompleteListener?.onScanComplete("")
+            handleResult("")
             return
         }
 
@@ -696,6 +705,9 @@ class QrFragment : Fragment() {
 
         private const val CAMERA_CLOSE_LOCK_TIMEOUT_MS = 2500L
 
+        const val RESULT_REQUEST_KEY = "qr_fragment_result_key"
+        const val RESULT_BUNDLE_KEY = "qr_scan_result_bundle"
+
         /**
          * Returns a new instance of QR Fragment
          * @param listener Listener invoked when the QR scan completed successfully.
@@ -704,6 +716,19 @@ class QrFragment : Fragment() {
         fun newInstance(listener: OnScanCompleteListener, scanMessage: Int? = null): QrFragment {
             return QrFragment().apply {
                 scanCompleteListener = listener
+                this.scanMessage = scanMessage
+            }
+        }
+
+        /**
+         * Returns a new instance of QR Fragment.
+         * Recommend using the [QrFragmentFactory] to create a [QrFragment].
+         *
+         * @param scanMessage (Optional) Scan message to be displayed.
+         */
+        @VisibleForTesting
+        internal fun newInstance(scanMessage: Int? = null): QrFragment {
+            return QrFragment().apply {
                 this.scanMessage = scanMessage
             }
         }
@@ -773,6 +798,19 @@ class QrFragment : Fragment() {
         @Volatile internal var qrState: Int = 0
     }
 
+    /**
+     * Send result of QR Scan to appropriate listener.
+     */
+    internal fun handleResult(result: String?) {
+        val resultBundle = Bundle().apply {
+            putString(RESULT_BUNDLE_KEY, result)
+        }
+        scanCompleteListener?.onScanComplete(result ?: "")
+        if (isAdded) {
+            setFragmentResult(RESULT_REQUEST_KEY, resultBundle)
+        }
+    }
+
     @VisibleForTesting
     internal fun tryScanningSource(source: LuminanceSource) {
         if (qrState != STATE_DECODE_PROGRESS) {
@@ -780,7 +818,7 @@ class QrFragment : Fragment() {
         }
         val result = decodeSource(source) ?: decodeSource(source.invert())
         result?.let {
-            scanCompleteListener?.onScanComplete(it)
+            handleResult(result)
         }
     }
 
@@ -851,4 +889,23 @@ internal fun WindowManager.getDisplaySize(): Point {
         this.defaultDisplay.getSize(size)
     }
     return size
+}
+
+/**
+ * [FragmentFactory] for [QrFragment].
+ *
+ * @property scanMessageProvider Provider for the scan message.
+ */
+class QrFragmentFactory(
+    private val scanMessageProvider: () -> Int?,
+) : FragmentFactory() {
+    override fun instantiate(classLoader: ClassLoader, className: String): Fragment {
+        return when (className) {
+            QrFragment::class.java.name -> {
+                val scanMessage = scanMessageProvider()
+                QrFragment.newInstance(scanMessage)
+            }
+            else -> super.instantiate(classLoader, className)
+        }
+    }
 }

@@ -7,7 +7,6 @@ from urllib.parse import urlunsplit
 
 import mozhttpd
 import mozunit
-from conftest import fspath
 
 
 def test_symbols_path_not_present(check_for_crashes, minidump_files):
@@ -19,10 +18,10 @@ def test_symbols_path_unicode(check_for_crashes, minidump_files, tmpdir, capsys)
     """Test that check_for_crashes can handle unicode in dump_directory."""
     symbols_path = tmpdir.mkdir("🍪")
 
-    assert 1 == check_for_crashes(symbols_path=fspath(symbols_path), quiet=False)
+    assert 1 == check_for_crashes(symbols_path=str(symbols_path), quiet=False)
 
     out, _ = capsys.readouterr()
-    assert fspath(symbols_path) in out
+    assert str(symbols_path) in out
 
 
 def test_symbols_path_url(check_for_crashes, minidump_files):

@@ -34,17 +34,6 @@ object WebCompatTestData {
             "app": {
               "defaultUserAgent": "testDefaultUserAgent"
             },
-            "experiments": [
-              {
-                "branch": "branch1",
-                "slug": "slug1",
-                "kind": "kind1"
-              }, {
-                "branch": "branch2",
-                "slug": "slug2",
-                "kind": "kind2"
-              }
-            ],
             "graphics": {
               "devices": [
                 { "id": "device1" },

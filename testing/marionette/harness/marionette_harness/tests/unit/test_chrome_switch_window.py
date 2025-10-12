@@ -28,10 +28,6 @@ class TestSwitchWindowChrome(TestSwitchToWindowContent):
         # Can only run in content context
         pass
 
-    @skipIf(
-        sys.platform.startswith("linux"),
-        "Bug 1511970 - New window isn't moved to the background on Linux",
-    )
     def test_switch_tabs_for_new_background_window_without_focus_change(self):
         # Open an additional tab in the original window so we can better check
         # the selected index in thew new window to be opened.

@@ -4,8 +4,9 @@ import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
-import androidx.compose.ui.test.hasAnySibling
+import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.longClick
@@ -19,6 +20,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import org.mozilla.fenix.R
 import org.mozilla.fenix.bookmarks.BookmarksTestTag.ADD_BOOKMARK_FOLDER_NAME_TEXT_FIELD
+import org.mozilla.fenix.bookmarks.BookmarksTestTag.BOOKMARK_TOOLBAR
 import org.mozilla.fenix.bookmarks.BookmarksTestTag.EDIT_BOOKMARK_ITEM_TITLE_TEXT_FIELD
 import org.mozilla.fenix.bookmarks.BookmarksTestTag.EDIT_BOOKMARK_ITEM_URL_TEXT_FIELD
 import org.mozilla.fenix.helpers.Constants.LONG_CLICK_DURATION
@@ -30,12 +32,15 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
 
     @OptIn(ExperimentalTestApi::class)
     fun verifyEmptyBookmarksMenuView() {
-        Log.i(TAG, "verifyBookmarksMenuView: Waiting for bookmarks header to exist.")
-        composeTestRule.waitUntilExactlyOneExists(
-            hasText("Bookmarks")
-                .and(hasAnySibling(hasContentDescription("Navigate back"))),
+        Log.i(TAG, "verifyBookmarksMenuView: Waiting for bookmarks toolbar elements to exist.")
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasTestTag(BOOKMARK_TOOLBAR)
+                .and(hasAnyDescendant(hasText("Bookmarks")))
+                .and(hasAnyDescendant(hasContentDescription("Navigate back")))
+                .and(hasAnyDescendant(hasContentDescription(getStringResource(R.string.bookmark_sort_menu_content_desc))))
+                .and(hasAnyDescendant(hasContentDescription(getStringResource(R.string.bookmark_add_new_folder_button_content_description)))),
         )
-        Log.i(TAG, "verifyBookmarksMenuView: Waited for bookmarks header to exist.")
+        Log.i(TAG, "verifyBookmarksMenuView: Waited for bookmarks toolbar elements to exist.")
         Log.i(TAG, "verifyBookmarksMenuView: Trying to verify the empty bookmarks list is displayed.")
         composeTestRule.onNodeWithText(
             getStringResource(R.string.bookmark_empty_list_guest_description),
@@ -112,7 +117,7 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
 
     fun cancelFolderDeletion() {
         Log.i(TAG, "cancelFolderDeletion: Trying to click \"Cancel\" bookmarks folder deletion dialog button")
-        composeTestRule.onNodeWithText(getStringResource(R.string.bookmark_delete_negative).uppercase()).performClick()
+        composeTestRule.onNodeWithText(getStringResource(R.string.bookmark_delete_negative)).performClick()
         Log.i(TAG, "cancelFolderDeletion: Clicked \"Cancel\" bookmarks folder deletion dialog button")
     }
 
@@ -217,7 +222,7 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
 
     fun confirmDeletion() {
         Log.i(TAG, "confirmDeletion: Trying to click \"Delete\" bookmarks deletion button")
-        composeTestRule.onNodeWithText("DELETE").performClick()
+        composeTestRule.onNodeWithText("Delete").performClick()
         Log.i(TAG, "confirmDeletion: Clicked \"Delete\" bookmarks deletion button")
     }
 

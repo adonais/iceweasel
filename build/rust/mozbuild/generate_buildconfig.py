@@ -110,6 +110,7 @@ def generate(output):
     output.write(generate_string("MOZ_APP_BASENAME"))
     output.write(generate_string("MOZ_APP_NAME"))
     output.write(generate_string("MOZ_APP_VENDOR"))
+    output.write(generate_string("MOZ_APP_VERSION"))
 
     # Write out some useful booleans from the buildconfig.
     output.write(generate_bool("MOZ_FOLD_LIBS"))

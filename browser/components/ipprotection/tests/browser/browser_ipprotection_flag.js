@@ -22,7 +22,7 @@ add_task(async function test_flags_content() {
   );
 
   await setPanelState({
-    isSignedIn: true,
+    isSignedOut: false,
     location: mockLocation,
   });
   await flagLoadedPromise;

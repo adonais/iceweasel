@@ -1828,6 +1828,93 @@ LayoutDeviceIntRect TextLeafPoint::ComputeBoundsFromFrame() const {
       frameScreenRect, presContext->AppUnitsPerDevPixel());
 }
 
+LayoutDeviceIntRect TextLeafPoint::InsertionPointBounds() const {
+  if (TextLeafPoint::GetCaret(mAcc) == *this) {
+    for (Accessible* acc = mAcc; acc; acc = acc->Parent()) {
+      if (HyperTextAccessibleBase* ht = acc->AsHyperTextBase()) {
+        return ht->GetCaretRect().first;
+      }
+    }
+  }
+
+  LayoutDeviceIntRect currentBounds = CharBounds();
+  if (currentBounds.IsEmpty()) {
+    return LayoutDeviceIntRect();
+  }
+
+  // When 'reversed' is true we calculate the writing direction using a
+  // neighboring character that is past the current one (eg. in LTR the
+  // character to the right.)
+  bool reversed = false;
+  // We are conservative here and stay within the bounds of the editable so
+  // we don't get confused with other text-flows outside of this block.
+  TextLeafPoint neighborChar =
+      FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirPrevious,
+                   BoundaryFlags::eStopInEditable);
+  if (*this == neighborChar) {
+    // If the current char is the first, use the next char past the current
+    // to extrapolate the writing direction.
+    neighborChar = FindBoundary(nsIAccessibleText::BOUNDARY_CHAR, eDirNext,
+                                BoundaryFlags::eStopInEditable);
+    reversed = true;
+  } else {
+    if (*this ==
+        FindBoundary(
+            nsIAccessibleText::BOUNDARY_LINE_START, eDirPrevious,
+            BoundaryFlags::eStopInEditable | BoundaryFlags::eIncludeOrigin)) {
+      // If this char is a newline the previous char will be on the previous
+      // line either equal or past the current one (eg. in LTR the previous char
+      // will be to the right of the current instead of the left.)
+      reversed = true;
+    }
+  }
+
+  LayoutDeviceIntRect neighborBounds = neighborChar.CharBounds();
+  if (neighborBounds.IsEmpty()) {
+    // Either the point is invalid or the accessible is not visible.
+    // We tried, didn't we..
+    return LayoutDeviceIntRect();
+  }
+
+  // An axis-agnostic function that determines writing direction and aligns
+  // the caret where insertion point should be.
+  auto alignRectToInsertion = [](int32_t neighborStart, bool reversed,
+                                 int32_t& currentStart,
+                                 int32_t& currentLength) {
+    // The caret is always 1px wide (or tall, in vertical text).
+    const int32_t caretLength = 1;
+    int32_t delta = (neighborStart - currentStart);
+    if (reversed) {
+      delta *= -1;
+    }
+    if (delta > 0) {
+      // Previous character is to the end (eg. right in ltr) of the current one,
+      // or next character is to the start (eg. left in ltr) of the current one.
+      // Align the caret to the end of the current character.
+      currentStart += currentLength - caretLength;
+    }
+    currentLength = caretLength;
+  };
+
+  WritingMode wm = mAcc->GetWritingMode();
+  if (wm == WritingMode() && mAcc->Parent()) {
+    // mAcc is probably a text leaf with no stored writing mode, use its parent.
+    wm = mAcc->Parent()->GetWritingMode();
+  }
+
+  if (!wm.IsVertical()) {
+    // Horizontal text.
+    alignRectToInsertion(neighborBounds.x, reversed, currentBounds.x,
+                         currentBounds.width);
+  } else {
+    // Vertical text
+    alignRectToInsertion(neighborBounds.y, reversed, currentBounds.y,
+                         currentBounds.height);
+  }
+
+  return currentBounds;
+}
+
 /* static */
 nsTArray<TextOffsetAttribute> TextLeafPoint::GetTextOffsetAttributes(
     LocalAccessible* aAcc) {
@@ -2067,7 +2154,7 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
       static_cast<int32_t>(nsAccUtils::TextLength(lastPoint.mAcc)));
 }
 
-LayoutDeviceIntRect TextLeafPoint::CharBounds() {
+LayoutDeviceIntRect TextLeafPoint::CharBounds() const {
   if (!mAcc) {
     return LayoutDeviceIntRect();
   }
@@ -2205,7 +2292,7 @@ LayoutDeviceIntRect TextLeafRange::Bounds() const {
   // incorrect width. We should use the length of the longest spanned line for
   // our width. To achieve this, walk all the lines and union them into the
   // result rectangle.
-  LayoutDeviceIntRect result = TextLeafPoint{mStart}.CharBounds();
+  LayoutDeviceIntRect result;
   const bool succeeded = WalkLineRects(
       [&result](TextLeafRange aLine, LayoutDeviceIntRect aLineRect) {
         result.UnionRect(result, aLineRect);
@@ -2454,9 +2541,12 @@ void TextLeafRange::ScrollIntoView(uint32_t aScrollType) const {
 nsTArray<TextLeafRange> TextLeafRange::VisibleLines(
     Accessible* aContainer) const {
   MOZ_ASSERT(aContainer);
+  nsTArray<TextLeafRange> lines;
+  if (mStart == mEnd) {
+    return lines;
+  }
   // We want to restrict our lines to those visible within aContainer.
   LayoutDeviceIntRect containerBounds = aContainer->Bounds();
-  nsTArray<TextLeafRange> lines;
   WalkLineRects([&lines, &containerBounds](TextLeafRange aLine,
                                            LayoutDeviceIntRect aLineRect) {
     // XXX This doesn't correctly handle lines that are scrolled out where the
@@ -2472,8 +2562,13 @@ nsTArray<TextLeafRange> TextLeafRange::VisibleLines(
 }
 
 bool TextLeafRange::WalkLineRects(LineRectCallback aCallback) const {
-  if (mEnd <= mStart) {
+  if (mEnd < mStart) {
     return false;
+  }
+  if (mStart == mEnd) {
+    // Return the insertion point bounds for the offset if range is collapsed.
+    aCallback(*this, mStart.InsertionPointBounds());
+    return true;
   }
 
   bool locatedFinalLine = false;

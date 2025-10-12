@@ -11,7 +11,6 @@ skip-if = ["headless"] # bug 1410525
 ["test_assign_event_data.html"]
 skip-if = [
   "os == 'mac'", # bug 933303
-  "os == 'android' && debug", # bug 1285414
   "android_version == '24'",
   "headless && os == 'win'",
 ]

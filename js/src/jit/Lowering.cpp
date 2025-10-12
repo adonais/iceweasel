@@ -402,12 +402,11 @@ void LIRGenerator::visitGetInlinedArgument(MGetInlinedArgument* ins) {
 }
 
 void LIRGenerator::visitGetInlinedArgumentHole(MGetInlinedArgumentHole* ins) {
-#if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_MIPS64) || \
-    defined(JS_CODEGEN_RISCV64)
-  // On some 64-bit architectures, we don't support boxing a typed
-  // register in-place without using a scratch register, so the result
-  // register can't be the same as any of the inputs. Fortunately,
-  // those architectures have registers to spare.
+#if defined(JS_PUNBOX64)
+  // On 64-bit architectures, we don't support boxing a typed register
+  // in-place without using a scratch register, so the result register
+  // can't be the same as any of the inputs. Fortunately, those
+  // architectures have registers to spare.
   const bool useAtStart = false;
 #else
   const bool useAtStart = true;
@@ -1259,6 +1258,26 @@ void LIRGenerator::visitTest(MTest* test) {
     return;
   }
 
+  if (opd->isStrictConstantCompareInt32() && opd->isEmittedAtUses()) {
+    auto* comp = opd->toStrictConstantCompareInt32();
+    auto* value = comp->value();
+
+    auto* lir = new (alloc()) LStrictConstantCompareInt32AndBranch(
+        ifTrue, ifFalse, useBoxAtStart(value), comp);
+    add(lir, test);
+    return;
+  }
+
+  if (opd->isStrictConstantCompareBoolean() && opd->isEmittedAtUses()) {
+    auto* comp = opd->toStrictConstantCompareBoolean();
+    auto* value = comp->value();
+
+    auto* lir = new (alloc()) LStrictConstantCompareBooleanAndBranch(
+        ifTrue, ifFalse, useBoxAtStart(value), comp);
+    add(lir, test);
+    return;
+  }
+
   if (opd->isIsNoIter()) {
     MOZ_ASSERT(opd->isEmittedAtUses());
 
@@ -1521,19 +1540,29 @@ void LIRGenerator::visitCompare(MCompare* comp) {
 
 void LIRGenerator::visitStrictConstantCompareInt32(
     MStrictConstantCompareInt32* ins) {
+  // Prefer to emit fused compare-and-branch if possible.
+  if (CanEmitCompareAtUses(ins)) {
+    emitAtUses(ins);
+    return;
+  }
+
   MDefinition* value = ins->value();
 
-  auto* lir = new (alloc())
-      LStrictConstantCompareInt32(useBox(value), tempDouble(), tempDouble());
+  auto* lir = new (alloc()) LStrictConstantCompareInt32(useBox(value), temp());
   define(lir, ins);
 }
 
 void LIRGenerator::visitStrictConstantCompareBoolean(
     MStrictConstantCompareBoolean* ins) {
+  // Prefer to emit fused compare-and-branch if possible.
+  if (CanEmitCompareAtUses(ins)) {
+    emitAtUses(ins);
+    return;
+  }
+
   MDefinition* value = ins->value();
 
-  auto* lir =
-      new (alloc()) LStrictConstantCompareBoolean(useBox(value), temp());
+  auto* lir = new (alloc()) LStrictConstantCompareBoolean(useBox(value));
   define(lir, ins);
 }
 
@@ -1908,6 +1937,21 @@ void LIRGenerator::visitNearbyInt(MNearbyInt* ins) {
     lir = new (alloc()) LNearbyInt(useRegisterAtStart(ins->input()));
   } else {
     lir = new (alloc()) LNearbyIntF(useRegisterAtStart(ins->input()));
+  }
+
+  define(lir, ins);
+}
+
+void LIRGenerator::visitRoundToDouble(MRoundToDouble* ins) {
+  MIRType inputType = ins->input()->type();
+  MOZ_ASSERT(IsFloatingPointType(inputType));
+  MOZ_ASSERT(ins->type() == inputType);
+
+  LInstructionHelper<1, 1, 0>* lir;
+  if (inputType == MIRType::Double) {
+    lir = new (alloc()) LRoundToDouble(useRegister(ins->input()));
+  } else {
+    lir = new (alloc()) LRoundToFloat32(useRegister(ins->input()));
   }
 
   define(lir, ins);
@@ -5491,14 +5535,21 @@ void LIRGenerator::visitLoadElementAndUnbox(MLoadElementAndUnbox* ins) {
 void LIRGenerator::visitAddAndStoreSlot(MAddAndStoreSlot* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
 
-  LDefinition maybeTemp = LDefinition::BogusTemp();
-  if (ins->kind() != MAddAndStoreSlot::Kind::FixedSlot) {
-    maybeTemp = temp();
+  if (ins->preserveWrapper()) {
+    auto* lir = new (alloc()) LAddAndStoreSlotPreserveWrapper(
+        useRegister(ins->object()), useBox(ins->value()), temp(), temp());
+    assignSnapshot(lir, ins->bailoutKind());
+    add(lir, ins);
+    assignSafepoint(lir, ins);
+  } else {
+    LDefinition maybeTemp = LDefinition::BogusTemp();
+    if (ins->kind() != MAddAndStoreSlot::Kind::FixedSlot) {
+      maybeTemp = temp();
+    }
+    auto* lir = new (alloc()) LAddAndStoreSlot(useRegister(ins->object()),
+                                               useBox(ins->value()), maybeTemp);
+    add(lir, ins);
   }
-
-  auto* lir = new (alloc()) LAddAndStoreSlot(useRegister(ins->object()),
-                                             useBox(ins->value()), maybeTemp);
-  add(lir, ins);
 }
 
 void LIRGenerator::visitAllocateAndStoreSlot(MAllocateAndStoreSlot* ins) {

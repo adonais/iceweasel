@@ -54,6 +54,8 @@ tags = "addons"
 skip-if = ["os == 'android'"]
 
 ["test_TOUNotificationFlow.js"]
+skip-if = ["os == 'android'"]
+# The TOU notification flow is desktop only
 
 ["test_TelemetryClientID_reset.js"]
 skip-if = ["os == 'android'"] # Disabled as Android/GeckoView doesn't run TelemetryController
@@ -85,6 +87,8 @@ skip-if = [
 ["test_TelemetryHistograms.js"]
 
 ["test_TelemetryReportingPolicy.js"]
+skip-if = ["os == 'android'"]
+# Desktop only
 tags = "addons"
 
 ["test_TelemetryScalars.js"]

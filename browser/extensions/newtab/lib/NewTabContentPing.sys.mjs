@@ -118,6 +118,8 @@ export class NewTabContentPing {
       event_source,
       // eslint-disable-next-line no-unused-vars
       recommendation_id,
+      // eslint-disable-next-line no-unused-vars
+      layout_name,
       ...result
     } = eventDataDict;
     return result;

@@ -92,7 +92,7 @@ ScriptLoadData::ScriptLoadData(ScriptLoader* aLoader,
       mLoadedScript(aRequest->getLoadedScript()),
       mNetworkMetadata(aRequest->mNetworkMetadata) {}
 
-NS_IMPL_ISUPPORTS(SharedScriptCache, nsIMemoryReporter, nsIObserver)
+NS_IMPL_ISUPPORTS(SharedScriptCache, nsIMemoryReporter)
 
 MOZ_DEFINE_MALLOC_SIZE_OF(SharedScriptCacheMallocSizeOf)
 
@@ -106,11 +106,10 @@ void SharedScriptCache::Init() {
   // The cache reflects the policy for whether to block or not, and once
   // the policy is modified, we should discard the cache, to avoid running
   // a cached script which is supposed to be blocked.
-  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-  if (prefs) {
-    prefs->AddObserver("urlclassifier", this, false);
-    prefs->AddObserver("privacy.trackingprotection.enabled", this, false);
-  }
+  auto ClearCache = [](const char*, void*) { Clear(); };
+  Preferences::RegisterPrefixCallback(ClearCache, "urlclassifier.");
+  Preferences::RegisterCallback(ClearCache,
+                                "privacy.trackingprotection.enabled");
 }
 
 SharedScriptCache::~SharedScriptCache() { UnregisterWeakMemoryReporter(this); }
@@ -126,16 +125,6 @@ SharedScriptCache::CollectReports(nsIHandleReportCallback* aHandleReport,
                          SizeOfExcludingThis(SharedScriptCacheMallocSizeOf),
                      "Memory used for SharedScriptCache to share script "
                      "across documents");
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-SharedScriptCache::Observe(nsISupports* aSubject, const char* aTopic,
-                           const char16_t* aData) {
-  if (strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) == 0) {
-    SharedScriptCache::Clear();
-  }
-
   return NS_OK;
 }
 

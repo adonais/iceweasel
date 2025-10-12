@@ -18,12 +18,14 @@ import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Addresses
+import org.mozilla.fenix.R
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.address.controller.DefaultAddressManagementController
 import org.mozilla.fenix.settings.address.interactor.AddressManagementInteractor
 import org.mozilla.fenix.settings.address.interactor.DefaultAddressManagementInteractor
-import org.mozilla.fenix.settings.address.view.AddressList
+import org.mozilla.fenix.settings.address.ui.list.AddressList
 import org.mozilla.fenix.settings.autofill.AutofillAction
 import org.mozilla.fenix.settings.autofill.AutofillFragmentState
 import org.mozilla.fenix.settings.autofill.AutofillFragmentStore
@@ -80,6 +82,11 @@ class AddressManagementFragment : Fragment() {
                 return@consumeFrom
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showToolbar(getString(R.string.addresses_manage_addresses))
     }
 
     /**

@@ -31,6 +31,7 @@ import org.mozilla.gecko.GeckoSystemStateListener;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.LocaleUtils;
 
+/** Settings for configuring the Gecko runtime environment. */
 @AnyThread
 public final class GeckoRuntimeSettings extends RuntimeSettings {
   private static final String LOGTAG = "GeckoRuntimeSettings";
@@ -442,7 +443,12 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       return this;
     }
 
-    @SuppressWarnings("checkstyle:javadocmethod")
+    /**
+     * Set the content blocking settings.
+     *
+     * @param cb The ContentBlocking.Settings to use
+     * @return This Builder instance
+     */
     public @NonNull Builder contentBlocking(final @NonNull ContentBlocking.Settings cb) {
       getSettings().mContentBlocking = cb;
       return this;
@@ -663,6 +669,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().setSameDocumentNavigationOverridesLoadTypeForceDisable(uri);
       return this;
     }
+
+    /**
+     * Set whether content service should be on isolated process or not. This must be set before
+     * startup.
+     *
+     * @param enabled A flag determining whether content service should be on isolated process.
+     * @return The builder instance.
+     */
+    public @NonNull Builder isolatedProcessEnabled(final boolean enabled) {
+      getSettings().mIsolatedProcess = enabled;
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
@@ -672,7 +690,11 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   /* package */ ContentBlocking.Settings mContentBlocking;
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  /**
+   * Get the content blocking settings.
+   *
+   * @return The ContentBlocking.Settings for this runtime
+   */
   public @NonNull ContentBlocking.Settings getContentBlocking() {
     return mContentBlocking;
   }
@@ -767,7 +789,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /* package */ final Pref<Boolean> mCookieBehaviorOptInPartitioningPBM =
       new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning.pbmode", false);
   /* package */ final Pref<Integer> mCertificateTransparencyMode =
-      new Pref<Integer>("security.pki.certificate_transparency.mode", 0);
+      new Pref<Integer>("security.pki.certificate_transparency.mode", 1);
   /* package */ final PrefWithoutDefault<Boolean> mPostQuantumKeyExchangeTLSEnabled =
       new PrefWithoutDefault<Boolean>("security.tls.enable_kyber");
   /* package */ final PrefWithoutDefault<Boolean> mPostQuantumKeyExchangeHttp3Enabled =
@@ -790,6 +812,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /* package */ boolean mDebugPause;
   /* package */ boolean mUseMaxScreenDepth;
   /* package */ boolean mLowMemoryDetection = true;
+  /* package */ boolean mIsolatedProcess = false;
   /* package */ float mDisplayDensityOverride = -1.0f;
   /* package */ int mDisplayDpiOverride;
   /* package */ int mScreenWidthOverride;
@@ -841,6 +864,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mDebugPause = settings.mDebugPause;
     mUseMaxScreenDepth = settings.mUseMaxScreenDepth;
     mLowMemoryDetection = settings.mLowMemoryDetection;
+    mIsolatedProcess = settings.mIsolatedProcess;
     mDisplayDensityOverride = settings.mDisplayDensityOverride;
     mDisplayDpiOverride = settings.mDisplayDpiOverride;
     mScreenWidthOverride = settings.mScreenWidthOverride;
@@ -1349,7 +1373,11 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     return null;
   }
 
-  @SuppressWarnings("checkstyle:javadocmethod")
+  /**
+   * Get the crash handler service class.
+   *
+   * @return The crash handler Service class, if set
+   */
   public @Nullable Class<? extends Service> getCrashHandler() {
     return mCrashHandler;
   }
@@ -1655,6 +1683,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     return mFontInflationMinTwips.get() > 0;
   }
 
+  /** Color scheme type definitions for web content theming. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({COLOR_SCHEME_LIGHT, COLOR_SCHEME_DARK, COLOR_SCHEME_SYSTEM})
   public @interface ColorScheme {}
@@ -1939,6 +1968,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     return this;
   }
 
+  /** HTTPS-only mode type definitions for secure browsing. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({ALLOW_ALL, HTTPS_ONLY_PRIVATE, HTTPS_ONLY})
   public @interface HttpsOnlyMode {}
@@ -2317,6 +2347,15 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     return mSameDocumentNavigationOverridesLoadTypeForceDisable.get();
   }
 
+  /**
+   * Gets whether the content service is isolated process or not.
+   *
+   * @return True if the content service runs on isolated process.
+   */
+  public boolean getIsolatedProcessEnabled() {
+    return mIsolatedProcess;
+  }
+
   @Override // Parcelable
   public void writeToParcel(final Parcel out, final int flags) {
     super.writeToParcel(out, flags);
@@ -2327,6 +2366,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     ParcelableUtils.writeBoolean(out, mDebugPause);
     ParcelableUtils.writeBoolean(out, mUseMaxScreenDepth);
     ParcelableUtils.writeBoolean(out, mLowMemoryDetection);
+    ParcelableUtils.writeBoolean(out, mIsolatedProcess);
     out.writeFloat(mDisplayDensityOverride);
     out.writeInt(mDisplayDpiOverride);
     out.writeInt(mScreenWidthOverride);
@@ -2337,7 +2377,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   }
 
   // AIDL code may call readFromParcel even though it's not part of Parcelable.
-  @SuppressWarnings("checkstyle:javadocmethod")
   public void readFromParcel(final @NonNull Parcel source) {
     super.readFromParcel(source);
 
@@ -2347,6 +2386,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mDebugPause = ParcelableUtils.readBoolean(source);
     mUseMaxScreenDepth = ParcelableUtils.readBoolean(source);
     mLowMemoryDetection = ParcelableUtils.readBoolean(source);
+    mIsolatedProcess = ParcelableUtils.readBoolean(source);
     mDisplayDensityOverride = source.readFloat();
     mDisplayDpiOverride = source.readInt();
     mScreenWidthOverride = source.readInt();
@@ -2368,6 +2408,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mConfigFilePath = source.readString();
   }
 
+  /** Parcelable creator for GeckoRuntimeSettings instances. */
   public static final Parcelable.Creator<GeckoRuntimeSettings> CREATOR =
       new Parcelable.Creator<GeckoRuntimeSettings>() {
         @Override

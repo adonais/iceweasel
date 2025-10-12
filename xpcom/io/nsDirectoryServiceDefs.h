@@ -86,6 +86,8 @@
 #  define NS_WIN_APPDATA_DIR "AppData"
 #  define NS_WIN_LOCAL_APPDATA_DIR "LocalAppData"
 #  define NS_WIN_COOKIES_DIR "CookD"
+#  define NS_WIN_ONEDRIVE_PERSONAL_DIR "OneDrPD"
+#  define NS_WIN_ONEDRIVE_BUSINESS_DIR_LIST "OneDrBDL"
 #elif defined(XP_UNIX)
 #  define NS_UNIX_HOME_DIR NS_OS_HOME_DIR
 #endif

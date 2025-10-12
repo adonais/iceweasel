@@ -18,17 +18,7 @@ function WrapWithProvider({ children, state = INITIAL_STATE }) {
 }
 
 describe("<Widgets>", () => {
-  it("should render", () => {
-    const wrapper = mount(
-      <WrapWithProvider>
-        <Widgets />
-      </WrapWithProvider>
-    );
-    assert.ok(wrapper.exists());
-    assert.ok(wrapper.find(".widgets-container").exists());
-  });
-
-  it("should render <Lists> if list prefs are enabled", () => {
+  it("should render and show <Lists> if list prefs are enabled", () => {
     const state = {
       ...INITIAL_STATE,
       Prefs: {
@@ -45,10 +35,12 @@ describe("<Widgets>", () => {
         <Widgets />
       </WrapWithProvider>
     );
+    assert.ok(wrapper.exists());
+    assert.ok(wrapper.find(".widgets-container").exists());
     assert.ok(wrapper.find(Lists).exists());
   });
 
-  it("should render <FocusTimer> if timer prefs are enabled", () => {
+  it("should render and show <FocusTimer> if timer prefs are enabled", () => {
     const state = {
       ...INITIAL_STATE,
       Prefs: {
@@ -65,6 +57,8 @@ describe("<Widgets>", () => {
         <Widgets />
       </WrapWithProvider>
     );
+    assert.ok(wrapper.exists());
+    assert.ok(wrapper.find(".widgets-container").exists());
     assert.ok(wrapper.find(FocusTimer).exists());
   });
 });

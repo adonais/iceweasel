@@ -7,6 +7,8 @@
 #include "NetworkLoadHandler.h"
 
 #include "CacheLoadHandler.h"  // CachePromiseHandler
+#include "js/loader/ModuleLoadRequest.h"
+#include "js/loader/ScriptLoadRequest.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
 #include "mozilla/dom/InternalResponse.h"
@@ -153,8 +155,8 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
 
     nsAutoCString sourceMapURL;
     if (nsContentUtils::GetSourceMapURL(httpChannel, sourceMapURL)) {
-      loadContext->mRequest->mSourceMapURL =
-          Some(NS_ConvertUTF8toUTF16(sourceMapURL));
+      loadContext->mRequest->SetSourceMapURL(
+          NS_ConvertUTF8toUTF16(sourceMapURL));
     }
   }
 

@@ -11,6 +11,7 @@
 #include "gfxContext.h"
 #include "gfxMathTable.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 
@@ -88,17 +89,21 @@ nsMathMLmrootFrame::TransmitAutomaticData() {
     //    to "false", within index, but leaves both attributes unchanged within
     //    base.
     // 2. The TeXbook (Ch 17. p.141) says \sqrt is compressed
-    UpdatePresentationDataFromChildAt(1, 1, NS_MATHML_COMPRESSED,
-                                      NS_MATHML_COMPRESSED);
-    UpdatePresentationDataFromChildAt(0, 0, NS_MATHML_COMPRESSED,
-                                      NS_MATHML_COMPRESSED);
+    if (!StaticPrefs::mathml_math_shift_enabled()) {
+      UpdatePresentationDataFromChildAt(1, 1, NS_MATHML_COMPRESSED,
+                                        NS_MATHML_COMPRESSED);
+      UpdatePresentationDataFromChildAt(0, 0, NS_MATHML_COMPRESSED,
+                                        NS_MATHML_COMPRESSED);
+    }
 
     PropagateFrameFlagFor(mFrames.LastChild(),
                           NS_FRAME_MATHML_SCRIPT_DESCENDANT);
   } else {
     // The TeXBook (Ch 17. p.141) says that \sqrt is cramped
-    UpdatePresentationDataFromChildAt(0, -1, NS_MATHML_COMPRESSED,
-                                      NS_MATHML_COMPRESSED);
+    if (!StaticPrefs::mathml_math_shift_enabled()) {
+      UpdatePresentationDataFromChildAt(0, -1, NS_MATHML_COMPRESSED,
+                                        NS_MATHML_COMPRESSED);
+    }
   }
 
   return NS_OK;

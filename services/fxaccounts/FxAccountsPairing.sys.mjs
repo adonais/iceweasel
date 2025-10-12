@@ -27,7 +27,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource://gre/modules/FxAccountsPairingChannel.sys.mjs",
 
   Weave: "resource://services-sync/main.sys.mjs",
-  jwcrypto: "resource://services-crypto/jwcrypto.sys.mjs",
+  jwcrypto: "moz-src:///services/crypto/modules/jwcrypto.sys.mjs",
 });
 
 const PAIRING_REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob:pair-auth-webchannel";

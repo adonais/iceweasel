@@ -254,11 +254,16 @@ extern void wgpu_parent_queue_submit(
     WGPUWebGPUParentPtr aParent, WGPUDeviceId aDeviceId, WGPUQueueId aQueueId,
     const WGPUCommandBufferId* aCommandBufferIds,
     uintptr_t aCommandBufferIdsLength, const WGPUTextureId* aTextureIds,
-    uintptr_t aTextureIdsLength) {
+    uintptr_t aTextureIdsLength,
+    const WGPUExternalTextureSourceId* aExternalTextureSourceIds,
+    uintptr_t aExternalTextureSourceIdsLength) {
   auto* parent = static_cast<WebGPUParent*>(aParent);
   auto command_buffers = Span(aCommandBufferIds, aCommandBufferIdsLength);
   auto textures = Span(aTextureIds, aTextureIdsLength);
-  parent->QueueSubmit(aDeviceId, aQueueId, command_buffers, textures);
+  auto externalTextureSources =
+      Span(aExternalTextureSourceIds, aExternalTextureSourceIdsLength);
+  parent->QueueSubmit(aQueueId, aDeviceId, command_buffers, textures,
+                      externalTextureSources);
 }
 
 extern void wgpu_parent_create_swap_chain(
@@ -492,12 +497,13 @@ class PresentationData {
   ~PresentationData() { MOZ_COUNT_DTOR(PresentationData); }
 };
 
-WebGPUParent::WebGPUParent() : mContext(ffi::wgpu_server_new(this)) {
+WebGPUParent::WebGPUParent(const dom::ContentParentId& aContentId)
+    : mContentId(aContentId), mContext(ffi::wgpu_server_new(this)) {
   mTimer.Start(base::TimeDelta::FromMilliseconds(POLL_TIME_MS), this,
                &WebGPUParent::MaintainDevices);
 }
 
-WebGPUParent::~WebGPUParent() {}
+WebGPUParent::~WebGPUParent() = default;
 
 void WebGPUParent::MaintainDevices() {
   ffi::wgpu_server_poll_all_devices(mContext.get(), false);
@@ -835,12 +841,25 @@ void WebGPUParent::DropExternalTextureSource(RawId aSourceId) {
 
 void WebGPUParent::QueueSubmit(RawId aQueueId, RawId aDeviceId,
                                Span<const RawId> aCommandBuffers,
-                               Span<const RawId> aTextureIds) {
+                               Span<const RawId> aTextureIds,
+                               Span<const RawId> aExternalTextureSourceIds) {
   for (const auto& textureId : aTextureIds) {
     auto it = mSharedTextures.find(textureId);
     if (it != mSharedTextures.end()) {
       auto& sharedTexture = it->second;
       sharedTexture->onBeforeQueueSubmit(aQueueId);
+    }
+  }
+
+  for (const auto& sourceId : aExternalTextureSourceIds) {
+    auto it = mExternalTextureSources.find(sourceId);
+    if (it != mExternalTextureSources.end()) {
+      auto& source = it->second;
+      if (!source.OnBeforeQueueSubmit(this, aDeviceId, aQueueId)) {
+        // If the above call failed we cannot submit the command buffers, as
+        // it would be invalid to read from the external textures.
+        return;
+      }
     }
   }
 

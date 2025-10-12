@@ -109,7 +109,7 @@ class SVGClipPathFrame final : public SVGContainerFrame {
 
   // nsIFrame interface:
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
 #ifdef DEBUG
   void Init(nsIContent* aContent, nsContainerFrame* aParent,

@@ -10,7 +10,6 @@
 
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/Point.h"
-#include "mozilla/gfx/RecordedEvent.h"
 #include "mozilla/gfx/Rect.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/ipc/ByteBuf.h"
@@ -95,6 +94,8 @@ class PaintFragment final {
   ByteBuf mRecording;
   nsTHashSet<uint64_t> mDependencies;
 };
+
+struct RecordedDependentSurface;
 
 /**
  * An object for painting a cross process document tree.

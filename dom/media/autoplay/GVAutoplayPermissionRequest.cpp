@@ -47,6 +47,7 @@ enum class TestRequest : uint32_t {
   eAllowInAudible = 5,
   eDenyInAudible = 6,
   eLeaveAllPending = 7,
+  eAllowAllAsync = 8,
 };
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(GVAutoplayPermissionRequest,
@@ -67,11 +68,15 @@ void GVAutoplayPermissionRequest::CreateRequest(nsGlobalWindowInner* aWindow,
   if (testingPref != TestRequest::ePromptAsNormal) {
     LOG("Create testing request, tesing value=%u",
         static_cast<uint32_t>(testingPref));
-    if (testingPref == TestRequest::eAllowAll ||
-        (testingPref == TestRequest::eAllowAudible &&
-         aType == RType::eAUDIBLE) ||
-        (testingPref == TestRequest::eAllowInAudible &&
-         aType == RType::eINAUDIBLE)) {
+    if (testingPref == TestRequest::eAllowAllAsync) {
+      request->RequestDelayedTask(
+          aWindow->SerialEventTarget(),
+          GVAutoplayPermissionRequest::DelayedTaskType::Allow);
+    } else if (testingPref == TestRequest::eAllowAll ||
+               (testingPref == TestRequest::eAllowAudible &&
+                aType == RType::eAUDIBLE) ||
+               (testingPref == TestRequest::eAllowInAudible &&
+                aType == RType::eINAUDIBLE)) {
       request->Allow(JS::UndefinedHandleValue);
     } else if (testingPref == TestRequest::eDenyAll ||
                (testingPref == TestRequest::eDenyAudible &&
@@ -153,7 +158,15 @@ GVAutoplayPermissionRequest::Allow(JS::Handle<JS::Value> aChoices) {
   MOZ_ASSERT(status == RStatus::ePENDING || status == RStatus::eUNKNOWN);
   if (status == RStatus::ePENDING) {
     SetRequestStatus(RStatus::eALLOWED);
+    // Permission grant may arrive late and elements may be suspended.
+    // We message to wake them up and resume downloading data if needed.
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->NotifyObservers(ToSupports(mWindow), kGVAutoplayAllowedTopic,
+                           /* no extra string data */ nullptr);
+    }
   }
+
   mContext = nullptr;
   return NS_OK;
 }
@@ -191,6 +204,22 @@ void GVAutoplayPermissionRequestor::AskForPermissionIfNeeded(
 bool GVAutoplayPermissionRequestor::HasEverAskForRequest(
     BrowsingContext* aContext, RType aType) {
   return GetRequestStatus(aContext, aType) != RStatus::eUNKNOWN;
+}
+
+/* static */
+bool GVAutoplayPermissionRequestor::HasUnresolvedRequest(
+    nsPIDOMWindowInner* aWindow) {
+  if (!aWindow) {
+    return false;
+  }
+
+  RefPtr<BrowsingContext> context = aWindow->GetBrowsingContext()->Top();
+  auto gvAudible = context->GetGVAudibleAutoplayRequestStatus();
+  auto gvInaudible = context->GetGVInaudibleAutoplayRequestStatus();
+  return (gvAudible == GVAutoplayRequestStatus::eUNKNOWN) ||
+         (gvAudible == GVAutoplayRequestStatus::ePENDING) ||
+         (gvInaudible == GVAutoplayRequestStatus::eUNKNOWN) ||
+         (gvInaudible == GVAutoplayRequestStatus::ePENDING);
 }
 
 /* static */

@@ -291,7 +291,7 @@ add_task(async function test_deduplicate_for_unitConversion() {
     [unitConversionSuggestion],
     null,
     UrlbarUtils.PROVIDER_TYPE.PROFILE,
-    "UnitConversion"
+    "UrlbarProviderUnitConversion"
   );
 
   const context = createContext(undefined, {

@@ -16,7 +16,7 @@ const { IPProtectionService } = ChromeUtils.importESModule(
 class FakeIPProtectionPanelElement {
   constructor() {
     this.state = {
-      isSignedIn: false,
+      isSignedOut: true,
       isProtectionEnabled: false,
       protectionEnabledSince: null,
     };
@@ -157,15 +157,15 @@ add_task(async function test_IPProtectionPanel_signedIn() {
   await signedInEventPromise;
 
   Assert.equal(
-    ipProtectionPanel.state.isSignedIn,
-    true,
-    "isSignedIn should be true in the IPProtectionPanel state"
+    ipProtectionPanel.state.isSignedOut,
+    false,
+    "isSignedOut should be false in the IPProtectionPanel state"
   );
 
   Assert.equal(
-    fakeElement.state.isSignedIn,
-    true,
-    "isSignedIn should be true in the fake elements state"
+    fakeElement.state.isSignedOut,
+    false,
+    "isSignedOut should be false in the fake elements state"
   );
 
   sandbox.restore();
@@ -187,7 +187,7 @@ add_task(async function test_IPProtectionPanel_signedOut() {
 
   IPProtectionService.isSignedIn = true;
   ipProtectionPanel.setState({
-    isSignedIn: true,
+    isSignedOut: false,
   });
   ipProtectionPanel.updateState();
 
@@ -201,15 +201,15 @@ add_task(async function test_IPProtectionPanel_signedOut() {
   await signedOutEventPromise;
 
   Assert.equal(
-    ipProtectionPanel.state.isSignedIn,
-    false,
-    "isSignedIn should be true in the IPProtectionPanel state"
+    ipProtectionPanel.state.isSignedOut,
+    true,
+    "isSignedOut should be true in the IPProtectionPanel state"
   );
 
   Assert.equal(
-    fakeElement.state.isSignedIn,
-    false,
-    "isSignedIn should be true in the fake elements state"
+    fakeElement.state.isSignedOut,
+    true,
+    "isSignedOut should be true in the fake elements state"
   );
 
   sandbox.restore();
@@ -236,7 +236,7 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
 
   // Set to signed in
   ipProtectionPanel.setState({
-    isSignedIn: true,
+    isSignedOut: false,
   });
   ipProtectionPanel.updateState();
 

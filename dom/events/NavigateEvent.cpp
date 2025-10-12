@@ -9,11 +9,17 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/AbortController.h"
+#include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/NavigateEventBinding.h"
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "nsDocShell.h"
 #include "nsGlobalWindowInner.h"
+
+extern mozilla::LazyLogModule gNavigationLog;
+
+#define LOG_FMT(format, ...) \
+  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, format, ##__VA_ARGS__);
 
 namespace mozilla::dom {
 
@@ -171,7 +177,7 @@ void NavigateEvent::Intercept(const NavigationInterceptOptions& aOptions,
     }
 
     // Step 7.2
-    mFocusResetBehavior.emplace(aOptions.mFocusReset.Value());
+    mFocusResetBehavior = Some(aOptions.mFocusReset.Value());
   }
 
   // Step 8
@@ -348,7 +354,7 @@ void NavigateEvent::PotentiallyResetFocus() {
   }
 
   // Step 8
-  Element* focusTarget = document->GetDocumentElement();
+  RefPtr<Element> focusTarget = document->GetDocumentElement();
   if (focusTarget) {
     focusTarget =
         focusTarget->GetAutofocusDelegate(mozilla::IsFocusableFlags(0));
@@ -364,12 +370,10 @@ void NavigateEvent::PotentiallyResetFocus() {
     focusTarget = document->GetDocumentElement();
   }
 
-  // The remaining steps will be implemented in Bug 1948253.
-
-  // Step 11: Run the focusing steps for focusTarget, with document's viewport
-  // as the fallback target.
-  // Step 12: Move the sequential focus navigation starting point to
-  // focusTarget.
+  // Step 11, step 12
+  FocusOptions options;
+  LOG_FMT("Set focus for {}", *focusTarget->AsNode());
+  focusTarget->Focus(options, CallerType::NonSystem, IgnoredErrorResult());
 }
 
 // https://html.spec.whatwg.org/#potentially-process-scroll-behavior
@@ -453,3 +457,5 @@ void NavigateEvent::ProcessScrollBehavior() {
   document->ScrollToRef();
 }
 }  // namespace mozilla::dom
+
+#undef LOG_FMT

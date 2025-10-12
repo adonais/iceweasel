@@ -96,6 +96,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
 
+            <ViewStub
+                android:id="@+id/translationsBannerStub"
+                android:inflatedId="@+id/translationsBanner"
+                android:layout="@layout/translations_banner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

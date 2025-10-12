@@ -18,6 +18,7 @@
 #include <stdint.h>
 
 #include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <string>
@@ -620,9 +621,7 @@ TEST_P(PeerConnectionIntegrationTest, AudioToVideoUpgrade) {
     callee()->SetOfferAnswerOptions(options);
   } else {
     callee()->SetRemoteOfferHandler([this] {
-      callee()
-          ->GetFirstTransceiverOfType(webrtc::MediaType::VIDEO)
-          ->StopInternal();
+      callee()->GetFirstTransceiverOfType(MediaType::VIDEO)->StopInternal();
     });
   }
   // Do offer/answer and make sure audio is still received end-to-end.
@@ -657,8 +656,7 @@ TEST_P(PeerConnectionIntegrationTest, AudioToVideoUpgrade) {
       // the offer, but by default it is send only.
       auto transceivers = caller()->pc()->GetTransceivers();
       ASSERT_EQ(2U, transceivers.size());
-      ASSERT_EQ(webrtc::MediaType::VIDEO,
-                transceivers[1]->receiver()->media_type());
+      ASSERT_EQ(MediaType::VIDEO, transceivers[1]->receiver()->media_type());
       transceivers[1]->sender()->SetTrack(
           caller()->CreateLocalVideoTrack().get());
       transceivers[1]->SetDirectionWithError(
@@ -841,9 +839,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsAudioSection) {
     // Stopping the audio RtpTransceiver will cause the media section to be
     // rejected in the answer.
     callee()->SetRemoteOfferHandler([this] {
-      callee()
-          ->GetFirstTransceiverOfType(webrtc::MediaType::AUDIO)
-          ->StopInternal();
+      callee()->GetFirstTransceiverOfType(MediaType::AUDIO)->StopInternal();
     });
   }
   callee()->AddTrack(callee()->CreateLocalVideoTrack());
@@ -866,8 +862,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsAudioSection) {
   if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
     // The caller's transceiver should have stopped after receiving the answer,
     // and thus no longer listed in transceivers.
-    EXPECT_EQ(nullptr,
-              caller()->GetFirstTransceiverOfType(webrtc::MediaType::AUDIO));
+    EXPECT_EQ(nullptr, caller()->GetFirstTransceiverOfType(MediaType::AUDIO));
   }
 }
 
@@ -887,9 +882,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsVideoSection) {
     // Stopping the video RtpTransceiver will cause the media section to be
     // rejected in the answer.
     callee()->SetRemoteOfferHandler([this] {
-      callee()
-          ->GetFirstTransceiverOfType(webrtc::MediaType::VIDEO)
-          ->StopInternal();
+      callee()->GetFirstTransceiverOfType(MediaType::VIDEO)->StopInternal();
     });
   }
   callee()->AddTrack(callee()->CreateLocalAudioTrack());
@@ -912,8 +905,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsVideoSection) {
   if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
     // The caller's transceiver should have stopped after receiving the answer,
     // and thus is no longer present.
-    EXPECT_EQ(nullptr,
-              caller()->GetFirstTransceiverOfType(webrtc::MediaType::VIDEO));
+    EXPECT_EQ(nullptr, caller()->GetFirstTransceiverOfType(MediaType::VIDEO));
   }
 }
 
@@ -988,9 +980,7 @@ TEST_P(PeerConnectionIntegrationTest, VideoRejectedInSubsequentOffer) {
           }
         });
   } else {
-    caller()
-        ->GetFirstTransceiverOfType(webrtc::MediaType::VIDEO)
-        ->StopInternal();
+    caller()->GetFirstTransceiverOfType(MediaType::VIDEO)->StopInternal();
   }
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_THAT(
@@ -2326,9 +2316,7 @@ TEST_P(PeerConnectionIntegrationTest,
     callee()->SetOfferAnswerOptions(options);
   } else {
     callee()->SetRemoteOfferHandler([this] {
-      callee()
-          ->GetFirstTransceiverOfType(webrtc::MediaType::VIDEO)
-          ->StopInternal();
+      callee()->GetFirstTransceiverOfType(MediaType::VIDEO)->StopInternal();
     });
   }
   caller()->CreateAndSetAndSignalOffer();
@@ -2350,7 +2338,7 @@ TEST_P(PeerConnectionIntegrationTest,
   } else {
     // The caller's transceiver is stopped, so we need to add another track.
     auto caller_transceiver =
-        caller()->GetFirstTransceiverOfType(webrtc::MediaType::VIDEO);
+        caller()->GetFirstTransceiverOfType(MediaType::VIDEO);
     EXPECT_EQ(nullptr, caller_transceiver.get());
     caller()->AddVideoTrack();
   }
@@ -2421,10 +2409,10 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
        MediaFlowsAfterEarlyWarmupWithAddTransceiver) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
-  auto audio_result = caller()->pc()->AddTransceiver(webrtc::MediaType::AUDIO);
+  auto audio_result = caller()->pc()->AddTransceiver(MediaType::AUDIO);
   ASSERT_EQ(RTCErrorType::NONE, audio_result.error().type());
   auto caller_audio_sender = audio_result.MoveValue()->sender();
-  auto video_result = caller()->pc()->AddTransceiver(webrtc::MediaType::VIDEO);
+  auto video_result = caller()->pc()->AddTransceiver(MediaType::VIDEO);
   ASSERT_EQ(RTCErrorType::NONE, video_result.error().type());
   auto caller_video_sender = video_result.MoveValue()->sender();
   callee()->SetRemoteOfferHandler([this] {
@@ -2577,11 +2565,10 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
   options.offer_to_receive_video = 1;
   caller()->SetOfferAnswerOptions(options);
   caller()->CreateAndSetAndSignalOffer();
-  EXPECT_THAT(
-      WaitUntil([&] { return DtlsConnected(); }, ::testing::IsTrue(),
-                {.timeout = webrtc::TimeDelta::Millis(total_connection_time_ms),
-                 .clock = &FakeClock()}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return DtlsConnected(); }, ::testing::IsTrue(),
+                        {.timeout = TimeDelta::Millis(total_connection_time_ms),
+                         .clock = &FakeClock()}),
+              IsRtcOk());
   // Closing the PeerConnections destroys the ports before the ScopedFakeClock.
   // If this is not done a DCHECK can be hit in ports.cc, because a large
   // negative number is calculated for the rtt due to the global clock changing.
@@ -2913,7 +2900,7 @@ TEST_P(PeerConnectionIntegrationTest, GetSourcesAudio) {
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
   ASSERT_EQ(callee()->pc()->GetReceivers().size(), 1u);
   auto receiver = callee()->pc()->GetReceivers()[0];
-  ASSERT_EQ(receiver->media_type(), webrtc::MediaType::AUDIO);
+  ASSERT_EQ(receiver->media_type(), MediaType::AUDIO);
   auto sources = receiver->GetSources();
   ASSERT_GT(receiver->GetParameters().encodings.size(), 0u);
   EXPECT_EQ(receiver->GetParameters().encodings[0].ssrc,
@@ -2936,7 +2923,7 @@ TEST_P(PeerConnectionIntegrationTest, GetSourcesVideo) {
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
   ASSERT_EQ(callee()->pc()->GetReceivers().size(), 1u);
   auto receiver = callee()->pc()->GetReceivers()[0];
-  ASSERT_EQ(receiver->media_type(), webrtc::MediaType::VIDEO);
+  ASSERT_EQ(receiver->media_type(), MediaType::VIDEO);
   auto sources = receiver->GetSources();
   ASSERT_GT(receiver->GetParameters().encodings.size(), 0u);
   ASSERT_GT(sources.size(), 0u);
@@ -3649,7 +3636,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   config.sdp_semantics = SdpSemantics::kUnifiedPlan;
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
-  caller()->pc()->AddTransceiver(webrtc::MediaType::AUDIO);
+  caller()->pc()->AddTransceiver(MediaType::AUDIO);
 
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_THAT(
@@ -3663,7 +3650,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   while (current_size < 8) {
     // Double the number of tracks
     for (int i = 0; i < current_size; i++) {
-      caller()->pc()->AddTransceiver(webrtc::MediaType::AUDIO);
+      caller()->pc()->AddTransceiver(MediaType::AUDIO);
     }
     current_size = caller()->pc()->GetTransceivers().size();
     RTC_LOG(LS_INFO) << "Renegotiating with " << current_size << " tracks";
@@ -3687,7 +3674,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   config.sdp_semantics = SdpSemantics::kUnifiedPlan;
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
-  caller()->pc()->AddTransceiver(webrtc::MediaType::VIDEO);
+  caller()->pc()->AddTransceiver(MediaType::VIDEO);
 
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_THAT(
@@ -3703,7 +3690,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   while (current_size < 8) {
     // Double the number of tracks
     for (int i = 0; i < current_size; i++) {
-      caller()->pc()->AddTransceiver(webrtc::MediaType::VIDEO);
+      caller()->pc()->AddTransceiver(MediaType::VIDEO);
     }
     current_size = caller()->pc()->GetTransceivers().size();
     RTC_LOG(LS_INFO) << "Renegotiating with " << current_size << " tracks";
@@ -3749,7 +3736,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   while (current_size < 16) {
     // Double the number of tracks
     for (int i = 0; i < current_size; i++) {
-      caller()->pc()->AddTransceiver(webrtc::MediaType::VIDEO);
+      caller()->pc()->AddTransceiver(MediaType::VIDEO);
     }
     current_size = caller()->pc()->GetTransceivers().size();
     RTC_LOG(LS_INFO) << "Renegotiating with " << current_size << " tracks";
@@ -3773,7 +3760,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
 TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
        GetParametersHasEncodingsBeforeNegotiation) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
-  auto result = caller()->pc()->AddTransceiver(webrtc::MediaType::VIDEO);
+  auto result = caller()->pc()->AddTransceiver(MediaType::VIDEO);
   auto transceiver = result.MoveValue();
   auto parameters = transceiver->sender()->GetParameters();
   EXPECT_EQ(parameters.encodings.size(), 1u);
@@ -3785,7 +3772,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   RtpTransceiverInit init;
   init.send_encodings.push_back({});
   init.send_encodings[0].max_bitrate_bps = 12345;
-  auto result = caller()->pc()->AddTransceiver(webrtc::MediaType::VIDEO, init);
+  auto result = caller()->pc()->AddTransceiver(MediaType::VIDEO, init);
   auto transceiver = result.MoveValue();
   auto parameters = transceiver->sender()->GetParameters();
   ASSERT_EQ(parameters.encodings.size(), 1u);
@@ -3850,7 +3837,7 @@ TEST_P(PeerConnectionIntegrationInteropTest, OneAudioLocalToNoMediaRemote) {
   // has the same track ID as the sending track.
   auto receivers = callee()->pc()->GetReceivers();
   ASSERT_EQ(1u, receivers.size());
-  EXPECT_EQ(webrtc::MediaType::AUDIO, receivers[0]->media_type());
+  EXPECT_EQ(MediaType::AUDIO, receivers[0]->media_type());
   EXPECT_EQ(receivers[0]->track()->id(), audio_sender->track()->id());
 
   MediaExpectations media_expectations;
@@ -3871,10 +3858,10 @@ TEST_P(PeerConnectionIntegrationInteropTest, OneAudioOneVideoToNoMediaRemote) {
 
   // Verify that one audio and one video receiver have been created on the
   // remote and that they have the same track IDs as the sending tracks.
-  auto audio_receivers = callee()->GetReceiversOfType(webrtc::MediaType::AUDIO);
+  auto audio_receivers = callee()->GetReceiversOfType(MediaType::AUDIO);
   ASSERT_EQ(1u, audio_receivers.size());
   EXPECT_EQ(audio_receivers[0]->track()->id(), audio_sender->track()->id());
-  auto video_receivers = callee()->GetReceiversOfType(webrtc::MediaType::VIDEO);
+  auto video_receivers = callee()->GetReceiversOfType(MediaType::VIDEO);
   ASSERT_EQ(1u, video_receivers.size());
   EXPECT_EQ(video_receivers[0]->track()->id(), video_sender->track()->id());
 
@@ -3913,7 +3900,7 @@ TEST_P(PeerConnectionIntegrationInteropTest,
       IsRtcOk());
 
   // Verify that only the audio track has been negotiated.
-  EXPECT_EQ(0u, caller()->GetReceiversOfType(webrtc::MediaType::VIDEO).size());
+  EXPECT_EQ(0u, caller()->GetReceiversOfType(MediaType::VIDEO).size());
   // Might also check that the callee's NegotiationNeeded flag is set.
 
   // Reverse roles.
@@ -4496,7 +4483,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   RTCConfiguration config;
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
   ConnectFakeSignaling();
-  webrtc::RtpEncodingParameters init_send_encodings;
+  RtpEncodingParameters init_send_encodings;
   init_send_encodings.active = false;
   caller()->pc()->AddTrack(caller()->CreateLocalAudioTrack(), {"name"},
                            {init_send_encodings});
@@ -4794,6 +4781,107 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
 }
 
 TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       MungeOfferCodecAndReOfferWorksWithSetCodecPreferencesIsAFootgun) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddVideoTrack();
+  bool has_munged = false;
+  auto munger =
+      [&has_munged](std::unique_ptr<SessionDescriptionInterface>& sdp) {
+        auto video = GetFirstVideoContentDescription(sdp->description());
+        auto codecs = video->codecs();
+        std::optional<Codec> replacement_codec;
+        for (auto&& codec : codecs) {
+          if (codec.name == "VP9") {
+            replacement_codec = codec;
+            break;
+          }
+        }
+        if (replacement_codec) {
+          for (auto&& codec : codecs) {
+            if (codec.name == "VP8") {
+              RTC_LOG(LS_INFO) << "Remapping VP8 codec " << codec << " to VP9";
+              codec.name = replacement_codec->name;
+              codec.params = replacement_codec->params;
+              has_munged = true;
+              break;
+            }
+          }
+          video->set_codecs(codecs);
+        } else {
+          RTC_LOG(LS_INFO) << "Skipping munge, no VP9 codec found ";
+        }
+      };
+  caller()->SetGeneratedSdpMunger(munger);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_THAT(
+      WaitUntil([&] { return SignalingStateStable(); }, ::testing::IsTrue()),
+      IsRtcOk());
+  caller()->SetGeneratedSdpMunger(nullptr);
+
+  if (!has_munged) {
+    GTEST_SKIP() << "SDP munging did not replace codec, skipping.";
+  }
+
+  // Note currently negotiated codecs and count VP8 and VP9.
+  auto codecs_after_munge = caller()
+                                ->pc()
+                                ->local_description()
+                                ->description()
+                                ->contents()[0]
+                                .media_description()
+                                ->codecs();
+  size_t vp8_munge = 0;
+  size_t vp9_munge = 0;
+  for (const auto& codec : codecs_after_munge) {
+    if (codec.name == "VP8")
+      vp8_munge++;
+    else if (codec.name == "VP9")
+      vp9_munge++;
+  }
+  // We should have replaced VP8 with VP9.
+  EXPECT_EQ(vp8_munge, 0u);
+  EXPECT_GE(vp9_munge, 2u);
+
+  // Call setCodecPreferences.
+  std::vector<RtpCodecCapability> codecs =
+      caller()
+          ->pc_factory()
+          ->GetRtpReceiverCapabilities(webrtc::MediaType::VIDEO)
+          .codecs;
+  auto transceivers = caller()->pc()->GetTransceivers();
+  ASSERT_EQ(transceivers.size(), 1u);
+  transceivers[0]->SetCodecPreferences(codecs);
+
+  auto offer = caller()->CreateOfferAndWait();
+  ASSERT_NE(offer, nullptr);
+  // The offer should be acceptable.
+  EXPECT_TRUE(caller()->SetLocalDescriptionAndSendSdpMessage(std::move(offer)));
+
+  auto codecs_after_scp = caller()
+                              ->pc()
+                              ->local_description()
+                              ->description()
+                              ->contents()[0]
+                              .media_description()
+                              ->codecs();
+  size_t vp8_scp = 0;
+  size_t vp9_scp = 0;
+  for (const auto& codec : codecs_after_scp) {
+    if (codec.name == "VP8")
+      vp8_scp++;
+    else if (codec.name == "VP9")
+      vp9_scp++;
+  }
+  // The SDP munging modification was reverted by sCP.
+  // This is a footgun but please do not mix such munging with
+  // setCodecPreferences, munging is on the way out.
+  EXPECT_EQ(vp8_scp, 1u);
+  EXPECT_GE(vp9_scp, 1u);
+  EXPECT_GT(vp9_munge, vp9_scp);
+}
+
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
        SensibleRtxWithDuplicateCodecs) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   caller()->AddVideoTrack();
@@ -4837,7 +4925,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   // associated RTX codec.
   std::unique_ptr<SessionDescriptionInterface> answer =
       caller()->CreateAnswerForTest();
-  ASSERT_THAT(answer, NotNull());
+  ASSERT_NE(answer, nullptr);
   RTC_LOG(LS_ERROR) << "Answer is " << *answer;
   ASSERT_THAT(answer->description()->contents().size(), Eq(1));
   auto codecs =
@@ -4896,7 +4984,7 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   caller()->AddVideoTrack();
   auto offer2 = caller()->CreateOfferAndWait();
   // Observe that packetization is raw on BOTH media sections.
-  ASSERT_THAT(offer2, NotNull());
+  ASSERT_NE(offer2, nullptr);
   EXPECT_EQ(offer2->description()->contents().size(), 2U);
   for (const auto& content : offer2->description()->contents()) {
     for (const auto& codec : content.media_description()->codecs()) {
@@ -4908,6 +4996,98 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
     }
   }
 }
+
+#ifdef WEBRTC_HAVE_SCTP
+
+TEST_P(PeerConnectionIntegrationTest, DtlsPqc) {
+  CryptoOptions crypto_options;
+  crypto_options.ephemeral_key_exchange_cipher_groups.AddFirst(
+      webrtc::CryptoOptions::EphemeralKeyExchangeCipherGroups::
+          kX25519_MLKEM768);
+
+  PeerConnectionInterface::RTCConfiguration config;
+  config.crypto_options = crypto_options;
+
+  PeerConnectionFactoryInterface::Options options;
+  options.ssl_max_version = SSL_PROTOCOL_DTLS_13;
+
+  const bool create_media_engine = false;
+  SetCallerPcWrapperAndReturnCurrent(CreatePeerConnectionWrapper(
+      "caller", &options, &config, PeerConnectionDependencies(nullptr),
+      /* event_log_factory= */ nullptr,
+      /* reset_encoder_factory= */ false,
+      /* reset_decoder_factory= */ false, create_media_engine));
+  SetCalleePcWrapperAndReturnCurrent(CreatePeerConnectionWrapper(
+      "callee", &options, &config, PeerConnectionDependencies(nullptr),
+      /* event_log_factory= */ nullptr,
+      /* reset_encoder_factory= */ false,
+      /* reset_decoder_factory= */ false, create_media_engine));
+
+  ConnectFakeSignaling();
+
+  caller()->CreateDataChannel();
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_THAT(
+      WaitUntil(
+          [&] {
+            return PeerConnectionStateIs(
+                PeerConnectionInterface::PeerConnectionState::kConnected);
+          },
+          ::testing::IsTrue()),
+      IsRtcOk());
+
+  uint16_t expected =
+      webrtc::CryptoOptions::EphemeralKeyExchangeCipherGroups::kX25519_MLKEM768;
+  if (!SSLStreamAdapter::IsBoringSsl()) {
+    expected = webrtc::CryptoOptions::EphemeralKeyExchangeCipherGroups::kX25519;
+  }
+  EXPECT_EQ(caller()->dtls_transport_information().ssl_group_id(), expected);
+  EXPECT_EQ(caller()->dtls_transport_information().ssl_group_id(), expected);
+}
+
+TEST_P(PeerConnectionIntegrationTest, DtlsPqcFieldTrial) {
+  SetFieldTrials("WebRTC-EnableDtlsPqc/Enabled/");
+  PeerConnectionInterface::RTCConfiguration config;
+  PeerConnectionFactoryInterface::Options options;
+  options.ssl_max_version = SSL_PROTOCOL_DTLS_13;
+
+  const bool create_media_engine = false;
+  SetCallerPcWrapperAndReturnCurrent(CreatePeerConnectionWrapper(
+      "caller", &options, &config, PeerConnectionDependencies(nullptr),
+      /* event_log_factory= */ nullptr,
+      /* reset_encoder_factory= */ false,
+      /* reset_decoder_factory= */ false, create_media_engine));
+  SetCalleePcWrapperAndReturnCurrent(CreatePeerConnectionWrapper(
+      "callee", &options, &config, PeerConnectionDependencies(nullptr),
+      /* event_log_factory= */ nullptr,
+      /* reset_encoder_factory= */ false,
+      /* reset_decoder_factory= */ false, create_media_engine));
+
+  ConnectFakeSignaling();
+
+  caller()->CreateDataChannel();
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_THAT(
+      WaitUntil(
+          [&] {
+            return PeerConnectionStateIs(
+                PeerConnectionInterface::PeerConnectionState::kConnected);
+          },
+          ::testing::IsTrue()),
+      IsRtcOk());
+
+  uint16_t expected =
+      webrtc::CryptoOptions::EphemeralKeyExchangeCipherGroups::kX25519_MLKEM768;
+  if (!SSLStreamAdapter::IsBoringSsl()) {
+    expected = webrtc::CryptoOptions::EphemeralKeyExchangeCipherGroups::kX25519;
+  }
+  EXPECT_EQ(caller()->dtls_transport_information().ssl_group_id(), expected);
+  EXPECT_EQ(caller()->dtls_transport_information().ssl_group_id(), expected);
+}
+
+#endif  // WEBRTC_HAVE_SCTP
 
 }  // namespace
 

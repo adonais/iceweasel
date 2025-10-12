@@ -44,11 +44,7 @@ namespace js {
 //
 // https://cplusplus.github.io/CWG/issues/2518.html
 #if defined(__clang__)
-#  if (__clang_major__ >= 17)
-#    define STATIC_ASSERT_IN_UNEVALUATED_CONTEXT 1
-#  else
-#    define STATIC_ASSERT_IN_UNEVALUATED_CONTEXT 0
-#  endif
+#  define STATIC_ASSERT_IN_UNEVALUATED_CONTEXT 1
 #elif MOZ_IS_GCC
 #  if MOZ_GCC_VERSION_AT_LEAST(13, 1, 0)
 #    define STATIC_ASSERT_IN_UNEVALUATED_CONTEXT 1

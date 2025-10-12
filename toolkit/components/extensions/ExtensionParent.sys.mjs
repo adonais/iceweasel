@@ -1167,7 +1167,7 @@ ParentAPIManager = {
       );
     }
 
-    let start = Cu.now();
+    let start = ChromeUtils.now();
     try {
       return callable();
     } finally {
@@ -1267,7 +1267,7 @@ ParentAPIManager = {
     let handlingUserInput = false;
 
     let listener = async (...listenerArgs) => {
-      let startTime = Cu.now();
+      let startTime = ChromeUtils.now();
       // Extract urgentSend flag to avoid deserializing args holder later.
       let urgentSend = false;
       if (listenerArgs[0] && data.path.startsWith("webRequest.")) {

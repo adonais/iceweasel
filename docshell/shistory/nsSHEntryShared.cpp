@@ -340,7 +340,7 @@ void nsSHEntryShared::CharacterDataChanged(nsIContent* aContent,
 
 void nsSHEntryShared::AttributeChanged(dom::Element* aElement,
                                        int32_t aNameSpaceID, nsAtom* aAttribute,
-                                       int32_t aModType,
+                                       AttrModType,
                                        const nsAttrValue* aOldValue) {
   if (!IgnoreMutationForBfCache(*aElement)) {
     RemoveFromBFCacheAsync();

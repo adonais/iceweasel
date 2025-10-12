@@ -699,6 +699,10 @@ newtab:
         description: >
           Are content details sent separately in the newtab_content ping
         type: boolean
+      layout_name: &layout_name
+        description: >
+          description of the section layout
+        type: string
     send_in_pings:
       - newtab
 
@@ -1491,6 +1495,12 @@ topsites:
       position: &topsite_position
         description: The position (0-index) of the topsite tile.
         type: quantity
+      is_pinned: &is_pinned
+        description: Whether the topsite tile is pinned.
+        type: boolean
+      visible_topsites: &visible_topsites
+        description: The quantity of visible topsites when event occurred
+        type: quantity
     send_in_pings:
       - newtab
 
@@ -1527,6 +1537,8 @@ topsites:
       newtab_visit_id: *newtab_visit_id
       is_sponsored: *is_sponsored
       position: *topsite_position
+      is_pinned: *is_pinned
+      visible_topsites: *visible_topsites
     send_in_pings:
       - newtab
 
@@ -1951,6 +1963,7 @@ pocket:
           If click belongs in a section, the numeric position of the section
         type: string
       is_section_followed: *is_section_followed
+      layout_name: *layout_name
       content_redacted:
         description: >
           Are content details sent separately in the newtab_content ping
@@ -2021,6 +2034,7 @@ pocket:
           If click belongs in a section, the numeric position of the section
         type: string
       is_section_followed: *is_section_followed
+      layout_name: *layout_name
       event_source: *event_source
       content_redacted:
         description: >
@@ -2708,6 +2722,7 @@ newtab_content:
         description: >
           If click belongs in a section, if that section is followed
         type: boolean
+      layout_name: *layout_name
     send_in_pings:
       - newtab-content
 

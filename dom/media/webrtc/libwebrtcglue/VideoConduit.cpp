@@ -2029,7 +2029,7 @@ void WebrtcVideoConduit::GenerateKeyFrame(const Maybe<std::string>& aRid,
 
         // If encoder is not processing video frames, reject promise with
         // InvalidStateError, abort these steps.
-        if (!mSendStream || !mCurSendCodecConfig || !mEngineTransmitting) {
+        if (!mSendStream || !mCurSendCodecConfig) {
           CopyableErrorResult result;
           result.ThrowInvalidStateError("No encoders");
           proxy->GenerateKeyFrameError(aRid, result);

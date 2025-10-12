@@ -603,7 +603,7 @@ function _execute_test() {
     coverageCollector = new _CoverageCollector(_JSCOV_DIR);
   }
 
-  let startTime = Cu.now();
+  let startTime = ChromeUtils.now();
 
   // _HEAD_FILES is dynamically defined by <runxpcshelltests.py>.
   _load_files(_HEAD_FILES);
@@ -718,7 +718,7 @@ function _execute_test() {
   };
 
   let complete = !_cleanupFunctions.length;
-  let cleanupStartTime = complete ? 0 : Cu.now();
+  let cleanupStartTime = complete ? 0 : ChromeUtils.now();
   (async () => {
     for (let func of _cleanupFunctions.reverse()) {
       try {
@@ -834,7 +834,7 @@ function _execute_test() {
 function _load_files(aFiles) {
   function load_file(element) {
     try {
-      let startTime = Cu.now();
+      let startTime = ChromeUtils.now();
       load(element);
       ChromeUtils.addProfilerMarker(
         "load_file",
@@ -1843,7 +1843,7 @@ function run_next_test() {
         } else {
           _gTaskRunning = true;
         }
-        let startTime = Cu.now();
+        let startTime = ChromeUtils.now();
         (async () => _gRunningTest())().then(
           result => {
             _gTaskRunning = _gSetupRunning = false;
@@ -1896,7 +1896,7 @@ function run_next_test() {
         );
       } else {
         // Exceptions do not kill asynchronous tests, so they'll time out.
-        let startTime = Cu.now();
+        let startTime = ChromeUtils.now();
         try {
           _gRunningTest();
         } catch (e) {
@@ -1960,7 +1960,7 @@ try {
   // We only need to run this in the parent process.
   // We only want to run this for local developer builds (which should have a "default" update channel).
   if (runningInParent && _AppConstants.MOZ_UPDATE_CHANNEL == "default") {
-    let startTime = Cu.now();
+    let startTime = ChromeUtils.now();
     let { TelemetryController: _TelemetryController } =
       ChromeUtils.importESModule(
         "resource://gre/modules/TelemetryController.sys.mjs"

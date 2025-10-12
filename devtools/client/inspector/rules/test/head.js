@@ -715,8 +715,8 @@ async function getPropertiesForRuleIndex(
   const ruleEditor = getRuleViewRuleEditor(view, ruleIndex, nodeIndex);
 
   for (const currProp of ruleEditor?.rule?.textProps || []) {
-    const icon = currProp.editor.unusedState;
-    const unused = currProp.editor.element.classList.contains("unused");
+    const icon = currProp.editor.inactiveCssState;
+    const unused = currProp.editor.element.classList.contains("inactive-css");
 
     let compatibilityData;
     let compatibilityIcon;
@@ -729,7 +729,7 @@ async function getPropertiesForRuleIndex(
       propertyName: currProp.name,
       propertyValue: currProp.value,
       icon,
-      data: currProp.isUsed(),
+      data: currProp.getInactiveCssData(),
       warning: unused,
       used: !unused,
       ...(addCompatibilityData
@@ -903,7 +903,7 @@ async function checkDeclarationIsInactive(view, ruleIndex, declaration) {
   ok(!used, `"${dec}" is inactive`);
   ok(warning, `"${dec}" has a warning`);
   ok(
-    icon.classList.contains("ruleview-unused-warning"),
+    icon.classList.contains("ruleview-inactive-css-warning"),
     "Icon has expected icon"
   );
   is(icon.hidden, false, "Icon is visible");

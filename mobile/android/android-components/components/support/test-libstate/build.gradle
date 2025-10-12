@@ -25,8 +25,9 @@ android {
 }
 
 dependencies {
-    implementation libs.kotlin.coroutines
     implementation project(':components:lib-state')
+
+    implementation libs.kotlinx.coroutines
 
     testImplementation libs.androidx.core
     testImplementation libs.androidx.test.junit

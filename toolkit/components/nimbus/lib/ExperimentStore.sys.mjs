@@ -344,6 +344,25 @@ export class ExperimentStore extends SharedDataMap {
   }
 
   /**
+   * Returns a Map from the setPrefs from all active experiments to
+   * the pref values that the experiment overwrote.
+   * @returns {nsIPrefOverrideMap}
+   */
+  getOriginalPrefValuesForAllActiveEnrollments() {
+    let ret = Cc["@mozilla.org/pref-override-map;1"].createInstance(
+      Ci.nsIPrefOverrideMap
+    );
+    this.getAll()
+      .filter(enrollment => enrollment.active)
+      .forEach(enrollmentsArray =>
+        enrollmentsArray.prefs.forEach(enrollment => {
+          ret.addEntry(enrollment.name, enrollment.originalValue);
+        })
+      );
+    return ret;
+  }
+
+  /**
    * Query the store for the remote configuration of a feature
    * @param {string} featureId The feature we want to query for
    * @returns {{Rollout}|undefined} Remote defaults if available

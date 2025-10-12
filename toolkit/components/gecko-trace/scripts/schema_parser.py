@@ -83,7 +83,7 @@ class SourceLocation:
         )
 
     def __str__(self) -> str:
-        return f"{self.file_path}:{self.start_line}:{self.start_column}"
+        return f"{self.file_path.as_posix()}:{self.start_line}:{self.start_column}"
 
 
 class SourceTrackingLoader(yaml.SafeLoader):

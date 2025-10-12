@@ -155,6 +155,7 @@ class CodeGeneratorShared : public LElementVisitor {
  public:
   MIRGenerator& mirGen() const { return *gen; }
   const wasm::CodeMetadata* wasmCodeMeta() const { return wasmCodeMeta_; }
+  IonPerfSpewer& perfSpewer() const { return mirGen().perfSpewer(); }
 
   // When appending to runtimeData_, the vector might realloc, leaving pointers
   // int the origianl vector stale and unusable. DataPtr acts like a pointer,

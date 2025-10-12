@@ -27,17 +27,19 @@ android {
 }
 
 dependencies {
+    api project(':components:support-base')
+
+    implementation project(':components:support-ktx')
+
     implementation libs.androidx.annotation
     implementation libs.androidx.appcompat
     implementation libs.androidx.core.ktx
-    api project(':components:support-base')
-    implementation project(':components:support-ktx')
 
-    testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
     testImplementation project(':components:support-test')
 
     testFixturesImplementation libs.androidx.test.junit
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

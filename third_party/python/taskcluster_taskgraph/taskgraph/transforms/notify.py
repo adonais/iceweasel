@@ -54,6 +54,7 @@ _route_keys = {
 }
 """Map each type to its primary key that will be used in the route."""
 
+#: Schema for notify transforms
 NOTIFY_SCHEMA = Schema(
     {
         Exclusive("notify", "config"): {
@@ -90,7 +91,6 @@ NOTIFY_SCHEMA = Schema(
     },
     extra=ALLOW_EXTRA,
 )
-"""Notify schema."""
 
 transforms = TransformSequence()
 transforms.add_validate(NOTIFY_SCHEMA)

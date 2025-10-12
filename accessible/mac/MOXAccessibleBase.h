@@ -84,6 +84,10 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 // final
 - (BOOL)accessibilityNotifiesWhenDestroyed;
 
+#pragma mark - AXCustomContentProvider protocol
+
+- (NSArray*)accessibilityCustomContent;
+
 #pragma mark - MOXAccessible protocol
 
 // override
@@ -129,6 +133,9 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 // override
 - (id<MOXAccessible>)moxFindAncestor:(BOOL (^)(id<MOXAccessible> moxAcc,
                                                BOOL* stop))findBlock;
+
+// override
+- (NSArray*)moxCustomContent;
 
 #pragma mark -
 

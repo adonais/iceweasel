@@ -5,9 +5,11 @@
 package org.mozilla.fenix.webcompat.ui
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
-import androidx.compose.runtime.Composable
+import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.compose.content
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -18,7 +20,6 @@ import mozilla.components.support.ktx.android.view.hideKeyboard
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.components.lazyStore
-import org.mozilla.fenix.compose.ComposeFragment
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.webcompat.WEB_COMPAT_REPORTER_SUMO_URL
@@ -31,7 +32,7 @@ import org.mozilla.fenix.webcompat.store.WebCompatReporterStore
 /**
  * [Fragment] for displaying the WebCompat Reporter.
  */
-class WebCompatReporterFragment : ComposeFragment() {
+class WebCompatReporterFragment : Fragment() {
 
     private val args by navArgs<WebCompatReporterFragmentArgs>()
 
@@ -50,8 +51,11 @@ class WebCompatReporterFragment : ComposeFragment() {
         )
     }
 
-    @Composable
-    override fun UI() {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View? = content {
         FirefoxTheme {
             WebCompatReporter(
                 store = webCompatReporterStore,

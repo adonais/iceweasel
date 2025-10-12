@@ -7,10 +7,15 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include <memory>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
 #include <string>
 
+#include "api/array_view.h"
 #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/checks.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
@@ -45,13 +50,13 @@ class CngDeathTest : public CngTest {};
 void CngTest::SetUp() {
   FILE* input_file;
   const std::string file_name =
-      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
+      test::ResourcePath("audio_coding/testfile32kHz", "pcm");
   input_file = fopen(file_name.c_str(), "rb");
-  ASSERT_TRUE(input_file != NULL);
+  ASSERT_TRUE(input_file != nullptr);
   ASSERT_EQ(640, static_cast<int32_t>(
                      fread(speech_data_, sizeof(int16_t), 640, input_file)));
   fclose(input_file);
-  input_file = NULL;
+  input_file = nullptr;
 }
 
 void CngTest::TestCngEncode(int sample_rate_hz, int quality) {

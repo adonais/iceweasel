@@ -15,6 +15,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import org.hamcrest.Matchers.equalTo
 import org.json.JSONObject
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
@@ -97,6 +98,7 @@ class DragAndDropTest : BaseSessionTest() {
         assertThat("drag event is started correctly", true, equalTo(true))
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1983057")
     @WithDisplay(width = 300, height = 300)
     @Test
     fun dropFromExternalTest() {
@@ -118,6 +120,7 @@ class DragAndDropTest : BaseSessionTest() {
         assertThat("drop event is fired correctly", promise.value as String, equalTo("foo"))
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1983057")
     @WithDisplay(width = 300, height = 500)
     @Test
     fun dropFromExternalToTextControlTest() {
@@ -152,6 +155,7 @@ class DragAndDropTest : BaseSessionTest() {
         assertThat("input event is fired correctly", promiseSetValue.value as String, equalTo("foo"))
     }
 
+    @Ignore("https://bugzilla.mozilla.org/show_bug.cgi?id=1988041")
     @WithDisplay(width = 300, height = 300)
     @Test
     fun dragStartXOriginTest() {

@@ -60,9 +60,8 @@ namespace webrtc {
 namespace test {
 namespace {
 
-std::optional<int> CodecSampleRate(
-    uint8_t payload_type,
-    webrtc::test::NetEqTestFactory::Config config) {
+std::optional<int> CodecSampleRate(uint8_t payload_type,
+                                   test::NetEqTestFactory::Config config) {
   if (payload_type == config.pcmu || payload_type == config.pcma ||
       payload_type == config.pcm16b || payload_type == config.cn_nb ||
       payload_type == config.avt)
@@ -298,9 +297,9 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
 
     std::set<uint8_t> cn_types = std_set_int32_to_uint8(
         {config.cn_nb, config.cn_wb, config.cn_swb32, config.cn_swb48});
-    std::set<uint8_t> forbidden_types = std_set_int32_to_uint8(
-        {config.g722, config.red, config.opus_red, config.avt, config.avt_16,
-         config.avt_32, config.avt_48});
+    std::set<uint8_t> forbidden_types =
+        std_set_int32_to_uint8({config.g722, config.red, config.avt,
+                                config.avt_16, config.avt_32, config.avt_48});
     input.reset(new NetEqReplacementInput(std::move(input), replacement_pt,
                                           cn_types, forbidden_types));
 

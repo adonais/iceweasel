@@ -542,9 +542,6 @@ class MenuDialogMiddlewareTest {
         store.dispatch(MenuAction.RemoveShortcut)
 
         verify(removePinnedSiteUseCase, never()).invoke(topSite = topSite)
-        verify(appStore, never()).dispatch(
-            AppAction.ShortcutAction.ShortcutRemoved,
-        )
         assertFalse(dismissedWasCalled)
     }
 
@@ -582,9 +579,6 @@ class MenuDialogMiddlewareTest {
         store.dispatch(MenuAction.RemoveShortcut)
 
         verify(removePinnedSiteUseCase).invoke(topSite = topSite)
-        verify(appStore).dispatch(
-            AppAction.ShortcutAction.ShortcutRemoved,
-        )
         assertTrue(dismissedWasCalled)
     }
 

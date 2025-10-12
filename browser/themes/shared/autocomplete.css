@@ -283,10 +283,21 @@
 .autocomplete-richlistitem {
   &:not([disabled="true"]):not([selected]):hover {
     background-color: var(--arrowpanel-dimmed);
+    @media (forced-colors) {
+      background-color: ButtonText;
+      color: ButtonFace;
+    }
   }
 
   &[selected] {
     background-color: SelectedItem;
     color: SelectedItemText;
+    @media (forced-colors) {
+      &:not(:active) {
+        box-shadow: inset 0 0 0 3px CanvasText;
+        color: ButtonText;
+        background-color: ButtonFace;
+      }
+    }
   }
 }

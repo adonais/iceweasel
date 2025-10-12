@@ -17,6 +17,8 @@ import org.mozilla.fenix.benchmark.utils.TARGET_PACKAGE
 import org.mozilla.fenix.benchmark.utils.dismissWallpaperOnboarding
 import org.mozilla.fenix.benchmark.utils.flingToEnd
 import org.mozilla.fenix.benchmark.utils.isWallpaperOnboardingShown
+import androidx.core.net.toUri
+import org.mozilla.fenix.benchmark.utils.FENIX_HOME_DEEP_LINK
 
 /**
  * This test class generates a baseline profile on a critical user journey, that scrolls down on the
@@ -56,7 +58,7 @@ class HomepageScrollBaselineProfileGenerator {
         rule.collect(
             packageName = TARGET_PACKAGE,
         ) {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("fenix-nightly://home"))
+            val intent = Intent(Intent.ACTION_VIEW, FENIX_HOME_DEEP_LINK)
 
             startActivityAndWait(intent = intent)
 

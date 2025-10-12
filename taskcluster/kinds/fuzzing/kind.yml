@@ -46,7 +46,7 @@ tasks:
                 - target.jsshell.zip
                 - target.fuzztest.tests.tar.gz
         worker:
-            docker-image: {in-tree: ubuntu1804-test}
+            docker-image: {in-tree: ubuntu2404-test}
             env:
                 LD_LIBRARY_PATH: /builds/worker/fetches
                 JSSHELL: ./js
@@ -60,7 +60,7 @@ tasks:
         platform: linux32/asan
         worker-type: t-linux-docker
         worker:
-            docker-image: {in-tree: ubuntu1804-test}
+            docker-image: {in-tree: ubuntu2404-test}
             env:
                 GECKO_BINARY_PATH: "$MOZ_FETCHES_DIR/firefox/firefox"
                 ASAN_OPTIONS: "malloc_context_size=20:rss_limit_heap_profile=false:max_malloc_fill_size=4096:quarantine_size_mb=64"
@@ -79,7 +79,7 @@ tasks:
         platform: linux32/debug
         worker-type: t-linux-docker
         worker:
-            docker-image: {in-tree: ubuntu1804-test}
+            docker-image: {in-tree: ubuntu2404-test}
             env:
                 GECKO_BINARY_PATH: "$MOZ_FETCHES_DIR/firefox/firefox"
                 ASAN_OPTIONS: "malloc_context_size=20:rss_limit_heap_profile=false:max_malloc_fill_size=4096:quarantine_size_mb=64"
@@ -98,7 +98,7 @@ tasks:
         platform: linux64/asan
         worker-type: b-linux-gcp
         worker:
-            docker-image: {in-tree: ubuntu1804-test}
+            docker-image: {in-tree: ubuntu2404-test}
             env:
                 GECKO_BINARY_PATH: "$MOZ_FETCHES_DIR/firefox/firefox"
         require-build:
@@ -116,7 +116,7 @@ tasks:
         platform: linux64/debug
         worker-type: b-linux-gcp
         worker:
-            docker-image: {in-tree: ubuntu1804-test}
+            docker-image: {in-tree: ubuntu2404-test}
             env:
                 GECKO_BINARY_PATH: "$MOZ_FETCHES_DIR/firefox/firefox"
         require-build:
@@ -134,7 +134,7 @@ tasks:
         platform: linux64/tsan
         worker-type: b-linux-gcp
         worker:
-            docker-image: {in-tree: ubuntu1804-test}
+            docker-image: {in-tree: ubuntu2404-test}
             env:
                 GECKO_BINARY_PATH: "$MOZ_FETCHES_DIR/firefox/firefox"
         require-build:
@@ -159,6 +159,7 @@ tasks:
         run:
             using: python-test
             subsuite: fuzzing
+        run-on-projects: []
         fetches:
             build:
                 - target.zip
@@ -178,6 +179,7 @@ tasks:
         run:
             using: python-test
             subsuite: fuzzing
+        run-on-projects: []
         fetches:
             build:
                 - target.zip
@@ -193,6 +195,7 @@ tasks:
         run:
             using: python-test
             subsuite: fuzzing
+        run-on-projects: []
         fetches:
             build:
                 - target.zip
@@ -212,6 +215,7 @@ tasks:
         run:
             using: python-test
             subsuite: fuzzing
+        run-on-projects: []
         fetches:
             build:
                 - target.zip
@@ -227,6 +231,7 @@ tasks:
         run:
             using: python-test
             subsuite: fuzzing
+        run-on-projects: []
         fetches:
             build:
                 - target.dmg
@@ -242,6 +247,7 @@ tasks:
         run:
             using: python-test
             subsuite: fuzzing
+        run-on-projects: []
         fetches:
             build:
                 - target.dmg
@@ -257,6 +263,7 @@ tasks:
         run:
             using: python-test
             subsuite: fuzzing
+        run-on-projects: []
         fetches:
             build:
                 - target.dmg
@@ -272,6 +279,7 @@ tasks:
         run:
             using: python-test
             subsuite: fuzzing
+        run-on-projects: []
         fetches:
             build:
                 - target.dmg

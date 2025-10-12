@@ -208,7 +208,7 @@ AudioNode* AudioNode::Connect(AudioNode& aDestination, uint32_t aOutput,
     return &aDestination;
   }
 
-  WEB_AUDIO_API_LOG("%f: %s %u Connect() to %s %u", Context()->CurrentTime(),
+  WEB_AUDIO_API_LOG("{:f}: {} {} Connect() to {} {}", Context()->CurrentTime(),
                     NodeType(), Id(), aDestination.NodeType(),
                     aDestination.Id());
 
@@ -291,7 +291,7 @@ void AudioNode::SendChannelMixingParametersToTrack() {
 template <>
 bool AudioNode::DisconnectFromOutputIfConnected<AudioNode>(
     uint32_t aOutputNodeIndex, uint32_t aInputIndex) {
-  WEB_AUDIO_API_LOG("%f: %s %u Disconnect()", Context()->CurrentTime(),
+  WEB_AUDIO_API_LOG("{:f}: {} {} Disconnect()", Context()->CurrentTime(),
                     NodeType(), Id());
 
   AudioNode* destination = mOutputNodes[aOutputNodeIndex];

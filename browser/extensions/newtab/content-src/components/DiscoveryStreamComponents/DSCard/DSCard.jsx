@@ -101,7 +101,6 @@ export const DefaultMeta = ({
   sponsored_by_override,
   ctaButtonVariant,
   dispatch,
-  spocMessageVariant,
   mayHaveSectionsCards,
   mayHaveThumbsUpDown,
   onThumbsUpClick,
@@ -206,7 +205,6 @@ export const DefaultMeta = ({
           cta_button_variant={ctaButtonVariant}
           source={source}
           dispatch={dispatch}
-          spocMessageVariant={spocMessageVariant}
           mayHaveSectionsCards={mayHaveSectionsCards}
         />
       )}
@@ -385,6 +383,7 @@ export class _DSCard extends React.PureComponent {
                     section: this.props.section,
                     section_position: this.props.sectionPosition,
                     is_section_followed: this.props.sectionFollowed,
+                    layout_name: this.props.sectionLayoutName,
                   }
                 : {}),
             },
@@ -935,6 +934,7 @@ export class _DSCard extends React.PureComponent {
                       section: this.props.section,
                       section_position: this.props.sectionPosition,
                       is_section_followed: this.props.sectionFollowed,
+                      sectionLayoutName: this.props.sectionLayoutName,
                     }
                   : {}),
                 ...(!format && this.props.section
@@ -971,7 +971,6 @@ export class _DSCard extends React.PureComponent {
               sponsored_by_override={this.props.sponsored_by_override}
               ctaButtonVariant={ctaButtonVariant}
               dispatch={this.props.dispatch}
-              spocMessageVariant={this.props.spocMessageVariant}
               mayHaveThumbsUpDown={this.props.mayHaveThumbsUpDown}
               mayHaveSectionsCards={this.props.mayHaveSectionsCards}
               onThumbsUpClick={this.onThumbsUpClick}

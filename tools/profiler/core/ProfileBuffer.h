@@ -48,7 +48,7 @@ class ProfileBuffer final {
       const mozilla::Maybe<JS::ProfilingCategoryPair>& aCategoryPair);
 
   // Maximum size of a frameKey string that we'll handle.
-  static const size_t kMaxFrameKeyLength = 512;
+  static constexpr size_t kMaxFrameKeyLength = 512;
 
   // Add JIT frame information to aJITFrameInfo for any JitReturnAddr entries
   // that are currently in the buffer at or after aRangeStart, in samples

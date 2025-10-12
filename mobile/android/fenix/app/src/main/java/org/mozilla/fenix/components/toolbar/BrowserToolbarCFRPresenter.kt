@@ -41,6 +41,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
+import mozilla.components.browser.toolbar.R as toolbarR
 
 /**
  * Vertical padding needed to improve the visual alignment of the popup and respect the UX design.
@@ -143,7 +144,7 @@ class BrowserToolbarCFRPresenter(
     internal fun showCookieBannersCFR() {
         CFRPopup(
             anchor = toolbar.findViewById(
-                R.id.mozac_browser_toolbar_site_info_indicator,
+                toolbarR.id.mozac_browser_toolbar_site_info_indicator,
             ),
             properties = CFRPopupProperties(
                 popupAlignment = INDICATOR_CENTERED_IN_ANCHOR,
@@ -204,7 +205,7 @@ class BrowserToolbarCFRPresenter(
     internal fun showTabSwipeCFR() {
         CFRPopup(
             anchor = toolbar.findViewById(
-                R.id.mozac_browser_toolbar_background,
+                toolbarR.id.mozac_browser_toolbar_background,
             ),
             properties = CFRPopupProperties(
                 popupAlignment = BODY_TO_ANCHOR_CENTER,

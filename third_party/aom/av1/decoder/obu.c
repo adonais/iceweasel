@@ -613,9 +613,9 @@ static void alloc_read_metadata(AV1Decoder *const pbi,
     aom_internal_error(&pbi->error, AOM_CODEC_MEM_ERROR,
                        "Error allocating metadata");
   }
-  aom_metadata_t **metadata_array =
-      (aom_metadata_t **)realloc(pbi->metadata->metadata_array,
-                                 (pbi->metadata->sz + 1) * sizeof(metadata));
+  aom_metadata_t **metadata_array = (aom_metadata_t **)realloc(
+      pbi->metadata->metadata_array,
+      (pbi->metadata->sz + 1) * sizeof(*metadata_array));
   if (!metadata_array) {
     aom_img_metadata_free(metadata);
     aom_internal_error(&pbi->error, AOM_CODEC_MEM_ERROR,

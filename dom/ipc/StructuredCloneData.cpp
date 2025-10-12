@@ -34,13 +34,6 @@ StructuredCloneData::StructuredCloneData()
           StructuredCloneHolder::StructuredCloneScope::DifferentProcess,
           StructuredCloneHolder::TransferringSupported) {}
 
-StructuredCloneData::StructuredCloneData(StructuredCloneData&& aOther)
-    : StructuredCloneData(
-          StructuredCloneHolder::StructuredCloneScope::DifferentProcess,
-          StructuredCloneHolder::TransferringSupported) {
-  *this = std::move(aOther);
-}
-
 StructuredCloneData::StructuredCloneData(
     StructuredCloneHolder::StructuredCloneScope aScope,
     TransferringSupport aSupportsTransferring)
@@ -55,17 +48,6 @@ StructuredCloneData::StructuredCloneData(
 }
 
 StructuredCloneData::~StructuredCloneData() = default;
-
-StructuredCloneData& StructuredCloneData::operator=(
-    StructuredCloneData&& aOther) {
-  mBlobImplArray = std::move(aOther.mBlobImplArray);
-  mExternalData = std::move(aOther.mExternalData);
-  mSharedData = std::move(aOther.mSharedData);
-  mPortIdentifiers = std::move(aOther.mPortIdentifiers);
-  mInitialized = aOther.mInitialized;
-
-  return *this;
-}
 
 bool StructuredCloneData::Copy(const StructuredCloneData& aData) {
   if (!aData.mInitialized) {

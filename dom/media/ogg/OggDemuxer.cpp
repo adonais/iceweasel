@@ -24,7 +24,6 @@
 #include "nsDebug.h"
 #include "nsError.h"
 
-extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define OGG_DEBUG(arg, ...)                                           \
   DDMOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, "::%s: " arg, \
             __func__, ##__VA_ARGS__)

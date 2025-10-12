@@ -7,8 +7,8 @@ package org.mozilla.fenix.iconpicker.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
@@ -34,6 +35,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -45,10 +48,10 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.button.RadioButton
 import org.mozilla.fenix.iconpicker.AppIcon
 import org.mozilla.fenix.iconpicker.DefaultAppIconRepository
+import org.mozilla.fenix.iconpicker.DefaultPackageManagerWrapper
 import org.mozilla.fenix.iconpicker.IconBackground
 import org.mozilla.fenix.iconpicker.IconGroupTitle
 import org.mozilla.fenix.theme.FirefoxTheme
-import org.mozilla.fenix.utils.Settings
 
 private val ListItemHeight = 56.dp
 private val AppIconSize = 40.dp
@@ -147,7 +150,12 @@ private fun AppIconOption(
         modifier = Modifier
             .fillMaxWidth()
             .height(ListItemHeight)
-            .clickable { onClick() },
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                onClick = { onClick() },
+            )
+            .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(
@@ -155,18 +163,30 @@ private fun AppIconOption(
             onClick = {
                 onClick()
             },
+            modifier = Modifier.clearAndSetSemantics {},
         )
 
         AppIcon(appIcon)
 
         Spacer(modifier = Modifier.width(16.dp))
 
-        Text(
-            text = stringResource(appIcon.titleId),
-            modifier = Modifier.weight(1f),
-            style = FirefoxTheme.typography.subtitle1,
-            color = FirefoxTheme.colors.textPrimary,
-        )
+        Column {
+            Text(
+                text = stringResource(appIcon.titleId),
+                style = FirefoxTheme.typography.subtitle1,
+                color = FirefoxTheme.colors.textPrimary,
+            )
+
+            appIcon.subtitleId?.let {
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Text(
+                    text = stringResource(it),
+                    style = FirefoxTheme.typography.body2,
+                    color = FirefoxTheme.colors.textSecondary,
+                )
+            }
+        }
     }
 }
 
@@ -240,7 +260,10 @@ private fun RestartWarningDialog(
                 },
         text = {
             Text(
-                text = stringResource(R.string.restart_warning_dialog_body),
+                text = stringResource(
+                    id = R.string.restart_warning_dialog_body_2,
+                    stringResource(R.string.app_name),
+                ),
                 color = FirefoxTheme.colors.textPrimary,
                 style = FirefoxTheme.typography.body2,
             )
@@ -248,15 +271,13 @@ private fun RestartWarningDialog(
         onDismissRequest = { onDismiss() },
         confirmButton = {
             TextButton(
-                text = stringResource(id = R.string.restart_warning_dialog_button_positive),
-                upperCaseText = false,
+                text = stringResource(id = R.string.restart_warning_dialog_button_positive_2),
                 onClick = { onConfirm() },
             )
         },
         dismissButton = {
             TextButton(
                 text = stringResource(id = R.string.restart_warning_dialog_button_negative),
-                upperCaseText = false,
                 onClick = { onDismiss() },
             )
         },
@@ -269,7 +290,10 @@ private fun AppIconSelectionPreview() {
     FirefoxTheme {
         AppIconSelection(
             currentAppIcon = AppIcon.AppDefault,
-            groupedIconOptions = DefaultAppIconRepository(Settings(LocalContext.current)).groupedAppIcons,
+            groupedIconOptions = DefaultAppIconRepository(
+                packageManager = DefaultPackageManagerWrapper(LocalContext.current.packageManager),
+                packageName = LocalContext.current.packageName,
+            ).groupedAppIcons,
             onAppIconSelected = {},
         )
     }
@@ -280,6 +304,14 @@ private fun AppIconSelectionPreview() {
 private fun AppIconOptionPreview() {
     FirefoxTheme {
         AppIconOption(AppIcon.AppDefault, false) {}
+    }
+}
+
+@FlexibleWindowLightDarkPreview
+@Composable
+private fun AppIconOptionWithSubtitlePreview() {
+    FirefoxTheme {
+        AppIconOption(AppIcon.AppMomo, false) {}
     }
 }
 

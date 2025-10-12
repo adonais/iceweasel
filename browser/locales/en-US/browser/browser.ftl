@@ -2,74 +2,20 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-## The main browser window's title
-
-# These are the default window titles everywhere except macOS.
-# .data-title-default and .data-title-private are used when the web content
-# opened has no title:
-#
-# default - "Mozilla Firefox"
-# private - "Mozilla Firefox (Private Browsing)"
-#
-# .data-content-title-default and .data-content-title-private are for use when
-# there *is* a content title.
-#
-# .data-title-default-with-profile, .data-title-private-with-profile,
-# .data-content-title-default-with-profile,
-# .data-content-title-private-with-profile are used when there a
-# SelectableProfileService.current profile exists.
-#
-# Variables:
-#  $content-title (String): the title of the web content.
-#  $profile-name (String): the name of the current profile.
-browser-main-window-titles =
-  .data-title-default = { -brand-full-name }
-  .data-title-private = { -brand-full-name } Private Browsing
-  .data-title-default-with-profile = { $profile-name } — { -brand-full-name }
-  .data-title-private-with-profile = { $profile-name } — { -brand-full-name } Private Browsing
-  .data-content-title-default = { $content-title } — { -brand-full-name }
-  .data-content-title-private = { $content-title } — { -brand-full-name } Private Browsing
-  .data-content-title-default-with-profile = { $content-title } — { $profile-name } — { -brand-full-name }
-  .data-content-title-private-with-profile = { $content-title } — { $profile-name } — { -brand-full-name } Private Browsing
-
-# These are the default window titles on macOS.
-# .data-title-default and .data-title-private are used when the web content
-# opened has no title:
-#
-#
-# "default" - "Mozilla Firefox"
-# "private" - "Mozilla Firefox — (Private Browsing)"
-#
-# .data-content-title-default and .data-content-title-private are for use when
-# there *is* a content title.
-# Do not use the brand name in these, as we do on non-macOS.
-#
-# .data-title-default-with-profile, .data-title-private-with-profile,
-# .data-content-title-default-with-profile,
-# .data-content-title-private-with-profile are used when there a
-# SelectableProfileService.current profile exists.
-#
-# Also note the other subtle difference here: we use a `-` to separate the
-# brand name from `(Private Browsing)`, which does not happen on other OSes.
-#
-# Variables:
-#  $content-title (String): the title of the web content.
-#  $profile-name (String): the name of the current profile.
-browser-main-window-titles-mac =
-  .data-title-default = { -brand-full-name }
-  .data-title-private = { -brand-full-name } — Private Browsing
-  .data-title-default-with-profile = { $profile-name } — { -brand-full-name }
-  .data-title-private-with-profile = { $profile-name } — { -brand-full-name } Private Browsing
-  .data-content-title-default = { $content-title }
-  .data-content-title-private = { $content-title } — Private Browsing
-  .data-content-title-default-with-profile = { $content-title } — { $profile-name }
-  .data-content-title-private-with-profile = { $content-title } — { $profile-name } — Private Browsing
-
-# This gets set as the initial title, and is overridden as soon as we start
-# updating the titlebar based on loaded tabs or private browsing state.
-# This should match the `data-title-default` attribute in both
-# `browser-main-window` and `browser-main-window-mac`.
+# This is the initial default title for the browser window.
+# It gets updated based on loaded tabs or private browsing state.
 browser-main-window-default-title = { -brand-full-name }
+
+# Note: only on macOS do we use a `-` separator between the brand name and the
+# "Private Browsing" suffix.
+browser-main-private-window-title = { PLATFORM() ->
+      [macos] { -brand-full-name } — Private Browsing
+     *[other] { -brand-full-name } Private Browsing
+  }
+
+# This is only used on macOS; on other OSes we use the full private window
+# title (so including the brand name) as a suffix
+browser-main-private-suffix-for-content = Private Browsing
 
 # The non-variable portion of this MUST match the translation of
 # "PRIVATE_BROWSING_SHORTCUT_TITLE" in custom.properties
@@ -214,8 +160,8 @@ urlbar-screen-blocked =
     .tooltiptext = You have blocked this website from sharing your screen.
 urlbar-persistent-storage-blocked =
     .tooltiptext = You have blocked persistent storage for this website.
-urlbar-popup-blocked =
-    .tooltiptext = You have blocked pop-ups for this website.
+urlbar-popup-blocked2 =
+    .tooltiptext = You have blocked pop-ups and third-party redirects for this website.
 urlbar-autoplay-media-blocked =
     .tooltiptext = You have blocked autoplay media with sound for this website.
 urlbar-canvas-blocked =
@@ -1102,22 +1048,18 @@ ui-tour-info-panel-close =
 ## Variables:
 ##  $uriHost (String): URI host for which the popup was allowed or blocked.
 
-popups-infobar-allow =
-    .label = Allow pop-ups for { $uriHost }
-    .accesskey = p
-
-popups-infobar-block =
-    .label = Block pop-ups for { $uriHost }
+popups-infobar-allow2 =
+    .label = Allow pop-ups and third-party redirects for { $uriHost }
     .accesskey = p
 
 ##
 
-popups-infobar-dont-show-message =
-    .label = Don’t show this message when pop-ups are blocked
+popups-infobar-dont-show-message2 =
+    .label = Don’t show this message when pop-ups or third-party redirects are blocked
     .accesskey = D
 
-edit-popup-settings =
-    .label = Manage pop-up settings…
+edit-popup-settings2 =
+    .label = Manage pop-up and third-party redirect settings…
     .accesskey = M
 
 picture-in-picture-hide-toggle =
@@ -1288,6 +1230,7 @@ firefox-relay-offer-why-to-use-relay = Our secure, easy-to-use masks protect you
 firefox-relay-offer-what-relay-provides = All emails sent to your email masks will be forwarded to <strong>{ $useremail }</strong> (unless you decide to block them).
 
 firefox-relay-offer-legal-notice = By clicking “Use email mask”, you agree to the <label data-l10n-name="tos-url">Terms of Service</label> and <label data-l10n-name="privacy-url">Privacy Notice</label>.
+firefox-relay-offer-legal-notice-1 = By signing up and creating an email mask, you agree to the <label data-l10n-name="tos-url">Terms of Service</label> and <label data-l10n-name="privacy-url">Privacy Notice</label>.
 
 ## Add-on Pop-up Notifications
 
@@ -1317,6 +1260,16 @@ popup-warning-message =
         [1] { -brand-short-name } prevented this site from opening a pop-up window.
        *[other] { -brand-short-name } prevented this site from opening { $popupCount } pop-up windows.
     }
+
+# Variables:
+#   $popupCount (Number): the number of pop-ups blocked.
+redirect-warning-with-popup-message =
+    { $popupCount ->
+        [0] { -brand-short-name } prevented this site from redirecting.
+        [1] { -brand-short-name } prevented this site from opening a pop-up window and redirecting.
+       *[other] { -brand-short-name } prevented this site from opening { $popupCount } pop-up windows and redirecting.
+    }
+
 # The singular form is left out for English, since the number of blocked pop-ups is always greater than 1.
 # Variables:
 #   $popupCount (Number): the number of pop-ups blocked.
@@ -1324,6 +1277,14 @@ popup-warning-exceeded-message =
     { $popupCount ->
        *[other] { -brand-short-name } prevented this site from opening more than { $popupCount } pop-up windows.
     }
+
+# Variables:
+#   $popupCount (Number): the number of pop-ups blocked.
+popup-warning-exceeded-with-redirect-message =
+    { $popupCount ->
+       *[other] { -brand-short-name } prevented this site from opening more than { $popupCount } pop-up windows and redirecting.
+    }
+
 popup-warning-button =
     .label =
         { PLATFORM() ->
@@ -1340,6 +1301,11 @@ popup-warning-button =
 #   $popupURI (String): the URI for the pop-up window
 popup-show-popup-menuitem =
     .label = Show “{ $popupURI }”
+
+# Variables:
+#   $redirectURI (String): the URI for the redirect
+popup-trigger-redirect-menuitem =
+    .label = Show “{ $redirectURI }”
 
 ## File-picker crash notification ("FilePickerCrashed.sys.mjs")
 
@@ -1414,9 +1380,6 @@ trustpanel-clear-cookies-subview-button-cancel = Cancel
 #  $host (String): the hostname of the site that is being displayed.
 trustpanel-site-information-header =
     .title = Connection protections for { $host }
-
-trustpanel-connection-secure = You are securely connected to this site.
-trustpanel-connection-not-secure = You are not securely connected to this site.
 
 trustpanel-siteinformation-morelink = More site information
 

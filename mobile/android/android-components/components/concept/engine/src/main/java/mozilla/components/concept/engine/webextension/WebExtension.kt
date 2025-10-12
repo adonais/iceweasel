@@ -520,7 +520,6 @@ data class Metadata(
 /**
  * Provides additional information about why an extension is being enabled or disabled.
  */
-@Suppress("MagicNumber")
 enum class EnableSource(val id: Int) {
     /**
      * The extension is enabled or disabled by the user.

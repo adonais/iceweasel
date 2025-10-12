@@ -302,6 +302,8 @@ support-files = "window_panel_focus.xhtml"
 
 ["test_preferences.xhtml"]
 
+["test_preferencesBindings_async_setting.html"]
+
 ["test_preferencesBindings_setting.html"]
 
 ["test_preferencesBindings_setting_setup_teardown.html"]

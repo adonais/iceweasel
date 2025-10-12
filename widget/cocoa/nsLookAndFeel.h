@@ -40,8 +40,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
 
  protected:
   bool mInitialized = false;
-  bool mRtl = false;
-  int32_t mTitlebarHeight = 0;
 };
 
 #endif  // nsLookAndFeel_h_

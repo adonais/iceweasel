@@ -107,6 +107,7 @@ class AutocompleteTest : BaseSessionTest() {
                 // Enable login management since it's disabled in automation.
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 
@@ -775,6 +776,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 
@@ -838,6 +840,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 
@@ -912,6 +915,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 
@@ -994,6 +998,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 
@@ -1554,6 +1559,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 
@@ -1664,6 +1670,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 
@@ -1750,6 +1757,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.autofillForms.http" to true,
                 "dom.disable_open_during_load" to false,
                 "signon.userInputRequiredToCapture.enabled" to false,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 
@@ -2028,6 +2036,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.autofillForms.http" to true,
                 "dom.disable_open_during_load" to false,
                 "signon.userInputRequiredToCapture.enabled" to false,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 
@@ -2293,6 +2302,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.generation.available" to true,
                 "dom.disable_open_during_load" to false,
                 "signon.userInputRequiredToCapture.enabled" to false,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 
@@ -2495,6 +2505,7 @@ class AutocompleteTest : BaseSessionTest() {
                 "signon.rememberSignons" to true,
                 "signon.autofillForms.http" to true,
                 "signon.userInputRequiredToCapture.enabled" to false,
+                "signon.testOnlyNotWaitForPaint" to true,
             ),
         )
 

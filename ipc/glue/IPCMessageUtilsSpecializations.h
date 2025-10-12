@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <limits>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -303,6 +304,34 @@ struct ParamTraits<std::vector<E>> {
         return mozilla::Some(std::back_inserter(*aResult));
       }
     });
+  }
+};
+
+template <typename V, typename Compare, typename Allocator>
+struct ParamTraits<std::set<V, Compare, Allocator>> final {
+  using T = std::set<V, Compare, Allocator>;
+
+  static void Write(MessageWriter* const writer, const T& in) {
+    WriteParam(writer, in.size());
+    for (const auto& value : in) {
+      WriteParam(writer, value);
+    }
+  }
+
+  static bool Read(MessageReader* const reader, T* const out) {
+    size_t size = 0;
+    if (!ReadParam(reader, &size)) return false;
+    T set;
+    for (const auto i : mozilla::IntegerRange(size)) {
+      V value;
+      mozilla::Unused << i;
+      if (!ReadParam(reader, &(value))) {
+        return false;
+      }
+      set.insert(std::move(value));
+    }
+    *out = std::move(set);
+    return true;
   }
 };
 

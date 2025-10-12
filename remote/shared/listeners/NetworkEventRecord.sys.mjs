@@ -24,6 +24,7 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
  */
 export class NetworkEventRecord {
   #decodedBodySizeMap;
+  #devtoolsResponseSizes;
   #fromCache;
   #networkEventsMap;
   #networkListener;
@@ -65,6 +66,12 @@ export class NetworkEventRecord {
       rawHeaders: networkEvent.rawHeaders,
     });
     this.#response = null;
+
+    this.#devtoolsResponseSizes = {
+      decodedBodySize: 0,
+      encodedBodySize: 0,
+      totalTransmittedSize: 0,
+    };
 
     if (channel instanceof Ci.nsIChannel) {
       this.#wrappedChannel = ChannelWrapper.get(channel);
@@ -216,13 +223,39 @@ export class NetworkEventRecord {
    *
    * @param {object} responseContent
    *     An object which represents the response content.
-   * @param {object} responseInfo
-   *     Additional meta data about the response.
    */
-  addResponseContent(responseContent, responseInfo) {
+  addResponseContent(responseContent) {
     if (this.#response) {
       this.#response.setResponseContent(responseContent);
     }
+    // Bug 1979111: In Bug 1971778 the DevTools NetworkObserver is configured
+    // to no longer decode responsizes.
+    // Consequently `responseContent` no longer exposes the decodedBodySize.
+    // Until we can monitor decoded body size in all processes, ServiceWorker
+    // initiated requests will report the encodedBodySize here, which is at
+    // least non-zero.
+    this.#devtoolsResponseSizes.decodedBodySize =
+      responseContent.isContentEncoded
+        ? responseContent.encodedBodySize
+        : responseContent.decodedBodySize;
+    // Note: response's bodySize is normally equal to encodedBodySize, but
+    // encodedBodySize is only available on responses with isContentEncoded
+    // set to true, which is not the case for data or file URIs, regardless
+    // of the `decodeResponseBodies` configuration of the NetworkObserver.
+    this.#devtoolsResponseSizes.encodedBodySize = responseContent.bodySize;
+    this.#devtoolsResponseSizes.totalTransmittedSize =
+      responseContent.transferredSize;
+  }
+
+  /**
+   * Add response content complete
+   *
+   * Required API for a NetworkObserver event owner.
+   *
+   * @param {object} responseInfo
+   *    An object with info for when response content is complete
+   */
+  addResponseContentComplete(responseInfo) {
     if (
       // Ignore already completed requests.
       this.#request.alreadyCompleted ||
@@ -232,25 +265,10 @@ export class NetworkEventRecord {
     ) {
       return;
     }
-
-    const sizes = {
-      // Bug 1979111: In Bug 1971778 the DevTools NetworkObserver is configured
-      // to no longer decode responsizes.
-      // Consequently `responseContent` no longer exposes the decodedBodySize.
-      // Until we can monitor decoded body size in all processes, ServiceWorker
-      // initiated requests will report the encodedBodySize here, which is at
-      // least non-zero.
-      decodedBodySize: responseContent.isContentEncoded
-        ? responseContent.encodedBodySize
-        : responseContent.decodedBodySize,
-      // Note: response's bodySize is normally equal to encodedBodySize, but
-      // encodedBodySize is only available on responses with isContentEncoded
-      // set to true, which is not the case for data or file URIs, regardless
-      // of the `decodeResponseBodies` configuration of the NetworkObserver.
-      encodedBodySize: responseContent.bodySize,
-      totalTransmittedSize: responseContent.transferredSize,
-    };
-    this.#handleRequestEnd(responseInfo.blockedReason, sizes);
+    this.#handleRequestEnd(
+      responseInfo.blockedReason,
+      this.#devtoolsResponseSizes
+    );
   }
 
   /**

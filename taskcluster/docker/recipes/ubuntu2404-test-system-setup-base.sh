@@ -7,13 +7,6 @@ test "$(whoami)" == 'root'
 # We do want to install recommended packages.
 sed -i /APT::Install-Recommends/d /etc/apt/apt.conf.d/99taskcluster
 
-apt-get update && apt-get install ubuntu-dbgsym-keyring
-
-cat > /etc/apt/sources.list.d/ddebs.list <<EOF
-deb http://ddebs.ubuntu.com noble main restricted universe multiverse
-deb http://ddebs.ubuntu.com noble-updates main restricted universe multiverse
-EOF
-
 # To speed up docker image build times as well as number of network/disk I/O
 # build a list of packages to be installed and call it in one go.
 apt_packages=()
@@ -104,14 +97,15 @@ apt_packages+=('x11-xserver-utils')
 # Build a list of packages to install from the multiverse repo.
 apt_packages+=('ubuntu-restricted-extras')
 
-# libgallium debug symbols
-apt_packages+=('mesa-libgallium-dbgsym')
-
 # APT update takes very long on Ubuntu. Run it at the last possible minute.
 apt-get update
 
 # Also force the cleanup after installation of packages to reduce image size.
 apt-get install --allow-downgrades "${apt_packages[@]}"
+
+# libgallium debug symbols
+wget -O /tmp/mesa-libgallium-dbgsym.ddeb "https://launchpad.net/ubuntu/+archive/primary/+files/mesa-libgallium-dbgsym_24.2.8-1ubuntu1~24.04.1_$ARCH.ddeb"
+dpkg -i /tmp/mesa-libgallium-dbgsym.ddeb
 
 # gsd-power can't start without logind, but it's marked as required in the
 # gnome-session config; remove it so the session doesn't start with the fail
@@ -134,6 +128,7 @@ if [[ "$ARCH" == "amd64" ]]; then
     apt_packages+=('libx11-xcb1:i386')
     apt_packages+=('libxcb1:i386')
     apt_packages+=('libasound2:i386')
+    apt_packages+=('libnotify4:i386')
 
     apt-get install --allow-downgrades "${apt_packages[@]}"
 fi

@@ -252,6 +252,14 @@ class nsIScriptElement : public nsIScriptLoaderObserver {
    */
   virtual nsresult FireErrorEvent() = 0;
 
+  /**
+   * This must be called on scripts with mIsTrusted set to false in
+   * order retrieve the associated aSourceText (source text after
+   * application of the Trusted Types's default policy).
+   */
+  virtual MOZ_CAN_RUN_SCRIPT nsresult
+  GetTrustedTypesCompliantInlineScriptText(nsString& aSourceText) = 0;
+
  protected:
   /**
    * Processes the script if it's in the document-tree and links to or

@@ -84,17 +84,6 @@ inline std::enable_if_t<is_dom_dictionary<T>, void> ImplCycleCollectionTraverse(
   aDictionary.TraverseForCC(aCallback, aFlags);
 }
 
-template <typename T>
-inline std::enable_if_t<is_dom_dictionary<T>, void> ImplCycleCollectionTraverse(
-    nsCycleCollectionTraversalCallback& aCallback, UniquePtr<T>& aDictionary,
-    const char* aName, uint32_t aFlags = 0) {
-  if (aDictionary) {
-    ImplCycleCollectionTraverse(aCallback, *aDictionary, aName, aFlags);
-  }
-}
-// Struct that serves as a base class for all typed arrays and array buffers and
-// array buffer views.  Particularly useful so we can use std::is_base_of to
-// detect typed array/buffer/view template arguments.
 struct AllTypedArraysBase {};
 
 template <class T>

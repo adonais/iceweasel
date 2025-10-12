@@ -7,7 +7,7 @@
  * @module actions/sources
  */
 import { prettyPrintSource, prettyPrintAndSelectSource } from "./prettyPrint";
-import { addTab, closeTab } from "../tabs";
+import { addTab, closeTabForSource } from "../tabs";
 import { loadSourceText } from "./loadSourceText";
 import { setBreakableLines } from "./breakableLines";
 
@@ -31,7 +31,7 @@ import {
   tabExists,
   hasSource,
   hasSourceActor,
-  hasPrettyTab,
+  isPrettyPrinted,
   isSourceActorWithSourceMap,
 } from "../../selectors/index";
 
@@ -99,9 +99,12 @@ export function selectSourceURL(url, options) {
  */
 export function selectMayBePrettyPrintedLocation(location) {
   return async ({ dispatch, getState }) => {
-    const prettySource = getPrettySource(getState(), location.source.id);
-    if (prettySource) {
-      location = createLocation({ source: prettySource });
+    const sourceIsPrettyPrinted = isPrettyPrinted(getState(), location.source);
+    if (sourceIsPrettyPrinted) {
+      const prettySource = getPrettySource(getState(), location.source.id);
+      if (prettySource) {
+        location = createLocation({ source: prettySource });
+      }
     }
     await dispatch(selectSpecificLocation(location));
   };
@@ -162,8 +165,8 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
   //
   // In this case we don't follow the "should select original location",
   // we solely follow user decision to have pretty printed the source.
-  const sourceHasPrettyTab = hasPrettyTab(getState(), location.source);
-  if (!location.source.isOriginal && sourceHasPrettyTab) {
+  const sourceIsPrettyPrinted = isPrettyPrinted(getState(), location.source);
+  if (!location.source.isOriginal && sourceIsPrettyPrinted) {
     // Note that prettyPrintSource has already been called a bit before when this generated source has been added
     // but it is a slow operation and is most likely not resolved yet.
     // prettyPrintSource uses memoization to avoid doing the operation more than once, while waiting from both callsites.
@@ -196,7 +199,7 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
       if (
         location.source.isOriginal ||
         isSourceActorWithSourceMap(getState(), location.sourceActor.id) ||
-        sourceHasPrettyTab
+        sourceIsPrettyPrinted
       ) {
         // getRelatedMapLocation will convert to the related generated/original location.
         // i.e if the original location is passed, the related generated location will be returned and vice versa.
@@ -296,7 +299,7 @@ export function selectLocation(
     }
 
     if (!tabExists(getState(), source)) {
-      dispatch(addTab(source, sourceActor));
+      dispatch(addTab(source));
     }
     dispatch(
       setSelectedLocation(
@@ -338,7 +341,7 @@ export function selectLocation(
       isMinified(source, sourceTextContent)
     ) {
       await dispatch(prettyPrintAndSelectSource(loadedSource));
-      dispatch(closeTab(loadedSource));
+      dispatch(closeTabForSource(loadedSource));
     }
 
     // When we select a generated source which has a sourcemap,

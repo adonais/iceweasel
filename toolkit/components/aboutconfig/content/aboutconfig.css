@@ -106,7 +106,7 @@
   min-width: 644px;
   /* To stay consistent with about:preferences (664px - 20px margin). */
   border: var(--prefs-table-border);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   border-spacing: 0;
 }
 

@@ -76,7 +76,7 @@ pub use self::font::{FontVariantAlternates, FontWeight};
 pub use self::font::{FontVariantEastAsian, FontVariationSettings};
 pub use self::font::{MathDepth, MozScriptMinSize, MozScriptSizeMultiplier, XLang, XTextScale};
 pub use self::image::{Gradient, Image, ImageRendering, LineDirection};
-pub use self::length::{AnchorSizeFunction, CSSPixelLength, NonNegativeLength};
+pub use self::length::{CSSPixelLength, NonNegativeLength};
 pub use self::length::{Length, LengthOrNumber, LengthPercentage, NonNegativeLengthOrNumber};
 pub use self::length::{LengthOrAuto, LengthPercentageOrAuto, Margin, MaxSize, Size};
 pub use self::length::{NonNegativeLengthPercentage, NonNegativeLengthPercentageOrAuto};
@@ -112,7 +112,9 @@ pub use self::text::{InitialLetter, LetterSpacing, LineBreak, TextIndent};
 pub use self::text::{OverflowWrap, RubyPosition, TextOverflow, WordBreak, WordSpacing};
 pub use self::text::{TextAlign, TextAlignLast, TextEmphasisPosition, TextEmphasisStyle};
 pub use self::text::{TextAutospace, TextUnderlinePosition};
-pub use self::text::{TextDecorationLength, TextDecorationSkipInk, TextDecorationTrim, TextJustify};
+pub use self::text::{
+    TextDecorationLength, TextDecorationSkipInk, TextDecorationTrim, TextJustify,
+};
 pub use self::time::Time;
 pub use self::transform::{Rotate, Scale, Transform, TransformBox, TransformOperation};
 pub use self::transform::{TransformOrigin, TransformStyle, Translate};

@@ -49,6 +49,7 @@ import org.mozilla.fenix.databinding.FragmentTrackingProtectionBinding
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.SupportUtils
+import com.google.android.material.R as materialR
 
 @Suppress("TooManyFunctions")
 class TrackingProtectionPanelDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
@@ -170,8 +171,7 @@ class TrackingProtectionPanelDialogFragment : AppCompatDialogFragment(), UserInt
         return if (args.gravity == Gravity.BOTTOM) {
             BottomSheetDialog(requireContext(), this.theme).apply {
                 setOnShowListener {
-                    val bottomSheet =
-                        findViewById<View>(com.google.android.material.R.id.design_bottom_sheet) as FrameLayout
+                    val bottomSheet = findViewById<View>(materialR.id.design_bottom_sheet) as FrameLayout
                     val behavior = BottomSheetBehavior.from(bottomSheet)
                     behavior.state = BottomSheetBehavior.STATE_EXPANDED
                 }

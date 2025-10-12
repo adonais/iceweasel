@@ -117,18 +117,6 @@ impl MemoryDistribution for LabeledMemoryDistributionMetric {
         }
     }
 
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<DistributionData> {
-        match self {
-            LabeledMemoryDistributionMetric::Parent(p) => p.test_get_value(ping_name),
-            LabeledMemoryDistributionMetric::Child { id, .. } => {
-                panic!("Cannot get test value for labeled_memory_distribution {:?} in non-parent process!", id)
-            }
-        }
-    }
-
     pub fn test_get_num_recorded_errors(&self, error: glean::ErrorType) -> i32 {
         match self {
             LabeledMemoryDistributionMetric::Parent(p) => p.test_get_num_recorded_errors(error),
@@ -136,6 +124,18 @@ impl MemoryDistribution for LabeledMemoryDistributionMetric {
                 "Cannot get the number of recorded errors for labeled_memory_distribution {:?} in non-parent process!",
                 id
             ),
+        }
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<DistributionData> for LabeledMemoryDistributionMetric {
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
+        match self {
+            LabeledMemoryDistributionMetric::Parent(p) => p.test_get_value(ping_name),
+            LabeledMemoryDistributionMetric::Child { id, .. } => {
+                panic!("Cannot get test value for labeled_memory_distribution {:?} in non-parent process!", id)
+            }
         }
     }
 }

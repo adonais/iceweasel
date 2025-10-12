@@ -26,6 +26,7 @@ class AndroidDataEncoder final : public MediaDataEncoder {
 
   RefPtr<InitPromise> Init() override;
   RefPtr<EncodePromise> Encode(const MediaData* aSample) override;
+  RefPtr<EncodePromise> Encode(nsTArray<RefPtr<MediaData>>&& aSamples) override;
   RefPtr<EncodePromise> Drain() override;
   RefPtr<ShutdownPromise> Shutdown() override;
   RefPtr<GenericPromise> SetBitrate(uint32_t aBitsPerSec) override;
@@ -70,7 +71,7 @@ class AndroidDataEncoder final : public MediaDataEncoder {
 
   // Methods only called on mTaskQueue.
   RefPtr<InitPromise> ProcessInit();
-  RefPtr<EncodePromise> ProcessEncode(const RefPtr<const MediaData>& aSample);
+  RefPtr<EncodePromise> ProcessEncode(nsTArray<RefPtr<MediaData>>&& aSamples);
   RefPtr<EncodePromise> ProcessDrain();
   RefPtr<ShutdownPromise> ProcessShutdown();
   void ProcessInput();

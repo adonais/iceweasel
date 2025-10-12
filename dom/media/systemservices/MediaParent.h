@@ -38,7 +38,8 @@ class NonE10s {
  */
 class RefCountedParent {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefCountedParent)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD(
+      RefCountedParent)
 
  protected:
   virtual ~RefCountedParent() = default;

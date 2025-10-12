@@ -153,7 +153,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "minimumTimeBetweenBackupsSeconds",
   MINIMUM_TIME_BETWEEN_BACKUPS_SECONDS_PREF_NAME,
-  3600 /* 1 hour */
+  86400 /* 1 day */
 );
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -1077,6 +1077,44 @@ export class BackupService extends EventTarget {
         { cause: ERRORS.FILE_SYSTEM_ERROR }
       );
     }
+  }
+
+  /**
+   * Attempts to resolve an existing folder path to use for archives,
+   * following the same fallback order as `resolveArchiveDestFolderPath`.
+   *
+   * Order of resolution:
+   * 1. Configured destination folder
+   * 2. Default parent folder
+   * 3. Home directory
+   *
+   * @param {string} configuredDestFolderPath
+   * @returns {Promise<string, Error>}
+   */
+  async resolveExistingArchiveDestFolderPath(configuredDestFolderPath) {
+    if (await IOUtils.exists(configuredDestFolderPath)) {
+      return configuredDestFolderPath;
+    }
+
+    let fallbackFolderPath = PathUtils.join(
+      BackupService.DEFAULT_PARENT_DIR_PATH,
+      BackupService.BACKUP_DIR_NAME
+    );
+    if (await IOUtils.exists(fallbackFolderPath)) {
+      return fallbackFolderPath;
+    }
+
+    let homeDirPath = PathUtils.join(
+      Services.dirsvc.get("Home", Ci.nsIFile).path,
+      BackupService.BACKUP_DIR_NAME
+    );
+    if (await IOUtils.exists(homeDirPath)) {
+      return homeDirPath;
+    }
+
+    throw new Error("Could not resolve an existing destination folder path.", {
+      cause: ERRORS.FILE_SYSTEM_ERROR,
+    });
   }
 
   /**
@@ -3481,6 +3519,16 @@ export class BackupService extends EventTarget {
     this.stateUpdate();
   }
 
+  /**
+   * TEST ONLY: reset's lastBackup state's for testing purposes
+   */
+  resetLastBackupInternalState() {
+    this.#_state.backupFileToRestore = null;
+    this.#_state.lastBackupFileName = "";
+    this.#_state.lastBackupDate = null;
+    this.stateUpdate();
+  }
+
   /*
    * Attempts to open a native file explorer window at the last backup file's
    * location on the filesystem.
@@ -3497,6 +3545,61 @@ export class BackupService extends EventTarget {
         lazy.backupDirPref
       );
       new lazy.nsLocalFile(archiveDestFolderPath).reveal();
+    }
+  }
+
+  /**
+   * Looks for valid backup files in the default location to auto populate the file picker.
+   */
+  async findIfABackupFileExists() {
+    // Do we already have a backup for this browser? if so, we don't need to do any searching!
+    if (this.#_state.lastBackupFileName) {
+      return;
+    }
+
+    try {
+      // Check if the default folder exists
+      let archiveDestPath = await this.resolveExistingArchiveDestFolderPath(
+        this.#_state.backupDirPath
+      );
+      let dirExists = await this.#infalliblePathExists(archiveDestPath);
+      if (dirExists) {
+        const files = await IOUtils.getChildren(archiveDestPath);
+
+        for (const file of files) {
+          // The backup is always a html file, disregard any other files in the folder
+          if (!file.endsWith(".html")) {
+            continue;
+          }
+          try {
+            await this.sampleArchive(file);
+            this.#_state.backupFileToRestore = file;
+            this.stateUpdate();
+
+            // TODO: support multiple valid backups for different profiles.
+            // Currently, we break out of the loop and select the first profile that works.
+            // We want to eventually support showing multiple valid profiles to the user.
+            break;
+          } catch (e) {
+            lazy.logConsole.log(
+              "Not a valid backup file in the default folder",
+              file,
+              e
+            );
+
+            if (this.#_state.backupFileToRestore !== file) {
+              continue;
+            }
+
+            // If this is the file that's selected already, but was tampered with, we should unbind it
+            this.#_state.backupFileToRestore = null;
+            this.#_state.backupFileInfo = null;
+            this.stateUpdate();
+          }
+        }
+      }
+    } catch (e) {
+      // no folder to go to!
     }
   }
 

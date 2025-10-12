@@ -437,7 +437,7 @@ class PublicSuffixListTest {
         assertTrue(publicSuffixList.isPublicSuffix("chirurgiens-dentistes.fr").await())
         assertTrue(publicSuffixList.isPublicSuffix("trani-andria-barletta.it").await())
         assertTrue(publicSuffixList.isPublicSuffix("yabuki.fukushima.jp").await())
-        assertTrue(publicSuffixList.isPublicSuffix("research.museum").await())
+        assertTrue(publicSuffixList.isPublicSuffix("researched.cx").await())
         assertTrue(publicSuffixList.isPublicSuffix("lamborghini").await())
         assertTrue(publicSuffixList.isPublicSuffix("reisen").await())
         assertTrue(publicSuffixList.isPublicSuffix("github.io").await())

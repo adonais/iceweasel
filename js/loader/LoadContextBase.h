@@ -7,7 +7,7 @@
 #ifndef js_loader_BaseLoadContext_h
 #define js_loader_BaseLoadContext_h
 
-#include "js/loader/ScriptLoadRequest.h"
+#include "nsCycleCollectionParticipant.h"
 #include "nsIStringBundle.h"
 
 namespace mozilla::dom {
@@ -39,7 +39,7 @@ class LoadContextBase : public nsISupports {
   ContextKind mKind;
 
  protected:
-  virtual ~LoadContextBase() = default;
+  virtual ~LoadContextBase();
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS

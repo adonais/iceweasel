@@ -17,7 +17,6 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/FormData.h"
 #include "mozilla/dom/HTMLTextAreaElementBinding.h"
-#include "mozilla/dom/MutationEventBinding.h"
 #include "nsAttrValueInlines.h"
 #include "nsBaseCommandController.h"
 #include "nsContentCreatorFunctions.h"
@@ -27,6 +26,7 @@
 #include "nsIControllers.h"
 #include "nsIFormControl.h"
 #include "nsIFrame.h"
+#include "nsIMutationObserver.h"
 #include "nsLayoutUtils.h"
 #include "nsLinebreakConverter.h"
 #include "nsPresContext.h"
@@ -375,15 +375,12 @@ void HTMLTextAreaElement::MapAttributesIntoRule(
 }
 
 nsChangeHint HTMLTextAreaElement::GetAttributeChangeHint(
-    const nsAtom* aAttribute, int32_t aModType) const {
+    const nsAtom* aAttribute, AttrModType aModType) const {
   nsChangeHint retval =
       nsGenericHTMLFormControlElementWithState::GetAttributeChangeHint(
           aAttribute, aModType);
 
-  const bool isAdditionOrRemoval =
-      aModType == MutationEvent_Binding::ADDITION ||
-      aModType == MutationEvent_Binding::REMOVAL;
-
+  const bool isAdditionOrRemoval = IsAdditionOrRemoval(aModType);
   if (aAttribute == nsGkAtoms::rows || aAttribute == nsGkAtoms::cols) {
     retval |= NS_STYLE_HINT_REFLOW;
   } else if (aAttribute == nsGkAtoms::wrap) {

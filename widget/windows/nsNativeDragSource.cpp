@@ -11,6 +11,7 @@
 #include "nsWidgetsCID.h"
 #include "nsIDragService.h"
 #include "nsServiceManagerUtils.h"
+#include "mozilla/Logging.h"  //for mozilla::TrueOrFalse
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/widget/WidgetLogging.h"
 
@@ -66,8 +67,9 @@ nsNativeDragSource::Release(void) {
 STDMETHODIMP
 nsNativeDragSource::QueryContinueDrag(BOOL fEsc, DWORD grfKeyState) {
   LOGD("%s | fEsc: %s | grfKeyState: %lu | grfKeyState has button: %s",
-       __FUNCTION__, GetBoolName(fEsc), grfKeyState,
-       GetBoolName((grfKeyState & MK_LBUTTON) || (grfKeyState & MK_RBUTTON)));
+       __FUNCTION__, mozilla::TrueOrFalse(fEsc), grfKeyState,
+       mozilla::TrueOrFalse((grfKeyState & MK_LBUTTON) ||
+                            (grfKeyState & MK_RBUTTON)));
   nsCOMPtr<nsIDragService> dragService =
       do_GetService("@mozilla.org/widget/dragservice;1");
   if (dragService) {

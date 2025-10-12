@@ -504,7 +504,7 @@ export let BrowserUsageTelemetry = {
    */
 
   /** @type {Map<string, TabMovementsRecord>} */
-  _tabMovementsBySource: new Map(),
+  _tabMovementsBySegment: new Map(),
 
   init() {
     this._lastRecordTabCount = 0;
@@ -1054,13 +1054,13 @@ export let BrowserUsageTelemetry = {
   _flowIdTS: 0,
 
   recordInteractionEvent(widgetId, source) {
-    // A note on clocks. Cu.now() is monotonic, but its behaviour across
+    // A note on clocks. ChromeUtils.now() is monotonic, but its behaviour across
     // computer sleeps is different per platform.
     // We're okay with this for flows because we're looking at idle times
     // on the order of minutes and within the same machine, so the weirdest
     // thing we may expect is a flow that accidentally continues across a
     // sleep. Until we have evidence that this is common, we're in the clear.
-    if (!this._flowId || this._flowIdTS + FLOW_IDLE_TIME < Cu.now()) {
+    if (!this._flowId || this._flowIdTS + FLOW_IDLE_TIME < ChromeUtils.now()) {
       // We submit the ping full o' events on every new flow,
       // including at startup.
       GleanPings.prototypeNoCodeEvents.submit();
@@ -1068,7 +1068,7 @@ export let BrowserUsageTelemetry = {
       // out of all events from all flows across all clients.
       this._flowId = Services.uuid.generateUUID();
     }
-    this._flowIdTS = Cu.now();
+    this._flowIdTS = ChromeUtils.now();
 
     const extra = {
       source,
@@ -1525,21 +1525,35 @@ export let BrowserUsageTelemetry = {
       return;
     }
 
-    let tabMovementsRecord = this._tabMovementsBySource.get(telemetrySource);
+    let groupType = "";
+    if (event.target.group) {
+      groupType = event.target.group.collapsed
+        ? lazy.TabMetrics.METRIC_GROUP_TYPE.COLLAPSED
+        : lazy.TabMetrics.METRIC_GROUP_TYPE.EXPANDED;
+    }
+
+    let segmentKey = [telemetrySource, groupType].join(",");
+
+    let tabMovementsRecord = this._tabMovementsBySegment.get(segmentKey);
     if (!tabMovementsRecord) {
       let deferredTask = new lazy.DeferredTask(() => {
-        Glean.tabgroup.addTab.record({
-          source: telemetrySource,
-          tabs: tabMovementsRecord.numberAddedToTabGroup,
-          layout: lazy.sidebarVerticalTabs ? "vertical" : "horizontal",
-        });
-        this._tabMovementsBySource.delete(telemetrySource);
+        if (tabMovementsRecord.numberAddedToTabGroup) {
+          Glean.tabgroup.addTab.record({
+            source: telemetrySource,
+            tabs: tabMovementsRecord.numberAddedToTabGroup,
+            layout: lazy.sidebarVerticalTabs
+              ? lazy.TabMetrics.METRIC_TABS_LAYOUT.VERTICAL
+              : lazy.TabMetrics.METRIC_TABS_LAYOUT.HORIZONTAL,
+            group_type: groupType,
+          });
+        }
+        this._tabMovementsBySegment.delete(segmentKey);
       }, 0);
       tabMovementsRecord = {
         deferredTask,
         numberAddedToTabGroup: 0,
       };
-      this._tabMovementsBySource.set(telemetrySource, tabMovementsRecord);
+      this._tabMovementsBySegment.set(segmentKey, tabMovementsRecord);
       this._updateTabMovementsRecord(tabMovementsRecord, event);
       deferredTask.arm();
     } else {
@@ -1576,7 +1590,10 @@ export let BrowserUsageTelemetry = {
 
   _onTabSelect(event) {
     if (event.target.group) {
-      Glean.tabgroup.tabInteractions.activate.add();
+      let interaction = event.target.group.collapsed
+        ? Glean.tabgroup.tabInteractions.activate_collapsed
+        : Glean.tabgroup.tabInteractions.activate_expanded;
+      interaction.add();
     }
     if (event.target.pinned) {
       const counter = lazy.sidebarVerticalTabs

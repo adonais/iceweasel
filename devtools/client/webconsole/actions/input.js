@@ -456,6 +456,13 @@ function terminalInputChanged(expression, force = false) {
       eager: true,
     });
 
+    // If the terminal input changed while the expression was evaluated, don't render
+    // the results of the eager evaluation, it will be handled by the last call to
+    // terminalInputChanged
+    if (expression.trim() !== getState().history?.terminalInput) {
+      return null;
+    }
+
     return dispatch({
       type: SET_TERMINAL_EAGER_RESULT,
       result: getEagerEvaluationResult(response),

@@ -60,13 +60,13 @@ class PolicyContainer : public nsIPolicyContainer {
                      const PolicyContainer* aOtherContainer);
 
   // == CSP ==
-  nsIContentSecurityPolicy* CSP() const;
+  nsIContentSecurityPolicy* GetCSP() const;
   void SetCSP(nsIContentSecurityPolicy* aPolicy);
   static nsIContentSecurityPolicy* GetCSP(
       const nsIPolicyContainer* aPolicyContainer);
 
   // == Integrity Policy ==
-  nsIIntegrityPolicy* IntegrityPolicy() const;
+  nsIIntegrityPolicy* GetIntegrityPolicy() const;
   void SetIntegrityPolicy(nsIIntegrityPolicy* aPolicy);
   static nsIIntegrityPolicy* GetIntegrityPolicy(
       const nsIPolicyContainer* aPolicyContainer);

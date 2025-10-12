@@ -569,7 +569,8 @@ nsUrlClassifierDBServiceWorker::SetHashCompleter(
 
 NS_IMETHODIMP
 nsUrlClassifierDBServiceWorker::BeginUpdate(
-    nsIUrlClassifierUpdateObserver* observer, const nsACString& tables) {
+    nsIUrlClassifierUpdateObserver* observer, const nsACString& tables,
+    const nsACString& provider) {
   LOG(("nsUrlClassifierDBServiceWorker::BeginUpdate [%s]",
        PromiseFlatCString(tables).get()));
 
@@ -591,6 +592,7 @@ nsUrlClassifierDBServiceWorker::BeginUpdate(
     MOZ_ASSERT(mTableUpdates.IsEmpty(),
                "mTableUpdates should have been cleared in FinishUpdate()");
     mUpdateObserver = observer;
+    mProvider = provider;
   }
   Classifier::SplitTables(tables, mUpdateTables);
 
@@ -617,28 +619,20 @@ nsUrlClassifierDBServiceWorker::BeginStream(const nsACString& table) {
 
   NS_ASSERTION(!mProtocolParser, "Should not have a protocol parser.");
 
-  // Check if we should use protobuf to parse the update.
-  bool useProtobuf = false;
-  for (size_t i = 0; i < mUpdateTables.Length(); i++) {
-    bool isCurProtobuf = StringEndsWith(mUpdateTables[i], "-proto"_ns);
-
-    if (0 == i) {
-      // Use the first table name to decice if all the subsequent tables
-      // should be '-proto'.
-      useProtobuf = isCurProtobuf;
-      continue;
-    }
-
-    if (useProtobuf != isCurProtobuf) {
-      NS_WARNING(
-          "Cannot mix 'proto' tables with other types "
-          "within the same provider.");
-      break;
-    }
-  }
-
-  if (useProtobuf) {
+  if (mProvider.EqualsLiteral("google5")) {
+    mProtocolParser.reset(new (fallible) ProtocolParserProtobufV5());
+  } else if (mProvider.EqualsLiteral("google4")) {
     mProtocolParser.reset(new (fallible) ProtocolParserProtobuf());
+  } else if (mProvider.EqualsLiteral("test")) {
+    // Check if we should use protobuf to parse the update for the test
+    // provider.
+    bool useProtobuf = StringEndsWith(mUpdateTables[0], "-proto"_ns);
+
+    if (useProtobuf) {
+      mProtocolParser.reset(new (fallible) ProtocolParserProtobuf());
+    } else {
+      mProtocolParser.reset(new (fallible) ProtocolParserV2());
+    }
   } else {
     mProtocolParser.reset(new (fallible) ProtocolParserV2());
   }
@@ -2156,7 +2150,8 @@ nsUrlClassifierDBService::ClearLastResults() {
 
 NS_IMETHODIMP
 nsUrlClassifierDBService::BeginUpdate(nsIUrlClassifierUpdateObserver* observer,
-                                      const nsACString& updateTables) {
+                                      const nsACString& updateTables,
+                                      const nsACString& provider) {
   NS_ENSURE_TRUE(gDbBackgroundThread, NS_ERROR_NOT_INITIALIZED);
 
   if (mInUpdate) {
@@ -2197,7 +2192,7 @@ nsUrlClassifierDBService::BeginUpdate(nsIUrlClassifierUpdateObserver* observer,
   nsCOMPtr<nsIUrlClassifierUpdateObserver> proxyObserver =
       new UrlClassifierUpdateObserverProxy(observer);
 
-  return mWorkerProxy->BeginUpdate(proxyObserver, updateTables);
+  return mWorkerProxy->BeginUpdate(proxyObserver, updateTables, provider);
 }
 
 NS_IMETHODIMP

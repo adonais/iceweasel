@@ -13,7 +13,6 @@
 #include "mozilla/Maybe.h"
 #include "prenv.h"
 
-extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define LOG(msg, ...) \
   DDMOZ_LOG(gMediaDemuxerLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 #define LOGV(msg, ...) \

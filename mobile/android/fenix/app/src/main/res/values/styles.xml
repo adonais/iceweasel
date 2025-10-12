@@ -4,7 +4,9 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="SplashScreen" parent="SplashScreenThemeBase"/>
+    <style name="SplashScreen" parent="SplashScreenThemeBase">
+        <item name="windowSplashScreenAnimatedIcon">@drawable/animated_splash_screen</item>
+    </style>
 
     <style name="SplashScreenThemeBase" parent="Theme.SplashScreen">
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_screen</item>
@@ -18,6 +20,7 @@
         <item name="autoCompleteTextViewStyle">@style/AutoCompleteTextViewStyle</item>
         <item name="android:textAlignment">viewStart</item>
         <item name="android:windowContentTransitions">true</item>
+        <item name="android:datePickerDialogTheme">@style/DatePickerDialogStyle</item>
         <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
         <item name="android:progressBarStyleHorizontal">@style/progressBarStyleHorizontal</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
@@ -142,8 +145,36 @@
         <item name="bottomBarBackgroundTop">@drawable/home_bottom_bar_background_top</item>
         <item name="mozac_ic_private_mode_circle_fill_background_color">@android:color/transparent</item>
         <item name="mozac_ic_private_mode_circle_fill_icon_color">@color/fx_mobile_text_color_primary</item>
+        <item name="mozac_ic_shield_slash_bg_fill_critical">@color/fx_mobile_icon_color_primary</item>
+        <item name="mozac_ic_shield_slash_fill_critical">@color/fx_mobile_icon_color_critical</item>
 
         <item name="tabCounterTintColor">?attr/textPrimary</item>
+    </style>
+
+    <!-- A theme to fix DatePickerDialogs year picker text alignment
+        https://bugzilla.mozilla.org/show_bug.cgi?id=1986252 -->
+    <style name="DatePickerDialogStyle" parent="ThemeOverlay.MaterialComponents.Dialog">
+        <item name="android:textAlignment">gravity</item>
+        <item name="android:windowBackground">?attr/layer1</item>
+        <item name="android:colorEdgeEffect">@color/accent_normal_theme</item>
+        <item name="android:colorAccent">@color/fx_mobile_text_color_primary</item>
+        <item name="android:textColorPrimary">@color/state_list_text_color</item>
+        <item name="android:textColorSecondary">@color/secondary_state_list_text_color</item>
+        <item name="android:colorForeground">@color/toggle_off_track_normal_theme</item>
+    </style>
+
+    <style name="PrivateDatePickerDialogStyle" parent="ThemeOverlay.MaterialComponents.Dialog">
+        <item name="android:textAlignment">gravity</item>
+        <!-- For some reason in private mode it was trying to load @drawable/?
+            as the window background. This resolved to #424242. Hard coding
+            this until we know what color we want private mode dialogs to be.
+            see: https://bugzilla.mozilla.org/show_bug.cgi?id=1986252-->
+        <item name="android:windowBackground">#424242</item>
+        <item name="android:colorEdgeEffect">@color/accent_private_theme</item>
+        <item name="android:colorAccent">@color/fx_mobile_private_text_color_primary</item>
+        <item name="android:textColorPrimary">@color/state_list_text_color</item>
+        <item name="android:textColorSecondary">@color/secondary_state_list_text_color</item>
+        <item name="android:colorForeground">@color/toggle_off_track_dark_theme</item>
     </style>
 
     <!-- A theme derived from the normal activity theme, but to look and behave like a dialog -->
@@ -205,14 +236,15 @@
         <item name="android:background">@drawable/ripple_button</item>
         <item name="android:textColor">?accentBright</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="DialogButtonStyleDark" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
         <item name="android:background">@drawable/ripple_button_dark</item>
         <item name="android:textColor">?accentUsedOnDarkBackground</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>    </style>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
+    </style>
 
     <style name="DialogStyleNormal" parent="DialogStyleLight"/>
 
@@ -221,6 +253,7 @@
         <item name="searchViewStyle">@style/SearchViewStyle</item>
         <item name="autoCompleteTextViewStyle">@style/AutoCompleteTextViewStyle</item>
         <item name="android:textAlignment">viewStart</item>
+        <item name="android:datePickerDialogTheme">@style/PrivateDatePickerDialogStyle</item>
         <item name="android:windowContentTransitions">true</item>
         <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
         <item name="android:progressBarStyleHorizontal">@style/progressBarStyleHorizontal</item>
@@ -342,6 +375,8 @@
         <item name="bottomBarBackgroundTop">@drawable/private_home_bottom_bar_background_gradient_top</item>
         <item name="mozac_ic_private_mode_circle_fill_background_color">@color/photonWhite</item>
         <item name="mozac_ic_private_mode_circle_fill_icon_color">@color/fx_mobile_private_layer_color_2</item>
+        <item name="mozac_ic_shield_slash_bg_fill_critical">@color/fx_mobile_private_icon_color_primary</item>
+        <item name="mozac_ic_shield_slash_fill_critical">@color/fx_mobile_private_icon_color_critical</item>
 
         <item name="tabCounterTintColor">?attr/textPrimary</item>
     </style>
@@ -353,7 +388,12 @@
         <item name="cardBackgroundColor">?attr/layer2</item>
     </style>
 
-    <style name="PrivateTheme" parent="PrivateThemeBase" />
+    <style name="PrivateTheme" parent="PrivateThemeBase">
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Style the navigation bar -->
+        <item name="android:navigationBarColor">?attr/layer1</item>
+    </style>
 
     <!-- Fade animation for theme switching -->
     <style name="WindowAnimationTransition" parent="android:Animation.Activity">
@@ -384,7 +424,7 @@
         <item name="rippleColor">?attr/textSecondary</item>
         <item name="android:letterSpacing">0</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="DestructiveButton" parent="NeutralButton">
@@ -420,28 +460,28 @@
         <item name="android:textSize">18sp</item>
         <item name="android:textColor">?attr/textPrimary</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="Header20TextStyle" parent="TextAppearance.MaterialComponents.Body1" tools:ignore="UnusedResources">
         <item name="android:textColor">?attr/textPrimary</item>
         <item name="android:textSize">20sp</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="Header16TextStyle" parent="TextAppearance.MaterialComponents.Body1">
         <item name="android:textColor">?attr/textPrimary</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="Header14TextStyle" parent="TextAppearance.MaterialComponents.Body2">
         <item name="android:textColor">?attr/textPrimary</item>
         <item name="android:textSize">14sp</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="Body14TextStyle" parent="TextAppearance.MaterialComponents.Body2">
@@ -468,19 +508,19 @@
         <item name="android:textColor">?attr/textSecondary</item>
         <item name="android:textSize">12sp</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="CaptionTextStyle" parent="TextAppearance.MaterialComponents.Body1">
         <item name="android:textSize">12sp</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="ToolbarTitleTextStyle" parent="HeaderTextStyle">
         <item name="android:textSize">20sp</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="ListItemTextStyle" parent="TextAppearance.MaterialComponents.Subtitle1">
@@ -567,7 +607,7 @@
         <item name="android:textAlignment">center</item>
         <item name="android:textColor">?accentUsedOnDarkBackground</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="ShareHeaderTextStyle">
@@ -577,13 +617,13 @@
         <item name="android:textSize">@dimen/share_header_text_size</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="StudiesItemTitleTextStyle">
         <item name="android:textSize">12sp</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_semi_bold</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_semi_bold</item>
+        <item name="android:fontWeight">@integer/font_weight_semi_bold</item>
         <item name="fontFamily">sans-serif-medium</item>
     </style>
 
@@ -608,7 +648,7 @@
     <style name="PreferenceSectionHeader" parent="@android:style/Widget.ListView">
         <item name="android:textColor">?preferenceSectionHeader</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
     <style name="EngineTextField" parent="TextAppearance.AppCompat">
@@ -632,7 +672,12 @@
         <item name="android:textColorHint">@color/search_view_hint_color</item>
     </style>
 
-    <style name="BottomSheetPrivate" parent="@style/BottomSheetBasePrivate" />
+    <style name="BottomSheetPrivate" parent="BottomSheetBasePrivate">
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Style the navigation bar -->
+        <item name="android:navigationBarColor">?attr/layer1</item>
+    </style>
 
     <style name="BottomSheet" parent="@style/BottomSheetBase" />
 
@@ -696,5 +741,17 @@
         <item name="cornerFamily">rounded</item>
         <item name="elevation">0dp</item>
         <item name="cornerSize">2dp</item>
+    </style>
+
+    <style name="StopProfilerTransparentTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="windowActionBar">false</item> <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowIsFloating">true</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
     </style>
 </resources>

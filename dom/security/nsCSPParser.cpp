@@ -470,6 +470,11 @@ nsCSPBaseSrc* nsCSPParser::keywordSource() {
     return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
   }
 
+  if (StaticPrefs::dom_security_trusted_types_enabled() &&
+      CSP_IsKeyword(mCurToken, CSP_TRUSTED_TYPES_EVAL)) {
+    return new nsCSPKeywordSrc(CSP_UTF16KeywordToEnum(mCurToken));
+  }
+
   return nullptr;
 }
 
@@ -1267,8 +1272,10 @@ void nsCSPParser::MaybeWarnAboutIgnoredSources(
       nsAutoString srcStr;
       aSrcs[i]->toString(srcStr);
       // Hashes and nonces continue to apply with 'strict-dynamic', as well as
-      // 'unsafe-eval', 'wasm-unsafe-eval' and 'unsafe-hashes'.
+      // 'unsafe-eval', 'wasm-unsafe-eval', 'trusted-types-eval' and
+      // 'unsafe-hashes'.
       if (!aSrcs[i]->isKeyword(CSP_STRICT_DYNAMIC) &&
+          !aSrcs[i]->isKeyword(CSP_TRUSTED_TYPES_EVAL) &&
           !aSrcs[i]->isKeyword(CSP_UNSAFE_EVAL) &&
           !aSrcs[i]->isKeyword(CSP_WASM_UNSAFE_EVAL) &&
           !aSrcs[i]->isKeyword(CSP_UNSAFE_HASHES) && !aSrcs[i]->isNonce() &&

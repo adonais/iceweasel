@@ -60,7 +60,7 @@ use zlib_rs::inflate::{uncompress_slice, InflateConfig};
 use zlib_rs::ReturnCode;
 
 std::thread_local! {
-    static RECV_BUF: RefCell<neqo_udp::RecvBuf> = RefCell::new(neqo_udp::RecvBuf::new());
+    static RECV_BUF: RefCell<neqo_udp::RecvBuf> = RefCell::new(neqo_udp::RecvBuf::default());
 }
 
 #[allow(clippy::cast_possible_truncation, reason = "see check below")]
@@ -1286,6 +1286,7 @@ const fn crypto_error_code(err: &neqo_crypto::Error) -> u64 {
         neqo_crypto::Error::CertificateDecoding => 19,
         neqo_crypto::Error::CertificateEncoding => 20,
         neqo_crypto::Error::InvalidCertificateCompressionID => 21,
+        neqo_crypto::Error::InvalidAlpn => 22,
     }
 }
 
@@ -1554,7 +1555,7 @@ impl WebTransportEventExternal {
     fn new(event: WebTransportEvent, data: &mut ThinVec<u8>) -> Self {
         match event {
             WebTransportEvent::Negotiated(n) => Self::Negotiated(n),
-            WebTransportEvent::Session {
+            WebTransportEvent::NewSession {
                 stream_id, status, ..
             } => {
                 data.extend_from_slice(b"HTTP/3 ");

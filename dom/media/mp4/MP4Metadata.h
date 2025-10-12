@@ -45,7 +45,7 @@ class StreamAdaptor {
 
   ~StreamAdaptor() = default;
 
-  bool Read(uint8_t* buffer, uintptr_t size, size_t* bytes_read);
+  nsresult Read(uint8_t* buffer, uintptr_t size, size_t* bytes_read);
 
  private:
   ByteStream* mSource;

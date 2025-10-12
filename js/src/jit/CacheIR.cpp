@@ -2235,9 +2235,14 @@ bool IRGenerator::canOptimizeConstantDataProperty(NativeObject* holder,
     return false;
   }
 
-  // Warp supports nursery objects and nursery strings (all strings are
-  // atomized) but not nursery BigInts. This is very uncommon so we currently
-  // don't optimize such properties.
+  if (!(*objFuse)->tryOptimizeConstantProperty(prop)) {
+    return false;
+  }
+
+  // Warp supports nursery objects and strings. Strings are atomized below,
+  // and if that were not the case, WarpOracle would handle it. Warp does not
+  // support nursery BigInts, a very uncommon case, so we currently don't
+  // optimize such properties.
   Value result = holder->getSlot(prop.slot());
   if (result.isGCThing() && !result.toGCThing()->isTenured() &&
       !result.isObject() && !result.isString()) {
@@ -2245,7 +2250,30 @@ bool IRGenerator::canOptimizeConstantDataProperty(NativeObject* holder,
     return false;
   }
 
-  return (*objFuse)->tryOptimizeConstantProperty(prop);
+  // Atomize strings to ensure the slot's value won't be mutated by the
+  // LLoadFixedSlotAndAtomize or LLoadDynamicSlotAndAtomize instructions in Ion.
+  // This matters because, for GC reasons, the Value that will be stored in the
+  // IC stub in a WeakValueField must match the Value stored in the object slot.
+  // In emitConstantDataPropertyResult we emit CacheIR instructions to assert
+  // this.
+  //
+  // We don't optimize the constant property if the string is very long because
+  // atomizing such strings can be slow.
+  if (result.isString() && !result.toString()->isAtom()) {
+    static constexpr size_t MaxLengthForAtomize = 1000;
+    if (result.toString()->length() > MaxLengthForAtomize) {
+      return false;
+    }
+    JSAtom* atom = AtomizeString(cx_, result.toString());
+    if (!atom) {
+      cx_->recoverFromOutOfMemory();
+      return false;
+    }
+    result.setString(atom);
+    holder->setSlot(prop.slot(), result);
+  }
+
+  return true;
 }
 
 void IRGenerator::emitConstantDataPropertyResult(NativeObject* holder,
@@ -2263,12 +2291,37 @@ void IRGenerator::emitConstantDataPropertyResult(NativeObject* holder,
   writer.assertPropertyLookup(holderId, key, prop.slot());
 #endif
 
-  // Use LoadObjectResult if the value is an object to support nursery objects
-  // in Warp.
   Value result = holder->getSlot(prop.slot());
-  if (result.isObject()) {
-    ObjOperandId resObjId = writer.loadObject(&result.toObject());
-    writer.loadObjectResult(resObjId);
+  MOZ_RELEASE_ASSERT(!result.isMagic());
+  MOZ_ASSERT_IF(result.isString(), result.toString()->isAtom());
+
+  if (result.isGCThing()) {
+    // We store the property Value in the IC stub in a WeakValueField (or
+    // WeakObjectField) to ensure the stub doesn't keep GC things alive after
+    // the property is mutated. Weak references normally require a read barrier
+    // but not using a barrier here should be safe, because this property Value
+    // is also stored in the holder object's slot and Watchtower should pop the
+    // fuse when that slot is mutated.
+    //
+    // To make sure a Watchtower correctness bug doesn't become a GC security
+    // bug, we check the slot Value still matches the current value before we
+    // use the weak reference. This only affects Baseline IC code because we
+    // don't use weak references in the transpiler or for Ion ICs.
+    if (holder->isFixedSlot(prop.slot())) {
+      size_t offset = NativeObject::getFixedSlotOffset(prop.slot());
+      writer.checkWeakValueResultForFixedSlot(holderId, offset, result);
+    } else {
+      size_t offset = holder->dynamicSlotIndex(prop.slot()) * sizeof(Value);
+      writer.checkWeakValueResultForDynamicSlot(holderId, offset, result);
+    }
+
+    // Use a different CacheIR instruction for objects, to support nursery
+    // objects in Warp.
+    if (result.isObject()) {
+      writer.uncheckedLoadWeakObjectResult(&result.toObject());
+    } else {
+      writer.uncheckedLoadWeakValueResult(result);
+    }
   } else {
     writer.loadValueResult(result);
   }
@@ -3711,9 +3764,14 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameValue(ObjOperandId objId,
   if (holder == globalLexical) {
     // There is no need to guard on the shape. Lexical bindings are
     // non-configurable, and this stub cannot be shared across globals.
-    size_t dynamicSlotOffset =
-        holder->dynamicSlotIndex(prop->slot()) * sizeof(Value);
-    writer.loadDynamicSlotResult(objId, dynamicSlotOffset);
+    ObjectFuse* objFuse = nullptr;
+    if (canOptimizeConstantDataProperty(holder, *prop, &objFuse)) {
+      emitConstantDataPropertyResult(holder, objId, id, *prop, objFuse);
+    } else {
+      size_t dynamicSlotOffset =
+          holder->dynamicSlotIndex(prop->slot()) * sizeof(Value);
+      writer.loadDynamicSlotResult(objId, dynamicSlotOffset);
+    }
   } else if (holder == &globalLexical->global()) {
     MOZ_ASSERT(globalLexical->global().isGenerationCountedGlobal());
     ObjectFuse* objFuse = nullptr;
@@ -5952,29 +6010,31 @@ AttachDecision SetPropIRGenerator::tryAttachAddSlotStub(
   DebugOnly<uint32_t> index;
   MOZ_ASSERT_IF(obj->is<ArrayObject>(), !IdIsIndex(id, &index));
   bool mustCallAddPropertyHook =
-      !obj->is<ArrayObject>() &&
-      (obj->getClass()->getAddProperty() ||
-       (obj->getClass()->preservesWrapper() &&
-        !oldShape->hasObjectFlag(ObjectFlag::HasPreservedWrapper)));
+      !obj->is<ArrayObject>() && obj->getClass()->getAddProperty();
+  bool preserveWrapper =
+      obj->getClass()->preservesWrapper() &&
+      !oldShape->hasObjectFlag(ObjectFlag::HasPreservedWrapper);
 
   if (mustCallAddPropertyHook) {
     writer.addSlotAndCallAddPropHook(objId, rhsValId, newShape);
     trackAttached("SetProp.AddSlotWithAddPropertyHook");
   } else if (holder->isFixedSlot(propInfo.slot())) {
     size_t offset = NativeObject::getFixedSlotOffset(propInfo.slot());
-    writer.addAndStoreFixedSlot(objId, offset, rhsValId, newShape);
+    writer.addAndStoreFixedSlot(objId, offset, rhsValId, newShape,
+                                preserveWrapper);
     trackAttached("SetProp.AddSlotFixed");
   } else {
     size_t offset = holder->dynamicSlotIndex(propInfo.slot()) * sizeof(Value);
     uint32_t numOldSlots = NativeObject::calculateDynamicSlots(oldSharedShape);
     uint32_t numNewSlots = holder->numDynamicSlots();
     if (numOldSlots == numNewSlots) {
-      writer.addAndStoreDynamicSlot(objId, offset, rhsValId, newShape);
+      writer.addAndStoreDynamicSlot(objId, offset, rhsValId, newShape,
+                                    preserveWrapper);
       trackAttached("SetProp.AddSlotDynamic");
     } else {
       MOZ_ASSERT(numNewSlots > numOldSlots);
       writer.allocateAndStoreDynamicSlot(objId, offset, rhsValId, newShape,
-                                         numNewSlots);
+                                         numNewSlots, preserveWrapper);
       trackAttached("SetProp.AllocateSlot");
     }
   }
@@ -9148,7 +9208,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachMathRound() {
     if (resultIsInt32) {
       writer.mathRoundToInt32Result(numberId);
     } else {
-      writer.mathFunctionNumberResult(numberId, UnaryMathFunction::Round);
+      writer.mathRoundNumberResult(numberId);
     }
   }
 
@@ -11134,8 +11194,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachDateGet(
     return AttachDecision::NoAction;
   }
 
-  // Can't check DateTime cache when time zone is forced to UTC.
-  if (cx_->realm()->creationOptions().forceUTC()) {
+  // Can't check DateTime cache when not using the default time zone.
+  if (cx_->realm()->behaviors().timeZone()) {
     return AttachDecision::NoAction;
   }
 
@@ -12504,8 +12564,6 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
     }
     format = CallFlags::FunApplyArgsObj;
   } else if (args_[1].isObject() && args_[1].toObject().is<ArrayObject>() &&
-             args_[1].toObject().as<ArrayObject>().length() <=
-                 JIT_ARGS_LENGTH_MAX &&
              IsPackedArray(&args_[1].toObject())) {
     format = CallFlags::FunApplyArray;
   } else {
@@ -12531,6 +12589,12 @@ AttachDecision CallIRGenerator::tryAttachFunApply(HandleFunction calleeFunc) {
     InlinableNativeIRGenerator nativeGen(*this, target, newTarget, thisValue,
                                          args, targetFlags);
     TRY_ATTACH(nativeGen.tryAttachStub());
+  }
+  if (format == CallFlags::FunApplyArray &&
+      args_[1].toObject().as<ArrayObject>().length() > JIT_ARGS_LENGTH_MAX) {
+    // We check this after trying to attach inlinable natives, because some
+    // inlinable natives can safely ignore the limit.
+    return AttachDecision::NoAction;
   }
 
   if (mode_ == ICState::Mode::Specialized && !isScripted &&
@@ -12823,6 +12887,11 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
     // Can't inline spread calls when bound arguments are present.
     MOZ_ASSERT(!hasBoundArguments());
 
+    // Note: we haven't compared args.length() to JIT_ARGS_LENGTH_MAX
+    // yet, to support natives that can handle more arguments without
+    // having to push them on the stack. Spread-call inlined natives
+    // are responsible for enforcing the limit on themselves if
+    // necessary.
     switch (native) {
       case InlinableNative::MathMin:
         return tryAttachSpreadMathMinMax(/*isMax = */ false);
@@ -13503,14 +13572,16 @@ AttachDecision CallIRGenerator::tryAttachCallNative(HandleFunction calleeFunc) {
     return AttachDecision::NoAction;
   }
 
-  // Verify that spread calls have a reasonable number of arguments.
-  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
-    return AttachDecision::NoAction;
-  }
-
   // Check for specific native-function optimizations.
   if (isSpecialized) {
     TRY_ATTACH(tryAttachInlinableNative(calleeFunc, flags));
+  }
+
+  // Verify that spread calls have a reasonable number of arguments.
+  // We check this after trying to attach inlinable natives, because some
+  // inlinable natives can safely ignore the limit.
+  if (isSpread && args_.length() > JIT_ARGS_LENGTH_MAX) {
+    return AttachDecision::NoAction;
   }
 
   // Load argc.

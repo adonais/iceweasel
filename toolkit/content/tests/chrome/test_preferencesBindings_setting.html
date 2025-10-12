@@ -263,6 +263,80 @@
           "Parent setting is not visible based on dep"
         );
       });
+
+      add_task(async function testDepsToCallbacks() {
+        const SETTING_ID = "testDepsToCallbacks";
+        const DEP_ID = "testDepsToCallbacksDep";
+        const DEP_VALUE = Symbol("DEP_VALUE");
+        const INITIAL_VALUE = Symbol("INITIAL_VALUE");
+
+        Preferences.addSetting({
+          id: DEP_ID,
+          get: () => DEP_VALUE,
+        });
+
+        let setupResult;
+        let _value = INITIAL_VALUE;
+        let _valueWasDepsValue = false;
+        let _onUserChangeValue = null;
+        Preferences.addSetting({
+          id: SETTING_ID,
+          deps: [DEP_ID],
+          get: (_, deps) =>
+            _value == INITIAL_VALUE
+              ? INITIAL_VALUE
+              : deps[DEP_ID].value == _value,
+          set: (val, deps) => {
+            _value = val;
+            _valueWasDepsValue = val == deps[DEP_ID].value;
+          },
+          visible: deps => deps[DEP_ID].value,
+          disabled: deps => deps[DEP_ID].value,
+          getControlConfig: (_, deps) => deps[DEP_ID].value,
+          onUserChange: (_, deps) => {
+            _onUserChangeValue = deps[DEP_ID].value;
+          },
+          setup: (_, deps, setting) => {
+            setupResult = [deps[DEP_ID].value, setting.value];
+          },
+        });
+
+        let setting = Preferences.getSetting(SETTING_ID);
+
+        // Check setup gets real Setting objects
+        is(setupResult.length, 2, "setup was called");
+        is(setupResult[0], DEP_VALUE, "setup gets the deps as a real Setting");
+        is(
+          setupResult[1],
+          INITIAL_VALUE,
+          "setup gets the setting as a real Setting"
+        );
+
+        // Check the straightforward callbacks.
+        is(setting.value, INITIAL_VALUE, "initial value is INITIAL_VALUE");
+        is(setting.visible, DEP_VALUE, "visible is passed deps");
+        is(setting.disabled, DEP_VALUE, "disabled is passed deps");
+        is(
+          setting.getControlConfig(),
+          DEP_VALUE,
+          "getControlConfig() is passed deps"
+        );
+
+        // Check set and get
+        setting.value = "foo";
+        is(_value, "foo", "Value was set to foo");
+        is(_valueWasDepsValue, false, "Value was not set to DEP_VALUE");
+        is(setting.value, false, "Value changed to false (value != DEP_VALUE)");
+        setting.value = DEP_VALUE;
+        is(_value, DEP_VALUE, "Value was set to DEP_VALUE");
+        is(_valueWasDepsValue, true, "set is passed deps (value == DEP_VALUE)");
+        is(setting.value, true, "get is passed deps (value == DEP_VALUE)");
+
+        // Check onUserChange
+        is(_onUserChangeValue, null, "_onUserChangeValue is unset");
+        setting.userChange("foo");
+        is(_onUserChangeValue, DEP_VALUE, "onUserChange() is passed deps");
+      });
     </script>
   </head>
   <body>

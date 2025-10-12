@@ -24,6 +24,8 @@ class nsIFrame;
 class nsStyleChangeList;
 class nsStyleChangeList;
 
+enum class AttrModType : uint8_t;  // Defined in nsIMutationObserver.h
+
 namespace mozilla {
 
 class ServoStyleSet;
@@ -371,10 +373,10 @@ class RestyleManager {
                                  dom::ElementState aChangedBits);
 
   void AttributeWillChange(Element* aElement, int32_t aNameSpaceID,
-                           nsAtom* aAttribute, int32_t aModType);
+                           nsAtom* aAttribute, AttrModType aModType);
   void ClassAttributeWillBeChangedBySMIL(dom::Element* aElement);
   void AttributeChanged(dom::Element* aElement, int32_t aNameSpaceID,
-                        nsAtom* aAttribute, int32_t aModType,
+                        nsAtom* aAttribute, AttrModType aModType,
                         const nsAttrValue* aOldValue);
 
   /**

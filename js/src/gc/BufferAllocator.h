@@ -484,6 +484,7 @@ class BufferAllocator : public SlimLinkedListElement<BufferAllocator> {
   void getStats(Stats& stats);
 
 #ifdef DEBUG
+  bool hasAlloc(void* alloc);
   void checkGCStateNotInUse();
   void checkGCStateNotInUse(MaybeLock& lock);
   void checkGCStateNotInUse(const AutoLock& lock);

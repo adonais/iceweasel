@@ -679,11 +679,11 @@ ViewID nsLayoutUtils::FindIDForScrollContainerFrame(
 
 bool nsLayoutUtils::UsesAsyncScrolling(nsIFrame* aFrame) {
 #ifdef MOZ_WIDGET_ANDROID
-  // We always have async scrolling for android
+  // We always have async scrolling for Android.
   return true;
-#endif
-
+#else
   return AsyncPanZoomEnabled(aFrame);
+#endif
 }
 
 bool nsLayoutUtils::AsyncPanZoomEnabled(const nsIFrame* aFrame) {
@@ -1736,24 +1736,24 @@ void nsLayoutUtils::ConstrainToCoordValues(gfxFloat& aStart, gfxFloat& aSize) {
   }
 }
 
-nsRegion nsLayoutUtils::RoundedRectIntersectRect(const nsRect& aRoundedRect,
-                                                 const nscoord aRadii[8],
-                                                 const nsRect& aContainedRect) {
+nsRegion nsLayoutUtils::RoundedRectIntersectRect(
+    const nsRect& aRoundedRect, const nsRectCornerRadii& aRadii,
+    const nsRect& aContainedRect) {
   // rectFullHeight and rectFullWidth together will approximately contain
   // the total area of the frame minus the rounded corners.
   nsRect rectFullHeight = aRoundedRect;
-  nscoord xDiff = std::max(aRadii[eCornerTopLeftX], aRadii[eCornerBottomLeftX]);
+  nscoord xDiff = std::max(aRadii.TopLeft().width, aRadii.BottomLeft().width);
   rectFullHeight.x += xDiff;
   rectFullHeight.width -=
-      std::max(aRadii[eCornerTopRightX], aRadii[eCornerBottomRightX]) + xDiff;
+      std::max(aRadii.TopRight().width, aRadii.BottomRight().width) + xDiff;
   nsRect r1;
   r1.IntersectRect(rectFullHeight, aContainedRect);
 
   nsRect rectFullWidth = aRoundedRect;
-  nscoord yDiff = std::max(aRadii[eCornerTopLeftY], aRadii[eCornerTopRightY]);
+  nscoord yDiff = std::max(aRadii.TopLeft().height, aRadii.TopRight().height);
   rectFullWidth.y += yDiff;
   rectFullWidth.height -=
-      std::max(aRadii[eCornerBottomLeftY], aRadii[eCornerBottomRightY]) + yDiff;
+      std::max(aRadii.BottomLeft().height, aRadii.BottomRight().height) + yDiff;
   nsRect r2;
   r2.IntersectRect(rectFullWidth, aContainedRect);
 
@@ -1815,7 +1815,7 @@ static bool CheckCorner(nscoord aXOffset, nscoord aYOffset, nscoord aXRadius,
 }
 
 bool nsLayoutUtils::RoundedRectIntersectsRect(const nsRect& aRoundedRect,
-                                              const nscoord aRadii[8],
+                                              const nsRectCornerRadii& aRadii,
                                               const nsRect& aTestRect) {
   if (!aTestRect.Intersects(aRoundedRect)) {
     return false;
@@ -1832,14 +1832,14 @@ bool nsLayoutUtils::RoundedRectIntersectsRect(const nsRect& aRoundedRect,
   // Check whether the bottom-right corner of aTestRect is inside the
   // top left corner of aBounds when rounded by aRadii, etc.  If any
   // corner is not, then fail; otherwise succeed.
-  return CheckCorner(insets.left, insets.top, aRadii[eCornerTopLeftX],
-                     aRadii[eCornerTopLeftY]) &&
-         CheckCorner(insets.right, insets.top, aRadii[eCornerTopRightX],
-                     aRadii[eCornerTopRightY]) &&
-         CheckCorner(insets.right, insets.bottom, aRadii[eCornerBottomRightX],
-                     aRadii[eCornerBottomRightY]) &&
-         CheckCorner(insets.left, insets.bottom, aRadii[eCornerBottomLeftX],
-                     aRadii[eCornerBottomLeftY]);
+  return CheckCorner(insets.left, insets.top, aRadii.TopLeft().width,
+                     aRadii.TopLeft().height) &&
+         CheckCorner(insets.right, insets.top, aRadii.TopRight().width,
+                     aRadii.TopRight().height) &&
+         CheckCorner(insets.right, insets.bottom, aRadii.BottomRight().width,
+                     aRadii.BottomRight().height) &&
+         CheckCorner(insets.left, insets.bottom, aRadii.BottomLeft().width,
+                     aRadii.BottomLeft().height);
 }
 
 nsRect nsLayoutUtils::MatrixTransformRect(const nsRect& aBounds,
@@ -5265,8 +5265,12 @@ gfxFloat nsLayoutUtils::GetMaybeSnappedBaselineY(nsIFrame* aFrame,
                                                  gfxContext* aContext,
                                                  nscoord aY, nscoord aAscent) {
   gfxFloat baseline = gfxFloat(aY) + aAscent;
-  // TODO: Remove this funciton when this pref is being removed.
+  // TODO: Remove this function when this pref is being removed.
   if (StaticPrefs::layout_disable_pixel_alignment()) {
+    return baseline;
+  }
+
+  if (aContext->CurrentMatrix().IsSingular()) {
     return baseline;
   }
 
@@ -5283,8 +5287,12 @@ gfxFloat nsLayoutUtils::GetMaybeSnappedBaselineX(nsIFrame* aFrame,
                                                  gfxContext* aContext,
                                                  nscoord aX, nscoord aAscent) {
   gfxFloat baseline = gfxFloat(aX) + aAscent;
-  // TODO: Remove this funciton when this pref is being removed.
+  // TODO: Remove this function when this pref is being removed.
   if (StaticPrefs::layout_disable_pixel_alignment()) {
+    return baseline;
+  }
+
+  if (aContext->CurrentMatrix().IsSingular()) {
     return baseline;
   }
 
@@ -9088,7 +9096,7 @@ void nsLayoutUtils::AppendFrameTextContent(nsIFrame* aFrame,
     auto* const textFrame = static_cast<nsTextFrame*>(aFrame);
     const auto offset = AssertedCast<uint32_t>(textFrame->GetContentOffset());
     const auto length = AssertedCast<uint32_t>(textFrame->GetContentLength());
-    textFrame->CharacterDataBuffer()->AppendTo(aResult, offset, length);
+    textFrame->CharacterDataBuffer().AppendTo(aResult, offset, length);
   } else {
     for (nsIFrame* child : aFrame->PrincipalChildList()) {
       AppendFrameTextContent(child, aResult);

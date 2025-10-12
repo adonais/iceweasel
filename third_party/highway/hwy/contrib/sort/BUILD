@@ -1,3 +1,5 @@
+# Placeholder for cc_test, do not remove
+
 package(
     default_applicable_licenses = ["//:license"],
     default_visibility = ["//visibility:public"],
@@ -82,7 +84,6 @@ cc_library(
 )
 
 VQSORT_SRCS = [
-    "vqsort.cc",
     # Split into separate files to reduce MSVC build time.
     "vqsort_128a.cc",
     "vqsort_128d.cc",
@@ -98,8 +99,7 @@ VQSORT_SRCS = [
     "vqsort_i32d.cc",
     "vqsort_i64a.cc",
     "vqsort_i64d.cc",
-    "vqsort_kv64a.cc",
-    "vqsort_kv64d.cc",
+    # vqsort_kv64a.cc is in :vqsort_k32v32 and vqsort.cc is in :vqsort_shared.
     "vqsort_kv128a.cc",
     "vqsort_kv128d.cc",
     "vqsort_u16a.cc",
@@ -119,6 +119,45 @@ VQSORT_TEXTUAL_HDRS = [
     # Placeholder for internal instrumentation. Do not remove.
 ]
 
+# both :vqsort_k32v32 and :vqsort depend on this.
+cc_library(
+    name = "vqsort_shared",
+    srcs = [
+        "vqsort.cc",
+    ],
+    hdrs = [
+        "order.h",  # part of public interface, included by vqsort.h
+        "vqsort.h",  # public interface
+    ],
+    compatible_with = [],
+    local_defines = ["hwy_contrib_EXPORTS"],
+    textual_hdrs = VQSORT_TEXTUAL_HDRS,
+    deps = [
+        "//:algo",
+        "//:hwy",
+    ],
+)
+
+cc_library(
+    name = "vqsort_k32v32",
+    srcs = [
+        "vqsort_kv64a.cc",
+        "vqsort_kv64d.cc",
+    ],
+    hdrs = [
+        "order.h",  # part of public interface, included by vqsort.h
+        "vqsort.h",  # public interface
+    ],
+    compatible_with = [],
+    local_defines = ["hwy_contrib_EXPORTS"],
+    textual_hdrs = VQSORT_TEXTUAL_HDRS,
+    deps = [
+        ":vqsort_shared",
+        "//:algo",
+        "//:hwy",
+    ],
+)
+
 cc_library(
     name = "vqsort",
     srcs = VQSORT_SRCS,
@@ -131,6 +170,8 @@ cc_library(
     textual_hdrs = VQSORT_TEXTUAL_HDRS,
     deps = [
         ":intel",  # required if HAVE_INTEL
+        ":vqsort_k32v32",
+        ":vqsort_shared",
         ":vxsort",  # required if HAVE_VXSORT
         "//:algo",
         "//:hwy",
@@ -191,9 +232,31 @@ cc_binary(
     ],
 )
 
+TEST_MAIN = select({
+    "//:compiler_msvc": [],
+    "//conditions:default": ["@com_google_googletest//:gtest_main"],
+})
+
+cc_test(
+    name = "sort_unit_test",
+    size = "small",
+    srcs = ["sort_unit_test.cc"],
+    # Do not enable fully_static_link (pthread crash on bazel)
+    local_defines = ["HWY_IS_TEST"],
+    # for test_suite.
+    tags = ["hwy_ops_test"],
+    deps = [
+        ":helpers",
+        ":vqsort_for_test",
+        "//:hwy",
+        "//:hwy_test_util",
+    ] + TEST_MAIN,
+)
+
 cc_test(
     name = "sort_test",
     size = "medium",
+    timeout = "long",
     srcs = ["sort_test.cc"],
     # Do not enable fully_static_link (pthread crash on bazel)
     local_defines = ["HWY_IS_TEST"],
@@ -202,10 +265,11 @@ cc_test(
     deps = [
         ":helpers",
         ":vqsort_for_test",
-        "@com_google_googletest//:gtest_main",
         "//:hwy",
         "//:hwy_test_util",
-    ],
+        "//:thread_pool",
+        "//:topology",
+    ] + TEST_MAIN,
 )
 
 cc_test(
@@ -219,11 +283,11 @@ cc_test(
     deps = [
         ":helpers",
         ":vqsort",
-        "@com_google_googletest//:gtest_main",
         "//:hwy",
         "//:hwy_test_util",
         "//:nanobenchmark",
-    ],
+        "//:thread_pool",
+    ] + TEST_MAIN,
 )
 
 cc_binary(
@@ -235,8 +299,8 @@ cc_binary(
     deps = [
         ":helpers",
         ":vqsort",
-        "@com_google_googletest//:gtest_main",
         "//:hwy",
         "//:hwy_test_util",
-    ],
+        "//:nanobenchmark",
+    ] + TEST_MAIN,
 )

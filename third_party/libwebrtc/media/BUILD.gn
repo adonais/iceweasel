@@ -175,7 +175,6 @@ rtc_library("video_adapter") {
     "../rtc_base:timeutils",
     "../rtc_base/synchronization:mutex",
     "../rtc_base/system:rtc_export",
-    "../system_wrappers:field_trial",
   ]
 }
 
@@ -223,7 +222,6 @@ rtc_library("video_common") {
   deps = [
     "../api:array_view",
     "../rtc_base:checks",
-    "../rtc_base:macromagic",
     "../rtc_base:stringutils",
     "../rtc_base:timeutils",
     "../rtc_base/system:rtc_export",
@@ -562,7 +560,6 @@ rtc_library("rtc_internal_video_codecs") {
     "../rtc_base:checks",
     "../rtc_base:logging",
     "../rtc_base/system:rtc_export",
-    "../system_wrappers:field_trial",
     "../test:fake_video_codecs",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/strings",
@@ -716,6 +713,11 @@ rtc_library("rtc_audio_video") {
     public_configs += [ ":rtc_media_defines_config" ]
     deps += [ "../modules/video_capture:video_capture_internal_impl" ]
   }
+
+  if (rtc_include_internal_audio_device) {
+    deps += [ "../api/audio:create_audio_device_module" ]
+  }
+
   if (rtc_enable_protobuf) {
     deps += [
       "../modules/audio_coding:ana_config_proto",
@@ -809,7 +811,6 @@ rtc_library("rtc_data_sctp_transport_factory") {
     deps += [
       ":rtc_data_dcsctp_transport",
       "../system_wrappers",
-      "../system_wrappers:field_trial",
     ]
   }
 }
@@ -1065,7 +1066,6 @@ if (rtc_include_tests) {
         "../rtc_base:checks",
         "../rtc_base:copy_on_write_buffer",
         "../rtc_base:dscp",
-        "../rtc_base:macromagic",
         "../rtc_base:safe_conversions",
         "../rtc_base:socket",
         "../rtc_base:threading",
@@ -1074,7 +1074,6 @@ if (rtc_include_tests) {
         "../rtc_base/experiments:min_video_bitrate_experiment",
         "../rtc_base/system:file_wrapper",
         "../system_wrappers",
-        "../system_wrappers:field_trial",
         "../test:audio_codec_mocks",
         "../test:fake_video_codecs",
         "../test:field_trial",

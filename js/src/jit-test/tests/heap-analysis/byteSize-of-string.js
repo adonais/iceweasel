@@ -1,7 +1,11 @@
-// |jit-test| skip-if: !getBuildConfiguration("moz-memory")
+// |jit-test| skip-if: !getBuildConfiguration("moz-memory"); --setpref=objectfuse_for_global=false
+//
 // Run this test only if we're using jemalloc. Other malloc implementations
 // exhibit surprising behaviors. For example, 32-bit Fedora builds have
 // non-deterministic allocation sizes.
+//
+// Don't use object fuses for this test because atomizing global constants
+// affects what we're testing.
 
 // Check JS::ubi::Node::size results for strings.
 

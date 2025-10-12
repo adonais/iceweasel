@@ -25,6 +25,7 @@ INSTALLER_FILES = \
 	nsis/stub.nsh \
 	nsis/stub_shared_defs.nsh \
 	nsis/shared.nsh \
+	nsis/postupdate_helper.nsh \
 	nsis/test_stub.nsi \
 	stub.tag \
 	$(NULL)

@@ -508,7 +508,10 @@ add_task(async function test_enter_searchmode_by_key_if_single_result() {
 
     // Sanity check.
     const autofill = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-    Assert.equal(autofill.result.providerName, "RestrictKeywordsAutofill");
+    Assert.equal(
+      autofill.result.providerName,
+      "UrlbarProviderRestrictKeywordsAutofill"
+    );
     Assert.equal(autofill.result.payload.autofillKeyword, "@bookmarks");
 
     info("Choose the search mode suggestion");
@@ -566,7 +569,7 @@ add_task(
 
         let { result } = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
         if (
-          result.providerName == "RestrictKeywords" &&
+          result.providerName == "UrlbarProviderRestrictKeywords" &&
           result.payload.keyword == "*"
         ) {
           await UrlbarTestUtils.assertSearchMode(window, {

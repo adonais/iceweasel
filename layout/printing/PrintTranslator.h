@@ -24,7 +24,6 @@ using gfx::FilterNode;
 using gfx::GradientStops;
 using gfx::NativeFontResource;
 using gfx::Path;
-using gfx::RecordedDependentSurface;
 using gfx::ReferencePtr;
 using gfx::ScaledFont;
 using gfx::SourceSurface;

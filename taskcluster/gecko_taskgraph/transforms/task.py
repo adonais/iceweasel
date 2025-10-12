@@ -2099,16 +2099,15 @@ def try_task_config_env(config, tasks):
 
 
 @transforms.add
-def try_task_config_chemspill_prio(config, tasks):
-    """Increase the priority from lowest and very-low -> low, but leave others unchanged."""
-    chemspill_prio = config.params["try_task_config"].get("chemspill-prio")
-    if not chemspill_prio:
+def try_task_config_priority(config, tasks):
+    """Change priority based on the try_task_config."""
+    priority = config.params["try_task_config"].get("priority")
+    if not priority:
         yield from tasks
         return
 
     for task in tasks:
-        if task.get("priority") in (None, "lowest", "very-low"):
-            task["priority"] = "low"
+        task["priority"] = priority
         yield task
 
 

@@ -267,6 +267,12 @@ async function doTests({ locales, homeRegion, tests }) {
                   keyword: query,
                   url: `https://example.com/${query}`,
                   title: `Suggestion: ${query}`,
+                  suggestedIndex:
+                    // Expect index -1 for amp results because we test
+                    // without the search suggestions provider.
+                    expected == QuickSuggestTestUtils.ampResult
+                      ? -1
+                      : undefined,
                 })
               );
             }

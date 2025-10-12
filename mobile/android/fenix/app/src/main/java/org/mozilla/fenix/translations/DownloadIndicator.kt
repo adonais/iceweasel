@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.PrimaryButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Animation duration in milliseconds.
@@ -83,7 +84,7 @@ fun DownloadIconIndicator(
 @Composable
 fun DownloadInProgressIndicator(
     modifier: Modifier = Modifier,
-    icon: Painter = painterResource(id = R.drawable.mozac_ic_stop_8),
+    icon: Painter = painterResource(id = iconsR.drawable.mozac_ic_stop_8),
     tint: Color = FirefoxTheme.colors.iconPrimary,
     contentDescription: String? = null,
 ) {
@@ -165,7 +166,7 @@ private fun DownloadIconIndicatorPreview() {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             DownloadIconIndicator(
-                icon = painterResource(id = R.drawable.mozac_ic_sync_24),
+                icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
                 contentDescription = stringResource(
                     id = R.string.translations_bottom_sheet_translating_in_progress,
                 ),
@@ -209,7 +210,7 @@ private fun DownloadIndicatorPreview() {
                 contentDescription = stringResource(
                     id = R.string.translations_bottom_sheet_translating_in_progress_content_description,
                 ),
-                icon = painterResource(id = R.drawable.mozac_ic_sync_24),
+                icon = painterResource(id = iconsR.drawable.mozac_ic_sync_24),
             )
         }
     }

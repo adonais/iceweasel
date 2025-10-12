@@ -813,9 +813,24 @@ async function openPasswordContextMenu(
  * Returns a promise that will passed additional data specific to the message.
  */
 function listenForTestNotification(expectedMessage, count = 1) {
+  let expectedMessages = [];
+  if (Array.isArray(expectedMessage)) {
+    expectedMessages = expectedMessage;
+  } else {
+    for (let i = 0; i < count; i++) {
+      expectedMessages.push(expectedMessage);
+    }
+  }
+
   return new Promise(resolve => {
     LoginManagerParent.setListenerForTests((msg, data) => {
-      if (msg == expectedMessage && --count == 0) {
+      let idx = expectedMessages.indexOf(msg);
+      if (idx == -1) {
+        return;
+      }
+
+      expectedMessages.splice(idx, 1);
+      if (!expectedMessages.length) {
         LoginManagerParent.setListenerForTests(null);
         info("listenForTestNotification, resolving for message: " + msg);
         resolve(data);

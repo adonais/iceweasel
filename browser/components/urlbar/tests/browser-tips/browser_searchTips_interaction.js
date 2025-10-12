@@ -37,6 +37,9 @@ const GOOGLE_DOMAINS = [
   "www.google.com.au",
   "www.google.co.nz",
 ];
+let tipsProviderInstance = UrlbarProvidersManager.getProvider(
+  "UrlbarProviderSearchTips"
+);
 
 add_setup(async function () {
   await PlacesUtils.history.clear();
@@ -87,7 +90,7 @@ add_setup(async function () {
 // Picking the tip's button should cause the Urlbar to blank out and the tip to
 // be not to be shown again in any session.
 add_task(async function pickButton_onboard() {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  tipsProviderInstance.disableTipsForCurrentSession = false;
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:newtab",
@@ -119,7 +122,7 @@ add_task(async function pickButton_onboard() {
 // Picking the tip's button should cause the Urlbar to blank out and the tip to
 // be not to be shown again in any session.
 add_task(async function pickButton_redirect() {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  tipsProviderInstance.disableTipsForCurrentSession = false;
   await setDefaultEngine("Google");
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await withDNSRedirect("www.google.com", "/", async url => {
@@ -151,7 +154,7 @@ add_task(async function pickButton_redirect() {
 // Clicking in the input while the onboard tip is showing should have the same
 // effect as picking the tip.
 add_task(async function clickInInput_onboard() {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  tipsProviderInstance.disableTipsForCurrentSession = false;
   await setDefaultEngine("Google");
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -181,7 +184,7 @@ add_task(async function clickInInput_onboard() {
 // Pressing Ctrl+L (the open location command) while the onboard tip is showing
 // should have the same effect as picking the tip.
 add_task(async function openLocation_onboard() {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  tipsProviderInstance.disableTipsForCurrentSession = false;
   await setDefaultEngine("Google");
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -211,7 +214,7 @@ add_task(async function openLocation_onboard() {
 // Clicking in the input while the redirect tip is showing should have the same
 // effect as picking the tip.
 add_task(async function clickInInput_redirect() {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  tipsProviderInstance.disableTipsForCurrentSession = false;
   await setDefaultEngine("Google");
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await withDNSRedirect("www.google.com", "/", async url => {
@@ -241,7 +244,7 @@ add_task(async function clickInInput_redirect() {
 // Pressing Ctrl+L (the open location command) while the redirect tip is showing
 // should have the same effect as picking the tip.
 add_task(async function openLocation_redirect() {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  tipsProviderInstance.disableTipsForCurrentSession = false;
   await setDefaultEngine("Google");
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await withDNSRedirect("www.google.com", "/", async url => {
@@ -269,7 +272,7 @@ add_task(async function openLocation_redirect() {
 });
 
 add_task(async function pickingTipDoesNotDisableOtherKinds() {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  tipsProviderInstance.disableTipsForCurrentSession = false;
   await setDefaultEngine("Google");
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -297,7 +300,7 @@ add_task(async function pickingTipDoesNotDisableOtherKinds() {
   BrowserTestUtils.removeTab(tab);
 
   // Simulate a new session.
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  tipsProviderInstance.disableTipsForCurrentSession = false;
 
   // Onboarding tips should no longer be shown.
   let tab2 = await BrowserTestUtils.openNewForegroundTab({
@@ -339,7 +342,7 @@ add_task(async function notification() {
 // The tip should be shown when switching to a tab where it should be shown.
 add_task(async function tabSwitch() {
   let tab = BrowserTestUtils.addTab(gBrowser, "about:newtab");
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  tipsProviderInstance.disableTipsForCurrentSession = false;
   await BrowserTestUtils.switchTab(gBrowser, tab);
   await checkTip(window, UrlbarProviderSearchTips.TIP_TYPE.ONBOARD);
   BrowserTestUtils.removeTab(tab);
@@ -370,7 +373,7 @@ add_task(async function ignoreEndsEngagement() {
         AccessibilityUtils.resetEnv();
       });
       Assert.equal(
-        UrlbarProviderSearchTips.showedTipTypeInCurrentEngagement,
+        tipsProviderInstance.showedTipTypeInCurrentEngagement,
         UrlbarProviderSearchTips.TIP_TYPE.NONE,
         "The engagement should have ended after the tip was ignored."
       );
@@ -393,7 +396,7 @@ add_task(async function pasteAndGo_nonURL() {
 });
 
 async function doPasteAndGoTest(searchString, expectedURL) {
-  UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
+  tipsProviderInstance.disableTipsForCurrentSession = false;
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:newtab",

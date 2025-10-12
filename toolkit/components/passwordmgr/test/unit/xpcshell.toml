@@ -103,6 +103,8 @@ skip-if = ["os == 'android'"]
 
 ["test_recipes_content.js"]
 
+["test_reencrypt.js"]
+
 ["test_remote_recipes.js"]
 skip-if = ["os == 'android'"]
 

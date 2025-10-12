@@ -135,6 +135,8 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
       const nsTArray<mozilla::pkix::Input>& thirdPartyRootInputs,
       const nsTArray<mozilla::pkix::Input>& thirdPartyIntermediateInputs,
       const Maybe<nsTArray<nsTArray<uint8_t>>>& extraCertificates,
+      const mozilla::pkix::Input& encodedSCTsFromTLS,
+      const UniquePtr<mozilla::ct::MultiLogCTVerifier>& ctVerifier,
       /*out*/ nsTArray<nsTArray<uint8_t>>& builtChain,
       /*optional*/ PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
       /*optional*/ const char* hostname = nullptr);
@@ -192,8 +194,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
       const mozilla::pkix::CertID& certID, mozilla::pkix::Time time,
       mozilla::pkix::Duration validityDuration,
       /*optional*/ const mozilla::pkix::Input* stapledOCSPResponse,
-      /*optional*/ const mozilla::pkix::Input* aiaExtension,
-      /*optional*/ const mozilla::pkix::Input* sctExtension) override;
+      /*optional*/ const mozilla::pkix::Input* aiaExtension) override;
 
   virtual Result IsChainValid(
       const mozilla::pkix::DERArray& certChain, mozilla::pkix::Time time,
@@ -222,6 +223,8 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   mozilla::pkix::Input GetSCTListFromCertificate() const;
   mozilla::pkix::Input GetSCTListFromOCSPStapling() const;
 
+  Maybe<ct::CTVerifyResult>& GetCachedCTVerifyResult();
+
   bool GetIsBuiltChainRootBuiltInRoot() const;
 
   OCSPFetchStatus GetOCSPFetchStatus() { return mOCSPFetchStatus; }
@@ -248,7 +251,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   TimeDuration GetOCSPTimeout() const;
 
   Result CheckRevocationByCRLite(const mozilla::pkix::CertID& certID,
-                                 const mozilla::pkix::Input& sctExtension,
+                                 mozilla::pkix::Time time,
                                  /*out*/ bool& crliteCoversCertificate);
 
   Result CheckRevocationByOCSP(
@@ -289,9 +292,11 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   const OriginAttributes& mOriginAttributes;
   const nsTArray<mozilla::pkix::Input>& mThirdPartyRootInputs;  // non-owning
   const nsTArray<mozilla::pkix::Input>&
-      mThirdPartyIntermediateInputs;                             // non-owning
-  const Maybe<nsTArray<nsTArray<uint8_t>>>& mExtraCertificates;  // non-owning
-  nsTArray<nsTArray<uint8_t>>& mBuiltChain;                      // non-owning
+      mThirdPartyIntermediateInputs;                              // non-owning
+  const Maybe<nsTArray<nsTArray<uint8_t>>>& mExtraCertificates;   // non-owning
+  const mozilla::pkix::Input& mEncodedSCTsFromTLS;                // non-owning
+  const UniquePtr<mozilla::ct::MultiLogCTVerifier>& mCTVerifier;  // non-owning
+  nsTArray<nsTArray<uint8_t>>& mBuiltChain;                       // non-owning
   bool mIsBuiltChainRootBuiltInRoot;
   PinningTelemetryInfo* mPinningTelemetryInfo;
   const char* mHostname;  // non-owning - only used for pinning checks
@@ -307,6 +312,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
   OCSPFetchStatus mOCSPFetchStatus;
   IssuerSources mIssuerSources;
   Maybe<mozilla::pkix::Time> mDistrustAfterTime;
+  Maybe<mozilla::ct::CTVerifyResult> mCTVerifyResult;
 };
 
 }  // namespace psm

@@ -315,19 +315,32 @@ newtab-custom-pocket-subtitle = Contenu exceptionnel sélectionné par { -pocket
 newtab-custom-stories-toggle =
     .label = Articles recommandés
     .description = Contenu exceptionnel sélectionné par les membres de la gamme de produits { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Articles
+newtab-custom-stories-personalized-checkbox-label = Articles personnalisés en fonction de votre activité
 newtab-custom-pocket-sponsored = Articles sponsorisés
 newtab-custom-pocket-show-recent-saves = Afficher les éléments enregistrés récemment
 newtab-custom-recent-title = Activité récente
 newtab-custom-recent-subtitle = Une sélection de sites et de contenus récents
-newtab-custom-recent-toggle =
-    .label = Activité récente
-    .description = Une sélection de sites et de contenus récents
 newtab-custom-weather-toggle =
     .label = Météo
     .description = Les prévisions du jour en un coup d’œil
 newtab-custom-trending-search-toggle =
     .label = Recherches populaires
     .description = Sujets populaires et fréquemment recherchés
+newtab-custom-widget-weather-toggle =
+    .label = Météo
+newtab-custom-widget-trending-search-toggle =
+    .label = Recherches populaires
+newtab-custom-widget-lists-toggle =
+    .label = Listes
+newtab-custom-widget-timer-toggle =
+    .label = Minuteur
+newtab-custom-widget-section-title = Widgets
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Fermer
+    .aria-label = Fermer le menu
 newtab-custom-close-button = Fermer
 newtab-custom-settings = Gérer plus de paramètres
 
@@ -340,6 +353,7 @@ newtab-wallpaper-custom-color = Choisir une couleur
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = La taille de l’image dépasse la limite de { $file_size } Mo. Veuillez essayer d’envoyer un fichier plus petit.
+newtab-wallpaper-error-upload-file-type = Nous n’avons pas pu envoyer votre fichier. Veuillez réessayer avec un fichier image.
 newtab-wallpaper-error-file-type = Nous n’avons pas pu envoyer votre fichier. Veuillez réessayer avec un type de fichier différent.
 newtab-wallpaper-light-red-panda = Panda roux
 newtab-wallpaper-light-mountain = Montagne blanche
@@ -445,7 +459,6 @@ newtab-weather-menu-change-location = Changer de lieu
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Rechercher un lieu
     .aria-label = Rechercher un lieu
-newtab-weather-change-location-search-input = Rechercher un lieu
 newtab-weather-menu-weather-display = Affichage météo
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature
@@ -511,6 +524,8 @@ newtab-topic-selection-button-pick-interests = Choisir vos centres d’intérêt
 newtab-section-follow-button = Suivre
 newtab-section-following-button = Suivi
 newtab-section-unfollow-button = Ne plus suivre
+# A modal may appear next to the Follow button, directing users to try out the feature
+newtab-section-follow-highlight-title = Personnalisez votre fil
 newtab-section-follow-highlight-subtitle = Suivez vos centres d’intérêt pour découvrir davantage de contenus qui vous plaisent.
 
 ## Button to block/unblock listed topics
@@ -547,6 +562,7 @@ newtab-custom-wallpaper-cta = Essayer
 ## Strings for new user activation custom wallpaper highlight
 
 newtab-new-user-custom-wallpaper-title = Choisissez un fond d’écran pour personnaliser { -brand-product-name }
+newtab-new-user-custom-wallpaper-subtitle = Personnalisez chaque nouvel onglet pour qu’il vous ressemble en choisissant vos propres fonds d’écran et couleurs.
 newtab-new-user-custom-wallpaper-cta = Essayer
 
 ## Strings for download mobile highlight
@@ -561,6 +577,7 @@ newtab-download-mobile-highlight-image =
 
 ## Strings for shortcuts highlight
 
+newtab-shortcuts-highlight-title = Vos sites préférés à portée de main
 newtab-shortcuts-highlight-subtitle = Ajoutez un raccourci pour accéder à vos sites préférés en un clic.
 
 ## Strings for reporting ads and content
@@ -588,8 +605,6 @@ newtab-toast-thanks-for-reporting =
 
 ## Strings for trending searches
 
-# "Trending on Google" refers to the trending topics coming from Google Search, usually seen when a user is focused on the search bar
-newtab-trending-searches-trending-on-google = Tendances sur Google
 newtab-trending-searches-show-trending =
     .title = Afficher les recherches populaires
 newtab-trending-searches-hide-trending =
@@ -598,3 +613,76 @@ newtab-trending-searches-learn-more = En savoir plus
 newtab-trending-searches-dismiss = Masquer les recherches populaires
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Recherches populaires
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Les possibilités sont infinies. Ajoutez une tâche.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Nouveau
+newtab-widget-lists-label-beta =
+    .label = Bêta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Achevées ({ $number })
+newtab-widget-task-list-menu-copy = Copier
+newtab-widget-lists-menu-edit = Modifier le nom de la liste
+newtab-widget-lists-menu-create = Créer une nouvelle liste
+newtab-widget-lists-menu-delete = Supprimer cette liste
+newtab-widget-lists-menu-copy = Copier la liste dans le presse-papiers
+newtab-widget-lists-menu-hide = Masquer toutes les listes
+newtab-widget-lists-menu-learn-more = En savoir plus
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Ajouter un élément
+newtab-widget-lists-input-error = Veuillez saisir du texte pour ajouter un élément.
+newtab-widget-lists-input-menu-open-link = Ouvrir le lien
+newtab-widget-lists-input-menu-move-up = Déplacer vers le haut
+newtab-widget-lists-input-menu-move-down = Déplacer vers le bas
+newtab-widget-lists-input-menu-delete = Supprimer
+newtab-widget-lists-input-menu-edit = Modifier
+newtab-widget-lists-name-label-default =
+    .label = Liste de tâches
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Liste de tâches
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Nouvelle liste
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Minuteur
+newtab-widget-timer-notification-focus = La période de concentration est terminée. Bien joué. Besoin de faire une pause ?
+newtab-widget-timer-notification-break = Votre pause est terminée. Prêt·e à se concentrer à nouveau ?
+newtab-widget-timer-notification-warning = Notifications désactivées
+newtab-widget-timer-mode-focus =
+    .label = Concentration
+newtab-widget-timer-mode-break =
+    .label = Pause
+newtab-widget-timer-play =
+    .title = Démarrer
+newtab-widget-timer-pause =
+    .title = Pause
+newtab-widget-timer-label-play =
+    .label = Démarrer
+newtab-widget-timer-label-pause =
+    .label = Pause
+newtab-widget-timer-reset =
+    .title = Réinitialiser
+newtab-widget-timer-menu-notifications = Désactiver les notifications
+newtab-widget-timer-menu-notifications-on = Activer les notifications
+newtab-widget-timer-menu-hide = Masquer le minuteur
+newtab-widget-timer-menu-learn-more = En savoir plus
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Faites défiler pour en voir davantage
+newtab-widget-message-title = Gardez votre concentration grâce aux listes et au minuteur intégré
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Qu’il s’agisse de rappels rapides ou de tâches quotidiennes, de sessions de réflexion ou de pauses détente, gardez le cap et respectez vos horaires.
+newtab-promo-card-title = Apportez votre soutien à { -brand-product-name }
+newtab-promo-card-body = Nos sponsors soutiennent notre mission de créer un meilleur Web
+newtab-promo-card-cta = En apprendre davantage
+newtab-promo-card-dismiss-button =
+    .title = Ignorer
+    .aria-label = Ignorer

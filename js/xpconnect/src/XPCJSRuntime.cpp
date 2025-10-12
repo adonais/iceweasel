@@ -2554,17 +2554,21 @@ void JSReporter::CollectReports(WindowPaths* windowPaths,
                "The memory used by the JSContexts in HelperThreadState.");
 }
 
-static nsresult JSSizeOfTab(JSObject* objArg, size_t* jsObjectsSize,
+static nsresult JSSizeOfTab(JSObject* obj, size_t* jsObjectsSize,
                             size_t* jsStringsSize, size_t* jsPrivateSize,
                             size_t* jsOtherSize) {
   JSContext* cx = XPCJSContext::Get()->Context();
-  JS::RootedObject obj(cx, objArg);
+  JS::Zone* zone = JS::GetObjectZone(obj);
+  if (JS::IsIncrementalGCInProgress(cx)) {
+    JS::FinishIncrementalGC(cx, JS::GCReason::PREPARE_FOR_TRACING);
+  }
+  JS::AutoCheckCannotGC nogc(cx);
 
   TabSizes sizes;
   OrphanReporter orphanReporter(XPCConvert::GetISupportsFromJSObject);
-  NS_ENSURE_TRUE(
-      JS::AddSizeOfTab(cx, obj, moz_malloc_size_of, &orphanReporter, &sizes),
-      NS_ERROR_OUT_OF_MEMORY);
+  NS_ENSURE_TRUE(JS::AddSizeOfTab(cx, zone, moz_malloc_size_of, &orphanReporter,
+                                  &sizes, nogc),
+                 NS_ERROR_OUT_OF_MEMORY);
 
   *jsObjectsSize = sizes.objects_;
   *jsStringsSize = sizes.strings_;
@@ -2905,16 +2909,6 @@ static void SetUseCounterCallback(JSObject* obj, JSUseCounter counter) {
     case JSUseCounter::REGEXP_SYMBOL_PROTOCOL_ON_PRIMITIVE:
       SetUseCounter(obj,
                     eUseCounter_custom_JS_regexp_symbol_protocol_on_primitive);
-      return;
-    case JSUseCounter::ERROR_CAPTURESTACKTRACE:
-      SetUseCounter(obj, eUseCounter_custom_JS_error_capturestacktrace);
-      return;
-    case JSUseCounter::ERROR_CAPTURESTACKTRACE_CTOR:
-      SetUseCounter(obj, eUseCounter_custom_JS_error_capturestacktrace_ctor);
-      return;
-    case JSUseCounter::ERROR_CAPTURESTACKTRACE_UNCALLABLE_CTOR:
-      SetUseCounter(
-          obj, eUseCounter_custom_JS_error_capturestacktrace_uncallable_ctor);
       return;
     case JSUseCounter::COUNT:
       break;

@@ -8,10 +8,6 @@ include $(topsrcdir)/build/binary-location.mk
 
 SYMBOLS_PATH := --symbols-path=$(DIST)/crashreporter-symbols
 
-ifndef TEST_PACKAGE_NAME
-TEST_PACKAGE_NAME := $(ANDROID_PACKAGE_NAME)
-endif
-
 ifndef NO_FAIL_ON_TEST_ERRORS
 define check_test_error_internal
   @errors=`grep 'TEST-UNEXPECTED-' $@.log` ;\
@@ -33,7 +29,7 @@ RUN_REFTEST = rm -f ./$@.log && $(PYTHON3) _tests/reftest/runreftest.py \
 
 REMOTE_REFTEST = rm -f ./$@.log && $(PYTHON3) _tests/reftest/remotereftest.py \
   --ignore-window-size \
-  --app=$(TEST_PACKAGE_NAME) --deviceIP=${TEST_DEVICE} --xre-path=${MOZ_HOST_BIN} \
+  --deviceIP=${TEST_DEVICE} --xre-path=${MOZ_HOST_BIN} \
   --httpd-path=_tests/modules --suite reftest \
   --extra-profile-file=$(topsrcdir)/mobile/android/fonts \
   $(SYMBOLS_PATH) $(EXTRA_TEST_ARGS) $(1) | tee ./$@.log

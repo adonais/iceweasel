@@ -7,7 +7,7 @@ task-defaults:
         category: reftest
     target:
         by-test-platform:
-            android-em-7.*: geckoview-test_runner.apk
+            android-em.*: geckoview-test_runner.apk
             android-hw-.*: geckoview-test_runner.apk
             default: null
     tier: default
@@ -22,6 +22,9 @@ task-defaults:
                 android-em-7.*:
                     - android/android_common.py
                     - android/android-x86_64.py
+                android-em-14.*:
+                    - android/android_common.py
+                    - android/android14-x86_64.py
                 android-hw.*:
                     - android/android_common.py
                     - android/android_hw.py
@@ -39,7 +42,7 @@ crashtest:
     treeherder-symbol: R(C)
     chunks:
         by-test-platform:
-            android-em-7.*: 1
+            android-em.*: 1
             linux.*64-tsan(-qr)?/opt: 4
             default: 1
     variants:
@@ -51,7 +54,7 @@ crashtest:
         by-variant:
             webrender-sw+no-fission:
                 by-test-platform:
-                    android-em-7.0-x86_64(-qr)?/debug: built-projects
+                    android-em.*/debug: built-projects
                     linux1804-64(-qr)?/.*: ['mozilla-central']
                     linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
                     linux1804-64-asan(-qr)?/opt: ['mozilla-central']
@@ -70,7 +73,7 @@ crashtest:
                     default: []
             no-fission:
                 by-test-platform:
-                    android-em-7.0-x86_64(-qr)?/debug-isolated-process: []
+                    android-em.*/debug-isolated-process: []
                     linux1804-64(-qr)?/.*: ['mozilla-central']
                     linux1804-64-shippable(-qr)?/opt: ['mozilla-central']
                     linux1804-64-asan(-qr)?/opt: ['mozilla-central']
@@ -105,7 +108,7 @@ crashtest:
             default:
                 by-test-platform:
                     android-hw-.*(-qr)?/.*: 2
-                    android-em-7.0-x86_64(-qr)?/debug-isolated-process: 3
+                    android-em.*/debug-isolated-process: 3
                     default: default
 
 crashtest-qr:
@@ -187,7 +190,7 @@ reftest:
     virtualization: virtual-with-gpu
     chunks:
         by-test-platform:
-            android-em-7.*: 6
+            android-em.*: 6
             linux1804-64(-shippable)?(-qr)?/opt: 5
             linux1804-64-devedition(-qr)?/opt: 5
             linux2404-64(-shippable)?/opt: 5
@@ -221,7 +224,7 @@ reftest:
                     default: []
             webrender-sw+no-fission:
                 by-test-platform:
-                    android-em-7.0-x86_64(-qr)?/debug: built-projects
+                    android-em.*/debug: built-projects
                     linux1804-64(-qr)?/debug: ['mozilla-central']
                     linux1804-64(-shippable)?(-qr)?/opt: ['mozilla-central']
                     linux1804-64-asan(-qr)?/opt: ['mozilla-central']
@@ -242,7 +245,7 @@ reftest:
                     default: []
             no-fission:
                 by-test-platform:
-                    android-em-7.0-x86_64(-qr)?/debug-isolated-process: []
+                    android-em.*/debug-isolated-process: []
                     linux1804-64(-qr)?/debug: ['mozilla-central']
                     linux1804-64(-shippable)?(-qr)?/opt: ['mozilla-central']
                     linux1804-64-asan(-qr)?/opt: ['mozilla-central']
@@ -253,7 +256,7 @@ reftest:
                     default: []
             geckoview-no-fission-no-ship:
                 by-test-platform:
-                    android-em-7.0-x86_64(-qr)?/debug-isolated-process: []
+                    android-em.*/debug-isolated-process: []
                     android-em.*: built-projects
                     default: []
             no-gpu-process:
@@ -296,7 +299,7 @@ reftest:
                     default: default
             default:
                 by-test-platform:
-                    android-em-7.0-x86_64(-qr)?/debug-isolated-process: 3
+                    android-em.*/debug-isolated-process: 1
                     default: default
 
 reftest-qr:

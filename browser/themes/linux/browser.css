@@ -90,13 +90,6 @@
   font-size: 1.05em;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
-@media -moz-pref("browser.urlbar.experimental.expandTextOnFocus") {
-  #urlbar[breakout-extend] {
-    font-size: 1.14em;
-  }
-}
-
 /* AutoComplete */
 
 #PopupAutoComplete > richlistbox > richlistitem[originaltype~="datalist-first"] {
@@ -213,7 +206,7 @@
   -moz-window-dragging: drag;
 
   > .toolbarbutton-icon {
-    border-radius: 100%;
+    border-radius: var(--border-radius-circle);
     background-position: center center;
     background-size: min(16px, var(--titlebar-button-size) - 2 * env(hairline));
     background-repeat: no-repeat;

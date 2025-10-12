@@ -21,6 +21,7 @@ support-files = [ "send_more_info.js" ]
 support-files = [ "send_more_info.js" ]
 
 ["browser_keyboard_navigation.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan"] # Bug 1867132
 
 ["browser_parent_menuitems.js"]
 

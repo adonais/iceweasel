@@ -90,9 +90,9 @@ using webrtc::test::DriftingClock;
 namespace webrtc {
 namespace {
 
-using ::webrtc::test::GetGlobalMetricsLogger;
-using ::webrtc::test::ImprovementDirection;
-using ::webrtc::test::Unit;
+using test::GetGlobalMetricsLogger;
+using test::ImprovementDirection;
+using test::Unit;
 
 enum : int {  // The first valid value is 1.
   kTransportSequenceNumberExtensionId = 1,
@@ -237,8 +237,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     metrics::Reset();
     scoped_refptr<AudioDeviceModule> fake_audio_device =
         TestAudioDeviceModule::Create(
-            &env().task_queue_factory(),
-            TestAudioDeviceModule::CreatePulsedNoiseCapturer(256, 48000),
+            env(), TestAudioDeviceModule::CreatePulsedNoiseCapturer(256, 48000),
             TestAudioDeviceModule::CreateDiscardRenderer(48000),
             audio_rtp_speed);
     EXPECT_EQ(0, fake_audio_device->Init());
@@ -667,7 +666,7 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
         const FieldTrialsView& /*field_trials*/,
         int frame_width,
         int frame_height,
-        const webrtc::VideoEncoderConfig& encoder_config) override {
+        const VideoEncoderConfig& encoder_config) override {
       std::vector<VideoStream> streams =
           test::CreateVideoStreams(frame_width, frame_height, encoder_config);
       streams[0].min_bitrate_bps = 50000;

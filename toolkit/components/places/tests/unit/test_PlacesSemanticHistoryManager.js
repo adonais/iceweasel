@@ -61,14 +61,13 @@ add_setup(async function () {
   Services.fog.initializeFOG();
 });
 
-add_task(async function test_tensorToBindable() {
-  const semanticManager = createPlacesSemanticHistoryManager();
+add_task(async function test_tensorToSQLBindable() {
   let tensor = [0.3, 0.3, 0.3, 0.3];
-  let bindable = semanticManager.tensorToBindable(tensor);
+  let bindable = PlacesUtils.tensorToSQLBindable(tensor);
   Assert.equal(
     Object.prototype.toString.call(bindable),
     "[object Uint8ClampedArray]",
-    "tensorToBindable should return a Uint8ClampedArray"
+    "tensorToSQLBindable should return a Uint8ClampedArray"
   );
   let floatArray = new Float32Array(bindable.buffer);
   Assert.equal(
@@ -438,7 +437,7 @@ add_task(async function test_rowid_conflict() {
     VALUES (1, :vector, vec_quantize_binary(:vector))
     `,
     {
-      vector: semanticManager.tensorToBindable(Array(EMBEDDING_SIZE).fill(0.1)),
+      vector: PlacesUtils.tensorToSQLBindable(Array(EMBEDDING_SIZE).fill(0.1)),
     }
   );
 

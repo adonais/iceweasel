@@ -10771,7 +10771,7 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
 
     // Compile MIR graph
     {
-      jit::SpewBeginWasmFunction(&rootCompiler.mirGen(), func.index);
+      rootCompiler.mirGen().spewBeginWasmFunction(func.index);
       jit::AutoSpewEndFunction spewEndFunction(&rootCompiler.mirGen());
 
       if (!OptimizeMIR(&rootCompiler.mirGen())) {
@@ -10791,11 +10791,10 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
           wasm::BytecodeOffset(func.lineOrBytecode));
       FuncOffsets offsets;
       ArgTypeVector args(codeMeta.getFuncType(func.index));
-      IonPerfSpewer spewer;
       if (!codegen.generateWasm(CallIndirectId::forFunc(codeMeta, func.index),
                                 prologueTrapSiteDesc, args, trapExitLayout,
                                 trapExitLayoutNumWords, &offsets,
-                                &code->stackMaps, &d, &spewer)) {
+                                &code->stackMaps, &d)) {
         return false;
       }
 
@@ -10806,11 +10805,12 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
       if (!code->codeRanges.emplaceBack(func.index, offsets, hasUnwindInfo)) {
         return false;
       }
+    }
 
-      if (PerfEnabled()) {
-        if (!code->funcIonSpewers.emplaceBack(func.index, std::move(spewer))) {
-          return false;
-        }
+    if (PerfEnabled()) {
+      IonPerfSpewer spewer = std::move(rootCompiler.mirGen().perfSpewer());
+      if (!code->funcIonSpewers.emplaceBack(func.index, std::move(spewer))) {
+        return false;
       }
     }
 
@@ -10842,9 +10842,9 @@ bool wasm::IonCompileFunctions(const CodeMetadata& codeMeta,
 
 bool wasm::IonDumpFunction(const CompilerEnvironment& compilerEnv,
                            const CodeMetadata& codeMeta,
-                           const FuncCompileInput& func,
-                           IonDumpContents contents, GenericPrinter& out,
+                           const FuncCompileInput& func, GenericPrinter& out,
                            UniqueChars* error) {
+#ifdef JS_JITSPEW
   LifoAlloc lifo(TempAllocator::PreferredLifoChunkSize,
                  js::BackgroundMallocArena);
   TempAllocator alloc(&lifo);
@@ -10861,36 +10861,21 @@ bool wasm::IonDumpFunction(const CompilerEnvironment& compilerEnv,
   InliningContext inliningContext;
   RootCompiler rootCompiler(compilerEnv, codeMeta, nullptr, alloc, locals, func,
                             d, tryNotes, inliningContext);
-  if (!rootCompiler.generate()) {
+  MIRGenerator& mirGen = rootCompiler.mirGen();
+  GraphSpewer graphSpewer(out, &codeMeta);
+
+  mirGen.setGraphSpewer(&graphSpewer);
+  mirGen.spewBeginWasmFunction(func.index);
+
+  if (!rootCompiler.generate() || !OptimizeMIR(&mirGen) ||
+      !GenerateLIR(&mirGen)) {
     return false;
   }
 
-  if (contents == IonDumpContents::UnoptimizedMIR) {
-    rootCompiler.mirGraph().dump(out);
-    return true;
-  }
+  mirGen.spewEndFunction();
 
-  // Optimize the MIR graph
-  if (!OptimizeMIR(&rootCompiler.mirGen())) {
-    return false;
-  }
-
-  if (contents == IonDumpContents::OptimizedMIR) {
-    rootCompiler.mirGraph().dump(out);
-    return true;
-  }
-
-#ifdef JS_JITSPEW
-  // Generate the LIR graph
-  LIRGraph* lir = GenerateLIR(&rootCompiler.mirGen());
-  if (!lir) {
-    return false;
-  }
-
-  MOZ_ASSERT(contents == IonDumpContents::LIR);
-  lir->dump(out);
 #else
-  out.printf("cannot dump LIR without --enable-jitspew");
+  out.printf("cannot dump Ion without --enable-jitspew");
 #endif
   return true;
 }

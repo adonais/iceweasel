@@ -15,26 +15,38 @@ namespace mozilla::dom::quota {
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wunreachable-code-loop-increment"
 #endif
-TEST(Flatten, FlatEmpty)
+TEST(DOM_Quota_Flatten, FlatEmpty)
 {
-  for (const auto& item : Flatten<int>(nsTArray<int>{})) {
+  auto range = Flatten<int>(nsTArray<int>{});
+
+  EXPECT_EQ(std::distance(range.begin(), range.end()), 0);
+
+  for (const auto& item : range) {
+    Unused << item;
+    FAIL();  // should never execute
+  }
+}
+
+TEST(DOM_Quota_Flatten, NestedOuterEmpty)
+{
+  auto range = Flatten<int>(nsTArray<CopyableTArray<int>>{});
+
+  EXPECT_EQ(std::distance(range.begin(), range.end()), 0);
+
+  for (const auto& item : range) {
     Unused << item;
     FAIL();
   }
 }
 
-TEST(Flatten, NestedOuterEmpty)
+TEST(DOM_Quota_Flatten, NestedInnerEmpty)
 {
-  for (const auto& item : Flatten<int>(nsTArray<CopyableTArray<int>>{})) {
-    Unused << item;
-    FAIL();
-  }
-}
+  auto range =
+      Flatten<int>(nsTArray<CopyableTArray<int>>{CopyableTArray<int>{}});
 
-TEST(Flatten, NestedInnerEmpty)
-{
-  for (const auto& item :
-       Flatten<int>(nsTArray<CopyableTArray<int>>{CopyableTArray<int>{}})) {
+  EXPECT_EQ(std::distance(range.begin(), range.end()), 0);
+
+  for (const auto& item : range) {
     Unused << item;
     FAIL();
   }
@@ -43,33 +55,45 @@ TEST(Flatten, NestedInnerEmpty)
 #  pragma clang diagnostic pop
 #endif
 
-TEST(Flatten, NestedInnerSingular)
+TEST(DOM_Quota_Flatten, NestedInnerSingular)
 {
+  auto range =
+      Flatten<int>(nsTArray<CopyableTArray<int>>{CopyableTArray<int>{1}});
+
+  EXPECT_EQ(std::distance(range.begin(), range.end()), 1);
+
   nsTArray<int> flattened;
-  for (const auto& item :
-       Flatten<int>(nsTArray<CopyableTArray<int>>{CopyableTArray<int>{1}})) {
+  for (const auto& item : range) {
     flattened.AppendElement(item);
   }
 
   EXPECT_EQ(nsTArray{1}, flattened);
 }
 
-TEST(Flatten, NestedInnerSingulars)
+TEST(DOM_Quota_Flatten, NestedInnerSingulars)
 {
+  auto range = Flatten<int>(nsTArray<CopyableTArray<int>>{
+      CopyableTArray<int>{1}, CopyableTArray<int>{2}});
+
+  EXPECT_EQ(std::distance(range.begin(), range.end()), 2);
+
   nsTArray<int> flattened;
-  for (const auto& item : Flatten<int>(nsTArray<CopyableTArray<int>>{
-           CopyableTArray<int>{1}, CopyableTArray<int>{2}})) {
+  for (const auto& item : range) {
     flattened.AppendElement(item);
   }
 
   EXPECT_EQ((nsTArray<int>{{1, 2}}), flattened);
 }
 
-TEST(Flatten, NestedInnerNonSingulars)
+TEST(DOM_Quota_Flatten, NestedInnerNonSingulars)
 {
+  auto range = Flatten<int>(nsTArray<CopyableTArray<int>>{
+      CopyableTArray<int>{1, 2}, CopyableTArray<int>{3, 4}});
+
+  EXPECT_EQ(std::distance(range.begin(), range.end()), 4);
+
   nsTArray<int> flattened;
-  for (const auto& item : Flatten<int>(nsTArray<CopyableTArray<int>>{
-           CopyableTArray<int>{1, 2}, CopyableTArray<int>{3, 4}})) {
+  for (const auto& item : range) {
     flattened.AppendElement(item);
   }
 

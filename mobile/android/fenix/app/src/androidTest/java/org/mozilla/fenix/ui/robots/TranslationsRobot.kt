@@ -124,7 +124,7 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
         assertItemIsChecked(
             mDevice.findObject(
                 UiSelector()
-                    .index(3)
+                    .index(2)
                     .className("android.view.View"),
             ),
             isChecked = isChecked,
@@ -189,7 +189,7 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
         assertItemIsChecked(
             mDevice.findObject(
                 UiSelector()
-                    .index(6)
+                    .index(5)
                     .className("android.view.View"),
             ),
             isChecked = isChecked,
@@ -205,7 +205,7 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
         assertItemIsChecked(
             mDevice.findObject(
                 UiSelector()
-                    .index(5)
+                    .index(4)
                     .className("android.view.View"),
             ),
             isChecked = isChecked,
@@ -221,7 +221,7 @@ class TranslationsRobot(private val composeTestRule: ComposeTestRule) {
         assertItemIsEnabledAndVisible(
             mDevice.findObject(
                 UiSelector()
-                    .index(5)
+                    .index(4)
                     .className("android.view.View"),
             ),
             isEnabled = isEnabled,

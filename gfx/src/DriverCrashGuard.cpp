@@ -468,9 +468,9 @@ void GLContextCrashGuard::Initialize() {
   // its drivers will essentially never change, so the crash guard could
   // permanently disable WebGL.
   return;
-#endif
-
+#else
   DriverCrashGuard::Initialize();
+#endif
 }
 
 bool GLContextCrashGuard::UpdateEnvironment() {

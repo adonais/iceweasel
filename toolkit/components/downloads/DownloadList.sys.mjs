@@ -243,13 +243,8 @@ export class DownloadList {
    *            // Called after all the changes have been made.
    *          },
    *        }
-   *
-   * @return {Promise}
-   * @resolves When the view has been registered and all the onDownloadAdded
-   *           notifications for the existing downloads have been sent.
-   * @rejects JavaScript exception.
    */
-  async addView(view) {
+  addView(view) {
     this._views.add(view);
 
     if ("onDownloadAdded" in view) {
@@ -270,13 +265,8 @@ export class DownloadList {
    *
    * @param view
    *        The view object to remove.
-   *
-   * @return {Promise}
-   * @resolves When the view has been removed.  At this point, the removed view
-   *           will not receive any more notifications.
-   * @rejects JavaScript exception.
    */
-  async removeView(view) {
+  removeView(view) {
     this._views.delete(view);
   }
 
@@ -377,8 +367,8 @@ export class DownloadCombinedList extends DownloadList {
      */
     this._privateList = privateList;
 
-    publicList.addView(this).catch(console.error);
-    privateList.addView(this).catch(console.error);
+    publicList.addView(this);
+    privateList.addView(this);
   }
 
   /**
@@ -543,13 +533,8 @@ export class DownloadSummary {
    *            // Called after any property of the summary has changed.
    *          },
    *        }
-   *
-   * @return {Promise}
-   * @resolves When the view has been registered and the onSummaryChanged
-   *           notification has been sent.
-   * @rejects JavaScript exception.
    */
-  async addView(view) {
+  addView(view) {
     this._views.add(view);
 
     if ("onSummaryChanged" in view) {
@@ -566,13 +551,8 @@ export class DownloadSummary {
    *
    * @param view
    *        The view object to remove.
-   *
-   * @return {Promise}
-   * @resolves When the view has been removed.  At this point, the removed view
-   *           will not receive any more notifications.
-   * @rejects JavaScript exception.
    */
-  async removeView(view) {
+  removeView(view) {
     this._views.delete(view);
   }
 

@@ -41,7 +41,7 @@
 #if defined(__cplusplus)
 #  include "mozilla/fallible.h"
 #  include "mozilla/mozalloc_abort.h"
-#  include "mozilla/TemplateLib.h"
+#  include "mozilla/MulOverflowMask.h"
 #endif
 #include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
@@ -155,7 +155,7 @@ class InfallibleAllocPolicy {
 
   template <typename T>
   T* pod_malloc(size_t aNumElems) {
-    if (aNumElems & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
+    if (aNumElems & mozilla::MulOverflowMask<sizeof(T)>()) {
       reportAllocOverflow();
     }
     return static_cast<T*>(moz_xmalloc(aNumElems * sizeof(T)));
@@ -168,7 +168,7 @@ class InfallibleAllocPolicy {
 
   template <typename T>
   T* pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
-    if (aNewSize & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
+    if (aNewSize & mozilla::MulOverflowMask<sizeof(T)>()) {
       reportAllocOverflow();
     }
     return static_cast<T*>(moz_xrealloc(aPtr, aNewSize * sizeof(T)));

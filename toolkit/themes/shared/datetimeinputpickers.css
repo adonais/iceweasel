@@ -76,6 +76,10 @@
   }
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font: message-box;
@@ -217,7 +221,7 @@ button.month-year.active {
   order: 2;
 }
 
-.calendar-container > table:not([hidden]) {
+.calendar-container > table {
   display: flex;
   flex-direction: column;
   border-spacing: inherit;
@@ -302,7 +306,7 @@ button.month-year.active {
 }
 
 #time-picker,
-.month-year-view:not([hidden]) {
+.month-year-view {
   display: flex;
   justify-content: center;
 }
@@ -379,4 +383,14 @@ button.month-year.active {
 
 .spacer {
   width: var(--day-period-spacing-width);
+}
+
+#datetime-picker {
+  display: flex;
+  gap: 1em;
+}
+
+#date-picker,
+#time-picker {
+  min-width: 0;
 }

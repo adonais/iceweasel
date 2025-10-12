@@ -145,7 +145,7 @@ RefPtr<MediaDataEncoder::InitPromise> AndroidDataEncoder::ProcessInit() {
   mIsHardwareAccelerated = mJavaEncoder->IsHardwareAccelerated();
   mDrainState = DrainState::DRAINABLE;
 
-  return InitPromise::CreateAndResolve(TrackInfo::kVideoTrack, __func__);
+  return InitPromise::CreateAndResolve(true, __func__);
 }
 
 RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::Encode(
@@ -153,9 +153,26 @@ RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::Encode(
   RefPtr<AndroidDataEncoder> self = this;
   MOZ_ASSERT(aSample != nullptr);
 
-  RefPtr<const MediaData> sample(aSample);
+  return InvokeAsync(
+      mTaskQueue, __func__,
+      [self, sample = RefPtr<MediaData>(const_cast<MediaData*>(aSample))]() {
+        return self->ProcessEncode({sample});
+      });
+}
+
+// TODO(Bug 1984936): For realtime mode, resolve the promise after the first
+// sample's result is available, then continue processing remaining samples.
+// This allows the caller to keep submitting new samples while the encoder
+// handles pending ones.
+RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::Encode(
+    nsTArray<RefPtr<MediaData>>&& aSamples) {
+  RefPtr<AndroidDataEncoder> self = this;
+  MOZ_ASSERT(!aSamples.IsEmpty());
+
   return InvokeAsync(mTaskQueue, __func__,
-                     [self, sample]() { return self->ProcessEncode(sample); });
+                     [self, samples = std::move(aSamples)]() mutable {
+                       return self->ProcessEncode(std::move(samples));
+                     });
 }
 
 static jni::ByteBuffer::LocalRef ConvertI420ToNV12Buffer(
@@ -193,35 +210,40 @@ static jni::ByteBuffer::LocalRef ConvertI420ToNV12Buffer(
 }
 
 RefPtr<MediaDataEncoder::EncodePromise> AndroidDataEncoder::ProcessEncode(
-    const RefPtr<const MediaData>& aSample) {
+    nsTArray<RefPtr<MediaData>>&& aSamples) {
   AssertOnTaskQueue();
 
   REJECT_IF_ERROR();
 
-  RefPtr<const VideoData> sample(aSample->As<const VideoData>());
-  MOZ_ASSERT(sample);
+  // TODO(Bug 1984936): Looping here for large batches is inefficient, as it can
+  // take excessive shared memory and file descriptors due to passing both input
+  // and output buffers between the content and media codec processes.
+  for (auto& s : aSamples) {
+    RefPtr<const VideoData> sample(s->As<const VideoData>());
+    MOZ_ASSERT(sample);
 
-  mInputSampleDuration = aSample->mDuration;
+    mInputSampleDuration = s->mDuration;
 
-  // Bug 1789846: Check with the Encoder if MediaCodec has a stride or height
-  // value to use.
-  jni::ByteBuffer::LocalRef buffer = ConvertI420ToNV12Buffer(
-      sample, mYUVBuffer, mJavaEncoder->GetInputFormatStride(),
-      mJavaEncoder->GetInputFormatYPlaneHeight());
-  if (!buffer) {
-    return EncodePromise::CreateAndReject(NS_ERROR_ILLEGAL_INPUT, __func__);
+    // Bug 1789846: Check with the Encoder if MediaCodec has a stride or height
+    // value to use.
+    jni::ByteBuffer::LocalRef buffer = ConvertI420ToNV12Buffer(
+        sample, mYUVBuffer, mJavaEncoder->GetInputFormatStride(),
+        mJavaEncoder->GetInputFormatYPlaneHeight());
+    if (!buffer) {
+      return EncodePromise::CreateAndReject(NS_ERROR_ILLEGAL_INPUT, __func__);
+    }
+
+    if (s->mKeyframe) {
+      mInputBufferInfo->Set(0, AssertedCast<int32_t>(mYUVBuffer->Length()),
+                            s->mTime.ToMicroseconds(),
+                            java::sdk::MediaCodec::BUFFER_FLAG_SYNC_FRAME);
+    } else {
+      mInputBufferInfo->Set(0, AssertedCast<int32_t>(mYUVBuffer->Length()),
+                            s->mTime.ToMicroseconds(), 0);
+    }
+
+    mJavaEncoder->Input(buffer, mInputBufferInfo, nullptr);
   }
-
-  if (aSample->mKeyframe) {
-    mInputBufferInfo->Set(0, AssertedCast<int32_t>(mYUVBuffer->Length()),
-                          aSample->mTime.ToMicroseconds(),
-                          java::sdk::MediaCodec::BUFFER_FLAG_SYNC_FRAME);
-  } else {
-    mInputBufferInfo->Set(0, AssertedCast<int32_t>(mYUVBuffer->Length()),
-                          aSample->mTime.ToMicroseconds(), 0);
-  }
-
-  mJavaEncoder->Input(buffer, mInputBufferInfo, nullptr);
 
   if (mEncodedData.Length() > 0) {
     EncodedData pending = std::move(mEncodedData);

@@ -14,7 +14,6 @@
 #include "mozilla/Logging.h"
 #include "mozilla/UniquePtr.h"
 
-extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define LOG(msg, ...) \
   MOZ_LOG(gMediaDemuxerLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 #define ADTSLOG(msg, ...) \

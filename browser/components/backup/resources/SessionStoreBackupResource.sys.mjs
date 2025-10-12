@@ -31,16 +31,15 @@ export class SessionStoreBackupResource extends BackupResource {
   async backup(
     stagingPath,
     profilePath = PathUtils.profileDir,
-    isEncrypting = false
+    _isEncrypting = false
   ) {
     let sessionStoreState = lazy.SessionStore.getCurrentState(true);
     let sessionStorePath = PathUtils.join(stagingPath, "sessionstore.jsonlz4");
 
-    if (!isEncrypting) {
-      // If we're not encrypting, we don't want to include any session cookies
-      // in the backup.
-      sessionStoreState.cookies = [];
-    }
+    // Preserving session cookies in a backup used on a different machine
+    // may break behavior for websites. So we leave them out of the backup.
+
+    sessionStoreState.cookies = [];
 
     await IOUtils.writeJSON(sessionStorePath, sessionStoreState, {
       compress: true,

@@ -70,7 +70,10 @@ exports.menuitems = [
     oncommand(event) {
       try {
         const window = event.target.ownerDocument.defaultView;
-        gDevToolsBrowser.toggleToolboxCommand(window.gBrowser, Cu.now());
+        gDevToolsBrowser.toggleToolboxCommand(
+          window.gBrowser,
+          ChromeUtils.now()
+        );
       } catch (e) {
         console.error(`Exception while opening the toolbox: ${e}\n${e.stack}`);
       }

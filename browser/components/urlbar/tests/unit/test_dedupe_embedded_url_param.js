@@ -60,7 +60,7 @@ add_task(async function test_deduplication_of_embedded_url_autofill_result() {
         title: "kitten",
         source: UrlbarUtils.RESULT_SOURCE.HISTORY,
         heuristic: true,
-        providerName: "Autofill",
+        providerName: "UrlbarProviderAutofill",
       }),
     ],
   });

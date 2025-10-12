@@ -1,5 +1,5 @@
-commit 823f4cfd2004cf410bc0344304e22e12d243e955
-Author: Ms2ger <Ms2ger@igalia.com>
-Date:   Mon Jun 9 15:35:15 2025 +0200
+commit d0cb9f80f70a924197d0b5e2160b07401ddfef4e
+Author: Daniel Minor <dminor@mozilla.com>
+Date:   Tue Aug 19 10:43:14 2025 -0400
 
-    Fix some esids that should have been lower case
+    Add symbols-as-weakmap-keys to features

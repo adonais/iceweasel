@@ -28,7 +28,7 @@ class SVGViewportFrame : public SVGDisplayContainerFrame, public ISVGSVGFrame {
   NS_DECL_ABSTRACT_FRAME(SVGViewportFrame)
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   // ISVGDisplayableFrame interface:
   void PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,

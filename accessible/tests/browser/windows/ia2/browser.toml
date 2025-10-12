@@ -25,6 +25,8 @@ prefs = [
 
 ["browser_scrolling.js"]
 
+["browser_systemCaret.js"]
+
 ["browser_text.js"]
 
 ["browser_textSelectionContainer.js"]

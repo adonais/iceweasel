@@ -560,7 +560,7 @@ const av1_codec_arg_definitions_t g_av1_codec_arg_defs = {
               "Variance Boost all intra); requires --enable-tpl-model=1"),
   .deltaq_strength = ARG_DEF(NULL, "deltaq-strength", 1,
                              "Deltaq strength for"
-                             " --deltaq-mode=4 (%)"),
+                             " --deltaq-mode=4 and --deltaq-mode=6 (%)"),
   .deltalf_mode = ARG_DEF(NULL, "delta-lf-mode", 1,
                           "Enable delta-lf-mode (0: off (default), 1: on)"),
   .frame_periodic_boost =

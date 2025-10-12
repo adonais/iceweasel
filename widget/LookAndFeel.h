@@ -118,14 +118,6 @@ class LookAndFeel {
     MacBigSurTheme,
 
     /*
-     * A Boolean value to determine whether macOS is in RTL mode or not.
-     */
-    MacRTL,
-
-    /* Native macOS titlebar height. */
-    MacTitlebarHeight,
-
-    /*
      * AlertNotificationOrigin indicates from which corner of the
      * screen alerts slide in, and from which direction (horizontal/vertical).
      * 0, the default, represents bottom right, sliding vertically.

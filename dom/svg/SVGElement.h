@@ -112,7 +112,7 @@ class SVGElement : public SVGElementBase  // nsIContent
   nsresult BindToTree(BindContext&, nsINode& aParent) override;
 
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
-                                      int32_t aModType) const override;
+                                      AttrModType aModType) const override;
 
   /**
    * We override the default to unschedule computation of Servo declaration
@@ -168,59 +168,47 @@ class SVGElement : public SVGElementBase  // nsIContent
       const StyleLockedDeclarationBlock&, const SVGAnimatedTransformList*,
       const gfx::Matrix* aAnimateMotionTransform, ValToUse);
 
-  nsAttrValue WillChangeLength(uint8_t aAttrEnum,
-                               const mozAutoDocUpdate& aProofOfUpdate);
-  nsAttrValue WillChangeNumberPair(uint8_t aAttrEnum);
-  nsAttrValue WillChangeIntegerPair(uint8_t aAttrEnum,
-                                    const mozAutoDocUpdate& aProofOfUpdate);
-  nsAttrValue WillChangeOrient(const mozAutoDocUpdate& aProofOfUpdate);
-  nsAttrValue WillChangeViewBox(const mozAutoDocUpdate& aProofOfUpdate);
-  nsAttrValue WillChangePreserveAspectRatio(
-      const mozAutoDocUpdate& aProofOfUpdate);
-  nsAttrValue WillChangeNumberList(uint8_t aAttrEnum,
-                                   const mozAutoDocUpdate& aProofOfUpdate);
-  nsAttrValue WillChangeLengthList(uint8_t aAttrEnum,
-                                   const mozAutoDocUpdate& aProofOfUpdate);
-  nsAttrValue WillChangePointList(const mozAutoDocUpdate& aProofOfUpdate);
-  nsAttrValue WillChangePathSegList(const mozAutoDocUpdate& aProofOfUpdate);
-  nsAttrValue WillChangeTransformList(const mozAutoDocUpdate& aProofOfUpdate);
-  nsAttrValue WillChangeStringList(bool aIsConditionalProcessingAttribute,
-                                   uint8_t aAttrEnum,
-                                   const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangeLength(uint8_t aAttrEnum,
+                        const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangeNumberPair(uint8_t aAttrEnum);
+  void WillChangeIntegerPair(uint8_t aAttrEnum,
+                             const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangeOrient(const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangeViewBox(const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangePreserveAspectRatio(const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangeNumberList(uint8_t aAttrEnum,
+                            const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangeLengthList(uint8_t aAttrEnum,
+                            const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangePointList(const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangePathSegList(const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangeTransformList(const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangeStringList(bool aIsConditionalProcessingAttribute,
+                            uint8_t aAttrEnum,
+                            const mozAutoDocUpdate& aProofOfUpdate);
 
-  void DidChangeLength(uint8_t aAttrEnum, const nsAttrValue& aEmptyOrOldValue,
+  void DidChangeLength(uint8_t aAttrEnum,
                        const mozAutoDocUpdate& aProofOfUpdate);
   void DidChangeNumber(uint8_t aAttrEnum);
-  void DidChangeNumberPair(uint8_t aAttrEnum,
-                           const nsAttrValue& aEmptyOrOldValue);
+  void DidChangeNumberPair(uint8_t aAttrEnum);
   void DidChangeInteger(uint8_t aAttrEnum);
   void DidChangeIntegerPair(uint8_t aAttrEnum,
-                            const nsAttrValue& aEmptyOrOldValue,
                             const mozAutoDocUpdate& aProofOfUpdate);
   void DidChangeBoolean(uint8_t aAttrEnum);
   void DidChangeEnum(uint8_t aAttrEnum);
-  void DidChangeOrient(const nsAttrValue& aEmptyOrOldValue,
-                       const mozAutoDocUpdate& aProofOfUpdate);
-  void DidChangeViewBox(const nsAttrValue& aEmptyOrOldValue,
-                        const mozAutoDocUpdate& aProofOfUpdate);
-  void DidChangePreserveAspectRatio(const nsAttrValue& aEmptyOrOldValue,
-                                    const mozAutoDocUpdate& aProofOfUpdate);
+  void DidChangeOrient(const mozAutoDocUpdate& aProofOfUpdate);
+  void DidChangeViewBox(const mozAutoDocUpdate& aProofOfUpdate);
+  void DidChangePreserveAspectRatio(const mozAutoDocUpdate& aProofOfUpdate);
   void DidChangeNumberList(uint8_t aAttrEnum,
-                           const nsAttrValue& aEmptyOrOldValue,
                            const mozAutoDocUpdate& aProofOfUpdate);
   void DidChangeLengthList(uint8_t aAttrEnum,
-                           const nsAttrValue& aEmptyOrOldValue,
                            const mozAutoDocUpdate& aProofOfUpdate);
-  void DidChangePointList(const nsAttrValue& aEmptyOrOldValue,
-                          const mozAutoDocUpdate& aProofOfUpdate);
-  void DidChangePathSegList(const nsAttrValue& aEmptyOrOldValue,
-                            const mozAutoDocUpdate& aProofOfUpdate);
-  void DidChangeTransformList(const nsAttrValue& aEmptyOrOldValue,
-                              const mozAutoDocUpdate& aProofOfUpdate);
+  void DidChangePointList(const mozAutoDocUpdate& aProofOfUpdate);
+  void DidChangePathSegList(const mozAutoDocUpdate& aProofOfUpdate);
+  void DidChangeTransformList(const mozAutoDocUpdate& aProofOfUpdate);
   void DidChangeString(uint8_t aAttrEnum) {}
   void DidChangeStringList(bool aIsConditionalProcessingAttribute,
                            uint8_t aAttrEnum,
-                           const nsAttrValue& aEmptyOrOldValue,
                            const mozAutoDocUpdate& aProofOfUpdate);
 
   void DidAnimateLength(uint8_t aAttrEnum);
@@ -267,7 +255,7 @@ class SVGElement : public SVGElementBase  // nsIContent
   }
   void DidAnimatePointList();
   void DidAnimatePathSegList();
-  void DidAnimateTransformList(int32_t aModType);
+  void DidAnimateTransformList();
   void DidAnimateString(uint8_t aAttrEnum) {
     auto info = GetStringInfo();
     DidAnimateAttribute(info.mInfos[aAttrEnum].mNamespaceID,
@@ -374,14 +362,11 @@ class SVGElement : public SVGElementBase  // nsIContent
                                               nsAtom* aAttribute,
                                               const nsAString& aValue);
 
-  nsAttrValue WillChangeValue(nsAtom* aName,
-                              const mozAutoDocUpdate& aProofOfUpdate);
+  void WillChangeValue(nsAtom* aName, const mozAutoDocUpdate& aProofOfUpdate);
   // aNewValue is set to the old value. This value may be invalid if
   // !StoresOwnData.
-  void DidChangeValue(nsAtom* aName, const nsAttrValue& aEmptyOrOldValue,
-                      nsAttrValue& aNewValue,
+  void DidChangeValue(nsAtom* aName, nsAttrValue& aNewValue,
                       const mozAutoDocUpdate& aProofOfUpdate);
-  void MaybeSerializeAttrBeforeRemoval(nsAtom* aName, bool aNotify);
 
   nsAtom* GetEventNameForAttr(nsAtom* aAttr) override;
 

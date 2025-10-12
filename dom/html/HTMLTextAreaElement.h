@@ -121,7 +121,7 @@ class HTMLTextAreaElement final : public TextControlElement,
                       nsAttrValue& aResult) override;
   nsMapRuleToAttributesFunc GetAttributeMappingFunction() const override;
   nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
-                                      int32_t aModType) const override;
+                                      AttrModType aModType) const override;
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;

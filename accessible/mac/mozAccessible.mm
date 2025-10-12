@@ -5,6 +5,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#import <Accessibility/Accessibility.h>
+
 #import "mozAccessible.h"
 #include "MOXAccessibleBase.h"
 
@@ -537,14 +539,39 @@ static bool ProvidesTitle(const Accessible* aAccessible, nsString& aName) {
 }
 
 - (NSString*)moxHelp {
+  nsAutoString desc;
+  EDescriptionValueFlag descFlag = mGeckoAccessible->Description(desc);
+
+  if (@available(macOS 11.0, *)) {
+    // Provide AXHelp only on non-aria descriptions (eg. title attribute),
+    // or if the accessible is a fieldset or radio group.
+    if (descFlag == eDescriptionFromARIA &&
+        mGeckoAccessible->Role() != roles::GROUPING &&
+        mGeckoAccessible->Role() != roles::RADIO_GROUP) {
+      return nil;
+    }
+  }
+
+  return nsCocoaUtils::ToNSString(desc);
+}
+
+- (NSArray*)moxCustomContent {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  // What needs to go here is actually the accDescription of an item.
-  // The MSAA acc_help method has nothing to do with this one.
-  nsAutoString helpText;
-  mGeckoAccessible->Description(helpText);
+  if (@available(macOS 11.0, *)) {
+    nsAutoString desc;
+    EDescriptionValueFlag descFlag = mGeckoAccessible->Description(desc);
 
-  return nsCocoaUtils::ToNSString(helpText);
+    if (!desc.IsEmpty() && descFlag == eDescriptionFromARIA) {
+      AXCustomContent* contentItem = [AXCustomContent
+          customContentWithLabel:@"description"
+                           value:nsCocoaUtils::ToNSString(desc)];
+      contentItem.importance = AXCustomContentImportanceHigh;
+      return @[ contentItem ];
+    }
+  }
+
+  return nil;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }

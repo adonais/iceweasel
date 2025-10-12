@@ -38,7 +38,7 @@ if (AppConstants.platform == "linux") {
 let win, canvas;
 let paints = [];
 let afterPaintListener = () => {
-  let startTime = Cu.now();
+  let startTime = ChromeUtils.now();
   let width, height;
   canvas.width = width = win.innerWidth;
   canvas.height = height = win.innerHeight;

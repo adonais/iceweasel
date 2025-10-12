@@ -266,7 +266,11 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   void GetOuterText(mozilla::dom::DOMString& aValue, ErrorResult& aError) {
     return GetInnerText(aValue, aError);
   }
-  MOZ_CAN_RUN_SCRIPT void SetInnerText(const nsAString& aValue);
+  MOZ_CAN_RUN_SCRIPT void SetInnerText(const nsAString& aValue) {
+    SetInnerTextInternal(aValue, MutationEffectOnScript::DropTrustWorthiness);
+  }
+  MOZ_CAN_RUN_SCRIPT void SetInnerTextInternal(
+      const nsAString& aValue, MutationEffectOnScript aMutationEffectOnScript);
   MOZ_CAN_RUN_SCRIPT void SetOuterText(const nsAString& aValue,
                                        ErrorResult& aRv);
 

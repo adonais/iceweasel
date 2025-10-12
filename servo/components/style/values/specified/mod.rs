@@ -66,7 +66,7 @@ pub use self::font::{FontVariantAlternates, FontWeight};
 pub use self::font::{FontVariantEastAsian, FontVariationSettings, LineHeight};
 pub use self::font::{MathDepth, MozScriptMinSize, MozScriptSizeMultiplier, XLang, XTextScale};
 pub use self::image::{EndingShape as GradientEndingShape, Gradient, Image, ImageRendering};
-pub use self::length::{AbsoluteLength, AnchorSizeFunction, CalcLengthPercentage, CharacterWidth};
+pub use self::length::{AbsoluteLength, CalcLengthPercentage, CharacterWidth};
 pub use self::length::{FontRelativeLength, Length, LengthOrNumber, NonNegativeLengthOrNumber};
 pub use self::length::{LengthOrAuto, LengthPercentage, LengthPercentageOrAuto};
 pub use self::length::{Margin, MaxSize, Size};
@@ -108,7 +108,7 @@ pub use self::text::{OverflowWrap, TextEmphasisPosition, TextEmphasisStyle, Word
 pub use self::text::{TextAlignKeyword, TextDecorationLine, TextOverflow, WordSpacing};
 pub use self::text::{TextAlignLast, TextAutospace, TextUnderlinePosition};
 pub use self::text::{
-    TextDecorationLength, TextDecorationSkipInk, TextDecorationTrim, TextJustify, TextTransform
+    TextDecorationLength, TextDecorationSkipInk, TextDecorationTrim, TextJustify, TextTransform,
 };
 pub use self::time::Time;
 pub use self::transform::{Rotate, Scale, Transform};

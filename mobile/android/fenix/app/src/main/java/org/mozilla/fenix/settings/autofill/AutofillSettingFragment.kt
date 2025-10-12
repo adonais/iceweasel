@@ -40,6 +40,7 @@ import org.mozilla.fenix.settings.SharedPreferenceUpdater
 import org.mozilla.fenix.settings.SyncPreferenceView
 import org.mozilla.fenix.settings.biometric.BiometricPromptPreferenceFragment
 import org.mozilla.fenix.settings.requirePreference
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Autofill settings fragment displays a list of settings related to autofilling, adding and
@@ -230,7 +231,7 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
             manageAddressesPreference.title =
                 getString(R.string.preferences_addresses_manage_addresses)
         } else {
-            manageAddressesPreference.setIcon(R.drawable.ic_new)
+            manageAddressesPreference.setIcon(iconsR.drawable.mozac_ic_plus_24)
             manageAddressesPreference.title =
                 getString(R.string.preferences_addresses_add_address)
         }
@@ -266,7 +267,7 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
             manageSavedCardsPreference.title =
                 getString(R.string.preferences_credit_cards_manage_saved_cards_2)
         } else {
-            manageSavedCardsPreference.setIcon(R.drawable.ic_new)
+            manageSavedCardsPreference.setIcon(iconsR.drawable.mozac_ic_plus_24)
             manageSavedCardsPreference.title =
                 getString(R.string.preferences_credit_cards_add_credit_card_2)
         }

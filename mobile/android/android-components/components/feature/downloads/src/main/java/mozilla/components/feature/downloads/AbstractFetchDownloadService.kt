@@ -143,7 +143,6 @@ abstract class AbstractFetchDownloadService : Service() {
             return getSecondsSinceTheLastNotificationUpdate() >= 1
         }
 
-        @Suppress("MagicNumber")
         internal fun getSecondsSinceTheLastNotificationUpdate(): Long {
             return (System.currentTimeMillis() - lastNotificationUpdate) / 1000
         }
@@ -213,7 +212,6 @@ abstract class AbstractFetchDownloadService : Service() {
                         removeNotification(context, currentDownloadJobState)
                         currentDownloadJobState.lastNotificationUpdate = System.currentTimeMillis()
                         currentDownloadJobState.createdTime = System.currentTimeMillis()
-                        currentDownloadJobState.currentBytesCopied = 0
                         setDownloadJobStatus(currentDownloadJobState, DOWNLOADING)
 
                         currentDownloadJobState.job = CoroutineScope(IO).launch {
@@ -239,7 +237,7 @@ abstract class AbstractFetchDownloadService : Service() {
                             )
                         ) {
                             val fileExt = MimeTypeMap.getFileExtensionFromUrl(
-                                currentDownloadJobState.state.filePath.toString(),
+                                currentDownloadJobState.state.filePath,
                             )
                             val errorMessage = applicationContext.getString(
                                 R.string.mozac_feature_downloads_open_not_supported1,
@@ -330,7 +328,7 @@ abstract class AbstractFetchDownloadService : Service() {
 
         downloadJobs[download.id] = downloadJobState
 
-        setForegroundNotification(downloadJobState)
+        setForegroundNotification()
 
         notificationUpdateScope.launch {
             while (isActive) {
@@ -377,7 +375,7 @@ abstract class AbstractFetchDownloadService : Service() {
              */
             val uiStatus = getDownloadJobStatus(download)
 
-            updateForegroundNotificationIfNeeded(download)
+            updateForegroundNotificationIfNeeded()
 
             // Dispatch the corresponding notification based on the current status
             updateDownloadNotification(uiStatus, download)
@@ -488,9 +486,7 @@ abstract class AbstractFetchDownloadService : Service() {
                 cancelDownloadJob(state)
             }
         }
-        if (SDK_INT >= Build.VERSION_CODES.N) {
-            notificationManager.cancel(NOTIFICATION_DOWNLOAD_GROUP_ID)
-        }
+        notificationManager.cancel(NOTIFICATION_DOWNLOAD_GROUP_ID)
     }
 
     @Suppress("TooGenericExceptionCaught")
@@ -608,7 +604,7 @@ abstract class AbstractFetchDownloadService : Service() {
         if (downloadJobs.isEmpty()) {
             stopSelf()
         } else {
-            updateForegroundNotificationIfNeeded(downloadJobState)
+            updateForegroundNotificationIfNeeded()
             removeNotification(context, downloadJobState)
         }
     }
@@ -624,128 +620,43 @@ abstract class AbstractFetchDownloadService : Service() {
      */
     @VisibleForTesting
     internal fun updateNotificationGroup(): Notification? {
-        return if (SDK_INT >= Build.VERSION_CODES.N) {
-            val downloadList = downloadJobs.values.toList()
-            val notificationGroup =
-                DownloadNotification.createDownloadGroupNotification(
-                    context = context,
-                    fileSizeFormatter = fileSizeFormatter,
-                    notifications = downloadList,
-                    notificationAccentColor = style.notificationAccentColor,
-                )
-
-            notificationsDelegate.notify(
-                notificationId = NOTIFICATION_DOWNLOAD_GROUP_ID,
-                notification = notificationGroup,
-            )
-            notificationGroup
-        } else {
-            null
-        }
-    }
-
-    internal fun createCompactForegroundNotification(downloadJobState: DownloadJobState): Notification {
-        val notification =
-            DownloadNotification.createOngoingDownloadNotification(
+        val downloadList = downloadJobs.values.toList()
+        val notificationGroup =
+            DownloadNotification.createDownloadGroupNotification(
                 context = context,
-                downloadState = downloadJobState.state,
                 fileSizeFormatter = fileSizeFormatter,
+                notifications = downloadList,
                 notificationAccentColor = style.notificationAccentColor,
-                downloadEstimator = downloadEstimator,
             )
-        compatForegroundNotificationId = downloadJobState.foregroundServiceId
 
         notificationsDelegate.notify(
-            notificationId = compatForegroundNotificationId,
-            notification = notification,
+            notificationId = NOTIFICATION_DOWNLOAD_GROUP_ID,
+            notification = notificationGroup,
         )
-
-        downloadJobState.lastNotificationUpdate = System.currentTimeMillis()
-
-        return notification
+        return notificationGroup
     }
 
     @VisibleForTesting
-    internal fun getForegroundId(): Int {
-        return if (SDK_INT >= Build.VERSION_CODES.N) {
-            NOTIFICATION_DOWNLOAD_GROUP_ID
-        } else {
-            compatForegroundNotificationId
-        }
-    }
+    internal fun getForegroundId(): Int = NOTIFICATION_DOWNLOAD_GROUP_ID
 
     /**
-     * We have two different behaviours as notification groups are not supported in all devices.
-     * For devices that support it, we create a separate notification which will be the foreground
+     * We create a separate notification which will be the foreground
      * notification, it will be always present until we don't have more active downloads.
-     * For devices that doesn't support notification groups, we set the latest active notification as
-     * the foreground notification and we keep changing it to the latest active download.
      */
     @VisibleForTesting
-    internal fun setForegroundNotification(downloadJobState: DownloadJobState) {
-        var previousDownload: DownloadJobState? = null
-
-        val (notificationId, notification) = if (SDK_INT >= Build.VERSION_CODES.N) {
-            NOTIFICATION_DOWNLOAD_GROUP_ID to updateNotificationGroup()
-        } else {
-            previousDownload = downloadJobs.values.firstOrNull {
-                it.foregroundServiceId == compatForegroundNotificationId
-            }
-            downloadJobState.foregroundServiceId to createCompactForegroundNotification(
-                downloadJobState,
-            )
-        }
-
+    internal fun setForegroundNotification() {
+        val (notificationId, notification) = NOTIFICATION_DOWNLOAD_GROUP_ID to updateNotificationGroup()
         startForeground(notificationId, notification)
-        /**
-         * In devices that doesn't use notification groups, every new download becomes the new foreground one,
-         * unfortunately, when we call startForeground it removes the previous foreground notification
-         * when it's not an ongoing one, for this reason, we have to recreate the deleted notification.
-         * By the way ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_DETACH)
-         * doesn't work neither calling stopForeground(false) and then calling startForeground,
-         * it always deletes the previous notification :(
-         */
-        previousDownload?.let {
-            updateDownloadNotification(previousDownload.status, it)
-        }
     }
 
     /**
      * Indicates the status of a download has changed and maybe the foreground notification needs,
      * to be updated. For devices that support group notifications, we update the overview
-     * notification. For devices that don't support group notifications, we try to find a new
-     * active download and selected it as the new foreground notification.
+     * notification
      */
-    internal fun updateForegroundNotificationIfNeeded(download: DownloadJobState) {
-        if (SDK_INT < Build.VERSION_CODES.N) {
-            /**
-             * For devices that don't support notification groups, we have to keep updating
-             * the foreground notification id, when the previous one gets a state that
-             * is likely to be dismissed.
-             */
-            val status = download.status
-            val foregroundId = download.foregroundServiceId
-            val isSelectedForegroundId = compatForegroundNotificationId == foregroundId
-            val needNewForegroundNotification = when (status) {
-                COMPLETED, FAILED, CANCELLED -> true
-                else -> false
-            }
-
-            if (isSelectedForegroundId && needNewForegroundNotification) {
-                // We need to deselect the actual foreground notification, because while it is
-                // selected the user will not be able to dismiss it.
-                stopForegroundCompat(false)
-
-                // Now we need to find a new foreground notification, if needed.
-                val newSelectedForegroundDownload = downloadJobs.values.firstOrNull { it.status == DOWNLOADING }
-                newSelectedForegroundDownload?.let {
-                    setForegroundNotification(it)
-                }
-            }
-        } else {
-            // This device supports notification groups, we just need to update the summary notification
-            updateNotificationGroup()
-        }
+    internal fun updateForegroundNotificationIfNeeded() {
+        // This device supports notification groups, we just need to update the summary notification
+        updateNotificationGroup()
         // If all downloads have been completed we don't need the status of
         // foreground service anymore, we can call stopForeground and let the user
         // swipe the foreground notification.
@@ -823,7 +734,7 @@ abstract class AbstractFetchDownloadService : Service() {
      */
     internal fun verifyDownload(download: DownloadJobState) {
         if (getDownloadJobStatus(download) == DOWNLOADING &&
-            download.currentBytesCopied < download.state.contentLength ?: 0
+            download.currentBytesCopied < (download.state.contentLength ?: 0)
         ) {
             setDownloadJobStatus(download, FAILED)
             logger.error("verifyDownload for ${download.state.id} FAILED")
@@ -1089,7 +1000,7 @@ abstract class AbstractFetchDownloadService : Service() {
             return try {
                 applicationContext.startActivity(newIntent)
                 true
-            } catch (error: ActivityNotFoundException) {
+            } catch (_: ActivityNotFoundException) {
                 false
             }
         }

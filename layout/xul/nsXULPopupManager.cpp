@@ -1629,7 +1629,7 @@ void nsXULPopupManager::HidePopupAfterDelay(nsMenuPopupFrame* aPopup,
           pm->KillMenuTimer();
         }
       },
-      nullptr, aDelay, nsITimer::TYPE_ONE_SHOT, "KillMenuTimer", target);
+      nullptr, aDelay, nsITimer::TYPE_ONE_SHOT, "KillMenuTimer"_ns, target);
   // the popup will call PopupDestroyed if it is destroyed, which checks if it
   // is set to mTimerMenu, so it should be safe to keep a reference to it
   mTimerMenu = aPopup;

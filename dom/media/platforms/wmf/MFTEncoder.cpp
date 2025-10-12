@@ -766,6 +766,25 @@ HRESULT MFTEncoder::SetModes(const EncoderConfig& aConfig) {
     MFT_RETURN_IF_FAILED(mConfig->SetValue(&CODECAPI_AVLowLatencyMode, &var));
   }
 
+  uint32_t interval = SaturatingCast<uint32_t>(aConfig.mKeyframeInterval);
+  if (interval != 0) {
+    var.vt = VT_UI4;
+    var.ulVal = interval;
+    if (SUCCEEDED(mConfig->IsModifiable(&CODECAPI_AVEncMPVGOPSize))) {
+      MFT_RETURN_IF_FAILED(mConfig->SetValue(&CODECAPI_AVEncMPVGOPSize, &var));
+      MFT_ENC_LOGD("Set GOPSize to %lu", var.ulVal);
+    }
+    // Set keyframe distance through both media type and codec API for better
+    // compatibility. Some encoders may only support one of these methods.
+    // `MF_MT_MAX_KEYFRAME_SPACING` is set in `CreateOutputType`.
+    if (SUCCEEDED(
+            mConfig->IsModifiable(&CODECAPI_AVEncVideoMaxKeyframeDistance))) {
+      MFT_RETURN_IF_FAILED(
+          mConfig->SetValue(&CODECAPI_AVEncVideoMaxKeyframeDistance, &var));
+      MFT_ENC_LOGD("Set MaxKeyframeDistance to %lu", var.ulVal);
+    }
+  }
+
   mIsRealtime = aConfig.mUsage == Usage::Realtime;
 
   return S_OK;
@@ -780,6 +799,12 @@ MFTEncoder::SetBitrate(UINT32 aBitsPerSec) {
   return mConfig->SetValue(&CODECAPI_AVEncCommonMeanBitRate, &var);
 }
 
+bool MFTEncoder::IsHardwareAccelerated() const {
+  MOZ_ASSERT(mscom::IsCurrentThreadMTA());
+
+  return mFactory && mFactory->mProvider != MFTEncoder::Factory::Provider::SW;
+}
+
 template <typename T, typename E, bool IsExclusive = true>
 static auto ResultToPromise(Result<T, E>&& aResult) {
   if (aResult.isErr()) {
@@ -790,17 +815,18 @@ static auto ResultToPromise(Result<T, E>&& aResult) {
                                                          __func__);
 };
 
-RefPtr<MFTEncoder::EncodePromise> MFTEncoder::Encode(InputSample&& aInput) {
+RefPtr<MFTEncoder::EncodePromise> MFTEncoder::Encode(
+    nsTArray<InputSample>&& aInputs) {
   MOZ_ASSERT(mscom::IsCurrentThreadMTA());
   MOZ_ASSERT(mEncoder);
 
   if (!IsAsync()) {
-    return ResultToPromise(EncodeSync(std::move(aInput)));
+    return ResultToPromise(EncodeSync(std::move(aInputs)));
   }
   if (!mIsRealtime) {
-    return ResultToPromise(EncodeAsync(std::move(aInput)));
+    return ResultToPromise(EncodeAsync(std::move(aInputs)));
   }
-  return EncodeWithAsyncCallback(std::move(aInput));
+  return EncodeWithAsyncCallback(std::move(aInputs));
 }
 
 RefPtr<MFTEncoder::EncodePromise> MFTEncoder::Drain() {
@@ -844,7 +870,7 @@ MFTEncoder::CreateInputSample(RefPtr<IMFSample>* aSample, size_t aSize) {
 }
 
 Result<MFTEncoder::EncodedData, MediaResult> MFTEncoder::EncodeSync(
-    InputSample&& aInput) {
+    nsTArray<InputSample>&& aInputs) {
   MOZ_ASSERT(mscom::IsCurrentThreadMTA());
   MOZ_ASSERT(mEncoder);
   MOZ_ASSERT(mState == State::Inited);
@@ -852,36 +878,36 @@ Result<MFTEncoder::EncodedData, MediaResult> MFTEncoder::EncodeSync(
   auto exitWithError = MakeScopeExit([&] { SetState(State::Error); });
   SetState(State::Encoding);
 
+  EncodedData outputs;
+
   // Follow steps in
   // https://learn.microsoft.com/en-us/windows/win32/medfound/basic-mft-processing-model#process-data
-  HRESULT hr = ProcessInput(std::move(aInput));
-  if (FAILED(hr)) {
-    return Err(MediaResult(
-        NS_ERROR_DOM_MEDIA_FATAL_ERR,
-        RESULT_DETAIL("ProcessInput error: %s", ErrorMessage(hr).get())));
+  for (auto& input : aInputs) {
+    HRESULT hr = ProcessInput(std::move(input));
+    if (FAILED(hr)) {
+      return Err(MediaResult(
+          NS_ERROR_DOM_MEDIA_FATAL_ERR,
+          RESULT_DETAIL("ProcessInput error: %s", ErrorMessage(hr).get())));
+    }
+
+    DWORD flags = 0;
+    hr = mEncoder->GetOutputStatus(&flags);
+    if (FAILED(hr) && hr != E_NOTIMPL) {
+      return Err(MediaResult(
+          NS_ERROR_DOM_MEDIA_FATAL_ERR,
+          RESULT_DETAIL("GetOutputStatus error: %s", ErrorMessage(hr).get())));
+    }
+
+    if (hr == E_NOTIMPL ||
+        (hr == S_OK && (flags & MFT_OUTPUT_STATUS_SAMPLE_READY))) {
+      outputs.AppendElements(MOZ_TRY(PullOutputs().mapErr([](HRESULT e) {
+        return MediaResult(
+            NS_ERROR_DOM_MEDIA_FATAL_ERR,
+            RESULT_DETAIL("PullOutputs error: %s", ErrorMessage(e).get()));
+      })));
+    }
   }
 
-  DWORD flags = 0;
-  hr = mEncoder->GetOutputStatus(&flags);
-  if (FAILED(hr) && hr != E_NOTIMPL) {
-    return Err(MediaResult(
-        NS_ERROR_DOM_MEDIA_FATAL_ERR,
-        RESULT_DETAIL("GetOutputStatus error: %s", ErrorMessage(hr).get())));
-  }
-
-  if (hr == S_OK && !(flags & MFT_OUTPUT_STATUS_SAMPLE_READY)) {
-    exitWithError.release();
-    SetState(State::Inited);
-    return EncodedData{};
-  }
-
-  MOZ_ASSERT(hr == E_NOTIMPL ||
-             (hr == S_OK && (flags & MFT_OUTPUT_STATUS_SAMPLE_READY)));
-  EncodedData outputs = MOZ_TRY(PullOutputs().mapErr([](HRESULT e) {
-    return MediaResult(
-        NS_ERROR_DOM_MEDIA_FATAL_ERR,
-        RESULT_DETAIL("PullOutputs error: %s", ErrorMessage(e).get()));
-  }));
   exitWithError.release();
   SetState(State::Inited);
   return outputs;
@@ -955,7 +981,7 @@ Result<MFTEncoder::EncodedData, HRESULT> MFTEncoder::PullOutputs() {
 }
 
 Result<MFTEncoder::EncodedData, MediaResult> MFTEncoder::EncodeAsync(
-    InputSample&& aInput) {
+    nsTArray<InputSample>&& aInputs) {
   MOZ_ASSERT(mscom::IsCurrentThreadMTA());
   MOZ_ASSERT(mEncoder);
   MOZ_ASSERT(mState == State::Inited);
@@ -963,13 +989,19 @@ Result<MFTEncoder::EncodedData, MediaResult> MFTEncoder::EncodeAsync(
   auto exitWithError = MakeScopeExit([&] { SetState(State::Error); });
   SetState(State::Encoding);
 
-  mPendingInputs.push_back(std::move(aInput));
-  auto r = MOZ_TRY(ProcessInput().mapErr([](HRESULT hr) {
-    return MediaResult(
-        NS_ERROR_DOM_MEDIA_FATAL_ERR,
-        RESULT_DETAIL("ProcessInput error: %s", ErrorMessage(hr).get()));
+  size_t inputCounts = aInputs.Length();
+  for (auto& input : aInputs) {
+    mPendingInputs.push_back(std::move(input));
+  }
+
+  MOZ_TRY(ProcessPendingInputs().mapErr([](HRESULT hr) {
+    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                       RESULT_DETAIL("ProcessPendingInputs error: %s",
+                                     ErrorMessage(hr).get()));
   }));
-  MFT_ENC_LOGV("input processed: %s", MFTEncoder::EnumValueToString(r));
+  MFT_ENC_LOGV("%zu inputs processed, %zu inputs remain, inputs needed: %zu",
+               inputCounts - mPendingInputs.size(), mPendingInputs.size(),
+               mNumNeedInput);
 
   // If the underlying system signaled that more input is needed, continue
   // processing inputs until either no more input is required or there are no
@@ -1039,7 +1071,7 @@ Result<MFTEncoder::EncodedData, MediaResult> MFTEncoder::DrainAsync() {
 }
 
 RefPtr<MFTEncoder::EncodePromise> MFTEncoder::EncodeWithAsyncCallback(
-    InputSample&& aInput) {
+    nsTArray<InputSample>&& aInputs) {
   MOZ_ASSERT(mscom::IsCurrentThreadMTA());
   MOZ_ASSERT(mEncoder);
   MOZ_ASSERT(mEncodePromise.IsEmpty());
@@ -1048,18 +1080,23 @@ RefPtr<MFTEncoder::EncodePromise> MFTEncoder::EncodeWithAsyncCallback(
   auto exitWithError = MakeScopeExit([&] { SetState(State::Error); });
   SetState(State::Encoding);
 
-  mPendingInputs.push_back(std::move(aInput));
-  auto inputProcessed = ProcessInput();
-  if (inputProcessed.isErr()) {
+  size_t inputCounts = aInputs.Length();
+  for (auto& input : aInputs) {
+    mPendingInputs.push_back(std::move(input));
+  }
+
+  auto inputsProcessed = ProcessPendingInputs();
+  if (inputsProcessed.isErr()) {
     return EncodePromise::CreateAndReject(
         MediaResult(
             NS_ERROR_DOM_MEDIA_FATAL_ERR,
-            RESULT_DETAIL("ProcessInput error: %s",
-                          ErrorMessage(inputProcessed.unwrapErr()).get())),
+            RESULT_DETAIL("ProcessPendingInputs error: %s",
+                          ErrorMessage(inputsProcessed.unwrapErr()).get())),
         __func__);
   }
-  MFT_ENC_LOGV("input processed: %s",
-               MFTEncoder::EnumValueToString(inputProcessed.inspect()));
+  MFT_ENC_LOGV("%zu inputs processed, %zu inputs remain, inputs needed: %zu",
+               inputCounts - mPendingInputs.size(), mPendingInputs.size(),
+               mNumNeedInput);
 
   RefPtr<MFTEncoder::EncodePromise> p = mEncodePromise.Ensure(__func__);
   exitWithError.release();
@@ -1077,7 +1114,7 @@ RefPtr<MFTEncoder::EncodePromise> MFTEncoder::EncodeWithAsyncCallback(
         self->MaybeResolveOrRejectEncodePromise();
       },
       TimeDuration::FromMilliseconds(20), nsITimer::TYPE_ONE_SHOT,
-      "EncodingProgressChecker", GetCurrentSerialEventTarget());
+      "EncodingProgressChecker"_ns, GetCurrentSerialEventTarget());
   if (timerResult.isErr()) {
     MFT_ENC_LOGE(
         "Failed to set an encoding progress checker. Resolve encode promise "
@@ -1464,6 +1501,17 @@ MFTEncoder::ProcessDrainComplete() {
                mNumNeedInput);
   mNumNeedInput = 0;
   return ProcessedResult::DrainComplete;
+}
+
+Result<MFTEncoder::ProcessedResult, HRESULT>
+MFTEncoder::ProcessPendingInputs() {
+  while (!mPendingInputs.empty()) {
+    auto r = MOZ_TRY(ProcessInput());
+    if (r == ProcessedResult::AllAvailableInputsProcessed) {
+      break;
+    }
+  }
+  return ProcessedResult::AllAvailableInputsProcessed;
 }
 
 Result<MediaEventType, HRESULT> MFTEncoder::GetPendingEvent() {

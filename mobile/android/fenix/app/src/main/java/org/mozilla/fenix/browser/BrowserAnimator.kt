@@ -17,7 +17,6 @@ import mozilla.components.concept.engine.EngineView
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.ext.settings
-import org.mozilla.fenix.utils.Settings
 import java.lang.ref.WeakReference
 
 /**

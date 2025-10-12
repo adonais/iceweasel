@@ -475,6 +475,21 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
   mWindow = aWindow;
   NS_ENSURE_STATE(mWindow);
 
+  // Now rummage through the objects to get a usable origin
+  nsCOMPtr<nsIScriptGlobalObject> sgo = do_QueryInterface(mWindow);
+  NS_ENSURE_STATE(sgo);
+  nsCOMPtr<nsIScriptContext> scriptContext = sgo->GetContext();
+  NS_ENSURE_STATE(scriptContext);
+
+  nsCOMPtr<nsIScriptObjectPrincipal> scriptPrincipal(
+      do_QueryInterface(mWindow));
+  NS_ENSURE_STATE(scriptPrincipal);
+  nsCOMPtr<nsIPrincipal> principal = scriptPrincipal->GetPrincipal();
+  NS_ENSURE_STATE(principal);
+
+  res = nsContentUtils::GetWebExposedOriginSerialization(principal, mOrigin);
+  NS_ENSURE_SUCCESS(res, res);
+
   PRTime timestamp = PR_Now();
   // Ok if we truncate this, but we want it to be large enough to reliably
   // contain the location on the tests we run in CI.
@@ -1053,9 +1068,10 @@ PeerConnectionImpl::CreateDataChannel(
   }
 
   RefPtr<RTCDataChannel> retval;
-  rv = NS_NewDOMDataChannel(dataChannel.forget(), aLabel, ordered, maxLifeTime,
-                            maxRetransmits, aProtocol, aExternalNegotiated,
-                            mWindow, getter_AddRefs(retval));
+  rv = NS_NewDOMDataChannel(dataChannel.forget(), aLabel, mOrigin, ordered,
+                            maxLifeTime, maxRetransmits, aProtocol,
+                            aExternalNegotiated, mWindow,
+                            getter_AddRefs(retval));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1350,9 +1366,10 @@ void PeerConnectionImpl::NotifyDataChannel(
   CSFLogDebug(LOGTAG, "%s: channel: %p", __FUNCTION__, channel.get());
 
   RefPtr<RTCDataChannel> domchannel;
-  nsresult rv = NS_NewDOMDataChannel(
-      channel.forget(), aLabel, aOrdered, aMaxLifeTime, aMaxRetransmits,
-      aProtocol, aNegotiated, mWindow, getter_AddRefs(domchannel));
+  nsresult rv =
+      NS_NewDOMDataChannel(channel.forget(), aLabel, mOrigin, aOrdered,
+                           aMaxLifeTime, aMaxRetransmits, aProtocol,
+                           aNegotiated, mWindow, getter_AddRefs(domchannel));
   NS_ENSURE_SUCCESS_VOID(rv);
 
   domchannel->SetReadyState(RTCDataChannelState::Open);
@@ -3623,14 +3640,26 @@ void PeerConnectionImpl::UpdateDefaultCandidate(
 }
 
 RefPtr<dom::RTCStatsPromise> PeerConnectionImpl::GetDataChannelStats(
-    const RefPtr<DataChannelConnection>& aDataChannelConnection,
     const DOMHighResTimeStamp aTimestamp) {
-  UniquePtr<dom::RTCStatsCollection> report(new dom::RTCStatsCollection);
-  if (aDataChannelConnection) {
-    aDataChannelConnection->AppendStatsToReport(report, aTimestamp);
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mDataConnection) {
+    return mDataConnection->GetStats(aTimestamp)
+        ->Then(GetMainThreadSerialEventTarget(), __func__,
+               [](DataChannelConnection::StatsPromise::ResolveOrRejectValue&&
+                      aResult) {
+                 UniquePtr<dom::RTCStatsCollection> report(
+                     new dom::RTCStatsCollection);
+                 if (aResult.IsResolve()) {
+                   if (!report->mDataChannelStats.AppendElements(
+                           aResult.ResolveValue(), fallible)) {
+                     mozalloc_handle_oom(0);
+                   }
+                 }
+                 return RTCStatsPromise::CreateAndResolve(std::move(report),
+                                                          __func__);
+               });
   }
-  return RTCStatsPromise::CreateAndResolve(std::move(report), __func__);
-  ;
+  return nullptr;
 }
 
 void PeerConnectionImpl::CollectConduitTelemetryData() {
@@ -3840,7 +3869,9 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
     promises.AppendElement(mTransportHandler->GetIceStats(transportId, now));
   }
 
-  promises.AppendElement(GetDataChannelStats(mDataConnection, now));
+  if (mDataConnection) {
+    promises.AppendElement(GetDataChannelStats(now));
+  }
 
   auto pcStatsCollection = MakeUnique<dom::RTCStatsCollection>();
   RTCPeerConnectionStats pcStats;

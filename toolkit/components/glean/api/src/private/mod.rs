@@ -286,23 +286,23 @@ pub(crate) mod profiler_utils {
                 "{marker.data.cat}.{marker.data.id} {marker.data.label} {marker.data.val}",
             );
             schema.set_table_label("{marker.name} - {marker.data.cat}.{marker.data.id} {marker.data.label}: {marker.data.val}");
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "cat",
                 "Category",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "id",
                 "Metric",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "label",
                 "Label",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
             schema.add_key_label_format("val", "Value", Format::String);
             schema
@@ -366,23 +366,23 @@ pub(crate) mod profiler_utils {
             schema.set_table_label(
                 "{marker.name} - {marker.data.cat}.{marker.data.id} {marker.data.label}: {marker.data.val}",
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "cat",
                 "Category",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "id",
                 "Metric",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "label",
                 "Label",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
             schema.add_key_label_format("val", "Value", Format::Integer);
 
@@ -454,23 +454,23 @@ pub(crate) mod profiler_utils {
                 "{marker.name} - {marker.data.cat}.{marker.data.id} {marker.data.label}: {marker.data.sample}{marker.data.samples}",
             );
             schema.set_chart_label("{marker.data.cat}.{marker.data.id}");
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "cat",
                 "Category",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "id",
                 "Metric",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "label",
                 "Label",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
             schema.add_key_label_format("sample", "Sample", Format::String);
             schema.add_key_label_format("samples", "Samples", Format::String);
@@ -539,23 +539,23 @@ pub(crate) mod profiler_utils {
             schema.set_table_label(
                 "{marker.name} - {marker.data.cat}.{marker.data.id}: {marker.data.val}",
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "cat",
                 "Category",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "id",
                 "Metric",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "label",
                 "Label",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
             schema.add_key_label_format("val", "Value", Format::String);
             schema
@@ -592,17 +592,17 @@ pub(crate) mod profiler_utils {
             let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
             schema.set_tooltip_label("{marker.data.id} {marker.data.reason}");
             schema.set_table_label("{marker.data.id} {marker.data.reason}");
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "id",
                 "Ping name",
                 Format::UniqueString,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
-            schema.add_key_label_format_searchable(
+            schema.add_key_label_format_with_flags(
                 "reason",
                 "Submission reason",
                 Format::String,
-                Searchable::Searchable,
+                PayloadFlags::Searchable,
             );
             schema
         }

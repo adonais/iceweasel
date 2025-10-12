@@ -483,7 +483,7 @@ void MacroAssemblerRiscv64Compat::movePtr(wasm::SymbolicAddress imm,
 }
 
 bool MacroAssemblerRiscv64Compat::buildOOLFakeExitFrame(void* fakeReturnAddr) {
-  asMasm().PushFrameDescriptor(FrameType::IonJS);  // descriptor_
+  asMasm().Push(FrameDescriptor(FrameType::IonJS));  // descriptor_
   asMasm().Push(ImmPtr(fakeReturnAddr));
   asMasm().Push(FramePointer);
   return true;
@@ -507,6 +507,94 @@ void MacroAssemblerRiscv64Compat::convertUInt32ToFloat32(Register src,
 void MacroAssemblerRiscv64Compat::convertDoubleToFloat32(FloatRegister src,
                                                          FloatRegister dest) {
   fcvt_s_d(dest, src);
+}
+
+void MacroAssemblerRiscv64Compat::minMax32(Register lhs, Register rhs,
+                                           Register dest, bool isMax) {
+  if (rhs == dest) {
+    std::swap(lhs, rhs);
+  }
+
+  auto cond = isMax ? Assembler::GreaterThan : Assembler::LessThan;
+  if (lhs != dest) {
+    move32(lhs, dest);
+  }
+  asMasm().cmp32Move32(cond, rhs, lhs, rhs, dest);
+}
+
+void MacroAssemblerRiscv64Compat::minMax32(Register lhs, Imm32 rhs,
+                                           Register dest, bool isMax) {
+  if (rhs.value == 0) {
+    ScratchRegisterScope scratch(asMasm());
+
+    if (isMax) {
+      // dest = -(lhs > 0 ? 1 : 0) & lhs
+      sgtz(scratch, lhs);
+      neg(scratch, scratch);
+      and_(dest, lhs, scratch);
+    } else {
+      // dest = (lhs >> 31) & lhs
+      sraiw(scratch, lhs, 31);
+      and_(dest, lhs, scratch);
+    }
+    return;
+  }
+
+  // Uses branches because "Zicond" extension isn't yet supported.
+
+  auto cond =
+      isMax ? Assembler::GreaterThanOrEqual : Assembler::LessThanOrEqual;
+  if (lhs != dest) {
+    move32(lhs, dest);
+  }
+  Label done;
+  asMasm().branch32(cond, lhs, rhs, &done);
+  move32(rhs, dest);
+  bind(&done);
+}
+
+void MacroAssemblerRiscv64Compat::minMaxPtr(Register lhs, Register rhs,
+                                            Register dest, bool isMax) {
+  if (rhs == dest) {
+    std::swap(lhs, rhs);
+  }
+
+  auto cond = isMax ? Assembler::GreaterThan : Assembler::LessThan;
+  if (lhs != dest) {
+    movePtr(lhs, dest);
+  }
+  asMasm().cmpPtrMovePtr(cond, rhs, lhs, rhs, dest);
+}
+
+void MacroAssemblerRiscv64Compat::minMaxPtr(Register lhs, ImmWord rhs,
+                                            Register dest, bool isMax) {
+  if (rhs.value == 0) {
+    ScratchRegisterScope scratch(asMasm());
+
+    if (isMax) {
+      // dest = -(lhs > 0 ? 1 : 0) & lhs
+      sgtz(scratch, lhs);
+      neg(scratch, scratch);
+      and_(dest, lhs, scratch);
+    } else {
+      // dest = (lhs >> 63) & lhs
+      srai(scratch, lhs, 63);
+      and_(dest, lhs, scratch);
+    }
+    return;
+  }
+
+  // Uses branches because "Zicond" extension isn't yet supported.
+
+  auto cond =
+      isMax ? Assembler::GreaterThanOrEqual : Assembler::LessThanOrEqual;
+  if (lhs != dest) {
+    movePtr(lhs, dest);
+  }
+  Label done;
+  asMasm().branchPtr(cond, lhs, rhs, &done);
+  movePtr(rhs, dest);
+  bind(&done);
 }
 
 template <typename F>
@@ -1277,7 +1365,7 @@ void MacroAssemblerRiscv64Compat::move32(Imm32 imm, Register dest) {
 }
 
 void MacroAssemblerRiscv64Compat::move32(Register src, Register dest) {
-  slliw(dest, src, 0);
+  SignExtendWord(dest, src);
 }
 
 FaultingCodeOffset MacroAssemblerRiscv64Compat::load8ZeroExtend(
@@ -1543,11 +1631,11 @@ void MacroAssemblerRiscv64Compat::testUndefinedSet(Condition cond,
 
 void MacroAssemblerRiscv64Compat::unboxInt32(const ValueOperand& operand,
                                              Register dest) {
-  slliw(dest, operand.valueReg(), 0);
+  SignExtendWord(dest, operand.valueReg());
 }
 
 void MacroAssemblerRiscv64Compat::unboxInt32(Register src, Register dest) {
-  slliw(dest, src, 0);
+  SignExtendWord(dest, src);
 }
 
 void MacroAssemblerRiscv64Compat::unboxInt32(const Address& src,
@@ -1687,6 +1775,109 @@ void MacroAssemblerRiscv64Compat::boxNonDouble(JSValueType type, Register src,
   boxValue(type, src, dest.valueReg());
 }
 
+void MacroAssemblerRiscv64Compat::boxNonDouble(Register type, Register src,
+                                               const ValueOperand& dest) {
+  MOZ_ASSERT(src != dest.valueReg());
+  boxValue(type, src, dest.valueReg());
+}
+
+void MacroAssemblerRiscv64Compat::boxValue(JSValueType type, Register src,
+                                           Register dest) {
+  MOZ_ASSERT(src != dest);
+
+  switch (type) {
+    case JSVAL_TYPE_INT32:
+    case JSVAL_TYPE_BOOLEAN:
+    case JSVAL_TYPE_MAGIC: {
+      // Loading the shifted tag requires only two instructions.
+      ma_li(dest, ImmShiftedTag(type));
+
+      UseScratchRegisterScope temps(this);
+      Register scratch = temps.Acquire();
+
+      // Insert low 32 bits as payload, removing all high bits from |src|.
+      ZeroExtendWord(scratch, src);
+      or_(dest, dest, scratch);
+      return;
+    }
+    case JSVAL_TYPE_STRING:
+    case JSVAL_TYPE_SYMBOL:
+    case JSVAL_TYPE_PRIVATE_GCTHING:
+    case JSVAL_TYPE_BIGINT:
+    case JSVAL_TYPE_OBJECT: {
+#ifdef DEBUG
+      // High bits of pointer-valued types must be zero.
+      Label done;
+      srli(dest, src, JSVAL_TAG_SHIFT);
+      ma_b(dest, Imm32(0), &done, Assembler::Equal, ShortJump);
+      breakpoint();
+      bind(&done);
+#endif
+
+      // Loading the shifted tag requires only two instructions.
+      ma_li(dest, ImmShiftedTag(type));
+
+      // Insert 47-bit payload.
+      or_(dest, dest, src);
+      return;
+    }
+    case JSVAL_TYPE_DOUBLE:
+    case JSVAL_TYPE_UNDEFINED:
+    case JSVAL_TYPE_NULL:
+    case JSVAL_TYPE_UNKNOWN:
+      break;
+  }
+  MOZ_CRASH("bad value type");
+}
+
+void MacroAssemblerRiscv64Compat::boxValue(Register type, Register src,
+                                           Register dest) {
+  MOZ_ASSERT(src != dest);
+
+#ifdef DEBUG
+  // Ensure |src| is sign-extended.
+  Label check, done;
+  ma_b(type, Imm32(JSVAL_TYPE_INT32), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_BOOLEAN), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_NULL), &check, Assembler::Equal, ShortJump);
+  ma_b(type, Imm32(JSVAL_TYPE_UNDEFINED), &done, Assembler::NotEqual,
+       ShortJump);
+  {
+    bind(&check);
+
+    ScratchRegisterScope scratch(asMasm());
+    SignExtendWord(scratch, src);
+    ma_b(src, scratch, &done, Assembler::Equal, ShortJump);
+    breakpoint();
+  }
+  bind(&done);
+
+  // GCThing types aren't currently supported, because slli/srli truncates
+  // payloads above UINT32_MAX.
+  Label ok;
+  ma_b(type, Imm32(JSVAL_TYPE_NULL), &ok, Assembler::BelowOrEqual, ShortJump);
+  breakpoint();
+  bind(&ok);
+#endif
+
+  // JSVAL_TAG_MAX_DOUBLE can't be directly encoded in a single `ori`
+  // instruction. Sign-extend the tag, taking the bits into account which will
+  // later be shifted out, into a shorter immediate which fits into `ori`.
+  constexpr int64_t tag =
+      int64_t(uint64_t(JSVAL_TAG_MAX_DOUBLE) << JSVAL_TAG_SHIFT) >>
+      JSVAL_TAG_SHIFT;
+  static_assert(is_int12(tag), "ori requires int12 immediate");
+
+  ori(dest, type, tag);
+  slli(dest, dest, JSVAL_TAG_SHIFT);
+
+  // Insert low 32 bits as payload, removing all high bits from |src|.
+  ScratchRegisterScope scratch(asMasm());
+  ZeroExtendWord(scratch, src);
+
+  ma_or(dest, dest, scratch);
+}
+
 void MacroAssemblerRiscv64Compat::loadConstantFloat32(float f,
                                                       FloatRegister dest) {
   ma_lis(dest, f);
@@ -1806,14 +1997,13 @@ void MacroAssemblerRiscv64Compat::storeValue(JSValueType type, Register reg,
   if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
     store32(reg, dest);
     JSValueShiftedTag tag = (JSValueShiftedTag)JSVAL_TYPE_TO_SHIFTED_TAG(type);
-    store32(((Imm64(tag)).hi()), Address(dest.base, dest.offset + 4));
+    store32(Imm64(tag).hi(), Address(dest.base, dest.offset + 4));
   } else {
-    ScratchRegisterScope SecondScratchReg(asMasm());
-    MOZ_ASSERT(dest.base != SecondScratchReg);
-    ma_li(SecondScratchReg, ImmTag(JSVAL_TYPE_TO_TAG(type)));
-    slli(SecondScratchReg, SecondScratchReg, JSVAL_TAG_SHIFT);
-    InsertBits(SecondScratchReg, reg, 0, JSVAL_TAG_SHIFT);
-    storePtr(SecondScratchReg, Address(dest.base, dest.offset));
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+    MOZ_ASSERT(dest.base != scratch);
+    boxValue(type, reg, scratch);
+    storePtr(scratch, Address(dest.base, dest.offset));
   }
 }
 
@@ -1858,19 +2048,56 @@ void MacroAssemblerRiscv64Compat::loadValue(Address src, ValueOperand val) {
 
 void MacroAssemblerRiscv64Compat::tagValue(JSValueType type, Register payload,
                                            ValueOperand dest) {
-  UseScratchRegisterScope temps(this);
-  Register ScratchRegister = temps.Acquire();
-  MOZ_ASSERT(dest.valueReg() != ScratchRegister);
   JitSpew(JitSpew_Codegen, "[ tagValue");
-  if (payload != dest.valueReg()) {
-    mv(dest.valueReg(), payload);
+
+  if (payload == dest.valueReg()) {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+    MOZ_ASSERT(dest.valueReg() != scratch);
+
+    switch (type) {
+      case JSVAL_TYPE_INT32:
+      case JSVAL_TYPE_BOOLEAN:
+      case JSVAL_TYPE_MAGIC: {
+        // Loading the shifted tag requires only two instructions.
+        ma_li(scratch, ImmShiftedTag(type));
+
+        // Insert low 32 bits as payload, removing all high bits from |payload|.
+        ZeroExtendWord(payload, payload);
+        or_(dest.valueReg(), payload, scratch);
+        break;
+      }
+      case JSVAL_TYPE_STRING:
+      case JSVAL_TYPE_SYMBOL:
+      case JSVAL_TYPE_PRIVATE_GCTHING:
+      case JSVAL_TYPE_BIGINT:
+      case JSVAL_TYPE_OBJECT: {
+#ifdef DEBUG
+        // High bits of pointer-valued types must be zero.
+        Label done;
+        srli(scratch, payload, JSVAL_TAG_SHIFT);
+        ma_b(scratch, Imm32(0), &done, Assembler::Equal, ShortJump);
+        breakpoint();
+        bind(&done);
+#endif
+
+        // Loading the shifted tag requires only two instructions.
+        ma_li(scratch, ImmShiftedTag(type));
+
+        // Insert 47-bit payload.
+        or_(dest.valueReg(), payload, scratch);
+        break;
+      }
+      case JSVAL_TYPE_DOUBLE:
+      case JSVAL_TYPE_UNDEFINED:
+      case JSVAL_TYPE_NULL:
+      case JSVAL_TYPE_UNKNOWN:
+        MOZ_CRASH("bad value type");
+    }
+  } else {
+    boxNonDouble(type, payload, dest);
   }
-  ma_li(ScratchRegister, ImmTag(JSVAL_TYPE_TO_TAG(type)));
-  InsertBits(dest.valueReg(), ScratchRegister, JSVAL_TAG_SHIFT,
-             64 - JSVAL_TAG_SHIFT);
-  if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
-    InsertBits(dest.valueReg(), zero, 32, JSVAL_TAG_SHIFT - 32);
-  }
+
   JitSpew(JitSpew_Codegen, "]");
 }
 
@@ -2282,7 +2509,7 @@ static void AtomicExchange(MacroAssembler& masm,
   masm.slliw(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sllw(maskTemp, maskTemp, offsetTemp);
-  masm.nor(maskTemp, zero, maskTemp);
+  masm.not_(maskTemp, maskTemp);
   switch (nbytes) {
     case 1:
       masm.andi(valueTemp, value, 0xff);
@@ -2487,7 +2714,7 @@ static void AtomicEffectOp(MacroAssembler& masm,
   masm.slliw(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sllw(maskTemp, maskTemp, offsetTemp);
-  masm.nor(maskTemp, zero, maskTemp);
+  masm.not_(maskTemp, maskTemp);
 
   masm.memoryBarrierBefore(sync);
 
@@ -2618,7 +2845,7 @@ static void AtomicFetchOp(MacroAssembler& masm,
   masm.slliw(offsetTemp, offsetTemp, 3);
   masm.ma_li(maskTemp, Imm32(UINT32_MAX >> ((4 - nbytes) * 8)));
   masm.sllw(maskTemp, maskTemp, offsetTemp);
-  masm.nor(maskTemp, zero, maskTemp);
+  masm.not_(maskTemp, maskTemp);
 
   masm.memoryBarrierBefore(sync);
 
@@ -2866,11 +3093,16 @@ void MacroAssembler::branchTestValue(Condition cond, const ValueOperand& lhs,
                                      const Value& rhs, Label* label) {
   MOZ_ASSERT(cond == Equal || cond == NotEqual);
   MOZ_ASSERT(!rhs.isNaN());
-  UseScratchRegisterScope temps(this);
-  Register scratch = temps.Acquire();
-  MOZ_ASSERT(lhs.valueReg() != scratch);
-  moveValue(rhs, ValueOperand(scratch));
-  ma_b(lhs.valueReg(), scratch, label, cond);
+
+  if (!rhs.isGCThing()) {
+    ma_b(lhs.valueReg(), ImmWord(rhs.asRawBits()), label, cond);
+  } else {
+    UseScratchRegisterScope temps(this);
+    Register scratch = temps.Acquire();
+    MOZ_ASSERT(lhs.valueReg() != scratch);
+    moveValue(rhs, ValueOperand(scratch));
+    ma_b(lhs.valueReg(), scratch, label, cond);
+  }
 }
 
 void MacroAssembler::branchTestNaNValue(Condition cond, const ValueOperand& val,
@@ -3257,13 +3489,49 @@ void MacroAssembler::moveValue(const Value& src, const ValueOperand& dest) {
   writeDataRelocation(src);
   movWithPatch(ImmWord(src.asRawBits()), dest.valueReg());
 }
-void MacroAssembler::nearbyIntDouble(RoundingMode, FloatRegister,
-                                     FloatRegister) {
-  MOZ_CRASH("not supported on this platform");
+
+void MacroAssembler::nearbyIntDouble(RoundingMode mode, FloatRegister src,
+                                     FloatRegister dest) {
+  MOZ_ASSERT(HasRoundInstruction(mode));
+
+  ScratchDoubleScope2 fscratch(*this);
+
+  switch (mode) {
+    case RoundingMode::Down:
+      Floor_d_d(dest, src, fscratch);
+      break;
+    case RoundingMode::Up:
+      Ceil_d_d(dest, src, fscratch);
+      break;
+    case RoundingMode::NearestTiesToEven:
+      Round_d_d(dest, src, fscratch);
+      break;
+    case RoundingMode::TowardsZero:
+      Trunc_d_d(dest, src, fscratch);
+      break;
+  }
 }
-void MacroAssembler::nearbyIntFloat32(RoundingMode, FloatRegister,
-                                      FloatRegister) {
-  MOZ_CRASH("not supported on this platform");
+
+void MacroAssembler::nearbyIntFloat32(RoundingMode mode, FloatRegister src,
+                                      FloatRegister dest) {
+  MOZ_ASSERT(HasRoundInstruction(mode));
+
+  ScratchFloat32Scope2 fscratch(*this);
+
+  switch (mode) {
+    case RoundingMode::Down:
+      Floor_s_s(dest, src, fscratch);
+      break;
+    case RoundingMode::Up:
+      Ceil_s_s(dest, src, fscratch);
+      break;
+    case RoundingMode::NearestTiesToEven:
+      Round_s_s(dest, src, fscratch);
+      break;
+    case RoundingMode::TowardsZero:
+      Trunc_s_s(dest, src, fscratch);
+      break;
+  }
 }
 
 void MacroAssembler::oolWasmTruncateCheckF32ToI32(
@@ -3441,9 +3709,9 @@ void MacroAssembler::patchCall(uint32_t callerOffset, uint32_t calleeOffset) {
     Instruction* auipc_ = (Instruction*)editSrc(call);
     Instruction* jalr_ = (Instruction*)editSrc(
         BufferOffset(callerOffset - 1 * sizeof(uint32_t)));
-    DEBUG_PRINTF("\t%p %lu\n\t", auipc_, callerOffset - 2 * sizeof(uint32_t));
+    DEBUG_PRINTF("\t%p %zu\n\t", auipc_, callerOffset - 2 * sizeof(uint32_t));
     disassembleInstr(auipc_->InstructionBits());
-    DEBUG_PRINTF("\t%p %lu\n\t", jalr_, callerOffset - 1 * sizeof(uint32_t));
+    DEBUG_PRINTF("\t%p %zu\n\t", jalr_, callerOffset - 1 * sizeof(uint32_t));
     disassembleInstr(jalr_->InstructionBits());
     DEBUG_PRINTF("\t\n");
     MOZ_ASSERT(IsJalr(jalr_->InstructionBits()) &&
@@ -4091,9 +4359,8 @@ static void CompareExchange(MacroAssembler& masm,
     }
 
     masm.lr_w(true, true, output, scratch2);
-    masm.ma_li(scratch1, Imm64(UINT32_MAX));
-    masm.and_(oldval, oldval, scratch1);
-    masm.ma_b(output, oldval, &end, Assembler::NotEqual, ShortJump);
+    masm.SignExtendWord(scratch1, oldval);
+    masm.ma_b(output, scratch1, &end, Assembler::NotEqual, ShortJump);
     masm.mv(scratch1, newval);
     masm.sc_w(true, true, scratch1, scratch2, scratch1);
     masm.ma_b(scratch1, scratch1, &again, Assembler::NonZero, ShortJump);
@@ -4696,14 +4963,14 @@ bool MacroAssemblerRiscv64::BranchShortCheck(int32_t offset, Label* L,
 
 void MacroAssemblerRiscv64::BranchShort(Label* L) { BranchShortHelper(0, L); }
 
-void MacroAssemblerRiscv64::BranchShort(int32_t offset, Condition cond,
+bool MacroAssemblerRiscv64::BranchShort(int32_t offset, Condition cond,
                                         Register rs, const Operand& rt) {
-  BranchShortCheck(offset, nullptr, cond, rs, rt);
+  return BranchShortCheck(offset, nullptr, cond, rs, rt);
 }
 
-void MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
+bool MacroAssemblerRiscv64::BranchShort(Label* L, Condition cond, Register rs,
                                         const Operand& rt) {
-  BranchShortCheck(0, L, cond, rs, rt);
+  return BranchShortCheck(0, L, cond, rs, rt);
 }
 
 void MacroAssemblerRiscv64::BranchLong(Label* L) {
@@ -4733,7 +5000,7 @@ void MacroAssemblerRiscv64::ma_branch(Label* L, Condition cond, Register rs,
     if (cond != Always) {
       Label skip;
       Condition neg_cond = InvertCondition(cond);
-      BranchShort(&skip, neg_cond, rs, rt);
+      (void)BranchShort(&skip, neg_cond, rs, rt);  // Guaranteed to be short.
       BranchLong(L);
       bind(&skip);
     } else {
@@ -4745,7 +5012,7 @@ void MacroAssemblerRiscv64::ma_branch(Label* L, Condition cond, Register rs,
       if (cond != Always) {
         Label skip;
         Condition neg_cond = InvertCondition(cond);
-        BranchShort(&skip, neg_cond, rs, rt);
+        (void)BranchShort(&skip, neg_cond, rs, rt);  // Guaranteed to be short.
         BranchLong(L);
         bind(&skip);
       } else {
@@ -4753,7 +5020,9 @@ void MacroAssemblerRiscv64::ma_branch(Label* L, Condition cond, Register rs,
         EmitConstPoolWithJumpIfNeeded();
       }
     } else {
-      BranchShort(L, cond, rs, rt);
+      if (!BranchShort(L, cond, rs, rt)) {
+        ma_branch(L, cond, rs, rt, LongJump);
+      }
     }
   }
 }
@@ -4871,20 +5140,28 @@ void MacroAssemblerRiscv64::InsertBits(Register dest, Register source, int pos,
   MOZ_ASSERT(size < 32);
 #endif
   UseScratchRegisterScope temps(this);
-  Register mask = temps.Acquire();
   BlockTrampolinePoolScope block_trampoline_pool(this, 9);
   Register source_ = temps.Acquire();
-  // Create a mask of the length=size.
-  ma_li(mask, Imm32(1));
-  slli(mask, mask, size);
-  addi(mask, mask, -1);
-  and_(source_, mask, source);
-  slli(source_, source_, pos);
-  // Make a mask containing 0's. 0's start at "pos" with length=size.
-  slli(mask, mask, pos);
-  not_(mask, mask);
-  // cut area for insertion of source.
-  and_(dest, mask, dest);
+  if (pos != 0) {
+    Register mask = temps.Acquire();
+    // Create a mask of the length=size.
+    ma_li(mask, Imm32(1));
+    slli(mask, mask, size);
+    addi(mask, mask, -1);
+    and_(source_, mask, source);
+    slli(source_, source_, pos);
+    // Make a mask containing 0's. 0's start at "pos" with length=size.
+    slli(mask, mask, pos);
+    not_(mask, mask);
+    // cut area for insertion of source.
+    and_(dest, mask, dest);
+  } else {
+    // clear top bits from source and bottom bits from dest.
+    slli(source_, source, 64 - size);
+    srli(source_, source_, 64 - size);
+    srli(dest, dest, size);
+    slli(dest, dest, size);
+  }
   // insert source
   or_(dest, dest, source_);
 }

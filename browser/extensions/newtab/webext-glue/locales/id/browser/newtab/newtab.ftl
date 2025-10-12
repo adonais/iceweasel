@@ -303,9 +303,6 @@ newtab-custom-pocket-sponsored = Konten bersponsor
 newtab-custom-pocket-show-recent-saves = Tampilkan penyimpanan terbaru
 newtab-custom-recent-title = Aktivitas terbaru
 newtab-custom-recent-subtitle = Pilihan situs dan konten terbaru
-newtab-custom-recent-toggle =
-    .label = Aktivitas terbaru
-    .description = Pilihan situs dan konten terbaru
 newtab-custom-weather-toggle =
     .label = Cuaca
     .description = Sekilas prakiraan cuaca hari ini
@@ -426,7 +423,6 @@ newtab-weather-menu-change-location = Ubah lokasi
 newtab-weather-change-location-search-input-placeholder =
     .placeholder = Cari lokasi
     .aria-label = Cari lokasi
-newtab-weather-change-location-search-input = Cari lokasi
 newtab-weather-menu-weather-display = Tampilan cuaca
 # Display options are:
 # - Simple: Displays a current weather condition icon and the current temperature

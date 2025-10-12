@@ -87,12 +87,9 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   // calculated value for the progress circle; 1 = 100%
   const [progress, setProgress] = useState(0);
-  const [progressVisible, setProgressVisible] = useState(false);
 
   const activeMinutesRef = useRef(null);
   const activeSecondsRef = useRef(null);
-  const idleMinutesRef = useRef(null);
-  const idleSecondsRef = useRef(null);
   const arcRef = useRef(null);
 
   const timerType = useSelector(state => state.TimerWidget.timerType);
@@ -128,14 +125,6 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
   const prefs = useSelector(state => state.Prefs.values);
   const showSystemNotifications =
     prefs["widgets.focusTimer.showSystemNotifications"];
-
-  // If the timer is running, set the progress visibility to true
-  // This helps persist progressbar visibility on refresh/opening a new tab
-  useEffect(() => {
-    if (isRunning) {
-      setProgressVisible(true);
-    }
-  }, [isRunning]);
 
   useEffect(() => {
     // resets default values after timer ends
@@ -177,9 +166,6 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
 
             // There's more to see!
             setTimeout(() => {
-              // progress circle rolls up to show timer in the default state
-              setProgressVisible(false);
-
               // switch over to the other timer type
               // eslint-disable-next-line max-nested-callbacks
               batch(() => {
@@ -238,17 +224,12 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
     if (arcRef?.current) {
       arcRef.current.style.clipPath = getClipPath(progress);
     }
-  }, [progress]);
+  }, [progress, timerType]);
 
   // set timer function
   const setTimerDuration = () => {
-    const minutesEl = progressVisible
-      ? activeMinutesRef.current
-      : idleMinutesRef.current;
-
-    const secondsEl = progressVisible
-      ? activeSecondsRef.current
-      : idleSecondsRef.current;
+    const minutesEl = activeMinutesRef.current;
+    const secondsEl = activeSecondsRef.current;
 
     const minutesValue = minutesEl.innerText.trim() || "0";
     const secondsValue = secondsEl.innerText.trim() || "0";
@@ -289,8 +270,6 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
   // Pause timer function
   const toggleTimer = () => {
     if (!isRunning && duration > 0) {
-      setProgressVisible(true);
-
       batch(() => {
         dispatch(
           ac.AlsoToMain({
@@ -354,10 +333,6 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
     // Reset progress value and gradient arc on the progress circle
     resetProgressCircle();
 
-    // Transition the timer back to the default state if it was expanded
-    if (progressVisible) {
-      setProgressVisible(false);
-    }
     handleTimerInteraction();
   };
 
@@ -523,19 +498,8 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
         timerRef.current = [el];
       }}
     >
-      <div className="focus-timer-tabs">
-        <div className="focus-timer-tabs-buttons">
-          <moz-button
-            type={timerType === "focus" ? "primary" : "ghost"}
-            data-l10n-id="newtab-widget-timer-mode-focus"
-            onClick={() => toggleType("focus")}
-          />
-          <moz-button
-            type={timerType === "break" ? "primary" : "ghost"}
-            data-l10n-id="newtab-widget-timer-mode-break"
-            onClick={() => toggleType("break")}
-          />
-        </div>
+      <div className="newtab-widget-timer-notification-title-wrapper">
+        <h3 data-l10n-id="newtab-widget-timer-notification-title"></h3>
         <div className="focus-timer-context-menu-wrapper">
           <moz-button
             className="focus-timer-context-menu-button"
@@ -570,12 +534,33 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
           </panel-list>
         </div>
       </div>
-
+      <div className="focus-timer-tabs">
+        <div className="focus-timer-tabs-buttons">
+          <moz-button
+            type={timerType === "focus" ? "default" : "ghost"}
+            data-l10n-id="newtab-widget-timer-mode-focus"
+            size="small"
+            onClick={() => toggleType("focus")}
+          />
+          <moz-button
+            type={timerType === "break" ? "default" : "ghost"}
+            data-l10n-id="newtab-widget-timer-mode-break"
+            size="small"
+            onClick={() => toggleType("break")}
+          />
+        </div>
+      </div>
       <div
         role="progress"
-        className={`progress-circle-wrapper${progressVisible ? " visible" : ""}`}
+        className={`progress-circle-wrapper ${
+          !showSystemNotifications && !timerData[timerType].isRunning
+            ? "is-small"
+            : ""
+        }`}
       >
-        <div className="progress-circle-background" />
+        <div
+          className={`progress-circle-background${timerType === "break" ? "-break" : ""}`}
+        />
 
         <div
           className={`progress-circle ${timerType === "focus" ? "focus-visible" : "focus-hidden"}`}
@@ -583,75 +568,54 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
         />
 
         <div
-          className={`progress-circle ${timerType === "break" ? "progress-circle-break break-visible" : "break-hidden"}`}
+          className={`progress-circle ${timerType === "break" ? "break-visible" : "break-hidden"}`}
           ref={timerType === "break" ? arcRef : null}
         />
 
         <div
           className={`progress-circle-complete${progress === 1 ? " visible" : ""}`}
         />
-        {progressVisible && (
-          <div role="timer" className="progress-circle-label">
-            <EditableTimerFields
-              minutesRef={activeMinutesRef}
-              secondsRef={activeSecondsRef}
-              onKeyDown={handleKeyDown}
-              onBeforeInput={handleBeforeInput}
-              onFocus={handleFocus}
-              timeLeft={timeLeft}
-              onBlur={() => setTimerDuration()}
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="set-timer-controls-wrapper">
-        <div
-          role="timer"
-          className={`set-timer-countdown progress-circle-label${progressVisible ? " hidden" : ""}`}
-          aria-hidden={progressVisible}
-        >
+        <div role="timer" className="progress-circle-label">
           <EditableTimerFields
-            minutesRef={idleMinutesRef}
-            secondsRef={idleSecondsRef}
+            minutesRef={activeMinutesRef}
+            secondsRef={activeSecondsRef}
             onKeyDown={handleKeyDown}
             onBeforeInput={handleBeforeInput}
             onFocus={handleFocus}
             timeLeft={timeLeft}
-            tabIndex={progressVisible ? -1 : 0}
             onBlur={() => setTimerDuration()}
           />
         </div>
+      </div>
 
-        <div
-          className={`focus-timer-controls ${progressVisible ? "timer-running" : " "}`}
-        >
+      <div className="set-timer-controls-wrapper">
+        <div className={`focus-timer-controls timer-running`}>
           <moz-button
-            type="primary"
+            {...(!isRunning ? { type: "primary" } : {})}
             iconsrc={`chrome://global/skin/media/${isRunning ? "pause" : "play"}-fill.svg`}
             data-l10n-id={
               isRunning
-                ? "newtab-widget-timer-pause"
-                : "newtab-widget-timer-play"
+                ? "newtab-widget-timer-label-pause"
+                : "newtab-widget-timer-label-play"
             }
             onClick={toggleTimer}
           />
-          <moz-button
-            type="icon ghost"
-            iconsrc="chrome://newtab/content/data/content/assets/arrow-clockwise-16.svg"
-            data-l10n-id="newtab-widget-timer-reset"
-            onClick={resetTimer}
-          />
+          {isRunning && (
+            <moz-button
+              type="icon ghost"
+              iconsrc="chrome://newtab/content/data/content/assets/arrow-clockwise-16.svg"
+              data-l10n-id="newtab-widget-timer-reset"
+              onClick={resetTimer}
+            />
+          )}
         </div>
       </div>
-      {!showSystemNotifications &&
-        !timerData[timerType].isRunning &&
-        !progressVisible && (
-          <p
-            className="timer-notification-status"
-            data-l10n-id="newtab-widget-timer-notification-warning"
-          ></p>
-        )}
+      {!showSystemNotifications && !timerData[timerType].isRunning && (
+        <p
+          className="timer-notification-status"
+          data-l10n-id="newtab-widget-timer-notification-warning"
+        ></p>
+      )}
     </article>
   ) : null;
 };

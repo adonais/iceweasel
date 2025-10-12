@@ -100,7 +100,7 @@ class IonICEntry;
 class BaselineEntry;
 class BaselineInterpreterEntry;
 class DummyEntry;
-class SelfHostedSharedEntry;
+class RealmIndependentSharedEntry;
 
 // Base class for all entries.
 class JitcodeGlobalEntry : public JitCodeRange {
@@ -119,7 +119,7 @@ class JitcodeGlobalEntry : public JitCodeRange {
     Baseline,
     BaselineInterpreter,
     Dummy,
-    SelfHostedShared,
+    RealmIndependentShared,
   };
 
  protected:
@@ -165,21 +165,23 @@ class JitcodeGlobalEntry : public JitCodeRange {
     return kind() == Kind::BaselineInterpreter;
   }
   bool isDummy() const { return kind() == Kind::Dummy; }
-  bool isSelfHostedShared() const { return kind() == Kind::SelfHostedShared; }
+  bool isRealmIndependentShared() const {
+    return kind() == Kind::RealmIndependentShared;
+  }
 
   inline const IonEntry& asIon() const;
   inline const IonICEntry& asIonIC() const;
   inline const BaselineEntry& asBaseline() const;
   inline const BaselineInterpreterEntry& asBaselineInterpreter() const;
   inline const DummyEntry& asDummy() const;
-  inline const SelfHostedSharedEntry& asSelfHostedShared() const;
+  inline const RealmIndependentSharedEntry& asRealmIndependentShared() const;
 
   inline IonEntry& asIon();
   inline IonICEntry& asIonIC();
   inline BaselineEntry& asBaseline();
   inline BaselineInterpreterEntry& asBaselineInterpreter();
   inline DummyEntry& asDummy();
-  inline SelfHostedSharedEntry& asSelfHostedShared();
+  inline RealmIndependentSharedEntry& asRealmIndependentShared();
 
   JitCode* jitcode() const { return jitcode_; }
   JitCode** jitcodePtr() { return &jitcode_; }
@@ -346,13 +348,13 @@ class BaselineEntry : public JitcodeGlobalEntry {
   bool trace(JSTracer* trc);
 };
 
-class SelfHostedSharedEntry : public JitcodeGlobalEntry {
+class RealmIndependentSharedEntry : public JitcodeGlobalEntry {
   UniqueChars str_;
 
  public:
-  SelfHostedSharedEntry(JitCode* code, void* nativeStartAddr,
-                        void* nativeEndAddr, UniqueChars str)
-      : JitcodeGlobalEntry(Kind::SelfHostedShared, code, nativeStartAddr,
+  RealmIndependentSharedEntry(JitCode* code, void* nativeStartAddr,
+                              void* nativeEndAddr, UniqueChars str)
+      : JitcodeGlobalEntry(Kind::RealmIndependentShared, code, nativeStartAddr,
                            nativeEndAddr),
         str_(std::move(str)) {
     MOZ_ASSERT(str_);
@@ -432,10 +434,10 @@ inline const DummyEntry& JitcodeGlobalEntry::asDummy() const {
   return *static_cast<const DummyEntry*>(this);
 }
 
-inline const SelfHostedSharedEntry& JitcodeGlobalEntry::asSelfHostedShared()
-    const {
-  MOZ_ASSERT(isSelfHostedShared());
-  return *static_cast<const SelfHostedSharedEntry*>(this);
+inline const RealmIndependentSharedEntry&
+JitcodeGlobalEntry::asRealmIndependentShared() const {
+  MOZ_ASSERT(isRealmIndependentShared());
+  return *static_cast<const RealmIndependentSharedEntry*>(this);
 }
 
 inline IonEntry& JitcodeGlobalEntry::asIon() {
@@ -463,9 +465,10 @@ inline DummyEntry& JitcodeGlobalEntry::asDummy() {
   return *static_cast<DummyEntry*>(this);
 }
 
-inline SelfHostedSharedEntry& JitcodeGlobalEntry::asSelfHostedShared() {
-  MOZ_ASSERT(isSelfHostedShared());
-  return *static_cast<SelfHostedSharedEntry*>(this);
+inline RealmIndependentSharedEntry&
+JitcodeGlobalEntry::asRealmIndependentShared() {
+  MOZ_ASSERT(isRealmIndependentShared());
+  return *static_cast<RealmIndependentSharedEntry*>(this);
 }
 
 // Global table of JitcodeGlobalEntry entries.

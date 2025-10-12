@@ -38,6 +38,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
+#include "nsGlobalWindowInner.h"
 #include "nsRFPService.h"
 
 #define PERFLOG(msg, ...) printf_stderr(msg, ##__VA_ARGS__)

@@ -34,7 +34,9 @@ BUNDLETOOL_URL = f"https://github.com/google/bundletool/releases/download/{BUNDL
 X86_64_ANDROID_AVD = "linux64-android-avd-x86_64-repack"
 ARM64_ANDROID_AVD = "linux64-android-avd-arm64-repack"
 
-AVD_MANIFEST_X86_64 = Path(__file__).resolve().parent / "android-avds/x86_64.json"
+AVD_MANIFEST_X86_64 = (
+    Path(__file__).resolve().parent / "android-avds/android34-x86_64.json"
+)
 AVD_MANIFEST_ARM64 = Path(__file__).resolve().parent / "android-avds/arm64.json"
 
 MOZBUILD_PATH = Path(get_state_dir())

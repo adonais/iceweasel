@@ -130,6 +130,7 @@ class DMABufSurface {
   };
   int32_t GetFOURCCFormat() const { return mFOURCCFormat; };
   virtual int GetTextureCount() = 0;
+  virtual bool HoldsTexture() = 0;
 
 #ifdef MOZ_LOGGING
   bool IsMapped(int aPlane = 0) { return (mMappedRegion[aPlane] != nullptr); };
@@ -292,6 +293,8 @@ class DMABufSurface {
   RefPtr<mozilla::gfx::FileHandleWrapper> mSyncFd;
   EGLSyncKHR mSync;
   RefPtr<mozilla::gfx::FileHandleWrapper> mSemaphoreFd;
+  // mGL is tied to textures/eglimages created over dmabuf and it's null for
+  // dmabuf without textures/eglimages.
   RefPtr<mozilla::gl::GLContext> mGL;
 
   // Inter process properties, used to share DMABuf among various processes
@@ -366,6 +369,7 @@ class DMABufSurfaceRGBA final : public DMABufSurface {
 #endif
 
   int GetTextureCount() override { return 1; };
+  bool HoldsTexture() override;
 
 #ifdef MOZ_LOGGING
   void DumpToFile(const char* pFile) override;
@@ -446,6 +450,7 @@ class DMABufSurfaceYUV final : public DMABufSurface {
   };
 
   int GetTextureCount() override;
+  bool HoldsTexture() override;
 
   void SetYUVColorSpace(mozilla::gfx::YUVColorSpace aColorSpace) {
     mColorSpace = aColorSpace;

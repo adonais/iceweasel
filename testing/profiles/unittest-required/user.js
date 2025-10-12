@@ -41,6 +41,8 @@ user_pref("browser.safebrowsing.provider.google.gethashURL", "http://{server}/sa
 user_pref("browser.safebrowsing.provider.google.updateURL", "http://{server}/safebrowsing-dummy/update");
 user_pref("browser.safebrowsing.provider.google4.gethashURL", "http://{server}/safebrowsing4-dummy/gethash");
 user_pref("browser.safebrowsing.provider.google4.updateURL", "http://{server}/safebrowsing4-dummy/update");
+user_pref("browser.safebrowsing.provider.google5.gethashURL", "http://{server}/safebrowsing5-dummy/gethash");
+user_pref("browser.safebrowsing.provider.google5.updateURL", "http://{server}/safebrowsing5-dummy/update");
 user_pref("browser.safebrowsing.provider.mozilla.gethashURL", "http://{server}/safebrowsing-dummy/gethash");
 user_pref("browser.safebrowsing.provider.mozilla.updateURL", "http://{server}/safebrowsing-dummy/update");
 user_pref("browser.search.suggest.timeout", 10000); // use a 10s suggestion timeout in tests

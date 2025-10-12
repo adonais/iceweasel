@@ -6,7 +6,7 @@
 
 #include "CamerasParent.h"
 
-#include <atomic>
+#include <algorithm>
 
 #include "CamerasTypes.h"
 #include "MediaEngineSource.h"
@@ -16,15 +16,12 @@
 #include "api/video/video_frame_buffer.h"
 #include "common/browser_logging/WebRtcLog.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/BasePrincipal.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_media.h"
-#include "mozilla/StaticPrefs_permissions.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
@@ -57,6 +54,7 @@ mozilla::LazyLogModule gCamerasParentLog("CamerasParent");
 #define LOG_ENABLED() MOZ_LOG_TEST(gCamerasParentLog, mozilla::LogLevel::Debug)
 
 namespace mozilla {
+using dom::VideoResizeModeEnum;
 using media::ShutdownBlockingTicket;
 namespace camera {
 
@@ -370,6 +368,18 @@ ShmemBuffer CamerasParent::GetBuffer(size_t aSize) {
   return mShmemPool.GetIfAvailable(aSize);
 }
 
+void CallbackHelper::SetConfiguration(
+    const webrtc::VideoCaptureCapability& aCapability,
+    const NormalizedConstraints& aConstraints,
+    const dom::VideoResizeModeEnum& aResizeMode) {
+  auto c = mConfiguration.Lock();
+  c.ref() = Configuration{
+      .mCapability = aCapability,
+      .mConstraints = aConstraints,
+      .mResizeMode = aResizeMode,
+  };
+}
+
 void CallbackHelper::OnCaptureEnded() {
   nsIEventTarget* target = mParent->GetBackgroundEventTarget();
 
@@ -378,6 +388,30 @@ void CallbackHelper::OnCaptureEnded() {
 }
 
 void CallbackHelper::OnFrame(const webrtc::VideoFrame& aVideoFrame) {
+  {
+    // Proactively drop frames that would not get processed anyway.
+    auto c = mConfiguration.Lock();
+
+    const double maxFramerate = static_cast<double>(
+        c->mCapability.maxFPS > 0 ? c->mCapability.maxFPS : 120);
+    const double desiredFramerate =
+        c->mResizeMode == VideoResizeModeEnum::Crop_and_scale
+            ? c->mConstraints.mFrameRate.Get(maxFramerate)
+            : maxFramerate;
+    const double targetFramerate = std::clamp(desiredFramerate, 0.01, 120.);
+
+    // Allow 5% higher fps than configured as frame time sampling is timing
+    // dependent.
+    const auto minInterval =
+        media::TimeUnit(1000, static_cast<int64_t>(1050 * targetFramerate));
+    const auto frameTime =
+        media::TimeUnit::FromMicroseconds(aVideoFrame.timestamp_us());
+    const auto frameInterval = frameTime - mLastFrameTime;
+    if (frameInterval < minInterval) {
+      return;
+    }
+    mLastFrameTime = frameTime;
+  }
   LOG_VERBOSE("CamerasParent(%p)::%s", mParent, __func__);
   if (profiler_thread_is_being_profiled_for_markers()) {
     PROFILER_MARKER_UNTYPED(
@@ -930,7 +964,9 @@ ipc::IPCResult CamerasParent::RecvReleaseCapture(
 
 ipc::IPCResult CamerasParent::RecvStartCapture(
     const CaptureEngine& aCapEngine, const int& aCaptureId,
-    const VideoCaptureCapability& aIpcCaps) {
+    const VideoCaptureCapability& aIpcCaps,
+    const NormalizedConstraints& aConstraints,
+    const dom::VideoResizeModeEnum& aResizeMode) {
   MOZ_ASSERT(mPBackgroundEventTarget->IsOnCurrentThread());
   MOZ_ASSERT(!mDestroyed);
 
@@ -939,7 +975,8 @@ ipc::IPCResult CamerasParent::RecvStartCapture(
   using Promise = MozPromise<int, bool, true>;
   InvokeAsync(
       mVideoCaptureThread, __func__,
-      [this, self = RefPtr(this), aCapEngine, aCaptureId, aIpcCaps] {
+      [this, self = RefPtr(this), aCapEngine, aCaptureId, aIpcCaps,
+       aConstraints, aResizeMode] {
         LOG_FUNCTION();
         int error = -1;
 
@@ -1036,36 +1073,40 @@ ipc::IPCResult CamerasParent::RecvStartCapture(
                 }
               }
 
-              bool cbhExists = false;
-              CallbackHelper** cbh = nullptr;
-              for (auto* cb : mCallbacks) {
+              CallbackHelper* cbh = nullptr;
+              for (auto& cb : mCallbacks) {
                 if (cb->mCapEngine == aCapEngine &&
                     cb->mStreamId == (uint32_t)aCaptureId) {
-                  cbhExists = true;
+                  cbh = cb.get();
                   break;
                 }
               }
-              if (!cbhExists) {
-                cbh = mCallbacks.AppendElement(new CallbackHelper(
-                    static_cast<CaptureEngine>(aCapEngine), aCaptureId, this));
+              bool cbhCreated = !cbh;
+              if (!cbh) {
+                cbh = mCallbacks
+                          .AppendElement(MakeUnique<CallbackHelper>(
+                              static_cast<CaptureEngine>(aCapEngine),
+                              aCaptureId, this))
+                          ->get();
                 cap.VideoCapture()->SetTrackingId(
-                    (*cbh)->mTrackingId.mUniqueInProcId);
+                    cbh->mTrackingId.mUniqueInProcId);
               }
 
+              cbh->SetConfiguration(capability, aConstraints, aResizeMode);
               error = cap.VideoCapture()->StartCapture(capability);
 
               if (!error) {
-                if (cbh) {
+                if (cbhCreated) {
                   cap.VideoCapture()->RegisterCaptureDataCallback(
                       static_cast<
                           webrtc::VideoSinkInterface<webrtc::VideoFrame>*>(
-                          *cbh));
+                          cbh));
                   if (auto* event = cap.CaptureEndedEvent();
-                      event && !(*cbh)->mConnectedToCaptureEnded) {
-                    (*cbh)->mCaptureEndedListener =
-                        event->Connect(mVideoCaptureThread, (*cbh),
+                      event && !cbh->mConnectedToCaptureEnded) {
+                    cbh->mCaptureEndedListener =
+                        event->Connect(mVideoCaptureThread, cbh,
                                        &CallbackHelper::OnCaptureEnded);
-                    (*cbh)->mConnectedToCaptureEnded = true;
+                    cbh->mConnectedToCaptureEnded = true;
                   }
                 }
               } else {
@@ -1148,7 +1189,7 @@ void CamerasParent::StopCapture(const CaptureEngine& aCapEngine,
     for (size_t i = mCallbacks.Length(); i > 0; i--) {
       if (mCallbacks[i - 1]->mCapEngine == aCapEngine &&
           mCallbacks[i - 1]->mStreamId == (uint32_t)aCaptureId) {
-        CallbackHelper* cbh = mCallbacks[i - 1];
+        CallbackHelper* cbh = mCallbacks[i - 1].get();
         engine->WithEntry(aCaptureId, [cbh, &aCaptureId](
                                           VideoEngine::CaptureEntry& cap) {
           if (cap.VideoCapture()) {
@@ -1162,7 +1203,6 @@ void CamerasParent::StopCapture(const CaptureEngine& aCapEngine,
           }
         });
         cbh->mCaptureEndedListener.DisconnectIfExists();
-        delete mCallbacks[i - 1];
         mCallbacks.RemoveElementAt(i - 1);
         break;
       }

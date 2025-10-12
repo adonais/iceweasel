@@ -44,7 +44,8 @@ already_AddRefed<Text> Text::SplitText(uint32_t aOffset, ErrorResult& aRv) {
   CharacterDataChangeInfo::Details details = {
       CharacterDataChangeInfo::Details::eSplit, newContent};
   nsresult rv =
-      SetTextInternal(cutStartOffset, cutLength, nullptr, 0, true, &details);
+      SetTextInternal(cutStartOffset, cutLength, nullptr, 0, true,
+                      MutationEffectOnScript::KeepTrustWorthiness, &details);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
     return nullptr;
@@ -53,7 +54,9 @@ already_AddRefed<Text> Text::SplitText(uint32_t aOffset, ErrorResult& aRv) {
   nsCOMPtr<nsINode> parent = GetParentNode();
   if (parent) {
     nsCOMPtr<nsIContent> beforeNode = GetNextSibling();
-    parent->InsertChildBefore(newContent, beforeNode, true, IgnoreErrors());
+    parent->InsertChildBefore(newContent, beforeNode, true, IgnoreErrors(),
+                              nullptr,
+                              MutationEffectOnScript::KeepTrustWorthiness);
   }
 
   return newContent.forget();

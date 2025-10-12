@@ -84,7 +84,7 @@ class Editor extends PureComponent {
       selectedSource: PropTypes.object,
       selectedSourceTextContent: PropTypes.object,
       selectedSourceIsBlackBoxed: PropTypes.bool,
-      closeTab: PropTypes.func.isRequired,
+      closeTabForSource: PropTypes.func.isRequired,
       toggleBreakpointAtLine: PropTypes.func.isRequired,
       conditionalPanelLocation: PropTypes.object,
       closeConditionalPanel: PropTypes.func.isRequired,
@@ -248,7 +248,7 @@ class Editor extends PureComponent {
     if (selectedSource) {
       e.preventDefault();
       e.stopPropagation();
-      this.props.closeTab(selectedSource, "shortcut");
+      this.props.closeTabForSource(selectedSource);
     }
   };
 
@@ -860,7 +860,7 @@ const mapDispatchToProps = dispatch => ({
       addBreakpointAtLine: actions.addBreakpointAtLine,
       jumpToMappedLocation: actions.jumpToMappedLocation,
       updateViewport: actions.updateViewport,
-      closeTab: actions.closeTab,
+      closeTabForSource: actions.closeTabForSource,
       showEditorContextMenu: actions.showEditorContextMenu,
       showEditorGutterContextMenu: actions.showEditorGutterContextMenu,
       selectLocation: actions.selectLocation,

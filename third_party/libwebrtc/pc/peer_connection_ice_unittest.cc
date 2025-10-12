@@ -158,7 +158,8 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
     pcf_deps.worker_thread = Thread::Current();
     pcf_deps.signaling_thread = Thread::Current();
     pcf_deps.socket_factory = &vss_;
-    auto network_manager = std::make_unique<FakeNetworkManager>();
+    auto network_manager =
+        std::make_unique<FakeNetworkManager>(pcf_deps.network_thread);
     auto* fake_network = network_manager.get();
     pcf_deps.network_manager = std::move(network_manager);
     pcf_deps.adm = FakeAudioCaptureModule::Create();
@@ -269,7 +270,7 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
             pc_wrapper_ptr->pc());
     PeerConnection* pc = static_cast<PeerConnection*>(pc_proxy->internal());
     for (const auto& transceiver : pc->GetTransceiversInternal()) {
-      if (transceiver->media_type() == webrtc::MediaType::AUDIO) {
+      if (transceiver->media_type() == MediaType::AUDIO) {
         auto dtls_transport = pc->LookupDtlsTransportByMidInternal(
             transceiver->internal()->channel()->mid());
         return dtls_transport->ice_transport()->internal()->GetIceRole();
@@ -361,11 +362,10 @@ TEST_P(PeerConnectionIceTest, OfferContainsGatheredCandidates) {
   // Start ICE candidate gathering by setting the local offer.
   ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
 
-  EXPECT_THAT(
-      WaitUntil([&] { return caller->IsIceGatheringDone(); },
-                ::testing::IsTrue(),
-                {.timeout = webrtc::TimeDelta::Millis(kIceCandidatesTimeout)}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return caller->IsIceGatheringDone(); },
+                        ::testing::IsTrue(),
+                        {.timeout = TimeDelta::Millis(kIceCandidatesTimeout)}),
+              IsRtcOk());
 
   auto offer = caller->CreateOffer();
   EXPECT_LT(0u, caller->observer()->GetCandidatesByMline(0).size());
@@ -386,11 +386,10 @@ TEST_P(PeerConnectionIceTest, AnswerContainsGatheredCandidates) {
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
   ASSERT_TRUE(callee->SetLocalDescription(callee->CreateAnswer()));
 
-  EXPECT_THAT(
-      WaitUntil([&] { return callee->IsIceGatheringDone(); },
-                ::testing::IsTrue(),
-                {.timeout = webrtc::TimeDelta::Millis(kIceCandidatesTimeout)}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return callee->IsIceGatheringDone(); },
+                        ::testing::IsTrue(),
+                        {.timeout = TimeDelta::Millis(kIceCandidatesTimeout)}),
+              IsRtcOk());
 
   auto* answer = callee->pc()->local_description();
   EXPECT_LT(0u, caller->observer()->GetCandidatesByMline(0).size());
@@ -717,11 +716,10 @@ TEST_P(PeerConnectionIceTest, CandidatesGeneratedForEachLocalInterface) {
   caller->network()->AddInterface(kLocalAddress2);
 
   caller->CreateOfferAndSetAsLocal();
-  EXPECT_THAT(
-      WaitUntil([&] { return caller->IsIceGatheringDone(); },
-                ::testing::IsTrue(),
-                {.timeout = webrtc::TimeDelta::Millis(kIceCandidatesTimeout)}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return caller->IsIceGatheringDone(); },
+                        ::testing::IsTrue(),
+                        {.timeout = TimeDelta::Millis(kIceCandidatesTimeout)}),
+              IsRtcOk());
 
   auto candidates = caller->observer()->GetCandidatesByMline(0);
   EXPECT_PRED_FORMAT2(AssertIpInCandidates, kLocalAddress1, candidates);
@@ -787,7 +785,7 @@ TEST_P(PeerConnectionIceTest, AsyncAddIceCandidateIsAddedToRemoteDescription) {
                                 });
   EXPECT_THAT(
       WaitUntil([&] { return operation_completed; }, ::testing::IsTrue(),
-                {.timeout = webrtc::TimeDelta::Millis(kWaitTimeout)}),
+                {.timeout = TimeDelta::Millis(kWaitTimeout)}),
       IsRtcOk());
 
   auto candidates = callee->GetIceCandidatesFromRemoteDescription();
@@ -839,7 +837,7 @@ TEST_P(PeerConnectionIceTest,
   EXPECT_FALSE(operation_completed);
   EXPECT_THAT(
       WaitUntil([&] { return answer_observer->called(); }, ::testing::IsTrue(),
-                {.timeout = webrtc::TimeDelta::Millis(kWaitTimeout)}),
+                {.timeout = TimeDelta::Millis(kWaitTimeout)}),
       IsRtcOk());
   // As soon as it does, AddIceCandidate() will execute without delay, so it
   // must also have completed.
@@ -864,7 +862,7 @@ TEST_P(PeerConnectionIceTest,
       });
   EXPECT_THAT(
       WaitUntil([&] { return operation_completed; }, ::testing::IsTrue(),
-                {.timeout = webrtc::TimeDelta::Millis(kWaitTimeout)}),
+                {.timeout = TimeDelta::Millis(kWaitTimeout)}),
       IsRtcOk());
 }
 
@@ -901,7 +899,7 @@ TEST_P(PeerConnectionIceTest,
   callee = nullptr;
   EXPECT_THAT(
       WaitUntil([&] { return operation_completed; }, ::testing::IsTrue(),
-                {.timeout = webrtc::TimeDelta::Millis(kWaitTimeout)}),
+                {.timeout = TimeDelta::Millis(kWaitTimeout)}),
       IsRtcOk());
 }
 
@@ -925,7 +923,7 @@ TEST_P(PeerConnectionIceTest, LocalDescriptionUpdatedWhenContinualGathering) {
             return caller->pc()->local_description()->candidates(0)->count();
           },
           ::testing::Gt(0),
-          {.timeout = webrtc::TimeDelta::Millis(kIceCandidatesTimeout)}),
+          {.timeout = TimeDelta::Millis(kIceCandidatesTimeout)}),
       IsRtcOk());
 }
 
@@ -952,7 +950,7 @@ TEST_P(PeerConnectionIceTest,
             return caller->pc()->local_description()->candidates(0)->count();
           },
           ::testing::Gt(0),
-          {.timeout = webrtc::TimeDelta::Millis(kIceCandidatesTimeout)}),
+          {.timeout = TimeDelta::Millis(kIceCandidatesTimeout)}),
       IsRtcOk());
 
   // Remove the only network interface, causing the PeerConnection to signal
@@ -965,7 +963,7 @@ TEST_P(PeerConnectionIceTest,
             return caller->pc()->local_description()->candidates(0)->count();
           },
           ::testing::Eq(0u),
-          {.timeout = webrtc::TimeDelta::Millis(kIceCandidatesTimeout)}),
+          {.timeout = TimeDelta::Millis(kIceCandidatesTimeout)}),
       IsRtcOk());
   EXPECT_LT(0, caller->observer()->num_candidates_removed_);
 }
@@ -983,11 +981,10 @@ TEST_P(PeerConnectionIceTest,
   // Start ICE candidate gathering by setting the local offer.
   ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
 
-  EXPECT_THAT(
-      WaitUntil([&] { return caller->IsIceGatheringDone(); },
-                ::testing::IsTrue(),
-                {.timeout = webrtc::TimeDelta::Millis(kIceCandidatesTimeout)}),
-      IsRtcOk());
+  EXPECT_THAT(WaitUntil([&] { return caller->IsIceGatheringDone(); },
+                        ::testing::IsTrue(),
+                        {.timeout = TimeDelta::Millis(kIceCandidatesTimeout)}),
+              IsRtcOk());
 
   caller->network()->RemoveInterface(kLocalAddress);
 

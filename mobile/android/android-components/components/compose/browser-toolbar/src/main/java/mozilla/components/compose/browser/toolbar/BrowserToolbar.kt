@@ -40,12 +40,13 @@ fun BrowserToolbar(
     if (uiState.isEditMode()) {
         BrowserEditToolbar(
             query = uiState.editState.query,
+            hint = stringResource(uiState.editState.hint),
             isQueryPrefilled = uiState.editState.isQueryPrefilled,
+            usePrivateModeQueries = uiState.editState.isQueryPrivate,
             gravity = uiState.gravity,
             autocompleteProviders = uiState.editState.autocompleteProviders,
             editActionsStart = uiState.editState.editActionsStart,
             editActionsEnd = uiState.editState.editActionsEnd,
-            hint = stringResource(uiState.editState.hint),
             onUrlCommitted = { text -> store.dispatch(CommitUrl(text)) },
             onUrlEdit = { text -> store.dispatch(SearchQueryUpdated(text)) },
             onUrlEditAborted = { store.dispatch(SearchAborted) },

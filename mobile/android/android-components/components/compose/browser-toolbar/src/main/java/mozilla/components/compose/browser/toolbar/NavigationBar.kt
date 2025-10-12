@@ -16,7 +16,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.browser.menu2.R
 import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.Action
@@ -25,6 +24,7 @@ import mozilla.components.compose.browser.toolbar.concept.Action.TabCounterActio
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
+import mozilla.components.browser.menu2.R as menu2R
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -102,7 +102,7 @@ private fun NavigationBarPreview() {
                 ),
                 ActionButtonRes(
                     drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
-                    contentDescription = R.string.mozac_browser_menu2_button,
+                    contentDescription = menu2R.string.mozac_browser_menu2_button,
                     onClick = object : BrowserToolbarEvent {},
                 ),
             ),

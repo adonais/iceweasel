@@ -72,6 +72,10 @@ reftest.Runner = class {
     this.useRemoteTabs = lazy.AppInfo.browserTabsRemoteAutostart;
     this.useRemoteSubframes = lazy.AppInfo.fissionAutostart;
     this.cacheScreenshots = true;
+    this.useDrawSnapshot = Services.prefs.getBoolPref(
+      "reftest.use-draw-snapshot",
+      false
+    );
   }
 
   /**
@@ -766,7 +770,7 @@ reftest.Runner = class {
         0, // top
         browserRect.width,
         browserRect.height,
-        { canvas, flags, readback: true }
+        { canvas, flags, readback: !this.useDrawSnapshot }
       );
     }
     if (

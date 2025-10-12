@@ -329,7 +329,7 @@ class BrowserParent final : public PBrowserParent,
 
   mozilla::ipc::IPCResult RecvSyncMessage(
       const nsString& aMessage, const ClonedMessageData& aData,
-      nsTArray<ipc::StructuredCloneData>* aRetVal);
+      nsTArray<UniquePtr<ipc::StructuredCloneData>>* aRetVal);
 
   mozilla::ipc::IPCResult RecvAsyncMessage(const nsString& aMessage,
                                            const ClonedMessageData& aData);
@@ -731,7 +731,7 @@ class BrowserParent final : public PBrowserParent,
 
   bool ReceiveMessage(
       const nsString& aMessage, bool aSync, ipc::StructuredCloneData* aData,
-      nsTArray<ipc::StructuredCloneData>* aJSONRetVal = nullptr);
+      nsTArray<UniquePtr<ipc::StructuredCloneData>>* aJSONRetVal = nullptr);
 
   virtual void ActorDestroy(ActorDestroyReason why) override;
 

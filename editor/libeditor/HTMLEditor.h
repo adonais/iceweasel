@@ -56,6 +56,7 @@ class ResizerSelectionListener;
 class Runnable;
 template <class T>
 class OwningNonNull;
+enum class LogLevel;
 namespace dom {
 class AbstractRange;
 class Blob;
@@ -102,6 +103,7 @@ class HTMLEditor final : public EditorBase,
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
   NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
+  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
 
   // nsIHTMLEditor methods
   NS_DECL_NSIHTMLEDITOR
@@ -1054,26 +1056,23 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   SetPositionToStatic(Element& aElement);
 
-  class DocumentModifiedEvent final : public Runnable {
-   public:
-    explicit DocumentModifiedEvent(HTMLEditor& aHTMLEditor)
-        : Runnable("DocumentModifiedEvent"), mHTMLEditor(aHTMLEditor) {}
+  /**
+   * Called when aRunner starts calling a DOM API to modify the DOM.
+   *
+   * @return The previous runner if the DOM API calls are unfortunately nested.
+   */
+  [[nodiscard]] const AutoDOMAPIWrapperBase* OnDOMAPICallStart(
+      const AutoDOMAPIWrapperBase& aRunner);
 
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() {
-      Unused << MOZ_KnownLive(mHTMLEditor)->OnModifyDocument(*this);
-      return NS_OK;
-    }
+  /**
+   * Called when aRunner ends calling a DOM API to modify the DOM.
+   *
+   * @param aPrevRunner Must be set to the result of the preceding
+   *                    OnDOMMutationStart() call.
+   */
+  void OnDOMAPICallEnd(const AutoDOMAPIWrapperBase* aPrevRunner);
 
-    const nsTArray<EditorDOMPointInText>& NewInvisibleWhiteSpacesRef() const {
-      return mNewInvisibleWhiteSpaces;
-    }
-
-   private:
-    ~DocumentModifiedEvent() = default;
-
-    const OwningNonNull<HTMLEditor> mHTMLEditor;
-    nsTArray<EditorDOMPointInText> mNewInvisibleWhiteSpaces;
-  };
+  class DocumentModifiedEvent;
 
   /**
    * OnModifyDocument() is called when the editor is changed.  This should
@@ -2015,8 +2014,8 @@ class HTMLEditor final : public EditorBase,
    * @param aPointToInsert      The insertion point.  The container must not
    *                            be a data node like a text node.
    */
-  [[nodiscard]] nsresult MoveAllChildren(
-      nsINode& aContainer, const EditorRawDOMPoint& aPointToInsert);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  MoveAllChildren(nsINode& aContainer, const EditorRawDOMPoint& aPointToInsert);
 
   /**
    * MoveChildrenBetween() moves all children between aFirstChild and aLastChild
@@ -2034,9 +2033,9 @@ class HTMLEditor final : public EditorBase,
    * @param aPointToInsert      The insertion point.  The container must not
    *                            be a data node like a text node.
    */
-  [[nodiscard]] nsresult MoveChildrenBetween(
-      nsIContent& aFirstChild, nsIContent& aLastChild,
-      const EditorRawDOMPoint& aPointToInsert);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  MoveChildrenBetween(nsIContent& aFirstChild, nsIContent& aLastChild,
+                      const EditorRawDOMPoint& aPointToInsert);
 
   /**
    * MovePreviousSiblings() moves all siblings before aChild (i.e., aChild
@@ -2048,7 +2047,7 @@ class HTMLEditor final : public EditorBase,
    * @param aPointToInsert      The insertion point.  The container must not
    *                            be a data node like a text node.
    */
-  [[nodiscard]] nsresult MovePreviousSiblings(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MovePreviousSiblings(
       nsIContent& aChild, const EditorRawDOMPoint& aPointToInsert);
 
   /**
@@ -2060,7 +2059,7 @@ class HTMLEditor final : public EditorBase,
    * @param aPointToInsert      The insertion point.  The container must not
    *                            be a data node like a text node.
    */
-  [[nodiscard]] nsresult MoveInclusiveNextSiblings(
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MoveInclusiveNextSiblings(
       nsIContent& aChild, const EditorRawDOMPoint& aPointToInsert);
 
   /**
@@ -2772,10 +2771,10 @@ class HTMLEditor final : public EditorBase,
   AddZIndexAsSubAction(int32_t aChange);
 
   /**
-   * OnDocumentModified() is called when editor content is changed.
+   * RunOrScheduleOnModifyDocument() is called when editor content is changed.
    */
-  MOZ_CAN_RUN_SCRIPT nsresult
-  OnDocumentModified(const nsIContent* aContentWillBeRemoved = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult RunOrScheduleOnModifyDocument(
+      const nsIContent* aContentWillBeRemoved = nullptr);
 
  protected:  // Called by helper classes.
   MOZ_CAN_RUN_SCRIPT void OnStartToHandleTopLevelEditSubAction(
@@ -2786,6 +2785,28 @@ class HTMLEditor final : public EditorBase,
 
  protected:  // Shouldn't be used by friend classes
   virtual ~HTMLEditor();
+
+  enum class DOMMutationType {
+    ContentAppended,
+    ContentInserted,
+    ContentWillBeRemoved,
+    CharacterDataChanged,
+  };
+  [[nodiscard]] LogLevel MutationLogLevelOf(
+      nsIContent* aContent,
+      const CharacterDataChangeInfo* aCharacterDataChangeInfo,
+      DOMMutationType aDOMMutationType) const;
+  [[nodiscard]] LogLevel AttrMutationLogLevelOf(
+      Element* aElement, int32_t aNameSpaceID, nsAtom* aAttribute,
+      AttrModType aModType, const nsAttrValue* aOldValue) const;
+
+  void MaybeLogContentAppended(nsIContent*) const;
+  void MaybeLogContentInserted(nsIContent*) const;
+  void MaybeLogContentWillBeRemoved(nsIContent*) const;
+  void MaybeLogCharacterDataChanged(nsIContent*,
+                                    const CharacterDataChangeInfo&) const;
+  void MaybeLogAttributeChanged(Element*, int32_t, nsAtom*, AttrModType,
+                                const nsAttrValue*) const;
 
   /**
    * InitEditorContentAndSelection() may insert `<br>` elements and padding
@@ -4295,14 +4316,17 @@ class HTMLEditor final : public EditorBase,
   /**
    * HideAnonymousEditingUIs() forcibly hides all editing UIs (resizers,
    * inline-table-editing UI, absolute positioning UI).
+   *
+   * XXX This method is called by the CC, therefore, needs to be a boundary
+   * method.
    */
-  void HideAnonymousEditingUIs();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void HideAnonymousEditingUIs();
 
   /**
    * HideAnonymousEditingUIsIfUnnecessary() hides all editing UIs if some of
    * visible UIs are now unnecessary.
    */
-  void HideAnonymousEditingUIsIfUnnecessary();
+  MOZ_CAN_RUN_SCRIPT void HideAnonymousEditingUIsIfUnnecessary();
 
   /**
    * sets the z-index of an element.
@@ -4332,7 +4356,7 @@ class HTMLEditor final : public EditorBase,
   /**
    * hide the grabber if it shown.
    */
-  void HideGrabberInternal();
+  MOZ_CAN_RUN_SCRIPT void HideGrabberInternal();
 
   /**
    * CreateGrabberInternal() creates a grabber for moving aParentContent.
@@ -4533,6 +4557,10 @@ class HTMLEditor final : public EditorBase,
   // This is set only when HandleInsertText appended a collapsible white-space.
   RefPtr<dom::Text> mLastCollapsibleWhiteSpaceAppendedTextNode;
 
+  // While this instance or its helper class updates the DOM with a DOM API,
+  // this is set to the wrapper class to call the DOM API.
+  const AutoDOMAPIWrapperBase* mRunningDOMAPIWrapper = nullptr;
+
   bool mCRInParagraphCreatesParagraph;
 
   // resizing
@@ -4638,6 +4666,8 @@ class HTMLEditor final : public EditorBase,
   friend class AutoClonedRangeArray;   // RangeUpdaterRef,
                                        // SplitNodeWithTransaction,
                                        // SplitInlineAncestorsAtRangeBoundaries
+  friend class AutoDOMAPIWrapperBase;  // OnDOMAPICallEnd,
+                                       // OnDOMAPICallStart,
   friend class AutoClonedSelectionRangeArray;  // RangeUpdaterRef,
   friend class AutoSelectionRestore;
   friend class AutoSelectionSetterAfterTableEdit;  // SetSelectionAfterEdit

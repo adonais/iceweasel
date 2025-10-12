@@ -403,6 +403,8 @@ class NetworkEventWatcher {
         resourceUpdates.contentSize = updateResource.contentSize;
         resourceUpdates.transferredSize = updateResource.transferredSize;
         resourceUpdates.mimeType = updateResource.mimeType;
+        break;
+      case NETWORK_EVENT_TYPES.RESPONSE_CONTENT_COMPLETE:
         resourceUpdates.blockingExtension = updateResource.blockingExtension;
         resourceUpdates.blockedReason = updateResource.blockedReason;
         break;
@@ -423,7 +425,7 @@ class NetworkEventWatcher {
 
     const isResponseComplete =
       receivedUpdates.includes(NETWORK_EVENT_TYPES.EVENT_TIMINGS) &&
-      receivedUpdates.includes(NETWORK_EVENT_TYPES.RESPONSE_CONTENT) &&
+      receivedUpdates.includes(NETWORK_EVENT_TYPES.RESPONSE_CONTENT_COMPLETE) &&
       receivedUpdates.includes(NETWORK_EVENT_TYPES.SECURITY_INFO);
 
     if (isResponseComplete) {
@@ -436,6 +438,7 @@ class NetworkEventWatcher {
 
     if (
       updateResource.updateType == NETWORK_EVENT_TYPES.RESPONSE_START ||
+      updateResource.updateType == NETWORK_EVENT_TYPES.RESPONSE_CONTENT ||
       isResponseComplete
     ) {
       this._emitUpdate(networkEvent);

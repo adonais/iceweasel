@@ -65,7 +65,7 @@ add_task(async function basic() {
   ).result;
   Assert.equal(
     tabToSearchResult.providerName,
-    "TabToSearch",
+    "UrlbarProviderTabToSearch",
     "The second result is a tab-to-search result."
   );
   Assert.equal(
@@ -139,7 +139,7 @@ add_task(async function activedescendant_tab() {
   );
   Assert.equal(
     tabToSearchRow.result.providerName,
-    "TabToSearch",
+    "UrlbarProviderTabToSearch",
     "The second result is a tab-to-search result."
   );
 
@@ -183,7 +183,7 @@ add_task(async function activedescendant_tab() {
   tabToSearchRow = await UrlbarTestUtils.waitForAutocompleteResultAt(window, 1);
   Assert.equal(
     tabToSearchRow.result.providerName,
-    "TabToSearch",
+    "UrlbarProviderTabToSearch",
     "The second result is a tab-to-search result."
   );
 
@@ -216,7 +216,7 @@ add_task(async function activedescendant_arrow() {
   );
   Assert.equal(
     tabToSearchRow.result.providerName,
-    "TabToSearch",
+    "UrlbarProviderTabToSearch",
     "The second result is a tab-to-search result."
   );
 
@@ -515,7 +515,7 @@ add_task(async function onboard_limit() {
     ).result;
     Assert.equal(
       tabToSearchResult.providerName,
-      "TabToSearch",
+      "UrlbarProviderTabToSearch",
       "The second result is a tab-to-search result."
     );
     Assert.equal(
@@ -544,7 +544,7 @@ add_task(async function onboard_limit() {
     ).result;
     Assert.equal(
       tabToSearchResult.providerName,
-      "TabToSearch",
+      "UrlbarProviderTabToSearch",
       "The second result is a tab-to-search result."
     );
     Assert.equal(
@@ -577,7 +577,7 @@ add_task(async function onboard_limit() {
   ).result;
   Assert.equal(
     tabToSearchResult.providerName,
-    "TabToSearch",
+    "UrlbarProviderTabToSearch",
     "The second result is a tab-to-search result."
   );
   Assert.notEqual(
@@ -624,7 +624,7 @@ add_task(async function onboard_multipleEnginesForHostname() {
   ).result;
   Assert.notEqual(
     firstResult.providerName,
-    "TabToSearch",
+    "UrlbarProviderTabToSearch",
     "The first result is not from TabToSearch."
   );
   let secondResult = (
@@ -632,7 +632,7 @@ add_task(async function onboard_multipleEnginesForHostname() {
   ).result;
   Assert.equal(
     secondResult.providerName,
-    "TabToSearch",
+    "UrlbarProviderTabToSearch",
     "The second result is from TabToSearch."
   );
   Assert.equal(

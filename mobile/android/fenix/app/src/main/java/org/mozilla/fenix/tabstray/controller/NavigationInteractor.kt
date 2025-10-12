@@ -5,9 +5,7 @@
 package org.mozilla.fenix.tabstray.controller
 
 import androidx.navigation.NavController
-import mozilla.components.browser.state.selector.getNormalOrPrivateTabs
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
@@ -32,11 +30,6 @@ interface NavigationInteractor {
      * Called when clicking the account settings button.
      */
     fun onAccountSettingsClicked()
-
-    /**
-     * Called when clicking the share tabs button.
-     */
-    fun onShareTabsOfTypeClicked(private: Boolean)
 
     /**
      * Called when clicking the tab settings button.
@@ -101,17 +94,6 @@ class DefaultNavigationInteractor(
             TabManagementFragmentDirections.actionGlobalRecentlyClosed(),
         )
         Events.recentlyClosedTabsOpened.record(NoExtras())
-    }
-
-    override fun onShareTabsOfTypeClicked(private: Boolean) {
-        val tabs = browserStore.state.getNormalOrPrivateTabs(private)
-        val data = tabs.map {
-            ShareData(url = it.content.url, title = it.content.title)
-        }
-        val directions = TabManagementFragmentDirections.actionGlobalShareFragment(
-            data = data.toTypedArray(),
-        )
-        navController.navigate(directions)
     }
 
     override fun onCloseAllTabsClicked(private: Boolean) {

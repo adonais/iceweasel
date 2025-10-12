@@ -381,6 +381,13 @@ class GeckoEngineSession(
     }
 
     /**
+     * See [EngineSession.flushSessionState]
+     */
+    override fun flushSessionState() {
+        geckoSession.flushSessionState()
+    }
+
+    /**
      * See [EngineSession.updateTrackingProtection]
      */
     override fun updateTrackingProtection(policy: TrackingProtectionPolicy) {

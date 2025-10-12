@@ -572,7 +572,7 @@ PRTime nsNavHistory::GetNow() {
     if (mExpireNowTimer)
       mExpireNowTimer->InitWithNamedFuncCallback(
           expireNowTimerCallback, this, RENEW_CACHED_NOW_TIMEOUT,
-          nsITimer::TYPE_ONE_SHOT, "nsNavHistory::GetNow");
+          nsITimer::TYPE_ONE_SHOT, "nsNavHistory::GetNow"_ns);
   }
   return mCachedNow;
 }
@@ -1849,6 +1849,47 @@ NS_IMETHODIMP
 nsNavHistory::SetShouldStartFrecencyRecalculation(bool aVal) {
   nsNavHistory::sShouldStartFrecencyRecalculation = aVal;
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsNavHistory::PageFrecencyThreshold(int32_t aVisitAgeInDays, int32_t aNumVisits,
+                                    bool aBookmarked, int64_t* aFrecency) {
+  NS_ENSURE_ARG_POINTER(aFrecency);
+  NS_ENSURE_TRUE(aNumVisits >= 0, NS_ERROR_INVALID_ARG);
+  NS_ENSURE_TRUE(aVisitAgeInDays >= 0, NS_ERROR_INVALID_ARG);
+
+  // Calculate the frecency threshold based on the input parameters.
+  *aFrecency = CalculateFrecency(aVisitAgeInDays, aNumVisits, aBookmarked);
+  return NS_OK;
+}
+
+int64_t nsNavHistory::CalculateFrecency(int32_t aVisitAgeInDays,
+                                        int32_t aNumVisits,
+                                        bool aBookmarked) const {
+  int32_t weight = this->GetFrecencyAgedWeight(aVisitAgeInDays);
+
+  if (aNumVisits) {
+    int32_t visitScore = this->GetFrecencyTransitionBonus(
+        nsINavHistoryService::TRANSITION_LINK, true, false);
+    if (aBookmarked) {
+      visitScore += this->GetFrecencyTransitionBonus(
+          nsINavHistoryService::TRANSITION_BOOKMARK, true);
+    }
+    int64_t perVisitScore =
+        static_cast<int64_t>(ceilf(static_cast<float>(weight) *
+                                   (static_cast<float>(visitScore) / 100.0f)));
+    return aNumVisits * perVisitScore;
+  }
+
+  if (aBookmarked) {
+    // Unvisited bookmark.
+    int32_t bookmarkScore = this->GetFrecencyTransitionBonus(
+        nsINavHistoryService::TRANSITION_BOOKMARK, true);
+    return static_cast<int64_t>(
+        ceilf(static_cast<float>(weight) *
+              (static_cast<float>(bookmarkScore) / 100.0f)));
+  }
+  return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

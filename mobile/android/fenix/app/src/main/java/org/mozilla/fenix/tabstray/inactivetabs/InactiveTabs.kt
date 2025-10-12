@@ -52,6 +52,7 @@ import org.mozilla.fenix.compose.list.FaviconListItem
 import org.mozilla.fenix.ext.toShortUrl
 import org.mozilla.fenix.tabstray.ext.toDisplayTitle
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(8.dp)
 
@@ -135,7 +136,7 @@ fun InactiveTabsList(
                             description = tabUrl,
                             faviconPainter = faviconPainter,
                             onClick = { onTabClick(tab) },
-                            iconPainter = painterResource(R.drawable.mozac_ic_cross_24),
+                            iconPainter = painterResource(iconsR.drawable.mozac_ic_cross_24),
                             iconDescription = stringResource(R.string.content_description_close_button),
                             onIconClick = { onTabCloseClick(tab) },
                         )
@@ -270,7 +271,7 @@ private fun InactiveTabsAutoClosePrompt(
                     modifier = Modifier.size(20.dp),
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.mozac_ic_cross_20),
+                        painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
                         contentDescription =
                         stringResource(R.string.tab_tray_inactive_auto_close_button_content_description),
                         tint = FirefoxTheme.colors.iconPrimary,

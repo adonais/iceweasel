@@ -23,7 +23,7 @@ from taskgraph.util.taskcluster import (
 )
 from taskgraph.util.yaml import load_yaml
 
-from gecko_taskgraph import GECKO
+from gecko_taskgraph import GECKO, TEST_CONFIGS
 from gecko_taskgraph.util.attributes import (
     is_try,
     match_run_on_hg_branches,
@@ -674,8 +674,7 @@ def target_tasks_custom_car_perf_testing(full_task_graph, parameters, graph_conf
             return False
 
         try_name = attributes.get("raptor_try_name")
-
-        if "network-bench" in try_name:
+        if "network-bench" in try_name and "linux" not in platform:
             return False
 
         # Desktop and Android selection for CaR
@@ -1637,9 +1636,7 @@ def target_tasks_android_l10n_sync(full_task_graph, parameters, graph_config):
 
 @register_target_task("os-integration")
 def target_tasks_os_integration(full_task_graph, parameters, graph_config):
-    candidate_attrs = load_yaml(
-        os.path.join(GECKO, "taskcluster", "kinds", "test", "os-integration.yml")
-    )
+    candidate_attrs = load_yaml(os.path.join(TEST_CONFIGS, "os-integration.yml"))
 
     labels = []
     for label, task in full_task_graph.tasks.items():

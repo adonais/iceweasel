@@ -3099,9 +3099,8 @@ struct CreateGlobalOptionsWithXPConnect {
 
 template <class T>
 using IsGlobalWithXPConnect =
-    std::integral_constant<bool,
-                           std::is_base_of<nsGlobalWindowInner, T>::value ||
-                               std::is_base_of<MessageManagerGlobal, T>::value>;
+    std::disjunction<std::is_base_of<nsGlobalWindowInner, T>,
+                     std::is_base_of<MessageManagerGlobal, T>>;
 
 template <class T>
 struct CreateGlobalOptions

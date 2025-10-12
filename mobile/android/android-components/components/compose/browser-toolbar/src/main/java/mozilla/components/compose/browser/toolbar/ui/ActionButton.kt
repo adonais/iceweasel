@@ -35,7 +35,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteractio
 import mozilla.components.compose.browser.toolbar.ui.MenuState.CLick
 import mozilla.components.compose.browser.toolbar.ui.MenuState.LongClick
 import mozilla.components.compose.browser.toolbar.ui.MenuState.None
-import mozilla.components.ui.icons.R
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A clickable icon used to represent an action that can be added to the toolbar.
@@ -217,7 +217,7 @@ private fun ActionButtonPreview() {
             ActionButton(
                 icon = AppCompatResources.getDrawable(
                     LocalContext.current,
-                    R.drawable.mozac_ic_web_extension_default_icon,
+                    iconsR.drawable.mozac_ic_web_extension_default_icon,
                 )!!,
                 contentDescription = "Test",
                 onClick = object : BrowserToolbarEvent {},
@@ -235,7 +235,7 @@ private fun HighlightedActionButtonPreview() {
             ActionButton(
                 icon = AppCompatResources.getDrawable(
                     LocalContext.current,
-                    R.drawable.mozac_ic_web_extension_default_icon,
+                    iconsR.drawable.mozac_ic_web_extension_default_icon,
                 )!!,
                 contentDescription = "Test",
                 onClick = object : BrowserToolbarEvent {},

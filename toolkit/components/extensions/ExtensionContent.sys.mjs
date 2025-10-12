@@ -360,7 +360,7 @@ class Script {
    *        execution details. This is usually a plain WebExtensionContentScript
    *        except when the script is run via `tabs.executeScript` or
    *        `scripting.executeScript`. In this case, the object may have some
-   *        extra properties: wantReturnValue, removeCSS, cssOrigin
+   *        extra properties: wantReturnValue, removeCSS
    */
   constructor(extension, matcher) {
     this.scriptType = "content_script";
@@ -1455,7 +1455,6 @@ export var ExtensionContent = {
     Object.assign(matcher, {
       wantReturnValue: options.wantReturnValue,
       removeCSS: options.removeCSS,
-      cssOrigin: options.cssOrigin,
     });
     let script = contentScripts.get(matcher);
 

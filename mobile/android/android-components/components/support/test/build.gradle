@@ -25,27 +25,23 @@ android {
 }
 
 dependencies {
+    api libs.mockito
+
     implementation project(':components:concept-fetch')
     implementation project(':components:support-base')
 
-    implementation libs.kotlin.coroutines
-    implementation libs.kotlin.reflect
-
-    implementation libs.androidx.test.junit
-    api libs.testing.mockito
-    implementation libs.testing.coroutines
     implementation libs.androidx.fragment
-    implementation  (libs.testing.robolectric) {
-        exclude group: 'org.apache.maven'
-    }
-
-    testImplementation libs.testing.maven.ant.tasks
-
     implementation libs.androidx.test.core
+    implementation libs.androidx.test.junit
+    implementation libs.kotlin.reflect
+    implementation libs.kotlinx.coroutines
+    implementation libs.kotlinx.coroutines.test
+    implementation libs.robolectric
+
+    testImplementation project(':components:support-ktx')
 
     testImplementation libs.androidx.core
     testImplementation libs.androidx.test.junit
-    testImplementation project(':components:support-ktx')
 }
 
 apply from: '../../../android-lint.gradle'

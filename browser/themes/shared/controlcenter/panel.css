@@ -45,31 +45,31 @@
 }
 
 /* Show the right elements for the right connection states. */
-#identity-popup[customroot=true] [when-customroot=true],
-#identity-popup[connection=not-secure] [when-connection~=not-secure],
-#identity-popup[connection=secure-cert-user-overridden] [when-connection~=secure-cert-user-overridden],
-#identity-popup[connection=secure-ev] [when-connection~=secure-ev],
-#identity-popup[connection=secure] [when-connection~=secure],
-#identity-popup[connection=chrome] [when-connection~=chrome],
-#identity-popup[connection=file] [when-connection~=file],
-#identity-popup[connection=associated] [when-connection~=associated],
-#identity-popup[connection=extension] [when-connection~=extension],
-#identity-popup[connection=cert-error-page] [when-connection~=cert-error-page],
-#identity-popup[connection=net-error-page] [when-connection~=net-error-page],
-#identity-popup[connection=https-only-error-page] [when-connection~=https-only-error-page],
+.site-information-popup[customroot=true] [when-customroot=true],
+.site-information-popup[connection=not-secure] [when-connection~=not-secure],
+.site-information-popup[connection=secure-cert-user-overridden] [when-connection~=secure-cert-user-overridden],
+.site-information-popup[connection=secure-ev] [when-connection~=secure-ev],
+.site-information-popup[connection=secure] [when-connection~=secure],
+.site-information-popup[connection=chrome] [when-connection~=chrome],
+.site-information-popup[connection=file] [when-connection~=file],
+.site-information-popup[connection=associated] [when-connection~=associated],
+.site-information-popup[connection=extension] [when-connection~=extension],
+.site-information-popup[connection=cert-error-page] [when-connection~=cert-error-page],
+.site-information-popup[connection=net-error-page] [when-connection~=net-error-page],
+.site-information-popup[connection=https-only-error-page] [when-connection~=https-only-error-page],
 /* Show weak cipher messages when needed. */
-#identity-popup[ciphers=weak] [when-ciphers~=weak],
+.site-information-popup[ciphers=weak] [when-ciphers~=weak],
 /* Show mixed content warnings when needed */
-#identity-popup[mixedcontent~=active-loaded] [when-mixedcontent=active-loaded],
-#identity-popup[mixedcontent~=passive-loaded]:not([mixedcontent~=active-loaded]) [when-mixedcontent=passive-loaded],
-#identity-popup[mixedcontent~=active-blocked]:not([mixedcontent~=passive-loaded]) [when-mixedcontent=active-blocked],
+.site-information-popup[mixedcontent~=active-loaded] [when-mixedcontent=active-loaded],
+.site-information-popup[mixedcontent~=passive-loaded]:not([mixedcontent~=active-loaded]) [when-mixedcontent=passive-loaded],
+.site-information-popup[mixedcontent~=active-blocked]:not([mixedcontent~=passive-loaded]) [when-mixedcontent=active-blocked],
 /* Show the right elements when there is mixed passive content loaded and active blocked. */
-#identity-popup[mixedcontent~=active-blocked][mixedcontent~=passive-loaded] [when-mixedcontent~=active-blocked][when-mixedcontent~=passive-loaded],
+.site-information-popup[mixedcontent~=active-blocked][mixedcontent~=passive-loaded] [when-mixedcontent~=active-blocked][when-mixedcontent~=passive-loaded],
 /* HTTPS-Only and HTTPS-First Mode */
-#identity-popup[httpsonlystatus=exception] [when-httpsonlystatus~=exception],
-#identity-popup[httpsonlystatus=upgraded] [when-httpsonlystatus~=upgraded],
-#identity-popup[httpsonlystatus=failed-top] [when-httpsonlystatus~=failed-top],
-#identity-popup[httpsonlystatus=failed-sub] [when-httpsonlystatus~=failed-sub],
+.site-information-popup[httpsonlystatus=exception] [when-httpsonlystatus~=exception],
+.site-information-popup[httpsonlystatus=upgraded] [when-httpsonlystatus~=upgraded],
+.site-information-popup[httpsonlystatus=failed-top] [when-httpsonlystatus~=failed-top],
+.site-information-popup[httpsonlystatus=failed-sub] [when-httpsonlystatus~=failed-sub],
 /* Show 'disable MCB' button always when there is mixed active content blocked. */
 #identity-popup-securityView-extended-info[mixedcontent~=active-blocked] > button[when-mixedcontent=active-blocked] {
   display: revert;
@@ -137,7 +137,7 @@
 
 /* CONTENT */
 
-:where(#protections-popup, #identity-popup) :is(description, label) {
+:where(#trustpanel-popup, #protections-popup, #identity-popup) :is(description, label) {
   margin: 0;
 }
 
@@ -188,8 +188,8 @@
 
 /* SECURITY */
 
-#identity-popup[mixedcontent~="active-loaded"] .identity-popup-connection-not-secure,
-#identity-popup:not([mixedcontent]) .identity-popup-connection-not-secure {
+.site-information-popup[mixedcontent~="active-loaded"] .identity-popup-connection-not-secure,
+.site-information-popup:not([mixedcontent]) .identity-popup-connection-not-secure {
   font-weight: bold;
 }
 
@@ -220,45 +220,45 @@
   min-height: 24px;
 }
 
-#identity-popup[connection="chrome"] .identity-popup-security-connection {
+.site-information-popup[connection="chrome"] .identity-popup-security-connection {
   list-style-image: url(chrome://branding/content/icon48.png);
 }
 
-#identity-popup[connection="file"] .identity-popup-security-connection {
+.site-information-popup[connection="file"] .identity-popup-security-connection {
   list-style-image: url(chrome://global/skin/icons/page-portrait.svg);
 }
 
-#identity-popup[connection="associated"] .identity-popup-security-connection {
+.site-information-popup[connection="associated"] .identity-popup-security-connection {
   list-style-image: url(chrome://global/skin/icons/info.svg);
 }
 
-#identity-popup[connection^="secure"] .identity-popup-security-connection {
+.site-information-popup[connection^="secure"] .identity-popup-security-connection {
   list-style-image: url(chrome://global/skin/icons/security.svg);
 }
 
 /* Use [isbroken] to make sure we don't show a warning lock on an http page. See Bug 1192162. */
-#identity-popup[ciphers="weak"] .identity-popup-security-connection,
-#identity-popup[mixedcontent~="passive-loaded"][isbroken] .identity-popup-security-connection {
+.site-information-popup[ciphers="weak"] .identity-popup-security-connection,
+.site-information-popup[mixedcontent~="passive-loaded"][isbroken] .identity-popup-security-connection {
   list-style-image: url(chrome://global/skin/icons/security-warning.svg);
   -moz-context-properties: fill, fill-opacity;
 }
 
-#identity-popup[connection="secure-cert-user-overridden"] .identity-popup-security-connection,
-#identity-popup[connection="cert-error-page"] .identity-popup-security-connection {
+.site-information-popup[connection="secure-cert-user-overridden"] .identity-popup-security-connection,
+.site-information-popup[connection="cert-error-page"] .identity-popup-security-connection {
   list-style-image: url(chrome://global/skin/icons/security-warning.svg);
   fill: unset;
 }
 
-#identity-popup[connection="net-error-page"] .identity-popup-security-connection {
+.site-information-popup[connection="net-error-page"] .identity-popup-security-connection {
   list-style-image: url(chrome://global/skin/icons/info.svg);
   fill: unset;
 }
 
-#identity-popup[mixedcontent~="active-loaded"][isbroken] .identity-popup-security-connection {
+.site-information-popup[mixedcontent~="active-loaded"][isbroken] .identity-popup-security-connection {
   list-style-image: url(chrome://browser/skin/controlcenter/mcb-disabled.svg);
 }
 
-#identity-popup[connection="extension"] .identity-popup-security-connection {
+.site-information-popup[connection="extension"] .identity-popup-security-connection {
   list-style-image: url(chrome://mozapps/skin/extensions/extension.svg);
 }
 
@@ -511,7 +511,7 @@
   padding-inline-end: 6px;
   background-color: var(--button-background-color);
   color: var(--button-text-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
 
   > .button-box > .button-icon {
     margin: 0;
@@ -695,6 +695,11 @@
   margin-inline-start: 16px;
 }
 
+#blocked-popup-indicator-item,
+#blocked-popup-indicator-item > label {
+  display: block;
+}
+
 #geo-access-indicator-item {
   font-size: 0.8em;
   color: var(--text-color-deemphasized);
@@ -791,18 +796,6 @@
   padding-inline-start: var(--space-large);
 }
 
-#trustpanel-popup-icon {
-  -moz-context-properties: fill, fill-opacity;
-  width: var(--icon-size);
-  height: var(--icon-size);
-  align-self: center;
-
-  &:not([src]),
-  &[src=""] {
-    display: none;
-  }
-}
-
 #trustpanel-popup-host {
   align-self: center;
 }
@@ -874,15 +867,27 @@
 }
 
 #trustpanel-connection-icon,
-#trustpanel-siteinfo-icon {
+#trustpanel-siteinfo-icon,
+#trustpanel-popup-icon {
   -moz-context-properties: fill, fill-opacity;
   width: var(--icon-size);
   height: var(--icon-size);
+  margin-inline-end: var(--space-xsmall);
+  align-self: center;
+}
+
+#trustpanel-connection-icon,
+#trustpanel-siteinfo-icon {
   list-style-image: url(chrome://global/skin/icons/security-broken.svg);
 
   #trustpanel-popup[connection^="secure"] & {
     list-style-image: url(chrome://global/skin/icons/security.svg);
   }
+}
+
+#trustpanel-popup-icon:not([src]),
+#trustpanel-popup-icon[src=""] {
+  display: none;
 }
 
 .trustpanel-section {

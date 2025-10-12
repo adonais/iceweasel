@@ -177,7 +177,7 @@ class nsXULPrototypeElement : public nsXULPrototypeNode {
   virtual ~nsXULPrototypeElement() { Unlink(); }
 
  public:
-  virtual void ReleaseSubtree() override {
+  void ReleaseSubtree() override {
     for (int32_t i = mChildren.Length() - 1; i >= 0; i--) {
       if (mChildren[i].get()) mChildren[i]->ReleaseSubtree();
     }
@@ -185,10 +185,10 @@ class nsXULPrototypeElement : public nsXULPrototypeNode {
     nsXULPrototypeNode::ReleaseSubtree();
   }
 
-  virtual nsresult Serialize(
+  nsresult Serialize(
       nsIObjectOutputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
       const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) override;
-  virtual nsresult Deserialize(
+  nsresult Deserialize(
       nsIObjectInputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
       nsIURI* aDocumentURI,
       const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) override;
@@ -220,12 +220,12 @@ class nsXULPrototypeScript : public nsXULPrototypeNode {
                           uint32_t aLineNo);
 
  public:
-  virtual nsresult Serialize(
+  nsresult Serialize(
       nsIObjectOutputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
       const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) override;
   nsresult SerializeOutOfLine(nsIObjectOutputStream* aStream,
                               nsXULPrototypeDocument* aProtoDoc);
-  virtual nsresult Deserialize(
+  nsresult Deserialize(
       nsIObjectInputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
       nsIURI* aDocumentURI,
       const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) override;
@@ -285,10 +285,10 @@ class nsXULPrototypeText : public nsXULPrototypeNode {
   virtual ~nsXULPrototypeText() = default;
 
  public:
-  virtual nsresult Serialize(
+  nsresult Serialize(
       nsIObjectOutputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
       const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) override;
-  virtual nsresult Deserialize(
+  nsresult Deserialize(
       nsIObjectInputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
       nsIURI* aDocumentURI,
       const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) override;
@@ -304,10 +304,10 @@ class nsXULPrototypePI : public nsXULPrototypeNode {
   virtual ~nsXULPrototypePI() = default;
 
  public:
-  virtual nsresult Serialize(
+  nsresult Serialize(
       nsIObjectOutputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
       const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) override;
-  virtual nsresult Deserialize(
+  nsresult Deserialize(
       nsIObjectInputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
       nsIURI* aDocumentURI,
       const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) override;
@@ -369,25 +369,23 @@ class nsXULElement : public nsStyledElement {
   // nsINode
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual nsresult PreHandleEvent(
-      mozilla::EventChainVisitor& aVisitor) override;
+  nsresult PreHandleEvent(mozilla::EventChainVisitor& aVisitor) override;
   // nsIContent
-  virtual nsresult BindToTree(BindContext&, nsINode& aParent) override;
-  virtual void UnbindFromTree(UnbindContext&) override;
-  virtual void DestroyContent() override;
-  virtual void DoneAddingChildren(bool aHaveNotified) override;
+  void DestroyContent() override;
+  nsresult BindToTree(BindContext&, nsINode& aParent) override;
+  void UnbindFromTree(UnbindContext&) override;
+  void DoneAddingChildren(bool aHaveNotified) override;
 
 #ifdef MOZ_DOM_LIST
-  virtual void List(FILE* out, int32_t aIndent) const override;
-  virtual void DumpContent(FILE* out, int32_t aIndent,
-                           bool aDumpAll) const override {}
+  void List(FILE* out, int32_t aIndent) const override;
+  void DumpContent(FILE* out, int32_t aIndent, bool aDumpAll) const override {}
 #endif
 
   MOZ_CAN_RUN_SCRIPT bool HasMenu();
   MOZ_CAN_RUN_SCRIPT void OpenMenu(bool aOpenFlag);
 
   MOZ_CAN_RUN_SCRIPT
-  virtual mozilla::Result<bool, nsresult> PerformAccesskey(
+  mozilla::Result<bool, nsresult> PerformAccesskey(
       bool aKeyCausesActivation, bool aIsTrustedEvent) override;
   MOZ_CAN_RUN_SCRIPT void ClickWithInputSource(uint16_t aInputSource,
                                                bool aIsTrustedEvent);
@@ -405,10 +403,9 @@ class nsXULElement : public nsStyledElement {
 
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
-  virtual nsresult Clone(mozilla::dom::NodeInfo*,
-                         nsINode** aResult) const override;
+  nsresult Clone(mozilla::dom::NodeInfo*, nsINode** aResult) const override;
 
-  virtual bool IsEventAttributeNameInternal(nsAtom* aName) override;
+  bool IsEventAttributeNameInternal(nsAtom* aName) override;
 
   using DOMString = mozilla::dom::DOMString;
   void GetXULAttr(nsAtom* aName, DOMString& aResult) const {
@@ -473,7 +470,11 @@ class nsXULElement : public nsStyledElement {
   void SetSrc(const nsAString& aValue, mozilla::ErrorResult& rv) {
     SetXULAttr(nsGkAtoms::src, aValue, rv);
   }
-  nsIControllers* GetControllers(mozilla::ErrorResult& rv);
+  nsIControllers* GetExtantControllers() const {
+    const nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
+    return slots ? slots->mControllers.get() : nullptr;
+  }
+  nsIControllers* EnsureControllers();
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Click(mozilla::dom::CallerType aCallerType);
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
@@ -527,13 +528,6 @@ class nsXULElement : public nsStyledElement {
  protected:
   void AddTooltipSupport();
   void RemoveTooltipSupport();
-
-  // Internal accessor. This shadows the 'Slots', and returns
-  // appropriate value.
-  nsIControllers* Controllers() {
-    nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
-    return slots ? slots->mControllers.get() : nullptr;
-  }
 
   bool SupportsAccessKey() const;
   void RegUnRegAccessKey(bool aDoReg) override;

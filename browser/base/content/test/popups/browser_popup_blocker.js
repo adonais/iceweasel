@@ -85,6 +85,28 @@ add_task(async function test_opening_blocked_popups_privateWindow() {
   await BrowserTestUtils.closeWindow(win);
 });
 
+// This is a test for Bug 1988311.
+// Make sure that everything also functions correctly on special pages,
+// such as "about:privatebrowsing".
+add_task(async function test_opening_blocked_popups_about_privatebrowsing() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "about:privatebrowsing"
+  );
+
+  const browser = tab.linkedBrowser;
+  const uri = Services.io.newURI(
+    "javascript:" +
+      `window.open("${baseURL}" + "popup_blocker_a.html");` +
+      `window.open("${baseURL}" + "popup_blocker_b.html");`
+  );
+  const triggeringPrincipal =
+    Services.scriptSecurityManager.getSystemPrincipal();
+
+  browser.loadURI(uri, { triggeringPrincipal });
+  await testPopupBlockingToolbar(tab);
+});
+
 async function testPopupBlockingToolbar(tab) {
   let win = tab.ownerGlobal;
   // Wait for the popup-blocked notification.

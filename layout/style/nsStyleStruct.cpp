@@ -189,6 +189,7 @@ nsStyleFont::nsStyleFont(const nsStyleFont& aSrc)
       mMinFontSizeRatio(aSrc.mMinFontSizeRatio),
       mMathVariant(aSrc.mMathVariant),
       mMathStyle(aSrc.mMathStyle),
+      mMathShift(aSrc.mMathShift),
       mExplicitLanguage(aSrc.mExplicitLanguage),
       mXTextScale(aSrc.mXTextScale),
       mScriptUnconstrainedSize(aSrc.mScriptUnconstrainedSize),
@@ -217,6 +218,7 @@ nsStyleFont::nsStyleFont(const Document& aDocument)
       mLineHeight(StyleLineHeight::Normal()),
       mMathVariant(StyleMathVariant::None),
       mMathStyle(StyleMathStyle::Normal),
+      mMathShift(StyleMathShift::Normal),
       mXTextScale(InitialTextScale(aDocument)),
       mScriptUnconstrainedSize(mSize),
       mScriptMinSize(Length::FromPixels(
@@ -240,7 +242,7 @@ nsChangeHint nsStyleFont::CalcDifference(const nsStyleFont& aNewData) const {
   if (mSize != aNewData.mSize || mLanguage != aNewData.mLanguage ||
       mExplicitLanguage != aNewData.mExplicitLanguage ||
       mMathVariant != aNewData.mMathVariant ||
-      mMathStyle != aNewData.mMathStyle ||
+      mMathStyle != aNewData.mMathStyle || mMathShift != aNewData.mMathShift ||
       mMinFontSizeRatio != aNewData.mMinFontSizeRatio ||
       mLineHeight != aNewData.mLineHeight) {
     return NS_STYLE_HINT_REFLOW;
@@ -283,7 +285,7 @@ static StyleRect<T> StyleRectWithAllSides(const T& aSide) {
   return {aSide, aSide, aSide, aSide};
 }
 
-AnchorPosReferencedAnchors::Result AnchorPosReferencedAnchors::Lookup(
+AnchorPosReferencedAnchors::Result AnchorPosReferencedAnchors::InsertOrModify(
     const nsAtom* aAnchorName, bool aNeedOffset) {
   bool exists = true;
   auto* result = &mMap.LookupOrInsertWith(aAnchorName, [&exists]() {
@@ -311,6 +313,11 @@ AnchorPosReferencedAnchors::Result AnchorPosReferencedAnchors::Lookup(
   return {result->ref().mOrigin.isSome(), result};
 }
 
+const AnchorPosReferencedAnchors::Value* AnchorPosReferencedAnchors::Lookup(
+    const nsAtom* aAnchorName) const {
+  return mMap.Lookup(aAnchorName).DataPtrOrNull();
+}
+
 AnchorResolvedMargin AnchorResolvedMarginHelper::ResolveAnchor(
     const StyleMargin& aValue, StylePhysicalAxis aAxis,
     const AnchorPosResolutionParams& aParams) {
@@ -318,8 +325,8 @@ AnchorResolvedMargin AnchorResolvedMarginHelper::ResolveAnchor(
              "Calling anchor resolution without using it?");
   if (aValue.IsAnchorSizeFunction()) {
     auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
-    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), &aParams,
-                                    aAxis, &resolved);
+    Servo_ResolveAnchorSizeFunctionForMargin(&*aValue.AsAnchorSizeFunction(),
+                                             &aParams, aAxis, &resolved);
     if (resolved.IsInvalid()) {
       return Zero();
     }
@@ -1335,11 +1342,11 @@ nsChangeHint nsStylePosition::CalcDifference(
   // right now.
   // Don't try to handle changes between types efficiently; at least for
   // changing into/out of `auto`, we will hardly ever be able to avoid a reflow.
-  // TODO(dshin, Bug 1917695): Re-evaulate this for `anchor()`.
   if (mOffset != aNewData.mOffset) {
     if (IsEqualInsetType(mOffset, aNewData.mOffset) &&
         aNewData.mOffset.All([](const StyleInset& aInset) {
-          // Err on the side of triggering reflow for anchor positioning.
+          // Anchor positioning invalidation depends on `AnchorPosReferences`
+          // being updated, which happens during reflow.
           return !aInset.HasAnchorPositioningFunction();
         })) {
       hint |=
@@ -1425,9 +1432,9 @@ AnchorResolvedInset AnchorResolvedInsetHelper::ResolveAnchor(
     }
     case StyleInset::Tag::AnchorSizeFunction: {
       auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
-      Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(),
-                                      &aParams.mBaseParams,
-                                      ToStylePhysicalAxis(aSide), &resolved);
+      Servo_ResolveAnchorSizeFunctionForInset(
+          &*aValue.AsAnchorSizeFunction(), &aParams, ToStylePhysicalAxis(aSide),
+          &resolved);
       if (resolved.IsInvalid()) {
         return Auto();
       }
@@ -1451,8 +1458,8 @@ AnchorResolvedSize AnchorResolvedSizeHelper::ResolveAnchor(
              "Calling anchor resolution without using it?");
   if (aValue.IsAnchorSizeFunction()) {
     auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
-    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), &aParams,
-                                    aAxis, &resolved);
+    Servo_ResolveAnchorSizeFunctionForSize(&*aValue.AsAnchorSizeFunction(),
+                                           &aParams, aAxis, &resolved);
     if (resolved.IsInvalid()) {
       return Auto();
     }
@@ -1486,8 +1493,8 @@ AnchorResolvedMaxSize AnchorResolvedMaxSizeHelper::ResolveAnchor(
              "Calling anchor resolution without using it?");
   if (aValue.IsAnchorSizeFunction()) {
     auto resolved = StyleAnchorPositioningFunctionResolution::Invalid();
-    Servo_ResolveAnchorSizeFunction(&*aValue.AsAnchorSizeFunction(), &aParams,
-                                    aAxis, &resolved);
+    Servo_ResolveAnchorSizeFunctionForMaxSize(&*aValue.AsAnchorSizeFunction(),
+                                              &aParams, aAxis, &resolved);
     if (resolved.IsInvalid()) {
       return None();
     }
@@ -3018,6 +3025,7 @@ nsStyleText::nsStyleText(const nsStyleText& aSource)
       mLineBreak(aSource.mLineBreak),
       mWordBreak(aSource.mWordBreak),
       mOverflowWrap(aSource.mOverflowWrap),
+      mTextAutospace(aSource.mTextAutospace),
       mHyphens(aSource.mHyphens),
       mRubyAlign(aSource.mRubyAlign),
       mRubyPosition(aSource.mRubyPosition),
@@ -3042,8 +3050,7 @@ nsStyleText::nsStyleText(const nsStyleText& aSource)
       mHyphenateCharacter(aSource.mHyphenateCharacter),
       mHyphenateLimitChars(aSource.mHyphenateLimitChars),
       mWebkitTextSecurity(aSource.mWebkitTextSecurity),
-      mTextWrapStyle(aSource.mTextWrapStyle),
-      mTextAutospace(aSource.mTextAutospace) {
+      mTextWrapStyle(aSource.mTextWrapStyle) {
   MOZ_COUNT_CTOR(nsStyleText);
 }
 

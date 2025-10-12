@@ -304,11 +304,47 @@ void log_print(const LogModule* aModule, LogLevel aLevel, TimeStamp* aStart,
     } while (0)
 #endif
 
+#ifdef DEBUG
+   // MOZ_LOG_DEBUG_ONLY calls MOZ_LOG only in debug builds.
+#  define MOZ_LOG_DEBUG_ONLY(...) MOZ_LOG(__VA_ARGS__)
+   // MOZ_LOG_DURATION_DEBUG_ONLY calls MOZ_LOG_DURATION only in debug builds.
+#  define MOZ_LOG_DURATION_DEBUG_ONLY(...) MOZ_LOG_DURATION(__VA_ARGS__)
+   // MOZ_LOG_FMT_DEBUG_ONLY calls MOZ_LOG_FMT only in debug builds.
+#  define MOZ_LOG_FMT_DEBUG_ONLY(...) MOZ_LOG_FMT(__VA_ARGS__)
+#else
+   // MOZ_LOG_DEBUG_ONLY is noop in non-debug builds.
+#  define MOZ_LOG_DEBUG_ONLY(...)
+   // MOZ_LOG_DURATION_DEBUG_ONLY is noop in non-debug builds.
+#  define MOZ_LOG_DURATION_DEBUG_ONLY(...)
+   // MOZ_LOG_FMT_DEBUG_ONLY is noop in non-debug builds.
+#  define MOZ_LOG_FMT_DEBUG_ONLY(...)
+#endif
+
 // This #define is a Logging.h-only knob!  Don't encourage people to get fancy
 // with their log definitions by exporting it outside of Logging.h.
 #undef MOZ_LOGGING_ENABLED
 
-// Utility for pretty-printing booleans.
-inline const char* GetBoolName(bool aBool) { return aBool ? "true" : "false"; }
+/**
+ * Define a utility method to pretty print a boolean value.
+ * TrueOrFalse, YesOrNo, SucceededOrFailed, OkOrError, DoneOrIgnored,
+ * HandledOrIgnored, DoneOrCanceled, HandledOrCanceled are defined in the
+ * global scope.
+ */
+#define MOZ_DEFINE_BOOL_PRETTY_PRINTER(_method_name, _true_str, _false_str) \
+  inline const char* _method_name(bool aBool) {                             \
+    return aBool ? #_true_str : #_false_str;                                \
+  }
+
+namespace mozilla {
+MOZ_DEFINE_BOOL_PRETTY_PRINTER(TrueOrFalse, true, false);
+MOZ_DEFINE_BOOL_PRETTY_PRINTER(YesOrNo, Yes, No);
+MOZ_DEFINE_BOOL_PRETTY_PRINTER(OnOrOff, On, Off);
+MOZ_DEFINE_BOOL_PRETTY_PRINTER(SucceededOrFailed, Succeeded, Failed);
+MOZ_DEFINE_BOOL_PRETTY_PRINTER(OkOrError, OK, Failed);
+MOZ_DEFINE_BOOL_PRETTY_PRINTER(DoneOrIgnored, Done, Ignored);
+MOZ_DEFINE_BOOL_PRETTY_PRINTER(HandledOrIgnored, Handled, Ignored);
+MOZ_DEFINE_BOOL_PRETTY_PRINTER(DoneOrCanceled, Done, Canceled);
+MOZ_DEFINE_BOOL_PRETTY_PRINTER(HandledOrCanceled, Handled, Canceled);
+}  // namespace mozilla
 
 #endif  // mozilla_logging_h

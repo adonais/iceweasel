@@ -17,6 +17,7 @@ import mozilla.components.browser.state.search.DefaultSearchEngineProvider
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction
+import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.PrivateModeUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.engine.Engine
@@ -100,6 +101,8 @@ class FenixSearchMiddleware(
         next: (SearchFragmentAction) -> Unit,
         action: SearchFragmentAction,
     ) {
+        if (handleEnvironmentUpdates(context, next, action)) return
+
         when (action) {
             is Init -> {
                 next(action)
@@ -112,27 +115,13 @@ class FenixSearchMiddleware(
                 )
             }
 
-            is EnvironmentRehydrated -> {
-                next(action)
-
-                environment = action.environment
-
-                suggestionsProvidersBuilder = buildSearchSuggestionsProvider(context)
-                updateSearchProviders(context)
-            }
-
-            is EnvironmentCleared -> {
-                next(action)
-
-                environment = null
-
-                // Search providers may keep hard references to lifecycle dependent objects
-                // so we need to reset them when the environment is cleared.
-                suggestionsProvidersBuilder = null
-                context.dispatch(SearchProvidersUpdated(emptyList()))
-            }
-
             is SearchStarted -> {
+                toolbarStore.dispatch(
+                    PrivateModeUpdated(
+                        environment?.browsingModeManager?.mode?.isPrivate == true,
+                    ),
+                )
+
                 next(action)
 
                 engine.speculativeCreateSession(action.inPrivateMode)
@@ -189,6 +178,38 @@ class FenixSearchMiddleware(
 
             else -> next(action)
         }
+    }
+
+    private fun handleEnvironmentUpdates(
+        context: MiddlewareContext<SearchFragmentState, SearchFragmentAction>,
+        next: (SearchFragmentAction) -> Unit,
+        action: SearchFragmentAction,
+    ) = when (action) {
+        is EnvironmentRehydrated -> {
+            next(action)
+
+            environment = action.environment
+
+            suggestionsProvidersBuilder = buildSearchSuggestionsProvider(context)
+            updateSearchProviders(context)
+
+            true
+        }
+
+        is EnvironmentCleared -> {
+            next(action)
+
+            environment = null
+
+            // Search providers may keep hard references to lifecycle dependent objects
+            // so we need to reset them when the environment is cleared.
+            suggestionsProvidersBuilder = null
+            context.dispatch(SearchProvidersUpdated(emptyList()))
+
+            true
+        }
+
+        else -> false
     }
 
     /**

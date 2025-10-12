@@ -1140,10 +1140,12 @@ export var BackgroundUpdate = {
           `${SLUG}: setting last task run timestamp to ${nowSeconds} after the Unix epoch (${Date(nowSeconds * 1000)})`
         );
       };
-    }
 
-    if (!throttled) {
-      actionSet.add(BackgroundUpdate.ACTION.UPDATE);
+      if (throttled) {
+        actionSet.add(BackgroundUpdate.ACTION.UPDATE_CHECK);
+      } else {
+        actionSet.add(BackgroundUpdate.ACTION.UPDATE);
+      }
     }
 
     let d = Array.from(actionSet).toSorted();
@@ -1208,4 +1210,7 @@ BackgroundUpdate.ACTION = {
   // has enabled this, the browser may restart as a result of performing this
   // action.
   UPDATE: "ACTION_UPDATE",
+  // This is an alternate version of the `UPDATE` action that checks for updates
+  // but only installs them if Balrog specifies an optional forcing flag.
+  UPDATE_CHECK: "ACTION_UPDATE_CHECK",
 };

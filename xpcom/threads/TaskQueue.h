@@ -69,8 +69,15 @@ class TaskQueue final : public AbstractThread,
 
   TaskDispatcher& TailDispatcher() override;
 
+  NS_IMETHOD DispatchFromScript(nsIRunnable* aEvent,
+                                DispatchFlags aFlags) override {
+    return Dispatch(do_AddRef(aEvent), aFlags);
+  }
+
   NS_IMETHOD Dispatch(already_AddRefed<nsIRunnable> aEvent,
-                      uint32_t aFlags) override {
+                      DispatchFlags aFlags) override {
+    // NOTE: This dispatch implementation never leaks the runnable on failure,
+    // even if `NS_DISPATCH_FALLIBLE` is not specified.
     nsCOMPtr<nsIRunnable> runnable = aEvent;
     {
       MonitorAutoLock mon(mQueueMonitor);
@@ -159,7 +166,8 @@ class TaskQueue final : public AbstractThread,
   // mQueueMonitor must be held.
   void AwaitIdleLocked();
 
-  nsresult DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable, uint32_t aFlags,
+  nsresult DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
+                          DispatchFlags aFlags,
                           DispatchReason aReason = NormalDispatch);
 
   void MaybeResolveShutdown();
@@ -176,7 +184,7 @@ class TaskQueue final : public AbstractThread,
 
   typedef struct TaskStruct {
     nsCOMPtr<nsIRunnable> event;
-    uint32_t flags;
+    DispatchFlags flags;
   } TaskStruct;
 
   // Queue of tasks to run.

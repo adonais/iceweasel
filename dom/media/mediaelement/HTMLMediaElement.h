@@ -355,6 +355,12 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   void RunAutoplay();
 
+  // Start listening for async GV autoplay permission request results.
+  void StartObservingGVAutoplayIfNeeded();
+
+  // Stops listening for async GV autoplay permissions if observer exists.
+  void StopObservingGVAutoplayIfNeeded();
+
   // Check if the media element had crossorigin set when loading started
   bool ShouldCheckAllowOrigin();
 
@@ -867,6 +873,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   class AudioChannelAgentCallback;
   class ChannelLoader;
   class ErrorSink;
+  class GVAutoplayObserver;
   class MediaElementTrackSource;
   class MediaLoadListener;
   class MediaStreamRenderer;
@@ -1491,6 +1498,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   // The currently selected video stream track.
   RefPtr<VideoStreamTrack> mSelectedVideoStreamTrack;
+
+  // Created in Init() and AfterSetAttr(), released in deconstructor
+  RefPtr<GVAutoplayObserver> mGVAutoplayObserver;
 
   const RefPtr<ShutdownObserver> mShutdownObserver;
 

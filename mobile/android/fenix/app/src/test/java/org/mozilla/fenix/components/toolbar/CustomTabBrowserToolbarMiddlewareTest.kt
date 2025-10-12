@@ -6,6 +6,8 @@ package org.mozilla.fenix.components.toolbar
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.InetAddresses
+import android.util.Patterns
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.drawable.toDrawable
@@ -14,10 +16,9 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.ContentAction.UpdateProgressAction
 import mozilla.components.browser.state.action.ContentAction.UpdateSecurityInfoAction
 import mozilla.components.browser.state.action.ContentAction.UpdateTitleAction
@@ -26,10 +27,13 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.state.state.SecurityInfoState
 import mozilla.components.browser.state.state.createCustomTab
+import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButton
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
+import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.ContextualMenuOption
+import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.PageOriginContextualMenuInteractions.CopyToClipboardClicked
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.EnvironmentCleared
 import mozilla.components.compose.browser.toolbar.store.EnvironmentRehydrated
@@ -39,10 +43,11 @@ import mozilla.components.concept.engine.permission.SitePermissionsStorage
 import mozilla.components.feature.session.TrackingProtectionUseCases
 import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.lib.publicsuffixlist.PublicSuffixList
+import mozilla.components.support.ktx.kotlin.getRegistrableDomainIndexRange
 import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
+import mozilla.components.support.test.rule.MainLooperTestRule
+import mozilla.components.support.utils.ClipboardHandler
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -51,30 +56,48 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.appstate.AppAction.URLCopiedToClipboard
 import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware.Companion.DisplayActions.MenuClicked
 import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware.Companion.DisplayActions.ShareClicked
 import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware.Companion.EndPageActions.CustomButtonClicked
 import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware.Companion.StartBrowserActions.CloseClicked
 import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware.Companion.StartPageActions.SiteInfoClicked
+import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.lifecycle.TestLifecycleOwner
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.Implementation
+import org.robolectric.annotation.Implements
+import mozilla.components.browser.toolbar.R as toolbarR
+import mozilla.components.feature.customtabs.R as customtabsR
+import mozilla.components.ui.icons.R as iconsR
 
 @RunWith(RobolectricTestRunner::class)
+@Config(shadows = [ShadowInetAddresses::class])
 class CustomTabBrowserToolbarMiddlewareTest {
     @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
+    val mainLooperRule = MainLooperTestRule()
+
+    @get:Rule
+    val gleanRule = FenixGleanTestRule(testContext)
 
     private val customTabId = "test"
     private val customTab: CustomTabSessionState = mockk(relaxed = true) {
         every { id } returns customTabId
     }
+    private val selectedTab = createTab("test.com")
     private val browserStore = BrowserStore(
         BrowserState(
+            tabs = listOf(selectedTab),
             customTabs = listOf(customTab),
+            selectedTabId = selectedTab.id,
         ),
     )
+    private val appStore: AppStore = mockk()
     private val permissionsStorage: SitePermissionsStorage = mockk()
     private val cookieBannersStorage: CookieBannersStorage = mockk()
     private val useCases: CustomTabsUseCases = mockk()
@@ -82,9 +105,10 @@ class CustomTabBrowserToolbarMiddlewareTest {
     private val publicSuffixList: PublicSuffixList = mockk {
         every { getPublicSuffixPlusOne(any()) } returns CompletableDeferred(null)
     }
+    private val clipboard: ClipboardHandler = mockk()
     private val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
     private val navController: NavController = mockk()
-    private val closeTabDelegate: () -> Unit = mockk()
+    private val closeTabDelegate: () -> Unit = {}
     private val settings: Settings = mockk {
         every { shouldUseBottomToolbar } returns true
     }
@@ -94,8 +118,8 @@ class CustomTabBrowserToolbarMiddlewareTest {
         every { customTab.config.showCloseButton } returns true
         every { customTab.config.closeButtonIcon } returns null
         val expectedCloseButton = ActionButton(
-            drawable = AppCompatResources.getDrawable(testContext, R.drawable.mozac_ic_cross_24),
-            contentDescription = testContext.getString(R.string.mozac_feature_customtabs_exit_button),
+            drawable = AppCompatResources.getDrawable(testContext, iconsR.drawable.mozac_ic_cross_24),
+            contentDescription = testContext.getString(customtabsR.string.mozac_feature_customtabs_exit_button),
             onClick = CloseClicked,
         )
 
@@ -115,7 +139,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
         every { customTab.config.closeButtonIcon } returns closeButtonIcon
         val expectedCloseButton = ActionButton(
             drawable = closeButtonIcon.toDrawable(testContext.resources),
-            contentDescription = testContext.getString(R.string.mozac_feature_customtabs_exit_button),
+            contentDescription = testContext.getString(customtabsR.string.mozac_feature_customtabs_exit_button),
             onClick = CloseClicked,
         )
 
@@ -143,7 +167,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN the custom tab is configured to show a custom button WHEN initializing the toolbar THEN add a custom button with a custom icon`() {
-        val customButtonIcon: Bitmap = testContext.getDrawable(R.drawable.mozac_ic_logo_firefox_24)!!.toBitmap(10, 10)
+        val customButtonIcon: Bitmap = testContext.getDrawable(iconsR.drawable.mozac_ic_logo_firefox_24)!!.toBitmap(10, 10)
         every { customTab.config.actionButtonConfig?.icon } returns customButtonIcon
         every { customTab.config.actionButtonConfig?.description } returns "test"
         val expectedCustomButton = ActionButton(
@@ -167,7 +191,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN a private custom tab is configured to show a custom button WHEN initializing the toolbar THEN add a custom button with a custom icon`() {
-        val customButtonIcon: Bitmap = testContext.getDrawable(R.drawable.mozac_ic_logo_firefox_24)!!.toBitmap(10, 10)
+        val customButtonIcon: Bitmap = testContext.getDrawable(iconsR.drawable.mozac_ic_logo_firefox_24)!!.toBitmap(10, 10)
         every { customTab.config.actionButtonConfig?.icon } returns customButtonIcon
         every { customTab.config.actionButtonConfig?.description } returns "test"
         every { customTab.content.private } returns true
@@ -192,7 +216,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN a normal custom tab is configured to show a tinted custom button WHEN initializing the toolbar THEN add a custom button with a custom icon`() {
-        val customButtonIcon: Bitmap = testContext.getDrawable(R.drawable.mozac_ic_logo_firefox_24)!!.toBitmap(10, 10)
+        val customButtonIcon: Bitmap = testContext.getDrawable(iconsR.drawable.mozac_ic_logo_firefox_24)!!.toBitmap(10, 10)
         every { customTab.config.actionButtonConfig?.icon } returns customButtonIcon
         every { customTab.config.actionButtonConfig?.description } returns "test"
         every { customTab.config.actionButtonConfig?.tint } returns true
@@ -220,8 +244,8 @@ class CustomTabBrowserToolbarMiddlewareTest {
     fun `GIVEN the url if of a local file WHEN initializing the toolbar THEN add an appropriate security indicator`() {
         every { customTab.content.url } returns "content://test"
         val expectedSecurityIndicator = ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_page_portrait_24,
-            contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
+            drawableResId = iconsR.drawable.mozac_ic_page_portrait_24,
+            contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
             onClick = SiteInfoClicked,
         )
 
@@ -237,8 +261,8 @@ class CustomTabBrowserToolbarMiddlewareTest {
     fun `GIVEN the website is secure WHEN initializing the toolbar THEN add an appropriate security indicator`() {
         every { customTab.content.securityInfo.secure } returns true
         val expectedSecurityIndicator = ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_shield_checkmark_24,
-            contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
+            drawableResId = iconsR.drawable.mozac_ic_shield_checkmark_24,
+            contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
             onClick = SiteInfoClicked,
         )
 
@@ -254,8 +278,8 @@ class CustomTabBrowserToolbarMiddlewareTest {
     fun `GIVEN the website is insecure WHEN initializing the toolbar THEN add an appropriate security indicator`() {
         every { customTab.content.securityInfo.secure } returns false
         val expectedSecurityIndicator = ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_shield_slash_24,
-            contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
+            drawableResId = iconsR.drawable.mozac_ic_shield_slash_24,
+            contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
             onClick = SiteInfoClicked,
         )
 
@@ -280,32 +304,31 @@ class CustomTabBrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN the website is insecure WHEN the conection becomes secure THEN update appropriate security indicator`() = runTestOnMain {
-        Dispatchers.setMain(StandardTestDispatcher())
+    fun `GIVEN the website is insecure WHEN the conection becomes secure THEN update appropriate security indicator`() = runTest {
         val customTab = createCustomTab(url = "URL", id = customTabId)
         val browserStore = BrowserStore(
             BrowserState(customTabs = listOf(customTab)),
         )
         val middleware = buildMiddleware(browserStore)
         val expectedSecureIndicator = ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_shield_checkmark_24,
-            contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
+            drawableResId = iconsR.drawable.mozac_ic_shield_checkmark_24,
+            contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
             onClick = SiteInfoClicked,
         )
         val expectedInsecureIndicator = ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_shield_slash_24,
-            contentDescription = R.string.mozac_browser_toolbar_content_description_site_info,
+            drawableResId = iconsR.drawable.mozac_ic_shield_slash_24,
+            contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
             onClick = SiteInfoClicked,
         )
         val toolbarStore = buildStore(middleware)
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         var toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
         assertEquals(1, toolbarPageActions.size)
         var securityIndicator = toolbarPageActions[0]
         assertEquals(expectedInsecureIndicator, securityIndicator)
 
         browserStore.dispatch(UpdateSecurityInfoAction(customTabId, SecurityInfoState(true))).joinBlocking()
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
         assertEquals(1, toolbarPageActions.size)
         securityIndicator = toolbarPageActions[0]
@@ -313,8 +336,47 @@ class CustomTabBrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `WHEN the website title changes THEN update the shown page origin`() = runTestOnMain {
-        Dispatchers.setMain(StandardTestDispatcher())
+    @Config(sdk = [31])
+    fun `GIVEN on Android 12 WHEN choosing to copy the current URL to clipboard THEN copy to clipboard and show a snackbar`() {
+        val appStore: AppStore = mockk(relaxed = true)
+        val navController: NavController = mockk(relaxed = true)
+        every { customTab.content.url } returns "https://mozilla.test"
+        val clipboard = ClipboardHandler(testContext)
+        val middleware = buildMiddleware(appStore = appStore, clipboard = clipboard)
+        val toolbarStore = buildStore(
+            middleware = middleware,
+            navController = navController,
+        )
+
+        toolbarStore.dispatch(CopyToClipboardClicked)
+
+        assertEquals(customTab.content.url, clipboard.text)
+        verify { appStore.dispatch(URLCopiedToClipboard) }
+        assertNotNull(Events.copyUrlTapped.testGetValue())
+    }
+
+    @Test
+    @Config(sdk = [33])
+    fun `GIVEN on Android 13 WHEN choosing to copy the current URL to clipboard THEN copy to clipboard and don't show a snackbar`() {
+        val appStore: AppStore = mockk(relaxed = true)
+        val navController: NavController = mockk(relaxed = true)
+        every { customTab.content.url } returns "https://mozilla.test"
+        val clipboard = ClipboardHandler(testContext)
+        val middleware = buildMiddleware(appStore = appStore, clipboard = clipboard)
+        val toolbarStore = buildStore(
+            middleware = middleware,
+            navController = navController,
+        )
+
+        toolbarStore.dispatch(CopyToClipboardClicked)
+
+        assertEquals(customTab.content.url, clipboard.text)
+        verify(exactly = 0) { appStore.dispatch(URLCopiedToClipboard) }
+        assertNotNull(Events.copyUrlTapped.testGetValue())
+    }
+
+    @Test
+    fun `WHEN the website title changes THEN update the shown page origin`() = runTest {
         val customTab = createCustomTab(title = "Title", url = "URL", id = customTabId)
         val browserStore = BrowserStore(
             BrowserState(customTabs = listOf(customTab)),
@@ -324,23 +386,23 @@ class CustomTabBrowserToolbarMiddlewareTest {
             hint = R.string.search_hint,
             title = "Title",
             url = "URL",
+            contextualMenuOptions = listOf(ContextualMenuOption.CopyURLToClipboard),
             onClick = null,
         )
 
         val toolbarStore = buildStore(middleware)
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         var pageOrigin = toolbarStore.state.displayState.pageOrigin
-        assertEquals(expectedDetails, pageOrigin)
+        assertPageOriginEquals(expectedDetails, pageOrigin)
 
         browserStore.dispatch(UpdateTitleAction(customTabId, "UpdatedTitle")).joinBlocking()
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         pageOrigin = toolbarStore.state.displayState.pageOrigin
-        assertEquals(expectedDetails.copy(title = "UpdatedTitle"), pageOrigin)
+        assertPageOriginEquals(expectedDetails.copy(title = "UpdatedTitle"), pageOrigin)
     }
 
     @Test
-    fun `GIVEN no title available WHEN the website url changes THEN update the shown page origin`() = runTestOnMain {
-        Dispatchers.setMain(StandardTestDispatcher())
+    fun `GIVEN no title available WHEN the website url changes THEN update the shown page origin`() = runTest {
         val customTab = createCustomTab(url = "URL", id = customTabId)
         val browserStore = BrowserStore(
             BrowserState(customTabs = listOf(customTab)),
@@ -350,23 +412,23 @@ class CustomTabBrowserToolbarMiddlewareTest {
             hint = R.string.search_hint,
             title = null,
             url = "URL",
+            contextualMenuOptions = listOf(ContextualMenuOption.CopyURLToClipboard),
             onClick = null,
         )
 
         val toolbarStore = buildStore(middleware)
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         var pageOrigin = toolbarStore.state.displayState.pageOrigin
-        assertEquals(expectedDetails, pageOrigin)
+        assertPageOriginEquals(expectedDetails, pageOrigin)
 
         browserStore.dispatch(UpdateUrlAction(customTabId, "UpdatedURL")).joinBlocking()
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         pageOrigin = toolbarStore.state.displayState.pageOrigin
-        assertEquals(expectedDetails.copy(url = "UpdatedURL"), pageOrigin)
+        assertPageOriginEquals(expectedDetails.copy(url = "UpdatedURL"), pageOrigin)
     }
 
     @Test
-    fun `GIVEN a title previously available WHEN the website url changes THEN update the shown page origin`() = runTestOnMain {
-        Dispatchers.setMain(StandardTestDispatcher())
+    fun `GIVEN a title previously available WHEN the website url changes THEN update the shown page origin`() = runTest {
         val customTab = createCustomTab(title = "Title", url = "URL", id = customTabId)
         val browserStore = BrowserStore(
             BrowserState(customTabs = listOf(customTab)),
@@ -376,18 +438,19 @@ class CustomTabBrowserToolbarMiddlewareTest {
             hint = R.string.search_hint,
             title = "Title",
             url = "URL",
+            contextualMenuOptions = listOf(ContextualMenuOption.CopyURLToClipboard),
             onClick = null,
         )
 
         val toolbarStore = buildStore(middleware)
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         var pageOrigin = toolbarStore.state.displayState.pageOrigin
-        assertEquals(expectedDetails, pageOrigin)
+        assertPageOriginEquals(expectedDetails, pageOrigin)
 
         browserStore.dispatch(UpdateUrlAction(customTabId, "UpdatedURL")).joinBlocking()
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         pageOrigin = toolbarStore.state.displayState.pageOrigin
-        assertEquals(
+        assertPageOriginEquals(
             expectedDetails.copy(
                 // If a title was used previously and not available after then the URL is shown as title also.
                 title = "UpdatedURL",
@@ -398,7 +461,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN an url with an ip address for the domain WHEN showing displaying the page origin THEN correctly infer the ip address as the domain`() = runTestOnMain {
+    fun `GIVEN an url with an ip address for the domain WHEN displaying the page origin THEN correctly infer the ip address as the domain`() = runTest {
         val customTab = createCustomTab(title = "Title", url = "http://127.0.0.1/test", id = customTabId)
         val browserStore = BrowserStore(
             BrowserState(customTabs = listOf(customTab)),
@@ -408,20 +471,50 @@ class CustomTabBrowserToolbarMiddlewareTest {
             hint = R.string.search_hint,
             title = "Title",
             url = "127.0.0.1",
+            contextualMenuOptions = listOf(ContextualMenuOption.CopyURLToClipboard),
             onClick = null,
         )
 
         val toolbarStore = buildStore(middleware)
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         val pageOrigin = toolbarStore.state.displayState.pageOrigin
-        assertEquals(expectedPageOrigin, pageOrigin)
+        assertPageOriginEquals(expectedPageOrigin, pageOrigin)
+    }
+
+    @Test
+    fun `GIVEN a url with subdomain and path WHEN displaying the page origin THEN show the subdomain and domain`() = runTest {
+        val registrableDomain = "mozilla.com"
+        val subDomain = "www."
+        val domain = "$subDomain$registrableDomain"
+        val customTab = createCustomTab(title = "Title", url = "https://$domain/firefox", id = customTabId)
+        val browserStore = BrowserStore(
+            BrowserState(customTabs = listOf(customTab)),
+        )
+        val expectedPageOrigin = PageOrigin(
+            hint = R.string.search_hint,
+            title = "Title",
+            url = domain,
+            onClick = null,
+        )
+        every { publicSuffixList.getPublicSuffixPlusOne(any()) } returns CompletableDeferred(registrableDomain)
+        val middleware = buildMiddleware(browserStore)
+
+        val toolbarStore = buildStore(middleware)
+        mainLooperRule.idle()
+
+        val pageOrigin = toolbarStore.state.displayState.pageOrigin
+        assertPageOriginEquals(expectedPageOrigin, pageOrigin)
+        assertEquals(
+            subDomain.length to domain.length,
+            pageOrigin.url?.getRegistrableDomainIndexRange(),
+        )
     }
 
     @Test
     fun `GIVEN the custom tab is not configured to show a share button WHEN initializing the toolbar THEN show just a menu button`() {
         every { customTab.config.showShareMenuItem } returns false
         val expectedMenuButton = ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_ellipsis_vertical_24,
+            drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             contentDescription = R.string.content_description_menu,
             onClick = MenuClicked,
         )
@@ -438,12 +531,12 @@ class CustomTabBrowserToolbarMiddlewareTest {
     fun `GIVEN the custom tab is configured to show a share button WHEN initializing the toolbar THEN show both a share and a menu buttons`() {
         every { customTab.config.showShareMenuItem } returns true
         val expectedShareButton = ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_share_android_24,
-            contentDescription = R.string.mozac_feature_customtabs_share_link,
+            drawableResId = iconsR.drawable.mozac_ic_share_android_24,
+            contentDescription = customtabsR.string.mozac_feature_customtabs_share_link,
             onClick = ShareClicked,
         )
         val expectedMenuButton = ActionButtonRes(
-            drawableResId = R.drawable.mozac_ic_ellipsis_vertical_24,
+            drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             contentDescription = R.string.content_description_menu,
             onClick = MenuClicked,
         )
@@ -459,8 +552,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a bottom toolbar WHEN the loading progress changes THEN update the progress bar`() = runTestOnMain {
-        Dispatchers.setMain(StandardTestDispatcher())
+    fun `GIVEN a bottom toolbar WHEN the loading progress changes THEN update the progress bar`() = runTest {
         every { settings.shouldUseBottomToolbar } returns true
         val customTab = createCustomTab(url = "test", id = customTabId)
         val browserStore = BrowserStore(
@@ -472,7 +564,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
         val toolbarStore = buildStore(middleware)
 
         browserStore.dispatch(UpdateProgressAction(customTabId, 50)).joinBlocking()
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         assertEquals(
             ProgressBarConfig(
                 progress = 50,
@@ -482,7 +574,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
         )
 
         browserStore.dispatch(UpdateProgressAction(customTabId, 80)).joinBlocking()
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         assertEquals(
             ProgressBarConfig(
                 progress = 80,
@@ -493,8 +585,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN a top toolbar WHEN the loading progress changes THEN update the progress bar`() = runTestOnMain {
-        Dispatchers.setMain(StandardTestDispatcher())
+    fun `GIVEN a top toolbar WHEN the loading progress changes THEN update the progress bar`() = runTest {
         every { settings.shouldUseBottomToolbar } returns false
         val customTab = createCustomTab(url = "test", id = customTabId)
         val browserStore = BrowserStore(
@@ -506,7 +597,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
         val toolbarStore = buildStore(middleware)
 
         browserStore.dispatch(UpdateProgressAction(customTabId, 22)).joinBlocking()
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         assertEquals(
             ProgressBarConfig(
                 progress = 22,
@@ -516,7 +607,7 @@ class CustomTabBrowserToolbarMiddlewareTest {
         )
 
         browserStore.dispatch(UpdateProgressAction(customTabId, 67)).joinBlocking()
-        testScheduler.advanceUntilIdle()
+        mainLooperRule.idle()
         assertEquals(
             ProgressBarConfig(
                 progress = 67,
@@ -528,20 +619,24 @@ class CustomTabBrowserToolbarMiddlewareTest {
 
     private fun buildMiddleware(
         browserStore: BrowserStore = this.browserStore,
+        appStore: AppStore = this.appStore,
         permissionsStorage: SitePermissionsStorage = this.permissionsStorage,
         cookieBannersStorage: CookieBannersStorage = this.cookieBannersStorage,
         useCases: CustomTabsUseCases = this.useCases,
         trackingProtectionUseCases: TrackingProtectionUseCases = this.trackingProtectionUseCases,
         publicSuffixList: PublicSuffixList = this.publicSuffixList,
+        clipboard: ClipboardHandler = this.clipboard,
         settings: Settings = this.settings,
     ) = CustomTabBrowserToolbarMiddleware(
         customTabId = this.customTabId,
         browserStore = browserStore,
+        appStore = appStore,
         permissionsStorage = permissionsStorage,
         cookieBannersStorage = cookieBannersStorage,
         useCases = useCases,
         trackingProtectionUseCases = trackingProtectionUseCases,
         publicSuffixList = publicSuffixList,
+        clipboard = clipboard,
         settings = settings,
     )
 
@@ -564,5 +659,28 @@ class CustomTabBrowserToolbarMiddlewareTest {
                 ),
             ),
         )
+    }
+
+    private fun assertPageOriginEquals(expected: PageOrigin, actual: PageOrigin) {
+        assertEquals(expected.hint, actual.hint)
+        assertEquals(expected.title, actual.title)
+        assertEquals(expected.url.toString(), actual.url.toString())
+        // Cannot check the onClick and onLongClick anonymous object
+    }
+}
+
+/**
+ * Robolectric default implementation of [InetAddresses] returns false for any address.
+ * This shadow is used to override that behavior and return true for any IP address.
+ */
+@Implements(InetAddresses::class)
+private class ShadowInetAddresses {
+    companion object {
+        @Implementation
+        @JvmStatic
+        @Suppress("DEPRECATION")
+        fun isNumericAddress(address: String): Boolean {
+            return Patterns.IP_ADDRESS.matcher(address).matches() || address.contains(":")
+        }
     }
 }

@@ -7,7 +7,10 @@
 
 #include "mozilla/java/GeckoAppShellWrappers.h"
 #include "nsArrayUtils.h"
+#include "nsComponentManagerUtils.h"
 #include "nsISupportsUtils.h"
+#include "nsNetUtil.h"
+#include "nsStringEnumerator.h"
 
 using namespace mozilla;
 

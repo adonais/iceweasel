@@ -266,6 +266,9 @@ struct IdentityHub {
     queues: IdentityManager<markers::Queue>,
     buffers: IdentityManager<markers::Buffer>,
     command_encoders: IdentityManager<markers::CommandEncoder>,
+    render_pass_encoders: IdentityManager<markers::RenderPassEncoder>,
+    compute_pass_encoders: IdentityManager<markers::ComputePassEncoder>,
+    render_bundle_encoders: IdentityManager<markers::RenderBundleEncoder>,
     command_buffers: IdentityManager<markers::CommandBuffer>,
     render_bundles: IdentityManager<markers::RenderBundle>,
     bind_group_layouts: IdentityManager<markers::BindGroupLayout>,
@@ -290,6 +293,9 @@ impl Default for IdentityHub {
             queues: IdentityManager::new(),
             buffers: IdentityManager::new(),
             command_encoders: IdentityManager::new(),
+            render_pass_encoders: IdentityManager::new(),
+            compute_pass_encoders: IdentityManager::new(),
+            render_bundle_encoders: IdentityManager::new(),
             command_buffers: IdentityManager::new(),
             render_bundles: IdentityManager::new(),
             bind_group_layouts: IdentityManager::new(),
@@ -360,6 +366,21 @@ impl MessageQueue {
 
         self.nr_of_queued_messages = self.nr_of_queued_messages.checked_add(1).unwrap();
         (self.on_message_queued)(child);
+
+        // Force send when we have queued up at least 4k messages.
+        // We must comply with some static limits:
+        //   - `IPC::Message::MAX_DESCRIPTORS_PER_MESSAGE` (32767): currently,
+        //     no message can refer to more than one shmem handle; 4k is well below 32k.
+        //   - `IPC::Channel::kMaximumMessageSize` (256 * 1024 * 1024, when fuzzing):
+        //     with a limit of 4k messages, each message can be up to 64KiB; while we have
+        //     some messages that can have arbitrary size (ex. `CreateShaderModule`) most
+        //     have a static size.
+        // If we ever violate the limits, the worst that can happen is that we trigger asserts.
+        if self.nr_of_queued_messages >= 4 * 1024 {
+            let (nr_of_messages, serialized_messages) = self.flush();
+            let serialized_messages = ByteBuf::from_vec(serialized_messages);
+            unsafe { wgpu_child_send_messages(child, nr_of_messages, serialized_messages) };
+        }
     }
 
     fn flush(&mut self) -> (u32, Vec<u8>) {
@@ -476,6 +497,10 @@ pub extern "C" fn wgpu_client_request_device(
         // the result of consulting the `WGPU_TRACE` environment
         // variable itself in `wgpu_server_adapter_request_device`.
         trace: wgt::Trace::Off,
+        // The content process is untrusted, so this value is ignored
+        // by the GPU process. The GPU process overwrites this with
+        // `ExperimentalFeatures::disabled()`.
+        experimental_features: wgt::ExperimentalFeatures::disabled(),
     };
     let message = Message::RequestDevice {
         adapter_id,
@@ -500,6 +525,25 @@ pub extern "C" fn wgpu_client_free_buffer_id(client: &Client, id: id::BufferId) 
     client.identities.lock().buffers.free(id)
 }
 
+#[no_mangle]
+pub extern "C" fn wgpu_client_make_render_pass_encoder_id(
+    client: &Client,
+) -> id::RenderPassEncoderId {
+    client.identities.lock().render_pass_encoders.process()
+}
+#[no_mangle]
+pub extern "C" fn wgpu_client_make_compute_pass_encoder_id(
+    client: &Client,
+) -> id::ComputePassEncoderId {
+    client.identities.lock().compute_pass_encoders.process()
+}
+#[no_mangle]
+pub extern "C" fn wgpu_client_make_render_bundle_encoder_id(
+    client: &Client,
+) -> id::RenderBundleEncoderId {
+    client.identities.lock().render_bundle_encoders.process()
+}
+
 #[rustfmt::skip]
 mod drop {
     use super::*;
@@ -515,6 +559,9 @@ mod drop {
     #[no_mangle] pub extern "C" fn wgpu_client_drop_queue(client: &Client, id: id::QueueId) { client.queue_message(&Message::DropQueue(id)); client.identities.lock().queues.free(id); }
     #[no_mangle] pub extern "C" fn wgpu_client_drop_buffer(client: &Client, id: id::BufferId) { client.queue_message(&Message::DropBuffer(id)); client.identities.lock().buffers.free(id); }
     #[no_mangle] pub extern "C" fn wgpu_client_drop_command_encoder(client: &Client, id: id::CommandEncoderId) { client.queue_message(&Message::DropCommandEncoder(id)); client.identities.lock().command_encoders.free(id); }
+    #[no_mangle] pub extern "C" fn wgpu_client_drop_render_pass_encoder(client: &Client, id: id::RenderPassEncoderId) { client.queue_message(&Message::DropRenderPassEncoder(id)); client.identities.lock().render_pass_encoders.free(id); }
+    #[no_mangle] pub extern "C" fn wgpu_client_drop_compute_pass_encoder(client: &Client, id: id::ComputePassEncoderId) { client.queue_message(&Message::DropComputePassEncoder(id)); client.identities.lock().compute_pass_encoders.free(id); }
+    #[no_mangle] pub extern "C" fn wgpu_client_drop_render_bundle_encoder(client: &Client, id: id::RenderBundleEncoderId) { client.queue_message(&Message::DropRenderBundleEncoder(id)); client.identities.lock().render_bundle_encoders.free(id); }
     #[no_mangle] pub extern "C" fn wgpu_client_drop_command_buffer(client: &Client, id: id::CommandBufferId) { client.queue_message(&Message::DropCommandBuffer(id)); client.identities.lock().command_buffers.free(id); }
     #[no_mangle] pub extern "C" fn wgpu_client_drop_render_bundle(client: &Client, id: id::RenderBundleId) { client.queue_message(&Message::DropRenderBundle(id)); client.identities.lock().render_bundles.free(id); }
     #[no_mangle] pub extern "C" fn wgpu_client_drop_bind_group_layout(client: &Client, id: id::BindGroupLayoutId) { client.queue_message(&Message::DropBindGroupLayout(id)); client.identities.lock().bind_group_layouts.free(id); }
@@ -541,6 +588,11 @@ pub struct FfiShaderModuleCompilationMessage {
 }
 
 extern "C" {
+    fn wgpu_child_send_messages(
+        child: WebGPUChildPtr,
+        nr_of_messages: u32,
+        serialized_messages: ByteBuf,
+    );
     fn wgpu_child_resolve_request_adapter_promise(
         child: WebGPUChildPtr,
         adapter_id: id::AdapterId,
@@ -885,12 +937,14 @@ pub extern "C" fn wgpu_client_queue_submit(
     queue_id: id::QueueId,
     command_buffers: FfiSlice<'_, id::CommandBufferId>,
     swap_chain_textures: FfiSlice<'_, id::TextureId>,
+    external_texture_sources: FfiSlice<'_, crate::ExternalTextureSourceId>,
 ) {
     let message = Message::QueueSubmit(
         device_id,
         queue_id,
         Cow::Borrowed(unsafe { command_buffers.as_slice() }),
         Cow::Borrowed(unsafe { swap_chain_textures.as_slice() }),
+        Cow::Borrowed(unsafe { external_texture_sources.as_slice() }),
     );
     client.queue_message(&message);
 }

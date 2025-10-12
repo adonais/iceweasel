@@ -181,7 +181,9 @@ export class DataSourceBase {
       const { BrowserWindowTracker } = ChromeUtils.importESModule(
         "resource:///modules/BrowserWindowTracker.sys.mjs"
       );
-      const browser = BrowserWindowTracker.getTopWindow().gBrowser;
+      const browser = BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      }).gBrowser;
       browser.addWebTab(url, { inBackground: false });
     },
 

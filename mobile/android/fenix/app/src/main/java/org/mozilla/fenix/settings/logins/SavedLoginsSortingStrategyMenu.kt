@@ -13,6 +13,7 @@ import mozilla.components.concept.menu.candidate.TextStyle
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.logins.interactor.SavedLoginsInteractor
+import androidx.appcompat.R as appcompatR
 
 class SavedLoginsSortingStrategyMenu(
     private val context: Context,
@@ -41,7 +42,7 @@ class SavedLoginsSortingStrategyMenu(
         )
 
         val highlight = HighPriorityHighlightEffect(
-            backgroundTint = context.getColorFromAttr(R.attr.colorControlHighlight),
+            backgroundTint = context.getColorFromAttr(appcompatR.attr.colorControlHighlight),
         )
 
         return listOf(

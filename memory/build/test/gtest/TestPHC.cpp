@@ -376,6 +376,7 @@ size_t GetNumAvailable() {
   return stats.mSlotsFreed + stats.mSlotsUnused;
 }
 
+#ifndef ANDROID
 TEST(PHC, TestPHCExhaustion)
 {
   // PHC hardcodes the amount of allocations to track.
@@ -421,3 +422,4 @@ TEST(PHC, TestPHCExhaustion)
       StaticPrefs::memory_phc_avg_delay_normal(),
       StaticPrefs::memory_phc_avg_delay_page_reuse());
 }
+#endif

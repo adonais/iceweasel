@@ -13,6 +13,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/net/Cookie.h"
 #include "mozilla/net/CookieCommons.h"
+#include "nsGlobalWindowInner.h"
 #include "nsICookie.h"
 #include "nsICookieNotification.h"
 #include "nsISerialEventTarget.h"

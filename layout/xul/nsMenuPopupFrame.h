@@ -195,7 +195,7 @@ class nsMenuPopupFrame final : public nsBlockFrame {
             nsIFrame* aPrevInFlow) override;
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            AttrModType aModType) override;
 
   // FIXME: This shouldn't run script (this can end up calling HidePopup).
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Destroy(DestroyContext&) override;

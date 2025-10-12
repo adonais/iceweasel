@@ -196,9 +196,9 @@ bool js::ConstantStrictEqual(const JS::Value& val, uint16_t operand) {
 
   switch (constant.type()) {
     case ConstantCompareOperand::EncodedType::Int32:
-      return val.isNumber() && val.toNumber() == constant.toNumber();
+      return val.isNumber() && val.toNumber() == double(constant.toInt32());
     case ConstantCompareOperand::EncodedType::Boolean:
-      return val.isBoolean() && val.toBoolean() == constant.toBoolean();
+      return val == BooleanValue(constant.toBoolean());
     case ConstantCompareOperand::EncodedType::Undefined:
       return val.isUndefined();
     case ConstantCompareOperand::EncodedType::Null:

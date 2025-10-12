@@ -20,7 +20,6 @@
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EventListenerManager.h"
-#include "mozilla/InternalMutationEvent.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/ProfilerLabels.h"
@@ -40,7 +39,6 @@
 #include "mozilla/dom/InputEvent.h"
 #include "mozilla/dom/MessageEvent.h"
 #include "mozilla/dom/MouseScrollEvent.h"
-#include "mozilla/dom/MutationEvent.h"
 #include "mozilla/dom/NotifyPaintEvent.h"
 #include "mozilla/dom/PageTransitionEvent.h"
 #include "mozilla/dom/PerformanceEventTiming.h"
@@ -1416,9 +1414,6 @@ nsresult EventDispatcher::DispatchDOMEvent(EventTarget* aTarget,
     const nsAString& aEventType, CallerType aCallerType) {
   if (aEvent) {
     switch (aEvent->mClass) {
-      case eMutationEventClass:
-        return NS_NewDOMMutationEvent(aOwner, aPresContext,
-                                      aEvent->AsMutationEvent());
       case eGUIEventClass:
       case eScrollPortEventClass:
       case eUIEventClass:
@@ -1502,10 +1497,6 @@ nsresult EventDispatcher::DispatchDOMEvent(EventTarget* aTarget,
       return NS_NewDOMCompositionEvent(aOwner, aPresContext, nullptr);
     }
     return NS_NewDOMTextEvent(aOwner, aPresContext, nullptr);
-  }
-  if (aEventType.LowerCaseEqualsLiteral("mutationevent") ||
-      aEventType.LowerCaseEqualsLiteral("mutationevents")) {
-    return NS_NewDOMMutationEvent(aOwner, aPresContext, nullptr);
   }
   if (aEventType.LowerCaseEqualsLiteral("deviceorientationevent")) {
     DeviceOrientationEventInit init;

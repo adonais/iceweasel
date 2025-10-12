@@ -204,7 +204,11 @@ void WorkletJSContext::ReportError(JSErrorReport* aReport,
   RefPtr<AsyncErrorReporter> reporter = new AsyncErrorReporter(xpcReport);
 
   JSContext* cx = Context();
-  if (JS_IsExceptionPending(cx)) {
+  // NOTE: This function is used both for errors and warnings, and warnings
+  //       can be reported while there's a pending exception.
+  //       Warnings are always reported with non-null JSErrorReport.
+  if (!aReport || !aReport->isWarning()) {
+    MOZ_ASSERT(JS_IsExceptionPending(cx));
     JS::ExceptionStack exnStack(cx);
     if (JS::StealPendingExceptionStack(cx, &exnStack)) {
       JS::Rooted<JSObject*> stack(cx);
@@ -298,30 +302,6 @@ nsresult WorkletThread::DispatchRunnable(
     already_AddRefed<nsIRunnable> aRunnable) {
   nsCOMPtr<nsIRunnable> runnable(aRunnable);
   return nsThread::Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
-}
-
-NS_IMETHODIMP
-WorkletThread::DispatchFromScript(nsIRunnable* aRunnable, uint32_t aFlags) {
-  nsCOMPtr<nsIRunnable> runnable(aRunnable);
-  return Dispatch(runnable.forget(), aFlags);
-}
-
-NS_IMETHODIMP
-WorkletThread::Dispatch(already_AddRefed<nsIRunnable> aRunnable,
-                        uint32_t aFlags) {
-  nsCOMPtr<nsIRunnable> runnable(aRunnable);
-
-  // Worklet only supports asynchronous dispatch.
-  if (NS_WARN_IF(aFlags != NS_DISPATCH_NORMAL)) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  return nsThread::Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
-}
-
-NS_IMETHODIMP
-WorkletThread::DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t aFlags) {
-  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 static bool DispatchToEventLoop(

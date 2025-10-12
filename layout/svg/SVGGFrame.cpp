@@ -43,7 +43,7 @@ void SVGGFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 // ISVGDisplayableFrame methods
 
 nsresult SVGGFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                     int32_t aModType) {
+                                     AttrModType aModType) {
   if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::transform) {
     // We don't invalidate for transform changes (the layers code does that).
     // Also note that SVGTransformableElement::GetAttributeChangeHint will

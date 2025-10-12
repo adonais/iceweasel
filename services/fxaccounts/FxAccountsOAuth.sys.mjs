@@ -5,7 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  jwcrypto: "resource://services-crypto/jwcrypto.sys.mjs",
+  jwcrypto: "moz-src:///services/crypto/modules/jwcrypto.sys.mjs",
 });
 
 import {

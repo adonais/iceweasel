@@ -30,7 +30,6 @@ interventions:
     treeherder:
         symbol: wc(I)
         tier: 3
-    python-version: [3]
     run:
         using: mach
         # Need to start Xvfb if we remove --headless

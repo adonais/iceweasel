@@ -102,9 +102,6 @@
 #include "rtc_base/weak_ptr.h"
 
 namespace webrtc {
-using ::webrtc::IceCandidateType;
-using ::webrtc::SafeTask;
-using ::webrtc::TimeDelta;
 
 TCPPort::TCPPort(const PortParametersRef& args,
                  uint16_t min_port,
@@ -135,31 +132,31 @@ TCPPort::~TCPPort() {
 Connection* TCPPort::CreateConnection(const Candidate& address,
                                       CandidateOrigin origin) {
   if (!SupportsProtocol(address.protocol())) {
-    return NULL;
+    return nullptr;
   }
 
   if ((address.tcptype() == TCPTYPE_ACTIVE_STR && !address.is_prflx()) ||
       (address.tcptype().empty() && address.address().port() == 0)) {
     // It's active only candidate, we should not try to create connections
     // for these candidates.
-    return NULL;
+    return nullptr;
   }
 
   // We can't accept TCP connections incoming on other ports
   if (origin == ORIGIN_OTHER_PORT)
-    return NULL;
+    return nullptr;
 
   // We don't know how to act as an ssl server yet
-  if ((address.protocol() == webrtc::SSLTCP_PROTOCOL_NAME) &&
+  if ((address.protocol() == SSLTCP_PROTOCOL_NAME) &&
       (origin == ORIGIN_THIS_PORT)) {
-    return NULL;
+    return nullptr;
   }
 
   if (!IsCompatibleAddress(address.address())) {
-    return NULL;
+    return nullptr;
   }
 
-  TCPConnection* conn = NULL;
+  TCPConnection* conn = nullptr;
   if (AsyncPacketSocket* socket = GetIncoming(address.address(), true)) {
     // Incoming connection; we already created a socket and connected signals,
     // so we need to hand off the "read packet" responsibility to
@@ -182,7 +179,7 @@ void TCPPort::PrepareAddress() {
                         << static_cast<int>(listen_socket_->GetState());
     AddAddress(
         listen_socket_->GetLocalAddress(), listen_socket_->GetLocalAddress(),
-        SocketAddress(), webrtc::TCP_PROTOCOL_NAME, "", TCPTYPE_PASSIVE_STR,
+        SocketAddress(), TCP_PROTOCOL_NAME, "", TCPTYPE_PASSIVE_STR,
         IceCandidateType::kHost, ICE_TYPE_PREFERENCE_HOST_TCP, 0, "", true);
   } else {
     RTC_LOG(LS_INFO) << ToString()
@@ -197,7 +194,7 @@ void TCPPort::PrepareAddress() {
     // see what IP we get. But that may be overkill.
     AddAddress(SocketAddress(Network()->GetBestIP(), DISCARD_PORT),
                SocketAddress(Network()->GetBestIP(), 0), SocketAddress(),
-               webrtc::TCP_PROTOCOL_NAME, "", TCPTYPE_ACTIVE_STR,
+               TCP_PROTOCOL_NAME, "", TCPTYPE_ACTIVE_STR,
                IceCandidateType::kHost, ICE_TYPE_PREFERENCE_HOST_TCP, 0, "",
                true);
   }
@@ -208,7 +205,7 @@ int TCPPort::SendTo(const void* data,
                     const SocketAddress& addr,
                     const AsyncSocketPacketOptions& options,
                     bool payload) {
-  AsyncPacketSocket* socket = NULL;
+  AsyncPacketSocket* socket = nullptr;
   TCPConnection* conn = static_cast<TCPConnection*>(GetConnection(addr));
 
   // For Connection, this is the code path used by Ping() to establish
@@ -272,12 +269,11 @@ int TCPPort::GetError() {
 }
 
 bool TCPPort::SupportsProtocol(absl::string_view protocol) const {
-  return protocol == webrtc::TCP_PROTOCOL_NAME ||
-         protocol == webrtc::SSLTCP_PROTOCOL_NAME;
+  return protocol == TCP_PROTOCOL_NAME || protocol == SSLTCP_PROTOCOL_NAME;
 }
 
 ProtocolType TCPPort::GetProtocol() const {
-  return webrtc::PROTO_TCP;
+  return PROTO_TCP;
 }
 
 void TCPPort::OnNewConnection(AsyncListenSocket* socket,
@@ -317,7 +313,7 @@ void TCPPort::TryCreateServerSocket() {
 
 AsyncPacketSocket* TCPPort::GetIncoming(const SocketAddress& addr,
                                         bool remove) {
-  AsyncPacketSocket* socket = NULL;
+  AsyncPacketSocket* socket = nullptr;
   for (std::list<Incoming>::iterator it = incoming_.begin();
        it != incoming_.end(); ++it) {
     if (it->addr == addr) {
@@ -332,7 +328,7 @@ AsyncPacketSocket* TCPPort::GetIncoming(const SocketAddress& addr,
 
 void TCPPort::OnReadPacket(AsyncPacketSocket* socket,
                            const ReceivedIpPacket& packet) {
-  Port::OnReadPacket(packet, webrtc::PROTO_TCP);
+  Port::OnReadPacket(packet, PROTO_TCP);
 }
 
 void TCPPort::OnSentPacket(AsyncPacketSocket* socket,
@@ -354,13 +350,13 @@ TCPConnection::TCPConnection(WeakPtr<Port> tcp_port,
     : Connection(std::move(tcp_port), 0, candidate),
       socket_(socket),
       error_(0),
-      outgoing_(socket == NULL),
+      outgoing_(socket == nullptr),
       connection_pending_(false),
       pretending_to_be_writable_(false),
       reconnection_timeout_(CONNECTION_WRITE_CONNECT_TIMEOUT) {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK_EQ(port()->GetProtocol(),
-                webrtc::PROTO_TCP);  // Needs to be TCPPort.
+                PROTO_TCP);  // Needs to be TCPPort.
 
   SignalDestroyed.connect(this, &TCPConnection::OnDestroyed);
 
@@ -413,7 +409,7 @@ int TCPConnection::Send(const void* data,
   tcp_port()->CopyPortInformationToPacketInfo(
       &modified_options.info_signaled_after_sent);
   int sent = socket_->Send(data, size, modified_options);
-  int64_t now = webrtc::TimeMillis();
+  int64_t now = TimeMillis();
   if (sent < 0) {
     stats_.sent_discarded_packets++;
     error_ = socket_->GetError();
@@ -487,7 +483,7 @@ void TCPConnection::OnConnect(AsyncPacketSocket* socket) {
                           << ", rather than an address associated with network:"
                           << port_->Network()->ToString()
                           << ". Still allowing it since it's localhost.";
-    } else if (webrtc::IPIsAny(port_->Network()->GetBestIP())) {
+    } else if (IPIsAny(port_->Network()->GetBestIP())) {
       RTC_LOG(LS_WARNING)
           << "Socket is bound to the address:"
           << socket_address.ipaddr().ToSensitiveString()
@@ -592,7 +588,7 @@ void TCPConnection::OnDestroyed(Connection* c) {
 
 void TCPConnection::CreateOutgoingTcpSocket() {
   RTC_DCHECK(outgoing_);
-  int opts = (remote_candidate().protocol() == webrtc::SSLTCP_PROTOCOL_NAME)
+  int opts = (remote_candidate().protocol() == SSLTCP_PROTOCOL_NAME)
                  ? PacketSocketFactory::OPT_TLS_FAKE
                  : 0;
 

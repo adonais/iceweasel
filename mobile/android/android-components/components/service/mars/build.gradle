@@ -15,7 +15,7 @@ buildscript {
     }
 
     dependencies {
-        classpath  libs.plugin.serialization
+        classpath libs.kotlin.serialization
     }
 }
 
@@ -41,23 +41,23 @@ android {
 }
 
 dependencies {
-    implementation libs.kotlin.coroutines
-    implementation libs.kotlin.json
-    implementation libs.androidx.work.runtime
-
     implementation project(':components:concept-fetch')
-    implementation project(':components:support-ktx')
-    implementation project(':components:support-base')
     implementation project(':components:feature-top-sites')
+    implementation project(':components:support-base')
+    implementation project(':components:support-ktx')
+
+    implementation libs.androidx.work.runtime
+    implementation libs.kotlinx.coroutines
+    implementation libs.kotlinx.serialization.json
+
+    testImplementation project(':components:support-test')
 
     testImplementation libs.androidx.concurrent
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.work.testing
-    testImplementation libs.testing.robolectric
-    testImplementation libs.testing.coroutines
-
-    testImplementation project(':components:support-test')
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

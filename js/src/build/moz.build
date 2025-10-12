@@ -107,15 +107,18 @@ NO_EXPAND_LIBS = True
 
 DIST_INSTALL = True
 
-# Run SpiderMonkey style checker after linking the static library. This avoids
-# running the script for no-op builds.
-GeneratedFile(
-    "spidermonkey_checks",
-    script="/config/run_spidermonkey_checks.py",
-    inputs=[
-        "!%sjs_static.%s" % (CONFIG["LIB_PREFIX"], CONFIG["LIB_SUFFIX"]),
-        "/config/check_spidermonkey_style.py",
-        "/config/check_macroassembler_style.py",
-        "/config/check_js_opcode.py",
-    ],
-)
+# JS developers want this to run even if tests are disabled. It may be worth
+# considering moving the check to `mach lint` at some point.
+if CONFIG["ENABLE_TESTS"] or CONFIG["JS_STANDALONE"]:
+    # Run SpiderMonkey style checker after linking the static library. This avoids
+    # running the script for no-op builds.
+    GeneratedFile(
+        "spidermonkey_checks",
+        script="/config/run_spidermonkey_checks.py",
+        inputs=[
+            "!%sjs_static.%s" % (CONFIG["LIB_PREFIX"], CONFIG["LIB_SUFFIX"]),
+            "/config/check_spidermonkey_style.py",
+            "/config/check_macroassembler_style.py",
+            "/config/check_js_opcode.py",
+        ],
+    )

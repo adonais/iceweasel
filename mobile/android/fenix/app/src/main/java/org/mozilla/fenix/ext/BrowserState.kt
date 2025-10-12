@@ -9,7 +9,6 @@ import mozilla.components.browser.state.selector.selectedNormalTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
-import mozilla.components.feature.tabs.ext.hasMediaPlayed
 import org.mozilla.fenix.home.recenttabs.RecentTab
 import org.mozilla.fenix.tabstray.ext.isNormalTabInactive
 import org.mozilla.fenix.utils.Settings

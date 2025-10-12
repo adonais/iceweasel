@@ -789,9 +789,9 @@ return handleRustResult(
 /**
  * invokeTestCallbackInterfaceGetValue
  * @param {TestCallbackInterface} cbi
- * @returns {Promise<number>}}
+ * @returns {number}
  */
-export async function invokeTestCallbackInterfaceGetValue(
+export function invokeTestCallbackInterfaceGetValue(
     cbi) {
    
 if (cbi instanceof UniffiSkipJsTypeCheck) {
@@ -799,7 +799,7 @@ if (cbi instanceof UniffiSkipJsTypeCheck) {
 } else {
     FfiConverterTypeTestCallbackInterface.checkType(cbi);
 }
-const result = await UniFFIScaffolding.callAsyncWrapper(
+const result = UniFFIScaffolding.callSync(
     147, // uniffi_uniffi_bindings_tests_fn_func_invoke_test_callback_interface_get_value
     FfiConverterTypeTestCallbackInterface.lower(cbi),
 )
@@ -814,7 +814,7 @@ return handleRustResult(
  * invokeTestCallbackInterfaceNoop
  * @param {TestCallbackInterface} cbi
  */
-export async function invokeTestCallbackInterfaceNoop(
+export function invokeTestCallbackInterfaceNoop(
     cbi) {
    
 if (cbi instanceof UniffiSkipJsTypeCheck) {
@@ -822,7 +822,7 @@ if (cbi instanceof UniffiSkipJsTypeCheck) {
 } else {
     FfiConverterTypeTestCallbackInterface.checkType(cbi);
 }
-const result = await UniFFIScaffolding.callAsyncWrapper(
+const result = UniFFIScaffolding.callSync(
     148, // uniffi_uniffi_bindings_tests_fn_func_invoke_test_callback_interface_noop
     FfiConverterTypeTestCallbackInterface.lower(cbi),
 )
@@ -838,7 +838,7 @@ return handleRustResult(
  * @param {TestCallbackInterface} cbi
  * @param {number} value
  */
-export async function invokeTestCallbackInterfaceSetValue(
+export function invokeTestCallbackInterfaceSetValue(
     cbi, 
     value) {
    
@@ -852,7 +852,7 @@ if (value instanceof UniffiSkipJsTypeCheck) {
 } else {
     FfiConverterUInt32.checkType(value);
 }
-const result = await UniFFIScaffolding.callAsyncWrapper(
+const result = UniFFIScaffolding.callSync(
     149, // uniffi_uniffi_bindings_tests_fn_func_invoke_test_callback_interface_set_value
     FfiConverterTypeTestCallbackInterface.lower(cbi),
     FfiConverterUInt32.lower(value),
@@ -868,9 +868,9 @@ return handleRustResult(
  * invokeTestCallbackInterfaceThrowIfEqual
  * @param {TestCallbackInterface} cbi
  * @param {CallbackInterfaceNumbers} numbers
- * @returns {Promise<CallbackInterfaceNumbers>}}
+ * @returns {CallbackInterfaceNumbers}
  */
-export async function invokeTestCallbackInterfaceThrowIfEqual(
+export function invokeTestCallbackInterfaceThrowIfEqual(
     cbi, 
     numbers) {
    
@@ -884,7 +884,7 @@ if (numbers instanceof UniffiSkipJsTypeCheck) {
 } else {
     FfiConverterTypeCallbackInterfaceNumbers.checkType(numbers);
 }
-const result = await UniFFIScaffolding.callAsyncWrapper(
+const result = UniFFIScaffolding.callSync(
     150, // uniffi_uniffi_bindings_tests_fn_func_invoke_test_callback_interface_throw_if_equal
     FfiConverterTypeTestCallbackInterface.lower(cbi),
     FfiConverterTypeCallbackInterfaceNumbers.lower(numbers),
@@ -4257,30 +4257,30 @@ export class TestAsyncCallbackInterface {
     /**
      * noop
      */
-    noop() {
+    async noop() {
       throw Error("noop not implemented");
     }
     /**
      * getValue
-     * @returns {number}
+     * @returns {Promise<number>}}
      */
-    getValue() {
+    async getValue() {
       throw Error("getValue not implemented");
     }
     /**
      * setValue
      * @param {number} value
      */
-    setValue(
+    async setValue(
         value) {
       throw Error("setValue not implemented");
     }
     /**
      * throwIfEqual
      * @param {CallbackInterfaceNumbers} numbers
-     * @returns {CallbackInterfaceNumbers}
+     * @returns {Promise<CallbackInterfaceNumbers>}}
      */
-    throwIfEqual(
+    async throwIfEqual(
         numbers) {
       throw Error("throwIfEqual not implemented");
     }

@@ -19,7 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
-import mozilla.components.ui.icons.R
+import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun DotHighlight(
@@ -44,7 +44,7 @@ private fun HighlightedActionButtonPreview() {
     AcornTheme {
         Box(modifier = Modifier.background(AcornTheme.colors.layer1)) {
             Image(
-                painter = painterResource(id = R.drawable.mozac_ic_web_extension_default_icon),
+                painter = painterResource(id = iconsR.drawable.mozac_ic_web_extension_default_icon),
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
                 colorFilter = ColorFilter.tint(AcornTheme.colors.iconPrimary),

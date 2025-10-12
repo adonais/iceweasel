@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -67,6 +68,28 @@
 #include "rtc_base/system/file_wrapper.h"
 
 namespace webrtc {
+namespace {
+
+Environment AssembleEnvironment(PeerConnectionFactoryDependencies& deps) {
+  // Assemble Environment here rather than in ConnectionContext::Create
+  // to avoid dependency on EnvironmentFactory by ConnectionContext and thus its
+  // users.
+  EnvironmentFactory env_factory = deps.env.has_value()
+                                       ? EnvironmentFactory(*deps.env)
+                                       : EnvironmentFactory();
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  env_factory.Set(std::move(deps.trials));
+  env_factory.Set(std::move(deps.task_queue_factory));
+#pragma clang diagnostic pop
+
+  // Clear Environment from `deps` to avoid accidental usage of the wrong
+  // Environment.
+  deps.env = std::nullopt;
+  return env_factory.Create();
+}
+
+}  // namespace
 
 scoped_refptr<PeerConnectionFactoryInterface>
 CreateModularPeerConnectionFactory(
@@ -93,10 +116,8 @@ CreateModularPeerConnectionFactory(
 // Static
 scoped_refptr<PeerConnectionFactory> PeerConnectionFactory::Create(
     PeerConnectionFactoryDependencies dependencies) {
-  auto context = ConnectionContext::Create(
-      CreateEnvironment(std::move(dependencies.trials),
-                        std::move(dependencies.task_queue_factory)),
-      &dependencies);
+  auto context = ConnectionContext::Create(AssembleEnvironment(dependencies),
+                                           &dependencies);
   if (!context) {
     return nullptr;
   }
@@ -128,10 +149,8 @@ PeerConnectionFactory::PeerConnectionFactory(
 PeerConnectionFactory::PeerConnectionFactory(
     PeerConnectionFactoryDependencies dependencies)
     : PeerConnectionFactory(
-          ConnectionContext::Create(
-              CreateEnvironment(std::move(dependencies.trials),
-                                std::move(dependencies.task_queue_factory)),
-              &dependencies),
+          ConnectionContext::Create(AssembleEnvironment(dependencies),
+                                    &dependencies),
           &dependencies) {}
 
 PeerConnectionFactory::~PeerConnectionFactory() {
@@ -149,17 +168,17 @@ void PeerConnectionFactory::SetOptions(const Options& options) {
 }
 
 RtpCapabilities PeerConnectionFactory::GetRtpSenderCapabilities(
-    webrtc::MediaType kind) const {
+    MediaType kind) const {
   RTC_DCHECK_RUN_ON(signaling_thread());
   switch (kind) {
-    case webrtc::MediaType::AUDIO: {
+    case MediaType::AUDIO: {
       Codecs cricket_codecs;
       cricket_codecs = codec_vendor_.audio_send_codecs().codecs();
       auto extensions =
           GetDefaultEnabledRtpHeaderExtensions(media_engine()->voice());
       return ToRtpCapabilities(cricket_codecs, extensions);
     }
-    case webrtc::MediaType::VIDEO: {
+    case MediaType::VIDEO: {
       Codecs cricket_codecs;
       cricket_codecs = codec_vendor_.video_send_codecs().codecs();
       auto extensions =
@@ -174,17 +193,17 @@ RtpCapabilities PeerConnectionFactory::GetRtpSenderCapabilities(
 }
 
 RtpCapabilities PeerConnectionFactory::GetRtpReceiverCapabilities(
-    webrtc::MediaType kind) const {
+    MediaType kind) const {
   RTC_DCHECK_RUN_ON(signaling_thread());
   switch (kind) {
-    case webrtc::MediaType::AUDIO: {
+    case MediaType::AUDIO: {
       Codecs cricket_codecs;
       cricket_codecs = codec_vendor_.audio_recv_codecs().codecs();
       auto extensions =
           GetDefaultEnabledRtpHeaderExtensions(media_engine()->voice());
       return ToRtpCapabilities(cricket_codecs, extensions);
     }
-    case webrtc::MediaType::VIDEO: {
+    case MediaType::VIDEO: {
       Codecs cricket_codecs = codec_vendor_.video_recv_codecs().codecs();
       auto extensions =
           GetDefaultEnabledRtpHeaderExtensions(media_engine()->video());

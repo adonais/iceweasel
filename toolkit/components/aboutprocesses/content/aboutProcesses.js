@@ -133,7 +133,7 @@ var State = {
   _latest: null,
 
   async _promiseSnapshot() {
-    let date = Cu.now();
+    let date = ChromeUtils.now();
     let main = await ChromeUtils.requestProcInfo();
     main.date = date;
 
@@ -156,7 +156,8 @@ var State = {
     if (
       force ||
       !this._latest ||
-      Cu.now() - this._latest.date > MINIMUM_INTERVAL_BETWEEN_SAMPLES_MS
+      ChromeUtils.now() - this._latest.date >
+        MINIMUM_INTERVAL_BETWEEN_SAMPLES_MS
     ) {
       // Replacing this._previous before we are done awaiting
       // this._promiseSnapshot can cause this._previous and this._latest to be

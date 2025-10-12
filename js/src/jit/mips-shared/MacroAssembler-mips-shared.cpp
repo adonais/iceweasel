@@ -1414,6 +1414,80 @@ void MacroAssemblerMIPSShared::ma_bc1d(FloatRegister lhs, FloatRegister rhs,
   asMasm().branchWithCode(getBranchCode(testKind, fcc), label, jumpKind);
 }
 
+void MacroAssemblerMIPSShared::minMax32(Register lhs, Register rhs,
+                                        Register dest, bool isMax) {
+  if (rhs == dest) {
+    std::swap(lhs, rhs);
+  }
+
+  auto cond = isMax ? Assembler::GreaterThan : Assembler::LessThan;
+  if (lhs != dest) {
+    asMasm().move32(lhs, dest);
+  }
+  asMasm().cmp32Move32(cond, rhs, lhs, rhs, dest);
+}
+
+void MacroAssemblerMIPSShared::minMax32(Register lhs, Imm32 rhs, Register dest,
+                                        bool isMax) {
+  if (rhs.value == 0) {
+    ScratchRegisterScope scratch(asMasm());
+
+    if (isMax) {
+      // dest = (~lhs >> 31) & lhs
+      as_nor(scratch, lhs, zero);
+      as_sra(scratch, scratch, 31);
+      as_and(dest, lhs, scratch);
+    } else {
+      // dest = (lhs >> 31) & lhs
+      as_sra(scratch, lhs, 31);
+      as_and(dest, lhs, scratch);
+    }
+    return;
+  }
+
+  SecondScratchRegisterScope scratch(asMasm());
+  asMasm().move32(rhs, scratch);
+
+  minMax32(lhs, scratch, dest, isMax);
+}
+
+void MacroAssemblerMIPSShared::minMaxPtr(Register lhs, Register rhs,
+                                         Register dest, bool isMax) {
+  if (rhs == dest) {
+    std::swap(lhs, rhs);
+  }
+
+  auto cond = isMax ? Assembler::GreaterThan : Assembler::LessThan;
+  if (lhs != dest) {
+    asMasm().movePtr(lhs, dest);
+  }
+  asMasm().cmpPtrMovePtr(cond, rhs, lhs, rhs, dest);
+}
+
+void MacroAssemblerMIPSShared::minMaxPtr(Register lhs, ImmWord rhs,
+                                         Register dest, bool isMax) {
+  if (rhs.value == 0) {
+    ScratchRegisterScope scratch(asMasm());
+
+    if (isMax) {
+      // dest = (~lhs >> 63) & lhs
+      as_nor(scratch, lhs, zero);
+      as_dsra32(scratch, scratch, 63);
+      as_and(dest, lhs, scratch);
+    } else {
+      // dest = (lhs >> 63) & lhs
+      as_dsra32(scratch, lhs, 63);
+      as_and(dest, lhs, scratch);
+    }
+    return;
+  }
+
+  SecondScratchRegisterScope scratch(asMasm());
+  asMasm().movePtr(rhs, scratch);
+
+  minMaxPtr(lhs, scratch, dest, isMax);
+}
+
 void MacroAssemblerMIPSShared::minMaxDouble(FloatRegister srcDest,
                                             FloatRegister second,
                                             bool handleNaN, bool isMax) {
@@ -2266,7 +2340,17 @@ static void CompareExchange(MacroAssembler& masm,
 
   masm.ma_b(output, valueTemp, &end, Assembler::NotEqual, ShortJump);
 
-  masm.as_sllv(valueTemp, newval, offsetTemp);
+  // truncate newval for 8-bit and 16-bit cmpxchg
+  switch (nbytes) {
+    case 1:
+      masm.as_andi(valueTemp, newval, 0xff);
+      break;
+    case 2:
+      masm.as_andi(valueTemp, newval, 0xffff);
+      break;
+  }
+
+  masm.as_sllv(valueTemp, valueTemp, offsetTemp);
   masm.as_and(ScratchRegister, ScratchRegister, maskTemp);
   masm.as_or(ScratchRegister, ScratchRegister, valueTemp);
 

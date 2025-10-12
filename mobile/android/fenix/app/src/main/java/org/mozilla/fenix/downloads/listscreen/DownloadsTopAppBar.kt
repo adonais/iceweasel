@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A TopAppBar for the Downloads screen. It has slots for a title, an optional navigation icon
@@ -76,7 +77,7 @@ private fun DownloadsTopAppBarPreview() {
             navigationIcon = {
                 IconButton(onClick = {}) {
                     Icon(
-                        painter = painterResource(R.drawable.mozac_ic_back_24),
+                        painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                         contentDescription = stringResource(R.string.download_navigate_back_description),
                         tint = FirefoxTheme.colors.iconPrimary,
                     )
@@ -85,7 +86,7 @@ private fun DownloadsTopAppBarPreview() {
             actions = {
                 IconButton(onClick = {}) {
                     Icon(
-                        painter = painterResource(R.drawable.mozac_ic_ellipsis_vertical_24),
+                        painter = painterResource(iconsR.drawable.mozac_ic_ellipsis_vertical_24),
                         contentDescription = stringResource(
                             R.string.content_description_menu,
                         ),

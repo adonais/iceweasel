@@ -607,7 +607,7 @@ static void SandboxLateInit() {
   // This will create:
   //  - pointers to uprofiler to make use of the profiler
   //  - a SandboxProfiler
-  //  - a MPSCQueue
+  //  - a BoundedMPSCQueue
   //  - a std::thread
   //
   // So that later usage of uprofiler under SIGSYS context can:

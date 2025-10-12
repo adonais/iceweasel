@@ -28,7 +28,9 @@ if (AppConstants.MOZ_UPDATER) {
 
 let openUrlFun = url => () => openUrl(url);
 let openUrl = url => {
-  let window = lazy.BrowserWindowTracker.getTopWindow();
+  let window = lazy.BrowserWindowTracker.getTopWindow({
+    allowFromInactiveWorkspace: true,
+  });
 
   if (url.startsWith("about:")) {
     window.switchToTabHavingURI(Services.io.newURI(url), true, {
@@ -45,15 +47,25 @@ let openUrl = url => {
 
 let openAddonsUrl = url => {
   return () => {
-    let window = lazy.BrowserWindowTracker.getTopWindow();
+    // bug 1983835 - should this only look for windows on the current
+    // workspace?
+    let window = lazy.BrowserWindowTracker.getTopWindow({
+      allowFromInactiveWorkspace: true,
+    });
     window.BrowserAddonUI.openAddonsMgr(url, { selectTabByViewId: true });
   };
 };
 
+// bug 1983835 - should this only look for windows on the current
+// workspace?
 let currentBrowser = () =>
-  lazy.BrowserWindowTracker.getTopWindow()?.gBrowser.selectedBrowser;
+  lazy.BrowserWindowTracker.getTopWindow({ allowFromInactiveWorkspace: true })
+    ?.gBrowser.selectedBrowser;
+// bug 1983835 - should this only look for windows on the current
+// workspace?
 let currentTab = () =>
-  lazy.BrowserWindowTracker.getTopWindow()?.gBrowser.selectedTab;
+  lazy.BrowserWindowTracker.getTopWindow({ allowFromInactiveWorkspace: true })
+    ?.gBrowser.selectedTab;
 
 ChromeUtils.defineLazyGetter(lazy, "gFluentStrings", function () {
   return new Localization(
@@ -78,9 +90,9 @@ const DEFAULT_ACTIONS = {
     icon: "chrome://browser/skin/bookmark.svg",
     label: "quickactions-bookmarks2",
     onPick: () => {
-      lazy.BrowserWindowTracker.getTopWindow().top.PlacesCommandHook.showPlacesOrganizer(
-        "BookmarksToolbar"
-      );
+      lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      }).top.PlacesCommandHook.showPlacesOrganizer("BookmarksToolbar");
     },
   },
   clear: {
@@ -90,7 +102,9 @@ const DEFAULT_ACTIONS = {
     ],
     label: "quickactions-clearrecenthistory",
     onPick: () => {
-      lazy.BrowserWindowTracker.getTopWindow()
+      lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      })
         .document.getElementById("Tools:Sanitize")
         .doCommand();
     },
@@ -120,7 +134,9 @@ const DEFAULT_ACTIONS = {
     icon: "chrome://browser/skin/firefox-view.svg",
     label: "quickactions-firefoxview",
     onPick: () => {
-      lazy.BrowserWindowTracker.getTopWindow().FirefoxViewHandler.openTab();
+      lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      }).FirefoxViewHandler.openTab();
     },
   },
   inspect: {
@@ -153,8 +169,13 @@ const DEFAULT_ACTIONS = {
     l10nCommands: ["quickactions-cmd-print"],
     label: "quickactions-print2",
     icon: "chrome://global/skin/icons/print.svg",
+    isVisible: () => {
+      return Services.prefs.getBoolPref("print.enabled");
+    },
     onPick: () => {
-      lazy.BrowserWindowTracker.getTopWindow()
+      lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      })
         .document.getElementById("cmd_print")
         .doCommand();
     },
@@ -164,7 +185,9 @@ const DEFAULT_ACTIONS = {
     label: "quickactions-private2",
     icon: "chrome://global/skin/icons/indicator-private-browsing.svg",
     onPick: () => {
-      lazy.BrowserWindowTracker.getTopWindow().OpenBrowserWindow({
+      lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      }).OpenBrowserWindow({
         private: true,
       });
     },
@@ -175,7 +198,9 @@ const DEFAULT_ACTIONS = {
     isVisible: () => lazy.ResetProfile.resetSupported(),
     onPick: () => {
       lazy.ResetProfile.openConfirmationDialog(
-        lazy.BrowserWindowTracker.getTopWindow()
+        lazy.BrowserWindowTracker.getTopWindow({
+          allowFromInactiveWorkspace: true,
+        })
       );
     },
   },
@@ -188,11 +213,16 @@ const DEFAULT_ACTIONS = {
     l10nCommands: ["quickactions-cmd-savepdf2"],
     label: "quickactions-savepdf",
     icon: "chrome://global/skin/icons/print.svg",
+    isVisible: () => {
+      return Services.prefs.getBoolPref("print.enabled");
+    },
     onPick: () => {
       // This writes over the users last used printer which we
       // should not do. Refactor to launch the print preview with
       // custom settings.
-      let win = lazy.BrowserWindowTracker.getTopWindow();
+      let win = lazy.BrowserWindowTracker.getTopWindow({
+        allowFromInactiveWorkspace: true,
+      });
       Cc["@mozilla.org/gfx/printsettings-service;1"]
         .getService(Ci.nsIPrintSettingsService)
         .maybeSaveLastUsedPrinterNameToPrefs(
@@ -213,7 +243,9 @@ const DEFAULT_ACTIONS = {
     },
     onPick: () => {
       Services.obs.notifyObservers(
-        lazy.BrowserWindowTracker.getTopWindow(),
+        lazy.BrowserWindowTracker.getTopWindow({
+          allowFromInactiveWorkspace: true,
+        }),
         "menuitem-screenshot",
         "QuickActions"
       );
@@ -256,7 +288,8 @@ const DEFAULT_ACTIONS = {
 
 function openInspector() {
   lazy.DevToolsShim.showToolboxForTab(
-    lazy.BrowserWindowTracker.getTopWindow().gBrowser.selectedTab,
+    lazy.BrowserWindowTracker.getTopWindow({ allowFromInactiveWorkspace: true })
+      .gBrowser.selectedTab,
     { toolId: "inspector" }
   );
 }

@@ -31,6 +31,10 @@ function TimePicker(context) {
      *         }
      */
     init(props) {
+      if (props.type == "date") {
+        return;
+      }
+      this.context.hidden = false;
       this.props = props || {};
       this._setDefaultState();
       this._createComponents();
@@ -256,7 +260,9 @@ function TimePicker(context) {
     handleMessage(event) {
       switch (event.data.name) {
         case "PickerSetValue": {
-          this.set(event.data.detail);
+          if (!this.context.hidden) {
+            this.set(event.data.detail);
+          }
           break;
         }
         case "PickerInit": {

@@ -85,7 +85,8 @@ class MOZ_RAII IonCacheIRCompiler : public CacheIRCompiler {
 
   [[nodiscard]] bool emitAddAndStoreSlotShared(
       CacheOp op, ObjOperandId objId, uint32_t offsetOffset, ValOperandId rhsId,
-      uint32_t newShapeOffset, mozilla::Maybe<uint32_t> numNewSlotsOffset);
+      uint32_t newShapeOffset, mozilla::Maybe<uint32_t> numNewSlotsOffset,
+      bool preserveWrapper);
 
   template <typename IdType>
   [[nodiscard]] bool emitCallScriptedProxyGetShared(

@@ -1577,13 +1577,13 @@ AV1_COMP *av1_create_compressor(AV1_PRIMARY *ppi, const AV1EncoderConfig *oxcf,
   if (cpi->oxcf.kf_cfg.key_freq_max != 0)
     alloc_obmc_buffers(&cpi->td.mb.obmc_buffer, cm->error);
 
-  for (int x = 0; x < 2; x++)
-    for (int y = 0; y < 2; y++)
-      CHECK_MEM_ERROR(
-          cm, cpi->td.mb.intrabc_hash_info.hash_value_buffer[x][y],
-          (uint32_t *)aom_malloc(
-              AOM_BUFFER_SIZE_FOR_BLOCK_HASH *
-              sizeof(*cpi->td.mb.intrabc_hash_info.hash_value_buffer[0][0])));
+  for (int x = 0; x < 2; x++) {
+    CHECK_MEM_ERROR(
+        cm, cpi->td.mb.intrabc_hash_info.hash_value_buffer[x],
+        (uint32_t *)aom_malloc(
+            AOM_BUFFER_SIZE_FOR_BLOCK_HASH *
+            sizeof(*cpi->td.mb.intrabc_hash_info.hash_value_buffer[x])));
+  }
 
   cpi->td.mb.intrabc_hash_info.crc_initialized = 0;
 
@@ -2261,17 +2261,17 @@ static void estimate_screen_content_antialiasing_aware(AV1_COMP *cpi,
     fprintf(stats_file, "Fast detection enabled\n");
   }
   fprintf(stats_file,
-          "---------------------------------------------------------------\n");
+          "-------------------------------------------------------\n");
   fprintf(stats_file,
-          "S: simple SCR block, high var    C: complex SCR block, high var\n");
+          "S: simple block, high var    C: complex block, high var\n");
   fprintf(stats_file,
-          "-: simple SCR block, low var     =: complex SCR block, low var \n");
+          "-: simple block, low var     =: complex block, low var \n");
   fprintf(stats_file,
-          "x: photo-like block              .: non-palettizable block     \n");
+          "x: photo-like block          .: non-palettizable block \n");
   fprintf(stats_file,
-          "(whitespace): solid block                                      \n");
+          "(whitespace): solid block                              \n");
   fprintf(stats_file,
-          "---------------------------------------------------------------\n");
+          "-------------------------------------------------------\n");
 #endif
 
   // Skip every other block and weigh each block twice as much when performing
@@ -2348,14 +2348,13 @@ static void estimate_screen_content_antialiasing_aware(AV1_COMP *cpi,
               &number_of_colors);
 
           if (under_threshold) {
-            ++count_palette;
-
             // Variance always comes from the source image with no
             // down-conversion
             int var = av1_get_perpixel_variance(cpi, xd, &buf, BLOCK_16X16,
                                                 AOM_PLANE_Y, use_hbd);
 
             if (var > kVarThresh) {
+              ++count_palette;
               ++count_intrabc;
 #ifdef OUTPUT_SCR_DET_MODE2_STATS
               fprintf(stats_file, "C");
@@ -2388,8 +2387,8 @@ static void estimate_screen_content_antialiasing_aware(AV1_COMP *cpi,
   // Normalize counts to account for the blocks that were skipped
   if (fast_detection) {
     count_photo *= multiplier;
-    count_intrabc *= multiplier;
     count_palette *= multiplier;
+    count_intrabc *= multiplier;
   }
 
   // The threshold values are selected experimentally.

@@ -92,6 +92,11 @@ interface TabManagerInteractor :
      * @return true if the back button press was consumed.
      */
     fun onBackPressed(): Boolean
+
+    /**
+     * Invoked when the sign into sync button is clicked.
+     */
+    fun onSignInClicked()
 }
 
 /**
@@ -217,5 +222,9 @@ class DefaultTabManagerInteractor(
      */
     override fun onDeleteAllInactiveTabsClicked() {
         controller.handleDeleteAllInactiveTabsClicked()
+    }
+
+    override fun onSignInClicked() {
+        controller.handleSignInClicked()
     }
 }

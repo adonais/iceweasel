@@ -126,6 +126,8 @@ struct IgnoreGCPolicy {
   static bool isValid(const T& v) { return true; }
 };
 template <>
+struct GCPolicy<uint8_t> : public IgnoreGCPolicy<uint8_t> {};
+template <>
 struct GCPolicy<uint32_t> : public IgnoreGCPolicy<uint32_t> {};
 template <>
 struct GCPolicy<uint64_t> : public IgnoreGCPolicy<uint64_t> {};

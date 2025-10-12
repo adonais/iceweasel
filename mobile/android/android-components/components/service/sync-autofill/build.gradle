@@ -27,22 +27,22 @@ android {
 dependencies {
     api ComponentsDependencies.mozilla_appservices_autofill
 
+    api project(':components:concept-base')
     api project(':components:concept-storage')
     api project(':components:concept-sync')
-    api project(':components:concept-base')
     api project(':components:lib-dataprotect')
 
-    implementation project(':components:support-utils')
     implementation project(':components:support-ktx')
+    implementation project(':components:support-utils')
 
     testImplementation project(':components:support-test')
 
-    testImplementation libs.androidx.test.core
-    testImplementation libs.androidx.test.junit
-    testImplementation libs.testing.robolectric
-    testImplementation libs.testing.coroutines
     testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
     testImplementation ComponentsDependencies.mozilla_appservices_init_rust_components
+    testImplementation libs.androidx.test.core
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.kotlinx.coroutines.test
+    testImplementation libs.robolectric
 }
 
 apply from: '../../../android-lint.gradle'

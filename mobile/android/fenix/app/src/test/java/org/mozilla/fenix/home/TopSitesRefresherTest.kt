@@ -6,14 +6,15 @@ package org.mozilla.fenix.home
 
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesProvider
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.lifecycle.TestLifecycleOwner
 import org.mozilla.fenix.utils.Settings
@@ -23,41 +24,45 @@ import org.mozilla.fenix.utils.Settings
  */
 class TopSitesRefresherTest {
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
-
     private val lifecycleOwner = TestLifecycleOwner()
 
     private val topSitesProvider = FakeTopSitesProvider()
     private val settings: Settings = mockk(relaxed = true)
 
+    private val testScheduler = TestCoroutineScheduler()
+    private lateinit var topSitesRefresher: TopSitesRefresher
+
     @Before
     fun setUp() {
+        topSitesRefresher = TopSitesRefresher(
+            settings = settings,
+            topSitesProvider = topSitesProvider,
+            dispatcher = StandardTestDispatcher(testScheduler),
+        )
+
         lifecycleOwner.registerObserver(
-            observer = TopSitesRefresher(
-                settings = settings,
-                topSitesProvider = topSitesProvider,
-                dispatcher = coroutinesTestRule.testDispatcher,
-            ),
+            observer = topSitesRefresher,
         )
     }
 
     @Test
     fun `WHEN lifecycle resumes AND we want to show contile feature THEN top sites are refreshed`() =
-        runTestOnMain {
+        runTest(context = testScheduler) {
             every { settings.showContileFeature } returns true
 
             lifecycleOwner.onResume()
+            advanceUntilIdle()
 
             assertTrue(topSitesProvider.cacheRefreshed)
         }
 
     @Test
     fun `WHEN lifecycle resumes AND we DO NOT want to show contile feature THEN top sites are NOT refreshed`() =
-        runTestOnMain {
+        runTest(context = testScheduler) {
             every { settings.showContileFeature } returns false
 
             lifecycleOwner.onResume()
+            advanceUntilIdle()
 
             assertFalse(topSitesProvider.cacheRefreshed)
         }

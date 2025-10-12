@@ -12,7 +12,6 @@ import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import androidx.core.graphics.scale
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.images.DesiredSize
-import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt

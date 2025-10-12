@@ -505,6 +505,29 @@
           "additionalProperties": false,
           "required": ["id"],
           "description": "Happens when the IP protection widget is loaded and the toolbar item is available"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "enum": ["selectableProfilesUpdated"]
+            },
+            "context": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["remote"],
+                  "description": "The source type of the profiles update event. Only 'remote' is emitted by the trigger"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false,
+          "required": ["id"],
+          "description": "Happens when shared profile data changes in another running profile instance (remote) and a tracked data-collection preference changed."
         }
       ]
     }

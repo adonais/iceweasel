@@ -616,14 +616,16 @@ style:
       - '0'
       - '1'
       - '2'
+      - '60' # seconds in minute / minutes in hour
+      - '1000' # millis in second
     ignoreHashCodeFunction: true
     ignorePropertyDeclaration: true # Enabled for Compose in https://github.com/mozilla-mobile/android-components/issues/11864
-    ignoreLocalVariableDeclaration: false
+    ignoreLocalVariableDeclaration: true
     ignoreConstantDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
     ignoreAnnotation: false
     ignoreNamedArgument: true
-    ignoreEnums: false
+    ignoreEnums: true
     ignoreRanges: false
     ignoreExtensionFunctions: true
   MandatoryBracesLoops:
@@ -731,7 +733,7 @@ style:
   UntilInsteadOfRangeTo:
     active: false
   UnusedImports:
-    active: false
+    active: true
   UnusedParameter:
     active: true
     allowedNames: 'ignored|expected'
@@ -782,4 +784,8 @@ style:
     active: true
     ignoreLateinitVar: false
   WildcardImport:
+    active: true
+
+mozilla-rules:
+  ForbiddenSuppression:
     active: true

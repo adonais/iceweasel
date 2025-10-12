@@ -8,6 +8,7 @@ package org.mozilla.fenix.ui.robots
 
 import android.content.Intent
 import android.util.Log
+import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.core.net.toUri
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
@@ -355,31 +356,6 @@ class SettingsRobot {
         Log.i(TAG, "verifyExternalDownloadsButton: Verified that the \"Downloads\" button is visible")
     }
 
-    fun verifyExternalDownloadManagerToggle(enabled: Boolean) {
-        onView(withId(R.id.recycler_view)).perform(
-            RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
-                hasDescendant(withText(R.string.preferences_external_download_manager)),
-            ),
-        )
-        Log.i(TAG, "verifyExternalDownloadManagerToggle: Trying to verify that the \"External download manager\" toggle is enabled: $enabled")
-        onView(withText(R.string.preferences_external_download_manager))
-            .check(
-                matches(
-                    hasCousin(
-                        allOf(
-                            withClassName(endsWith("Switch")),
-                            if (enabled) {
-                                isChecked()
-                            } else {
-                                isNotChecked()
-                            },
-                        ),
-                    ),
-                ),
-            )
-        Log.i(TAG, "verifyExternalDownloadManagerToggle: Verified that the \"External download manager\" toggle is enabled: $enabled")
-    }
-
     fun verifyLeakCanaryToggle(enabled: Boolean) {
         onView(withId(R.id.recycler_view)).perform(
             RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(
@@ -593,7 +569,7 @@ class SettingsRobot {
             return SettingsSubMenuHomepageRobot.Transition()
         }
 
-        fun openAutofillSubMenu(interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
+        fun openAutofillSubMenu(composeTestRule: ComposeTestRule, interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
             mDevice.findObject(UiSelector().textContains(getStringResource(R.string.preferences_autofill)))
                 .also {
                     Log.i(TAG, "openAutofillSubMenu: Waiting for $waitingTime ms for the \"Autofill\" button to exist")
@@ -604,8 +580,8 @@ class SettingsRobot {
                     Log.i(TAG, "openAutofillSubMenu: Clicked the \"Autofill\" button")
                 }
 
-            SettingsSubMenuAutofillRobot().interact()
-            return SettingsSubMenuAutofillRobot.Transition()
+            SettingsSubMenuAutofillRobot(composeTestRule).interact()
+            return SettingsSubMenuAutofillRobot.Transition(composeTestRule)
         }
 
         fun openAccessibilitySubMenu(interact: SettingsSubMenuAccessibilityRobot.() -> Unit): SettingsSubMenuAccessibilityRobot.Transition {
@@ -673,7 +649,7 @@ class SettingsRobot {
 
         fun openTurnOnSyncMenu(interact: SettingsTurnOnSyncRobot.() -> Unit): SettingsTurnOnSyncRobot.Transition {
             Log.i(TAG, "openTurnOnSyncMenu: Trying to click the \"Sync and save your data\" button")
-            onView(withText("Sync and save your data")).click()
+            onView(withText("Sign in")).click()
             Log.i(TAG, "openTurnOnSyncMenu: Clicked the \"Sync and save your data\" button")
 
             SettingsTurnOnSyncRobot().interact()

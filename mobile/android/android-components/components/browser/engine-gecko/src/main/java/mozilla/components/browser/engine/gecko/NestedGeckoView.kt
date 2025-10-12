@@ -27,7 +27,6 @@ import org.mozilla.geckoview.PanZoomController
  * https://github.com/takahirom/webview-in-coordinatorlayout
  */
 
-@Suppress("ClickableViewAccessibility")
 open class NestedGeckoView(context: Context) : GeckoView(context), NestedScrollingChild {
     @VisibleForTesting
     internal var lastY: Int = 0
@@ -70,6 +69,7 @@ open class NestedGeckoView(context: Context) : GeckoView(context), NestedScrolli
     }
 
     @Suppress("ComplexMethod")
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         val event = MotionEvent.obtain(ev)
         val action = ev.actionMasked

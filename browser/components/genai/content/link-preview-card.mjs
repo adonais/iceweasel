@@ -424,6 +424,13 @@ class LinkPreviewCard extends MozLitElement {
       return "";
     }
 
+    if (
+      !this.optin &&
+      Services.prefs.prefIsLocked("browser.ml.linkPreview.optin")
+    ) {
+      return "";
+    }
+
     // Determine if there's any generation error state
     const isGenerationError =
       this.isMissingDataErrorState || this.generationError;

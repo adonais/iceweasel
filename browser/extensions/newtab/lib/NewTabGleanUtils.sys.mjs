@@ -16,6 +16,8 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   });
 });
 
+const EXTRA_ARGS_TYPES_ALLOWLIST = ["event", "memory_distribution"];
+
 /**
  * Module for managing Glean telemetry metrics and pings in the New Tab page.
  * This object provides functionality to:
@@ -122,9 +124,13 @@ export const NewTabGleanUtils = {
         return;
       }
 
-      // Convert extraArgs to JSON string for metrics type event
+      // Convert extraArgs to JSON string for metrics types in allowlist
       let extraArgsJson = null;
-      if (type === "event" && extraArgs && Object.keys(extraArgs).length) {
+      if (
+        EXTRA_ARGS_TYPES_ALLOWLIST.includes(type) &&
+        extraArgs &&
+        Object.keys(extraArgs).length
+      ) {
         extraArgsJson = JSON.stringify(extraArgs);
       }
 

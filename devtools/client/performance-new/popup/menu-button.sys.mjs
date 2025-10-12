@@ -8,6 +8,7 @@
  * Care should be taken to keep it minimal as it can be run with browser initialization.
  */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 import { createLazyLoaders } from "resource://devtools/client/performance-new/shared/typescript-lazy-load.sys.mjs";
 
 const lazy = createLazyLoaders({
@@ -61,6 +62,10 @@ function remove() {
  * @return {boolean}
  */
 function isInNavbar() {
+  if (AppConstants.MOZ_APP_NAME == "thunderbird") {
+    return false;
+  }
+
   const { CustomizableUI } = lazy.CustomizableUI();
   return Boolean(CustomizableUI.getPlacementOfWidget("profiler-button"));
 }

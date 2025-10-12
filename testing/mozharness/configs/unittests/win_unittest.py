@@ -245,7 +245,7 @@ config = {
                     if REQUIRE_GPU and (platform.uname().version == "10.0.19045")
                     else (
                         "--platform=win11-hw"
-                        if REQUIRE_GPU and (platform.uname().version == "10.0.22621")
+                        if REQUIRE_GPU and (platform.uname().version == "10.0.26100")
                         else "--platform=win7"
                     )
                 ),
@@ -480,7 +480,6 @@ config = {
     "vcs_output_timeout": 1000,
     "minidump_save_path": "%(abs_work_dir)s/../minidumps",
     "unstructured_flavors": {
-        "xpcshell": [],
         "gtest": [],
         "cppunittest": [],
         "jittest": [],

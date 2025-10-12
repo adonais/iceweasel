@@ -167,7 +167,7 @@ export class GenAIChild extends JSWindowActorChild {
     const article = await lazy.ReaderMode.parseDocument(doc);
     return {
       readerMode: !!article?.textContent,
-      selection: (article?.textContent || doc.body.innerText || "")
+      selection: (article?.textContent || doc?.body?.innerText || "")
         .trim()
         // Replace duplicate whitespace with either a single newline or space
         .replace(/(\s*\n\s*)|\s{2,}/g, (_, newline) => (newline ? "\n" : " ")),

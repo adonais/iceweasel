@@ -6,23 +6,25 @@ set -x -e -v
 
 export MOZ_DXC_TARGET_ARCH=$1
 
+export VSINSTALLDIR="$MOZ_FETCHES_DIR/vs"
+
 # Detect a windows SDK version by looking at the directory names in
 # "Windows Kits/10/Include/". At the time of writing this comment, there
 # is one, but we pick the first result in alphabetical order in to reduce
 # the risk of breakage if the vs-toolchain job changes.
-export MOZ_DXC_WIN10_SDK_VERSION=`ls fetches/vs/Windows\ Kits/10/Include/ | sort | head -n 1`
-
-export VSINSTALLDIR="$MOZ_FETCHES_DIR/vs"
+export MOZ_DXC_WIN10_SDK_VERSION=`ls "$VSINSTALLDIR/Windows Kits/10/Include/" | sort | head -n 1`
 
 artifact=$(basename "$TOOLCHAIN_ARTIFACT")
 dxc_folder=${artifact%.tar.*}
 
 
-cd "$HOME/fetches/DirectXShaderCompiler"
+dxc_src_dir="$MOZ_FETCHES_DIR/DirectXShaderCompiler"
+cd "$dxc_src_dir"
 
 # Configure and build.
-mkdir build
-cd build
+dxc_build_dir="$dxc_src_dir/build"
+mkdir $dxc_build_dir
+cd $dxc_build_dir
 
 # Note: it is important that LLVM_ENABLE_ASSERTIONS remains enabled.
 
@@ -49,11 +51,12 @@ cmake .. \
 
 
 # Only build the required target.
+# NOTE: This builds `dxcompiler.pdb`, too.
 ninja dxcompiler.dll
 
 # Pack the result and upload.
 mkdir $dxc_folder
-mv bin/dxcompiler.dll $dxc_folder
+mv bin/dxcompiler.dll bin/dxcompiler.pdb $dxc_folder
 
 mkdir -p $UPLOAD_DIR
 tar cavf $UPLOAD_DIR/$artifact $dxc_folder

@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -26,14 +28,12 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.Divider
+import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.utils.inComposePreview
 import mozilla.components.support.ktx.android.content.appName
 import mozilla.components.support.ktx.android.content.appVersionName
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.TextListItem
-import org.mozilla.fenix.compose.snackbar.AcornSnackbarHostState
-import org.mozilla.fenix.compose.snackbar.SnackbarHost
-import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.debugsettings.navigation.DebugDrawerDestination
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -112,7 +112,7 @@ fun DebugDrawerHome(
 @PreviewLightDark
 private fun DebugDrawerHomePreview() {
     val scope = rememberCoroutineScope()
-    val snackbarState = remember { AcornSnackbarHostState() }
+    val snackbarState = remember { SnackbarHostState() }
 
     FirefoxTheme {
         Box {
@@ -123,7 +123,7 @@ private fun DebugDrawerHomePreview() {
                         title = R.string.debug_drawer_title,
                         onClick = {
                             scope.launch {
-                                snackbarState.showSnackbar(SnackbarState(message = "item $it clicked"))
+                                snackbarState.displaySnackbar(message = "item $it clicked")
                             }
                         },
                         content = {},
@@ -132,7 +132,7 @@ private fun DebugDrawerHomePreview() {
             )
 
             SnackbarHost(
-                snackbarHostState = snackbarState,
+                hostState = snackbarState,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }

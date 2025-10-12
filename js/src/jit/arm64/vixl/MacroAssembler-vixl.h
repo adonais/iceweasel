@@ -2325,6 +2325,26 @@ class MacroAssembler : public js::jit::Assembler {
     crc32cx(rd, rn, rm);
   }
 
+  void Abs(const Register& rd, const Register& rn) {
+     SingleEmissionCheckScope guard(this);
+     abs(rd, rn);
+   }
+
+   void Cnt(const Register& rd, const Register& rn) {
+     SingleEmissionCheckScope guard(this);
+     cnt(rd, rn);
+   }
+
+   void Ctz(const Register& rd, const Register& rn) {
+     SingleEmissionCheckScope guard(this);
+     ctz(rd, rn);
+   }
+
+   void Smax(const Register& rd, const Register& rn, const Operand& op);
+   void Smin(const Register& rd, const Register& rn, const Operand& op);
+   void Umax(const Register& rd, const Register& rn, const Operand& op);
+   void Umin(const Register& rd, const Register& rn, const Operand& op);
+
   // Push the system stack pointer (sp) down to allow the same to be done to
   // the current stack pointer (according to StackPointer()). This must be
   // called _before_ accessing the memory.

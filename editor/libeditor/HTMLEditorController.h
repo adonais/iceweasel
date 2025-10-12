@@ -14,9 +14,9 @@ namespace mozilla {
 
 class HTMLEditorController final {
  public:
-  static nsresult RegisterEditorDocStateCommands(
+  static void RegisterEditorDocStateCommands(
       nsControllerCommandTable* aCommandTable);
-  static nsresult RegisterHTMLEditorCommands(
+  static void RegisterHTMLEditorCommands(
       nsControllerCommandTable* aCommandTable);
   static void Shutdown();
 };

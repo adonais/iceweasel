@@ -31,29 +31,14 @@
 
 namespace mozilla::webgpu {
 
-GPU_IMPL_CYCLE_COLLECTION(Queue, mParent, mBridge)
+GPU_IMPL_CYCLE_COLLECTION(Queue, mParent)
 GPU_IMPL_JS_WRAP(Queue)
 
-Queue::Queue(Device* const aParent, WebGPUChild* aBridge, RawId aId)
-    : ChildOf(aParent), mId(aId), mBridge(aBridge) {
-  MOZ_RELEASE_ASSERT(aId);
-}
+Queue::Queue(Device* const aParent, RawId aId)
+    : ObjectBase(aParent->GetChild(), aId, ffi::wgpu_client_drop_queue),
+      ChildOf(aParent) {}
 
-Queue::~Queue() { Cleanup(); }
-
-void Queue::Cleanup() {
-  if (!mValid) {
-    return;
-  }
-  mValid = false;
-
-  auto bridge = mParent->GetBridge();
-  if (!bridge) {
-    return;
-  }
-
-  ffi::wgpu_client_drop_queue(bridge->GetClient(), mId);
-}
+Queue::~Queue() = default;
 
 struct ExternalTextureWorkDoneHandler : dom::PromiseNativeHandler {
   NS_DECL_ISUPPORTS
@@ -103,7 +88,7 @@ void Queue::Submit(
     for (const auto& externalTexture :
          aCommandBuffers[i]->GetExternalTextures()) {
       if (externalTexture->IsExpired()) {
-        ffi::wgpu_report_validation_error(mBridge->GetClient(), mParent->mId,
+        ffi::wgpu_report_validation_error(GetClient(), mParent->GetId(),
                                           "External texture is expired");
         return;
       }
@@ -111,11 +96,17 @@ void Queue::Submit(
     externalTextures.AppendElements(aCommandBuffers[i]->GetExternalTextures());
 
     if (idMaybe) {
-      list.AppendElement(*idMaybe);
+      list.AppendElement(idMaybe);
     }
   }
 
-  mBridge->QueueSubmit(mId, mParent->mId, list);
+  nsTArray<RawId> externalTextureSourceIds;
+  for (auto& externalTexture : externalTextures) {
+    externalTextureSourceIds.AppendElement(externalTexture->Source()->GetId());
+  }
+
+  GetChild()->QueueSubmit(GetId(), mParent->GetId(), list,
+                          externalTextureSourceIds);
 
   if (!externalTextures.IsEmpty()) {
     for (const auto& externalTexture : externalTextures) {
@@ -144,9 +135,9 @@ already_AddRefed<dom::Promise> Queue::OnSubmittedWorkDone(ErrorResult& aRv) {
     return nullptr;
   }
 
-  ffi::wgpu_client_on_submitted_work_done(mBridge->GetClient(), mId);
+  ffi::wgpu_client_on_submitted_work_done(GetClient(), GetId());
 
-  mBridge->mPendingOnSubmittedWorkDonePromises[mId].push_back(promise);
+  GetChild()->mPendingOnSubmittedWorkDonePromises[GetId()].push_back(promise);
 
   return promise.forget();
 }
@@ -156,7 +147,7 @@ void Queue::WriteBuffer(
     const dom::MaybeSharedArrayBufferOrMaybeSharedArrayBufferView& aData,
     uint64_t aDataOffset, const dom::Optional<uint64_t>& aSize,
     ErrorResult& aRv) {
-  if (!aBuffer.mId) {
+  if (!aBuffer.GetId()) {
     // Invalid buffers are unknown to the parent -- don't try to write
     // to them.
     return;
@@ -169,75 +160,75 @@ void Queue::WriteBuffer(
       elementByteSize = byteSize(type);
     }
   }
-  dom::ProcessTypedArraysFixed(
-      aData, [&, elementByteSize](const Span<const uint8_t>& aData) {
-        uint64_t byteLength = aData.Length();
+  dom::ProcessTypedArraysFixed(aData, [&, elementByteSize](
+                                          const Span<const uint8_t>& aData) {
+    uint64_t byteLength = aData.Length();
 
-        auto checkedByteOffset =
-            CheckedInt<uint64_t>(aDataOffset) * elementByteSize;
-        if (!checkedByteOffset.isValid()) {
-          aRv.ThrowOperationError("offset x element size overflows");
-          return;
-        }
-        auto offset = checkedByteOffset.value();
+    auto checkedByteOffset =
+        CheckedInt<uint64_t>(aDataOffset) * elementByteSize;
+    if (!checkedByteOffset.isValid()) {
+      aRv.ThrowOperationError("offset x element size overflows");
+      return;
+    }
+    auto offset = checkedByteOffset.value();
 
-        size_t size;
-        if (aSize.WasPassed()) {
-          const auto checkedByteSize =
-              CheckedInt<size_t>(aSize.Value()) * elementByteSize;
-          if (!checkedByteSize.isValid()) {
-            aRv.ThrowOperationError("write size x element size overflows");
-            return;
-          }
-          size = checkedByteSize.value();
-        } else {
-          const auto checkedByteSize = CheckedInt<size_t>(byteLength) - offset;
-          if (!checkedByteSize.isValid()) {
-            aRv.ThrowOperationError("data byte length - offset underflows");
-            return;
-          }
-          size = checkedByteSize.value();
-        }
+    size_t size;
+    if (aSize.WasPassed()) {
+      const auto checkedByteSize =
+          CheckedInt<size_t>(aSize.Value()) * elementByteSize;
+      if (!checkedByteSize.isValid()) {
+        aRv.ThrowOperationError("write size x element size overflows");
+        return;
+      }
+      size = checkedByteSize.value();
+    } else {
+      const auto checkedByteSize = CheckedInt<size_t>(byteLength) - offset;
+      if (!checkedByteSize.isValid()) {
+        aRv.ThrowOperationError("data byte length - offset underflows");
+        return;
+      }
+      size = checkedByteSize.value();
+    }
 
-        auto checkedByteEnd = CheckedInt<uint64_t>(offset) + size;
-        if (!checkedByteEnd.isValid() || checkedByteEnd.value() > byteLength) {
-          aRv.ThrowOperationError(
-              nsPrintfCString("Wrong data size %" PRIuPTR, size));
-          return;
-        }
+    auto checkedByteEnd = CheckedInt<uint64_t>(offset) + size;
+    if (!checkedByteEnd.isValid() || checkedByteEnd.value() > byteLength) {
+      aRv.ThrowOperationError(
+          nsPrintfCString("Wrong data size %" PRIuPTR, size));
+      return;
+    }
 
-        if (size % 4 != 0) {
-          aRv.ThrowOperationError("Byte size must be a multiple of 4");
-          return;
-        }
+    if (size % 4 != 0) {
+      aRv.ThrowOperationError("Byte size must be a multiple of 4");
+      return;
+    }
 
-        if (size < 1024) {
-          ipc::ByteBuf bb{};
-          bb.Allocate(size);
-          memcpy(bb.mData, aData.Elements() + offset, size);
-          auto data_buffer_index = mBridge->QueueDataBuffer(std::move(bb));
-          ffi::wgpu_queue_write_buffer_inline(mBridge->GetClient(),
-                                              mParent->mId, mId, aBuffer.mId,
-                                              aBufferOffset, data_buffer_index);
-          return;
-        }
+    if (size < 1024) {
+      ipc::ByteBuf bb{};
+      bb.Allocate(size);
+      memcpy(bb.mData, aData.Elements() + offset, size);
+      auto data_buffer_index = GetChild()->QueueDataBuffer(std::move(bb));
+      ffi::wgpu_queue_write_buffer_inline(GetClient(), mParent->GetId(),
+                                          GetId(), aBuffer.GetId(),
+                                          aBufferOffset, data_buffer_index);
+      return;
+    }
 
-        mozilla::ipc::MutableSharedMemoryHandle handle;
-        if (size != 0) {
-          handle = mozilla::ipc::shared_memory::Create(size);
-          auto mapping = handle.Map();
-          if (!handle || !mapping) {
-            aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-            return;
-          }
+    mozilla::ipc::MutableSharedMemoryHandle handle;
+    if (size != 0) {
+      handle = mozilla::ipc::shared_memory::Create(size);
+      auto mapping = handle.Map();
+      if (!handle || !mapping) {
+        aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+        return;
+      }
 
-          memcpy(mapping.DataAs<uint8_t>(), aData.Elements() + offset, size);
-        }
-        auto shmem_handle_index = mBridge->QueueShmemHandle(std::move(handle));
-        ffi::wgpu_queue_write_buffer_via_shmem(
-            mBridge->GetClient(), mParent->mId, mId, aBuffer.mId, aBufferOffset,
-            shmem_handle_index);
-      });
+      memcpy(mapping.DataAs<uint8_t>(), aData.Elements() + offset, size);
+    }
+    auto shmem_handle_index = GetChild()->QueueShmemHandle(std::move(handle));
+    ffi::wgpu_queue_write_buffer_via_shmem(GetClient(), mParent->GetId(),
+                                           GetId(), aBuffer.GetId(),
+                                           aBufferOffset, shmem_handle_index);
+  });
 }
 
 static CheckedInt<size_t> ComputeApproxSize(
@@ -337,10 +328,10 @@ void Queue::WriteTexture(
       handle = mozilla::ipc::MutableSharedMemoryHandle();
     }
 
-    auto shmem_handle_index = mBridge->QueueShmemHandle(std::move(handle));
-    ffi::wgpu_queue_write_texture_via_shmem(mBridge->GetClient(), mParent->mId,
-                                            mId, copyView, dataLayout, extent,
-                                            shmem_handle_index);
+    auto shmem_handle_index = GetChild()->QueueShmemHandle(std::move(handle));
+    ffi::wgpu_queue_write_texture_via_shmem(GetClient(), mParent->GetId(),
+                                            GetId(), copyView, dataLayout,
+                                            extent, shmem_handle_index);
   });
 }
 
@@ -608,9 +599,9 @@ void Queue::CopyExternalImageToTexture(
   ffi::WGPUTexelCopyTextureInfo copyView = {};
   CommandEncoder::ConvertTextureCopyViewToFFI(aDestination, &copyView);
 
-  auto shmem_handle_index = mBridge->QueueShmemHandle(std::move(handle));
-  ffi::wgpu_queue_write_texture_via_shmem(mBridge->GetClient(), mParent->mId,
-                                          mId, copyView, dataLayout, extent,
+  auto shmem_handle_index = GetChild()->QueueShmemHandle(std::move(handle));
+  ffi::wgpu_queue_write_texture_via_shmem(GetClient(), mParent->GetId(),
+                                          GetId(), copyView, dataLayout, extent,
                                           shmem_handle_index);
 }
 

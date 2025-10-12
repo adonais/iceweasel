@@ -58,7 +58,7 @@ Relation HTMLLabelAccessible::RelationByType(RelationType aType) const {
 
 void HTMLLabelAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
-                                              int32_t aModType,
+                                              AttrModType aModType,
                                               const nsAttrValue* aOldValue,
                                               uint64_t aOldState) {
   HyperTextAccessible::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,
@@ -97,7 +97,7 @@ Relation HTMLOutputAccessible::RelationByType(RelationType aType) const {
 
 void HTMLOutputAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                                nsAtom* aAttribute,
-                                               int32_t aModType,
+                                               AttrModType aModType,
                                                const nsAttrValue* aOldValue,
                                                uint64_t aOldState) {
   HyperTextAccessible::DOMAttributeChanged(aNameSpaceID, aAttribute, aModType,

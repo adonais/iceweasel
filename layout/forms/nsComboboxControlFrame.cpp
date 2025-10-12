@@ -213,15 +213,6 @@ void nsComboboxControlFrame::Reflow(nsPresContext* aPresContext,
   // 3) Default block size of button is block size of display area
   // 4) Inline size of display area is whatever is left over from our
   //    inline size after allocating inline size for the button.
-  // Make sure the displayed text is the same as the selected option,
-  // bug 297389.
-  mDisplayedIndex = Select().SelectedIndex();
-
-  // In dropped down mode the "selected index" is the hovered menu item,
-  // we want the last selected item which is |mDisplayedIndex| in this case.
-  // FIXME(emilio): why is this needed here?
-  RedisplayText();
-
   WritingMode wm = aReflowInput.GetWritingMode();
 
   // Check if the theme specifies a minimum size for the dropdown button

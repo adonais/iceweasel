@@ -37,8 +37,8 @@ def add_optimization(
     """
     if (digest is None) == (digest_data is None):
         raise Exception("Must pass exactly one of `digest` and `digest_data`.")
-    if digest is None:
-        digest = hashlib.sha256("\n".join(digest_data).encode("utf-8")).hexdigest()  # type: ignore
+    elif digest is None and digest_data is not None:
+        digest = hashlib.sha256("\n".join(digest_data).encode("utf-8")).hexdigest()
 
     if "cached-task-prefix" in config.graph_config["taskgraph"]:
         cache_prefix = config.graph_config["taskgraph"]["cached-task-prefix"]

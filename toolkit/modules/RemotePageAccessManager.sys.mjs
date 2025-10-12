@@ -130,10 +130,7 @@ export let RemotePageAccessManager = {
       ],
       RPMAddMessageListener: ["*"],
       RPMRemoveMessageListener: ["*"],
-      RPMGetFormatURLPref: [
-        "app.support.baseURL",
-        "browser.privatebrowsing.vpnpromourl",
-      ],
+      RPMGetFormatURLPref: ["app.support.baseURL"],
       RPMIsWindowPrivate: ["*"],
       RPMGetBoolPref: ["browser.privatebrowsing.felt-privacy-v1"],
     },

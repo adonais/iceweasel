@@ -1436,7 +1436,8 @@ void nsTreeSanitizer::SanitizeChildren(nsINode* aRoot) {
         ErrorResult rv;
         while ((child = node->GetFirstChild())) {
           nsCOMPtr<nsINode> refNode = node;
-          parent->InsertBefore(*child, refNode, rv);
+          parent->InsertBeforeInternal(
+              *child, refNode, MutationEffectOnScript::KeepTrustWorthiness, rv);
           if (rv.Failed()) {
             break;
           }

@@ -3,9 +3,26 @@
 
 "use strict";
 
+let TEST_PROFILE_PATH;
+
 add_setup(async () => {
   MockFilePicker.init(window.browsingContext);
-  registerCleanupFunction(() => {
+  TEST_PROFILE_PATH = await IOUtils.createUniqueDirectory(
+    PathUtils.tempDir,
+    "testBackup"
+  );
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.backup.location", TEST_PROFILE_PATH]],
+  });
+
+  // It's possible for other tests to change the internal state of the BackupService
+  // which can lead to complications with the auto detection behaviour. Let's just reset
+  // these states before testing
+  let bs = BackupService.get();
+  bs.resetLastBackupInternalState();
+
+  registerCleanupFunction(async () => {
     MockFilePicker.cleanup();
   });
 });
@@ -21,9 +38,10 @@ add_task(async function test_restore_from_backup() {
       .resolves();
 
     const mockBackupFilePath = await IOUtils.createUniqueFile(
-      PathUtils.tempDir,
+      TEST_PROFILE_PATH,
       "backup.html"
     );
+
     const mockBackupFile = Cc["@mozilla.org/file/local;1"].createInstance(
       Ci.nsIFile
     );
@@ -138,6 +156,15 @@ add_task(async function test_restore_in_progress() {
     let restoreFromBackup = settings.restoreFromBackupEl;
 
     Assert.ok(restoreFromBackup, "restore-from-backup should be found");
+
+    Assert.equal(
+      restoreFromBackup.filePicker.value,
+      "",
+      "File picker has no value assigned automatically"
+    );
+
+    // There is a backup file, but it is not a valid one
+    // we don't automatically pick it
     Assert.ok(
       restoreFromBackup.confirmButtonEl.disabled,
       "Confirm button should be disabled."
@@ -217,6 +244,77 @@ add_task(async function test_restore_in_progress() {
     Assert.ok(
       !settings.restoreFromBackupDialogEl.open,
       "Restore dialog should now be closed."
+    );
+
+    sandbox.restore();
+  });
+});
+
+/**
+ * Tests the backup autodetect feature for the file picker
+ */
+add_task(async function test_finding_a_valid_backup() {
+  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+    let sandbox = sinon.createSandbox();
+    let bs = BackupService.get();
+
+    let { archivePath } = await bs.createBackup();
+
+    Assert.stringContains(
+      archivePath,
+      TEST_PROFILE_PATH,
+      "archive is in our test dir"
+    );
+
+    let settings = browser.contentDocument.querySelector("backup-settings");
+
+    // To test the behaviour of this function, we want to reset the last backup states
+    // so we can see if the function can find a valid backup from the default directory
+    bs.resetLastBackupInternalState();
+
+    await settings.updateComplete;
+
+    registerCleanupFunction(async () => {
+      // we'll make sure to clean this whole dir up after the test
+      await IOUtils.remove(TEST_PROFILE_PATH, { recursive: true });
+    });
+
+    settings.restoreFromBackupButtonEl.click();
+    await settings.updateComplete;
+
+    let restoreFromBackup = settings.restoreFromBackupEl;
+    Assert.ok(restoreFromBackup, "restore-from-backup should be found");
+
+    let infoPromise = BrowserTestUtils.waitForEvent(
+      window,
+      "getBackupFileInfo"
+    );
+    let infoEvent = await infoPromise;
+
+    // it should be asking about the same path we created.
+    Assert.equal(
+      infoEvent.detail.backupFile,
+      archivePath,
+      "Component asked for info for the detected archive"
+    );
+
+    await restoreFromBackup.updateComplete;
+
+    Assert.ok(
+      settings.restoreFromBackupDialogEl.open,
+      "Restore dialog should be open."
+    );
+
+    Assert.equal(
+      restoreFromBackup.backupFileToRestore,
+      archivePath,
+      "backupFileToRestore was updated to the detected archive path"
+    );
+
+    Assert.equal(
+      restoreFromBackup.filePicker.value,
+      archivePath,
+      "Text input reflects the detected archive path"
     );
 
     sandbox.restore();

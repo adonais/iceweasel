@@ -92,16 +92,9 @@ nsresult HttpConnectionUDP::Init(nsHttpConnectionInfo* info,
   // See https://github.com/whatwg/fetch/pull/1763 for context.
   if (peerAddr.IsIPAddrAny()) {
     if (StaticPrefs::network_socket_ip_addr_any_disabled()) {
-      mozilla::glean::networking::http_ip_addr_any_count
-          .Get("blocked_requests"_ns)
-          .Add(1);
       LOG(("Connection refused because of 0.0.0.0 IP address\n"));
       return NS_ERROR_CONNECTION_REFUSED;
     }
-
-    mozilla::glean::networking::http_ip_addr_any_count
-        .Get("not_blocked_requests"_ns)
-        .Add(1);
   }
 
   mSocket = do_CreateInstance("@mozilla.org/network/udp-socket;1", &rv);
@@ -482,7 +475,7 @@ nsresult HttpConnectionUDP::MaybeForceSendIO() {
   return NS_NewTimerWithFuncCallback(
       getter_AddRefs(mForceSendTimer), HttpConnectionUDP::ForceSendIO, this,
       kForceDelay, nsITimer::TYPE_ONE_SHOT,
-      "net::HttpConnectionUDP::MaybeForceSendIO");
+      "net::HttpConnectionUDP::MaybeForceSendIO"_ns);
 }
 
 // trigger an asynchronous read

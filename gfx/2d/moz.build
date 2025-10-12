@@ -25,6 +25,7 @@ EXPORTS.mozilla.gfx += [
     "DataSourceSurfaceWrapper.h",
     "DataSurfaceHelpers.h",
     "DrawEventRecorder.h",
+    "DrawEventRecorderTypes.h",
     "DrawTargetOffset.h",
     "DrawTargetRecording.h",
     "DrawTargetSkia.h",

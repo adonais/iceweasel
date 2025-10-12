@@ -28,8 +28,8 @@
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
+#include "rtc_base/thread.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/sleep.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
@@ -43,10 +43,10 @@ using ::testing::Contains;
 using ::testing::SizeIs;
 using ::testing::UnorderedElementsAre;
 
-using ::webrtc::test::DefaultMetricsLogger;
-using ::webrtc::test::ImprovementDirection;
-using ::webrtc::test::Metric;
-using ::webrtc::test::Unit;
+using test::DefaultMetricsLogger;
+using test::ImprovementDirection;
+using test::Metric;
+using test::Unit;
 
 constexpr int kAnalyzerMaxThreadsCount = 1;
 constexpr int kFrameWidth = 320;
@@ -123,7 +123,7 @@ void PassFramesThroughAnalyzer(DefaultVideoQualityAnalyzer& analyzer,
       analyzer.OnFrameRendered(receiver, received_frame);
     }
     if (i < frames_count - 1 && interframe_delay_ms > 0) {
-      SleepMs(interframe_delay_ms);
+      Thread::SleepMs(interframe_delay_ms);
     }
   }
 }

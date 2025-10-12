@@ -14,6 +14,34 @@ import { TabStateFlusher } from "resource:///modules/sessionstore/TabStateFlushe
  */
 export const TabGroupTestUtils = {
   /**
+   * Change a group's collapsed state and wait for its
+   * animation to finish.
+   *
+   * @param {MozTabbrowserTabGroup} group
+   * @param {boolean} [force]
+   *  force the group to be collapsed (true) or expanded (false)
+   *  instead of toggling previous state.
+   * @returns {Promise<void>}
+   */
+  async toggleCollapsed(group, force) {
+    let shouldCollapse;
+    if (typeof force !== "undefined") {
+      shouldCollapse = force;
+    } else {
+      shouldCollapse = !group.collapsed;
+    }
+    if (group.collapsed == shouldCollapse) {
+      return;
+    }
+    let animationComplete = BrowserTestUtils.waitForEvent(
+      group,
+      "TabGroupAnimationComplete"
+    );
+    group.collapsed = shouldCollapse;
+    await animationComplete;
+  },
+
+  /**
    * Removes a tab group, along with its tabs. Resolves when the tab group
    * is gone.
    *

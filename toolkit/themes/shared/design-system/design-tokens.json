@@ -18,10 +18,24 @@
   "background": {
     "color": {
       "box": {
-        "value": {
-          "light": "{color.white}",
-          "dark": "{color.gray.80}",
-          "prefersContrast": "{background.color.canvas}"
+        "@base": {
+          "value": {
+            "light": "{color.white}",
+            "dark": "{color.gray.80}",
+            "prefersContrast": "{background.color.canvas}"
+          }
+        },
+        "info": {
+          "value": {
+            "prefersContrast": "{background.color.canvas}",
+            "brand": {
+              "light": "{color.gray.20}",
+              "dark": "{color.gray.80}"
+            },
+            "platform": {
+              "default": "color-mix(in srgb, currentColor 20%, transparent)"
+            }
+          }
         }
       },
       "canvas": {
@@ -146,6 +160,9 @@
       "circle": {
         "value": "9999px"
       },
+      "xsmall": {
+        "value": "2px"
+      },
       "small": {
         "value": "4px"
       },
@@ -153,7 +170,7 @@
         "value": "8px"
       },
       "large": {
-        "value": "12px"
+        "value": "16px"
       }
     },
     "width": {
@@ -1252,6 +1269,13 @@
       }
     }
   },
+  "promo": {
+    "background": {
+      "color": {
+        "value": "{background.color.box.info}"
+      }
+    }
+  },
   "size": {
     "item": {
       "xsmall": {
@@ -1377,8 +1401,8 @@
                 "dark": "{color.gray.80}"
               },
               "platform": {
-                "light": "rgba(0,0,0,5%)",
-                "dark": "rgba(255,255,255,5%)"
+                "light": "rgba(0, 0, 0, 0.05)",
+                "dark": "rgba(255, 255, 255, 0.05)"
               }
             }
           }

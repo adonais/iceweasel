@@ -24,6 +24,7 @@
 class nsIPrincipal;
 struct JSContext;
 class JSObject;
+enum class AttrModType : uint8_t;  // Defined in nsIMutationObserver.h
 
 namespace mozilla {
 enum class StyleCssRuleType : uint8_t;
@@ -43,7 +44,7 @@ struct MutationClosureData {
 
   mozilla::dom::Element* mElement = nullptr;
   Maybe<nsAttrValue> mOldValue;
-  uint8_t mModType = 0;
+  AttrModType mModType{0};  // NOTE: The initial value is invalid value.
   bool mWasCalled = false;
   bool mShouldBeCalled = false;
 };
@@ -95,7 +96,7 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
                    mozilla::ErrorResult& aRv) override;
   uint32_t Length() override;
 
-  // WebIDL interface for CSS2Properties
+  // WebIDL interface for CSSStyleProperties
   virtual void IndexedGetter(uint32_t aIndex, bool& aFound,
                              nsACString& aPropName) override;
 

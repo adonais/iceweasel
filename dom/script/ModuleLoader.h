@@ -7,9 +7,8 @@
 #ifndef mozilla_dom_ModuleLoader_h
 #define mozilla_dom_ModuleLoader_h
 
+#include "ScriptLoader.h"
 #include "js/loader/ModuleLoaderBase.h"
-#include "js/loader/ScriptLoadRequest.h"
-#include "mozilla/dom/ScriptLoadContext.h"
 #include "mozilla/dom/ScriptLoadRequestType.h"
 
 class nsIURI;
@@ -28,6 +27,7 @@ class ModuleLoadRequest;
 namespace mozilla::dom {
 
 class ScriptLoader;
+class ScriptLoadContext;
 class SRIMetadata;
 
 //////////////////////////////////////////////////////////////
@@ -66,19 +66,17 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
       nsIURI* aReferrer, ScriptLoadContext* aContext,
       ScriptLoadRequestType aRequestType);
 
-  // Create a module load request for a static module import.
-  already_AddRefed<ModuleLoadRequest> CreateStaticImport(
-      nsIURI* aURI, JS::ModuleType aModuleType,
-      JS::loader::ModuleScript* aReferrerScript,
-      const mozilla::dom::SRIMetadata& aSriMetadata,
-      JS::loader::LoadContextBase* aLoadContext,
-      JS::loader::ModuleLoaderBase* aLoader) override;
+  nsIURI* GetClientReferrerURI() override;
 
-  // Create a module load request for a dynamic module import.
-  already_AddRefed<ModuleLoadRequest> CreateDynamicImport(
-      JSContext* aCx, nsIURI* aURI, LoadedScript* aMaybeActiveScript,
-      JS::Handle<JSObject*> aModuleRequestObj,
-      JS::Handle<JSObject*> aPromise) override;
+  already_AddRefed<ScriptFetchOptions> CreateDefaultScriptFetchOptions()
+      override;
+
+  already_AddRefed<ModuleLoadRequest> CreateRequest(
+      JSContext* aCx, nsIURI* aURI, JS::Handle<JSObject*> aModuleRequest,
+      JS::Handle<JS::Value> aHostDefined, JS::Handle<JS::Value> aPayload,
+      bool aIsDynamicImport, ScriptFetchOptions* aOptions,
+      ReferrerPolicy aReferrerPolicy, nsIURI* aBaseURL,
+      const SRIMetadata& aSriMetadata) override;
 
   static ModuleLoader* From(ModuleLoaderBase* aLoader) {
     return static_cast<ModuleLoader*>(aLoader);

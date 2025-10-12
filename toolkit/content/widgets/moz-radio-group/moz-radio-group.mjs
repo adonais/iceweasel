@@ -64,7 +64,7 @@ export class MozRadio extends SelectControlItemMixin(MozBaseInputElement) {
     return html`<input
       type="radio"
       id="input"
-      value=${this.value}
+      .value=${this.value}
       name=${this.name}
       .checked=${this.checked}
       aria-checked=${this.checked}

@@ -16,14 +16,19 @@
 
 video {
   width: 100%;
-  height: auto;
+  height: 5em;
   display: block;
 
   border-radius: var(--border-radius-small);
   border: 1px solid var(--border-color-deemphasized);
   min-width: 0;
-  min-height: 10em;
-  max-height: 250px;
+
+  /* Increase the video element height when the preview is active. */
+  &.active {
+    height: auto;
+    min-height: 10em;
+    max-height: 250px;
+  }
 }
 
 .centered {

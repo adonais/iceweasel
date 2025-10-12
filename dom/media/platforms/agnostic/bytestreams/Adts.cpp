@@ -7,12 +7,12 @@
 #include "ADTSDemuxer.h"
 #include "BitWriter.h"
 #include "MediaData.h"
+#include "MediaDataDemuxer.h"
 #include "PlatformDecoderModule.h"
 #include "mozilla/Array.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Logging.h"
 
-extern mozilla::LazyLogModule gMediaDemuxerLog;
 #define LOG(msg, ...) \
   MOZ_LOG(gMediaDemuxerLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 #define ADTSLOG(msg, ...) \

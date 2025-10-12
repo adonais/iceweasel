@@ -75,8 +75,14 @@ ScreenOrientation::ScreenOrientation(nsPIDOMWindowInner* aWindow,
 
   Document* doc = GetResponsibleDocument();
   BrowsingContext* bc = doc ? doc->GetBrowsingContext() : nullptr;
-  if (bc && !bc->IsDiscarded() && !bc->InRDMPane()) {
+  if (bc && !bc->IsDiscarded() && !bc->HasOrientationOverride()) {
     MOZ_ALWAYS_SUCCEEDS(bc->SetCurrentOrientation(mType, mAngle));
+  } else if (bc && !bc->IsTop() && bc->HasOrientationOverride()) {
+    // Resync the override for newly created iframes.
+    BrowsingContext* topBC = bc->Top();
+    MOZ_ALWAYS_SUCCEEDS(
+        bc->SetOrientationOverride(topBC->GetCurrentOrientationType(),
+                                   topBC->GetCurrentOrientationAngle()));
   }
 }
 
@@ -820,29 +826,52 @@ void ScreenOrientation::MaybeChanged() {
     rv = bc->SetCurrentOrientation(mType, mAngle);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "SetCurrentOrientation failed");
 
-    // change event has to be dispatched by descendantDocs.
-    // Looking for top level browsing context that has screen in process.
-    // If parent document has screen, we don't dispatch it at this time.
-    // change event will be dispatched by parent's
-    // ScreenOrientation::MaybeChanged.
-    BrowsingContext* rootBc = bc;
-    bool dispatchChangeEvent = true;
-    while (rootBc->GetParent()) {
-      rootBc = rootBc->GetParent();
-      if (Document* doc = rootBc->GetExtantDocument()) {
-        if (auto* win = nsGlobalWindowInner::Cast(doc->GetInnerWindow())) {
-          if (win->HasScreen()) {
-            // Parent of browsing context has screen object. Child shouldn't
-            // dispatch change event.
-            dispatchChangeEvent = false;
-            break;
-          }
+    MaybeDispatchChangeEvent(bc);
+  }
+}
+
+void ScreenOrientation::MaybeDispatchChangeEvent(
+    BrowsingContext* aBrowsingContext) {
+  // change event has to be dispatched by descendantDocs.
+  // Looking for top level browsing context that has screen in process.
+  // If parent document has screen, we don't dispatch it at this time.
+  // change event will be dispatched by parent's
+  // ScreenOrientation::MaybeChanged.
+  BrowsingContext* rootBc = aBrowsingContext;
+  bool dispatchChangeEvent = true;
+  while (rootBc->GetParent()) {
+    rootBc = rootBc->GetParent();
+    if (Document* doc = rootBc->GetExtantDocument()) {
+      if (auto* win = nsGlobalWindowInner::Cast(doc->GetInnerWindow())) {
+        if (win->HasScreen()) {
+          // Parent of browsing context has screen object. Child shouldn't
+          // dispatch change event.
+          dispatchChangeEvent = false;
+          break;
         }
       }
     }
-    if (dispatchChangeEvent) {
-      DispatchChangeEventToChildren(rootBc);
-    }
+  }
+  if (dispatchChangeEvent) {
+    DispatchChangeEventToChildren(rootBc);
+  }
+}
+
+void ScreenOrientation::MaybeDispatchEventsForOverride(
+    BrowsingContext* aBrowsingContext, bool aOldHasOrientationOverride,
+    bool aOverrideIsDifferentThanDevice) {
+  Document* doc = aBrowsingContext->GetExtantDocument();
+  nsCOMPtr<nsPIDOMWindowOuter> outerWindow = doc->GetWindow();
+
+  // Send the event if the orientation was already overriden or different
+  // from device metrics or the override was reset and it is different from
+  // device metrics.
+  if ((aBrowsingContext->HasOrientationOverride() &&
+       (aOldHasOrientationOverride || aOverrideIsDifferentThanDevice)) ||
+      (!aBrowsingContext->HasOrientationOverride() &&
+       aOldHasOrientationOverride && aOverrideIsDifferentThanDevice)) {
+    outerWindow->DispatchCustomEvent(u"orientationchange"_ns);
+    MaybeDispatchChangeEvent(aBrowsingContext);
   }
 }
 

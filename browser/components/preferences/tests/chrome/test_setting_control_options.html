@@ -225,6 +225,7 @@
           pref: PREF,
         });
 
+        const CUSTOM_LABEL = "Custom label";
         let itemConfig = {
           control: "moz-button-group",
           id: SETTING,
@@ -232,10 +233,15 @@
             {
               l10nId: LABEL_L10N_ID,
               control: "moz-button",
+              controlAttrs: {
+                type: "primary",
+              },
             },
             {
-              l10nId: LABEL_L10N_ID,
               control: "moz-button",
+              controlAttrs: {
+                label: CUSTOM_LABEL,
+              },
             },
           ],
         };
@@ -252,9 +258,15 @@
           buttons.every(btn => btn.localName == "moz-button"),
           "The buttons are moz-buttons"
         );
-        ok(
-          buttons.every(btn => !btn.slot),
-          "The buttons are not in a slot"
+        let primaryButton = buttons.find(btn => btn.slot == "primary");
+        let secondaryButton = buttons.find(btn => !btn.slot);
+        ok(primaryButton, "There is a primary button");
+        ok(secondaryButton, "There is a secondary button");
+        is(primaryButton.type, "primary", "Type was set from controlAttrs");
+        is(
+          secondaryButton.label,
+          CUSTOM_LABEL,
+          "Label was set from controlAttrs"
         );
       });
     </script>

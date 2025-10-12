@@ -19,6 +19,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MulOverflowMask.h"
 #include "mozilla/Range.h"
 #include "mozilla/Span.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
@@ -1624,7 +1625,7 @@ class RtlAllocPolicy {
  public:
   template <typename T>
   T* maybe_pod_malloc(size_t aNumElems) {
-    if (aNumElems & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
+    if (aNumElems & mozilla::MulOverflowMask<sizeof(T)>()) {
       return nullptr;
     }
 
@@ -1634,7 +1635,7 @@ class RtlAllocPolicy {
 
   template <typename T>
   T* maybe_pod_calloc(size_t aNumElems) {
-    if (aNumElems & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
+    if (aNumElems & mozilla::MulOverflowMask<sizeof(T)>()) {
       return nullptr;
     }
 
@@ -1644,7 +1645,7 @@ class RtlAllocPolicy {
 
   template <typename T>
   T* maybe_pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
-    if (aNewSize & mozilla::tl::MulOverflowMask<sizeof(T)>::value) {
+    if (aNewSize & mozilla::MulOverflowMask<sizeof(T)>()) {
       return nullptr;
     }
 

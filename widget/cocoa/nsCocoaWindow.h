@@ -56,7 +56,6 @@ class TextInputHandler;
   NSRect mDirtyRect;
 
   BOOL mBeingShown;
-  BOOL mDrawTitle;
   BOOL mIsAnimationSuppressed;
 
   nsTouchBar* mTouchBar;
@@ -103,9 +102,6 @@ class TextInputHandler;
 - (NSArray<NSView*>*)contentViewContents;
 
 - (ChildView*)mainChildView;
-
-- (void)setWantsTitleDrawn:(BOOL)aDrawTitle;
-- (BOOL)wantsTitleDrawn;
 
 - (void)disableSetNeedsDisplay;
 - (void)enableSetNeedsDisplay;
@@ -391,7 +387,12 @@ class nsCocoaWindow final : public nsBaseWidget {
   bool WidgetPaintsBackground() override { return true; }
 
   void CreateCompositor(int aWidth, int aHeight) override;
-  void FinishCreateCompositor(int aWidth, int aHeight);
+  static void FinishCreateCompositor(
+      int aWidth, int aHeight,
+      mozilla::ipc::Endpoint<mozilla::layers::PNativeLayerRemoteParent>&&
+          aParentEndpoint,
+      RefPtr<mozilla::layers::NativeLayerRootRemoteMacParent>
+          aNativeLayerRootRemoteMacParent);
   void DestroyCompositor() override;
   void SetCompositorWidgetDelegate(
       mozilla::widget::CompositorWidgetDelegate*) override;
@@ -447,7 +448,8 @@ class nsCocoaWindow final : public nsBaseWidget {
   bool GetSupportsNativeFullscreen();
   void SetSupportsNativeFullscreen(bool aShow) override;
   void SetWindowAnimationType(WindowAnimationType aType) override;
-  void SetDrawsTitle(bool aDrawTitle) override;
+  void SetHideTitlebarSeparator(bool) override;
+  bool IsMacTitlebarDirectionRTL() override;
   void SetCustomTitlebar(bool) override;
   void UpdateThemeGeometries(
       const nsTArray<ThemeGeometry>& aThemeGeometries) override;
@@ -560,8 +562,6 @@ class nsCocoaWindow final : public nsBaseWidget {
   RefPtr<mozilla::layers::NativeLayerRootCA> mNativeLayerRoot;
   RefPtr<mozilla::layers::NativeLayerRootRemoteMacParent>
       mNativeLayerRootRemoteMacParent;
-  mozilla::ipc::Endpoint<mozilla::layers::PNativeLayerRemoteParent>
-      mParentEndpoint;
   mozilla::ipc::Endpoint<mozilla::layers::PNativeLayerRemoteChild>
       mChildEndpoint;
 

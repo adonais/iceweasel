@@ -132,7 +132,7 @@ table {
   text-align: start;
   width: 100%;
   border: 1px solid var(--in-content-table-border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   border-spacing: 0;
   overflow: hidden;
 }
@@ -170,7 +170,7 @@ td {
 .action-box {
   background-color: var(--in-content-table-background);
   border: 1px solid var(--in-content-box-border-color);
-  border-radius: 4px;
+  border-radius: var(--border-radius-small);
   padding: 16px;
   flex: 1 1 25%;
 }

@@ -17,6 +17,9 @@ export function getOpenTabs() {
 
 export function switchToOpenTab(url) {
   // We only want public tabs, so skip private top windows
-  let win = lazy.BrowserWindowTracker.getTopWindow({ private: false });
+  let win = lazy.BrowserWindowTracker.getTopWindow({
+    allowFromInactiveWorkspace: true,
+    private: false,
+  });
   win?.switchToTabHavingURI(url);
 }

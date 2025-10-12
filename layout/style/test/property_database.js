@@ -48,7 +48,7 @@ const CSS_TYPE_SHORTHAND_AND_LONGHAND = 2;
 const CSS_TYPE_LEGACY_SHORTHAND = 3;
 
 // Each property has the following fields:
-//   domProp: The name of the relevant member of nsIDOM[NS]CSS2Properties
+//   domProp: The name of the relevant member of CSSStyleProperties
 //   inherited: Whether the property is inherited by default (stated as
 //     yes or no in the property header in all CSS specs)
 //   type: see above
@@ -13881,6 +13881,17 @@ gCSSProperties["math-style"] = {
   invalid_values: [],
 };
 
+if (IsCSSPropertyPrefEnabled("mathml.math_shift.enabled")) {
+  gCSSProperties["math-shift"] = {
+    domProp: "mathShift",
+    inherited: true,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: ["normal"],
+    other_values: ["compact"],
+    invalid_values: [],
+  };
+}
+
 gCSSProperties["forced-color-adjust"] = {
   domProp: "forcedColorAdjust",
   inherited: true,
@@ -14209,42 +14220,47 @@ if (IsCSSPropertyPrefEnabled("layout.css.text-autospace.enabled")) {
         "ideograph-alpha",
         "ideograph-numeric",
         "ideograph-alpha ideograph-numeric",
-        "punctuation",
-        "punctuation ideograph-alpha",
-        "ideograph-alpha punctuation",
-        "punctuation ideograph-alpha ideograph-numeric",
-        "ideograph-alpha ideograph-numeric punctuation",
         "ideograph-alpha insert",
         "ideograph-numeric insert",
         "ideograph-alpha ideograph-numeric insert",
-        "punctuation insert",
-        "punctuation ideograph-alpha insert",
-        "ideograph-alpha punctuation insert",
         "insert ideograph-alpha",
         "ideograph-alpha insert",
         "insert ideograph-numeric",
         "ideograph-numeric insert",
         "insert ideograph-alpha ideograph-numeric",
         "ideograph-alpha ideograph-numeric insert",
-        "insert punctuation",
-        "punctuation insert",
-        "insert punctuation ideograph-alpha",
-        "ideograph-alpha punctuation insert",
-        "insert punctuation ideograph-alpha ideograph-numeric",
-        "ideograph-alpha ideograph-numeric punctuation insert",
+        //
+        // Bug 1986500: Uncomment the 'punctuation' values below to enable the tests.
+        // "punctuation",
+        // "punctuation ideograph-alpha",
+        // "ideograph-alpha punctuation",
+        // "punctuation ideograph-alpha ideograph-numeric",
+        // "ideograph-alpha ideograph-numeric punctuation",
+        // "punctuation insert",
+        // "punctuation ideograph-alpha insert",
+        // "ideograph-alpha punctuation insert",
+        // "insert punctuation",
+        // "punctuation insert",
+        // "insert punctuation ideograph-alpha",
+        // "ideograph-alpha punctuation insert",
+        // "insert punctuation ideograph-alpha ideograph-numeric",
+        // "ideograph-alpha ideograph-numeric punctuation insert",
+        //
         // Bug 1980111: Uncomment the valid 'replace' values below to enable the tests.
         // "ideograph-alpha replace",
         // "ideograph-numeric replace",
         // "ideograph-alpha ideograph-numeric replace",
-        // "punctuation replace",
-        // "punctuation ideograph-alpha replace",
-        // "ideograph-alpha punctuation replace",
         // "replace ideograph-alpha",
         // "ideograph-alpha replace",
         // "replace ideograph-numeric",
         // "ideograph-numeric replace",
         // "replace ideograph-alpha ideograph-numeric",
         // "ideograph-alpha ideograph-numeric replace",
+        //
+        // Both bug 1980111 and bug 1986500 required for these:
+        // "punctuation replace",
+        // "punctuation ideograph-alpha replace",
+        // "ideograph-alpha punctuation replace",
         // "replace punctuation",
         // "punctuation replace",
         // "replace punctuation ideograph-alpha",

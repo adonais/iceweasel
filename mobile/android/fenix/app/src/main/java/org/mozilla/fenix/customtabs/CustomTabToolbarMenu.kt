@@ -28,6 +28,7 @@ import org.mozilla.fenix.ext.getStringWithArgSafe
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.theme.ThemeManager
 import java.util.Locale
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Builds the toolbar object used with the 3-dot menu in the custom tab browser fragment.
@@ -58,7 +59,7 @@ class CustomTabToolbarMenu(
 
     override val menuToolbar by lazy {
         val back = BrowserMenuItemToolbar.TwoStateButton(
-            primaryImageResource = mozilla.components.ui.icons.R.drawable.mozac_ic_back_24,
+            primaryImageResource = iconsR.drawable.mozac_ic_back_24,
             primaryContentDescription = context.getString(R.string.browser_menu_back),
             primaryImageTintResource = primaryTextColor(),
             isInPrimaryState = {
@@ -75,7 +76,7 @@ class CustomTabToolbarMenu(
         }
 
         val forward = BrowserMenuItemToolbar.TwoStateButton(
-            primaryImageResource = mozilla.components.ui.icons.R.drawable.mozac_ic_forward_24,
+            primaryImageResource = iconsR.drawable.mozac_ic_forward_24,
             primaryContentDescription = context.getString(R.string.browser_menu_forward),
             primaryImageTintResource = primaryTextColor(),
             isInPrimaryState = {
@@ -92,13 +93,13 @@ class CustomTabToolbarMenu(
         }
 
         val refresh = BrowserMenuItemToolbar.TwoStateButton(
-            primaryImageResource = mozilla.components.ui.icons.R.drawable.mozac_ic_arrow_clockwise_24,
+            primaryImageResource = iconsR.drawable.mozac_ic_arrow_clockwise_24,
             primaryContentDescription = context.getString(R.string.browser_menu_refresh),
             primaryImageTintResource = primaryTextColor(),
             isInPrimaryState = {
                 session?.content?.loading == false
             },
-            secondaryImageResource = mozilla.components.ui.icons.R.drawable.mozac_ic_stop,
+            secondaryImageResource = iconsR.drawable.mozac_ic_stop,
             secondaryContentDescription = context.getString(R.string.browser_menu_stop),
             secondaryImageTintResource = primaryTextColor(),
             disableInSecondaryState = false,
@@ -147,7 +148,7 @@ class CustomTabToolbarMenu(
 
     private val findInPage = BrowserMenuImageText(
         label = context.getString(R.string.browser_menu_find_in_page),
-        imageResource = R.drawable.mozac_ic_search_24,
+        imageResource = iconsR.drawable.mozac_ic_search_24,
         iconTintColorResource = primaryTextColor(),
     ) {
         onItemTapped.invoke(ToolbarMenu.Item.FindInPage)

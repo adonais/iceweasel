@@ -246,6 +246,11 @@ bool WindowContext::CanSet(FieldIndex<IDX_NeedsBeforeUnload>,
   return CheckOnlyOwningProcessCanSet(aSource);
 }
 
+bool WindowContext::CanSet(FieldIndex<IDX_NeedsTraverse>,
+                           const bool& aNeedsTraverse, ContentParent* aSource) {
+  return CheckOnlyOwningProcessCanSet(aSource);
+}
+
 bool WindowContext::CanSet(FieldIndex<IDX_CookieBehavior>,
                            const Maybe<uint32_t>& aValue,
                            ContentParent* aSource) {

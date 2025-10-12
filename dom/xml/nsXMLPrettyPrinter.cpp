@@ -161,7 +161,7 @@ void nsXMLPrettyPrinter::Unhook() {
 
 void nsXMLPrettyPrinter::AttributeChanged(Element* aElement,
                                           int32_t aNameSpaceID,
-                                          nsAtom* aAttribute, int32_t aModType,
+                                          nsAtom* aAttribute, AttrModType,
                                           const nsAttrValue* aOldValue) {
   MaybeUnhook(aElement);
 }

@@ -179,7 +179,7 @@ SpinEventLoopUntilRet SpinEventLoopUntil(
   bool timedOut = false;
   auto timer = UNWRAP(NS_NewTimerWithCallback(
       [&](nsITimer*) { timedOut = true; }, aDuration, nsITimer::TYPE_ONE_SHOT,
-      "SpinEventLoop timer", currentThread));
+      "SpinEventLoop timer"_ns, currentThread));
   auto onExitCancelTimer = mozilla::MakeScopeExit([&] { timer->Cancel(); });
 
   bool const ret = mozilla::SpinEventLoopUntil(
@@ -473,10 +473,10 @@ class MockEventTarget final : public nsIEventTarget {
     *_retval = false;
     return NS_OK;
   }
-  NS_IMETHOD Dispatch(already_AddRefed<nsIRunnable>, uint32_t) {
+  NS_IMETHOD Dispatch(already_AddRefed<nsIRunnable>, DispatchFlags) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
-  NS_IMETHOD DispatchFromScript(nsIRunnable*, uint32_t) {
+  NS_IMETHOD DispatchFromScript(nsIRunnable*, DispatchFlags) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
   NS_IMETHOD DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) {

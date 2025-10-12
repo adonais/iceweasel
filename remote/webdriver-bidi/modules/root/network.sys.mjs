@@ -2219,6 +2219,13 @@ class NetworkModule extends RootBiDiModule {
       // Let processBodyError be this step: Do nothing.
     }
 
+    // If the network module was destroyed while waiting to read the response
+    // body, the session has been destroyed. Resolve the promise and bail out.
+    if (!this.#collectedNetworkData) {
+      collectedData.networkDataCollected.resolve();
+      return;
+    }
+
     if (bytes !== null) {
       for (const collector of collectors) {
         if (size <= collector.maxEncodedDataSize) {

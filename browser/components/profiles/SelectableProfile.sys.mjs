@@ -292,11 +292,11 @@ export class SelectableProfile {
       case "briefcase":
         return "briefcase-avatar-alt";
       case "canvas":
-        return "canvas-avatar-alt";
+        return "picture-avatar-alt";
       case "craft":
         return "craft-avatar-alt";
       case "default-favicon":
-        return "default-favicon-avatar-alt";
+        return "globe-avatar-alt";
       case "diamond":
         return "diamond-avatar-alt";
       case "flower":
@@ -310,7 +310,7 @@ export class SelectableProfile {
       case "heart-rate":
         return "heart-rate-avatar-alt";
       case "history":
-        return "history-avatar-alt";
+        return "clock-avatar-alt";
       case "leaf":
         return "leaf-avatar-alt";
       case "lightbulb":
@@ -332,7 +332,7 @@ export class SelectableProfile {
       case "shopping":
         return "shopping-avatar-alt";
       case "soccer":
-        return "soccer-avatar-alt";
+        return "soccer-ball-avatar-alt";
       case "sparkle-single":
         return "sparkle-single-avatar-alt";
       case "star":
@@ -396,7 +396,7 @@ export class SelectableProfile {
    *
    * @returns {object} An object with only fields need for the database
    */
-  async toDbObject() {
+  toDbObject() {
     let profileObj = {
       id: this.id,
       path: this.#path,

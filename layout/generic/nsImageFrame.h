@@ -92,7 +92,7 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
                        nsEventStatus*) override;
   Cursor GetCursor(const nsPoint&) override;
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) final;
+                            AttrModType aModType) final;
 
   void OnVisibilityChange(
       Visibility aNewVisibility,

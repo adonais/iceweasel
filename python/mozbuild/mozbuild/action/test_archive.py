@@ -54,7 +54,7 @@ TEST_HARNESS_BINS = [
 
 TEST_HARNESS_DLLS = ["crashinjectdll", "mozglue"]
 
-TRAIN_HOP_DLLS = ["xul", "nss3", "gkcodecs", "lgpllibs"]
+TRAIN_HOP_DLLS = ["xul", "nss3", "gkcodecs", "lgpllibs", "mozinference"]
 
 GMP_TEST_PLUGIN_DIRS = ["gmp-fake/**", "gmp-fakeopenh264/**"]
 

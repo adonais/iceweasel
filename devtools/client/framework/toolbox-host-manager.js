@@ -80,6 +80,9 @@ function ToolboxHostManager(commands, hostType, hostOptions) {
   this.eventController = new AbortController();
   this.host = this.createHost(hostType, hostOptions);
   this.hostType = hostType;
+  // List of event which are collected when a new host is created for a popup
+  // from `switchHostToTab` method.
+  this.collectPendingMessages = null;
   this.setMinWidthWithZoom = this.setMinWidthWithZoom.bind(this);
   this._onMessage = this._onMessage.bind(this);
   Services.prefs.addObserver(ZOOM_VALUE_PREF, this.setMinWidthWithZoom);
@@ -169,6 +172,10 @@ ToolboxHostManager.prototype = {
     // Toolbox document is still chrome and disallow identifying message
     // origin via event.source as it is null. So use a custom id.
     if (msg.frameId != this.frameId) {
+      return;
+    }
+    if (this.collectPendingMessages) {
+      this.collectPendingMessages.push(event);
       return;
     }
     switch (msg.name) {
@@ -277,6 +284,12 @@ ToolboxHostManager.prototype = {
 
     // change toolbox document's parent to the new host
     newIframe.swapFrameLoaders(iframe);
+
+    // swapFrameLoaders ends up disabling the new frame activeness,
+    // so ensure we set the expected state at the end of this method
+    iframe.docShellIsActive = false;
+    newIframe.docShellIsActive = true;
+
     if (destroyPreviousHost) {
       this.destroyHost();
     }
@@ -287,7 +300,6 @@ ToolboxHostManager.prototype = {
     ) {
       Services.prefs.setCharPref(PREVIOUS_HOST, this.hostType);
     }
-
     this.host = newHost;
     if (this.currentTab) {
       this.hostPerTab.set(this.currentTab, newHost);
@@ -339,7 +351,15 @@ ToolboxHostManager.prototype = {
         newHost.frame.swapFrameLoaders(this.host.frame);
         this.host = newHost;
       } else {
+        // Ensure collecting any message sent by the toolbox in order to emit them
+        // on the newly created host, which is created asynchronously
+        const pendingMessages = [];
+        this.collectPendingMessages = pendingMessages;
         await this.switchHost(this.hostType, false);
+        this.collectPendingMessages = null;
+        for (const message of pendingMessages) {
+          this._onMessage(message);
+        }
       }
       previousTab.addEventListener(
         "TabSelect",

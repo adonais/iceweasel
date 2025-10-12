@@ -2531,7 +2531,7 @@ bool js::array_sort(JSContext* cx, unsigned argc, Value* vp) {
         return true;
 
       case ArraySortResult::CallJS:
-      case ArraySortResult::CallJSSameRealmNoRectifier:
+      case ArraySortResult::CallJSSameRealmNoUnderflow:
         MOZ_ASSERT(data.get().comparatorThisValue().isUndefined());
         MOZ_ASSERT(&args[0].toObject() == data.get().comparator());
         callArgs[0].set(data.get().comparatorArg(0));

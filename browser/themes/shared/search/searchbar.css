@@ -175,6 +175,6 @@
 
 @media (-moz-platform: macos) {
   #PopupSearchAutoComplete {
-    border-radius: 4px;
+    border-radius: var(--border-radius-small);
   }
 }

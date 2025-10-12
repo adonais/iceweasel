@@ -42,6 +42,8 @@ extern crate peek_poke;
 
 pub mod channel;
 mod color;
+#[cfg(feature = "debugger")]
+pub mod debugger;
 mod display_item;
 mod display_item_cache;
 mod display_list;
@@ -99,7 +101,7 @@ impl Default for QualitySettings {
 /// This is mostly used as a synchronization mechanism to observe how/when particular pipeline
 /// updates propagate through WebRender and are applied at various stages.
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, MallocSizeOf, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct Epoch(pub u32);
 
 impl Epoch {

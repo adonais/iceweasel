@@ -366,15 +366,15 @@ impl TimingDistribution for LabeledTimingDistributionMetric {
         }
     }
 
-    pub fn test_get_value<'a, S: Into<Option<&'a str>>>(
-        &self,
-        ping_name: S,
-    ) -> Option<DistributionData> {
-        self.inner.test_get_value(ping_name)
-    }
-
     pub fn test_get_num_recorded_errors(&self, error: ErrorType) -> i32 {
         self.inner.test_get_num_recorded_errors(error)
+    }
+}
+
+#[inherent]
+impl glean::TestGetValue<DistributionData> for LabeledTimingDistributionMetric {
+    pub fn test_get_value(&self, ping_name: Option<String>) -> Option<DistributionData> {
+        self.inner.test_get_value(ping_name)
     }
 }
 

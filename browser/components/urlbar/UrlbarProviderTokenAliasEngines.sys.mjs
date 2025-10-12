@@ -23,19 +23,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
 /**
  * Class used to create the provider.
  */
-class ProviderTokenAliasEngines extends UrlbarProvider {
+export class UrlbarProviderTokenAliasEngines extends UrlbarProvider {
   constructor() {
     super();
     this._engines = [];
-  }
-
-  /**
-   * Returns the name of this provider.
-   *
-   * @returns {string} the name of this provider.
-   */
-  get name() {
-    return "TokenAliasEngines";
   }
 
   /**
@@ -45,7 +36,7 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
     return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
   }
 
-  get PRIORITY() {
+  static get PRIORITY() {
     // Beats UrlbarProviderSearchSuggestions and UrlbarProviderPlaces.
     return 1;
   }
@@ -158,7 +149,7 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
    * @returns {number} The provider's priority for the given query.
    */
   getPriority() {
-    return this.PRIORITY;
+    return UrlbarProviderTokenAliasEngines.PRIORITY;
   }
 
   /**
@@ -230,5 +221,3 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
     return null;
   }
 }
-
-export var UrlbarProviderTokenAliasEngines = new ProviderTokenAliasEngines();

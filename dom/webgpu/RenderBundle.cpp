@@ -6,7 +6,6 @@
 #include "RenderBundle.h"
 
 #include "Device.h"
-#include "ipc/WebGPUChild.h"
 #include "mozilla/dom/WebGPUBinding.h"
 
 namespace mozilla::webgpu {
@@ -16,27 +15,10 @@ GPU_IMPL_JS_WRAP(RenderBundle)
 
 RenderBundle::RenderBundle(Device* const aParent, RawId aId,
                            CanvasContextArray&& aCanvasContexts)
-    : ChildOf(aParent),
-      mId(aId),
-      mUsedCanvasContexts(std::move(aCanvasContexts)) {
-  // TODO: we may be running into this if we finish an encoder twice.
-  MOZ_RELEASE_ASSERT(aId);
-}
+    : ObjectBase(aParent->GetChild(), aId, ffi::wgpu_client_drop_render_bundle),
+      ChildOf(aParent),
+      mUsedCanvasContexts(std::move(aCanvasContexts)) {}
 
-RenderBundle::~RenderBundle() { Cleanup(); }
-
-void RenderBundle::Cleanup() {
-  if (!mValid) {
-    return;
-  }
-  mValid = false;
-
-  auto bridge = mParent->GetBridge();
-  if (!bridge) {
-    return;
-  }
-
-  ffi::wgpu_client_drop_render_bundle(bridge->GetClient(), mId);
-}
+RenderBundle::~RenderBundle() = default;
 
 }  // namespace mozilla::webgpu

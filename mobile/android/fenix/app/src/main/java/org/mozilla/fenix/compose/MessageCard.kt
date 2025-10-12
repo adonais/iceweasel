@@ -38,6 +38,7 @@ import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.mozilla.fenix.wallpapers.WallpaperState
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * State-based Message Card.
@@ -183,7 +184,7 @@ private fun MessageCardIconButton(
         onClick = onCloseButtonClick,
     ) {
         Icon(
-            painter = painterResource(R.drawable.mozac_ic_cross_20),
+            painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
             contentDescription = stringResource(
                 R.string.content_description_close_button,
             ),

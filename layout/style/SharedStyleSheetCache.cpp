@@ -28,7 +28,11 @@ MOZ_DEFINE_MALLOC_SIZE_OF(SharedStyleSheetCacheMallocSizeOf)
 
 SharedStyleSheetCache::SharedStyleSheetCache() = default;
 
-void SharedStyleSheetCache::Init() { RegisterWeakMemoryReporter(this); }
+void SharedStyleSheetCache::Init() {
+  RegisterWeakMemoryReporter(this);
+  auto ClearCache = [](const char*, void*) { Clear(); };
+  Preferences::RegisterPrefixCallback(ClearCache, "layout.css.");
+}
 
 SharedStyleSheetCache::~SharedStyleSheetCache() {
   UnregisterWeakMemoryReporter(this);

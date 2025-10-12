@@ -283,6 +283,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_rules_edit-value-after-name_01.js"]
 
 ["browser_rules_edit-value-after-name_02.js"]
+fail-if = ["a11y_checks"] # Bug 1984832 clicked element is destroyed after mousedown, a11y utils asserts the wrong element
 
 ["browser_rules_edit-value-after-name_03.js"]
 
@@ -300,6 +301,8 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_rules_eyedropper.js"]
 skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug"] # Bug 1781473
+
+["browser_rules_variables-jump-to-definition.js"]
 
 ["browser_rules_variables-in-pseudo-element_01.js"]
 

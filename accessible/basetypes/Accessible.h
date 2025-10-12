@@ -8,7 +8,7 @@
 
 #include "mozilla/a11y/Role.h"
 #include "mozilla/a11y/AccTypes.h"
-#include "nsString.h"
+#include "nsStringFwd.h"
 #include "nsRect.h"
 #include "Units.h"
 
@@ -20,6 +20,8 @@ struct nsRoleMapEntry;
 class nsIURI;
 
 namespace mozilla {
+class WritingMode;
+
 namespace a11y {
 
 class AccAttributes;
@@ -57,6 +59,25 @@ enum ENameValueFlag {
    * Labelling relations were used for the name.
    */
   eNameFromRelations,
+};
+
+/**
+ * Description type flags.
+ */
+enum EDescriptionValueFlag {
+  /**
+   * Description either
+   *  a) present (not empty): !description.IsEmpty()
+   *  b) no description (was missed): IsVoid() or IsEmpty(),
+   *     or NameAndDescription caching domain is not active.
+   */
+  eDescriptionOK,
+
+  /**
+   * Description was provided by ARIA (either aria-description or
+   * aria-describedby)
+   */
+  eDescriptionFromARIA,
 };
 
 /**
@@ -320,7 +341,7 @@ class Accessible {
   /*
    * Get the description of this accessible.
    */
-  virtual void Description(nsString& aDescription) const = 0;
+  virtual EDescriptionValueFlag Description(nsString& aDescription) const = 0;
 
   /**
    * Get the value of this accessible.
@@ -386,6 +407,8 @@ class Accessible {
   virtual already_AddRefed<nsAtom> DisplayStyle() const = 0;
 
   virtual float Opacity() const = 0;
+
+  virtual WritingMode GetWritingMode() const = 0;
 
   /**
    * Get the live region attributes (if any) for this single Accessible. This

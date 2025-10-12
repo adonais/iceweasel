@@ -21,8 +21,6 @@
 using mozilla::media::TimeIntervals;
 using mozilla::media::TimeUnit;
 
-extern mozilla::LazyLogModule gMediaDemuxerLog;
-
 namespace mozilla {
 
 #define LOG(msg, ...) \

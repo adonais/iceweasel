@@ -61,14 +61,15 @@ static const char* TrackTypeToString(mozilla::TrackInfo::TrackType aType) {
   }
 }
 
-bool StreamAdaptor::Read(uint8_t* buffer, uintptr_t size, size_t* bytes_read) {
+nsresult StreamAdaptor::Read(uint8_t* buffer, uintptr_t size,
+                             size_t* bytes_read) {
   if (!mOffset.isValid()) {
     MOZ_LOG(gMP4MetadataLog, LogLevel::Error,
             ("Overflow in source stream offset"));
-    return false;
+    return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
   }
-  bool rv = mSource->ReadAt(mOffset.value(), buffer, size, bytes_read);
-  if (rv) {
+  nsresult rv = mSource->ReadAt(mOffset.value(), buffer, size, bytes_read);
+  if (NS_SUCCEEDED(rv)) {
     mOffset += *bytes_read;
   }
   return rv;
@@ -81,8 +82,8 @@ static intptr_t read_source(uint8_t* buffer, uintptr_t size, void* userdata) {
 
   auto source = reinterpret_cast<StreamAdaptor*>(userdata);
   size_t bytes_read = 0;
-  bool rv = source->Read(buffer, size, &bytes_read);
-  if (!rv) {
+  nsresult rv = source->Read(buffer, size, &bytes_read);
+  if (NS_FAILED(rv)) {
     MOZ_LOG(gMP4MetadataLog, LogLevel::Warning, ("Error reading source data"));
     return -1;
   }

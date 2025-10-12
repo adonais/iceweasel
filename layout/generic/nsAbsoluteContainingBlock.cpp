@@ -16,6 +16,7 @@
 #include "mozilla/ReflowInput.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/ViewportFrame.h"
+#include "mozilla/dom/ViewTransition.h"
 #include "nsAtomicContainerFrame.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsContainerFrame.h"
@@ -203,8 +204,8 @@ void nsAbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
           return viewport->GetContainingBlockAdjustedForScrollbars(
               aReflowInput);
         }
-        // else, we would like to use the default containing block for
-        // ::-moz-snapshot-containing-block.
+        return dom::ViewTransition::SnapshotContainingBlockRect(
+            viewport->PresContext());
       }
       return aContainingBlock;
     }();
@@ -793,7 +794,7 @@ void nsAbsoluteContainingBlock::ResolveAutoMarginsAfterLayout(
     ReflowInput& aKidReflowInput, const LogicalSize* aLogicalCBSize,
     const LogicalSize& aKidSize, LogicalMargin& aMargin,
     LogicalMargin& aOffsets) {
-  MOZ_ASSERT(aKidReflowInput.mFrame->HasIntrinsicKeywordForBSize());
+  MOZ_ASSERT(aKidReflowInput.mFlags.mDeferAutoMarginComputation);
 
   WritingMode wm = aKidReflowInput.GetWritingMode();
   WritingMode outerWM = aKidReflowInput.mParentReflowInput->GetWritingMode();
@@ -1007,7 +1008,7 @@ void nsAbsoluteContainingBlock::ReflowAbsoluteFrame(
     ResolveSizeDependentOffsets(aPresContext, kidReflowInput, kidSize, margin,
                                 &offsets, &logicalCBSize);
 
-    if (kidReflowInput.mFrame->HasIntrinsicKeywordForBSize()) {
+    if (kidReflowInput.mFlags.mDeferAutoMarginComputation) {
       ResolveAutoMarginsAfterLayout(kidReflowInput, &logicalCBSize, kidSize,
                                     margin, offsets);
     }

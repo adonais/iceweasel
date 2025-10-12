@@ -98,7 +98,7 @@ export function sumNorm(vec) {
  * @param {object} normobj Dictionary of storing info for running mean var
  * @returns {[number, obj]} normalized features and the updated object
  */
-function normUpdate(vals, input_normobj) {
+export function normUpdate(vals, input_normobj) {
   if (!vals.length) {
     return [vals, input_normobj];
   }
@@ -213,24 +213,168 @@ export function processSeasonality(guids, input, tau, curtime) {
   return normweights;
 }
 
+// Visit type codes in Places
+const TYPE = {
+  LINK: 1,
+  TYPED: 2,
+  BOOKMARK: 3,
+  EMBED: 4,
+  REDIRECT_PERM: 5,
+  REDIRECT_TEMP: 6,
+  DOWNLOAD: 7,
+  FRAMED_LINK: 8,
+  RELOAD: 9,
+};
+
+// default bonus map; copy from frecency
+const TYPE_SCORE = {
+  [TYPE.TYPED]: 200,
+  [TYPE.LINK]: 100,
+  [TYPE.BOOKMARK]: 75,
+  [TYPE.RELOAD]: 0,
+  [TYPE.REDIRECT_PERM]: 0,
+  [TYPE.REDIRECT_TEMP]: 0,
+  [TYPE.EMBED]: 0,
+  [TYPE.FRAMED_LINK]: 0,
+  [TYPE.DOWNLOAD]: 0,
+};
 /**
- * Apply thompson sampling to topsites array, considers frecency weights
+ * Build features that break apart frecency into:
+ *        frequency, recency, re-frecency
+ * frequency total_visits*F(visit_types)
+ * recency is exponential decay of last 10 visits
+ * re-frecency is dot_product(frequency,recency)
  *
- * @param {object[]} topsites Array of topsites objects
- * @param {object} prefValues Store user prefs, controls how this ranking behaves
- * @returns {combined: object[]} Array of topsites in reranked order
+ * difference between frecency and re-frecency is how the
+ * recency calc is done, recency is exponential decay instead
+ * of the frecency buckets for interpretability
+ *
+ * @param {object} visitCounts guid -> {visit.type, visit.time}
+ * @param {object} visitCounts guid -> total visit count
+ * @param {object} opts options for controlling calc
+ * @returns {Promise<{pvec: number[]|null, hists: any}>}
  */
+export async function buildFrecencyFeatures(
+  visitsByGuid,
+  visitCounts,
+  opts = {}
+) {
+  const {
+    halfLifeDays = 28, // 28 reproduces frecency
+  } = opts;
+
+  const nowMs = Date.now();
+  const dayMs = 864e5;
+  const tauDays = halfLifeDays / Math.log(2);
+
+  // Transposed output: { refre: {guid:...}, rece: {guid:...}, freq: {guid:...} }
+  const byFeature = { refre: {}, rece: {}, freq: {}, unid: {} };
+
+  for (const [guid, visits] of Object.entries(visitsByGuid)) {
+    // take the log here, original frecency grows linearly with visits
+    // lets test out log growth
+    const total = Math.log((visitCounts?.[guid] ?? 0) + 1);
+
+    const time_scores = [];
+    const type_scores = [];
+
+    const days_visited = new Set([]);
+
+    for (let i = 0; i < visits.length; i++) {
+      const { visit_date_us, visit_type } = visits[i];
+      const ageDays = (nowMs - visit_date_us / 1000) / dayMs;
+      days_visited.add(Math.floor(ageDays));
+      const t = Math.exp(-ageDays / tauDays); // exponential decay
+      const b = TYPE_SCORE[visit_type] ?? 0;
+      time_scores.push(t);
+      type_scores.push(b);
+    }
+    // dot captures the interaction between time and type, basically frecency
+    const dot = time_scores.reduce(
+      (s, x, i) => s + x * (type_scores[i] ?? 0),
+      0
+    );
+    // time_score is a pure recency feature
+    const time_score = time_scores.reduce((s, x) => s + x, 0);
+    // type_score is frequency feature weighted by how the user got to the site
+    const type_score = type_scores.reduce((s, x) => s + x, 0);
+
+    byFeature.refre[guid] = total * dot; // interaction (≈ frecency-like)
+    byFeature.rece[guid] = time_score; // recency-only
+    byFeature.freq[guid] = total * type_score; // frequency-only (lifetime-weighted)
+    byFeature.unid[guid] = days_visited.size;
+  }
+
+  return byFeature;
+}
+
+// small helpers used only here
+const _projectByGuid = (guids, dict) => guids.map(g => dict[g]);
+
+const _applyVectorFeature = (
+  namei,
+  rawVec,
+  norms,
+  score_map,
+  guids,
+  updated_norms
+) => {
+  const [vals, n] = normUpdate(rawVec, norms[namei]);
+  updated_norms[namei] = n;
+  guids.forEach((g, i) => {
+    score_map[g][namei] = vals[i];
+  });
+};
+
 export async function weightedSampleTopSites(input) {
-  let updated_norms = {};
-  let score_map = Object.fromEntries(
+  const updated_norms = {};
+  const score_map = Object.fromEntries(
     input.guid.map(guid => [
       guid,
-      Object.fromEntries(input.features.map(feature => [feature, 0])),
+      Object.fromEntries(input.features.map(f => [f, 0])),
     ])
   );
 
-  // THOMPSON FEATURES
-  // sample scores for the topsites
+  // Table-driven vector features that already exist as per-guid dictionaries
+  const dictFeatures = {
+    bmark: () => _projectByGuid(input.guid, input.bmark_scores),
+    open: () => _projectByGuid(input.guid, input.open_scores),
+    rece: () => _projectByGuid(input.guid, input.rece_scores),
+    freq: () => _projectByGuid(input.guid, input.freq_scores),
+    refre: () => _projectByGuid(input.guid, input.refre_scores),
+    unid: () => _projectByGuid(input.guid, input.unid_scores),
+  };
+
+  // 1) Simple vector features
+  for (const namei of Object.keys(dictFeatures)) {
+    if (input.features.includes(namei)) {
+      _applyVectorFeature(
+        namei,
+        dictFeatures[namei](),
+        input.norms,
+        score_map,
+        input.guid,
+        updated_norms
+      );
+    }
+  }
+
+  // 2) CTR feature (derived vector)
+  if (input.features.includes("ctr")) {
+    const raw_ctr = input.impressions.map(
+      (imp, i) => (input.clicks[i] + 1) / (imp + 1)
+    );
+    _applyVectorFeature(
+      "ctr",
+      raw_ctr,
+      input.norms,
+      score_map,
+      input.guid,
+      updated_norms
+    );
+  }
+
+  // 3) Thompson feature (special case)
   if (input.features.includes("thom")) {
     const ranked_thetas = await thompsonSampleSort({
       key_array: input.guid,
@@ -242,80 +386,69 @@ export async function weightedSampleTopSites(input) {
       prior_negative: input.impressions.map(() => input.beta),
       do_sort: false,
     });
-    const [thom_scores, thom_norm] = normUpdate(
-      ranked_thetas[1],
-      input.norms.thom
-    );
-    updated_norms.thom = thom_norm;
-    input.guid.forEach((guid, i) => {
-      score_map[guid].thom = thom_scores[i];
-    });
-  }
-  // FRECENCY FEATURES
-  // get frecency from withGUID
-  if (input.features.includes("frec")) {
-    const [frec_scores, frec_norm] = normUpdate(
-      input.frecency,
-      input.norms.frec
-    );
-    updated_norms.frec = frec_norm;
-    input.guid.forEach((guid, i) => {
-      score_map[guid].frec = frec_scores[i];
+    const [vals, n] = normUpdate(ranked_thetas[1], input.norms.thom);
+    updated_norms.thom = n;
+    input.guid.forEach((g, i) => {
+      score_map[g].thom = vals[i];
     });
   }
 
-  // HOURLY SEASONALITY FEATURES
+  // 4) Frecency vector (already an array)
+  if (input.features.includes("frec")) {
+    const [vals, n] = normUpdate(input.frecency, input.norms.frec);
+    updated_norms.frec = n;
+    input.guid.forEach((g, i) => {
+      score_map[g].frec = vals[i];
+    });
+  }
+
+  // 5) Seasonality features
   if (input.features.includes("hour")) {
-    const raw_hour_scores = processSeasonality(
+    const raw = processSeasonality(
       input.guid,
       input.hourly_seasonality,
       input.tau,
       getCurrentHourOfDay()
     );
-    const [hour_scores, hour_norm] = normUpdate(
-      raw_hour_scores,
-      input.norms.hour
+    _applyVectorFeature(
+      "hour",
+      raw,
+      input.norms,
+      score_map,
+      input.guid,
+      updated_norms
     );
-    updated_norms.hour = hour_norm;
-    input.guid.forEach((guid, i) => {
-      score_map[guid].hour = hour_scores[i];
-    });
   }
-
-  // DAILY SEASONALITY FEATURES
   if (input.features.includes("daily")) {
-    const raw_daily_scores = processSeasonality(
+    const raw = processSeasonality(
       input.guid,
       input.daily_seasonality,
       input.tau,
       getCurrentDayOfWeek()
     );
-    const [daily_scores, daily_norm] = normUpdate(
-      raw_daily_scores,
-      input.norms.daily
+    _applyVectorFeature(
+      "daily",
+      raw,
+      input.norms,
+      score_map,
+      input.guid,
+      updated_norms
     );
-    updated_norms.daily = daily_norm;
-    input.guid.forEach((guid, i) => {
-      score_map[guid].daily = daily_scores[i];
-    });
   }
 
-  // BIAS
+  // 6) Bias
   if (input.features.includes("bias")) {
-    input.guid.forEach(guid => {
-      score_map[guid].bias = 1;
+    input.guid.forEach(g => {
+      score_map[g].bias = 1;
     });
   }
-  // FINAL SCORE, track other scores
-  for (const guid of Object.keys(score_map)) {
-    score_map[guid].final = computeLinearScore(score_map[guid], input.weights);
+
+  // 7) Final score
+  for (const g of input.guid) {
+    score_map[g].final = computeLinearScore(score_map[g], input.weights);
   }
 
-  const output = {
-    score_map,
-    norms: updated_norms,
-  };
-  return output;
+  return { score_map, norms: updated_norms };
 }
 
 export function clampWeights(weights, maxNorm = 100) {
@@ -372,6 +505,13 @@ export function updateWeights(input, do_clamp = true) {
       score_map[guid] &&
       typeof score_map[guid].final === "number"
     ) {
+      /* impressions without a click can happen for many reasons
+      that are unrelated to the item. clicks are almost
+      always a deliberate action. therefore, we should
+      learn more from clicks. the click_bonus can be viewed
+      as a weight on click events and biases the model
+       to learning more from clicks relative to impressions
+      */
       const clicks = (data[guid].clicks | 0) * click_bonus;
       const impressions = data[guid].impressions | 0;
       if (clicks === 0 && impressions === 0) {
@@ -412,5 +552,8 @@ export class RankShortcutsWorker {
   }
   async updateWeights(input) {
     return updateWeights(input);
+  }
+  async buildFrecencyFeatures(raw_frec, visit_totals) {
+    return buildFrecencyFeatures(raw_frec, visit_totals);
   }
 }

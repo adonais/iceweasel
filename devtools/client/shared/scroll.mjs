@@ -74,7 +74,17 @@ function closestScrolledParent(node) {
     return null;
   }
 
-  if (node.scrollHeight > node.clientHeight) {
+  const window = node.ownerDocument?.defaultView || node.defaultView;
+  // Typically ignore Document when reaching the top-most element
+  const isElement = node instanceof window.HTMLElement;
+
+  // Ensure that the scrolled parent can actually scroll.
+  // In the debugger's scope panel, the "div.accordion" has scrollable content
+  // but "div.secondary-panes" is the parent element with overflow:auto
+  const overflowY = isElement ? window.getComputedStyle(node).overflowY : null;
+  const isScrollable = overflowY !== "visible" && overflowY !== "hidden";
+
+  if (isScrollable && node.scrollHeight > node.clientHeight) {
     return node;
   }
 

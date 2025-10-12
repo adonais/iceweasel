@@ -140,6 +140,8 @@ class DataChannelConnectionDcSctp : public DataChannelConnection,
   void UpdateBufferedAmount(StreamID aStreamId);
   void OnDCEPMessageDone(LifecycleId aLifecycleId);
 
+  bool HasPreChannelData(uint16_t aStream) const;
+
   std::unique_ptr<DcSctpSocketInterface> mDcSctp;
   std::set<uint16_t> mStreamsAwaitingAck;
 

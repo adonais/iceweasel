@@ -2066,6 +2066,31 @@ struct MOZ_STACK_CLASS HTMLEditor::ReplaceWhiteSpacesData final {
   const uint32_t mNewOffsetAfterReplace = UINT32_MAX;
 };
 
+/******************************************************************************
+ * A runnable to run HTMLEditor::OnModifiedDocument when it's safe.
+ ******************************************************************************/
+
+class HTMLEditor::DocumentModifiedEvent final : public Runnable {
+ public:
+  explicit DocumentModifiedEvent(HTMLEditor& aHTMLEditor)
+      : Runnable("DocumentModifiedEvent"), mHTMLEditor(aHTMLEditor) {}
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() {
+    Unused << MOZ_KnownLive(mHTMLEditor)->OnModifyDocument(*this);
+    return NS_OK;
+  }
+
+  const nsTArray<EditorDOMPointInText>& NewInvisibleWhiteSpacesRef() const {
+    return mNewInvisibleWhiteSpaces;
+  }
+
+ private:
+  ~DocumentModifiedEvent() = default;
+
+  const OwningNonNull<HTMLEditor> mHTMLEditor;
+  nsTArray<EditorDOMPointInText> mNewInvisibleWhiteSpaces;
+};
+
 }  // namespace mozilla
 
 #endif  // #ifndef HTMLEditorNestedClasses_h

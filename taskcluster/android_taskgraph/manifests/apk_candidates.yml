@@ -82,14 +82,6 @@ mapping:
             - ${folder_prefix}${product}-${version}-android-armeabi-v7a
         from:
             - signing-apk
-    target.x86.apk:
-        <<: *default
-        description: "Android package for x86"
-        pretty_name: ${product}-${version}.${locale}.android-x86.apk
-        destinations:
-            - ${folder_prefix}${product}-${version}-android-x86
-        from:
-            - signing-apk
     target.x86_64.apk:
         <<: *default
         description: "Android package for x86_64"

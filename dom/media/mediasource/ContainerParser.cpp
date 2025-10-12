@@ -189,7 +189,8 @@ class WebMContainerParser
     if (initSegment || !HasCompleteInitData()) {
       if (mParser.mInitEndOffset > 0) {
         MOZ_DIAGNOSTIC_ASSERT(mInitData && mResource &&
-                              mParser.mInitEndOffset <= mResource->GetLength());
+                              mParser.mInitEndOffset <=
+                                  mResource->GetCachedDataEnd(0));
         if (!mInitData->SetLength(mParser.mInitEndOffset, fallible)) {
           // Super unlikely OOM
           return NS_ERROR_OUT_OF_MEMORY;
@@ -315,10 +316,10 @@ class MP4Stream : public ByteStream, public DecoderDoctorLifeLogger<MP4Stream> {
  public:
   explicit MP4Stream(SourceBufferResource* aResource);
   virtual ~MP4Stream();
-  bool ReadAt(int64_t aOffset, void* aBuffer, size_t aCount,
-              size_t* aBytesRead) override;
-  bool CachedReadAt(int64_t aOffset, void* aBuffer, size_t aCount,
-                    size_t* aBytesRead) override;
+  nsresult ReadAt(int64_t aOffset, void* aBuffer, size_t aCount,
+                  size_t* aBytesRead) override;
+  nsresult CachedReadAt(int64_t aOffset, void* aBuffer, size_t aCount,
+                        size_t* aBytesRead) override;
   bool Length(int64_t* aSize) override;
   const uint8_t* GetContiguousAccess(int64_t aOffset, size_t aSize) override;
 
@@ -334,21 +335,21 @@ MP4Stream::MP4Stream(SourceBufferResource* aResource) : mResource(aResource) {
 
 MP4Stream::~MP4Stream() { MOZ_COUNT_DTOR(MP4Stream); }
 
-bool MP4Stream::ReadAt(int64_t aOffset, void* aBuffer, size_t aCount,
-                       size_t* aBytesRead) {
+nsresult MP4Stream::ReadAt(int64_t aOffset, void* aBuffer, size_t aCount,
+                           size_t* aBytesRead) {
   return CachedReadAt(aOffset, aBuffer, aCount, aBytesRead);
 }
 
-bool MP4Stream::CachedReadAt(int64_t aOffset, void* aBuffer, size_t aCount,
-                             size_t* aBytesRead) {
+nsresult MP4Stream::CachedReadAt(int64_t aOffset, void* aBuffer, size_t aCount,
+                                 size_t* aBytesRead) {
   nsresult rv = mResource->ReadFromCache(reinterpret_cast<char*>(aBuffer),
                                          aOffset, aCount);
   if (NS_FAILED(rv)) {
     *aBytesRead = 0;
-    return false;
+    return rv;
   }
   *aBytesRead = aCount;
-  return true;
+  return rv;
 }
 
 const uint8_t* MP4Stream::GetContiguousAccess(int64_t aOffset, size_t aSize) {
@@ -550,8 +551,8 @@ class MP4ContainerParser : public ContainerParser,
 
     mResource->AppendData(aData);
     MediaByteRangeSet byteRanges;
-    byteRanges +=
-        MediaByteRange(int64_t(mParser->mOffset), mResource->GetLength());
+    byteRanges += MediaByteRange(int64_t(mParser->mOffset),
+                                 mResource->GetCachedDataEnd(mParser->mOffset));
     mParser->RebuildFragmentedIndex(byteRanges);
 
     if (initSegment || !HasCompleteInitData()) {

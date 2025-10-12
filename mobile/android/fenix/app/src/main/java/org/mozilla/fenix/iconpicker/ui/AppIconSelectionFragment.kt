@@ -14,10 +14,10 @@ import androidx.navigation.fragment.findNavController
 import mozilla.components.support.base.feature.UserInteractionHandler
 import org.mozilla.fenix.GleanMetrics.AppIconSelection
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.iconpicker.AppIconRepository
 import org.mozilla.fenix.iconpicker.DefaultAppIconRepository
+import org.mozilla.fenix.iconpicker.DefaultPackageManagerWrapper
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.ShortcutManagerWrapperDefault
 import org.mozilla.fenix.utils.ShortcutsUpdaterDefault
@@ -29,7 +29,10 @@ import org.mozilla.fenix.utils.changeAppLauncherIcon
 class AppIconSelectionFragment : Fragment(), UserInteractionHandler {
 
     private val appIconRepository: AppIconRepository by lazy {
-        DefaultAppIconRepository(requireContext().settings())
+        DefaultAppIconRepository(
+            packageManager = DefaultPackageManagerWrapper(requireContext().packageManager),
+            packageName = requireContext().packageName,
+        )
     }
 
     override fun onCreateView(
@@ -43,7 +46,6 @@ class AppIconSelectionFragment : Fragment(), UserInteractionHandler {
                 groupedIconOptions = appIconRepository.groupedAppIcons,
                 onAppIconSelected = { selectedAppIcon ->
                     val currentAliasSuffix = appIconRepository.selectedAppIcon.aliasSuffix
-                    appIconRepository.selectedAppIcon = selectedAppIcon
 
                     AppIconSelection.appIconSelectionConfirmed.record(
                         extra = AppIconSelection.AppIconSelectionConfirmedExtra(

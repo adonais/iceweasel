@@ -43,6 +43,8 @@ class RemoteMediaDataEncoderChild final
   RefPtr<MediaDataEncoder::InitPromise> Init() override;
   RefPtr<MediaDataEncoder::EncodePromise> Encode(
       const MediaData* aSample) override;
+  RefPtr<MediaDataEncoder::EncodePromise> Encode(
+      nsTArray<RefPtr<MediaData>>&& aSamples) override;
   RefPtr<MediaDataEncoder::EncodePromise> Drain() override;
   RefPtr<MediaDataEncoder::ReconfigurationPromise> Reconfigure(
       const RefPtr<const EncoderConfigurationChangeList>& aConfigurationChanges)
@@ -57,7 +59,7 @@ class RemoteMediaDataEncoderChild final
   RemoteMediaManagerChild* GetManager();
 
   virtual RefPtr<PRemoteEncoderChild::EncodePromise> DoSendEncode(
-      const MediaData* aSample, ShmemRecycleTicket* aTicket);
+      const nsTArray<RefPtr<MediaData>>& aSamples, ShmemRecycleTicket* aTicket);
 
   void DoSendInit();
   void MaybeDestroyActor();

@@ -53,9 +53,9 @@ pub struct CssUrlData {
 
 impl PartialEq for CssUrlData {
     fn eq(&self, other: &Self) -> bool {
-        self.serialization == other.serialization &&
-            self.extra_data == other.extra_data &&
-            self.cors_mode == other.cors_mode
+        self.serialization == other.serialization
+            && self.extra_data == other.extra_data
+            && self.cors_mode == other.cors_mode
     }
 }
 
@@ -86,7 +86,10 @@ impl NonLocalUriDependency {
             // https://drafts.csswg.org/css-values-4/#url-empty
             return Self::No;
         }
-        if specified.starts_with('/') || specified.starts_with("http:") || specified.starts_with("https:") {
+        if specified.starts_with('/')
+            || specified.starts_with("http:")
+            || specified.starts_with("https:")
+        {
             return Self::Absolute;
         }
         if specified.starts_with('?') {

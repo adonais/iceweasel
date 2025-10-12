@@ -386,10 +386,6 @@ skip-if = [
   "http2",
 ]
 
-["test_bug339494.html"]
-
-["test_bug339494.xhtml"]
-
 ["test_bug343596.html"]
 
 ["test_bug345339.html"]
@@ -419,17 +415,9 @@ support-files = ["file_bug357450.js"]
 
 ["test_bug358660.html"]
 
-["test_bug362391.xhtml"]
-
-["test_bug364092.xhtml"]
-
-["test_bug364413.xhtml"]
-
 ["test_bug366944.html"]
 
 ["test_bug366946.html"]
-
-["test_bug367164.html"]
 
 ["test_bug368972.html"]
 
@@ -499,8 +487,6 @@ support-files = ["test_bug402150.html^headers^"]
 ["test_bug403852.html"]
 
 ["test_bug403868.xml"]
-
-["test_bug405182.html"]
 
 ["test_bug409380.html"]
 
@@ -732,8 +718,6 @@ support-files = ["file_bug518104.js"]
 
 ["test_bug562169-2.html"]
 
-["test_bug562652.html"]
-
 ["test_bug564047.html"]
 
 ["test_bug564863.xhtml"]
@@ -913,8 +897,6 @@ skip-if = [
 ["test_bug711180.html"]
 
 ["test_bug719533.html"]
-
-["test_bug726364.html"]
 
 ["test_bug737087.html"]
 
@@ -1150,8 +1132,6 @@ skip-if = [
 support-files = ["bug1739957.sjs"]
 
 ["test_bug1784187.html"]
-
-["test_bug1799354.html"]
 
 ["test_caretPositionFromPoint.html"]
 
@@ -1415,7 +1395,6 @@ support-files = ["file_location_href_unknown_protocol.html"]
 
 ["test_lock_orientation_after_fullscreen.html"]
 run-if = ["os == 'android'"] # Only run on Android.
-skip-if = ["os == 'android' && android_version == '34' && processor == 'x86_64'"] # Bug 1982947
 
 ["test_lock_orientation_with_pending_fullscreen.html"]
 skip-if = [
@@ -1452,6 +1431,13 @@ skip-if = [
 ["test_nested_event_loop_spin_and_idle_tasks.html"]
 
 ["test_nodelist_holes.html"]
+
+["test_omt_eager_baseline.html"]
+skip-if = ["ccov"]
+support-files = [
+  "file_omt_eager_baseline.html",
+  "file_omt_eager_baseline.js"
+]
 
 ["test_openDialogChromeOnly.html"]
 tags = "openwindow"

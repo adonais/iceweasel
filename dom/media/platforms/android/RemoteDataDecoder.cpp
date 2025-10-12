@@ -408,10 +408,13 @@ class RemoteVideoDecoder final : public RemoteDataDecoder {
     ok = mInputInfos.Find(presentationTimeUs, inputInfo);
     bool isEOS = !!(flags & java::sdk::MediaCodec::BUFFER_FLAG_END_OF_STREAM);
     if (!ok && !isEOS) {
+      LOG("No corresponding input");
       // Ignore output with no corresponding input.
       return;
     }
 
+    LOG("flags=%" PRIx32 " size=%" PRIi32 " presentationTimeUs=%" PRIi64, flags,
+        size, presentationTimeUs);
     if (ok && (size > 0 || presentationTimeUs >= 0)) {
       bool forceBT709ColorSpace = false;
       // On certain devices SMPTE 432 color primaries are rendered incorrectly,
@@ -833,7 +836,6 @@ class RemoteAudioDecoder final : public RemoteDataDecoder {
     }
 
     if (isEOS) {
-      LOG("EOS: drain complete");
       DrainComplete();
     }
   }
@@ -929,15 +931,11 @@ RefPtr<MediaDataDecoder::DecodePromise> RemoteDataDecoder::Drain() {
                                           __func__);
   }
   RefPtr<DecodePromise> p = mDrainPromise.Ensure(__func__);
-  if (GetState() == State::DRAINED) {
+  if (GetState() == State::DRAINING || GetState() == State::DRAINED) {
+    // Drain operation already in progress or complete.
     // There's no operation to perform other than returning any already
     // decoded data.
     ReturnDecodedData();
-    return p;
-  }
-
-  if (GetState() == State::DRAINING) {
-    // Draining operation already pending, let it complete its course.
     return p;
   }
 
@@ -1147,13 +1145,28 @@ void RemoteDataDecoder::ReturnDecodedData() {
   MOZ_ASSERT(GetState() != State::SHUTDOWN);
 
   // We only want to clear mDecodedData when we have resolved the promises.
+  LOG("have decode promise=%i, have drain promise=%i, state=%i",
+      static_cast<int>(!mDecodePromise.IsEmpty()),
+      static_cast<int>(!mDrainPromise.IsEmpty()), static_cast<int>(GetState()));
+  MOZ_ASSERT(mDecodePromise.IsEmpty() || mDrainPromise.IsEmpty());
+
   if (!mDecodePromise.IsEmpty()) {
-    mDecodePromise.Resolve(std::move(mDecodedData), __func__);
-    mDecodedData = DecodedData();
-  } else if (!mDrainPromise.IsEmpty() &&
-             (!mDecodedData.IsEmpty() || GetState() == State::DRAINED)) {
-    mDrainPromise.Resolve(std::move(mDecodedData), __func__);
-    mDecodedData = DecodedData();
+    // Return successfully decoded samples, even if there is an error, which
+    // can be returned for a subsequent decode or drain request.
+    if (!mDecodedData.IsEmpty() || mDecodeError.isNothing()) {
+      mDecodePromise.Resolve(std::move(mDecodedData), __func__);
+      MOZ_ASSERT(mDecodedData.IsEmpty());
+    } else if (mDecodeError.isSome()) {
+      mDecodePromise.Reject(mDecodeError.extract(), __func__);
+    }
+  } else if (!mDrainPromise.IsEmpty()) {
+    if (!mDecodedData.IsEmpty() ||
+        (GetState() == State::DRAINED && mDecodeError.isNothing())) {
+      mDrainPromise.Resolve(std::move(mDecodedData), __func__);
+      MOZ_ASSERT(mDecodedData.IsEmpty());
+    } else if (mDecodeError.isSome()) {
+      mDrainPromise.Reject(mDecodeError.extract(), __func__);
+    }
   }
 }
 
@@ -1166,6 +1179,7 @@ void RemoteDataDecoder::DrainComplete() {
     Unused << rv;
     return;
   }
+  LOG("EOS");
   AssertOnThread();
   if (GetState() == State::SHUTDOWN) {
     return;
@@ -1187,16 +1201,25 @@ void RemoteDataDecoder::Error(const MediaResult& aError) {
     return;
   }
 
+  LOG("ErrorName=%s Message=%s", aError.ErrorName().get(),
+      aError.Message().get());
   // If we know we need a new decoder (eg because RemoteVideoDecoder's mSurface
   // has been released due to a GPU process crash) then override the error to
   // request a new decoder.
-  const MediaResult& error =
-      NeedsNewDecoder()
-          ? MediaResult(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__)
-          : aError;
+  if (NeedsNewDecoder()) {
+    mDecodeError =
+        Some(MediaResult(NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER, __func__));
+  } else if (!mDecodeError.isSome()) {
+    mDecodeError.emplace(aError);
+  }  // else keep the first error to report.
 
-  mDecodePromise.RejectIfExists(error, __func__);
-  mDrainPromise.RejectIfExists(error, __func__);
+  ReturnDecodedData();
+}
+
+void RemoteDataDecoder::SetState(RemoteDataDecoder::State aState) {
+  LOG("%i", static_cast<int>(aState));
+  AssertOnThread();
+  mState = aState;
 }
 
 }  // namespace mozilla

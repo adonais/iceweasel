@@ -16,10 +16,9 @@ const DEFAULT_PREFS = {
 
 // Migration will use these values to migrate only up to version 1 instead of
 // the current version.
-// Currently undefined because version 2 is the current migration version and we
-// want migration to use its actual values, not overrides. When version 3 is
-// added, set this to an object like the one in test_quicksuggest_migrate_v1.js.
-const TEST_OVERRIDES = undefined;
+const TEST_OVERRIDES = {
+  migrationVersion: 2,
+};
 
 add_setup(async () => {
   await UrlbarTestUtils.initNimbusFeature();

@@ -925,9 +925,7 @@ class MDefinition : public MNode {
 #endif
 
   MDefinition* dependency() const {
-    if (getAliasSet().isStore()) {
-      return nullptr;
-    }
+    MOZ_ASSERT_IF(getAliasSet().isStore(), !loadDependency_);
     return loadDependency_;
   }
   void setDependency(MDefinition* dependency) {
@@ -7744,6 +7742,9 @@ class MLoadFixedSlot : public MUnaryInstruction,
   NAMED_OPERANDS((0, object))
 
   size_t slot() const { return slot_; }
+
+  HashNumber valueHash() const override;
+
   bool congruentTo(const MDefinition* ins) const override {
     if (!ins->isLoadFixedSlot()) {
       return false;
@@ -8278,13 +8279,15 @@ class MAddAndStoreSlot
   Kind kind_;
   uint32_t slotOffset_;
   CompilerShape shape_;
+  bool preserveWrapper_;
 
   MAddAndStoreSlot(MDefinition* obj, MDefinition* value, Kind kind,
-                   uint32_t slotOffset, Shape* shape)
+                   uint32_t slotOffset, Shape* shape, bool preserveWrapper)
       : MBinaryInstruction(classOpcode, obj, value),
         kind_(kind),
         slotOffset_(slotOffset),
-        shape_(shape) {}
+        shape_(shape),
+        preserveWrapper_(preserveWrapper) {}
 
  public:
   INSTRUCTION_HEADER(AddAndStoreSlot)
@@ -8294,6 +8297,9 @@ class MAddAndStoreSlot
   Kind kind() const { return kind_; }
   uint32_t slotOffset() const { return slotOffset_; }
   Shape* shape() const { return shape_; }
+  bool preserveWrapper() const { return preserveWrapper_; }
+
+  bool possiblyCalls() const override { return preserveWrapper_; }
 
   AliasSet getAliasSet() const override {
     return AliasSet::Store(AliasSet::ObjectFields |
@@ -8793,6 +8799,48 @@ class MNearbyInt : public MUnaryInstruction,
   }
 
   ALLOW_CLONE(MNearbyInt)
+};
+
+// Inlined version of Math.round(double) -> double.
+class MRoundToDouble : public MUnaryInstruction,
+                       public FloatingPointPolicy<0>::Data {
+  explicit MRoundToDouble(MDefinition* num)
+      : MUnaryInstruction(classOpcode, num) {
+    MOZ_ASSERT(HasAssemblerSupport());
+
+    setResultType(MIRType::Double);
+    specialization_ = MIRType::Double;
+
+    setMovable();
+  }
+
+ public:
+  INSTRUCTION_HEADER(RoundToDouble)
+  TRIVIAL_NEW_WRAPPERS
+
+  static bool HasAssemblerSupport() {
+    // Requires Ceil support in the assembler.
+    return Assembler::HasRoundInstruction(RoundingMode::Up);
+  }
+
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+
+  bool isFloat32Commutative() const override { return true; }
+  void trySpecializeFloat32(TempAllocator& alloc) override;
+#ifdef DEBUG
+  bool isConsistentFloat32Use(MUse* use) const override { return true; }
+#endif
+
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins);
+  }
+
+  [[nodiscard]] bool writeRecoverData(
+      CompactBufferWriter& writer) const override;
+
+  bool canRecoverOnBailout() const override { return true; }
+
+  ALLOW_CLONE(MRoundToDouble)
 };
 
 class MGetIteratorCache : public MUnaryInstruction,

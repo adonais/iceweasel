@@ -22,6 +22,7 @@ about-glean-category-manual-testing = Manual Testing
 about-glean-category-adhoc-testing = Ad Hoc Testing
 about-glean-category-profiler = Using the Profiler
 about-glean-category-about-data = About Data
+about-glean-category-metrics-table = Metrics Table
 
 about-glean-upload-enabled = Data upload is enabled.
 about-glean-upload-disabled = Data upload is disabled.
@@ -147,3 +148,37 @@ about-glean-about-data-list-item-debug-ping-viewer =
 about-glean-about-data-list-item-firefox-profiler =
   To record a performance profile and see all recorded metrics, please use the
   <a data-l10n-name="about-glean-firefox-profiler">{ -profiler-brand-name }</a>.
+
+about-glean-metrics-table-header = All Metrics
+# This message refers to the category in which a given metric is recorded.
+about-glean-metrics-table-header-category = Category
+# This message refers to the name of a given metric.
+about-glean-metrics-table-header-name = Name
+# This message refers to a given metric's metric type.
+about-glean-metrics-table-header-type = Type
+# This message refers to the underlying value of a given metric.
+about-glean-metrics-table-header-value = Value
+# This message refers to the UI action buttons for a given metric.
+about-glean-metrics-table-header-actions = Actions
+
+# Label displayed near an input field that can be used to filter metrics
+about-glean-label-for-filter-metrics = Filter
+# This message sits alongside an input field, further describing its purpose.
+# Category refers to the category in which a given metric is recorded.
+# Name refers to the name of a given metric.
+# Type refers to a given metric's metric type.
+# Value refers to the underlying value of a given metric.
+# "Simple type" refers to a value type that does not have deeply-nested data, such as a boolean, number, string, or list of strings.
+about-glean-description-for-filter-metrics = This will filter the table below based on category, name, type, and value (if the value is a simple type).
+
+about-glean-button-load-all = Load All Values
+about-glean-button-load-value = Load
+# "Docs" is shorthand for "documentation"
+about-glean-button-dictionary-link = Docs
+about-glean-button-watch = Watch
+# Meaning "to stop watching"
+about-glean-button-unwatch = Unwatch
+
+# Do not translate strings between <code> </code> tags.
+about-glean-labeled-metric-warning = Labeled metrics are not yet supported in the <code>about:glean</code> view.
+about-glean-unknown-metric-type-warning = Unknown metric type.

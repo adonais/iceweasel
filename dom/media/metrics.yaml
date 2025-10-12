@@ -270,6 +270,45 @@ media:
     expires: never
     telemetry_mirror: MEDIA_ELEMENT_IN_PAGE_COUNT
 
+  mkv_content_count:
+    type: counter
+    description: >
+      The number of times MKV content is detected as a source for media playback.
+      This metric does not determine whether the MKV file is valid; it is simply
+      a count based on the sniffed MIME type.
+    bugs:
+      - https://bugzil.la/1985336
+    data_reviews:
+      - https://bugzil.la/1985336
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: 150
+
+  mkv_codec_type:
+    type: labeled_counter
+    description: >
+      Count the amount of the real world codec usage inside Matroska.
+    labels:
+      - VideoAv1
+      - VideoAvc
+      - VideoHevc
+      - VideoVp8
+      - VideoVp9
+      - AudioAac
+      - AudioMp3
+      - AudioOpus
+      - AudioVorbis
+      - AudioFlac
+      - AudioPcm
+      - NoCodecSpecified
+    bugs:
+      - https://bugzil.la/1986058
+    data_reviews:
+      - https://bugzil.la/1986058
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: 150
+
   video_hardware_decoding_support:
     type: labeled_boolean
     description: >

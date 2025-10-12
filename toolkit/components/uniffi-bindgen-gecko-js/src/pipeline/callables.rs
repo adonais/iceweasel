@@ -84,13 +84,6 @@ fn handle_callable(
 ) -> Result<()> {
     let name = &callable.name;
     let spec = match &callable.kind {
-        CallableKind::VTableMethod {
-            for_callback_interface: true,
-            ..
-        } => {
-            // Callback interfaces aren't configured using `config.toml` file yet.
-            return Ok(());
-        }
         CallableKind::Function => name.clone(),
         CallableKind::Method { interface_name, .. }
         | CallableKind::Constructor { interface_name, .. } => {
@@ -126,39 +119,44 @@ fn handle_callable(
         }
     });
     match config {
-        Some(ConcurrencyMode::Sync) => {
-            callable.is_js_async = false;
-            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callSync".to_string();
-        }
-        Some(ConcurrencyMode::Async) => {
-            callable.is_js_async = true;
-            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsync".to_string();
-        }
-        Some(ConcurrencyMode::AsyncWrapped) => {
-            if matches!(callable.kind, CallableKind::VTableMethod { .. }) {
-                bail!(
-                    "VTable method '{}' cannot be AsyncWrapped as foreign-implemented trait interfaces don't support async wrapping",
-                    spec
-                );
-            }
-            callable.is_js_async = true;
-            callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsyncWrapper".to_string();
-        }
-        Some(ConcurrencyMode::FireAndForget) => {
-            if !matches!(
-                callable.kind,
-                CallableKind::VTableMethod {
-                    for_callback_interface: true,
-                    ..
+        Some(concurrency_mode) => {
+            callable.concurrency_mode = concurrency_mode.clone();
+            match concurrency_mode {
+                ConcurrencyMode::Sync => {
+                    callable.is_js_async = false;
+                    callable.uniffi_scaffolding_method = "UniFFIScaffolding.callSync".to_string();
                 }
-            ) {
-                bail!(
-                    "VTable method '{}' cannot be FireAndForget as Rust-implemented functions don't support fire-and-forget wrapping",
-                    spec
-                );
+                ConcurrencyMode::Async => {
+                    callable.is_js_async = true;
+                    callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsync".to_string();
+                }
+                ConcurrencyMode::AsyncWrapped => {
+                    if matches!(callable.kind, CallableKind::VTableMethod { .. }) {
+                        bail!(
+                            "VTable method '{}' cannot be AsyncWrapped as foreign-implemented trait interfaces don't support async wrapping",
+                            spec
+                        );
+                    }
+                    callable.is_js_async = true;
+                    callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsyncWrapper".to_string();
+                }
+                ConcurrencyMode::FireAndForget => {
+                    if !matches!(
+                        callable.kind,
+                        CallableKind::VTableMethod {
+                            for_callback_interface: true,
+                            ..
+                        }
+                    ) {
+                        bail!(
+                            "VTable method '{}' cannot be FireAndForget as Rust-implemented functions don't support fire-and-forget wrapping",
+                            spec
+                        );
+                    }
+                    // no need to set `is_js_async` or `uniffi_scaffolding_method` since these can only
+                    // be called from Rust.
+                }
             }
-            // no need to set `is_js_async` or `uniffi_scaffolding_method` since these can only
-            // be called from Rust.
         }
         None => {
             // Store information about the unconfigured callable

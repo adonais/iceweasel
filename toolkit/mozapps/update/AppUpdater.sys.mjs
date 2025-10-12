@@ -217,8 +217,14 @@ export class AppUpdater {
    * or monitoring an update check/download will have no effect. In other words,
    * it is only really necessary/useful to call this function when the status is
    * `NEVER_CHECKED` or `NO_UPDATES_FOUND`.
+   *
+   * @param  {object} optional parameters
+   *  {boolean} checkOnly
+   *    If `true`, this function performs only a check and will not begin
+   *    downloading an update. The update process can be resumed by calling the
+   *    `allowUpdateDownload` method.
    */
-  async check() {
+  async check({ checkOnly = false } = {}) {
     try {
       // We don't want to end up with multiple instances of the same `async`
       // functions waiting on the same events, so if we are already busy going
@@ -235,6 +241,8 @@ export class AppUpdater {
     try {
       this.#updateBusy = true;
       this.#update = null;
+      this.#status = AppUpdater.STATUS.NEVER_CHECKED;
+      this.#permissionToDownloadGivenFn = null;
 
       if (this.#swapListenerConnected) {
         LOG("AppUpdater:check - Removing update-swap listener");
@@ -348,11 +356,15 @@ export class AppUpdater {
       let updateAuto = await makeAbortable(
         lazy.UpdateUtils.getAppUpdateAutoEnabled()
       );
-      if (!updateAuto || this.aus.manualUpdateOnly) {
-        LOG(
-          "AppUpdater:check - Need to wait for user approval to start the " +
-            "download."
-        );
+      if (!updateAuto || this.aus.manualUpdateOnly || checkOnly) {
+        if (checkOnly) {
+          LOG(`AppUpdater:check - Done. checkOnly = ${checkOnly}`);
+        } else {
+          LOG(
+            "AppUpdater:check - Need to wait for user approval to start the " +
+              "download."
+          );
+        }
 
         let downloadPermissionPromise = new Promise(resolve => {
           this.#permissionToDownloadGivenFn = resolve;

@@ -6,19 +6,13 @@
     "bcd-idl-mapper": "3.0.0",
     "kdljs": "0.3.0",
     "jest": "30.0.5",
-    "jsonc-parser": "3.3.1",
-    "peggy": "5.0.5",
-    "print-diff": "2.0.0",
-    "ts-patch": "3.3.0",
-    "typescript": "5.9.2",
-    "webidl2": "24.5.0",
-    "yaml": "2.8.0"
+    "peggy": "5.0.6",
+    "print-diff": "2.0.0"
   },
   "overrides": {
     "globals": "13.24.0"
   },
   "scripts": {
-    "prepare": "ts-patch install -s",
     "postinstall": "npm explore @typescript/dom-lib-generator -- tsc --typeRoots ../../@types",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   }

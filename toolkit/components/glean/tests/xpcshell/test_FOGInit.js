@@ -62,6 +62,19 @@ add_task(
       ],
       "Directory info was collected on first startup."
     );
+    const assertNoErrs = () => {
+      // TODO: bug 1986046 - Replace with labeled testGetValue() asserts.
+      const subdirs = ["db", "events", "pending_pings"];
+      for (const subdir of subdirs) {
+        Assert.equal(null, Glean.fog.subdirErr[subdir].testGetValue());
+        Assert.equal(null, Glean.fog.subdirEntryErr[subdir].testGetValue());
+        Assert.equal(
+          null,
+          Glean.fog.subdirEntryMetadataErr[subdir].testGetValue()
+        );
+      }
+    };
+    assertNoErrs();
 
     // Startup again to make sure we collect the directory info when the dirs exist.
     Services.fog.initializeFOG();
@@ -79,6 +92,7 @@ add_task(
     Assert.equal(dir_info[1].dir_exists, true);
     Assert.equal(dir_info[2].dir_name, "pending_pings");
     Assert.equal(dir_info[2].dir_exists, true);
+    assertNoErrs();
 
     Services.fog.initializeFOG();
 
@@ -87,11 +101,10 @@ add_task(
     Assert.equal(new_dir_info[1].dir_exists, true);
     Assert.equal(new_dir_info[1].file_count, 1);
     Assert.equal(new_dir_info[1].files[0].file_name, "test-ping");
-    Assert.greater(new_dir_info[1].files[0].file_size, 0);
-
-    console.log(
-      "Directory info collected on startup: ",
-      Glean.fog.dataDirectoryInfo.testGetValue()
-    );
+    // On Windows the file size metadata is not synced until the file is closed.
+    // But Glean is never shutdown in this test and so the metadata doesn't update
+    // and the file size seen will be 0, even if the file has been written to.
+    Assert.greaterOrEqual(new_dir_info[1].files[0].file_size, 0);
+    assertNoErrs();
   }
 );

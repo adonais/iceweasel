@@ -11,7 +11,6 @@ include protocol PRemoteMediaManager;
 
 using mozilla::EncoderConfig from "EncoderConfig.h";
 using mozilla::MediaResult from "MediaResult.h";
-using mozilla::TrackInfo::TrackType from "MediaInfo.h";
 [RefCounted] using class mozilla::ArrayOfRemoteMediaRawData from "mozilla/RemoteMediaData.h";
 [RefCounted] using class mozilla::ArrayOfRemoteAudioData from "mozilla/RemoteMediaData.h";
 [RefCounted] using class mozilla::ArrayOfRemoteVideoData from "mozilla/RemoteMediaData.h";

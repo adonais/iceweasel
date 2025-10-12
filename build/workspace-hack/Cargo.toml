@@ -55,7 +55,7 @@ once_cell = { version = "1", optional = true }
 percent-encoding = { version = "2", optional = true }
 phf = { version = "0.11", features = ["macros", "phf_macros"], optional = true }
 regex = { version = "1", optional = true }
-rkv = { version = "0.19", default-features = false, features = ["no-canonicalize-path"], optional = true }
+rkv = { version = "0.20", default-features = false, features = ["no-canonicalize-path"], optional = true }
 scroll = { version = "0.12", optional = true }
 semver = { version = "1", features = ["serde"], optional = true }
 serde = { version = "1", features = ["alloc", "derive", "rc"] }
