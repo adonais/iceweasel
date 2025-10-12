@@ -44,7 +44,7 @@ jobs:
         sudo chown runner:runner -R "$MOZ_FETCHES_DIR"
         mkdir -p "$MOZBUILD_DOWNLOAD"
         cd "$GITHUB_WORKSPACE"
-        m_ver=`cat browser/config/version_display.txt`
+        m_ver=`cat browser/config/version.txt`
         echo MY_VER=$m_ver>>$GITHUB_ENV
       shell: bash
 

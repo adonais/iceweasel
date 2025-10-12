@@ -39,7 +39,7 @@ jobs:
         sudo chown runner:runner -R "$MOZ_FETCHES_DIR"
         mkdir -p "$MOZBUILD_DOWNLOAD"
         cd "$GITHUB_WORKSPACE"
-        m_ver=`cat browser/config/version_display.txt`
+        m_ver=`cat browser/config/version.txt`
         echo MY_VER=$m_ver>>$GITHUB_ENV
       shell: bash
 
@@ -137,7 +137,7 @@ jobs:
         ./fx_pgo_use115.sh 32
         echo MY_BITS32=win32>>$GITHUB_ENV
         cd "$GITHUB_WORKSPACE/../obju32-release/dist"
-        mv "${APP_NAME}-${MY_VER}.en-US.win32.7z" "$MOZ_FETCHES_DIR/${APP_NAME}-v${MY_VER}.l10n_win32_pgo.7z"
+        mv "${APP_NAME}-${MY_VER}.en-US.win32.7z" "$MOZ_FETCHES_DIR/${APP_NAME}-v${MY_VER}esr.l10n_win32_pgo.7z"
         cd "$MOZ_FETCHES_DIR"
         rm -rf "$GITHUB_WORKSPACE/../obju32-release"
         ls -la
@@ -157,7 +157,7 @@ jobs:
         ./fx_pgo_use115.sh 64
         echo MY_BITS64=win64>>$GITHUB_ENV
         cd "$GITHUB_WORKSPACE/../obju64-release/dist"
-        mv "${APP_NAME}-${MY_VER}.en-US.win64.7z" "$MOZ_FETCHES_DIR/${APP_NAME}-v${MY_VER}.l10n_win64_pgo.7z"
+        mv "${APP_NAME}-${MY_VER}.en-US.win64.7z" "$MOZ_FETCHES_DIR/${APP_NAME}-v${MY_VER}esr.l10n_win64_pgo.7z"
         ls -la "$MOZ_FETCHES_DIR"
       shell: bash
 
@@ -165,7 +165,7 @@ jobs:
       with:
         tag: v${{ env.MY_VER }}
         name: Iceweasel v${{ env.MY_VER }}
-        artifacts: ${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}.l10n_${{ env.MY_BITS32 }}_pgo.7z,${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}.l10n_${{ env.MY_BITS64 }}_pgo.7z
+        artifacts: ${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}esr.l10n_${{ env.MY_BITS32 }}_pgo.7z,${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}esr.l10n_${{ env.MY_BITS64 }}_pgo.7z
         prerelease: false
         bodyFile: "${{ env.GITHUB_WORKSPACE }}/ESR115.md"
         token: ${{ secrets.GITHUB_TOKEN }}
