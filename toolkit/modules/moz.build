@@ -260,6 +260,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     EXTRA_JS_MODULES += [
         "WindowsLaunchOnLogin.sys.mjs",
         "WindowsRegistry.sys.mjs",
+        "upcheck.sys.mjs",
     ]
 
 for var in (
