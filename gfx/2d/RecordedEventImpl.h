@@ -3845,6 +3845,9 @@ inline bool RecordedFilterNodeSetAttribute::PlayEvent(
 
 #define REPLAY_SET_ATTRIBUTE(type, argtype)                      \
   case ARGTYPE_##argtype:                                        \
+    if (mPayload.size() < sizeof(type)) {                        \
+      return false;                                              \
+    }                                                            \
     ReplaySetAttribute(node, mIndex, *(type*)&mPayload.front()); \
     break
 
