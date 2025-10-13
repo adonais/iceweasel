@@ -172,6 +172,5 @@ jobs:
         name: Iceweasel v${{ env.MY_VER }}
         artifacts: ${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}.l10n_${{ env.MY_BITS64 }}_pgo.7z
         prerelease: false
-        makeLatest: true
         generateReleaseNotes: true
         token: ${{ secrets.GITHUB_TOKEN }}

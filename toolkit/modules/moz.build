@@ -258,9 +258,9 @@ if "Android" != CONFIG["OS_TARGET"]:
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     EXTRA_JS_MODULES += [
+        "upcheck.sys.mjs",
         "WindowsLaunchOnLogin.sys.mjs",
         "WindowsRegistry.sys.mjs",
-        "upcheck.sys.mjs",
     ]
 
 for var in (
