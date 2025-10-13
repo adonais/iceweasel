@@ -158,6 +158,7 @@ jobs:
         echo MY_BITS64=win64>>$GITHUB_ENV
         cd "$GITHUB_WORKSPACE/../obju64-release/dist"
         mv "${APP_NAME}-${MY_VER}.en-US.win64.7z" "$MOZ_FETCHES_DIR/${APP_NAME}-v${MY_VER}esr.l10n_win64_pgo.7z"
+        mv "$GITHUB_WORKSPACE/ESR115.md" "$MOZ_FETCHES_DIR/ESR115.md"
         ls -la "$MOZ_FETCHES_DIR"
       shell: bash
 
@@ -167,5 +168,5 @@ jobs:
         name: Iceweasel v${{ env.MY_VER }}
         artifacts: ${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}esr.l10n_${{ env.MY_BITS32 }}_pgo.7z,${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}esr.l10n_${{ env.MY_BITS64 }}_pgo.7z
         prerelease: false
-        bodyFile: "${{ env.GITHUB_WORKSPACE }}/ESR115.md"
+        bodyFile: "${{ env.MOZ_FETCHES_DIR }}/ESR115.md"
         token: ${{ secrets.GITHUB_TOKEN }}
