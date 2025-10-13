@@ -15,6 +15,7 @@ browser.jar:
    content/browser/preferences/translations.js
    content/browser/preferences/sync.js
    content/browser/preferences/experimental.js
+   content/browser/preferences/iceweasel.js
    content/browser/preferences/moreFromMozilla.js
    content/browser/preferences/fxaPairDevice.xhtml
    content/browser/preferences/fxaPairDevice.js

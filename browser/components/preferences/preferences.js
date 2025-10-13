@@ -10,6 +10,7 @@
 /* import-globals-from translations.js */
 /* import-globals-from privacy.js */
 /* import-globals-from sync.js */
+/* import-globals-from iceweasel.js */
 /* import-globals-from experimental.js */
 /* import-globals-from moreFromMozilla.js */
 /* import-globals-from findInPage.js */
@@ -195,6 +196,7 @@ function init_all() {
   register_module("paneHome", gHomePane);
   register_module("paneSearch", gSearchPane);
   register_module("panePrivacy", gPrivacyPane);
+  register_module("paneIceweasel", gIceweaselPane);
   register_module("paneContainers", gContainersPane);
 
   if (Services.prefs.getBoolPref("browser.translations.newSettingsUI.enable")) {

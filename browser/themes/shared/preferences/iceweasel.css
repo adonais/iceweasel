@@ -1,0 +1,36 @@
+.iceweasel-collapse > input {
+	display: none;
+}
+.iceweasel-collapse > input ~ .iceweasel-collapsed {
+	display: none;
+	/* max-height: 0; */
+	transition: max-height 0.25s ease-in-out;
+}
+.iceweasel-collapse > input:checked ~ .iceweasel-collapsed {
+	display: block;
+	/* max-height: 20rem; */
+}
+.iceweasel-warning {
+	display: inline;
+	font-size: 0.8em;
+}
+.iceweasel-button-icon {
+	width: 16px;
+	height: 16px;
+	margin-right: 8px;
+	-moz-context-properties: fill, fill-opacity;
+	fill: currentColor;
+}
+
+#iceweasel-message-box {
+	position: fixed;
+	bottom: 20px;
+	right: 30px;
+	background-color: #f44336;
+	color: white;
+	border-radius: 5px;
+	box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+	padding: 10px;
+	font-size: 18px;
+	display: none;
+}

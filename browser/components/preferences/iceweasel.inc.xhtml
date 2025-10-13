@@ -1,0 +1,216 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+<script src="chrome://browser/content/preferences/iceweasel.js"/>
+
+<html:template id="template-paneIceweasel">
+
+<hbox class="subcategory" hidden="true" data-category="paneIceweasel">
+  <html:h2 data-l10n-id="iceweasel-header"/>
+</hbox>
+
+<groupbox hidden="true" data-category="paneIceweasel">
+
+  <hbox>
+    <checkbox id="iceweasel-extension-update-checkbox" data-l10n-id="iceweasel-extension-update-checkbox" preference="extensions.update.autoUpdateDefault" flex="1" />
+    <html:label for="iceweasel-extension-update-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-extension-update-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-extension-update-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-extension-update-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="extensions.update.autoUpdateDefault" label="extensions.update.autoUpdateDefault" />
+      <checkbox preference="extensions.update.enabled" label="extensions.update.enabled" />
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-autocopy-checkbox" data-l10n-id="iceweasel-autocopy-checkbox" preference="clipboard.autocopy" flex="1" />
+    <html:label for="iceweasel-autocopy-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-autocopy-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-autocopy-description" />
+      <checkbox preference="clipboard.autocopy" label="clipboard.autocopy" />
+      <checkbox preference="middlemouse.paste" label="middlemouse.paste" />
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-ipv6-checkbox" data-l10n-id="iceweasel-ipv6-checkbox" preference="network.dns.disableIPv6" flex="1" />
+    <html:label for="iceweasel-ipv6-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-ipv6-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-ipv6-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-ipv6-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="network.dns.disableIPv6" label="network.dns.disableIPv6" />
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-javascript-checkbox" data-l10n-id="iceweasel-javascript-checkbox" preference="javascript.enabled" flex="1" />
+    <html:label for="iceweasel-javascript-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-javascript-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-javascript-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-javascript-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="javascript.enabled" label="javascript.enabled" />
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-lastclose-checkbox" data-l10n-id="iceweasel-lastclose-checkbox" preference="browser.tabs.closeWindowWithLastTab" flex="1" />
+    <html:label for="iceweasel-lastclose-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-lastclose-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-lastclose-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-lastclose-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="browser.tabs.closeWindowWithLastTab" label="browser.tabs.closeWindowWithLastTab" />
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-tips-checkbox" data-l10n-id="iceweasel-tips-checkbox" preference="officialtips.show" flex="1" />
+    <html:label for="iceweasel-tips-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-tips-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-tips-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-tips-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="officialtips.show" label="officialtips.show" />
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-styling-checkbox" data-l10n-id="iceweasel-styling-checkbox" preference="toolkit.legacyUserProfileCustomizations.stylesheets" flex="1" />
+    <html:label for="iceweasel-styling-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-styling-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-styling-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-styling-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="toolkit.legacyUserProfileCustomizations.stylesheets" label="toolkit.legacyUserProfileCustomizations.stylesheets" />
+    </vbox>
+  </vbox>
+
+</groupbox>
+
+<groupbox hidden="true" data-category="paneIceweasel">
+
+  <hbox>
+    <label id="iceweasel-libportable-heading" data-l10n-id="iceweasel-libportable-heading" flex="1" />
+    <html:label for="iceweasel-libportable-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-libportable-collapse"/>
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-libportable-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-libportable-warning1" class="iceweasel-warning" /> </html:div>
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-libportable-upcheck-checkbox" data-l10n-id="iceweasel-libportable-upcheck-checkbox" flex="1" />
+    <html:label for="iceweasel-libportable-upcheck-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-libportable-upcheck-collapse"/>
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-libportable-upcheck-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-libportable-upcheck-warning1" class="iceweasel-warning" /> </html:div>
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-libportable-bosskey-checkbox" data-l10n-id="iceweasel-libportable-bosskey-checkbox" flex="1" />
+    <html:label for="iceweasel-libportable-bosskey-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-libportable-bosskey-collapse"/>
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-libportable-bosskey-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-libportable-bosskey-warning1" class="iceweasel-warning" /> </html:div>
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-libportable-ontabs-checkbox" data-l10n-id="iceweasel-libportable-ontabs-checkbox" flex="1" />
+    <html:label for="iceweasel-libportable-ontabs-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-libportable-ontabs-collapse"/>
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-libportable-ontabs-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-libportable-ontabs-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox id="iceweasel-hover-activate"  data-l10n-id="iceweasel-hover-activate" />
+      <checkbox id="iceweasel-double-click-close"  data-l10n-id="iceweasel-double-click-close" />
+      <checkbox id="iceweasel-double-click-new"    data-l10n-id="iceweasel-double-click-new" />
+      <checkbox id="iceweasel-mouse-hover-close"   data-l10n-id="iceweasel-mouse-hover-close" />
+      <checkbox id="iceweasel-mouse-hover-new"     data-l10n-id="iceweasel-mouse-hover-new" />
+      <checkbox id="iceweasel-right-click-close"   data-l10n-id="iceweasel-right-click-close" />
+      <checkbox id="iceweasel-right-click-recover" data-l10n-id="iceweasel-right-click-recover" />
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-libportable-chrome-checkbox" data-l10n-id="iceweasel-libportable-chrome-checkbox" flex="1" />
+    <html:div id="iceweasel-message-box"> <html:p data-l10n-id="iceweasel-libportable-chrome-pop" class="iceweasel-warning"/> </html:div>
+    <html:label for="iceweasel-libportable-chrome-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-libportable-chrome-collapse"/>
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-libportable-chrome-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-libportable-chrome-warning1" class="iceweasel-warning" /> </html:div>
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-libportable-ubo-checkbox" data-l10n-id="iceweasel-libportable-ubo-checkbox" flex="1" />
+    <html:label for="iceweasel-libportable-ubo-collapse" class="sidebar-footer-link" pack="end"> <image id="ubo_help" class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-libportable-ubo-collapse"/>
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-libportable-ubo-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-libportable-ubo-warning1" class="iceweasel-warning" /> </html:div>
+    </vbox>
+  </vbox>
+
+</groupbox>
+
+<hbox class="subcategory" hidden="true" data-category="paneIceweasel">
+    <html:h1 data-l10n-id="iceweasel-footer"/>
+</hbox>
+
+<groupbox data-category="paneIceweasel" hidden="true">
+  <vbox align="start">
+    <hbox>
+      <button id="iceweasel-config-link" is="highlightable-button" flex="1">
+        <image class="iceweasel-button-icon" src="chrome://browser/skin/preferences/category-iceweasel.svg" />
+        <label data-l10n-id="iceweasel-config-link"></label>
+      </button>
+      <button id="iceweasel-open-profile" is="highlightable-button" flex="1">
+        <image class="iceweasel-button-icon" src="chrome://browser/skin/open.svg" />
+        <label data-l10n-id="iceweasel-open-profile"></label>
+      </button>
+      <button id="iceweasel-restart-profile" is="highlightable-button" flex="1">
+        <image class="iceweasel-button-icon" src="chrome://global/skin/icons/reload.svg" />
+        <label data-l10n-id="iceweasel-restart-profile"></label>
+      </button>
+    </hbox>
+  </vbox>
+</groupbox>
+
+</html:template>

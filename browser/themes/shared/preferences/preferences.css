@@ -231,6 +231,10 @@ radio {
   list-style-image: url("chrome://browser/skin/preferences/category-sync.svg");
 }
 
+#category-iceweasel > .category-icon {
+  list-style-image: url("chrome://browser/skin/preferences/category-iceweasel.svg");
+}
+
 #category-experimental > .category-icon {
   list-style-image: url("chrome://global/skin/icons/experiments.svg");
 }

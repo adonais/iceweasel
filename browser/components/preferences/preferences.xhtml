@@ -43,6 +43,7 @@
   />
   <link rel="stylesheet" href="chrome://browser/skin/preferences/privacy.css" />
   <link rel="stylesheet" href="chrome://browser/content/preferences/widgets/setting-group.css" />
+  <link rel="stylesheet" href="chrome://browser/skin/preferences/iceweasel.css" />
   <link rel="stylesheet" href="chrome://browser/content/preferences/widgets/setting-control.css" />
 
   <link rel="localization" href="branding/brand.ftl"/>
@@ -51,6 +52,7 @@
   <link rel="localization" href="browser/preferences/fonts.ftl"/>
   <link rel="localization" href="browser/preferences/moreFromMozilla.ftl"/>
   <link rel="localization" href="browser/preferences/preferences.ftl"/>
+  <link rel="localization" href="browser/preferences/iceSetting.ftl"/>
   <link rel="localization" href="toolkit/branding/brandings.ftl"/>
   <link rel="localization" href="toolkit/firefoxlabs/features.ftl"/>
 
@@ -169,6 +171,15 @@
           <image class="category-icon"/>
           <label class="category-name" flex="1" data-l10n-id="settings-pane-labs-title"></label>
         </richlistitem>
+        <richlistitem id="category-iceweasel"
+                      class="category"
+                      value="paneIceweasel"
+                      data-l10n-id="category-iceweasel"
+                      data-l10n-attrs="tooltiptext"
+                      align="center">
+          <image class="category-icon"/>
+          <label class="category-name" flex="1" data-l10n-id="pane-iceweasel-title"></label>
+        </richlistitem>
         <richlistitem id="category-more-from-mozilla"
                       class="category"
                       hidden="true"
@@ -246,6 +257,7 @@
 #include translations.inc.xhtml
 #include sync.inc.xhtml
 #include experimental.inc.xhtml
+#include iceweasel.inc.xhtml
 #include moreFromMozilla.inc.xhtml
         </vbox>
       </vbox>
