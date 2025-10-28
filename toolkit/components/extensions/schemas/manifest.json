@@ -664,7 +664,8 @@
                 "optional": true,
                 "default": false
               }
-            }
+            },
+            "additionalProperties": { "$ref": "UnrecognizedProperty" }
           }
         },
         "additionalProperties": { "$ref": "UnrecognizedProperty" }

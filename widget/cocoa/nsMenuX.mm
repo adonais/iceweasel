@@ -46,6 +46,11 @@ using namespace mozilla::dom;
 static bool gConstructingMenu = false;
 static bool gMenuMethodsSwizzled = false;
 
+// Protect against really deep menu nestings, for example from recursive
+// bookmark folders. This avoids hangs when the system enumerates the entire
+// menu tree.
+static const size_t kMaxMenuNestingDepth = 20;
+
 int32_t nsMenuX::sIndexingMenuLevel = 0;
 
 // TODO: It is unclear whether this is still needed.
@@ -86,7 +91,10 @@ static void SwizzleDynamicIndexingMethods() {
 
 nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
                  nsIContent* aContent)
-    : mContent(aContent), mParent(aParent), mMenuGroupOwner(aMenuGroupOwner) {
+    : mContent(aContent),
+      mParent(aParent),
+      mMenuGroupOwner(aMenuGroupOwner),
+      mNestingDepth(aParent ? aParent->NestingDepth() + 1 : 0) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   MOZ_COUNT_CTOR(nsMenuX);
@@ -121,6 +129,12 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
                                              keyEquivalent:@""];
   mNativeMenuItem.submenu = mNativeMenu;
 
+  if (mNestingDepth > kMaxMenuNestingDepth) {
+    // If we're nested too deep, turn this item into a regular item without a
+    // submenu.
+    mNativeMenuItem.submenu = nil;
+  }
+
   SetEnabled(!mContent->IsElement() ||
              !mContent->AsElement()->AttrValueIs(
                  kNameSpaceID_None, nsGkAtoms::disabled, nsGkAtoms::_true,
@@ -141,7 +155,7 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
   mIcon = MakeUnique<nsMenuItemIconX>(this);
 
   if (mVisible) {
-    if (!isXULWindowMenu) {
+    if (!isXULWindowMenu && !IsXULEditMenu(mContent)) {
       SetRebuild(true);
     }
     SetupIcon();
@@ -1006,6 +1020,18 @@ bool nsMenuX::IsXULWindowMenu(nsIContent* aMenuContent) {
     nsAutoString id;
     aMenuContent->AsElement()->GetAttr(nsGkAtoms::id, id);
     if (id.Equals(u"windowMenu"_ns)) {
+      retval = true;
+    }
+  }
+  return retval;
+}
+
+bool nsMenuX::IsXULEditMenu(nsIContent* aMenuContent) {
+  bool retval = false;
+  if (aMenuContent && aMenuContent->IsElement()) {
+    nsAutoString id;
+    aMenuContent->AsElement()->GetAttr(nsGkAtoms::id, id);
+    if (id.Equals(u"edit-menu"_ns)) {
       retval = true;
     }
   }

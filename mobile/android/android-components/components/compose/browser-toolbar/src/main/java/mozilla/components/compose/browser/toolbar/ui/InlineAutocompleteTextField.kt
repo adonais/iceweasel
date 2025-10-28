@@ -189,13 +189,15 @@ internal fun InlineAutocompleteTextField(
         },
         modifier = modifier,
         update = {
-            if (query != it.originalText) {
-                it.updateText(query)
-                it.refreshAutocompleteSuggestions()
-            }
-            if (it.hint != hint) {
-                it.hint = hint
-                it.setHintTextColor(hintColor.toArgb())
+            it.post {
+                if (query != it.originalText) {
+                    it.updateText(query)
+                    it.refreshAutocompleteSuggestions()
+                }
+                if (it.hint != hint) {
+                    it.hint = hint
+                    it.setHintTextColor(hintColor.toArgb())
+                }
             }
         },
     )

@@ -3855,7 +3855,7 @@ static NSURL* GetPasteLocation(NSPasteboard* aPasteboard, bool aUseFallback) {
     return [(NSURL*)urlRef autorelease];
   }
 
-  if (aUseFallback) {
+  if (!aUseFallback) {
     return nil;
   }
 

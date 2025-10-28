@@ -1230,9 +1230,6 @@ bool gfxUserFontSet::UserFontCache::Entry::KeyEquals(
 }
 
 void gfxUserFontSet::UserFontCache::CacheFont(gfxFontEntry* aFontEntry) {
-  NS_ASSERTION(aFontEntry->mFamilyName.Length() != 0,
-               "caching a font associated with no family yet");
-
   // if caching is disabled, simply return
   if (StaticPrefs::gfx_downloadable_fonts_disable_cache()) {
     return;

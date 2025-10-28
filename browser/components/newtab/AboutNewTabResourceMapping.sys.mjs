@@ -18,6 +18,10 @@ export const TRAINHOP_SCHEDULED_UPDATE_STATE_DELAY_PREF =
 export const TRAINHOP_SCHEDULED_UPDATE_STATE_TIMEOUT_PREF =
   "browser.newtabpage.trainhopAddon.scheduledUpdateState.timeout";
 
+const FLUENT_SOURCE_NAME = "newtab";
+const TOPIC_LOCALES_CHANGED = "intl:app-locales-changed";
+const TOPIC_SHUTDOWN = "profile-before-change";
+
 const lazy = XPCOMUtils.declareLazy({
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AddonSettings: "resource://gre/modules/addons/AddonSettings.sys.mjs",
@@ -82,6 +86,7 @@ export var AboutNewTabResourceMapping = {
   _addonListener: null,
   _builtinVersion: null,
   _updateAddonStateDeferredTask: null,
+  _supportedLocales: null,
 
   /**
    * Returns the version string for whichever version of New Tab is currently
@@ -291,23 +296,73 @@ export var AboutNewTabResourceMapping = {
    */
   async registerFluentSources(rootURI) {
     try {
-      const SUPPORTED_LOCALES = await fetch(
-        rootURI.resolve("/locales/supported-locales.json")
-      ).then(r => r.json());
-      const newtabFileSource = new L10nFileSource(
-        "newtab",
-        "app",
-        SUPPORTED_LOCALES,
-        `resource://newtab/locales/{locale}/`
+      // Read in the list of locales included with the XPI. This will prevent
+      // us from accidentally registering a L10nFileSource that wasn't included.
+      this._supportedLocales = new Set(
+        await fetch(rootURI.resolve("/locales/supported-locales.json")).then(
+          r => r.json()
+        )
       );
-      this._l10nFileSource = newtabFileSource;
-      L10nRegistry.getInstance().registerSources([newtabFileSource]);
+
+      // Set up observers so that if the user changes the list of available
+      // locales, we'll re-register.
+      Services.obs.addObserver(this, TOPIC_LOCALES_CHANGED);
+      Services.obs.addObserver(this, TOPIC_SHUTDOWN);
+      // Now actually do the registration.
+      this._updateFluentSourcesRegistration();
     } catch (e) {
       // TODO: consider if we should collect this in telemetry.
       this.logger.error(
         `Error on registering fluent files from ${rootURI.spec}:`,
         e
       );
+    }
+  },
+
+  /**
+   * Sets up the L10nFileSource for the newtab Fluent files included in the
+   * XPI that are in the available locales for the app. If a pre-existing
+   * registration exists, it will be updated.
+   */
+  _updateFluentSourcesRegistration() {
+    let availableLocales = new Set(Services.locale.availableLocales);
+    let availableSupportedLocales =
+      this._supportedLocales.intersection(availableLocales);
+
+    const newtabFileSource = new L10nFileSource(
+      FLUENT_SOURCE_NAME,
+      "app",
+      [...availableSupportedLocales],
+      `resource://newtab/locales/{locale}/`
+    );
+
+    let registry = L10nRegistry.getInstance();
+    if (registry.hasSource(FLUENT_SOURCE_NAME)) {
+      registry.updateSources([newtabFileSource]);
+      this.logger.debug(
+        "Newtab strings updated for ",
+        availableSupportedLocales
+      );
+    } else {
+      registry.registerSources([newtabFileSource]);
+      this.logger.debug(
+        "Newtab strings registered for ",
+        availableSupportedLocales
+      );
+    }
+  },
+
+  observe(_subject, topic, _data) {
+    switch (topic) {
+      case TOPIC_LOCALES_CHANGED: {
+        this._updateFluentSourcesRegistration();
+        break;
+      }
+      case TOPIC_SHUTDOWN: {
+        Services.obs.removeObserver(this, TOPIC_LOCALES_CHANGED);
+        Services.obs.removeObserver(this, TOPIC_SHUTDOWN);
+        break;
+      }
     }
   },
 

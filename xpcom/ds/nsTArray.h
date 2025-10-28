@@ -2972,7 +2972,7 @@ class MOZ_NON_MEMMOVABLE MOZ_GSL_OWNER AutoTArray : public nsTArray<E> {
       char mStorage[sizeof(value_type) * N];
     };
     AutoBuffer() : mHdr{.mLength = 0, .mCapacity = N, .mIsAutoArray = true} {}
-    ~AutoBuffer() {}
+    ~AutoBuffer() = default;
   } mAutoBuf;
   static_assert(offsetof(AutoBuffer, mStorage) == sizeof(nsTArrayHeader),
                 "Shouldn't have padding");

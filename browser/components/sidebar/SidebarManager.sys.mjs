@@ -94,46 +94,8 @@ class SidebarManager extends EventTarget {
     super();
     this.checkForPinnedTabsComplete = false;
   }
+  #initialized = false;
   init() {
-    // Handle nimbus feature pref setting updates on init and enrollment
-    const featureId = "sidebar";
-    lazy.NimbusFeatures[featureId].onUpdate(() => {
-      // Set prefs only if we have an enrollment that's new
-      const enrollment = lazy.NimbusFeatures[featureId].getEnrollmentMetadata();
-      if (!enrollment) {
-        return;
-      }
-      const slug = enrollment.slug + ":" + enrollment.branch;
-      if (slug == lazy.sidebarNimbus) {
-        return;
-      }
-
-      // Enforce minimum version by skipping pref changes until Firefox restarts
-      // with the appropriate version
-      if (
-        Services.vc.compare(
-          // Support betas, e.g., 132.0b1, instead of MOZ_APP_VERSION
-          AppConstants.MOZ_APP_VERSION_DISPLAY,
-          // Check configured version or compare with unset handled as 0
-          lazy.NimbusFeatures[featureId].getVariable("minVersion")
-        ) < 0
-      ) {
-        return;
-      }
-
-      // Set/override user prefs to persist after experiment end
-      const setPref = (pref, value) => {
-        // Only set prefs with a value (so no clearing)
-        if (value != null) {
-          lazy.PrefUtils.setPref("sidebar." + pref, value);
-        }
-      };
-      setPref("nimbus", slug);
-      ["revamp", "verticalTabs", "visibility"].forEach(pref =>
-        setPref(pref, lazy.NimbusFeatures[featureId].getVariable(pref))
-      );
-    });
-
     lazy.CustomizableUI.addListener(this);
 
     Services.prefs.addObserver(
@@ -152,6 +114,55 @@ class SidebarManager extends EventTarget {
     this.handleVerticalTabsPrefChange(
       lazy.verticalTabsEnabled,
       shouldResetVisibility
+    );
+
+    // Handle nimbus feature pref setting updates on init and enrollment
+    lazy.NimbusFeatures.sidebar.onUpdate(() => {
+      if (this.#initialized) {
+        this.onNimbusFeatureUpdate();
+      } else {
+        // Schedule handling the update after this module has finished initializing
+        Promise.resolve().then(() => this.onNimbusFeatureUpdate());
+      }
+    });
+    this.#initialized = true;
+  }
+
+  onNimbusFeatureUpdate() {
+    const featureId = "sidebar";
+    // Set prefs only if we have an enrollment that's new
+    const enrollment = lazy.NimbusFeatures[featureId].getEnrollmentMetadata();
+    if (!enrollment) {
+      return;
+    }
+    const slug = enrollment.slug + ":" + enrollment.branch;
+    if (slug == lazy.sidebarNimbus) {
+      return;
+    }
+
+    // Enforce minimum version by skipping pref changes until Firefox restarts
+    // with the appropriate version
+    if (
+      Services.vc.compare(
+        // Support betas, e.g., 132.0b1, instead of MOZ_APP_VERSION
+        AppConstants.MOZ_APP_VERSION_DISPLAY,
+        // Check configured version or compare with unset handled as 0
+        lazy.NimbusFeatures[featureId].getVariable("minVersion")
+      ) < 0
+    ) {
+      return;
+    }
+
+    // Set/override user prefs to persist after experiment end
+    const setPref = (pref, value) => {
+      // Only set prefs with a value (so no clearing)
+      if (value != null) {
+        lazy.PrefUtils.setPref("sidebar." + pref, value);
+      }
+    };
+    setPref("nimbus", slug);
+    ["revamp", "verticalTabs", "visibility"].forEach(pref =>
+      setPref(pref, lazy.NimbusFeatures[featureId].getVariable(pref))
     );
   }
 

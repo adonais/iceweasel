@@ -152,7 +152,7 @@ class ImeInsetsSynchronizer private constructor(
             // Ideally we would just call view.requestApplyInsets() and let the normal dispatch
             // cycle happen, but this happens too late resulting in a visual flicker.
             // Instead we manually dispatch the most recent WindowInsets to the view.
-            ViewCompat.dispatchApplyWindowInsets(targetView, currentInsets)
+            ViewCompat.dispatchApplyWindowInsets(insetsSource, currentInsets)
         }
     }
 

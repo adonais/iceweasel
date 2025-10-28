@@ -68,7 +68,8 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
   bool ChooseCapability(const NormalizedConstraints& aConstraints,
                         const MediaEnginePrefs& aPrefs,
                         webrtc::CaptureCapability& aCapability,
-                        const DistanceCalculation aCalculate);
+                        const DistanceCalculation aCalculate,
+                        const char** aOutBadConstraint);
 
   uint32_t GetDistance(const webrtc::CaptureCapability& aCandidate,
                        const NormalizedConstraintSet& aConstraints,

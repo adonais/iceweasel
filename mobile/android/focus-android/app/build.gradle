@@ -62,6 +62,13 @@ android {
         }
     }
 
+    // Exclude native libraries for unsupported architectures from third-party dependencies
+    packagingOptions {
+        jniLibs {
+            excludes += ["**/armeabi/*.so", "**/mips/*.so", "**/mips64/*.so", "**/x86/*.so"]
+        }
+    }
+
     lint {
         lintConfig = file("lint.xml")
         baseline = file("lint-baseline.xml")

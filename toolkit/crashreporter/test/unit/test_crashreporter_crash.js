@@ -113,6 +113,7 @@ add_task(async function run_test() {
       // Enable the FHR, official policy bypass (since we're in a test) and
       // specify a telemetry server & client ID.
       Services.prefs.setBoolPref("termsofuse.bypassNotification", true);
+      Services.prefs.setBoolPref("browser.preonboarding.enabled", false);
       Services.prefs.setBoolPref(
         "datareporting.policy.dataSubmissionPolicyBypassNotification",
         true

@@ -234,6 +234,39 @@ add_task(async function test_keyboard_nav() {
   await test_navigate_switcher("KEY_ArrowDown", 3, bingSearchMode);
 });
 
+add_task(async function test_open_switcher_with_page() {
+  info("Open a page");
+  await BrowserTestUtils.withNewTab(
+    {
+      gBrowser,
+      url: "https://example.com/",
+    },
+    async function () {
+      info("Click on the urlbar to select all text");
+      await focusOnURLbar(() =>
+        EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {})
+      );
+      info("Input a char to show the Unified Search Button");
+      EventUtils.synthesizeKey("a");
+
+      info("Move the focus to the button");
+      EventUtils.synthesizeKey("KEY_Tab", { shiftKey: true });
+      await TestUtils.waitForCondition(
+        () => document.activeElement.id == "urlbar-searchmode-switcher"
+      );
+
+      info("Do the focus test");
+      let popup = UrlbarTestUtils.searchModeSwitcherPopup(window);
+      let promiseHidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
+      await test_open_switcher(" ");
+
+      info("Close the Unified Search popup");
+      EventUtils.synthesizeKey("KEY_Escape");
+      await promiseHidden;
+    }
+  );
+});
+
 add_task(async function test_focus_on_switcher_by_tab() {
   const input = "abc";
   info(`Open urlbar view with query [${input}]`);
@@ -258,10 +291,10 @@ add_task(async function test_focus_on_switcher_by_tab() {
   let promiseMenuOpen = BrowserTestUtils.waitForEvent(popup, "popupshown");
   EventUtils.synthesizeKey("KEY_Enter");
   await promiseMenuOpen;
-  Assert.notEqual(
+  Assert.equal(
     document.activeElement.id,
     "urlbar-searchmode-switcher",
-    "Dedicated Search button loses the focus"
+    "Dedicated Search button still has focus"
   );
   Assert.equal(gURLBar.view.isOpen, false, "Urlbar view panel is closed");
   Assert.equal(gURLBar.value, input, "Inputted value still be on urlbar");

@@ -118,6 +118,7 @@ class nsMenuBarX : public nsMenuParentX,
   // nsMenuParentX
   void MenuChildChangedVisibility(const MenuChild& aChild,
                                   bool aIsVisible) override;
+  size_t NestingDepth() override { return 0; }
 
  protected:
   virtual ~nsMenuBarX();

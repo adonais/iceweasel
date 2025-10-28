@@ -175,11 +175,13 @@ class nsMenuX final : public nsMenuParentX,
   // nsMenuParentX
   void MenuChildChangedVisibility(const MenuChild& aChild,
                                   bool aIsVisible) override;
+  size_t NestingDepth() override { return mNestingDepth; }
 
   void Dump(uint32_t aIndent) const;
 
   static bool IsXULHelpMenu(nsIContent* aMenuContent);
   static bool IsXULWindowMenu(nsIContent* aMenuContent);
+  static bool IsXULEditMenu(nsIContent* aMenuContent);
 
   // Set an observer that gets notified of menu opening and closing.
   // The menu does not keep a strong reference the observer. The observer must
@@ -290,6 +292,8 @@ class nsMenuX final : public nsMenuParentX,
   // Nothing() if no item is highlighted. The index only accounts for visible
   // items.
   mozilla::Maybe<uint32_t> mHighlightedItemIndex;
+
+  size_t mNestingDepth = 0;
 
   bool mIsEnabled = true;
   bool mNeedsRebuild = true;

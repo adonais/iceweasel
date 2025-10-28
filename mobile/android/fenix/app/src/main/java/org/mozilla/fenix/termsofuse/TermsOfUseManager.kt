@@ -53,7 +53,7 @@ class TermsOfUseManager(private val settings: Settings) {
     ): Boolean {
         if (settings.hasAcceptedTermsOfService) return false
         if (!settings.isTermsOfUsePromptEnabled) return false
-        if (settings.termsOfUsePromptDisplayedCount >= settings.termsOfUseMaxDisplayCount) return false
+        if (settings.termsOfUsePromptDisplayedCount >= settings.getTermsOfUseMaxDisplayCount()) return false
 
         val isFirstCheck = isFirstCheckSinceStartingApp
         isFirstCheckSinceStartingApp = false

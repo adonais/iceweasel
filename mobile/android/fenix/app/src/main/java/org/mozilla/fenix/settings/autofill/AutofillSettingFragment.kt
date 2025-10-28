@@ -15,6 +15,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
@@ -232,6 +233,12 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
                 getString(R.string.preferences_addresses_manage_addresses)
         } else {
             manageAddressesPreference.setIcon(iconsR.drawable.mozac_ic_plus_24)
+            manageAddressesPreference.icon?.setTint(
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.fx_mobile_icon_color_primary,
+                ),
+            )
             manageAddressesPreference.title =
                 getString(R.string.preferences_addresses_add_address)
         }
@@ -268,6 +275,12 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment() {
                 getString(R.string.preferences_credit_cards_manage_saved_cards_2)
         } else {
             manageSavedCardsPreference.setIcon(iconsR.drawable.mozac_ic_plus_24)
+            manageSavedCardsPreference.icon?.setTint(
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.fx_mobile_icon_color_primary,
+                ),
+            )
             manageSavedCardsPreference.title =
                 getString(R.string.preferences_credit_cards_add_credit_card_2)
         }

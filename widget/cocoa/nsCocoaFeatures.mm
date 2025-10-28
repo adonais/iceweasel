@@ -27,16 +27,19 @@
 #define MACOS_VERSION_12_0_HEX 0x000C0000
 #define MACOS_VERSION_13_0_HEX 0x000D0000
 #define MACOS_VERSION_14_0_HEX 0x000E0000
+#define MACOS_VERSION_26_0_HEX 0x001A0000
 
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
 #include "nsDebug.h"
 #include "nsObjCExceptions.h"
 
+#include <atomic>
 #import <Cocoa/Cocoa.h>
 #include <sys/sysctl.h>
 
-/*static*/ int32_t nsCocoaFeatures::mOSVersion = 0;
+// The lazily-initialized version. 0 before initialization, non-zero after.
+static std::atomic<int32_t> sOSVersion = 0;
 
 // This should not be called with unchecked aMajor, which should be >= 10.
 inline int32_t AssembleVersion(int32_t aMajor, int32_t aMinor,
@@ -116,8 +119,8 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor,
   return macOSVersion;
 }
 
-/*static*/ void nsCocoaFeatures::InitializeVersionNumbers() {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
+/*static*/ int32_t nsCocoaFeatures::ComputeVersion() {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   // Provide an autorelease pool to avoid leaking Cocoa objects,
   // as this gets called before the main autorelease pool is in place.
@@ -125,19 +128,25 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor,
 
   int major, minor, bugfix;
   GetSystemVersion(major, minor, bugfix);
-  mOSVersion = GetVersion(major, minor, bugfix);
+  return GetVersion(major, minor, bugfix);
 
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
+  NS_OBJC_END_TRY_BLOCK_RETURN(0);
 }
 
 /* static */ int32_t nsCocoaFeatures::macOSVersion() {
-  // Don't let this be called while we're first setting the value...
-  MOZ_ASSERT((mOSVersion & MACOS_VERSION_MASK) >= 0);
-  if (!mOSVersion) {
-    mOSVersion = -1;
-    InitializeVersionNumbers();
+  int32_t version = sOSVersion.load(std::memory_order_relaxed);
+  if (version != 0) {
+    return version;
   }
-  return mOSVersion;
+
+  // Compute the version. Multiple threads might do the computation
+  // concurrently. That's ok; they will all compute the same value.
+  version = ComputeVersion();
+  if (version != 0) {
+    sOSVersion.store(version, std::memory_order_relaxed);
+  }
+
+  return version;
 }
 
 /* static */ int32_t nsCocoaFeatures::macOSVersionMajor() {
@@ -184,6 +193,11 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor,
 /* static */ bool nsCocoaFeatures::OnSonomaOrLater() {
   // See comments above regarding SYSTEM_VERSION_COMPAT.
   return (macOSVersion() >= MACOS_VERSION_14_0_HEX);
+}
+
+/* static */ bool nsCocoaFeatures::OnTahoeOrLater() {
+  // See comments above regarding SYSTEM_VERSION_COMPAT.
+  return (macOSVersion() >= MACOS_VERSION_26_0_HEX);
 }
 
 /* static */ bool nsCocoaFeatures::IsAtLeastVersion(int32_t aMajor,

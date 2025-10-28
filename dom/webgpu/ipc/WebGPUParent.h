@@ -135,7 +135,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   struct BufferMapData {
-    ipc::SharedMemoryMapping mShmem;
+    std::shared_ptr<ipc::SharedMemoryMapping> mShmem;
     // True if buffer's usage has MAP_READ or MAP_WRITE set.
     bool mHasMapFlags;
     uint64_t mMappedOffset;
@@ -219,7 +219,7 @@ class WebGPUParent final : public PWebGPUParent, public SupportsWeakPtr {
 
   void ReportError(RawId aDeviceId, GPUErrorFilter, const nsCString& message);
 
-  nsTArray<Maybe<ipc::shared_memory::MutableMapping>> mTempMappings;
+  std::vector<std::shared_ptr<ipc::SharedMemoryMapping>> mTempMappings;
 
   /// A map from wgpu buffer ids to data about their shared memory segments.
   /// Includes entries about mappedAtCreation, MAP_READ and MAP_WRITE buffers,

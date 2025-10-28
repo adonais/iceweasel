@@ -90,6 +90,7 @@ private fun BottomSheet(
     ModalBottomSheet(
         onDismissRequest = { onDismissRequest() },
         sheetState = sheetState,
+        containerColor = FirefoxTheme.colors.layer2,
     ) {
         BottomSheetContent(
             sheetState = sheetState,

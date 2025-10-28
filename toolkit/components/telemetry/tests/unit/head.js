@@ -594,6 +594,17 @@ if (runningInParent) {
     );
   }
 
+  // Disable TOU pre-onboarding in xpcshell so Telemetry isn't gated on Browser
+  // UI.
+  const TOS_ENABLED_PREF = "browser.preonboarding.enabled";
+  const previous = Services.prefs.getBoolPref(TOS_ENABLED_PREF, false);
+
+  Services.prefs.setBoolPref(TOS_ENABLED_PREF, false);
+
+  registerCleanupFunction(() => {
+    Services.prefs.setBoolPref(TOS_ENABLED_PREF, previous);
+  });
+
   fakePingSendTimer(
     callback => {
       Services.tm.dispatchToMainThread(() => callback());

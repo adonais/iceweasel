@@ -509,6 +509,16 @@ pref("browser.urlbar.suggest.quicksuggest.sponsored", false, sticky);
 // with their various default-branch values, the user is enrolled in over time.
 pref("browser.urlbar.quicksuggest.dataCollection.enabled", false, sticky);
 
+// Whether quick suggest retrives online suggestions from Merino via Oblivious
+// HTTP (OHTTP). This functionality is being enabled in a future release. Note,
+// that even if this is preference enabled, the feature may not be available
+// - there are other prefs that control if the feature is available or not.
+// When the feature is enabled, the pref will also be exposed to the user in the
+// UI and it's sticky so that its user-branch value persists regardless of
+// whatever Firefox Suggest scenarios, with their various default-brnch values,
+// the user is enrolled in over time.
+pref("browser.urlbar.quicksuggest.online.enabled", true, sticky);
+
 // Whether the Firefox Suggest contextual opt-in result is enabled.
 pref("browser.urlbar.quicksuggest.contextualOptIn", false);
 
