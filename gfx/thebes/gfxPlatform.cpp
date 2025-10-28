@@ -210,7 +210,9 @@ class CrashStatsLogForwarder : public mozilla::gfx::LogForwarder {
 
  private:
   // Helper for the Log()
-  void UpdateCrashReport();
+  void UpdateCrashReport(const MutexAutoLock& aProofOfLock);
+  bool UpdateStringsVectorInternal(const std::string& aString,
+                                   const MutexAutoLock& aProofOfLock);
 
  private:
   LoggingRecord mBuffer;
@@ -240,6 +242,12 @@ LoggingRecord CrashStatsLogForwarder::LoggingRecordCopy() {
 }
 
 bool CrashStatsLogForwarder::UpdateStringsVector(const std::string& aString) {
+  MutexAutoLock lock(mMutex);
+  return UpdateStringsVectorInternal(aString, lock);
+}
+
+bool CrashStatsLogForwarder::UpdateStringsVectorInternal(
+    const std::string& aString, const MutexAutoLock& aProofOfLock) {
   // We want at least the first one and the last one.  Otherwise, no point.
   if (mMaxCapacity < 2) {
     return false;
@@ -267,7 +275,8 @@ bool CrashStatsLogForwarder::UpdateStringsVector(const std::string& aString) {
   return true;
 }
 
-void CrashStatsLogForwarder::UpdateCrashReport() {
+void CrashStatsLogForwarder::UpdateCrashReport(
+    const MutexAutoLock& aProofOfLock) {
   std::stringstream message;
   std::string logAnnotation;
 
@@ -333,8 +342,8 @@ class LogForwarderEvent : public Runnable {
 void CrashStatsLogForwarder::Log(const std::string& aString) {
   MutexAutoLock lock(mMutex);
 
-  if (UpdateStringsVector(aString)) {
-    UpdateCrashReport();
+  if (UpdateStringsVectorInternal(aString, lock)) {
+    UpdateCrashReport(lock);
   }
 
   // Add it to the parent strings

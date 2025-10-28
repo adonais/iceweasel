@@ -211,8 +211,6 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   RefPtr<PGPUChild::TestTriggerMetricsPromise> TestTriggerMetrics();
 
  private:
-  // Called from our xpcom-shutdown observer.
-  void OnXPCOMShutdown();
   void OnPreferenceChange(const char16_t* aData);
 
   bool CreateContentCompositorManager(
@@ -270,7 +268,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   bool IsProcessStable(const TimeStamp& aNow);
 
   // Shutdown the GPU process.
-  void CleanShutdown();
+  void ShutdownInternal();
   // Destroy the process and clean up resources.
   // Setting aUnexpectedShutdown = true indicates that this is being called to
   // clean up resources in response to an unexpected shutdown having been
@@ -306,16 +304,18 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
 
   DISALLOW_COPY_AND_ASSIGN(GPUProcessManager);
 
+  void NotifyObserve(const char* aTopic, const char16_t* aData);
+
   class Observer final : public nsIObserver {
    public:
     NS_DECL_ISUPPORTS
     NS_DECL_NSIOBSERVER
-    explicit Observer(GPUProcessManager* aManager);
+
+    Observer();
+    void Shutdown();
 
    protected:
     virtual ~Observer() = default;
-
-    GPUProcessManager* mManager;
   };
   friend class Observer;
 

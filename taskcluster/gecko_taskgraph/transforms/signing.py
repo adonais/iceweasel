@@ -192,7 +192,6 @@ def make_task_description(config, jobs):
             "worker": {
                 "implementation": "scriptworker-signing",
                 "upstream-artifacts": job["upstream-artifacts"],
-                "max-run-time": job.get("max-run-time", 3600),
             },
             "scopes": [signing_cert_scope] + signing_format_scopes,
             "dependencies": _generate_dependencies(job),

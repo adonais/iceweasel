@@ -21,6 +21,5 @@ only-for-attributes:
     - shippable
 
 job-template:
-    max-run-time: 1800
     treeherder:
         symbol: BMN

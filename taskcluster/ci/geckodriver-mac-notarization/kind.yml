@@ -23,7 +23,6 @@ job-template:
         symbol: TM(gd-n)
     worker:
         implementation: scriptworker-signing
-        max-run-time: 3600
         upstream-artifacts:
             - taskType: signing
               paths:
