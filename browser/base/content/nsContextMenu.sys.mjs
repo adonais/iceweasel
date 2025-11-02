@@ -34,6 +34,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+import { upcheck } from "resource://gre/modules/upcheck.sys.mjs";
 
 ChromeUtils.defineLazyGetter(lazy, "ReferrerInfo", () =>
   Components.Constructor(
@@ -2160,17 +2161,11 @@ export class nsContextMenu {
 
   downloadLink() {
     if (AppConstants.platform === "win") {
-	  const exeName = "upcheck.exe";
-	  let exe = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-	  let cfile = Services.dirsvc.get("ProfD", Ci.nsIFile);
-	  exe.append(exeName);
-	  cfile.append("cookies.sqlite");
-	  let process = Cc["@mozilla.org/process/util;1"]
-                    .createInstance(Ci.nsIProcess);
-	  process.init(exe);
-	  process.startHidden = true;
-	  process.noShell = true;
-	  process.run(false, ["-i", this.linkURL, "-b", encodeURIComponent(cfile.path), "-m", "1"], 6);
+      try {
+        upcheck.download_caller(0, this.linkURL, this.contentData.linkReferrerInfo.originalReferrer.spec);
+      } catch (e) {
+        console.log("upcheck downloadLink failed");
+      }
     }
   }
   // Backwards-compatibility wrapper

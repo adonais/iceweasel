@@ -165,7 +165,7 @@
 
   <hbox>
     <checkbox id="iceweasel-libportable-chrome-checkbox" data-l10n-id="iceweasel-libportable-chrome-checkbox" flex="1" />
-    <html:div id="iceweasel-message-box"> <html:p data-l10n-id="iceweasel-libportable-chrome-pop" class="iceweasel-warning"/> </html:div>
+    <html:div id="iceweasel-chrome-box" class="iceweasel-message-box"> <html:p data-l10n-id="iceweasel-libportable-chrome-pop" class="iceweasel-warning"/> </html:div>
     <html:label for="iceweasel-libportable-chrome-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
   </hbox>
   <vbox class="iceweasel-collapse indent">
@@ -173,6 +173,20 @@
     <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
       <label data-l10n-id="iceweasel-libportable-chrome-description" />
       <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-libportable-chrome-warning1" class="iceweasel-warning" /> </html:div>
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-libportable-download-checkbox" data-l10n-id="iceweasel-libportable-download-checkbox" flex="1" />
+    <html:div id="iceweasel-download-box" class="iceweasel-message-box"> <html:p data-l10n-id="iceweasel-libportable-download-pop" class="iceweasel-warning"/> </html:div>
+    <html:div id="iceweasel-download-needed" class="iceweasel-message-box"> <html:p data-l10n-id="iceweasel-libportable-download-needed" class="iceweasel-warning"/> </html:div>
+    <html:label for="iceweasel-libportable-download-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-libportable-download-collapse"/>
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-libportable-download-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-libportable-download-warning1" class="iceweasel-warning" /> </html:div>
     </vbox>
   </vbox>
 

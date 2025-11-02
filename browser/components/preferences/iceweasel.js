@@ -74,6 +74,7 @@ var gIceweaselPane = {
     setOntabSyncListeners("iceweasel-libportable-ontabs-checkbox");
     setUboSyncListeners("iceweasel-libportable-ubo-checkbox");
     setChromeSyncListeners("iceweasel-libportable-chrome-checkbox");
+    setDownloadSyncListeners("iceweasel-libportable-download-checkbox");
 
     // Set event listener on open profile directory button
     setEventListener("iceweasel-open-profile", "command", openProfileDirectory);
@@ -125,11 +126,11 @@ function setUpcheckSyncListeners(checkboxid) {
     let ontabs = iniSafeGet(ini, "General", "Update");
     if (ontabs == "1") {
       if (!value) {
-         makeMasterCheckboxesReactive(checkboxid, () => {return true});
+        makeMasterCheckboxesReactive(checkboxid, () => {return true;});
       }
       
     } else if (value) {
-      makeMasterCheckboxesReactive(checkboxid, () => {return false});
+      makeMasterCheckboxesReactive(checkboxid, () => {return false;});
     }
     setEventListener(checkboxid, "click", onUpcheckSyncListeners);
   }
@@ -151,10 +152,10 @@ function setUboSyncListeners(checkboxid) {
       let ubos = iniSafeGet(ini, "General", "EnableUBO");
       if (ubos == "1") {
         if (!value) {
-          makeMasterCheckboxesReactive(checkboxid, () => {return true});
+          makeMasterCheckboxesReactive(checkboxid, () => {return true;});
         }
       } else if (value) {
-        makeMasterCheckboxesReactive(checkboxid, () => {return false});
+        makeMasterCheckboxesReactive(checkboxid, () => {return false;});
       }
       setEventListener(checkboxid, "click", onUboSyncListeners);
     }
@@ -175,18 +176,47 @@ function setChromeSyncListeners(checkboxid) {
     process.startHidden = true;
     process.noShell = true;
     try {
-      process.run(true, ["-chrome-check", encodeURIComponent(bin.path), encodeURIComponent(prof.path)], 3);
+      process.runw(true, ["-chrome-check", bin.path, prof.path], 3);
       exitValue = process.exitValue;
     } catch (e) {
       console.log("On Windows negative return value throws an exception");
       exitValue = -1;
     }
     if (exitValue > 0) {
-      makeMasterCheckboxesReactive(checkboxid, () => {return true});
+      makeMasterCheckboxesReactive(checkboxid, () => {return true;});
     } else {
-      makeMasterCheckboxesReactive(checkboxid, () => {return false}); 
+      makeMasterCheckboxesReactive(checkboxid, () => {return false;}); 
     }
     setEventListener(checkboxid, "click", onChromeSyncListeners);
+  }
+}
+
+function setDownloadSyncListeners(checkboxid) {
+  // Get the app directory.
+  let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+  let bin = target.clone();
+  target.append("upcheck.exe");
+  if (target.exists()) {
+    let exitValue = 1;
+    let process = Cc["@mozilla.org/process/util;1"]
+                   .createInstance(Ci.nsIProcess);
+    let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
+    process.init(target);
+    process.startHidden = true;
+    process.noShell = true;
+    try {
+      process.runw(true, ["-integration-check", bin.path, prof.path], 3);
+      exitValue = process.exitValue;
+    } catch (e) {
+      console.log("On Windows negative return value throws an exception");
+      exitValue = -1;
+    }
+    if (exitValue > 0) {
+      makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+    } else {
+      makeMasterCheckboxesReactive(checkboxid, () => {return false;}); 
+    }
+    setEventListener(checkboxid, "click", onDownloadSyncListeners);
   }
 }
 
@@ -201,10 +231,10 @@ function setBosskeySyncListeners(checkboxid) {
     let ontabs = iniSafeGet(ini, "General", "Bosskey");
     if (ontabs == "1") {
       if (!value) {
-         makeMasterCheckboxesReactive(checkboxid, () => {return true});
+         makeMasterCheckboxesReactive(checkboxid, () => {return true;});
       }
     } else if (value) {
-      makeMasterCheckboxesReactive(checkboxid, () => {return false});
+      makeMasterCheckboxesReactive(checkboxid, () => {return false;});
     }
     setEventListener(checkboxid, "click", onBosskeySyncListeners);
   }
@@ -213,9 +243,9 @@ function setBosskeySyncListeners(checkboxid) {
 function tabChildboxChk(ini, boxid, value, enabled) {
   let child = enabled ? iniSafeGet(ini, "tabs", value) : "0";
   if (parseInt(child) > 0) {
-    makeMasterCheckboxesReactive(boxid, () => {return true});
+    makeMasterCheckboxesReactive(boxid, () => {return true;});
   } else {
-    makeMasterCheckboxesReactive(boxid, () => {return false});
+    makeMasterCheckboxesReactive(boxid, () => {return false;});
   }
 }
 
@@ -237,7 +267,7 @@ function setOntabSyncListeners(checkboxid) {
     let ontabs = iniSafeGet(ini, "General", "OnTabs");
     if (ontabs == "1") {
       if (!value) {
-        makeMasterCheckboxesReactive(checkboxid, () => {return true});
+        makeMasterCheckboxesReactive(checkboxid, () => {return true;});
       }
       tabChildboxChk(ini, boxid1, "mouse_time", true);
       tabChildboxChk(ini, boxid2, "double_click_close", true);
@@ -247,7 +277,7 @@ function setOntabSyncListeners(checkboxid) {
       tabChildboxChk(ini, boxid6, "right_click_close", true);
       tabChildboxChk(ini, boxid7, "right_click_recover", true);
     } else if (value) {
-      makeMasterCheckboxesReactive(checkboxid, () => {return false});
+      makeMasterCheckboxesReactive(checkboxid, () => {return false;});
       tabChildboxChk(ini, boxid1, "mouse_time", false);
       tabChildboxChk(ini, boxid2, "double_click_close", false);
       tabChildboxChk(ini, boxid3, "double_click_new", false);
@@ -297,12 +327,23 @@ function setBoolSyncListeners(checkboxid, opts, vals) {
   }
 }
 
-function showIceMessage() {
-  const messageBox = document.getElementById('iceweasel-message-box');
-  messageBox.style.display = 'flex';
-  setTimeout(() => {
-    messageBox.style.display = 'none';
-  }, 3000);
+function showIceMessage(n) {
+  let messageBox = null;
+  if (!n) {
+    messageBox = document.getElementById('iceweasel-chrome-box');
+  }
+  else if (n == 1) {
+    messageBox = document.getElementById('iceweasel-download-box');
+  }
+  else if (n == 2) {
+    messageBox = document.getElementById('iceweasel-download-needed');
+  }
+  if (messageBox) {
+    messageBox.style.display = 'flex';
+    setTimeout(() => {
+      messageBox.style.display = 'none';
+    }, 3000);
+  }
 }
 
 function onUpcheckSyncListeners() {
@@ -325,7 +366,7 @@ function onChromeSyncListeners() {
     let chromeObserver = {
       observe: function xobserve(aSubject, aTopic) {
         if (aTopic == "process-finished") {
-          showIceMessage();
+          showIceMessage(0);
         } else {
           console.log("The process launch failed!");
         }
@@ -337,9 +378,43 @@ function onChromeSyncListeners() {
     process.noShell = true;
     try {
       if (!value) {
-        process.run(false, ["-chrome-uncheck", encodeURIComponent(bin.path), encodeURIComponent(prof.path)], 3);
+        process.runw(false, ["-chrome-uncheck", bin.path, prof.path], 3);
       } else {
-        process.runAsync( ["-chrome-install", encodeURIComponent(bin.path), encodeURIComponent(prof.path)], 3, chromeObserver);
+        process.runwAsync( ["-chrome-install", bin.path, prof.path], 3, chromeObserver);
+      }
+    } catch (e) {
+      console.log("On Windows negative return value throws an exception");
+    }
+  }
+}
+
+function onDownloadSyncListeners() {
+  let value = document.getElementById("iceweasel-libportable-download-checkbox").checked;
+  let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+  let bin = target.clone();
+  target.append("upcheck.exe");
+  if (target.exists()) {
+    let process = Cc["@mozilla.org/process/util;1"]
+                   .createInstance(Ci.nsIProcess);
+    let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
+    let chromeObserver = {
+      observe: function xobserve(aSubject, aTopic) {
+        if (aTopic == "process-finished") {
+          showIceMessage(1);
+        } else {
+          console.log("The process return false");
+          showIceMessage(2);
+        }
+      },
+    };
+    process.init(target);
+    process.startHidden = true;
+    process.noShell = true;
+    try {
+      if (!value) {
+        process.runw(false, ["-integration-uncheck", bin.path, prof.path], 3);
+      } else {
+        process.runwAsync( ["-integration-install", bin.path, prof.path], 3, chromeObserver);
       }
     } catch (e) {
       console.log("On Windows negative return value throws an exception");

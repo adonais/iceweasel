@@ -22,7 +22,7 @@
 	fill: currentColor;
 }
 
-#iceweasel-message-box {
+.iceweasel-message-box {
 	position: fixed;
 	bottom: 20px;
 	right: 30px;
