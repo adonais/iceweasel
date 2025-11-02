@@ -115,12 +115,11 @@ jobs:
           exit 255
         fi
         tar Jxf windows-rs.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/l10n.tar.xz?viasf=1 -O l10n.tar.xz
+        git clone --branch 144.x --depth=1 https://github.com/adonais/iceweasel-l10n.git "$MOZ_FETCHES_DIR/l10n"
         if [ $? -ne 0 ]; then
           echo Download l10n failed
           exit 255
         fi
-        tar Jxf l10n.tar.xz -C "$MOZ_FETCHES_DIR"
         chmod -R 755 "$MOZ_FETCHES_DIR/l10n"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/wine.tar.xz?viasf=1 -O wine.tar.xz
         if [ $? -ne 0 ]; then
