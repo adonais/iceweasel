@@ -66,6 +66,19 @@
   </vbox>
 
   <hbox>
+    <checkbox id="iceweasel-tabcompactmode-checkbox" data-l10n-id="iceweasel-tabcompactmode-checkbox" preference="browser.compactmode.show" flex="1" />
+    <html:label for="iceweasel-tabcompactmode-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-tabcompactmode-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-tabcompactmode-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-tabcompactmode-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="browser.compactmode.show" label="browser.compactmode.show" />
+    </vbox>
+  </vbox>
+
+  <hbox>
     <checkbox id="iceweasel-lastclose-checkbox" data-l10n-id="iceweasel-lastclose-checkbox" preference="browser.tabs.closeWindowWithLastTab" flex="1" />
     <html:label for="iceweasel-lastclose-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
   </hbox>

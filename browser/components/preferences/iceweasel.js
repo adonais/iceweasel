@@ -16,6 +16,8 @@ Preferences.addAll([
   { id: "network.dns.disableIPv6", type: "bool" },
   // disable javascipt
   { id: "javascript.enabled", type: "bool" },
+  // compactmode
+  { id: "browser.compactmode.show", type: "bool" },
   // lastclose
   { id: "browser.tabs.closeWindowWithLastTab", type: "bool" },
   // officialtips
@@ -51,6 +53,11 @@ var gIceweaselPane = {
       "iceweasel-javascript-checkbox",
       ["javascript.enabled"     ],
       [false,                   ],
+    );
+    setBoolSyncListeners(
+      "iceweasel-tabcompactmode-checkbox",
+      ["browser.compactmode.show"],
+      [true,                                ],
     );
     setBoolSyncListeners(
       "iceweasel-lastclose-checkbox",
