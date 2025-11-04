@@ -110,7 +110,7 @@ jobs:
           exit 255
         fi
         tar Jxf windows-rs.tar.xz -C "$MOZ_FETCHES_DIR"
-        git clone --branch 144.x --depth=1 https://github.com/adonais/iceweasel-l10n.git "$MOZ_FETCHES_DIR/l10n"
+        git clone --branch release --depth=1 https://github.com/adonais/iceweasel-l10n.git "$MOZ_FETCHES_DIR/l10n"
         if [ $? -ne 0 ]; then
           echo Download l10n failed
           exit 255

@@ -92,12 +92,11 @@ jobs:
           exit 255
         fi
         tar Jxf vs.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/l10n115.tar.xz?viasf=1 -O l10n.tar.xz
+        git clone --branch 115.x --depth=1 https://github.com/adonais/iceweasel-l10n.git "$MOZ_FETCHES_DIR/l10n"
         if [ $? -ne 0 ]; then
           echo Download l10n115 failed
           exit 255
         fi
-        tar Jxf l10n.tar.xz -C "$MOZ_FETCHES_DIR"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/wine.tar.xz?viasf=1 -O wine.tar.xz
         if [ $? -ne 0 ]; then
           echo Download wine failed
