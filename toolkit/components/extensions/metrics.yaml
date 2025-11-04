@@ -384,6 +384,49 @@ extensions.data:
         type: string
     expires: 147
 
+  storage_local_corrupted_reset:
+    type: event
+    description: |
+      These events are collected when the underlying IndexedDB backend is detected
+      as corrupted and Firefox is resetting it to allow it to be recreated from
+      scratch.
+    bugs:
+      - https://bugzilla.mozilla.org/1979997
+    data_reviews:
+      - https://bugzilla.mozilla.org/1979997
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - addons-dev-internal@mozilla.com
+    extra_keys:
+      addon_id:
+        description: Id of the addon.
+        type: string
+      reason:
+        description: |
+          A string that identifies the reason for resetting the storage.local IndexedDB
+          database. e.g.
+          - "ObjectStoreNotFound": (The IndexedDB instance is missing the expected
+            ObjectStorage name).
+          - "RejectedClear:ERROR_NAME": (The storage.local.clear method has hit an unexpected
+            error while iterating over the database keys, ERROR_NAME is either a DOMException
+            error name or "OtherError" in case of non-DOMException errors).
+        type: string
+      after_reset:
+        description: |
+          Set to true if the storage.local IndexedDB was still corrupted
+          right after being completely reset.
+        type: boolean
+      reset_disabled:
+        description: |
+          Whether automatically reset corrupted databases is disabled.
+        type: boolean
+      reset_error_name:
+        description: |
+          The name of the error hit by the DB reset logic (if any).
+        type: string
+    expires: 152
+
   sync_usage_quotas:
     type: event
     description: |

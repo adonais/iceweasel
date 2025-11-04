@@ -197,4 +197,15 @@ interface nsIUrlClassifierUtils : nsISupports
    */
   void parseFindFullHashResponseV4(in ACString aResponse,
                                    in nsIUrlClassifierParseFindFullHashCallback aCallback);
+
+  /**
+   * Parse FindFullHash response for the V5 protocol. In V5, the FindFullHash
+   * is implemented as the hashes::search API.
+   *
+   * @param aResponse Byte stream from the server.
+   * @param aCallback The callback function on each complete hash parsed.
+   *                  Can be called multiple times in one parsing.
+   */
+  void parseFindFullHashResponseV5(in ACString aResponse,
+                                   in nsIUrlClassifierParseFindFullHashCallback aCallback);
 };

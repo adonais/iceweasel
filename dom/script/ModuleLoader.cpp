@@ -26,6 +26,8 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/LoadInfo.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/StyleSheet.h"
+#include "mozilla/StyleSheetInlines.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
@@ -162,7 +164,7 @@ void ModuleLoader::ExecuteInlineModule(ModuleLoadRequest* aRequest) {
 void ModuleLoader::OnModuleLoadComplete(ModuleLoadRequest* aRequest) {
   MOZ_ASSERT(aRequest->IsFinished());
 
-  if (aRequest->IsTopLevel()) {
+  if (aRequest->IsTopLevel() || aRequest->IsDynamicImport()) {
     if (aRequest->GetScriptLoadContext()->mIsInline &&
         aRequest->GetScriptLoadContext()->GetParserCreated() ==
             NOT_FROM_PARSER) {
@@ -219,9 +221,10 @@ nsresult ModuleLoader::CompileFetchedModule(
       MOZ_CRASH("Unexpected module type");
     case JS::ModuleType::JavaScript:
       return CompileJavaScriptModule(aCx, aOptions, aRequest, aModuleOut);
-    case JS::ModuleType::JSON: {
+    case JS::ModuleType::JSON:
       return CompileJsonModule(aCx, aOptions, aRequest, aModuleOut);
-    }
+    case JS::ModuleType::CSS:
+      return CompileCssModule(aCx, aOptions, aRequest, aModuleOut);
   }
 
   MOZ_CRASH("Unhandled module type");
@@ -266,7 +269,7 @@ nsresult ModuleLoader::CompileJavaScriptModule(
       return NS_ERROR_FAILURE;
     }
 
-    if (aRequest->PassedConditionForCache()) {
+    if (aRequest->PassedConditionForEitherCache()) {
       bool alreadyStarted;
       if (!JS::StartCollectingDelazifications(aCx, aModuleOut, stencil,
                                               alreadyStarted)) {
@@ -315,7 +318,7 @@ nsresult ModuleLoader::CompileJavaScriptModule(
     return NS_ERROR_FAILURE;
   }
 
-  if (aRequest->PassedConditionForCache()) {
+  if (aRequest->PassedConditionForEitherCache()) {
     bool alreadyStarted;
     if (!JS::StartCollectingDelazifications(aCx, aModuleOut, stencil,
                                             alreadyStarted)) {
@@ -350,6 +353,90 @@ nsresult ModuleLoader::CompileJsonModule(
   }
 
   aModuleOut.set(jsonModule);
+  return NS_OK;
+}
+
+nsresult ModuleLoader::CompileCssModule(
+    JSContext* aCx, JS::CompileOptions& aOptions, ModuleLoadRequest* aRequest,
+    JS::MutableHandle<JSObject*> aModuleOut) {
+  MOZ_ASSERT(!aRequest->GetScriptLoadContext()->mWasCompiledOMT);
+  MOZ_ASSERT(mozilla::StaticPrefs::layout_css_module_scripts_enabled());
+
+  MOZ_ASSERT(aRequest->IsTextSource());
+  ModuleLoader::MaybeSourceText maybeSource;
+  nsresult rv = aRequest->GetScriptSource(aCx, &maybeSource,
+                                          aRequest->mLoadContext.get());
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  // https://html.spec.whatwg.org/#creating-a-css-module-script
+  JS::Rooted<JSObject*> cssModule(aCx, nullptr);
+  ErrorResult error;
+  auto compile = [&](auto& source) {
+    using T = decltype(source);
+    static_assert(std::is_same_v<T, JS::SourceText<char16_t>&> ||
+                  std::is_same_v<T, JS::SourceText<Utf8Unit>&>);
+
+    nsCOMPtr<nsPIDOMWindowInner> window =
+        do_QueryInterface(aRequest->GetGlobalObject());
+    if (!window) {
+      error.ThrowNotSupportedError("Not supported when there is no document");
+      return;
+    }
+
+    Document* constructorDocument = window->GetExtantDoc();
+    if (!constructorDocument) {
+      error.ThrowNotSupportedError("Not supported when there is no document");
+      return;
+    }
+
+    // 5. Let sheet be the result of running the steps to create a constructed
+    // CSSStyleSheet
+    //    with an empty dictionary as the argument.
+    // Note that according to the specification, the baseURL should be the
+    // baseURL of the document, but that doesn't seem correct (see
+    // https://github.com/whatwg/html/issues/11629).
+    dom::CSSStyleSheetInit options;
+    RefPtr<StyleSheet> sheet = StyleSheet::CreateConstructedSheet(
+        *constructorDocument, aRequest->mBaseURL, options, error);
+    if (error.Failed()) {
+      return;
+    }
+
+    // 6. Run the steps to synchronously replace the rules of a CSSStyleSheet on
+    // sheet given source. Ideally we wouldn't run this on the main thread for
+    // large scripts, see https://bugzilla.mozilla.org/show_bug.cgi?id=1987143.
+    if constexpr (std::is_same_v<T, JS::SourceText<mozilla::Utf8Unit>&>) {
+      nsDependentCSubstring text(source.get(), source.length());
+      sheet->ReplaceSync(text, error);
+    } else if constexpr (std::is_same_v<T, JS::SourceText<char16_t>&>) {
+      nsDependentSubstring text(source.get(), source.length());
+      sheet->ReplaceSync(NS_ConvertUTF16toUTF8(text), error);
+    }
+    if (error.Failed()) {
+      return;
+    }
+
+    JS::Rooted<JS::Value> val(aCx, JS::NullValue());
+    if (!GetOrCreateDOMReflector(aCx, sheet, &val) || !val.isObject()) {
+      if (!JS_IsExceptionPending(aCx)) {
+        error.ThrowUnknownError("Internal error");
+      }
+      return;
+    }
+
+    // Steps. 1 - 4 (re-ordered), 7, 8
+    cssModule.set(JS::CreateCssModule(aCx, aOptions, val));
+  };
+
+  maybeSource.mapNonEmpty(compile);
+  if (!cssModule) {
+    if (error.Failed()) {
+      MOZ_ALWAYS_TRUE(error.MaybeSetPendingException(aCx));
+    }
+    return NS_ERROR_FAILURE;
+  }
+
+  aModuleOut.set(cssModule);
   return NS_OK;
 }
 

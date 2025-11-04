@@ -260,7 +260,8 @@ class WaylandSurface final {
   bool EnableColorManagementLocked(const WaylandSurfaceLock& aProofOfLock);
   void SetColorRepresentationLocked(const WaylandSurfaceLock& aProofOfLock,
                                     mozilla::gfx::YUVColorSpace aColorSpace,
-                                    bool aFullRange);
+                                    bool aFullRange,
+                                    uint32_t aWPChromaLocation);
 
   static void ImageDescriptionFailed(
       void* aData, struct wp_image_description_v1* aImageDescription,

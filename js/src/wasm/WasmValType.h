@@ -444,6 +444,17 @@ class RefType {
   static bool isSubTypeOf(RefType subType, RefType superType);
   static bool castPossible(RefType sourceType, RefType destType);
 
+  // If we have two references, one of type `a` and one of type `b`, return
+  // true if there is any possibility that they might point at the same thing.
+  // That can only happen if either they are the same type or if one type is a
+  // subtype of the other.  Note, this can only be used for types in the same
+  // hierarchy.
+  static bool valuesMightAlias(RefType a, RefType b) {
+    MOZ_RELEASE_ASSERT(a.hierarchy() == b.hierarchy());
+    // The exact-same-type case is subsumed by `isSubTypeOf`.
+    return RefType::isSubTypeOf(a, b) || RefType::isSubTypeOf(b, a);
+  }
+
   // Gets the top of the given type's hierarchy, e.g. Any for structs and
   // arrays, and Func for funcs.
   RefType topType() const;

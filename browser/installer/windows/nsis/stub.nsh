@@ -101,7 +101,7 @@ Var ArchToInstall
 ; the stub installer
 ;!define STUB_DEBUG
 
-!define StubURLVersion "v10"
+!define StubURLVersion "v11"
 
 ; Successful install exit code
 !define ERR_SUCCESS 0
@@ -700,9 +700,16 @@ Function LaunchFullInstaller
   ${If} $CheckboxShortcuts == 0
     WriteINIStr "$PLUGINSDIR\${CONFIG_INI}" "Install" "TaskbarShortcut" "false"
     WriteINIStr "$PLUGINSDIR\${CONFIG_INI}" "Install" "DesktopShortcut" "false"
+    WriteINIStr "$PLUGINSDIR\${CONFIG_INI}" "Install" "DesktopLauncher" "false"
   ${Else}
     WriteINIStr "$PLUGINSDIR\${CONFIG_INI}" "Install" "TaskbarShortcut" "true"
+!ifdef DESKTOP_LAUNCHER_ENABLED
+    WriteINIStr "$PLUGINSDIR\${CONFIG_INI}" "Install" "DesktopShortcut" "false"
+    WriteINIStr "$PLUGINSDIR\${CONFIG_INI}" "Install" "DesktopLauncher" "true"
+!else
     WriteINIStr "$PLUGINSDIR\${CONFIG_INI}" "Install" "DesktopShortcut" "true"
+    WriteINIStr "$PLUGINSDIR\${CONFIG_INI}" "Install" "DesktopLauncher" "false"
+!endif
   ${EndIf}
 
 !ifdef MOZ_MAINTENANCE_SERVICE
@@ -927,6 +934,13 @@ Function SendPing
       ${EndIf}
     ${EndIf}
 
+    ${GetParameters} $R9
+    ClearErrors
+    ${GetOptions} "$R9" "/LaunchedBy:" "$R4"
+    ${If} ${Errors}
+      StrCpy $R4 "unknown"
+    ${EndIf}
+
     StrCpy $R3 "1"
 
 ; Note: ExitCode gets parsed here to determine values for "succeeded",
@@ -977,7 +991,8 @@ Function SendPing
                       $\nDistribution ID = $DistributionID \
                       $\nDistribution Version = $DistributionVersion \
                       $\nWindows UBR = $WindowsUBR \
-                      $\nStub Installer Build ID = $StubBuildID"
+                      $\nStub Installer Build ID = $StubBuildID \
+                      $\nLaunched by = $R4"
     ; The following will exit the installer
     SetAutoClose true
     StrCpy $R9 "2"
@@ -986,7 +1001,7 @@ Function SendPing
     ${StartTimer} ${DownloadIntervalMS} OnPing
     ; See https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/data/install-ping.html#stub-ping
     ; for instructions on how to make changes to data being reported in this ping
-    InetBgDL::Get "${BaseURLStubPing}/${StubURLVersion}${StubURLVersionAppend}/${Channel}/${UpdateChannel}/${AB_CD}/$R0/$R1/$5/$6/$7/$8/$9/$ExitCode/$FirefoxLaunchCode/$DownloadRetryCount/$DownloadedBytes/$DownloadSizeBytes/$IntroPhaseSeconds/$OptionsPhaseSeconds/$0/$1/$DownloadFirstTransferSeconds/$2/$3/$4/$InitialInstallRequirementsCode/$OpenedDownloadPage/$ExistingProfile/$ExistingVersion/$ExistingBuildID/$R5/$R6/$R7/$R8/$R2/$R3/$DownloadServerIP/$PostSigningData/$ProfileCleanupPromptType/$CheckboxCleanupProfile/$DistributionID/$DistributionVersion/$WindowsUBR/$StubBuildID" \
+    InetBgDL::Get "${BaseURLStubPing}/${StubURLVersion}${StubURLVersionAppend}/${Channel}/${UpdateChannel}/${AB_CD}/$R0/$R1/$5/$6/$7/$8/$9/$ExitCode/$FirefoxLaunchCode/$DownloadRetryCount/$DownloadedBytes/$DownloadSizeBytes/$IntroPhaseSeconds/$OptionsPhaseSeconds/$0/$1/$DownloadFirstTransferSeconds/$2/$3/$4/$InitialInstallRequirementsCode/$OpenedDownloadPage/$ExistingProfile/$ExistingVersion/$ExistingBuildID/$R5/$R6/$R7/$R8/$R2/$R3/$DownloadServerIP/$PostSigningData/$ProfileCleanupPromptType/$CheckboxCleanupProfile/$DistributionID/$DistributionVersion/$WindowsUBR/$StubBuildID/$R4" \
                   "$PLUGINSDIR\_temp" /END
 !endif
   ${Else}

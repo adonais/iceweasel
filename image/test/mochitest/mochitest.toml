@@ -179,7 +179,7 @@ skip-if = [
 ["test_bug865919.html"]
 
 ["test_bug1132427.html"]
-skip-if = ["display == 'wayland' && os_version == '22.04'"]  # Bug 18570
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"]  # Bug 18570
 
 ["test_bug1180105.html"]
 skip-if = [

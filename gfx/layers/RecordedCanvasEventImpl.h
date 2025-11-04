@@ -33,24 +33,23 @@ const EventType CANVAS_FLUSH = EventType(EventType::LAST + 2);
 const EventType TEXTURE_LOCK = EventType(EventType::LAST + 3);
 const EventType TEXTURE_UNLOCK = EventType(EventType::LAST + 4);
 const EventType CACHE_DATA_SURFACE = EventType(EventType::LAST + 5);
-const EventType PREPARE_DATA_FOR_SURFACE = EventType(EventType::LAST + 6);
-const EventType GET_DATA_FOR_SURFACE = EventType(EventType::LAST + 7);
-const EventType ADD_SURFACE_ALIAS = EventType(EventType::LAST + 8);
-const EventType REMOVE_SURFACE_ALIAS = EventType(EventType::LAST + 9);
-const EventType DEVICE_CHANGE_ACKNOWLEDGED = EventType(EventType::LAST + 10);
-const EventType CANVAS_DRAW_TARGET_CREATION = EventType(EventType::LAST + 11);
-const EventType TEXTURE_DESTRUCTION = EventType(EventType::LAST + 12);
-const EventType CHECKPOINT = EventType(EventType::LAST + 13);
-const EventType PAUSE_TRANSLATION = EventType(EventType::LAST + 14);
-const EventType RECYCLE_BUFFER = EventType(EventType::LAST + 15);
-const EventType DROP_BUFFER = EventType(EventType::LAST + 16);
-const EventType PREPARE_SHMEM = EventType(EventType::LAST + 17);
-const EventType PRESENT_TEXTURE = EventType(EventType::LAST + 18);
-const EventType DEVICE_RESET_ACKNOWLEDGED = EventType(EventType::LAST + 19);
-const EventType AWAIT_TRANSLATION_SYNC = EventType(EventType::LAST + 20);
-const EventType RESOLVE_EXTERNAL_SNAPSHOT = EventType(EventType::LAST + 21);
-const EventType ADD_EXPORT_SURFACE = EventType(EventType::LAST + 22);
-const EventType REMOVE_EXPORT_SURFACE = EventType(EventType::LAST + 23);
+const EventType GET_DATA_FOR_SURFACE = EventType(EventType::LAST + 6);
+const EventType ADD_SURFACE_ALIAS = EventType(EventType::LAST + 7);
+const EventType REMOVE_SURFACE_ALIAS = EventType(EventType::LAST + 8);
+const EventType DEVICE_CHANGE_ACKNOWLEDGED = EventType(EventType::LAST + 9);
+const EventType CANVAS_DRAW_TARGET_CREATION = EventType(EventType::LAST + 10);
+const EventType TEXTURE_DESTRUCTION = EventType(EventType::LAST + 11);
+const EventType CHECKPOINT = EventType(EventType::LAST + 12);
+const EventType PAUSE_TRANSLATION = EventType(EventType::LAST + 13);
+const EventType RECYCLE_BUFFER = EventType(EventType::LAST + 14);
+const EventType DROP_BUFFER = EventType(EventType::LAST + 15);
+const EventType PREPARE_SHMEM = EventType(EventType::LAST + 16);
+const EventType PRESENT_TEXTURE = EventType(EventType::LAST + 17);
+const EventType DEVICE_RESET_ACKNOWLEDGED = EventType(EventType::LAST + 18);
+const EventType AWAIT_TRANSLATION_SYNC = EventType(EventType::LAST + 19);
+const EventType RESOLVE_EXTERNAL_SNAPSHOT = EventType(EventType::LAST + 20);
+const EventType ADD_EXPORT_SURFACE = EventType(EventType::LAST + 21);
+const EventType REMOVE_EXPORT_SURFACE = EventType(EventType::LAST + 22);
 const EventType LAST_CANVAS_EVENT_TYPE = REMOVE_EXPORT_SURFACE;
 
 class RecordedCanvasBeginTransaction final
@@ -235,8 +234,11 @@ RecordedTextureUnlock::RecordedTextureUnlock(S& aStream)
 class RecordedCacheDataSurface final
     : public RecordedEventDerived<RecordedCacheDataSurface> {
  public:
-  explicit RecordedCacheDataSurface(gfx::SourceSurface* aSurface)
-      : RecordedEventDerived(CACHE_DATA_SURFACE), mSurface(aSurface) {}
+  explicit RecordedCacheDataSurface(const gfx::SourceSurface* aSurface,
+                                    bool aForceData = false)
+      : RecordedEventDerived(CACHE_DATA_SURFACE),
+        mSurface(aSurface),
+        mForceData(aForceData) {}
 
   template <class S>
   MOZ_IMPLICIT RecordedCacheDataSurface(S& aStream);
@@ -250,88 +252,43 @@ class RecordedCacheDataSurface final
 
  private:
   ReferencePtr mSurface;
+  bool mForceData = false;
 };
 
 inline bool RecordedCacheDataSurface::PlayCanvasEvent(
     CanvasTranslator* aTranslator) const {
+  if (RefPtr<gfx::DataSourceSurface> dataSurface =
+          aTranslator->LookupDataSurface(mSurface)) {
+    if (mForceData) {
+      (void)dataSurface->GetData();
+    }
+    return true;
+  }
+
   gfx::SourceSurface* surface = aTranslator->LookupSourceSurface(mSurface);
   if (!surface) {
     return false;
   }
-
-  RefPtr<gfx::DataSourceSurface> dataSurface = surface->GetDataSurface();
-
-  aTranslator->AddDataSurface(mSurface, std::move(dataSurface));
+  if (RefPtr<gfx::DataSourceSurface> dataSurface = surface->GetDataSurface()) {
+    if (mForceData) {
+      (void)dataSurface->GetData();
+    }
+    aTranslator->AddDataSurface(mSurface, std::move(dataSurface));
+  }
   return true;
 }
 
 template <class S>
 void RecordedCacheDataSurface::Record(S& aStream) const {
   WriteElement(aStream, mSurface);
+  WriteElement(aStream, mForceData);
 }
 
 template <class S>
 RecordedCacheDataSurface::RecordedCacheDataSurface(S& aStream)
     : RecordedEventDerived(CACHE_DATA_SURFACE) {
   ReadElement(aStream, mSurface);
-}
-
-class RecordedPrepareDataForSurface final
-    : public RecordedEventDerived<RecordedPrepareDataForSurface> {
- public:
-  explicit RecordedPrepareDataForSurface(const gfx::SourceSurface* aSurface)
-      : RecordedEventDerived(PREPARE_DATA_FOR_SURFACE), mSurface(aSurface) {}
-
-  template <class S>
-  MOZ_IMPLICIT RecordedPrepareDataForSurface(S& aStream);
-
-  bool PlayCanvasEvent(CanvasTranslator* aTranslator) const;
-
-  template <class S>
-  void Record(S& aStream) const;
-
-  std::string GetName() const final { return "RecordedPrepareDataForSurface"; }
-
- private:
-  ReferencePtr mSurface;
-};
-
-inline bool RecordedPrepareDataForSurface::PlayCanvasEvent(
-    CanvasTranslator* aTranslator) const {
-  RefPtr<gfx::DataSourceSurface> dataSurface =
-      aTranslator->LookupDataSurface(mSurface);
-  if (!dataSurface) {
-    gfx::SourceSurface* surface = aTranslator->LookupSourceSurface(mSurface);
-    if (!surface) {
-      return false;
-    }
-
-    dataSurface = surface->GetDataSurface();
-    if (!dataSurface) {
-      return false;
-    }
-  }
-
-  auto preparedMap = MakeUnique<gfx::DataSourceSurface::ScopedMap>(
-      dataSurface, gfx::DataSourceSurface::READ);
-  if (!preparedMap->IsMapped()) {
-    return false;
-  }
-
-  aTranslator->SetPreparedMap(mSurface, std::move(preparedMap));
-
-  return true;
-}
-
-template <class S>
-void RecordedPrepareDataForSurface::Record(S& aStream) const {
-  WriteElement(aStream, mSurface);
-}
-
-template <class S>
-RecordedPrepareDataForSurface::RecordedPrepareDataForSurface(S& aStream)
-    : RecordedEventDerived(PREPARE_DATA_FOR_SURFACE) {
-  ReadElement(aStream, mSurface);
+  ReadElement(aStream, mForceData);
 }
 
 class RecordedGetDataForSurface final
@@ -979,7 +936,6 @@ RecordedRemoveExportSurface::RecordedRemoveExportSurface(S& aStream)
   f(TEXTURE_LOCK, RecordedTextureLock);                             \
   f(TEXTURE_UNLOCK, RecordedTextureUnlock);                         \
   f(CACHE_DATA_SURFACE, RecordedCacheDataSurface);                  \
-  f(PREPARE_DATA_FOR_SURFACE, RecordedPrepareDataForSurface);       \
   f(GET_DATA_FOR_SURFACE, RecordedGetDataForSurface);               \
   f(ADD_SURFACE_ALIAS, RecordedAddSurfaceAlias);                    \
   f(REMOVE_SURFACE_ALIAS, RecordedRemoveSurfaceAlias);              \

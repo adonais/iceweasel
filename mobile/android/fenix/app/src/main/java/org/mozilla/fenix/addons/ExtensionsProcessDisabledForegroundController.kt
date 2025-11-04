@@ -9,8 +9,8 @@ import android.view.LayoutInflater
 import android.widget.Button
 import android.widget.TextView
 import androidx.annotation.UiContext
-import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.LifecycleOwner
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.browser.state.action.ExtensionsProcessAction
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.ktx.android.content.appName
@@ -34,7 +34,7 @@ class ExtensionsProcessDisabledForegroundController(
     @UiContext context: Context,
     browserStore: BrowserStore = context.components.core.store,
     appStore: AppStore = context.components.appStore,
-    builder: AlertDialog.Builder = AlertDialog.Builder(context),
+    builder: MaterialAlertDialogBuilder = MaterialAlertDialogBuilder(context),
     appName: String = context.appName,
 ) : ExtensionsProcessDisabledPromptObserver(
     store = browserStore,
@@ -67,7 +67,7 @@ class ExtensionsProcessDisabledForegroundController(
         private fun presentDialog(
             @UiContext context: Context,
             store: BrowserStore,
-            builder: AlertDialog.Builder,
+            builder: MaterialAlertDialogBuilder,
             appName: String,
         ) {
             if (!shouldCreateDialog) {

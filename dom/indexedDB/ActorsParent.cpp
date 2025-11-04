@@ -69,6 +69,7 @@
 #include "mozilla/EndianUtils.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/GeckoTrace.h"
 #include "mozilla/InitializedOnce.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MacroForEach.h"
@@ -784,8 +785,15 @@ OpenDatabaseAndHandleBusy(mozIStorageService& aStorageService,
     // that to complete.
     const TimeStamp start = TimeStamp::NowLoRes();
 
+    // Use exponential backoff: start at 1ms, double up to 100ms max
+    uint32_t sleepMs = 1;
+    constexpr uint32_t kMaxSleepMs = 100;
+
     do {
-      PR_Sleep(PR_MillisecondsToInterval(100));
+      PR_Sleep(PR_MillisecondsToInterval(sleepMs));
+
+      // Exponential backoff with cap
+      sleepMs = std::min(sleepMs * 2, kMaxSleepMs);
 
       QM_TRY_UNWRAP(connection,
                     QM_OR_ELSE_WARN_IF(
@@ -5794,6 +5802,8 @@ Result<Ok, nsresult> DeleteFileManagerDirectory(
     nsIFile& aFileManagerDirectory, QuotaManager* aQuotaManager,
     const PersistenceType aPersistenceType,
     const OriginMetadata& aOriginMetadata) {
+  GECKO_TRACE_SCOPE("dom::indexedDB", "DeleteFileManagerDirectory");
+
   // XXX In theory, deleting can continue for other files in case of a failure,
   // leaving only those files behind that cause the problem actually. However,
   // the current architecture doesn't allow having more databases (for the same
@@ -5846,6 +5856,8 @@ nsresult RemoveDatabaseFilesAndDirectory(nsIFile& aBaseDirectory,
                                          const PersistenceType aPersistenceType,
                                          const OriginMetadata& aOriginMetadata,
                                          const nsAString& aDatabaseName) {
+  GECKO_TRACE_SCOPE("dom::indexedDB", "RemoveDatabaseFilesAndDirectory");
+
   AssertIsOnIOThread();
   MOZ_ASSERT(!aDatabaseFilenameBase.IsEmpty());
 
@@ -12455,6 +12467,8 @@ nsresult QuotaClient::GetUsageForOriginInternal(
     PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
     const AtomicBool& aCanceled, const bool aInitializing,
     UsageInfo* aUsageInfo) {
+  GECKO_TRACE_SCOPE("dom::indexedDB", "QuotaClient::GetUsageForOriginInternal");
+
   AssertIsOnIOThread();
   MOZ_ASSERT(aOriginMetadata.mPersistenceType == aPersistenceType);
 

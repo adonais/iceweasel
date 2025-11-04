@@ -34,9 +34,14 @@ tasks:
         worker:
             docker-image: {in-tree: valgrind-build}
             max-run-time: 72000
+            artifacts:
+                - type: file
+                  path: /builds/worker/perfherder-data-valgrind.json
+                  name: public/build/perfherder-data-valgrind.json
             env:
                 NEED_XVFB: "true"
                 PERFHERDER_EXTRA_OPTIONS: valgrind
+                MOZ_PERFHERDER_UPLOAD: /builds/worker/perfherder-data-valgrind.json
         run:
             using: mozharness
             actions: [get-secrets, build, valgrind-test]

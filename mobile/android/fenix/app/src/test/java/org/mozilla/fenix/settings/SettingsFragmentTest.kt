@@ -9,6 +9,7 @@ import androidx.preference.Preference
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import mozilla.components.concept.fetch.Client
 import mozilla.components.service.fxa.manager.FxaAccountManager
@@ -59,6 +60,7 @@ class SettingsFragmentTest {
             .commitNow()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `Add-on collection override pref is visible if debug menu active and feature is enabled`() = runTestOnMain {
         val settingsFragment = SettingsFragment()
@@ -90,6 +92,7 @@ class SettingsFragmentTest {
         assertTrue(preferenceAmoCollectionOverride.isVisible)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `Install add-on from file pref is visible if debug menu active and feature is enabled`() = runTestOnMain {
         val settingsFragment = SettingsFragment()
@@ -116,6 +119,7 @@ class SettingsFragmentTest {
         assertTrue(preference.isVisible)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `Add-on collection override pref is visible if already configured and feature is enabled`() = runTestOnMain {
         val settingsFragment = SettingsFragment()
@@ -156,6 +160,7 @@ class SettingsFragmentTest {
         assertTrue(preferenceAmoCollectionOverride.isVisible)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `Add-on collection override pref is not visible if feature is disabled`() = runTestOnMain {
         val settingsFragment = SettingsFragment()

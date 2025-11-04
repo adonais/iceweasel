@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head = "../../unit/head.js head.js"
 firefox-appdir = "browser"
 prefs = [

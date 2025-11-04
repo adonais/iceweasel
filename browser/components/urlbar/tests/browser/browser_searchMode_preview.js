@@ -76,7 +76,7 @@ add_task(async function tokenAlias() {
 
     let expectedSearchMode =
       details.type === UrlbarUtils.RESULT_TYPE.RESTRICT
-        ? UrlbarUtils.searchModeForToken(details.result.payload.keyword)
+        ? gURLBar.searchModeForToken(details.result.payload.keyword)
         : {
             engineName: details.searchParams.engine,
             isPreview: true,
@@ -102,7 +102,7 @@ add_task(async function tokenAlias() {
   // Test that we are in confirmed search mode.
   let searchMode;
   if (details.type === UrlbarUtils.RESULT_TYPE.RESTRICT) {
-    searchMode = UrlbarUtils.searchModeForToken(details.result.payload.keyword);
+    searchMode = gURLBar.searchModeForToken(details.result.payload.keyword);
   } else {
     searchMode = {
       engineName: details.searchParams.engine,

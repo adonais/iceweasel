@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+const MIN_SELECTION_SIZE = 48;
+
 /**
  * This class is copied from https://searchfox.org/mozilla-central/source/browser/components/screenshots/overlayHelpers.mjs
  * with some slight modifications such as forcing the region to be a square.
@@ -13,8 +15,6 @@
  * will choose to return the "correct" value. For example, the left getter
  * returns the min of x1 and x2. The same goes for the other three getters.
  */
-
-const MIN_SELECTION_SIZE = 48;
 export class Region {
   #x1;
   #x2;
@@ -263,6 +263,9 @@ export class Region {
   }
 }
 
+/**
+ * A class which saves the current view dimensions.
+ */
 export class ViewDimensions {
   #height = null;
   #width = null;

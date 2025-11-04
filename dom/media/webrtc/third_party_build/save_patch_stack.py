@@ -55,14 +55,65 @@ def save_patch_stack(
     stdout_lines = run_git(cmd, github_path)
     merge_base = stdout_lines[0]
 
-    # grab patch stack
-    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {merge_base}..{github_branch}"
-    run_git(cmd, github_path)
+    # grab the log of our patches that live on top of libwebrtc, and find
+    # the commit of our base patch.
+    cmd = f"cd {github_path} ; git log --oneline {merge_base}..{github_branch}"
+    stdout_lines = run_shell(cmd)
+    base_commit_summary = "Bug 1376873 - Rollup of local modifications"
+    found_lines = [s for s in stdout_lines if base_commit_summary in s]
+    base_commit_sha = found_lines[0].split(" ")[0]
+    print(f"Found base_commit_sha: {base_commit_sha}")
 
-    # remove the commit summary from the file name
+    # First, a word about pre-stack and normal patches.  During the
+    # libwebrtc update process, there are 2 cases where we insert
+    # patches between the upstream trunk commit we're current based on
+    # and the Mozilla patch-stack:
+    # 1) Release branch commits are frequently used.  These are patches
+    #    that are typically cherry-picks of further upstream commits
+    #    that are needed to fix bugs in a upstream release.  When
+    #    beginning the Mozilla libwebrtc update process, it is necessary
+    #    to copy those release branch commits and insert them between
+    #    the trunk commit we're based on, and the Mozilla patch-stack we
+    #    carry in order for vendoring to produce the same result with
+    #    which we ended the previous update.
+    # 2) During update process, to avoid fixing/unfixing/refixing rebase
+    #    conflicts due to upstream landing/reverting/relanding patches,
+    #    our update scripts look ahead in the upstream commits for
+    #    reverted and relanded patches.  If found, we insert the
+    #    reverted commit before our Mozilla patch-stack.  This has the
+    #    effect of creating a virtually empty commit for the patch that
+    #    originally lands and then the revert commit.  Using this
+    #    technique allows us to fix any potential rebase conflicts when
+    #    the commit is eventually relanded the final time.
+    #
+    # Pre-stack commits are everything that we insert between upstream and
+    # the Mozilla patch-stack from the two categories above.
+    #
+    # Normal commits are the Mozilla patch-stack commits.
+
+    # write only the pre-stack patches out
+    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {merge_base}..{base_commit_sha}^"
+    stdout_lines = run_git(cmd, github_path)
+
+    # remove the commit summary from the file name - also prefix the pre-stack
+    # patches with 'p'
     patches_to_rename = os.listdir(patch_directory)
     for file in patches_to_rename:
-        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", "\\1.patch", file)
+        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", "p\\1.patch", file)
+        os.rename(
+            os.path.join(patch_directory, file),
+            os.path.join(patch_directory, shortened_name),
+        )
+
+    # write only the "normal" stack patches out
+    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {base_commit_sha}^..{github_branch}"
+    run_git(cmd, github_path)
+
+    # remove the commit summary from the file name - also prefix the "normal"
+    # patches with 's'
+    patches_to_rename = os.listdir(patch_directory)
+    for file in patches_to_rename:
+        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", "s\\1.patch", file)
         os.rename(
             os.path.join(patch_directory, file),
             os.path.join(patch_directory, shortened_name),

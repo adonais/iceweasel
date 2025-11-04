@@ -10,7 +10,6 @@
 
 #include "DenormalDisabler.h"
 #include "fdlibm.h"
-#include "mozilla/FloatingPoint.h"
 
 namespace blink {
 

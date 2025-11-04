@@ -721,35 +721,6 @@
     "n_buckets": 100,
     "description": "GPU process initialization (excluding XPCOM and fork time) time in milliseconds"
   },
-  "MEMORY_RESIDENT_FAST": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["memshrink-telemetry-alerts@mozilla.com"],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 32768,
-    "high": 16777216,
-    "n_buckets": 100,
-    "bug_numbers": [1226196, 1870550],
-    "description": "Resident memory size (KB)",
-    "releaseChannelCollection": "opt-out"
-  },
-  "MEMORY_RESIDENT_PEAK": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox"],
-    "alert_emails": [
-      "memshrink-telemetry-alerts@mozilla.com",
-      "amccreight@mozilla.com"
-    ],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 32768,
-    "high": 16777216,
-    "n_buckets": 100,
-    "bug_numbers": [1551648, 1870550],
-    "description": "Peak resident memory size (KB)",
-    "releaseChannelCollection": "opt-out"
-  },
   "MEMORY_TOTAL": {
     "record_in_processes": ["main"],
     "products": ["firefox", "fennec", "thunderbird"],
@@ -777,19 +748,6 @@
     "high": 200,
     "n_buckets": 100,
     "description": "Absolute difference of each content process' USS and the mean of USS's, normalized by the mean, in percentage. It will be recorded with the rest of the memory probes when gatherMemory is called, if at least 2 content processes are alive. Example: in case of 4 content processes with USS's: 1G, 500MB, 1G, 1.5G, the reported numbers will be: 0, 50, 0, 50. Which indicates that 2 processes used 50% more or 50% less memory than the avarage and 2 used exactly as much as the avarage."
-  },
-  "MEMORY_UNIQUE": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec"],
-    "alert_emails": ["memshrink-telemetry-alerts@mozilla.com"],
-    "bug_numbers": [1198209, 1870550],
-    "expires_in_version": "never",
-    "kind": "exponential",
-    "low": 32768,
-    "high": 16777216,
-    "n_buckets": 100,
-    "description": "Unique Set Size (KB)",
-    "releaseChannelCollection": "opt-out"
   },
   "MEMORY_UNIQUE_CONTENT_STARTUP": {
     "record_in_processes": ["content"],
@@ -887,18 +845,6 @@
     "high": 1000,
     "n_buckets": 50,
     "description": "Total JavaScript realms used for web pages."
-  },
-  "MEMORY_JS_GC_HEAP": {
-    "record_in_processes": ["main", "content"],
-    "products": ["firefox", "fennec", "thunderbird"],
-    "alert_emails": ["memshrink-telemetry-alerts@mozilla.com"],
-    "expires_in_version": "never",
-    "releaseChannelCollection": "opt-out",
-    "kind": "exponential",
-    "low": 1024,
-    "high": 16777216,
-    "n_buckets": 200,
-    "description": "Memory used by the garbage-collected JavaScript heap (KB)"
   },
   "MEMORY_STORAGE_SQLITE": {
     "record_in_processes": ["main", "content"],

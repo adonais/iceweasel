@@ -2325,6 +2325,15 @@
   num_temps: 1
   mir_op: StoreTypedArrayElementHole
 
+- name: TypedArraySubarray
+  result_type: WordSized
+  operands:
+    object: WordSized
+    start: WordSized
+    length: WordSized
+  call_instruction: true
+  mir_op: true
+
 - name: TypedArrayFill
   operands:
     object: WordSized
@@ -2523,12 +2532,14 @@
   result_type: WordSized
   operands:
     object: WordSized
+  num_temps64: 1
   mir_op: true
 
 - name: LoadDynamicSlotAndUnbox
   result_type: WordSized
   operands:
     slots: WordSized
+  num_temps64: 1
   mir_op: true
 
 - name: LoadElementAndUnbox
@@ -2536,6 +2547,7 @@
   operands:
     elements: WordSized
     index: WordSized
+  num_temps64: 1
   mir_op: true
 
 - name: LoadFixedSlotUnboxAndAtomize

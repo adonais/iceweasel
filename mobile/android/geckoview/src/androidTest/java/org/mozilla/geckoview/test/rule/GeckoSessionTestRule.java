@@ -2829,6 +2829,11 @@ public class GeckoSessionTestRule implements TestRule {
     return (Boolean) webExtensionApiCall("IsFissionRunning", null);
   }
 
+  /** Simulate user gesture activation */
+  public void notifyUserGestureActivation(final GeckoSession session) {
+    webExtensionApiCall(session, "NotifyUserGestureActivation", null);
+  }
+
   /**
    * Gets all the permission names defined in the WebExtensions API JSONSchema given an array of
    * type names.

@@ -285,6 +285,12 @@ this.test = class extends ExtensionAPI {
           );
           alertsService.teardown();
         },
+
+        async notifyUserGestureActivation(tabId) {
+          return getActorForTab(tabId, "TestSupport").sendQuery(
+            "NotifyUserGestureActivation"
+          );
+        },
       },
     };
   }

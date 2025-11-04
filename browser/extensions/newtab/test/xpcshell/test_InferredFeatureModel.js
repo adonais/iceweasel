@@ -11,6 +11,20 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://newtab/lib/InferredModel/FeatureModel.sys.mjs",
 });
 
+/**
+ * Compares two dictionaries up to decimalPoints decimal points
+ *
+ * @param {Object} a
+ * @param {Object} b
+ * @param {number} decimalPoints
+ * @returns {boolean} True if vectors are similar
+ */
+function vectorLooseEquals(a, b, decimalPoints = 2) {
+  return Object.entries(a).every(
+    ([k, v]) => v.toFixed(decimalPoints) === b[k].toFixed(decimalPoints)
+  );
+}
+
 add_task(function test_dictAdd() {
   let dict = {};
   dictAdd(dict, "a", 3);
@@ -330,13 +344,14 @@ add_task(function test_modelChecks() {
   );
 });
 
-add_task(function test_computeInterestVector() {
+add_task(function test_computeInterestVectorClickModel() {
   const modelData = { ...jsonModelData, rescale: true };
   const model = FeatureModel.fromJSON(modelData);
   const result = model.computeInterestVector({
     dataForIntervals: SQL_RESULT_DATA,
     indexSchema: SCHEMA,
     applyThresholding: false,
+    applyPostProcessing: true,
   });
   Assert.ok("parenting" in result, "Result should contain parenting");
   Assert.ok("news_reader" in result, "Result should contain news_reader");
@@ -511,6 +526,82 @@ const ctrModelDataNoDP = {
   },
 };
 
+const ctrModelData = {
+  model_type: "ctr",
+  noise_scale: 0,
+  day_time_weighting: {
+    days: [3, 14, 45],
+    relative_weight: [1, 0.5, 0.3],
+  },
+  interest_vector: {
+    news_reader: {
+      features: { pub_nytimes_com: 0.5, pub_cnn_com: 0.5 },
+      thresholds: [0.3, 0, 8],
+      diff_p: 1,
+      diff_q: 0,
+    },
+    parenting: {
+      features: { parenting: 1 },
+      thresholds: [0.3, 0, 8],
+      diff_p: 1,
+      diff_q: 0,
+    },
+  },
+};
+
+add_task(function test_postProcessing() {
+  let model = FeatureModel.fromJSON({
+    ...ctrModelDataNoDP,
+    normalize_l1: true,
+  });
+  ok(
+    vectorLooseEquals(model.applyPostProcessing({ a: 0.3, b: 0.5 }), {
+      a: 0.3 / 0.8,
+      b: 0.5 / 0.8,
+    }),
+    "L1 normalization"
+  );
+  model = FeatureModel.fromJSON({ ...ctrModelDataNoDP, normalize: true });
+  ok(
+    vectorLooseEquals(model.applyPostProcessing({ a: 1, b: 1 }), {
+      a: Math.sqrt(2) / 2,
+      b: Math.sqrt(2) / 2,
+    }),
+    "L2 normalization"
+  );
+  model = FeatureModel.fromJSON({ ...ctrModelDataNoDP, rescale: true });
+  ok(
+    vectorLooseEquals(model.applyPostProcessing({ a: 1.3, b: 1.3 }), {
+      a: 1,
+      b: 1,
+    }),
+    "Rescale"
+  );
+  ok(
+    vectorLooseEquals(model.applyPostProcessing({ a: 0.0, b: 0.0 }), {
+      a: 0.0,
+      b: 0,
+    }),
+    "Rescale"
+  );
+  model = FeatureModel.fromJSON({ ...ctrModelDataNoDP, normalize: true });
+  ok(
+    vectorLooseEquals(model.applyPostProcessing({ a: 0.0, b: 0.0 }), {
+      a: 0.0,
+      b: 0,
+    }),
+    "L1 0 vector"
+  );
+  model = FeatureModel.fromJSON({ ...ctrModelDataNoDP, rescale: true });
+  ok(
+    vectorLooseEquals(model.applyPostProcessing({ a: 0.0, b: 0.0 }), {
+      a: 0.0,
+      b: 0,
+    }),
+    "Rescale 0 vector"
+  );
+});
+
 add_task(function test_computeCTRInterestVectorsNoNoise() {
   const model = FeatureModel.fromJSON(ctrModelDataNoDP);
 
@@ -533,4 +624,24 @@ add_task(function test_computeCTRInterestVectorsNoNoise() {
   Assert.equal(result.inferredInterests.parenting, 0.5);
   Assert.equal(result.inferredInterests.news_reader, 0);
   Assert.ok(!result.coarseInferredInterests, "No coarse inferred interests");
+});
+
+add_task(function test_computeCTRInterestReprocessing() {
+  const model = FeatureModel.fromJSON({
+    ...ctrModelData,
+    normalize_l1: true,
+  });
+  // Note these are typically computed with the model.inferredInterests function and are not raw
+  // per feature impressions
+  const clickInferredInterests = { parenting: 1 };
+  const impressionInferredInterests = { parenting: 2, news_reader: 4 };
+  const result = model.computeCTRInterestVectors({
+    clicks: clickInferredInterests,
+    impressions: impressionInferredInterests,
+    model_id: "test-ctr-model",
+  });
+  Assert.equal(result.inferredInterests.parenting, 0.5);
+  Assert.equal(result.inferredInterests.news_reader, 0);
+  Assert.equal(result.coarseInferredInterests.parenting, 2); // ctr of 0.5, with vector normalized to 1
+  Assert.equal(result.coarseInferredInterests.news_reader, 0);
 });

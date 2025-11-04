@@ -96,6 +96,9 @@
         android:id="@+id/action_global_settingsFragment"
         app:destination="@id/settingsFragment" />
     <action
+        android:id="@+id/action_global_appIconSelectionFragment"
+        app:destination="@id/appIconSelectionFragment" />
+    <action
         android:id="@+id/action_global_homeSettingsFragment"
         app:destination="@id/homeSettingsFragment" />
     <action
@@ -176,8 +179,7 @@
         app:popUpToInclusive="true" />
     <action
         android:id="@+id/action_global_tabManagementFragment"
-        app:destination="@id/tabManagementFragment"
-        app:popUpTo="@id/tabManagementFragment" />
+        app:destination="@id/tabManagementFragment" />
     <action
         android:id="@+id/action_global_savedLoginsAuthFragment"
         app:destination="@id/savedLoginsAuthFragment" />
@@ -225,7 +227,7 @@
             app:argType="org.mozilla.fenix.tabstray.TabsTrayAccessPoint" />
     </dialog>
 
-    <fragment
+    <dialog
         android:id="@+id/tabManagementFragment"
         android:name="org.mozilla.fenix.tabstray.ui.TabManagementFragment">
         <argument
@@ -240,7 +242,7 @@
             android:name="accessPoint"
             android:defaultValue="None"
             app:argType="org.mozilla.fenix.tabstray.TabsTrayAccessPoint" />
-    </fragment>
+    </dialog>
 
     <fragment
         android:id="@+id/startupFragment"

@@ -17,6 +17,7 @@
 #include "prinrval.h"
 #include "nsIFile.h"
 #include "nsITimer.h"
+#include "nsNetUtil.h"
 #include "mozilla/AutoRestore.h"
 #include <algorithm>
 #include "mozilla/StaticPrefs_network.h"
@@ -840,11 +841,29 @@ nsresult CacheIndex::InitEntry(const SHA1Sum::Hash* aHash,
 }
 
 // static
-nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash) {
-  LOG(("CacheIndex::RemoveEntry() [hash=%08x%08x%08x%08x%08x]",
-       LOGSHA1(aHash)));
+nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash,
+                                 const nsACString& aKey,
+                                 bool aClearDictionary) {
+  LOG(
+      ("CacheIndex::RemoveEntry() [hash=%08x%08x%08x%08x%08x] key=%s "
+       "clear_dictionary=%d",
+       LOGSHA1(aHash), PromiseFlatCString(aKey).get(), aClearDictionary));
 
   MOZ_ASSERT(CacheFileIOManager::IsOnIOThread());
+
+  // Remove any dictionary associated with this entry even if we later
+  // error out - async since removal happens on MainThread.
+
+  // TODO XXX There may be a hole here where a dictionary entry can get
+  // referenced for a request before RemoveDictionaryFor can run, but after
+  // the entry is removed here.
+
+  // Note: we don't want to (re)clear dictionaries when the
+  // CacheFileContextEvictor purges entries; they've already been cleared
+  // via CacheIndex::EvictByContext synchronously
+  if (aClearDictionary) {
+    DictionaryCache::RemoveDictionaryFor(aKey);
+  }
 
   StaticMutexAutoLock lock(sLock);
 
@@ -1077,6 +1096,32 @@ nsresult CacheIndex::UpdateEntry(const SHA1Sum::Hash* aHash,
   index->WriteIndexToDiskIfNeeded(lock);
 
   return NS_OK;
+}
+
+// Clear the entries from the Index immediately, to comply with
+// https://www.w3.org/TR/clear-site-data/#fetch-integration
+// Note that we will effectively hide the entries until the actual evict
+// happens.
+
+// aOrigin == "" means clear all unless aBaseDomain is set to something
+// static
+void CacheIndex::EvictByContext(const nsAString& aOrigin,
+                                const nsAString& aBaseDomain) {
+  StaticMutexAutoLock lock(sLock);
+
+  RefPtr<CacheIndex> index = gInstance;
+
+  // Store in hashset that this origin has been evicted; we'll remove it
+  // when CacheFileIOManager::EvictByContextInternal() finishes.
+  // Not valid to set both aOrigin and aBaseDomain
+  if (!aOrigin.IsEmpty() && aBaseDomain.IsEmpty()) {
+    // likely CacheStorageService::ClearByPrincipal
+    nsCOMPtr<nsIURI> uri;
+    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), aOrigin))) {
+      // Remove the dictionary entries for this origin immediately
+      DictionaryCache::RemoveDictionariesForOrigin(uri);
+    }
+  }
 }
 
 // static

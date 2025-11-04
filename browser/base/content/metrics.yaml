@@ -64,13 +64,13 @@ security.ui.protectionspopup:
     bugs:
       - https://bugzil.la/1920735
       - https://bugzil.la/1958162
+      - https://bugzil.la/1989192
     data_reviews:
       - https://bugzil.la/1920735
     notification_emails:
       - wwen@mozilla.com
       - emz@mozilla.com
-    expires:
-      146
+    expires: 152
 
   open_protectionspopup_cfr:
     type: event
@@ -303,13 +303,13 @@ security.ui.protectionspopup:
     bugs:
       - https://bugzil.la/1920735
       - https://bugzil.la/1958162
+      - https://bugzil.la/1989192
     data_reviews:
       - https://bugzil.la/1920735
     notification_emails:
       - wwen@mozilla.com
       - emz@mozilla.com
-    expires:
-      146
+    expires: 152
 
   smartblockembeds_shown:
     type: counter
@@ -318,13 +318,13 @@ security.ui.protectionspopup:
     bugs:
       - https://bugzil.la/1920735
       - https://bugzil.la/1958162
+      - https://bugzil.la/1989192
     data_reviews:
       - https://bugzil.la/1920735
     notification_emails:
       - wwen@mozilla.com
       - emz@mozilla.com
-    expires:
-      146
+    expires: 152
 
 browser.engagement:
   bookmarks_toolbar_bookmark_added:

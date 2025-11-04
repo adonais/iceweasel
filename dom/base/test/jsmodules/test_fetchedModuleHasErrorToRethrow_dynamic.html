@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<meta charset=utf-8>
+<title>Test an imported module has an error to rethrow when import()</title>
+<script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
+<script type="module" src="./import_parse_error.mjs"></script>
+<script>
+  SimpleTest.waitForExplicitFinish();
+
+  let hasErrorToRethrow = false;
+  window.onerror = (e) => {
+    hasErrorToRethrow = true;
+  };
+
+  function testLoaded() {
+    is(hasErrorToRethrow, true, "hasErrorToRethrow should be set to true");
+    import("./import_parse_error_3.mjs").then(() => {
+      ok(false, "Should have thrown SyntaxError");
+    }).catch((e) => {
+      ok(e instanceof SyntaxError , "Should throw a SyntaxError");
+      SimpleTest.finish();
+    });
+  }
+</script>
+<body onload='testLoaded()'></body>

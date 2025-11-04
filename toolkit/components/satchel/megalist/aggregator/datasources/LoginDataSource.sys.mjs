@@ -390,7 +390,7 @@ export class LoginDataSource extends DataSourceBase {
   #removeObservers() {
     Services.obs.removeObserver(this, "passwordmgr-storage-changed");
     Services.obs.removeObserver(this, "passwordmgr-crypto-login");
-    Services.obs.addObserver(this, "passwordmgr-crypto-loginCanceled");
+    Services.obs.removeObserver(this, "passwordmgr-crypto-loginCanceled");
 
     Services.prefs.removeObserver("signon.rememberSignons", this);
     Services.prefs.removeObserver(

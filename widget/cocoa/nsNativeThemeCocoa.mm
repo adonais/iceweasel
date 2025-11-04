@@ -54,9 +54,6 @@ using namespace mozilla::gfx;
 extern "C" {
 CG_EXTERN void CGContextSetCTM(CGContextRef, CGAffineTransform);
 CG_EXTERN void CGContextSetBaseCTM(CGContextRef, CGAffineTransform);
-typedef CFTypeRef CUIRendererRef;
-void CUIDraw(CUIRendererRef r, CGRect rect, CGContextRef ctx,
-             CFDictionaryRef options, CFDictionaryRef* result);
 }
 
 // Workaround for NSCell control tint drawing
@@ -194,6 +191,10 @@ using CellMarginArray = PerSizeArray<IntMargin>;
 
 static void InflateControlRect(NSRect* rect, NSControlSize cocoaControlSize,
                                const CellMarginArray& marginSet) {
+  if (nsCocoaFeatures::OnTahoeOrLater()) {
+    // Controls on macOS 26 fill the entire frame and do not require inflation.
+    return;
+  }
   auto controlSize = EnumSizeForCocoaSize(cocoaControlSize);
   const IntMargin& buttonMargins = marginSet[controlSize];
   rect->origin.x -= buttonMargins.left;

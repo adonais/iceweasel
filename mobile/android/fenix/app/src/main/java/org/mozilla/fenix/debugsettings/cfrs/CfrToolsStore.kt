@@ -115,7 +115,6 @@ sealed class CfrToolsAction : Action {
  * Reducer for [CfrToolsStore].
  */
 internal object CfrToolsReducer {
-    @Suppress("ComplexMethod")
     fun reduce(state: CfrToolsState, action: CfrToolsAction): CfrToolsState {
         return when (action) {
             is CfrToolsAction.Init -> state

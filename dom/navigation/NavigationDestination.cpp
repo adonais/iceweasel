@@ -24,11 +24,9 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(NavigationDestination)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-NavigationDestination::NavigationDestination(nsIGlobalObject* aGlobal,
-                                             nsIURI* aURI,
-                                             NavigationHistoryEntry* aEntry,
-                                             nsStructuredCloneContainer* aState,
-                                             bool aIsSameDocument)
+NavigationDestination::NavigationDestination(
+    nsIGlobalObject* aGlobal, nsIURI* aURI, NavigationHistoryEntry* aEntry,
+    nsIStructuredCloneContainer* aState, bool aIsSameDocument)
     : mGlobal(aGlobal),
       mURL(aURI),
       mEntry(aEntry),
@@ -108,6 +106,6 @@ NavigationHistoryEntry* NavigationDestination::GetEntry() const {
   return mEntry;
 }
 
-nsIURI* NavigationDestination::GetURI() const { return mURL; }
+nsIURI* NavigationDestination::GetURL() const { return mURL; }
 
 }  // namespace mozilla::dom

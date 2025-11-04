@@ -32,6 +32,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/BlobImpl.h"
@@ -2257,6 +2258,15 @@ void gfxPlatformFontList::AddGenericFonts(
     nsTArray<FamilyAndGeneric>& aFamilyList) {
   AutoLock lock(mLock);
 
+  // TODO(eri): For now the math generic language uses the legacy
+  // "serif.x-math" configuration font list to avoid excesive
+  // repetition until a better font preference system can be found.
+  if (StaticPrefs::mathml_font_family_math_enabled() &&
+      aGenericType == StyleGenericFontFamily::Math) {
+    aGenericType = StyleGenericFontFamily::Serif;
+    aLanguage = nsGkAtoms::x_math;
+  }
+
   // map lang ==> langGroup
   nsAtom* langGroup = GetLangGroup(aLanguage);
 
@@ -2721,6 +2731,8 @@ nsAtom* gfxPlatformFontList::GetLangGroup(nsAtom* aLanguage) {
       return "cursive";
     case StyleGenericFontFamily::Fantasy:
       return "fantasy";
+    case StyleGenericFontFamily::Math:
+      return "math";
     case StyleGenericFontFamily::SystemUi:
       return "system-ui";
     case StyleGenericFontFamily::MozEmoji:

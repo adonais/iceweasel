@@ -474,8 +474,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = 切換為華氏溫度
 newtab-weather-menu-change-temperature-units-celsius = 切換為攝氏溫度
 newtab-weather-menu-hide-weather = 隱藏新分頁的天氣資訊
 newtab-weather-menu-learn-more = 更多資訊
+newtab-weather-menu-detect-my-location = 偵測我的所在位置
 # This message is shown if user is working offline
 newtab-weather-error-not-available = 目前暫時無法提供天氣資訊。
+newtab-weather-opt-in-see-weather = 您想看到目前所在位置的天氣資訊嗎？
+newtab-weather-opt-in-not-now =
+    .label = 現在不要
+newtab-weather-opt-in-yes =
+    .label = 好的
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = 紐約市
 
 ## Topic Labels
 
@@ -642,6 +650,9 @@ newtab-widget-lists-input-menu-move-up = 上移
 newtab-widget-lists-input-menu-move-down = 下移
 newtab-widget-lists-input-menu-delete = 刪除
 newtab-widget-lists-input-menu-edit = 編輯
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + 新增清單
 newtab-widget-lists-name-label-default =
     .label = 任務清單
 newtab-widget-lists-name-placeholder-default =

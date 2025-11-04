@@ -84,6 +84,7 @@ pub fn prepare_quad(
     let ctx = PatternBuilderContext {
         scene_properties: frame_context.scene_properties,
         spatial_tree: frame_context.spatial_tree,
+        fb_config: frame_context.fb_config,
     };
 
     let mut state = PatternBuilderState {

@@ -196,8 +196,10 @@ def parse_with_options(input_files, options, file=sys.stderr):
 
 
 def main(cpp_fd, *args):
+    cpp_fd_path = Path(cpp_fd.name)
+
     def open_output(filename):
-        return FileAvoidWrite(os.path.join(os.path.dirname(cpp_fd.name), filename))
+        return FileAvoidWrite(os.path.join(cpp_fd_path.parent, filename))
 
     all_objs, options = parse(args)
     all_metric_header_files = {}
@@ -223,7 +225,7 @@ def main(cpp_fd, *args):
             objs,
             (
                 cpp_fd
-                if header_name == "GleanMetrics"
+                if header_name == cpp_fd_path.stem
                 else open_output(header_name + ".h")
             ),
             {"header_name": header_name, "get_metric_id": get_metric_id},

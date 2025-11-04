@@ -412,23 +412,11 @@ RefPtr<FocusRequestPromise> RequestWaylandFocusPromise() {
     return nullptr;
   }
 
-  wl_surface* focusSurface;
-  uint32_t focusSerial;
-  KeymapWrapper::GetFocusInfo(&focusSurface, &focusSerial);
-  if (!focusSurface) {
-    LOGW("RequestWaylandFocusPromise() missing focusSurface");
-    return nullptr;
-  }
-
   GdkWindow* gdkWindow = sourceWindow->GetToplevelGdkWindow();
   if (!gdkWindow) {
     return nullptr;
   }
   wl_surface* surface = gdk_wayland_window_get_wl_surface(gdkWindow);
-  if (focusSurface != surface) {
-    LOGW("RequestWaylandFocusPromise() missing wl_surface");
-    return nullptr;
-  }
 
   RefPtr<FocusRequestPromise::Private> transferPromise =
       new FocusRequestPromise::Private(__func__);
@@ -438,9 +426,10 @@ RefPtr<FocusRequestPromise> RequestWaylandFocusPromise() {
   xdg_activation_token_v1_add_listener(
       aXdgToken, &token_listener,
       new XDGTokenRequest(aXdgToken, transferPromise));
-  xdg_activation_token_v1_set_serial(aXdgToken, focusSerial,
+  xdg_activation_token_v1_set_serial(aXdgToken,
+                                     nsWaylandDisplay::GetLastEventSerial(),
                                      WaylandDisplayGet()->GetSeat());
-  xdg_activation_token_v1_set_surface(aXdgToken, focusSurface);
+  xdg_activation_token_v1_set_surface(aXdgToken, surface);
   xdg_activation_token_v1_commit(aXdgToken);
 
   LOGW("RequestWaylandFocusPromise() XDG Token sent");

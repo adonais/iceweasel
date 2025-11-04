@@ -6,14 +6,26 @@
 
 #include "mozilla/dom/StylePropertyMap.h"
 
+#include "CSSUnsupportedValue.h"
 #include "mozilla/ErrorResult.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/CSSKeywordValue.h"
+#include "mozilla/dom/CSSStyleValue.h"
 #include "mozilla/dom/StylePropertyMapBinding.h"
+#include "nsCOMPtr.h"
+#include "nsDOMCSSDeclaration.h"
+#include "nsQueryObject.h"
+#include "nsString.h"
+#include "nsStyledElement.h"
 
 namespace mozilla::dom {
 
-StylePropertyMap::StylePropertyMap(nsCOMPtr<nsISupports> aParent)
-    : StylePropertyMapReadOnly(std::move(aParent)) {}
+StylePropertyMap::StylePropertyMap(nsCOMPtr<nsISupports> aParent,
+                                   bool aComputed)
+    : StylePropertyMapReadOnly(std::move(aParent), aComputed) {
+  MOZ_DIAGNOSTIC_ASSERT(!aComputed);
+}
 
 JSObject* StylePropertyMap::WrapObject(JSContext* aCx,
                                        JS::Handle<JSObject*> aGivenProto) {
@@ -22,11 +34,52 @@ JSObject* StylePropertyMap::WrapObject(JSContext* aCx,
 
 // start of StylePropertyMap Web IDL implementation
 
+// XXX This is not yet fully implemented and optimized!
 void StylePropertyMap::Set(
     const nsACString& aProperty,
     const Sequence<OwningCSSStyleValueOrUTF8String>& aValues,
     ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  if (aValues.Length() != 1) {
+    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+    return;
+  }
+
+  const auto& styleValueOrString = aValues[0];
+
+  if (!styleValueOrString.IsCSSStyleValue()) {
+    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+    return;
+  }
+
+  CSSStyleValue& styleValue = styleValueOrString.GetAsCSSStyleValue();
+
+  nsAutoCString value;
+
+  if (styleValue.IsCSSUnsupportedValue()) {
+    CSSUnsupportedValue& unsupportedValue =
+        styleValue.GetAsCSSUnsupportedValue();
+
+    unsupportedValue.GetValue(value);
+  } else if (styleValue.IsCSSKeywordValue()) {
+    CSSKeywordValue& keywordValue = styleValue.GetAsCSSKeywordValue();
+
+    keywordValue.GetValue(value);
+  } else {
+    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+    return;
+  }
+
+  // Step 6.
+
+  RefPtr<nsStyledElement> styledElement = do_QueryObject(mParent);
+  if (!styledElement) {
+    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+    return;
+  }
+
+  nsCOMPtr<nsDOMCSSDeclaration> declaration = styledElement->Style();
+
+  declaration->SetProperty(aProperty, value, ""_ns, aRv);
 }
 
 void StylePropertyMap::Append(

@@ -67,7 +67,7 @@ with Files("nsHTMLCanvasFrame.*"):
 with Files("nsImage*"):
     BUG_COMPONENT = ("Core", "Layout: Images, Video, and HTML Frames")
 
-with Files("nsAbsoluteContainingBlock.*"):
+with Files("AbsoluteContainingBlock.*"):
     BUG_COMPONENT = ("Core", "Layout: Positioned")
 
 with Files("Sticky*"):
@@ -100,6 +100,7 @@ EXPORTS += [
     "nsFrameSelection.h",
     "nsFrameState.h",
     "nsFrameStateBits.h",
+    "nsGridContainerFrame.h",
     "nsHTMLParts.h",
     "nsIAnonymousContentCreator.h",
     "nsIFrame.h",
@@ -135,6 +136,7 @@ EXPORTS += [
 EXPORTS.mozilla += [
     "!FrameIdList.h",
     "!FrameTypeList.h",
+    "AbsoluteContainingBlock.h",
     "AnonymousContentKey.h",
     "AspectRatio.h",
     "AutoCopyListener.h",
@@ -164,6 +166,7 @@ EXPORTS.mozilla.layout += [
 ]
 
 UNIFIED_SOURCES += [
+    "AbsoluteContainingBlock.cpp",
     "AspectRatio.cpp",
     "BlockReflowState.cpp",
     "BRFrame.cpp",
@@ -173,7 +176,6 @@ UNIFIED_SOURCES += [
     "CSSOrderAwareFrameIterator.cpp",
     "MathMLTextRunFactory.cpp",
     "MiddleCroppingBlockFrame.cpp",
-    "nsAbsoluteContainingBlock.cpp",
     "nsBackdropFrame.cpp",
     "nsBlockFrame.cpp",
     "nsBlockReflowContext.cpp",

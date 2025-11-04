@@ -42,10 +42,10 @@
 #include "nsNetUtil.h"
 #include "nsTHashtable.h"
 
-mozilla::LazyLogModule gNavigationLog("Navigation");
+mozilla::LazyLogModule gNavigationAPILog("NavigationAPI");
 
 #define LOG_FMT(format, ...) \
-  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, format, ##__VA_ARGS__);
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, format, ##__VA_ARGS__);
 
 namespace mozilla::dom {
 
@@ -215,7 +215,7 @@ already_AddRefed<NavigationHistoryEntry> Navigation::GetCurrentEntry() const {
     return nullptr;
   }
 
-  MOZ_LOG(gNavigationLog, LogLevel::Debug,
+  MOZ_LOG(gNavigationAPILog, LogLevel::Debug,
           ("Current Entry: %d; Amount of Entries: %d", int(*mCurrentEntryIndex),
            int(mEntries.Length())));
   MOZ_ASSERT(*mCurrentEntryIndex < mEntries.Length());
@@ -252,6 +252,7 @@ void Navigation::UpdateCurrentEntry(
   // null.
   RefPtr event = NavigationCurrentEntryChangeEvent::Constructor(
       this, u"currententrychange"_ns, init);
+  event->SetTrusted(true);
   DispatchEvent(*event);
 }
 
@@ -296,7 +297,7 @@ void Navigation::InitializeHistoryEntries(
   nsID key = aInitialSHInfo->NavigationKey();
   nsID id = aInitialSHInfo->NavigationId();
   MOZ_LOG(
-      gNavigationLog, LogLevel::Debug,
+      gNavigationAPILog, LogLevel::Debug,
       ("aInitialSHInfo: %s %s\n", key.ToString().get(), id.ToString().get()));
 }
 
@@ -308,7 +309,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
     return;
   }
 
-  MOZ_LOG(gNavigationLog, LogLevel::Debug,
+  MOZ_LOG(gNavigationAPILog, LogLevel::Debug,
           ("Updating entries for same-document navigation"));
 
   // Steps 2-7.
@@ -316,7 +317,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
   nsTArray<RefPtr<NavigationHistoryEntry>> disposedEntries;
   switch (aNavigationType) {
     case NavigationType::Traverse:
-      MOZ_LOG(gNavigationLog, LogLevel::Debug, ("Traverse navigation"));
+      MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Traverse navigation"));
       mCurrentEntryIndex.reset();
       for (auto i = 0ul; i < mEntries.Length(); i++) {
         if (mEntries[i]->IsSameEntry(aDestinationSHE)) {
@@ -328,7 +329,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
       break;
 
     case NavigationType::Push:
-      MOZ_LOG(gNavigationLog, LogLevel::Debug, ("Push navigation"));
+      MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Push navigation"));
       mCurrentEntryIndex =
           Some(mCurrentEntryIndex ? *mCurrentEntryIndex + 1 : 0);
       while (*mCurrentEntryIndex < mEntries.Length()) {
@@ -339,7 +340,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
       break;
 
     case NavigationType::Replace:
-      MOZ_LOG(gNavigationLog, LogLevel::Debug, ("Replace navigation"));
+      MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Replace navigation"));
       if (!oldCurrentEntry) {
         MOZ_ASSERT(false, "FIXME");
         return;
@@ -375,6 +376,7 @@ void Navigation::UpdateEntriesForSameDocumentNavigation(
     init.mNavigationType.SetValue(aNavigationType);
     RefPtr event = NavigationCurrentEntryChangeEvent::Constructor(
         this, u"currententrychange"_ns, init);
+    event->SetTrusted(true);
     DispatchEvent(*event);
 
     for (const auto& entry : disposedEntries) {
@@ -477,7 +479,7 @@ Navigation::CreateSerializedStateAndMaybeSetEarlyErrorResult(
 void Navigation::Navigate(JSContext* aCx, const nsAString& aUrl,
                           const NavigationNavigateOptions& aOptions,
                           NavigationResult& aResult) {
-  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug,
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
               "Called navigation.navigate() with url = {}",
               NS_ConvertUTF16toUTF8(aUrl));
   // 4. Let document be this's relevant global object's associated Document.
@@ -662,7 +664,7 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
 
   // 12. Append the following session history traversal steps to traversable:
   auto* childSHistory = traversable->GetChildSessionHistory();
-  auto performNaviationTraversalSteps =
+  auto performNavigationTraversalSteps =
       [finished =
            RefPtr(apiMethodTracker->FinishedPromise())](nsresult aResult) {
         switch (aResult) {
@@ -706,13 +708,14 @@ void Navigation::PerformNavigationTraversal(JSContext* aCx, const nsID& aKey,
   //      navigable, and "none".
   childSHistory->AsyncGo(aKey, navigable, /*aRequireUserInteraction=*/false,
                          /*aUserActivation=*/false,
-                         performNaviationTraversalSteps);
+                         /*aCheckForCancelation=*/true,
+                         performNavigationTraversalSteps);
 }
 
 // https://html.spec.whatwg.org/#dom-navigation-reload
 void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
                         NavigationResult& aResult) {
-  MOZ_LOG(gNavigationLog, LogLevel::Debug, ("Called navigation.reload()"));
+  MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Called navigation.reload()"));
   // 1. Let document be this's relevant global object's associated Document.
   const RefPtr<Document> document = GetAssociatedDocument();
   if (!document) {
@@ -767,6 +770,20 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
   MOZ_ASSERT(docShell);
   docShell->ReloadNavigable(Some(WrapNotNullUnchecked(aCx)),
                             nsIWebNavigation::LOAD_FLAGS_NONE, serializedState);
+  // This is stolen from #dom-navigation-navigate. If the upcoming non-traverse
+  // API method tracker is still apiMethodTracker, this means that the reload
+  // algorithm bailed out before ever getting to the inner navigate event
+  // firing algorithm which would promote that upcoming API method tracker to
+  // ongoing. This is done here because gecko's reload implementation has
+  // additional abort code paths which may return early before firing the
+  // navigate event.
+  if (mUpcomingNonTraverseAPIMethodTracker == apiMethodTracker) {
+    mUpcomingNonTraverseAPIMethodTracker = nullptr;
+    ErrorResult rv;
+    rv.ThrowAbortError("Reload aborted.");
+    SetEarlyErrorResult(aCx, aResult, std::move(rv));
+    return;
+  }
 
   // 10. Return a navigation API method tracker-derived result for
   //     apiMethodTracker.
@@ -777,7 +794,7 @@ void Navigation::Reload(JSContext* aCx, const NavigationReloadOptions& aOptions,
 void Navigation::TraverseTo(JSContext* aCx, const nsAString& aKey,
                             const NavigationOptions& aOptions,
                             NavigationResult& aResult) {
-  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug,
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
               "Called navigation.traverseTo() with key = {}",
               NS_ConvertUTF16toUTF8(aKey).get());
 
@@ -814,7 +831,7 @@ void Navigation::TraverseTo(JSContext* aCx, const nsAString& aKey,
 // https://html.spec.whatwg.org/#dom-navigation-back
 void Navigation::Back(JSContext* aCx, const NavigationOptions& aOptions,
                       NavigationResult& aResult) {
-  MOZ_LOG(gNavigationLog, LogLevel::Debug, ("Called navigation.back()"));
+  MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Called navigation.back()"));
   // 1. If this's current entry index is −1 or 0, then return an early error
   //    result for an "InvalidStateError" DOMException.
   if (mCurrentEntryIndex.isNothing() || *mCurrentEntryIndex == 0 ||
@@ -837,7 +854,7 @@ void Navigation::Back(JSContext* aCx, const NavigationOptions& aOptions,
 // https://html.spec.whatwg.org/#dom-navigation-forward
 void Navigation::Forward(JSContext* aCx, const NavigationOptions& aOptions,
                          NavigationResult& aResult) {
-  MOZ_LOG(gNavigationLog, LogLevel::Debug, ("Called navigation.forward()"));
+  MOZ_LOG(gNavigationAPILog, LogLevel::Debug, ("Called navigation.forward()"));
 
   // 1. If this's current entry index is −1 or is equal to this's entry list's
   //    size − 1, then return an early error result for an "InvalidStateError"
@@ -866,7 +883,7 @@ namespace {
 void LogEntry(NavigationHistoryEntry* aEntry, uint64_t aIndex, uint64_t aTotal,
               bool aIsCurrent) {
   if (!aEntry) {
-    MOZ_LOG(gNavigationLog, LogLevel::Debug,
+    MOZ_LOG(gNavigationAPILog, LogLevel::Debug,
             (" +- %d NHEntry null\n", int(aIndex)));
     return;
   }
@@ -874,14 +891,14 @@ void LogEntry(NavigationHistoryEntry* aEntry, uint64_t aIndex, uint64_t aTotal,
   nsString key, id;
   aEntry->GetKey(key);
   aEntry->GetId(id);
-  MOZ_LOG(gNavigationLog, LogLevel::Debug,
+  MOZ_LOG(gNavigationAPILog, LogLevel::Debug,
           ("%s+- %d NHEntry %p %s %s\n", aIsCurrent ? ">" : " ", int(aIndex),
            aEntry, NS_ConvertUTF16toUTF8(key).get(),
            NS_ConvertUTF16toUTF8(id).get()));
 
   nsAutoString url;
   aEntry->GetUrl(url);
-  MOZ_LOG(gNavigationLog, LogLevel::Debug,
+  MOZ_LOG(gNavigationAPILog, LogLevel::Debug,
           ("   URL = %s\n", NS_ConvertUTF16toUTF8(url).get()));
 }
 
@@ -938,22 +955,15 @@ bool Navigation::FireTraverseNavigateEvent(
 // https://html.spec.whatwg.org/#fire-a-push/replace/reload-navigate-event
 bool Navigation::FirePushReplaceReloadNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType, nsIURI* aDestinationURL,
-    bool aIsSameDocument, bool aIsSync,
-    Maybe<UserNavigationInvolvement> aUserInvolvement, Element* aSourceElement,
-    already_AddRefed<FormData> aFormDataEntryList,
+    bool aIsSameDocument, Maybe<UserNavigationInvolvement> aUserInvolvement,
+    Element* aSourceElement, already_AddRefed<FormData> aFormDataEntryList,
     nsIStructuredCloneContainer* aNavigationAPIState,
     nsIStructuredCloneContainer* aClassicHistoryAPIState) {
   // To not unnecessarily create an event that's never used, step 1 and step 2
   // in #fire-a-push/replace/reload-navigate-event have been moved to after step
   // 25 in #inner-navigate-event-firing-algorithm in our implementation.
 
-  // This is currently not how spec handles this.
-  // See https://github.com/whatwg/html/issues/11184
-  if (aIsSync) {
-    while (HasOngoingNavigateEvent()) {
-      AbortOngoingNavigation(aCx);
-    }
-  }
+  InnerInformAboutAbortingNavigation(aCx);
 
   // Step 3 to step 7
   RefPtr<NavigationDestination> destination =
@@ -1056,7 +1066,7 @@ static bool HasIdenticalFragment(nsIURI* aURI, nsIURI* aOtherURI) {
 
 static void LogEvent(Event* aEvent, NavigateEvent* aOngoingEvent,
                      const nsACString& aReason) {
-  if (!MOZ_LOG_TEST(gNavigationLog, LogLevel::Debug)) {
+  if (!MOZ_LOG_TEST(gNavigationAPILog, LogLevel::Debug)) {
     return;
   }
 
@@ -1076,7 +1086,7 @@ static void LogEvent(Event* aEvent, NavigateEvent* aOngoingEvent,
 
     if (RefPtr<NavigationDestination> destination =
             aOngoingEvent->Destination()) {
-      log.AppendElement(destination->GetURI()->GetSpecOrDefault());
+      log.AppendElement(destination->GetURL()->GetSpecOrDefault());
     }
 
     if (aOngoingEvent->HashChange()) {
@@ -1146,6 +1156,20 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(NavigationWaitForAllScope)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(NavigationWaitForAllScope)
 
+// https://html.spec.whatwg.org/#resume-applying-the-traverse-history-step
+static void ResumeApplyTheHistoryStep(
+    SessionHistoryInfo* aTarget, BrowsingContext* aTraversable,
+    UserNavigationInvolvement aUserInvolvement) {
+  MOZ_DIAGNOSTIC_ASSERT(aTraversable->IsTop());
+  auto* childSHistory = aTraversable->GetChildSessionHistory();
+  // Since we've already called #checking-if-unloading-is-canceled, we here pass
+  // checkForCancelation set to false.
+  childSHistory->AsyncGo(aTarget->NavigationKey(), aTraversable,
+                         /* aRequireUserInteraction */ false,
+                         /* aUserActivation */ false,
+                         /* aCheckForCancelation */ false, [](auto) {});
+}
+
 // https://html.spec.whatwg.org/#inner-navigate-event-firing-algorithm
 bool Navigation::InnerFireNavigateEvent(
     JSContext* aCx, NavigationType aNavigationType,
@@ -1200,7 +1224,7 @@ bool Navigation::InnerFireNavigateEvent(
 
   // Step 9
   init.mCanIntercept = document &&
-                       document->CanRewriteURL(aDestination->GetURI()) &&
+                       document->CanRewriteURL(aDestination->GetURL()) &&
                        (aDestination->SameDocument() ||
                         aNavigationType != NavigationType::Traverse);
 
@@ -1246,8 +1270,8 @@ bool Navigation::InnerFireNavigateEvent(
 
   // step 22
   init.mHashChange = !aClassicHistoryAPIState && aDestination->SameDocument() &&
-                     EqualsExceptRef(aDestination->GetURI(), currentURL) &&
-                     !HasIdenticalFragment(aDestination->GetURI(), currentURL);
+                     EqualsExceptRef(aDestination->GetURL(), currentURL) &&
+                     !HasIdenticalFragment(aDestination->GetURL(), currentURL);
 
   // Step 23
   init.mUserInitiated = aUserInvolvement != UserNavigationInvolvement::None;
@@ -1327,16 +1351,33 @@ bool Navigation::InnerFireNavigateEvent(
       case NavigationType::Traverse:
         // Step 33.6
         mSuppressNormalScrollRestorationDuringOngoingNavigation = true;
+        // The following steps are from after the precommit handler re-write.
+        // Numbering is a bit messed up, but will be fixed when precommit
+        // handlers are implemented.
+        // Step 32.7.1, case "traverse"
+        if (auto* entry = aDestination->GetEntry()) {
+          // 32.7.1.2
+          UserNavigationInvolvement userInvolvement =
+              UserNavigationInvolvement::None;
+          // 32.7.1.3
+          if (event->UserInitiated()) {
+            userInvolvement = UserNavigationInvolvement::Activation;
+          }
+          // 32.7.1.4
+          ResumeApplyTheHistoryStep(entry->SessionHistoryInfo(),
+                                    navigable->Top(), userInvolvement);
+        }
+
         break;
       case NavigationType::Push:
       case NavigationType::Replace:
         // Step 33.7
         if (nsDocShell* docShell = nsDocShell::Cast(document->GetDocShell())) {
           docShell->UpdateURLAndHistory(
-              document, aDestination->GetURI(), event->ClassicHistoryAPIState(),
+              document, aDestination->GetURL(), event->ClassicHistoryAPIState(),
               *NavigationUtils::NavigationHistoryBehavior(aNavigationType),
               document->GetDocumentURI(),
-              Equals(aDestination->GetURI(), document->GetDocumentURI()));
+              Equals(aDestination->GetURL(), document->GetDocumentURI()));
         }
         break;
       case NavigationType::Reload:
@@ -1416,12 +1457,12 @@ bool Navigation::InnerFireNavigateEvent(
               event->Finish(true);
 
               // Step 6
-              self->FireEvent(u"navigatesuccess"_ns);
-
-              // Step 7
               if (apiMethodTracker) {
                 apiMethodTracker->ResolveFinishedPromise();
               }
+
+              // Step 7
+              self->FireEvent(u"navigatesuccess"_ns);
 
               // Step 8
               if (self->mTransition) {
@@ -1466,19 +1507,19 @@ bool Navigation::InnerFireNavigateEvent(
               // Step 5
               event->Finish(false);
 
+              // Step 7
+              if (apiMethodTracker) {
+                apiMethodTracker->RejectFinishedPromise(aRejectionReason);
+              }
+
               if (AutoJSAPI jsapi;
                   !NS_WARN_IF(!jsapi.Init(event->GetParentObject()))) {
                 // Step 6
                 RootedDictionary<ErrorEventInit> init(jsapi.cx());
                 ExtractErrorInformation(jsapi.cx(), aRejectionReason, init);
 
-                // Step 7
+                // Step 8
                 self->FireErrorEvent(u"navigateerror"_ns, init);
-              }
-
-              // Step 8
-              if (apiMethodTracker) {
-                apiMethodTracker->RejectFinishedPromise(aRejectionReason);
               }
 
               // Step 9
@@ -1589,6 +1630,27 @@ void Navigation::PromoteUpcomingAPIMethodTrackerToOngoing(
   navigation->mUpcomingTraverseAPIMethodTrackers.Remove(*key);
 }
 
+// https://html.spec.whatwg.org/#inform-the-navigation-api-about-aborting-navigation
+void Navigation::InnerInformAboutAbortingNavigation(JSContext* aCx) {
+  // As per https://github.com/whatwg/html/issues/11579, we should abort all
+  // ongoing navigate events within "inform the navigation API about aborting
+  // navigation".
+
+  // As per https://github.com/whatwg/html/issues/11735, we should move out
+  // the non-traverse api method tracker while aborting ongoing navigations.
+  // Aborting allows to run script (onnavigateerror), which could start a new
+  // navigation, which asserts if there's an upcoming non-traverse api method
+  // tracker.
+  RefPtr upcomingNonTraverseAPIMethodTracker =
+      std::move(mUpcomingNonTraverseAPIMethodTracker);
+  while (HasOngoingNavigateEvent()) {
+    AbortOngoingNavigation(aCx);
+  }
+  MOZ_DIAGNOSTIC_ASSERT(!mUpcomingNonTraverseAPIMethodTracker);
+  mUpcomingNonTraverseAPIMethodTracker =
+      std::move(upcomingNonTraverseAPIMethodTracker);
+}
+
 // https://html.spec.whatwg.org/#abort-the-ongoing-navigation
 void Navigation::AbortOngoingNavigation(JSContext* aCx,
                                         JS::Handle<JS::Value> aError) {
@@ -1635,12 +1697,12 @@ void Navigation::AbortOngoingNavigation(JSContext* aCx,
   ExtractErrorInformation(aCx, error, init);
 
   // Step 10
-  FireErrorEvent(u"navigateerror"_ns, init);
-
-  // Step 11
   if (mOngoingAPIMethodTracker) {
     mOngoingAPIMethodTracker->RejectFinishedPromise(error);
   }
+
+  // Step 11
+  FireErrorEvent(u"navigateerror"_ns, init);
 
   // Step 12
   if (mTransition) {
@@ -1724,11 +1786,11 @@ void Navigation::UpdateNeedsTraverse() {
 }
 
 void Navigation::LogHistory() const {
-  if (!MOZ_LOG_TEST(gNavigationLog, LogLevel::Debug)) {
+  if (!MOZ_LOG_TEST(gNavigationAPILog, LogLevel::Debug)) {
     return;
   }
 
-  MOZ_LOG(gNavigationLog, LogLevel::Debug,
+  MOZ_LOG(gNavigationAPILog, LogLevel::Debug,
           ("Navigation %p (current entry index: %d)\n", this,
            mCurrentEntryIndex ? int(*mCurrentEntryIndex) : -1));
   auto length = mEntries.Length();
@@ -1813,7 +1875,7 @@ void Navigation::CreateNavigationActivationFrom(
     NavigationType aNavigationType) {
   // Note: we do Step 7.1 at the end of method so we can both create and
   // initialize the activation at once.
-  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug,
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
               "Creating NavigationActivation for from={}, type={}",
               fmt::ptr(aPreviousEntryForActivation), aNavigationType);
   RefPtr currentEntry = GetCurrentEntry();
@@ -1833,7 +1895,8 @@ void Navigation::CreateNavigationActivationFrom(
   // to navigation's entry list[previousEntryIndex].
   RefPtr<NavigationHistoryEntry> oldEntry;
   if (possiblePreviousEntry != mEntries.end()) {
-    MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, "Found previous entry at {}",
+    MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
+                "Found previous entry at {}",
                 fmt::ptr(possiblePreviousEntry->get()));
     oldEntry = *possiblePreviousEntry;
   } else if (aNavigationType == NavigationType::Replace &&
@@ -1847,14 +1910,16 @@ void Navigation::CreateNavigationActivationFrom(
     // navigation's relevant realm, whose session history entry is
     // previousEntryForActivation.
 
-    nsIURI* previousURI = aPreviousEntryForActivation->GetURI();
-    nsIURI* currentURI = currentEntry->SessionHistoryInfo()->GetURI();
+    nsCOMPtr previousURI =
+        aPreviousEntryForActivation->GetURIOrInheritedForAboutBlank();
+    nsCOMPtr currentURI =
+        currentEntry->SessionHistoryInfo()->GetURIOrInheritedForAboutBlank();
     if (NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
             currentURI, previousURI, false, false))) {
       oldEntry = MakeRefPtr<NavigationHistoryEntry>(
           GetOwnerGlobal(), aPreviousEntryForActivation, -1);
-      MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, "Created a new entry at {}",
-                  fmt::ptr(oldEntry.get()));
+      MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug,
+                  "Created a new entry at {}", fmt::ptr(oldEntry.get()));
     }
   }
 

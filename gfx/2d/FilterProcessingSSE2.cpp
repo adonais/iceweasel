@@ -66,38 +66,6 @@ void FilterProcessing::ApplyComposition_SSE2(DataSourceSurface* aSource,
                                                           aOperator);
 }
 
-void FilterProcessing::SeparateColorChannels_SSE2(
-    const IntSize& size, const uint8_t* sourceData, int32_t sourceStride,
-    uint8_t* channel0Data, uint8_t* channel1Data, uint8_t* channel2Data,
-    uint8_t* channel3Data, int32_t channelStride) {
-  SeparateColorChannels_SIMD<__m128i>(size, sourceData, sourceStride,
-                                      channel0Data, channel1Data, channel2Data,
-                                      channel3Data, channelStride);
-}
-
-void FilterProcessing::CombineColorChannels_SSE2(
-    const IntSize& size, int32_t resultStride, uint8_t* resultData,
-    int32_t channelStride, uint8_t* channel0Data, uint8_t* channel1Data,
-    uint8_t* channel2Data, uint8_t* channel3Data) {
-  CombineColorChannels_SIMD<__m128i>(size, resultStride, resultData,
-                                     channelStride, channel0Data, channel1Data,
-                                     channel2Data, channel3Data);
-}
-
-void FilterProcessing::DoPremultiplicationCalculation_SSE2(
-    const IntSize& aSize, uint8_t* aTargetData, int32_t aTargetStride,
-    const uint8_t* aSourceData, int32_t aSourceStride) {
-  DoPremultiplicationCalculation_SIMD<__m128i, __m128i, __m128i>(
-      aSize, aTargetData, aTargetStride, aSourceData, aSourceStride);
-}
-
-void FilterProcessing::DoUnpremultiplicationCalculation_SSE2(
-    const IntSize& aSize, uint8_t* aTargetData, int32_t aTargetStride,
-    const uint8_t* aSourceData, int32_t aSourceStride) {
-  DoUnpremultiplicationCalculation_SIMD<__m128i, __m128i>(
-      aSize, aTargetData, aTargetStride, aSourceData, aSourceStride);
-}
-
 void FilterProcessing::DoOpacityCalculation_SSE2(
     const IntSize& aSize, uint8_t* aTargetData, int32_t aTargetStride,
     const uint8_t* aSourceData, int32_t aSourceStride, Float aValue) {

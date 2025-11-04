@@ -26,7 +26,7 @@ import org.mozilla.fenix.helpers.TestHelper.exitMenu
  *
  */
 class RetryTestRule(private val retryCount: Int = 5) : TestRule {
-    @Suppress("TooGenericExceptionCaught", "ComplexMethod")
+    @Suppress("TooGenericExceptionCaught")
     override fun apply(base: Statement, description: Description): Statement {
         return statement {
             for (i in 1..retryCount) {

@@ -409,7 +409,7 @@ newtab-wallpaper-abstract-purple-green = Sfumatura di luce viola e verde
 newtab-wallpaper-abstract-blue-purple-waves = Forme ondulate blu e viola
 newtab-wallpaper-abstract-black-waves = Forme ondulate nere
 
-## Celestial
+## Firefox
 
 newtab-wallpaper-category-title-photographs = Fotografie
 newtab-wallpaper-beach-at-sunrise = Spiaggia all’alba
@@ -438,6 +438,10 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Firefox
+
+newtab-wallpaper-category-title-firefox = { -brand-product-name }
 
 ## Celestial
 
@@ -480,8 +484,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Passa a Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Passa a Celsius
 newtab-weather-menu-hide-weather = Nascondi meteo in Nuova scheda
 newtab-weather-menu-learn-more = Ulteriori informazioni
+newtab-weather-menu-detect-my-location = Rileva la mia posizione
 # This message is shown if user is working offline
 newtab-weather-error-not-available = I dati sul meteo non sono al momento disponibili.
+newtab-weather-opt-in-see-weather = Vuoi vedere il meteo per la tua posizione?
+newtab-weather-opt-in-not-now =
+    .label = Non adesso
+newtab-weather-opt-in-yes =
+    .label = Sì
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York City
 
 ## Topic Labels
 
@@ -648,6 +660,9 @@ newtab-widget-lists-input-menu-move-up = Sposta in alto
 newtab-widget-lists-input-menu-move-down = Sposta in basso
 newtab-widget-lists-input-menu-delete = Elimina
 newtab-widget-lists-input-menu-edit = Modifica
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Crea nuova lista
 newtab-widget-lists-name-label-default =
     .label = Lista di attività
 newtab-widget-lists-name-placeholder-default =
@@ -667,10 +682,6 @@ newtab-widget-timer-mode-focus =
     .label = Concentrazione
 newtab-widget-timer-mode-break =
     .label = Pausa
-newtab-widget-timer-play =
-    .title = Avvia
-newtab-widget-timer-pause =
-    .title = Metti in pausa
 newtab-widget-timer-label-play =
     .label = Avvia
 newtab-widget-timer-label-pause =
@@ -692,4 +703,3 @@ newtab-promo-card-cta = Ulteriori informazioni
 newtab-promo-card-dismiss-button =
     .title = Chiudi
     .aria-label = Chiudi
-

@@ -209,7 +209,7 @@ NS_IMETHODIMP
 ImageBitmapRenderingContext::GetInputStream(
     const char* aMimeType, const nsAString& aEncoderOptions,
     mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
-    nsIInputStream** aStream) {
+    const nsACString& aRandomizationKey, nsIInputStream** aStream) {
   nsCString enccid("@mozilla.org/image/encoder;2?type=");
   enccid += aMimeType;
   nsCOMPtr<imgIEncoder> encoder = do_CreateInstance(enccid.get());
@@ -225,9 +225,9 @@ ImageBitmapRenderingContext::GetInputStream(
     return NS_ERROR_FAILURE;
   }
 
-  return ImageEncoder::GetInputStream(imageSize.width, imageSize.height,
-                                      imageBuffer.get(), format, encoder,
-                                      aEncoderOptions, aStream);
+  return ImageEncoder::GetInputStream(
+      imageSize.width, imageSize.height, imageBuffer.get(), format, encoder,
+      aEncoderOptions, aRandomizationKey, aStream);
 }
 
 already_AddRefed<mozilla::gfx::SourceSurface>

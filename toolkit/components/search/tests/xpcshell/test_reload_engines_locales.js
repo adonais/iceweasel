@@ -53,7 +53,7 @@ add_setup(async () => {
 add_task(async function test_config_updated_engine_changes() {
   let engines = await Services.search.getEngines();
   Assert.deepEqual(
-    engines.map(e => e.identifier),
+    engines.map(e => e.id),
     ["appDefault", "localeGD"],
     "Should have the correct engines installed"
   );
@@ -69,7 +69,7 @@ add_task(async function test_config_updated_engine_changes() {
 
   engines = await Services.search.getEngines();
   Assert.deepEqual(
-    engines.map(e => e.identifier),
+    engines.map(e => e.id),
     ["appDefault", "notGDLocale"],
     "Should have the correct engines installed after locale change"
   );

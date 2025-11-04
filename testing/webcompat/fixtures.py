@@ -106,6 +106,11 @@ class FirefoxWebDriver(WebDriver):
             prefs["widget.gtk.overlay-scrollbars.enabled"] = False
             prefs["widget.windows.overlay-scrollbars.enabled"] = False
 
+        if test_config.get("enable_webkit_fill_available"):
+            prefs["layout.css.webkit-fill-available.enabled"] = True
+        elif test_config.get("disable_webkit_fill_available"):
+            prefs["layout.css.webkit-fill-available.enabled"] = False
+
         if test_config.get("enable_moztransform"):
             prefs["layout.css.prefixes.transforms"] = True
         elif test_config.get("disable_moztransform"):

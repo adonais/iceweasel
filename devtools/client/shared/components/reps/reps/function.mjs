@@ -10,12 +10,8 @@ import {
   span,
 } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-import {
-  getGripType,
-  cropString,
-  wrapRender,
-} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
-import { MODE } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
+import { getGripType, cropString, wrapRender } from "./rep-utils.mjs";
+import { MODE } from "./constants.mjs";
 
 const IGNORED_SOURCE_URLS = ["debugger eval code"];
 

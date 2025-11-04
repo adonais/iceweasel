@@ -146,9 +146,6 @@ class RootActor extends Actor {
       // updated (https://github.com/firefox-devtools/vscode-firefox-debug/issues/391).
       // Contact Holger Benl (hbenl) for topics related to the extension.
       supportsEnableWindowGlobalThreadActors: true,
-      // @backward-compat { version 143 } Use the bulk API to transfer the
-      // performance profile data.
-      useBulkTransferForPerformanceProfile: true,
     };
   }
 

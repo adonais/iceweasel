@@ -56,7 +56,7 @@ def actions_json(graph_config):
     return render_actions_json(Parameters(strict=False), graph_config, decision_task_id)
 
 
-def fake_loader(kind, path, config, parameters, loaded_tasks):
+def fake_loader(kind, path, config, parameters, loaded_tasks, write_artifacts):
     for i in range(3):
         dependencies = {}
         if i >= 1:
@@ -119,11 +119,15 @@ class WithFakeKind(TaskGraphGenerator):
             yield FakeKind.create(kind_name, cfg, graph_config)
 
 
+class FakeGraphConfig(GraphConfig):
+    def register(self):
+        pass
+
+
 def fake_load_graph_config(root_dir):
-    graph_config = GraphConfig(
+    graph_config = FakeGraphConfig(
         {"trust-domain": "test-domain", "taskgraph": {}}, root_dir
     )
-    graph_config.__dict__["register"] = lambda: None
     return graph_config
 
 

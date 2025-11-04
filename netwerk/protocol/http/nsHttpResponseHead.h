@@ -72,6 +72,8 @@ class nsHttpResponseHead {
 
   [[nodiscard]] nsresult SetHeader(const nsACString& h, const nsACString& v,
                                    bool m = false);
+  [[nodiscard]] nsresult SetHeaderOverride(const nsHttpAtom& h,
+                                           const nsACString& v);
   [[nodiscard]] nsresult SetHeader(const nsHttpAtom& h, const nsACString& v,
                                    bool m = false);
   [[nodiscard]] nsresult GetHeader(const nsHttpAtom& h, nsACString& v) const;
@@ -198,9 +200,16 @@ class nsHttpResponseHead {
   }
 
   bool NoCache_locked() const MOZ_REQUIRES(mRecursiveMutex) {
-    // We ignore Pragma: no-cache if Cache-Control is set.
     MOZ_ASSERT_IF(mCacheControlNoCache, mHasCacheControl);
-    return mHasCacheControl ? mCacheControlNoCache : mPragmaNoCache;
+    // Normally we would ignore Pragma: no-cache if Cache-Control is set.
+    // But since all other browsers treat the existence of Pragma: no-cache
+    // as a signal to not-cache even when it conflicts with Cache-Control
+    // it is safer just to do the same. Previous behaviour where Pragma
+    // was ignored when Cache-Control was present resulted in several
+    // web-compat issues (Bug 1937766)
+    // However, the presence of cacheControl immutable indicates that
+    // pragma: no-cache is incorrectly added to the response.
+    return (mPragmaNoCache && !mCacheControlImmutable) || mCacheControlNoCache;
   }
 
  private:

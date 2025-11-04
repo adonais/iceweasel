@@ -6,6 +6,9 @@ add_setup(async function () {
     gBrowser,
     url: "about:logins",
   });
+  await SpecialPowers.pushPrefEnv({
+    set: [["toolkit.osKeyStore.unofficialBuildOnlyLogin", ""]],
+  });
   registerCleanupFunction(() => {
     BrowserTestUtils.removeTab(aboutLoginsTab);
     Services.logins.removeAllUserFacingLogins();

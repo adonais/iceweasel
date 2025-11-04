@@ -463,7 +463,7 @@ class EngineDispatcher {
           // Ignore errors from tests intentionally causing errors.
           !error?.message?.startsWith("Intentionally")
         ) {
-          lazy.console.error("Could not initalize the engine", error);
+          lazy.console.error("Could not initialize the engine", error);
         }
       });
 

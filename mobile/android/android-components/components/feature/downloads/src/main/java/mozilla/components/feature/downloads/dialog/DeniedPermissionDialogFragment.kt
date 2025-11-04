@@ -11,8 +11,8 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import mozilla.components.support.base.R as supportBaseR
 
@@ -28,7 +28,7 @@ class DeniedPermissionDialogFragment : DialogFragment() {
     val safeArguments get() = requireNotNull(arguments)
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = AlertDialog.Builder(requireContext())
+        val builder = MaterialAlertDialogBuilder(requireContext())
             .setMessage(message)
             .setCancelable(true)
             .setNegativeButton(supportBaseR.string.mozac_support_base_permissions_needed_negative_button) { _, _ ->

@@ -575,17 +575,17 @@ payload property in the following example:
 
 .. code-block:: javascript
 
-    let result = new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.DYNAMIC,
-      UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
-      {
+    let result = new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      source: UrlbarUtils.RESULT_SOURCE.OTHER_NETWORK,
+      payload: {
         title: [
           "Some result title",
           UrlbarUtils.HIGHLIGHT.TYPED,
         ],
         // *more payload properties*
       }
-    );
+    });
 
 Your view template must create an element corresponding to the payload
 property. That is, it must include an object where the value of the ``name``

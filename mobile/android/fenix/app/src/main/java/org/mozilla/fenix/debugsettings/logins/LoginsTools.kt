@@ -31,7 +31,7 @@ import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.concept.storage.Login
 import mozilla.components.concept.storage.LoginEntry
 import mozilla.components.concept.storage.LoginsStorage
@@ -122,7 +122,7 @@ private fun LoginsContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        PrimaryButton(
+        FilledButton(
             text = stringResource(R.string.debug_drawer_logins_add_login_button),
             modifier = Modifier.fillMaxWidth(),
             onClick = onAddFakeLogin,

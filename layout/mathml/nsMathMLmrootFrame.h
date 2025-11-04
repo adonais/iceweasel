@@ -59,8 +59,8 @@ class nsMathMLmrootFrame : public nsMathMLContainerFrame {
  private:
   bool ShouldUseRowFallback();
   bool IsMrowLike() final;
-  nsresult Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
-                 ReflowOutput& aDesiredSize) final;
+  void Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
+             ReflowOutput& aDesiredSize) final;
 };
 
 #endif /* nsMathMLmrootFrame_h___ */

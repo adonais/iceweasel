@@ -46,6 +46,10 @@ if CONFIG["MOZ_DEBUG"] == "1":
 
 if CONFIG["OS_TARGET"] == "Android":
 
+    CXXFLAGS += [
+        "-std=gnu++20"
+    ]
+
     DEFINES["ANDROID"] = True
     DEFINES["ANDROID_NDK_VERSION_ROLL"] = "r27_1"
     DEFINES["HAVE_SYS_UIO_H"] = True

@@ -421,7 +421,7 @@ async function test_contextmenu(selector, menuItems, options = {}) {
         menuItems.includes("context-viewpartialsource-selection");
 
       const askChatIndex = menuItems.indexOf("context-ask-chat");
-      const isAskChatLastItem = menuItems.at(-4) === "context-ask-chat";
+      const isAskChatLastItem = menuItems.at(-6) === "context-ask-chat";
       if (askChatIndex >= 2) {
         hasSeparatorAboveAskChat = menuItems[askChatIndex - 2] === "---";
       }

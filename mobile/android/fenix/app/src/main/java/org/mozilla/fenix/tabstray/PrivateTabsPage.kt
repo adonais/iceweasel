@@ -4,10 +4,13 @@
 
 package org.mozilla.fenix.tabstray
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.TabSessionState
+import org.mozilla.fenix.pbmlock.UnlockPrivateTabsTrayScreen
 
 /**
  * UI for displaying the Private Tabs Page in the Tabs Tray.
@@ -16,11 +19,13 @@ import mozilla.components.browser.state.state.TabSessionState
  * @param selectedTabId The ID of the currently selected tab.
  * @param selectionMode [TabsTrayState.Mode] indicating whether the Tabs Tray is in single selection.
  * @param displayTabsInGrid Whether the normal and private tabs should be displayed in a grid.
+ * @param isPbmLocked Whether the private browsing mode is currently locked.
  * @param onTabClose Invoked when the user clicks to close a tab.
  * @param onTabMediaClick Invoked when the user interacts with a tab's media controls.
  * @param onTabClick Invoked when the user clicks on a tab.
  * @param onTabLongClick Invoked when the user long clicks on a tab.
  * @param onMove Invoked after the drag and drop gesture completed. Swaps position of two tabs.
+ * @param onUnlockPbmClick Invoked when user clicks on the Unlock button.
  */
 @Suppress("LongParameterList")
 @Composable
@@ -29,30 +34,43 @@ internal fun PrivateTabsPage(
     selectedTabId: String?,
     selectionMode: TabsTrayState.Mode,
     displayTabsInGrid: Boolean,
+    isPbmLocked: Boolean,
     onTabClose: (TabSessionState) -> Unit,
     onTabMediaClick: (TabSessionState) -> Unit,
     onTabClick: (TabSessionState) -> Unit,
     onTabLongClick: (TabSessionState) -> Unit,
     onMove: (String, String?, Boolean) -> Unit,
+    onUnlockPbmClick: () -> Unit,
 ) {
-    if (privateTabs.isNotEmpty()) {
-        TabLayout(
-            tabs = privateTabs,
-            displayTabsInGrid = displayTabsInGrid,
-            selectedTabId = selectedTabId,
-            selectionMode = selectionMode,
-            modifier = Modifier.testTag(TabsTrayTestTag.PRIVATE_TABS_LIST),
-            onTabClose = onTabClose,
-            onTabMediaClick = onTabMediaClick,
-            onTabClick = onTabClick,
-            onTabLongClick = onTabLongClick,
-            onTabDragStart = {
-                // Because we don't currently support selection mode for private tabs,
-                // there's no need to exit selection mode when dragging tabs.
-            },
-            onMove = onMove,
-        )
-    } else {
-        EmptyTabPage(isPrivate = true)
+    when {
+        privateTabs.isEmpty() -> {
+            EmptyTabPage(isPrivate = true)
+        }
+
+        isPbmLocked -> {
+            UnlockPrivateTabsTrayScreen(
+                modifier = Modifier.padding(bottom = 32.dp),
+                { onUnlockPbmClick() },
+            )
+        }
+
+        else -> {
+            TabLayout(
+                tabs = privateTabs,
+                displayTabsInGrid = displayTabsInGrid,
+                selectedTabId = selectedTabId,
+                selectionMode = selectionMode,
+                modifier = Modifier.testTag(TabsTrayTestTag.PRIVATE_TABS_LIST),
+                onTabClose = onTabClose,
+                onTabMediaClick = onTabMediaClick,
+                onTabClick = onTabClick,
+                onTabLongClick = onTabLongClick,
+                onTabDragStart = {
+                    // Because we don't currently support selection mode for private tabs,
+                    // there's no need to exit selection mode when dragging tabs.
+                },
+                onMove = onMove,
+            )
+        }
     }
 }

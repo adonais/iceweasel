@@ -9,7 +9,6 @@
 #include "builtin/intl/RelativeTimeFormat.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/intl/RelativeTimeFormat.h"
 
 #include "builtin/intl/CommonFunctions.h"

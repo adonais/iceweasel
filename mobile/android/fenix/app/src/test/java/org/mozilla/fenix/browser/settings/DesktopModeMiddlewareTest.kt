@@ -6,6 +6,7 @@ package org.mozilla.fenix.browser.settings
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import mozilla.components.browser.state.action.DefaultDesktopModeAction
@@ -27,6 +28,7 @@ import org.mozilla.fenix.browser.desktopmode.DesktopModeMiddleware
 import org.mozilla.fenix.browser.desktopmode.DesktopModeRepository
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 
+@OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
 @RunWith(AndroidJUnit4::class)
 class DesktopModeMiddlewareTest {
 

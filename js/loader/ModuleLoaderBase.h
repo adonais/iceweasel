@@ -25,6 +25,7 @@
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/ReferrerPolicyBinding.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "ResolveResult.h"
 
 class nsIConsoleReportCollector;
@@ -421,6 +422,19 @@ class ModuleLoaderBase : public nsISupports {
   // https://html.spec.whatwg.org/multipage/webappapis.html#disallow-further-import-maps
   void DisallowImportMaps() { mImportMapsAllowed = false; }
 
+  virtual bool IsModuleTypeAllowed(ModuleType aModuleType) {
+    if (aModuleType == ModuleType::Unknown) {
+      return false;
+    }
+
+    if (aModuleType == ModuleType::CSS &&
+        !mozilla::StaticPrefs::layout_css_module_scripts_enabled()) {
+      return false;
+    }
+
+    return true;
+  }
+
   // Returns whether there has been an entry in the import map
   // for the given aURI.
   bool GetImportMapSRI(nsIURI* aURI, nsIURI* aSourceURI,
@@ -535,22 +549,9 @@ class ModuleLoaderBase : public nsISupports {
                                              Handle<Value> aHostDefined,
                                              Handle<Value> aError);
   static bool OnLoadRequestedModulesResolved(ModuleLoadRequest* aRequest);
-  static bool OnLoadRequestedModulesRejected(ModuleLoadRequest* aRequest,
+  static bool OnLoadRequestedModulesRejected(JSContext* aCx,
+                                             ModuleLoadRequest* aRequest,
                                              Handle<Value> aError);
-
-  /**
-   * Shorthand Wrapper for JSAPI FinishDynamicImport function for the reject
-   * case where we do not have `aEvaluationPromise`. As there is no evaluation
-   * Promise, JS::FinishDynamicImport will always reject.
-   *
-   * @param aRequest
-   *        The module load request for the dynamic module.
-   * @param aResult
-   *        The result of running ModuleEvaluate -- If this is successful, then
-   *        we can await the associated EvaluationPromise.
-   */
-  void FinishDynamicImportAndReject(ModuleLoadRequest* aRequest,
-                                    nsresult aResult);
 
   void RemoveDynamicImport(ModuleLoadRequest* aRequest);
 
@@ -559,6 +560,7 @@ class ModuleLoaderBase : public nsISupports {
 
   void OnFetchSucceeded(ModuleLoadRequest* aRequest);
   void OnFetchFailed(ModuleLoadRequest* aRequest);
+  void Cancel(ModuleLoadRequest* aRequest);
 
   // The slot stored in ImportMetaResolve function.
   enum class ImportMetaSlots : uint32_t { ModulePrivateSlot = 0, SlotCount };

@@ -44,6 +44,12 @@
     this button will not give access to this permission
   -->
   <string name="mozac_feature_sitepermissions_block">Joko</string>
+  <!-- Message of a dialog offering more context about the app level notification permission request. %1$s will be replaced with the name of the app. -->
+  <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_message">Eikotevẽta embojuruja marandukuéra %1$s-pe og̃uahẽ hag̃ua ko tenda guive.</string>
+  <!-- Button label in a notification permission request dialog to dismiss the dialog. -->
+  <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_dismiss_label">Heja</string>
+  <!-- Button label in a notification permission request dialog. It will let the user go to Android Settings to grant the permission. -->
+  <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_settings_label">Eho ñembohekópe</string>
   <!-- Text for a checkbox in a permission request dialog, this will allow to not show again the prompt -->
   <string name="mozac_feature_sitepermissions_do_not_ask_again_on_this_site2">Eñemomandu’a je’ete ko tendápe g̃uarã</string>
   <!-- Text for a checkbox in a permission request dialog, this will allow to not show again the prompt -->

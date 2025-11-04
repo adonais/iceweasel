@@ -138,6 +138,8 @@
 ::before::marker,
 ::after::marker {
   text-align: end;
+  text-align-last: end;
+  text-indent: 0;
   text-transform: none;
   unicode-bidi: isolate;
   font-variant-numeric: tabular-nums;
@@ -195,7 +197,6 @@
   unicode-bidi: inherit;
   text-overflow: inherit;
   overflow: inherit;
-  overflow-clip-box: inherit;
   resize: inherit;
   padding: inherit;
   box-decoration-break: inherit;
@@ -212,7 +213,6 @@
   mask: inherit;
   opacity: inherit;
   text-decoration: inherit;
-  overflow-clip-box: inherit;
   unicode-bidi: inherit;
   user-select: inherit;
   text-overflow: inherit;
@@ -269,9 +269,6 @@
   align-items: inherit;
   justify-content: inherit;
   justify-items: inherit;
-  /* Do not change these. nsCSSFrameConstructor depends on them to create a good
-     frame tree. */
-  overflow-clip-box: inherit;
 }
 
 *|*::-moz-viewport,

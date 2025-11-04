@@ -52,15 +52,25 @@ PurgeTrackerService.prototype = {
   // protection list, so we cache the result for faster future lookups.
   _trackingState: new Map(),
 
+  // Tracks if purgeTrackingCookieJars has not yet finished.
+  _purgeRunning: false,
+
   observe(aSubject, aTopic) {
     switch (aTopic) {
       case "idle-daily":
         // only allow one idle-daily listener to trigger until the list has been fully parsed.
-        Services.obs.removeObserver(this, "idle-daily");
-        this.purgeTrackingCookieJars();
+        if (!this._purgeRunning) {
+          this._purgeRunning = true;
+          this.purgeTrackingCookieJars();
+        }
         break;
       case "profile-after-change":
         Services.obs.addObserver(this, "idle-daily");
+        Services.obs.addObserver(this, "quit-application");
+        break;
+      case "quit-application":
+        Services.obs.removeObserver(this, "idle-daily");
+        Services.obs.removeObserver(this, "quit-application");
         break;
     }
   },
@@ -211,9 +221,8 @@ PurgeTrackerService.prototype = {
   },
 
   resetPurgeList() {
-    // We've reached the end of the cookies.
-    // Restore the idle-daily listener so it will purge again tomorrow.
-    Services.obs.addObserver(this, "idle-daily");
+    // We've reached the end of the cookies. Accept new idle-daily triggers.
+    this._purgeRunning = false;
     // Set the date to 0 so we will start at the beginning of the list next time.
     Services.prefs.setStringPref(
       "privacy.purge_trackers.date_in_cookie_database",

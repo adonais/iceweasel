@@ -88,14 +88,10 @@ var UAHelpers = {
     const osVersion = config.osVersion?.replace(".", "_") || "10_15_7";
     const arch = config.arch || "Intel";
     let firefox = "";
-    switch (config.firefox || true) {
-      case "firefox":
-      case true:
-        firefox = `Firefox/${UAHelpers.getRunningFirefoxVersion()} `;
-        break;
-      case "fxQuantum":
-        firefox = UAHelpers.getFxQuantumSegment();
-        break;
+    if (config.withFirefox) {
+      firefox = `Firefox/${UAHelpers.getRunningFirefoxVersion()} `;
+    } else if (config.withFxQuantum) {
+      firefox = UAHelpers.getFxQuantumSegment();
     }
     return `Mozilla/5.0 (Macintosh; ${arch} Mac OS X ${osVersion}) ${firefox}AppleWebKit/${webkitVersion} (KHTML, like Gecko) Version/${version} Safari/${webkitVersion}`;
   },

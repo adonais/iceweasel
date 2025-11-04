@@ -65,7 +65,7 @@ internal class Parser(
         tokens.forEach { parseToken(it) }
     }
 
-    @Suppress("ComplexMethod", "LongMethod", "ThrowsCount")
+    @Suppress("ThrowsCount")
     private fun parseToken(token: Token): State? {
         if (state == State.COMPLETE) {
             throw ParserException("Token after parsing completed")

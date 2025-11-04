@@ -4051,30 +4051,7 @@ bool PresShell::ScrollFrameIntoView(
 
     if (ScrollContainerFrame* sf = do_QueryFrame(container)) {
       nsPoint oldPosition = sf->GetScrollPosition();
-      nsRect targetRect = rect;
-      // Inflate the scrolled rect by the container's padding in each dimension,
-      // unless we have 'overflow-clip-box-*: content-box' in that dimension.
-      auto* disp = container->StyleDisplay();
-      if (disp->mOverflowClipBoxBlock == StyleOverflowClipBox::ContentBox ||
-          disp->mOverflowClipBoxInline == StyleOverflowClipBox::ContentBox) {
-        WritingMode wm = container->GetWritingMode();
-        bool cbH = (wm.IsVertical() ? disp->mOverflowClipBoxBlock
-                                    : disp->mOverflowClipBoxInline) ==
-                   StyleOverflowClipBox::ContentBox;
-        bool cbV = (wm.IsVertical() ? disp->mOverflowClipBoxInline
-                                    : disp->mOverflowClipBoxBlock) ==
-                   StyleOverflowClipBox::ContentBox;
-        nsMargin padding = container->GetUsedPadding();
-        if (!cbH) {
-          padding.left = padding.right = nscoord(0);
-        }
-        if (!cbV) {
-          padding.top = padding.bottom = nscoord(0);
-        }
-        targetRect.Inflate(padding);
-      }
-
-      targetRect -= sf->GetScrolledFrame()->GetPosition();
+      nsRect targetRect = rect - sf->GetScrolledFrame()->GetPosition();
 
       {
         AutoWeakFrame wf(container);
@@ -10908,9 +10885,9 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
   // because for root frames (where they could be different, since root frames
   // are allowed to have overflow) the root view bounds need to match the
   // viewport bounds; the view manager "window dimensions" code depends on it.
-  if (target->HasView()) {
-    nsContainerFrame::SyncFrameViewAfterReflow(
-        mPresContext, target, target->GetView(), boundsRelativeToTarget);
+  if (auto* view = target->GetView()) {
+    nsContainerFrame::SyncFrameViewAfterReflow(mPresContext, target, view,
+                                               boundsRelativeToTarget);
   }
 
   target->DidReflow(mPresContext, nullptr);
@@ -12145,6 +12122,12 @@ void PresShell::RemoveAnchorPosAnchor(const nsAtom* aName, nsIFrame* aFrame) {
     return;  // Nothing to remove.
   }
 
+#ifdef ACCESSIBILITY
+  if (nsAccessibilityService* accService = GetAccService()) {
+    accService->NotifyAnchorRemoved(this, aFrame);
+  }
+#endif
+
   auto& anchorArray = entry.Data();
 
   // XXX: Once the implementation is more complete,
@@ -12213,20 +12196,20 @@ PresShell::AnchorPosUpdateResult PresShell::UpdateAnchorPosLayout() {
   for (auto* positioned : mAnchorPosPositioned) {
     MOZ_ASSERT(positioned->IsAbsolutelyPositioned(),
                "Anchor positioned frame is not absolutely positioned?");
-    const auto* referencedAnchors =
+    const auto* anchorPosReferenceData =
         positioned->GetProperty(nsIFrame::AnchorPosReferences());
     // Note that it's possible (Though unlikely) to register as anchor
     // positioned but not actually make any anchor resolution - e.g.
     // `position-anchor` is set, but no other anchor positioning property is
     // used.
-    if (!referencedAnchors || referencedAnchors->IsEmpty()) {
+    if (!anchorPosReferenceData || anchorPosReferenceData->IsEmpty()) {
       continue;
     }
     if (positioned->HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
       // Already marked for reflow.
       continue;
     }
-    for (const auto& kv : *referencedAnchors) {
+    for (const auto& kv : *anchorPosReferenceData) {
       const auto& data = kv.GetData();
       const auto& anchorName = kv.GetKey();
       const auto* anchor = GetAnchorPosAnchor(anchorName, positioned);
@@ -12327,20 +12310,56 @@ void PresShell::UpdateAnchorPosLayoutForScroll(
       // Already dirty? Skip.
       continue;
     }
-    const auto* referencedAnchors =
-        positioned->GetProperty(nsIFrame::AnchorPosReferences());
-    if (!referencedAnchors || referencedAnchors->IsEmpty()) {
+
+    const auto* stylePos = positioned->StylePosition();
+    if (!stylePos->mPositionAnchor.IsIdent()) {
+      // If it doesn't have a default anchor then it doesn't compensate for
+      // scroll.
       continue;
     }
+
+    const auto* anchorPosReferenceData =
+        positioned->GetProperty(nsIFrame::AnchorPosReferences());
+    if (!anchorPosReferenceData || anchorPosReferenceData->IsEmpty()) {
+      // If it doesn't reference any anchors then it doesn't compensate for
+      // scroll.
+      continue;
+    }
+
+    const nsAtom* defaultAnchorName =
+        stylePos->mPositionAnchor.AsIdent().AsAtom();
+    // We might not need to do this GetAnchorPosAnchor call at all if none of
+    // the affected anchors are referenced by positioned below. We could
+    // improve this.
+    auto* defaultAnchorFrame =
+        GetAnchorPosAnchor(defaultAnchorName, positioned);
+    if (!defaultAnchorFrame) {
+      continue;
+    }
+    auto* nearestScrollToDefaultAnchor =
+        FindScrollContainerFrameOf(defaultAnchorFrame);
+
     auto* absoluteContainingBlock = positioned->GetParent();
+
+    if (UnderScrollContainer(absoluteContainingBlock,
+                             nearestScrollToDefaultAnchor)) {
+      // If the positioned element's containing block is under the only possible
+      // anchor scroll container that it can scroll with, they'll scroll
+      // together without intervention, so skip the update.
+      continue;
+    }
+
     for (const auto& entry : affectedAnchors) {
       const auto* anchorName = entry.mAnchorName;
       const auto& anchors = entry.mFrames;
-      const auto* data = referencedAnchors->Lookup(anchorName);
+      const auto* data = anchorPosReferenceData->Lookup(anchorName);
       if (!data) {
         continue;
       }
-      const auto* anchorFrame = GetAnchorPosAnchor(anchorName, positioned);
+      const auto* anchorFrame =
+          anchorName == defaultAnchorName
+              ? defaultAnchorFrame
+              : GetAnchorPosAnchor(anchorName, positioned);
       const auto idx = anchors.IndexOf(anchorFrame, 0, Comparator{});
       if (idx == anchors.NoIndex) {
         // Referring to an anchor of the same name but unaffected by scrolling -
@@ -12349,11 +12368,8 @@ void PresShell::UpdateAnchorPosLayoutForScroll(
       }
       auto* anchorScrollContainer =
           anchors.ElementAt(idx).mNearestScrollContainer;
-      if (UnderScrollContainer(absoluteContainingBlock,
-                               anchorScrollContainer)) {
-        // If the positioned element's containing block is under the anchor's
-        // scroll container, they'll scroll together without intervention, so
-        // skip the update.
+      if (anchorScrollContainer != nearestScrollToDefaultAnchor) {
+        // We do not compensate for scroll for this anchor
         continue;
       }
 
@@ -12912,6 +12928,13 @@ nsSize PresShell::GetLayoutViewportSize() const {
     result = sf->GetScrollPortRect().Size();
   }
   return result;
+}
+
+nsSize PresShell::GetInnerSize() const {
+  if (ScrollContainerFrame* sf = GetRootScrollContainerFrame()) {
+    return sf->GetSizeForWindowInnerSize();
+  }
+  return mPresContext->GetVisibleArea().Size();
 }
 
 nsSize PresShell::GetVisualViewportSizeUpdatedByDynamicToolbar() const {

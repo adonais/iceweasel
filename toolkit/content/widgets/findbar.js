@@ -202,13 +202,14 @@
               this._finishFAYT(event);
             }
             break;
-          case KeyEvent.DOM_VK_TAB:
+          case KeyEvent.DOM_VK_TAB: {
             let shouldHandle =
               !event.altKey && !event.ctrlKey && !event.metaKey;
             if (shouldHandle && this.findMode != this.FIND_NORMAL) {
               this._finishFAYT(event);
             }
             break;
+          }
           case KeyEvent.DOM_VK_PAGE_UP:
           case KeyEvent.DOM_VK_PAGE_DOWN:
             if (
@@ -499,10 +500,9 @@
         return;
       }
 
-      this.browser.finder.requestMatchesCount(
-        this._findField.value,
-        this.findMode == this.FIND_LINKS
-      );
+      this.browser.finder.requestMatchesCount(this._findField.value, {
+        linksOnly: this.findMode == this.FIND_LINKS,
+      });
     }
 
     /**
@@ -1321,12 +1321,16 @@
         this._foundMatches.hidden = true;
         this._foundMatches.setAttribute("value", "");
       } else {
-        const l10nId =
-          result.total === -1
-            ? "findbar-found-matches-count-limit"
-            : "findbar-found-matches";
+        let l10nId, l10nArgs;
+        if (result.total === -1) {
+          l10nId = "findbar-found-matches-count-limit";
+          l10nArgs = { limit: result.limit };
+        } else {
+          l10nId = "findbar-found-matches";
+          l10nArgs = { current: result.current, total: result.total };
+        }
         this._foundMatches.hidden = false;
-        document.l10n.setAttributes(this._foundMatches, l10nId, result);
+        document.l10n.setAttributes(this._foundMatches, l10nId, l10nArgs);
       }
     }
 

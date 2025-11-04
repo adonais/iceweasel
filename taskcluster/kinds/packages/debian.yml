@@ -101,6 +101,7 @@ deb8-gcc-10:
         # generate an updated debian/control.
         # removing the libzstd-dev build dependency that doesn't exist in jessie.
         # uncommenting `with_common_libs` makes the packaging create the libstdc++6 package.
+        # `libstdcxx_abi = new` overrides the default that disables the new ABI on jessie
         # `BINUTILSBDV=2.25-3~` and `ISL_BUILD_DEP=libisl-dev,` override wrong versions
         # in build dependencies for jessie.
         # `OFFLOAD_BUILD_DEP=` overrides the dependency on nvptx, which is not available
@@ -119,6 +120,7 @@ deb8-gcc-10:
             apt install autoconf quilt &&
             sed -i 's/libzstd-dev,//' debian/control.m4 &&
             sed -i 's/#with_common_libs/with_common_libs/' debian/rules.defs &&
+            echo libstdcxx_abi = new >> debian/rules.defs &&
             echo BINUTILSBDV=2.25-3~ >> debian/rules.conf &&
             echo ISL_BUILD_DEP=libisl-dev, >> debian/rules.conf &&
             echo OFFLOAD_BUILD_DEP= >> debian/rules.conf &&
@@ -176,6 +178,7 @@ deb8-32-gcc-10:
             apt install autoconf quilt &&
             sed -i 's/libzstd-dev,//' debian/control.m4 &&
             sed -i 's/#with_common_libs/with_common_libs/' debian/rules.defs &&
+            echo libstdcxx_abi = new >> debian/rules.defs &&
             echo GCC_MULTILIB_BUILD_DEP='$(DPKG_BUILD_DEP)' >> debian/rules.conf &&
             echo BINUTILSBDV=2.25-3~ >> debian/rules.conf &&
             echo ISL_BUILD_DEP=libisl-dev, >> debian/rules.conf &&

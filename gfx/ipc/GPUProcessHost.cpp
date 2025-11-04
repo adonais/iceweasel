@@ -18,9 +18,16 @@
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/java/GeckoProcessManagerWrappers.h"
 #endif
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+#  include "mozilla/SandboxSettings.h"
+#endif
 
 namespace mozilla {
 namespace gfx {
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+bool GPUProcessHost::sLaunchWithMacSandbox = false;
+#endif
 
 using namespace ipc;
 
@@ -33,6 +40,13 @@ GPUProcessHost::GPUProcessHost(Listener* aListener)
       mShutdownRequested(false),
       mChannelClosed(false) {
   MOZ_COUNT_CTOR(GPUProcessHost);
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+  if (!sLaunchWithMacSandbox) {
+    sLaunchWithMacSandbox = IsGPUSandboxEnabled();
+  }
+  mDisableOSActivityMode = sLaunchWithMacSandbox;
+#endif
 }
 
 GPUProcessHost::~GPUProcessHost() { MOZ_COUNT_DTOR(GPUProcessHost); }
@@ -248,6 +262,17 @@ void GPUProcessHost::DestroyProcess() {
   GetCurrentSerialEventTarget()->Dispatch(
       NS_NewRunnableFunction("DestroyProcessRunnable", [this] { Destroy(); }));
 }
+
+#if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
+bool GPUProcessHost::FillMacSandboxInfo(MacSandboxInfo& aInfo) {
+  GeckoChildProcessHost::FillMacSandboxInfo(aInfo);
+  if (!aInfo.shouldLog && PR_GetEnv("MOZ_SANDBOX_GPU_LOGGING")) {
+    aInfo.shouldLog = true;
+  }
+  aInfo.type = MacSandboxType::MacSandboxType_GPU;
+  return true;
+}
+#endif
 
 #ifdef MOZ_WIDGET_ANDROID
 java::CompositorSurfaceManager::Param

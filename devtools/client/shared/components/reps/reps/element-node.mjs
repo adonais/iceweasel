@@ -10,16 +10,10 @@ import {
 } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
 
-import {
-  appendRTLClassNameIfNeeded,
-  wrapRender,
-} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
-import {
-  rep as StringRep,
-  isLongString,
-} from "resource://devtools/client/shared/components/reps/reps/string.mjs";
-import { MODE } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
-import * as nodeConstants from "resource://devtools/client/shared/components/reps/shared/dom-node-constants.mjs";
+import { appendRTLClassNameIfNeeded, wrapRender } from "./rep-utils.mjs";
+import { rep as StringRep, isLongString } from "./string.mjs";
+import { MODE } from "./constants.mjs";
+import * as nodeConstants from "../shared/dom-node-constants.mjs";
 
 const MAX_ATTRIBUTE_LENGTH = 50;
 

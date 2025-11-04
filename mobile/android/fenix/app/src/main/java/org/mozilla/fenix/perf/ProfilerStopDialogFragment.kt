@@ -54,24 +54,24 @@ class ProfilerStopDialogFragment : DialogFragment() {
         val uiState by viewModel.uiState.collectAsState()
         val context = LocalContext.current
 
+        val toastMessage: String? = when (val state = uiState) {
+            is ProfilerUiState.ShowToast ->
+                stringResource(state.messageResId) + state.extra
+            is ProfilerUiState.Error ->
+                stringResource(state.messageResId) + state.errorDetails
+            else -> null
+        }
+
         LaunchedEffect(uiState) {
-            when (val state = uiState) {
+            when (uiState) {
                 is ProfilerUiState.ShowToast -> {
-                    Toast.makeText(
-                        context,
-                        context.getString(state.messageResId) + state.extra,
-                        Toast.LENGTH_LONG,
-                        ).show()
+                    Toast.makeText(context, toastMessage.orEmpty(), Toast.LENGTH_LONG).show()
                 }
                 is ProfilerUiState.Finished -> {
                     dismissAllowingStateLoss()
                 }
                 is ProfilerUiState.Error -> {
-                    Toast.makeText(
-                        context,
-                        context.getString(state.messageResId) + state.errorDetails,
-                        Toast.LENGTH_LONG,
-                        ).show()
+                    Toast.makeText(context, toastMessage.orEmpty(), Toast.LENGTH_LONG).show()
                     dismissAllowingStateLoss()
                 }
                 else -> {}

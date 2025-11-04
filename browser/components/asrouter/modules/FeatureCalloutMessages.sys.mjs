@@ -1892,7 +1892,7 @@ const MESSAGES = () => {
       groups: [],
       profileScope: "single",
       targeting:
-        "'browser.profiles.profile-name.updated' | preferenceValue == true && userPrefs.cfrFeatures && localeLanguageCode == 'en'",
+        "'browser.profiles.profile-name.updated' | preferenceValue == true && userPrefs.cfrFeatures",
       trigger: {
         id: "preferenceObserver",
         params: ["browser.profiles.profile-name.updated"],

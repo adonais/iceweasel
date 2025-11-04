@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+import sys
 import textwrap
 import traceback
 import unittest
@@ -543,9 +544,10 @@ class TestLint(unittest.TestCase):
 
         self.assertEqual(str(e.exception), "global name 'unknown' is not defined")
 
-        # Ideally, this would raise on line 4, where `unknown` is used, but
-        # python disassembly doesn't give use the information.
-        with self.assertRaisesFromLine(NameError, 2) as e:
+        # The correct line here is 4, where `unknown` is used, but python
+        # disassembly before python 3.13 didn't give us the information.
+        line = 4 if sys.version_info >= (3, 13) else 2
+        with self.assertRaisesFromLine(NameError, line) as e:
             with self.moz_configure(
                 """
                 @template

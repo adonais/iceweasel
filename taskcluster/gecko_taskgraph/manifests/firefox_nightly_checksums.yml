@@ -15,8 +15,6 @@ tasktype_map:  # Map task reference to task type.
 platform_names:
     filename_platform:
         by-platform:
-            linux-shippable: 'linux-i686'
-            linux-devedition: 'linux-i686'
             linux64-shippable: 'linux-x86_64'
             linux64-aarch64-shippable: 'linux-aarch64'
             linux64-aarch64-devedition: 'linux-aarch64'

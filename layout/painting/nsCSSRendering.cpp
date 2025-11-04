@@ -1764,7 +1764,7 @@ void nsCSSRendering::PaintBoxShadowInner(nsPresContext* aPresContext,
           std::max(clipRectRadii[C_BL].height, clipRectRadii[C_BR].height), 0));
     }
 
-    // When there's a blur radius, gfxAlphaBoxBlur leaves the skiprect area
+    // When there's a blur radius, gfxGaussianBlur leaves the skiprect area
     // unchanged. And by construction the gfxSkipRect is not touched by the
     // rendered shadow (even after blurring), so those pixels must be completely
     // transparent in the shadow, so drawing them changes nothing.
@@ -3990,38 +3990,39 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
                     const nsTArray<SkScalar>& aIntercepts, Float aPadding,
                     Rect& aRect) {
   nsCSSRendering::PaintDecorationLineParams clipParams = aParams;
-  int length = aIntercepts.Length();
+  const unsigned length = aIntercepts.Length();
 
-  SkScalar startIntercept = 0;
-  SkScalar endIntercept = 0;
-
-  // keep track of the direction we are drawing the clipped rects in
-  // for sideways text, our intercepts from the first glyph are actually
-  // decreasing (towards the top edge of the page), so we use a negative
-  // direction
-  Float dir = 1.0f;
   Float lineStart = aParams.vertical ? aParams.pt.y : aParams.pt.x;
   Float lineEnd = lineStart + aParams.lineSize.width;
-  if (aParams.sidewaysLeft) {
-    dir = -1.0f;
-    std::swap(lineStart, lineEnd);
-  }
 
-  for (int i = 0; i <= length; i += 2) {
-    // handle start/end edge cases and set up general case
-    startIntercept = (i > 0) ? (dir * aIntercepts[i - 1]) + lineStart
-                             : lineStart - (dir * aPadding);
-    endIntercept = (i < length) ? (dir * aIntercepts[i]) + lineStart
-                                : lineEnd + (dir * aPadding);
+  // Compute the min/max positions based on trim.
+  const Float trimLineStart = lineStart + (aParams.trimLeft - aPadding);
+  const Float trimLineEnd = lineEnd - (aParams.trimRight - aPadding);
+
+  for (unsigned i = 0; i <= length; i += 2) {
+    // Handle start/end edge cases and set up general case.
+    // While we use the trim start/end values, it is possible the trim cuts
+    // of the first intercept and into the next, so we will need to clamp
+    // the dimensions in the other case too.
+    SkScalar startIntercept = trimLineStart;
+    if (i > 0) {
+      startIntercept = std::max(aIntercepts[i - 1] + lineStart, startIntercept);
+    }
+    SkScalar endIntercept = trimLineEnd;
+    if (i < length) {
+      endIntercept = std::min(aIntercepts[i] + lineStart, endIntercept);
+    }
 
     // remove padding at both ends for width
     // the start of the line is calculated so the padding removes just
     // enough so that the line starts at its normal position
     clipParams.lineSize.width =
-        (dir * (endIntercept - startIntercept)) - (2.0 * aPadding);
+        endIntercept - startIntercept - (2.0 * aPadding);
 
     // Don't draw decoration lines that have a smaller width than 1, or half
     // the line-end padding dimension.
+    // This will catch the case of an intercept being fully removed by the
+    // trim values, in which case the width will be negative.
     if (clipParams.lineSize.width < std::max(aPadding * 0.5, 1.0)) {
       continue;
     }
@@ -4030,8 +4031,9 @@ static void SkipInk(nsIFrame* aFrame, DrawTarget& aDrawTarget,
     // padding; snap the rect edges to device pixels for consistent rendering
     // of dots across separate fragments of a dotted line.
     if (aParams.vertical) {
-      clipParams.pt.y = aParams.sidewaysLeft ? endIntercept + aPadding
-                                             : startIntercept + aPadding;
+      clipParams.pt.y = aParams.sidewaysLeft
+                            ? lineEnd - (endIntercept - lineStart) + aPadding
+                            : startIntercept + aPadding;
       aRect.y = std::floor(clipParams.pt.y + 0.5);
       aRect.SetBottomEdge(
           std::floor(clipParams.pt.y + clipParams.lineSize.width + 0.5));
@@ -4657,6 +4659,11 @@ gfxRect nsCSSRendering::GetTextDecorationRectInternal(
     MOZ_ASSERT_UNREACHABLE("Invalid text decoration value");
   }
 
+  // Take text decoration trim into account.
+  r.x += aParams.sidewaysLeft ? aParams.trimRight : aParams.trimLeft;
+  r.width -= aParams.trimLeft + aParams.trimRight;
+  r.width = std::max(r.width, 0.0);
+
   // Convert line-relative coordinate system (x = line-right, y = line-up)
   // to physical coords, and move the decoration rect to the calculated
   // offset from baseline.
@@ -4701,7 +4708,7 @@ static inline IntSize ComputeBlurRadius(nscoord aBlurRadius,
                                         gfxFloat aScaleY = 1.0) {
   gfxPoint scaledBlurStdDev =
       ComputeBlurStdDev(aBlurRadius, aAppUnitsPerDevPixel, aScaleX, aScaleY);
-  return gfxAlphaBoxBlur::CalculateBlurRadius(scaledBlurStdDev);
+  return gfxGaussianBlur::CalculateBlurRadius(scaledBlurStdDev);
 }
 
 // -----
@@ -4747,16 +4754,13 @@ gfxContext* nsContextBoxBlur::Init(const nsRect& aRect, nscoord aSpreadRadius,
 
   // Create the temporary surface for blurring
   dirtyRect = transform.TransformBounds(dirtyRect);
-  bool useHardwareAccel = !(aFlags & DISABLE_HARDWARE_ACCELERATION_BLUR);
   if (aSkipRect) {
     gfxRect skipRect = transform.TransformBounds(*aSkipRect);
-    mOwnedContext =
-        mAlphaBoxBlur.Init(aDestinationCtx, rect, spreadRadius, blurRadius,
-                           &dirtyRect, &skipRect, useHardwareAccel);
+    mOwnedContext = mGaussianBlur.Init(aDestinationCtx, rect, spreadRadius,
+                                       blurRadius, &dirtyRect, &skipRect);
   } else {
-    mOwnedContext =
-        mAlphaBoxBlur.Init(aDestinationCtx, rect, spreadRadius, blurRadius,
-                           &dirtyRect, nullptr, useHardwareAccel);
+    mOwnedContext = mGaussianBlur.Init(aDestinationCtx, rect, spreadRadius,
+                                       blurRadius, &dirtyRect, nullptr);
   }
   mContext = mOwnedContext.get();
 
@@ -4779,7 +4783,7 @@ void nsContextBoxBlur::DoPaint() {
     mDestinationCtx->SetMatrix(Matrix());
   }
 
-  mAlphaBoxBlur.Paint(mDestinationCtx);
+  mGaussianBlur.Paint(mDestinationCtx);
 }
 
 gfxContext* nsContextBoxBlur::GetContext() { return mContext; }
@@ -4855,7 +4859,7 @@ void nsContextBoxBlur::BlurRectangle(
     aCornerRadii->Scale(scaleX, scaleY);
   }
 
-  gfxAlphaBoxBlur::BlurRectangle(aDestinationCtx, shadowThebesRect,
+  gfxGaussianBlur::BlurRectangle(aDestinationCtx, shadowThebesRect,
                                  aCornerRadii, blurStdDev, aShadowColor,
                                  dirtyRect, skipRect);
 }
@@ -4951,7 +4955,7 @@ bool nsContextBoxBlur::InsetBoxBlur(
         std::floor(scale.yScale * aInnerClipRectRadii[corner].height);
   }
 
-  mAlphaBoxBlur.BlurInsetBox(aDestinationCtx, transformedDestRect,
+  mGaussianBlur.BlurInsetBox(aDestinationCtx, transformedDestRect,
                              transformedShadowClipRect, blurRadius,
                              aShadowColor,
                              aHasBorderRadius ? &aInnerClipRectRadii : nullptr,

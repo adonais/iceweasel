@@ -154,8 +154,7 @@ class WebConsoleActor extends Actor {
     this.onConsoleAPICall = this.onConsoleAPICall.bind(this);
     this.onDocumentEvent = this.onDocumentEvent.bind(this);
 
-    EventEmitter.on(
-      this.targetActor,
+    this.targetActor.on(
       "changed-toplevel-document",
       this._onChangedToplevelDocument
     );
@@ -278,7 +277,7 @@ class WebConsoleActor extends Actor {
     this._evalGlobal = global;
 
     if (!this._progressListenerActive) {
-      EventEmitter.on(this.targetActor, "will-navigate", this._onWillNavigate);
+      this.targetActor.on("will-navigate", this._onWillNavigate);
       this._progressListenerActive = true;
     }
   }
@@ -328,8 +327,7 @@ class WebConsoleActor extends Actor {
     this.stopListeners();
     super.destroy();
 
-    EventEmitter.off(
-      this.targetActor,
+    this.targetActor.off(
       "changed-toplevel-document",
       this._onChangedToplevelDocument
     );
@@ -511,7 +509,7 @@ class WebConsoleActor extends Actor {
           }
           startedListeners.push(event);
           break;
-        case "NetworkActivity":
+        case "NetworkActivity": {
           // Workers don't support this message type
           if (isWorker) {
             break;
@@ -522,6 +520,7 @@ class WebConsoleActor extends Actor {
             "Instead use Watcher actor's watchResources and listen to NETWORK_EVENT resource";
           dump(errorMessage + "\n");
           throw new Error(errorMessage);
+        }
         case "FileActivity":
           // Workers don't support this message type
           if (isWorker) {
@@ -1653,7 +1652,7 @@ class WebConsoleActor extends Actor {
   _onWillNavigate({ isTopLevel }) {
     if (isTopLevel) {
       this._evalGlobal = null;
-      EventEmitter.off(this.targetActor, "will-navigate", this._onWillNavigate);
+      this.targetActor.off("will-navigate", this._onWillNavigate);
       this._progressListenerActive = false;
     }
   }

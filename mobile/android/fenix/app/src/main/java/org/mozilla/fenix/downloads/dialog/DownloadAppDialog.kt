@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.feature.downloads.ui.DownloaderApp
 import org.mozilla.fenix.R
@@ -68,7 +69,7 @@ internal fun createDownloadAppDialog(
         }
     }
 
-    val builder = AlertDialog.Builder(context)
+    val builder = MaterialAlertDialogBuilder(context)
         .setTitle(context.getString(R.string.download_app_dialog_title))
         .setView(composeView)
         .setOnDismissListener {

@@ -1388,7 +1388,8 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       }
 
       // If selection is in a table element, we need special handling.
-      if (HTMLEditUtils::IsAnyTableElement(editableBlockElement)) {
+      if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(
+              *editableBlockElement)) {
         Result<EditActionResult, nsresult> result =
             HandleTabKeyPressInTable(aKeyboardEvent);
         if (MOZ_UNLIKELY(result.isErr())) {
@@ -1406,7 +1407,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       }
 
       // If selection is in an list item element, treat it as indent or outdent.
-      if (HTMLEditUtils::IsListItem(editableBlockElement)) {
+      if (HTMLEditUtils::IsListItemElement(*editableBlockElement)) {
         aKeyboardEvent->PreventDefault();
         if (!aKeyboardEvent->IsShift()) {
           nsresult rv = IndentAsAction();
@@ -1655,12 +1656,12 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleTabKeyPressInTable(
       postOrderIter.Next();
     }
 
-    nsCOMPtr<nsINode> node = postOrderIter.GetCurrentNode();
-    if (node && HTMLEditUtils::IsTableCell(node) &&
-        HTMLEditUtils::GetClosestAncestorTableElement(*node->AsElement()) ==
-            table) {
+    const RefPtr<Element> element =
+        Element::FromNodeOrNull(postOrderIter.GetCurrentNode());
+    if (element && HTMLEditUtils::IsTableCellElement(*element) &&
+        HTMLEditUtils::GetClosestAncestorTableElement(*element) == table) {
       aKeyboardEvent->PreventDefault();
-      CollapseSelectionToDeepestNonTableFirstChild(node);
+      CollapseSelectionToDeepestNonTableFirstChild(element);
       if (NS_WARN_IF(Destroyed())) {
         return Err(NS_ERROR_EDITOR_DESTROYED);
       }
@@ -1738,7 +1739,7 @@ void HTMLEditor::CollapseSelectionToDeepestNonTableFirstChild(nsINode* aNode) {
   for (nsIContent* child = node->GetFirstChild(); child;
        child = child->GetFirstChild()) {
     // Stop if we find a table, don't want to go into nested tables
-    if (HTMLEditUtils::IsTable(child) ||
+    if (child->IsHTMLElement(nsGkAtoms::table) ||
         !HTMLEditUtils::IsContainerNode(*child)) {
       break;
     }
@@ -1877,7 +1878,7 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
     // Named Anchor is a special case,
     // We collapse to insert element BEFORE the selection
     // For all other tags, we insert AFTER the selection
-    if (HTMLEditUtils::IsNamedAnchor(aElement)) {
+    if (HTMLEditUtils::IsNamedAnchorElement(*aElement)) {
       IgnoredErrorResult ignoredError;
       SelectionRef().CollapseToStart(ignoredError);
       if (NS_WARN_IF(Destroyed())) {
@@ -1989,7 +1990,7 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
 
   // check for inserting a whole table at the end of a block. If so insert
   // a br after it.
-  if (!HTMLEditUtils::IsTable(aElement) ||
+  if (!aElement->IsHTMLElement(nsGkAtoms::table) ||
       !HTMLEditUtils::IsLastChild(*aElement,
                                   {WalkTreeOption::IgnoreNonEditableNode})) {
     return NS_OK;
@@ -2022,7 +2023,7 @@ HTMLEditor::InsertNodeIntoProperAncestorWithTransaction(
     NodeType& aContentToInsert, const EditorDOMPoint& aPointToInsert,
     SplitAtEdges aSplitAtEdges) {
   MOZ_ASSERT(aPointToInsert.IsSetAndValidInComposedDoc());
-  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
+  if (NS_WARN_IF(!aPointToInsert.IsInContentNode())) {
     return Err(NS_ERROR_FAILURE);
   }
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
@@ -2034,14 +2035,14 @@ HTMLEditor::InsertNodeIntoProperAncestorWithTransaction(
 
   // Search up the parent chain to find a suitable container.
   EditorDOMPoint pointToInsert(aPointToInsert);
-  MOZ_ASSERT(pointToInsert.IsSet());
+  MOZ_ASSERT(pointToInsert.IsInContentNode());
   while (!HTMLEditUtils::CanNodeContain(*pointToInsert.GetContainer(),
                                         aContentToInsert)) {
     // If the current parent is a root (body or table element)
     // then go no further - we can't insert.
-    if (MOZ_UNLIKELY(
-            pointToInsert.IsContainerHTMLElement(nsGkAtoms::body) ||
-            HTMLEditUtils::IsAnyTableElement(pointToInsert.GetContainer()))) {
+    if (MOZ_UNLIKELY(pointToInsert.IsContainerHTMLElement(nsGkAtoms::body) ||
+                     HTMLEditUtils::IsAnyTableElementExceptColumnElement(
+                         *pointToInsert.ContainerAs<nsIContent>()))) {
       NS_WARNING(
           "There was no proper container element to insert the content node in "
           "the document");
@@ -3068,7 +3069,8 @@ Element* HTMLEditor::GetInclusiveAncestorByTagNameInternal(
 
   bool lookForLink = IsLinkTag(aTagName);
   bool lookForNamedAnchor = IsNamedAnchorTag(aTagName);
-  for (Element* element : currentElement->InclusiveAncestorsOfType<Element>()) {
+  for (Element* const element :
+       currentElement->InclusiveAncestorsOfType<Element>()) {
     // Stop searching if parent is a body element.  Note: Originally used
     // IsRoot() to/ stop at table cells, but that's too messy when you are
     // trying to find the parent table.
@@ -3077,22 +3079,22 @@ Element* HTMLEditor::GetInclusiveAncestorByTagNameInternal(
     }
     if (lookForLink) {
       // Test if we have a link (an anchor with href set)
-      if (HTMLEditUtils::IsLink(element)) {
+      if (HTMLEditUtils::IsHyperlinkElement(*element)) {
         return element;
       }
     } else if (lookForNamedAnchor) {
       // Test if we have a named anchor (an anchor with name set)
-      if (HTMLEditUtils::IsNamedAnchor(element)) {
+      if (HTMLEditUtils::IsNamedAnchorElement(*element)) {
         return element;
       }
     } else if (&aTagName == nsGkAtoms::list) {
       // Match "ol", "ul", or "dl" for lists
-      if (HTMLEditUtils::IsAnyListElement(element)) {
+      if (HTMLEditUtils::IsListElement(*element)) {
         return element;
       }
     } else if (&aTagName == nsGkAtoms::td) {
       // Table cells are another special case: match either "td" or "th"
-      if (HTMLEditUtils::IsTableCell(element)) {
+      if (HTMLEditUtils::IsTableCellElement(*element)) {
         return element;
       }
     } else if (&aTagName == element->NodeInfo()->NameAtom()) {
@@ -3201,8 +3203,8 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
 
   // Optimization for a single selected element
   if (startRef.GetContainer() == endRef.GetContainer()) {
-    nsIContent* startContent = startRef.GetChildAtOffset();
-    nsIContent* endContent = endRef.GetChildAtOffset();
+    nsIContent* const startContent = startRef.GetChildAtOffset();
+    nsIContent* const endContent = endRef.GetChildAtOffset();
     if (startContent && endContent &&
         startContent->GetNextSibling() == endContent) {
       if (!aTagName) {
@@ -3215,8 +3217,9 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
       }
       // Test for appropriate node type requested
       if (aTagName == startContent->NodeInfo()->NameAtom() ||
-          (isLinkTag && HTMLEditUtils::IsLink(startContent)) ||
-          (isNamedAnchorTag && HTMLEditUtils::IsNamedAnchor(startContent))) {
+          (isLinkTag && HTMLEditUtils::IsHyperlinkElement(*startContent)) ||
+          (isNamedAnchorTag &&
+           HTMLEditUtils::IsNamedAnchorElement(*startContent))) {
         MOZ_ASSERT(startContent->IsElement());
         return do_AddRef(startContent->AsElement());
       }
@@ -3313,11 +3316,12 @@ already_AddRefed<Element> HTMLEditor::GetSelectedElement(const nsAtom* aTagName,
       continue;
     }
 
-    if (isLinkTag && HTMLEditUtils::IsLink(lastElementInRange)) {
+    if (isLinkTag && HTMLEditUtils::IsHyperlinkElement(*lastElementInRange)) {
       continue;
     }
 
-    if (isNamedAnchorTag && HTMLEditUtils::IsNamedAnchor(lastElementInRange)) {
+    if (isNamedAnchorTag &&
+        HTMLEditUtils::IsNamedAnchorElement(*lastElementInRange)) {
       continue;
     }
 
@@ -4329,7 +4333,7 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
             *aNextOrAfterModifiedPoint.ContainerAs<nsIContent>(),
             HTMLEditUtils::ClosestEditableBlockElement,
             BlockInlineCheck::UseComputedDisplayStyle);
-    if (blockElement && HTMLEditUtils::IsMailCite(*blockElement) &&
+    if (blockElement && HTMLEditUtils::IsMailCiteElement(*blockElement) &&
         HTMLEditUtils::IsInlineContent(*blockElement,
                                        BlockInlineCheck::UseHTMLDefaultStyle)) {
       return NS_OK;
@@ -4350,6 +4354,22 @@ nsresult HTMLEditor::EnsureNoFollowingUnnecessaryLineBreak(
     return NS_OK;
   }
   if (unnecessaryLineBreak->IsHTMLBRElement()) {
+    // If the found unnecessary <br> is a preceding one of a mailcite which is a
+    // <span> styled as block, we need to preserve the <br> element for the
+    // serializer to cause a line break before the mailcite.
+    if (IsPlaintextMailComposer()) {
+      const WSScanResult nextThing =
+          WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary(
+              WSRunScanner::Scan::All,
+              unnecessaryLineBreak->After<EditorRawDOMPoint>(),
+              BlockInlineCheck::UseComputedDisplayOutsideStyle);
+      if (nextThing.ReachedOtherBlockElement() &&
+          HTMLEditUtils::IsMailCiteElement(*nextThing.ElementPtr()) &&
+          HTMLEditUtils::IsInlineContent(
+              *nextThing.ElementPtr(), BlockInlineCheck::UseHTMLDefaultStyle)) {
+        return NS_OK;
+      }
+    }
     // If the invisible break is a placeholder of ancestor inline elements, we
     // should not delete it to allow users to insert text with the format
     // specified by them.
@@ -4781,7 +4801,7 @@ bool HTMLEditor::SetCaretInTableCell(Element* aElement) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (!aElement || !aElement->IsHTMLElement() ||
-      !HTMLEditUtils::IsAnyTableElement(aElement)) {
+      !HTMLEditUtils::IsAnyTableElementExceptColumnElement(*aElement)) {
     return false;
   }
   const RefPtr<Element> editingHost = ComputeEditingHost();
@@ -6679,7 +6699,7 @@ HTMLEditor::CopyLastEditableChildStylesWithTransaction(
   for (RefPtr<Element> elementInPreviousBlock = deepestVisibleEditableElement;
        elementInPreviousBlock && elementInPreviousBlock != &aPreviousBlock;
        elementInPreviousBlock = elementInPreviousBlock->GetParentElement()) {
-    if (!HTMLEditUtils::IsInlineStyle(elementInPreviousBlock) &&
+    if (!HTMLEditUtils::IsInlineStyleElement(*elementInPreviousBlock) &&
         !elementInPreviousBlock->IsHTMLElement(nsGkAtoms::span)) {
       continue;
     }

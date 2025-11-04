@@ -32,7 +32,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/EnumSet.h"
-#include "mozilla/EnumeratedArray.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MotionPathUtils.h"

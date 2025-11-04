@@ -830,10 +830,6 @@ void nsViewManager::CallWillPaintOnObservers() {
   }
 }
 
-void nsViewManager::GetLastUserEventTime(uint32_t& aTime) {
-  aTime = gLastUserEventTime;
-}
-
 void nsViewManager::InvalidateHierarchy() {
   if (mRootView) {
     mRootViewManager = nullptr;

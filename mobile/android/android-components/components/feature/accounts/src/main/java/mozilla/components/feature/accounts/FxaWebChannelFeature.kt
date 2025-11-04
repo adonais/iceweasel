@@ -21,6 +21,13 @@ import mozilla.components.concept.engine.webextension.Port
 import mozilla.components.concept.engine.webextension.WebExtensionRuntime
 import mozilla.components.concept.sync.AuthType
 import mozilla.components.concept.sync.UserData
+import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_CAN_LINK_ACCOUNT
+import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_DELETE_ACCOUNT
+import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_LOGIN
+import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_LOGOUT
+import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_OAUTH_LOGIN
+import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_STATUS
+import mozilla.components.feature.accounts.FxaWebChannelFeature.Companion.COMMAND_SYNC_PREFERENCES
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.service.fxa.FxaAuthData
 import mozilla.components.service.fxa.ServerConfig
@@ -122,7 +129,6 @@ class FxaWebChannelFeature(
         private val fxaCapabilities: Set<FxaCapability>,
         private val onCommandExecuted: (WebChannelCommand) -> Unit,
     ) : MessageHandler {
-        @SuppressWarnings("ComplexMethod")
         override fun onPortMessage(message: Any, port: Port) {
             if (!isCommunicationAllowed(serverConfig, port)) {
                 logger.error("Communication disallowed, ignoring WebChannel message.")
@@ -306,7 +312,7 @@ class FxaWebChannelFeature(
          * Handles the [COMMAND_STATUS] event from the web-channel.
          * Responds with supported application capabilities and information about currently signed-in Firefox Account.
          */
-        @Suppress("ComplexMethod")
+
         private fun processFxaStatusCommand(
             accountManager: FxaAccountManager,
             messageId: String,

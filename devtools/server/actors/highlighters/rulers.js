@@ -4,7 +4,6 @@
 
 "use strict";
 
-const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const {
   getCurrentZoom,
   setIgnoreLayoutChanges,
@@ -277,8 +276,6 @@ class RulersHighlighter {
     }
 
     this.markup.destroy();
-
-    EventEmitter.emit(this, "destroy");
   }
 
   show() {

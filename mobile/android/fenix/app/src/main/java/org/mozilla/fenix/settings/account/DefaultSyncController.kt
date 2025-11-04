@@ -10,7 +10,7 @@ import android.net.Uri
 import android.provider.Settings
 import android.text.SpannableString
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
@@ -40,9 +40,12 @@ class DefaultSyncController(
         dialog.show()
     }
 
+    /**
+     * Builds a [MaterialAlertDialogBuilder] to inform the user that camera permissions are needed.
+    */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    fun buildDialog(): AlertDialog.Builder {
-        return AlertDialog.Builder(activity).apply {
+    fun buildDialog(): MaterialAlertDialogBuilder {
+        return MaterialAlertDialogBuilder(activity).apply {
             val spannableText = SpannableString(
                 activity.resources.getString(R.string.camera_permissions_needed_message),
             )

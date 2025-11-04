@@ -32,7 +32,6 @@
 #include "gfxEnv.h"
 #include "gfxPattern.h"
 #include "mozilla/EnumeratedArrayCycleCollection.h"
-#include "mozilla/EnumeratedRange.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/ProcessPriorityManager.h"
 #include "mozilla/ResultVariant.h"

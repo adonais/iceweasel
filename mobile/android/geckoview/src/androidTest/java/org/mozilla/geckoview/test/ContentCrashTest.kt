@@ -44,6 +44,24 @@ class ContentCrashTest : BaseSessionTest() {
         assertTrue(evalResult.mMsg, evalResult.mResult)
     }
 
+    @IgnoreCrash
+    @Test
+    fun crashContentJava() {
+        // We need the crash reporter for this test
+        assumeTrue(BuildConfig.MOZ_CRASHREPORTER)
+
+        // TODO: bug 1710940
+        assumeThat(sessionRule.env.isIsolatedProcess, Matchers.equalTo(false))
+
+        mainSession.loadUri(CONTENT_CRASH_JAVA_URL)
+        // Default handler will call MOZ_CRASH by GeckoAppShell.reportJavaCrash
+        mainSession.waitUntilCalled(ContentDelegate::class, "onCrash")
+
+        // This test is really slow so we allow double the usual timeout
+        var evalResult = client.getEvalResult(env.defaultTimeoutMillis * 2)
+        assertTrue(evalResult.mMsg, evalResult.mResult)
+    }
+
     @After
     fun teardown() {
         client.disconnect()

@@ -116,14 +116,7 @@ class RTCDataChannel final : public DOMEventTargetHelper {
 
   dom::RTCDataChannelStats GetStats(const DOMHighResTimeStamp aTimestamp) const;
 
-  void AppendStatsToReport(const UniquePtr<RTCStatsCollection>& aReport,
-                           const DOMHighResTimeStamp aTimestamp) const;
-
-  void UnsetWorkerNeedsUs() {
-    MOZ_ASSERT(mEventTarget->IsOnCurrentThread());
-    mWorkerNeedsUs = false;
-    UpdateMustKeepAlive();
-  }
+  void UnsetWorkerNeedsUs();
 
  protected:
   ~RTCDataChannel();

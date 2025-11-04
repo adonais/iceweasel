@@ -10,7 +10,7 @@ const SCHEDULED_BACKUPS_ENABLED_PREF = "browser.backup.scheduled.enabled";
  * as expected.
  */
 add_task(async function password_validation() {
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
     let settings = browser.contentDocument.querySelector("backup-settings");
 

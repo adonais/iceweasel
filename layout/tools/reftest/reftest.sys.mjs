@@ -1763,10 +1763,18 @@ function ResetRenderingState() {
 }
 
 async function RestoreChangedPreferences() {
-  if (!g.prefsToRestore.length) {
+  // Restore any preferences set via SpecialPowers in a previous test.
+  // On Android, g.containingWindow typically doesn't doesn't have a
+  // SpecialPowers property because it was created before SpecialPowers was
+  // registered.
+  // Get a parent actor so that there is less waiting than with a child.
+  let { requiresRefresh } = g.browser.browsingContext.currentWindowGlobal
+    .getActor("SpecialPowers")
+    .flushPrefEnv();
+
+  if (!g.prefsToRestore.length && !requiresRefresh) {
     return;
   }
-  var requiresRefresh = false;
   g.prefsToRestore.reverse();
   g.prefsToRestore.forEach(function (ps) {
     requiresRefresh = requiresRefresh || ps.requiresRefresh;

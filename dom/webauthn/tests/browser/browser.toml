@@ -13,6 +13,7 @@ prefs = [
  "security.webauthn.ctap2=true",
  "security.webauthn.enable_conditional_mediation=true",
  "security.webauthn.enable_macos_passkeys=false",
+ "security.certerrors.felt-privacy-v1=true"
 ]
 
 ["browser_abort_visibility.js"]
@@ -22,6 +23,7 @@ run-if = ["os != 'win'"] # Test not relevant on 1903+
 run-if = ["os != 'win'"] # Test not relevant on 1903+
 
 ["browser_webauthn_cert_override.js"]
+
 
 ["browser_webauthn_conditional_mediation.js"]
 skip-if = [

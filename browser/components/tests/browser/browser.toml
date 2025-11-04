@@ -9,6 +9,8 @@ support-files = [
 ["browser_browserGlue_os_auth.js"]
 skip-if = ["os == 'linux'"]
 
+["browser_browserGlue_sandboxDisabledNotification.js"]
+
 ["browser_browserGlue_telemetry.js"]
 
 ["browser_browserGlue_upgradeDialog_trigger.js"]

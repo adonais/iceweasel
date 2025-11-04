@@ -68,14 +68,14 @@ add_task(async function test_header() {
 add_task(async function test_encryption_state() {
   let { backupDOM } = await testRenderTemplate(false /* isEncrypted */);
   Assert.equal(
-    backupDOM.querySelector("#encryption-state").textContent,
-    "Not encrypted"
+    backupDOM.querySelector("#encryption-state-value").textContent,
+    "No"
   );
 
   ({ backupDOM } = await testRenderTemplate(true /* isEncrypted */));
   Assert.equal(
-    backupDOM.querySelector("#encryption-state").textContent,
-    "Encrypted"
+    backupDOM.querySelector("#encryption-state-value").textContent,
+    "Yes"
   );
 });
 
@@ -94,12 +94,12 @@ add_task(async function test_metadata() {
     timeStyle: "short",
   }).format(backupDate);
   Assert.equal(
-    backupDOM.querySelector("#last-backed-up").textContent,
-    `Last backed up: ${expectedTime}, ${expectedDate}`
+    backupDOM.querySelector("#creation-date-value").textContent,
+    `${expectedTime}, ${expectedDate}`
   );
   Assert.equal(
-    backupDOM.querySelector("#creation-device").textContent,
-    "Created on A super cool machine"
+    backupDOM.querySelector("#creation-device-value").textContent,
+    "A super cool machine"
   );
 });
 
@@ -136,8 +136,14 @@ add_task(async function test_hostile_metadata() {
     userAgent: "",
   };
   evalSandbox.document = {
+    getElementById: sinon.stub().callsFake((...args) => {
+      return backupDOM.getElementById(...args);
+    }),
     body: {
       toggleAttribute: sinon.stub(),
+    },
+    location: {
+      pathname: "test_archive.html",
     },
   };
   evalSandbox.alert = sinon.stub();
@@ -145,6 +151,42 @@ add_task(async function test_hostile_metadata() {
   Cu.evalInSandbox(scriptContent, evalSandbox);
 
   Assert.ok(evalSandbox.alert.notCalled, "alert() was never called");
+});
+
+add_task(async function test_backup_file_path_from_javascript() {
+  let { backupDOM } = await testRenderTemplate(false /* isEncrypted */);
+  let scriptTags = backupDOM.querySelectorAll("script");
+  Assert.equal(
+    scriptTags.length,
+    1,
+    "There should only be 1 script tag on the page."
+  );
+  let scriptContent = scriptTags[0].innerHTML;
+  let evalSandbox = Cu.Sandbox(Cu.getGlobalForObject({}));
+
+  evalSandbox.navigator = {
+    userAgent:
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:129.0) Gecko/20100101 Firefox/129.0",
+  };
+  evalSandbox.document = {
+    getElementById: sinon.stub().callsFake((...args) => {
+      return backupDOM.getElementById(...args);
+    }),
+    body: {
+      toggleAttribute: sinon.stub(),
+    },
+    location: {
+      pathname: "test_archive.html",
+    },
+  };
+
+  Cu.evalInSandbox(scriptContent, evalSandbox);
+
+  Assert.equal(
+    backupDOM.querySelector("#backup-file-path-value").textContent,
+    "test_archive.html",
+    "backup file path should have been sourced from document.location"
+  );
 });
 
 /**
@@ -167,8 +209,14 @@ add_task(async function test_moz_browser_handling() {
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:129.0) Gecko/20100101 Firefox/129.0",
   };
   evalSandbox.document = {
+    getElementById: sinon.stub().callsFake((...args) => {
+      return backupDOM.getElementById(...args);
+    }),
     body: {
       toggleAttribute: sinon.stub(),
+    },
+    location: {
+      pathname: "test_archive.html",
     },
   };
 
@@ -207,8 +255,14 @@ add_task(async function test_non_moz_browser_handling() {
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Safari/605.1.15",
   };
   evalSandbox.document = {
+    getElementById: sinon.stub().callsFake((...args) => {
+      return backupDOM.getElementById(...args);
+    }),
     body: {
       toggleAttribute: sinon.stub(),
+    },
+    location: {
+      pathname: "test_archive.html",
     },
   };
 

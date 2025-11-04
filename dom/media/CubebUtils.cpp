@@ -42,6 +42,7 @@
 #include <thread>
 
 #include "CallbackThreadRegistry.h"
+#include "CubebDeviceEnumerator.h"
 #include "audioipc2_client_ffi_generated.h"
 #include "audioipc2_server_ffi_generated.h"
 #include "mozilla/StaticPrefs_media.h"
@@ -429,10 +430,13 @@ RefPtr<CubebHandle> GetCubeb() {
 // This is only exported when running tests.
 void ForceSetCubebContext(cubeb* aCubebContext) {
   RefPtr<CubebHandle> oldHandle;  // For release without sMutex
-  StaticMutexAutoLock lock(sMutex);
-  oldHandle = sCubebHandle.forget();
-  sCubebHandle = aCubebContext ? new CubebHandle(aCubebContext) : nullptr;
-  sCubebState = CubebState::Initialized;
+  {
+    StaticMutexAutoLock lock(sMutex);
+    oldHandle = sCubebHandle.forget();
+    sCubebHandle = aCubebContext ? new CubebHandle(aCubebContext) : nullptr;
+    sCubebState = CubebState::Initialized;
+  }
+  CubebDeviceEnumerator::Shutdown();
 }
 
 void ForceUnsetCubebContext() {

@@ -182,7 +182,7 @@ async function doLocaleTest({
         // Reinitialize Suggest, which will set default-branch values for
         // Suggest prefs appropriate to the locale.
         info("Reinitializing Suggest");
-        await QuickSuggest._test_reinit();
+        await QuickSuggest._test_reset();
         info("Done reinitializing Suggest");
 
         // Sanity-check prefs. At this point, the value of `quickSuggestEnabled`
@@ -231,7 +231,7 @@ async function doLocaleTest({
 
   // Reinitialize Suggest so prefs go back to their defaults now that the app is
   // back to its default locale.
-  await QuickSuggest._test_reinit();
+  await QuickSuggest._test_reset();
 }
 
 function assertSuggestPrefs(expectedEnabled) {

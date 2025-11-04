@@ -25,11 +25,13 @@ import mozilla.appservices.remotesettings.RemoteSettingsRecord
 import mozilla.appservices.remotesettings.RemoteSettingsResponse
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.util.writeString
+import mozilla.components.support.rusterrors.reportRustError
 import org.json.JSONObject
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.net.URL
+import mozilla.appservices.remotesettings.InternalException as UniffiInternalException
 
 /**
  * Helper class to download collections from remote settings in app services.
@@ -74,6 +76,10 @@ class RemoteSettingsClient(
             RemoteSettingsResult.NetworkFailure(e)
         } catch (e: NullPointerException) {
             Logger.error(e.message.toString())
+            RemoteSettingsResult.NetworkFailure(e)
+        } catch (e: UniffiInternalException) {
+            Logger.error(e.toString())
+            reportRustError("remote-settings-internal-error", e.toString())
             RemoteSettingsResult.NetworkFailure(e)
         }
     }

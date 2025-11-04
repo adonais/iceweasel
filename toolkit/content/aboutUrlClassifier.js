@@ -346,6 +346,15 @@ var Provider = {
   // the provider is active. This is used to filter out google v2 provider
   // without changing the preference.
   isActiveProvider(provider) {
+    if (
+      provider === "google5" &&
+      !Services.prefs.getBoolPref(
+        "browser.safebrowsing.provider.google5.enabled"
+      )
+    ) {
+      return false;
+    }
+
     let listmanager = Cc[
       "@mozilla.org/url-classifier/listmanager;1"
     ].getService(Ci.nsIUrlListManager);

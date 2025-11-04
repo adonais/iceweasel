@@ -25,10 +25,16 @@ class ErrorResult;
 namespace dom {
 
 class GlobalObject;
+class CSSKeywordValue;
+class CSSUnsupportedValue;
 
 class CSSStyleValue : public nsISupports, public nsWrapperCache {
  public:
+  enum class ValueType { Uninitialized, Unsupported, Keyword };
+
   explicit CSSStyleValue(nsCOMPtr<nsISupports> aParent);
+
+  CSSStyleValue(nsCOMPtr<nsISupports> aParent, ValueType aValueType);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(CSSStyleValue)
@@ -53,10 +59,21 @@ class CSSStyleValue : public nsISupports, public nsWrapperCache {
 
   // end of CSSStyleValue Web IDL declarations
 
+  bool IsCSSUnsupportedValue() const;
+
+  // Defined in CSSUnsupportedValue.cpp
+  CSSUnsupportedValue& GetAsCSSUnsupportedValue();
+
+  bool IsCSSKeywordValue() const;
+
+  // Defined in CSSKeywordValue.cpp
+  CSSKeywordValue& GetAsCSSKeywordValue();
+
  protected:
   virtual ~CSSStyleValue() = default;
 
   nsCOMPtr<nsISupports> mParent;
+  const ValueType mValueType;
 };
 
 }  // namespace dom

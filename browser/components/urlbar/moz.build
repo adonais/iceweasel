@@ -9,7 +9,7 @@ DIRS += [
     "unitconverters",
 ]
 
-EXTRA_JS_MODULES += [
+MOZ_SRC_FILES += [
     "ActionsProvider.sys.mjs",
     "ActionsProviderContextualSearch.sys.mjs",
     "ActionsProviderQuickActions.sys.mjs",
@@ -63,7 +63,7 @@ EXTRA_JS_MODULES += [
     "UrlbarView.sys.mjs",
 ]
 
-EXTRA_JS_MODULES["urlbar/private"] += [
+MOZ_SRC_FILES += [
     "private/AddonSuggestions.sys.mjs",
     "private/AmpSuggestions.sys.mjs",
     "private/DynamicSuggestions.sys.mjs",

@@ -172,7 +172,8 @@ void DOMLocalization::GetAttributes(Element& aElement, L10nIdArgs& aResult,
   }
 
   if (aElement.GetAttr(nsGkAtoms::datal10nargs, l10nArgs)) {
-    ConvertStringToL10nArgs(l10nArgs, aResult.mArgs.SetValue(), aRv);
+    ConvertStringToL10nArgs(aResult.mId, l10nArgs, aResult.mArgs.SetValue(),
+                            aRv);
   }
 }
 
@@ -640,7 +641,8 @@ void DOMLocalization::ReportL10nOverlaysErrors(
   }
 }
 
-void DOMLocalization::ConvertStringToL10nArgs(const nsString& aInput,
+void DOMLocalization::ConvertStringToL10nArgs(const nsCString& aL10nId,
+                                              const nsString& aInput,
                                               intl::L10nArgs& aRetVal,
                                               ErrorResult& aRv) {
   if (aInput.IsEmpty()) {
@@ -653,7 +655,7 @@ void DOMLocalization::ConvertStringToL10nArgs(const nsString& aInput,
 
   if (!jsonReader.parse(NS_ConvertUTF16toUTF8(aInput).get(), args, false)) {
     nsTArray<nsCString> errors{
-        "[dom/l10n] Failed to parse l10n-args JSON: "_ns +
+        "[dom/l10n] Failed to parse l10n-args JSON ("_ns + aL10nId + "): "_ns +
             NS_ConvertUTF16toUTF8(aInput),
     };
     MaybeReportErrorsToGecko(errors, aRv, GetParentObject());
@@ -662,8 +664,8 @@ void DOMLocalization::ConvertStringToL10nArgs(const nsString& aInput,
 
   if (!args.isObject()) {
     nsTArray<nsCString> errors{
-        "[dom/l10n] Failed to parse l10n-args JSON: "_ns +
-            NS_ConvertUTF16toUTF8(aInput),
+        "[dom/l10n] Failed to parse l10n-args as JSON object ("_ns + aL10nId +
+            "): "_ns + NS_ConvertUTF16toUTF8(aInput),
     };
     MaybeReportErrorsToGecko(errors, aRv, GetParentObject());
     return;
@@ -692,8 +694,8 @@ void DOMLocalization::ConvertStringToL10nArgs(const nsString& aInput,
       newEntry->mValue.SetNull();
     } else {
       nsTArray<nsCString> errors{
-          "[dom/l10n] Failed to convert l10n-args JSON: "_ns +
-              NS_ConvertUTF16toUTF8(aInput),
+          "[dom/l10n] Failed to convert l10n-args JSON ("_ns + aL10nId +
+              "): "_ns + NS_ConvertUTF16toUTF8(aInput),
       };
       MaybeReportErrorsToGecko(errors, aRv, GetParentObject());
     }

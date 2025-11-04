@@ -71,6 +71,48 @@ fun ExtendedFloatingActionButton(
     expanded: Boolean = true,
     colors: FloatingActionButtonColors = FloatingActionButtonDefaults.colorsPrimary(),
     elevation: FloatingActionButtonElevation = M3FloatingActionButtonDefaults.elevation(),
+) = ExtendedFloatingActionButton(
+    label = label,
+    onClick = onClick,
+    modifier = modifier,
+    expanded = expanded,
+    colors = colors,
+    elevation = elevation,
+) {
+    Icon(
+        painter = painterResource(id = icon),
+        contentDescription = contentDescription,
+    )
+}
+
+/**
+ * Extended FAB
+ *
+ * A FAB with the ability to collapse and expand based on [expanded]. When [expanded] is updated,
+ * the [label] and the size of the FAB will be animated.
+ *
+ * https://m3.material.io/components/extended-fab/overview
+ * https://www.figma.com/design/MjufE1X5fvkxZ0YneX4kRd/Android-Library--2025-?node-id=63872-4518
+ *
+ * @param label The label displayed inside this FAB.
+ * @param icon The icon displayed inside this FAB.
+ * @param onClick Invoked when this FAB is clicked.
+ * @param modifier the [Modifier] to be applied to this FAB.
+ * @param expanded Controls the expansion state of this FAB. In an expanded state, the FAB will
+ * show both the icon and text. In a collapsed state, the FAB will show only the icon.
+ * @param colors The [FloatingActionButtonColors] used to color this FAB.
+ * @param elevation  [FloatingActionButtonElevation] used to resolve the elevation for this FAB in
+ * different states. This controls the size of the shadow below the FAB.
+ */
+@Composable
+fun ExtendedFloatingActionButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    expanded: Boolean = true,
+    colors: FloatingActionButtonColors = FloatingActionButtonDefaults.colorsPrimary(),
+    elevation: FloatingActionButtonElevation = M3FloatingActionButtonDefaults.elevation(),
+    icon: @Composable () -> Unit,
 ) {
     val startPadding = if (expanded) AcornTheme.layout.space.static200 else 0.dp
     val endPadding = if (expanded) AcornTheme.layout.space.static300 else 0.dp
@@ -93,10 +135,7 @@ fun ExtendedFloatingActionButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = if (expanded) Arrangement.Start else Arrangement.Center,
         ) {
-            Icon(
-                painter = painterResource(id = icon),
-                contentDescription = contentDescription,
-            )
+            icon()
 
             AnimatedVisibility(
                 visible = expanded,

@@ -31,6 +31,10 @@ notes = "This is the upstream code plus the ARM intrinsics workaround from qcms,
 audit-as-crates-io = true
 notes = "This is the upstream code plus a few local fixes, see bug 1685697."
 
+[policy.bhttp]
+audit-as-crates-io = true
+notes = "This is upstream code in between released versions."
+
 [policy."bindgen:0.72.0@git:9366e0af8da529c958b4cd4fcbe492d951c86f5c"]
 audit-as-crates-io = true
 notes = "This is the upstream code not yet released"
@@ -75,6 +79,10 @@ notes = "The dependencies on tokio-reactor and tokio-threadpools are just a hack
 [policy.gluesmith]
 criteria = "safe-to-run"
 notes = "Used for fuzzing."
+
+[policy.hashlink]
+audit-as-crates-io = true
+notes = "Only a single change on top of 0.10.0 to allow `hashbrown` 0.16 as a dependency."
 
 [policy.http3server]
 criteria = "safe-to-run"
@@ -179,6 +187,9 @@ audit-as-crates-io = false
 [policy.mp4parse_capi]
 audit-as-crates-io = false
 
+[policy.mtu]
+audit-as-crates-io = true
+
 [policy.naga]
 audit-as-crates-io = true
 notes = "Part of the wgpu repository, pinned as the rest of wgpu crates."
@@ -190,6 +201,10 @@ notes = "This is a pinned version of the upstream code, pending update of the cr
 [policy.objc]
 audit-as-crates-io = true
 notes = "This is the upstream code plus a backported fix."
+
+[policy.ohttp]
+audit-as-crates-io = true
+notes = "This is upstream code in between released versions."
 
 [policy.osclientcerts]
 audit-as-crates-io = false
@@ -512,10 +527,6 @@ criteria = "safe-to-deploy"
 version = "3.1.0"
 criteria = "safe-to-deploy"
 
-[[exemptions.lazycell]]
-version = "1.3.0"
-criteria = "safe-to-deploy"
-
 [[exemptions.libdbus-sys]]
 version = "0.2.2"
 criteria = "safe-to-deploy"
@@ -632,10 +643,6 @@ criteria = "safe-to-deploy"
 
 [[exemptions.rust-ini]]
 version = "0.10.3"
-criteria = "safe-to-deploy"
-
-[[exemptions.rust_decimal]]
-version = "1.24.0"
 criteria = "safe-to-deploy"
 
 [[exemptions.scroll]]

@@ -315,15 +315,15 @@
     Title for set firefox as default browser screen used by Nimbus experiments.
     Note: The word "Firefox" should NOT be translated
   -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources">پتا کرو کہ لکھاں فائرفاکس نوں پسند کیوں کردے ہن</string>
+  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">پتا کرو کہ لکھاں فائرفاکس نوں پسند کیوں کردے ہن</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources">ہور چوݨاں نال سرکھیت براؤز کرنا</string>
+  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">ہور چوݨاں نال سرکھیت براؤز کرنا</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">کمپنیاں نوں چوری چوری ویب اُتے تہاڈا پچھا کرن توں ساڈا غیر فائدہ سمرتھ براؤزر آپݨے آپ ہی روکدا اے۔</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources">10 کروڑ توں ودھ لوک نے آپݨی پردےداری دی سرکھیا لئی اوس براؤزر دی چوݨ کیتی اے، جس دا مقصد کوئی فائدہ نہیں اے۔</string>
+  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">10 کروڑ توں ودھ لوک نے آپݨی پردےداری دی سرکھیا لئی اوس براؤزر دی چوݨ کیتی اے، جس دا مقصد کوئی فائدہ نہیں اے۔</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources">جاݨے پچھاݨے ٹریکر؟ آپݨے آپ پابندی لئی۔ پھیلاؤ؟ 700 توں ودھ ازماوݨ لئی۔ PDF؟ ساڈے بلٹ‌ان ریڈر نال اہناں نوں ورتݨا سوکھا۔</string>
+  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">جاݨے پچھاݨے ٹریکر؟ آپݨے آپ پابندی لئی۔ پھیلاؤ؟ 700 توں ودھ ازماوݨ لئی۔ PDF؟ ساڈے بلٹ‌ان ریڈر نال اہناں نوں ورتݨا سوکھا۔</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">مول براؤزر تے طور تے بݨاؤ</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -1048,14 +1048,6 @@
   <string name="tab_crash_close">ٹیب بند کرو</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">ٹیب بحال کرو</string>
-  <!--
-    Bookmarks
-
-    Confirmation message for a dialog confirming if the user wants to delete the selected folder
-  -->
-  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">کیہہ تسیں ایہہ فولڈر نوں ہٹاؤݨا چاہندے او؟</string>
-  <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s چݨیاں چیزاں نوں ہٹائےگا۔</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">رد کرو</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1078,8 +1070,6 @@
   <string name="bookmark_menu_open_all_in_private_tabs_button">سبھناں نوں نجی ٹیباں چ کھولھو</string>
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">مٹاؤ</string>
-  <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">سامبھو</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1089,37 +1079,23 @@
   <string name="edit_bookmark_fragment_title">بک‌مارک نوں سودھو</string>
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">فولڈر نوں سودھو</string>
-  <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">ہم وقت کیتے بک‌مارک ویکھݨ لئی سائین ان کرو</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">پتہ</string>
   <!-- Bookmark FOLDER editing field label -->
   <string name="bookmark_folder_label">فولڈر</string>
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">ناں</string>
-  <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">فولڈر پایو</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">فولڈر چݨو</string>
-  <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">ناں ہوݨا چاہیدا اے</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">غلط URL</string>
-  <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">اتھے کوئی بک‌مارک نہیں اے</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s مٹا گیا</string>
-  <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">بک‌مارک ہٹایا</string>
-  <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">چݨو فولڈراں نوں ہٹایا جا رہا اے</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">موڑو</string>
-  <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">کھوج دی لکھت پایو</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">واپس کرو</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -1371,12 +1347,6 @@
   <string name="preferences_take_survey">سرویکھݨ بھرو</string>
   <!-- Preference for not taking the short survey. -->
   <string name="preferences_not_take_survey">نہیں، شکریہ</string>
-  <!--
-    Snackbar
-
-    Text shown in snackbar when user deletes a collection
-  -->
-  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">بھنڈار ہٹیایا گیا</string>
   <!-- Text shown in snackbar to undo deleting a tab, top site or collection -->
   <string name="snackbar_deleted_undo">موڑو</string>
   <!-- QR code scanner prompt dialog positive option to allow navigation to scanned link -->
@@ -1387,8 +1357,6 @@
   <string name="qr_scanner_dialog_invalid">ایس پتے نال مسئلہ ہو گیا۔</string>
   <!-- QR code scanner prompt dialog positive option when there is an error -->
   <string name="qr_scanner_dialog_invalid_ok">ٹھیک اے</string>
-  <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">مٹاؤ</string>
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">فونٹ دا آکار</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
@@ -1612,8 +1580,6 @@
   <string name="top_sites_menu_settings">سیٹنگاں</string>
   <!-- Content description for close button in collection placeholder. -->
   <string name="remove_home_collection_placeholder_content_description">ہٹاؤ</string>
-  <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">بند کرو</string>
   <!-- Snackbar button text to navigate to telemetry settings. -->
   <string name="experiments_snackbar_button">سیٹنگاں نوں جاؤ</string>
   <!-- Translations feature -->

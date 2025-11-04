@@ -24,24 +24,32 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   ReaderMode: "moz-src:///toolkit/components/reader/ReaderMode.sys.mjs",
   SearchbarProvidersManager:
-    "resource:///modules/UrlbarProvidersManager.sys.mjs",
-  SearchModeSwitcher: "resource:///modules/SearchModeSwitcher.sys.mjs",
+    "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
+  SearchModeSwitcher:
+    "moz-src:///browser/components/urlbar/SearchModeSwitcher.sys.mjs",
   SearchUIUtils: "moz-src:///browser/components/search/SearchUIUtils.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
-  UrlbarController: "resource:///modules/UrlbarController.sys.mjs",
-  UrlbarEventBufferer: "resource:///modules/UrlbarEventBufferer.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarQueryContext: "resource:///modules/UrlbarUtils.sys.mjs",
+  UrlbarController:
+    "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs",
+  UrlbarEventBufferer:
+    "moz-src:///browser/components/urlbar/UrlbarEventBufferer.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarQueryContext:
+    "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarProviderGlobalActions:
-    "resource:///modules/UrlbarProviderGlobalActions.sys.mjs",
-  UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
-  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
-  UrlbarValueFormatter: "resource:///modules/UrlbarValueFormatter.sys.mjs",
-  UrlbarView: "resource:///modules/UrlbarView.sys.mjs",
+    "moz-src:///browser/components/urlbar/UrlbarProviderGlobalActions.sys.mjs",
+  UrlbarProviderOpenTabs:
+    "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
+  UrlbarSearchUtils:
+    "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
+  UrlbarTokenizer:
+    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarValueFormatter:
+    "moz-src:///browser/components/urlbar/UrlbarValueFormatter.sys.mjs",
+  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
   UrlbarSearchTermsPersistence:
-    "resource:///modules/UrlbarSearchTermsPersistence.sys.mjs",
+    "moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -90,6 +98,7 @@ let px = number => number.toFixed(2) + "px";
 export class UrlbarInput {
   #allowBreakout = false;
   #breakoutBlockerCount = 0;
+  #eventTelemetryCategory;
   #userTypedValue;
 
   /**
@@ -127,6 +136,7 @@ export class UrlbarInput {
     this._suppressStartQuery = false;
     this._suppressPrimaryAdjustment = false;
     this._untrimmedValue = "";
+    this.#eventTelemetryCategory = eventTelemetryCategory;
 
     this.QueryInterface = ChromeUtils.generateQI([
       "nsIObserver",
@@ -305,6 +315,13 @@ export class UrlbarInput {
 
     this.editor.newlineHandling =
       Ci.nsIEditor.eNewlinesStripSurroundingWhitespace;
+
+    if (isAddressbar) {
+      let searchContainersPref = lazy.UrlbarPrefs.get(
+        "switchTabs.searchAllContainers"
+      );
+      Glean.urlbar.prefSwitchTabsSearchAllContainers.set(searchContainersPref);
+    }
   }
 
   #lazy = XPCOMUtils.declareLazy({
@@ -1192,7 +1209,7 @@ export class UrlbarInput {
     let openParams = {
       allowInheritPrincipal: false,
       globalHistoryOptions: {
-        triggeringSource: "urlbar",
+        triggeringSource: this.#eventTelemetryCategory,
         triggeringSearchEngine: result.payload?.engine,
         triggeringSponsoredURL: result.payload?.isSponsored
           ? result.payload.url
@@ -1543,7 +1560,7 @@ export class UrlbarInput {
     if (result.payload.sendAttributionRequest) {
       lazy.PartnerLinkAttribution.makeRequest({
         targetURL: result.payload.url,
-        source: "urlbar",
+        source: this.#eventTelemetryCategory,
         campaignID: Services.prefs.getStringPref(
           "browser.partnerlink.campaign.topsites"
         ),
@@ -1915,7 +1932,7 @@ export class UrlbarInput {
     let end = trimmedValue.search(lazy.UrlbarTokenizer.REGEXP_SPACES);
     let firstToken = end == -1 ? trimmedValue : trimmedValue.substring(0, end);
     // Enter search mode if the string starts with a restriction token.
-    let searchMode = lazy.UrlbarUtils.searchModeForToken(firstToken);
+    let searchMode = this.searchModeForToken(firstToken);
     let firstTokenIsRestriction = !!searchMode;
     if (!searchMode && searchEngine) {
       searchMode = { engineName: searchEngine.name };
@@ -1967,6 +1984,35 @@ export class UrlbarInput {
   }
 
   /**
+   * Returns a search mode object if a token should enter search mode when
+   * typed. This does not handle engine aliases.
+   *
+   * @param {Values<typeof lazy.UrlbarTokenizer.RESTRICT>} token
+   *   A restriction token to convert to search mode.
+   * @returns {?object}
+   *   A search mode object. Null if search mode should not be entered. See
+   *   setSearchMode documentation for details.
+   */
+  searchModeForToken(token) {
+    if (token == lazy.UrlbarTokenizer.RESTRICT.SEARCH) {
+      return {
+        engineName: lazy.UrlbarSearchUtils.getDefaultEngine(this.isPrivate)
+          ?.name,
+      };
+    }
+
+    let mode = lazy.UrlbarUtils.LOCAL_SEARCH_MODES.find(
+      m => m.restrict == token
+    );
+    if (mode) {
+      // Return a copy so callers don't modify the object in LOCAL_SEARCH_MODES.
+      return { ...mode };
+    }
+
+    return null;
+  }
+
+  /**
    * Opens a search page if the value is non-empty, otherwise opens the
    * search engine homepage (searchform).
    *
@@ -1987,7 +2033,10 @@ export class UrlbarInput {
       // TODO: record SAP telemetry, see Bug 1961789.
     } else {
       url = searchEngine.searchForm;
-      lazy.BrowserSearchTelemetry.recordSearchForm(searchEngine, "urlbar");
+      lazy.BrowserSearchTelemetry.recordSearchForm(
+        searchEngine,
+        this.#eventTelemetryCategory
+      );
     }
 
     this._lastSearchString = "";
@@ -2481,30 +2530,32 @@ export class UrlbarInput {
    *   The source name.
    */
   getSearchSource(event) {
-    if (this._isHandoffSession) {
-      return "urlbar-handoff";
-    }
+    if (this.isAddressbar) {
+      if (this._isHandoffSession) {
+        return "urlbar-handoff";
+      }
 
-    const isOneOff = this.view.oneOffSearchButtons?.eventTargetIsAOneOff(event);
-    if (this.searchMode && !isOneOff) {
-      // Without checking !isOneOff, we might record the string
-      // oneoff_urlbar-searchmode in the SEARCH_COUNTS probe (in addition to
-      // oneoff_urlbar and oneoff_searchbar). The extra information is not
-      // necessary; the intent is the same regardless of whether the user is
-      // in search mode when they do a key-modified click/enter on a one-off.
-      return "urlbar-searchmode";
-    }
+      const isOneOff =
+        this.view.oneOffSearchButtons?.eventTargetIsAOneOff(event);
+      if (this.searchMode && !isOneOff) {
+        // Without checking !isOneOff, we might record the string
+        // oneoff_urlbar-searchmode in the SEARCH_COUNTS probe (in addition to
+        // oneoff_urlbar and oneoff_searchbar). The extra information is not
+        // necessary; the intent is the same regardless of whether the user is
+        // in search mode when they do a key-modified click/enter on a one-off.
+        return "urlbar-searchmode";
+      }
 
-    let state = this.getBrowserState(this.window.gBrowser.selectedBrowser);
-    if (state.persist?.searchTerms && !isOneOff) {
-      // Normally, we use state.persist.shouldPersist to check if search terms
-      // persisted. However when the user modifies the search term, the boolean
-      // will become false. Thus, we check the presence of the search terms to
-      // know whether or not search terms ever persisted in the address bar.
-      return "urlbar-persisted";
+      let state = this.getBrowserState(this.window.gBrowser.selectedBrowser);
+      if (state.persist?.searchTerms && !isOneOff) {
+        // Normally, we use state.persist.shouldPersist to check if search terms
+        // persisted. However when the user modifies the search term, the boolean
+        // will become false. Thus, we check the presence of the search terms to
+        // know whether or not search terms ever persisted in the address bar.
+        return "urlbar-persisted";
+      }
     }
-
-    return "urlbar";
+    return this.#eventTelemetryCategory;
   }
 
   // Private methods below.
@@ -3928,9 +3979,7 @@ export class UrlbarInput {
       return null;
     }
 
-    let searchMode = lazy.UrlbarUtils.searchModeForToken(
-      result.payload.keyword
-    );
+    let searchMode = this.searchModeForToken(result.payload.keyword);
     // If result.originalEngine is set, then the user is Alt+Tabbing
     // through the one-offs, so the keyword doesn't match the engine.
     if (

@@ -18,9 +18,13 @@ add_task(async function test_downloadListener() {
   await beforeDownload.start();
 
   const downloadStartedEvents = [];
+  const downloadStoppedEvents = [];
   const listener = new RemoteDownloadListener();
   listener.on("download-started", (eventName, data) => {
     downloadStartedEvents.push(data);
+  });
+  listener.on("download-stopped", (eventName, data) => {
+    downloadStoppedEvents.push(data);
   });
 
   info("Start and stop the DownloadListener a few times in a row");
@@ -56,6 +60,17 @@ add_task(async function test_downloadListener() {
   // Wait for download to complete
   await onDownloadComplete;
 
+  await TestUtils.waitForCondition(
+    () => downloadStoppedEvents.length >= 1,
+    "Wait for download-stopped event"
+  );
+  is(downloadStoppedEvents.length, 1, "One download-stopped event received");
+  is(
+    downloadStoppedEvents[0].download,
+    download,
+    "download-stopped event contains the download object"
+  );
+
   info("Start another download");
   const download2 = await createDownload();
   onDownloadComplete = download2.start();
@@ -75,6 +90,24 @@ add_task(async function test_downloadListener() {
     downloadStartedEvents[1].download,
     download2,
     "download-started event contains the download2 object"
+  );
+
+  // Wait for download to complete
+  await onDownloadComplete;
+
+  await TestUtils.waitForCondition(
+    () => downloadStoppedEvents.length >= 2,
+    "Wait for download-stopped event"
+  );
+  is(
+    downloadStoppedEvents.length,
+    2,
+    "Another download-stopped event received"
+  );
+  is(
+    downloadStoppedEvents[1].download,
+    download2,
+    "download-stopped event contains the download2 object"
   );
 
   listener.destroy();

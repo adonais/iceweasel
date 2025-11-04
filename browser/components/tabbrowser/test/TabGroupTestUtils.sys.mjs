@@ -42,6 +42,33 @@ export const TabGroupTestUtils = {
   },
 
   /**
+   * Ensures that tabs have all browsers fully loaded and their browser states
+   * flushed into session state. This is a prerequisite for any code that
+   * relies on session state, e.g. saved or closed tab groups.
+   *
+   * @param {MozTabbrowserTab[]} tabs
+   */
+  async ensureTabsLoaded(tabs) {
+    await Promise.all(
+      tabs.map(async tab => {
+        await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+        await TabStateFlusher.flush(tab.linkedBrowser);
+      })
+    );
+  },
+
+  /**
+   * Ensures that a tab group has all browsers fully loaded and their
+   * browser states flushed into session state. This is a prerequisite for any
+   * code that relies on session state, e.g. saved or closed tab groups.
+   *
+   * @param {MozTabbrowserTabGroup} tabGroup
+   */
+  ensureTabGroupLoaded(tabGroup) {
+    return this.ensureTabsLoaded(tabGroup.tabs);
+  },
+
+  /**
    * Removes a tab group, along with its tabs. Resolves when the tab group
    * is gone.
    *

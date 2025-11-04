@@ -1,3 +1,4 @@
+========================
 use-border-radius-tokens
 ========================
 
@@ -10,66 +11,65 @@ Examples of incorrect code for this rule:
 
 .. code-block:: css
 
-    .custom-button {
-      border-radius: 0.5rem;
-    }
+  .custom-button {
+    border-radius: 0.5rem;
+  }
 
 .. code-block:: css
 
-    .card {
-      border-radius: 8px;
-    }
+  .card {
+    border-radius: 8px;
+  }
 
 .. code-block:: css
 
-    .avatar {
-      border-radius: 50%;
-    }
+  .avatar {
+    border-radius: 50%;
+  }
 
 Examples of correct token usage for this rule:
 ----------------------------------------------
 
 .. code-block:: css
 
-    .custom-button {
-      border-radius: var(--border-radius-small);
-    }
+  .custom-button {
+    border-radius: var(--border-radius-small);
+  }
 
 .. code-block:: css
 
-    .custom-button {
-      border-radius: var(--border-radius-medium);
-    }
+  .custom-button {
+    border-radius: var(--border-radius-medium);
+  }
 
 .. code-block:: css
 
-    .custom-button {
-      border-radius: var(--border-radius-circle);
-    }
+  .custom-button {
+    border-radius: var(--border-radius-circle);
+  }
 
 .. code-block:: css
 
-    .custom-button {
-      border-radius: var(--border-radius-large);
-    }
+  .custom-button {
+    border-radius: var(--border-radius-large);
+  }
 
 .. code-block:: css
 
-    /* Local CSS variables that reference valid border-radius tokens are allowed */
-    :root {
-      --custom-border-radius: var(--border-radius-small);
-    }
+  /* Local CSS variables that reference valid border-radius tokens are allowed */
+  :root {
+    --custom-border-radius: var(--border-radius-small);
+  }
 
-    .custom-button {
-      border-radius: var(--custom-border-radius);
-    }
+  .custom-button {
+    border-radius: var(--custom-border-radius);
+  }
 
 .. code-block:: css
 
     .custom-button {
       border-radius: var(--custom-border-radius, --border-radius-small);
     }
-
 
 
 The rule also allows these values non-token values:

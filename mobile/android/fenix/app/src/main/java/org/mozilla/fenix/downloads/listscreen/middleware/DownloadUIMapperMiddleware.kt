@@ -12,6 +12,8 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.DownloadAction
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.feature.downloads.DateTimeProvider
+import mozilla.components.feature.downloads.DefaultDateTimeProvider
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.Store
@@ -36,7 +38,7 @@ class DownloadUIMapperMiddleware(
     private val browserStore: BrowserStore,
     private val fileItemDescriptionProvider: FileItemDescriptionProvider,
     private val scope: CoroutineScope,
-    private val dateTimeProvider: DateTimeProvider = DateTimeProviderImpl(),
+    private val dateTimeProvider: DateTimeProvider = DefaultDateTimeProvider(),
 ) : Middleware<DownloadUIState, DownloadUIAction> {
 
     override fun invoke(

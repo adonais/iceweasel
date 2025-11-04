@@ -261,7 +261,7 @@ function getWritingModeMatrix(size, style) {
     case "ltr":
       // This is the initial value. No further adjustment needed.
       break;
-    case "rtl":
+    case "rtl": {
       let rowLength = width;
       if (writingMode != "horizontal-tb") {
         rowLength = height;
@@ -269,6 +269,7 @@ function getWritingModeMatrix(size, style) {
       currentMatrix = multiply(currentMatrix, translate(rowLength, 0));
       currentMatrix = multiply(currentMatrix, reflectAboutY());
       break;
+    }
     default:
       console.error(`Unexpected direction: ${direction}`);
   }

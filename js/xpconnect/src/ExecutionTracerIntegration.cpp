@@ -11,6 +11,8 @@
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentFragment.h"
+#include "mozilla/dom/DOMException.h"
+#include "mozilla/dom/DOMExceptionBinding.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Location.h"
 #include "nsDOMAttributeMap.h"
@@ -125,6 +127,63 @@ bool ExecutionTracerIntegration::WriteNodeSummary(
   return true;
 }
 
+bool ExecutionTracerIntegration::WriteExceptionSummary(
+    JSContext* aCx, JS::Handle<JSObject*> aObj, bool aNested,
+    JS_TracerSummaryWriter* aWriter) {
+  RefPtr<DOMException> domException;
+  RefPtr<Exception> exception;
+  UNWRAP_OBJECT(DOMException, aObj, domException);
+  if (domException) {
+    exception = domException;
+  } else {
+    // Not a DOM Exception, try XPC Exception.
+    UNWRAP_OBJECT(Exception, aObj, exception);
+    if (!exception) {
+      return false;
+    }
+  }
+  aWriter->writeUint8(uint8_t(SummaryKind::Exception));
+
+  nsAutoString name;
+  exception->GetName(name);
+  aWriter->writeTwoByteString(name.get());
+
+  nsAutoString message;
+  exception->GetMessageMoz(message);
+  aWriter->writeTwoByteString(message.get());
+
+  if (domException) {
+    uint16_t code = domException->Code();
+    aWriter->writeUint16(code);
+  } else {
+    aWriter->writeUint16(0);
+  }
+
+  uint32_t result = exception->Result();
+  aWriter->writeUint32(result);
+
+  nsAutoCString fileName;
+  exception->GetFilename(aCx, fileName);
+  aWriter->writeUTF8String(fileName.get());
+
+  uint32_t line = exception->LineNumber(aCx);
+  aWriter->writeUint32(line);
+
+  uint32_t column = exception->ColumnNumber();
+  aWriter->writeUint32(column);
+
+  nsCOMPtr<nsIStackFrame> stack = exception->GetLocation();
+  nsAutoString stackString;
+  if (stack) {
+    stack->GetFormattedStack(aCx, stackString);
+    aWriter->writeTwoByteString(stackString.get());
+  } else {
+    aWriter->writeTwoByteString(u"");
+  }
+
+  return true;
+}
+
 // static
 bool ExecutionTracerIntegration::Callback(JSContext* aCx,
                                           JS::Handle<JSObject*> aObj,
@@ -143,10 +202,18 @@ bool ExecutionTracerIntegration::Callback(JSContext* aCx,
     if (!WriteNodeSummary(aCx, node, aNested, aWriter)) {
       return false;
     }
-  } else {
-    aWriter->writeUint8(uint8_t(SummaryKind::Other));
+    return true;
   }
 
+  if (DOMClassHasInterface<prototypes::id::DOMException>(domClass) ||
+      DOMClassHasInterface<prototypes::id::Exception>(domClass)) {
+    if (!WriteExceptionSummary(aCx, aObj, aNested, aWriter)) {
+      return false;
+    }
+    return true;
+  }
+
+  aWriter->writeUint8(uint8_t(SummaryKind::Other));
   return true;
 }
 

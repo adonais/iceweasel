@@ -144,16 +144,13 @@ add_task(async function testLargeRootInteger() {
 
   await performRequests(monitor, tab, 1);
 
-  const onCodeMirrorReady = waitForDOM(
-    document,
-    "#response-panel .CodeMirror-code"
-  );
+  const onCodeMirrorReady = waitForDOM(document, "#response-panel .cm-content");
 
   store.dispatch(Actions.toggleNetworkDetails());
   clickOnSidebarTab(document, "response");
   const [codeMirrorCodeEl] = await onCodeMirrorReady;
   is(
-    codeMirrorCodeEl.querySelector("pre.CodeMirror-line span").textContent,
+    codeMirrorCodeEl.querySelector(".cm-line").textContent,
     "1516340399466235648",
     "Large number is displayed in a CodeMirror editor"
   );

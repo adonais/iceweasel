@@ -58,8 +58,9 @@ class ModifierTest : TestSetup() {
         }
 
         composeTestRule.scrollToOnShownIndex()
+        composeTestRule.waitForIdle()
 
-        composeTestRule.waitUntil(ON_SHOWN_SETTLE_TIME_MS + 500L) { onShown }
+        composeTestRule.waitUntil(ON_SHOWN_SETTLE_TIME_MS + 4000L) { onShown }
 
         assertTrue(onShown)
     }

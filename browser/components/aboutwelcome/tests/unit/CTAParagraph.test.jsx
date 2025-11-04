@@ -38,7 +38,7 @@ describe("CTAParagraph component", () => {
 
   it("should call handleAction method when button is link is clicked", () => {
     const btnLink = wrapper.find(".cta-paragraph span");
-    btnLink.simulate("click");
+    btnLink.simulate("click", { preventDefault() {} });
     assert.calledOnce(handleAction);
   });
 

@@ -516,13 +516,10 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       padding-block: var(--space-medium);
 
       .title {
-        // Contrast fix for users who have wallpapers set
-        @include wallpaper-contrast-fix;
-
         text-transform: uppercase;
         font-size: var(--font-size-small);
         font-weight: var(--font-weight);
-        color: var(--newtab-contextual-text-secondary-color);
+        color: var(--newtab-text-secondary-color);
       }
 
       .excerpt {
@@ -561,7 +558,6 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       }
 
       .meta {
-        z-index: 10;
         padding: var(--space-small) var(--space-large);
         padding-block-end: 0;
 
@@ -572,7 +568,6 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
       }
 
       .meta .title {
-        color-scheme: initial;
         text-transform: none;
       }
 
@@ -648,13 +643,14 @@ $ds-card-image-gradient-solid: rgba(0, 0, 0, 100%);
   .card-stp-button-hover-background {
     height: 100%;
     padding-block-start: 0;
-    background: var(--button-background-color-ghost);
+    background: transparent;
 
     .card-stp-button-position-wrapper {
       inset-block-start: unset;
       // this value needs to equal the current padding of the card
       inset-block-end: var(--space-medium);
       inset-inline-end: var(--space-large);
+      background: var(--button-background-color-ghost);
     }
   }
 

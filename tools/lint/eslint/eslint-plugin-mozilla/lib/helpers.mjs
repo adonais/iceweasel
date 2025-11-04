@@ -142,7 +142,8 @@ export default {
    *
    * @param  {object} node
    *         The AST node to convert.
-   *
+   * @param {object} context
+   *   The ESLint context for the file being processed.
    * @returns {string}
    *         The JS source for the node.
    */
@@ -737,6 +738,9 @@ export default {
    * When ESLint is run from SublimeText, paths retrieved from
    * context.getFileName contain leading and trailing double-quote characters.
    * These characters need to be removed.
+   *
+   * @param {string} pathName
+   *   The path name to clean up.
    */
   cleanUpPath(pathName) {
     return pathName.replace(/^"/, "").replace(/"$/, "");
@@ -770,6 +774,9 @@ export default {
 
   /**
    * Extract the path of require (and require-like) helpers used in DevTools.
+   *
+   * @param {object} node
+   *   The node to extract the path from.
    */
   getDevToolsRequirePath(node) {
     if (

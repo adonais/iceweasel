@@ -15,7 +15,6 @@
 #include "nsCOMPtr.h"
 #include "nsTArray.h"
 #include "nsIWidget.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/ContentData.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/Maybe.h"

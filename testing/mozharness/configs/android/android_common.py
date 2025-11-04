@@ -278,8 +278,7 @@ config = {
                 "--symbols-path=%(symbols_path)s",
                 "--manifest=tests/xpcshell.toml",
                 "--log-errorsummary=%(error_summary_file)s",
-                "--log-tbpl-level=%(log_tbpl_level)s",
-                "--threads=4",
+                "--threads=10",
                 "--deviceSerial=%(device_serial)s",
                 "%(xpcshell_extra)s",
             ],
@@ -322,4 +321,7 @@ config = {
             ],
         },
     },  # end suite_definitions
+    "structured_suites": [
+        "xpcshell",
+    ],
 }

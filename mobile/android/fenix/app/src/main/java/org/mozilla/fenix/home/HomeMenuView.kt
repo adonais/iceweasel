@@ -109,7 +109,7 @@ class HomeMenuView(
     /**
      * Callback invoked when a menu item is tapped on.
      */
-    @Suppress("LongMethod", "ComplexMethod")
+    @Suppress("LongMethod")
     @VisibleForTesting(otherwise = PRIVATE)
     internal fun onItemTapped(item: HomeMenu.Item) {
         when (item) {

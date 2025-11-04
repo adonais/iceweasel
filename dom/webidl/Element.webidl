@@ -187,7 +187,7 @@ interface mixin HTMLOrForeignElement {
 // https://drafts.csswg.org/cssom/#the-elementcssinlinestyle-mixin
 interface mixin ElementCSSInlineStyle {
   [SameObject, PutForwards=cssText]
-  readonly attribute CSSStyleDeclaration style;
+  readonly attribute CSSStyleProperties style;
 };
 
 // https://drafts.csswg.org/cssom-view/

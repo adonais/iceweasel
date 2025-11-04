@@ -788,7 +788,14 @@ public final class GeckoProcessManager extends IProcessManager.Stub {
         () -> {
           INSTANCE
               .start(info)
-              .accept(result::complete, result::completeExceptionally)
+              .accept(
+                  result::complete,
+                  exception -> {
+                    if (type == GeckoProcessType.GPU) {
+                      GeckoAppShell.logGpuProcessLaunchFailure(exception.getMessage());
+                    }
+                    result.completeExceptionally(exception);
+                  })
               .finally_(info::cleanup);
         });
 

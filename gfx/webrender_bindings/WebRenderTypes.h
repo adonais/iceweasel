@@ -9,7 +9,6 @@
 
 #include "ImageTypes.h"
 #include "mozilla/webrender/webrender_ffi.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Types.h"
@@ -127,6 +126,7 @@ enum class SpatialKeyKind : uint32_t {
   Sticky,
   ImagePipeline,
   APZ,
+  ViewTransition,
 };
 
 // Construct a unique, persistent spatial key based on the frame tree pointer,

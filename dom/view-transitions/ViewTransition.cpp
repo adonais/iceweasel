@@ -268,6 +268,24 @@ Element* ViewTransition::GetViewTransitionTreeRoot() const {
              : nullptr;
 }
 
+void ViewTransition::GetCapturedFrames(
+    nsTArray<nsIFrame*>& aCapturedFrames) const {
+  if (mOldCaptureElements) {
+    for (const auto& [f, _] : *mOldCaptureElements) {
+      aCapturedFrames.AppendElement(f);
+    }
+  }
+
+  for (const auto& entry : mNamedElements) {
+    CapturedElement& capturedElement = *entry.GetData();
+    if (capturedElement.mNewElement &&
+        capturedElement.mNewElement->GetPrimaryFrame()) {
+      aCapturedFrames.AppendElement(
+          capturedElement.mNewElement->GetPrimaryFrame());
+    }
+  }
+}
+
 Maybe<nsRect> ViewTransition::GetOldInkOverflowRect(nsAtom* aName) const {
   auto* el = mNamedElements.Get(aName);
   if (NS_WARN_IF(!el)) {
@@ -1267,7 +1285,7 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   // Step 3: Let usedTransitionNames be a new set of strings.
   nsTHashSet<nsAtom*> usedTransitionNames;
   // Step 4: Let captureElements be a new list of elements.
-  AutoTArray<std::pair<nsIFrame*, RefPtr<nsAtom>>, 32> captureElements;
+  OldCaptureFramesArray captureElements;
 
   // Step 5: If the snapshot containing block size exceeds an
   // implementation-defined maximum, then return failure.
@@ -1328,6 +1346,8 @@ Maybe<SkipTransitionReason> ViewTransition::CaptureOldState() {
   }
 
   if (!captureElements.IsEmpty()) {
+    AutoRestore guard{mOldCaptureElements};
+    mOldCaptureElements = &captureElements;
     // When snapshotting an iframe, we need to paint from the root subdoc.
     if (RefPtr<PresShell> ps =
             nsContentUtils::GetInProcessSubtreeRootDocument(mDocument)

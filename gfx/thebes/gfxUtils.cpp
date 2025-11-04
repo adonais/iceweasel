@@ -1126,7 +1126,7 @@ nsresult gfxUtils::EncodeSourceSurfaceAsStream(SourceSurface* aSurface,
   nsresult rv = encoder->InitFromData(
       map.mData, BufferSizeFromStrideAndHeight(map.mStride, size.height),
       size.width, size.height, map.mStride, imgIEncoder::INPUT_FORMAT_HOSTARGB,
-      aOutputOptions);
+      aOutputOptions, VoidCString());
   dataSurface->Unmap();
   if (NS_FAILED(rv)) {
     return NS_ERROR_FAILURE;
@@ -1645,7 +1645,7 @@ nsresult gfxUtils::GetInputStream(gfx::DataSourceSurface* aSurface,
 
   return dom::ImageEncoder::GetInputStream(
       aSurface->GetSize().width, aSurface->GetSize().height, imageBuffer.get(),
-      format, encoder, aEncoderOptions, outStream);
+      format, encoder, aEncoderOptions, VoidCString(), outStream);
 }
 
 /* static */
@@ -1676,7 +1676,7 @@ nsresult gfxUtils::GetInputStreamWithRandomNoise(
 
   return dom::ImageEncoder::GetInputStream(
       aSurface->GetSize().width, aSurface->GetSize().height, imageBuffer.get(),
-      format, encoder, aEncoderOptions, outStream);
+      format, encoder, aEncoderOptions, VoidCString(), outStream);
 }
 
 class GetFeatureStatusWorkerRunnable final

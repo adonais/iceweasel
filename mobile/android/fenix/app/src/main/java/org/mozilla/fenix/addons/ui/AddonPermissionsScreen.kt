@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -21,7 +22,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.Addon.Companion.isAllURLsPermission
 import mozilla.components.feature.addons.Addon.Permission
@@ -75,7 +75,7 @@ fun AddonPermissionsScreen(
             }
 
             item {
-                Divider()
+                HorizontalDivider()
             }
 
             item {
@@ -102,7 +102,7 @@ fun AddonPermissionsScreen(
             }
 
             item {
-                Divider()
+                HorizontalDivider()
             }
         }
 
@@ -169,7 +169,7 @@ fun AddonPermissionsScreen(
             }
 
             item {
-                Divider()
+                HorizontalDivider()
             }
         }
 
@@ -186,7 +186,7 @@ fun AddonPermissionsScreen(
             }
 
             item {
-                Divider()
+                HorizontalDivider()
             }
         }
 
@@ -211,7 +211,7 @@ fun AddonPermissionsScreen(
             }
 
             item {
-                Divider()
+                HorizontalDivider()
             }
         }
 

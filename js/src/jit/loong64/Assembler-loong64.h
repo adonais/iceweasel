@@ -100,20 +100,9 @@ static constexpr FloatRegister ReturnFloat32Reg{FloatRegisters::f0,
 static constexpr FloatRegister ReturnDoubleReg = f0;
 static constexpr FloatRegister ReturnSimd128Reg = InvalidFloatReg;
 
-static constexpr Register ScratchRegister = t7;
-static constexpr Register SecondScratchReg = t8;
-
-// Helper classes for ScratchRegister usage. Asserts that only one piece
-// of code thinks it has exclusive ownership of each scratch register.
-struct ScratchRegisterScope : public AutoRegisterScope {
-  explicit ScratchRegisterScope(MacroAssembler& masm)
-      : AutoRegisterScope(masm, ScratchRegister) {}
-};
-
-struct SecondScratchRegisterScope : public AutoRegisterScope {
-  explicit SecondScratchRegisterScope(MacroAssembler& masm)
-      : AutoRegisterScope(masm, SecondScratchReg) {}
-};
+// Scratch register used for runtime call patching.
+// See MacroAssembler::patchNopToCall and MacroAssembler::PatchWrite_NearCall.
+static constexpr Register SavedScratchRegister = s8;
 
 static constexpr FloatRegister ScratchFloat32Reg{FloatRegisters::f23,
                                                  FloatRegisters::Single};
@@ -128,6 +117,29 @@ struct ScratchFloat32Scope : public AutoFloatRegisterScope {
 struct ScratchDoubleScope : public AutoFloatRegisterScope {
   explicit ScratchDoubleScope(MacroAssembler& masm)
       : AutoFloatRegisterScope(masm, ScratchDoubleReg) {}
+};
+
+class Assembler;
+
+class UseScratchRegisterScope {
+ public:
+  explicit UseScratchRegisterScope(Assembler& assembler);
+  explicit UseScratchRegisterScope(Assembler* assembler);
+  ~UseScratchRegisterScope();
+
+  Register Acquire();
+  void Release(const Register& reg);
+  bool hasAvailable() const;
+  void Include(const GeneralRegisterSet& list) {
+    *available_ = GeneralRegisterSet::Union(*available_, list);
+  }
+  void Exclude(const GeneralRegisterSet& list) {
+    *available_ = GeneralRegisterSet::Subtract(*available_, list);
+  }
+
+ private:
+  GeneralRegisterSet* available_;
+  GeneralRegisterSet old_available_;
 };
 
 // Use arg reg from EnterJIT function as OsrFrameReg.
@@ -965,14 +977,15 @@ class AssemblerLOONG64 : public AssemblerShared {
 #ifdef JS_JITSPEW
         printer(nullptr),
 #endif
-        isFinished(false) {
+        isFinished(false),
+        scratch_register_list_((1 << t7.code()) | (1 << t8.code())) {
   }
 
   static Condition InvertCondition(Condition cond);
   static DoubleCondition InvertCondition(DoubleCondition cond);
   // This is changing the condition codes for cmp a, b to the same codes for cmp
   // b, a.
-  static Condition InvertCmpCondition(Condition cond);
+  static Condition SwapCmpOperandsCondition(Condition cond);
 
   // As opposed to x86/x64 version, the data relocation has to be executed
   // before to recover the pointer, and not after.
@@ -1491,6 +1504,14 @@ class AssemblerLOONG64 : public AssemblerShared {
   void verifyHeapAccessDisassembly(uint32_t begin, uint32_t end,
                                    const Disassembler::HeapAccess& heapAccess) {
     // Implement this if we implement a disassembler.
+  }
+
+ private:
+  GeneralRegisterSet scratch_register_list_;
+
+ public:
+  GeneralRegisterSet* GetScratchRegisterList() {
+    return &scratch_register_list_;
   }
 };  // AssemblerLOONG64
 

@@ -18,7 +18,7 @@ task-defaults:
     run-on-projects: []
     treeherder:
         kind: test
-    worker-type: t-linux-docker
+    worker-type: t-linux-docker-amd
     worker:
         docker-image: {in-tree: ubuntu2404-test}
         max-run-time: 1800

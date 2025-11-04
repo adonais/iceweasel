@@ -7,13 +7,18 @@ subsuite = "webgpu"
 # These conditions should be the same as the `skip-if` conditions in
 # `mochitest-no-pref.html`, except for `verify`.
 run-if = [
-  "nightly_build",
+  "early_beta_or_earlier",
   "os == 'win'",
+  "os == 'mac' && arch == 'aarch64'",
 ]
 
 prefs = [
   "dom.webgpu.service-workers.enabled=true",
-  "gfx.webgpu.ignore-blocklist=true", # https://bugzilla.mozilla.org/show_bug.cgi?id=1985348
+  # Ignoring the blocklist is necessary to run tests in CI on old Mesa versions
+  # (https://bugzilla.mozilla.org/show_bug.cgi?id=1985348) or against beta and
+  # release builds on old MacOS versions
+  # (https://bugzilla.mozilla.org/show_bug.cgi?id=1993341).
+  "gfx.webgpu.ignore-blocklist=true",
 ]
 support-files = [
   "worker_wrapper.js",

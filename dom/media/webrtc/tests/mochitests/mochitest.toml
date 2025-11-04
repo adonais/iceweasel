@@ -73,10 +73,10 @@ scheme = "http"
 skip-if = ["os != 'linux'"] # the only platform with real devices
 
 ["test_ondevicechange.html"]
-run-sequentially = "sets prefs that may disrupt other tests"
+run-sequentially = ["true"] # sets prefs that may disrupt other tests
 
 ["test_ondevicechange_resistfingerprinting.html"]
-run-sequentially = "sets prefs that may disrupt other tests"
+run-sequentially = ["true"] # sets prefs that may disrupt other tests
 
 ["test_rvfc_timestamp_alignment.html"]
 

@@ -51,7 +51,7 @@ export class NetErrorChild extends RemotePageChild {
     let doc = aEvent.originalTarget.ownerDocument || aEvent.originalTarget;
 
     switch (aEvent.type) {
-      case "click":
+      case "click": {
         let elem = aEvent.originalTarget;
         if (elem.id == "viewCertificate") {
           // Call through the superclass to avoid the security check.
@@ -62,6 +62,7 @@ export class NetErrorChild extends RemotePageChild {
           });
         }
         break;
+      }
     }
   }
 

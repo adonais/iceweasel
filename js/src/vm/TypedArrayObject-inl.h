@@ -13,7 +13,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Compiler.h"
-#include "mozilla/FloatingPoint.h"
 
 #include <algorithm>
 #include <type_traits>

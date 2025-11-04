@@ -61,3 +61,5 @@ testChangeParam("helperThreadRatio");
 testChangeParam("maxHelperThreads");
 testChangeParam("semispaceNurseryEnabled");
 testChangeParam("nurseryMaxTimeGoalMS");
+testChangeParam("storeBufferEntries");
+testChangeParam("storeBufferScaling");

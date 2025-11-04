@@ -443,8 +443,6 @@ class CrashReporter internal constructor(
     )
 
     companion object {
-        const val RELEASE_RUNTIME_TAG = "release"
-
         @Volatile
         private var instance: CrashReporter? = null
 

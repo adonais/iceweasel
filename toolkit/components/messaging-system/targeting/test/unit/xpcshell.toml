@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head = "head.js"
 tags = "messaging-system"
 firefox-appdir = "browser"

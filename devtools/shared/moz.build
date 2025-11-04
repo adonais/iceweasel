@@ -50,7 +50,6 @@ DevToolsModules(
     "async-storage.js",
     "async-utils.js",
     "constants.js",
-    "content-observer.js",
     "debounce.js",
     "DevToolsInfaillibleUtils.sys.mjs",
     "DevToolsUtils.js",

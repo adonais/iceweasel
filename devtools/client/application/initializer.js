@@ -26,6 +26,9 @@ const {
   bindActionCreators,
 } = require("resource://devtools/client/shared/vendor/redux.js");
 const {
+  START_IGNORE_ACTION,
+} = require("resource://devtools/client/shared/redux/middleware/ignore.js");
+const {
   l10n,
 } = require("resource://devtools/client/application/src/modules/l10n.js");
 
@@ -132,6 +135,9 @@ window.Application = {
   },
 
   destroy() {
+    // Prevents any further action from being dispatched
+    this.store.dispatch(START_IGNORE_ACTION);
+
     this.workersListener.removeListener();
 
     this._commands.resourceCommand.unwatchResources(

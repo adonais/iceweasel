@@ -9,7 +9,18 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+});
+
+ChromeUtils.defineLazyGetter(lazy, "UrlbarUtils", () => {
+  try {
+    return ChromeUtils.importESModule(
+      "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"
+    ).UrlbarUtils;
+  } catch {
+    // Fallback to URI format prior to FF 144.
+    return ChromeUtils.importESModule("resource:///modules/UrlbarUtils.sys.mjs")
+      .UrlbarUtils;
+  }
 });
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";

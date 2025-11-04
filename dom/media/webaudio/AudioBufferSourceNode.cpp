@@ -15,7 +15,6 @@
 #include "AudioNodeTrack.h"
 #include "AudioParamTimeline.h"
 #include "Tracing.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/AudioBufferSourceNodeBinding.h"
 #include "mozilla/dom/AudioParam.h"
 #include "nsContentUtils.h"

@@ -779,6 +779,13 @@ LinuxUnderMemoryPressure:
   type: boolean
   scope: report
 
+LinuxMemoryPSI:
+  description: >
+    Memory PSI (Pressure Stall Information) values from /proc/pressure/memory
+    as comma-separated list: some_avg10,some_avg60,some_avg300,some_total,full_avg10,full_avg60,full_avg300,full_total
+  type: string
+  scope: ping
+
 LauncherProcessState:
   description: >
     Launcher process enabled state. The integer value of this annotation must
@@ -1177,6 +1184,13 @@ User32BeforeBlocklist:
 useragent_locale:
   description: >
     User-agent locale.
+  type: string
+  scope: report
+
+UserFontRulesExhausted:
+  description: >
+    Set to "inside" if rules exhausted while adding fonts inside the user's dir,
+    set to "outside" if adding for fonts outside the user's dir.
   type: string
   scope: report
 

@@ -217,7 +217,7 @@ nsIContent::IMEState nsIContent::GetDesiredIMEState() {
 
 bool nsIContent::HasIndependentSelection() const {
   nsIFrame* frame = GetPrimaryFrame();
-  return (frame && frame->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION));
+  return frame && frame->IsInsideTextControl();
 }
 
 dom::Element* nsIContent::GetEditingHost() const {

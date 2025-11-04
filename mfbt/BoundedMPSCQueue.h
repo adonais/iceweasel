@@ -18,50 +18,18 @@
 #define mozilla_BoundedMPSCQueue_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Attributes.h"
-#include "mozilla/PodOperations.h"
 #include <algorithm>
 #include <atomic>
+#include <cinttypes>
 #include <cstddef>
-#include <limits>
+#include <cstdint>
 #include <memory>
-#include <thread>
-#include <type_traits>
 #include <optional>
-#include <inttypes.h>
+#include <type_traits>
 
 namespace mozilla {
 
-namespace detail {
-template <typename T, bool IsPod = std::is_trivial<T>::value>
-struct MemoryOperations {
-  /**
-   * This allows either moving (if T supports it) or copying a number of
-   * elements from a `aSource` pointer to a `aDestination` pointer.
-   * If it is safe to do so and this call copies, this uses PodCopy. Otherwise,
-   * constructors and destructors are called in a loop.
-   */
-  static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount);
-};
-
-template <typename T>
-struct MemoryOperations<T, true> {
-  static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount) {
-    PodCopy(aDestination, aSource, aCount);
-  }
-};
-
-template <typename T>
-struct MemoryOperations<T, false> {
-  static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount) {
-    std::move(aSource, aSource + aCount, aDestination);
-  }
-};
-}  // namespace detail
-
-static const bool MPSC_DEBUG = false;
-
-static const size_t kMaxCapacity = 16;
+static constexpr bool MPSC_DEBUG = false;
 
 /**
  * This data structure allows producing data from several threads, and consuming
@@ -81,18 +49,19 @@ static const size_t kMaxCapacity = 16;
  * - There is no guarantee of forward progression for individual threads.
  * - This should be safe to use from a signal handler context.
  */
-template <typename T>
+template <typename T, size_t kCapacity>
 class MPSCRingBufferBase {
+  static constexpr size_t kMaxCapacity = 16;
+
  public:
-  explicit MPSCRingBufferBase(size_t aCapacity)
-      : mFree(0), mOccupied(0), mCapacity(aCapacity + 1) {
-    MOZ_RELEASE_ASSERT(aCapacity < kMaxCapacity);
+  explicit MPSCRingBufferBase() : mFree(0), mOccupied(0) {
+    static_assert(kCapacity < kMaxCapacity);
 
     if constexpr (MPSC_DEBUG) {
       fprintf(stderr,
               "[%s] this=%p { mCapacity=%zu, mBits=%" PRIu64
               ", mMask=0x%" PRIx64 " }\n",
-              __PRETTY_FUNCTION__, this, mCapacity, mBits, mMask);
+              __PRETTY_FUNCTION__, this, 1 + kCapacity, mBits, mMask);
     }
 
     // Leave one empty space in the queue, used to distinguish an empty queue
@@ -113,9 +82,9 @@ class MPSCRingBufferBase {
    * @brief Put an element in the queue. The caller MUST check the return value
    * and maybe loop to try again (or drop if acceptable).
    *
-   * First it attempts to acuire a slot (storage index) that is known to be
-   * non used. If that is not successfull then 0 is returned. If that is
-   * successfull, the slot is ours (it has been exclusively acquired) and data
+   * First it attempts to acquire a slot (storage index) that is known to be
+   * non used. If that is not successful then 0 is returned. If that is
+   * successful, the slot is ours (it has been exclusively acquired) and data
    * can be copied into the ring buffer at that index.
    *
    * @param aElement The element to put in the queue.
@@ -125,8 +94,7 @@ class MPSCRingBufferBase {
   [[nodiscard]] int Send(T& aElement) {
     std::optional<uint64_t> empty_idx = UnmarkSlot(mFree);
     if (empty_idx.has_value()) {
-      detail::MemoryOperations<T>::MoveOrCopy(&mData[*empty_idx - 1], &aElement,
-                                              1);
+      std::move(&aElement, &aElement + 1, &mData[*empty_idx - 1]);
       MarkSlot(mOccupied, *empty_idx);
       return *empty_idx;
     }
@@ -150,7 +118,7 @@ class MPSCRingBufferBase {
     std::optional<uint64_t> idx = UnmarkSlot(mOccupied);
     if (idx.has_value()) {
       if (aElement) {
-        detail::MemoryOperations<T>::MoveOrCopy(aElement, &mData[*idx - 1], 1);
+        std::move(&mData[*idx - 1], &mData[*idx], aElement);
       }
       MarkSlot(mFree, *idx);
       return *idx;
@@ -158,7 +126,7 @@ class MPSCRingBufferBase {
     return 0;
   }
 
-  size_t Capacity() const { return StorageCapacity() - 1; }
+  constexpr size_t Capacity() const { return StorageCapacity() - 1; }
 
  private:
   /*
@@ -215,7 +183,7 @@ class MPSCRingBufferBase {
    * Enqueue a value in the ring buffer at aIndex.
    *
    * Takes the current uint64_t value from the atomic and try to acquire a non
-   * used slot in the ring buffer. If unsucessfull, 0 is returned, otherwise
+   * used slot in the ring buffer. If unsuccessful, 0 is returned, otherwise
    * compute the new atomic value that holds the new state of usage of the
    * slots, and use compare/exchange to perform lock-free synchronization:
    * compare/exchanges succeeds when the current value and the modified one are
@@ -315,7 +283,7 @@ class MPSCRingBufferBase {
       // thread performing a read will see the value we are writing.
       //
       // In case of failure we require memory_order_relaxed for the load
-      // operation because we dont need synchronization at that point.
+      // operation because we don't need synchronization at that point.
       if (aSlotStatus.compare_exchange_weak(current, modified,
                                             std::memory_order_acquire,
                                             std::memory_order_relaxed)) {
@@ -333,7 +301,9 @@ class MPSCRingBufferBase {
   // Return the number of elements we can store within the ring buffer, whereas
   // Capacity() will return the amount of elements in mData, including the 0
   // value.
-  [[nodiscard]] size_t StorageCapacity() const { return mCapacity; }
+  [[nodiscard]] constexpr size_t StorageCapacity() const {
+    return 1 + kCapacity;
+  }
 
   // For the atomics below they are manipulated by Get()/Set(), and we are using
   // them to store the IDs of the ring buffer usage (empty/full).
@@ -350,15 +320,13 @@ class MPSCRingBufferBase {
   // Holds the IDs of the occupied slots in the ring buffer
   std::atomic<uint64_t> mOccupied;
 
-  const size_t mCapacity;
-
   // The actual ring buffer
   std::unique_ptr<T[]> mData;
 
   // How we are using the uint64_t atomic above to store the IDs of the ring
   // buffer.
-  static const uint64_t mBits = 4;
-  static const uint64_t mMask = 0b1111;
+  static constexpr uint64_t mBits = 4;
+  static constexpr uint64_t mMask = 0b1111;
 };
 
 /**
@@ -366,8 +334,8 @@ class MPSCRingBufferBase {
  * several producers threads and one one consumer (that never changes role),
  * without explicit synchronization nor allocation (outside of the constructor).
  */
-template <typename T>
-using BoundedMPSCQueue = MPSCRingBufferBase<T>;
+template <typename T, size_t Capacity>
+using BoundedMPSCQueue = MPSCRingBufferBase<T, Capacity>;
 
 }  // namespace mozilla
 

@@ -47,6 +47,8 @@ class AndroidDecoderModule : public PlatformDecoderModule {
   // Return supported codecs (querying via JNI if not already cached)
   static media::MediaCodecsSupported GetSupportedCodecs();
 
+  static bool IsJavaDecoderModuleAllowed();
+
  protected:
   bool SupportsColorDepth(
       gfx::ColorDepth aColorDepth,

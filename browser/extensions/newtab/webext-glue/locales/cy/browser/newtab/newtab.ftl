@@ -483,8 +483,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Newid i Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Newid i Celsius
 newtab-weather-menu-hide-weather = Cuddio'r tywydd ar Dab Newydd
 newtab-weather-menu-learn-more = Rhagor
+newtab-weather-menu-detect-my-location = Canfod fy lleoliad
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Nid yw data tywydd ar gael ar hyn o bryd.
+newtab-weather-opt-in-see-weather = Hoffech chi weld weld tywydd eich lleoliad?
+newtab-weather-opt-in-not-now =
+    .label = Nid nawr
+newtab-weather-opt-in-yes =
+    .label = Iawn
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Dinas Efrog Newydd
 
 ## Topic Labels
 
@@ -651,6 +659,9 @@ newtab-widget-lists-input-menu-move-up = Symud i fyny
 newtab-widget-lists-input-menu-move-down = Symud i lawr
 newtab-widget-lists-input-menu-delete = Dileu
 newtab-widget-lists-input-menu-edit = Golygu
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Creu rhestr newydd
 newtab-widget-lists-name-label-default =
     .label = Rhestr tasgau
 newtab-widget-lists-name-placeholder-default =

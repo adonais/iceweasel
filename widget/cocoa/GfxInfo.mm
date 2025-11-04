@@ -176,9 +176,28 @@ void GfxInfo::GetDeviceInfo() {
   }
 #endif
 
-  CFMutableDictionaryRef apv_dev_dict = IOServiceMatching("AppleParavirtGPU");
-  if (IOServiceGetMatchingServices(kIOMasterPortDefault, apv_dev_dict,
-                                   &io_iter) == kIOReturnSuccess) {
+  // "AppleParavirtGPU" is the class name in VMs that use the Apple
+  // Virtualization framework. But it's "AppleParavirtGPUControl" in VMware
+  // VMs (on Intel) that use VMware's "paravirtualized driver". Parallels
+  // Intel VMs have a "AppleParavirtGPUControl" service. But, like VMware
+  // VMs that don't use the "paravirtualized driver", they also have
+  // kClassCodeDisplayVGA devices. So these cases will have been dealt with
+  // above. On Apple Silicon, Parallels uses Apple's Virtualization
+  // framework. VMware doesn't support macOS guest VMs on Apple Silicon.
+  for (const char* className :
+       {"AppleParavirtGPU", "AppleParavirtGPUControl"}) {
+    CFMutableDictionaryRef apv_dev_dict = IOServiceMatching(className);
+    if (IOServiceGetMatchingServices(kIOMasterPortDefault, apv_dev_dict,
+                                     &io_iter) == kIOReturnSuccess) {
+      if (IOIteratorNext(io_iter) != IO_OBJECT_NULL) {
+        IOIteratorReset(io_iter);
+        break;
+      }
+      IOObjectRelease(io_iter);
+    }
+    io_iter = IO_OBJECT_NULL;
+  }
+  if (io_iter) {
     io_registry_entry_t entry = IO_OBJECT_NULL;
     while ((entry = IOIteratorNext(io_iter)) != IO_OBJECT_NULL) {
       CFTypeRef vendor_id_ref =
@@ -468,12 +487,6 @@ const nsTArray<RefPtr<GfxDriverInfo>>& GfxInfo::GetGfxDriverInfo() {
         OperatingSystem::OSX, DeviceFamily::IntelWebRenderBlocked,
         nsIGfxInfo::FEATURE_WEBRENDER, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
         "FEATURE_FAILURE_INTEL_GEN5_OR_OLDER");
-
-    // Intel HD3000 disabled due to bug 1661505
-    IMPLEMENT_MAC_DRIVER_BLOCKLIST(
-        OperatingSystem::OSX, DeviceFamily::IntelSandyBridge,
-        nsIGfxInfo::FEATURE_WEBRENDER, nsIGfxInfo::FEATURE_BLOCKED_DEVICE,
-        "FEATURE_FAILURE_INTEL_MAC_HD3000_NO_WEBRENDER");
   }
   return *sDriverInfo;
 }
@@ -520,6 +533,14 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
       aFailureId = "FEATURE_UNQUALIFIED_WEBRENDER_MAC_ROSETTA";
       return NS_OK;
+#ifndef EARLY_BETA_OR_EARLIER
+    } else if (aFeature == nsIGfxInfo::FEATURE_WEBGPU &&
+               !nsCocoaFeatures::OnTahoeOrLater()) {
+      // https://bugzilla.mozilla.org/show_bug.cgi?id=1993341
+      *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
+      aFailureId = "FEATURE_FAILURE_WEBGPU_MACOS_26_REQUIRED";
+      return NS_OK;
+#endif
     }
   }
 

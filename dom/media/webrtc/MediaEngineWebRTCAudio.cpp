@@ -190,7 +190,7 @@ nsresult MediaEngineWebRTCMicrophoneSource::Reconfigure(
 }
 
 AudioProcessing::Config AudioInputProcessing::ConfigForPrefs(
-    const MediaEnginePrefs& aPrefs) const {
+    MediaTrackGraph* aGraph, const MediaEnginePrefs& aPrefs) const {
   AudioProcessing::Config config;
 
   config.pipeline.multi_channel_render = true;
@@ -249,9 +249,12 @@ AudioProcessing::Config AudioInputProcessing::ConfigForPrefs(
 
   config.high_pass_filter.enabled = aPrefs.mHPFOn;
 
-  if (mPlatformProcessingSetParams &
-      CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION) {
-    config.echo_canceller.enabled = false;
+  if ((mPlatformProcessingSetParams &
+       CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION)) {
+    // Platform processing (VPIO on macOS) will cancel echo from the output
+    // device used as the output stream. Leave it on here when rendering audio
+    // to another output device.
+    config.echo_canceller.enabled = !aGraph->OutputForAECIsPrimary();
   }
   if (mPlatformProcessingSetParams &
       CUBEB_INPUT_PROCESSING_PARAM_AUTOMATIC_GAIN_CONTROL) {
@@ -732,6 +735,14 @@ void AudioInputProcessing::Process(AudioProcessingTrack* aTrack,
   MOZ_ASSERT(aInput->GetDuration() == need,
              "Wrong data length from input port source");
 
+  if (mSettings.mAecOn &&
+      (mPlatformProcessingSetParams &
+       CUBEB_INPUT_PROCESSING_PARAM_ECHO_CANCELLATION) &&
+      mAppliedConfig.echo_canceller.enabled ==
+          aTrack->Graph()->OutputForAECIsPrimary()) {
+    ApplySettingsInternal(aTrack->Graph(), mSettings);
+  }
+
   if (IsPassThrough(graph)) {
     LOG_FRAME(
         "(Graph %p, Driver %p) AudioInputProcessing %p Forwarding %" PRId64
@@ -786,7 +797,11 @@ void AudioInputProcessing::ProcessOutputData(AudioProcessingTrack* aTrack,
   MOZ_ASSERT(aChunk.ChannelCount() > 0);
   aTrack->AssertOnGraphThread();
 
-  if (!mEnabled || IsPassThrough(aTrack->Graph())) {
+  if (!mEnabled) {
+    return;
+  }
+
+  if (IsPassThrough(aTrack->Graph())) {
     return;
   }
 
@@ -1149,8 +1164,9 @@ void AudioInputProcessing::ApplySettingsInternal(
   bool wasPassThrough = IsPassThrough(aGraph);
 
   mSettings = aSettings;
+  mAppliedConfig = ConfigForPrefs(aGraph, aSettings);
   if (mAudioProcessing) {
-    mAudioProcessing->ApplyConfig(ConfigForPrefs(aSettings));
+    mAudioProcessing->ApplyConfig(mAppliedConfig);
   }
 
   if (wasPassThrough != IsPassThrough(aGraph)) {
@@ -1158,13 +1174,10 @@ void AudioInputProcessing::ApplySettingsInternal(
   }
 }
 
-webrtc::AudioProcessing::Config AudioInputProcessing::AppliedConfig(
+const webrtc::AudioProcessing::Config& AudioInputProcessing::AppliedConfig(
     MediaTrackGraph* aGraph) const {
   aGraph->AssertOnGraphThread();
-  if (mAudioProcessing) {
-    return mAudioProcessing->GetConfig();
-  }
-  return ConfigForPrefs(mSettings);
+  return mAppliedConfig;
 }
 
 void AudioInputProcessing::End() {
@@ -1252,7 +1265,7 @@ void AudioInputProcessing::EnsureAudioProcessing(AudioProcessingTrack* aTrack) {
     MOZ_ASSERT(mEnvWrapper);
     mHadAECAndDrift = haveAECAndDrift;
     BuiltinAudioProcessingBuilder builder;
-    builder.SetConfig(ConfigForPrefs(mSettings));
+    builder.SetConfig(AppliedConfig(graph));
     if (haveAECAndDrift) {
       // Setting an EchoControlFactory always enables AEC, overriding
       // Config::echo_canceller.enabled, so do this only when AEC is enabled.

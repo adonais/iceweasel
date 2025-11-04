@@ -13,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.lib.publicsuffixlist.PublicSuffixList
@@ -121,6 +122,7 @@ class CookieBannerHandlingDetailsViewTest {
             assertEquals(expectedText, view.binding.title.text)
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `GIVEN cookie banner handling mode is disabled WHEN biding title THEN title view must have the expected string`() =
         runTestOnMain {

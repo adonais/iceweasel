@@ -804,6 +804,12 @@ abstract class EngineSession(
             const val LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE: Int = 1 shl 7
             const val ALLOW_ADDITIONAL_HEADERS: Int = 1 shl 15
             const val ALLOW_JAVASCRIPT_URL: Int = 1 shl 16
+
+            const val APP_LINK_LAUNCH_TYPE_COLD: Int = 1 shl 8
+            const val APP_LINK_LAUNCH_TYPE_WARM: Int = 1 shl 9
+            const val APP_LINK_LAUNCH_TYPE_HOT: Int = 1 shl 10
+            const val APP_LINK_LAUNCH_TYPE_UNKNOWN: Int = 0
+
             internal const val ALL = BYPASS_CACHE + BYPASS_PROXY + EXTERNAL + ALLOW_POPUPS +
                 BYPASS_CLASSIFIER + LOAD_FLAGS_FORCE_ALLOW_DATA_URI + LOAD_FLAGS_REPLACE_HISTORY +
                 LOAD_FLAGS_BYPASS_LOAD_URI_DELEGATE + ALLOW_ADDITIONAL_HEADERS + ALLOW_JAVASCRIPT_URL

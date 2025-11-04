@@ -76,6 +76,7 @@ EXPORTS.mozilla += [
     "StopGapEventTarget.h",
     "SynchronizedEventQueue.h",
     "SyncRunnable.h",
+    "TargetShutdownTaskSet.h",
     "TaskController.h",
     "TaskDispatcher.h",
     "TaskQueue.h",

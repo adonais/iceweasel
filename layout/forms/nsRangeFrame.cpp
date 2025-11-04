@@ -135,7 +135,7 @@ void nsRangeFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     DisplayBorderBackgroundOutline(aBuilder, aLists);
     // Don't paint our children, but let the thumb be hittable for events.
     if (auto* thumb = mThumbDiv->GetPrimaryFrame();
-        thumb && aBuilder->IsForEventDelivery()) {
+        thumb && aBuilder->IsForEventDelivery() && !HidesContent()) {
       nsDisplayListSet set(aLists, aLists.Content());
       BuildDisplayListForChild(aBuilder, thumb, set, DisplayChildFlag::Inline);
     }

@@ -8,18 +8,13 @@ import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import mozilla.components.feature.top.sites.TopSite
-import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.SetupChecklistState
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.shouldShowRecentSyncedTabs
 import org.mozilla.fenix.ext.shouldShowRecentTabs
 import org.mozilla.fenix.home.bookmarks.Bookmark
@@ -37,12 +32,6 @@ import org.mozilla.fenix.utils.Settings
  * State object that describes the homepage.
  */
 internal sealed class HomepageState {
-
-    /**
-     * Height in [Dp] for the bottom of the scrollable view, based on
-     * what's currently visible on the screen.
-     */
-    abstract val bottomSpacerHeight: Dp
 
     /**
      * Whether to show the homepage header.
@@ -65,14 +54,13 @@ internal sealed class HomepageState {
      * @property showHeader Whether to show the homepage header.
      * @property firstFrameDrawn Flag indicating whether the first frame of the homescreen has been drawn.
      * @property isSearchInProgress Whether search is currently active on the homepage.
-     * @property bottomSpacerHeight Height in [Dp] for the bottom of the scrollable view, based on
-     * what's currently visible on the screen.
+     * @property privateModeRedesignEnabled Whether private browsing mode redesign is enabled.
      */
     internal data class Private(
         override val showHeader: Boolean,
         override val firstFrameDrawn: Boolean = false,
         override val isSearchInProgress: Boolean,
-        override val bottomSpacerHeight: Dp,
+        val privateModeRedesignEnabled: Boolean,
     ) : HomepageState()
 
     /**
@@ -102,8 +90,6 @@ internal sealed class HomepageState {
      * @property cardBackgroundColor Background color for card items.
      * @property buttonBackgroundColor Background [Color] for buttons.
      * @property buttonTextColor Text [Color] for buttons.
-     * @property bottomSpacerHeight Height in [Dp] for the bottom of the scrollable view, based on
-     * what's currently visible on the screen.
      * @property isSearchInProgress Whether search is currently active on the homepage.
      */
     internal data class Normal(
@@ -131,7 +117,6 @@ internal sealed class HomepageState {
         val cardBackgroundColor: Color,
         val buttonBackgroundColor: Color,
         val buttonTextColor: Color,
-        override val bottomSpacerHeight: Dp,
         override val isSearchInProgress: Boolean,
     ) : HomepageState()
 
@@ -162,7 +147,7 @@ internal sealed class HomepageState {
                         showHeader = settings.showHomepageHeader,
                         firstFrameDrawn = firstFrameDrawn,
                         isSearchInProgress = searchState.isSearchActive,
-                        bottomSpacerHeight = getBottomSpace(settings),
+                        privateModeRedesignEnabled = settings.enablePrivateBrowsingModeRedesign,
                     )
                 } else {
                     Normal(
@@ -203,46 +188,12 @@ internal sealed class HomepageState {
                         cardBackgroundColor = wallpaperState.cardBackgroundColor,
                         buttonBackgroundColor = wallpaperState.buttonBackgroundColor,
                         buttonTextColor = wallpaperState.buttonTextColor,
-                        bottomSpacerHeight = getBottomSpace(settings),
                         isSearchInProgress = searchState.isSearchActive,
                     )
                 }
             }
         }
     }
-}
-
-/**
- * Returns the height of the bottom toolbar container.
- */
-@Composable
-private fun bottomToolbarContainerHeight(
-    shouldShowMicrosurveyPrompt: Boolean,
-    shouldUseExpandedToolbar: Boolean,
-): Dp {
-    val microsurveyHeight = if (shouldShowMicrosurveyPrompt) {
-        dimensionResource(R.dimen.browser_microsurvey_height)
-    } else {
-        0.dp
-    }
-
-    val navBarHeight = if (shouldUseExpandedToolbar) {
-        dimensionResource(R.dimen.browser_navbar_height)
-    } else {
-        0.dp
-    }
-
-    return microsurveyHeight + navBarHeight
-}
-
-@Composable
-private fun getBottomSpace(settings: Settings): Dp {
-    val toolbarHeight = bottomToolbarContainerHeight(
-        settings.shouldShowMicrosurveyPrompt,
-        settings.shouldUseExpandedToolbar,
-    )
-
-    return toolbarHeight + HOME_APP_BAR_HEIGHT + 12.dp
 }
 
 /**
@@ -255,5 +206,3 @@ private fun getBottomSpace(settings: Settings): Dp {
  */
 private fun shouldShowSearchBar(appState: AppState) =
     !appState.searchState.isSearchActive
-
-private val HOME_APP_BAR_HEIGHT = 48.dp

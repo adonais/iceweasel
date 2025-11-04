@@ -5,10 +5,8 @@
 package org.mozilla.fenix.tabstray
 
 import android.content.Context
-import android.content.Intent
 import android.content.res.Configuration
 import android.view.LayoutInflater
-import android.view.View
 import androidx.navigation.NavController
 import io.mockk.Runs
 import io.mockk.every
@@ -18,7 +16,6 @@ import io.mockk.spyk
 import io.mockk.verify
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
-import mozilla.components.browser.storage.sync.Tab
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -34,7 +31,6 @@ import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.MockkRetryTestRule
 import org.mozilla.fenix.home.HomeScreenViewModel
 import org.mozilla.fenix.navigation.NavControllerProvider
-import org.mozilla.fenix.settings.biometric.BiometricUtils
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -145,103 +141,6 @@ class TabsTrayFragmentTest {
         assertEquals(1, position)
     }
 
-    // tests for onTabPageClick
-    @Test
-    fun `GIVEN private screen is locked WHEN a private tab is clicked THEN the biometrics prompt is shown and the tabs tray page selected`() {
-        var isBiometricsPromptCalled = false
-        var isTabsTrayInteractorCalled = false
-        val biometricUtils = buildTestBiometricUtils {
-            isBiometricsPromptCalled = true
-        }
-        val testInteractor = buildTestInteractor(
-            onTabPageClicked = {
-                isTabsTrayInteractorCalled = true
-            },
-        )
-
-        fragment.onTabPageClick(
-            biometricUtils = biometricUtils,
-            tabsTrayInteractor = testInteractor,
-            page = Page.PrivateTabs,
-            isPrivateScreenLocked = true,
-        )
-
-        assertFalse(isTabsTrayInteractorCalled)
-        assertTrue(isBiometricsPromptCalled)
-    }
-
-    @Test
-    fun `GIVEN private screen is unlocked WHEN a private tab is clicked THEN the biometrics prompt is not shown and the tabs tray page selected`() {
-        var isBiometricsPromptCalled = false
-        var isTabsTrayInteractorCalled = false
-        val biometricUtils = buildTestBiometricUtils {
-            isBiometricsPromptCalled = true
-        }
-        val testInteractor = buildTestInteractor(
-            onTabPageClicked = {
-                isTabsTrayInteractorCalled = true
-            },
-        )
-
-        fragment.onTabPageClick(
-            biometricUtils = biometricUtils,
-            tabsTrayInteractor = testInteractor,
-            page = Page.PrivateTabs,
-            isPrivateScreenLocked = false,
-        )
-
-        assertTrue(isTabsTrayInteractorCalled)
-        assertFalse(isBiometricsPromptCalled)
-    }
-
-    @Test
-    fun `GIVEN private screen is locked WHEN a regular tab is clicked THEN the biometrics prompt is not shown and the tabs tray page selected`() {
-        var isBiometricsPromptCalled = false
-        var isTabsTrayInteractorCalled = false
-        val biometricUtils = buildTestBiometricUtils {
-            isBiometricsPromptCalled = true
-        }
-        val testInteractor = buildTestInteractor(
-            onTabPageClicked = {
-                isTabsTrayInteractorCalled = true
-            },
-        )
-
-        fragment.onTabPageClick(
-            biometricUtils = biometricUtils,
-            tabsTrayInteractor = testInteractor,
-            page = Page.NormalTabs,
-            isPrivateScreenLocked = true,
-        )
-
-        assertTrue(isTabsTrayInteractorCalled)
-        assertFalse(isBiometricsPromptCalled)
-    }
-
-    @Test
-    fun `GIVEN private screen is unlocked WHEN a regular tab is clicked THEN the biometrics prompt is not shown and the tabs tray page selected`() {
-        var isBiometricsPromptCalled = false
-        var isTabsTrayInteractorCalled = false
-        val biometricUtils = buildTestBiometricUtils {
-            isBiometricsPromptCalled = true
-        }
-        val testInteractor = buildTestInteractor(
-            onTabPageClicked = {
-                isTabsTrayInteractorCalled = true
-            },
-        )
-
-        fragment.onTabPageClick(
-            biometricUtils = biometricUtils,
-            tabsTrayInteractor = testInteractor,
-            page = Page.NormalTabs,
-            isPrivateScreenLocked = false,
-        )
-
-        assertTrue(isTabsTrayInteractorCalled)
-        assertFalse(isBiometricsPromptCalled)
-    }
-
     @Test
     fun `WHEN all conditions are met THEN shouldShowLockPbmBanner returns true`() {
         val result = testShouldShowLockPbmBanner()
@@ -293,52 +192,4 @@ class TabsTrayFragmentTest {
             shouldShowBanner = shouldShowBanner,
         )
     }
-}
-
-private fun buildTestBiometricUtils(
-    onBiometricsPromptCalled: () -> Unit,
-) = object : BiometricUtils {
-    override fun bindBiometricsCredentialsPromptOrShowWarning(
-        titleRes: Int,
-        view: View,
-        onShowPinVerification: (Intent) -> Unit,
-        onAuthSuccess: () -> Unit,
-        onAuthFailure: () -> Unit,
-    ) {
-        onBiometricsPromptCalled()
-    }
-}
-
-private fun buildTestInteractor(
-    onTabPageClicked: () -> Unit,
-) = object : TabsTrayInteractor {
-    override fun onTabPageClicked(page: Page) {
-        onTabPageClicked()
-    }
-
-    // no-op
-    override fun onDeletePrivateTabWarningAccepted(tabId: String, source: String?) {}
-    override fun onDeleteSelectedTabsClicked() {}
-    override fun onForceSelectedTabsAsInactiveClicked() {}
-    override fun onBookmarkSelectedTabsClicked() {}
-    override fun onAddSelectedTabsToCollectionClicked() {}
-    override fun onShareSelectedTabs() {}
-    override fun onTabsMove(tabId: String, targetId: String?, placeAfter: Boolean) {}
-    override fun onRecentlyClosedClicked() {}
-    override fun onMediaClicked(tab: TabSessionState) {}
-    override fun onTabLongClicked(tab: TabSessionState): Boolean { return false }
-    override fun onBackPressed(): Boolean { return false }
-    override fun onSyncedTabClicked(tab: Tab) {}
-    override fun onSyncedTabClosed(deviceId: String, tab: Tab) {}
-    override fun onTabSelected(tab: TabSessionState, source: String?) {}
-    override fun onTabClosed(tab: TabSessionState, source: String?) {}
-    override fun onInactiveTabsHeaderClicked(expanded: Boolean) {}
-    override fun onInactiveTabClicked(tab: TabSessionState) {}
-    override fun onInactiveTabClosed(tab: TabSessionState) {}
-    override fun onDeleteAllInactiveTabsClicked() {}
-    override fun onAutoCloseDialogCloseButtonClicked() {}
-    override fun onEnableAutoCloseClicked() {}
-    override fun onNormalTabsFabClicked() {}
-    override fun onPrivateTabsFabClicked() {}
-    override fun onSyncedTabsFabClicked() {}
 }

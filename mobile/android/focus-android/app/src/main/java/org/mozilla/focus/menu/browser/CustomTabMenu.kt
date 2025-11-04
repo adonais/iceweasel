@@ -24,12 +24,21 @@ import org.mozilla.focus.theme.resolveAttribute
 import androidx.appcompat.R as appcompatR
 import mozilla.components.ui.icons.R as iconsR
 
+/**
+ * A menu designed for Custom Tabs.
+ *
+ * @param context The Android context.
+ * @param store The browser store, used to retrieve session information.
+ * @param currentTabId The ID of the currently selected tab.
+ * @param isOnboardingTab Whether the current tab is an onboarding tab, in which case some menu items will be hidden.
+ * @param onItemTapped A callback invoked when a menu item is tapped.
+ */
 class CustomTabMenu(
     private val context: Context,
     private val store: BrowserStore,
     private val currentTabId: String,
     private val isOnboardingTab: Boolean = false,
-    private val onItemTapped: (ToolbarMenu.Item) -> Unit = {},
+    private val onItemTapped: (ToolbarMenu.FocusMenuItem) -> Unit = {},
 ) : ToolbarMenu {
 
     private val selectedSession: CustomTabSessionState?

@@ -488,19 +488,69 @@ void MacroAssemblerX64::finish() {
   MacroAssemblerX86Shared::finish();
 }
 
+#ifdef DEBUG
+static constexpr int32_t PayloadSize(JSValueType type) {
+  switch (type) {
+    case JSVAL_TYPE_UNDEFINED:
+    case JSVAL_TYPE_NULL:
+      return 0;
+    case JSVAL_TYPE_BOOLEAN:
+      return 1;
+    case JSVAL_TYPE_INT32:
+    case JSVAL_TYPE_MAGIC:
+      return 32;
+    case JSVAL_TYPE_STRING:
+    case JSVAL_TYPE_SYMBOL:
+    case JSVAL_TYPE_PRIVATE_GCTHING:
+    case JSVAL_TYPE_BIGINT:
+    case JSVAL_TYPE_OBJECT:
+      return JSVAL_TAG_SHIFT;
+    case JSVAL_TYPE_DOUBLE:
+    case JSVAL_TYPE_UNKNOWN:
+      break;
+  }
+  MOZ_CRASH("bad value type");
+}
+#endif
+
+static void AssertValidPayload(MacroAssemblerX64& masm, JSValueType type,
+                               Register payload, Register scratch) {
+#ifdef DEBUG
+  // All bits above the payload must be zeroed.
+  Label upperBitsZeroed;
+  masm.movq(payload, scratch);
+  masm.shrq(Imm32(PayloadSize(type)), scratch);
+  masm.cmpPtr(scratch, scratch);
+  masm.j(Assembler::Zero, &upperBitsZeroed);
+  masm.breakpoint();
+  masm.bind(&upperBitsZeroed);
+#endif
+}
+
+void MacroAssemblerX64::tagValue(JSValueType type, Register payload,
+                                 ValueOperand dest) {
+  MOZ_ASSERT(type != JSVAL_TYPE_UNDEFINED && type != JSVAL_TYPE_NULL);
+
+  if (payload == dest.valueReg()) {
+    ScratchRegisterScope scratch(asMasm());
+    MOZ_ASSERT(dest.valueReg() != scratch);
+
+    AssertValidPayload(*this, type, payload, scratch);
+
+    mov(ImmShiftedTag(type), scratch);
+    orq(scratch, dest.valueReg());
+  } else {
+    boxNonDouble(type, payload, dest);
+  }
+}
+
 void MacroAssemblerX64::boxValue(JSValueType type, Register src,
                                  Register dest) {
+  MOZ_ASSERT(type != JSVAL_TYPE_UNDEFINED && type != JSVAL_TYPE_NULL);
   MOZ_ASSERT(src != dest);
 
-#ifdef DEBUG
-  if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
-    Label upper32BitsZeroed;
-    movePtr(ImmWord(UINT32_MAX), dest);
-    asMasm().branchPtr(Assembler::BelowOrEqual, src, dest, &upper32BitsZeroed);
-    breakpoint();
-    bind(&upper32BitsZeroed);
-  }
-#endif
+  AssertValidPayload(*this, type, src, dest);
+
   mov(ImmShiftedTag(type), dest);
   orq(src, dest);
 }
@@ -509,19 +559,63 @@ void MacroAssemblerX64::boxValue(Register type, Register src, Register dest) {
   MOZ_ASSERT(src != dest);
 
 #ifdef DEBUG
-  Label check, done;
-  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_INT32), &check);
-  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BOOLEAN), &check);
-  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_NULL), &check);
-  asMasm().branch32(Assembler::NotEqual, type, Imm32(JSVAL_TYPE_UNDEFINED),
-                    &done);
   {
-    bind(&check);
-    asMasm().branchPtr(Assembler::BelowOrEqual, src, ImmWord(UINT32_MAX),
-                       &done);
+    ScratchRegisterScope scratch(asMasm());
+
+    movq(src, scratch);
+
+    Label check, isNullOrUndefined, isBoolean, isInt32OrMagic, isPointerSized;
+
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_NULL),
+                      &isNullOrUndefined);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_UNDEFINED),
+                      &isNullOrUndefined);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BOOLEAN),
+                      &isBoolean);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_INT32),
+                      &isInt32OrMagic);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_MAGIC),
+                      &isInt32OrMagic);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_STRING),
+                      &isPointerSized);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_SYMBOL),
+                      &isPointerSized);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_PRIVATE_GCTHING),
+                      &isPointerSized);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BIGINT),
+                      &isPointerSized);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_OBJECT),
+                      &isPointerSized);
     breakpoint();
+    {
+      bind(&isNullOrUndefined);
+      shrq(Imm32(PayloadSize(JSVAL_TYPE_NULL)), scratch);
+      jump(&check);
+    }
+    {
+      bind(&isBoolean);
+      shrq(Imm32(PayloadSize(JSVAL_TYPE_BOOLEAN)), scratch);
+      jump(&check);
+    }
+    {
+      bind(&isInt32OrMagic);
+      shrq(Imm32(PayloadSize(JSVAL_TYPE_INT32)), scratch);
+      jump(&check);
+    }
+    {
+      bind(&isPointerSized);
+      shrq(Imm32(PayloadSize(JSVAL_TYPE_STRING)), scratch);
+      // fall-through
+    }
+    bind(&check);
+
+    // All bits above the payload must be zeroed.
+    Label upperBitsZeroed;
+    cmpPtr(scratch, scratch);
+    j(Assembler::Zero, &upperBitsZeroed);
+    breakpoint();
+    bind(&upperBitsZeroed);
   }
-  bind(&done);
 #endif
 
   if (type != dest) {

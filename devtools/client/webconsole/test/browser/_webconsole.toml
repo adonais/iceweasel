@@ -109,7 +109,6 @@ support-files = [
   "test-insecure-passwords-web-console-warning.html",
   "test-inspect-cross-domain-objects-frame.html",
   "test-inspect-cross-domain-objects-top.html",
-  "test-local-session-storage.html",
   "test-location-debugger-link-console-log.js",
   "test-location-debugger-link-errors.js",
   "test-location-debugger-link.html",
@@ -174,9 +173,6 @@ support-files = [
   "test-time-methods.html",
   "test-trackingprotection-securityerrors.html",
   "test-trackingprotection-securityerrors-thirdpartyonly.html",
-  "test-warning-groups.html",
-  "test-warning-group-csp.html",
-  "test-warning-group-csp.html^headers^",
   "test-websocket.html",
   "test-websocket.js",
   "test-worker-promise-error.html",
@@ -185,7 +181,6 @@ support-files = [
   "!/image/test/mochitest/blue.png",
   "!/devtools/client/shared/test/shared-head.js",
   "!/devtools/client/debugger/test/mochitest/shared-head.js",
-  "!/devtools/client/framework/browser-toolbox/test/helpers-browser-toolbox.js",
   "!/devtools/client/shared/test/telemetry-test-helpers.js",
   "!/devtools/client/shared/test/highlighter-test-actor.js",
   "!/devtools/client/webconsole/test/node/fixtures/stubs/consoleApi.js",
@@ -198,7 +193,6 @@ support-files = [
 ]
 prefs = [
   "javascript.options.experimental.explicit_resource_management=true", # This pref has to be set before the process starts
-  "javascript.options.experimental.temporal=true", # This pref has to be set before the process starts
 ]
 
 ["browser_webconsole_allow_mixedcontent_securityerrors.js"]
@@ -432,8 +426,6 @@ skip-if = [
 
 ["browser_webconsole_external_script_errors.js"]
 
-["browser_webconsole_file_uri.js"]
-
 ["browser_webconsole_filter_buttons_overflow.js"]
 
 ["browser_webconsole_filter_by_input.js"]
@@ -496,6 +488,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_webconsole_limit_multiline.js"]
 
 ["browser_webconsole_location_debugger_link.js"]
+fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_webconsole_location_logpoint_debugger_link.js"]
 
@@ -527,41 +520,6 @@ skip-if = [
 
 ["browser_webconsole_multiple_windows_and_tabs.js"]
 
-["browser_webconsole_network_attach.js"]
-
-["browser_webconsole_network_exceptions.js"]
-
-["browser_webconsole_network_message_close_on_escape.js"]
-
-["browser_webconsole_network_message_ctrl_click.js"]
-
-["browser_webconsole_network_messages_after_target_switching.js"]
-
-["browser_webconsole_network_messages_expand.js"]
-
-["browser_webconsole_network_messages_expand_before_updates.js"]
-
-["browser_webconsole_network_messages_html_preview.js"]
-
-["browser_webconsole_network_messages_openinnet.js"]
-
-["browser_webconsole_network_messages_resend_request.js"]
-
-["browser_webconsole_network_messages_stacktrace_console_initiated_request.js"]
-
-["browser_webconsole_network_messages_status_code.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_network_requests_from_chrome.js"]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1829298
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
-]
-
-["browser_webconsole_network_reset_filter.js"]
-
-["browser_webconsole_network_unicode.js"]
-
 ["browser_webconsole_nodes_highlight.js"]
 
 ["browser_webconsole_nodes_select.js"]
@@ -572,72 +530,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_webconsole_non_javascript_mime_worker_error.js"]
 
 ["browser_webconsole_non_standard_doctype_errors.js"]
-
-["browser_webconsole_object_ctrl_click.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_in_sidebar_keyboard_nav.js"]
-
-["browser_webconsole_object_inspector.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector__proto__.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_array_getters.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_entries.js"]
-support-files = ["browser_webconsole_object_inspector_entries.snapshot.mjs"]
-tags = "object-snapshots"
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-https_first_disabled = true # JS HttpServer doesn't support https
-skip-if = [
-  "http3", # JS HttpServer doesn't support http3
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt", # Bug 1965340
-]
-
-["browser_webconsole_object_inspector_getters.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_getters_prototype.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_getters_shadowed.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_key_sorting.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_local_session_storage.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_nested_promise.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_nested_proxy.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_private_properties.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-support-files = [
-  "page_webconsole_object_inspector_private_properties.html"
-]
-
-["browser_webconsole_object_inspector_scroll.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_selected_text.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_symbols.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_while_debugging_and_inspecting.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_webconsole_object_inspector_wrapped_primitive_value.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_webconsole_observer_notifications.js"]
 
@@ -783,7 +675,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_webconsole_telemetry_reverse_search.js"]
 
 ["browser_webconsole_temporal.js"]
-skip-if = ["!nightly_build"] # Bug 1912511
 
 ["browser_webconsole_time_methods.js"]
 
@@ -800,30 +691,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_webconsole_visibility_messages.js"]
 
 ["browser_webconsole_warn_about_replaced_api.js"]
-
-["browser_webconsole_warning_group_cookies.js"]
-
-["browser_webconsole_warning_group_csp.js"]
-
-["browser_webconsole_warning_group_enhanced_tracking_protection.js"]
-
-["browser_webconsole_warning_group_multiples.js"]
-
-["browser_webconsole_warning_group_storage_isolation.js"]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1765369
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1765369
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1765369
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1765369
-]
-
-["browser_webconsole_warning_groups.js"]
-
-["browser_webconsole_warning_groups_filtering.js"]
-
-["browser_webconsole_warning_groups_outside_console_group.js"]
-
-["browser_webconsole_warning_groups_toggle.js"]
 
 ["browser_webconsole_wasm_errors.js"]
 

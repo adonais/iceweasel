@@ -282,7 +282,6 @@ internal class CFRPopupFullscreenLayout(
      * @param layoutDirection the layout direction of the anchor layout.
      */
     @VisibleForTesting
-    @Suppress("LongMethod")
     internal fun computePopupHorizontalBounds(
         anchorMiddleXCoord: Pixels,
         arrowIndicatorWidth: Pixels,

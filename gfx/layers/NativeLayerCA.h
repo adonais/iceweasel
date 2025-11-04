@@ -43,9 +43,7 @@ class RenderMacIOSurfaceTextureHost;
 
 namespace layers {
 
-#ifdef XP_MACOSX
 class NativeLayerRootSnapshotterCA;
-#endif
 
 enum class VideoLowPowerType {
   // These must be kept synchronized with the telemetry histogram enums.
@@ -61,6 +59,32 @@ enum class VideoLowPowerType {
   FailPref,           // Pref is not set.
   FailSurface,        // Surface is not eligible.
   FailEnqueue,        // Enqueueing the video didn't work.
+};
+
+// The type of update needed to apply the pending changes to a NativeLayerCA
+// representation.
+//
+// Order is important. Each enum must fully encompass the work implied by the
+// previous enums.
+enum class NativeLayerCAUpdateType {
+  None,
+  OnlyVideo,
+  All,
+};
+
+class SnapshotterCADelegate {
+ public:
+  virtual ~SnapshotterCADelegate();
+
+  virtual float BackingScale() const { return 1.0f; }
+  virtual bool DoCustomReadbackForReftestsIfDesired(
+      const gfx::IntSize& aReadbackSize, gfx::SurfaceFormat aReadbackFormat,
+      const Range<uint8_t>& aReadbackBuffer) {
+    return false;
+  }
+  virtual void UpdateSnapshotterLayers(CALayer* aRootCALayer) = 0;
+  virtual void OnSnapshotterDestroyed(
+      NativeLayerRootSnapshotterCA* aSnapshotter) {}
 };
 
 // NativeLayerRootCA is the CoreAnimation implementation of the NativeLayerRoot
@@ -95,7 +119,7 @@ enum class VideoLowPowerType {
 // effect. To solve this problem, we build two CALayer representations, so that
 // one representation can stay inside the window and the other can stay attached
 // to the CARenderer.
-class NativeLayerRootCA : public NativeLayerRoot {
+class NativeLayerRootCA final : public NativeLayerRoot {
  public:
   static already_AddRefed<NativeLayerRootCA> CreateForCALayer(CALayer* aLayer);
 
@@ -106,11 +130,9 @@ class NativeLayerRootCA : public NativeLayerRoot {
   // off-main-thread commits are suspended.
   bool CommitToScreen() override;
 
-  void CommitOffscreen();
-#ifdef XP_MACOSX
+  void CommitOffscreen(CALayer* aRootCALayer);
   void OnNativeLayerRootSnapshotterDestroyed(
       NativeLayerRootSnapshotterCA* aNativeLayerRootSnapshotter);
-#endif
 
   // Enters a mode during which CommitToScreen(), when called on a non-main
   // thread, will not apply any updates to the CALayer tree.
@@ -158,25 +180,46 @@ class NativeLayerRootCA : public NativeLayerRoot {
   explicit NativeLayerRootCA(CALayer* aLayer);
   ~NativeLayerRootCA() override;
 
-  struct Representation {
-    explicit Representation(CALayer* aRootCALayer);
-    ~Representation();
-    void Commit(WhichRepresentation aRepresentation,
-                const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
-                bool aWindowIsFullscreen);
-    CALayer* mRootCALayer = nullptr;  // strong
-    bool mMutatedLayerStructure = false;
+  // Do a commit of the pending changes to the CALayers. This is used for both
+  // onscreen commits (modifying the CALayers attached to the NSView), and for
+  // "offscreen" commits.
+  // "Offscreen" commits are updating a separate copy of the CALayer tree for
+  // use with CARenderer by the snapshotter.
+  void CommitRepresentation(WhichRepresentation aRepresentation,
+                            CALayer* aRootCALayer,
+                            const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
+                            bool aMutatedLayerStructure,
+                            bool aWindowIsFullscreen);
+
+  void SetMutatedLayerStructure();
+
+  using UpdateType = NativeLayerCAUpdateType;
+  UpdateType GetMaxUpdateRequired(
+      WhichRepresentation aRepresentation,
+      const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
+      bool aMutatedLayerStructure) const;
+
+  // An implementation of SnapshotterCADelegate, backed by a NativeLayerRootCA.
+  struct SnapshotterDelegate final : public SnapshotterCADelegate {
+    explicit SnapshotterDelegate(NativeLayerRootCA* aLayerRoot);
+    virtual ~SnapshotterDelegate() override;
+    virtual float BackingScale() const override {
+      return mLayerRoot->BackingScale();
+    }
+    virtual void UpdateSnapshotterLayers(CALayer* aRootCALayer) override {
+      mLayerRoot->CommitOffscreen(aRootCALayer);
+    }
+    virtual void OnSnapshotterDestroyed(
+        NativeLayerRootSnapshotterCA* aSnapshotter) override {
+      mLayerRoot->OnNativeLayerRootSnapshotterDestroyed(aSnapshotter);
+    }
+    RefPtr<NativeLayerRootCA> mLayerRoot;
   };
 
-  template <typename F>
-  void ForAllRepresentations(F aFn);
-
-  Mutex mMutex MOZ_UNANNOTATED;  // protects all other fields
-  Representation mOnscreenRepresentation;
-  Representation mOffscreenRepresentation;
-#ifdef XP_MACOSX
+  Mutex mMutex MOZ_UNANNOTATED;              // protects all other fields
+  CALayer* mOnscreenRootCALayer = nullptr;   // strong
+  CALayer* mOffscreenRootCALayer = nullptr;  // strong
   NativeLayerRootSnapshotterCA* mWeakSnapshotter = nullptr;
-#endif
   nsTArray<RefPtr<NativeLayerCA>> mSublayers;  // in z-order
   float mBackingScale = 1.0f;
   bool mMutated = false;
@@ -197,6 +240,10 @@ class NativeLayerRootCA : public NativeLayerRoot {
   // of that window.
   bool mWindowIsFullscreen = false;
 
+  // Whether mSublayers has changed since the last onscreen / offscreen commit.
+  bool mMutatedOnscreenLayerStructure = false;
+  bool mMutatedOffscreenLayerStructure = false;
+
   // How many times have we committed since the last time we emitted
   // telemetry?
   unsigned int mTelemetryCommitCount = 0;
@@ -208,7 +255,7 @@ class RenderSourceNLRS;
 class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
  public:
   static UniquePtr<NativeLayerRootSnapshotterCA> Create(
-      NativeLayerRootCA* aLayerRoot, CALayer* aRootCALayer);
+      UniquePtr<SnapshotterCADelegate>&& aDelegate);
   virtual ~NativeLayerRootSnapshotterCA();
 
   bool ReadbackPixels(const gfx::IntSize& aReadbackSize,
@@ -222,12 +269,11 @@ class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
   CreateAsyncReadbackBuffer(const gfx::IntSize& aSize) override;
 
  protected:
-  NativeLayerRootSnapshotterCA(NativeLayerRootCA* aLayerRoot,
-                               RefPtr<gl::GLContext>&& aGL,
-                               CALayer* aRootCALayer);
+  NativeLayerRootSnapshotterCA(UniquePtr<SnapshotterCADelegate>&& aDelegate,
+                               RefPtr<gl::GLContext>&& aGL);
   void UpdateSnapshot(const gfx::IntSize& aSize);
 
-  RefPtr<NativeLayerRootCA> mLayerRoot;
+  UniquePtr<SnapshotterCADelegate> mDelegate;
   RefPtr<gl::GLContext> mGL;
 
   // Can be null. Created and updated in UpdateSnapshot.
@@ -235,6 +281,80 @@ class NativeLayerRootSnapshotterCA final : public NativeLayerRootSnapshotter {
   CARenderer* mRenderer = nullptr;  // strong
 };
 #endif
+
+// Wraps one CALayer representation of NativeLayerCA.
+struct NativeLayerCARepresentation {
+  using UpdateType = NativeLayerCAUpdateType;
+
+  NativeLayerCARepresentation();
+  ~NativeLayerCARepresentation();
+
+  // Returns null if the layer is currently completely clipped out.
+  CALayer* UnderlyingCALayer() {
+    return mWrappingCALayerHasExtent ? mWrappingCALayer : nullptr;
+  }
+
+  bool EnqueueSurface(IOSurfaceRef aSurfaceRef);
+
+  // Applies buffered changes to the native CALayers. The contract with the
+  // caller is as follows: If any of these values have changed since the last
+  // call to ApplyChanges, mMutated[Field] needs to have been set to true
+  // before the call. If aUpdate is not All, then a partial update will be
+  // applied. In such a case, ApplyChanges may not make any changes that
+  // require a CATransacation, because no transaction will be created. In a
+  // a partial update, the return value will indicate if all the needed
+  // changes were able to be applied under these restrictions. A false return
+  // value indicates an All update is necessary.
+  bool ApplyChanges(NativeLayerCAUpdateType aUpdate, const gfx::IntSize& aSize,
+                    bool aIsOpaque, const gfx::IntPoint& aPosition,
+                    const gfx::Matrix4x4& aTransform,
+                    const gfx::IntRect& aDisplayRect,
+                    const Maybe<gfx::IntRect>& aClipRect,
+                    const Maybe<gfx::RoundedRect>& aRoundedClip,
+                    float aBackingScale, bool aSurfaceIsFlipped,
+                    gfx::SamplingFilter aSamplingFilter, bool aSpecializeVideo,
+                    const CFTypeRefPtr<IOSurfaceRef>& aFrontSurface,
+                    const Maybe<gfx::DeviceColor>& aColor, bool aIsDRM,
+                    bool aIsVideo);
+
+  // Return whether any aspects of this layer representation have been mutated
+  // since the last call to ApplyChanges, i.e. whether ApplyChanges needs to
+  // be called.
+  // This is used to optimize away a CATransaction commit if no layers have
+  // changed.
+  NativeLayerCAUpdateType HasUpdate(bool aIsVideo);
+
+  // Lazily initialized by first call to ApplyChanges. mWrappingLayer is the
+  // layer that applies the intersection of mDisplayRect and mClipRect (if
+  // set), and mContentCALayer is the layer that hosts the IOSurface. We do
+  // not share clip layers between consecutive NativeLayerCA objects with the
+  // same clip rect.
+  CALayer* mWrappingCALayer = nullptr;      // strong
+  CALayer* mRoundedClipCALayer = nullptr;   // strong
+  CALayer* mContentCALayer = nullptr;       // strong
+  CALayer* mOpaquenessTintLayer = nullptr;  // strong
+
+#ifdef NIGHTLY_BUILD
+  bool mLogNextVideoSurface = false;
+#endif
+
+  bool mWrappingCALayerHasExtent : 1;
+
+  // These are all initialized to true by the constructor.
+  bool mMutatedPosition : 1;
+  bool mMutatedTransform : 1;
+  bool mMutatedDisplayRect : 1;
+  bool mMutatedClipRect : 1;
+  bool mMutatedRoundedClipRect : 1;
+  bool mMutatedBackingScale : 1;
+  bool mMutatedSize : 1;
+  bool mMutatedSurfaceIsFlipped : 1;
+  bool mMutatedFrontSurface : 1;
+  bool mMutatedSamplingFilter : 1;
+  bool mMutatedSpecializeVideo : 1;
+  bool mMutatedIsDRM : 1;
+  // Don't forget to update the constructor when you add a field here.
+};
 
 // NativeLayerCA wraps a CALayer and lets you draw to it. It ensures that only
 // fully-drawn frames make their way to the screen, by maintaining a swap chain
@@ -290,6 +410,10 @@ class NativeLayerCA : public NativeLayer {
 
  protected:
   friend class NativeLayerRootCA;
+  friend struct NativeLayerCARepresentation;
+  using UpdateType = NativeLayerCAUpdateType;
+  using WhichRepresentation = NativeLayerRootCA::WhichRepresentation;
+  using Representation = NativeLayerCARepresentation;
 
   NativeLayerCA(const gfx::IntSize& aSize, bool aIsOpaque,
                 SurfacePoolHandleCA* aSurfacePoolHandle);
@@ -302,18 +426,15 @@ class NativeLayerCA : public NativeLayer {
   ~NativeLayerCA() override;
 
   // To be called by NativeLayerRootCA:
-  typedef NativeLayerRootCA::WhichRepresentation WhichRepresentation;
   CALayer* UnderlyingCALayer(WhichRepresentation aRepresentation);
 
-  enum class UpdateType {
-    None,       // Order is important. Each enum must fully encompass the
-    OnlyVideo,  // work implied by the previous enums.
-    All,
-  };
+  NativeLayerCAUpdateType HasUpdate(WhichRepresentation aRepresentation);
 
-  UpdateType HasUpdate(WhichRepresentation aRepresentation);
-  bool WillUpdateAffectLayers(WhichRepresentation aRepresentation);
-  bool ApplyChanges(WhichRepresentation aRepresentation, UpdateType aUpdate);
+  // Apply pending updates to the underlaying CALayer. Sets *aMustRebuild to
+  // true if the update requires changing which set of CALayers should be in the
+  // parent.
+  bool ApplyChanges(WhichRepresentation aRepresentation, UpdateType aUpdate,
+                    bool* aMustRebuild);
 
   void SetBackingScale(float aBackingScale);
 
@@ -330,8 +451,6 @@ class NativeLayerCA : public NativeLayer {
 
   bool IsVideo(const MutexAutoLock& aProofOfLock);
   bool ShouldSpecializeVideo(const MutexAutoLock& aProofOfLock);
-  bool HasExtent() const { return mHasExtent; }
-  void SetHasExtent(bool aHasExtent) { mHasExtent = aHasExtent; }
 
   // This function returns a CGRect if a clip should be applied to the layer.
   // If set, the CGRect has the scaled position of the clip relative to the
@@ -341,68 +460,6 @@ class NativeLayerCA : public NativeLayer {
       const gfx::Matrix4x4& aTransform, const gfx::IntRect& aDisplayRect,
       const Maybe<gfx::IntRect>& aClipRect, float aBackingScale);
 
-  // Wraps one CALayer representation of this NativeLayer.
-  struct Representation {
-    Representation();
-    ~Representation();
-
-    CALayer* UnderlyingCALayer() { return mWrappingCALayer; }
-
-    bool EnqueueSurface(IOSurfaceRef aSurfaceRef);
-
-    // Applies buffered changes to the native CALayers. The contract with the
-    // caller is as follows: If any of these values have changed since the last
-    // call to ApplyChanges, mMutated[Field] needs to have been set to true
-    // before the call. If aUpdate is not All, then a partial update will be
-    // applied. In such a case, ApplyChanges may not make any changes that
-    // require a CATransacation, because no transaction will be created. In a
-    // a partial update, the return value will indicate if all the needed
-    // changes were able to be applied under these restrictions. A false return
-    // value indicates an All update is necessary.
-    bool ApplyChanges(
-        UpdateType aUpdate, const gfx::IntSize& aSize, bool aIsOpaque,
-        const gfx::IntPoint& aPosition, const gfx::Matrix4x4& aTransform,
-        const gfx::IntRect& aDisplayRect, const Maybe<gfx::IntRect>& aClipRect,
-        const Maybe<gfx::RoundedRect>& aRoundedClip, float aBackingScale,
-        bool aSurfaceIsFlipped, gfx::SamplingFilter aSamplingFilter,
-        bool aSpecializeVideo, CFTypeRefPtr<IOSurfaceRef> aFrontSurface,
-        CFTypeRefPtr<CGColorRef> aColor, bool aIsDRM, bool aIsVideo);
-
-    // Return whether any aspects of this layer representation have been mutated
-    // since the last call to ApplyChanges, i.e. whether ApplyChanges needs to
-    // be called.
-    // This is used to optimize away a CATransaction commit if no layers have
-    // changed.
-    UpdateType HasUpdate(bool aIsVideo);
-
-    // Lazily initialized by first call to ApplyChanges. mWrappingLayer is the
-    // layer that applies the intersection of mDisplayRect and mClipRect (if
-    // set), and mContentCALayer is the layer that hosts the IOSurface. We do
-    // not share clip layers between consecutive NativeLayerCA objects with the
-    // same clip rect.
-    CALayer* mWrappingCALayer = nullptr;      // strong
-    CALayer* mRoundedClipCALayer = nullptr;   // strong
-    CALayer* mContentCALayer = nullptr;       // strong
-    CALayer* mOpaquenessTintLayer = nullptr;  // strong
-
-#ifdef NIGHTLY_BUILD
-    bool mLogNextVideoSurface = false;
-#endif
-
-    bool mMutatedPosition : 1;
-    bool mMutatedTransform : 1;
-    bool mMutatedDisplayRect : 1;
-    bool mMutatedClipRect : 1;
-    bool mMutatedRoundedClipRect : 1;
-    bool mMutatedBackingScale : 1;
-    bool mMutatedSize : 1;
-    bool mMutatedSurfaceIsFlipped : 1;
-    bool mMutatedFrontSurface : 1;
-    bool mMutatedSamplingFilter : 1;
-    bool mMutatedSpecializeVideo : 1;
-    bool mMutatedIsDRM : 1;
-  };
-
   Representation& GetRepresentation(WhichRepresentation aRepresentation);
   template <typename F>
   void ForAllRepresentations(F aFn);
@@ -410,6 +467,10 @@ class NativeLayerCA : public NativeLayer {
   // Controls access to all fields of this class.
   Mutex mMutex MOZ_UNANNOTATED;
 
+  // The IOSurface to use for this layer. Optional.
+  // If not present, we get use a surface from mSurfaceHandler or mTextureHost
+  // instead. We mark the surface as "in use" as long as it is in
+  // mSurfaceToPresent, to prevent other processes from recycling it.
   CFTypeRefPtr<IOSurfaceRef> mSurfaceToPresent;
 
   Maybe<NativeLayerMacSurfaceHandler> mSurfaceHandler;
@@ -426,14 +487,13 @@ class NativeLayerCA : public NativeLayer {
   gfx::IntSize mSize;
   Maybe<gfx::IntRect> mClipRect;
   Maybe<gfx::RoundedRect> mRoundedClipRect;
+  Maybe<gfx::DeviceColor> mColor;
   gfx::SamplingFilter mSamplingFilter = gfx::SamplingFilter::POINT;
   float mBackingScale = 1.0f;
   bool mSurfaceIsFlipped = false;
-  CFTypeRefPtr<CGColorRef> mColor;
   const bool mIsOpaque = false;
   bool mRootWindowIsFullscreen = false;
   bool mSpecializeVideo = false;
-  bool mHasExtent = false;
   bool mIsDRM = false;
   bool mIsHDR = false;
 

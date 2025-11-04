@@ -365,6 +365,9 @@ bool ModuleTypeToString(JSContext* cx, JS::Handle<JSObject*> owner,
     case JS::ModuleType::JSON:
       to.setString(cx->names().json);
       break;
+    case JS::ModuleType::CSS:
+      MOZ_ASSERT_UNREACHABLE("CSS modules are not supported in the shell");
+      break;
   }
 
   MOZ_ASSERT(!to.isUndefined());

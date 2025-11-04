@@ -1,12 +1,15 @@
 [DEFAULT]
 prefs = [
   "browser.backup.enabled=true",
-  "browser.backup.preferences.ui.enabled=true",
+  "browser.backup.archive.enabled=true",
+  "browser.backup.restore.enabled=true",
   "browser.backup.scheduled.enabled=false",
 ]
 support-files = [
   "head.js",
 ]
+
+["browser_backup_policies.js"]
 
 ["browser_password_validation_inputs.js"]
 
@@ -22,8 +25,15 @@ skip-if = [
 
 ["browser_settings_enable_backup_encryption.js"]
 
+["browser_settings_errors.js"]
+
 ["browser_settings_restore_from_backup.js"]
 
 ["browser_settings_turn_off_scheduled_backups.js"]
 
 ["browser_settings_turn_on_scheduled_backups.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64'", # Bug 1988616
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # 1988616
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1988616
+]

@@ -64,9 +64,13 @@ bool DoTrialInlining(JSContext* cx, BaselineFrame* frame) {
     return true;
   }
 
-  // Baseline shouldn't attempt trial inlining in scripts that are too large.
-  MOZ_ASSERT_IF(JitOptions.limitScriptSize,
-                script->length() <= JitOptions.ionMaxScriptSize);
+  // Don't do trial inlining in scripts that are too large.
+  if (JitOptions.limitScriptSize &&
+      script->length() > JitOptions.ionMaxScriptSize) {
+    // Baseline should elide trial inlining calls if the script is big.
+    MOZ_ASSERT(frame->runningInInterpreter());
+    return true;
+  }
 
   const uint32_t MAX_INLINING_DEPTH = 4;
   if (icScript->depth() > MAX_INLINING_DEPTH) {

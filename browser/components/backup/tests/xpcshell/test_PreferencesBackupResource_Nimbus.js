@@ -188,6 +188,20 @@ function checkNimbusHasSetPrefs() {
   Assert.deepEqual(jsonTestValue, parsedJson);
 }
 
+async function checkIgnoredBackupPrefs(backupPrefsFilePath) {
+  let contents = (await IOUtils.readUTF8(backupPrefsFilePath))
+    .split("\n")
+    .map(line => line.trim());
+
+  let checkPrefNotSerialized = pref => {
+    Assert.ok(
+      !contents.reduce((acc, line) => acc || line.includes(pref), false)
+    );
+  };
+
+  checkPrefNotSerialized("browser.backup.");
+}
+
 async function checkBackupIgnoredNimbusPrefs(backupPrefsFilePath) {
   let contents = (await IOUtils.readUTF8(backupPrefsFilePath))
     .split("\n")
@@ -281,6 +295,7 @@ add_task(async function test_prefs_backup_does_not_backup_nimbus_prefs() {
   checkNimbusHasSetPrefs();
   const { sandbox, stagingPath, sourcePath } = await performBackup();
   await checkBackupIgnoredNimbusPrefs(PathUtils.join(stagingPath, "prefs.js"));
+  await checkIgnoredBackupPrefs(PathUtils.join(stagingPath, "prefs.js"));
   await maybeRemovePath(stagingPath);
   await maybeRemovePath(sourcePath);
   sandbox.restore();

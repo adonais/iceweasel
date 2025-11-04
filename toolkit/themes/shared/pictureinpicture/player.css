@@ -366,7 +366,7 @@ body:not(:fullscreen) #controls:hover #timestamp {
   &::-moz-range-track,
   &::-moz-range-progress {
     height: 2px;
-    border-radius: 10px;
+    border-radius: var(--border-radius-medium);
   }
 }
 
@@ -552,7 +552,7 @@ body:not(:fullscreen) #fullscreen {
   position: absolute;
   inset: 0;
   transition: transform 250ms;
-  border-radius: 13px;
+  border-radius: var(--border-radius-large);
   background-color: #55545f;
 }
 
@@ -608,7 +608,7 @@ input:checked + .slider::before {
   padding: 6px 2px;
 
   &::-moz-range-thumb {
-    border-radius: 14px;
+    border-radius: var(--border-radius-large);
     background-color: #bfbfc9;
     width: 8px;
     height: 8px;
@@ -628,7 +628,7 @@ input:checked + .slider::before {
   &::-moz-range-track,
   &::-moz-range-progress {
     height: 4px;
-    border-radius: 10px;
+    border-radius: var(--border-radius-medium);
   }
 }
 

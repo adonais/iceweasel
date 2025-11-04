@@ -23,6 +23,7 @@
 #include "CounterStyleManager.h"
 #include "TextOverflow.h"
 #include "gfxContext.h"
+#include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/AppUnits.h"
 #include "mozilla/Baseline.h"
 #include "mozilla/ComputedStyle.h"
@@ -40,7 +41,6 @@
 #include "mozilla/ToString.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Selection.h"
-#include "nsAbsoluteContainingBlock.h"
 #include "nsBidiPresUtils.h"
 #include "nsBlockReflowContext.h"
 #include "nsCOMPtr.h"
@@ -73,7 +73,6 @@ using namespace mozilla;
 using namespace mozilla::css;
 using namespace mozilla::dom;
 using namespace mozilla::layout;
-using AbsPosReflowFlags = nsAbsoluteContainingBlock::AbsPosReflowFlags;
 using ClearFloatsResult = BlockReflowState::ClearFloatsResult;
 using ShapeType = nsFloatManager::ShapeType;
 
@@ -1753,7 +1752,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   // our real new size. This also happens to be more efficient.
   WritingMode parentWM = aMetrics.GetWritingMode();
   if (HasAbsolutelyPositionedChildren()) {
-    nsAbsoluteContainingBlock* absoluteContainer = GetAbsoluteContainingBlock();
+    AbsoluteContainingBlock* absoluteContainer = GetAbsoluteContainingBlock();
     bool haveInterrupt = aPresContext->HasPendingInterrupt();
     if (aReflowInput.WillReflowAgainForClearance() || haveInterrupt) {
       // Make sure that when we reflow again we'll actually reflow all the abs
@@ -1772,12 +1771,11 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         // their existing overflow areas, which is usually a side effect of this
         // reflow.
         //
-        // TODO(emilio): nsAbsoluteContainingBlock::Reflow already checks for
+        // TODO(emilio): AbsoluteContainingBlock::Reflow already checks for
         // interrupt, can we just rely on it and unconditionally take the else
         // branch below? That's a bit more subtle / risky, since I don't see
         // what would reflow them in that case if they depended on our size.
-        for (nsIFrame* kid = absoluteContainer->GetChildList().FirstChild();
-             kid; kid = kid->GetNextSibling()) {
+        for (nsIFrame* kid : absoluteContainer->GetChildList()) {
           ConsiderChildOverflow(aMetrics.mOverflowAreas, kid);
         }
       }
@@ -1794,7 +1792,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       // changed.
 
       // XXX "width" and "height" in this block will become ISize and BSize
-      // when nsAbsoluteContainingBlock is logicalized
+      // when AbsoluteContainingBlock is logicalized
       bool cbWidthChanged = aMetrics.Width() != oldSize.width;
       bool isRoot = !GetContent()->GetParent();
       // If isRoot and we have auto height, then we are the initial
@@ -1807,12 +1805,12 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
       nsRect containingBlock(nsPoint(0, 0),
                              containingBlockSize.GetPhysicalSize(parentWM));
-      AbsPosReflowFlags flags = AbsPosReflowFlags::ConstrainHeight;
+      AbsPosReflowFlags flags{AbsPosReflowFlag::AllowFragmentation};
       if (cbWidthChanged) {
-        flags |= AbsPosReflowFlags::CBWidthChanged;
+        flags += AbsPosReflowFlag::CBWidthChanged;
       }
       if (cbHeightChanged) {
-        flags |= AbsPosReflowFlags::CBHeightChanged;
+        flags += AbsPosReflowFlag::CBHeightChanged;
       }
       // Setup the line cursor here to optimize line searching for
       // calculating hypothetical position of absolutely-positioned
@@ -4886,7 +4884,7 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
   // views it may have.  Note that the case when frame has a view got handled
   // by FinishReflowChild, but that function didn't have the coordinates needed
   // to correctly decide whether to reposition child views.
-  if (originalPosition != frame->GetPosition() && !frame->HasView()) {
+  if (originalPosition != frame->GetPosition() && !frame->GetView()) {
     nsContainerFrame::PositionChildViews(frame);
   }
 
@@ -7593,10 +7591,10 @@ void nsBlockFrame::ReflowFloat(BlockReflowState& aState, ReflowInput& aFloatRI,
   // of |PlaceFrameView| here?
   WritingMode metricsWM = metrics.GetWritingMode();
   aFloat->SetSize(metricsWM, metrics.Size(metricsWM));
-  if (aFloat->HasView()) {
-    nsContainerFrame::SyncFrameViewAfterReflow(
-        aState.mPresContext, aFloat, aFloat->GetView(), metrics.InkOverflow(),
-        ReflowChildFlags::NoMoveView);
+  if (auto* view = aFloat->GetView()) {
+    nsContainerFrame::SyncFrameViewAfterReflow(aState.mPresContext, aFloat,
+                                               view, metrics.InkOverflow(),
+                                               ReflowChildFlags::NoMoveView);
   }
   aFloat->DidReflow(aState.mPresContext, &aFloatRI);
 }
@@ -7930,6 +7928,10 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   // We don't have a float manager here.
 
   DisplayBorderBackgroundOutline(aBuilder, aLists);
+
+  if (HidesContent()) {
+    return;
+  }
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);

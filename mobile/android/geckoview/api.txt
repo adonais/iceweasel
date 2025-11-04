@@ -979,6 +979,7 @@ package org.mozilla.geckoview {
     method public boolean getCookieBehaviorOptInPartitioning();
     method public boolean getCookieBehaviorOptInPartitioningPBM();
     method @Nullable public Class<? extends android.app.Service> getCrashHandler();
+    method @NonNull public String getCrliteChannel();
     method @Nullable public String getDefaultRecursiveResolverUri();
     method @Nullable public Boolean getDisableShip();
     method @Nullable public Float getDisplayDensityOverride();
@@ -1041,6 +1042,7 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings setConsoleOutputEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setCookieBehaviorOptInPartitioning(boolean);
     method @NonNull public GeckoRuntimeSettings setCookieBehaviorOptInPartitioningPBM(boolean);
+    method @NonNull public GeckoRuntimeSettings setCrliteChannel(@NonNull String);
     method @NonNull public GeckoRuntimeSettings setDefaultRecursiveResolverUri(@NonNull String);
     method @NonNull public GeckoRuntimeSettings setDohAutoselectEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setDoubleTapZoomingEnabled(boolean);
@@ -1247,6 +1249,10 @@ package org.mozilla.geckoview {
     method @AnyThread public void setTranslationsSessionDelegate(@Nullable TranslationsController.SessionTranslation.Delegate);
     method @AnyThread public void stop();
     method @UiThread protected void setShouldPinOnScreen(boolean);
+    field public static final int APP_LINK_LAUNCH_TYPE_COLD = 1;
+    field public static final int APP_LINK_LAUNCH_TYPE_HOT = 3;
+    field public static final int APP_LINK_LAUNCH_TYPE_UNKNOWN = 0;
+    field public static final int APP_LINK_LAUNCH_TYPE_WARM = 2;
     field public static final int FINDER_DISPLAY_DIM_PAGE = 2;
     field public static final int FINDER_DISPLAY_DRAW_LINK_OUTLINE = 4;
     field public static final int FINDER_DISPLAY_HIGHLIGHT_ALL = 1;
@@ -1269,6 +1275,9 @@ package org.mozilla.geckoview {
     field public static final int PRIORITY_DEFAULT = 0;
     field public static final int PRIORITY_HIGH = 1;
     field @Nullable protected GeckoSession.Window mWindow;
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoSession.AppLinkLaunchType {
   }
 
   @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoSession.ClipboardPermissionType {
@@ -1382,6 +1391,7 @@ package org.mozilla.geckoview {
   @AnyThread public static class GeckoSession.Loader {
     ctor public Loader();
     method @NonNull public GeckoSession.Loader additionalHeaders(@NonNull Map<String,String>);
+    method @NonNull public GeckoSession.Loader appLinkLaunchType(int);
     method @NonNull public GeckoSession.Loader data(@NonNull byte[], @Nullable String);
     method @NonNull public GeckoSession.Loader data(@NonNull String, @Nullable String);
     method @NonNull public GeckoSession.Loader flags(int);
@@ -1582,6 +1592,7 @@ package org.mozilla.geckoview {
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onLoginSave(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.AutocompleteRequest<Autocomplete.LoginSaveOption>);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onLoginSelect(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.AutocompleteRequest<Autocomplete.LoginSelectOption>);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onPopupPrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.PopupPrompt);
+    method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onRedirectPrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.RedirectPrompt);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onRepostConfirmPrompt(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.RepostConfirmPrompt);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onRequestCertificate(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.CertificateRequest);
     method @Nullable @UiThread default public GeckoResult<GeckoSession.PromptDelegate.PromptResponse> onSelectIdentityCredentialAccount(@NonNull GeckoSession, @NonNull GeckoSession.PromptDelegate.IdentityCredential.AccountSelectorPrompt);
@@ -1846,6 +1857,12 @@ package org.mozilla.geckoview {
   }
 
   public static class GeckoSession.PromptDelegate.PromptResponse {
+  }
+
+  public static class GeckoSession.PromptDelegate.RedirectPrompt extends GeckoSession.PromptDelegate.BasePrompt {
+    ctor protected RedirectPrompt(@NonNull String, @Nullable String, @NonNull GeckoSession.PromptDelegate.BasePrompt.Observer);
+    method @NonNull @UiThread public GeckoSession.PromptDelegate.PromptResponse confirm(@NonNull AllowOrDeny);
+    field @Nullable public final String targetUri;
   }
 
   public static class GeckoSession.PromptDelegate.RepostConfirmPrompt extends GeckoSession.PromptDelegate.BasePrompt {
@@ -2754,6 +2771,10 @@ package org.mozilla.geckoview {
     field public static final int ERROR_USER_CANCELED = -100;
   }
 
+  public static class WebExtension.InvalidMetaDataException extends RuntimeException {
+    ctor protected InvalidMetaDataException();
+  }
+
   @UiThread public static interface WebExtension.MessageDelegate {
     method @Nullable default public void onConnect(@NonNull WebExtension.Port);
     method @Nullable default public GeckoResult<Object> onMessage(@NonNull String, @NonNull Object, @NonNull WebExtension.MessageSender);
@@ -2960,6 +2981,7 @@ package org.mozilla.geckoview {
     method @UiThread public void click();
     method @UiThread public void click(@NonNull String);
     method @UiThread public void dismiss();
+    method @UiThread public void show();
     field public static final Parcelable.Creator<WebNotification> CREATOR;
     field @NonNull public final WebNotificationAction[] actions;
     field @Nullable public final String imageUrl;

@@ -16,10 +16,11 @@ namespace widget {
 class CompositorWidgetChild final : public PCompositorWidgetChild,
                                     public PlatformCompositorWidgetDelegate {
  public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorWidgetChild, override)
+
   CompositorWidgetChild(RefPtr<CompositorVsyncDispatcher> aVsyncDispatcher,
                         RefPtr<CompositorWidgetVsyncObserver> aVsyncObserver,
                         const CompositorWidgetInitData&);
-  ~CompositorWidgetChild() override;
 
   bool Initialize();
 
@@ -31,6 +32,7 @@ class CompositorWidgetChild final : public PCompositorWidgetChild,
   void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
 
  private:
+  ~CompositorWidgetChild() override;
   RefPtr<CompositorVsyncDispatcher> mVsyncDispatcher;
   RefPtr<CompositorWidgetVsyncObserver> mVsyncObserver;
 };

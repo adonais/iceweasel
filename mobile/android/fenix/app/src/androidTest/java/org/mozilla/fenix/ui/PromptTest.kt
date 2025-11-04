@@ -33,7 +33,6 @@ class PromptTest : TestSetup() {
     @get:Rule
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
-    @SmokeTest
     @Test
     fun verifyBeforeUnloadPrompt() {
         val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)

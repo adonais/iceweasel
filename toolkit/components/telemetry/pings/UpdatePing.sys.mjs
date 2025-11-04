@@ -25,6 +25,7 @@ const UPDATE_STAGED_TOPIC = "update-staged";
  */
 export var UpdatePing = {
   _enabled: false,
+  _observerRegistered: false,
 
   earlyInit() {
     this._log = Log.repository.getLoggerWithMessagePrefix(
@@ -42,8 +43,11 @@ export var UpdatePing = {
       return;
     }
 
-    Services.obs.addObserver(this, UPDATE_DOWNLOADED_TOPIC);
-    Services.obs.addObserver(this, UPDATE_STAGED_TOPIC);
+    if (!this._observerRegistered) {
+      Services.obs.addObserver(this, UPDATE_DOWNLOADED_TOPIC);
+      Services.obs.addObserver(this, UPDATE_STAGED_TOPIC);
+      this._observerRegistered = true;
+    }
   },
 
   /**
@@ -186,7 +190,10 @@ export var UpdatePing = {
     if (!this._enabled) {
       return;
     }
-    Services.obs.removeObserver(this, UPDATE_DOWNLOADED_TOPIC);
-    Services.obs.removeObserver(this, UPDATE_STAGED_TOPIC);
+    if (this._observerRegistered) {
+      Services.obs.removeObserver(this, UPDATE_DOWNLOADED_TOPIC);
+      Services.obs.removeObserver(this, UPDATE_STAGED_TOPIC);
+      this._observerRegistered = false;
+    }
   },
 };

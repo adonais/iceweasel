@@ -208,6 +208,11 @@ interface nsIPrefService : nsISupports
    * started.
    */
   readonly attribute PRTime userPrefsFileLastModifiedAtStartup;
+
+  /**
+   * The preamble text for prefs.js.
+   */
+  readonly attribute ACString prefsJsPreamble;
 };
 
 %{C++

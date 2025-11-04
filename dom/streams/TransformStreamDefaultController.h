@@ -8,7 +8,6 @@
 #define DOM_STREAMS_TRANSFORMSTREAMDEFAULTCONTROLLER_H_
 
 #include "js/TypeDecls.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/QueuingStrategyBinding.h"
 #include "mozilla/dom/TransformerBinding.h"

@@ -257,7 +257,7 @@ export class JsonSchemaValidator {
         return result;
       }
 
-      case "array":
+      case "array": {
         if (!Array.isArray(param)) {
           return {
             valid: false,
@@ -298,6 +298,7 @@ export class JsonSchemaValidator {
         }
 
         return { valid: true, parsedValue: parsedArray };
+      }
 
       case "object": {
         if (typeof param != "object" || !param) {

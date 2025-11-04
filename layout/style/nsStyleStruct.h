@@ -44,6 +44,7 @@ namespace mozilla {
 class ComputedStyle;
 struct IntrinsicSize;
 struct ReflowInput;
+class AnchorPosReferenceData;
 
 }  // namespace mozilla
 
@@ -381,52 +382,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
 using AnchorResolvedMargin =
     mozilla::UniqueOrNonOwningPtr<const mozilla::StyleMargin>;
 
-// Resolved anchor positioning data.
-struct AnchorPosResolutionData {
-  // Size of the referenced anchor.
-  nsSize mSize;
-  // Origin of the referenced anchor, w.r.t. containing block at the time of
-  // resolution. Includes scroll offsets, for now.
-  // Nothing if the anchor did not resolve, or if the anchor was only referred
-  // to by its size.
-  mozilla::Maybe<nsPoint> mOrigin;
-};
-
-// Mapping from a referenced anchor to its resolution (If a valid anchor is
-// found).
-class AnchorPosReferencedAnchors {
- private:
-  using Map =
-      nsTHashMap<RefPtr<const nsAtom>, mozilla::Maybe<AnchorPosResolutionData>>;
-
- public:
-  using Value = mozilla::Maybe<AnchorPosResolutionData>;
-
-  AnchorPosReferencedAnchors() = default;
-  AnchorPosReferencedAnchors(const AnchorPosReferencedAnchors&) = delete;
-  AnchorPosReferencedAnchors(AnchorPosReferencedAnchors&&) = default;
-
-  AnchorPosReferencedAnchors& operator=(const AnchorPosReferencedAnchors&) =
-      delete;
-  AnchorPosReferencedAnchors& operator=(AnchorPosReferencedAnchors&&) = default;
-
-  struct Result {
-    bool mAlreadyResolved;
-    Value* mEntry;
-  };
-
-  Result InsertOrModify(const nsAtom* aAnchorName, bool aNeedOffset);
-  const Value* Lookup(const nsAtom* aAnchorName) const;
-
-  bool IsEmpty() const { return mMap.IsEmpty(); }
-
-  Map::const_iterator begin() const { return mMap.cbegin(); }
-  Map::const_iterator end() const { return mMap.cend(); }
-
- private:
-  Map mMap;
-};
-
 // Base set of parameters required to resolve a reference to an anchor.
 struct AnchorPosResolutionParams {
   // Frame of the anchor positioned element.
@@ -434,15 +389,17 @@ struct AnchorPosResolutionParams {
   const nsIFrame* mFrame;
   // Position property of the element in question.
   mozilla::StylePositionProperty mPosition;
-  // Storage for referenced anchors. To be populated on abspos reflow, whenever
-  // the frame makes any anchor reference.
-  AnchorPosReferencedAnchors* const mReferencedAnchors = nullptr;
+  // position-area property of the element in question.
+  mozilla::StylePositionArea mPositionArea;
+  // Storage for anchor reference data. To be populated on abspos reflow,
+  // whenever the frame makes any anchor reference.
+  mozilla::AnchorPosReferenceData* const mAnchorPosReferenceData = nullptr;
 
   // Helper functions for creating anchor resolution parameters.
   // Defined in corresponding header files.
   static inline AnchorPosResolutionParams From(
       const nsIFrame* aFrame,
-      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
+      mozilla::AnchorPosReferenceData* aAnchorPosReferenceData = nullptr);
   static inline AnchorPosResolutionParams From(const mozilla::ReflowInput* aRI);
   static inline AnchorPosResolutionParams From(
       const nsComputedDOMStyle* aComputedDOMStyle);
@@ -746,7 +703,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline {
   // style struct resolution reasons that we do nsStyleBorder::mBorder;
   // see that field's comment.)
   nscoord mOutlineWidth;
-  mozilla::Length mOutlineOffset;
+  mozilla::StyleAu mOutlineOffset;
   mozilla::StyleColor mOutlineColor;
   mozilla::StyleOutlineStyle mOutlineStyle;
 
@@ -850,6 +807,12 @@ struct AnchorResolvedInsetHelper {
       const mozilla::StyleInset& aValue, mozilla::Side aSide,
       const AnchorPosOffsetResolutionParams& aParams) {
     if (!aValue.HasAnchorPositioningFunction()) {
+      // If `position-area` is used "Any auto inset properties resolve to 0":
+      // https://drafts.csswg.org/css-anchor-position-1/#valdef-position-area-position-area
+      if (aValue.IsAuto() && !aParams.mBaseParams.mPositionArea.IsNone()) {
+        return AnchorResolvedInset::UniquelyOwning(
+            new mozilla::StyleInset(mozilla::LengthPercentage::Zero()));
+      }
       return AnchorResolvedInset::NonOwning(&aValue);
     }
     return ResolveAnchor(aValue, mozilla::ToStylePhysicalSide(aSide), aParams);
@@ -1222,7 +1185,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
   mozilla::StyleWordBreak mWordBreak = mozilla::StyleWordBreak::Normal;
   mozilla::StyleOverflowWrap mOverflowWrap = mozilla::StyleOverflowWrap::Normal;
   mozilla::StyleTextAutospace mTextAutospace =
-      mozilla::StyleTextAutospace::NORMAL;
+      mozilla::StyleTextAutospace::NO_AUTOSPACE;
 
  public:
   mozilla::StyleHyphens mHyphens;
@@ -1634,8 +1597,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   mozilla::StyleBreakBetween mBreakAfter;
   mozilla::StyleOverflow mOverflowX;
   mozilla::StyleOverflow mOverflowY;
-  mozilla::StyleOverflowClipBox mOverflowClipBoxBlock;
-  mozilla::StyleOverflowClipBox mOverflowClipBoxInline;
   mozilla::StyleScrollbarGutter mScrollbarGutter;
   mozilla::StyleResize mResize;
   mozilla::StyleOrient mOrient;

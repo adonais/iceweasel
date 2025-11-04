@@ -25,6 +25,13 @@ export class AboutTranslationsParent extends JSWindowActorParent {
    */
   #boundObserve = null;
 
+  /**
+   * Retrieves the display name for a language.
+   *
+   * @returns {Intl.DisplayNames}
+   */
+  #languageDisplayNames = null;
+
   actorCreated() {
     this.#boundObserve = this.#observe.bind(this);
     Services.obs.addObserver(
@@ -82,11 +89,40 @@ export class AboutTranslationsParent extends JSWindowActorParent {
 
         return undefined;
       }
+      case "AboutTranslations:GetDisplayName": {
+        const { language } = data;
+
+        if (!this.#languageDisplayNames) {
+          this.#languageDisplayNames =
+            lazy.TranslationsParent.createLanguageDisplayNames();
+        }
+
+        try {
+          return this.#languageDisplayNames.of(language);
+        } catch {
+          // No display name could be retrieved.
+          return "";
+        }
+      }
       case "AboutTranslations:GetSupportedLanguages": {
         return lazy.TranslationsParent.getSupportedLanguages();
       }
       case "AboutTranslations:IsTranslationsEngineSupported": {
         return lazy.TranslationsParent.getIsTranslationsEngineSupported();
+      }
+      case "AboutTranslations:OpenSupportPage": {
+        const browser = this.browsingContext.top.embedderElement;
+        browser.ownerGlobal.openTrustedLinkIn(
+          "https://support.mozilla.org/kb/website-translation",
+          "tab",
+          {
+            forceForeground: true,
+            triggeringPrincipal:
+              Services.scriptSecurityManager.getSystemPrincipal(),
+          }
+        );
+
+        return undefined;
       }
       case "AboutTranslations:Telemetry": {
         const { telemetryFunctionName, telemetryData } = data;
@@ -105,8 +141,9 @@ export class AboutTranslationsParent extends JSWindowActorParent {
 
         return undefined;
       }
-      default:
+      default: {
         throw new Error("Unknown AboutTranslations message: " + name);
+      }
     }
   }
 }

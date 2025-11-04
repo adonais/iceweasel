@@ -65,7 +65,7 @@
   <!-- Description for the "nativeMessaging" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_native_messaging_description">تبادل پیام با برنامه‌هایی جز این برنامه</string>
   <!-- Description for the "notifications" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_notifications_description">نمایش هشدار بر روی صفحه برای شما</string>
+  <string name="mozac_feature_addons_permissions_notifications_description">نمایش آگاه‌سازی‌ها برای شما</string>
   <!-- Description for the "pkcs11" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_pkcs11_description">فراهم‌سازی خدمات احراز هویت رمزنگاری شده</string>
   <!-- Description for the "proxy" WebExtensions API permission. -->
@@ -226,6 +226,10 @@
   <string name="mozac_feature_addons_remove">حذف</string>
   <!-- This is a button to report an add-on. -->
   <string name="mozac_feature_addons_report">گزارش</string>
+  <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_permissions_dialog_title_2">افزودن %1$s</string>
+  <!-- Heading for the optional settings section in the add-on install dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_optional_settings">تنظیمات اختیاری:</string>
   <!-- This is a button to add (install) an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_add">افزودن</string>
   <!-- This is a button to allow the optional permissions requested by an add-on . -->

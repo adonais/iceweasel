@@ -43,6 +43,10 @@ class Logic {
     return regex.test(element.labels?.[0]?.textContent);
   }
 
+  static hasTextContentMatchingRegex(element, regex) {
+    return regex.test(element.textContent);
+  }
+
   /**
    * Get the parts of the URL we want for identification.
    * Strip out things like the userPass portion and handle javascript:.

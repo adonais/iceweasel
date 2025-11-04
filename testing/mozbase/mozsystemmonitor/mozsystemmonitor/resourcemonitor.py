@@ -404,13 +404,16 @@ class SystemResourceMonitor:
         self.start_time = time.monotonic()
         SystemResourceMonitor.instance = self
 
-    def stop(self):
+    def stop(self, upload_dir=None):
         """Stop measuring system-wide CPU resource utilization.
 
         You should call this if and only if you have called start(). You should
         always pair a stop() with a start().
 
         Currently, data is not available until you call stop().
+
+        Args:
+            upload_dir: Optional path to upload directory for artifact markers.
         """
         if not self._process:
             self._stopped = True
@@ -504,17 +507,48 @@ class SystemResourceMonitor:
         SystemResourceUsage.instance = None
         self.end_time = time.monotonic()
 
+        # Add event markers for files in upload directory
+        if upload_dir is None:
+            upload_dir = os.environ.get("UPLOAD_DIR") or os.environ.get(
+                "MOZ_UPLOAD_DIR"
+            )
+        if upload_dir and os.path.isdir(upload_dir):
+            try:
+                for filename in os.listdir(upload_dir):
+                    filepath = os.path.join(upload_dir, filename)
+                    if os.path.isfile(filepath):
+                        stat = os.stat(filepath)
+                        timestamp = self.convert_to_monotonic_time(stat.st_mtime)
+                        marker_data = {
+                            "type": "Artifact",
+                            "filename": filename,
+                            "size": stat.st_size,
+                        }
+                        self.events.append((timestamp, "artifact", marker_data))
+            except Exception as e:
+                warnings.warn(f"Failed to scan upload directory: {e}")
+
     # Methods to record events alongside the monitored data.
 
     @staticmethod
-    def record_event(name):
+    def record_event(name, timestamp=None, data=None):
         """Record an event as occuring now.
 
         Events are actions that occur at a specific point in time. If you are
         looking for an action that has a duration, see the phase API below.
+
+        Args:
+            name: Name of the event (string)
+            timestamp: Optional timestamp (monotonic time). If not provided, uses current time.
+            data: Optional marker payload dictionary (e.g., {"type": "TestStatus", ...})
         """
         if SystemResourceMonitor.instance:
-            SystemResourceMonitor.instance.events.append((time.monotonic(), name))
+            if timestamp is None:
+                timestamp = time.monotonic()
+            if data:
+                SystemResourceMonitor.instance.events.append((timestamp, name, data))
+            else:
+                SystemResourceMonitor.instance.events.append((timestamp, name))
 
     @staticmethod
     def record_marker(name, start, end, data):
@@ -612,6 +646,8 @@ class SystemResourceMonitor:
 
             if status in ("SKIP", "TIMEOUT"):
                 marker_data["color"] = "yellow"
+                if message:
+                    marker_data["message"] = message
             elif status in ("CRASH", "ERROR"):
                 marker_data["color"] = "red"
             elif expected is None and not will_retry:
@@ -621,6 +657,104 @@ class SystemResourceMonitor:
                 marker_data["color"] = "orange"
 
         SystemResourceMonitor.instance.record_marker("test", start, end, marker_data)
+
+    @staticmethod
+    def test_status(data):
+        """Record a test_status/log/process_output event.
+
+        Args:
+            data: Dictionary containing test_status/log/process_output data including:
+                  - "action": the action type
+                  - "test": test name (optional)
+                  - "subtest": subtest name (optional, only for test_status/log)
+                  - "status" or "level": status for test_status/log
+                  - "time": timestamp in milliseconds
+                  - "message" or "data": optional message
+        """
+        if not SystemResourceMonitor.instance:
+            return
+
+        time_sec = data["time"] / 1000
+        timestamp = SystemResourceMonitor.instance.convert_to_monotonic_time(time_sec)
+
+        marker_data = {"type": "TestStatus"}
+
+        if data.get("action") == "process_output":
+            # Process output uses "output" as marker name
+            marker_name = "output"
+            message = data.get("data")
+        else:
+            # test_status and log actions
+            status = (data.get("status") or data.get("level")).upper()
+            marker_name = status
+
+            # Determine color based on status
+            if status == "PASS":
+                marker_data["color"] = "green"
+            elif status == "FAIL":
+                marker_data["color"] = "orange"
+            elif status == "ERROR":
+                marker_data["color"] = "red"
+
+            if subtest := data.get("subtest"):
+                marker_data["subtest"] = subtest
+
+            message = data.get("message")
+
+        if test_name := data.get("test"):
+            marker_data["test"] = test_name
+
+        if message:
+            marker_data["message"] = message
+
+        if stack := data.get("stack"):
+            marker_data["stack"] = stack
+
+        SystemResourceMonitor.record_event(marker_name, timestamp, marker_data)
+
+    @staticmethod
+    def crash(data):
+        """Record a crash event.
+
+        Args:
+            data: Dictionary containing crash data including:
+                  - "signature": crash signature
+                  - "reason": crash reason (optional)
+                  - "test": test name (optional)
+                  - "minidump_path": path to minidump file (optional)
+                  - "stack": structured stack (array of frame dicts) (optional)
+                  - "time": timestamp in milliseconds
+        """
+        if not SystemResourceMonitor.instance:
+            return
+
+        time_sec = data["time"] / 1000
+        timestamp = SystemResourceMonitor.instance.convert_to_monotonic_time(time_sec)
+
+        marker_data = {
+            "type": "Crash",
+            "color": "red",
+        }
+
+        if signature := data.get("signature"):
+            marker_data["signature"] = signature
+        if reason := data.get("reason"):
+            marker_data["reason"] = reason
+        if test := data.get("test"):
+            marker_data["test"] = test
+
+        if minidump_path := data.get("minidump_path"):
+            # Extract the minidump name (without extension) from the path
+            # e.g., "/tmp/xpc-other-k49po531/7a7f1343-4dc3-224c-638b-5806ab642301.dmp"
+            # -> "7a7f1343-4dc3-224c-638b-5806ab642301"
+            minidump_name = os.path.splitext(os.path.basename(minidump_path))[0]
+            marker_data["minidump"] = minidump_name
+
+        # Add stack if available (structured format: array of frame dicts)
+        if stack := data.get("crashing_thread_stack"):
+            marker_data["stack"] = stack
+
+        SystemResourceMonitor.record_event("CRASH", timestamp, marker_data)
 
     @contextmanager
     def phase(self, name):
@@ -1030,7 +1164,7 @@ class SystemResourceMonitor:
                     {
                         "name": "Test",
                         "tooltipLabel": "{marker.data.name}",
-                        "tableLabel": "{marker.data.test} — {marker.data.status}",
+                        "tableLabel": "{marker.data.status} — {marker.data.test}",
                         "chartLabel": "{marker.data.name}",
                         "display": ["marker-chart", "marker-table"],
                         "colorField": "color",
@@ -1054,6 +1188,87 @@ class SystemResourceMonitor:
                             {
                                 "key": "expected",
                                 "label": "Expected",
+                                "format": "string",
+                            },
+                            {
+                                "key": "message",
+                                "label": "Message",
+                                "format": "string",
+                            },
+                            {
+                                "key": "color",
+                                "hidden": True,
+                            },
+                        ],
+                    },
+                    {
+                        "name": "TestStatus",
+                        "tableLabel": "{marker.data.message} — {marker.data.test} {marker.data.subtest}",
+                        "display": ["marker-chart", "marker-table"],
+                        "colorField": "color",
+                        "data": [
+                            {
+                                "key": "message",
+                                "label": "Message",
+                                "format": "string",
+                            },
+                            {
+                                "key": "test",
+                                "label": "Test Name",
+                                "format": "string",
+                            },
+                            {
+                                "key": "subtest",
+                                "label": "Subtest",
+                                "format": "string",
+                            },
+                            {
+                                "key": "color",
+                                "hidden": True,
+                            },
+                        ],
+                    },
+                    {
+                        "name": "Artifact",
+                        "tableLabel": "{marker.data.filename} — {marker.data.size}",
+                        "display": ["marker-chart", "marker-table"],
+                        "data": [
+                            {
+                                "key": "filename",
+                                "label": "Filename",
+                                "format": "string",
+                            },
+                            {
+                                "key": "size",
+                                "label": "Size",
+                                "format": "bytes",
+                            },
+                        ],
+                    },
+                    {
+                        "name": "Crash",
+                        "tableLabel": "{marker.data.signature} — {marker.data.test}",
+                        "display": ["marker-chart", "marker-table"],
+                        "colorField": "color",
+                        "data": [
+                            {
+                                "key": "signature",
+                                "label": "Signature",
+                                "format": "string",
+                            },
+                            {
+                                "key": "reason",
+                                "label": "Reason",
+                                "format": "string",
+                            },
+                            {
+                                "key": "test",
+                                "label": "Test Name",
+                                "format": "string",
+                            },
+                            {
+                                "key": "minidump",
+                                "label": "Minidump",
                                 "format": "string",
                             },
                             {
@@ -1134,6 +1349,21 @@ class SystemResourceMonitor:
                             },
                         ],
                     },
+                    {
+                        "name": "Interval",
+                        "tooltipLabel": "{marker.name}",
+                        "display": [],
+                        "data": [
+                            {
+                                "key": "interval",
+                                "label": "Interval",
+                                "format": "duration",
+                            }
+                        ],
+                        "graphs": [
+                            {"key": "interval", "color": "purple", "type": "line"}
+                        ],
+                    },
                 ],
                 "usesOnlyOneStackType": True,
             },
@@ -1167,6 +1397,7 @@ class SystemResourceMonitor:
                         "endTime": [],
                         "phase": [],
                         "category": [],
+                        "stack": [],
                         "length": 0,
                     },
                     "stackTable": {
@@ -1234,6 +1465,238 @@ class SystemResourceMonitor:
                 stringArray.append(string)
                 return len(stringArray) - 1
 
+        def parse_stack(stack_string):
+            """Parse a JavaScript stack trace into structured format.
+
+            Supports two formats:
+            1. JavaScript Error.stack format: "func@file:line:col\nfunc@file:line:col\n..."
+            2. Normalized nsIStackFrame format: "file:func:line\nfile:func:line\n..."
+            Returns an array of frame dicts.
+            """
+            if not stack_string:
+                return None
+
+            frames = []
+            for line in stack_string.strip().split("\n"):
+                if not line:
+                    continue
+
+                file_name = None
+                func_part = None
+                line_num = None
+                col_num = None
+
+                # Parse "func@file:line:col" (JavaScript Error.stack format)
+                if "@" in line:
+                    func_part, location = line.rsplit("@", 1)
+                    func_part = func_part.strip()
+
+                    # Parse "file:line:col"
+                    parts = location.rsplit(":", 2)
+                    if len(parts) == 3:
+                        file_name, line_str, col_str = parts
+                        try:
+                            line_num = int(line_str)
+                            col_num = int(col_str)
+                        except ValueError:
+                            pass
+                    elif len(parts) == 2:
+                        file_name, line_str = parts
+                        try:
+                            line_num = int(line_str)
+                        except ValueError:
+                            pass
+                    else:
+                        file_name = location
+                else:
+                    # Parse "file:func:line" (normalized nsIStackFrame format)
+                    parts = line.rsplit(":", 2)
+                    if len(parts) == 3:
+                        file_name, func_part, line_str = parts
+                        try:
+                            line_num = int(line_str)
+                        except ValueError:
+                            func_part = line.strip()
+                            file_name = None
+                    else:
+                        func_part = line.strip()
+
+                frame_dict = {"is_js": True}
+                if func_part:
+                    frame_dict["function"] = func_part
+                if file_name:
+                    frame_dict["file"] = file_name
+                if line_num is not None:
+                    frame_dict["line"] = line_num
+                if col_num is not None:
+                    frame_dict["column"] = col_num
+                frames.append(frame_dict)
+
+            return frames
+
+        def get_stack_index(stack_frames):
+            """Get a stack index from a structured stack (array of frame dicts).
+
+            Each frame dict contains:
+            - function: function name (optional)
+            - module: module/library name (optional)
+            - file: source file path (optional)
+            - line: line number (optional)
+            - column: column number (optional)
+            - offset: hex offset for unsymbolicated frames (optional)
+            - inlined: boolean indicating if this is an inlined frame (optional)
+            - is_js: boolean indicating if this is a JavaScript frame (optional)
+
+            Returns the index of the innermost stack frame, or None if stack_frames is empty.
+            """
+            if not stack_frames:
+                return None
+
+            stackTable = firstThread["stackTable"]
+            frameTable = firstThread["frameTable"]
+            funcTable = firstThread["funcTable"]
+            resourceTable = firstThread["resourceTable"]
+            nativeSymbols = firstThread["nativeSymbols"]
+
+            # Build stack from outermost to innermost
+            stack_index = None
+            inline_depth = 0
+
+            for frame_data in reversed(stack_frames):
+                # Handle inline depth tracking
+                if frame_data.get("inlined"):
+                    inline_depth += 1
+                else:
+                    inline_depth = 0
+
+                # Get frame components
+                module_name = frame_data.get("module")
+                file_name = frame_data.get("file")
+                line_num = frame_data.get("line")
+                col_num = frame_data.get("column")
+                is_js = frame_data.get("is_js", False)
+
+                # Get offsets - different handling for native vs JIT frames
+                module_offset = frame_data.get("module_offset")
+                function_offset = frame_data.get("function_offset")
+                raw_offset = frame_data.get("offset")  # For JIT frames without module
+
+                func_name = frame_data.get("function")
+                if not func_name and (offset := module_offset or raw_offset):
+                    func_name = hex(offset)
+
+                # Get or create resource for the module or file
+                resource_index = -1
+                resource_name = module_name or (file_name if is_js else None)
+                if resource_name:
+                    # Find existing resource
+                    for i, name_idx in enumerate(resourceTable["name"]):
+                        if firstThread["stringArray"][name_idx] == resource_name:
+                            resource_index = i
+                            break
+                    else:
+                        # Create new resource if not found
+                        resource_index = resourceTable["length"]
+                        resourceTable["lib"].append(None)
+                        resourceTable["name"].append(get_string_index(resource_name))
+                        resourceTable["host"].append(None)
+                        # Possible resourceTypes:
+                        # 0 = unknown, 1 = library, 2 = addon, 3 = webhost, 4 = otherhost, 5 = url
+                        # https://github.com/firefox-devtools/profiler/blob/32cb6672c7ed47311e9d84963023d51f5147042b/src/profile-logic/data-structures.ts#L322
+                        resource_type = 1 if module_name else (5 if is_js else 0)
+                        resourceTable["type"].append(resource_type)
+                        resourceTable["length"] += 1
+
+                # Create native symbol for unsymbolicated frames
+                # nativeSymbols.address = module_offset - function_offset
+                native_symbol_index = None
+                if (
+                    module_offset is not None
+                    and function_offset is not None
+                    and module_name
+                ):
+                    symbol_address = module_offset - function_offset
+
+                    # Check if this native symbol already exists
+                    for i in range(nativeSymbols["length"]):
+                        if (
+                            nativeSymbols["libIndex"][i] == resource_index
+                            and nativeSymbols["address"][i] == symbol_address
+                        ):
+                            native_symbol_index = i
+                            break
+                    else:
+                        # Create new native symbol if not found
+                        native_symbol_index = nativeSymbols["length"]
+                        nativeSymbols["libIndex"].append(resource_index)
+                        nativeSymbols["address"].append(symbol_address)
+                        nativeSymbols["name"].append(get_string_index(func_name))
+                        nativeSymbols["functionSize"].append(None)
+                        nativeSymbols["length"] += 1
+
+                # Get or create func index
+                func_name_index = get_string_index(func_name)
+                file_name_index = get_string_index(file_name) if file_name else None
+
+                for i, name_idx in enumerate(funcTable["name"]):
+                    if (
+                        name_idx == func_name_index
+                        and funcTable["resource"][i] == resource_index
+                        and funcTable["fileName"][i] == file_name_index
+                        and funcTable["lineNumber"][i] == line_num
+                    ):
+                        func_index = i
+                        break
+                else:
+                    func_index = funcTable["length"]
+                    funcTable["isJS"].append(is_js)
+                    funcTable["relevantForJS"].append(is_js)
+                    funcTable["name"].append(func_name_index)
+                    funcTable["resource"].append(resource_index)
+                    funcTable["fileName"].append(file_name_index)
+                    funcTable["lineNumber"].append(line_num)
+                    funcTable["columnNumber"].append(col_num)
+                    funcTable["length"] += 1
+
+                # Get or create frame index
+                # frameTable.address = module_offset for native frames, or offset for JIT frames
+                frame_address = module_offset or raw_offset or -1
+                for i, func_idx in enumerate(frameTable["func"]):
+                    if (
+                        func_idx == func_index
+                        and frameTable["line"][i] == line_num
+                        and frameTable["column"][i] == col_num
+                        and frameTable["inlineDepth"][i] == inline_depth
+                        and frameTable["nativeSymbol"][i] == native_symbol_index
+                        and frameTable["address"][i] == frame_address
+                    ):
+                        frame_index = i
+                        break
+                else:
+                    frame_index = frameTable["length"]
+                    frameTable["address"].append(frame_address)
+                    frameTable["inlineDepth"].append(inline_depth)
+                    frameTable["category"].append(OTHER_CATEGORY)
+                    frameTable["subcategory"].append(0)
+                    frameTable["func"].append(func_index)
+                    frameTable["nativeSymbol"].append(native_symbol_index)
+                    frameTable["innerWindowID"].append(0)
+                    frameTable["implementation"].append(None)
+                    frameTable["line"].append(line_num)
+                    frameTable["column"].append(col_num)
+                    frameTable["length"] += 1
+
+                # Create stack entry
+                new_stack_index = stackTable["length"]
+                stackTable["frame"].append(frame_index)
+                stackTable["prefix"].append(stack_index)
+                stackTable["category"].append(0)
+                stackTable["subcategory"].append(0)
+                stackTable["length"] += 1
+                stack_index = new_stack_index
+
+            return stack_index
+
         def add_marker(
             name_index, start, end, data, category_index=OTHER_CATEGORY, precision=None
         ):
@@ -1254,7 +1717,28 @@ class SystemResourceMonitor:
                 markers["phase"].append(1)
             markers["category"].append(category_index)
             markers["name"].append(name_index)
+
+            # Extract and process stack if present
+            stack_index = None
+            if isinstance(data, dict) and "stack" in data:
+                stack = data["stack"]
+                del data["stack"]
+
+                # Convert string stack to structured format if needed
+                if isinstance(stack, str):
+                    stack = parse_stack(stack)
+
+                stack_index = get_stack_index(stack)
+
+                # Add cause object to marker data for processed profile format
+                if stack_index is not None:
+                    data["cause"] = {
+                        "time": markers["startTime"][-1],
+                        "stack": stack_index,
+                    }
+
             markers["data"].append(data)
+            markers["stack"].append(stack_index)
             markers["length"] = markers["length"] + 1
 
         def format_percent(value):
@@ -1263,6 +1747,7 @@ class SystemResourceMonitor:
         cpu_string_index = get_string_index("CPU Use")
         memory_string_index = get_string_index("Memory")
         io_string_index = get_string_index("IO")
+        interval_string_index = get_string_index("Sampling Interval")
         valid_cpu_fields = set()
         for m in self.measurements:
             # Ignore samples that are much too short.
@@ -1327,6 +1812,17 @@ class SystemResourceMonitor:
                 "write_bytes": m.io.write_bytes,
             }
             add_marker(io_string_index, m.start, m.end, markerData)
+
+            # Sampling interval marker
+            add_marker(
+                interval_string_index,
+                m.end,
+                None,
+                {
+                    "type": "Interval",
+                    "interval": round((m.end - m.start) * 1000),
+                },
+            )
 
         # The marker schema for CPU markers should only contain graph
         # definitions for fields we actually have, or the profiler front-end
@@ -1396,14 +1892,27 @@ class SystemResourceMonitor:
             add_marker(get_string_index(name), start, end, markerData, TASK_CATEGORY, 3)
         if self.events:
             event_string_index = get_string_index("Event")
-            for event_time, text in self.events:
-                if text:
+            for event in self.events:
+                if len(event) == 3:
+                    # Event with payload: (time, name, data)
+                    event_time, name, data = event
+                    add_marker(
+                        get_string_index(name),
+                        event_time,
+                        None,
+                        data,
+                        OTHER_CATEGORY,
+                        3,
+                    )
+                elif len(event) == 2:
+                    # Simple event: (time, text)
+                    event_time, text = event
                     add_marker(
                         event_string_index,
                         event_time,
                         None,
                         {"type": "Text", "text": text},
-                        TASK_CATEGORY,
+                        OTHER_CATEGORY,
                         3,
                     )
 

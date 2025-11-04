@@ -560,7 +560,7 @@ void Theme::PaintCircleShadow(WebRenderBackendData& aWrData,
   const LayoutDeviceCoord stdDev = aShadowBlurStdDev * aDpiRatio;
   const LayoutDevicePoint shadowOffset = aShadowOffset * aDpiRatio;
   const IntSize inflation =
-      gfxAlphaBoxBlur::CalculateBlurRadius(gfxPoint(stdDev, stdDev));
+      gfxGaussianBlur::CalculateBlurRadius(gfxPoint(stdDev, stdDev));
   LayoutDeviceRect shadowRect = aBoxRect;
   shadowRect.MoveBy(shadowOffset);
   shadowRect.Inflate(inflation.width, inflation.height);
@@ -592,7 +592,7 @@ void Theme::PaintCircleShadow(DrawTarget& aDrawTarget,
   blurFilter->SetAttribute(ATT_GAUSSIAN_BLUR_STD_DEVIATION, stdDev);
 
   IntSize inflation =
-      gfxAlphaBoxBlur::CalculateBlurRadius(gfxPoint(stdDev, stdDev));
+      gfxGaussianBlur::CalculateBlurRadius(gfxPoint(stdDev, stdDev));
   Rect inflatedRect = aBoxRect.ToUnknownRect();
   inflatedRect.Inflate(inflation.width, inflation.height);
   Rect sourceRectInFilterSpace =
@@ -1290,7 +1290,7 @@ void Theme::PaintAutoStyleOutline(nsIFrame* aFrame,
                                   const LayoutDeviceRect& aRect,
                                   const Colors& aColors, DPIRatio aDpiRatio) {
   const nscoord a2d = aFrame->PresContext()->AppUnitsPerDevPixel();
-  const auto cssOffset = aFrame->StyleOutline()->mOutlineOffset.ToAppUnits();
+  const auto cssOffset = aFrame->StyleOutline()->mOutlineOffset;
 
   LayoutDeviceRect rect(aRect);
   auto devOffset = LayoutDevicePixel::FromAppUnits(cssOffset, a2d);

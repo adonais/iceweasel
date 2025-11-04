@@ -37,6 +37,7 @@ class nsProxyInfo final : public nsIProxyInfo {
   // Cheap accessors for use within Necko
   const nsCString& Host() const { return mHost; }
   int32_t Port() const { return mPort; }
+  const nsCString& PathTemplate() const { return mPathTemplate; }
   const char* Type() const { return mType; }
   uint32_t Flags() const { return mFlags; }
   const nsCString& Username() const { return mUsername; }
@@ -54,6 +55,7 @@ class nsProxyInfo final : public nsIProxyInfo {
   bool IsHTTP();
   bool IsHTTPS();
   bool IsSOCKS();
+  bool IsHttp3Proxy();
 
   static void SerializeProxyInfo(nsProxyInfo* aProxyInfo,
                                  nsTArray<ProxyInfoCloneArgs>& aResult);
@@ -62,6 +64,8 @@ class nsProxyInfo final : public nsIProxyInfo {
 
   already_AddRefed<nsProxyInfo> CloneProxyInfoWithNewResolveFlags(
       uint32_t aResolveFlags);
+
+  already_AddRefed<nsProxyInfo> CreateFallbackProxyInfo();
 
  private:
   friend class nsProtocolProxyService;
@@ -72,7 +76,8 @@ class nsProxyInfo final : public nsIProxyInfo {
               const nsACString& aUsername, const nsACString& aPassword,
               uint32_t aFlags, uint32_t aTimeout, uint32_t aResolveFlags,
               const nsACString& aProxyAuthorizationHeader,
-              const nsACString& aConnectionIsolationKey);
+              const nsACString& aConnectionIsolationKey,
+              const nsACString& aUriTemplate);
 
   ~nsProxyInfo() { NS_IF_RELEASE(mNext); }
 
@@ -83,6 +88,7 @@ class nsProxyInfo final : public nsIProxyInfo {
   nsCString mProxyAuthorizationHeader;
   nsCString mConnectionIsolationKey;
   nsCString mSourceId;
+  nsCString mPathTemplate;
   int32_t mPort{-1};
   uint32_t mFlags{0};
   // We need to read on multiple threads, but don't need to sync on anything

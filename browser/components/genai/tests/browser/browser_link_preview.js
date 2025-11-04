@@ -419,6 +419,27 @@ add_task(async function test_fetch_page_data() {
 });
 
 /**
+ * Test that Shift-JIS encoding is handled correctly.
+ */
+add_task(async function test_fetch_shift_jis() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.ml.linkPreview.enabled", true]],
+  });
+  const actor =
+    window.browsingContext.currentWindowContext.getActor("LinkPreview");
+  const result = await actor.fetchPageData(
+    "https://example.com/browser/browser/components/genai/tests/browser/data/encodingWithShiftJIS.html"
+  );
+
+  ok(!result.error, "should not have an error");
+  is(
+    result.rawMetaInfo["html:title"],
+    "Shift-JIS テスト",
+    "title should be correct"
+  );
+});
+
+/**
  * Test fetching errors.
  */
 add_task(async function test_fetch_errors() {

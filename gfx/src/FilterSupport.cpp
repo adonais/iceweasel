@@ -177,6 +177,10 @@ static already_AddRefed<FilterNode> Crop(DrawTarget* aDT,
 static already_AddRefed<FilterNode> Offset(DrawTarget* aDT,
                                            FilterNode* aInputFilter,
                                            const IntPoint& aOffset) {
+  if (aOffset == IntPoint()) {
+    RefPtr<FilterNode> filter(aInputFilter);
+    return filter.forget();
+  }
   RefPtr<FilterNode> filter = aDT->CreateFilter(FilterType::TRANSFORM);
   if (filter) {
     filter->SetAttribute(ATT_TRANSFORM_MATRIX,
@@ -190,6 +194,10 @@ static already_AddRefed<FilterNode> Offset(DrawTarget* aDT,
 static already_AddRefed<FilterNode> GaussianBlur(DrawTarget* aDT,
                                                  FilterNode* aInputFilter,
                                                  const Size& aStdDeviation) {
+  if (aStdDeviation == Size()) {
+    RefPtr<FilterNode> filter(aInputFilter);
+    return filter.forget();
+  }
   float stdX = float(std::min(aStdDeviation.width, kMaxStdDeviation));
   float stdY = float(std::min(aStdDeviation.height, kMaxStdDeviation));
   if (stdX == stdY) {
@@ -593,6 +601,13 @@ static void ConvertComponentTransferFunctionToFilter(
       static const LinearTransferAtts interceptAtt[4] = {
           ATT_LINEAR_TRANSFER_INTERCEPT_R, ATT_LINEAR_TRANSFER_INTERCEPT_G,
           ATT_LINEAR_TRANSFER_INTERCEPT_B, ATT_LINEAR_TRANSFER_INTERCEPT_A};
+      const nsTArray<float>& slopeIntercept =
+          aFunctionAttributes.mValues[aInChannel];
+      float slope = slopeIntercept[kComponentTransferSlopeIndex];
+      float intercept = slopeIntercept[kComponentTransferInterceptIndex];
+      if (slope == 1.0f && intercept == 0.0f) {
+        return;
+      }
       if (!aLinearTransfer) {
         aLinearTransfer = aDT->CreateFilter(FilterType::LINEAR_TRANSFER);
         if (!aLinearTransfer) {
@@ -602,10 +617,6 @@ static void ConvertComponentTransferFunctionToFilter(
       }
       filter = aLinearTransfer;
       filter->SetAttribute(disableAtt[aOutChannel], false);
-      const nsTArray<float>& slopeIntercept =
-          aFunctionAttributes.mValues[aInChannel];
-      float slope = slopeIntercept[kComponentTransferSlopeIndex];
-      float intercept = slopeIntercept[kComponentTransferInterceptIndex];
       filter->SetAttribute(slopeAtt[aOutChannel], slope);
       filter->SetAttribute(interceptAtt[aOutChannel], intercept);
       break;
@@ -835,6 +846,13 @@ static already_AddRefed<FilterNode> FilterNodeFromPrimitiveDescription(
     }
 
     already_AddRefed<FilterNode> operator()(const OpacityAttributes& aOpacity) {
+      if (aOpacity.mOpacity == 1.0f) {
+        RefPtr<FilterNode> filter(mSources[0]);
+        return filter.forget();
+      }
+      if (aOpacity.mOpacity == 0.0f) {
+        return nullptr;
+      }
       RefPtr<FilterNode> filter = mDT->CreateFilter(FilterType::OPACITY);
       if (!filter) {
         return nullptr;

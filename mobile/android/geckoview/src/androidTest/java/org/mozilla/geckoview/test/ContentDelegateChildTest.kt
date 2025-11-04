@@ -222,10 +222,6 @@ class ContentDelegateChildTest : BaseSessionTest() {
     @WithDisplay(width = 100, height = 100)
     @Test
     fun requestContextMenuOnBlobBuffered() {
-        // Bug 1981579
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
-        }
         mainSession.loadTestPath(CONTEXT_MENU_BLOB_BUFFERED_HTML_PATH)
         mainSession.waitForPageStop()
         mainSession.waitForRoundTrip()
@@ -443,15 +439,6 @@ class ContentDelegateChildTest : BaseSessionTest() {
     @WithDisplay(width = 100, height = 100)
     @Test
     fun requestContextMenuOnVideo() {
-        if (sessionRule.env.isIsolatedProcess) {
-            // Bug 1961624
-            // Temporary disable Java's media decode that isn't compatible with isolated process.
-            sessionRule.setPrefsUntilTestEnd(
-                mapOf(
-                    "media.android-media-codec.enabled" to false,
-                ),
-            )
-        }
         mainSession.loadTestPath(CONTEXT_MENU_VIDEO_HTML_PATH)
         mainSession.waitForPageStop()
         sendLongPress(50f, 50f)

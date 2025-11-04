@@ -46,7 +46,23 @@ export const TaskbarTabs = new (class {
       this.#registry = registry;
       this.#windowManager = initWindowManager(registry);
       initPinManager(registry);
+
+      this.#setupTelemetry(registry);
     });
+  }
+
+  #setupTelemetry(aRegistry) {
+    function updateMetrics() {
+      Glean.webApp.installedWebAppCount.set(aRegistry.countTaskbarTabs());
+    }
+
+    aRegistry.on(kTaskbarTabsRegistryEvents.created, updateMetrics);
+    aRegistry.on(kTaskbarTabsRegistryEvents.removed, updateMetrics);
+    updateMetrics();
+  }
+
+  async waitUntilReady() {
+    await this.#ready;
   }
 
   async getTaskbarTab(...args) {
@@ -57,6 +73,11 @@ export const TaskbarTabs = new (class {
   async findOrCreateTaskbarTab(...args) {
     await this.#ready;
     return this.#registry.findOrCreateTaskbarTab(...args);
+  }
+
+  async findTaskbarTab(...args) {
+    await this.#ready;
+    return this.#registry.findTaskbarTab(...args);
   }
 
   /**

@@ -869,13 +869,12 @@ nsresult nsDocumentEncoder::NodeSerializer::SerializeNodeStart(
 
   switch (node->NodeType()) {
     case nsINode::TEXT_NODE: {
-      rv = mSerializer->AppendText(static_cast<nsIContent*>(node), aStartOffset,
-                                   aEndOffset);
+      rv = mSerializer->AppendText(node->AsText(), aStartOffset, aEndOffset);
       break;
     }
     case nsINode::CDATA_SECTION_NODE: {
-      rv = mSerializer->AppendCDATASection(static_cast<nsIContent*>(node),
-                                           aStartOffset, aEndOffset);
+      rv = mSerializer->AppendCDATASection(node->AsText(), aStartOffset,
+                                           aEndOffset);
       break;
     }
     case nsINode::PROCESSING_INSTRUCTION_NODE: {

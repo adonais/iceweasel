@@ -532,7 +532,6 @@ internal class GeckoPromptDelegate(private val geckoEngineSession: GeckoEngineSe
         return geckoResult
     }
 
-    @Suppress("ComplexMethod")
     override fun onDateTimePrompt(
         session: GeckoSession,
         prompt: PromptDelegate.DateTimePrompt,
@@ -718,6 +717,30 @@ internal class GeckoPromptDelegate(private val geckoEngineSession: GeckoEngineSe
         geckoEngineSession.notifyObservers {
             onPromptRequest(
                 PromptRequest.Popup(prompt.targetUri ?: "", onAllow, onDeny),
+            )
+        }
+        return geckoResult
+    }
+
+    override fun onRedirectPrompt(
+        session: GeckoSession,
+        prompt: PromptDelegate.RedirectPrompt,
+    ): GeckoResult<PromptResponse> {
+        val geckoResult = GeckoResult<PromptResponse>()
+        val onAllow: () -> Unit = {
+            if (!prompt.isComplete) {
+                geckoResult.complete(prompt.confirm(AllowOrDeny.ALLOW))
+            }
+        }
+        val onDeny: () -> Unit = {
+            if (!prompt.isComplete) {
+                geckoResult.complete(prompt.confirm(AllowOrDeny.DENY))
+            }
+        }
+
+        geckoEngineSession.notifyObservers {
+            onPromptRequest(
+                PromptRequest.Redirect(prompt.targetUri ?: "", onAllow, onDeny),
             )
         }
         return geckoResult

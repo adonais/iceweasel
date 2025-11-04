@@ -4,10 +4,7 @@
 
 package org.mozilla.fenix.settings.logins.ui
 
-import android.view.WindowManager
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,7 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,10 +44,6 @@ import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.ProcessLifecycleOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -84,67 +77,30 @@ internal fun SavedLoginsScreen(
     buildStore: (NavHostController) -> LoginsStore,
     startDestination: String = LoginsDestinations.LIST,
 ) {
-    val activityContext = LocalActivity.current as ComponentActivity
     val navController = rememberNavController()
     val store = buildStore(navController)
 
-    DisposableEffect(LocalLifecycleOwner.current) {
-        val observer = object : DefaultLifecycleObserver {
-            override fun onPause(owner: LifecycleOwner) {
-                super.onPause(owner)
-                activityContext.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-
-                if (store.state.pinVerificationState != PinVerificationState.Started) {
-                    store.dispatch(BiometricAuthenticationAction.AuthenticationFailed)
-                    store.dispatch(BiometricAuthenticationDialogAction(false))
-                } else {
-                    store.dispatch(PinVerificationAction.Duplicate)
-                }
+    RequireAuthorization(store) {
+        NavHost(
+            navController = navController,
+            startDestination = startDestination,
+        ) {
+            composable(route = LoginsDestinations.LIST) {
+                BackHandler { store.dispatch(LoginsListBackClicked) }
+                LoginsList(store = store)
             }
-
-            override fun onResume(owner: LifecycleOwner) {
-                super.onResume(owner)
-                activityContext.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-
-                val noPinVerification =
-                    store.state.pinVerificationState == PinVerificationState.Inert
-                val pinVerificationDuplicated =
-                    store.state.pinVerificationState == PinVerificationState.Duplicated
-                if (noPinVerification || pinVerificationDuplicated) {
-                    store.dispatch(BiometricAuthenticationDialogAction(true))
-                } else {
-                    store.dispatch(PinVerificationAction.None)
-                }
+            composable(route = LoginsDestinations.ADD_LOGIN) {
+                BackHandler { store.dispatch(AddLoginBackClicked) }
+                AddLoginScreen(store = store)
             }
-        }
-        ProcessLifecycleOwner.get().lifecycle.addObserver(observer)
-
-        onDispose {
-            activityContext.window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-            store.dispatch(ViewDisposed)
-            ProcessLifecycleOwner.get().lifecycle.removeObserver(observer)
-        }
-    }
-
-    NavHost(
-        navController = navController,
-        startDestination = startDestination,
-    ) {
-        composable(route = LoginsDestinations.LIST) {
-            BackHandler { store.dispatch(LoginsListBackClicked) }
-            LoginsList(store = store)
-        }
-        composable(route = LoginsDestinations.ADD_LOGIN) {
-            BackHandler { store.dispatch(AddLoginBackClicked) }
-            AddLoginScreen(store = store)
-        }
-        composable(route = LoginsDestinations.EDIT_LOGIN) {
-            BackHandler { store.dispatch(EditLoginBackClicked) }
-            EditLoginScreen(store = store)
-        }
-        composable(route = LoginsDestinations.LOGIN_DETAILS) {
-            BackHandler { store.dispatch(LoginsDetailBackClicked) }
-            LoginDetailsScreen(store = store)
+            composable(route = LoginsDestinations.EDIT_LOGIN) {
+                BackHandler { store.dispatch(EditLoginBackClicked) }
+                EditLoginScreen(store = store)
+            }
+            composable(route = LoginsDestinations.LOGIN_DETAILS) {
+                BackHandler { store.dispatch(LoginsDetailBackClicked) }
+                LoginDetailsScreen(store = store)
+            }
         }
     }
 }
@@ -160,6 +116,10 @@ internal object LoginsDestinations {
 private fun LoginsList(store: LoginsStore) {
     val state by store.observeAsState(store.state) { it }
 
+    LaunchedEffect(Unit) {
+        store.dispatch(LoginsListAppeared)
+    }
+
     Scaffold(
         topBar = {
             LoginsListTopBar(
@@ -170,11 +130,6 @@ private fun LoginsList(store: LoginsStore) {
         containerColor = FirefoxTheme.colors.layer1,
         contentWindowInsets = WindowInsets(0.dp),
     ) { paddingValues ->
-
-        if (state.biometricAuthenticationDialogState.shouldShow) {
-            BiometricAuthenticationDialog(store = store)
-        }
-
         if (state.searchText.isNullOrEmpty() && state.loginItems.isEmpty()) {
             EmptyList(dispatcher = store::dispatch, paddingValues = paddingValues)
             return@Scaffold

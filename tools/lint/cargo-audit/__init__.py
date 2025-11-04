@@ -280,6 +280,7 @@ def setup(root, log, **lintargs) -> int:
                 [
                     "cargo",
                     "install",
+                    "--locked",
                     "--version",
                     desired_version,
                     "--color",

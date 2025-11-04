@@ -924,13 +924,14 @@ this.DateTimeBoxWidget = class {
           // Give aria autocomplete hint for am/pm
           this.mDayPeriodField.setAttribute("aria-autocomplete", "inline");
           break;
-        default:
+        default: {
           let span = this.shadowRoot.createElementAndAppendChildAt(
             root,
             "span"
           );
           span.textContent = part.value;
           break;
+        }
       }
     });
   }
@@ -1534,14 +1535,16 @@ this.DateTimeBoxWidget = class {
         this.incrementFieldValue(targetField, 0 - interval);
         break;
       }
-      case "Home":
+      case "Home": {
         let min = targetField.getAttribute("min");
         this.setFieldValue(targetField, min);
         break;
-      case "End":
+      }
+      case "End": {
         let max = targetField.getAttribute("max");
         this.setFieldValue(targetField, max);
         break;
+      }
     }
     this.setInputValueFromFields();
   }

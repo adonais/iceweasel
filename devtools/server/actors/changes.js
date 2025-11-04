@@ -7,8 +7,6 @@
 const { Actor } = require("resource://devtools/shared/protocol.js");
 const { changesSpec } = require("resource://devtools/shared/specs/changes.js");
 
-const TrackChangeEmitter = require("resource://devtools/server/actors/utils/track-change-emitter.js");
-
 /**
  * The ChangesActor stores a stack of changes made by devtools on
  * the document in the associated tab.
@@ -29,7 +27,7 @@ class ChangesActor extends Actor {
     this.onTrackChange = this.pushChange.bind(this);
     this.onWillNavigate = this.onWillNavigate.bind(this);
 
-    TrackChangeEmitter.on("track-change", this.onTrackChange);
+    this.targetActor.on("track-css-change", this.onTrackChange);
     this.targetActor.on("will-navigate", this.onWillNavigate);
 
     this.changes = [];
@@ -40,7 +38,7 @@ class ChangesActor extends Actor {
     this._changesHaveBeenRequested = false;
     this.clearChanges();
     this.targetActor.off("will-navigate", this.onWillNavigate);
-    TrackChangeEmitter.off("track-change", this.onTrackChange);
+    this.targetActor.off("track-css-change", this.onTrackChange);
     super.destroy();
   }
 

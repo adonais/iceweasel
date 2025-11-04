@@ -1055,6 +1055,7 @@ pub enum PrimitiveInstanceKind {
         /// Handle to the common interned data for this primitive.
         data_handle: LinearGradientDataHandle,
         visible_tiles_range: GradientTileRange,
+        use_legacy_path: bool,
     },
     /// Always rendered via a cached render task. Usually faster with
     /// a GPU.
@@ -1067,13 +1068,13 @@ pub enum PrimitiveInstanceKind {
         /// Handle to the common interned data for this primitive.
         data_handle: RadialGradientDataHandle,
         visible_tiles_range: GradientTileRange,
-        cached: bool,
+        use_legacy_path: bool,
     },
     ConicGradient {
         /// Handle to the common interned data for this primitive.
         data_handle: ConicGradientDataHandle,
         visible_tiles_range: GradientTileRange,
-        cached: bool,
+        use_legacy_path: bool,
     },
     /// Clear out a rect, used for special effects.
     Clear {

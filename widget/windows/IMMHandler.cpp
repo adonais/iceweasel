@@ -14,7 +14,6 @@
 #include "KeyboardLayout.h"
 #include <algorithm>
 
-#include "mozilla/CheckedInt.h"
 #include "mozilla/MiscEvents.h"
 #include "mozilla/TextEvents.h"
 #include "mozilla/ToString.h"

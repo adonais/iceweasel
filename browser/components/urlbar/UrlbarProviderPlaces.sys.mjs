@@ -92,7 +92,7 @@ const SQL_SWITCHTAB_QUERY = `
 import {
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -101,12 +101,16 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
-  ProvidersManager: "resource:///modules/UrlbarProvidersManager.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
-  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarProviderOpenTabs:
+    "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
+  ProvidersManager:
+    "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarSearchUtils:
+    "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
+  UrlbarTokenizer:
+    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
 });
 
 // Constants to support an alternative frecency algorithm.
@@ -307,9 +311,9 @@ function makeUrlbarResult(tokens, info) {
     switch (action.type) {
       case "searchengine":
         // Return a form history result.
-        return new lazy.UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.SEARCH,
-          UrlbarUtils.RESULT_SOURCE.HISTORY,
+        return new lazy.UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.SEARCH,
+          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
           ...lazy.UrlbarResult.payloadAndSimpleHighlights(tokens, {
             engine: action.params.engineName,
             isBlockable: true,
@@ -323,28 +327,30 @@ function makeUrlbarResult(tokens, info) {
             ],
             lowerCaseSuggestion:
               action.params.searchSuggestion.toLocaleLowerCase(),
-          })
-        );
-      case "switchtab": {
-        let payload = lazy.UrlbarResult.payloadAndSimpleHighlights(tokens, {
-          url: [action.params.url, UrlbarUtils.HIGHLIGHT.TYPED],
-          title: [info.comment, UrlbarUtils.HIGHLIGHT.TYPED],
-          icon: info.icon,
-          userContextId: info.userContextId,
-          lastVisit: info.lastVisit,
-          tabGroup: info.tabGroup,
-          frecency: info.frecency,
+          }),
         });
-        if (lazy.UrlbarPrefs.get("secondaryActions.switchToTab")) {
-          payload[0].action = UrlbarUtils.createTabSwitchSecondaryAction(
-            info.userContextId
-          );
-        }
-        return new lazy.UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-          UrlbarUtils.RESULT_SOURCE.TABS,
-          ...payload
+      case "switchtab": {
+        let payloadAndHighlights = lazy.UrlbarResult.payloadAndSimpleHighlights(
+          tokens,
+          {
+            url: [action.params.url, UrlbarUtils.HIGHLIGHT.TYPED],
+            title: [info.comment, UrlbarUtils.HIGHLIGHT.TYPED],
+            icon: info.icon,
+            userContextId: info.userContextId,
+            lastVisit: info.lastVisit,
+            tabGroup: info.tabGroup,
+            frecency: info.frecency,
+          }
         );
+        if (lazy.UrlbarPrefs.get("secondaryActions.switchToTab")) {
+          payloadAndHighlights.payload.action =
+            UrlbarUtils.createTabSwitchSecondaryAction(info.userContextId);
+        }
+        return new lazy.UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+          source: UrlbarUtils.RESULT_SOURCE.TABS,
+          ...payloadAndHighlights,
+        });
       }
       default:
         console.error(`Unexpected action type: ${action.type}`);
@@ -394,8 +400,8 @@ function makeUrlbarResult(tokens, info) {
     });
   }
 
-  return new lazy.UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.URL,
+  return new lazy.UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.URL,
     source,
     ...lazy.UrlbarResult.payloadAndSimpleHighlights(tokens, {
       url: [info.url, UrlbarUtils.HIGHLIGHT.TYPED],
@@ -407,8 +413,8 @@ function makeUrlbarResult(tokens, info) {
       helpUrl,
       lastVisit: info.lastVisit,
       frecency: info.frecency,
-    })
-  );
+    }),
+  });
 }
 
 const MATCH_TYPE = {

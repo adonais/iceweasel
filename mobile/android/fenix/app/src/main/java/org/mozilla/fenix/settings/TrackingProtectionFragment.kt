@@ -14,6 +14,7 @@ import androidx.preference.DropDownPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.HomeActivity
@@ -416,7 +417,7 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
      * `false` if in custom mode.
      */
     private fun showDisableBaselineDialog(isStrictTrackingMode: Boolean) {
-        alertDialog = AlertDialog.Builder(requireContext()).apply {
+        alertDialog = MaterialAlertDialogBuilder(requireContext()).apply {
             setTitle(R.string.preference_enhanced_tracking_protection_allow_list_dialog_title)
             setMessage(
                 getString(

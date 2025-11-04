@@ -92,12 +92,13 @@ export class ContentMetaChild extends JSWindowActorChild {
 
   handleEvent(event) {
     switch (event.type) {
-      case "DOMContentLoaded":
+      case "DOMContentLoaded": {
         const metaTags = this.contentWindow.document.querySelectorAll("meta");
         for (let metaTag of metaTags) {
           this.onMetaTag(metaTag);
         }
         break;
+      }
       case "DOMMetaAdded":
         this.onMetaTag(event.originalTarget);
         break;

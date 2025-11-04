@@ -36,6 +36,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/gfx/Logging.h"
 #include "mozilla/intl/OSPreferences.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/java/GeckoAppShellNatives.h"
@@ -361,6 +362,11 @@ class GeckoAppShellSupport final
     }
 
     nsBaseAppShell::OnSystemTimezoneChange();
+  }
+
+  static void LogGpuProcessLaunchFailure(jni::String::Param aMessage) {
+    gfxCriticalNote << "Error launching GPU process: "
+                    << aMessage->ToCString().get();
   }
 };
 

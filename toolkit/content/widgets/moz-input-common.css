@@ -14,13 +14,8 @@
     --input-margin-inline-start-adjust: calc(-1 * var(--input-space-offset));
   }
 
-  :host(:not([hidden])) {
-    display: block;
-  }
-
   :host(:not(:state(has-label))) {
     --input-space-offset: var(--input-width);
-    display: inline-block;
   }
 
   :host([inputlayout="block"]) {
@@ -30,6 +25,14 @@
 
   :host([inputlayout="block"]:not(:state(has-label), :state(has-description))) {
     --input-margin-block-adjust: 0;
+  }
+
+  :host(:not([hidden])) {
+    display: block;
+  }
+
+  :host(:not([hidden], :state(has-label), [inputlayout="block"])) {
+    display: inline-block;
   }
 
   @media (forced-colors) {

@@ -443,6 +443,11 @@ class nsDocShellLoadState final {
   mozilla::dom::FormData* GetFormDataEntryList();
   void SetFormDataEntryList(mozilla::dom::FormData* aFormDataEntryList);
 
+  // This is used as the getter/setter for the app link intent launch type
+  // for the load.
+  uint32_t GetAppLinkLaunchType() const;
+  void SetAppLinkLaunchType(uint32_t aAppLinkLaunchType);
+
  protected:
   // Destructor can't be defaulted or inlined, as header doesn't have all type
   // includes it needs to do so.
@@ -714,6 +719,9 @@ class nsDocShellLoadState final {
   nsCOMPtr<nsIStructuredCloneContainer> mNavigationAPIState;
 
   RefPtr<mozilla::dom::FormData> mFormDataEntryList;
+
+  // App link intent launch type: 0 = unknown, 1 = cold, 2 = warm, 3 = hot.
+  uint32_t mAppLinkLaunchType = 0;
 };
 
 #endif /* nsDocShellLoadState_h__ */

@@ -44,6 +44,10 @@ run-if = ["false"] # Only used for recreating URLSearchParams_profile.zip
 
 ["test_clear_object_store_with_indexes.js"]
 requesttimeoutfactor = 2
+run-sequentially = [
+  "os == 'mac'", # frequent parallel fail on Mac
+  "os == 'linux'", # frequent parallel fail on Linux
+]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1959284
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1959284
@@ -117,7 +121,6 @@ skip-if = [
 ]
 
 ["test_transaction_durability.js"]
-run-sequentially = "very high failure rate in parallel"
 
 ["test_unexpectedDirectory.js"]
 

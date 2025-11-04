@@ -47,15 +47,16 @@ linux64-cctools-port:
     run:
         script: build-cctools-port.sh
         resources:
-            - taskcluster/scripts/misc/cctools.patch
+            - taskcluster/scripts/misc/libtapi.patch
         toolchain-artifact: public/build/cctools.tar.zst
     fetches:
         toolchain:
             - linux64-clang-toolchain
-            - linux64-toolchain-sysroot
+            - linux64-toolchain-sysroot-gcc10
         fetch:
             - cctools-port
             - libtapi
+            - libdispatch
             - ldid
 
 linux64-hfsplus:
@@ -229,7 +230,7 @@ macosx-custom-car:
         symbol: TM(custom-car)
         tier: 2
     worker:
-        max-run-time: 50000
+        max-run-time: 15000
     use-python: "3.11"
     run-on-projects: []
     run:
@@ -254,7 +255,7 @@ macosx-custom-car:
         toolchain-artifact: public/build/car_macosx.tar.zst
     fetches:
         toolchain:
-            - MacOSX15.4.sdk
+            - MacOSX26.0.sdk
 
 macosx-arm64-custom-car:
     description: "Custom chromium-as-release build for mac (apple silicon)"
@@ -265,7 +266,7 @@ macosx-arm64-custom-car:
         symbol: TM(custom-car-arm)
         tier: 2
     worker:
-        max-run-time: 50000
+        max-run-time: 15000
     use-python: "3.11"
     run-on-projects: []
     run:
@@ -290,7 +291,7 @@ macosx-arm64-custom-car:
         toolchain-artifact: public/build/car_macosx_arm.tar.zst
     fetches:
         toolchain:
-            - MacOSX15.4.sdk
+            - MacOSX26.0.sdk
 
 android-custom-car:
     description: "Custom chromium-as-release build for Android"
@@ -701,6 +702,53 @@ win64-vs2022:
             - vs
             - vs-toolchain
 
+win64-WindowsAppSDK:
+    description: "WindowsAppSDK headers and libraries (x86_64)"
+    attributes:
+        local-toolchain: true
+    treeherder:
+        symbol: TW64(WindowsAppSDK)
+    run:
+        script: build-WindowsAppSDK.sh
+        arguments: ['x64', '1.8']
+        toolchain-artifact: public/build/winappsdk-x86_64-pc-windows-msvc.tar.zst
+        toolchain-alias: winappsdk-x86_64-pc-windows-msvc
+    fetches:
+        fetch:
+            - windowsappsdk-redist
+
+win32-WindowsAppSDK:
+    description: "WindowsAppSDK headers and libraries (x86)"
+    attributes:
+        local-toolchain: true
+    worker-type: b-win2022
+    treeherder:
+        symbol: TW32(WindowsAppSDK)
+    run:
+        script: build-WindowsAppSDK.sh
+        arguments: ['x86', '1.8']
+        toolchain-artifact: public/build/winappsdk-x86-pc-windows-msvc.tar.zst
+        toolchain-alias: winappsdk-x86-pc-windows-msvc
+    fetches:
+        fetch:
+            - windowsappsdk-redist
+
+win64-aarch64-WindowsAppSDK:
+    description: "WindowsAppSDK headers and libraries (aarch64)"
+    attributes:
+        local-toolchain: true
+    worker-type: b-win2022
+    treeherder:
+        symbol: TWA64(WindowsAppSDK)
+    run:
+        script: build-WindowsAppSDK.sh
+        arguments: ['arm64', '1.8']
+        toolchain-artifact: public/build/winappsdk-aarch64-pc-windows-msvc.tar.zst
+        toolchain-alias: winappsdk-aarch64-pc-windows-msvc
+    fetches:
+        fetch:
+            - windowsappsdk-redist
+
 win64-aarch64-vs2022:
     description: "VS 2022"
     attributes:
@@ -791,40 +839,16 @@ talos-pdfs:
         fetch:
             - mozilla-pdf.js
 
-win64-dxc:
-    description: "DirectX Shader Compiler (x86_64)"
-    attributes:
-        local-toolchain: true
+symbolicator-cli:
+    description: "symbolicator-cli from firefox profiler"
     treeherder:
-        symbol: TW64(dxc)
+        symbol: TL(symbolicator-cli)
     run:
-        script: build-dxc.sh
-        arguments:
-            - "x86_64"
-        toolchain-artifact: public/build/dxc-x86_64-pc-windows-msvc.tar.zst
-        toolchain-alias: dxc-x86_64-pc-windows-msvc
+        script: build-symbolicator-cli.sh
+        toolchain-artifact: public/build/symbolicator-cli.tar.zst
+    run-on-projects: []
     fetches:
-        toolchain:
-            - linux64-clang-toolchain
-            - vs-toolchain
         fetch:
-            - dxc-src
-
-win64-aarch64-dxc:
-    description: "DirectX Shader Compiler (aarch64)"
-    attributes:
-        local-toolchain: true
-    treeherder:
-        symbol: TWA64(dxc)
-    run:
-        script: build-dxc.sh
-        arguments:
-            - "aarch64"
-        toolchain-artifact: public/build/dxc-aarch64-pc-windows-msvc.tar.zst
-        toolchain-alias: dxc-aarch64-pc-windows-msvc
-    fetches:
+            - firefox-profiler
         toolchain:
-            - linux64-clang-toolchain
-            - vs-toolchain
-        fetch:
-            - dxc-src
+            - linux64-node

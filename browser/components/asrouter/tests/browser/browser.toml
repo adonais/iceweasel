@@ -80,3 +80,5 @@ skip-if = [
 https_first_disabled = true
 
 ["browser_trigger_messagesLoaded.js"]
+
+["browser_backup_restore_spotlight.js"]

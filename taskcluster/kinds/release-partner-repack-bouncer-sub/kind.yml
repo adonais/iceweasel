@@ -31,7 +31,7 @@ task-defaults:
 
 tasks:
     firefox:
-        bouncer-platforms: ['linux', 'linux64', 'osx', 'win', 'win64', 'win64-aarch64']
+        bouncer-platforms: ['linux64', 'osx', 'win', 'win64', 'win64-aarch64']
         bouncer-products:
             by-release-type:
                 default: ['installer', 'stub-installer']

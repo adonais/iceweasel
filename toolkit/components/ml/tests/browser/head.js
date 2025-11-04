@@ -24,6 +24,10 @@ const { getInferenceProcessInfo } = ChromeUtils.importESModule(
   "chrome://global/content/ml/Utils.sys.mjs"
 );
 
+const { HttpServer } = ChromeUtils.importESModule(
+  "resource://testing-common/httpd.sys.mjs"
+);
+
 const MS_PER_SEC = 1000;
 const IndexedDBCache = TestIndexedDBCache;
 
@@ -60,6 +64,8 @@ async function setup({
     records,
     backend,
   });
+
+  Services.fog.testResetFOG();
 
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -725,7 +731,388 @@ async function perfTest({
 
 /**
  * Measures floating point value within epsilon tolerance
+ *
+ * @param {number[]} a
+ * @param {number[]} b
+ * @param {number} [epsilon]
+ * @returns {boolean}
  */
-function isEqualWithTolerance(A, B, epsilon = 0.000001) {
-  return Math.abs(Math.abs(A) - Math.abs(B)) < epsilon;
+function isEqualWithTolerance(a, b, epsilon = 0.000001) {
+  return Math.abs(Math.abs(a) - Math.abs(b)) < epsilon;
+}
+
+/**
+ * Asserts whether two float arrays are equal within epsilon tolerance.
+ *
+ * @param {number[] | ArrayBufferLike} a
+ * @param {number[] | ArrayBufferLike} b
+ * @param {string} message
+ * @param {number} [epsilon]
+ */
+function assertFloatArraysMatch(a, b, message, epsilon) {
+  const raise = () => {
+    // When logging errors, spread into a new array so that the logging is nice for
+    // ArrayBufferLike values. This makes it easy to see how arrays differ
+    console.log("a:", [...a]);
+    console.log("b:", [...b]);
+    throw new Error(message);
+  };
+  if (a.length !== b.length) {
+    raise();
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (!isEqualWithTolerance(a[i], b[i], epsilon)) {
+      raise();
+    }
+  }
+  ok(true, message);
+}
+
+// Mock OpenAI Chat Completions server for mochitests
+// Serves: http://localhost:11434/v1/chat/completions
+
+function readRequestBody(request) {
+  info("readRequestBody");
+  // Read the POST body as UTF-8 text
+  const stream = request.bodyInputStream;
+  const available = stream.available();
+  return NetUtil.readInputStreamToString(stream, available, {
+    charset: "UTF-8",
+  });
+}
+
+function startMockOpenAI({ echo = "This gets echoed." } = {}) {
+  const server = new HttpServer();
+
+  server.registerPathHandler("/v1/chat/completions", (request, response) => {
+    info("GET /v1/chat/completions");
+
+    let bodyText = "";
+    if (request.method === "POST") {
+      try {
+        bodyText = readRequestBody(request);
+      } catch (_) {}
+    }
+    info("bodyText: " + bodyText);
+
+    let body;
+    try {
+      body = JSON.parse(bodyText || "{}");
+    } catch (_) {
+      body = {};
+    }
+
+    const wantsStream = !!body.stream;
+    const tools = Array.isArray(body.tools) ? body.tools : [];
+    const askedForTools = tools.length;
+    const messages = Array.isArray(body.messages) ? body.messages : [];
+    const hasToolResult = messages.some(m => m && m.role === "tool");
+
+    // ---- SSE helpers (for streaming mode) ----
+    function startSSE() {
+      response.setStatusLine(request.httpVersion, 200, "OK");
+      response.setHeader(
+        "Content-Type",
+        "text/event-stream; charset=utf-8",
+        false
+      );
+      response.setHeader("Cache-Control", "no-cache", false);
+      response.setHeader("Access-Control-Allow-Origin", "*", false);
+      response.processAsync();
+    }
+    function sendSSE(obj) {
+      const line = `data: ${JSON.stringify(obj)}\n\n`;
+      response.write(line);
+    }
+    function endSSE() {
+      response.write("data: [DONE]\n\n");
+      response.finish();
+    }
+
+    // ===========================
+    // STREAMING BRANCHES (SSE)
+    // ===========================
+    if (wantsStream && askedForTools && !hasToolResult) {
+      // First turn: stream partial tool_calls, then finish with "tool_calls"
+      startSSE();
+
+      // Partial 1: name/args prefix
+      sendSSE({
+        id: "chatcmpl-mock-tools-stream-1",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [
+          {
+            index: 0,
+            delta: {
+              content: "",
+              tool_calls: [
+                {
+                  index: 0,
+                  id: "call_1",
+                  type: "function",
+                  function: { name: "search_", arguments: '{ "type": "ne' },
+                },
+              ],
+            },
+            finish_reason: null,
+          },
+        ],
+      });
+
+      // Partial 2: complete name/args
+      sendSSE({
+        id: "chatcmpl-mock-tools-stream-2",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [
+          {
+            index: 0,
+            delta: {
+              content: "",
+              tool_calls: [
+                {
+                  index: 0,
+                  id: "call_1",
+                  type: "function",
+                  function: { name: "open_tabs", arguments: 'ws" }' },
+                },
+              ],
+            },
+            finish_reason: null,
+          },
+        ],
+      });
+
+      // Signal the turn ends with tool calls
+      sendSSE({
+        id: "chatcmpl-mock-tools-stream-3",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [{ index: 0, delta: {}, finish_reason: "tool_calls" }],
+      });
+
+      endSSE();
+      return;
+    }
+
+    if (wantsStream && askedForTools && hasToolResult) {
+      // Second turn (after tool result): stream normal assistant text
+      startSSE();
+
+      sendSSE({
+        id: "chatcmpl-mock-tools-stream-4",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [
+          {
+            index: 0,
+            delta: { content: "Here are the tabs " },
+            finish_reason: null,
+          },
+        ],
+      });
+
+      sendSSE({
+        id: "chatcmpl-mock-tools-stream-5",
+        object: "chat.completion.chunk",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [
+          {
+            index: 0,
+            delta: { content: "I found for you." },
+            finish_reason: "stop",
+          },
+        ],
+      });
+
+      endSSE();
+      return;
+    }
+
+    // ===========================
+    // NON-STREAMING BRANCHES
+    // ===========================
+
+    // First turn w/ tools: return tool_calls message (finish_reason: tool_calls)
+    if (askedForTools && !hasToolResult) {
+      const payload = {
+        id: "chatcmpl-mock-tools-1",
+        object: "chat.completion",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: "assistant",
+              content: "",
+              tool_calls: [
+                {
+                  id: "call_1",
+                  type: "function",
+                  function: {
+                    name: "search_open_tabs",
+                    arguments: JSON.stringify({ type: "news" }),
+                  },
+                },
+              ],
+            },
+            finish_reason: "tool_calls",
+          },
+        ],
+        usage: { prompt_tokens: 10, completion_tokens: 0, total_tokens: 10 },
+        echo,
+      };
+
+      response.setStatusLine(request.httpVersion, 200, "OK");
+      response.setHeader(
+        "Content-Type",
+        "application/json; charset=utf-8",
+        false
+      );
+      response.setHeader("Access-Control-Allow-Origin", "*", false);
+      response.write(JSON.stringify(payload));
+      return;
+    }
+
+    // Second turn w/ tools (after tool result): normal assistant message
+    if (askedForTools && hasToolResult) {
+      const payload = {
+        id: "chatcmpl-mock-tools-2",
+        object: "chat.completion",
+        created: Math.floor(Date.now() / 1000),
+        model: "qwen3:0.6b",
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: "assistant",
+              content: "Here are the tabs I found for you.",
+            },
+            finish_reason: "stop",
+          },
+        ],
+        usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+        echo,
+      };
+
+      response.setStatusLine(request.httpVersion, 200, "OK");
+      response.setHeader(
+        "Content-Type",
+        "application/json; charset=utf-8",
+        false
+      );
+      response.setHeader("Access-Control-Allow-Origin", "*", false);
+      response.write(JSON.stringify(payload));
+      return;
+    }
+
+    const payload = {
+      id: "chatcmpl-mock-1",
+      object: "chat.completion",
+      created: Math.floor(Date.now() / 1000),
+      model: "qwen3:0.6b",
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: "assistant",
+            content: "This is a mock summary for testing end-to-end flow.",
+          },
+          finish_reason: "stop",
+        },
+      ],
+      usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+      echo,
+    };
+
+    info("Sending back payload: " + JSON.stringify(payload));
+    response.setStatusLine(request.httpVersion, 200, "OK");
+    response.setHeader(
+      "Content-Type",
+      "application/json; charset=utf-8",
+      false
+    );
+    response.setHeader("Access-Control-Allow-Origin", "*", false);
+    response.write(JSON.stringify(payload));
+  });
+
+  // -1 tells it to pick an ephemeral port
+  server.start(-1);
+  const port = server.identity.primaryPort;
+  return { server, port };
+}
+
+function stopMockOpenAI(server) {
+  return new Promise(resolve => server.stop(resolve));
+}
+
+/**
+ * Generates a numpy encoded float16 array to be used for generating static embeddings
+ * test data.
+ *
+ * @param {number} vocabSize
+ * @param {number} dimensions
+ * @returns {{ numbers: Float16Array, encoding: Uint8Array }}
+ */
+function generateFloat16Numpy(vocabSize, dimensions) {
+  const numbers = new Float16Array(vocabSize * dimensions);
+  // Build the data:
+  // [0.1, 0.2, 0.3, ..., 0.1 * vocabSize * dimensions]
+  for (let i = 0; i < vocabSize; i++) {
+    for (let j = 0; j < dimensions; j++) {
+      const index = i * dimensions + j;
+      numbers[index] = index / 10;
+    }
+  }
+  const magic = new Uint8Array([0x93, 78, 85, 77, 80, 89]); // \x93NUMPY
+  const version = new Uint8Array([1, 0]); // Version 1.0
+  let header = `{'descr': '<f2', 'fortran_order': False, 'shape': (${vocabSize},${dimensions}), }`;
+
+  // Pad header to 16-byte alignment
+  const preLength = magic.length + version.length + 2; // +2 for header length field
+  let padding = 16 - ((preLength + header.length + 1) % 16);
+  if (padding === 16) {
+    padding = 0;
+  }
+  header += " ".repeat(padding) + "\n";
+
+  const headerBytes = new TextEncoder().encode(header);
+
+  const headerLen = new Uint8Array(2);
+  new DataView(headerLen.buffer).setUint16(0, headerBytes.length, true);
+
+  const encoding = new Uint8Array(
+    preLength + headerBytes.length + numbers.byteLength
+  );
+
+  // Write everything out.
+  let offset = 0;
+  encoding.set(magic, offset);
+  offset += magic.length;
+  encoding.set(version, offset);
+  offset += version.length;
+  encoding.set(headerLen, offset);
+  offset += 2;
+  encoding.set(headerBytes, offset);
+  offset += headerBytes.length;
+  encoding.set(new Uint8Array(numbers.buffer), offset);
+
+  return { numbers, encoding };
+}
+
+/**
+ * @returns {Promise<string>}
+ */
+async function getMLEngineWorkerCode() {
+  const response = await fetch(
+    "chrome://global/content/ml/MLEngine.worker.mjs"
+  );
+  return response.text();
 }

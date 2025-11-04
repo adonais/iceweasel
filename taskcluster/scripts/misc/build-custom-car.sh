@@ -60,7 +60,14 @@ fi
 # Logic for macosx64
 if [[ $(uname -s) == "Darwin" ]]; then
   # Modify the config with fetched sdk path
-  export MACOS_SYSROOT="$MOZ_FETCHES_DIR/MacOSX15.4.sdk"
+  export MACOS_SYSROOT="$MOZ_FETCHES_DIR/MacOSX26.0.sdk"
+  # Bug 1990712 & 1989676
+  # HACK: Create a stub DarwinBasic.modulemap to satisfy Ninja’s dependency graph.
+  # This file does not exist in Command Line Tools SDKs. It seems only the full
+  # Xcode SDK includes DarwinBasic/DarwinFoundation modulemaps.
+  mkdir -p "$MACOS_SYSROOT/usr/include"
+  touch "$MACOS_SYSROOT/usr/include/DarwinFoundation.modulemap"
+
 
   # Avoid mixing up the system python and toolchain python in the
   # python path configuration

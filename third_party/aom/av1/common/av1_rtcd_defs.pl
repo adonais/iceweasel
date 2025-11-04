@@ -126,12 +126,7 @@ specialize qw/av1_dr_prediction_z3 sse4_1 avx2 neon/;
 
 # FILTER_INTRA predictor functions
 add_proto qw/void av1_filter_intra_predictor/, "uint8_t *dst, ptrdiff_t stride, TX_SIZE tx_size, const uint8_t *above, const uint8_t *left, int mode";
-# TODO(aomedia:349436249): enable NEON for armv7 after SIGBUS is fixed.
-if (aom_config("AOM_ARCH_ARM") eq "yes" && aom_config("AOM_ARCH_AARCH64") eq "") {
-  specialize qw/av1_filter_intra_predictor sse4_1/;
-} else {
-  specialize qw/av1_filter_intra_predictor sse4_1 neon/;
-}
+specialize qw/av1_filter_intra_predictor sse4_1 neon/;
 
 # High bitdepth functions
 

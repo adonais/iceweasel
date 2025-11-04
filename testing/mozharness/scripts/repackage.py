@@ -74,6 +74,7 @@ class Repackage(BaseScript):
             "deb-l10n-templates": config["deb-l10n-templates"],
             "flatpak-templates": config.get("flatpak-templates"),
             "wsx-stub": config["wsx-stub"],
+            "extensions-dir": config["extensions-dir"],
         }
         subst.update(dirs)
         if config.get("fetch-dir"):

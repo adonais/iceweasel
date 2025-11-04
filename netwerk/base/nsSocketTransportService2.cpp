@@ -432,12 +432,6 @@ bool nsSocketTransportService::CanAttachSocket() {
     static bool reported_socket_limit_reached = false;
     if (!reported_socket_limit_reached) {
       mozilla::glean::networking::os_socket_limit_reached.Add(1);
-      // GLAM EXPERIMENT
-      // This metric is temporary, disabled by default, and will be enabled only
-      // for the purpose of experimenting with client-side sampling of data for
-      // GLAM use. See Bug 1947604 for more information.
-      glean::glam_experiment::os_socket_limit_reached.Add(1);
-      // END GLAM EXPERIMENT
       reported_socket_limit_reached = true;
     }
     SOCKET_LOG(
@@ -814,13 +808,18 @@ nsSocketTransportService::Init() {
   nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
   // Note that the observr notifications are forwarded from parent process to
   // socket process. We have to make sure the topics registered below are also
-  // registered in nsIObserver::Init().
+  // registered in nsIOService::Init().
   if (obsSvc) {
-    obsSvc->AddObserver(this, "last-pb-context-exited", false);
-    obsSvc->AddObserver(this, NS_WIDGET_SLEEP_OBSERVER_TOPIC, true);
-    obsSvc->AddObserver(this, NS_WIDGET_WAKE_OBSERVER_TOPIC, true);
-    obsSvc->AddObserver(this, "xpcom-shutdown-threads", false);
-    obsSvc->AddObserver(this, NS_NETWORK_LINK_TOPIC, false);
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, "last-pb-context-exited", false));
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, NS_WIDGET_SLEEP_OBSERVER_TOPIC, false));
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, NS_WIDGET_WAKE_OBSERVER_TOPIC, false));
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, "xpcom-shutdown-threads", false));
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, NS_NETWORK_LINK_TOPIC, false));
   }
 
   // We can now dispatch tasks to the socket thread.

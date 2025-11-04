@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix
 
+import android.os.Build
+
 /**
  * A single source for setting feature flags that are mostly based on build type.
  */
@@ -50,4 +52,17 @@ object FeatureFlags {
      * Enables the "Discover more" stories screen.
      */
     const val DISCOVER_MORE_STORIES = false
+
+    /**
+     * Enables the private browsing mode redesign on the homepage.
+     */
+    const val PRIVATE_BROWSING_MODE_REDESIGN = false
+
+    /**
+     * Enables the app icon selection feature.
+     * The implementation of the feature is based on changing activity aliases, and on versions of Android older than 10
+     * that also leads to removal of created shortcuts. We need to work out a good UX to avoid confusion and data loss.
+     * Tracking here: https://bugzilla.mozilla.org/show_bug.cgi?id=1983768
+     */
+    val APP_ICON_SELECTION = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 }

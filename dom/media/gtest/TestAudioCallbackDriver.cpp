@@ -42,7 +42,7 @@ class MockGraphInterface : public GraphInterface {
 #endif
   /* OneIteration cannot be mocked because IterationResult is non-memmovable and
    * cannot be passed as a parameter, which GMock does internally. */
-  IterationResult OneIteration(GraphTime aStateComputedTime, GraphTime,
+  IterationResult OneIteration(GraphTime aStateComputedTime,
                                MixerCallbackReceiver* aMixerReceiver) {
     GraphDriver* driver = mCurrentDriver;
     if (aMixerReceiver) {
@@ -154,29 +154,37 @@ void TestSlowStart(const TrackRate aRate) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
 
   nsIThread* mainThread = NS_GetCurrentThread();
   Maybe<int64_t> audioStart;
-  Maybe<uint32_t> alreadyBuffered;
+  Maybe<uint32_t> firstAlreadyBuffered;
   int64_t inputFrameCount = 0;
   int64_t processedFrameCount = -1;
   ON_CALL(*graph, NotifyInputData)
       .WillByDefault([&](const AudioDataValue*, size_t aFrames, TrackRate,
                          uint32_t, uint32_t aAlreadyBuffered) {
         if (!audioStart) {
+          // GraphDrivers advance state computed time only in block size
+          // increments and AudioCallbackDriver first advances state computed
+          // time in the same iteration as NotifyInputData() is first called,
+          // so the frame after firstAlreadyBuffered.value() aligns with a
+          // block boundary in state computed time.
           audioStart = Some(graph->StateComputedTime());
-          alreadyBuffered = Some(aAlreadyBuffered);
+          firstAlreadyBuffered = Some(aAlreadyBuffered);
           mainThread->Dispatch(NS_NewRunnableFunction(__func__, [&] {
             // Start processedFrameCount now, ignoring frames processed while
             // waiting for the fallback driver to stop.
             processedFrameCount = 0;
           }));
         }
-        EXPECT_NEAR(inputFrameCount,
-                    static_cast<int64_t>(graph->StateComputedTime() -
-                                         *audioStart + *alreadyBuffered),
-                    WEBAUDIO_BLOCK_SIZE)
+        EXPECT_EQ(
+            PR_ROUNDUP(
+                inputFrameCount + aAlreadyBuffered - *firstAlreadyBuffered,
+                WEBAUDIO_BLOCK_SIZE),
+            static_cast<int64_t>(graph->StateComputedTime() - *audioStart))
             << "Input should be behind state time, due to the delayed start. "
-               "stateComputedTime="
-            << graph->StateComputedTime() << ", audioStartTime=" << *audioStart
-            << ", alreadyBuffered=" << *alreadyBuffered;
+            << "inputFrameCount=" << inputFrameCount
+            << ", firstAlreadyBuffered=" << *firstAlreadyBuffered
+            << ", aAlreadyBuffered=" << aAlreadyBuffered
+            << ", stateComputedTime=" << graph->StateComputedTime()
+            << ", audioStartTime=" << *audioStart;
         inputFrameCount += aFrames;
       });
 
@@ -234,10 +242,13 @@ void TestSlowStart(const TrackRate aRate) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
   processedListener.Disconnect();
 
   EXPECT_EQ(inputFrameCount, processedFrameCount);
-  EXPECT_NEAR(graph->StateComputedTime() - *audioStart,
-              inputFrameCount + *alreadyBuffered, WEBAUDIO_BLOCK_SIZE)
-      << "Graph progresses while audio driver runs. stateComputedTime="
-      << graph->StateComputedTime() << ", inputFrameCount=" << inputFrameCount;
+  EXPECT_EQ(
+      graph->StateComputedTime() - *audioStart,
+      PR_ROUNDUP(inputFrameCount - *firstAlreadyBuffered, WEBAUDIO_BLOCK_SIZE))
+      << "Graph progresses while audio driver runs. "
+      << "stateComputedTime=" << graph->StateComputedTime()
+      << ", inputFrameCount=" << inputFrameCount
+      << ", firstAlreadyBuffered=" << *firstAlreadyBuffered;
 }
 
 TEST(TestAudioCallbackDriver, SlowStart)

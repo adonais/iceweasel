@@ -9,7 +9,6 @@ import mozilla.appservices.places.BookmarkRoot
 /**
  * Function for reducing a new bookmarks state based on the received action.
  */
-@Suppress("LongMethod")
 internal fun bookmarksReducer(state: BookmarksState, action: BookmarksAction) = when (action) {
     is InitEditLoaded -> state.copy(
         currentFolder = action.folder,
@@ -46,126 +45,25 @@ internal fun bookmarksReducer(state: BookmarksState, action: BookmarksAction) = 
     } else {
         state
     }
-    is AddFolderAction.FolderCreated -> state.copy(
-        bookmarksSelectFolderState = null,
-        bookmarksEditBookmarkState = state.bookmarksEditBookmarkState?.copy(
-            folder = action.folder,
-        ),
-    )
-    is AddFolderAction.TitleChanged -> state.copy(
-        bookmarksAddFolderState = state.bookmarksAddFolderState?.copy(
-            folderBeingAddedTitle = action.updatedText,
-        ),
-    )
-    is EditBookmarkAction.TitleChanged -> state.copy(
-        bookmarksEditBookmarkState = state.bookmarksEditBookmarkState?.let {
-            it.copy(
-                bookmark = it.bookmark.copy(title = action.title),
-            )
-        },
-    )
-    is EditBookmarkAction.URLChanged -> state.copy(
-        bookmarksEditBookmarkState = state.bookmarksEditBookmarkState?.let {
-            it.copy(
-                bookmark = it.bookmark.copy(url = action.url),
-            )
-        },
-    )
-    is SelectFolderAction.FoldersLoaded -> state.copy(
-        bookmarksSelectFolderState = state.bookmarksSelectFolderState?.copy(
-            folders = action.folders,
-        ) ?: BookmarksSelectFolderState(folders = action.folders, outerSelectionGuid = BookmarkRoot.Mobile.id),
-    )
     AddFolderClicked -> state.copy(
         bookmarksAddFolderState = BookmarksAddFolderState(
             parent = state.currentFolder,
             folderBeingAddedTitle = "",
         ),
     )
-    is SelectFolderAction.ItemClicked -> state.updateSelectedFolder(action.folder)
-    EditBookmarkAction.DeleteClicked -> state.copy(
-        bookmarksSnackbarState = state.bookmarksEditBookmarkState?.let {
-            state.bookmarksSnackbarState.addGuidToDelete(it.bookmark.guid)
-        } ?: BookmarksSnackbarState.None,
-        bookmarksEditBookmarkState = null,
-    )
+    is SelectFolderAction -> state.handleSelectFolderAction(action)
     BackClicked -> state.respondToBackClick()
-    EditBookmarkAction.FolderClicked -> state.copy(
-        bookmarksSelectFolderState = BookmarksSelectFolderState(
-            outerSelectionGuid = state.bookmarksEditBookmarkState?.folder?.guid ?: state.currentFolder.guid,
-        ),
-    )
-    AddFolderAction.ParentFolderClicked -> state.copy(
-        bookmarksSelectFolderState = state.bookmarksSelectFolderState?.copy(
-            innerSelectionGuid = state.bookmarksAddFolderState?.parent?.guid ?: state.currentFolder.guid,
-        ) ?: BookmarksSelectFolderState(
-            outerSelectionGuid = state.bookmarksAddFolderState?.parent?.guid ?: state.currentFolder.guid,
-        ),
-    )
-    is EditFolderAction.TitleChanged -> state.copy(
-        bookmarksEditFolderState = state.bookmarksEditFolderState?.let {
-            it.copy(
-                folder = it.folder.copy(title = action.updatedText),
-            )
-        },
-    )
-    EditFolderAction.ParentFolderClicked -> state.copy(
-        bookmarksSelectFolderState = state.bookmarksSelectFolderState?.copy(
-            innerSelectionGuid = state.bookmarksEditFolderState?.parent?.guid ?: state.currentFolder.guid,
-        ) ?: BookmarksSelectFolderState(
-            outerSelectionGuid = state.bookmarksEditFolderState?.parent?.guid ?: state.currentFolder.guid,
-        ),
-    )
-    EditFolderAction.DeleteClicked -> state.bookmarksEditFolderState?.folder?.guid?.let {
-        state.copy(
-            bookmarksDeletionDialogState = DeletionDialogState.LoadingCount(
-                listOf(state.bookmarksEditFolderState.folder.guid),
-            ),
-        )
-    } ?: state
+    is EditBookmarkAction -> state.handleEditBookmarkAction(action)
+    is AddFolderAction -> state.handleAddFolderAction(action)
+    is EditFolderAction -> state.handleEditFolderAction(action)
     is BookmarksListMenuAction -> state.handleListMenuAction(action)
-    SnackbarAction.Undo -> {
-        state.copy(
-            bookmarksSnackbarState = BookmarksSnackbarState.None,
-            bookmarksDeletionSnackbarQueueCount = 0,
-        )
-    }
-    SnackbarAction.Dismissed -> {
-        if (state.bookmarksDeletionSnackbarQueueCount > 1) {
-            state.copy(bookmarksDeletionSnackbarQueueCount = state.bookmarksDeletionSnackbarQueueCount - 1)
-        } else {
-            state
-                .withDeletedItemsRemoved()
-                .copy(
-                    bookmarksSnackbarState = BookmarksSnackbarState.None,
-                    bookmarksDeletionSnackbarQueueCount = 0,
-                )
-        }
-    }
-    is DeletionDialogAction.CountLoaded -> state.copy(
-        bookmarksDeletionDialogState = DeletionDialogState.Presenting(
-            guidsToDelete = state.bookmarksDeletionDialogState.guidsToDelete,
-            recursiveCount = action.count,
-        ),
-    )
-    DeletionDialogAction.CancelTapped -> state.copy(bookmarksDeletionDialogState = DeletionDialogState.None)
-    DeletionDialogAction.DeleteTapped -> {
-        state.withDeletedItemsRemoved().copy(bookmarksDeletionDialogState = DeletionDialogState.None)
-    }
-    is OpenTabsConfirmationDialogAction.Present -> state.copy(
-        openTabsConfirmationDialog = OpenTabsConfirmationDialog.Presenting(
-            guidToOpen = action.guid,
-            numberOfTabs = action.count,
-            isPrivate = action.isPrivate,
-        ),
-    )
+    is SnackbarAction -> state.handleSnackbarAction(action)
+    is DeletionDialogAction -> state.handleDeletionDialogAction(action)
+    is OpenTabsConfirmationDialogAction -> state.handleOpenTabsConfirmationDialogAction(action)
     is ReceivedSyncSignInUpdate -> {
         state.copy(isSignedIntoSync = action.isSignedIn)
     }
     CloseClicked,
-    OpenTabsConfirmationDialogAction.CancelTapped,
-    OpenTabsConfirmationDialogAction.ConfirmTapped,
-    -> state.copy(openTabsConfirmationDialog = OpenTabsConfirmationDialog.None)
     FirstSyncCompleted,
     ViewDisposed,
     SelectFolderAction.ViewAppeared,
@@ -174,6 +72,168 @@ internal fun bookmarksReducer(state: BookmarksState, action: BookmarksAction) = 
     Init,
     PrivateBrowsingAuthorized,
     -> state
+}
+
+private fun BookmarksState.handleOpenTabsConfirmationDialogAction(
+    action: OpenTabsConfirmationDialogAction,
+): BookmarksState {
+    return when (action) {
+        OpenTabsConfirmationDialogAction.CancelTapped,
+        OpenTabsConfirmationDialogAction.ConfirmTapped,
+            -> this.copy(openTabsConfirmationDialog = OpenTabsConfirmationDialog.None)
+
+        is OpenTabsConfirmationDialogAction.Present -> this.copy(
+            openTabsConfirmationDialog = OpenTabsConfirmationDialog.Presenting(
+                guidToOpen = action.guid,
+                numberOfTabs = action.count,
+                isPrivate = action.isPrivate,
+            ),
+        )
+    }
+}
+
+private fun BookmarksState.handleSelectFolderAction(action: SelectFolderAction): BookmarksState {
+    return when (action) {
+        is SelectFolderAction.ItemClicked -> updateSelectedFolder(action.folder)
+        is SelectFolderAction.FoldersLoaded -> copy(
+            bookmarksSelectFolderState = bookmarksSelectFolderState?.copy(
+                folders = action.folders,
+            ) ?: BookmarksSelectFolderState(
+                folders = action.folders,
+                outerSelectionGuid = BookmarkRoot.Mobile.id,
+            ),
+        )
+        is SelectFolderAction.SortMenu -> this.handleSortMenuAction(action)
+
+        SelectFolderAction.ViewAppeared -> this
+    }
+}
+
+private fun BookmarksState.handleEditBookmarkAction(action: EditBookmarkAction): BookmarksState {
+    return when (action) {
+        EditBookmarkAction.FolderClicked -> copy(
+            bookmarksSelectFolderState = BookmarksSelectFolderState(
+                outerSelectionGuid = bookmarksEditBookmarkState?.folder?.guid ?: currentFolder.guid,
+            ),
+        )
+
+        EditBookmarkAction.DeleteClicked -> this.copy(
+            bookmarksSnackbarState = bookmarksEditBookmarkState?.let {
+                bookmarksSnackbarState.addGuidToDelete(it.bookmark.guid)
+            } ?: BookmarksSnackbarState.None,
+            bookmarksEditBookmarkState = null,
+        )
+
+        is EditBookmarkAction.TitleChanged -> this.copy(
+            bookmarksEditBookmarkState = bookmarksEditBookmarkState?.let {
+                it.copy(
+                    bookmark = it.bookmark.copy(title = action.title),
+                    edited = true,
+                )
+            },
+        )
+
+        is EditBookmarkAction.URLChanged -> this.copy(
+            bookmarksEditBookmarkState = bookmarksEditBookmarkState?.let {
+                it.copy(
+                    bookmark = it.bookmark.copy(url = action.url),
+                    edited = true,
+                )
+            },
+        )
+    }
+}
+
+private fun BookmarksState.handleAddFolderAction(action: AddFolderAction): BookmarksState {
+    return when (action) {
+        is AddFolderAction.ParentFolderClicked -> this.copy(
+            bookmarksSelectFolderState = bookmarksSelectFolderState?.copy(
+                innerSelectionGuid = bookmarksAddFolderState?.parent?.guid ?: currentFolder.guid,
+            ) ?: BookmarksSelectFolderState(
+                outerSelectionGuid = bookmarksAddFolderState?.parent?.guid ?: currentFolder.guid,
+            ),
+        )
+
+        is AddFolderAction.FolderCreated -> this.copy(
+            bookmarksSelectFolderState = null,
+            bookmarksEditBookmarkState = bookmarksEditBookmarkState?.copy(
+                folder = action.folder,
+            ),
+        )
+
+        is AddFolderAction.TitleChanged -> this.copy(
+            bookmarksAddFolderState = bookmarksAddFolderState?.copy(
+                folderBeingAddedTitle = action.updatedText,
+            ),
+        )
+    }
+}
+
+private fun BookmarksState.handleEditFolderAction(action: EditFolderAction): BookmarksState {
+    return when (action) {
+        is EditFolderAction.TitleChanged -> this.copy(
+            bookmarksEditFolderState = bookmarksEditFolderState?.let {
+                it.copy(
+                    folder = it.folder.copy(title = action.updatedText),
+                )
+            },
+        )
+
+        is EditFolderAction.ParentFolderClicked -> this.copy(
+            bookmarksSelectFolderState = bookmarksSelectFolderState?.copy(
+                innerSelectionGuid = bookmarksEditFolderState?.parent?.guid ?: currentFolder.guid,
+            ) ?: BookmarksSelectFolderState(
+                outerSelectionGuid = bookmarksEditFolderState?.parent?.guid ?: currentFolder.guid,
+            ),
+        )
+
+        is EditFolderAction.DeleteClicked -> bookmarksEditFolderState?.folder?.guid?.let {
+            this.copy(
+                bookmarksDeletionDialogState = DeletionDialogState.LoadingCount(
+                    listOf(bookmarksEditFolderState.folder.guid),
+                ),
+            )
+        } ?: this
+    }
+}
+
+private fun BookmarksState.handleSnackbarAction(action: SnackbarAction): BookmarksState {
+    return when (action) {
+        SnackbarAction.Undo -> {
+            this.copy(
+                bookmarksSnackbarState = BookmarksSnackbarState.None,
+                bookmarksDeletionSnackbarQueueCount = 0,
+            )
+        }
+
+        SnackbarAction.Dismissed -> {
+            if (bookmarksDeletionSnackbarQueueCount > 1) {
+                this.copy(bookmarksDeletionSnackbarQueueCount = bookmarksDeletionSnackbarQueueCount - 1)
+            } else {
+                withDeletedItemsRemoved()
+                    .copy(
+                        bookmarksSnackbarState = BookmarksSnackbarState.None,
+                        bookmarksDeletionSnackbarQueueCount = 0,
+                    )
+            }
+        }
+    }
+}
+
+private fun BookmarksState.handleDeletionDialogAction(action: DeletionDialogAction): BookmarksState {
+    return when (action) {
+        is DeletionDialogAction.CountLoaded -> this.copy(
+            bookmarksDeletionDialogState = DeletionDialogState.Presenting(
+                guidsToDelete = bookmarksDeletionDialogState.guidsToDelete,
+                recursiveCount = action.count,
+            ),
+        )
+
+        DeletionDialogAction.CancelTapped -> this.copy(bookmarksDeletionDialogState = DeletionDialogState.None)
+        DeletionDialogAction.DeleteTapped -> {
+            withDeletedItemsRemoved().copy(bookmarksDeletionDialogState = DeletionDialogState.None)
+        }
+    }
 }
 
 private fun BookmarksState.withDeletedItemsRemoved(): BookmarksState = when {
@@ -208,7 +268,7 @@ private fun BookmarksState.updateSelectedFolder(folder: SelectFolderItem): Bookm
             )
         } else {
             alwaysTryUpdate.copy(
-                bookmarksEditBookmarkState = bookmarksEditBookmarkState.copy(folder = folder.folder),
+                bookmarksEditBookmarkState = bookmarksEditBookmarkState.copy(folder = folder.folder, edited = true),
             )
         }
     }
@@ -251,27 +311,45 @@ private fun BookmarksState.respondToBackClick(): BookmarksState = when {
     else -> this
 }
 
-private fun BookmarksState.handleSortMenuAction(action: BookmarksListMenuAction.SortMenu): BookmarksState =
+private fun BookmarksState.handleSortMenuAction(action: BookmarksAction): BookmarksState =
     when (action) {
-        BookmarksListMenuAction.SortMenu.SortMenuButtonClicked -> copy(
+        BookmarksListMenuAction.SortMenu.SortMenuButtonClicked,
+        SelectFolderAction.SortMenu.SortMenuButtonClicked,
+            -> copy(
             sortMenuShown = !sortMenuShown,
         )
-        BookmarksListMenuAction.SortMenu.SortMenuDismissed -> copy(
+        BookmarksListMenuAction.SortMenu.SortMenuDismissed,
+        SelectFolderAction.SortMenu.SortMenuDismissed,
+            -> copy(
             sortMenuShown = false,
         )
-        BookmarksListMenuAction.SortMenu.CustomSortClicked -> copy(sortOrder = BookmarksListSortOrder.Positional)
-        BookmarksListMenuAction.SortMenu.NewestClicked -> copy(
+        BookmarksListMenuAction.SortMenu.CustomSortClicked,
+        SelectFolderAction.SortMenu.CustomSortClicked,
+            -> copy(
+            sortOrder = BookmarksListSortOrder.Positional,
+        )
+        BookmarksListMenuAction.SortMenu.NewestClicked,
+        SelectFolderAction.SortMenu.NewestClicked,
+            -> copy(
             sortOrder = BookmarksListSortOrder.Created(true),
         )
-        BookmarksListMenuAction.SortMenu.OldestClicked -> copy(
+        BookmarksListMenuAction.SortMenu.OldestClicked,
+        SelectFolderAction.SortMenu.OldestClicked,
+            -> copy(
             sortOrder = BookmarksListSortOrder.Created(false),
         )
-        BookmarksListMenuAction.SortMenu.AtoZClicked -> copy(
+        BookmarksListMenuAction.SortMenu.AtoZClicked,
+        SelectFolderAction.SortMenu.AtoZClicked,
+            -> copy(
             sortOrder = BookmarksListSortOrder.Alphabetical(true),
         )
-        BookmarksListMenuAction.SortMenu.ZtoAClicked -> copy(
+
+        BookmarksListMenuAction.SortMenu.ZtoAClicked,
+        SelectFolderAction.SortMenu.ZtoAClicked,
+            -> copy(
             sortOrder = BookmarksListSortOrder.Alphabetical(false),
         )
+        else -> copy(sortOrder = BookmarksListSortOrder.Positional)
     }.let {
         it.copy(
             bookmarkItems = it.bookmarkItems.sortedWith(it.sortOrder.comparator),

@@ -24,12 +24,7 @@ add_autofill_heuristic_tests([
           { fieldName: "family-name", autofill: TEST_ADDRESS_1["family-name"] },
           {
             fieldName: "address-line1",
-            autofill:
-              TEST_ADDRESS_1["street-address"].replace("\n", " ") +
-              " " +
-              TEST_ADDRESS_1["street-address"].split(
-                "\n"
-              )[1] /* extra apartment is due to bug 1930008 */,
+            autofill: TEST_ADDRESS_1["street-address"].replace("\n", " "),
           },
           { fieldName: "postal-code", autofill: TEST_ADDRESS_1["postal-code"] },
         ],

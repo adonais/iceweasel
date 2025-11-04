@@ -478,8 +478,15 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Εναλλαγή σε 
 newtab-weather-menu-change-temperature-units-celsius = Εναλλαγή σε Κελσίου
 newtab-weather-menu-hide-weather = Απόκρυψη καιρού στη νέα καρτέλα
 newtab-weather-menu-learn-more = Μάθετε περισσότερα
+newtab-weather-menu-detect-my-location = Εντοπισμός τοποθεσίας
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Τα δεδομένα καιρού δεν είναι διαθέσιμα αυτήν τη στιγμή.
+newtab-weather-opt-in-not-now =
+    .label = Όχι τώρα
+newtab-weather-opt-in-yes =
+    .label = Ναι
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Νέα Υόρκη
 
 ## Topic Labels
 
@@ -646,6 +653,9 @@ newtab-widget-lists-input-menu-move-up = Μετακίνηση πάνω
 newtab-widget-lists-input-menu-move-down = Μετακίνηση κάτω
 newtab-widget-lists-input-menu-delete = Διαγραφή
 newtab-widget-lists-input-menu-edit = Επεξεργασία
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Δημιουργία νέας λίστας
 newtab-widget-lists-name-label-default =
     .label = Λίστα εργασιών
 newtab-widget-lists-name-placeholder-default =

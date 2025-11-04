@@ -1077,14 +1077,13 @@ void nsNSSComponent::setValidationOptions(
   CertVerifier::CertificateTransparencyConfig ctConfig(
       ctMode, std::move(skipCTForHosts), std::move(skipCTForSPKIHashes));
 
-  CRLiteMode defaultCRLiteMode = CRLiteMode::Disabled;
+  CRLiteMode defaultCRLiteMode = CRLiteMode::Enforce;
   CRLiteMode crliteMode =
       static_cast<CRLiteMode>(StaticPrefs::security_pki_crlite_mode());
   switch (crliteMode) {
     case CRLiteMode::Disabled:
     case CRLiteMode::TelemetryOnly:
     case CRLiteMode::Enforce:
-    case CRLiteMode::ConfirmRevocations:
       break;
     default:
       crliteMode = defaultCRLiteMode;

@@ -28,12 +28,12 @@
 #include "mozilla/dom/MouseEvent.h"
 #include "nsContainerFrame.h"
 #include "nsContentUtils.h"
+#include "nsDOMCSSDeclaration.h"
 #include "nsDisplayList.h"
 #include "nsFlexContainerFrame.h"
 #include "nsFrameList.h"
 #include "nsGkAtoms.h"
 #include "nsHTMLParts.h"
-#include "nsICSSDeclaration.h"
 #include "nsIDOMEventListener.h"
 #include "nsLayoutUtils.h"
 #include "nsNameSpaceManager.h"
@@ -910,7 +910,7 @@ void nsSplitterFrameInner::SetPreferredSize(nsIFrame* aChildBox,
   element->SetAttr(aIsHorizontal ? nsGkAtoms::width : nsGkAtoms::height,
                    attrValue, IgnoreErrors());
 
-  nsCOMPtr<nsICSSDeclaration> decl = element->Style();
+  nsCOMPtr<nsDOMCSSDeclaration> decl = element->Style();
 
   nsAutoCString cssValue;
   cssValue.AppendInt(pixels);

@@ -48,7 +48,6 @@ FEATURE_CHECK_NEEDED = {
 RELEASE_OR_BETA = set(
     [
         "regexp-modifiers",
-        "symbols-as-weakmap-keys",
     ]
 )
 SHELL_OPTIONS = {

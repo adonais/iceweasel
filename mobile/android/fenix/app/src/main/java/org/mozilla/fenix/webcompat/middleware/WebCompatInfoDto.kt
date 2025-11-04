@@ -35,6 +35,7 @@ data class WebCompatInfoDto(
      * WebCompat anti-tracking data associated with the current tab.
      *
      * @property blockList The blocklist string.
+     * @property blockedOrigins The list of URLs currently blocked by ETP.
      * @property btpHasPurgedSite Whether the current tab has recently been purged by Bounce Tracking Protection.
      * @property etpCategory The current ETP category.
      * @property hasMixedActiveContentBlocked Whether the current tab has mixed active content blocked.
@@ -45,6 +46,7 @@ data class WebCompatInfoDto(
     @Serializable
     data class WebCompatAntiTrackingDto(
         val blockList: String,
+        val blockedOrigins: List<String>,
         val btpHasPurgedSite: Boolean,
         val etpCategory: String,
         val hasMixedActiveContentBlocked: Boolean,

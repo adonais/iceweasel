@@ -247,6 +247,8 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
         maybe_dithering.add("DITHERING");
     }
 
+    shaders.insert("ps_quad_gradient", vec![base_prim_features.concat(&maybe_dithering).finish()]);
+
     shaders.insert("ps_quad_radial_gradient", vec![base_prim_features.concat(&maybe_dithering).finish()]);
 
     shaders.insert("ps_quad_conic_gradient", vec![base_prim_features.concat(&maybe_dithering).finish()]);
@@ -263,4 +265,3 @@ pub fn get_shader_features(flags: ShaderFeatureFlags) -> ShaderFeatures {
 
     shaders
 }
-

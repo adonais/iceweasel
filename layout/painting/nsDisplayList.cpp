@@ -1106,6 +1106,16 @@ void nsDisplayListBuilder::EnterPresShell(const nsIFrame* aReferenceFrame,
 
   state->mTouchEventPrefEnabledDoc = dom::TouchEvent::PrefEnabled(docShell);
 
+  if (auto* vt = pc->Document()->GetActiveViewTransition()) {
+    // We must ensure captured view transition elements, including offscreen
+    // elements, are reached for display list building.
+    AutoTArray<nsIFrame*, 32> capturedFrames;
+    vt->GetCapturedFrames(capturedFrames);
+    for (const auto& frame : capturedFrames) {
+      MarkFrameForDisplay(frame, aReferenceFrame);
+    }
+  }
+
   if (!buildCaret) {
     return;
   }
@@ -4126,15 +4136,11 @@ bool nsDisplayOutline::HasRadius() const {
 }
 
 bool nsDisplayOutline::IsInvisibleInRect(const nsRect& aRect) const {
-  const nsStyleOutline* outline = mFrame->StyleOutline();
   nsRect borderBox(ToReferenceFrame(), mFrame->GetSize());
-  if (borderBox.Contains(aRect) && !HasRadius() &&
-      outline->mOutlineOffset.ToCSSPixels() >= 0.0f) {
-    // aRect is entirely inside the border-rect, and the outline isn't rendered
-    // inside the border-rect, so the outline is not visible.
-    return true;
-  }
-  return false;
+  // aRect is entirely inside the border-rect, and the outline isn't rendered
+  // inside the border-rect, so the outline is not visible.
+  return borderBox.Contains(aRect) && !HasRadius() &&
+         mFrame->StyleOutline()->mOutlineOffset >= 0;
 }
 
 void nsDisplayEventReceiver::HitTest(nsDisplayListBuilder* aBuilder,
@@ -5438,6 +5444,63 @@ bool nsDisplayViewTransitionCapture::CreateWebRenderCommands(
   wr::StackingContextParams params;
   params.clip =
       wr::WrStackingContextClip::ClipChain(aBuilder.CurrentClipChainId());
+
+  // This is for the case if this frame is transformed. In this case, the wr
+  // display list looks like:
+  //
+  // PushStackingContext(...)  // For the root
+  //   ...
+  //   nsDisplayTransform      // For the captured element if it is transformed
+  //     PushReferenceFrame    // If the transform matrix is not identity
+  //     PushStackingContext(...)
+  //     VTCapture             // For the captured element
+  //       PushReferenceFrame
+  //       PushStackingContext
+  //       ...
+  //       Other display items // For the descendants of the captured element
+  //       ...
+  //       PopStackingContext
+  //       PopReferenceFrame
+  //     PopStackingContext
+  //     PopReferenceFrame
+  //   ...
+  // PopStackingContext
+  //
+  // The wrapper, nsDisplayTransform, creates a new coordinate system whose
+  // origin is from ToReferenceFrame(mFrame). The VTCapture item is inside this
+  // nsDisplayTransform, so it's in this coordinate system. This works well if
+  // the transform matrix is not identity. However, if the transform matrix is
+  // identity, we don't create a new coordinate system (because we don't push a
+  // reference frame in WR), at this moment, the |ref_frame_offset| of the
+  // stacking context of this VTCapture becomes the |origin| of the
+  // nsDisplayTransform (see wr_dp_push_stacking_context() and
+  // push_stacking_context() for more details), so this offset may makes the
+  // position of this VTCapture wrong. (Note that the ToReferenceFrame(mFrame)
+  // of this VTCapture is the frame itself, but ToReferenceFrame(mFrame) of the
+  // nsDisplayTransform is its containing frame, e.g. viewport frame.)
+  //
+  // Therefore, we push a reference frame for this display item if the frame is
+  // transformed. This makes this VTCapture creates a new coordinate system, so
+  // its |ref_frame_offset| will be (0, 0), just fit the nsDisplayTransform's
+  // position.
+  //
+  // FIXME: We can avoid pushing a reference frame if the transform matrix is
+  // not identity, because we generate a new coordinate system already from the
+  // nsDisplayTransform (see nsDisplayTransform::CreateWebRenderCommands() for
+  // more details).
+  wr::WrTransformInfo info;
+  if (mFrame->IsTransformed()) {
+    // Use an identity matrix to force to push a reference frame to create a new
+    // coordinate system for view transition captured frame.
+    params.mTransformPtr = [&]() {
+      info.transform = wr::ToLayoutTransform(gfx::Matrix4x4());
+      info.key = wr::SpatialKey(uint64_t(mFrame), GetPerFrameKey(),
+                                wr::SpatialKeyKind::ViewTransition);
+      return &info;
+    }();
+    params.reference_frame_kind = wr::WrReferenceFrameKind::Transform;
+  }
+
   if (key) {
     vt->UpdateActiveRectForCapturedFrame(capturedFrame, aSc.GetInheritedScale(),
                                          captureRect);
@@ -5615,7 +5678,9 @@ bool nsDisplayFixedPosition::ShouldGetFixedAnimationId() {
          nsLayoutUtils::ScrollIdForRootScrollFrame(mFrame->PresContext()) ==
              GetScrollTargetId();
 #else
-  return false;
+  return HasDynamicToolbar() &&
+         (nsLayoutUtils::ScrollIdForRootScrollFrame(mFrame->PresContext()) ==
+          GetScrollTargetId());
 #endif
 }
 
@@ -6823,7 +6888,7 @@ bool nsDisplayTransform::CreateWebRenderCommands(
   if (newTransformMatrix.IsIdentity()) {
     // If the transform is an identity transform, strip it out so that WR
     // doesn't turn this stacking context into a reference frame, as it
-    // affects positioning. Bug 1345577 tracks a better fix.
+    // affects positioning.
     transformForSC = nullptr;
 
     // In ChooseScaleAndSetTransform, we round the offset from the reference

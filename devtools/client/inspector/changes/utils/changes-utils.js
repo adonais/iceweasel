@@ -30,10 +30,11 @@ function getSourceForDisplay(source) {
     case "inline":
       href = getStr("changes.inlineStyleSheetLabel2");
       break;
-    case "stylesheet":
+    case "stylesheet": {
       const url = new URL(source.href);
       href = url.pathname.substring(url.pathname.lastIndexOf("/") + 1);
       break;
+    }
   }
 
   return href;

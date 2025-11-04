@@ -8,6 +8,7 @@
 #define threading_ProtectedData_h
 
 #include "mozilla/Atomics.h"
+#include <utility>
 #include "jstypes.h"
 #include "threading/ThreadId.h"
 

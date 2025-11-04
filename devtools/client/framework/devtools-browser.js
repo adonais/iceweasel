@@ -282,24 +282,26 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
       case "browserToolbox":
         lazy.BrowserToolboxLauncher.init();
         break;
-      case "browserConsole":
+      case "browserConsole": {
         const {
           BrowserConsoleManager,
         } = require("resource://devtools/client/webconsole/browser-console-manager.js");
         BrowserConsoleManager.openBrowserConsoleOrFocus();
         break;
+      }
       case "responsiveDesignMode":
         ResponsiveUIManager.toggle(window, window.gBrowser.selectedTab, {
           trigger: "shortcut",
         });
         break;
-      case "javascriptTracingToggle":
+      case "javascriptTracingToggle": {
         const toolbox = gDevTools.getToolboxForTab(window.gBrowser.selectedTab);
         if (!toolbox) {
           break;
         }
         await toolbox.commands.tracerCommand.toggle();
         break;
+      }
     }
   },
 

@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Web Compatibility Interventions",
   "description": "Urgent post-release fixes for web compatibility.",
-  "version": "144.5.0",
+  "version": "145.8.0",
   "browser_specific_settings": {
     "gecko": {
       "id": "webcompat@mozilla.org",
@@ -48,6 +48,14 @@
         "paths": [["matchPatterns"]]
       }
     },
+    "remoteSettings": {
+      "schema": "experiment-apis/remoteSettings.json",
+      "parent": {
+        "scopes": ["addon_parent"],
+        "script": "experiment-apis/remoteSettings.js",
+        "paths": [["remoteSettings"]]
+      }
+    },
     "systemManufacturer": {
       "schema": "experiment-apis/systemManufacturer.json",
       "child": {
@@ -81,6 +89,7 @@
 
   "background": {
     "scripts": [
+      "lib/remote_settings_update_check.js",
       "lib/messaging_helper.js",
       "lib/ua_helpers.js",
       "lib/intervention_helpers.js",

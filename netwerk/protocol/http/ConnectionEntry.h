@@ -10,6 +10,7 @@
 #include "PendingTransactionQueue.h"
 #include "DnsAndConnectSocket.h"
 #include "DashboardTypes.h"
+#include "mozilla/WeakPtr.h"
 
 namespace mozilla {
 namespace net {
@@ -19,7 +20,7 @@ namespace net {
 // nsHttpConnectionMgr::mCT maps connection info hash key to ConnectionEntry
 // object, which contains list of active and idle connections as well as the
 // list of pending transactions.
-class ConnectionEntry {
+class ConnectionEntry : public SupportsWeakPtr {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ConnectionEntry)
   explicit ConnectionEntry(nsHttpConnectionInfo* ci);
@@ -158,6 +159,9 @@ class ConnectionEntry {
   bool mDoNotDestroy : 1;
 
   bool IsHttp3() const { return mConnInfo->IsHttp3(); }
+  bool IsHttp3ProxyConnection() const {
+    return mConnInfo->IsHttp3ProxyConnection();
+  }
   bool AllowHttp2() const { return mCanUseSpdy; }
   void DisallowHttp2();
   void DontReuseHttp3Conn();

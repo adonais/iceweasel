@@ -351,6 +351,13 @@ function update(state = initialState(), action) {
         highlightedDomEvents: eventNames,
       };
     }
+
+    case "SET_SELECTED_LOCACTION_TRACES": {
+      return {
+        ...state,
+        selectedLocationTraces: action.selectedLocationTraces,
+      };
+    }
   }
   return state;
 }

@@ -2122,23 +2122,6 @@ impl ClipItemKind {
     }
 }
 
-/// Represents a local rect and a device space
-/// rectangles that are either outside or inside bounds.
-#[derive(Clone, Debug, PartialEq)]
-pub struct Geometry {
-    pub local_rect: LayoutRect,
-    pub device_rect: DeviceIntRect,
-}
-
-impl From<LayoutRect> for Geometry {
-    fn from(local_rect: LayoutRect) -> Self {
-        Geometry {
-            local_rect,
-            device_rect: DeviceIntRect::zero(),
-        }
-    }
-}
-
 pub fn rounded_rectangle_contains_point(
     point: &LayoutPoint,
     rect: &LayoutRect,

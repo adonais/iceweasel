@@ -11,13 +11,15 @@
   padding: 4px 4px 3px;
   border-bottom: 1px solid ThreeDShadow;
 
-  &::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    appearance: auto;
-    -moz-default-appearance: -moz-window-titlebar;
-    z-index: -1;
+  @media not (-moz-mac-tahoe-theme) {
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      appearance: auto;
+      -moz-default-appearance: -moz-window-titlebar;
+      z-index: -1;
+    }
   }
 }
 

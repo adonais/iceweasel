@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ContentAnalysisUtils: "resource://gre/modules/ContentAnalysisUtils.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
-  PrefUtils: "resource://normandy/lib/PrefUtils.sys.mjs",
+  PrefUtils: "moz-src:///toolkit/modules/PrefUtils.sys.mjs",
   SidebarManager:
     "moz-src:///browser/components/sidebar/SidebarManager.sys.mjs",
 });
@@ -670,11 +670,10 @@ export const GenAI = {
       contextTabs = null,
     } = contextMenu;
 
-    showItem(menu, false);
-
     // DO NOT show menu when inside an extension panel
-    const uri = browser.browsingContext.currentURI.spec;
-    if (uri.startsWith("moz-extension:")) {
+    const uri = browser.browsingContext?.currentURI.spec;
+    if (uri?.startsWith("moz-extension:")) {
+      showItem(menu, false);
       return;
     }
 
@@ -698,6 +697,7 @@ export const GenAI = {
         break;
     }
     if (!canShow) {
+      showItem(menu, false);
       return;
     }
 
@@ -718,6 +718,9 @@ export const GenAI = {
       }
       menu.menupopup?.remove();
     }
+
+    // NOTE: Show the menu item synchronously, before any `await`.
+    showItem(menu, true);
 
     // Determine if we have selection or should use page content
     const context = {
@@ -806,8 +809,6 @@ export const GenAI = {
         Services.prefs.setBoolPref("browser.ml.chat.menu", false);
       }
     });
-
-    showItem(menu, true);
   },
 
   /**
@@ -1103,6 +1104,10 @@ export const GenAI = {
     if (lazy.chatSidebar) {
       await SidebarController.show("viewGenaiChatSidebar");
       browser = await SidebarController.browser.contentWindow.browserPromise;
+      if (!browser) {
+        console.error("Failed to get chat sidebar browser");
+        return;
+      }
       const showWarning =
         isPageSummarizeRequest && this.isContextTooLong(context.selection);
 

@@ -115,6 +115,10 @@ struct ParamTraits<mozilla::net::nsHttpHeaderArray::nsEntry> {
         break;
       case mozilla::net::nsHttpHeaderArray::eVarietyResponse:
         WriteParam(aWriter, (uint8_t)6);
+        break;
+      case mozilla::net::nsHttpHeaderArray::eVarietyResponseOverride:
+        WriteParam(aWriter, (uint8_t)7);
+        break;
     }
   }
 
@@ -157,6 +161,10 @@ struct ParamTraits<mozilla::net::nsHttpHeaderArray::nsEntry> {
         break;
       case 6:
         aResult->variety = mozilla::net::nsHttpHeaderArray::eVarietyResponse;
+        break;
+      case 7:
+        aResult->variety =
+            mozilla::net::nsHttpHeaderArray::eVarietyResponseOverride;
         break;
       default:
         return false;

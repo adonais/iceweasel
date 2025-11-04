@@ -2777,35 +2777,7 @@ void KeymapWrapper::WillDispatchKeyboardEventInternal(
 }
 
 #ifdef MOZ_WAYLAND
-void KeymapWrapper::SetFocusIn(wl_surface* aFocusSurface,
-                               uint32_t aFocusSerial) {
-  LOGW("KeymapWrapper::SetFocusIn() surface %p ID %d serial %d", aFocusSurface,
-       aFocusSurface ? wl_proxy_get_id((struct wl_proxy*)aFocusSurface) : 0,
-       aFocusSerial);
-
-  KeymapWrapper* keymapWrapper = KeymapWrapper::GetInstance();
-  keymapWrapper->mFocusSurface = aFocusSurface;
-  keymapWrapper->mFocusSerial = aFocusSerial;
-}
-
-// aFocusSurface can be null in case that focused surface is already destroyed.
-void KeymapWrapper::SetFocusOut(wl_surface* aFocusSurface) {
-  KeymapWrapper* keymapWrapper = KeymapWrapper::GetInstance();
-  LOGW("KeymapWrapper::SetFocusOut surface %p ID %d", aFocusSurface,
-       aFocusSurface ? wl_proxy_get_id((struct wl_proxy*)aFocusSurface) : 0);
-
-  keymapWrapper->mFocusSurface = nullptr;
-  keymapWrapper->mFocusSerial = 0;
-
-  sRepeatState = NOT_PRESSED;
-}
-
-void KeymapWrapper::GetFocusInfo(wl_surface** aFocusSurface,
-                                 uint32_t* aFocusSerial) {
-  KeymapWrapper* keymapWrapper = KeymapWrapper::GetInstance();
-  *aFocusSurface = keymapWrapper->mFocusSurface;
-  *aFocusSerial = keymapWrapper->mFocusSerial;
-}
+void KeymapWrapper::ResetRepeatState() { sRepeatState = NOT_PRESSED; }
 
 void KeymapWrapper::ClearKeymap() {
   KeymapWrapper* keymapWrapper = KeymapWrapper::GetInstance();

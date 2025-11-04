@@ -56,7 +56,7 @@ async function turnOffScheduledBackupsHelper(browser, taskFn) {
  * and that the most recent backup is deleted once confirmed.
  */
 add_task(async function test_turn_off_scheduled_backups_confirm() {
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     Services.telemetry.clearEvents();
     Services.fog.testResetFOG();
 
@@ -103,7 +103,7 @@ add_task(async function test_turn_off_scheduled_backups_confirm() {
  * encryption is disabled as a result and the latest backup is still deleted.
  */
 add_task(async function test_turn_off_scheduled_backups_disables_encryption() {
-  await BrowserTestUtils.withNewTab("about:preferences", async browser => {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
     let disableEncryptionStub = sandbox
       .stub(BackupService.prototype, "disableEncryption")

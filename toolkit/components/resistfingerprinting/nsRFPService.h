@@ -345,13 +345,22 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
       nsIURI* aFirstPartyURI, nsIPrincipal* aPrincipal,
       bool aForeignByAncestorContext);
 
-  // The method to add random noises to the image data based on the random key
-  // of the given cookieJarSettings.
+  // This function is plumbed to RandomizeElements function.
   static nsresult RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
                                   nsIPrincipal* aPrincipal, uint8_t* aData,
                                   uint32_t aWidth, uint32_t aHeight,
                                   uint32_t aSize,
                                   mozilla::gfx::SurfaceFormat aSurfaceFormat);
+  // This function is used to randomize the elements in the given data
+  // according to the given parameters. For example, for an RGBA pixel, by group
+  // in this context, we refer to a single pixel and by element, we refer to
+  // channels. So, if we have an RGBA pixel, we have 4 elements per group, i.e.
+  // 4 channels per pixel. We use aElementsPerGroup to randomize at most one of
+  // elements per group, i.e. one channel per pixel.
+  static nsresult RandomizeElements(
+      nsICookieJarSettings* aCookieJarSettings, nsIPrincipal* aPrincipal,
+      uint8_t* aData, uint32_t aSizeInBytes, uint8_t aElementsPerGroup,
+      uint8_t aBytesPerElement, uint8_t aElementOffset, bool aSkipLastElement);
 
   // --------------------------------------------------------------------------
 
@@ -432,6 +441,14 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   static bool FontIsAllowedByLocale(const nsACString& aName);
 
   static Maybe<RFPTarget> TextToRFPTarget(const nsAString& aText);
+
+  static void GetFingerprintingRandomizationKeyAsString(
+      nsICookieJarSettings* aCookieJarSettings,
+      nsACString& aRandomizationKeyStr);
+
+  static nsresult GenerateRandomizationKeyFromHash(
+      const nsACString& aRandomizationKeyStr, uint32_t aContentHash,
+      nsACString& aHex);
 
  private:
   nsresult Init();

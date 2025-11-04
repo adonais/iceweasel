@@ -45,6 +45,7 @@ import org.mozilla.fenix.components.menu.MenuDialogTestTag.WEB_EXTENSION_ITEM
 import org.mozilla.fenix.helpers.Constants.RETRY_COUNT
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.Constants.recommendedAddons
+import org.mozilla.fenix.helpers.DataGenerationHelper.getRecommendedExtensionTitle
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
@@ -380,11 +381,39 @@ class SettingsSubMenuAddonsManagerRobot {
         }
     }
 
-    fun installRecommendedAddon(recommendedExtensionTitle: String, composeTestRule: ComposeTestRule) {
-        waitForAppWindowToBeUpdated()
-        Log.i(TAG, "installARecommendedAddons: Trying to click addon: $recommendedExtensionTitle install button")
-        composeTestRule.onNodeWithContentDescription("Add $recommendedExtensionTitle", substring = true).performClick()
-        Log.i(TAG, "installARecommendedAddons: Clicked addon: $recommendedExtensionTitle install button")
+    fun installRecommendedAddon(composeTestRule: ComposeTestRule): String {
+        var recommendedExtensionTitle = ""
+
+        repeat(RETRY_COUNT) { i ->
+            val attempt = i + 1
+            Log.i(TAG, "installRecommendedAddon: Started try #$attempt")
+            try {
+                recommendedExtensionTitle = getRecommendedExtensionTitle(composeTestRule)
+                waitForAppWindowToBeUpdated()
+                Log.i(TAG, "installRecommendedAddon: Trying to click addon: $recommendedExtensionTitle install button")
+                composeTestRule.onNodeWithContentDescription("Add $recommendedExtensionTitle", substring = true).performClick()
+                Log.i(TAG, "installRecommendedAddon: Clicked addon: $recommendedExtensionTitle install button")
+
+                return recommendedExtensionTitle
+            } catch (e: AssertionError) {
+                Log.i(TAG, "installRecommendedAddon: AssertionError caught, executing fallback methods")
+                if (attempt == RETRY_COUNT) {
+                    throw e
+                } else {
+                    Log.i(TAG, "installRecommendedAddon: Trying to click device back button to dismiss the main menu")
+                    mDevice.pressBack()
+                    Log.i(TAG, "installRecommendedAddon: Clicked device back button to dismiss the main menu")
+                    waitForAppWindowToBeUpdated()
+                    browserScreen {
+                    }.openThreeDotMenu(composeTestRule) {
+                        verifyTryRecommendedExtensionButton()
+                    }.openExtensionsFromMainMenu {
+                        recommendedExtensionTitle = getRecommendedExtensionTitle(composeTestRule)
+                    }
+                }
+            }
+        }
+        return recommendedExtensionTitle
     }
 
     fun verifyManageExtensionsButtonFromRedesignedMainMenu(composeTestRule: ComposeTestRule, isDisplayed: Boolean) {

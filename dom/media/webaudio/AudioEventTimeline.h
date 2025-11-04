@@ -15,7 +15,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/DefineEnum.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/PodOperations.h"
 #include "nsTArray.h"
 

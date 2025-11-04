@@ -18,15 +18,178 @@ Running skip-fails for TOML
 
 The user documentation for TOML manifests is:
 https://firefox-source-docs.mozilla.org/mozbase/manifestparser.html
+https://firefox-source-docs.mozilla.org/testing/tests-for-new-config/index.html#run-skip-fails
+
+Usage
+-----
+
+$ ./mach manifest skip-fails -h
+usage: mach [global arguments] manifest skip-fails [command arguments]
+
+Global Arguments:
+
+  -v, --verbose         Print verbose output.
+  --quiet               Don't print as much output.
+  -l, --log-file FILENAME
+                        Filename to write log data to.
+  --log-interval        Prefix log line with interval from last message rather
+                        than relative time. Note that this is NOT execution
+                        time if there are parallel operations.
+  --no-interactive      Automatically selects the default option on any
+                        interactive prompts. If the output is not a terminal,
+                        then --no-interactive is assumed.
+  --log-no-times        Do not prefix log lines with times. By default, mach
+                        will prefix each output line with the time since
+                        command start.
+  -h, --help            Show this help message.
+  --debug-command       Start a Python debugger when command is dispatched.
+  --profile-command     Capture a Python profile of the mach process as command
+                        is dispatched.
+  --settings FILENAME   Path to settings file.
+
+Sub Command Arguments:
+  try_url               Treeherder URL for try (please use quotes)
+  -b, --bugzilla BUGZILLA
+                        Bugzilla instance [disable]
+  -C, --clear-cache [CLEAR_CACHE]
+                        clear cache REVISION (or all)
+  -c, --carryover       Set carryover mode (only skip failures for platform
+                        matches)
+  -d, --dry-run         Determine manifest changes, but do not write them
+  -F, --use-failures USE_FAILURES
+                        Use failures from file
+  -f, --save-failures SAVE_FAILURES
+                        Save failures to file
+  -I, --implicit-vars   Use implicit variables in reftest manifests
+  -i, --task-id TASK_ID
+                        Task id to write a condition for instead of all tasks
+                        from the push
+  -M, --max-failures MAX_FAILURES
+                        Maximum number of failures to skip (-1 == no limit)
+  -m, --meta-bug-id META_BUG_ID
+                        Meta Bug id
+  -n, --new-version NEW_VERSION
+                        New version to use for annotations
+  -r, --failure-ratio FAILURE_RATIO
+                        Ratio of test failures/total to skip [0.4]
+  -s, --turbo           Skip all secondary failures
+  -T, --use-tasks USE_TASKS
+                        Use tasks from file
+  -t, --save-tasks SAVE_TASKS
+                        Save tasks to file
+  -u, --user-agent USER_AGENT
+                        User-Agent to use for mozci if queries are forbidden
+                        from treeherder
+  -v, --verbose         Verbose mode
+
+
+
+Design
+------
 
 1. Classify the failure based on the following:
    a. If less than 3 runs, classify "unknown"
    b. If zero failures, classify "success"
-   c. If the ratio of failed runs / total runs is less than 40%
+   c. If the failure ratio of failed runs / total runs is less than 40%
       classify "intermittent"
    d. Else edit the manifest to skip this failure
 
+2. Manifest variable information
+   a. Variables used in Python are set:
+      https://searchfox.org/firefox-main/source/testing/mozbase/mozinfo/mozinfo/platforminfo.py
+
+   b. Variables used in JavaScript are set:
+      https://searchfox.org/firefox-main/source/layout/tools/reftest/manifest.sys.mjs
+
+   c. Use arch instead of processor
+      https://searchfox.org/firefox-main/source/testing/mozbase/mozinfo/mozinfo/mozinfo.py#170
+
+      aarch64
+      arm7
+      x86
+      x86_64
+
+   d. Build types
+      An an optimized build "opt" implies none of these build types: "debug", "ccov", "asan", "tsan".
+      A build type "!debug" implies "opt"
+
+   e. A "platform match" for the purpose of bug carryover means
+      - "os" is not specified in the existing condition or "os" is the same, and
+      - The existing build type is not present and the "os" explictly the same, or
+      - The existing build type is present:
+        + "opt" (or "!debug") in both existing skip-if and proposed skip-if
+        + "!opt" or one of ["debug", "asan", "tsan", "ccov" ] in both
+          (covers the case of "debug" in both)
+          EXCEPT does not match if one is "debug" and the other is
+          in ["asan", "tsan", "ccov"]
+      - Else not a match
+
+   f. If the argument `-n, --new-version NEW_VERSION` is used
+      then the os_version used in any skip-if expression
+      will be NEW_VERSION -- regardless of the os, arch or
+      another actual platform information. This is intended to workaround a bug
+      where task metadata would report "macosx 10.15", yet the worker was actually
+      "macosx 14.70". By setting `--new-version 14.70` then any skip-if
+      expression will be created with `os_version == 14.70` which would then match
+      what mozinfo says on the next try run.
+
+3. Bugzilla interaction
+   a. The bugzilla instance will be set to (in increasing precedence):
+      i. Default: "bugzilla.allizom.org"
+      ii. From the environment variable BUGZILLA
+      iii. From the command line arg --bugzilla
+
+   b. NOTE: if the BUGZILLA env var or command line arg is "disable"
+      then Bugzilla interaction will be disabled.
+
+   c. Setting --dry-run prevents editing manifests, but will not disable reading Bugzilla.
+      Nevertheless no new bugs will be created nor comments added.
+      Note existing bugs may be mentioned in an info message as appropriate.
+
+   d. If --meta-bug-id is NOT set no bugs will be filed. Any created manifest bugs will
+      require referencing a meta-bug-id.
+
+   e. If there is a skip line for this manifest and the platform matches (see above) then
+          add an info message about carryover
+          do NOT edit any existing bug nor create a new bug
+          If there is an existing manifest comment, then carry it over to the new skip line
+          Else do NOT add a new comment (as a comment did not exist before)
+      Else (no skip lines match the platform)
+          Add a new skip-if line and reference the bug for this manifest + meta-bug-id
+          (create a new bug if needed)
+
+   f. Special case for carryover when a [default] section exists
+          and contains a skip-if with a platform match
+      AND our current failure matches that skip-if line for a real manifest
+      THEN carry over the comment from [default] to the new skip-if line.
+
+4. Modes for skip-fails
+   a. Normal mode
+      Tests with failures found based on the above heuristics
+      are disabled with skip-if conditions in the appropriate manifests
+      and bugs filed (or updated).
+
+   b. Carry-over mode
+      Only consider adding skip-if conditions which match the
+      platform (see above) of previous conditions. Does not perform any other
+      manifest edits or bugzilla changes.
+
+5. Cache for skip-fails
+   At the top of the source tree is a cache directory for skip-fails:
+   ".skip_fails_cache". This directory will be created if it is not present.
+   When running skip-fails if --use-tasks has not been set then
+   the cache directory will be searched for a tasks file corresponding
+   the revision (i.e. ".skip_fails_cache/REVISION/tasks.json"). If
+   that file is present then it is used. Similarly for --use-failures.
+   If --save-tasks has not been set then, by default, the tasks will
+   be saved in the cache directory. Similarly for --save-failures.
+   Any specific cache directory can be cleared with --clear-cache REVISION.
+   All cache directories can be deleted with --clear-cache (no argument).
+   Any cache directories which are over 45 days old will be automatically
+   cleared.
+
 As design changes for skip-fails / TOML, notes will be added here.
+
 
 Running skip-fails for WPT
 ---------------------------
@@ -122,3 +285,32 @@ As skip-fails for REFTEST finds a failure it will take the following actions:
    Non fuzzy-if statements will appear before the fuzzy-if statements.
    In this way the more generic conditions will only be superceded by very specific
    conditions.
+
+
+Design Specification for ./mach manifest clean-skip-fails
+=========================================================
+
+The purpose / rationale for this command is to-be-documented.
+
+description="Update manifests to remove skip-if conditions for a specific platform.
+             Only works for TOML manifests.",
+
+The user documentation is:
+https://firefox-source-docs.mozilla.org/...
+
+Usage
+-----
+
+
+Design Specification for ./mach manifest high-freq-skip-fails
+=========================================================
+
+The purpose / rationale for this command is to-be-documented.
+
+description="Update manifests to skip failing tests",
+
+The user documentation is:
+https://firefox-source-docs.mozilla.org/...
+
+Usage
+-----

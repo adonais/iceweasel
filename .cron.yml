@@ -362,11 +362,29 @@ jobs:
       when:
           - {hour: 4, minute: 00}
 
+    - name: perftest-fenix-startup
+      job:
+          type: decision-task
+          treeherder-symbol: perftest-fenix-startup
+          target-tasks-method: perftest-fenix-startup
+      run-on-projects:
+          - mozilla-central
+      when:
+          - {hour: 5, minute: 00}
+
     - name: perftest-on-autoland
       job:
           type: decision-task
           treeherder-symbol: perftest-auto
           target-tasks-method: perftest-on-autoland
+          include-push-tasks: true
+      when: []
+
+    - name: retrigger-perftests-autoland
+      job:
+          type: decision-task
+          treeherder-symbol: ret-perftest-auto
+          target-tasks-method: retrigger-perftests-autoland
           include-push-tasks: true
       when: []
 

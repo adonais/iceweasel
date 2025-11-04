@@ -20,6 +20,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/BaseProfilerMarkers.h"
 #include "mozilla/CacheNtDllThunk.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/FStream.h"
 #include "mozilla/GetKnownFolderPath.h"
 #include "mozilla/HashFunctions.h"
@@ -808,7 +809,7 @@ Result<Ok, PreXULSkeletonUIError> DrawSkeletonUI(
 
   int placeholderBorderRadius = CSSToDevPixels(4, sCSSToDevPixelScaling);
   // found in browser.css "--toolbarbutton-border-radius"
-  int urlbarBorderRadius = CSSToDevPixels(4, sCSSToDevPixelScaling);
+  int urlbarBorderRadius = CSSToDevPixels(8, sCSSToDevPixelScaling);
 
   // The (traditionally dark blue on Windows) background of the tab bar.
   ColorRect tabBar = {};

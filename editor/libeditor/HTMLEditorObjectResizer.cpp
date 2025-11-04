@@ -122,7 +122,7 @@ ManualNACPtr HTMLEditor::CreateShadow(nsIContent& aParentContent,
                                       Element& aOriginalObject) {
   // let's create an image through the element factory
   RefPtr<nsAtom> name;
-  if (HTMLEditUtils::IsImage(&aOriginalObject)) {
+  if (HTMLEditUtils::IsImageElement(aOriginalObject)) {
     name = nsGkAtoms::img;
   } else {
     name = nsGkAtoms::span;
@@ -658,7 +658,8 @@ nsresult HTMLEditor::StartResizing(Element& aHandleElement) {
   }
 
   // do we want to preserve ratio or not?
-  const bool preserveRatio = HTMLEditUtils::IsImage(mResizedObject);
+  const bool preserveRatio =
+      mResizedObject && HTMLEditUtils::IsImageElement(*mResizedObject);
 
   // the way we change the position/size of the shadow depends on
   // the handle
@@ -986,7 +987,7 @@ nsresult HTMLEditor::SetShadowPosition(Element& aShadowElement,
     }
   }
 
-  if (!HTMLEditUtils::IsImage(&aElement)) {
+  if (!HTMLEditUtils::IsImageElement(aElement)) {
     return NS_OK;
   }
 

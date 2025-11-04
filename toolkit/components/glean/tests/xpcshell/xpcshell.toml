@@ -14,7 +14,6 @@ skip-if = ["appname == 'thunderbird'"] # Won't run on thunderbird due to a race 
 skip-if = ["os == 'android'"] # FOG isn't responsible for monitoring prefs and controlling upload on Android
 
 ["test_GIFFT.js"]
-run-sequentially = "very high failure rate in parallel"
 
 ["test_GIFFTIPC.js"]
 skip-if = ["os == 'android'"] # Telemetry IPC doesn't run on Android (bug 1896896)

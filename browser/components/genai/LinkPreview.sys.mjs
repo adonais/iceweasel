@@ -10,7 +10,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LinkPreviewModel:
     "moz-src:///browser/components/genai/LinkPreviewModel.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
-  PrefUtils: "resource://normandy/lib/PrefUtils.sys.mjs",
+  PrefUtils: "moz-src:///toolkit/modules/PrefUtils.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
 });
 

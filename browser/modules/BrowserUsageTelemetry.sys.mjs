@@ -13,6 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PageActions: "resource:///modules/PageActions.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SearchSERPTelemetry:
@@ -122,6 +123,11 @@ const BROWSER_UI_CONTAINER_IDS = {
   pageActionPanel: "pageaction-panel",
   "unified-extensions-area": "unified-extensions-area",
   "allTabsMenu-allTabsView": "alltabs-menu",
+  // Historically, panels opened from a button on any toolbar have been
+  // considered part of the nav-bar. Due to a technical change these panels
+  // are no longer descendants of the nav-bar; this entry just preserves
+  // continuity for telemetry.
+  "customizationui-widget-panel": "nav-bar",
 
   // This should appear last as some of the above are inside the nav bar.
   "nav-bar": "nav-bar",
@@ -193,6 +199,12 @@ const PLACES_OPEN_COMMANDS = [
 // Used by Browser UI Interaction event instrumentation.
 // Default: 5min.
 const FLOW_IDLE_TIME = 5 * 60 * 1000;
+
+const externalTabMovementRegistry = {
+  internallyOpenedTabs: new WeakSet(),
+  externallyOpenedTabsNextToActiveTab: new WeakSet(),
+  externallyOpenedTabsAtEndOfTabStrip: new WeakSet(),
+};
 
 function telemetryId(widgetId, obscureAddons = true) {
   // Add-on IDs need to be obscured.
@@ -517,8 +529,10 @@ export let BrowserUsageTelemetry = {
       "media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled",
       this
     );
+    Services.prefs.addObserver("idle-daily", this);
 
     this._recordUITelemetry();
+    this._recordInitialPrefValues();
     this.recordPinnedTabsCount();
 
     this._onTabsOpenedTask = new lazy.DeferredTask(
@@ -632,6 +646,10 @@ export let BrowserUsageTelemetry = {
               Glean.pictureinpictureSettings.enableAutotriggerSettings.record();
             }
             break;
+
+          case "idle-daily":
+            this._recordInitialPrefValues();
+            break;
         }
         break;
     }
@@ -681,7 +699,7 @@ export let BrowserUsageTelemetry = {
       case "unload":
         this._unregisterWindow(event.target);
         break;
-      case TAB_RESTORING_TOPIC:
+      case TAB_RESTORING_TOPIC: {
         // We're restoring a new tab from a previous or crashed session.
         // We don't want to track the URIs from these tabs, so let
         // |URICountListener| know about them.
@@ -691,6 +709,7 @@ export let BrowserUsageTelemetry = {
         const { loadedTabCount } = getOpenTabsAndWinsCounts();
         this._recordTabCounts({ loadedTabCount });
         break;
+      }
     }
   },
 
@@ -1206,6 +1225,33 @@ export let BrowserUsageTelemetry = {
   },
 
   /**
+   * Records the startup values of prefs that govern important browser behavior
+   * options.
+   */
+  _recordInitialPrefValues() {
+    this._recordOpenNextToActiveTabSettingValue();
+  },
+
+  /**
+   * @returns {boolean}
+   */
+  _isOpenNextToActiveTabSettingEnabled() {
+    /** @type {number} proxy for `browser.link.open_newwindow.override.external` */
+    const externalLinkOpeningBehavior =
+      lazy.NimbusFeatures.externalLinkHandling.getVariable("openBehavior");
+    return (
+      externalLinkOpeningBehavior ==
+      Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT
+    );
+  },
+
+  _recordOpenNextToActiveTabSettingValue() {
+    Glean.linkHandling.openNextToActiveTabSettingsEnabled.set(
+      this._isOpenNextToActiveTabSettingEnabled()
+    );
+  },
+
+  /**
    * Adds listeners to a single chrome window.
    * @param {Window} win
    */
@@ -1261,6 +1307,8 @@ export let BrowserUsageTelemetry = {
 
   /**
    * Updates the tab counts.
+   * @param {CustomEvent} [event]
+   *   `TabOpen` event
    */
   _onTabOpen(event) {
     // Update the "tab opened" count and its maximum.
@@ -1272,6 +1320,29 @@ export let BrowserUsageTelemetry = {
 
     if (event?.target?.group) {
       Glean.tabgroup.tabInteractions.new.add();
+    }
+
+    if (event) {
+      if (event.detail?.fromExternal) {
+        const wasOpenedNextToActiveTab =
+          this._isOpenNextToActiveTabSettingEnabled();
+
+        Glean.linkHandling.openFromExternalApp.record({
+          next_to_active_tab: wasOpenedNextToActiveTab,
+        });
+
+        if (wasOpenedNextToActiveTab) {
+          externalTabMovementRegistry.externallyOpenedTabsNextToActiveTab.add(
+            event.target
+          );
+        } else {
+          externalTabMovementRegistry.externallyOpenedTabsAtEndOfTabStrip.add(
+            event.target
+          );
+        }
+      } else {
+        externalTabMovementRegistry.internallyOpenedTabs.add(event.target);
+      }
     }
 
     const userContextId = event?.target?.getAttribute("usercontextid");
@@ -1300,6 +1371,11 @@ export let BrowserUsageTelemetry = {
     this._recordTabCounts({ tabCount, loadedTabCount });
   },
 
+  /**
+   *
+   * @param {CustomEvent} event
+   *   TabClose event.
+   */
   _onTabClosed(event) {
     const group = event.target?.group;
     const isUserTriggered = event.detail?.isUserTriggered;
@@ -1327,6 +1403,13 @@ export let BrowserUsageTelemetry = {
       this.recordPinnedTabsCount(pinnedTabs - 1);
       Glean.pinnedTabs.close.record({
         layout: lazy.sidebarVerticalTabs ? "vertical" : "horizontal",
+      });
+    }
+
+    if (event.target) {
+      // Stop tracking any tabs that have been tracked since their `TabOpen` events.
+      Object.values(externalTabMovementRegistry).forEach(set => {
+        set.delete(event.target);
       });
     }
   },
@@ -1561,6 +1644,8 @@ export let BrowserUsageTelemetry = {
       this._updateTabMovementsRecord(tabMovementsRecord, event);
       tabMovementsRecord.deferredTask.arm();
     }
+
+    this._recordExternalTabMovement(event);
   },
 
   /**
@@ -1585,6 +1670,28 @@ export let BrowserUsageTelemetry = {
 
     if (previousTabState.tabGroupId && !currentTabState.tabGroupId) {
       Glean.tabgroup.tabInteractions.remove_same_window.add();
+    }
+  },
+
+  /**
+   * @param {CustomEvent} event
+   *   TabMove event
+   */
+  _recordExternalTabMovement(event) {
+    if (externalTabMovementRegistry.internallyOpenedTabs.has(event.target)) {
+      Glean.browserUiInteraction.tabMovement.not_from_external_app.add();
+    } else if (
+      externalTabMovementRegistry.externallyOpenedTabsNextToActiveTab.has(
+        event.target
+      )
+    ) {
+      Glean.browserUiInteraction.tabMovement.from_external_app_next_to_active_tab.add();
+    } else if (
+      externalTabMovementRegistry.externallyOpenedTabsAtEndOfTabStrip.has(
+        event.target
+      )
+    ) {
+      Glean.browserUiInteraction.tabMovement.from_external_app_tab_strip_end.add();
     }
   },
 

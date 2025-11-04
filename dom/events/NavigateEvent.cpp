@@ -9,6 +9,7 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/AbortController.h"
+#include "mozilla/dom/Document.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/NavigateEventBinding.h"
 #include "mozilla/dom/Navigation.h"
@@ -16,10 +17,10 @@
 #include "nsDocShell.h"
 #include "nsGlobalWindowInner.h"
 
-extern mozilla::LazyLogModule gNavigationLog;
+extern mozilla::LazyLogModule gNavigationAPILog;
 
 #define LOG_FMT(format, ...) \
-  MOZ_LOG_FMT(gNavigationLog, LogLevel::Debug, format, ##__VA_ARGS__);
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, format, ##__VA_ARGS__);
 
 namespace mozilla::dom {
 
@@ -230,6 +231,9 @@ void NavigateEvent::InitNavigateEvent(const NavigateEventInit& aEventInitDict) {
   mInfo = aEventInitDict.mInfo;
   mHasUAVisualTransition = aEventInitDict.mHasUAVisualTransition;
   mSourceElement = aEventInitDict.mSourceElement;
+  if (RefPtr document = GetDocument()) {
+    mLastScrollGeneration = document->LastScrollGeneration();
+  }
 }
 
 void NavigateEvent::SetCanIntercept(bool aCanIntercept) {
@@ -412,13 +416,25 @@ static void ScrollToBeginningOfDocument(Document& aDocument) {
 }
 
 // https://html.spec.whatwg.org/#restore-scroll-position-data
-static void RestoreScrollPositionData(Document* aDocument) {
-  if (!aDocument || aDocument->HasBeenScrolled()) {
+static void RestoreScrollPositionData(Document* aDocument,
+                                      const uint32_t& aLastScrollGeneration) {
+  // 1. Let document be entry's document.
+  // 2. If document's has been scrolled by the user is true, then the user agent
+  // should return.
+  if (!aDocument || aDocument->HasBeenScrolledSince(aLastScrollGeneration)) {
     return;
   }
 
-  // This will be implemented in Bug 1955947. Make sure to move this to
-  // `SessionHistoryEntry`/`SessionHistoryInfo`.
+  RefPtr<nsDocShell> docShell = nsDocShell::Cast(aDocument->GetDocShell());
+  if (!docShell) {
+    return;
+  }
+
+  // 3. The user agent should attempt to use entry's scroll position data to
+  // restore the scroll positions of entry's document's restorable scrollable
+  // regions. The user agent may continue to attempt to do so periodically,
+  // until document's has been scrolled by the user becomes true.
+  docShell->RestoreScrollPosFromActiveSHE();
 }
 
 // https://html.spec.whatwg.org/#process-scroll-behavior
@@ -433,7 +449,7 @@ void NavigateEvent::ProcessScrollBehavior() {
   if (mNavigationType == NavigationType::Traverse ||
       mNavigationType == NavigationType::Reload) {
     RefPtr<Document> document = GetDocument();
-    RestoreScrollPositionData(document);
+    RestoreScrollPositionData(document, mLastScrollGeneration);
     return;
   }
 

@@ -1,7 +1,8 @@
 import json
+import pathlib
 import sys
 from collections import defaultdict
-from os import listdir
+from os import environ, listdir
 from os.path import isfile, join
 
 
@@ -76,6 +77,11 @@ def output_results(output_json, output_file_path):
 
     # Print in the specified format
     print(f"PERFHERDER_DATA: {compact_json}")
+    if "MOZ_AUTOMATION" in environ:
+        upload_path = pathlib.Path(environ.get("MOZ_PERFHERDER_UPLOAD"))
+        upload_path.parent.mkdir(parents=True, exist_ok=True)
+        with upload_path.open("w", encoding="utf-8") as f:
+            f.write(compact_json)
 
     # Write the pretty-formatted JSON to the file
     with open(output_file_path, "w") as output_file:

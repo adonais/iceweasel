@@ -11,7 +11,6 @@
 #include "mozilla/BaseProfileJSONWriter.h"
 #include "mozilla/BaseProfilerDetail.h"
 #include "mozilla/FailureLatch.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/ProgressLogger.h"
 #include "mozilla/ProportionValue.h"

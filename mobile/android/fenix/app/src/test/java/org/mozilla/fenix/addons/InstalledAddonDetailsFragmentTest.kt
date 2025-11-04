@@ -33,9 +33,12 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.HomeActivity
+import org.mozilla.fenix.R
+import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.databinding.FragmentInstalledAddOnDetailsBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.SupportUtils
@@ -167,7 +170,6 @@ class InstalledAddonDetailsFragmentTest {
     fun `GIVEN an add-on WHEN clicking the report button THEN a new tab is open`() {
         val addon = mockAddon()
         every { fragment.addon } returns addon
-        every { fragment.activity } returns mockk<HomeActivity>(relaxed = true)
         val useCases = mockk<TabsUseCases>()
         val selectOrAddTab = mockk<TabsUseCases.SelectOrAddUseCase>()
         every { selectOrAddTab.invoke(any(), any(), any(), any(), any()) } returns "some-tab-id"
@@ -184,6 +186,15 @@ class InstalledAddonDetailsFragmentTest {
         )
         val navController = mockk<NavController>(relaxed = true)
         Navigation.setViewNavController(fragment.binding.root, navController)
+
+        val appStore = mockk<AppStore>()
+        val appState = mockk<AppState>()
+        every { appState.mode } returns mockk(relaxed = true) {
+            every { isPrivate } returns false // or true
+        }
+
+        every { appStore.state } returns appState
+        every { testContext.components.appStore } returns appStore
 
         // Click the report button.
         fragment.binding.reportAddOn.performClick()
@@ -206,14 +217,12 @@ class InstalledAddonDetailsFragmentTest {
     fun `GIVEN an add-on and private browsing mode is used WHEN clicking the report button THEN a new private tab is open`() {
         val addon = mockAddon()
         every { fragment.addon } returns addon
-        val homeActivity = mockk<HomeActivity>(relaxed = true)
-        every { homeActivity.browsingModeManager.mode.isPrivate } returns true
-        every { fragment.activity } returns homeActivity
         val useCases = mockk<TabsUseCases>()
         val selectOrAddTab = mockk<TabsUseCases.SelectOrAddUseCase>()
         every { selectOrAddTab.invoke(any(), any(), any(), any(), any()) } returns "some-tab-id"
         every { useCases.selectOrAddTab } returns selectOrAddTab
         every { testContext.components.useCases.tabsUseCases } returns useCases
+        every { testContext.components.appStore.state.mode.isPrivate } returns true
         // We create the `binding` instance and bind the UI here because `onCreateView()` checks a late init variable
         // and we cannot easily mock it to skip the check.
         fragment.setBindingAndBindUI(
@@ -319,13 +328,7 @@ class InstalledAddonDetailsFragmentTest {
         every { addon.isDisabledAsBlocklisted() } returns true
         every { fragment.addon } returns addon
         every { fragment.context } returns testContext
-        every {
-            (fragment.activity as HomeActivity).openToBrowserAndLoad(
-                searchTermOrURL = any(),
-                newTab = any(),
-                from = any(),
-            )
-        } returns Unit
+
         // We create the `binding` instance and bind the UI here because `onCreateView()` checks a late init variable
         // and we cannot easily mock it to skip the check.
         val binding = FragmentInstalledAddOnDetailsBinding.inflate(
@@ -334,6 +337,12 @@ class InstalledAddonDetailsFragmentTest {
             false,
         )
         fragment.setBindingAndBindUI(binding)
+        val navController = mockk<NavController>(relaxed = true)
+        Navigation.setViewNavController(binding.root, navController)
+
+        val fenix = mockk<FenixBrowserUseCases>(relaxed = true)
+        every { testContext.components.useCases.fenixBrowserUseCases } returns fenix
+        every { testContext.components.appStore.state.mode.isPrivate } returns false
 
         val warningView =
             binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
@@ -344,11 +353,12 @@ class InstalledAddonDetailsFragmentTest {
         errorView.findViewById<TextView>(addonsR.id.add_on_messagebar_error_learn_more_link)
             .performClick()
 
+        verify { navController.navigate(R.id.browserFragment) }
         verify {
-            (fragment.activity as HomeActivity).openToBrowserAndLoad(
+            fenix.loadUrlOrSearch(
                 searchTermOrURL = "${BuildConfig.AMO_BASE_URL}/android/blocked-addon/some-addon-id/1.2.3/",
                 newTab = true,
-                from = BrowserDirection.FromAddonDetailsFragment,
+                private = false,
             )
         }
     }
@@ -359,14 +369,7 @@ class InstalledAddonDetailsFragmentTest {
         every { addon.isDisabledAsNotCorrectlySigned() } returns true
         every { fragment.addon } returns addon
         every { fragment.context } returns testContext
-        every {
-            (fragment.activity as HomeActivity).openToBrowserAndLoad(
-                searchTermOrURL = any(),
-                newTab = any(),
-                from = any(),
-            )
-        } returns Unit
-        every { (fragment.activity as HomeActivity).baseContext } returns testContext
+
         // We create the `binding` instance and bind the UI here because `onCreateView()` checks a late init variable
         // and we cannot easily mock it to skip the check.
         val binding = FragmentInstalledAddOnDetailsBinding.inflate(
@@ -375,6 +378,12 @@ class InstalledAddonDetailsFragmentTest {
             false,
         )
         fragment.setBindingAndBindUI(binding)
+        val navController = mockk<NavController>(relaxed = true)
+        Navigation.setViewNavController(binding.root, navController)
+
+        val fenix = mockk<FenixBrowserUseCases>(relaxed = true)
+        every { testContext.components.useCases.fenixBrowserUseCases } returns fenix
+        every { testContext.components.appStore.state.mode.isPrivate } returns false
 
         val warningView =
             binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
@@ -385,11 +394,12 @@ class InstalledAddonDetailsFragmentTest {
         errorView.findViewById<TextView>(addonsR.id.add_on_messagebar_error_learn_more_link)
             .performClick()
 
+        verify { navController.navigate(R.id.browserFragment) }
         verify {
-            (fragment.activity as HomeActivity).openToBrowserAndLoad(
-                searchTermOrURL = SupportUtils.getSumoURLForTopic(testContext, SupportUtils.SumoTopic.UNSIGNED_ADDONS),
+            fenix.loadUrlOrSearch(
+                searchTermOrURL = SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.UNSIGNED_ADDONS),
                 newTab = true,
-                from = BrowserDirection.FromAddonDetailsFragment,
+                private = false,
             )
         }
     }
@@ -400,13 +410,6 @@ class InstalledAddonDetailsFragmentTest {
         every { addon.isSoftBlocked() } returns true
         every { fragment.addon } returns addon
         every { fragment.context } returns testContext
-        every {
-            (fragment.activity as HomeActivity).openToBrowserAndLoad(
-                searchTermOrURL = any(),
-                newTab = any(),
-                from = any(),
-            )
-        } returns Unit
 
         // We create the `binding` instance and bind the UI here because `onCreateView()` checks a late init variable
         // and we cannot easily mock it to skip the check.
@@ -416,6 +419,12 @@ class InstalledAddonDetailsFragmentTest {
             false,
         )
         fragment.setBindingAndBindUI(binding)
+        val navController = mockk<NavController>(relaxed = true)
+        Navigation.setViewNavController(binding.root, navController)
+
+        val fenix = mockk<FenixBrowserUseCases>(relaxed = true)
+        every { testContext.components.useCases.fenixBrowserUseCases } returns fenix
+        every { testContext.components.appStore.state.mode.isPrivate } returns false
 
         val warningView = binding.root.findViewById<View>(addonsR.id.add_on_messagebar_warning)
         assertTrue(warningView.isVisible)
@@ -425,11 +434,12 @@ class InstalledAddonDetailsFragmentTest {
         warningView.findViewById<TextView>(addonsR.id.add_on_messagebar_warning_learn_more_link)
             .performClick()
 
+        verify { navController.navigate(R.id.browserFragment) }
         verify {
-            (fragment.activity as HomeActivity).openToBrowserAndLoad(
+            fenix.loadUrlOrSearch(
                 searchTermOrURL = "${BuildConfig.AMO_BASE_URL}/android/blocked-addon/some-addon-id/1.2.3/",
                 newTab = true,
-                from = BrowserDirection.FromAddonDetailsFragment,
+                private = false,
             )
         }
     }

@@ -18,6 +18,7 @@ function mockServicesChromeScript() {
 
   let activeNotifications = Object.create(null);
 
+  let throwHistory = false;
   let history = [];
 
   const mockAlertsService = {
@@ -84,6 +85,9 @@ function mockServicesChromeScript() {
     },
 
     getHistory() {
+      if (throwHistory) {
+        throw new Error("no history, sorry");
+      }
       return history;
     },
 
@@ -165,6 +169,10 @@ function mockServicesChromeScript() {
     history = value;
   });
 
+  addMessageListener("mock-alert-service:set-throw-history", value => {
+    throwHistory = value;
+  });
+
   sendAsyncMessage("mock-alert-service:registered");
 }
 
@@ -240,6 +248,12 @@ const MockAlertsService = {
     return await this._chromeScript.sendQuery(
       "mock-alert-service:set-history",
       ids
+    );
+  },
+  async setThrowHistory(throws) {
+    return await this._chromeScript.sendQuery(
+      "mock-alert-service:set-throw-history",
+      throws
     );
   },
 };

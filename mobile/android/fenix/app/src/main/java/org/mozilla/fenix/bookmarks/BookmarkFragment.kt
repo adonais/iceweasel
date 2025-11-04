@@ -35,11 +35,11 @@ import org.mozilla.fenix.components.QrScanFenixFeature
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.VoiceSearchFeature
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.toolbar.BrowserToolbarEnvironment
 import org.mozilla.fenix.ext.bookmarkStorage
-import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
@@ -66,21 +66,17 @@ import org.mozilla.fenix.utils.lastSavedFolderCache
 class BookmarkFragment : Fragment() {
 
     private val verificationResultLauncher = registerForVerification()
-
-    private val qrScanFenixFeature by lazy(LazyThreadSafetyMode.NONE) {
+    private var qrScanFenixFeature: ViewBoundFeatureWrapper<QrScanFenixFeature>? =
         ViewBoundFeatureWrapper<QrScanFenixFeature>()
-    }
-    private val qrScannerLauncher: ActivityResultLauncher<Intent> =
+    private val qrScanLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            qrScanFenixFeature.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
+            qrScanFenixFeature?.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
         }
-
-    private val voiceSearchFeature by lazy(LazyThreadSafetyMode.NONE) {
+    private var voiceSearchFeature: ViewBoundFeatureWrapper<VoiceSearchFeature>? =
         ViewBoundFeatureWrapper<VoiceSearchFeature>()
-    }
     private val voiceSearchLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            voiceSearchFeature.get()?.handleVoiceSearchResult(result.resultCode, result.data)
+            voiceSearchFeature?.get()?.handleVoiceSearchResult(result.resultCode, result.data)
         }
 
     @Suppress("LongMethod")
@@ -175,9 +171,15 @@ class BookmarkFragment : Fragment() {
                                         lifecycleHolder.homeActivity.browsingModeManager.mode
                                     },
                                     saveBookmarkSortOrder = {
-                                        lifecycleHolder.context.settings().bookmarkListSortOrder = it.asString
+                                        lifecycleHolder.context.settings().bookmarkListSortOrder =
+                                            it.asString
                                     },
                                     lastSavedFolderCache = context.settings().lastSavedFolderCache,
+                                    reportResultGlobally = {
+                                        requireComponents.appStore.dispatch(
+                                            AppAction.BookmarkAction.BookmarkOperationResultReported(it),
+                                        )
+                                    },
                                 ),
                             ),
                             lifecycleHolder = lifecycleHolder,
@@ -212,24 +214,8 @@ class BookmarkFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         if (requireContext().settings().shouldUseComposableToolbar) {
-            qrScanFenixFeature.set(
-                feature = QrScanFenixFeature(
-                    context = requireContext(),
-                    appStore = requireContext().components.appStore,
-                    qrScanActivityLauncher = qrScannerLauncher,
-                ),
-                owner = viewLifecycleOwner,
-                view = view,
-            )
-            voiceSearchFeature.set(
-                feature = VoiceSearchFeature(
-                    context = requireContext(),
-                    appStore = requireContext().components.appStore,
-                    voiceSearchLauncher = voiceSearchLauncher,
-                ),
-                owner = viewLifecycleOwner,
-                view = view,
-            )
+            qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
+            voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
         }
     }
 
@@ -256,7 +242,7 @@ class BookmarkFragment : Fragment() {
                 EnvironmentRehydrated(
                     BrowserToolbarEnvironment(
                         context = requireContext(),
-                        viewLifecycleOwner = viewLifecycleOwner,
+                        fragment = this,
                         navController = findNavController(),
                         browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                     ),

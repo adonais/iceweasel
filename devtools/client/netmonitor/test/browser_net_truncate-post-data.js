@@ -70,10 +70,7 @@ async function checkPostDataRequest(expectErrorDisplay) {
 
   // Make sure the header and editor are loaded
   const waitHeader = waitForDOM(document, "#request-panel .data-header");
-  const waitSourceEditor = waitForDOM(
-    document,
-    "#request-panel .CodeMirror.cm-s-mozilla"
-  );
+  const waitSourceEditor = waitForDOM(document, "#request-panel .cm-editor");
 
   store.dispatch(Actions.toggleNetworkDetails());
   clickOnSidebarTab(document, "request");
@@ -99,8 +96,9 @@ async function checkPostDataRequest(expectErrorDisplay) {
     false,
     "The params json view doesn't have the intended visibility."
   );
+
   is(
-    tabpanel.querySelector("PRE") === null,
+    tabpanel.querySelector(".cm-editor") === null,
     false,
     "The Request Payload has the intended visibility."
   );

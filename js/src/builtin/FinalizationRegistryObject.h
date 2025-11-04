@@ -22,29 +22,24 @@
  *   |  |      v                v            |               v               |
  *   |  |  +---+---+  +---------+---------+  |  +------------+------------+  |
  *   |  |  |Record |  |   Registrations   |  |  |  FinalizationObservers  |  |
- *   |  |  |Vector |  |     weak map      |  |  +------------+------------+  |
+ *   |  |  |Vector |  |        map        |  |  +------------+------------+  |
  *   |  |  +---+---+  +-------------------+  |               |               |
- *   |  |      |      | Unregister:Records|  |               v               |
- *   |  |      |      |   token   :object |  |  +------------+------------+  |
+ *   |  |      |      |   Weak    :Records|  |               |               |
+ *   |  |      |      | unregister:Vector |  |               v               |
+ *   |  |      |      |   token   :       |  |  +------------+------------+  |
  *   |  |      |      +--------------+----+  |  |      RecordMap map      |  |
  *   |  |      |                     |       |  +-------------------------+  |
- *   |  |      |                     v       |  |  Target  : ObserverList |  |
- *   |  |      |      +--------------+----+  |  |  object  :              |  |
- *   |  |      |      |   Finalization    |  |  +----+-------------+------+  |
- *   |  |      |      |RegistrationsObject|  |       |             |         |
- *   |  |      |      +-------------------+  |       v             |         |
- *   |  |      |      |   RecordVector    |  |  +----+-----+       |         |
- *   |  |      |      +---------+---------+  |  |  Target  |       |         |
- *   |  |      |                |            |  | JSObject |       |         |
- *   |  |    * v              * v            |  +----------+       |         |
- *   |  |  +--------------------+------+ *   |                     |         |
+ *   |  |      |                     |       |  |  Target  : ObserverList |  |
+ *   |  |      |                     |       |  |  object  :              |  |
+ *   |  |    * v                   * v       |  +----+-------------+------+  |
+ *   |  |  +-------------------------+-+ *   |       |             |         |
  *   |  |  | FinalizationRecordObject  +<--------------------------+         |
- *   |  |  +---------------------------+     |                               |
- *   |  |  | Queue                     +--+  |                               |
- *   |  |  +---------------------------+  |  |                               |
- *   |  |  | Held value                |  |  |                               |
- *   |  |  +---------------------------+  |  |                               |
- *   |  |                                 |  |                               |
+ *   |  |  +---------------------------+     |       |                       |
+ *   |  |  | Queue                     +--+  |       v                       |
+ *   |  |  +---------------------------+  |  |  +----+-----+                 |
+ *   |  |  | Held value                |  |  |  |  Target  |                 |
+ *   |  |  +---------------------------+  |  |  | GC thing |                 |
+ *   |  |                                 |  |  +----------+                 |
  *   |  +--------------+   +--------------+  |                               |
  *   |                 |   |                 |                               |
  *   |                 v   v                 |                               |
@@ -67,10 +62,9 @@
  * finalization observers which is used to actually track the target.
  *
  * When a target is registered an unregister token may be supplied. If so, this
- * is also recorded by the registry and is stored in a weak map of
- * registrations. The values of this map are FinalizationRegistrationsObject
- * objects. (It's necessary to have another JSObject here because our weak map
- * implementation only supports JS types as values.)
+ * is also recorded by the registry and is stored in a map of
+ * registrations. They keys of this map are weakly held and do not keep the
+ * unregister token alive.
  *
  * When targets are unregistered, the registration is looked up in the weakmap
  * and the corresponding records are cleared.
@@ -156,58 +150,23 @@ class FinalizationRecordObject : public gc::ObserverListObject {
   static void finalize(JS::GCContext* gcx, JSObject* obj);
 };
 
-// A vector of weakly-held FinalizationRecordObjects.
-using WeakFinalizationRecordVector =
-    GCVector<WeakHeapPtr<FinalizationRecordObject*>, 1, js::CellAllocPolicy>;
-
-// A JS object containing a vector of weakly-held FinalizationRecordObjects,
-// which holds the records corresponding to the registrations for a particular
-// registration token. These are used as the values in the registration
-// weakmap. Since the contents of the vector are weak references they are not
-// traced.
-class FinalizationRegistrationsObject : public NativeObject {
-  enum { RecordsSlot = 0, SlotCount };
-
- public:
-  static const JSClass class_;
-
-  static FinalizationRegistrationsObject* create(JSContext* cx);
-
-  WeakFinalizationRecordVector* records();
-  const WeakFinalizationRecordVector* records() const;
-
-  bool isEmpty() const;
-
-  bool append(HandleFinalizationRecordObject record);
-  void remove(HandleFinalizationRecordObject record);
-
-  bool traceWeak(JSTracer* trc);
-
- private:
-  static const JSClassOps classOps_;
-
-  void* privatePtr() const;
-
-  static void trace(JSTracer* trc, JSObject* obj);
-  static void finalize(JS::GCContext* gcx, JSObject* obj);
-};
-
 using FinalizationRecordVector =
     GCVector<HeapPtr<FinalizationRecordObject*>, 1, js::CellAllocPolicy>;
 
 // The JS FinalizationRegistry object itself.
 class FinalizationRegistryObject : public NativeObject {
-  enum { QueueSlot = 0, RecordsSlot, RegistrationsSlot, SlotCount };
+  enum { QueueSlot = 0, RegistrationsSlot, RecordsWithoutTokenSlot, SlotCount };
 
  public:
-  using RegistrationsWeakMap = WeakMap<Value, JSObject*>;
+  using RegistrationsMap =
+      GCHashMap<HeapPtr<Value>, FinalizationRecordVector, gc::WeakTargetHasher>;
 
   static const JSClass class_;
   static const JSClass protoClass_;
 
   FinalizationQueueObject* queue() const;
-  FinalizationRecordVector* records() const;
-  RegistrationsWeakMap* registrations() const;
+  RegistrationsMap* registrations() const;
+  FinalizationRecordVector* recordsWithoutToken() const;
 
   void traceWeak(JSTracer* trc);
 

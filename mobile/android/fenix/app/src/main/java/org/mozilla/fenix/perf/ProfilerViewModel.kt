@@ -160,7 +160,7 @@ class ProfilerViewModel(
         ContextCompat.startForegroundService(application, startIntent)
         _uiState.value = ProfilerUiState.ShowToast(R.string.profiler_start_dialog_started)
 
-        viewModelScope.launch {
+        viewModelScope.launch(mainDispatcher) {
             delay(delayToPollProfilerForStatus)
             if (isProfilerActive.value) {
                 _uiState.value = ProfilerUiState.Running
@@ -289,7 +289,7 @@ class ProfilerViewModel(
                 withContext(mainDispatcher) {
                     profilerUtils.finishProfileSave(application, url) { messageResId ->
                         _uiState.value = ProfilerUiState.ShowToast(messageResId)
-                        launch {
+                        launch(mainDispatcher) {
                             delay(delayToUpdateStatus)
                             _uiState.value = ProfilerUiState.Finished(url)
                         }
@@ -349,7 +349,7 @@ class ProfilerViewModel(
             tag = "ProfilerViewModel",
             message = "Error: ${exception.message}",
         )
-        withContext(Dispatchers.Main) {
+        withContext(mainDispatcher) {
             _uiState.value = ProfilerUiState.Error(
                 errorMessageRes,
                 exception.message ?: fallbackMessage,

@@ -81,9 +81,9 @@ nscoord nsMathMLmspaceFrame::CalculateAttributeValue(nsAtom* aAtom,
   return CalcLength(aAttribute.mValue, aFontSizeInflation, this);
 }
 
-nsresult nsMathMLmspaceFrame::Place(DrawTarget* aDrawTarget,
-                                    const PlaceFlags& aFlags,
-                                    ReflowOutput& aDesiredSize) {
+void nsMathMLmspaceFrame::Place(DrawTarget* aDrawTarget,
+                                const PlaceFlags& aFlags,
+                                ReflowOutput& aDesiredSize) {
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
 
   // <mspace/> is listed among MathML elements allowing negative spacing and
@@ -123,5 +123,4 @@ nsresult nsMathMLmspaceFrame::Place(DrawTarget* aDrawTarget,
   auto borderPadding = GetBorderPaddingForPlace(aFlags);
   InflateReflowAndBoundingMetrics(borderPadding, aDesiredSize,
                                   mBoundingMetrics);
-  return NS_OK;
 }

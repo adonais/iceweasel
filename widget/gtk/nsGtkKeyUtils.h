@@ -225,15 +225,9 @@ class KeymapWrapper {
   static void HandleKeymap(uint32_t format, int fd, uint32_t size);
 
   /**
-   * Wayland global focus handlers
-   */
-  static void SetFocusIn(wl_surface* aFocusSurface, uint32_t aFocusSerial);
-  static void SetFocusOut(wl_surface* aFocusSurface);
-  static void GetFocusInfo(wl_surface** aFocusSurface, uint32_t* aFocusSerial);
-
-  /**
    * Key repeat helpers for Wayland
    */
+  static void ResetRepeatState();
   static void KeyboardHandlerForWayland(uint32_t aSerial,
                                         uint32_t aHardwareKeycode,
                                         uint32_t aState);
@@ -532,11 +526,6 @@ class KeymapWrapper {
    */
   void SetModifierMask(xkb_keymap* aKeymap, ModifierIndex aModifierIndex,
                        const char* aModifierName);
-#endif
-
-#ifdef MOZ_WAYLAND
-  wl_surface* mFocusSurface = nullptr;
-  uint32_t mFocusSerial = 0;
 #endif
 };
 

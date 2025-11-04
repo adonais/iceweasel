@@ -6,77 +6,81 @@
 
 const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 
-function ToolSidebar(tabbox, panel, uid, options = {}) {
-  EventEmitter.decorate(this);
+class ToolSidebar extends EventEmitter {
+  constructor(tabbox, panel, options = {}) {
+    super();
 
-  this._tabbox = tabbox;
-  this._uid = uid;
-  this._panelDoc = this._tabbox.ownerDocument;
-  this._toolPanel = panel;
-  this._options = options;
+    this.#tabbox = tabbox;
+    this.#panelDoc = this.#tabbox.ownerDocument;
+    this.#toolPanel = panel;
+    this.#options = options;
 
-  if (!options.disableTelemetry) {
-    this._telemetry = this._toolPanel.telemetry;
+    if (!options.disableTelemetry) {
+      this.#telemetry = this.#toolPanel.telemetry;
+    }
+
+    if (this.#options.hideTabstripe) {
+      this.#tabbox.setAttribute("hidetabs", "true");
+    }
+
+    this.render();
+
+    this.#toolPanel.emit("sidebar-created", this);
   }
 
-  this._tabs = [];
-
-  if (this._options.hideTabstripe) {
-    this._tabbox.setAttribute("hidetabs", "true");
-  }
-
-  this.render();
-
-  this._toolPanel.emit("sidebar-created", this);
-}
-
-exports.ToolSidebar = ToolSidebar;
-
-ToolSidebar.prototype = {
-  TABPANEL_ID_PREFIX: "sidebar-panel-",
+  TABPANEL_ID_PREFIX = "sidebar-panel-";
+  #currentTool;
+  #destroyed;
+  #options;
+  #panelDoc;
+  #tabbar;
+  #tabbox;
+  #telemetry;
+  #toolNames;
+  #toolPanel;
 
   // React
 
   get React() {
-    return this._toolPanel.React;
-  },
+    return this.#toolPanel.React;
+  }
 
   get ReactDOM() {
-    return this._toolPanel.ReactDOM;
-  },
+    return this.#toolPanel.ReactDOM;
+  }
 
   get browserRequire() {
-    return this._toolPanel.browserRequire;
-  },
+    return this.#toolPanel.browserRequire;
+  }
 
   get InspectorTabPanel() {
-    return this._toolPanel.InspectorTabPanel;
-  },
+    return this.#toolPanel.InspectorTabPanel;
+  }
 
   get TabBar() {
-    return this._toolPanel.TabBar;
-  },
+    return this.#toolPanel.TabBar;
+  }
 
   // Rendering
 
   render() {
     const sidebar = this.TabBar({
-      menuDocument: this._toolPanel.toolbox.doc,
+      menuDocument: this.#toolPanel.toolbox.doc,
       showAllTabsMenu: true,
-      allTabsMenuButtonTooltip: this._options.allTabsMenuButtonTooltip,
-      sidebarToggleButton: this._options.sidebarToggleButton,
+      allTabsMenuButtonTooltip: this.#options.allTabsMenuButtonTooltip,
+      sidebarToggleButton: this.#options.sidebarToggleButton,
       onSelect: this.handleSelectionChange.bind(this),
     });
 
-    this._tabbar = this.ReactDOM.render(sidebar, this._tabbox);
-  },
+    this.#tabbar = this.ReactDOM.render(sidebar, this.#tabbox);
+  }
 
   /**
    * Adds all the queued tabs.
    */
   addAllQueuedTabs() {
-    this._tabbar.addAllQueuedTabs();
-  },
+    this.#tabbar.addAllQueuedTabs();
+  }
 
   /**
    * Register a side-panel tab.
@@ -88,9 +92,9 @@ ToolSidebar.prototype = {
    * @param {Number} index the position where the tab should be inserted
    */
   addTab(id, title, panel, selected, index) {
-    this._tabbar.addTab(id, title, selected, panel, null, index);
+    this.#tabbar.addTab(id, title, selected, panel, null, index);
     this.emit("new-tab-registered", id);
-  },
+  }
 
   /**
    * Helper API for adding side-panels that use existing DOM nodes
@@ -110,7 +114,7 @@ ToolSidebar.prototype = {
     });
 
     this.addTab(id, title, panel, selected, index);
-  },
+  }
 
   /**
    * Queues a side-panel tab to be added..
@@ -122,9 +126,9 @@ ToolSidebar.prototype = {
    * @param {Number} index the position where the tab should be inserted
    */
   queueTab(id, title, panel, selected, index) {
-    this._tabbar.queueTab(id, title, selected, panel, null, index);
+    this.#tabbar.queueTab(id, title, selected, panel, null, index);
     this.emit("new-tab-registered", id);
-  },
+  }
 
   /**
    * Helper API for queuing side-panels that use existing DOM nodes
@@ -144,7 +148,7 @@ ToolSidebar.prototype = {
     });
 
     this.queueTab(id, title, panel, selected, index);
-  },
+  }
 
   /**
    * Remove an existing tab.
@@ -153,10 +157,10 @@ ToolSidebar.prototype = {
    * got created.
    */
   removeTab(tabId) {
-    this._tabbar.removeTab(tabId);
+    this.#tabbar.removeTab(tabId);
 
     this.emit("tab-unregistered", tabId);
-  },
+  }
 
   /**
    * Show or hide a specific tab.
@@ -164,22 +168,22 @@ ToolSidebar.prototype = {
    * @param {String} id The ID of the tab to be hidden.
    */
   toggleTab(isVisible, id) {
-    this._tabbar.toggleTab(id, isVisible);
-  },
+    this.#tabbar.toggleTab(id, isVisible);
+  }
 
   /**
    * Select a specific tab.
    */
   select(id) {
-    this._tabbar.select(id);
-  },
+    this.#tabbar.select(id);
+  }
 
   /**
    * Return the id of the selected tab.
    */
   getCurrentTabID() {
-    return this._currentTool;
-  },
+    return this.#currentTool;
+  }
 
   /**
    * Returns the requested tab panel based on the id.
@@ -189,30 +193,30 @@ ToolSidebar.prototype = {
   getTabPanel(id) {
     // Search with and without the ID prefix as there might have been existing
     // tabpanels by the time the sidebar got created
-    return this._panelDoc.querySelector(
+    return this.#panelDoc.querySelector(
       "#" + this.TABPANEL_ID_PREFIX + id + ", #" + id
     );
-  },
+  }
 
   /**
    * Event handler.
    */
   handleSelectionChange(id) {
-    if (this._destroyed) {
+    if (this.#destroyed) {
       return;
     }
 
-    const previousTool = this._currentTool;
+    const previousTool = this.#currentTool;
     if (previousTool) {
       this.emit(previousTool + "-unselected");
     }
 
-    this._currentTool = id;
+    this.#currentTool = id;
 
     this.updateTelemetryOnChange(id, previousTool);
-    this.emit(this._currentTool + "-selected");
-    this.emit("select", this._currentTool);
-  },
+    this.emit(this.#currentTool + "-selected");
+    this.emit("select", this.#currentTool);
+  }
 
   /**
    * Log toolClosed and toolOpened events on telemetry.
@@ -223,7 +227,7 @@ ToolSidebar.prototype = {
    *         id of the previously selected tool.
    */
   updateTelemetryOnChange(currentToolId, previousToolId) {
-    if (currentToolId === previousToolId || !this._telemetry) {
+    if (currentToolId === previousToolId || !this.#telemetry) {
       // Skip telemetry if the tool id did not change or telemetry is unavailable.
       return;
     }
@@ -232,16 +236,16 @@ ToolSidebar.prototype = {
 
     if (previousToolId) {
       previousToolId = this.getTelemetryPanelNameOrOther(previousToolId);
-      this._telemetry.toolClosed(previousToolId, this);
+      this.#telemetry.toolClosed(previousToolId, this);
 
-      this._telemetry.recordEvent("sidepanel_changed", "inspector", null, {
+      this.#telemetry.recordEvent("sidepanel_changed", "inspector", null, {
         oldpanel: previousToolId,
         newpanel: currentToolId,
-        os: this._telemetry.osNameAndVersion,
+        os: this.#telemetry.osNameAndVersion,
       });
     }
-    this._telemetry.toolOpened(currentToolId, this);
-  },
+    this.#telemetry.toolOpened(currentToolId, this);
+  }
 
   /**
    * Returns a panel id in the case of built in panels or "other" in the case of
@@ -253,22 +257,22 @@ ToolSidebar.prototype = {
    *        The panel id we would like to process.
    */
   getTelemetryPanelNameOrOther(id) {
-    if (!this._toolNames) {
+    if (!this.#toolNames) {
       // Get all built in tool ids. We identify third party tool ids by checking
       // for a "-", which shows it originates from an addon.
-      const ids = this._tabbar.state.tabs.map(({ id: toolId }) => {
+      const ids = this.#tabbar.state.tabs.map(({ id: toolId }) => {
         return toolId.includes("-") ? "other" : toolId;
       });
 
-      this._toolNames = new Set(ids);
+      this.#toolNames = new Set(ids);
     }
 
-    if (!this._toolNames.has(id)) {
+    if (!this.#toolNames.has(id)) {
       return "other";
     }
 
     return id;
-  },
+  }
 
   /**
    * Show the sidebar.
@@ -277,7 +281,7 @@ ToolSidebar.prototype = {
    *         The sidebar tab id to select.
    */
   show(id) {
-    this._tabbox.hidden = false;
+    this.#tabbox.hidden = false;
 
     // If an id is given, select the corresponding sidebar tab.
     if (id) {
@@ -285,40 +289,41 @@ ToolSidebar.prototype = {
     }
 
     this.emit("show");
-  },
+  }
 
   /**
    * Show the sidebar.
    */
   hide() {
-    this._tabbox.hidden = true;
+    this.#tabbox.hidden = true;
 
     this.emit("hide");
-  },
+  }
 
   /**
    * Clean-up.
    */
   destroy() {
-    if (this._destroyed) {
+    if (this.#destroyed) {
       return;
     }
-    this._destroyed = true;
+    this.#destroyed = true;
 
     this.emit("destroy");
 
-    if (this._currentTool && this._telemetry) {
-      this._telemetry.toolClosed(this._currentTool, this);
+    if (this.#currentTool && this.#telemetry) {
+      this.#telemetry.toolClosed(this.#currentTool, this);
     }
 
-    this._toolPanel.emit("sidebar-destroyed", this);
+    this.#toolPanel.emit("sidebar-destroyed", this);
 
-    this.ReactDOM.unmountComponentAtNode(this._tabbox);
+    this.ReactDOM.unmountComponentAtNode(this.#tabbox);
 
-    this._tabs = null;
-    this._tabbox = null;
-    this._telemetry = null;
-    this._panelDoc = null;
-    this._toolPanel = null;
-  },
-};
+    this.#tabbox = null;
+    this.#telemetry = null;
+    this.#panelDoc = null;
+    this.#toolPanel = null;
+  }
+}
+
+exports.ToolSidebar = ToolSidebar;

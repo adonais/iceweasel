@@ -33,7 +33,6 @@ class BlocklistMiddleware(
         next(getUpdatedAction(context.state, action))
     }
 
-    @Suppress("ComplexMethod")
     private fun getUpdatedAction(
         state: AppState,
         action: AppAction,

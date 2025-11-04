@@ -57,6 +57,7 @@ task-defaults:
                 nightly-larch: nightly-larch
                 nightly-oak: nightly-oak
                 nightly-pine: nightly-pine
+                nightly-cypress: nightly-cypress
                 beta:
                     by-shipping-product:
                         devedition: aurora

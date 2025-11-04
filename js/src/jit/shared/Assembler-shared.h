@@ -7,7 +7,9 @@
 #ifndef jit_shared_Assembler_shared_h
 #define jit_shared_Assembler_shared_h
 
-#include "mozilla/CheckedInt.h"
+#if JS_BITS_PER_WORD == 32
+#  include "mozilla/CheckedInt.h"
+#endif
 #include "mozilla/DebugOnly.h"
 
 #include <limits.h>

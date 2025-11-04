@@ -42,8 +42,9 @@ enum class ModuleType : uint32_t {
   Unknown = 0,
   JavaScript,
   JSON,
+  CSS,
 
-  Limit = JSON,
+  Limit = CSS,
 };
 
 /**
@@ -192,6 +193,15 @@ extern JS_PUBLIC_API JSObject* CompileJsonModule(
 extern JS_PUBLIC_API JSObject* CompileJsonModule(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<mozilla::Utf8Unit>& srcBuf);
+
+/**
+ * Create a synthetic module record for a CSS module from the provided
+ * CSSStyleSheet in cssValue. There's no capability to parse CSS in
+ * the engine, so this must occur prior to calling this function.
+ */
+extern JS_PUBLIC_API JSObject* CreateCssModule(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    const Value& cssValue);
 
 /**
  * Set a private value associated with a source text module record.

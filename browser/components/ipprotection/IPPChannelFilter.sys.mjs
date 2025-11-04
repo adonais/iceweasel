@@ -204,6 +204,8 @@ export class IPPChannelFilter {
    * to measure usage, or catch proxy errors.
    *
    * @returns {AsyncGenerator<nsIChannel>} An async generator that yields proxied channels.
+   * @yields {object}
+   *   Proxied channels.
    */
   async *proxiedChannels() {
     const stop = Promise.withResolvers();

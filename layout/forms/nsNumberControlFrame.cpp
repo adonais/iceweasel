@@ -8,7 +8,6 @@
 
 #include "HTMLInputElement.h"
 #include "mozilla/BasicEvents.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/PresShell.h"
 #include "nsCSSPseudoElements.h"
 #include "nsContentCreatorFunctions.h"

@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head = "head.js ../../../common/tests/unit/head_helpers.js ../../../common/tests/unit/head_http.js"
 firefox-appdir = "browser"
 skip-if = ["!sync"]

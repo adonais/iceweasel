@@ -43,7 +43,9 @@ suites:
     browser/components/translations/tests/browser:
         description: "Performance tests for Translations models on Firefox Desktop"
         tests:
-            "Full-Page Translation (Spanish to English)": ""
+            "Full-Page Translations Base Model": ""
+            "Full-Page Translations BaseMemory Model": ""
+            "Full-Page Translations Tiny Model": ""
 
     dom/serviceworkers/test/performance:
         description: "Performance tests running through Mochitest for Service Workers"

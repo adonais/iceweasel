@@ -233,12 +233,8 @@ class StatisticsPanel extends Component {
 
     const container = this.refs[id];
 
-    // Nuke all existing charts of the specified type.
-    while (container.hasChildNodes()) {
-      container.firstChild.remove();
-    }
-
-    container.appendChild(chart.node);
+    // Update the charts of the specified type.
+    container.replaceChildren(chart.node);
   }
 
   onLayoutChange() {

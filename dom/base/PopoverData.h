@@ -32,7 +32,7 @@ enum class PopoverVisibilityState : uint8_t {
 
 class PopoverToggleEventTask : public Runnable {
  public:
-  explicit PopoverToggleEventTask(nsWeakPtr aElement,
+  explicit PopoverToggleEventTask(nsWeakPtr aElement, nsWeakPtr aSource,
                                   PopoverVisibilityState aOldState);
 
   // MOZ_CAN_RUN_SCRIPT_BOUNDARY until Runnable::Run is MOZ_CAN_RUN_SCRIPT.  See
@@ -41,8 +41,11 @@ class PopoverToggleEventTask : public Runnable {
 
   PopoverVisibilityState GetOldState() const { return mOldState; }
 
+  Element* GetSource() const;
+
  private:
   nsWeakPtr mElement;
+  nsWeakPtr mSource;
   PopoverVisibilityState mOldState;
 };
 

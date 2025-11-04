@@ -49,7 +49,9 @@ void FillNativeStack(NativeStack* aStack) {
   StackWalkCallback((void*)0x901, (void*)0x976, aStack);
 }
 
-void BasicAPITestWithStack(BoundedMPSCQueue<NativeStack>& aQueue, size_t aCap) {
+template <size_t Capacity>
+void BasicAPITestWithStack(BoundedMPSCQueue<NativeStack, Capacity>& aQueue,
+                           size_t aCap) {
   MOZ_RELEASE_ASSERT(aQueue.Capacity() == aCap);
 
   NativeStack s = {.mCount = 0};
@@ -78,7 +80,9 @@ void BasicAPITestWithStack(BoundedMPSCQueue<NativeStack>& aQueue, size_t aCap) {
   }
 }
 
-void BasicAPITestMP(BoundedMPSCQueue<NativeStack>& aQueue, size_t aThreads) {
+template <size_t Capacity>
+void BasicAPITestMP(BoundedMPSCQueue<NativeStack, Capacity>& aQueue,
+                    size_t aThreads) {
   MOZ_RELEASE_ASSERT(aQueue.Capacity() == 15);
 
   std::thread consumer([&aQueue, aThreads] {
@@ -116,16 +120,25 @@ void BasicAPITestMP(BoundedMPSCQueue<NativeStack>& aQueue, size_t aThreads) {
   consumer.join();
 }
 
+template <size_t Capacity>
+bool testBasicApi() {
+  BoundedMPSCQueue<NativeStack, Capacity> s;
+  BasicAPITestWithStack(s, Capacity);
+  return true;
+}
+
+template <size_t... Capacity>
+void testBasicApiCapacities() {
+  [[maybe_unused]] std::initializer_list<bool> _ = {
+      testBasicApi<Capacity>()...};
+}
+
 int main() {
-  size_t caps[] = {2, 5, 7, 10, 15};
-  for (auto maxCap : caps) {
-    BoundedMPSCQueue<NativeStack> s(maxCap);
-    BasicAPITestWithStack(s, maxCap);
-  }
+  testBasicApiCapacities<1, 5, 7, 10, 15>();
 
   {
     NativeStack e{};
-    BoundedMPSCQueue<NativeStack> deq(2);
+    BoundedMPSCQueue<NativeStack, 2> deq;
 
     // Dequeue with nothing should return 0 and not fail later
     int retrieve = deq.Recv(&e);
@@ -161,7 +174,7 @@ int main() {
 
   size_t nbThreads[] = {8, 16, 64, 128, 512, 1024};
   for (auto threads : nbThreads) {
-    BoundedMPSCQueue<NativeStack> s(15);
+    BoundedMPSCQueue<NativeStack, 15> s;
     BasicAPITestMP(s, threads);
   }
 

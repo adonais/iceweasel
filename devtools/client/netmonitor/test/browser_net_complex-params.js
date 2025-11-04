@@ -146,7 +146,7 @@ async function testRequestWithFormattedView(
     "The request params box should be displayed."
   );
   Assert.strictEqual(
-    tabpanel.querySelector(".CodeMirror-code"),
+    tabpanel.querySelector(".cm-content"),
     null,
     "The request post data editor should not be displayed."
   );
@@ -172,7 +172,7 @@ async function testRequestWithFormattedView(
   );
 
   // Toggle the raw data display. This should hide the formatted display.
-  waitForContent = waitForDOM(document, "#request-panel .CodeMirror-code");
+  waitForContent = waitForDOM(document, "#request-panel .cm-content");
   let rawDataToggle = document.querySelector(
     "#request-panel .raw-data-toggle-input .devtools-checkbox-toggle"
   );
@@ -197,7 +197,7 @@ async function testRequestWithFormattedView(
     "The formatted display should be hidden."
   );
   is(
-    tabpanel.querySelector(".CodeMirror-code") !== null,
+    tabpanel.querySelector(".cm-content") !== null,
     true,
     "The raw payload data display is shown."
   );
@@ -236,10 +236,7 @@ async function testRequestWithOnlyRawDataView(
 
   // Wait for header and CodeMirror editor to be displayed
   const wait = waitForDOM(document, "#request-panel .data-header");
-  const waitForContent = waitForDOM(
-    document,
-    "#request-panel .CodeMirror-code"
-  );
+  const waitForContent = waitForDOM(document, "#request-panel .cm-content");
   EventUtils.sendMouseEvent({ type: "mousedown" }, requestListItem);
   await Promise.all([wait, waitForContent]);
 
@@ -262,7 +259,7 @@ async function testRequestWithOnlyRawDataView(
     "The formatted display should be hidden."
   );
   is(
-    tabpanel.querySelector(".CodeMirror-code") !== null,
+    tabpanel.querySelector(".cm-content") !== null,
     true,
     "The raw payload data display is shown."
   );
@@ -301,7 +298,7 @@ async function testRequestWithoutRequestData(monitor, requestListItem) {
     "The formatted display should be hidden."
   );
   is(
-    tabpanel.querySelector(".CodeMirror-code") === null,
+    tabpanel.querySelector(".cm-content") === null,
     true,
     "The raw payload data display should be hidden."
   );

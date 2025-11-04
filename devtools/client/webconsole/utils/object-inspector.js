@@ -97,7 +97,7 @@ function getObjectInspector(
     sourceMapURLService: serviceContainer.sourceMapURLService,
     customFormat: override.customFormat !== false,
     setExpanded: override.setExpanded,
-    initiallyExpanded: override.initiallyExpanded,
+    getInitiallyExpanded: override.getInitiallyExpanded,
     queueActorsForCleanup: override.queueActorsForCleanup,
     cachedNodes: override.cachedNodes,
     urlCropLimit: 120,

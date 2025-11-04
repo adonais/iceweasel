@@ -14,7 +14,7 @@ export class ScrollDelegateChild extends GeckoViewActorChild {
     debug`handleEvent: ${aEvent.type}`;
 
     switch (aEvent.type) {
-      case "mozvisualscroll":
+      case "mozvisualscroll": {
         const x = {};
         const y = {};
         this.contentWindow.windowUtils.getVisualViewportOffset(x, y);
@@ -24,6 +24,7 @@ export class ScrollDelegateChild extends GeckoViewActorChild {
           scrollY: y.value,
         });
         break;
+      }
     }
   }
 }

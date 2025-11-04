@@ -819,6 +819,8 @@ describe("Reducers", () => {
       const data = {
         lastUpdated: 123,
         spocs: [1, 2, 3],
+        spocsCacheUpdateTime: 10 * 60 * 1000,
+        spocsOnDemand: true,
       };
       const state = DiscoveryStream(undefined, {
         type: at.DISCOVERY_STREAM_SPOCS_UPDATE,
@@ -826,12 +828,17 @@ describe("Reducers", () => {
       });
       assert.deepEqual(state.spocs, {
         spocs_endpoint: "",
-        data: [1, 2, 3],
-        lastUpdated: 123,
+        data: data.spocs,
+        lastUpdated: data.lastUpdated,
         loaded: true,
         frequency_caps: [],
         blocked: [],
         placements: [],
+        cacheUpdateTime: data.spocsCacheUpdateTime,
+        onDemand: {
+          enabled: data.spocsOnDemand,
+          loaded: false,
+        },
       });
     });
     it("should default to a single spoc placement", () => {

@@ -340,6 +340,8 @@ var Impl = {
   _newProfilePingSent: false,
   // Keep track of the active observers
   _observedTopics: new Set(),
+  _earlyObserversRegistered: false,
+  _delayedObserversRegistered: false,
 
   addObserver(aTopic) {
     Services.obs.addObserver(this, aTopic);
@@ -804,15 +806,18 @@ var Impl = {
    * chrome process.
    */
   attachEarlyObservers() {
-    this.addObserver("sessionstore-windows-restored");
-    if (AppConstants.platform === "android") {
-      this.addObserver("application-background");
-    }
-    this.addObserver("xul-window-visible");
+    if (!this._earlyObserversRegistered) {
+      this.addObserver("sessionstore-windows-restored");
+      if (AppConstants.platform === "android") {
+        this.addObserver("application-background");
+      }
+      this.addObserver("xul-window-visible");
 
-    // Attach the active-ticks related observers.
-    this.addObserver("user-interaction-active");
-    this.addObserver("user-interaction-inactive");
+      // Attach the active-ticks related observers.
+      this.addObserver("user-interaction-active");
+      this.addObserver("user-interaction-inactive");
+      this._earlyObserversRegistered = true;
+    }
   },
 
   /**
@@ -888,7 +893,10 @@ var Impl = {
           this._getSessionDataObject()
         );
 
-        this.addObserver("idle-daily");
+        if (!this._delayedObserversRegistered) {
+          this.addObserver("idle-daily");
+          this._delayedObserversRegistered = true;
+        }
         await Services.telemetry.gatherMemory();
 
         Services.telemetry.asyncFetchTelemetryData(function () {});
@@ -1063,6 +1071,8 @@ var Impl = {
         this._log.warn("uninstall - Failed to remove " + topic, e);
       }
     }
+    this._earlyObserversRegistered = false;
+    this._delayedObserversRegistered = false;
   },
 
   getPayload: function getPayload(reason, clearSubsession) {
@@ -1111,11 +1121,6 @@ var Impl = {
     if (needsUpdate) {
       this._sessionActiveTicks++;
       Glean.browserEngagement.activeTicks.add(1);
-      // GLAM EXPERIMENT
-      // This metric is temporary, disabled by default, and will be enabled only
-      // for the purpose of experimenting with client-side sampling of data for
-      // GLAM use. See Bug 1947604 for more information.
-      Glean.glamExperiment.activeTicks.add(1);
     }
   },
 
@@ -1138,7 +1143,7 @@ var Impl = {
           Glean.startupIo.write.windowVisible.set(counters[1]);
         }
         break;
-      case "sessionstore-windows-restored":
+      case "sessionstore-windows-restored": {
         this.removeObserver("sessionstore-windows-restored");
         // Check whether debugger was attached during startup
         let debugService = Cc["@mozilla.org/xpcom/debug;1"].getService(
@@ -1147,6 +1152,7 @@ var Impl = {
         gWasDebuggerAttached = debugService.isDebuggerAttached;
         this.gatherStartup();
         break;
+      }
       case "idle-daily":
         // Enqueue to main-thread, otherwise components may be inited by the
         // idle-daily category and miss the gather-telemetry notification.
@@ -1158,7 +1164,7 @@ var Impl = {
         });
         break;
 
-      case "application-background":
+      case "application-background": {
         if (AppConstants.platform !== "android") {
           break;
         }
@@ -1189,6 +1195,7 @@ var Impl = {
           options
         );
         break;
+      }
       case "user-interaction-active":
         this._onActiveTick(true);
         break;

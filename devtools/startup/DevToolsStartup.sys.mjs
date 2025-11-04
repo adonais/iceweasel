@@ -1291,20 +1291,22 @@ DevToolsStartup.prototype = {
         // When the debugger is already paused.
         threadFront.resumeThenPause();
         break;
-      case "attached":
+      case "attached": {
         // When the debugger is already open.
         const onPaused = threadFront.once("paused");
         threadFront.interrupt();
         await onPaused;
         threadFront.resumeThenPause();
         break;
-      case "resuming":
+      }
+      case "resuming": {
         // The debugger is newly opened.
         const onResumed = threadFront.once("resumed");
         await threadFront.interrupt();
         await onResumed;
         threadFront.resumeThenPause();
         break;
+      }
       default:
         throw Error(
           "invalid thread front state in slow script debug handler: " +

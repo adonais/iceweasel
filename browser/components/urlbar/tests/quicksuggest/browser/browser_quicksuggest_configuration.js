@@ -787,7 +787,7 @@ async function doPolicyTest({
 
   gDefaultBranch.unlockPref(pref);
   gUserBranch.clearUserPref(pref);
-  await QuickSuggest._test_reinit();
+  await QuickSuggest._test_reset();
 
   Assert.ok(
     !gDefaultBranch.prefIsLocked(pref),

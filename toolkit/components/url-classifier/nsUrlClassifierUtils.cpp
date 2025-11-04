@@ -343,9 +343,25 @@ static const struct {
   const char* mServerListName;
 } THREAT_NAME_CONV_TABLE_V5[] = {
     {"goog-malware-proto", "mw-4b"},
+// Unlike the SafeBrowsing V4, the SafeBrowsing V5 only has one social
+// engineering list. We need to map the goog-phish-proto and googpub-phish-proto
+// to the V5 social engineering list name according to the official build flag
+// because the official build uses goog-phish-proto. This is also needed for
+// the backward compatibility.
+#ifdef MOZILLA_OFFICIAL
+    {"goog-phish-proto", "se-4b"},
+#else
     {"googpub-phish-proto", "se-4b"},
+#endif
+// Map the goog-unwanted-proto to different V5 list name on Android because
+// SafeBrowsing V5 provides a different unwanted list for Android.
+#ifndef MOZ_WIDGET_ANDROID
     {"goog-unwanted-proto", "uws-4b"},
+#else
+    {"goog-unwanted-proto", "uwsa-4b"},
+#endif
     {"goog-harmful-proto", "pha-4b"},
+    {"test-google5-malware-proto", "test-4b"},
 };
 
 NS_IMETHODIMP
@@ -427,8 +443,9 @@ nsUrlClassifierUtils::GetTelemetryProvider(const nsACString& aTableName,
   // Exceptionlist known providers to avoid reporting on private ones.
   // An empty provider is treated as "other"
   if (!"mozilla"_ns.Equals(aProvider) && !"google"_ns.Equals(aProvider) &&
-      !"google4"_ns.Equals(aProvider) && !"baidu"_ns.Equals(aProvider) &&
-      !"mozcn"_ns.Equals(aProvider) && !"yandex"_ns.Equals(aProvider) &&
+      !"google4"_ns.Equals(aProvider) && !"google5"_ns.Equals(aProvider) &&
+      !"baidu"_ns.Equals(aProvider) && !"mozcn"_ns.Equals(aProvider) &&
+      !"yandex"_ns.Equals(aProvider) &&
       !nsLiteralCString(TESTING_TABLE_PROVIDER_NAME).Equals(aProvider)) {
     aProvider.AssignLiteral("other");
   }
@@ -640,12 +657,8 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV5(
   // https://developers.google.com/safe-browsing/reference/rest/v5/hashes/search
   // for the query parameter format.
   for (uint32_t i = 0; i < aHashPrefixes.Length(); i++) {
-    nsAutoCString hashEncoded;
-    nsresult rv = Base64Encode(aHashPrefixes[i], hashEncoded);
-    NS_ENSURE_SUCCESS(rv, rv);
-
     aRequest.AppendLiteral("hashPrefixes=");
-    aRequest.Append(hashEncoded);
+    aRequest.Append(aHashPrefixes[i]);
     if (i != aHashPrefixes.Length() - 1) {
       aRequest.AppendLiteral("&");
     }
@@ -923,6 +936,37 @@ nsUrlClassifierUtils::ParseFindFullHashResponseV4(
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsUrlClassifierUtils::ParseFindFullHashResponseV5(
+    const nsACString& aResponse,
+    nsIUrlClassifierParseFindFullHashCallback* aCallback) {
+  v5::SearchHashesResponse response;
+
+  if (!response.ParseFromArray(aResponse.BeginReading(), aResponse.Length())) {
+    NS_WARNING("Invalid V5 find full hash response");
+    return NS_ERROR_FAILURE;
+  }
+
+  auto cacheDurationSec = response.cache_duration().seconds();
+
+  for (auto& fullHash : response.full_hashes()) {
+    auto& hash = fullHash.full_hash();
+
+    aCallback->OnCompleteHashFound(
+        nsDependentCString(hash.c_str(), hash.length()), ""_ns,
+        cacheDurationSec);
+  }
+
+  // In V5, the hashes::search API use the single cache duration for all. There
+  // is no negative_cache_duration field in the response. In addition, the field
+  // 'minimum_wait_duration' is not present in the response, which means the
+  // client can always issue a new request on an as-needed basis. Therefore, we
+  // set the value to 0.
+  aCallback->OnResponseParsed(0, cacheDurationSec);
+
+  return NS_OK;
+}
+
 //////////////////////////////////////////////////////////
 // nsIObserver
 
@@ -976,6 +1020,9 @@ nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
     providers.Insert(provider);
   }
 
+  bool isGoogle5Enabled = mozilla::Preferences::GetBool(
+      "browser.safebrowsing.provider.google5.enabled");
+
   // Now we have all providers. Check which one owns |aTableName|.
   // e.g. The owning lists of provider "google" is defined in
   // "browser.safebrowsing.provider.google.lists".
@@ -998,9 +1045,7 @@ nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
       // If the Safe Browsing V5 is disabled, we will use V4 instead. This means
       // that we will put the V5 lists to the V4 provider to instruct using
       // Safe Browsing V4 for those tables.
-      if (!mozilla::Preferences::GetBool(
-              "browser.safebrowsing.provider.google5.enabled") &&
-          providerToUse.EqualsLiteral("google5")) {
+      if (!isGoogle5Enabled && providerToUse.EqualsLiteral("google5")) {
         providerToUse.AssignLiteral("google4");
       }
       aDict.InsertOrUpdate(tableName, MakeUnique<nsCString>(providerToUse));

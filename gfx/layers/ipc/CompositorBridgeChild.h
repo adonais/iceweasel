@@ -173,10 +173,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   bool AllocShmem(size_t aSize, mozilla::ipc::Shmem* aShmem) override;
   bool DeallocShmem(mozilla::ipc::Shmem& aShmem) override;
 
-  PCompositorWidgetChild* AllocPCompositorWidgetChild(
-      const CompositorWidgetInitData& aInitData);
-  bool DeallocPCompositorWidgetChild(PCompositorWidgetChild* aActor);
-
   PAPZCTreeManagerChild* AllocPAPZCTreeManagerChild(const LayersId& aLayersId);
   bool DeallocPAPZCTreeManagerChild(PAPZCTreeManagerChild* aActor);
 

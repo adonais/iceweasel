@@ -7,7 +7,6 @@
 #ifndef jit_MacroAssembler_h
 #define jit_MacroAssembler_h
 
-#include "mozilla/EndianUtils.h"
 #include "mozilla/MacroForEach.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
@@ -47,6 +46,7 @@
 #include "vm/FunctionFlags.h"
 #include "vm/Opcodes.h"
 #include "vm/RealmFuses.h"
+#include "vm/RuntimeFuses.h"
 #include "wasm/WasmAnyRef.h"
 
 // [SMDOC] MacroAssembler multi-platform overview
@@ -909,6 +909,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                             bool hasInlineICScript = false);
   inline void PushFrameDescriptorForJitCall(FrameType type, Register argc,
                                             Register scratch,
+                                            bool hasInlineICScript = false);
+  inline void makeFrameDescriptorForJitCall(FrameType type, Register argc,
+                                            Register dest,
                                             bool hasInlineICScript = false);
 
   // Load the number of actual arguments from the frame's JitFrameLayout.
@@ -5059,6 +5062,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void loadGlobalObjectData(Register dest);
 
   void loadRealmFuse(RealmFuses::FuseIndex index, Register dest);
+
+  void loadRuntimeFuse(RuntimeFuses::FuseIndex index, Register dest);
+
+  void guardRuntimeFuse(RuntimeFuses::FuseIndex index, Label* fail);
 
   void switchToRealm(Register realm);
   void switchToRealm(const void* realm, Register scratch);

@@ -94,6 +94,12 @@ class ViewState {
 
   static REASON_CHOICES_ID_PREFIX = "report-broken-site-popup-reason-";
 
+  get blockedTrackersCheckbox() {
+    return this.#mainView.querySelector(
+      "#report-broken-site-popup-blocked-trackers-checkbox"
+    );
+  }
+
   get reasonInput() {
     return this.#mainView.querySelector("#report-broken-site-popup-reason");
   }
@@ -159,6 +165,7 @@ class ViewState {
   reset() {
     this.currentTabWebcompatDetailsPromise = undefined;
     this.form.reset();
+    this.blockedTrackersCheckbox.checked = false;
 
     this.resetURLToCurrentTab();
   }
@@ -208,6 +215,12 @@ class ViewState {
     } else if (!this.isDescriptionValid) {
       this.#focusMainViewElement(this.descriptionInput);
     }
+  }
+
+  get learnMoreLink() {
+    return this.#mainView.querySelector(
+      "#report-broken-site-popup-learn-more-link"
+    );
   }
 
   get sendMoreInfoLink() {
@@ -520,7 +533,9 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
         return;
       }
       const multiview = event.target.closest("panelmultiview");
-      this.#recordGleanEvent("send");
+      this.#recordGleanEvent("send", {
+        sent_with_blocked_trackers: !!state.blockedTrackersCheckbox.checked,
+      });
       await this.#sendReportAsGleanPing(state);
       multiview.showSubView("report-broken-site-popup-reportSentView");
       state.reset();
@@ -538,6 +553,13 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
       event.target.ownerGlobal.CustomizableUI.hidePanelForNode(event.target);
       await this.#openWebCompatTab(tabbrowser);
       state.reset();
+    });
+
+    state.learnMoreLink.addEventListener("click", async event => {
+      this.#recordGleanEvent("learnMore");
+      event.target.ownerGlobal.requestAnimationFrame(() => {
+        event.target.ownerGlobal.CustomizableUI.hidePanelForNode(event.target);
+      });
     });
   }
 
@@ -651,6 +673,7 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
   }
 
   async #sendReportAsGleanPing({
+    blockedTrackersCheckbox,
     currentTabWebcompatDetailsPromise,
     description,
     reason,
@@ -694,7 +717,9 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     gGraphics.devicePixelRatio.set(devicePixelRatio);
 
     for (const [name, value] of Object.entries(antitracking)) {
-      gAntitracking[name].set(value);
+      if (name !== "blockedOrigins" || blockedTrackersCheckbox.checked) {
+        gAntitracking[name].set(value);
+      }
     }
 
     for (const [name, value] of Object.entries(frameworks)) {

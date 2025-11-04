@@ -4,6 +4,7 @@
 
 import argparse
 import errno
+import functools
 import itertools
 import json
 import logging
@@ -21,6 +22,8 @@ from os import path
 from pathlib import Path
 
 import mozpack.path as mozpath
+from gtest.reports import AggregatedGTestReport
+from gtest.suites import get_gtest_suites, suite_filters
 from mach.decorators import (
     Command,
     CommandArgument,
@@ -879,6 +882,13 @@ def join_ensure_dir(dir1, dir2):
     help="Run the tests in parallel using multiple processes.",
 )
 @CommandArgument(
+    "--combine-suites",
+    action="store_true",
+    default=False,
+    help="Run multiple test suites in the same process invocation (as opposed "
+    "to the default behavior of running one process per test suite).",
+)
+@CommandArgument(
     "--tbpl-parser",
     "-t",
     action="store_true",
@@ -982,6 +992,7 @@ def gtest(
     command_context,
     shuffle,
     jobs,
+    combine_suites,
     gtest_filter,
     list_tests,
     tbpl_parser,
@@ -1026,6 +1037,10 @@ def gtest(
     if conditions.is_android(command_context):
         if jobs != 1:
             print("--jobs is not supported on Android and will be ignored")
+        if combine_suites:
+            print(
+                "--combine-suites is always the behavior on Android and will be ignored"
+            )
         if enable_inc_origin_init:
             print(
                 "--enable-inc-origin-init is not supported on Android and will"
@@ -1132,7 +1147,11 @@ def gtest(
             gtest_filter_sets.list()
             return 1
 
-    if jobs == 1:
+    # Don't bother with multiple processes if:
+    # - listing tests
+    # - running the debugger
+    # - combining suites with one job
+    if list_tests or debug or (combine_suites and jobs == 1):
         return command_context.run_process(
             args=args,
             append_env=gtest_env,
@@ -1141,38 +1160,150 @@ def gtest(
             pass_thru=True,
         )
 
-    import functools
+    report = AggregatedGTestReport()
 
-    from mozprocess import ProcessHandlerMixin
+    with report:
+        from mozprocess import ProcessHandlerMixin
 
-    def handle_line(job_id, line):
-        # Prepend the jobId
-        line = "[%d] %s" % (job_id + 1, line.strip())
-        command_context.log(logging.INFO, "GTest", {"line": line}, "{line}")
+        processes = []
 
-    gtest_env["GTEST_TOTAL_SHARDS"] = str(jobs)
-    processes = {}
-    for i in range(0, jobs):
-        gtest_env["GTEST_SHARD_INDEX"] = str(i)
-        processes[i] = ProcessHandlerMixin(
-            [app_path, "-unittest"],
-            cwd=cwd,
-            env=gtest_env,
-            processOutputLine=[functools.partial(handle_line, i)],
-            universal_newlines=True,
-        )
-        processes[i].run()
+        def add_process(job_id, env, **kwargs):
+            def log_line(line):
+                # Prepend the job identifier to output
+                command_context.log(
+                    logging.INFO,
+                    "GTest",
+                    {"job_id": job_id, "line": line.strip()},
+                    "[{job_id}] {line}",
+                )
 
-    exit_code = 0
-    for process in processes.values():
-        status = process.wait()
-        if status:
-            exit_code = status
+            report.set_output_in_env(env, job_id)
 
-    # Clamp error code to 255 to prevent overflowing multiple of
-    # 256 into 0
-    if exit_code > 255:
-        exit_code = 255
+            proc = ProcessHandlerMixin(
+                [app_path, "-unittest"],
+                cwd=cwd,
+                universal_newlines=True,
+                env=env,
+                processOutputLine=log_line,
+                **kwargs,
+            )
+            processes.append(proc)
+            return proc
+
+        if combine_suites:
+            # Use GTest sharding to create `jobs` processes
+            gtest_env["GTEST_TOTAL_SHARDS"] = str(jobs)
+
+            for i in range(0, jobs):
+                env = gtest_env.copy()
+                env["GTEST_SHARD_INDEX"] = str(i)
+                add_process(str(i), env).run()
+        else:
+            # Make one process per test suite
+            suites = get_gtest_suites(args, cwd, gtest_env)
+
+            from threading import Event, Lock
+
+            processes_to_run = []
+            all_processes_run = Event()
+            running_suites = set()
+            process_state_lock = Lock()
+
+            def run_next(finished_suite=None):
+                """
+                Run another test suite process.
+
+                If `finished_suite` is provided, it will be considered as finished.
+                This updates the `running_suites` set and will signal the
+                `all_processes_run` Event when there are no longer any test suites
+                to start (though some may still be running).
+
+                This may be safely called from different threads
+                (ProcessHandlerMixin callbacks occur from separate threads).
+                """
+                # The changes here must be synchronized, so acquire a lock for the
+                # duration of the function.
+                with process_state_lock:
+                    if finished_suite is not None:
+                        running_suites.remove(finished_suite)
+                    if len(processes_to_run) > 0:
+                        next_suite, proc = processes_to_run.pop()
+                        proc.run()
+                        running_suites.add(next_suite)
+                        command_context.log(
+                            logging.DEBUG,
+                            "GTest",
+                            {},
+                            f"Starting {next_suite} tests. {len(processes_to_run)} suites remain.",
+                        )
+                    else:
+                        all_processes_run.set()
+                    if len(running_suites) > 0:
+                        command_context.log(
+                            logging.INFO,
+                            "GTest",
+                            {},
+                            f"Currently running suites: {', '.join(running_suites)}",
+                        )
+
+            for filt in suite_filters(suites):
+                proc = add_process(
+                    filt.suite,
+                    filt(gtest_env),
+                    onFinish=functools.partial(run_next, filt.suite),
+                )
+                processes_to_run.append((filt.suite, proc))
+
+            # Start a number of processes according to 'jobs'. As they finish,
+            # they'll each kick off another one.
+            for _ in range(jobs):
+                run_next()
+
+            # Wait for all processes to have been started, then wait on completion.
+            all_processes_run.wait()
+
+        # Wait on processes and return a non-zero exit code if any process does so.
+        exit_code = 0
+        for process in processes:
+            status = process.wait()
+            if status:
+                exit_code = status
+
+        # Clamp error code to 255 to prevent overflowing multiple of
+        # 256 into 0
+        if exit_code > 255:
+            exit_code = 255
+
+    # Show aggregated report information and any test errors.
+    command_context.log(
+        logging.INFO,
+        "GTest",
+        {
+            "tests": report["tests"] - report["disabled"],
+            "failures": report["failures"],
+            "disabled": report["disabled"],
+            "suites": len(report["testsuites"]),
+        },
+        "Ran {tests} test(s) from {suites} test suite(s) ({disabled} disabled), with {failures} failure(s).",
+    )
+
+    for suite in report["testsuites"]:
+        if suite["failures"] == 0:
+            continue
+        for test in suite["testsuite"]:
+            if "failures" not in test:
+                continue
+            full_name = f"{suite['name']}.{test['name']}"
+            command_context.log(
+                logging.ERROR,
+                "GTest",
+                {
+                    "test": full_name,
+                    "failure_count": len(test["failures"]),
+                    "failures": "\n".join(e["failure"] for e in test["failures"]),
+                },
+                "{test} failed {failure_count} check(s):\n{failures}",
+            )
 
     return exit_code
 
@@ -2556,6 +2687,12 @@ def repackage_deb(
     required=True,
     help="The product being shipped. Used to disambiguate beta/devedition etc.",
 )
+@CommandArgument(
+    "--extensions-dir",
+    type=str,
+    required=True,
+    help="Path to extensions.",
+)
 def repackage_deb_l10n(
     command_context,
     input_xpi_file,
@@ -2565,6 +2702,7 @@ def repackage_deb_l10n(
     build_number,
     templates,
     product,
+    extensions_dir,
 ):
     for input_file in (input_xpi_file, input_tar_file):
         if not os.path.exists(input_file):
@@ -2586,6 +2724,7 @@ def repackage_deb_l10n(
         version,
         build_number,
         product,
+        extensions_dir,
     )
 
 
@@ -2844,7 +2983,7 @@ def repackage_msi(
 @CommandArgument(
     "--channel",
     type=str,
-    choices=["official", "beta", "aurora", "nightly", "unofficial"],
+    choices=["official", "beta", "esr", "aurora", "nightly", "unofficial"],
     help="Release channel.",
 )
 @CommandArgument(

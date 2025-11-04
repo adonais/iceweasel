@@ -126,55 +126,6 @@ events:
     metadata:
       tags:
         - Search
-  browser_toolbar_action:
-    type: event
-    description: |
-      A browser toolbar item was tapped.
-      The name of the item that the user tapped is stored in extras with the
-      key `item`.
-    extra_keys:
-      item:
-        description: |
-          A string containing the name of the item the user tapped. These items
-          include:
-          back, back_long_press, custom_back, custom_back_long_press, forward,
-          forward_long_press, custom_forward, custom_forward_long_press, new_tab,
-          new_tab_long_press, tabs_tray, tabs_tray_long_press, menu_press.
-        type: string
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1937593
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D232243
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  browser_navbar_action:
-    type: event
-    description: |
-      A browser navbar item was tapped.
-      The name of the item that the user tapped is stored in extras with the
-      key `item`.
-    extra_keys:
-      item:
-        description: |
-          A string containing the name of the item the user tapped. These items
-          include:
-          back, back_long_press, custom_back, custom_back_long_press, forward,
-          forward_long_press, custom_forward, custom_forward_long_press, add_new_tab,
-          add_new_private_tab, tabs_tray, tabs_tray_long_press, menu_press, refresh,
-          stop_refresh, add_bookmark, edit_bookmark, share.
-        type: string
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1971855
-    data_reviews:
-      - phabricator.services.mozilla.com/D258399
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
   browser_menu_action:
     type: event
     description: |
@@ -523,74 +474,6 @@ events:
     metadata:
       tags:
         - ContextMenu
-  browser_toolbar_home_tapped:
-    type: event
-    description: |
-      An event that indicates that a user has tapped
-      home button on browser toolbar.
-    bugs:
-      - https://github.com/mozilla-mobile/fenix/issues/19915
-    data_reviews:
-      - https://github.com/mozilla-mobile/fenix/pull/19936
-      - https://github.com/mozilla-mobile/fenix/pull/19924#issuecomment-861423789
-      - https://github.com/mozilla-mobile/fenix/pull/21316#issuecomment-944615938
-      - https://github.com/mozilla-mobile/fenix/pull/27295
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  browser_toolbar_security_indicator_tapped:
-    type: event
-    description: |
-      An event that indicates that a user has tapped
-      the security indicator icon (at the start of the domain name).
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1869664
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/5019#issuecomment-1876329933
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Toolbar
-  browser_toolbar_input_cleared:
-    type: event
-    description: |
-      A user pressed the circle cross icon, clearing the input in the toolbar.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1869664
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/5019#issuecomment-1876329933
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Toolbar
-  browser_toolbar_qr_scan_tapped:
-    type: event
-    description: |
-      An event that indicates that a user has tapped
-      QR scan button on browser toolbar.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862096
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1862096
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Toolbar
   browser_toolbar_qr_scan_completed:
     type: event
     description: |
@@ -623,6 +506,32 @@ events:
     metadata:
       tags:
         - Toolbar
+  toolbar_tab_swipe_cfr_shown:
+    type: event
+    description: |
+      Address bar swipe CFR was shown to the user.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935696
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935696
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  toolbar_tab_swipe_cfr_dismissed:
+    type: event
+    description: |
+      Address bar swipe CFR was dismissed by the user.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935696
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935696
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
   tab_view_changed:
     type: event
     description: |
@@ -2314,7 +2223,9 @@ terms_of_use:
 
   dismiss:
     type: event
-    description: The user dismissed the Terms of Use prompt.
+    description: >
+      The user dismissed the Terms of Use prompt by swiping, hitting back, or tapping
+      the background scrim.
     extra_keys:
       tou_version:
         type: quantity
@@ -2559,49 +2470,6 @@ search_shortcuts:
       - https://github.com/mozilla-mobile/fenix/pull/20517#pullrequestreview-718069041
       - https://github.com/mozilla-mobile/fenix/pull/23453#issuecomment-1024694220
       - https://github.com/mozilla-mobile/fenix/pull/28502
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Search
-        - Shortcuts
-
-unified_search:
-  search_menu_tapped:
-    type: event
-    description: |
-      A user tapped on the unified search selector menu.
-    bugs:
-      - https://github.com/mozilla-mobile/fenix/issues/24522
-    data_reviews:
-      - https://github.com/mozilla-mobile/fenix/pull/25544
-      - https://github.com/mozilla-mobile/firefox-android/pull/1875
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Search
-        - Shortcuts
-  engine_selected:
-    type: event
-    description: |
-      A user used unified search to select a search shortcut engine to use
-    extra_keys:
-      engine:
-        type: string
-        description: |
-          The name of the built-in search engine the user selected as a string
-    bugs:
-      - https://github.com/mozilla-mobile/fenix/issues/24522
-    data_reviews:
-      - https://github.com/mozilla-mobile/fenix/pull/25544
-      - https://github.com/mozilla-mobile/firefox-android/pull/1875
       - https://github.com/mozilla-mobile/firefox-android/pull/4039
     notification_emails:
       - android-probes@mozilla.com
@@ -3695,26 +3563,6 @@ metrics:
     metadata:
       tags:
         - Performance
-  search_page_load_time:
-    type: timing_distribution
-    time_unit: millisecond
-    lifetime: application
-    description: The time that it takes to load the Search content.
-    send_in_pings:
-      - metrics
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1842604
-    data_reviews:
-      - https://github.com/mozilla-mobile/firefox-android/pull/2889
-      - https://github.com/mozilla-mobile/firefox-android/pull/4039
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Experiments
   is_large_device:
     type: boolean
     lifetime: application
@@ -4484,6 +4332,64 @@ preferences:
       tags:
         - Settings
         - Performance
+  https_only_mode:
+    type: string
+    lifetime: application
+    description: |
+      Measures user retention of the HTTPS-Only setting at start-up.
+      Example values include: "DISABLED", "ENABLED_PRIVATE_ONLY", "ENABLED".
+    send_in_pings:
+      - metrics
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1991520
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267766
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Settings
+  doh_protection_level:
+    type: string
+    lifetime: application
+    description: |
+      Measures user retention of the DNS over HTTPS (DoH) setting at start-up.
+      Example values include: "Default", "Increased", "Max", "Off".
+    send_in_pings:
+      - metrics
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1991520
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267766
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Settings
+  global_privacy_control_enabled:
+    type: boolean
+    lifetime: application
+    description: Measures user retention of the Global Privacy Control (GPC) setting at start-up.
+    send_in_pings:
+      - metrics
+    notification_emails:
+      - android-probes@mozilla.com
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1991520
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267766
+    expires: never
+    data_sensitivity:
+      - interaction
+    metadata:
+      tags:
+        - Settings
 
 search.default_engine:
   code:
@@ -8385,6 +8291,23 @@ top_sites:
     metadata:
       tags:
         - Shortcuts
+shortcuts_library:
+  viewed:
+    type: event
+    description: |
+      A user viewed the shortcuts library
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1983357
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D270046
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Shortcuts
 app_menu:
   customize_homepage:
     type: event
@@ -8662,7 +8585,23 @@ pocket:
     metadata:
       tags:
         - PocketIntegration
-
+stories_library:
+  viewed:
+    type: event
+    description: |
+      A user viewed the "discover more" content feed
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1984410
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D270402
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - PocketIntegration
 first_session:
   campaign:
     type: string
@@ -12896,73 +12835,6 @@ navigation_bar:
       tags:
         - Performance
 
-address_toolbar:
-  share_tapped:
-    type: event
-    description: |
-      When share button is tapped on the toolbar.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1889484
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1889484
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  reload_tapped:
-    type: event
-    description: |
-      When reload button is tapped on the toolbar.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1889484
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1889484
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  cancel_tapped:
-    type: event
-    description: |
-      When cancel button is tapped on the toolbar.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1889484
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1889484
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  swipe_cfr_shown:
-    type: event
-    description: |
-      Address bar swipe CFR was shown to the user.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935696
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935696
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  swipe_cfr_dismissed:
-    type: event
-    description: |
-      Address bar swipe CFR was dismissed by the user.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935696
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1935696
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-
 customization_settings:
   dynamic_toolbar:
     type: boolean
@@ -13463,6 +13335,22 @@ broken_site_report.tab_info:
     send_in_pings:
       - broken-site-report
 broken_site_report.tab_info.antitracking:
+  blocked_origins:
+    type: string_list
+    expires: never
+    data_sensitivity:
+      - highly_sensitive
+    description: >
+      List of origins which were blocked by antitracking.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1970745
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1970745
+    notification_emails:
+      - twisniewski@mozilla.com
+      - webcompat-reporting-tool-telemetry@mozilla.com
+    send_in_pings:
+      - broken-site-report
   block_list:
     type: string
     expires: never
@@ -14086,15 +13974,20 @@ webcompatreporting:
     description: |
       Recorded when a user selects the Send button to submit webcompat report data.
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1932462
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1970744
     data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1932462
+      - https://phabricator.services.mozilla.com/D260373
     data_sensitivity:
       - interaction
     notification_emails:
       - twisniewski@mozilla.com
       - webcompat-reporting-tool-telemetry@mozilla.com
     expires: never
+    extra_keys:
+      sent_with_blocked_trackers:
+        description: >
+          Whether the user opted into including blocked tracker origins.
+        type: boolean
   send_more_info:
     type: event
     description: |
@@ -14421,3 +14314,38 @@ client_association:
     expires: never
     send_in_pings:
       - fx-accounts
+
+toolbar:
+  button_tapped:
+    type: event
+    description: |
+      A toolbar button was tapped.
+      The name of the item that the user tapped is stored in extras with the
+      key `item`.
+    extra_keys:
+      source:
+        description: |
+          Where the interaction occurred. One of: url_bar, navigation_bar, custom_bar.
+        type: string
+      item:
+        description: |
+          A string containing the name of the button the user tapped. These items include:
+          navigate_back, navigate_back_long_press, navigate_forward, navigate_forward_long_press,
+          add_new_tab, add_new_tab_long_press, add_new_private_tab, tab_counter, tab_counter_long_press,
+          menu, share, clear, refresh, stop, add_bookmark, edit_bookmark, security_indicator, qr_code,
+          home, reader_mode, microphone, open_in_fenix, close, site_custom, search_engine_selector,
+          search_engine_selected.
+        type: string
+      extra:
+        description: |
+          Any extra information about the button that was tapped.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1971857
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D264134
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never

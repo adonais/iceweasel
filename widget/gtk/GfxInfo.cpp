@@ -231,7 +231,9 @@ void GfxInfo::GetData() {
   bool error = !ManageChildProcess("glxtest", &sGLXTestPID, &sGLXTestPipe,
                                    GFX_TEST_TIMEOUT, &glxData);
   if (error) {
-    gfxCriticalNote << "glxtest: ManageChildProcess failed\n";
+    gfxCriticalNote
+        << "Failed to get GPU info from glxtest. Fallback to SW rendering! Run "
+           "with MOZ_GFX_DEBUG=1 env variable to get further info.\n";
   }
 
   nsCString glVendor;

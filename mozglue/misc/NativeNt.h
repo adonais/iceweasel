@@ -17,9 +17,9 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/CheckedArithmetic.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/MulOverflowMask.h"
 #include "mozilla/Range.h"
 #include "mozilla/Span.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
@@ -1625,32 +1625,34 @@ class RtlAllocPolicy {
  public:
   template <typename T>
   T* maybe_pod_malloc(size_t aNumElems) {
-    if (aNumElems & mozilla::MulOverflowMask<sizeof(T)>()) {
+    size_t size;
+    if (MOZ_UNLIKELY(!mozilla::SafeMul(aNumElems, sizeof(T), &size))) {
       return nullptr;
     }
 
-    return static_cast<T*>(
-        ::RtlAllocateHeap(RtlGetProcessHeap(), 0, aNumElems * sizeof(T)));
+    return static_cast<T*>(::RtlAllocateHeap(RtlGetProcessHeap(), 0, size));
   }
 
   template <typename T>
   T* maybe_pod_calloc(size_t aNumElems) {
-    if (aNumElems & mozilla::MulOverflowMask<sizeof(T)>()) {
+    size_t size;
+    if (MOZ_UNLIKELY(!mozilla::SafeMul(aNumElems, sizeof(T), &size))) {
       return nullptr;
     }
 
-    return static_cast<T*>(::RtlAllocateHeap(
-        RtlGetProcessHeap(), HEAP_ZERO_MEMORY, aNumElems * sizeof(T)));
+    return static_cast<T*>(
+        ::RtlAllocateHeap(RtlGetProcessHeap(), HEAP_ZERO_MEMORY, size));
   }
 
   template <typename T>
   T* maybe_pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
-    if (aNewSize & mozilla::MulOverflowMask<sizeof(T)>()) {
+    size_t size;
+    if (MOZ_UNLIKELY(!mozilla::SafeMul(aNewSize, sizeof(T), &size))) {
       return nullptr;
     }
 
-    return static_cast<T*>(::RtlReAllocateHeap(RtlGetProcessHeap(), 0, aPtr,
-                                               aNewSize * sizeof(T)));
+    return static_cast<T*>(
+        ::RtlReAllocateHeap(RtlGetProcessHeap(), 0, aPtr, size));
   }
 
   template <typename T>

@@ -11,7 +11,6 @@ import mozilla.components.service.nimbus.messaging.ControlMessageBehavior.SHOW_N
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -20,7 +19,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
@@ -60,9 +58,6 @@ class NimbusMessagingStorageTest {
     private lateinit var featuresInterface: FeaturesInterface
 
     private val displayOnceStyle = StyleData(maxDisplayCount = 1)
-
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
 
     @Before
     fun setup() {

@@ -28,7 +28,10 @@ class VideoFrame;
 }  // namespace dom
 namespace layers {
 class BufferDescriptor;
+class DXGITextureHostD3D11;
+class DXGIYCbCrTextureHostD3D11;
 class Image;
+class MacIOSurfaceTextureHostOGL;
 }  // namespace layers
 
 namespace webgpu {
@@ -245,19 +248,19 @@ class ExternalTextureSourceHost {
   static ExternalTextureSourceHost CreateFromBufferDesc(
       WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
       const ExternalTextureSourceDescriptor& aDesc,
-      const layers::BufferDescriptor& aSd, uint8_t* aBuffer);
-  static ExternalTextureSourceHost CreateFromD3D10Desc(
+      const layers::BufferDescriptor& aBufferDesc, Span<uint8_t> aBuffer);
+  static ExternalTextureSourceHost CreateFromDXGITextureHost(
       WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
       const ExternalTextureSourceDescriptor& aDesc,
-      const layers::SurfaceDescriptorD3D10& aSd, gfx::SurfaceFormat aFormat);
-  static ExternalTextureSourceHost CreateFromDXGIYCbCrDesc(
+      const layers::DXGITextureHostD3D11* aTextureHost);
+  static ExternalTextureSourceHost CreateFromDXGIYCbCrTextureHost(
       WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
       const ExternalTextureSourceDescriptor& aDesc,
-      const layers::SurfaceDescriptorDXGIYCbCr& aSd);
-  static ExternalTextureSourceHost CreateFromMacIOSurfaceDesc(
+      const layers::DXGIYCbCrTextureHostD3D11* aTextureHost);
+  static ExternalTextureSourceHost CreateFromMacIOSurfaceTextureHost(
       WebGPUParent* aParent, RawId aDeviceId,
       const ExternalTextureSourceDescriptor& aDesc,
-      const layers::SurfaceDescriptorMacIOSurface& aSd);
+      const layers::MacIOSurfaceTextureHostOGL* aTextureHost);
 
   // Creates an external texture source in an error state that will be
   // propagated to any external textures created from it.

@@ -31,6 +31,8 @@ policy-AutoLaunchProtocolsFromOrigins = Define a list of external protocols that
 
 policy-BackgroundAppUpdate2 = Enable or disable the background updater.
 
+policy-Backup = Disable backup or restore of profile data.
+
 policy-BlockAboutAddons = Block access to the Add-ons Manager (about:addons).
 
 policy-BlockAboutConfig = Block access to the about:config page.
@@ -163,6 +165,8 @@ policy-LegacySameSiteCookieBehaviorEnabledForDomainList = Revert to legacy SameS
 ##
 
 policy-LocalFileLinks = Allow specific websites to link to local files.
+
+policy-LocalNetworkAccess = Enable or disable local network access checks.
 
 policy-ManagedBookmarks = Configures a list of bookmarks managed by an administrator that cannot be changed by the user.
 

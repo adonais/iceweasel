@@ -500,6 +500,9 @@ void nsMenuPopupFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
 
 nscoord nsMenuPopupFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                          IntrinsicISizeType aType) {
+  if (CanSkipLayout()) {
+    return 0;
+  }
   nscoord iSize = nsBlockFrame::IntrinsicISize(aInput, aType);
   if (!ShouldExpandToInflowParentOrAnchor()) {
     return iSize;
@@ -566,6 +569,18 @@ void nsMenuPopupFrame::EnsureActiveMenuListItemIsVisible() {
       ScrollFlags::ScrollOverflowHidden | ScrollFlags::ScrollFirstAncestorOnly);
 }
 
+bool nsMenuPopupFrame::CanSkipLayout() const {
+  // If the popup is not open, only do layout while showing or if we're a
+  // menulist.
+  //
+  // The later is needed because the SelectParent code wants to limit the height
+  // of the popup before opening it.
+  //
+  // TODO(emilio): We should consider adding a way to do that more reliably
+  // instead, but this preserves existing behavior.
+  return !IsVisibleOrShowing() && !IsMenuList();
+}
+
 void nsMenuPopupFrame::LayoutPopup(nsPresContext* aPresContext,
                                    ReflowOutput& aDesiredSize,
                                    const ReflowInput& aReflowInput,
@@ -577,21 +592,9 @@ void nsMenuPopupFrame::LayoutPopup(nsPresContext* aPresContext,
   SchedulePaint();
 
   const bool isOpen = IsOpen();
-  if (!isOpen) {
-    // If the popup is not open, only do layout while showing or if we're a
-    // menulist.
-    //
-    // This is needed because the SelectParent code wants to limit the height of
-    // the popup before opening it.
-    //
-    // TODO(emilio): We should consider adding a way to do that more reliably
-    // instead, but this preserves existing behavior.
-    const bool needsLayout = mPopupState == ePopupShowing ||
-                             mPopupState == ePopupPositioning || IsMenuList();
-    if (!needsLayout) {
-      RemoveStateBits(NS_FRAME_FIRST_REFLOW);
-      return;
-    }
+  if (CanSkipLayout()) {
+    RemoveStateBits(NS_FRAME_FIRST_REFLOW);
+    return;
   }
 
   // Do a first reflow, with all our content, in order to find our preferred
@@ -644,7 +647,7 @@ void nsMenuPopupFrame::LayoutPopup(nsPresContext* aPresContext,
                          aStatus);
   }
 
-  // Set our size, since nsAbsoluteContainingBlock won't.
+  // Set our size, since AbsoluteContainingBlock won't.
   SetRect(constraints.mUsedRect);
 
   nsView* view = GetView();
@@ -2113,15 +2116,11 @@ nsresult nsMenuPopupFrame::AttributeChanged(int32_t aNameSpaceID,
 
   if (aAttribute == nsGkAtoms::label) {
     // set the label for the titlebar
-    nsView* view = GetView();
-    if (view) {
-      nsIWidget* widget = view->GetWidget();
-      if (widget) {
-        nsAutoString title;
-        mContent->AsElement()->GetAttr(nsGkAtoms::label, title);
-        if (!title.IsEmpty()) {
-          widget->SetTitle(title);
-        }
+    if (nsIWidget* widget = GetWidget()) {
+      nsAutoString title;
+      mContent->AsElement()->GetAttr(nsGkAtoms::label, title);
+      if (!title.IsEmpty()) {
+        widget->SetTitle(title);
       }
     }
   } else if (aAttribute == nsGkAtoms::ignorekeys) {
@@ -2346,12 +2345,12 @@ int8_t nsMenuPopupFrame::GetAlignmentPosition() const {
  * as much as possible. Until we get rid of views finally...
  */
 void nsMenuPopupFrame::CreatePopupView() {
-  if (HasView()) {
+  if (mView) {
     return;
   }
 
   nsViewManager* viewManager = PresContext()->GetPresShell()->GetViewManager();
-  NS_ASSERTION(nullptr != viewManager, "null view manager");
+  NS_ASSERTION(viewManager, "null view manager");
 
   // Create a view
   nsView* parentView = viewManager->GetRootView();

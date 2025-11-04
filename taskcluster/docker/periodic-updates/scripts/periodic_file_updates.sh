@@ -131,12 +131,11 @@ case "${BRANCH}" in
 esac
 
 BROWSER_ARCHIVE="target.tar.xz"
-TESTS_ARCHIVE="target.common.tests.tar.gz"
+TESTS_ARCHIVE="target.common.tests.tar.zst"
 
-UNPACK_CMD="tar Jxf"
+UNPACK_CMD="tar xf"
 COMMIT_AUTHOR='ffxbld <ffxbld@mozilla.com>'
 WGET="wget -nv"
-UNTAR="tar -zxf"
 DIFF="$(command -v diff) -u"
 JQ="$(command -v jq)"
 
@@ -275,7 +274,7 @@ function unpack_artifacts {
   ${UNPACK_CMD} "${BROWSER_ARCHIVE}"
   mkdir -p tests
   cd tests
-  ${UNTAR} "../${TESTS_ARCHIVE}"
+  ${UNPACK_CMD} "../${TESTS_ARCHIVE}"
   cd "${BASEDIR}"
   cp tests/bin/xpcshell "${PRODUCT}"
 }

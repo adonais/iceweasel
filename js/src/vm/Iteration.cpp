@@ -40,6 +40,8 @@
 #include "vm/StringType.h"
 #include "vm/TypedArrayObject.h"
 #include "vm/Watchtower.h"
+
+#include "gc/StoreBuffer-inl.h"
 #include "vm/NativeObject-inl.h"
 #include "vm/PlainObject-inl.h"  // js::PlainObject::createWithTemplate
 
@@ -78,15 +80,18 @@ void NativeIterator::trace(JSTracer* trc) {
   // Note that we must trace all properties (not just those not yet visited,
   // or just visited, due to |NativeIterator::previousPropertyWas|) for
   // |NativeIterator|s to be reusable.
-  GCPtr<JSLinearString*>* begin =
+  IteratorProperty* begin =
       MOZ_LIKELY(isInitialized()) ? propertiesBegin() : propertyCursor_;
-  std::for_each(begin, propertiesEnd(), [trc](GCPtr<JSLinearString*>& prop) {
-    // Properties begin life non-null and never *become*
-    // null.  (Deletion-suppression will shift trailing
-    // properties over a deleted property in the properties
-    // array, but it doesn't null them out.)
-    TraceEdge(trc, &prop, "prop");
-  });
+  std::for_each(begin, propertiesEnd(),
+                [trc](IteratorProperty& prop) { prop.traceString(trc); });
+}
+
+void IteratorProperty::traceString(JSTracer* trc) {
+  // Properties begin life non-null and never *become* null.
+  // Trace the underlying string while preserving the deleted bit.
+  JSLinearString* str = asString();
+  TraceManuallyBarrieredEdge(trc, &str, "iterator-property-string");
+  raw_ = uintptr_t(str) | (deleted() ? DeletedBit : 0);
 }
 
 using PropertyKeySet = GCHashSet<PropertyKey, DefaultHasher<PropertyKey>>;
@@ -768,10 +773,10 @@ static PropertyIteratorObject* NewPropertyIteratorObject(JSContext* cx) {
 
 static inline size_t NumTrailingBytes(size_t propertyCount, size_t shapeCount,
                                       bool hasIndices) {
-  static_assert(alignof(GCPtr<JSLinearString*>) <= alignof(NativeIterator));
-  static_assert(alignof(GCPtr<Shape*>) <= alignof(GCPtr<JSLinearString*>));
+  static_assert(alignof(IteratorProperty) <= alignof(NativeIterator));
+  static_assert(alignof(GCPtr<Shape*>) <= alignof(IteratorProperty));
   static_assert(alignof(PropertyIndex) <= alignof(GCPtr<Shape*>));
-  size_t result = propertyCount * sizeof(GCPtr<JSLinearString*>) +
+  size_t result = propertyCount * sizeof(IteratorProperty) +
                   shapeCount * sizeof(GCPtr<Shape*>);
   if (hasIndices) {
     result += propertyCount * sizeof(PropertyIndex);
@@ -852,7 +857,7 @@ NativeIterator::NativeIterator(JSContext* cx,
       shapesEnd_(shapesBegin()),
       // ...and no properties.
       propertyCursor_(
-          reinterpret_cast<GCPtr<JSLinearString*>*>(shapesBegin() + numShapes)),
+          reinterpret_cast<IteratorProperty*>(shapesBegin() + numShapes)),
       propertiesEnd_(propertyCursor_),
       shapesHash_(0),
       flagsAndCount_(
@@ -929,6 +934,8 @@ NativeIterator::NativeIterator(JSContext* cx,
   // from |propIter| which will be tenured.
   AutoSelectGCHeap gcHeap(cx);
 
+  bool maybeNeedGC = !gc::IsInsideNursery(propIter);
+  uint64_t gcNumber = cx->runtime()->gc.gcNumber();
   size_t numProps = props.length();
   for (size_t i = 0; i < numProps; i++) {
     JSLinearString* str = IdToString(cx, props[i], gcHeap);
@@ -936,8 +943,20 @@ NativeIterator::NativeIterator(JSContext* cx,
       *hadError = true;
       return;
     }
-    new (propertiesEnd_) GCPtr<JSLinearString*>(str);
+    uint64_t newGcNumber = cx->runtime()->gc.gcNumber();
+    if (newGcNumber != gcNumber) {
+      gcNumber = newGcNumber;
+      maybeNeedGC = true;
+    }
+    // We write to our IteratorProperty children only here and in
+    // PropertyIteratorObject::trace. Here we do not need a pre-barrier
+    // because we are not overwriting a previous value.
+    new (propertiesEnd_) IteratorProperty(str);
     propertiesEnd_++;
+    if (maybeNeedGC && gc::IsInsideNursery(str)) {
+      maybeNeedGC = false;
+      cx->runtime()->gc.storeBuffer().putWholeCell(propIter);
+    }
   }
 
   if (hasActualIndices) {
@@ -1128,7 +1147,7 @@ static bool IndicesAreValid(NativeObject* obj, NativeIterator* ni) {
   size_t numFixedSlots = obj->numFixedSlots();
   const Value* elements = obj->getDenseElements();
 
-  GCPtr<JSLinearString*>* keys = ni->propertiesBegin();
+  IteratorProperty* keys = ni->propertiesBegin();
   PropertyIndex* indices = ni->indicesBegin();
 
   for (uint32_t i = 0; i < ni->numKeys(); i++) {
@@ -1145,7 +1164,7 @@ static bool IndicesAreValid(NativeObject* obj, NativeIterator* ni) {
         // Verify that the slot exists and is an enumerable data property with
         // the expected key.
         Maybe<PropertyInfo> prop =
-            obj->lookupPure(AtomToId(&keys[i]->asAtom()));
+            obj->lookupPure(AtomToId(&keys[i].asString()->asAtom()));
         if (!prop.isSome() || !prop->hasSlot() || !prop->enumerable() ||
             !prop->isDataProperty() || prop->slot() != index.index()) {
           return false;
@@ -1156,7 +1175,7 @@ static bool IndicesAreValid(NativeObject* obj, NativeIterator* ni) {
         // Verify that the slot exists and is an enumerable data property with
         // the expected key.
         Maybe<PropertyInfo> prop =
-            obj->lookupPure(AtomToId(&keys[i]->asAtom()));
+            obj->lookupPure(AtomToId(&keys[i].asString()->asAtom()));
         if (!prop.isSome() || !prop->hasSlot() || !prop->enumerable() ||
             !prop->isDataProperty() ||
             prop->slot() - numFixedSlots != index.index()) {
@@ -1748,76 +1767,54 @@ static bool SuppressDeletedProperty(JSContext* cx, NativeIterator* ni,
     return true;
   }
 
-  while (true) {
-    bool restart = false;
-
-    // Check whether id is still to come.
-    GCPtr<JSLinearString*>* const cursor = ni->nextProperty();
-    GCPtr<JSLinearString*>* const end = ni->propertiesEnd();
-    for (GCPtr<JSLinearString*>* idp = cursor; idp < end; ++idp) {
-      // Common case: both strings are atoms.
-      if ((*idp)->isAtom() && str->isAtom()) {
-        if (*idp != str) {
-          continue;
-        }
-      } else {
-        if (!EqualStrings(*idp, str)) {
-          continue;
-        }
+  // Check whether id is still to come.
+  Rooted<JSLinearString*> idStr(cx);
+  IteratorProperty* cursor = ni->nextProperty();
+  for (; cursor < ni->propertiesEnd(); ++cursor) {
+    idStr = cursor->asString();
+    // Common case: both strings are atoms.
+    if (idStr->isAtom() && str->isAtom()) {
+      if (idStr != str) {
+        continue;
       }
+    } else {
+      if (!EqualStrings(idStr, str)) {
+        continue;
+      }
+    }
 
-      // Check whether another property along the prototype chain became
-      // visible as a result of this deletion.
-      RootedObject proto(cx);
-      if (!GetPrototype(cx, obj, &proto)) {
+    // Check whether another property along the prototype chain became
+    // visible as a result of this deletion.
+    RootedObject proto(cx);
+    if (!GetPrototype(cx, obj, &proto)) {
+      return false;
+    }
+    if (proto) {
+      RootedId id(cx);
+      RootedValue idv(cx, StringValue(idStr));
+      if (!PrimitiveValueToId<CanGC>(cx, idv, &id)) {
         return false;
       }
-      if (proto) {
-        RootedId id(cx);
-        RootedValue idv(cx, StringValue(*idp));
-        if (!PrimitiveValueToId<CanGC>(cx, idv, &id)) {
-          return false;
-        }
 
-        Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
-        RootedObject holder(cx);
-        if (!GetPropertyDescriptor(cx, proto, id, &desc, &holder)) {
-          return false;
-        }
-
-        if (desc.isSome() && desc->enumerable()) {
-          continue;
-        }
+      Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
+      RootedObject holder(cx);
+      if (!GetPropertyDescriptor(cx, proto, id, &desc, &holder)) {
+        return false;
       }
 
-      // If GetPropertyDescriptor above removed a property from ni, start
-      // over.
-      if (end != ni->propertiesEnd() || cursor != ni->nextProperty()) {
-        restart = true;
-        break;
+      // If deletion just made something up the chain visible, no need to
+      // do anything.
+      if (desc.isSome() && desc->enumerable()) {
+        return true;
       }
-
-      // No property along the prototype chain stepped in to take the
-      // property's place, so go ahead and delete id from the list.
-      // If it is the next property to be enumerated, just skip it.
-      if (idp == cursor) {
-        ni->incCursor();
-      } else {
-        for (GCPtr<JSLinearString*>* p = idp; p + 1 != end; p++) {
-          *p = *(p + 1);
-        }
-
-        ni->trimLastProperty();
-      }
-
-      ni->markHasUnvisitedPropertyDeletion();
-      return true;
     }
 
-    if (!restart) {
-      return true;
-    }
+    cursor->markDeleted();
+    ni->markHasUnvisitedPropertyDeletion();
+    return true;
   }
+
+  return true;
 }
 
 /*
@@ -1898,10 +1895,10 @@ void js::AssertDenseElementsNotIterated(NativeObject* obj) {
     NativeIterator* ni = iter.next();
     if (ni->objectBeingIterated() == obj &&
         !ni->maybeHasIndexedPropertiesFromProto()) {
-      for (GCPtr<JSLinearString*>* idp = ni->nextProperty();
+      for (IteratorProperty* idp = ni->nextProperty();
            idp < ni->propertiesEnd(); ++idp) {
         uint32_t index;
-        if (idp->get()->isIndex(&index)) {
+        if (idp->asString()->isIndex(&index)) {
           MOZ_ASSERT(!obj->containsDenseElement(index));
         }
         if (++propsChecked > MaxPropsToCheck) {

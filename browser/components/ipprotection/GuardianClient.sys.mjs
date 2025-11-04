@@ -31,6 +31,7 @@ if (Services.appinfo.processType !== Services.appinfo.PROCESS_TYPE_DEFAULT) {
  */
 export class GuardianClient {
   /**
+   * @param {typeof gConfig} [config]
    */
   constructor(config = gConfig) {
     this.guardianEndpoint = config.guardianEndpoint;
@@ -73,12 +74,15 @@ export class GuardianClient {
   /**
    * Tries to enroll the user to the proxy service.
    * It will silently try to sign in the user into guardian using their FxA account.
-   * If the user already has a proxy entitlement, nothing will happen.
+   * If the user already has a proxy entitlement, the experiment type will update.
+   *
+   * @param { "alpha" | "beta" | "delta" | "gamma" } aExperimentType - The experiment type to enroll the user into.
+   * The experiment type controls which feature set the user will get in Firefox.
    *
    * @param { AbortSignal | null } aAbortSignal - An AbortSignal to cancel the operation.
-   * @returns {Promise<{error?: string, ok?: boolean}>} Re
+   * @returns {Promise<{error?: string, ok?: boolean}>}
    */
-  async enroll(aAbortSignal) {
+  async enroll(aExperimentType = "alpha", aAbortSignal = null) {
     // We abort loading the page if the origion is not allowed.
     const allowedOrigins = [
       new URL(this.guardianEndpoint).origin,
@@ -111,7 +115,9 @@ export class GuardianClient {
         }
         return false;
       });
-      browser.loadURI(Services.io.newURI(this.#loginURL.href), {
+      const loginURL = this.#loginURL;
+      loginURL.searchParams.set("experiment", aExperimentType);
+      browser.loadURI(Services.io.newURI(loginURL.href), {
         // TODO: Make sure this is the right principal to use?
         triggeringPrincipal:
           Services.scriptSecurityManager.getSystemPrincipal(),

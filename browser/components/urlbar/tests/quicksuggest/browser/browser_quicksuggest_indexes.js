@@ -279,17 +279,13 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
   constructor() {
     super({
       results: [
-        Object.assign(
-          new UrlbarResult(
-            UrlbarUtils.RESULT_TYPE.URL,
-            UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-            { url: "http://example.com/test" }
-          ),
-          {
-            suggestedIndex: 1,
-            resultSpan: 2,
-          }
-        ),
+        new UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.URL,
+          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          suggestedIndex: 1,
+          resultSpan: 2,
+          payload: { url: "http://example.com/test" },
+        }),
       ],
     });
   }

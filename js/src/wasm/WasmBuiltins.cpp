@@ -21,6 +21,8 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/ScopeExit.h"
 
+#include <cmath>
+
 #include "fdlibm.h"
 #include "jslibmath.h"
 #include "jsmath.h"
@@ -1257,6 +1259,64 @@ static float Uint64ToFloat32(int32_t x_hi, uint32_t x_lo) {
   return float(x);
 }
 
+template <typename T>
+static T Ceil(T value) {
+  // Perform addition to ensure quiet NaNs are returned. Also try to keep the
+  // NaN payload intact, so don't directly return a specific quiet NaN value.
+  if (std::isnan(value)) {
+    return value + value;
+  }
+  return std::ceil(value);
+}
+
+template <typename T>
+static T Floor(T value) {
+  // Perform addition to ensure quiet NaNs are returned. Also try to keep the
+  // NaN payload intact, so don't directly return a specific quiet NaN value.
+  if (std::isnan(value)) {
+    return value + value;
+  }
+  return std::floor(value);
+}
+
+template <typename T>
+static T Trunc(T value) {
+  // Perform addition to ensure quiet NaNs are returned. Also try to keep the
+  // NaN payload intact, so don't directly return a specific quiet NaN value.
+  if (std::isnan(value)) {
+    return value + value;
+  }
+  return std::trunc(value);
+}
+
+template <typename T>
+static T NearbyInt(T value) {
+  // Perform addition to ensure quiet NaNs are returned. Also try to keep the
+  // NaN payload intact, so don't directly return a specific quiet NaN value.
+  if (std::isnan(value)) {
+    return value + value;
+  }
+  return std::nearbyint(value);
+}
+
+// Stack alignment on x86 Windows is 4 byte. Align to 16 bytes when calling
+// rounding functions with double parameters.
+//
+// See |ABIStackAlignment| in "js/src/jit/x86/Assembler-x86.h".
+#if defined(JS_CODEGEN_X86) && (!defined(__GNUC__) || defined(__MINGW32__))
+#  define ALIGN_STACK_FOR_ROUNDING_FUNCTION \
+    __attribute__((force_align_arg_pointer))
+#else
+#  define ALIGN_STACK_FOR_ROUNDING_FUNCTION
+#endif
+
+template ALIGN_STACK_FOR_ROUNDING_FUNCTION double Ceil(double);
+template ALIGN_STACK_FOR_ROUNDING_FUNCTION double Floor(double);
+template ALIGN_STACK_FOR_ROUNDING_FUNCTION double Trunc(double);
+template ALIGN_STACK_FOR_ROUNDING_FUNCTION double NearbyInt(double);
+
+#undef ALIGN_STACK_FOR_ROUNDING_FUNCTION
+
 static void WasmArrayMemMove(uint8_t* destArrayData, uint32_t destIndex,
                              const uint8_t* srcArrayData, uint32_t srcIndex,
                              uint32_t elementSize, uint32_t count) {
@@ -1419,28 +1479,28 @@ void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
       return FuncCast<double(double)>(fdlibm_atan, *abiType);
     case SymbolicAddress::CeilD:
       *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_ceil, *abiType);
+      return FuncCast<double(double)>(Ceil, *abiType);
     case SymbolicAddress::CeilF:
       *abiType = Args_Float32_Float32;
-      return FuncCast<float(float)>(fdlibm_ceilf, *abiType);
+      return FuncCast<float(float)>(Ceil, *abiType);
     case SymbolicAddress::FloorD:
       *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_floor, *abiType);
+      return FuncCast<double(double)>(Floor, *abiType);
     case SymbolicAddress::FloorF:
       *abiType = Args_Float32_Float32;
-      return FuncCast<float(float)>(fdlibm_floorf, *abiType);
+      return FuncCast<float(float)>(Floor, *abiType);
     case SymbolicAddress::TruncD:
       *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_trunc, *abiType);
+      return FuncCast<double(double)>(Trunc, *abiType);
     case SymbolicAddress::TruncF:
       *abiType = Args_Float32_Float32;
-      return FuncCast<float(float)>(fdlibm_truncf, *abiType);
+      return FuncCast<float(float)>(Trunc, *abiType);
     case SymbolicAddress::NearbyIntD:
       *abiType = Args_Double_Double;
-      return FuncCast<double(double)>(fdlibm_nearbyint, *abiType);
+      return FuncCast<double(double)>(NearbyInt, *abiType);
     case SymbolicAddress::NearbyIntF:
       *abiType = Args_Float32_Float32;
-      return FuncCast<float(float)>(fdlibm_nearbyintf, *abiType);
+      return FuncCast<float(float)>(NearbyInt, *abiType);
     case SymbolicAddress::ExpD:
       *abiType = Args_Double_Double;
       return FuncCast<double(double)>(fdlibm_exp, *abiType);

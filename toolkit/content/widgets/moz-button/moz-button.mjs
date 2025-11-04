@@ -5,6 +5,8 @@
 import { html, ifDefined, classMap } from "../vendor/lit.all.mjs";
 import { MozLitElement } from "../lit-utils.mjs";
 
+window.MozXULElement?.insertFTLIfNeeded("toolkit/global/mozButton.ftl");
+
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-label.mjs";
 
@@ -22,6 +24,9 @@ class MenuController {
   /** @type {HTMLElement | null} */
   #menuEl;
 
+  /** @type {boolean} */
+  #hostIsSplitButton;
+
   constructor(host) {
     this.host = host;
     host.addController(this);
@@ -34,23 +39,29 @@ class MenuController {
   hostDisconnected() {
     this.#menuId = null;
     this.#menuEl = null;
-    this.host.removeEventListener("click", this.openPanelList);
-    this.host.removeEventListener("mousedown", this.openPanelList);
+    this.removePanelListListeners();
   }
 
   hostUpdated() {
-    if (this.#menuId === this.host.menuId) {
+    let hostMenuId = this.host.menuId;
+    let hostIsSplitButton = this.host.isSplitButton;
+
+    if (
+      this.#menuId === hostMenuId &&
+      this.#hostIsSplitButton === hostIsSplitButton
+    ) {
       return;
     }
     if (this.#menuEl?.localName == "panel-list") {
       this.panelListCleanUp();
     }
 
-    this.#menuId = this.host.menuId;
+    this.#menuId = hostMenuId;
+    this.#hostIsSplitButton = hostIsSplitButton;
 
     // Check to see if a menuId has been added to host, or changed
     if (this.#menuId) {
-      this.#menuEl = this.host.getRootNode().querySelector(`#${this.#menuId}`);
+      this.#menuEl = this.getPanelList();
 
       if (this.#menuEl?.localName == "panel-list") {
         this.panelListSetUp();
@@ -65,6 +76,30 @@ class MenuController {
   }
 
   /**
+   * Retrieves the panel-list element matching the host's menuId.
+   * @returns {HTMLElement | null}
+   */
+  getPanelList() {
+    let root = this.host.getRootNode();
+    let menuEl = null;
+
+    while (root) {
+      menuEl = root.querySelector?.(`#${this.#menuId}`);
+      if (menuEl) {
+        break;
+      }
+
+      if (root instanceof ShadowRoot) {
+        root = root.host?.getRootNode();
+      } else {
+        break;
+      }
+    }
+
+    return menuEl;
+  }
+
+  /**
    * Handles opening/closing the panel-list when the host is clicked or activated via keyboard.
    * @param {MouseEvent|KeyboardEvent} event
    */
@@ -74,17 +109,48 @@ class MenuController {
       event.inputSource == MouseEvent.MOZ_SOURCE_KEYBOARD ||
       !event.detail
     ) {
-      this.#menuEl?.toggle(event, this.host);
+      if (this.#hostIsSplitButton) {
+        this.#menuEl?.toggle(event, this.host.chevronButtonEl);
+      } else {
+        this.#menuEl?.toggle(event, this.host);
+      }
     }
   };
+
+  /**
+   * Removes event listeners related to panel-list from the host.
+   */
+  removePanelListListeners() {
+    if (this.#hostIsSplitButton) {
+      this.host.chevronButtonEl?.removeEventListener(
+        "click",
+        this.openPanelList
+      );
+      this.host.chevronButtonEl?.removeEventListener(
+        "mousedown",
+        this.openPanelList
+      );
+    } else {
+      this.host.removeEventListener("click", this.openPanelList);
+      this.host.removeEventListener("mousedown", this.openPanelList);
+    }
+  }
 
   /**
    * Sets up the host for integration with panel-list,
    * adding necessary event listeners and ARIA attributes.
    */
   panelListSetUp() {
-    this.host.addEventListener("click", this.openPanelList);
-    this.host.addEventListener("mousedown", this.openPanelList);
+    if (this.#hostIsSplitButton) {
+      this.host.chevronButtonEl?.addEventListener("click", this.openPanelList);
+      this.host.chevronButtonEl?.addEventListener(
+        "mousedown",
+        this.openPanelList
+      );
+    } else {
+      this.host.addEventListener("click", this.openPanelList);
+      this.host.addEventListener("mousedown", this.openPanelList);
+    }
     this.host.ariaHasPopup = "menu";
     this.host.ariaExpanded = this.#menuEl?.open ? "true" : "false";
   }
@@ -94,8 +160,7 @@ class MenuController {
    * removing event listeners and clearing ARIA attributes.
    */
   panelListCleanUp() {
-    this.host.removeEventListener("click", this.openPanelList);
-    this.host.removeEventListener("mousedown", this.openPanelList);
+    this.removePanelListListeners();
     this.host.ariaHasPopup = null;
     this.host.ariaExpanded = null;
   }
@@ -164,9 +229,10 @@ export default class MozButton extends MozLitElement {
   };
 
   static queries = {
-    buttonEl: "button",
+    buttonEl: "#main-button",
+    chevronButtonEl: "#chevron-button",
     slotEl: "slot",
-    backgroundEl: ".button-background",
+    backgroundEl: "#main-button .button-background",
   };
 
   constructor() {
@@ -181,8 +247,8 @@ export default class MozButton extends MozLitElement {
     this.parentDisabled = undefined;
   }
 
-  willUpdate(changedProperties) {
-    super.willUpdate(changedProperties);
+  updated(changedProperties) {
+    super.updated(changedProperties);
 
     if (changedProperties.has("menuId")) {
       if (this.menuId && !this._menuController) {
@@ -192,6 +258,10 @@ export default class MozButton extends MozLitElement {
         this._menuController = null;
       }
     }
+  }
+
+  get isSplitButton() {
+    return this.type === "split";
   }
 
   // Delegate clicks on host to the button element.
@@ -219,6 +289,30 @@ export default class MozButton extends MozLitElement {
     return null;
   }
 
+  chevronButtonTemplate() {
+    if (this.isSplitButton) {
+      return html`<button
+        id="chevron-button"
+        size=${this.size}
+        ?disabled=${this.disabled || this.parentDisabled}
+        data-l10n-id="moz-button-more-options"
+        aria-labelledby="main-button chevron-button"
+        aria-expanded=${ifDefined(this.ariaExpanded)}
+        aria-haspopup=${ifDefined(this.ariaHasPopup)}
+        @click=${e => e.stopPropagation()}
+        @mousedown=${e => e.stopPropagation()}
+      >
+        <span class="button-background" type=${this.type} size=${this.size}>
+          <img
+            src="chrome://global/skin/icons/arrow-down.svg"
+            role="presentation"
+          />
+        </span>
+      </button>`;
+    }
+    return null;
+  }
+
   render() {
     return html`
       <link
@@ -226,11 +320,16 @@ export default class MozButton extends MozLitElement {
         href="chrome://global/content/elements/moz-button.css"
       />
       <button
+        id="main-button"
         ?disabled=${this.disabled || this.parentDisabled}
         title=${ifDefined(this.title || this.tooltipText)}
         aria-label=${ifDefined(this.ariaLabel)}
-        aria-expanded=${ifDefined(this.ariaExpanded)}
-        aria-haspopup=${ifDefined(this.ariaHasPopup)}
+        aria-expanded=${ifDefined(
+          this.isSplitButton ? undefined : this.ariaExpanded
+        )}
+        aria-haspopup=${ifDefined(
+          this.isSplitButton ? undefined : this.ariaHasPopup
+        )}
         accesskey=${ifDefined(this.accessKey)}
       >
         <span
@@ -255,6 +354,7 @@ export default class MozButton extends MozLitElement {
           ${this.iconTemplate("end")}
         </span>
       </button>
+      ${this.chevronButtonTemplate()}
     `;
   }
 }

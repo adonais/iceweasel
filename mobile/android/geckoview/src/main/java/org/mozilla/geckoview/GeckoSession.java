@@ -2013,6 +2013,41 @@ public class GeckoSession {
   public @interface HeaderFilter {}
 
   /**
+   * App link intent's launch type for cold start, i.e. the app process was not running when the
+   * intent arrived.
+   */
+  public static final int APP_LINK_LAUNCH_TYPE_COLD = 1;
+
+  /**
+   * App link intent's launch type for warm start, i.e. the app process was alive, but the system
+   * created a new Activity instance to handle the intent.
+   */
+  public static final int APP_LINK_LAUNCH_TYPE_WARM = 2;
+
+  /**
+   * App link intent's launch type for hot start, i.e. the intent was delivered to an existing
+   * activity instance; no new activity was created.
+   */
+  public static final int APP_LINK_LAUNCH_TYPE_HOT = 3;
+
+  /**
+   * App link intent's launch type for unknown state, i.e. the launch type is not applicable or not
+   * yet determined.
+   */
+  public static final int APP_LINK_LAUNCH_TYPE_UNKNOWN = 0;
+
+  /** App link launch type constants indicating how the app was started by the external intent. */
+  @Retention(RetentionPolicy.SOURCE)
+  @IntDef(
+      value = {
+        APP_LINK_LAUNCH_TYPE_COLD,
+        APP_LINK_LAUNCH_TYPE_WARM,
+        APP_LINK_LAUNCH_TYPE_HOT,
+        APP_LINK_LAUNCH_TYPE_UNKNOWN,
+      })
+  public @interface AppLinkLaunchType {}
+
+  /**
    * Main entry point for loading URIs into a {@link GeckoSession}.
    *
    * <p>The simplest use case is loading a URIs with no extra options, this can be accomplished by
@@ -2053,6 +2088,7 @@ public class GeckoSession {
     private @HeaderFilter int mHeaderFilter = HEADER_FILTER_CORS_SAFELISTED;
     private @Nullable String mOriginalInput;
     private boolean mTextDirectiveUserActivation;
+    private @AppLinkLaunchType int mAppLinkLaunchType = APP_LINK_LAUNCH_TYPE_UNKNOWN;
 
     private static @NonNull String createDataUri(
         @NonNull final byte[] bytes, @Nullable final String mimeType) {
@@ -2266,6 +2302,20 @@ public class GeckoSession {
       mTextDirectiveUserActivation = textDirectiveUserActivation;
       return this;
     }
+
+    /**
+     * Set the app link intent launch type for this load.
+     *
+     * @param appLinkLaunchType the app link intent launch type to use, one of the {@link
+     *     #APP_LINK_LAUNCH_TYPE_UNKNOWN APP_LINK_LAUNCH_TYPE_*}. For the loads other than app link
+     *     intents, the default {@code APP_LINK_LAUNCH_TYPE_UNKNOWN} is used.
+     * @return this {@link Loader} instance.
+     */
+    @NonNull
+    public Loader appLinkLaunchType(final @AppLinkLaunchType int appLinkLaunchType) {
+      mAppLinkLaunchType = appLinkLaunchType;
+      return this;
+    }
   }
 
   /**
@@ -2351,6 +2401,8 @@ public class GeckoSession {
               if (request.mOriginalInput != null) {
                 msg.putString("originalInput", request.mOriginalInput);
               }
+
+              msg.putInt("appLinkLaunchType", request.mAppLinkLaunchType);
 
               mEventDispatcher.dispatch("GeckoView:LoadUri", msg);
             });
@@ -6092,6 +6144,43 @@ public class GeckoSession {
       }
     }
 
+    /**
+     * RedirectPrompt contains the information necessary to represent a redirect blocking request.
+     */
+    class RedirectPrompt extends BasePrompt {
+      /** The target URI for the redirect; may be null. */
+      public final @Nullable String targetUri;
+
+      /**
+       * Constructor for RedirectPrompt with the given target URI.
+       *
+       * @param id Unique identifier for this prompt.
+       * @param targetUri The target URI for the redirect; may be null.
+       * @param observer Observer to notify when the prompt is completed.
+       */
+      protected RedirectPrompt(
+          @NonNull final String id,
+          @Nullable final String targetUri,
+          @NonNull final Observer observer) {
+        super(id, null, observer);
+        this.targetUri = targetUri;
+      }
+
+      /**
+       * Confirms the prompt and either allows or blocks the redirect.
+       *
+       * @param response An {@link AllowOrDeny} specifying whether to allow or deny the redirect.
+       * @return A {@link PromptResponse} which can be used to complete the {@link GeckoResult}
+       *     associated with this prompt.
+       */
+      @UiThread
+      public @NonNull PromptResponse confirm(@NonNull final AllowOrDeny response) {
+        final boolean res = AllowOrDeny.ALLOW == response;
+        ensureResult().putBoolean("response", res);
+        return super.confirm();
+      }
+    }
+
     /** SharePrompt contains the information necessary to represent a (v1) WebShare request. */
     class SharePrompt extends BasePrompt {
       /** Share result type definitions for share operation outcomes. */
@@ -6427,6 +6516,21 @@ public class GeckoSession {
     @UiThread
     default @Nullable GeckoResult<PromptResponse> onPopupPrompt(
         @NonNull final GeckoSession session, @NonNull final PopupPrompt prompt) {
+      return null;
+    }
+
+    /**
+     * Display a redirect request prompt; this occurs when a third-party frame attempts to redirect
+     * the top-level window in a way that doesn't appear to be the result of user input.
+     *
+     * @param session GeckoSession that triggered the prompt.
+     * @param prompt The {@link RedirectPrompt} that describes the prompt.
+     * @return A {@link GeckoResult} resolving to a {@link PromptResponse} which includes all
+     *     necessary information to resolve the prompt.
+     */
+    @UiThread
+    default @Nullable GeckoResult<PromptResponse> onRedirectPrompt(
+        @NonNull final GeckoSession session, @NonNull final RedirectPrompt prompt) {
       return null;
     }
 

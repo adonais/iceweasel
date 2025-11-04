@@ -2789,6 +2789,46 @@ with only_when(target_is_windows):
         with only_when(dxcompiler.from_sdk):
             set_config("MOZ_DXC_DLL_PATH", dxcompiler.dxc_path)
 
+with only_when(target_is_windows & compile_environment):
+    option(
+        env="MOZ_WINDOWS_APP_SDK_DIR",
+        nargs=1,
+        help="Path to the DLLs from the Windows App SDK redistributable",
+    )
+
+    @depends(target)
+    def windows_app_sdk_task_job_name(target):
+        return f"winappsdk-{target.cpu}-pc-windows-msvc"
+
+    @depends(
+        "MOZ_WINDOWS_APP_SDK_DIR",
+        bootstrap_path(
+            windows_app_sdk_task_job_name,
+            when=depends("MOZ_WINDOWS_APP_SDK_DIR")(lambda x: not x),
+        ),
+    )
+    @checking("for the Windows App SDK")
+    @imports("os")
+    def windows_app_sdk(dir, bootstrapped):
+        if bootstrapped:
+            dir = bootstrapped
+        elif dir:
+            dir = dir[0]
+
+        if not dir:
+            raise FatalCheckError("Windows App SDK dir not present!")
+        if not os.path.exists(dir):
+            raise FatalCheckError(f"Could not find Windows App SDK directory at {dir}")
+        if not os.path.isdir(dir):
+            raise FatalCheckError(
+                f"Windows App SDK directory is not a directory at {dir}"
+            )
+        if len(os.listdir(dir)) == 0:
+            raise FatalCheckError(f"Windows App SDK directory is empty at {dir}")
+        return dir
+
+    set_config("MOZ_WINDOWSAPPSDK_DIR", windows_app_sdk)
+
 
 # Remoting protocol support
 # ==============================================================
@@ -3700,6 +3740,7 @@ with only_when(target_is_osx):
     option(env="DMG_TOOL", nargs=1, help="Path to the dmg tool")
     set_config("DMG_TOOL", depends_if("DMG_TOOL")(lambda x: x[0]))
 
+    # Media Plugin Helper
     moz_eme_process_name = dependable("media-plugin-helper")
 
     set_config("MOZ_EME_PROCESS_NAME", moz_eme_process_name)
@@ -3723,6 +3764,40 @@ with only_when(target_is_osx):
         return f"{distribution_id[0]}.{eme_process_bundle_id}-{eme_process_name}"
 
     set_config("MOZ_EME_PROCESS_BUNDLEID", moz_eme_process_bundle_id)
+
+    # GPU Helper
+    #
+    # Set up configuration strings for building and referencing the GPU process
+    # executable. For a local developer build where the display name is
+    # "Nightly", the strings will be as follows.
+    #
+    # MOZ_GPU_PROCESS_NAME = gpu-helper
+    # MOZ_GPU_PROCESS_NAME_BRANDED = Nightly GPU Helper
+    # MOZ_GPU_PROCESS_NAME_BUNDLENAME = gpu-helper.app
+    # MOZ_GPU_PROCESS_BUNDLEID = org.mozilla.nightly-gpu-helper
+    moz_gpu_process_name = dependable("gpu-helper")
+
+    set_config("MOZ_GPU_PROCESS_NAME", moz_gpu_process_name)
+    set_config(
+        "MOZ_GPU_PROCESS_NAME_BRANDED",
+        depends_if(moz_app_displayname)(lambda name: f"{name} GPU Helper"),
+    )
+    set_config(
+        "MOZ_GPU_PROCESS_BUNDLENAME",
+        depends(moz_gpu_process_name)(lambda name: f"{name}.app"),
+    )
+
+    # Generate a lower case string with no spaces to be used as the bundle ID
+    # for the GPU helper .app of the form org.mozilla.<executable-name>.
+    @depends(moz_app_displayname, moz_gpu_process_name, "--with-distribution-id")
+    def moz_gpu_process_bundle_id(app_displayname, gpu_process_name, distribution_id):
+        if not app_displayname:
+            return
+
+        gpu_process_bundle_id = app_displayname.replace(" ", "-").lower()
+        return f"{distribution_id[0]}.{gpu_process_bundle_id}-{gpu_process_name}"
+
+    set_config("MOZ_GPU_PROCESS_BUNDLEID", moz_gpu_process_bundle_id)
 
 
 # JS Packaging

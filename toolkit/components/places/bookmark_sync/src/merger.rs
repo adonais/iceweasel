@@ -12,8 +12,8 @@ use nsstring::nsString;
 use storage::Conn;
 use xpcom::{
     interfaces::{
-        mozIPlacesPendingOperation, mozIStorageConnection,
-        mozISyncedBookmarksMirrorCallback, mozISyncedBookmarksMirrorProgressListener,
+        mozIPlacesPendingOperation, mozIStorageConnection, mozISyncedBookmarksMirrorCallback,
+        mozISyncedBookmarksMirrorProgressListener,
     },
     RefPtr, XpCom,
 };

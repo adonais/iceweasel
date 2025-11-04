@@ -19,8 +19,6 @@
 #ifndef wasm_gc_h
 #define wasm_gc_h
 
-#include "mozilla/BinarySearch.h"
-
 #include "jit/ABIArgGenerator.h"  // For ABIArgIter
 #include "js/AllocPolicy.h"
 #include "js/Vector.h"

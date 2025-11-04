@@ -863,9 +863,6 @@ void xpc::SetPrefableContextOptions(JS::ContextOptions& options) {
   SetPrefableCompileOptions(options.compileOptions());
 }
 
-// Mirrored value of javascript.options.self_hosted.use_shared_memory.
-static bool sSelfHostedUseSharedMemory = false;
-
 static void LoadStartupJSPrefs(XPCJSContext* xpccx) {
   // Prefs that require a restart are handled here. This includes the
   // process-wide JIT options because toggling these at runtime can easily cause
@@ -904,7 +901,7 @@ static void LoadStartupJSPrefs(XPCJSContext* xpccx) {
     JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_NATIVE_REGEXP_ENABLE,
                                   false);
     JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_JIT_HINTS_ENABLE, false);
-    sSelfHostedUseSharedMemory = false;
+    xpc::SelfHostedShmem::SetSelfHostedUseSharedMemory(false);
   } else {
     JS_SetGlobalJitCompilerOption(
         cx, JSJITCOMPILER_BASELINE_ENABLE,
@@ -925,8 +922,9 @@ static void LoadStartupJSPrefs(XPCJSContext* xpccx) {
         XRE_IsContentProcess()
             ? StaticPrefs::javascript_options_jithints_DoNotUseDirectly()
             : false);
-    sSelfHostedUseSharedMemory = StaticPrefs::
-        javascript_options_self_hosted_use_shared_memory_DoNotUseDirectly();
+    xpc::SelfHostedShmem::SetSelfHostedUseSharedMemory(
+        StaticPrefs::
+            javascript_options_self_hosted_use_shared_memory_DoNotUseDirectly());
   }
 
   uint32_t strategyIndex = StaticPrefs::
@@ -1426,7 +1424,8 @@ nsresult XPCJSContext::Initialize() {
   // in startupcache. Only the parent process may initialize the data.
   auto& shm = xpc::SelfHostedShmem::GetSingleton();
   JS::SelfHostedWriter writer = nullptr;
-  if (XRE_IsParentProcess() && sSelfHostedUseSharedMemory) {
+  if (XRE_IsParentProcess() &&
+      xpc::SelfHostedShmem::SelfHostedUseSharedMemory()) {
     // Check the startup cache for a copy of the bytecode.
     if (auto* sc = scache::StartupCache::GetSingleton()) {
       const char* buf = nullptr;

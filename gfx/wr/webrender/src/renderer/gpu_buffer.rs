@@ -31,6 +31,9 @@ pub type GpuBufferBuilderF = GpuBufferBuilderImpl<GpuBufferBlockF>;
 pub type GpuBufferI = GpuBuffer<GpuBufferBlockI>;
 pub type GpuBufferBuilderI = GpuBufferBuilderImpl<GpuBufferBlockI>;
 
+pub type GpuBufferWriterF<'l> = GpuBufferWriter<'l, GpuBufferBlockF>;
+//pub type GpuBufferWriterI<'l> = GpuBufferWriter<'l, GpuBufferBlockI>;
+
 unsafe impl Texel for GpuBufferBlockF {
     fn image_format() -> ImageFormat { ImageFormat::RGBAF32 }
 }

@@ -20,6 +20,8 @@ import kotlin.coroutines.CoroutineContext
  * Default implementation of [TopSitesStorage].
  *
  * @param pinnedSitesStorage An instance of [PinnedSiteStorage], used for storing pinned sites.
+ * @param coroutineContext The [CoroutineContext] to be used for background operations.
+ * Defaults to [Dispatchers.IO].
  */
 class DefaultTopSitesStorage(
     private val pinnedSitesStorage: PinnedSiteStorage,

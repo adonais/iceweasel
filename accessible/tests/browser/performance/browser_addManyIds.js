@@ -17,7 +17,7 @@ const perfMetadata = {
       perfherder: true,
       perfherder_metrics: [
         // Total time for the entire run (this probe is not process specific)
-        { name: "A11Y_TotalTime", unit: "ms", shouldAlert: false },
+        { name: "A11Y_TotalTime", unit: "ms", shouldAlert: true },
 
         //////////////// PARENT PROCESS
 

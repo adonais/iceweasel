@@ -384,8 +384,6 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(mContent, "We should have a content!");
 
-  AddStateBits(NS_FRAME_INDEPENDENT_SELECTION);
-
   RefPtr<TextControlElement> textControlElement = ControlElement();
   mRootNode = MakeAnonElement(PseudoStyleType::mozTextControlEditingRoot);
   if (NS_WARN_IF(!mRootNode)) {
@@ -441,12 +439,7 @@ nsresult nsTextControlFrame::CreateAnonymousContent(
 }
 
 bool nsTextControlFrame::ShouldInitializeEagerly() const {
-  // textareas are eagerly initialized.
-  if (!IsSingleLineTextControl()) {
-    return true;
-  }
-
-  // Also, input elements which have a cached selection should get eager
+  // Input elements which have a cached selection should get eager
   // editor initialization.
   TextControlElement* textControlElement = ControlElement();
   if (textControlElement->HasCachedSelection()) {
@@ -457,21 +450,6 @@ bool nsTextControlFrame::ShouldInitializeEagerly() const {
   if (auto* htmlElement = nsGenericHTMLElement::FromNode(mContent)) {
     if (htmlElement->Spellcheck()) {
       return true;
-    }
-  }
-
-  // If text in the editor is being dragged, we need the editor to create
-  // new source node for the drag session (TextEditor creates the text node
-  // in the anonymous <div> element.
-  if (nsCOMPtr<nsIDragSession> dragSession =
-          nsContentUtils::GetDragSession(PresContext())) {
-    if (dragSession->IsDraggingTextInTextControl()) {
-      nsCOMPtr<nsINode> sourceNode;
-      if (NS_SUCCEEDED(
-              dragSession->GetSourceNode(getter_AddRefs(sourceNode))) &&
-          sourceNode == textControlElement) {
-        return true;
-      }
     }
   }
 
@@ -664,20 +642,22 @@ void nsTextControlFrame::ReflowTextControlChild(
   const LogicalSize paddingBoxSize = contentBoxSize + parentPadding.Size(wm);
   const LogicalSize borderBoxSize =
       paddingBoxSize + aReflowInput.ComputedLogicalBorder(wm).Size(wm);
-  LogicalSize availSize = paddingBoxSize;
-  availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-
+  const bool singleLine = IsSingleLineTextControl();
   const bool isButtonBox = IsButtonBox(aKid);
-
+  LogicalSize availSize =
+      !isButtonBox && singleLine ? contentBoxSize : paddingBoxSize;
+  availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
   ReflowInput kidReflowInput(aPresContext, aReflowInput, aKid, availSize,
                              Nothing(), ReflowInput::InitFlag::CallerWillInit);
 
   // Override padding with our computed padding in case we got it from theming
   // or percentage, if we're not the button box.
   auto overridePadding = isButtonBox ? Nothing() : Some(parentPadding);
-  if (!isButtonBox && aButtonBoxISize) {
+  if (!isButtonBox && singleLine) {
     // Button box respects inline-end-padding, so we don't need to.
-    overridePadding->IEnd(outerWM) = 0;
+    // inline-padding is not propagated to the scroller for single-line text
+    // controls.
+    overridePadding->IStart(outerWM) = overridePadding->IEnd(outerWM) = 0;
   }
 
   // We want to let our button box fill the frame in the block axis, up to the
@@ -701,6 +681,9 @@ void nsTextControlFrame::ReflowTextControlChild(
     // actually "inherits" that padding and manages it on behalf of the parent.
     position.B(wm) = border.BStart(wm);
     position.I(wm) = border.IStart(wm);
+    if (singleLine) {
+      position.I(wm) += parentPadding.IStart(wm);
+    }
 
     // Set computed width and computed height for the child (the button box is
     // the only exception, which has an auto size).
@@ -954,7 +937,9 @@ nsresult nsTextControlFrame::AttributeChanged(int32_t aNameSpaceID,
                                               nsAtom* aAttribute,
                                               AttrModType aModType) {
   if (aAttribute == nsGkAtoms::value && !mEditorHasBeenInitialized) {
-    UpdateValueDisplay(true);
+    if (IsSingleLineTextControl()) {
+      UpdateValueDisplay(true);
+    }
     return NS_OK;
   }
 
@@ -1051,13 +1036,7 @@ void nsTextControlFrame::SetInitialChildList(ChildListID aListID,
   }
 }
 
-nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
-                                                bool aBeforeEditorInit,
-                                                const nsAString* aValue) {
-  if (!IsSingleLineTextControl()) {  // textareas don't use this
-    return NS_OK;
-  }
-
+nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify) {
   MOZ_ASSERT(mRootNode, "Must have a div content\n");
   MOZ_ASSERT(!mEditorHasBeenInitialized,
              "Do not call this after editor has been initialized");
@@ -1082,12 +1061,7 @@ nsresult nsTextControlFrame::UpdateValueDisplay(bool aNotify,
 
   // Get the current value of the textfield from the content.
   nsAutoString value;
-  if (aValue) {
-    value = *aValue;
-  } else {
-    ControlElement()->GetTextEditorValue(value);
-  }
-
+  ControlElement()->GetTextEditorValue(value);
   return textContent->SetText(value, aNotify);
 }
 
@@ -1131,6 +1105,10 @@ void nsTextControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   DO_GLOBAL_REFLOW_COUNT_DSP("nsTextControlFrame");
 
   DisplayBorderBackgroundOutline(aBuilder, aLists);
+
+  if (HidesContent()) {
+    return;
+  }
 
   // Redirect all lists to the Content list so that nothing can escape, ie
   // opacity creating stacking contexts that then get sorted with stacking

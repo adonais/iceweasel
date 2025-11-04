@@ -15,7 +15,8 @@ object WebCompatTestData {
             "hasMixedActiveContentBlocked": false,
             "hasMixedDisplayContentBlocked": false,
             "hasTrackingContentBlocked": false,
-            "isPrivateBrowsing": false
+            "isPrivateBrowsing": false,
+            "blockedOrigins": ["https://blockedUrlExample.com"]
           },
           "browser": {
             "addons": [
@@ -90,7 +91,8 @@ object WebCompatTestData {
             "hasMixedActiveContentBlocked": false,
             "hasMixedDisplayContentBlocked": false,
             "hasTrackingContentBlocked": false,
-            "isPrivateBrowsing": false
+            "isPrivateBrowsing": false,
+            "blockedOrigins": ["https://blockedUrlExample.com", "https://blockedUrlExample2.com"]
           },
           "browser": {
             "addons": [

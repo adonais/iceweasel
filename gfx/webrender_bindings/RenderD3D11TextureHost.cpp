@@ -474,7 +474,7 @@ bool RenderDXGITextureHost::SyncObjectNeeded() {
 }
 
 RenderDXGIYCbCrTextureHost::RenderDXGIYCbCrTextureHost(
-    RefPtr<gfx::FileHandleWrapper> (&aHandles)[3],
+    const RefPtr<gfx::FileHandleWrapper> (&aHandles)[3],
     const gfx::YUVColorSpace aYUVColorSpace, const gfx::ColorDepth aColorDepth,
     const gfx::ColorRange aColorRange, const gfx::IntSize aSizeY,
     const gfx::IntSize aSizeCbCr,

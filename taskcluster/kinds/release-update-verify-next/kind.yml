@@ -55,12 +55,6 @@ tasks:
         attributes:
             build_platform: linux64-shippable
 
-    firefox-next-linux:
-        description: linux esr-next update verify
-        shipping-product: firefox
-        attributes:
-            build_platform: linux-shippable
-
     firefox-next-win64:
         description: win64 esr-next update verify
         shipping-product: firefox

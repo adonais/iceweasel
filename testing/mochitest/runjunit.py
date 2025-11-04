@@ -160,15 +160,15 @@ class JUnitTestRunner(MochitestDesktop):
         self.merge_base_profiles(self.options, "geckoview-junit")
 
         if self.options.web_content_isolation_strategy is not None:
-            self.options.extra_prefs.append(
+            self.options.extraPrefs.append(
                 "fission.webContentIsolationStrategy=%s"
                 % self.options.web_content_isolation_strategy
             )
-        self.options.extra_prefs.append("fission.autostart=true")
+        self.options.extraPrefs.append("fission.autostart=true")
         if self.options.disable_fission:
-            self.options.extra_prefs.pop()
-            self.options.extra_prefs.append("fission.autostart=false")
-        prefs = parse_preferences(self.options.extra_prefs)
+            self.options.extraPrefs.pop()
+            self.options.extraPrefs.append("fission.autostart=false")
+        prefs = parse_preferences(self.options.extraPrefs)
         self.profile.set_preferences(prefs)
 
         if self.fillCertificateDB(self.options):
@@ -619,7 +619,7 @@ class JunitArgumentParser(argparse.ArgumentParser):
         self.add_argument(
             "--setpref",
             action="append",
-            dest="extra_prefs",
+            dest="extraPrefs",
             default=[],
             metavar="PREF=VALUE",
             help="Defines an extra user preference.",

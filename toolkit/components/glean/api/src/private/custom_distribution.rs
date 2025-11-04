@@ -225,7 +225,9 @@ mod test {
 
         metric.accumulate_samples_signed(vec![1, 2, 3]);
 
-        assert!(metric.test_get_value(Some("test-ping".to_string())).is_some());
+        assert!(metric
+            .test_get_value(Some("test-ping".to_string()))
+            .is_some());
     }
 
     #[test]

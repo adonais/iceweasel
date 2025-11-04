@@ -19,6 +19,7 @@ MOZ_SRC_FILES += [
     "LinkPreview.sys.mjs",
     "LinkPreviewModel.sys.mjs",
     "PageAssist.sys.mjs",
+    "SmartAssistEngine.sys.mjs",
 ]
 
 FINAL_TARGET_FILES.actors += [

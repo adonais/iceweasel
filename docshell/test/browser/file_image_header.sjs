@@ -4,18 +4,27 @@
 function handleRequest(request, response) {
   let accept = request.getHeader("Accept");
 
-  if (request.queryString === "image") {
-    // Make sure that the Accept header is for images.
-    if (accept.startsWith("image/")) {
-      response.setStatusLine(request.httpVersion, 200, "Ok");
-      // Also test that the image is rendered inline.
-      response.setHeader("Content-Disposition", "attachment");
-      response.write(
-        atob(
-          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P4v5ThPwAG7wKklwQ/bwAAAABJRU5ErkJggg=="
-        )
-      );
-      return;
+  // Make sure that the Accept header is for images.
+  if (accept.startsWith("image/")) {
+    switch (request.queryString) {
+      case "imagePNG":
+        response.setStatusLine(request.httpVersion, 200, "Ok");
+        // Also test that the image is rendered inline.
+        response.setHeader("Content-Disposition", "attachment");
+        response.write(
+          atob(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P4v5ThPwAG7wKklwQ/bwAAAABJRU5ErkJggg=="
+          )
+        );
+        return;
+      case "imageSVG": {
+        response.setStatusLine(request.httpVersion, 200, "OK");
+        response.setHeader("Content-Type", "image/svg+xml");
+        response.write(
+          `<svg height="100" width="100" xmlns="http://www.w3.org/2000/svg"><circle r="45" cx="50" cy="50" fill="blue" /></svg>`
+        );
+        return;
+      }
     }
   }
 

@@ -4,7 +4,7 @@
 
 package org.mozilla.focus.ui.theme
 
-import androidx.compose.material.Typography
+import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.text.TextStyle
@@ -42,19 +42,22 @@ data class FocusTypography(
     val cfrTextStyle: TextStyle,
     val cfrCookieBannerTextStyle: TextStyle,
 ) {
-    val h1: TextStyle get() = materialTypography.h1
-    val h2: TextStyle get() = materialTypography.h2
-    val h3: TextStyle get() = materialTypography.h3
-    val h4: TextStyle get() = materialTypography.h4
-    val h5: TextStyle get() = materialTypography.h5
-    val h6: TextStyle get() = materialTypography.h6
-    val subtitle1: TextStyle get() = materialTypography.subtitle1
-    val subtitle2: TextStyle get() = materialTypography.subtitle2
-    val body1: TextStyle get() = materialTypography.body1
-    val body2: TextStyle get() = materialTypography.body2
-    val button: TextStyle get() = materialTypography.button
-    val caption: TextStyle get() = materialTypography.caption
-    val overline: TextStyle get() = materialTypography.overline
+
+    val displayLarge: TextStyle get() = materialTypography.displayLarge
+    val displayMedium: TextStyle get() = materialTypography.displayMedium
+    val displaySmall: TextStyle get() = materialTypography.displaySmall
+    val headlineLarge: TextStyle get() = materialTypography.headlineLarge
+    val headlineMedium: TextStyle get() = materialTypography.headlineMedium
+    val headlineSmall: TextStyle get() = materialTypography.headlineSmall
+    val titleLarge: TextStyle get() = materialTypography.titleLarge
+    val titleMedium: TextStyle get() = materialTypography.titleMedium
+    val titleSmall: TextStyle get() = materialTypography.titleSmall
+    val bodyLarge: TextStyle get() = materialTypography.bodyLarge
+    val bodyMedium: TextStyle get() = materialTypography.bodyMedium
+    val bodySmall: TextStyle get() = materialTypography.bodySmall
+    val labelLarge: TextStyle get() = materialTypography.labelLarge
+    val labelMedium: TextStyle get() = materialTypography.labelMedium
+    val labelSmall: TextStyle get() = materialTypography.labelSmall
 }
 
 val focusTypography: FocusTypography
@@ -62,7 +65,7 @@ val focusTypography: FocusTypography
     @ReadOnlyComposable
     get() = FocusTypography(
         materialTypography = Typography(
-            body1 = TextStyle(
+            bodyLarge = TextStyle(
                 fontSize = 16.sp,
                 lineHeight = 24.sp,
             ),

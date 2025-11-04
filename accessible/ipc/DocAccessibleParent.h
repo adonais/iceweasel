@@ -287,8 +287,8 @@ class DocAccessibleParent : public RemoteAccessible,
 
   // Tracks cached reverse relations (ie. those not set explicitly by an
   // attribute like aria-labelledby) for accessibles in this doc. This map is of
-  // the form: {accID, {relationType, [targetAccID, targetAccID, ...]}}
-  nsTHashMap<uint64_t, nsTHashMap<RelationType, nsTArray<uint64_t>>>
+  // the form: {accID, {pointerToRelationDataAddress, [targetAccID, ...]}}
+  nsTHashMap<uint64_t, nsTHashMap<const RelationData*, nsTArray<uint64_t>>>
       mReverseRelations;
 
   // Computed from the viewport cache, the accs referenced by these ids

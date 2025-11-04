@@ -62,12 +62,6 @@ def add_hardened_sign_config(config, jobs):
                         "project": config.params["project"],
                     },
                 )
-            if "entitlements" in sign_cfg and not sign_cfg.get(
-                "entitlements", ""
-            ).startswith("http"):
-                sign_cfg["entitlements"] = config.params.file_url(
-                    sign_cfg["entitlements"]
-                )
 
         job["worker"]["hardened-sign-config"] = hardened_sign_config
         job["worker"]["mac-behavior"] = "mac_sign_and_pkg_hardened"
@@ -107,4 +101,33 @@ def add_provisioning_profile_config(config, jobs):
                     "target_path": "/Contents/embedded.provisionprofile",
                 },
             ]
+        yield job
+
+
+@transforms.add
+def add_upstream_signing_resources(config, jobs):
+    """
+    Add the upstream signing resources to the job payload
+    """
+    for job in jobs:
+        dep_job = get_primary_dependency(config, job)
+        assert dep_job
+
+        upstream_files = set()
+        for cfg in job["worker"].get("hardened-sign-config", []):
+            if "entitlements" in cfg:
+                upstream_files.add(cfg["entitlements"])
+
+        task_ref = f"<{dep_job.kind}>"
+        task_type = "build"
+        if "notarization" in dep_job.kind:
+            task_type = "scriptworker"
+        job["worker"].setdefault("upstream-artifacts", []).append(
+            {
+                "paths": sorted(upstream_files),
+                "taskId": {"task-reference": task_ref},
+                "taskType": task_type,
+                "formats": [],  # Not for signing
+            }
+        )
         yield job

@@ -90,7 +90,8 @@ enum class ObjectFlag : uint32_t {
   // If set, this object may have an ObjectFuse associated with it that JIT code
   // can use to bake in constant property values of this object. Changes to this
   // object may require popping this per-Object fuse. This is used for global
-  // objects and global lexical environments.
+  // objects, global lexical environments, and certain builtin constructors and
+  // prototypes.
   HasObjectFuse = 1 << 15,
 
   // If set, we have already called the preserveWrapper hook for this object.

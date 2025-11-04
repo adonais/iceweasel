@@ -240,6 +240,8 @@ static const char* gCallbackPrefs[] = {
 static const char* gCallbackPrefsForSocketProcess[] = {
     WEBRTC_PREF_PREFIX,
     NETWORK_DNS_PREF,
+    "media.webrtc.enable_pq_hybrid_kex",
+    "media.webrtc.send_mlkem_keyshare",
     "network.send_ODA_to_content_directly",
     "network.trr.",
     "doh-rollout.",
@@ -304,13 +306,13 @@ nsresult nsIOService::Init() {
 
   // Register for profile change notifications
   mObserverService = services::GetObserverService();
-  AddObserver(this, kProfileChangeNetTeardownTopic, true);
-  AddObserver(this, kProfileChangeNetRestoreTopic, true);
-  AddObserver(this, kProfileDoChange, true);
-  AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, true);
-  AddObserver(this, NS_NETWORK_LINK_TOPIC, true);
-  AddObserver(this, NS_NETWORK_ID_CHANGED_TOPIC, true);
-  AddObserver(this, NS_WIDGET_WAKE_OBSERVER_TOPIC, true);
+  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, kProfileChangeNetTeardownTopic, true));
+  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, kProfileChangeNetRestoreTopic, true));
+  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, kProfileDoChange, true));
+  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, true));
+  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, NS_NETWORK_LINK_TOPIC, true));
+  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, NS_NETWORK_ID_CHANGED_TOPIC, true));
+  MOZ_ALWAYS_SUCCEEDS(AddObserver(this, NS_WIDGET_WAKE_OBSERVER_TOPIC, true));
 
   // Register observers for sending notifications to nsSocketTransportService
   if (XRE_IsParentProcess()) {

@@ -1291,11 +1291,16 @@ class AccessibilityTest : BaseSessionTest() {
             @AssertCalled(count = 1, order = [1])
             override fun onAccessibilityFocused(event: AccessibilityEvent) {
                 nodeId = getSourceId(event)
+                var node = createNodeInfo(nodeId)
+                assertThat("Focused node is not scrollable", node.isScrollable, equalTo(false))
                 assertThat("Focused node is onscreen", screenContainsNode(nodeId), equalTo(true))
             }
 
             @AssertCalled(count = 1, order = [2])
             override fun onScrolled(event: AccessibilityEvent) {
+                nodeId = getSourceId(event)
+                var node = createNodeInfo(nodeId)
+                assertThat("View is scrollable", node.isScrollable, equalTo(true))
                 assertThat("View is scrolled for focused node to be onscreen", event.scrollY, greaterThan(0))
                 assertThat("View is not scrolled to the end", event.scrollY, lessThan(event.maxScrollY))
             }

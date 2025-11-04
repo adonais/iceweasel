@@ -208,9 +208,16 @@ bool FrontendContext::convertToRuntimeError(
   }
   if (warning == Warning::Report) {
     for (CompileError& error : warnings()) {
+#ifdef DEBUG
+      bool hadException = cx->isExceptionPending();
+#endif
       if (!error.throwError(cx)) {
         return false;
       }
+
+      // The warning reporter shouldn't clear the exception set by
+      // other errors.
+      MOZ_ASSERT_IF(hadException, cx->isExceptionPending());
     }
   }
   if (hadOverRecursed()) {

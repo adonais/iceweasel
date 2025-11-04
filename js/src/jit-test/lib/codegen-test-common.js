@@ -11,11 +11,11 @@ function wrap(options, funcs) {
     return `(module ${funcs})`;
 }
 
-function fixlines(s) {
+function fixlines(s, insEncoding) {
     return s.split(/\n+/)
         .map(strip)
         .filter(x => x.length > 0)
-        .map(x => '(?:0x)?' + HEXES + ' ' + x)
+        .map(x => `(?:0x)?${HEX}+ ${insEncoding} ${x}`)
         .map(spaces)
         .join('\n');
 }

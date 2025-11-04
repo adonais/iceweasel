@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.textfield.TextField
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.doh.DohSettingsState
@@ -60,7 +60,7 @@ internal fun AddExceptionScreen(
                 ),
         )
 
-        PrimaryButton(
+        FilledButton(
             text = stringResource(R.string.preference_doh_exceptions_add_save),
             modifier = Modifier
                 .fillMaxWidth()

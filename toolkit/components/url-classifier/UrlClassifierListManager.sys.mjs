@@ -583,7 +583,10 @@ class PROT_ListManager {
         streamerMap.isPostRequest = false;
       } else if (provider === "google5") {
         // The request body for v5 is empty and it uses the query parameters to
-        // pass the table lists and their versions.
+        // pass the table lists and their versions. We need to encode the
+        // versions with URL encoding to avoid issues with special characters.
+        stateArray = stateArray.map(encodeURIComponent);
+
         streamerMap.requestPayload = "";
         streamerMap.requestQueryParameters = urlUtils.makeUpdateRequestV5(
           tableArray,

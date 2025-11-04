@@ -84,13 +84,14 @@ export class BrowsingContextListener {
         this.emit("discarded", { browsingContext: subject, why: data });
         break;
 
-      case OBSERVER_TOPIC_SET_EMBEDDER:
+      case OBSERVER_TOPIC_SET_EMBEDDER: {
         const why = this.#topContextsToAttach.get(subject);
         if (why !== undefined) {
           this.emit("attached", { browsingContext: subject, why });
           this.#topContextsToAttach.delete(subject);
         }
         break;
+      }
     }
   }
 

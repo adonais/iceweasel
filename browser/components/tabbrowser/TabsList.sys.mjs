@@ -706,9 +706,13 @@ export class TabsPanel extends TabsListBase {
         ? getTabGroupFromRow(row).labelElement
         : getTabFromRow(row);
 
-    this.gBrowser.tabContainer.startTabDrag(event, elementToDrag, {
-      fromTabList: true,
-    });
+    this.gBrowser.tabContainer.tabDragAndDrop.startTabDrag(
+      event,
+      elementToDrag,
+      {
+        fromTabList: true,
+      }
+    );
   }
 
   /**
@@ -724,7 +728,8 @@ export class TabsPanel extends TabsListBase {
    * @returns {boolean}
    */
   _isMovingTabs(event) {
-    var effects = this.gBrowser.tabContainer.getDropEffectForTabDrag(event);
+    var effects =
+      this.gBrowser.tabContainer.tabDragAndDrop.getDropEffectForTabDrag(event);
     return effects == "move";
   }
 

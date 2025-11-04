@@ -437,6 +437,15 @@ TEST_F(FOGFixture, TestLabeledCounterWithLabelsWorks) {
                    .ref());
 }
 
+TEST_F(FOGFixture, TestLabeledCounterProcessGetWorks) {
+  test_only::mabels_kitchen_counters.ProcessGet().Add(5);
+
+  ASSERT_EQ(5, test_only::mabels_kitchen_counters.Get("default"_ns)
+                   .TestGetValue()
+                   .unwrap()
+                   .ref());
+}
+
 TEST_F(FOGFixture, TestLabeledStringWorks) {
   ASSERT_EQ(mozilla::Nothing(),
             test_only::mabels_balloon_strings.Get("twine"_ns)

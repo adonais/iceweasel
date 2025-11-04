@@ -8,7 +8,6 @@
 #define mozilla_dom_ScrollTimeline_h
 
 #include "mozilla/HashTable.h"
-#include "mozilla/PairHash.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/WritingModes.h"
 #include "mozilla/dom/AnimationTimeline.h"

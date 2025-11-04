@@ -23,6 +23,8 @@ const askChatMenu = [
   // Need a blank entry here because the Ask Chat submenu is dynamically built with no ids.
   "",
   null,
+  "---",
+  null,
 ];
 
 async function openMenuAndPaste(browser, useFormatting) {

@@ -30,7 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.Config
@@ -130,7 +130,7 @@ fun RegionTools(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        PrimaryButton(
+        FilledButton(
             text = stringResource(R.string.debug_drawer_override_region),
             modifier = Modifier.fillMaxWidth(),
             onClick = {
@@ -152,7 +152,7 @@ fun RegionTools(
                     Context.MODE_PRIVATE,
                 )
 
-            PrimaryButton(
+            FilledButton(
                 text = stringResource(R.string.debug_drawer_override_home_region_permanently),
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {

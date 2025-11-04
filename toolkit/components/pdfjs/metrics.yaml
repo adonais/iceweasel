@@ -896,26 +896,6 @@ pdfjs.signature:
         - pdfjs-team@mozilla.com
       expires: never
 
-glam_experiment:
-  used:
-    type: counter
-    disabled: true
-    description: >
-      Duplicate of:
-      `pdfjs.used`
-
-      Intended for the purpose of testing client side sampling of data. This
-      metric is disabled by default and will be enabled only for the purpose
-      of the experiment. See Bug 1947604 for more information.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1947604
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1566882#c2
-    notification_emails:
-      - tlong@mozilla.com
-      - efilho@mozilla.com
-    expires: 146
-
 pdfjs.digital_signature:
   certificate:
     type: labeled_counter
@@ -937,3 +917,63 @@ pdfjs.digital_signature:
     notification_emails:
       - pdfjs-team@mozilla.com
     expires: 147
+
+pdfjs.comment:
+    edit:
+      type: labeled_counter
+      description: >
+        Counts the number of times the user edits or deletes comments.
+      labels:
+        - deleted
+        - edited
+      bugs:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1991172
+      data_reviews:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1991172#c1
+      data_sensitivity:
+        - interaction
+      notification_emails:
+        - pdfjs-team@mozilla.com
+      expires: never
+
+    sidebar:
+      type: event
+      description: >
+        Recorded when the comment sidebar is opened.
+      bugs:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1991172
+      data_reviews:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1991172#c1
+      data_sensitivity:
+        - interaction
+      notification_emails:
+        - pdfjs-team@mozilla.com
+      expires: never
+      extra_keys:
+        comments_count:
+          type: quantity
+          description: >
+            Number of comments in the sidebar.
+
+    save:
+      type: event
+      description: >
+        Recorded when the user saves a PDF with some deleted/edited comments.
+      bugs:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1991172
+      data_reviews:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1991172#c1
+      data_sensitivity:
+        - interaction
+      notification_emails:
+        - pdfjs-team@mozilla.com
+      expires: never
+      extra_keys:
+        edited:
+          type: quantity
+          description: >
+            Number of edited comments.
+        deleted:
+          type: quantity
+          description: >
+            Number of deleted comments.

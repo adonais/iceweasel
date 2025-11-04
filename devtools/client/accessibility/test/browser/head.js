@@ -26,7 +26,8 @@ const {
   PREF_KEYS,
 } = require("resource://devtools/client/accessibility/constants.js");
 
-const SIMULATION_MENU_BUTTON_ID = "#simulation-menu-button";
+const SIMULATION_MENU_BUTTON_ID = "simulation-menu-button";
+const SIMULATION_MENU_ID = "simulation-menu-button-menu";
 const TREE_FILTERS_MENU_ID = "accessibility-tree-filters-menu";
 const PREFS_MENU_ID = "accessibility-tree-filters-prefs-menu";
 
@@ -84,10 +85,17 @@ const EXPANDABLE_PROPS = ["actions", "states", "attributes"];
  * Add a new test tab in the browser and load the given url.
  * @param {String} url
  *        The url to be loaded in the new tab
+ * @param {Object} options
+ * @param {Boolean} options.waitUntilDocumentAccessibleInState
+ *        Whether we should wait for the state to have the document accessible.
+ *        Defaults to true.
  * @return a promise that resolves to the tab object when
  *        the url is loaded
  */
-async function addTestTab(url) {
+async function addTestTab(
+  url,
+  { waitUntilDocumentAccessibleInState = true } = {}
+) {
   info("Adding a new test tab with URL: '" + url + "'");
 
   const tab = await addTab(url);
@@ -98,13 +106,14 @@ async function addTestTab(url) {
 
   win.focus();
 
-  await waitUntilState(
-    store,
-    state =>
-      state.accessibles.size === 1 &&
-      state.details.accessible &&
-      state.details.accessible.role === "document"
-  );
+  if (waitUntilDocumentAccessibleInState) {
+    await waitUntilState(
+      store,
+      state =>
+        state.accessibles.size === 1 &&
+        state.details.accessible?.role === "document"
+    );
+  }
 
   return {
     tab,
@@ -436,26 +445,33 @@ async function checkToolbarState(doc, activeToolbarFilters) {
 /**
  * Check the state of the simulation button and menu components.
  * @param  {Object} doc         Panel document.
+ * @param  {Object} toolboxDoc  Toolbox document.
  * @param  {Object} expected    Expected states of the simulation components:
- *                              menuVisible, buttonActive, checkedOptionIndices (Optional)
+ * @param  {Boolean} expected.buttonActive
+ * @param  {Array<Number>} expected.checkedOptionIndices
+ * @param  {Array<Number>} expected.colorMatrix
  */
-async function checkSimulationState(doc, expected) {
-  const { buttonActive, checkedOptionIndices } = expected;
-  const simulationMenuOptions = doc
-    .querySelector(SIMULATION_MENU_BUTTON_ID + "-menu")
-    .querySelectorAll(".menuitem");
+async function checkSimulationState(doc, toolboxDoc, expected) {
+  const { buttonActive, checkedOptionIndices, colorMatrix } = expected;
 
   // Check simulation menu button state
-  is(
-    doc.querySelector(SIMULATION_MENU_BUTTON_ID).className,
-    `devtools-button toolbar-menu-button simulation${
-      buttonActive ? " active" : ""
-    }`,
+  await waitFor(
+    () =>
+      doc
+        .getElementById(SIMULATION_MENU_BUTTON_ID)
+        .classList.contains("active") === buttonActive
+  );
+  ok(
+    true,
     `Simulation menu button contains ${buttonActive ? "active" : "base"} class.`
   );
 
   // Check simulation menu options states, if specified
   if (checkedOptionIndices) {
+    const simulationMenuOptions = toolboxDoc
+      .getElementById(SIMULATION_MENU_ID)
+      .querySelectorAll(".menuitem");
+
     simulationMenuOptions.forEach((menuListItem, index) => {
       const isChecked = checkedOptionIndices.includes(index);
       const button = menuListItem.firstChild;
@@ -467,6 +483,19 @@ async function checkSimulationState(doc, expected) {
       );
     });
   }
+
+  const docShellColorMatrix = await SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [],
+    () => content.window.docShell.getColorMatrix()
+  );
+  Assert.deepEqual(
+    // The values we get from getColorMatrix have higher precisions than what is defined
+    // in the simulation matrix in the accessibility panel
+    docShellColorMatrix.map(v => v.toFixed(6)),
+    colorMatrix,
+    `docShell color matrix has expected value`
+  );
 }
 
 /**
@@ -618,20 +647,46 @@ async function toggleMenuItem(doc, toolboxDoc, menuId, menuItemIndex) {
   );
 }
 
-async function openSimulationMenu(doc) {
-  doc.querySelector(SIMULATION_MENU_BUTTON_ID).click();
+/**
+ * Open the simulation menu.
+ *
+ * @param {document} doc
+ *        panel document.
+ * @param {document} toolboxDoc
+ *        toolbox document.
+ */
+async function openSimulationMenu(doc, toolboxDoc) {
+  doc.getElementById(SIMULATION_MENU_BUTTON_ID).click();
 
   await BrowserTestUtils.waitForCondition(() =>
-    doc
-      .querySelector(SIMULATION_MENU_BUTTON_ID + "-menu")
+    toolboxDoc
+      .getElementById(SIMULATION_MENU_ID)
       .classList.contains("tooltip-visible")
   );
 }
 
-async function toggleSimulationOption(doc, optionIndex) {
-  const simulationMenu = doc.querySelector(SIMULATION_MENU_BUTTON_ID + "-menu");
-  simulationMenu.querySelectorAll(".menuitem")[optionIndex].firstChild.click();
+/**
+ * Toggle an option in the the simulation menu.
+ *
+ * @param {document} toolboxDoc
+ *        toolbox document.
+ * @param {Number}
+ *        index of the option in the menu
+ */
+async function toggleSimulationOption(toolboxDoc, optionIndex) {
+  const simulationMenu = toolboxDoc.getElementById(SIMULATION_MENU_ID);
+  const menuItemButton =
+    simulationMenu.querySelectorAll(".menuitem")[optionIndex].firstChild;
+  const previousAriaCheckedValue = menuItemButton.getAttribute("aria-checked");
+  menuItemButton.click();
 
+  // wait for the button state to be updated
+  await waitFor(
+    () =>
+      menuItemButton.getAttribute("aria-checked") !== previousAriaCheckedValue
+  );
+
+  // wait for the menu to be hidden
   await BrowserTestUtils.waitForCondition(
     () => !simulationMenu.classList.contains("tooltip-visible")
   );
@@ -725,7 +780,7 @@ async function runA11yPanelTests(tests, env) {
     }
 
     if (simulation) {
-      await checkSimulationState(env.doc, simulation);
+      await checkSimulationState(env.doc, env.toolbox.doc, simulation);
     }
   }
 }

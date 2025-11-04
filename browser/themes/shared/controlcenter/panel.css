@@ -267,6 +267,7 @@
   height: 16px;
 }
 
+.identity-popup-security-connection description,
 .identity-popup-connection-secure.security-view,
 .identity-popup-connection-secure.upgraded,
 .identity-popup-connection-not-secure.security-view {
@@ -414,7 +415,7 @@
 }
 
 #protections-popup-not-blocking-section-why {
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
 
   &:hover {
     outline: 4px solid var(--button-background-color-ghost-hover);
@@ -506,12 +507,12 @@
   min-width: auto;
   margin: 0;
   margin-inline-start: 2px;
-  border-width: 0;
   padding: 2px;
   padding-inline-end: 6px;
   background-color: var(--button-background-color);
   color: var(--button-text-color);
-  border-radius: var(--border-radius-small);
+  border: var(--button-border);
+  border-radius: var(--button-border-radius);
 
   > .button-box > .button-icon {
     margin: 0;
@@ -529,11 +530,13 @@
   &:hover {
     color: var(--button-text-color-hover);
     background-color: var(--button-background-color-hover);
+    border-color: var(--button-border-color-hover);
   }
 
   &:hover:active {
     color: var(--button-text-color-active);
     background-color: var(--button-background-color-active);
+    border-color: var(--button-border-color-active);
   }
 }
 
@@ -798,6 +801,7 @@
 
 #trustpanel-popup-host {
   align-self: center;
+  white-space: nowrap;
 }
 
 #trustpanel-graphic-section {
@@ -806,6 +810,14 @@
   padding-block-start: var(--space-small);
   border-radius: var(--border-radius-medium);
   flex-direction: column;
+}
+
+.only-trustpanel {
+  visibility: hidden;
+
+  #trustpanel-popup & {
+    visibility: visible;
+  }
 }
 
 #trustpanel-popup {
@@ -922,6 +934,10 @@
 #trustpanel-blocker-section {
   background: light-dark(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12));
   border: var(--trustpanel-inner-border);
+}
+
+.trustpanel-blocker-section[hidden] + toolbarseparator {
+  display: none;
 }
 
 #trustpanel-insecure-section {

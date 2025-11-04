@@ -112,6 +112,7 @@ export let FormAutofillStatus = {
 
     Services.obs.removeObserver(this, "privacy-pane-loaded");
     Services.prefs.removeObserver(ENABLED_AUTOFILL_ADDRESSES_PREF, this);
+    Services.obs.removeObserver(this, "formautofill-storage-changed");
     Services.wm.removeListener(this);
 
     if (FormAutofill.isAutofillCreditCardsAvailable) {
@@ -204,11 +205,7 @@ export let FormAutofillStatus = {
       case "privacy-pane-loaded": {
         let formAutofillPreferences = new lazy.FormAutofillPreferences();
         let document = subject.document;
-        let prefFragment = formAutofillPreferences.init(document);
-        let formAutofillGroupBox = document.getElementById(
-          "formAutofillGroupBox"
-        );
-        formAutofillGroupBox.appendChild(prefFragment);
+        formAutofillPreferences.init(document);
         break;
       }
 
@@ -870,10 +867,6 @@ export class FormAutofillParent extends JSWindowActorParent {
     // from the new address.
     let newRecord = {};
     if (mergeableFields.length) {
-      // TODO: This is only temporarily, should be removed after Bug 1836438 is fixed
-      if (mergeableFields.includes("name")) {
-        mergeableFields.push("given-name", "additional-name", "family-name");
-      }
       mergeableFields.forEach(f => {
         if (f in newAddress.record) {
           newRecord[f] = newAddress.record[f];

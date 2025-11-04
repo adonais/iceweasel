@@ -38,7 +38,6 @@ class AddonPermissionsDetailsFragment : Fragment() {
 
     private val args by navArgs<AddonPermissionsDetailsFragmentArgs>()
 
-    @Suppress("LongMethod")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,

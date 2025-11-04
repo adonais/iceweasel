@@ -266,14 +266,15 @@ class nsMenuPopupFrame final : public nsBlockFrame {
     return mPopupState == ePopupOpening || mPopupState == ePopupVisible ||
            mPopupState == ePopupShown;
   }
-  bool IsVisible() {
+  bool IsVisible() const {
     return mPopupState == ePopupVisible || mPopupState == ePopupShown;
   }
-  bool IsVisibleOrShowing() {
+  bool IsVisibleOrShowing() const {
     return IsOpen() || mPopupState == ePopupPositioning ||
            mPopupState == ePopupShowing;
   }
   bool IsNativeMenu() const { return mIsNativeMenu; }
+  bool CanSkipLayout() const;
   bool IsMouseTransparent() const;
 
   // Return true if the popup is for a menulist.

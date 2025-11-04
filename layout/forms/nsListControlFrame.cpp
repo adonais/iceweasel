@@ -41,12 +41,8 @@ using namespace mozilla::dom;
 //---------------------------------------------------------
 nsListControlFrame* NS_NewListControlFrame(PresShell* aPresShell,
                                            ComputedStyle* aStyle) {
-  nsListControlFrame* it =
-      new (aPresShell) nsListControlFrame(aStyle, aPresShell->GetPresContext());
-
-  it->AddStateBits(NS_FRAME_INDEPENDENT_SELECTION);
-
-  return it;
+  return new (aPresShell)
+      nsListControlFrame(aStyle, aPresShell->GetPresContext());
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsListControlFrame)

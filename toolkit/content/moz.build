@@ -264,3 +264,9 @@ with Files("treeUtils.js"):
 
 with Files("viewZoomOverlay.js"):
     BUG_COMPONENT = ("Toolkit", "General")
+
+with Files("preferencesBindings.js"):
+    BUG_COMPONENT = ("Toolkit", "Preferences")
+
+with Files("preferences/*"):
+    BUG_COMPONENT = ("Toolkit", "Preferences")

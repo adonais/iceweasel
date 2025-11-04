@@ -7,11 +7,11 @@
 // the view.
 
 const TEST_RESULTS = [
-  new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.URL,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
-    { url: "http://mozilla.org/1" }
-  ),
+  new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.URL,
+    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    payload: { url: "http://mozilla.org/1" },
+  }),
   makeTipResult(),
 ];
 
@@ -33,11 +33,11 @@ add_task(async function oneTip() {
   let results = Array.from(TEST_RESULTS);
   for (let i = TEST_RESULTS.length; i < MAX_RESULTS; i++) {
     results.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: `http://mozilla.org/${i}` }
-      )
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: `http://mozilla.org/${i}` },
+      })
     );
   }
 
@@ -68,11 +68,11 @@ add_task(async function threeTips() {
   }
   for (let i = 2; i < 15; i++) {
     results.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: `http://mozilla.org/${i}` }
-      )
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: `http://mozilla.org/${i}` },
+      })
     );
   }
 
@@ -100,11 +100,11 @@ add_task(async function oneTip_nonRestricting() {
   let results = Array.from(TEST_RESULTS);
   for (let i = 2; i < 15; i++) {
     results.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: `http://mozilla.org/${i}` }
-      )
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: `http://mozilla.org/${i}` },
+      })
     );
   }
 
@@ -144,11 +144,11 @@ add_task(async function threeTips_nonRestricting() {
   }
   for (let i = 2; i < 15; i++) {
     results.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: `http://mozilla.org/${i}` }
-      )
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: `http://mozilla.org/${i}` },
+      })
     );
   }
 
@@ -184,15 +184,14 @@ add_task(async function customValue() {
   let results = [];
   for (let i = 0; i < 15; i++) {
     results.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: `http://mozilla.org/${i}` }
-      )
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        resultSpan: i == 1 ? 5 : undefined,
+        payload: { url: `http://mozilla.org/${i}` },
+      })
     );
   }
-
-  results[1].resultSpan = 5;
 
   let expectedResults = Array.from(results);
   expectedResults = expectedResults.slice(0, 6);
@@ -236,10 +235,10 @@ function collectExpectedProperties(actualObj, expectedObj) {
 }
 
 function makeTipResult() {
-  return new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.TIP,
-    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-    {
+  return new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.TIP,
+    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    payload: {
       helpUrl: "http://example.com/",
       type: "test",
       titleL10n: { id: "urlbar-search-tips-confirm" },
@@ -249,6 +248,6 @@ function makeTipResult() {
           l10n: { id: "urlbar-search-tips-confirm" },
         },
       ],
-    }
-  );
+    },
+  });
 }

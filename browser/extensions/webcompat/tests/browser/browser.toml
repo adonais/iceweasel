@@ -25,6 +25,8 @@ skip-if = ["debug"] # disabled until bug 1961939 is fixed.
 
 ["browser_pref_check.js"]
 
+["browser_remote_settings_updates.js"]
+
 ["browser_shims.js"]
 https_first_disabled = true
 

@@ -393,31 +393,35 @@ class TreeView extends Component {
           }
         }
         break;
-      case "ArrowDown":
+      case "ArrowDown": {
         const nextRow = rows[index + 1];
         if (nextRow) {
           this.selectRow(nextRow, { alignTo: "bottom" });
         }
         break;
-      case "ArrowUp":
+      }
+      case "ArrowUp": {
         const previousRow = rows[index - 1];
         if (previousRow) {
           this.selectRow(previousRow, { alignTo: "top" });
         }
         break;
-      case "Home":
+      }
+      case "Home": {
         const firstRow = rows[0];
 
         if (firstRow) {
           this.selectRow(firstRow, { alignTo: "top" });
         }
         break;
-      case "End":
+      }
+      case "End": {
         const lastRow = rows[rows.length - 1];
         if (lastRow) {
           this.selectRow(lastRow, { alignTo: "bottom" });
         }
         break;
+      }
       case "Enter":
       case " ":
         // On space or enter make selected row active. This means keyboard

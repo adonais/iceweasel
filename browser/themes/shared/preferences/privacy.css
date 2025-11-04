@@ -125,7 +125,7 @@
 }
 
 .arrowhead {
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   min-height: 20px;
   min-width: 20px;
   max-height: 20px;

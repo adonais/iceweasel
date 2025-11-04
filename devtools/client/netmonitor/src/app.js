@@ -18,6 +18,9 @@ const ToolboxProvider = require("resource://devtools/client/framework/store-prov
 const {
   visibilityHandlerStore,
 } = require("resource://devtools/client/shared/redux/visibilityHandlerStore.js");
+const {
+  START_IGNORE_ACTION,
+} = require("resource://devtools/client/shared/redux/middleware/ignore.js");
 
 const FluentReact = require("resource://devtools/client/shared/vendor/fluent-react.js");
 const App = require("resource://devtools/client/netmonitor/src/components/App.js");
@@ -116,6 +119,9 @@ NetMonitorApp.prototype = {
     // where the Network panel is initialized without the toolbox
     // and running in a tab (see initialize.js for details).
     this.api.destroy();
+
+    // Prevents any further action from being dispatched
+    this.api.store.dispatch(START_IGNORE_ACTION);
   },
 
   /**

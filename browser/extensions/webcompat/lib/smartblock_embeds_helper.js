@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* globals browser */
+/* globals browser exportFunction */
 
 "use strict";
 
@@ -156,6 +156,10 @@ const embedHelperLib = (() => {
       // Create the placeholder inside a shadow dom
       const placeholderDiv = document.createElement("div");
 
+      // Workaround to make sure clicks reach our placeholder button if the site
+      // uses pointer capture. See Bug 1966696 for an example.
+      disableSetPointerCaptureFor(placeholderDiv);
+
       if (isTestShim) {
         // Tag the div with a class to make it easily detectable FOR THE TEST SHIM ONLY
         placeholderDiv.classList.add("shimmed-embedded-content");
@@ -252,6 +256,31 @@ const embedHelperLib = (() => {
         newEmbedObserver.disconnect();
       }
     }, SMARTBLOCK_EMBED_OBSERVER_TIMEOUT_MS);
+  }
+
+  /**
+   * Disables the setPointerCapture method for a given element to prevent
+   * pointer capture issues.
+   *
+   * @param {HTMLElement} el - The element to disable setPointerCapture for.
+   */
+  function disableSetPointerCaptureFor(el) {
+    const pageEl = el.wrappedJSObject;
+
+    Object.defineProperty(pageEl, "setPointerCapture", {
+      configurable: true,
+      writable: true,
+      enumerable: false,
+      // no-op ONLY for this element
+      value: exportFunction(function (_pointerId) {
+        console.warn(
+          "Blocked setPointerCapture on SmartBlock embed placeholder.",
+          this,
+          _pointerId
+        );
+        // swallow
+      }, window),
+    });
   }
 
   /**

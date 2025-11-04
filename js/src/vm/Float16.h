@@ -340,7 +340,7 @@ class std::numeric_limits<js::float16> {
 };
 
 template <>
-struct mozilla::detail::FloatingPointTrait<js::float16> {
+struct mozilla::FloatingPointTrait<js::float16> {
  protected:
   using Bits = uint16_t;
 

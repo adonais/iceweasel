@@ -59,7 +59,8 @@
       position: absolute;
       inset-block-start: 50%;
       transform: translateY(-50%);
-      inset-inline-start: var(--space-xlarge);
+      // Bug 1967304 - Custom alignment for absolutely positioned element
+      inset-inline-start: calc(var(--space-medium) + var(--space-small));
 
       &.icon-disabled {
         fill: var(--text-color-disabled);
@@ -69,7 +70,9 @@
     .add-task-input {
       background: var(--button-background-color);
       padding-block: var(--space-small);
-      padding-inline: var(--space-xxlarge) var(--space-large);
+      // Bug 1967304 - Custom alignment for absolutely positioned element
+      padding-inline-start: calc((var(--space-large) * 2) + var(--space-xsmall));
+      padding-inline-end: var(--space-large);
       outline: none;
       border: none;
       border-radius: var(--border-radius-small);
@@ -94,11 +97,13 @@
   // Height necessary to vertically center empty state
   .task-list-wrapper {
     height: 100%;
+    padding-block-start: var(--space-xsmall);
   }
 
   fieldset {
-    padding: 0 var(--space-medium);
-    margin: 0 var(--space-xsmall);
+    margin: 0;
+    padding-block: 0;
+    padding-inline: var(--space-medium);
     border: none;
     overflow-y: auto;
     max-height: 165px;
@@ -108,22 +113,15 @@
     align-items: center;
     background: transparent;
     border-radius: var(--border-radius-small);
-    padding: var(--space-xsmall);
     display: flex;
     justify-content: space-between;
     transition: opacity 300ms ease;
+    margin-block-end: var(--space-xsmall);
 
     // Spacing between uncompleted task and "Completed" list
     &.task-type-tasks {
       &:last-of-type {
         margin-block-end: var(--space-small);
-      }
-    }
-
-    // Spacing between "Completed" list title and first completed item
-    &.task-type-completed {
-      &:first-of-type {
-        margin-block-start: var(--space-small);
       }
     }
 
@@ -137,6 +135,7 @@
       display: flex;
       align-items: center;
       flex-grow: 2;
+      padding-block: var(--space-small);
 
       span {
         -webkit-line-clamp: 3;
@@ -152,6 +151,8 @@
       height: var(--space-large);
       width: var(--space-large);
       accent-color: var(--button-background-color-primary);
+      margin-inline-start: var(--space-small);
+      padding: 0;
     }
 
     .task-label {
@@ -165,7 +166,7 @@
     }
 
     moz-button {
-      align-self: flex-start;
+      margin-inline-end: var(--space-xsmall);
       visibility: hidden;
 
       &:has(+ panel-list[open]) {
@@ -194,6 +195,7 @@
       max-width: 180px;
       border: none;
       border-radius: 0;
+      user-select: text;
 
       &:focus {
         outline: var(--focus-outline);
@@ -208,7 +210,7 @@
     align-items: center;
     gap: var(--space-small);
     height: 100%;
-    padding-block: var(--space-large);
+    padding-block-end: var(--space-medium);
 
     @include wallpaper-contrast-fix;
 
@@ -217,7 +219,14 @@
       text-align: center;
       color: var(--text-color-deemphasized);
       font-size: var(--font-size-small);
+      padding-inline: var(--space-medium);
     }
+  }
+
+  .completed-task-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-small);
   }
 
   .completed-task-wrapper summary {

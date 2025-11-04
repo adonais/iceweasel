@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { SuggestProvider } from "resource:///modules/urlbar/private/SuggestFeature.sys.mjs";
+import { SuggestProvider } from "moz-src:///browser/components/urlbar/private/SuggestFeature.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+  QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 /**
@@ -35,11 +35,15 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     throw new Error("Trying to access the base class, must be overridden");
   }
 
-  getViewTemplate(_result) {
+  getViewTemplateForDescriptionTop(_index) {
     throw new Error("Trying to access the base class, must be overridden");
   }
 
-  getViewUpdate(_result) {
+  getViewTemplateForDescriptionBottom(_index) {
+    throw new Error("Trying to access the base class, must be overridden");
+  }
+
+  getViewUpdateForValues(_values) {
     throw new Error("Trying to access the base class, must be overridden");
   }
 
@@ -282,7 +286,12 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     return null;
   }
 
-  makeMerinoResult(_queryContext, suggestion, searchString) {
+  makeMerinoResult(
+    queryContext,
+    suggestion,
+    searchString,
+    additionalOptions = {}
+  ) {
     if (!this.isEnabled) {
       return null;
     }
@@ -293,20 +302,18 @@ export class RealtimeSuggestProvider extends SuggestProvider {
     ) {
       return null;
     }
-    return Object.assign(
-      new lazy.UrlbarResult(
-        lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC,
-        lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-        {
-          ...suggestion.custom_details,
-          dynamicType: this.realtimeType,
-        }
-      ),
-      {
-        isBestMatch: true,
-        hideRowLabel: true,
-      }
-    );
+
+    return new lazy.UrlbarResult({
+      type: lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      isBestMatch: true,
+      hideRowLabel: true,
+      ...additionalOptions,
+      payload: {
+        ...suggestion.custom_details,
+        dynamicType: this.realtimeType,
+      },
+    });
   }
 
   makeOptInResult(queryContext, _suggestion) {
@@ -329,47 +336,136 @@ export class RealtimeSuggestProvider extends SuggestProvider {
           },
         };
 
-    return Object.assign(
-      new lazy.UrlbarResult(
-        lazy.UrlbarUtils.RESULT_TYPE.TIP,
-        lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-        {
-          // This `type` is the tip type, required for `TIP` results.
-          type: "realtime_opt_in",
-          icon: this.optInIcon,
-          titleL10n: this.optInTitleL10n,
-          descriptionL10n: this.optInDescriptionL10n,
-          descriptionLearnMoreTopic: lazy.QuickSuggest.HELP_TOPIC,
-          buttons: [
-            {
-              command: "opt_in",
-              l10n: {
-                id: "urlbar-result-realtime-opt-in-allow",
-                cacheable: true,
-              },
-              input: queryContext.searchString,
-              attributes: {
-                primary: "",
-              },
+    return new lazy.UrlbarResult({
+      type: lazy.UrlbarUtils.RESULT_TYPE.TIP,
+      source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      isBestMatch: true,
+      hideRowLabel: true,
+      payload: {
+        // This `type` is the tip type, required for `TIP` results.
+        type: "realtime_opt_in",
+        icon: this.optInIcon,
+        titleL10n: this.optInTitleL10n,
+        descriptionL10n: this.optInDescriptionL10n,
+        descriptionLearnMoreTopic: lazy.QuickSuggest.HELP_TOPIC,
+        buttons: [
+          {
+            command: "opt_in",
+            l10n: {
+              id: "urlbar-result-realtime-opt-in-allow",
+              cacheable: true,
             },
-            {
-              ...splitButtonMain,
-              menu: [
-                {
-                  name: "not_interested",
-                  l10n: {
-                    id: "urlbar-result-realtime-opt-in-dismiss-all",
-                  },
+            input: queryContext.searchString,
+            attributes: {
+              primary: "",
+            },
+          },
+          {
+            ...splitButtonMain,
+            menu: [
+              {
+                name: "not_interested",
+                l10n: {
+                  id: "urlbar-result-realtime-opt-in-dismiss-all",
                 },
-              ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+  }
+
+  getViewTemplate(result) {
+    let values = result.payload[this.merinoProvider]?.values;
+    if (!values) {
+      return null;
+    }
+
+    let hasMultipleValues = values.length > 1;
+    return {
+      name: "root",
+      overflowable: true,
+      attributes: {
+        selectable: hasMultipleValues ? null : "",
+      },
+      classList: ["urlbarView-realtime-root"],
+      children: values.map((_v, i) => ({
+        name: `item_${i}`,
+        tag: "span",
+        classList: ["urlbarView-realtime-item"],
+        attributes: {
+          selectable: !hasMultipleValues ? null : "",
+        },
+        children: [
+          // Create an image inside a container so that the image appears inset
+          // into a square. This is atypical because we normally use only an
+          // image and give it padding and a background color to achieve that
+          // effect, but that only works when the image size is fixed.
+          // Unfortunately Merino serves market icons of different sizes due to
+          // its reliance on a third-party API.
+          {
+            name: `image_container_${i}`,
+            tag: "span",
+            classList: ["urlbarView-realtime-image-container"],
+            children: [
+              {
+                name: `image_${i}`,
+                tag: "img",
+                classList: ["urlbarView-realtime-image"],
+              },
+            ],
+          },
+          {
+            tag: "span",
+            classList: ["urlbarView-realtime-description"],
+            children: [
+              {
+                tag: "div",
+                classList: ["urlbarView-realtime-description-top"],
+                children: this.getViewTemplateForDescriptionTop(i),
+              },
+              {
+                tag: "div",
+                classList: ["urlbarView-realtime-description-bottom"],
+                children: this.getViewTemplateForDescriptionBottom(i),
+              },
+            ],
+          },
+        ],
+      })),
+    };
+  }
+
+  getViewUpdate(result) {
+    let values = result.payload[this.merinoProvider]?.values;
+    if (!values) {
+      return null;
+    }
+
+    return mergeObjects(
+      Object.assign(
+        {
+          root: {
+            dataset: {
+              // This `url` or `query` will be used when there's only one value.
+              url: values[0].url,
+              query: values[0].query,
             },
-          ],
-        }
+          },
+        },
+        ...values.flatMap((v, i) => ({
+          [`item_${i}`]: {
+            dataset: {
+              // These `url` or `query`s will be used when there are multiple
+              // values.
+              url: v.url,
+              query: v.query,
+            },
+          },
+        }))
       ),
-      {
-        isBestMatch: true,
-        hideRowLabel: true,
-      }
+      this.getViewUpdateForValues(values)
     );
   }
 
@@ -533,4 +629,26 @@ export class RealtimeSuggestProvider extends SuggestProvider {
         : nimbusValue;
     return Math.max(minLength, 0);
   }
+}
+
+function mergeObjects(dest, source) {
+  if (!source || typeof source != "object") {
+    return source;
+  }
+
+  if (Array.isArray(source)) {
+    if (!Array.isArray(dest)) {
+      dest = [];
+    }
+    dest.push(...source);
+    return dest;
+  }
+
+  if (!dest || typeof dest != "object") {
+    dest = {};
+  }
+  for (let [key, value] of Object.entries(source)) {
+    dest[key] = mergeObjects(dest[key], value);
+  }
+  return dest;
 }

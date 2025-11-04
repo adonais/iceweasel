@@ -9,7 +9,7 @@ class LogGradleErrorForTreeHerderJupiterTest {
     private fun assertEqualLines(expected: String, actual: String) {
         assertLinesMatch(
             expected.split("\n"),
-            actual.split("\n"))
+            actual.trimEnd('\n').split("\n"))
     }
 
     @Test

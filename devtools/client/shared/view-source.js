@@ -132,6 +132,7 @@ exports.viewSourceInDebugger = async function (
   });
 
   if (openedSourceInDebugger) {
+    toolbox.emitForTests("source-opened-in-debugger");
     return true;
   }
 

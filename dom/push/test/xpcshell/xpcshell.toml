@@ -9,7 +9,7 @@ skip-if = ["os == 'android'"] # Push notifications and alarms are currently disa
 # This used to be hasNode, but that caused too many issues with tests being
 # silently disabled, so now we explicitly call out the platforms not known
 # to have node installed.
-run-sequentially = "This will delete all existing push subscriptions."
+run-sequentially = ["true"] # This will delete all existing push subscriptions.
 
 ["test_clear_forgetAboutSite.js"]
 
@@ -41,7 +41,7 @@ run-sequentially = "This will delete all existing push subscriptions."
 skip-if = ["true"]
 
 ["test_permissions.js"]
-run-sequentially = "This will delete all existing push subscriptions."
+run-sequentially = ["true"] # This will delete all existing push subscriptions.
 
 ["test_quota_exceeded.js"]
 

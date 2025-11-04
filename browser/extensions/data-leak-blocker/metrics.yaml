@@ -28,7 +28,7 @@ data_leak_blocker:
       - interaction
     send_in_pings:
       - data-leak-blocker
-    expires: 146
+    expires: 151
     extra_keys:
       addon_id:
         type: string

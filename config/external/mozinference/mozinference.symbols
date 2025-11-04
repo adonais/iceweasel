@@ -19,11 +19,15 @@ llama_sampler_chain_init
 llama_sampler_init_greedy
 llama_sampler_init_temp
 llama_sampler_init_dist
+llama_sampler_init_top_k
+llama_sampler_init_top_p
+llama_sampler_init_logit_bias
 llama_sampler_free
 llama_sampler_sample
 llama_memory_clear
 llama_get_memory
 llama_model_get_vocab
+llama_vocab_n_tokens
 llama_tokenize
 llama_n_ctx
 llama_batch_get_one

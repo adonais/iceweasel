@@ -23,7 +23,7 @@ def install_reqs():
     except Exception:
         # we're detecting here that this is running in Taskcluster
         # by checking for the presence of the mozfile directory
-        # that was decompressed from target.condprof.tests.tar.gz
+        # that was decompressed from target.condprof.tests.tar.zst
         run_in_ci = os.path.exists(os.path.join(TOPDIR, "mozfile"))
 
         # On Python 2 we only install what's required for condprof.client

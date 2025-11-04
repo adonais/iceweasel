@@ -43,8 +43,8 @@ list of acceptable features is given below:
      - Clang
      -
    * - Current minimal requirement
-     - 8.1
-     - 8.0
+     - 10
+     - 17
      -
    * - Feature
      - GCC
@@ -311,10 +311,6 @@ Attributes
 Alignment
   Some alignment utilities are defined in `mozilla/Alignment.h
   <https://searchfox.org/mozilla-central/source/mfbt/Alignment.h>`__.
-
-  .. caution::
-    ``MOZ_ALIGNOF`` and ``alignof`` don't have the same semantics. Be careful of what you
-    expect from them.
 
 ``[[deprecated]]``
   If we have deprecated code, we should be removing it rather than marking it as

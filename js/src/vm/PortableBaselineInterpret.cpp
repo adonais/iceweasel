@@ -15,7 +15,9 @@
 #include "vm/PortableBaselineInterpret.h"
 
 #include "mozilla/Maybe.h"
+
 #include <algorithm>
+#include <cmath>
 
 #include "fdlibm.h"
 #include "jsapi.h"
@@ -3770,7 +3772,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
       CACHEOP_CASE(MathFloorNumberResult) {
         NumberOperandId inputId = cacheIRReader.numberOperandId();
         double input = READ_VALUE_REG(inputId.id()).toNumber();
-        double result = fdlibm_floor(input);
+        double result = std::floor(input);
         retValue = DoubleValue(result).asRawBits();
         PREDICT_RETURN();
         DISPATCH_CACHEOP();
@@ -3779,7 +3781,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
       CACHEOP_CASE(MathCeilNumberResult) {
         NumberOperandId inputId = cacheIRReader.numberOperandId();
         double input = READ_VALUE_REG(inputId.id()).toNumber();
-        double result = fdlibm_ceil(input);
+        double result = std::ceil(input);
         retValue = DoubleValue(result).asRawBits();
         PREDICT_RETURN();
         DISPATCH_CACHEOP();
@@ -3788,7 +3790,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
       CACHEOP_CASE(MathTruncNumberResult) {
         NumberOperandId inputId = cacheIRReader.numberOperandId();
         double input = READ_VALUE_REG(inputId.id()).toNumber();
-        double result = fdlibm_trunc(input);
+        double result = std::trunc(input);
         retValue = DoubleValue(result).asRawBits();
         PREDICT_RETURN();
         DISPATCH_CACHEOP();
@@ -3800,7 +3802,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         if (input == 0.0 && std::signbit(input)) {
           FAIL_IC();
         }
-        double result = fdlibm_floor(input);
+        double result = std::floor(input);
         int32_t intResult = int32_t(result);
         if (double(intResult) != result) {
           FAIL_IC();
@@ -3816,7 +3818,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         if (input > -1.0 && std::signbit(input)) {
           FAIL_IC();
         }
-        double result = fdlibm_ceil(input);
+        double result = std::ceil(input);
         int32_t intResult = int32_t(result);
         if (double(intResult) != result) {
           FAIL_IC();
@@ -3832,7 +3834,7 @@ uint64_t ICInterpretOps(uint64_t arg0, uint64_t arg1, ICStub* stub,
         if (input == 0.0 && std::signbit(input)) {
           FAIL_IC();
         }
-        double result = fdlibm_trunc(input);
+        double result = std::trunc(input);
         int32_t intResult = int32_t(result);
         if (double(intResult) != result) {
           FAIL_IC();
@@ -9247,9 +9249,8 @@ debug:;
  */
 
 bool PortableBaselineTrampoline(JSContext* cx, size_t argc, Value* argv,
-                                size_t numFormals, size_t numActuals,
-                                CalleeToken calleeToken, JSObject* envChain,
-                                Value* result) {
+                                size_t numFormals, CalleeToken calleeToken,
+                                JSObject* envChain, Value* result) {
   State state(cx);
   Stack stack(cx->portableBaselineStack());
   StackVal* sp = stack.top;
@@ -9265,10 +9266,10 @@ bool PortableBaselineTrampoline(JSContext* cx, size_t argc, Value* argv,
   // - descriptor
   // - "return address" (nullptr for top frame)
 
-  // `argc` is the number of args *including* `this` (`N + 1`
-  // above). `numFormals` is the minimum `N`; if less, we need to push
-  // `UndefinedValue`s above. We need to pass an argc (including
-  // `this`) accoundint for the extra undefs in the descriptor's argc.
+  // `argc` is the number of args *excluding* `this` (`N` above).
+  // `numFormals` is the minimum `N`; if less, we need to push
+  // `UndefinedValue`s above. The argc in the frame descriptor does
+  // not include `this` or any undefs.
   //
   // If constructing, there is an additional `newTarget` at the end.
   //
@@ -9276,28 +9277,30 @@ bool PortableBaselineTrampoline(JSContext* cx, size_t argc, Value* argv,
   // JSOp, does *not* appear in this count: it is separately passed in
   // the `calleeToken`.
 
-  bool constructing = CalleeTokenIsConstructing(calleeToken);
-  size_t numCalleeActuals = std::max(numActuals, numFormals);
-  size_t numUndefs = numCalleeActuals - numActuals;
+  if (CalleeTokenIsFunction(calleeToken)) {
+    bool constructing = CalleeTokenIsConstructing(calleeToken);
+    size_t numCalleeActuals = std::max(argc, numFormals);
+    size_t numUndefs = numCalleeActuals - argc;
 
-  // N.B.: we already checked the stack in
-  // PortableBaselineInterpreterStackCheck; we don't do it here
-  // because we can't push an exit frame if we don't have an entry
-  // frame, and we need a full activation to produce the backtrace
-  // from ReportOverRecursed.
+    // N.B.: we already checked the stack in
+    // PortableBaselineInterpreterStackCheck; we don't do it here
+    // because we can't push an exit frame if we don't have an entry
+    // frame, and we need a full activation to produce the backtrace
+    // from ReportOverRecursed.
 
-  if (constructing) {
-    PUSH(StackVal(argv[argc]));
-  }
-  for (size_t i = 0; i < numUndefs; i++) {
-    PUSH(StackVal(UndefinedValue()));
-  }
-  for (size_t i = 0; i < argc; i++) {
-    PUSH(StackVal(argv[argc - 1 - i]));
+    if (constructing) {
+      PUSH(StackVal(argv[argc]));
+    }
+    for (size_t i = 0; i < numUndefs; i++) {
+      PUSH(StackVal(UndefinedValue()));
+    }
+    for (size_t i = 0; i < argc + 1; i++) {
+      PUSH(StackVal(argv[argc - 1 - i]));
+    }
   }
   PUSHNATIVE(StackValNative(calleeToken));
   PUSHNATIVE(StackValNative(
-      MakeFrameDescriptorForJitCall(FrameType::CppToJSJit, numActuals)));
+      MakeFrameDescriptorForJitCall(FrameType::CppToJSJit, argc)));
 
   JSScript* script = ScriptFromCalleeToken(calleeToken);
   jsbytecode* pc = script->code();

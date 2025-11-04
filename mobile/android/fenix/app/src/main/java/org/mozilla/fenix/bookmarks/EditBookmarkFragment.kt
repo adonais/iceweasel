@@ -22,6 +22,7 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
+import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.ext.bookmarkStorage
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
@@ -109,6 +110,11 @@ class EditBookmarkFragment : Fragment(R.layout.fragment_edit_bookmark) {
                                     },
                                     lastSavedFolderCache = context.settings().lastSavedFolderCache,
                                     saveBookmarkSortOrder = {},
+                                    reportResultGlobally = {
+                                        requireComponents.appStore.dispatch(
+                                            AppAction.BookmarkAction.BookmarkOperationResultReported(it),
+                                        )
+                                    },
                                 ),
                             ),
                             lifecycleHolder = lifecycleHolder,

@@ -60,8 +60,9 @@ void HTMLDetailsElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         } else {
           oldState.Assign(stringForState(wasOpen));
         }
-        RefPtr<ToggleEvent> toggleEvent = CreateToggleEvent(
-            u"toggle"_ns, oldState, stringForState(isOpen), Cancelable::eNo);
+        RefPtr<ToggleEvent> toggleEvent =
+            CreateToggleEvent(u"toggle"_ns, oldState, stringForState(isOpen),
+                              Cancelable::eNo, nullptr);
         mToggleEventDispatcher =
             new AsyncEventDispatcher(this, toggleEvent.forget());
         mToggleEventDispatcher->PostDOMEvent();

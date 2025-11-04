@@ -24,7 +24,7 @@ private const val FIVE_DAYS_IN_MILLIS = DateUtils.DAY_IN_MILLIS * 5
 internal class StartupCrashMiddleware(
     settings: Settings,
     private val crashReporter: CrashReporter,
-    private val reinitializeHandler: suspend () -> Unit,
+    private val restartHandler: () -> Unit,
     private val startupCrashCanaryCache: StartupCrashCanary,
     private val currentTimeInMillis: () -> TimeInMillis = { System.currentTimeMillis() },
     private val cache: CrashReportCache = SettingsCrashReportCache(settings),
@@ -45,9 +45,7 @@ internal class StartupCrashMiddleware(
                     startupCrashCanaryCache.clearCanary()
                 }
             }
-            ReopenTapped -> scope.launch {
-                reinitializeHandler()
-            }
+            ReopenTapped -> restartHandler()
             NoTapped -> {
                 scope.launch {
                     cache.setDeferredUntil(currentTimeInMillis() + FIVE_DAYS_IN_MILLIS)

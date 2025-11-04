@@ -7,7 +7,6 @@
 #define _mozilla_dom_PerformanceTimingIPCUtils_h
 
 #include "ipc/EnumSerializer.h"
-#include "mozilla/EnumTypeTraits.h"
 #include "nsITimedChannel.h"
 
 namespace IPC {

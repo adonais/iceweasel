@@ -20,14 +20,12 @@ import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.DownloadAction
 import mozilla.components.browser.state.state.content.DownloadState
@@ -104,8 +102,8 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
-@ExperimentalCoroutinesApi // UnconfinedTestDispatcher
 @RunWith(AndroidJUnit4::class)
 @Config(shadows = [ShadowFileProvider::class])
 class AbstractFetchDownloadServiceTest {
@@ -120,7 +118,7 @@ class AbstractFetchDownloadServiceTest {
     @get:Rule
     val coroutinesTestRule = MainCoroutineRule()
     private val mainDispatcher = coroutinesTestRule.testDispatcher
-    private val testsDispatcher = UnconfinedTestDispatcher(TestCoroutineScheduler())
+    private val testsDispatcher = StandardTestDispatcher(TestCoroutineScheduler())
 
     private val fakeFileSizeFormatter: FileSizeFormatter = FakeFileSizeFormatter()
     private val fakeDateTimeProvider: DateTimeProvider = FakeDateTimeProvider()
@@ -137,6 +135,8 @@ class AbstractFetchDownloadServiceTest {
     private lateinit var service: AbstractFetchDownloadService
 
     private lateinit var shadowNotificationService: ShadowNotificationManager
+
+    private val delayTime = PROGRESS_UPDATE_INTERVAL.milliseconds
 
     fun createService(
         browserStore: BrowserStore,
@@ -833,7 +833,7 @@ class AbstractFetchDownloadServiceTest {
         service.setDownloadJobStatus(downloadJobState, DOWNLOADING)
         assertEquals(DOWNLOADING, service.getDownloadJobStatus(downloadJobState))
 
-        mainDispatcher.scheduler.advanceTimeBy(PROGRESS_UPDATE_INTERVAL)
+        mainDispatcher.scheduler.advanceTimeBy(delayTime)
         mainDispatcher.scheduler.runCurrent()
 
         // The additional notification is the summary one (the notification group).
@@ -1097,7 +1097,7 @@ class AbstractFetchDownloadServiceTest {
         service.setDownloadJobStatus(downloadJobState, DownloadState.Status.PAUSED)
         assertEquals(DownloadState.Status.PAUSED, service.getDownloadJobStatus(downloadJobState))
 
-        mainDispatcher.scheduler.advanceTimeBy(PROGRESS_UPDATE_INTERVAL)
+        mainDispatcher.scheduler.advanceTimeBy(delayTime)
         mainDispatcher.scheduler.runCurrent()
 
         // one of the notifications it is the group notification only for devices the support it
@@ -1145,7 +1145,7 @@ class AbstractFetchDownloadServiceTest {
         service.setDownloadJobStatus(downloadJobState, COMPLETED)
         assertEquals(COMPLETED, service.getDownloadJobStatus(downloadJobState))
 
-        mainDispatcher.scheduler.advanceTimeBy(PROGRESS_UPDATE_INTERVAL)
+        mainDispatcher.scheduler.advanceTimeBy(delayTime)
         mainDispatcher.scheduler.runCurrent()
         return downloadJobState
     }
@@ -1176,7 +1176,7 @@ class AbstractFetchDownloadServiceTest {
         service.setDownloadJobStatus(downloadJobState, FAILED)
         assertEquals(FAILED, service.getDownloadJobStatus(downloadJobState))
 
-        mainDispatcher.scheduler.advanceTimeBy(PROGRESS_UPDATE_INTERVAL)
+        mainDispatcher.scheduler.advanceTimeBy(delayTime)
         mainDispatcher.scheduler.runCurrent()
 
         // one of the notifications it is the group notification only for devices the support it
@@ -1209,7 +1209,7 @@ class AbstractFetchDownloadServiceTest {
         service.setDownloadJobStatus(downloadJobState, DownloadState.Status.CANCELLED)
         assertEquals(DownloadState.Status.CANCELLED, service.getDownloadJobStatus(downloadJobState))
 
-        mainDispatcher.scheduler.advanceTimeBy(PROGRESS_UPDATE_INTERVAL)
+        mainDispatcher.scheduler.advanceTimeBy(delayTime)
         mainDispatcher.scheduler.runCurrent()
 
         // The additional notification is the summary one (the notification group).
@@ -1352,7 +1352,7 @@ class AbstractFetchDownloadServiceTest {
         verify(service).performDownload(providedDownload.capture(), anyBoolean())
 
         // Advance the clock so that the puller posts a notification.
-        mainDispatcher.scheduler.advanceTimeBy(PROGRESS_UPDATE_INTERVAL)
+        mainDispatcher.scheduler.advanceTimeBy(delayTime)
         mainDispatcher.scheduler.runCurrent()
         // One of the notifications it is the group notification only for devices the support it
         assertEquals(2, shadowNotificationService.size())
@@ -1414,7 +1414,7 @@ class AbstractFetchDownloadServiceTest {
         service.setDownloadJobStatus(service.downloadJobs[download.id]!!, DownloadState.Status.PAUSED)
 
         // Advance the clock so that the poller posts a notification.
-        mainDispatcher.scheduler.advanceTimeBy(PROGRESS_UPDATE_INTERVAL)
+        mainDispatcher.scheduler.advanceTimeBy(delayTime)
         mainDispatcher.scheduler.runCurrent()
         assertEquals(2, shadowNotificationService.size())
 
@@ -1436,7 +1436,7 @@ class AbstractFetchDownloadServiceTest {
             state = download,
             foregroundServiceId = Random.nextInt(),
             status = DOWNLOADING,
-            job = CoroutineScope(IO).launch {
+            job = backgroundScope.launch {
                 @Suppress("ControlFlowWithEmptyBody")
                 while (true) { }
             },
@@ -1483,7 +1483,7 @@ class AbstractFetchDownloadServiceTest {
             state = inProgressDownload,
             foregroundServiceId = Random.nextInt(),
             status = DOWNLOADING,
-            job = CoroutineScope(IO).launch {
+            job = backgroundScope.launch {
                 @Suppress("ControlFlowWithEmptyBody")
                 while (true) { }
             },
@@ -1499,7 +1499,7 @@ class AbstractFetchDownloadServiceTest {
             state = pausedDownload,
             foregroundServiceId = Random.nextInt(),
             status = PAUSED,
-            job = CoroutineScope(IO).launch {
+            job = backgroundScope.launch {
                 @Suppress("ControlFlowWithEmptyBody")
                 while (true) { }
             },
@@ -1514,7 +1514,7 @@ class AbstractFetchDownloadServiceTest {
             state = initiatedDownload,
             foregroundServiceId = Random.nextInt(),
             status = INITIATED,
-            job = CoroutineScope(IO).launch {
+            job = backgroundScope.launch {
                 @Suppress("ControlFlowWithEmptyBody")
                 while (true) { }
             },
@@ -1529,7 +1529,7 @@ class AbstractFetchDownloadServiceTest {
             state = failedDownload,
             foregroundServiceId = Random.nextInt(),
             status = FAILED,
-            job = CoroutineScope(IO).launch {
+            job = backgroundScope.launch {
                 @Suppress("ControlFlowWithEmptyBody")
                 while (true) { }
             },
@@ -1564,7 +1564,7 @@ class AbstractFetchDownloadServiceTest {
             state = completedDownload,
             foregroundServiceId = Random.nextInt(),
             status = COMPLETED,
-            job = CoroutineScope(IO).launch {
+            job = backgroundScope.launch {
                 @Suppress("ControlFlowWithEmptyBody")
                 while (true) { }
             },
@@ -1580,7 +1580,7 @@ class AbstractFetchDownloadServiceTest {
             state = cancelledDownload,
             foregroundServiceId = Random.nextInt(),
             status = CANCELLED,
-            job = CoroutineScope(IO).launch {
+            job = backgroundScope.launch {
                 @Suppress("ControlFlowWithEmptyBody")
                 while (true) { }
             },
@@ -1644,6 +1644,7 @@ class AbstractFetchDownloadServiceTest {
         val downloadJobState = DownloadJobState(state = download, status = DownloadState.Status.COMPLETED)
 
         service.updateDownloadNotification(DownloadState.Status.COMPLETED, downloadJobState, this)
+        testsDispatcher.scheduler.advanceUntilIdle()
 
         verify(service).addCompletedDownload(
             title = any(),
@@ -1767,6 +1768,8 @@ class AbstractFetchDownloadServiceTest {
         doReturn(downloadManager).`when`(spyContext).getSystemService<DownloadManager>()
 
         service.addToDownloadSystemDatabaseCompat(download, this)
+        testsDispatcher.scheduler.advanceUntilIdle()
+
         verify(downloadManager).addCompletedDownload(anyString(), anyString(), anyBoolean(), anyString(), anyString(), anyLong(), anyBoolean(), isNull(), any())
     }
 
@@ -1816,6 +1819,8 @@ class AbstractFetchDownloadServiceTest {
         doReturn(downloadManager).`when`(spyContext).getSystemService<DownloadManager>()
 
         service.addToDownloadSystemDatabaseCompat(download, this)
+        testsDispatcher.scheduler.advanceUntilIdle()
+
         verify(downloadManager).addCompletedDownload(
             eq("example.apk"),
             eq("example.apk"),
@@ -1847,6 +1852,8 @@ class AbstractFetchDownloadServiceTest {
         val defaultMimeType = "*/*"
 
         service.addToDownloadSystemDatabaseCompat(downloadWithNullMimeType, this)
+        testsDispatcher.scheduler.advanceUntilIdle()
+
         verify(downloadManager).addCompletedDownload(
             anyString(), anyString(), anyBoolean(), eq(defaultMimeType),
             anyString(), anyLong(), anyBoolean(), isNull(), any(),
@@ -1855,6 +1862,8 @@ class AbstractFetchDownloadServiceTest {
         downloadManager = mock()
         doReturn(downloadManager).`when`(spyContext).getSystemService<DownloadManager>()
         service.addToDownloadSystemDatabaseCompat(downloadWithEmptyMimeType, this)
+        testsDispatcher.scheduler.advanceUntilIdle()
+
         verify(downloadManager).addCompletedDownload(
             anyString(), anyString(), anyBoolean(), eq(defaultMimeType),
             anyString(), anyLong(), anyBoolean(), isNull(), any(),
@@ -1919,7 +1928,7 @@ class AbstractFetchDownloadServiceTest {
 
         service.setDownloadJobStatus(cancelledDownloadJobState, DownloadState.Status.CANCELLED)
         assertEquals(DownloadState.Status.CANCELLED, service.getDownloadJobStatus(cancelledDownloadJobState))
-        mainDispatcher.scheduler.advanceTimeBy(PROGRESS_UPDATE_INTERVAL)
+        mainDispatcher.scheduler.advanceTimeBy(delayTime)
         mainDispatcher.scheduler.runCurrent()
         // The additional notification is the summary one (the notification group).
         assertEquals(1, shadowNotificationService.size())
@@ -1939,7 +1948,7 @@ class AbstractFetchDownloadServiceTest {
 
         service.setDownloadJobStatus(downloadJobState, DownloadState.Status.COMPLETED)
         assertEquals(DownloadState.Status.COMPLETED, service.getDownloadJobStatus(downloadJobState))
-        mainDispatcher.scheduler.advanceTimeBy(PROGRESS_UPDATE_INTERVAL)
+        mainDispatcher.scheduler.advanceTimeBy(delayTime)
         mainDispatcher.scheduler.runCurrent()
         // one of the notifications it is the group notification only for devices the support it
         assertEquals(2, shadowNotificationService.size())

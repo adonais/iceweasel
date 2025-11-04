@@ -35,6 +35,11 @@ async function testHWConcurrency(result, expectedResults, extraData) {
 }
 
 add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.fingerprintingProtection.overrides", "+NavigatorHWConcurrency"],
+    ],
+  });
   registerCleanupFunction(async function () {
     Services.prefs.clearUserPref(
       "privacy.trackingprotection.allow_list.hasUserInteractedWithETPSettings"

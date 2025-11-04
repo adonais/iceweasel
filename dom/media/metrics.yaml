@@ -244,6 +244,59 @@ media.playback:
         type: boolean
     expires: never
 
+media.recorder:
+  mime_type_query:
+    type: labeled_counter
+    description: >
+      Count the amount of times where a mime type is queried via
+      MediaRecorder.isTypeSupported() or passed to the MediaRecorder constructor.
+      The result is accumulated per mime type.
+    labels:
+      - mp4_av1
+      - mp4_h264
+      - mp4_h265
+      - mp4_vp9
+      - mp4_aac
+      - mp4_flac
+      - mp4_opus
+      - mp4_unspecified # no codec specified (codecs string is empty but valid)
+      - mp4_others # invalid/unrecognized codec
+      - webm_av1
+      - webm_vp8
+      - webm_vp9
+      - webm_opus
+      - webm_vorbis
+      - webm_unspecified # no codec specified (codecs string is empty but valid)
+      - webm_others # invalid codec
+      - mkv_av1
+      - mkv_h264
+      - mkv_h265
+      - mkv_vp8
+      - mkv_vp9
+      - mkv_aac
+      - mkv_flac
+      - mkv_opus
+      - mkv_pcm
+      - mkv_vorbis
+      - mkv_unspecified # no codec specified (codecs string is empty but valid)
+      - mkv_others # invalid/unrecognized codec
+      - ogg_vp8
+      - ogg_vp9
+      - ogg_flac
+      - ogg_opus
+      - ogg_vorbis
+      - ogg_unspecified # no codec specified (codecs string is empty but valid)
+      - ogg_others # invalid/unrecognized codec
+      - empty # The whole MIME string is empty but valid
+      - others # invalid container
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1986763
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1986763
+    notification_emails:
+      - media-alerts@mozilla.com
+    expires: never
+
 media:
   element_in_page_count:
     type: counter

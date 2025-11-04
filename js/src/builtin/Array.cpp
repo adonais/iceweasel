@@ -5548,16 +5548,16 @@ ArrayObject* js::NewDenseCopiedArray(
   return arr;
 }
 
-// values must point at already-rooted Value objects
+// strings in props must point at already-rooted strings
 ArrayObject* js::NewDenseCopiedArray(
-    JSContext* cx, uint32_t length, JSLinearString** values,
+    JSContext* cx, uint32_t length, IteratorProperty* props,
     NewObjectKind newKind /* = GenericObject */) {
   ArrayObject* arr = NewArray<UINT32_MAX>(cx, length, newKind);
   if (!arr) {
     return nullptr;
   }
 
-  arr->initDenseElements(values, length);
+  arr->initDenseElements(props, length);
   return arr;
 }
 

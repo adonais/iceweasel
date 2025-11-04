@@ -45,6 +45,7 @@
     --font-size-large: unset;
     --font-size-xlarge: unset;
     --font-size-xxlarge: unset;
+    --font-size-xxxlarge: unset;
 
     /** Link **/
     --link-color: LinkText;

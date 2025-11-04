@@ -134,7 +134,6 @@ nsIntPoint UIEvent::GetLayerPoint() const {
   if (mEvent->mFlags.mIsPositionless) {
     return nsIntPoint(0, 0);
   }
-
   if (!mEvent ||
       (mEvent->mClass != eMouseEventClass &&
        mEvent->mClass != eMouseScrollEventClass &&
@@ -146,14 +145,24 @@ nsIntPoint UIEvent::GetLayerPoint() const {
       !mPresContext || mEventIsInternal) {
     return mLayerPoint;
   }
-  // XXX I'm not really sure this is correct; it's my best shot, though
   nsIFrame* targetFrame = mPresContext->EventStateManager()->GetEventTarget();
-  if (!targetFrame) return mLayerPoint;
+  if (!targetFrame) {
+    return mLayerPoint;
+  }
+  // NOTE(emilio): This matches Blink to my knowledge, but it's generally not
+  // super-well specified, see https://github.com/w3c/uievents/issues/398
+  RelativeTo root{targetFrame->PresShell()->GetRootFrame()};
+  const nsPoint rootPoint =
+      nsLayoutUtils::GetEventCoordinatesRelativeTo(mEvent, root);
   nsIFrame* layer = nsLayoutUtils::GetClosestLayer(targetFrame);
-  nsPoint pt(
-      nsLayoutUtils::GetEventCoordinatesRelativeTo(mEvent, RelativeTo{layer}));
-  return nsIntPoint(nsPresContext::AppUnitsToIntCSSPixels(pt.x),
-                    nsPresContext::AppUnitsToIntCSSPixels(pt.y));
+  nsPoint layerRootPoint{0, 0};
+  if (nsLayoutUtils::TransformPoint(RelativeTo{layer}, RelativeTo{root},
+                                    layerRootPoint) !=
+      nsLayoutUtils::TRANSFORM_SUCCEEDED) {
+    return mLayerPoint;
+  }
+  return RoundedToInt(CSSPoint::FromAppUnits(rootPoint - layerRootPoint))
+      .ToUnknownPoint();
 }
 
 void UIEvent::DuplicatePrivateData() {

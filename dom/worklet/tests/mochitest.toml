@@ -55,3 +55,8 @@ support-files = ["worklet_paintWorklet.js"]
 
 ["test_promise.html"]
 support-files = ["worklet_promise.js"]
+
+["test_warning_reporter.html"]
+support-files = [
+  "warning_reporter_worklet.js",
+]

@@ -75,6 +75,10 @@ class NativeLayerRoot {
   // successful.
   virtual bool CommitToScreen() = 0;
 
+  // When called on a remote instance, synchronously wait until the other side
+  // has processed any previous commits.
+  virtual void WaitUntilCommitToScreenHasBeenProcessed() {}
+
   // Returns a new NativeLayerRootSnapshotter that can be used to read back the
   // visual output of this NativeLayerRoot. The snapshotter needs to be
   // destroyed on the same thread that CreateSnapshotter() was called on. Only

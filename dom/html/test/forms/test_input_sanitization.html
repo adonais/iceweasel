@@ -246,7 +246,7 @@ function sanitizeValue(aType, aValue)
         return "";
       }
       return aValue;
-    case "week":
+    case "week": {
       // https://html.spec.whatwg.org/multipage/infrastructure.html#valid-week-string
       function isLeapYear(aYear) {
         return ((aYear % 4 == 0) && (aYear % 100 != 0)) || (aYear % 400 == 0);
@@ -277,6 +277,7 @@ function sanitizeValue(aType, aValue)
         return "";
       }
       return 1 <= week && week <= getMaximumWeekInYear(year) ? aValue : "";
+    }
     case "datetime-local":
       return sanitizeDateTimeLocal(aValue);
     case "color":

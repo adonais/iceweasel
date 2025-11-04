@@ -29,7 +29,15 @@ pub fn pass(root: &mut Root) -> Result<()> {
     root.visit_mut(|cbi: &mut CustomType| cbi.name = cbi.name.to_upper_camel_case());
     root.visit_mut(|custom: &mut CustomType| custom.name = custom.name.to_upper_camel_case());
     root.visit_mut(|arg: &mut Argument| arg.name = arg.name.to_lower_camel_case());
-    root.visit_mut(|field: &mut Field| field.name = field.name.to_lower_camel_case());
+    root.visit_mut(|fields: &mut Vec<Field>| {
+        for (i, field) in fields.iter_mut().enumerate() {
+            field.name = if field.name.is_empty() {
+                format!("v{i}")
+            } else {
+                field.name.to_lower_camel_case()
+            }
+        }
+    });
     root.visit_mut(|module: &mut Module| module.js_name = format_module_name(&module.name));
     root.visit_mut(|ty: &mut Type| match ty {
         Type::Record {

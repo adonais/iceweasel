@@ -536,10 +536,23 @@
     <html:div class="tab-preview-thumbnail-container"></html:div>
   </panel>
 
-  <menupopup id="tabgroup-preview-panel"
-             class="toolbar-menupopup"
-             consumeoutsideclicks="never">
-  </menupopup>
+  <panel id="tabgroup-preview-panel"
+         role="menu"
+         data-l10n-id="tab-group-preview-name"
+         type="arrow"
+         class="toolbar-menupopup animatable-menupopup"
+         noautofocus="true"
+         norolluponanchor="true"
+         consumeoutsideclicks="false">
+        <arrowscrollbox id="tabgroup-panel-content"
+                        class="menupopup-arrowscrollbox"
+                        flex="1"
+                        orient="vertical"
+                        smoothscroll="false">
+        </arrowscrollbox>
+  </panel>
+
+
 
   <html:template id="pageActionPanelTemplate">
     <panel id="pageActionPanel"

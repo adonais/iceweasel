@@ -34,9 +34,26 @@ async function test_webauthn_with_cert_override(
 
   info("Adding certificate error override.");
   await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
-    let doc = content.document;
-    let exceptionButton = doc.getElementById("exceptionDialogButton");
-    exceptionButton.click();
+    const doc = content.document;
+    const netErrorCard = doc.querySelector("net-error-card").wrappedJSObject;
+
+    await netErrorCard.getUpdateComplete();
+    await EventUtils.synthesizeMouseAtCenter(
+      netErrorCard.advancedButton,
+      {},
+      content
+    );
+    await ContentTaskUtils.waitForCondition(() => {
+      return (
+        netErrorCard.exceptionButton && !netErrorCard.exceptionButton.disabled
+      );
+    }, "Waiting for exception button");
+    netErrorCard.exceptionButton.scrollIntoView();
+    EventUtils.synthesizeMouseAtCenter(
+      netErrorCard.exceptionButton,
+      {},
+      content
+    );
   });
 
   info("Waiting for page load.");

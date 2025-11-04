@@ -41,7 +41,7 @@ add_task(async function test_reload_engines_with_duplicate() {
   let engines = await Services.search.getEngines();
 
   Assert.deepEqual(
-    engines.map(e => e.identifier),
+    engines.map(e => e.id),
     ["appDefault"],
     "Should have the expected default engines"
   );
@@ -71,7 +71,7 @@ add_task(async function test_reload_engines_with_duplicate() {
   engines = await Services.search.getEngines();
 
   Assert.deepEqual(
-    engines.map(e => e.identifier),
+    engines.map(e => e.id),
     ["appDefault", "notInFR"],
     "Should have the expected default engines"
   );

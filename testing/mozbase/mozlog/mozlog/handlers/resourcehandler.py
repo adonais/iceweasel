@@ -53,7 +53,14 @@ class ResourceHandler(LogHandler):
     def test_end(self, data):
         SystemResourceMonitor.end_test(data)
 
+    def test_status(self, data):
+        SystemResourceMonitor.test_status(data)
+
     def log(self, data):
-        level = data.get("level").upper()
-        time = self.resources.convert_to_monotonic_time(data.get("time") / 1000)
-        SystemResourceMonitor.record_marker(level, time, time, data.get("message"))
+        SystemResourceMonitor.test_status(data)
+
+    def process_output(self, data):
+        SystemResourceMonitor.test_status(data)
+
+    def crash(self, data):
+        SystemResourceMonitor.crash(data)

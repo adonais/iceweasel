@@ -230,6 +230,7 @@ async function prepareSemanticSearchTest({
 
   let semanticManager = lazy.getPlacesSemanticHistoryManager(
     {
+      backend: "onnx-native",
       embeddingSize: 384,
       rowLimit,
       samplingAttrib: "frecency",

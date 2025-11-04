@@ -158,7 +158,7 @@ vendoring:
   # All three file/path parameters ("keep", "exclude", and "include") support
   # filenames, directory names, and globs/wildcards.
 
-  # Actions to take after updating. Applied in order.
+  # Actions to take after updating but before applying patches. Applied in order.
   # The action subfield is required. It must be one of:
   #   - copy-file
   #   - move-file
@@ -230,6 +230,15 @@ vendoring:
     - action: run-script
       script: '{cwd}/generate_sources.sh'
       cwd: '{yaml_dir}'
+
+  # Actions to take after patches have been applied. Applied in order.
+  # Uses the same action types as update-actions.
+  # optional
+  post-patch-actions:
+    - action: run-script
+      script: '{yaml_dir}/post_patch_script.py'
+      cwd: '{yaml_dir}'
+      args: ['{revision}']
 
 
 # Configuration for automatic updating system.

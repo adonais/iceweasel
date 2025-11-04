@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env mozilla/browser-window */
-
 /**
  * @typedef {import("../../../../toolkit/components/translations/translations").SelectTranslationsPanelState} SelectTranslationsPanelState
  * @typedef {import("../../../../toolkit/components/translations/translations").LanguagePair} LanguagePair
@@ -2211,11 +2209,13 @@ var SelectTranslationsPanel = new (class {
       `Creating new Translator (${TranslationsUtils.serializeLanguagePair(languagePair)})`
     );
 
-    const translator = await Translator.create(
+    const translator = await Translator.create({
       languagePair,
-      this.#requestTranslationsPort,
-      true /* allowSameLanguage */
-    );
+      requestTranslationsPort: this.#requestTranslationsPort,
+      allowSameLanguage: true,
+      activeRequestCapacity: 1,
+    });
+
     return translator;
   }
 

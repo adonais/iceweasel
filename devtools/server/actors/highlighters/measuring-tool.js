@@ -4,7 +4,6 @@
 
 "use strict";
 
-const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const {
   getCurrentZoom,
   getWindowDimensions,
@@ -232,8 +231,6 @@ class MeasuringToolHighlighter {
     }
 
     this.markup.destroy();
-
-    EventEmitter.emit(this, "destroy");
   }
 
   show() {
@@ -563,7 +560,7 @@ class MeasuringToolHighlighter {
     const { target, type } = event;
 
     switch (type) {
-      case "mousedown":
+      case "mousedown": {
         if (event.button || this._dragging) {
           return;
         }
@@ -575,6 +572,7 @@ class MeasuringToolHighlighter {
           this.handleMouseDownEvent(event);
         }
         break;
+      }
       case "mousemove":
         if (this._dragging && this._dragging.handler) {
           this.handleResizingMouseMoveEvent(event);

@@ -54,6 +54,11 @@ sealed class DebugDrawerAction : Action {
         data object Addresses : NavigateTo()
 
         /**
+         * [NavigateTo] action fired when the debug drawer needs to navigate to [CreditCardsTools].
+         */
+        data object CreditCards : NavigateTo()
+
+        /**
          * [NavigateTo] action fired when the debug drawer needs to navigate to [CfrToolsScreen].
          */
         object CfrTools : NavigateTo()

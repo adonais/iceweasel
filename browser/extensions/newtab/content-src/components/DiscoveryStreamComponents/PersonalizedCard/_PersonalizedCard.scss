@@ -2,7 +2,7 @@
   background-color: var(--background-color-canvas);
   border: 2px solid var(--border-color-card);
   color: var(--text-color);
-  padding: var(--space-xlarge);
+  padding: var(--space-xxlarge);
   border-radius: var(--border-radius-large);
   margin: var(--space-xlarge) 0;
   position: relative;
@@ -49,7 +49,7 @@
     // 1-column layout
     @media (max-width: $break-point-layout-variant) {
       grid-template-columns: 1fr;
-      gap: var(--space-small);
+      gap: var(--space-large);
 
       img {
         justify-self: initial;
@@ -76,12 +76,16 @@
         grid-row: 2;
         grid-column: 2 / span 2;
       }
+
+      p {
+        width: 230px;
+      }
     }
 
     // 3 and 4-column layout
     @media (min-width: $break-point-widest) {
-      grid-template-columns: 0.2fr 1fr 1fr 1fr;
-      gap: var(--space-small);
+      grid-template-columns: 0.2fr 1.2fr 0.8fr 1fr;
+      gap: var(--space-large);
 
       img {
         width: 75px;
@@ -117,7 +121,7 @@
 
     // rules for 3-col
     @media (min-width: $break-point-widest) and (max-width: $break-point-sections-variant) {
-      gap: var(--space-small);
+      grid-template-columns: 0.2fr 1fr 1fr 1fr;
 
       h2 {
         max-width: 200px;

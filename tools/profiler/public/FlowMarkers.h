@@ -126,8 +126,38 @@ class FlowTextMarker : public BaseMarkerType<FlowTextMarker> {
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
   static constexpr const char* TableLabel =
-      "{marker.name} - {marker.data.name}(flow={marker.data.flow})";
+      "{marker.data.name}(flow={marker.data.flow})";
   static constexpr const char* ChartLabel = "{marker.name}";
+
+  static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Generic;
+
+  static void StreamJSONMarkerData(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
+      const ProfilerString8View& aText, Flow aFlow) {
+    aWriter.StringProperty("name", aText);
+    aWriter.FlowProperty("flow", aFlow);
+  }
+};
+
+class FlowStackTextMarker : public BaseMarkerType<FlowStackTextMarker> {
+ public:
+  static constexpr const char* Name = "FlowStackTextMarker";
+  static constexpr const char* Description = "";
+
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"name", MS::InputType::CString, "Details", MS::Format::String,
+       MS::PayloadFlags::Searchable},
+      {"flow", MS::InputType::Uint64, "Flow", MS::Format::Flow,
+       MS::PayloadFlags::Searchable}};
+
+  static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
+                                               MS::Location::MarkerTable};
+  static constexpr const char* TableLabel =
+      "{marker.data.name}(flow={marker.data.flow})";
+  static constexpr const char* ChartLabel = "{marker.name}";
+
+  static constexpr bool IsStackBased = true;
 
   static constexpr MS::ETWMarkerGroup Group = MS::ETWMarkerGroup::Generic;
 
@@ -156,7 +186,7 @@ class TerminatingFlowTextMarker
   static constexpr MS::Location Locations[] = {MS::Location::MarkerChart,
                                                MS::Location::MarkerTable};
   static constexpr const char* TableLabel =
-      "{marker.name} - "
+      ""
       "{marker.data.name}(terminatingFlow={marker.data.terminatingFlow})";
   static constexpr const char* ChartLabel = "{marker.name}";
 
@@ -196,6 +226,42 @@ class MOZ_RAII AutoProfilerFlowMarker {
   const char* mMarkerName;
   mozilla::MarkerCategory mCategory;
   mozilla::MarkerOptions mOptions;
+  Flow mFlow;
+};
+
+class MOZ_RAII AutoProfilerFlowTextMarker {
+ public:
+  AutoProfilerFlowTextMarker(const char* aMarkerName,
+                             const mozilla::MarkerCategory& aCategory,
+                             mozilla::MarkerOptions&& aOptions,
+                             const ProfilerString8View& aText, Flow aFlow)
+      : mMarkerName(aMarkerName),
+        mCategory(aCategory),
+        mOptions(std::move(aOptions)),
+        mText(aText),
+        mFlow(aFlow) {
+    MOZ_ASSERT(mOptions.Timing().EndTime().IsNull(),
+               "AutoProfilerTextMarker options shouldn't have an end time");
+    if (profiler_is_active_and_unpaused() &&
+        mOptions.Timing().StartTime().IsNull()) {
+      mOptions.Set(mozilla::MarkerTiming::InstantNow());
+    }
+  }
+
+  ~AutoProfilerFlowTextMarker() {
+    if (profiler_is_active_and_unpaused()) {
+      mOptions.TimingRef().SetIntervalEnd();
+      profiler_add_marker(
+          mozilla::ProfilerString8View::WrapNullTerminatedString(mMarkerName),
+          mCategory, std::move(mOptions), FlowStackTextMarker{}, mText, mFlow);
+    }
+  }
+
+ public:
+  const char* mMarkerName;
+  mozilla::MarkerCategory mCategory;
+  mozilla::MarkerOptions mOptions;
+  const ProfilerString8View& mText;
   Flow mFlow;
 };
 
@@ -264,6 +330,12 @@ class MOZ_RAII AutoProfilerTerminatingFlowMarkerFlowOnly {
 #define AUTO_PROFILER_FLOW_MARKER(markerName, categoryName, flow) \
   ::mozilla::AutoProfilerFlowMarker PROFILER_RAII(                \
       markerName, ::mozilla::baseprofiler::category::categoryName, flow)
+
+#define AUTO_PROFILER_FLOW_MARKER_TEXT(markerName, categoryName, options,   \
+                                       text, flow)                          \
+  AutoProfilerFlowTextMarker PROFILER_RAII(                                 \
+      markerName, ::mozilla::baseprofiler::category::categoryName, options, \
+      text, flow)
 
 #define AUTO_PROFILER_TERMINATING_FLOW_MARKER(markerName, categoryName, flow) \
   ::mozilla::AutoProfilerTerminatingFlowMarker PROFILER_RAII(                 \

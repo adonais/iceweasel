@@ -741,9 +741,12 @@ nsresult BounceTrackingState::OnResponseReceived(
         DebugOnly<nsresult> rv =
             bounceTrackingState->mBounceTrackingProtection
                 ->RecordStatefulBounces(bounceTrackingState);
-        NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rv),
-            "Running RecordStatefulBounces after a timeout failed.");
+#ifdef DEBUG
+        if (NS_FAILED(rv)) {
+          MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
+                  ("Running RecordStatefulBounces after a timeout failed."));
+        }
+#endif
 
         bounceTrackingState->mClientBounceDetectionTimeout = nullptr;
       },

@@ -131,6 +131,31 @@
         );
       });
 
+      add_task(async function testSettingSameControlValue() {
+        const SETTING = "setting-control-same-value";
+        Preferences.addSetting({
+          id: SETTING,
+          get: () => false,
+          set: () => false,
+        });
+        let itemConfig = {
+          l10nId: LABEL_L10N_ID,
+          id: SETTING,
+        };
+        let setting = Preferences.getSetting(SETTING);
+        let control = await renderTemplate(itemConfig);
+        ok(control, "Got a control");
+        let checkbox = control.controlEl;
+        is(checkbox.localName, "moz-checkbox", "moz-checkbox is rendered");
+        is(checkbox.checked, false, "checkbox is unchecked on initial render");
+
+        let settingChanged = waitForSettingChange(setting);
+        synthesizeMouseAtCenter(checkbox, {});
+        setting.emit("change");
+        await settingChanged;
+        is(checkbox.checked, false, "checkbox stays unchecked after click");
+      });
+
       add_task(async function testSupportLinkCheckbox() {
         const SETTING = "setting-control-support-link";
         Preferences.addSetting({

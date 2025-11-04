@@ -72,7 +72,7 @@ class ProfilesDatastoreServiceClass {
   async createTables() {
     // TODO: (Bug 1902320) Handle exceptions on connection opening
     let currentVersion = await this.#connection.getSchemaVersion();
-    if (currentVersion == 6) {
+    if (currentVersion == 7) {
       return;
     }
 
@@ -110,6 +110,7 @@ class ProfilesDatastoreServiceClass {
 
     if (currentVersion < 2) {
       await this.#connection.executeTransaction(async () => {
+        // NB: The profileId field is actually TEXT (a string UUID).
         const createEnrollmentsTable = `
           CREATE TABLE IF NOT EXISTS "NimbusEnrollments" (
             id             INTEGER NOT NULL,
@@ -187,6 +188,25 @@ class ProfilesDatastoreServiceClass {
       });
 
       await this.#connection.setSchemaVersion(6);
+    }
+
+    if (currentVersion < 7) {
+      await this.#connection.executeTransaction(async () => {
+        const createNimbusSyncTable = `
+          CREATE TABLE IF NOT EXISTS "NimbusSyncTimestamps" (
+            id                  INTEGER NOT NULL,
+            profileId           TEXT NOT NULL,
+            collection          TEXT NOT NULL,
+            lastModified        INTEGER NOT NULL,
+            PRIMARY KEY(id),
+            UNIQUE (profileId, collection) ON CONFLICT FAIL
+          );
+        `;
+
+        await this.#connection.execute(createNimbusSyncTable);
+      });
+
+      await this.#connection.setSchemaVersion(7);
     }
   }
 

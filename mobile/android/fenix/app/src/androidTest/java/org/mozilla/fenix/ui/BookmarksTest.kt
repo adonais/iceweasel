@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.test.espresso.Espresso.pressBack
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SkipLeaks
@@ -92,10 +93,14 @@ class BookmarksTest : TestSetup() {
     fun editBookmarksNameAndUrlTest() {
         val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
 
-        browserScreen {
-            createBookmark(composeTestRule, defaultWebPage.url)
+        navigationToolbar {
+        }.enterURLAndEnterToBrowser(defaultWebPage.url) {
         }.openThreeDotMenu {
-        }.editBookmarkPage(composeTestRule) {
+        }.bookmarkPage {
+            verifySnackBarText("Saved in “Bookmarks”")
+            clickSnackbarButton(composeTestRule, "EDIT")
+        }
+        composeBookmarksMenu(composeTestRule) {
             verifyEditBookmarksView()
             changeBookmarkTitle(testBookmark.title)
             changeBookmarkUrl(testBookmark.url)
@@ -135,6 +140,7 @@ class BookmarksTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833702
     @SmokeTest
+    @Ignore("disabled - https://bugzilla.mozilla.org/show_bug.cgi?id=1989405")
     @Test
     fun openMultipleSelectedBookmarksInANewTabTest() {
         val webPages = listOf(
@@ -321,6 +327,7 @@ class BookmarksTest : TestSetup() {
         }.openThreeDotMenu {
         }.openBookmarksMenu(composeTestRule) {
             verifyFolderTitle(bookmarkFolderName)
+            verifyBookmarkFolderDescription(numberOfBookmarksInFolder = "1")
             selectFolder(bookmarkFolderName)
             verifyBookmarkedURL(defaultWebPage.url.toString())
         }

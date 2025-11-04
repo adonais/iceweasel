@@ -6,8 +6,19 @@
  * JSWindowActor to pass data between PageAssist singleton and content pages.
  */
 export class PageAssistParent extends JSWindowActorParent {
+  /**
+   * Get page data
+   *
+   * @returns {Promise<{
+   *  url: string,
+   *  title: string,
+   *  content: string,
+   *  textContent: string,
+   *  excerpt: string,
+   *  isReaderable: boolean
+   * } | null>}
+   */
   async fetchPageData() {
-    // Forward request to child
     return this.sendQuery("PageAssist:FetchPageData");
   }
 }

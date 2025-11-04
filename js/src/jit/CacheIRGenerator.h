@@ -128,6 +128,9 @@ class MOZ_RAII IRGenerator {
   void emitConstantDataPropertyResult(NativeObject* holder,
                                       ObjOperandId holderId, PropertyKey key,
                                       PropertyInfo prop, ObjectFuse* objFuse);
+  void emitLoadDataPropertyResult(NativeObject* obj, NativeObject* holder,
+                                  PropertyKey key, PropertyInfo prop,
+                                  ObjOperandId objId);
 
   bool canOptimizeConstantAccessorProperty(NativeObject* holder,
                                            PropertyInfo prop,

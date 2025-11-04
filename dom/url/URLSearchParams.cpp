@@ -25,7 +25,6 @@
 #include "mozilla/dom/Record.h"
 #include "mozilla/dom/StructuredCloneHolder.h"
 #include "mozilla/dom/URLSearchParamsBinding.h"
-#include "mozilla/fallible.h"
 #include "nsDOMString.h"
 #include "nsError.h"
 #include "nsIGlobalObject.h"

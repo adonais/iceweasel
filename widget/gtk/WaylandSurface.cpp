@@ -493,10 +493,12 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
   MOZ_DIAGNOSTIC_ASSERT(!mSurface && !mSubsurface, "Already mapped?");
 
   if (aParentWLSurface) {
+    LOGWAYLAND(" parent wl_surface [%p]", aParentWLSurface);
     mParentSurface = aParentWLSurface;
   } else {
     MOZ_DIAGNOSTIC_ASSERT(!mParentSurface, "Already mapped?");
     mParent = aParentWaylandSurfaceLock->GetWaylandSurface();
+    LOGWAYLAND(" parent WaylandSurface [%p]", mParent.get());
     MOZ_DIAGNOSTIC_ASSERT(mParent->IsMapped(), "Parent surface is not mapped?");
     mParentSurface = mParent->mSurface;
   }
@@ -527,6 +529,8 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
   }
   wl_subsurface_set_position(mSubsurface, mSubsurfacePosition.x,
                              mSubsurfacePosition.y);
+  LOGWAYLAND(" subsurface position [%d,%d]", (int)mSubsurfacePosition.x,
+             (int)mSubsurfacePosition.y);
 
   if (aUseReadyToDrawCallback) {
     mReadyToDrawFrameCallback = wl_surface_frame(mParentSurface);
@@ -1393,19 +1397,11 @@ static int YUVColorSpaceToWLColorCoeficients(
 
 void WaylandSurface::SetColorRepresentationLocked(
     const WaylandSurfaceLock& aProofOfLock,
-    mozilla::gfx::YUVColorSpace aColorSpace, bool aFullRange) {
+    mozilla::gfx::YUVColorSpace aColorSpace, bool aFullRange,
+    uint32_t aWPChromaLocation) {
   auto* colorRepresentation =
       WaylandDisplayGet()->GetColorRepresentationManager();
   if (!colorRepresentation) {
-    return;
-  }
-
-  auto coefficients = YUVColorSpaceToWLColorCoeficients(aColorSpace);
-  if (!coefficients) {
-    return;
-  }
-  auto range = WaylandDisplayGet()->GetColorRange(coefficients, aFullRange);
-  if (!range) {
     return;
   }
 
@@ -1413,11 +1409,21 @@ void WaylandSurface::SetColorRepresentationLocked(
       "WaylandSurface::SetColorRepresentationLocked() colorspace %s full range "
       "%d",
       YUVColorSpaceToString(aColorSpace), aFullRange);
+
   MOZ_DIAGNOSTIC_ASSERT(!mColorRepresentationSurface);
   mColorRepresentationSurface = wp_color_representation_manager_v1_get_surface(
       colorRepresentation, mSurface);
-  wp_color_representation_surface_v1_set_coefficients_and_range(
-      mColorRepresentationSurface, coefficients, range);
+  if (aWPChromaLocation) {
+    wp_color_representation_surface_v1_set_chroma_location(
+        mColorRepresentationSurface, aWPChromaLocation);
+  }
+  if (auto coefficients = YUVColorSpaceToWLColorCoeficients(aColorSpace)) {
+    if (auto range =
+            WaylandDisplayGet()->GetColorRange(coefficients, aFullRange)) {
+      wp_color_representation_surface_v1_set_coefficients_and_range(
+          mColorRepresentationSurface, coefficients, range);
+    }
+  }
 }
 
 void WaylandSurface::AssertCurrentThreadOwnsMutex() {

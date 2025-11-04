@@ -316,6 +316,7 @@ class JsepTrack {
   // negotiated rids.
   std::vector<std::string> mRids;
   UniquePtr<JsepTrackNegotiatedDetails> mNegotiatedDetails;
+  // Storage of mSsrcs and mSsrcToRtxSsrc could be improved, see Bug 1990364
   std::vector<uint32_t> mSsrcs;
   std::map<uint32_t, uint32_t> mSsrcToRtxSsrc;
   bool mActive;

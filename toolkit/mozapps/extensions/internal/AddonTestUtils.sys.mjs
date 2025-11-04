@@ -10,6 +10,7 @@ const CERTDB_CONTRACTID = "@mozilla.org/security/x509certdb;1";
 import {
   AddonManager,
   AddonManagerPrivate,
+  AMTelemetry,
 } from "resource://gre/modules/AddonManager.sys.mjs";
 import { AsyncShutdown } from "resource://gre/modules/AsyncShutdown.sys.mjs";
 import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
@@ -862,6 +863,10 @@ export var AddonTestUtils = {
         }
       };
 
+    // Make sure AMTelemetry.onStartup to be called as it would happen
+    // on a real application startup.
+    AddonManager.addManagerListener(AMTelemetry);
+
     this.addonIntegrationService = Cc[
       "@mozilla.org/addons/integration;1"
     ].getService(Ci.nsIObserver);
@@ -961,6 +966,10 @@ export var AddonTestUtils = {
     lazy.ExtensionAddonObserver.uninit();
 
     lazy.ExtensionTestCommon.resetStartupPromises();
+
+    // Uninitialize AMTelemetry to ensure that it can be properly re-initialized
+    // as a side-effect of AddonTestUtils.promiseStartupManager.
+    await AMTelemetry.uninit();
 
     if (shutdownError) {
       throw shutdownError;

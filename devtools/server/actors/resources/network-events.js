@@ -5,10 +5,6 @@
 "use strict";
 
 const { Pool } = require("resource://devtools/shared/protocol/Pool.js");
-const { isWindowGlobalPartOfContext } = ChromeUtils.importESModule(
-  "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs",
-  { global: "contextual" }
-);
 const { ParentProcessWatcherRegistry } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/watcher/ParentProcessWatcherRegistry.sys.mjs",
   // ParentProcessWatcherRegistry needs to be a true singleton and loads ActorManagerParent
@@ -80,7 +76,10 @@ class NetworkEventWatcher {
       onNetworkEvent: this.onNetworkEvent.bind(this),
     });
 
-    Services.obs.addObserver(this, "window-global-destroyed");
+    this.watcherActor.on(
+      "top-browsing-context-will-navigate",
+      this.#onTopBrowsingContextWillNavigate
+    );
   }
 
   /**
@@ -200,55 +199,35 @@ class NetworkEventWatcher {
    * Watch for previous document being unloaded in order to clear
    * all related network events, in case persist is disabled.
    * (which is the default behavior)
+   *
+   * This "will-navigate" event should only be fired when debugging tabs
+   * (not for web extensions or browser toolbox).
    */
-  observe(windowGlobal, topic) {
-    if (topic !== "window-global-destroyed") {
-      return;
-    }
+  #onTopBrowsingContextWillNavigate = () => {
     // If we persist, we will keep all requests allocated.
-    // For now, consider that the Browser console and toolbox persist all the requests.
-    if (this.persist || this.watcherActor.sessionContext.type == "all") {
+    if (this.persist) {
       return;
     }
-    // Only process WindowGlobals which are related to the debugged scope.
-    if (
-      !isWindowGlobalPartOfContext(
-        windowGlobal,
-        this.watcherActor.sessionContext
-      )
-    ) {
-      return;
-    }
-    const { innerWindowId } = windowGlobal;
 
+    const { innerWindowId } =
+      this.watcherActor.browserElement.browsingContext.currentWindowGlobal;
+
+    // When a navigation starts, destroy all network request actors as the UI should not longer show them.
+    // We can easily destroy all requests which aren't navigation request.
+    // But navigation requests should be preserved as they started just before the navigation
+    // (and the will-navigate" event fired).
+    // The current WindowGloball is still for the document we navigate **from**,
+    // so destroy navigation requests from iframes or the WindowGlobal from the previous navigation
+    // with the `innerWindowId` comparison.
     for (const child of this.pool.poolChildren()) {
-      // Destroy all network events matching the destroyed WindowGlobal
-      if (!child.isNavigationRequest()) {
-        if (child.getInnerWindowId() == innerWindowId) {
-          child.destroy();
-        }
-        // Avoid destroying the navigation request, which is flagged with previous document's innerWindowId.
-        // When navigating, the WindowGlobal we navigate *from* will be destroyed and notified here.
-        // We should explicitly avoid destroying it here.
-        // But, we still want to eventually destroy them.
-        // So do this when navigating a second time, we will navigate from a distinct WindowGlobal
-        // and check that this is the top level window global and not an iframe one.
-        // So that we avoid clearing the top navigation when an iframe navigates
-        //
-        // Avoid destroying the request if innerWindowId isn't set. This happens when we reload many times in a row.
-        // The previous navigation request will be cancelled and because of that its innerWindowId will be null.
-        // But the frontend will receive it after the navigation begins (after will-navigate) and will display it
-        // and try to fetch extra data about it. So, avoid destroying its NetworkEventActor.
-      } else if (
-        child.getInnerWindowId() &&
-        child.getInnerWindowId() != innerWindowId &&
-        windowGlobal.browsingContext ==
-          this.watcherActor.browserElement?.browsingContext
+      if (
+        !child.isNavigationRequest() ||
+        (child.getInnerWindowId() && child.getInnerWindowId() != innerWindowId)
       ) {
         child.destroy();
       }
     }
-  }
+  };
 
   /**
    * Called by NetworkObserver in order to know if the channel should be ignored
@@ -471,7 +450,10 @@ class NetworkEventWatcher {
     if (this.listener) {
       this.clear();
       this.listener.destroy();
-      Services.obs.removeObserver(this, "window-global-destroyed");
+      this.watcherActor.off(
+        "top-browsing-context-will-navigate",
+        this.#onTopBrowsingContextWillNavigate
+      );
     }
   }
 }

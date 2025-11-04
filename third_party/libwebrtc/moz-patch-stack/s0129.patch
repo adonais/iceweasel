@@ -1,0 +1,45 @@
+From: Michael Froman <mfroman@mozilla.com>
+Date: Thu, 11 Sep 2025 14:17:00 -0500
+Subject: Bug 1988042 - add BSD support to new version of libwebrtc's
+ cpu_info.cc r?ng!
+
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/e3b37acb8816aefb9134a68cafad8c7d5e145179
+---
+ rtc_base/cpu_info.cc | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/rtc_base/cpu_info.cc b/rtc_base/cpu_info.cc
+index 0923e7aca7..2f2108464b 100644
+--- a/rtc_base/cpu_info.cc
++++ b/rtc_base/cpu_info.cc
+@@ -21,8 +21,10 @@
+ #include <unistd.h>
+ #elif defined(WEBRTC_FUCHSIA)
+ #include <zircon/syscalls.h>
+-#elif defined(WEBRTC_LINUX)
++#elif defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
++#if defined(WEBRTC_LINUX)
+ #include <features.h>
++#endif
+ #include <stdlib.h>
+ #include <string.h>  // IWYU pragma: keep
+ #include <unistd.h>
+@@ -50,7 +52,7 @@
+ #if defined(WEBRTC_ARCH_X86_FAMILY) && defined(_MSC_VER)
+ #include <intrin.h>
+ #endif
+-#if defined(WEBRTC_ARCH_ARM_FAMILY) && defined(WEBRTC_LINUX)
++#if defined(WEBRTC_ARCH_ARM_FAMILY) && (defined(WEBRTC_LINUX) || defined(WEBRTC_BSD))
+ #include <asm/hwcap.h>
+ #endif
+ 
+@@ -189,6 +191,9 @@ bool Supports(ISA instruction_set_architecture) {
+   if (instruction_set_architecture == ISA::kNeon) {
+ #if defined(WEBRTC_ANDROID)
+     return 0 != (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON);
++#elif defined(WEBRTC_BSD)
++    // OpenBSD does not have getauxval() and does not have /proc reading
++    return false;
+ #elif defined(WEBRTC_LINUX)
+     uint64_t hwcap = 0;
+ #if WEBRTC_GLIBC_PREREQ(2, 16)

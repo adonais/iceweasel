@@ -6,7 +6,6 @@
 
 #include "jit/x86/MacroAssembler-x86.h"
 
-#include "mozilla/Alignment.h"
 #include "mozilla/Casting.h"
 
 #include "jit/AtomicOp.h"
@@ -507,6 +506,75 @@ void MacroAssemblerX86::finish() {
     if (!enoughMemory_) {
       return;
     }
+  }
+}
+
+void MacroAssemblerX86::boxNonDouble(JSValueType type, Register src,
+                                     const ValueOperand& dest) {
+  MOZ_ASSERT(type != JSVAL_TYPE_UNDEFINED && type != JSVAL_TYPE_NULL);
+  MOZ_ASSERT(dest.typeReg() != dest.payloadReg());
+
+#ifdef DEBUG
+  if (type == JSVAL_TYPE_BOOLEAN) {
+    Label upperBitsZeroed;
+    cmp32(src, Imm32(1));
+    j(Assembler::BelowOrEqual, &upperBitsZeroed);
+    breakpoint();
+    bind(&upperBitsZeroed);
+  }
+#endif
+
+  if (src != dest.payloadReg()) {
+    movl(src, dest.payloadReg());
+  }
+  movl(ImmType(type), dest.typeReg());
+}
+
+void MacroAssemblerX86::boxNonDouble(Register type, Register src,
+                                     const ValueOperand& dest) {
+  MOZ_ASSERT(type != dest.payloadReg() && src != dest.typeReg());
+
+#ifdef DEBUG
+  Label ok, isNullOrUndefined, isBoolean;
+
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_NULL),
+                    &isNullOrUndefined);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_UNDEFINED),
+                    &isNullOrUndefined);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BOOLEAN),
+                    &isBoolean);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_INT32), &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_MAGIC), &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_STRING), &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_SYMBOL), &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_PRIVATE_GCTHING),
+                    &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BIGINT), &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_OBJECT), &ok);
+  breakpoint();
+  {
+    bind(&isNullOrUndefined);
+    cmp32(src, src);
+    j(Assembler::Zero, &ok);
+    breakpoint();
+  }
+  {
+    bind(&isBoolean);
+    cmp32(src, Imm32(1));
+    j(Assembler::BelowOrEqual, &ok);
+    breakpoint();
+  }
+  bind(&ok);
+#endif
+
+  if (src != dest.payloadReg()) {
+    movl(src, dest.payloadReg());
+  }
+  if (type != dest.typeReg()) {
+    movl(Imm32(JSVAL_TAG_CLEAR), dest.typeReg());
+    orl(type, dest.typeReg());
+  } else {
+    orl(Imm32(JSVAL_TAG_CLEAR), dest.typeReg());
   }
 }
 

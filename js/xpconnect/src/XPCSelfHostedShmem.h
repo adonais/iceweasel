@@ -37,6 +37,12 @@ class SelfHostedShmem final : public nsIMemoryReporter {
 
   static SelfHostedShmem& GetSingleton();
 
+  static void SetSelfHostedUseSharedMemory(bool aSelfHostedUseSharedMemory) {
+    sSelfHostedUseSharedMemory = aSelfHostedUseSharedMemory;
+  }
+
+  static bool SelfHostedUseSharedMemory() { return sSelfHostedUseSharedMemory; }
+
   // Initialize this singleton with the content of the Self-hosted Stencil XDR.
   // This will be used to initialize the shared memory which would hold a copy.
   //
@@ -73,6 +79,8 @@ class SelfHostedShmem final : public nsIMemoryReporter {
   SelfHostedShmem() = default;
   ~SelfHostedShmem() = default;
 
+  // Mirrored value of javascript.options.self_hosted.use_shared_memory.
+  static bool sSelfHostedUseSharedMemory;
   static mozilla::StaticRefPtr<SelfHostedShmem> sSelfHostedXdr;
 
   // Read-only shared memory used by JS runtime initialization.

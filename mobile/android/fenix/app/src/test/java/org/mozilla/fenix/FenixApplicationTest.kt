@@ -14,6 +14,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.Engine.HttpsOnlyMode
 import mozilla.components.concept.engine.webextension.DisabledFlags
 import mozilla.components.concept.engine.webextension.Metadata
 import mozilla.components.concept.engine.webextension.WebExtension
@@ -21,6 +22,7 @@ import mozilla.components.feature.addons.migration.DefaultSupportedAddonsChecker
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.BrowsersCache
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -35,12 +37,15 @@ import org.mozilla.fenix.GleanMetrics.SearchDefaultEngine
 import org.mozilla.fenix.GleanMetrics.TopSites
 import org.mozilla.fenix.components.metrics.MozillaProductDetector
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
+import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.distributions.DefaultDistributionBrowserStoreProvider
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.distributions.DistributionProviderChecker
 import org.mozilla.fenix.distributions.DistributionSettings
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.FenixGleanTestRule
+import org.mozilla.fenix.settings.doh.DohSettingsProvider
+import org.mozilla.fenix.settings.doh.ProtectionLevel
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -87,6 +92,45 @@ class FenixApplicationTest {
     }
 
     @Test
+    fun `GIVEN a startup crash canary THEN initialize is never called`() {
+        var called = false
+        val initialize = { called = true }
+
+        val canary = object : StartupCrashCanary {
+            override val startupCrashDetected: Boolean
+                get() = true
+
+            override suspend fun clearCanary() { TODO("Not yet implemented") }
+
+            override suspend fun createCanary() { TODO("Not yet implemented") }
+        }
+
+        val application = FenixApplication()
+        application.checkForStartupCrash(canary, initialize)
+
+        assertFalse(called)
+    }
+
+    @Test
+    fun `GIVEN no startup crash canary THEN initialize is called`() {
+        var called = false
+        val initialize = { called = true }
+        val canary = object : StartupCrashCanary {
+            override val startupCrashDetected: Boolean
+                get() = false
+
+            override suspend fun clearCanary() { TODO("Not yet implemented") }
+
+            override suspend fun createCanary() { TODO("Not yet implemented") }
+        }
+
+        val application = FenixApplication()
+        application.checkForStartupCrash(canary, initialize)
+
+        assertTrue(called)
+    }
+
+    @Test
     fun `GIVEN there are unsupported addons installed WHEN subscribing for new add-ons checks THEN register for checks`() {
         val checker = mockk<DefaultSupportedAddonsChecker>(relaxed = true)
         val unSupportedExtension: WebExtension = mockk()
@@ -120,6 +164,7 @@ class FenixApplicationTest {
         val expectedAppName = "org.mozilla.fenix"
         val expectedAppInstallSource = "org.mozilla.install.source"
         val settings = spyk(Settings(testContext))
+        val dohSettingsProvider = mockk<DohSettingsProvider>()
         val application = spyk(application)
         val packageManager: PackageManager = mockk()
 
@@ -177,6 +222,9 @@ class FenixApplicationTest {
         every { settings.inactiveTabsAreEnabled } returns true
         every { settings.isIsolatedProcessEnabled } returns true
         every { application.isDeviceRamAboveThreshold } returns true
+        every { dohSettingsProvider.getSelectedProtectionLevel() } returns ProtectionLevel.Max
+        every { settings.getHttpsOnlyMode() } returns HttpsOnlyMode.ENABLED_PRIVATE_ONLY
+        every { settings.shouldEnableGlobalPrivacyControl } returns true
 
         assertTrue(settings.contileContextId.isNotEmpty())
         assertNotNull(TopSites.contextId.testGetValue())
@@ -185,6 +233,7 @@ class FenixApplicationTest {
         application.setStartupMetrics(
             browserStore = browserStore,
             settings = settings,
+            dohSettingsProvider,
             browsersCache = browsersCache,
             mozillaProductDetector = mozillaProductDetector,
         )
@@ -230,6 +279,9 @@ class FenixApplicationTest {
         assertEquals(true, Metrics.defaultWallpaper.testGetValue())
         assertEquals(true, Metrics.ramMoreThanThreshold.testGetValue())
         assertEquals(7L, Metrics.deviceTotalRam.testGetValue())
+        assertEquals("Max", Preferences.dohProtectionLevel.testGetValue())
+        assertEquals("ENABLED_PRIVATE_ONLY", Preferences.httpsOnlyMode.testGetValue())
+        assertEquals(true, Preferences.globalPrivacyControlEnabled.testGetValue())
 
         val contextId = TopSites.contextId.testGetValue()!!.toString()
 
@@ -242,7 +294,12 @@ class FenixApplicationTest {
         assertNull(SearchDefaultEngine.name.testGetValue())
         assertNull(SearchDefaultEngine.searchUrl.testGetValue())
 
-        application.setStartupMetrics(browserStore, settings, browsersCache, mozillaProductDetector)
+        application.setStartupMetrics(
+            browserStore = browserStore,
+            settings = settings,
+            browsersCache = browsersCache,
+            mozillaProductDetector = mozillaProductDetector,
+        )
 
         assertEquals(contextId, TopSites.contextId.testGetValue()!!.toString())
         assertEquals(contextId, settings.contileContextId)
@@ -257,7 +314,12 @@ class FenixApplicationTest {
             every { blockCookiesSelectionInCustomTrackingProtection } returns "Test"
         }
 
-        application.setStartupMetrics(browserStore, settings, browsersCache, mozillaProductDetector)
+        application.setStartupMetrics(
+            browserStore = browserStore,
+            settings = settings,
+            browsersCache = browsersCache,
+            mozillaProductDetector = mozillaProductDetector,
+        )
 
         assertEquals("Test", Preferences.etpCustomCookiesSelection.testGetValue())
     }
@@ -274,7 +336,12 @@ class FenixApplicationTest {
         shadowOf(packageManager)
             .setInstallSourceInfo(testContext.packageName, "initiating.package", "installing.package")
 
-        application.setStartupMetrics(browserStore, settings, browsersCache, mozillaProductDetector)
+        application.setStartupMetrics(
+            browserStore = browserStore,
+            settings = settings,
+            browsersCache = browsersCache,
+            mozillaProductDetector = mozillaProductDetector,
+        )
 
         assertEquals("Test", Preferences.etpCustomCookiesSelection.testGetValue())
     }

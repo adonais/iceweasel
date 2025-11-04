@@ -11,7 +11,6 @@
 #include "base/task.h"            // for NewRunnableMethod, etc
 #include "mozilla/gfx/Logging.h"  // for gfxCriticalNote
 #include "mozilla/StaticMutex.h"
-#include "mozilla/Array.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/StaticPrefs_widget.h"
@@ -207,7 +206,9 @@ static void pointer_handle_motion(void* data, struct wl_pointer* pointer,
 static void pointer_handle_button(void* data, struct wl_pointer* pointer,
                                   uint32_t serial, uint32_t time,
                                   uint32_t button, uint32_t state) {
-  gLastSerial = serial;
+  if (state == WL_POINTER_BUTTON_STATE_PRESSED) {
+    gLastSerial = serial;
+  }
 }
 
 static void pointer_handle_axis(void* data, struct wl_pointer* pointer,
@@ -322,6 +323,13 @@ static void seat_handle_capabilities(void* data, struct wl_seat* seat,
   } else if (!(caps & WL_SEAT_CAPABILITY_KEYBOARD) && keyboard) {
     display->ClearKeyboard();
   }
+
+  wl_touch* touch = display->GetTouch();
+  if ((caps & WL_SEAT_CAPABILITY_TOUCH) && !touch) {
+    display->SetTouch(wl_seat_get_touch(seat));
+  } else if (!(caps & WL_SEAT_CAPABILITY_TOUCH) && touch) {
+    display->ClearTouch();
+  }
 }
 
 static void seat_handle_name(void* data, struct wl_seat* seat,
@@ -357,18 +365,20 @@ static void keyboard_handle_keymap(void* data, struct wl_keyboard* wl_keyboard,
 static void keyboard_handle_enter(void* data, struct wl_keyboard* keyboard,
                                   uint32_t serial, struct wl_surface* surface,
                                   struct wl_array* keys) {
-  KeymapWrapper::SetFocusIn(surface, serial);
+  gLastSerial = serial;
 }
 
 static void keyboard_handle_leave(void* data, struct wl_keyboard* keyboard,
                                   uint32_t serial, struct wl_surface* surface) {
-  KeymapWrapper::SetFocusOut(surface);
+  KeymapWrapper::ResetRepeatState();
 }
 
 static void keyboard_handle_key(void* data, struct wl_keyboard* keyboard,
                                 uint32_t serial, uint32_t time, uint32_t key,
                                 uint32_t state) {
-  gLastSerial = serial;
+  if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+    gLastSerial = serial;
+  }
   // hardware key code is +8.
   // https://gitlab.gnome.org/GNOME/gtk/-/blob/3.24.41/gdk/wayland/gdkdevice-wayland.c#L2341
   KeymapWrapper::KeyboardHandlerForWayland(serial, key + 8, state);
@@ -396,10 +406,44 @@ void nsWaylandDisplay::SetKeyboard(wl_keyboard* aKeyboard) {
 
 void nsWaylandDisplay::ClearKeyboard() {
   if (mKeyboard) {
-    wl_keyboard_destroy(mKeyboard);
+    wl_keyboard_release(mKeyboard);
     mKeyboard = nullptr;
     KeymapWrapper::ClearKeymap();
   }
+}
+
+static void touch_handle_down(void* data, struct wl_touch* touch,
+                              uint32_t serial, uint32_t time,
+                              struct wl_surface* surface, int32_t id,
+                              wl_fixed_t x, wl_fixed_t y) {
+  gLastSerial = serial;
+}
+
+static void touch_handle_up(void* data, struct wl_touch* touch, uint32_t serial,
+                            uint32_t time, int32_t id) {}
+
+static void touch_handle_motion(void* data, struct wl_touch* touch,
+                                uint32_t time, int32_t id, wl_fixed_t x,
+                                wl_fixed_t y) {}
+
+static void touch_handle_frame(void* data, struct wl_touch* touch) {}
+
+static void touch_handle_cancel(void* data, struct wl_touch* touch) {}
+
+static const struct wl_touch_listener touch_listener = {
+    touch_handle_down,  touch_handle_up,     touch_handle_motion,
+    touch_handle_frame, touch_handle_cancel,
+};
+
+void nsWaylandDisplay::SetTouch(wl_touch* aTouch) {
+  MOZ_ASSERT(aTouch);
+  MOZ_DIAGNOSTIC_ASSERT(!mTouch);
+  mTouch = aTouch;
+  wl_touch_add_listener(mTouch, &touch_listener, nullptr);
+}
+
+void nsWaylandDisplay::ClearTouch() {
+  MozClearPointer(mTouch, wl_touch_release);
 }
 
 void nsWaylandDisplay::SetCompositor(wl_compositor* aCompositor) {

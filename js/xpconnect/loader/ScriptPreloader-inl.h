@@ -8,9 +8,6 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/CheckedInt.h"
-#include "mozilla/EndianUtils.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/Range.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/Unused.h"

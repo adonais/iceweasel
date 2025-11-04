@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         targetSdkVersion project.ext.targetSdkVersion
-        minSdkVersion 21 // this will be updated to project.ext.minSdkVersion shortly
+        minSdkVersion project.ext.minSdkVersion
         manifestPlaceholders = project.ext.manifestPlaceholders
 
         applicationId "org.mozilla.geckoview.test_runner"

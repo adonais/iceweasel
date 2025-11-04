@@ -19,19 +19,17 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.concept.engine.Engine
-import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.FenixApplication
@@ -41,12 +39,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowApplication
 
-@ExperimentalCoroutinesApi
+@OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
 @RunWith(RobolectricTestRunner::class)
 class ProfilerViewModelTest {
-
-    @get:Rule
-    val coroutineRule = MainCoroutineRule()
 
     @MockK
     lateinit var mockProfiler: Profiler
@@ -66,6 +61,7 @@ class ProfilerViewModelTest {
     private lateinit var viewModel: ProfilerViewModel
     private lateinit var context: Context
     private lateinit var shadowApplication: ShadowApplication
+    private val testDispatcher = StandardTestDispatcher()
 
     @Before
     fun setUp() {
@@ -110,8 +106,8 @@ class ProfilerViewModelTest {
 
     private fun initializeViewModel(
         isInitiallyActive: Boolean,
-        mainDispatcher: CoroutineDispatcher = coroutineRule.testDispatcher,
-        ioDispatcher: CoroutineDispatcher = coroutineRule.testDispatcher,
+        mainDispatcher: CoroutineDispatcher = testDispatcher,
+        ioDispatcher: CoroutineDispatcher = testDispatcher,
     ) {
         every { mockProfiler.isProfilerActive() } returns isInitiallyActive
         viewModel = ProfilerViewModel(
@@ -123,15 +119,15 @@ class ProfilerViewModelTest {
     }
 
     @Test
-    fun `WHEN the ViewModel is created THEN its initial UI state and active status correctly reflect the profiler's state`() = runTest(coroutineRule.testDispatcher.scheduler) {
+    fun `WHEN the ViewModel is created THEN its initial UI state and active status correctly reflect the profiler's state`() = runTest(testDispatcher) {
         initializeViewModel(isInitiallyActive = false)
 
         val collectedUiStates = mutableListOf<ProfilerUiState>()
-        val uiCollectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+        val uiCollectJob = launch {
             viewModel.uiState.toList(collectedUiStates)
         }
         val collectedActiveStates = mutableListOf<Boolean>()
-        val activeCollectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+        val activeCollectJob = launch {
             viewModel.isProfilerActive.toList(collectedActiveStates)
         }
 
@@ -146,10 +142,10 @@ class ProfilerViewModelTest {
         collectedActiveStates.clear()
 
         initializeViewModel(isInitiallyActive = true)
-        val uiCollectJob2 = launch(UnconfinedTestDispatcher(testScheduler)) {
+        val uiCollectJob2 = launch {
             viewModel.uiState.toList(collectedUiStates)
         }
-        val activeCollectJob2 = launch(UnconfinedTestDispatcher(testScheduler)) {
+        val activeCollectJob2 = launch {
             viewModel.isProfilerActive.toList(collectedActiveStates)
         }
 
@@ -162,13 +158,13 @@ class ProfilerViewModelTest {
     }
 
     @Test
-    fun `GIVEN the profiler is unavailable WHEN start profiling is tried THEN the state should be moved to error`() = runTest(coroutineRule.testDispatcher.scheduler) {
+    fun `GIVEN the profiler is unavailable WHEN start profiling is tried THEN the state should be moved to error`() = runTest(testDispatcher) {
         every { mockComponents.core.engine.profiler } returns null
 
         initializeViewModel(
             isInitiallyActive = false,
-            mainDispatcher = coroutineRule.testDispatcher,
-            ioDispatcher = coroutineRule.testDispatcher,
+            mainDispatcher = testDispatcher,
+            ioDispatcher = testDispatcher,
         )
         advanceUntilIdle()
 
@@ -186,11 +182,11 @@ class ProfilerViewModelTest {
     }
 
     @Test
-    fun `GIVEN the profiler is already running WHEN profiling again THEN the UI state remains Running and no new profiler session is started`() = runTest(coroutineRule.testDispatcher.scheduler) {
+    fun `GIVEN the profiler is already running WHEN profiling again THEN the UI state remains Running and no new profiler session is started`() = runTest(testDispatcher) {
         initializeViewModel(
             isInitiallyActive = true,
-            mainDispatcher = coroutineRule.testDispatcher,
-            ioDispatcher = coroutineRule.testDispatcher,
+            mainDispatcher = testDispatcher,
+            ioDispatcher = testDispatcher,
         )
         advanceUntilIdle()
         assertEquals(ProfilerUiState.Idle, viewModel.uiState.value)
@@ -201,8 +197,7 @@ class ProfilerViewModelTest {
     }
 
     @Test
-    fun `WHEN profiling starts successfully THEN the profiler starts and service launches with notification`() = runTest(coroutineRule.testDispatcher.scheduler) {
-        val testDispatcher = coroutineRule.testDispatcher
+    fun `WHEN profiling starts successfully THEN the profiler starts and service launches with notification`() = runTest(testDispatcher) {
         initializeViewModel(
             isInitiallyActive = false,
             mainDispatcher = testDispatcher,
@@ -211,9 +206,10 @@ class ProfilerViewModelTest {
         val settings = ProfilerSettings.Firefox
 
         val collectedStates = mutableListOf<ProfilerUiState>()
-        val collectionJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+        val collectionJob = launch {
             viewModel.uiState.toList(collectedStates)
         }
+        advanceUntilIdle()
 
         viewModel.initiateProfilerStartProcess(settings)
         every { mockProfiler.isProfilerActive() } returns true
@@ -238,8 +234,7 @@ class ProfilerViewModelTest {
     }
 
     @Test
-    fun `GIVEN the profiler is not currently active WHEN an attempt is made to stop and save a profile THEN the UI state becomes Finished and no profile URL is available`() = runTest(coroutineRule.testDispatcher.scheduler) {
-        val testDispatcher = coroutineRule.testDispatcher
+    fun `GIVEN the profiler is not currently active WHEN an attempt is made to stop and save a profile THEN the UI state becomes Finished and no profile URL is available`() = runTest(testDispatcher) {
         initializeViewModel(
             isInitiallyActive = false,
             mainDispatcher = testDispatcher,
@@ -260,8 +255,7 @@ class ProfilerViewModelTest {
     }
 
     @Test
-    fun `WHEN a profile is successfully saved THEN the UI shows successful completing with copied URL`() = runTest(coroutineRule.testDispatcher.scheduler) {
-        val testDispatcher = coroutineRule.testDispatcher
+    fun `WHEN a profile is successfully saved THEN the UI shows successful completing with copied URL`() = runTest(testDispatcher) {
         initializeViewModel(
             isInitiallyActive = true,
             mainDispatcher = testDispatcher,
@@ -279,9 +273,10 @@ class ProfilerViewModelTest {
         }
 
         val collectedStates = mutableListOf<ProfilerUiState>()
-        val collectionJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+        val collectionJob = launch {
             viewModel.uiState.toList(collectedStates)
         }
+        advanceUntilIdle()
 
         viewModel.stopProfilerAndSave()
         advanceUntilIdle()
@@ -305,8 +300,7 @@ class ProfilerViewModelTest {
     }
 
     @Test
-    fun `WHEN the profiler fails during saving the profile THEN state changes to error and the error message is displayed`() = runTest(coroutineRule.testDispatcher.scheduler) {
-        val testDispatcher = coroutineRule.testDispatcher
+    fun `WHEN the profiler fails during saving the profile THEN state changes to error and the error message is displayed`() = runTest(testDispatcher) {
         initializeViewModel(
             isInitiallyActive = true,
             mainDispatcher = testDispatcher,
@@ -323,9 +317,10 @@ class ProfilerViewModelTest {
         }
 
         val collectedStates = mutableListOf<ProfilerUiState>()
-        val collectionJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+        val collectionJob = launch {
             viewModel.uiState.toList(collectedStates)
         }
+        advanceUntilIdle()
 
         viewModel.stopProfilerAndSave()
         advanceUntilIdle()
@@ -346,8 +341,7 @@ class ProfilerViewModelTest {
     }
 
     @Test
-    fun `WHEN data save after stopping the profiler THEN toast shows error and service stops`() = runTest(coroutineRule.testDispatcher.scheduler) {
-        val testDispatcher = coroutineRule.testDispatcher
+    fun `WHEN data save after stopping the profiler THEN toast shows error and service stops`() = runTest(testDispatcher) {
         initializeViewModel(
             isInitiallyActive = true,
             mainDispatcher = testDispatcher,
@@ -369,9 +363,10 @@ class ProfilerViewModelTest {
         } throws saveException
 
         val collectedStates = mutableListOf<ProfilerUiState>()
-        val collectionJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+        val collectionJob = launch {
             viewModel.uiState.toList(collectedStates)
         }
+        advanceUntilIdle()
 
         viewModel.stopProfilerAndSave()
         advanceUntilIdle()
@@ -398,8 +393,7 @@ class ProfilerViewModelTest {
     }
 
     @Test
-    fun `WHEN the profiler is stopped without saving THEN the UI shows the profiler is stopped without a URL copied`() = runTest(coroutineRule.testDispatcher.scheduler) {
-        val testDispatcher = coroutineRule.testDispatcher
+    fun `WHEN the profiler is stopped without saving THEN the UI shows the profiler is stopped without a URL copied`() = runTest(testDispatcher) {
         initializeViewModel(
             isInitiallyActive = true,
             mainDispatcher = testDispatcher,
@@ -414,9 +408,10 @@ class ProfilerViewModelTest {
         }
 
         val collectedUiStates = mutableListOf<ProfilerUiState>()
-        val collectionJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+        val collectionJob = launch {
             viewModel.uiState.toList(collectedUiStates)
         }
+        advanceUntilIdle()
 
         viewModel.stopProfilerWithoutSaving()
         advanceUntilIdle()
@@ -437,8 +432,7 @@ class ProfilerViewModelTest {
     }
 
     @Test
-    fun `WHEN the profiler's active status changes THEN the ViewModel's status updates accordingly`() = runTest(coroutineRule.testDispatcher.scheduler) {
-        val testDispatcher = coroutineRule.testDispatcher
+    fun `WHEN the profiler's active status changes THEN the ViewModel's status updates accordingly`() = runTest(testDispatcher) {
         initializeViewModel(
             isInitiallyActive = false,
             mainDispatcher = testDispatcher,
@@ -446,7 +440,7 @@ class ProfilerViewModelTest {
         )
 
         val collectedStates = mutableListOf<Boolean>()
-        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+        val collectJob = launch {
             viewModel.isProfilerActive.toList(collectedStates)
         }
         advanceUntilIdle()
@@ -462,5 +456,19 @@ class ProfilerViewModelTest {
         collectJob.cancel()
 
         assertEquals(listOf(false, true, false), collectedStates)
+    }
+
+    @Test
+    fun `GIVEN all profiler presets THEN they must include the java feature for polling to work`() {
+        // This test ensures that all ProfilerSettings presets include the "java" feature.
+        // The "java" feature is required for GeckoJavaSampler to start, which makes
+        // isProfilerActive() return true. Without it, the polling mechanism in
+        // pollUntilProfilerActiveAndThen() will timeout and fail (see bug 1994995).
+        ProfilerSettings.entries.forEach { setting ->
+            assertTrue(
+                "ProfilerSettings.${setting.name} must include 'java' feature for isProfilerActive() to work",
+                setting.features.contains("java"),
+            )
+        }
     }
 }

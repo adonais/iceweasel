@@ -17,15 +17,15 @@ namespace layers {
 
 MacIOSurfaceTextureHostOGL::MacIOSurfaceTextureHostOGL(
     TextureFlags aFlags, const SurfaceDescriptorMacIOSurface& aDescriptor)
-    : TextureHost(TextureHostType::MacIOSurface, aFlags) {
+    : TextureHost(TextureHostType::MacIOSurface, aFlags),
+      mSurface(MacIOSurface::LookupSurface(aDescriptor.surfaceId(),
+                                           !aDescriptor.isOpaque(),
+                                           aDescriptor.yUVColorSpace())),
+      mGpuFence(aDescriptor.gpuFence()) {
   MOZ_COUNT_CTOR(MacIOSurfaceTextureHostOGL);
-  mSurface = MacIOSurface::LookupSurface(aDescriptor.surfaceId(),
-                                         !aDescriptor.isOpaque(),
-                                         aDescriptor.yUVColorSpace());
   if (!mSurface) {
     gfxCriticalNote << "Failed to look up MacIOSurface";
   }
-  mGpuFence = aDescriptor.gpuFence();
 }
 
 MacIOSurfaceTextureHostOGL::~MacIOSurfaceTextureHostOGL() {

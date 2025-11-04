@@ -65,11 +65,12 @@ export default class MozPromo extends MozLitElement {
         ${imageStartAligned ? this.imageTemplate() : ""}
         <div class="text-container">
           ${this.headingTemplate()}
-          <p class="message">${this.message}</p>
-          <div class="actions-and-support-link-wrapper">
-            <slot name="actions"></slot>
-            <slot name="support-link"></slot>
-          </div>
+          <p class="message">
+            ${this.message}<span class="actions-and-support-link-wrapper">
+              <slot name="actions"></slot>
+              <slot name="support-link"></slot>
+            </span>
+          </p>
         </div>
         ${!imageStartAligned ? this.imageTemplate() : ""}
       </div>`;

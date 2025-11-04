@@ -18,7 +18,7 @@ const lazy = XPCOMUtils.declareLazy({
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   // This is currently only used within experiment code.
   // eslint-disable-next-line mozilla/no-browser-refs-in-toolkit
-  MerinoClient: "resource:///modules/MerinoClient.sys.mjs",
+  MerinoClient: "moz-src:///browser/components/urlbar/MerinoClient.sys.mjs",
   logConsole: () =>
     console.createInstance({
       prefix: "SearchSuggestionController",
@@ -62,7 +62,7 @@ const lazy = XPCOMUtils.declareLazy({
  */
 
 /**
- * @import {MerinoClient} from "resource:///modules/MerinoClient.sys.mjs"
+ * @import {MerinoClient} from "moz-src:///browser/components/urlbar/MerinoClient.sys.mjs"
  */
 
 /**
@@ -307,7 +307,9 @@ export class SearchSuggestionController {
   /**
    * @typedef {object} FetchResult
    * @property {string} term
+   *   The search term used for obtaining the suggestions.
    * @property {FormHistoryResultType} [formHistoryResults]
+   *   The results in a form history result object, used for `SearchSuggestions`.
    * @property {Array<SearchSuggestionEntry>} local
    *   Contains local search suggestions.
    * @property {Array<SearchSuggestionEntry>} remote

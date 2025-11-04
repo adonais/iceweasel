@@ -32,7 +32,9 @@ skip-if = [
 
 ["browser_keyboard_shortcuts.js"]
 run-if = ["!headless"]
-skip-if = ["display == 'wayland'"] # sendNativeMouseEvent doesn't work on wayland
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && display == 'wayland'", # sendNativeMouseEvent doesn't work on wayland
+]
 
 ["browser_keyboard_tests.js"]
 

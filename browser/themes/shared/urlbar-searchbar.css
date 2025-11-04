@@ -140,6 +140,7 @@
   background-color: transparent;
   color: inherit;
   border: none;
+  border-radius: 0;
   margin: 0;
   padding: 0;
   outline: none;
@@ -204,7 +205,6 @@
 [focused]:not([suppress-focus-border]) > .urlbar-background,
 #searchbar:focus-within {
   outline: var(--focus-outline);
-  outline-offset: var(--focus-outline-inset);
 
   /* We used --focus-outline above to inherit its width and style properties,
      but we still want to use the theme's border-color.
@@ -214,14 +214,13 @@
   border-color: transparent;
 }
 
-[focused] > .urlbar-background,
-#searchbar:focus-within {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.23);
-}
-
 [open] > .urlbar-background {
   border-color: var(--arrowpanel-border-color);
   box-shadow: 0 2px 14px rgba(0, 0, 0, 0.13);
+
+  /* The border moves outwards in the open state, so increase the radius
+     accordingly. */
+  border-radius: calc(var(--toolbarbutton-border-radius) + 2px);
 
   @media (-moz-platform: macos) and (prefers-contrast) {
     /* The "increase contrast" preference on macOS draws a 1px black line around
@@ -482,7 +481,7 @@
   color: var(--urlbar-box-text-color);
   margin-inline-end: 8px;
   align-items: center;
-  border-radius: var(--urlbar-icon-border-radius);
+  border-radius: var(--urlbar-inner-border-radius);
   padding-inline: 8px 6px;
 
   #urlbar[focused] > .urlbar-input-container > & {
@@ -503,7 +502,7 @@
   -moz-context-properties: fill, fill-opacity;
   fill-opacity: 0.6;
   fill: currentColor;
-  border-radius: var(--urlbar-icon-border-radius);
+  border-radius: var(--urlbar-inner-border-radius);
   flex-shrink: 0;
 
   @media (prefers-contrast) {
@@ -589,7 +588,7 @@
 .search-go-button {
   width: calc(var(--urlbar-min-height) - 2px /* border */ - 2 * var(--urlbar-container-padding));
   height: calc(var(--urlbar-min-height) - 2px /* border */ - 2 * var(--urlbar-container-padding));
-  border-radius: var(--urlbar-icon-border-radius);
+  border-radius: var(--urlbar-inner-border-radius);
   padding: var(--urlbar-icon-padding);
   color: inherit;
   outline: var(--toolbarbutton-outline);
@@ -759,7 +758,7 @@
 #cfr-label-container {
   width: 0;
   overflow: hidden;
-  border-radius: var(--urlbar-icon-border-radius);
+  border-radius: var(--urlbar-inner-border-radius);
   padding-inline-start: 28px;
   mask-image: linear-gradient(to right, transparent 0, black 0);
   mask-position-x: var(--cfr-label-width);
@@ -944,7 +943,7 @@
   appearance: none;
   font-size: 0.8em;
   padding: 3px 7px;
-  border-radius: var(--urlbar-icon-border-radius);
+  border-radius: var(--urlbar-inner-border-radius);
   background-color: var(--urlbar-box-bgcolor);
   color: var(--urlbar-box-text-color);
   margin-block: calc((var(--urlbar-min-height) - 20px) / 2 - 1px /* border */ - var(--urlbar-container-padding));
@@ -1118,7 +1117,7 @@
 
 .searchmode-switcher {
   appearance: none;
-  border-radius: var(--urlbar-icon-border-radius);
+  border-radius: var(--urlbar-inner-border-radius);
   margin: 0;
   margin-inline-end: var(--urlbar-searchmodeswitcher-margin-inline-end);
   padding-inline: var(--urlbar-searchmodeswitcher-inline-padding);
@@ -1159,7 +1158,6 @@
 .searchmode-switcher-icon {
   width: 16px;
   height: 16px;
-  border-radius: var(--urlbar-icon-border-radius);
   -moz-context-properties: fill;
   fill: currentColor;
   list-style-image: url("chrome://global/skin/icons/search-glass.svg");
@@ -1168,7 +1166,7 @@
 .searchmode-switcher-chicklet {
   background-color: var(--urlbar-box-bgcolor);
   border-start-end-radius: var(--toolbarbutton-border-radius);
-  border-end-end-radius: var(--urlbar-icon-border-radius);
+  border-end-end-radius: var(--urlbar-inner-border-radius);
   align-items: center;
   height: 100%;
   max-width: 40%;

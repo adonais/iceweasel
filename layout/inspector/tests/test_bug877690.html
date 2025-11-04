@@ -158,7 +158,6 @@ function do_test() {
   var values = InspectorUtils.getCSSValuesForProperty(prop);
   var expected = [
     "-moz-available",
-    "-webkit-fill-available",
     "auto",
     "fit-content",
     "inherit",
@@ -167,10 +166,15 @@ function do_test() {
     "min-content",
     "revert",
     "revert-layer",
-    "stretch",
     "unset",
   ];
 
+  if(SpecialPowers.getBoolPref("layout.css.stretch-size-keyword.enabled")) {
+    expected.push("stretch");
+  }
+  if(SpecialPowers.getBoolPref("layout.css.webkit-fill-available.enabled")) {
+    expected.push("-webkit-fill-available");
+  }
   if(SpecialPowers.getBoolPref("layout.css.anchor-positioning.enabled")) {
     expected.push("anchor-size");
   }
@@ -181,7 +185,6 @@ function do_test() {
   var values = InspectorUtils.getCSSValuesForProperty(prop);
   var expected = [
     "-moz-available",
-    "-webkit-fill-available",
     "none",
     "fit-content",
     "inherit",
@@ -190,10 +193,15 @@ function do_test() {
     "min-content",
     "revert",
     "revert-layer",
-    "stretch",
     "unset",
   ];
 
+  if(SpecialPowers.getBoolPref("layout.css.stretch-size-keyword.enabled")) {
+    expected.push("stretch");
+  }
+  if(SpecialPowers.getBoolPref("layout.css.webkit-fill-available.enabled")) {
+    expected.push("-webkit-fill-available");
+  }
   if(SpecialPowers.getBoolPref("layout.css.anchor-positioning.enabled")) {
     expected.push("anchor-size");
   }

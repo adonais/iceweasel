@@ -557,24 +557,6 @@ bool CompositorBridgeChild::DeallocShmem(ipc::Shmem& aShmem) {
   return PCompositorBridgeChild::DeallocShmem(aShmem);
 }
 
-widget::PCompositorWidgetChild*
-CompositorBridgeChild::AllocPCompositorWidgetChild(
-    const CompositorWidgetInitData& aInitData) {
-  // We send the constructor manually.
-  MOZ_CRASH("Should not be called");
-  return nullptr;
-}
-
-bool CompositorBridgeChild::DeallocPCompositorWidgetChild(
-    PCompositorWidgetChild* aActor) {
-#ifdef MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
-  delete aActor;
-  return true;
-#else
-  return false;
-#endif
-}
-
 PAPZCTreeManagerChild* CompositorBridgeChild::AllocPAPZCTreeManagerChild(
     const LayersId& aLayersId) {
   APZCTreeManagerChild* child = new APZCTreeManagerChild();

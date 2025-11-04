@@ -1736,6 +1736,8 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
 #  elif defined(XP_MACOSX)
   sandboxEnabled = (GetEffectiveContentSandboxLevel() >= 1);
   DisconnectWindowServer(sandboxEnabled);
+#  elif defined(XP_IOS)
+  LockdownExtensionKitProcess(ExtensionKitSandboxRevision::Revision1);
 #  endif
 
   CrashReporter::RecordAnnotationBool(

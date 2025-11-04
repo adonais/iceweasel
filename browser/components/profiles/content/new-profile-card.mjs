@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env mozilla/remote-page */
-
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { EditProfileCard } from "chrome://browser/content/profiles/edit-profile-card.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -32,20 +30,14 @@ export class NewProfileCard extends EditProfileCard {
       this.maybeRedirectExistingProfile(profileCreated);
     }
 
-    this.profile = currentProfile;
+    this.setProfile(currentProfile);
     this.profiles = profiles;
     this.themes = themes;
-
-    if (this.profile.hasCustomAvatar) {
-      super.createAvatarURL();
-    }
 
     await Promise.all([
       this.setInitialInput(),
       this.setRandomTheme(isInAutomation),
     ]);
-
-    super.setFavicon();
   }
 
   /**

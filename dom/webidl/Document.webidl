@@ -155,9 +155,9 @@ partial interface Document {
   WindowProxy? open(UTF8String url, DOMString name, DOMString features);
   [CEReactions, Throws]
   undefined close();
-  [CEReactions, Throws]
+  [CEReactions, Throws, NeedsSubjectPrincipal=NonSystem]
   undefined write((TrustedHTML or DOMString)... text);
-  [CEReactions, Throws]
+  [CEReactions, Throws, NeedsSubjectPrincipal=NonSystem]
   undefined writeln((TrustedHTML or DOMString)... text);
 
   // user interaction

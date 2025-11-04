@@ -101,16 +101,18 @@ class StyleSheetsManager extends EventEmitter {
     const { signal } = this.#abortController;
 
     // Listen for new stylesheet being added via StyleSheetApplicableStateChanged
-    this.#targetActor.chromeEventHandler.addEventListener(
-      "StyleSheetApplicableStateChanged",
-      this.#onApplicableStateChanged,
-      { capture: true, signal }
-    );
-    this.#targetActor.chromeEventHandler.addEventListener(
-      "StyleSheetRemoved",
-      this.#onStylesheetRemoved,
-      { capture: true, signal }
-    );
+    if (this.#targetActor.chromeEventHandler) {
+      this.#targetActor.chromeEventHandler.addEventListener(
+        "StyleSheetApplicableStateChanged",
+        this.#onApplicableStateChanged,
+        { capture: true, signal }
+      );
+      this.#targetActor.chromeEventHandler.addEventListener(
+        "StyleSheetRemoved",
+        this.#onStylesheetRemoved,
+        { capture: true, signal }
+      );
+    }
 
     this.#watchStyleSheetChangeEvents();
     this.#targetActor.on("window-ready", this.#onTargetActorWindowReady, {

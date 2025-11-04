@@ -1420,6 +1420,10 @@ void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
   }
 }
 
+UseScratchRegisterScope::UseScratchRegisterScope(Assembler& assembler)
+    : available_(assembler.GetScratchRegisterList()),
+      old_available_(*available_) {}
+
 UseScratchRegisterScope::UseScratchRegisterScope(Assembler* assembler)
     : available_(assembler->GetScratchRegisterList()),
       old_available_(*available_) {}
@@ -1434,6 +1438,13 @@ Register UseScratchRegisterScope::Acquire() {
   Register index = GeneralRegisterSet::FirstRegister(available_->bits());
   available_->takeRegisterIndex(index);
   return index;
+}
+
+void UseScratchRegisterScope::Release(const Register& reg) {
+  MOZ_ASSERT(available_ != nullptr);
+  MOZ_ASSERT(old_available_.hasRegisterIndex(reg));
+  MOZ_ASSERT(!available_->hasRegisterIndex(reg));
+  Include(GeneralRegisterSet(1 << reg.code()));
 }
 
 bool UseScratchRegisterScope::hasAvailable() const {

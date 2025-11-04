@@ -668,7 +668,6 @@ bool GLContext::InitImpl() {
       "NVIDIA Tegra",
       "Android Emulator",
       "Gallium 0.4 on llvmpipe",
-      "Intel HD Graphics 3000 OpenGL Engine",
       "Microsoft Basic Render Driver",
       "Samsung Xclipse",
       "Unknown"};
@@ -942,6 +941,17 @@ bool GLContext::InitImpl() {
   }
 
   mMaxTexOrRbSize = std::min(mMaxTextureSize, mMaxRenderbufferSize);
+
+#ifdef MOZ_WIDGET_ANDROID
+  if (Renderer() == GLRenderer::SamsungXclipse && jni::GetAPIVersion() >= 35) {
+    // On Samsung Xclipse GPUs on Android 15 attribute values for the final
+    // vertex in a buffer may be incorrect. Padding the buffer to contain
+    // enough space for an additional vertex avoids the issue. See bug 1983036.
+    GLint maxVertexAttribStride;
+    raw_fGetIntegerv(LOCAL_GL_MAX_VERTEX_ATTRIB_STRIDE, &maxVertexAttribStride);
+    mVertexBufferExtraPadding = Some(maxVertexAttribStride);
+  }
+#endif
 
   ////////////////////////////////////////////////////////////////////////////
 
@@ -1748,15 +1758,6 @@ void GLContext::InitExtensions() {
     }
 
 #ifdef XP_MACOSX
-    // Bug 1009642: On OSX Mavericks (10.9), the driver for Intel HD
-    // 3000 appears to be buggy WRT updating sub-images of S3TC
-    // textures with glCompressedTexSubImage2D. Works on Intel HD 4000
-    // and Intel HD 5000/Iris that I tested.
-    // Bug 1124996: Appears to be the same on OSX Yosemite (10.10)
-    if (Renderer() == GLRenderer::IntelHD3000) {
-      MarkExtensionUnsupported(EXT_texture_compression_s3tc);
-    }
-
     // OSX supports EXT_texture_sRGB in Legacy contexts, but not in Core
     // contexts. Though EXT_texture_sRGB was included into GL2.1, it *excludes*
     // the interactions with s3tc. Strictly speaking, you must advertize support

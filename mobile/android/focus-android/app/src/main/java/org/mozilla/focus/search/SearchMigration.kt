@@ -60,7 +60,7 @@ class SearchMigration(
     }
 }
 
-@Suppress("SwallowedException", "DEPRECATION")
+@Suppress("DEPRECATION")
 private fun loadSafely(id: String, stream: BufferedInputStream?): SearchEngine? {
     return try {
         stream?.let { parseLegacySearchEngine(id, it) }

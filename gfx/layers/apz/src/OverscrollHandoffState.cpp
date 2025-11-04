@@ -8,7 +8,6 @@
 
 #include <algorithm>  // for std::stable_sort
 #include "mozilla/Assertions.h"
-#include "mozilla/FloatingPoint.h"
 #include "AsyncPanZoomController.h"
 
 namespace mozilla {

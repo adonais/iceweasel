@@ -13,7 +13,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/XULResizerElementBinding.h"
 #include "nsContentUtils.h"
-#include "nsICSSDeclaration.h"
+#include "nsDOMCSSDeclaration.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
@@ -292,7 +292,7 @@ void XULResizerElement::ResizeContent(nsIContent* aContent,
   if (!inlineStyleContent) {
     return;
   }
-  nsCOMPtr<nsICSSDeclaration> decl = inlineStyleContent->Style();
+  nsCOMPtr<nsDOMCSSDeclaration> decl = inlineStyleContent->Style();
   if (aOriginalSizeInfo) {
     decl->GetPropertyValue("width"_ns, aOriginalSizeInfo->width);
     decl->GetPropertyValue("height"_ns, aOriginalSizeInfo->height);

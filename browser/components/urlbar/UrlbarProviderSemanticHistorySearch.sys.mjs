@@ -11,7 +11,7 @@
 import {
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -19,9 +19,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   EnrollmentType: "resource://nimbus/ExperimentAPI.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarProviderOpenTabs:
+    "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", function () {
@@ -41,7 +42,6 @@ ChromeUtils.defineLazyGetter(lazy, "semanticManager", function () {
     0.6
   );
   return getPlacesSemanticHistoryManager({
-    embeddingSize: 384,
     rowLimit: 10000,
     samplingAttrib: "frecency",
     changeThresholdCount: 3,
@@ -139,9 +139,9 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
           addCallback
         )
       ) {
-        const result = new lazy.UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.URL,
-          UrlbarUtils.RESULT_SOURCE.HISTORY,
+        const result = new lazy.UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.URL,
+          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
           ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
             title: [res.title, UrlbarUtils.HIGHLIGHT.NONE],
             url: [res.url, UrlbarUtils.HIGHLIGHT.NONE],
@@ -152,8 +152,8 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
               Services.urlFormatter.formatURLPref("app.support.baseURL") +
               "awesome-bar-result-menu",
             frecency: res.frecency,
-          })
-        );
+          }),
+        });
         addCallback(this, result);
       }
     }
@@ -201,26 +201,25 @@ export class UrlbarProviderSemanticHistorySearch extends UrlbarProvider {
       ) {
         continue;
       }
-      let payload = lazy.UrlbarResult.payloadAndSimpleHighlights(
-        queryContext.tokens,
-        {
+      let { payload, payloadHighlights } =
+        lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
           url: [res.url, UrlbarUtils.HIGHLIGHT.NONE],
           title: [res.title, UrlbarUtils.HIGHLIGHT.NONE],
           icon: UrlbarUtils.getIconForUrl(res.url),
           userContextId: tabUserContextId,
           tabGroup: tabGroupId,
           lastVisit: res.lastVisit,
-        }
-      );
+        });
       if (lazy.UrlbarPrefs.get("secondaryActions.switchToTab")) {
-        payload[0].action =
+        payload.action =
           UrlbarUtils.createTabSwitchSecondaryAction(tabUserContextId);
       }
-      let result = new lazy.UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-        UrlbarUtils.RESULT_SOURCE.TABS,
-        ...payload
-      );
+      let result = new lazy.UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+        source: UrlbarUtils.RESULT_SOURCE.TABS,
+        payload,
+        payloadHighlights,
+      });
       addCallback(this, result);
       added = true;
     }

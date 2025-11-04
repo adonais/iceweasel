@@ -1183,7 +1183,7 @@ add_task(async function test_html_lang_attribute() {
 
   translate();
 
-  await waitForCondition(() => document.documentElement.lang === "EN");
+  await waitForCondition(() => document.documentElement.lang === "es");
 
   cleanup();
 });

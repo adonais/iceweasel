@@ -6,6 +6,9 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { FLAGS } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
 
+/**
+ * A custom element that handles the display of flag icons.
+ */
 export default class IPProtectionFlagElement extends MozLitElement {
   static properties = {
     location: { type: Object },

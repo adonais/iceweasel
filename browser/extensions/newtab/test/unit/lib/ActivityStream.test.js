@@ -326,7 +326,7 @@ describe("ActivityStream", () => {
       assert.isTrue(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
     });
     it("should turn off when region is not supported", () => {
-      stub.get(() => "FR");
+      stub.get(() => "JP");
       as._updateDynamicPrefs();
       assert.isFalse(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
     });
@@ -399,7 +399,7 @@ describe("ActivityStream", () => {
       assert.isTrue(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
     });
     it("should turn off when region is not supported", () => {
-      stub.get(() => "FR");
+      stub.get(() => "JP");
       as._updateDynamicPrefs();
       assert.isFalse(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
     });
@@ -472,7 +472,7 @@ describe("ActivityStream", () => {
       assert.isTrue(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
     });
     it("should turn off when region is not supported", () => {
-      stub.get(() => "FR");
+      stub.get(() => "JP");
       as._updateDynamicPrefs();
       assert.isFalse(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
     });
@@ -546,7 +546,7 @@ describe("ActivityStream", () => {
       assert.isTrue(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
     });
     it("should turn off when region is not supported", () => {
-      stub.get(() => "FR");
+      stub.get(() => "JP");
       as._updateDynamicPrefs();
       assert.isFalse(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
     });
@@ -622,7 +622,7 @@ describe("ActivityStream", () => {
       assert.isTrue(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
     });
     it("should turn off when region is not supported", () => {
-      stub.get(() => "FR");
+      stub.get(() => "JP");
       as._updateDynamicPrefs();
       assert.isFalse(PREFS_CONFIG.get(FEATURE_ENABLED_PREF).value);
     });

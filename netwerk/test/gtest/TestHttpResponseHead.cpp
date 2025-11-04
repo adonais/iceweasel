@@ -67,7 +67,8 @@ TEST(TestHttpResponseHead, bug1649807)
   Unused << head.ParseStatusLine("HTTP/1.1 200 OK"_ns);
   Unused << head.ParseHeaderLine("content-type: text/plain"_ns);
   Unused << head.ParseHeaderLine("etag: Just testing"_ns);
-  Unused << head.ParseHeaderLine("cache-control: age=99999"_ns);
+  Unused << head.ParseHeaderLine(
+      "cache-control: public, max-age=31536000, immutable"_ns);
   Unused << head.ParseHeaderLine("accept-ranges: bytes"_ns);
   Unused << head.ParseHeaderLine("content-length: 1408"_ns);
   Unused << head.ParseHeaderLine("connection: close"_ns);
@@ -76,7 +77,27 @@ TEST(TestHttpResponseHead, bug1649807)
   Unused << head.ParseHeaderLine("date: Tue, 12 May 2020 09:24:23 GMT"_ns);
 
   ASSERT_FALSE(head.NoCache())
-  << "Cache-Control wins over Pragma: no-cache";
+  << "Cache-Control: immutable wins over Pragma: no-cache";
+  AssertRoundTrips(head);
+}
+
+TEST(TestHttpResponseHead, bug1937766)
+{
+  nsHttpResponseHead head;
+
+  Unused << head.ParseStatusLine("HTTP/1.1 200 OK"_ns);
+  Unused << head.ParseHeaderLine("content-type: text/plain"_ns);
+  Unused << head.ParseHeaderLine("etag: Just testing"_ns);
+  Unused << head.ParseHeaderLine("cache-control: age=99999"_ns);
+  Unused << head.ParseHeaderLine("accept-ranges: bytes"_ns);
+  Unused << head.ParseHeaderLine("content-length: 1408"_ns);
+  Unused << head.ParseHeaderLine("connection: close"_ns);
+  Unused << head.ParseHeaderLine("server: httpd.js"_ns);
+  Unused << head.ParseHeaderLine("pragma: no-cache"_ns);
+  Unused << head.ParseHeaderLine("date: Tue, 12 May 2020 09:24:23 GMT"_ns);
+
+  ASSERT_TRUE(head.NoCache())
+  << "Pragma: no-cache wins over Cache-Control";
   AssertRoundTrips(head);
 }
 

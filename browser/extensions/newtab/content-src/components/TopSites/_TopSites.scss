@@ -265,8 +265,20 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
     &:focus-visible {
       background-color: var(--newtab-button-focus-background);
-      border-color: var(--newtab-button-focus-border);
+      outline: var(--focus-outline); // Backup for when wallpaper is not set
       opacity: 1;
+
+      .lightWallpaper &,
+      .darkWallpaper & {
+        &::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: var(--border-radius-small);
+          outline: var(--focus-outline);
+          color-scheme: initial; // Override wallpaper-contrast-fix for focus outline color
+        }
+      }
     }
   }
 
@@ -286,6 +298,14 @@ $calculated-max-width-twice-widest: $break-point-widest + 2 * $card-width;
 
     &:focus + div .context-menu-button {
       opacity: 1;
+    }
+
+    &:focus .tile {
+      .lightWallpaper &,
+      .darkWallpaper & {
+        outline: var(--focus-outline);
+        color-scheme: initial;
+      }
     }
   }
 

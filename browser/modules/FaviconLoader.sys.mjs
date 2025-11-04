@@ -56,17 +56,6 @@ function promiseBlobAsDataURL(blob) {
   });
 }
 
-function promiseBlobAsOctets(blob) {
-  return new Promise((resolve, reject) => {
-    let reader = new FileReader();
-    reader.addEventListener("load", () => {
-      resolve(Array.from(reader.result).map(c => c.charCodeAt(0)));
-    });
-    reader.addEventListener("error", reject);
-    reader.readAsBinaryString(blob);
-  });
-}
-
 function promiseImage(stream, type) {
   return new Promise((resolve, reject) => {
     let imgTools = Cc["@mozilla.org/image/tools;1"].getService(Ci.imgITools);
@@ -293,7 +282,7 @@ class FaviconLoad {
       let blob = new Blob([buffer], { type });
 
       if (type != "image/svg+xml") {
-        let octets = await promiseBlobAsOctets(blob);
+        let octets = new Uint8Array(buffer);
         let sniffer = Cc["@mozilla.org/image/loader;1"].createInstance(
           Ci.nsIContentSniffer
         );

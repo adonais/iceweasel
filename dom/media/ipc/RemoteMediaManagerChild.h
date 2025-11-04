@@ -12,7 +12,6 @@
 #include "PDMFactory.h"
 #include "PlatformEncoderModule.h"
 #include "ipc/EnumSerializer.h"
-#include "mozilla/EnumTypeTraits.h"
 #include "mozilla/PRemoteMediaManagerChild.h"
 #include "mozilla/ipc/UtilityProcessSandboxing.h"
 #include "mozilla/layers/VideoBridgeUtils.h"

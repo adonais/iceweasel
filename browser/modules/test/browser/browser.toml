@@ -41,6 +41,9 @@ support-files = [
   "../../../components/tabbrowser/test/browser/tabs/file_mediaPlayback.html",
   "../../../base/content/test/general/audio.ogg",
 ]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1781868
+]
 
 ["browser_Telemetry_numberOfSiteOrigins.js"]
 support-files = ["contain_iframe.html"]

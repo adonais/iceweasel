@@ -5,9 +5,14 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  CustomizableUI:
+    "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   IPProtectionService:
     "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+  IPProtectionStates:
+    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
   IPProtection: "resource:///modules/ipprotection/IPProtection.sys.mjs",
+  IPPSignInWatcher: "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs",
 });
 
 import {
@@ -24,7 +29,7 @@ export class IPProtectionPanel {
   static CONTENT_TAGNAME = "ipprotection-content";
   static CUSTOM_ELEMENTS_SCRIPT =
     "chrome://browser/content/ipprotection/ipprotection-customelements.js";
-
+  static WIDGET_ID = "ipprotection-button";
   static PANEL_ID = "PanelUI-ipprotection";
   static TITLE_L10N_ID = "ipprotection-title";
 
@@ -105,16 +110,12 @@ export class IPProtectionPanel {
   constructor(window, variant = "") {
     this.handleEvent = this.#handleEvent.bind(this);
 
-    let {
-      isSignedIn,
-      isActive: isProtectionEnabled,
-      activatedAt: protectionEnabledSince,
-      hasUpgraded,
-    } = lazy.IPProtectionService;
+    let { activatedAt: protectionEnabledSince, hasUpgraded } =
+      lazy.IPProtectionService;
 
     this.state = {
-      isSignedOut: !isSignedIn,
-      isProtectionEnabled,
+      isSignedOut: !lazy.IPPSignInWatcher.isSignedIn,
+      isProtectionEnabled: !!protectionEnabledSince,
       protectionEnabledSince,
       location: {
         name: "United States",
@@ -199,9 +200,7 @@ export class IPProtectionPanel {
    */
   showing(panelView) {
     if (this.initiatedUpgrade) {
-      lazy.IPProtectionService.updateHasUpgradedStatus(
-        true /* refetchEntitlement */
-      );
+      lazy.IPProtectionService.refetchEntitlement();
       this.initiatedUpgrade = false;
     }
 
@@ -242,6 +241,22 @@ export class IPProtectionPanel {
   }
 
   /**
+   * Open the IP Protection panel in the given window.
+   *
+   * @param {Window} window - which window to open the panel in.
+   * @returns {Promise<void>}
+   */
+  async open(window) {
+    if (!lazy.IPProtection.created || !window?.PanelUI) {
+      return;
+    }
+
+    let widget = lazy.CustomizableUI.getWidget(IPProtectionPanel.WIDGET_ID);
+    let anchor = widget.forWindow(window).anchor;
+    await window.PanelUI.showSubView(IPProtectionPanel.PANEL_ID, anchor);
+  }
+
+  /**
    * Close the containing panel popup.
    */
   close() {
@@ -261,7 +276,7 @@ export class IPProtectionPanel {
     this.close();
     let isSignedIn = await lazy.IPProtectionService.startLoginFlow(browser);
     if (isSignedIn) {
-      lazy.IPProtection.openPanel(window);
+      await this.open(window);
     }
   }
 
@@ -308,54 +323,14 @@ export class IPProtectionPanel {
 
   #addProxyListeners() {
     lazy.IPProtectionService.addEventListener(
-      "IPProtectionService:SignedIn",
-      this.handleEvent
-    );
-    lazy.IPProtectionService.addEventListener(
-      "IPProtectionService:SignedOut",
-      this.handleEvent
-    );
-    lazy.IPProtectionService.addEventListener(
-      "IPProtectionService:Started",
-      this.handleEvent
-    );
-    lazy.IPProtectionService.addEventListener(
-      "IPProtectionService:Stopped",
-      this.handleEvent
-    );
-    lazy.IPProtectionService.addEventListener(
-      "IPProtectionService:UpdateHasUpgraded",
-      this.handleEvent
-    );
-    lazy.IPProtectionService.addEventListener(
-      "IPProtectionService:Error",
+      "IPProtectionService:StateChanged",
       this.handleEvent
     );
   }
 
   #removeProxyListeners() {
     lazy.IPProtectionService.removeEventListener(
-      "IPProtectionService:SignedIn",
-      this.handleEvent
-    );
-    lazy.IPProtectionService.removeEventListener(
-      "IPProtectionService:SignedOut",
-      this.handleEvent
-    );
-    lazy.IPProtectionService.removeEventListener(
-      "IPProtectionService:Started",
-      this.handleEvent
-    );
-    lazy.IPProtectionService.removeEventListener(
-      "IPProtectionService:Stopped",
-      this.handleEvent
-    );
-    lazy.IPProtectionService.removeEventListener(
-      "IPProtectionService:UpdateHasUpgraded",
-      this.handleEvent
-    );
-    lazy.IPProtectionService.removeEventListener(
-      "IPProtectionService:Error",
+      "IPProtectionService:StateChanged",
       this.handleEvent
     );
   }
@@ -367,45 +342,34 @@ export class IPProtectionPanel {
       this.close();
     } else if (event.type == "IPProtection:UserEnable") {
       this.#startProxy();
+      Services.prefs.setBoolPref("browser.ipProtection.userEnabled", true);
     } else if (event.type == "IPProtection:UserDisable") {
       this.#stopProxy();
+      Services.prefs.setBoolPref("browser.ipProtection.userEnabled", false);
     } else if (event.type == "IPProtection:ShowHelpPage") {
       this.showHelpPage();
     } else if (event.type == "IPProtection:ClickUpgrade") {
       // Let the service know that we tried upgrading at least once
       this.initiatedUpgrade = true;
       this.close();
-    } else if (event.type == "IPProtectionService:SignedIn") {
-      this.setState({
-        isSignedOut: false,
-      });
-    } else if (event.type == "IPProtectionService:SignedOut") {
-      this.setState({
-        isSignedOut: true,
-      });
-    } else if (event.type == "IPProtectionService:Started") {
-      this.setState({
-        isProtectionEnabled: true,
-        protectionEnabledSince: event.detail?.activatedAt,
-        error: "",
-      });
-    } else if (event.type == "IPProtectionService:Stopped") {
-      this.setState({
-        isProtectionEnabled: false,
-        protectionEnabledSince: null,
-      });
-    } else if (event.type == "IPProtectionService:UpdateHasUpgraded") {
-      this.setState({
-        hasUpgraded: event.detail?.hasUpgraded,
-      });
     } else if (event.type == "IPProtection:SignIn") {
       this.startLoginFlow();
-    } else if (
-      event.type == "IPProtectionService:Error" &&
-      event.detail?.error == ERRORS.GENERIC
-    ) {
+    } else if (event.type == "IPProtectionService:StateChanged") {
+      let {
+        state,
+        activatedAt: protectionEnabledSince,
+        hasUpgraded,
+      } = lazy.IPProtectionService;
+      let hasError =
+        state === lazy.IPProtectionStates.ERROR &&
+        lazy.IPProtectionService.errors.includes(ERRORS.GENERIC);
+
       this.setState({
-        error: event.detail.error,
+        isSignedOut: !lazy.IPPSignInWatcher.isSignedIn,
+        isProtectionEnabled: !!protectionEnabledSince,
+        protectionEnabledSince,
+        hasUpgraded,
+        error: hasError ? ERRORS.GENERIC : "",
       });
     }
   }

@@ -44,9 +44,7 @@ export function bootstrapStore(client, workers, panel, initialState) {
   const createStore = configureStore({
     log: prefs.logging || flags.testing,
     timing: debugJsModules,
-    makeThunkArgs: args => {
-      return { ...args, client, ...workers, panel };
-    },
+    thunkArgs: { client, ...workers, panel },
   });
 
   let store = createStore(combineReducers(reducers), initialState);

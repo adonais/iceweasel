@@ -1553,8 +1553,7 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
           break;
         }
 
-        JSLinearString** properties =
-            ni->propertiesBegin()->unbarrieredAddress();
+        IteratorProperty* properties = ni->propertiesBegin();
         JSObject* array = NewDenseCopiedArray(cx, ni->numKeys(), properties);
         if (!array) {
           return false;

@@ -24,7 +24,6 @@ use crate::custom_properties::{self, ComputedCustomProperties};
 use crate::gecko_bindings::structs::{nsCSSPropertyID, AnimatedPropertyID, RefPtr};
 use crate::logical_geometry::WritingMode;
 use crate::parser::ParserContext;
-use crate::str::CssString;
 use crate::stylesheets::CssRuleType;
 use crate::stylesheets::Origin;
 use crate::stylist::Stylist;
@@ -39,7 +38,8 @@ use std::{
     mem,
 };
 use style_traits::{
-    CssWriter, KeywordsCollectFn, ParseError, ParsingMode, SpecifiedValueInfo, ToCss,
+    CssString, CssWriter, KeywordsCollectFn, ParseError, ParsingMode, SpecifiedValueInfo, ToCss,
+    ToTyped, TypedValue,
 };
 
 bitflags! {
@@ -77,7 +77,9 @@ bitflags! {
 }
 
 /// An enum to represent a CSS Wide keyword.
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+#[derive(
+    Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped,
+)]
 pub enum CSSWideKeyword {
     /// The `initial` keyword.
     Initial,
@@ -137,8 +139,16 @@ pub struct WideKeywordDeclaration {
     pub keyword: CSSWideKeyword,
 }
 
+// XXX Switch back to ToTyped derive once it can automatically handle structs
+// Tracking in bug 1991631
+impl ToTyped for WideKeywordDeclaration {
+    fn to_typed(&self) -> Option<TypedValue> {
+        self.keyword.to_typed()
+    }
+}
+
 /// An unparsed declaration that contains `var()` functions.
-#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf)]
+#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf, ToTyped)]
 pub struct VariableDeclaration {
     /// The id of the property this declaration represents.
     #[css(skip)]
@@ -161,7 +171,7 @@ pub enum CustomDeclarationValue {
 }
 
 /// A custom property declaration with the property name and the declared value.
-#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf)]
+#[derive(Clone, PartialEq, ToCss, ToShmem, MallocSizeOf, ToTyped)]
 pub struct CustomDeclaration {
     /// The name of the custom property.
     #[css(skip)]
@@ -438,7 +448,7 @@ impl PropertyId {
 
     /// Given this property id, get it either as a shorthand or as a
     /// `PropertyDeclarationId`.
-    pub fn as_shorthand(&self) -> Result<ShorthandId, PropertyDeclarationId> {
+    pub fn as_shorthand(&self) -> Result<ShorthandId, PropertyDeclarationId<'_>> {
         match *self {
             Self::NonCustom(id) => match id.longhand_or_shorthand() {
                 Ok(lh) => Err(PropertyDeclarationId::Longhand(lh)),
@@ -962,7 +972,7 @@ impl OwnedPropertyDeclarationId {
 
     /// Returns the corresponding PropertyDeclarationId.
     #[inline]
-    pub fn as_borrowed(&self) -> PropertyDeclarationId {
+    pub fn as_borrowed(&self) -> PropertyDeclarationId<'_> {
         match self {
             Self::Longhand(id) => PropertyDeclarationId::Longhand(*id),
             Self::Custom(name) => PropertyDeclarationId::Custom(name),
@@ -1193,7 +1203,7 @@ impl LonghandIdSet {
     }
 
     /// Iterate over the current longhand id set.
-    pub fn iter(&self) -> LonghandIdSetIterator {
+    pub fn iter(&self) -> LonghandIdSetIterator<'_> {
         LonghandIdSetIterator {
             chunks: &self.storage,
             cur_chunk: 0,
@@ -1340,7 +1350,7 @@ impl SourcePropertyDeclaration {
     }
 
     /// Similar to Vec::drain: leaves this empty when the return value is dropped.
-    pub fn drain(&mut self) -> SourcePropertyDeclarationDrain {
+    pub fn drain(&mut self) -> SourcePropertyDeclarationDrain<'_> {
         SourcePropertyDeclarationDrain {
             declarations: self.declarations.drain(..),
             all_shorthand: mem::replace(&mut self.all_shorthand, AllShorthand::NotSet),
@@ -1550,7 +1560,7 @@ impl Default for AllShorthand {
 impl AllShorthand {
     /// Iterates property declarations from the given all shorthand value.
     #[inline]
-    pub fn declarations(&self) -> AllShorthandDeclarationIterator {
+    pub fn declarations(&self) -> AllShorthandDeclarationIterator<'_> {
         AllShorthandDeclarationIterator {
             all_shorthand: self,
             longhands: ShorthandId::All.longhands(),

@@ -102,10 +102,6 @@ def isLinux(platform: str):
     return "linux" in platform
 
 
-def isLinux32(platform: str):
-    return "linux32" in platform or "linux-i686" in platform or platform == "linux"
-
-
 def isLinux64(platform: str):
     return "linux64" in platform or "linux-x86_64" in platform
 
@@ -133,7 +129,6 @@ def isWin64Aarch64(platform: str):
 def isValidPlatform(platform: str):
     return (
         isLinux64(platform)
-        or isLinux32(platform)
         or isMac(platform)
         or isWin64(platform)
         or isWin64Aarch64(platform)

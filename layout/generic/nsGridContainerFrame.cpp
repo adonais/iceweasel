@@ -15,6 +15,7 @@
 
 #include "fmt/format.h"
 #include "gfxContext.h"
+#include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Baseline.h"
 #include "mozilla/CSSAlignUtils.h"
@@ -27,7 +28,6 @@
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/Grid.h"
 #include "mozilla/dom/GridBinding.h"
-#include "nsAbsoluteContainingBlock.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsDisplayList.h"
 #include "nsFieldSetFrame.h"
@@ -41,7 +41,6 @@
 
 using namespace mozilla;
 
-using AbsPosReflowFlags = nsAbsoluteContainingBlock::AbsPosReflowFlags;
 using AlignJustifyFlag = CSSAlignUtils::AlignJustifyFlag;
 using AlignJustifyFlags = CSSAlignUtils::AlignJustifyFlags;
 using GridItemCachedBAxisMeasurement =
@@ -7152,16 +7151,14 @@ void nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
       // Collect information for step 3.
       // https://drafts.csswg.org/css-grid-2/#algo-spanning-items
 
-      nsTArray<SpanningItemData>* items = &nonFlexSpanningItems;
+      nsTArray<SpanningItemData>* items;
       if (state & TrackSize::eFlexMaxSizing) {
         // Set eIsFlexing on the item state here to speed up
         // FindUsedFlexFraction later.
         gridItem.mState[mAxis] |= ItemState::eIsFlexing;
-        if (!StaticPrefs::
-                layout_css_grid_flex_spanning_items_intrinsic_sizing_enabled()) {
-          continue;
-        }
         items = &flexSpanningItems;
+      } else {
+        items = &nonFlexSpanningItems;
       }
 
       if (state &
@@ -8273,7 +8270,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
                              cb.BSize(wm) - consumedGridAreaBSize);
     }
     applyItemSelfAlignment(LogicalAxis::Inline, cb.ISize(wm));
-  }  // else, nsAbsoluteContainingBlock.cpp will handle align/justify-self.
+  }  // else, AbsoluteContainingBlock.cpp will handle align/justify-self.
 
   FinishReflowChild(aChild, pc, childSize, &childRI, childWM, childPos,
                     aContainerSize, ReflowChildFlags::ApplyRelativePositioning);
@@ -9352,7 +9349,7 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aGridRI,
         GridArea& area = aGridRI.mAbsPosItems[i].mArea;
         LogicalRect itemCB =
             aGridRI.ContainingBlockForAbsPos(area, gridOrigin, gridCB);
-        // nsAbsoluteContainingBlock::Reflow uses physical coordinates.
+        // AbsoluteContainingBlock::Reflow uses physical coordinates.
         nsRect* cb = child->GetProperty(GridItemContainingBlockRect());
         if (!cb) {
           cb = new nsRect;
@@ -9362,13 +9359,15 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aGridRI,
         ++i;
       }
       // We pass a dummy rect as CB because each child has its own CB rect.
-      // The eIsGridContainerCB flag tells nsAbsoluteContainingBlock::Reflow to
+      // The IsGridContainerCB flag tells AbsoluteContainingBlock::Reflow to
       // use those instead.
       nsRect dummyRect;
-      AbsPosReflowFlags flags =
-          AbsPosReflowFlags::CBWidthAndHeightChanged;  // XXX could be optimized
-      flags |= AbsPosReflowFlags::ConstrainHeight;
-      flags |= AbsPosReflowFlags::IsGridContainerCB;
+      // XXX: To optimize the performance, set the flags only when the CB width
+      // or height actually changes.
+      AbsPosReflowFlags flags{AbsPosReflowFlag::AllowFragmentation,
+                              AbsPosReflowFlag::CBWidthChanged,
+                              AbsPosReflowFlag::CBHeightChanged,
+                              AbsPosReflowFlag::IsGridContainerCB};
       GetAbsoluteContainingBlock()->Reflow(
           this, PresContext(), *aGridRI.mReflowInput, aStatus, dummyRect, flags,
           &aDesiredSize.mOverflowAreas);
@@ -10315,6 +10314,10 @@ void nsGridContainerFrame::MarkIntrinsicISizesDirty() {
 void nsGridContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                             const nsDisplayListSet& aLists) {
   DisplayBorderBackgroundOutline(aBuilder, aLists);
+  if (HidesContent()) {
+    return;
+  }
+
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
   }

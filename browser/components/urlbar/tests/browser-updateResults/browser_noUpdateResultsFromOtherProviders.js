@@ -19,16 +19,16 @@ add_task(async function test() {
   // be overriden by results from the second provider.
   let firstProvider = new UrlbarTestUtils.TestProvider({
     results: [
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: "https://mozilla.org/c" }
-      ),
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: "https://mozilla.org/d" }
-      ),
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: "https://mozilla.org/c" },
+      }),
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: "https://mozilla.org/d" },
+      }),
     ],
     priority: 10,
   });
@@ -38,16 +38,16 @@ add_task(async function test() {
   // appended, until the query is done or the stale timer elapses.
   let secondProvider = new UrlbarTestUtils.TestProvider({
     results: [
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: "https://mozilla.org/c" }
-      ),
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: "https://mozilla.org/d" }
-      ),
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: "https://mozilla.org/c" },
+      }),
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: "https://mozilla.org/d" },
+      }),
     ],
     priority: 10,
   });

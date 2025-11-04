@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -42,6 +43,10 @@ fun ShortcutsScreen(
     interactor: TopSiteInteractor,
     onNavigationIconClick: () -> Unit,
 ) {
+    LaunchedEffect(Unit) {
+        interactor.onShortcutsLibraryViewed()
+    }
+
     BackInvokedHandler {
         onNavigationIconClick()
     }

@@ -14,12 +14,16 @@ pub fn register(cmd_list: &mut CommandList) {
     cmd_list.register_command(Box::new(GenerateFrameCommand));
     cmd_list.register_command(Box::new(ToggleProfilerCommand));
     cmd_list.register_command(Box::new(GetSpatialTreeCommand));
+    cmd_list.register_command(Box::new(GetCompositeConfigCommand));
+    cmd_list.register_command(Box::new(GetCompositeViewCommand));
 }
 
 struct PingCommand;
 struct GenerateFrameCommand;
 struct ToggleProfilerCommand;
 struct GetSpatialTreeCommand;
+struct GetCompositeConfigCommand;
+struct GetCompositeViewCommand;
 
 impl Command for PingCommand {
     fn descriptor(&self) -> &'static CommandDescriptor {
@@ -123,6 +127,66 @@ impl Command for GetSpatialTreeCommand {
             Ok(output) => {
                 CommandOutput::TextDocument {
                     title: "Spatial Tree".to_string(),
+                    content: output.expect("empty response"),
+                }
+            }
+            Err(err) => {
+                CommandOutput::Err(err)
+            }
+        }
+    }
+}
+
+impl Command for GetCompositeConfigCommand {
+    fn descriptor(&self) -> &'static CommandDescriptor {
+        &CommandDescriptor {
+            name: "get-composite-cfg",
+            help: "Print the current compositing config to the console",
+            alias: None,
+        }
+    }
+
+    fn run(
+        &mut self,
+        ctx: &mut CommandContext,
+    ) -> CommandOutput {
+        match ctx.net.get_with_query(
+            "query",
+            &[("type", "composite-config")],
+        ) {
+            Ok(output) => {
+                CommandOutput::TextDocument {
+                    title: "Composite Config".into(),
+                    content: output.expect("empty response"),
+                }
+            }
+            Err(err) => {
+                CommandOutput::Err(err)
+            }
+        }
+    }
+}
+
+impl Command for GetCompositeViewCommand {
+    fn descriptor(&self) -> &'static CommandDescriptor {
+        &CommandDescriptor {
+            name: "get-composite-view",
+            help: "Print the current compositing config to the console",
+            alias: None,
+        }
+    }
+
+    fn run(
+        &mut self,
+        ctx: &mut CommandContext,
+    ) -> CommandOutput {
+        match ctx.net.get_with_query(
+            "query",
+            &[("type", "composite-view")],
+        ) {
+            Ok(output) => {
+                CommandOutput::SerdeDocument {
+                    kind: "composite-view".into(),
                     content: output.expect("empty response"),
                 }
             }

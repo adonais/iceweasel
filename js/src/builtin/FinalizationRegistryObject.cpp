@@ -136,111 +136,6 @@ void FinalizationRecordObject::clear() {
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// FinalizationRegistrationsObject
-
-const JSClass FinalizationRegistrationsObject::class_ = {
-    "FinalizationRegistrations",
-    JSCLASS_HAS_RESERVED_SLOTS(SlotCount) | JSCLASS_BACKGROUND_FINALIZE,
-    &classOps_,
-    JS_NULL_CLASS_SPEC,
-};
-
-const JSClassOps FinalizationRegistrationsObject::classOps_ = {
-    nullptr,                                    // addProperty
-    nullptr,                                    // delProperty
-    nullptr,                                    // enumerate
-    nullptr,                                    // newEnumerate
-    nullptr,                                    // resolve
-    nullptr,                                    // mayResolve
-    FinalizationRegistrationsObject::finalize,  // finalize
-    nullptr,                                    // call
-    nullptr,                                    // construct
-    FinalizationRegistrationsObject::trace,     // trace
-};
-
-/* static */
-FinalizationRegistrationsObject* FinalizationRegistrationsObject::create(
-    JSContext* cx) {
-  auto records = cx->make_unique<WeakFinalizationRecordVector>(cx->zone());
-  if (!records) {
-    return nullptr;
-  }
-
-  auto object =
-      NewObjectWithGivenProto<FinalizationRegistrationsObject>(cx, nullptr);
-  if (!object) {
-    return nullptr;
-  }
-
-  InitReservedSlot(object, RecordsSlot, records.release(),
-                   MemoryUse::FinalizationRecordVector);
-
-  return object;
-}
-
-/* static */
-void FinalizationRegistrationsObject::trace(JSTracer* trc, JSObject* obj) {
-  if (!trc->traceWeakEdges()) {
-    return;
-  }
-
-  auto* self = &obj->as<FinalizationRegistrationsObject>();
-  if (WeakFinalizationRecordVector* records = self->records()) {
-    TraceRange(trc, records->length(), records->begin(),
-               "FinalizationRegistrationsObject records");
-  }
-}
-
-/* static */
-void FinalizationRegistrationsObject::finalize(JS::GCContext* gcx,
-                                               JSObject* obj) {
-  auto* self = &obj->as<FinalizationRegistrationsObject>();
-  gcx->delete_(obj, self->records(), MemoryUse::FinalizationRecordVector);
-}
-
-inline WeakFinalizationRecordVector*
-FinalizationRegistrationsObject::records() {
-  return static_cast<WeakFinalizationRecordVector*>(privatePtr());
-}
-
-inline const WeakFinalizationRecordVector*
-FinalizationRegistrationsObject::records() const {
-  return static_cast<const WeakFinalizationRecordVector*>(privatePtr());
-}
-
-inline void* FinalizationRegistrationsObject::privatePtr() const {
-  Value value = getReservedSlot(RecordsSlot);
-  if (value.isUndefined()) {
-    return nullptr;
-  }
-  void* ptr = value.toPrivate();
-  MOZ_ASSERT(ptr);
-  return ptr;
-}
-
-inline bool FinalizationRegistrationsObject::isEmpty() const {
-  MOZ_ASSERT(records());
-  return records()->empty();
-}
-
-inline bool FinalizationRegistrationsObject::append(
-    HandleFinalizationRecordObject record) {
-  MOZ_ASSERT(records());
-  return records()->append(record);
-}
-
-inline void FinalizationRegistrationsObject::remove(
-    HandleFinalizationRecordObject record) {
-  MOZ_ASSERT(records());
-  records()->eraseIfEqual(record);
-}
-
-inline bool FinalizationRegistrationsObject::traceWeak(JSTracer* trc) {
-  MOZ_ASSERT(records());
-  return records()->traceWeak(trc);
-}
-
-///////////////////////////////////////////////////////////////////////////
 // FinalizationRegistryObject
 
 // Bug 1600300: FinalizationRegistryObject is foreground finalized so that
@@ -322,8 +217,8 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
     return false;
   }
 
-  Rooted<UniquePtr<RegistrationsWeakMap>> registrations(
-      cx, cx->make_unique<RegistrationsWeakMap>(cx));
+  Rooted<UniquePtr<RegistrationsMap>> registrations(
+      cx, cx->make_unique<RegistrationsMap>(cx));
   if (!registrations) {
     return false;
   }
@@ -341,7 +236,7 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
   }
 
   registry->initReservedSlot(QueueSlot, ObjectValue(*queue));
-  InitReservedSlot(registry, RecordsSlot, records.release(),
+  InitReservedSlot(registry, RecordsWithoutTokenSlot, records.release(),
                    MemoryUse::FinalizationRecordVector);
   InitReservedSlot(registry, RegistrationsSlot, registrations.release(),
                    MemoryUse::FinalizationRegistryRegistrations);
@@ -360,28 +255,34 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
 void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
   // Trace finalization records.
   auto* registry = &obj->as<FinalizationRegistryObject>();
-  if (FinalizationRecordVector* records = registry->records()) {
+  if (FinalizationRecordVector* records = registry->recordsWithoutToken()) {
     records->trace(trc);
   }
 
-  // Trace the registrations weak map. At most this traces the
-  // FinalizationRegistrationsObject values of the map; the contents of those
-  // objects are weakly held and are not traced by this method.
-  if (RegistrationsWeakMap* registrations = registry->registrations()) {
-    registrations->trace(trc);
+  // Trace the records referred to by the registrations map, but not its keys
+  // which are weakly held.
+  if (RegistrationsMap* registrations = registry->registrations()) {
+    for (auto iter = registrations->iter(); !iter.done(); iter.next()) {
+      iter.get().value().trace(trc);
+    }
   }
 }
 
 void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
-  // Trace and update the contents of the registrations weak map's values, which
+  // Trace and update the contents of the registrations map's keys, which
   // are weakly held.
   MOZ_ASSERT(registrations());
-  for (RegistrationsWeakMap::Enum e(*registrations()); !e.empty();
-       e.popFront()) {
-    auto* registrations =
-        &e.front().value()->as<FinalizationRegistrationsObject>();
-    if (!registrations->traceWeak(trc)) {
-      e.removeFront();
+  for (auto iter = registrations()->modIter(); !iter.done(); iter.next()) {
+    auto result = TraceWeakEdge(trc, &iter.getMutable().mutableKey(),
+                                "FinalizationRegistry unregister token");
+    if (result.isDead()) {
+      // The unregister token has died and can no longer be used to unregister
+      // registrations. However those registrations remain valid.
+      AutoEnterOOMUnsafeRegion oomUnsafe;
+      if (!recordsWithoutToken()->appendAll(std::move(iter.get().value()))) {
+        oomUnsafe.crash("FinalizationRegistryObject::traceWeak");
+      }
+      iter.remove();
     }
   }
 }
@@ -394,13 +295,15 @@ void FinalizationRegistryObject::finalize(JS::GCContext* gcx, JSObject* obj) {
   // GCRuntime::sweepFinalizationRegistries.
   MOZ_ASSERT_IF(registry->queue(), !registry->queue()->hasRegistry());
 
-  gcx->delete_(obj, registry->records(), MemoryUse::FinalizationRecordVector);
+  gcx->delete_(obj, registry->recordsWithoutToken(),
+               MemoryUse::FinalizationRecordVector);
   gcx->delete_(obj, registry->registrations(),
                MemoryUse::FinalizationRegistryRegistrations);
 }
 
-FinalizationRecordVector* FinalizationRegistryObject::records() const {
-  Value value = getReservedSlot(RecordsSlot);
+FinalizationRecordVector* FinalizationRegistryObject::recordsWithoutToken()
+    const {
+  Value value = getReservedSlot(RecordsWithoutTokenSlot);
   if (value.isUndefined()) {
     return nullptr;
   }
@@ -415,13 +318,13 @@ FinalizationQueueObject* FinalizationRegistryObject::queue() const {
   return &value.toObject().as<FinalizationQueueObject>();
 }
 
-FinalizationRegistryObject::RegistrationsWeakMap*
+FinalizationRegistryObject::RegistrationsMap*
 FinalizationRegistryObject::registrations() const {
   Value value = getReservedSlot(RegistrationsSlot);
   if (value.isUndefined()) {
     return nullptr;
   }
-  return static_cast<RegistrationsWeakMap*>(value.toPrivate());
+  return static_cast<RegistrationsMap*>(value.toPrivate());
 }
 
 // FinalizationRegistry.prototype.register(target, heldValue [, unregisterToken
@@ -480,24 +383,11 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
     return false;
   }
 
-  // Add the record to the records vector.
-  if (!registry->records()->append(record)) {
-    ReportOutOfMemory(cx);
+  if (!addRegistration(cx, registry, unregisterToken, record)) {
     return false;
   }
-  auto recordsGuard =
-      mozilla::MakeScopeExit([&] { registry->records()->popBack(); });
-
-  // Add the record to the registrations if an unregister token was supplied.
-  if (!unregisterToken.isUndefined() &&
-      !addRegistration(cx, registry, unregisterToken, record)) {
-    return false;
-  }
-  auto registrationsGuard = mozilla::MakeScopeExit([&] {
-    if (!unregisterToken.isUndefined()) {
-      removeRegistrationOnError(registry, unregisterToken, record);
-    }
-  });
+  auto registrationGuard = mozilla::MakeScopeExit(
+      [&] { removeRegistrationOnError(registry, unregisterToken, record); });
 
   bool isPermanent = false;
   if (target.isObject()) {
@@ -529,8 +419,7 @@ bool FinalizationRegistryObject::register_(JSContext* cx, unsigned argc,
   }
 
   // 8. Return undefined.
-  recordsGuard.release();
-  registrationsGuard.release();
+  registrationGuard.release();
   args.rval().setUndefined();
   return true;
 }
@@ -552,25 +441,28 @@ bool FinalizationRegistryObject::addRegistration(
     JSContext* cx, HandleFinalizationRegistryObject registry,
     HandleValue unregisterToken, HandleFinalizationRecordObject record) {
   // Add the record to the list of records associated with this unregister
-  // token.
+  // token, or add it to the main list.
 
-  MOZ_ASSERT(CanBeHeldWeakly(unregisterToken));
   MOZ_ASSERT(registry->registrations());
+  MOZ_ASSERT(unregisterToken.isUndefined() || CanBeHeldWeakly(unregisterToken));
 
-  auto& map = *registry->registrations();
-  Rooted<FinalizationRegistrationsObject*> recordsObject(cx);
-  JSObject* obj = map.get(unregisterToken);
-  if (obj) {
-    recordsObject = &obj->as<FinalizationRegistrationsObject>();
-  } else {
-    recordsObject = FinalizationRegistrationsObject::create(cx);
-    if (!recordsObject || !map.put(unregisterToken, recordsObject)) {
+  if (unregisterToken.isUndefined()) {
+    if (!registry->recordsWithoutToken()->append(record)) {
       ReportOutOfMemory(cx);
       return false;
     }
+    return true;
   }
 
-  if (!recordsObject->append(record)) {
+  auto& map = *registry->registrations();
+  auto ptr = map.lookupForAdd(unregisterToken.get());
+  if (!ptr.found() &&
+      !map.add(ptr, unregisterToken, FinalizationRecordVector(cx->zone()))) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  if (!ptr->value().append(record)) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -578,25 +470,31 @@ bool FinalizationRegistryObject::addRegistration(
   return true;
 }
 
-/* static */ void FinalizationRegistryObject::removeRegistrationOnError(
+/* static */
+void FinalizationRegistryObject::removeRegistrationOnError(
     HandleFinalizationRegistryObject registry, HandleValue unregisterToken,
     HandleFinalizationRecordObject record) {
   // Remove a registration if something went wrong before we added it to the
   // target zone's map. Note that this can't remove a registration after that
   // point.
 
-  MOZ_ASSERT(CanBeHeldWeakly(unregisterToken));
   MOZ_ASSERT(registry->registrations());
+  MOZ_ASSERT(unregisterToken.isUndefined() || CanBeHeldWeakly(unregisterToken));
   JS::AutoAssertNoGC nogc;
 
-  auto& map = *registry->registrations();
-  JSObject* obj = map.get(unregisterToken);
-  MOZ_ASSERT(obj);
-  auto records = &obj->as<FinalizationRegistrationsObject>();
-  records->remove(record);
+  if (unregisterToken.isUndefined()) {
+    MOZ_ASSERT(registry->recordsWithoutToken()->back() == record);
+    registry->recordsWithoutToken()->popBack();
+    return;
+  }
 
-  if (records->empty()) {
-    map.remove(unregisterToken);
+  auto ptr = registry->registrations()->lookup(unregisterToken);
+  MOZ_ASSERT(ptr.found());
+  FinalizationRecordVector& records = ptr->value();
+  MOZ_ASSERT(records.back() == record);
+  records.popBack();
+  if (records.empty()) {
+    registry->registrations()->remove(ptr);
   }
 }
 
@@ -641,24 +539,17 @@ bool FinalizationRegistryObject::unregister(JSContext* cx, unsigned argc,
   //       i. Remove cell from finalizationRegistry.[[Cells]].
   //       ii. Set removed to true.
 
-  RootedObject obj(cx, registry->registrations()->get(unregisterToken));
-  if (obj) {
-    auto* records = obj->as<FinalizationRegistrationsObject>().records();
-    MOZ_ASSERT(records);
-    MOZ_ASSERT(!records->empty());
-    for (FinalizationRecordObject* record : *records) {
+  RegistrationsMap* map = registry->registrations();
+  auto ptr = map->lookup(unregisterToken);
+  if (ptr) {
+    FinalizationRecordVector& records = ptr->value();
+    MOZ_ASSERT(!records.empty());
+    for (FinalizationRecordObject* record : records) {
       if (unregisterRecord(record)) {
         removed = true;
       }
     }
-    registry->registrations()->remove(unregisterToken);
-
-    // Remove any unregistered records from the main records vector.
-    if (removed) {
-      registry->records()->eraseIf([](FinalizationRecordObject* record) {
-        return !record->isRegistered();
-      });
-    }
+    map->remove(unregisterToken);
   }
 
   // 7. Return removed.
@@ -670,6 +561,7 @@ bool FinalizationRegistryObject::unregister(JSContext* cx, unsigned argc,
 bool FinalizationRegistryObject::unregisterRecord(
     FinalizationRecordObject* record) {
   if (!record->isRegistered()) {
+    MOZ_ASSERT(!record->isInList());
     return false;
   }
 

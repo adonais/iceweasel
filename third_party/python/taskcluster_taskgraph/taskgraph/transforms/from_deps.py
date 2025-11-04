@@ -241,6 +241,7 @@ def from_deps(config, tasks):
                                 )
                             fetches_from_dep.append(entry)
 
-                    task_fetches[dep_task.label] = fetches_from_dep
+                    key = dep_task.kind if unique_kinds else dep_task.label
+                    task_fetches[key] = fetches_from_dep
 
             yield new_task

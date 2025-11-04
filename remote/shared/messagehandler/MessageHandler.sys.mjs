@@ -155,6 +155,28 @@ export class MessageHandler extends EventEmitter {
   }
 
   /**
+   * Check if the provided context matches provided contextDescriptor.
+   *
+   * @param {BrowsingContext} browsingContext
+   *     The browsing context to verify.
+   * @param {ContextDescriptor} contextDescriptor
+   *     The context descriptor to match.
+   *
+   * @returns {boolean}
+   *     Return "true" if the context matches the context descriptor,
+   *     "false" otherwise.
+   */
+  contextMatchesDescriptor(browsingContext, contextDescriptor) {
+    return (
+      contextDescriptor.type === ContextDescriptorType.All ||
+      (contextDescriptor.type === ContextDescriptorType.TopBrowsingContext &&
+        contextDescriptor.id === browsingContext.browserId) ||
+      (contextDescriptor.type === ContextDescriptorType.UserContext &&
+        contextDescriptor.id === browsingContext.originAttributes.userContextId)
+    );
+  }
+
+  /**
    * Emit a message handler event.
    *
    * Such events should bubble up to the root of a MessageHandler network.

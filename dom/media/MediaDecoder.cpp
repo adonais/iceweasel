@@ -23,7 +23,6 @@
 #include "VideoUtils.h"
 #include "WindowRenderer.h"
 #include "mozilla/AbstractThread.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_media.h"

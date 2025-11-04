@@ -426,6 +426,10 @@ class MockCubeb {
   // Remove all input or output devices from this backend, without calling the
   // callback. This is meant to clean up in between tests.
   void ClearDevices(cubeb_device_type aType);
+  // Set the device with the given id as preferred. The current preferred device
+  // of the same device type will be removed. Does nothing if a device with the
+  // given id doesn't exist.
+  void SetPreferredDevice(cubeb_devid aId, cubeb_device_type aType);
 
   // This allows simulating a backend that does not support setting a device
   // collection invalidation callback, to be able to test the fallback path.

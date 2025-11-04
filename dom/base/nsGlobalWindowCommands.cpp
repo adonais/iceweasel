@@ -520,7 +520,9 @@ nsresult nsSelectionCommand::DoCommand(const nsACString& aCommandName,
 already_AddRefed<nsIDocumentViewerEdit>
 nsSelectionCommand::GetDocumentViewerEditFromContext(nsISupports* aContext) {
   nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryInterface(aContext);
-  NS_ENSURE_TRUE(window, nullptr);
+  if (!window) {
+    return nullptr;
+  }
 
   nsIDocShell* docShell = window->GetDocShell();
   NS_ENSURE_TRUE(docShell, nullptr);

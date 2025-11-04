@@ -50,7 +50,8 @@ struct TestData {
 
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const TestData& aData) {
-    return aStream << "Scan \"" << aData.mScanData << "\" in \"" << aData.mData
+    return aStream << "Scan \"" << NS_ConvertUTF16toUTF8(aData.mScanData).get()
+                   << "\" in \"" << NS_ConvertUTF16toUTF8(aData.mData).get()
                    << "\" starting from " << aData.mStartOffset;
   }
 

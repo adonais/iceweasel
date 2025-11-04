@@ -39,7 +39,7 @@ The tool is built to be conservative about the number of tests to run, so if you
                             Binary Path, or Intents required change at all relative to the
                             existing GeckoView, and Fenix tasks, then you will need to make
                             fixes in the associated taskcluster files (e.g.
-                            taskcluster/kinds/test/browsertime-mobile.yml). Alternatively, set
+                            taskcluster/kinds/browsertime/mobile.yml). Alternatively, set
                             MOZ_FIREFOX_ANDROID_APK_OUTPUT to a path to an APK, and then run
                             the command with --browsertime-upload-apk firefox-android. This
                             option will only copy the APK for browsertime, see --mozperftest-

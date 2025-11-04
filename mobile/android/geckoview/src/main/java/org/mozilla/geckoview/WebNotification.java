@@ -157,6 +157,16 @@ public class WebNotification implements Parcelable {
   }
 
   /**
+   * This should be called when the app starts showing the notification. This is important, as it
+   * tells the result of the notification request to Web Content.
+   */
+  @UiThread
+  public void show() {
+    ThreadUtils.assertOnUiThread();
+    GeckoAppShell.onNotificationShow(tag, mCookie, origin);
+  }
+
+  /**
    * This should be called when the user taps or clicks a notification. Note that this does not
    * automatically dismiss the notification as far as Web Content is concerned. For that, see {@link
    * #dismiss()}.

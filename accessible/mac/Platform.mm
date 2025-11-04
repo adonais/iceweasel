@@ -208,7 +208,11 @@ enum class Client : uint64_t {
   VoiceOver,
   SwitchControl,
   FullKeyboardAccess,
-  VoiceControl
+  VoiceControl,
+  SpeakSelection,
+  SpeakItemUnderMouse,
+  SpeakTypingFeedback,
+  HoverText
 };
 
 // Get the set of currently-active clients and the client to log.
@@ -231,26 +235,62 @@ std::pair<EnumSet<Client>, Client> GetClients() {
              [[NSWorkspace sharedWorkspace] isSwitchControlEnabled]) {
     AddClient(Client::SwitchControl);
   } else {
+    Boolean foundSpecificClient = false;
+
     // This is more complicated than the NSWorkspace queries above
     // because (a) there is no "full keyboard access" query for NSWorkspace
     // and (b) the [NSApplication fullKeyboardAccessEnabled] query checks
     // the pre-Monterey version of full keyboard access, which is not what
     // we're looking for here. For more info, see bug 1772375 comment 7.
     Boolean exists;
-    int val = CFPreferencesGetAppIntegerValue(
+    long val = CFPreferencesGetAppIntegerValue(
         CFSTR("FullKeyboardAccessEnabled"), CFSTR("com.apple.Accessibility"),
         &exists);
     if (exists && val == 1) {
+      foundSpecificClient = true;
       AddClient(Client::FullKeyboardAccess);
-    } else {
-      val = CFPreferencesGetAppIntegerValue(CFSTR("CommandAndControlEnabled"),
-                                            CFSTR("com.apple.Accessibility"),
-                                            &exists);
-      if (exists && val == 1) {
-        AddClient(Client::VoiceControl);
-      } else {
-        AddClient(Client::Unknown);
-      }
+    }
+
+    val = CFPreferencesGetAppIntegerValue(CFSTR("CommandAndControlEnabled"),
+                                          CFSTR("com.apple.Accessibility"),
+                                          &exists);
+    if (exists && val == 1) {
+      foundSpecificClient = true;
+      AddClient(Client::VoiceControl);
+    }
+
+    val = CFPreferencesGetAppIntegerValue(
+        CFSTR("SpeakThisEnabled"), CFSTR("com.apple.universalaccess"), &exists);
+    if (exists && val == 1) {
+      foundSpecificClient = true;
+      AddClient(Client::SpeakSelection);
+    }
+
+    val = CFPreferencesGetAppIntegerValue(CFSTR("speakItemUnderMouseEnabled"),
+                                          CFSTR("com.apple.universalaccess"),
+                                          &exists);
+    if (exists && val == 1) {
+      foundSpecificClient = true;
+      AddClient(Client::SpeakItemUnderMouse);
+    }
+
+    val = CFPreferencesGetAppIntegerValue(CFSTR("typingEchoEnabled"),
+                                          CFSTR("com.apple.universalaccess"),
+                                          &exists);
+    if (exists && val == 1) {
+      foundSpecificClient = true;
+      AddClient(Client::SpeakTypingFeedback);
+    }
+
+    val = CFPreferencesGetAppIntegerValue(
+        CFSTR("hoverTextEnabled"), CFSTR("com.apple.universalaccess"), &exists);
+    if (exists && val == 1) {
+      foundSpecificClient = true;
+      AddClient(Client::HoverText);
+    }
+
+    if (!foundSpecificClient) {
+      AddClient(Client::Unknown);
     }
   }
   return std::make_pair(clients, clientToLog.value());
@@ -269,6 +309,14 @@ constexpr const char* GetStringForClient(Client aClient) {
       return "FullKeyboardAccess";
     case Client::VoiceControl:
       return "VoiceControl";
+    case Client::SpeakSelection:
+      return "SpeakSelection";
+    case Client::SpeakItemUnderMouse:
+      return "SpeakItemUnderMouse";
+    case Client::SpeakTypingFeedback:
+      return "SpeakTypingFeedback";
+    case Client::HoverText:
+      return "HoverText";
     default:
       break;
   }

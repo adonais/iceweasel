@@ -1730,16 +1730,8 @@ bool ScriptExecutorRunnable::ProcessModuleScript(
   moduleRequest->OnFetchComplete(loadContext->mLoadResult);
 
   if (NS_FAILED(loadContext->mLoadResult)) {
-    if (moduleRequest->IsDynamicImport()) {
-      if (request->isInList()) {
-        moduleRequest->CancelDynamicImport(loadContext->mLoadResult);
-        mScriptLoader->TryShutdown();
-      }
-    } else if (!moduleRequest->IsTopLevel()) {
-      moduleRequest->Cancel();
+    if (moduleRequest->IsDynamicImport() || !moduleRequest->IsTopLevel()) {
       mScriptLoader->TryShutdown();
-    } else {
-      moduleRequest->LoadFailed();
     }
   }
   return true;

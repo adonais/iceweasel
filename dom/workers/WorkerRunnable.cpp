@@ -10,7 +10,6 @@
 #include "js/RootingAPI.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSContext.h"

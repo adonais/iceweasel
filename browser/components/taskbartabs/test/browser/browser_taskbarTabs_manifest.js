@@ -100,30 +100,113 @@ add_task(async function test_nameAndStartUrl() {
       httpUrl("/example/path/string/here"),
       "Page action detected correct start URL"
     );
-  });
+  }, "/example/path/string/here");
 });
 
-async function usingManifest(aCallback) {
+add_task(async function test_scope() {
+  gManifest = {
+    scope: "/example/",
+  };
+
+  await usingManifest((aWindow, aTaskbarTab) => {
+    Assert.deepEqual(aTaskbarTab.scopes[0], {
+      hostname: "localhost",
+      prefix: "/example/",
+    });
+  }, "/example/file");
+});
+
+add_task(async function test_startUrlOutOfScope() {
+  gManifest = {
+    scope: "/example/",
+    start_url: "/example",
+  };
+
+  await usingManifest((aWindow, aTaskbarTab) => {
+    Assert.deepEqual(aTaskbarTab.scopes[0], {
+      hostname: "localhost",
+      prefix: "/",
+    });
+  }, "/example");
+});
+
+add_task(async function test_scopeDistinguishesTaskbarTabs() {
+  const find = prefix =>
+    TaskbarTabs.findTaskbarTab(Services.io.newURI(httpUrl(prefix)), 0);
+
+  gManifest = {
+    scope: "/example/",
+  };
+
+  await usingManifest(async (aWindowOuter, aTaskbarTabOuter) => {
+    gManifest = {
+      scope: "/example/another/",
+    };
+
+    await usingManifest(async (aWindowInner, aTaskbarTabInner) => {
+      is(
+        (await find("/example/another/still")).id,
+        aTaskbarTabInner.id,
+        "/example/another/still matches to inner Taskbar Tab"
+      );
+      is(
+        (await find("/example/another/")).id,
+        aTaskbarTabInner.id,
+        "/example/another/ matches to inner Taskbar Tab"
+      );
+      is(
+        (await find("/example/another")).id,
+        aTaskbarTabOuter.id,
+        "/example/another matches to outer Taskbar Tab"
+      );
+      is(
+        (await find("/example/different")).id,
+        aTaskbarTabOuter.id,
+        "/example/different matches to outer Taskbar Tab"
+      );
+      is(
+        (await find("/example/")).id,
+        aTaskbarTabOuter.id,
+        "/example/ matches to outer Taskbar Tab"
+      );
+
+      is(await find("/example"), null, "/example does not match a Taskbar Tab");
+      is(
+        await find("/unrelated"),
+        null,
+        "/unrelated does not match any Taskbar Tab"
+      );
+    }, "/example/another/main");
+  }, "/example/main");
+});
+
+async function usingManifest(aCallback, aLocation = "/") {
   const location = httpUrl("/taskbartabs-manifest.json");
 
-  await BrowserTestUtils.withNewTab(httpUrl("/"), async browser => {
-    await SpecialPowers.spawn(browser, [location], async url => {
-      content.document.body.innerHTML = `<link rel="manifest" href="${url}">`;
-    });
+  await BrowserTestUtils.withNewTab(
+    {
+      url: httpUrl(aLocation),
+      gBrowser: window.gBrowser,
+    },
+    async browser => {
+      await SpecialPowers.spawn(browser, [location], async url => {
+        content.document.body.innerHTML = `<link rel="manifest" href="${url}">`;
+      });
 
-    const tab = window.gBrowser.getTabForBrowser(browser);
-    let result = await TaskbarTabs.moveTabIntoTaskbarTab(tab);
+      const tab = window.gBrowser.getTabForBrowser(browser);
+      let result = await TaskbarTabs.moveTabIntoTaskbarTab(tab);
 
-    const uri = Services.io.newURI(httpUrl("/"));
-    const tt = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
-    is(
-      await TaskbarTabsUtils.getTaskbarTabIdFromWindow(result.window),
-      tt.id,
-      "moveTabIntoTaskbarTab created a Taskbar Tab"
-    );
-    aCallback(result.window, tt);
+      const uri = Services.io.newURI(httpUrl(aLocation));
+      const tt = await TaskbarTabs.findOrCreateTaskbarTab(uri, 0);
+      is(
+        await TaskbarTabsUtils.getTaskbarTabIdFromWindow(result.window),
+        tt.id,
+        "moveTabIntoTaskbarTab created a Taskbar Tab"
+      );
+      await aCallback(result.window, tt);
 
-    await TaskbarTabs.removeTaskbarTab(tt.id);
-    await BrowserTestUtils.closeWindow(result.window);
-  });
+      await TaskbarTabs.removeTaskbarTab(tt.id);
+      await BrowserTestUtils.closeWindow(result.window);
+    }
+  );
 }

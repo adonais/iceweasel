@@ -14,7 +14,6 @@
 #include <limits>
 
 #include "Units.h"  // for CSSPoint
-#include "mozilla/EnumeratedArray.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsSize.h"

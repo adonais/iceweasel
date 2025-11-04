@@ -130,7 +130,7 @@ firefox-suggest-yelp-service-title = Top results for { $service }
 
 # This string is shown in Yelp suggestions and indicates the suggestion is for
 # Yelp.
-firefox-suggest-yelp-bottom-text = Yelp · Sponsored
+firefox-suggest-yelp-bottom-text = { -yelp-brand-name } · Sponsored
 
 # These strings are used for a toggle switch in the settings UI that opts the
 # user into "online" Firefox Suggest, allowing them to receive suggestions from
@@ -247,7 +247,6 @@ urlbar-search-mode-actions-en = Actions
 
 ## These strings are used for Yelp realtime suggestions in the urlbar.
 ## Yelp realtime suggestions shows shops, places information etc nearby.
-## NOTE: Yelp is a service name, so please use this word as-is when translating.
 
 # This string is shown as title when Yelp realtime suggestion are disabled.
 urlbar-result-yelp-realtime-opt-in-title = Find great places nearby and more
@@ -257,8 +256,39 @@ urlbar-result-yelp-realtime-opt-in-description = Get suggestions for nearby plac
 
 # This string is shown in the result menu.
 urlbar-result-menu-dont-show-yelp-realtime =
-  .label = Don’t show Yelp suggestions
+  .label = Don’t show { -yelp-brand-name } suggestions
 
 # A message that replaces a result when the user dismisses Yelp realtime
 # suggestions.
-urlbar-result-dismissal-acknowledgment-yelp-realtime = Thanks for your feedback. You won’t see Yelp suggestions anymore.
+urlbar-result-dismissal-acknowledgment-yelp-realtime = Thanks for your feedback. You won’t see { -yelp-brand-name } suggestions anymore.
+
+# This string is shown as group label for Yelp realtime suggestions.
+urlbar-result-yelp-realtime-group-label =
+  .label = { -yelp-brand-name } · Sponsored
+
+
+# This string is shown as the business hours information in cases where the shop
+# is opening.
+# e.g. <span>Open</span> until 3pm.
+# The <span> is needed to change the text color by the status (open/closed).
+# Variables:
+#   $timeUntil (string) - The time that this state is kept.
+urlbar-result-yelp-realtime-business-hours-open =
+    <span>Open</span> until { $timeUntil }
+
+# This string is shown as the business hours information in cases where the shop
+# is closed.
+# closed.
+# e.g. <span>Closed</span> until 3pm.
+# The <span> is needed to change the text color by the status (open/closed).
+# Variables:
+#   $timeUntil (string) - The time that this state is kept.
+urlbar-result-yelp-realtime-business-hours-closed =
+    <span>Closed</span> until { $timeUntil }
+
+
+# This string is shown as popularity by the rating and the review count.
+# Variables:
+#   $rating (float) - The rating of this.
+#   $review_count (integer) - The review count of this.
+urlbar-result-yelp-realtime-popularity = { $rating } ({ $review_count })

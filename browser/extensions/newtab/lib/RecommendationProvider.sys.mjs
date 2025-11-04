@@ -279,10 +279,11 @@ export class RecommendationProvider {
             break;
         }
         break;
-      case at.DISCOVERY_STREAM_PERSONALIZATION_TOGGLE:
+      case at.DISCOVERY_STREAM_PERSONALIZATION_TOGGLE: {
         let enabled = this.store.getState().Prefs.values[PREF_PERSONALIZATION];
         this.store.dispatch(ac.SetPref(PREF_PERSONALIZATION, !enabled));
         break;
+      }
       case at.DISCOVERY_STREAM_PERSONALIZATION_OVERRIDE:
         this.personalizationOverride(action.data.override);
         break;

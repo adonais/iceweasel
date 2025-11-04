@@ -24,7 +24,6 @@ use crate::rule_cache::RuleCacheConditions;
 use crate::selector_map::PrecomputedHashSet;
 use crate::selector_parser::SelectorImpl;
 use crate::shared_lock::Locked;
-use crate::str::{CssString, CssStringWriter};
 use crate::stylesheets::container_rule::ContainerSizeQuery;
 use crate::stylesheets::{CssRuleType, Origin, UrlExtraData};
 use crate::stylist::Stylist;
@@ -42,7 +41,10 @@ use smallvec::SmallVec;
 use std::fmt::{self, Write};
 use std::iter::Zip;
 use std::slice::Iter;
-use style_traits::{CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCss};
+use style_traits::{
+    CssString, CssStringWriter, CssWriter, ParseError, ParsingMode, StyleParseErrorKind, ToCss,
+    TypedValue,
+};
 use thin_vec::ThinVec;
 
 /// A set of property declarations including animations and transitions.
@@ -111,6 +113,24 @@ impl Importance {
             Self::Important => true,
         }
     }
+}
+
+/// A property-aware wrapper around reification results.
+///
+/// While `TypedValue` is property-agnostic, this enum represents the outcome
+/// of reifying a specific property inside a `PropertyDeclarationBlock`.
+#[derive(Clone, Debug)]
+pub enum PropertyTypedValue {
+    /// The property is not present in the declaration block.
+    None,
+
+    /// The property exists but cannot be expressed as a `TypedValue`.
+    /// Used for shorthands and other unrepresentable cases, which must be
+    /// exposed as `CSSUnsupportedValue` objects tied to the property.
+    Unsupported,
+
+    /// The property was successfully reified into a `TypedValue`.
+    Typed(TypedValue),
 }
 
 /// A set of properties.
@@ -192,7 +212,7 @@ impl PropertyDeclarationIdSet {
     }
 
     /// Iterate over the current property declaration id set.
-    pub fn iter(&self) -> PropertyDeclarationIdSetIterator {
+    pub fn iter(&self) -> PropertyDeclarationIdSetIterator<'_> {
         PropertyDeclarationIdSetIterator {
             longhands: self.longhands.iter(),
             custom: self.custom.iter(),
@@ -405,7 +425,7 @@ impl PropertyDeclarationBlock {
 
     /// Iterate over `(PropertyDeclaration, Importance)` pairs
     #[inline]
-    pub fn declaration_importance_iter(&self) -> DeclarationImportanceIterator {
+    pub fn declaration_importance_iter(&self) -> DeclarationImportanceIterator<'_> {
         DeclarationImportanceIterator::new(&self.declarations, &self.declarations_importance)
     }
 
@@ -573,6 +593,32 @@ impl PropertyDeclarationBlock {
                 // Step 3
                 self.get(longhand_or_custom)
                     .map_or(Importance::Normal, |(_, importance)| importance)
+            },
+        }
+    }
+
+    /// Find the value of the given property in this block and reify it
+    pub fn property_value_to_typed(&self, property: &PropertyId) -> PropertyTypedValue {
+        match property.as_shorthand() {
+            Ok(shorthand) => {
+                if shorthand
+                    .longhands()
+                    .all(|longhand| self.contains(PropertyDeclarationId::Longhand(longhand)))
+                {
+                    PropertyTypedValue::Unsupported
+                } else {
+                    PropertyTypedValue::None
+                }
+            },
+            Err(longhand_or_custom) => match self.get(longhand_or_custom) {
+                Some((value, _importance)) => {
+                    if let Some(typed_value) = value.to_typed() {
+                        PropertyTypedValue::Typed(typed_value)
+                    } else {
+                        PropertyTypedValue::Unsupported
+                    }
+                },
+                None => PropertyTypedValue::None,
             },
         }
     }

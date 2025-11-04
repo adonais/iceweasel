@@ -23,7 +23,7 @@ support-files = ["data/**"]
 ["test_headers.js"]
 
 ["test_host.js"]
-run-sequentially = "Reusing same server on different specific ports."
+run-sequentially = ["true"] # Reusing same server on different specific ports.
 
 ["test_host_identity.js"]
 

@@ -10,10 +10,10 @@
 # https://searchfox.org/mozilla-central/source/third_party/python/taskcluster_taskgraph/taskgraph/util/attributes.py
 
 ### Unittests
-- kind: test
+- kind: &unittest-kinds
+      - test
+      - mochitest
   test_platform:
-      - android-em-7.0-x86_64-lite-qr/opt
-      - android-em-7.0-x86_64-qr/debug
       - android-em-14-x86_64-lite/opt
       - android-em-14-x86_64/debug
       - linux2404-64/debug
@@ -51,7 +51,7 @@
   unittest_variant: null
 
 # linux wayland
-- kind: test
+- kind: *unittest-kinds
   test_platform:
       - linux2204-64-wayland/opt
       - linux2204-64-wayland/debug
@@ -64,14 +64,14 @@
   unittest_variant: null
 
 # asan
-- kind: test
+- kind: *unittest-kinds
   test_platform:
       - linux2404-64-asan/opt
   unittest_suite: *unittest-suites
   unittest_variant:
       - null
 
-- kind: test
+- kind: *unittest-kinds
   test_platform:
       - windows11-64-24h2-asan/opt
   unittest_suite: *unittest-suites
@@ -84,9 +84,8 @@
       - service-worker
       - startup-geckoview
 
-- kind: test
+- kind: browsertime
   test_platform: &perf-platforms
-      - android-em-7.0-x86_64-shippable-qr/opt
       - android-em-14-x86_64-shippable-qr/opt
       - linux1804-64-shippable-qr/opt
       - macosx1400-64-shippable-qr/opt

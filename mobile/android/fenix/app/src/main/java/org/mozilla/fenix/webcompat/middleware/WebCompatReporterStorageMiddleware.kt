@@ -71,6 +71,7 @@ internal fun WebCompatState.toReporterState() = WebCompatReporterState(
     enteredUrl = enteredUrl,
     reason = reason?.let { WebCompatReporterState.BrokenSiteReason.valueOf(it) },
     problemDescription = problemDescription,
+    includeEtpBlockedUrls = includeEtpBlockedUrls,
 )
 
 @VisibleForTesting
@@ -79,4 +80,5 @@ internal fun WebCompatReporterState.toPersistedState() = WebCompatState(
     enteredUrl = enteredUrl.ifEmpty { tabUrl }, // do not save the URL is the text field is empty
     reason = reason?.name,
     problemDescription = problemDescription,
+    includeEtpBlockedUrls = includeEtpBlockedUrls,
 )

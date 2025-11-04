@@ -11,7 +11,7 @@
   margin: 24px 0;
   padding: 14px;
   border: 1px solid var(--in-content-box-border-color);
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
 }
 
 #reportBox > h2:first-child {

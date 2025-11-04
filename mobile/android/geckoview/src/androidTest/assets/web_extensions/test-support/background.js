@@ -104,6 +104,9 @@ const APIS = {
   TeardownAlertsService() {
     return browser.test.teardownAlertsService();
   },
+  NotifyUserGestureActivation({ tab }) {
+    return browser.test.notifyUserGestureActivation(tab.id);
+  },
 };
 
 port.onMessage.addListener(async message => {

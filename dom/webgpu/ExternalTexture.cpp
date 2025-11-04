@@ -28,9 +28,11 @@
 #ifdef XP_WIN
 #  include "mozilla/layers/CompositeProcessD3D11FencesHolderMap.h"
 #  include "mozilla/layers/GpuProcessD3D11TextureMap.h"
+#  include "mozilla/layers/TextureD3D11.h"
 #endif
 #ifdef XP_MACOSX
 #  include "mozilla/gfx/MacIOSurface.h"
+#  include "mozilla/layers/MacIOSurfaceTextureHostOGL.h"
 #endif
 
 namespace mozilla::webgpu {
@@ -430,12 +432,11 @@ ExternalTextureSourceHost::ExternalTextureSourceHost(
     case layers::SurfaceDescriptor::TSurfaceDescriptorBuffer: {
       const layers::SurfaceDescriptorBuffer& bufferDesc =
           sd.get_SurfaceDescriptorBuffer();
+      ipc::Shmem& bufferShmem = bufferDesc.data().get_Shmem();
       auto source =
           CreateFromBufferDesc(aParent, aDeviceId, aQueueId, aDesc,
-                               bufferDesc.desc(), GetAddressFromDescriptor(sd));
-      if (bufferDesc.data().type() == layers::MemoryOrShmem::TShmem) {
-        aParent->DeallocShmem(bufferDesc.data().get_Shmem());
-      }
+                               bufferDesc.desc(), bufferShmem.Range<uint8_t>());
+      aParent->DeallocShmem(bufferShmem);
       return source;
     } break;
 
@@ -447,6 +448,12 @@ ExternalTextureSourceHost::ExternalTextureSourceHost(
 
       const auto videoBridge =
           layers::VideoBridgeParent::GetSingleton(remoteDecoderDesc.source());
+      if (!videoBridge) {
+        gfxCriticalErrorOnce() << "Failed to get VideoBridge";
+        aParent->ReportError(aDeviceId, dom::GPUErrorFilter::Internal,
+                             "Failed to get VideoBridge"_ns);
+        return CreateError();
+      }
       const RefPtr<layers::TextureHost> textureHost =
           videoBridge->LookupTexture(aParent->mContentId,
                                      remoteDecoderDesc.handle());
@@ -456,60 +463,30 @@ ExternalTextureSourceHost::ExternalTextureSourceHost(
                              "Failed to lookup remote decoder texture"_ns);
         return CreateError();
       }
-      const layers::RemoteDecoderVideoSubDescriptor& subDesc =
-          remoteDecoderDesc.subdesc();
 
-      switch (subDesc.type()) {
-        case layers::RemoteDecoderVideoSubDescriptor::Tnull_t: {
-          const RefPtr<layers::BufferTextureHost> bufferHost =
-              textureHost->AsBufferTextureHost();
-          if (!bufferHost) {
-            gfxCriticalNoteOnce << "Unexpected TextureHost type";
-            aParent->ReportError(aDeviceId, dom::GPUErrorFilter::Internal,
-                                 "Unexpected TextureHost type"_ns);
-            return CreateError();
-          }
-          return CreateFromBufferDesc(aParent, aDeviceId, aQueueId, aDesc,
-                                      bufferHost->GetBufferDescriptor(),
-                                      bufferHost->GetBuffer());
-        } break;
-
-        case layers::RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorD3D10: {
-          const layers::SurfaceDescriptorD3D10& d3d10Desc =
-              subDesc.get_SurfaceDescriptorD3D10();
-          return CreateFromD3D10Desc(aParent, aDeviceId, aQueueId, aDesc,
-                                     d3d10Desc, textureHost->GetFormat());
-        } break;
-
-        case layers::RemoteDecoderVideoSubDescriptor::
-            TSurfaceDescriptorDXGIYCbCr: {
-          const layers::SurfaceDescriptorDXGIYCbCr& dxgiDesc =
-              subDesc.get_SurfaceDescriptorDXGIYCbCr();
-          return CreateFromDXGIYCbCrDesc(aParent, aDeviceId, aQueueId, aDesc,
-                                         dxgiDesc);
-        } break;
-
-        case layers::RemoteDecoderVideoSubDescriptor::
-            TSurfaceDescriptorMacIOSurface: {
-          return CreateFromMacIOSurfaceDesc(
-              aParent, aDeviceId, aDesc,
-              subDesc.get_SurfaceDescriptorMacIOSurface());
-        } break;
-
-        case layers::RemoteDecoderVideoSubDescriptor::T__None:
-        case layers::RemoteDecoderVideoSubDescriptor::TSurfaceDescriptorDMABuf:
-        case layers::RemoteDecoderVideoSubDescriptor::
-            TSurfaceDescriptorDcompSurface: {
-          gfxCriticalErrorOnce()
-              << "Unexpected RemoteDecoderVideoSubDescriptor type: "
-              << subDesc.type();
-          aParent->ReportError(
-              aDeviceId, dom::GPUErrorFilter::Internal,
-              nsPrintfCString(
-                  "Unexpected RemoteDecoderVideoSubDescriptor type: %d",
-                  subDesc.type()));
-          return CreateError();
-        } break;
+      if (const auto* bufferHost = textureHost->AsBufferTextureHost()) {
+        return CreateFromBufferDesc(
+            aParent, aDeviceId, aQueueId, aDesc,
+            bufferHost->GetBufferDescriptor(),
+            Span(bufferHost->GetBuffer(), bufferHost->GetBufferSize()));
+      } else if (const auto* dxgiHost = textureHost->AsDXGITextureHostD3D11()) {
+        return CreateFromDXGITextureHost(aParent, aDeviceId, aQueueId, aDesc,
+                                         dxgiHost);
+      } else if (const auto* dxgiYCbCrHost =
+                     textureHost->AsDXGIYCbCrTextureHostD3D11()) {
+        return CreateFromDXGIYCbCrTextureHost(aParent, aDeviceId, aQueueId,
+                                              aDesc, dxgiYCbCrHost);
+      } else if (const auto* ioSurfHost =
+                     textureHost->AsMacIOSurfaceTextureHost()) {
+        return CreateFromMacIOSurfaceTextureHost(aParent, aDeviceId, aDesc,
+                                                 ioSurfHost);
+      } else {
+        gfxCriticalErrorOnce()
+            << "Unexpected SurfaceDescriptorGPUVideo TextureHost type";
+        aParent->ReportError(
+            aDeviceId, dom::GPUErrorFilter::Internal,
+            "Unexpected SurfaceDescriptorGPUVideo TextureHost type"_ns);
+        return CreateError();
       }
     } break;
     default:
@@ -527,15 +504,15 @@ ExternalTextureSourceHost::ExternalTextureSourceHost(
 ExternalTextureSourceHost::CreateFromBufferDesc(
     WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
     const ExternalTextureSourceDescriptor& aDesc,
-    const layers::BufferDescriptor& aSd, uint8_t* aBuffer) {
+    const layers::BufferDescriptor& aBufferDesc, Span<uint8_t> aBuffer) {
   const gfx::SurfaceFormat format =
-      layers::ImageDataSerializer::FormatFromBufferDescriptor(aSd);
+      layers::ImageDataSerializer::FormatFromBufferDescriptor(aBufferDesc);
   // Creates a texture and view for a single plane, and writes the provided data
   // to the texture.
   auto createPlane = [aParent, aDeviceId, aQueueId](
                          RawId texId, RawId viewId,
                          ffi::WGPUTextureFormat format, gfx::IntSize size,
-                         uint8_t* buffer, uint32_t stride) {
+                         Span<uint8_t> buffer, uint32_t stride) {
     const ffi::WGPUTextureDescriptor textureDesc{
         .size =
             ffi::WGPUExtent3d{
@@ -573,9 +550,10 @@ ExternalTextureSourceHost::CreateFromBufferDesc(
         .bytes_per_row = &stride,
         .rows_per_image = nullptr,
     };
+    const Span<uint8_t> slice = buffer.to(size.height * stride);
     const ffi::WGPUFfiSlice_u8 data{
-        .data = buffer,
-        .length = size.height * stride,
+        .data = slice.data(),
+        .length = slice.size(),
     };
     {
       ErrorBuffer error;
@@ -600,9 +578,9 @@ ExternalTextureSourceHost::CreateFromBufferDesc(
   AutoTArray<RawId, 3> usedTextureIds;
   AutoTArray<RawId, 3> usedViewIds;
   gfx::YUVRangedColorSpace colorSpace;
-  switch (aSd.type()) {
+  switch (aBufferDesc.type()) {
     case layers::BufferDescriptor::TRGBDescriptor: {
-      const layers::RGBDescriptor& rgbDesc = aSd.get_RGBDescriptor();
+      const layers::RGBDescriptor& rgbDesc = aBufferDesc.get_RGBDescriptor();
       ffi::WGPUTextureFormat planeFormat;
       switch (rgbDesc.format()) {
         case gfx::SurfaceFormat::B8G8R8A8:
@@ -630,11 +608,12 @@ ExternalTextureSourceHost::CreateFromBufferDesc(
       colorSpace = gfx::YUVRangedColorSpace::GbrIdentity;
     } break;
     case layers::BufferDescriptor::TYCbCrDescriptor: {
-      const layers::YCbCrDescriptor& yCbCrDesc = aSd.get_YCbCrDescriptor();
+      const layers::YCbCrDescriptor& yCbCrDesc =
+          aBufferDesc.get_YCbCrDescriptor();
       const gfx::IntSize ySize =
-          layers::ImageDataSerializer::SizeFromBufferDescriptor(aSd);
+          layers::ImageDataSerializer::SizeFromBufferDescriptor(aBufferDesc);
       const gfx::IntSize cbCrSize =
-          layers::ImageDataSerializer::GetCroppedCbCrSize(aSd);
+          layers::ImageDataSerializer::GetCroppedCbCrSize(aBufferDesc);
 
       ffi::WGPUTextureFormat planeFormat;
       switch (yCbCrDesc.colorDepth()) {
@@ -655,12 +634,12 @@ ExternalTextureSourceHost::CreateFromBufferDesc(
       }
 
       createPlane(aDesc.mTextureIds[0], aDesc.mViewIds[0], planeFormat, ySize,
-                  aBuffer + yCbCrDesc.yOffset(), yCbCrDesc.yStride());
+                  aBuffer.from(yCbCrDesc.yOffset()), yCbCrDesc.yStride());
       createPlane(aDesc.mTextureIds[1], aDesc.mViewIds[1], planeFormat,
-                  cbCrSize, aBuffer + yCbCrDesc.cbOffset(),
+                  cbCrSize, aBuffer.from(yCbCrDesc.cbOffset()),
                   yCbCrDesc.cbCrStride());
       createPlane(aDesc.mTextureIds[2], aDesc.mViewIds[2], planeFormat,
-                  cbCrSize, aBuffer + yCbCrDesc.crOffset(),
+                  cbCrSize, aBuffer.from(yCbCrDesc.crOffset()),
                   yCbCrDesc.cbCrStride());
       usedTextureIds.AppendElements(aDesc.mTextureIds.data(),
                                     aDesc.mTextureIds.size());
@@ -689,20 +668,20 @@ ExternalTextureSourceHost::CreateError() {
 }
 
 /* static */ ExternalTextureSourceHost
-ExternalTextureSourceHost::CreateFromD3D10Desc(
+ExternalTextureSourceHost::CreateFromDXGITextureHost(
     WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
     const ExternalTextureSourceDescriptor& aDesc,
-    const layers::SurfaceDescriptorD3D10& aSd, gfx::SurfaceFormat aFormat) {
+    const layers::DXGITextureHostD3D11* aTextureHost) {
 #ifdef XP_WIN
-  const auto& gpuProcessTextureId = aSd.gpuProcessTextureId();
   Maybe<HANDLE> handle;
-  if (gpuProcessTextureId) {
+  if (aTextureHost->mGpuProcessTextureId) {
     auto* textureMap = layers::GpuProcessD3D11TextureMap::Get();
     if (textureMap) {
-      handle = textureMap->GetSharedHandle(gpuProcessTextureId.ref());
+      handle =
+          textureMap->GetSharedHandle(aTextureHost->mGpuProcessTextureId.ref());
     }
-  } else if (aSd.handle()) {
-    handle.emplace(aSd.handle()->GetHandle());
+  } else if (aTextureHost->mHandle) {
+    handle.emplace(aTextureHost->mHandle->GetHandle());
   }
 
   if (!handle) {
@@ -713,12 +692,13 @@ ExternalTextureSourceHost::CreateFromD3D10Desc(
   }
 
   const gfx::YUVRangedColorSpace colorSpace = gfx::ToYUVRangedColorSpace(
-      gfx::ToYUVColorSpace(aSd.colorSpace()), aSd.colorRange());
+      gfx::ToYUVColorSpace(aTextureHost->mColorSpace),
+      aTextureHost->mColorRange);
 
   ffi::WGPUTextureFormat textureFormat;
   AutoTArray<std::pair<ffi::WGPUTextureFormat, ffi::WGPUTextureAspect>, 2>
       viewFormatAndAspects;
-  switch (aFormat) {
+  switch (aTextureHost->mFormat) {
     case gfx::SurfaceFormat::R8G8B8A8:
     case gfx::SurfaceFormat::R8G8B8X8:
       textureFormat = {ffi::WGPUTextureFormat_Rgba8Unorm};
@@ -750,10 +730,12 @@ ExternalTextureSourceHost::CreateFromD3D10Desc(
           ffi::WGPUTextureAspect_Plane1));
       break;
     default:
-      gfxCriticalNoteOnce << "Unsupported surface format: " << aFormat;
-      aParent->ReportError(aDeviceId, dom::GPUErrorFilter::Internal,
-                           nsPrintfCString("Unsupported surface format: %s",
-                                           mozilla::ToString(aFormat).c_str()));
+      gfxCriticalNoteOnce << "Unsupported surface format: "
+                          << aTextureHost->mFormat;
+      aParent->ReportError(
+          aDeviceId, dom::GPUErrorFilter::Internal,
+          nsPrintfCString("Unsupported surface format: %s",
+                          mozilla::ToString(aTextureHost->mFormat).c_str()));
       return CreateError();
   }
 
@@ -763,8 +745,8 @@ ExternalTextureSourceHost::CreateFromD3D10Desc(
   const ffi::WGPUTextureDescriptor textureDesc{
       .size =
           ffi::WGPUExtent3d{
-              .width = static_cast<uint32_t>(aSd.size().width),
-              .height = static_cast<uint32_t>(aSd.size().height),
+              .width = static_cast<uint32_t>(aTextureHost->mSize.width),
+              .height = static_cast<uint32_t>(aTextureHost->mSize.height),
               .depth_or_array_layers = 1,
           },
       .mip_level_count = 1,
@@ -804,10 +786,10 @@ ExternalTextureSourceHost::CreateFromD3D10Desc(
     }
     usedViewIds.AppendElement(aDesc.mViewIds[i]);
   }
-  ExternalTextureSourceHost source(usedTextureIds, usedViewIds, aDesc.mSize,
-                                   aFormat, colorSpace, aDesc.mSampleTransform,
-                                   aDesc.mLoadTransform);
-  source.mFenceId = aSd.fencesHolderId();
+  ExternalTextureSourceHost source(
+      usedTextureIds, usedViewIds, aDesc.mSize, aTextureHost->mFormat,
+      colorSpace, aDesc.mSampleTransform, aDesc.mLoadTransform);
+  source.mFenceId = aTextureHost->mFencesHolderId;
   return source;
 #else
   MOZ_CRASH();
@@ -815,41 +797,40 @@ ExternalTextureSourceHost::CreateFromD3D10Desc(
 }
 
 /* static */ ExternalTextureSourceHost
-ExternalTextureSourceHost::CreateFromDXGIYCbCrDesc(
+ExternalTextureSourceHost::CreateFromDXGIYCbCrTextureHost(
     WebGPUParent* aParent, RawId aDeviceId, RawId aQueueId,
     const ExternalTextureSourceDescriptor& aDesc,
-    const layers::SurfaceDescriptorDXGIYCbCr& aSd) {
+    const layers::DXGIYCbCrTextureHostD3D11* aTextureHost) {
 #ifdef XP_WIN
-  const gfx::SurfaceFormat format = gfx::SurfaceFormat::YUV420;
-  const gfx::YUVRangedColorSpace colorSpace =
-      gfx::ToYUVRangedColorSpace(aSd.yUVColorSpace(), aSd.colorRange());
+  const gfx::YUVRangedColorSpace colorSpace = gfx::ToYUVRangedColorSpace(
+      aTextureHost->mYUVColorSpace, aTextureHost->mColorRange);
 
   ffi::WGPUTextureFormat planeFormat;
-  switch (aSd.colorDepth()) {
+  switch (aTextureHost->mColorDepth) {
     case gfx::ColorDepth::COLOR_8:
       planeFormat = {ffi::WGPUTextureFormat_R8Unorm};
       break;
     case gfx::ColorDepth::COLOR_10:
     case gfx::ColorDepth::COLOR_12:
     case gfx::ColorDepth::COLOR_16:
-      gfxCriticalNoteOnce << "Unsupported color depth: " << aSd.colorDepth();
+      gfxCriticalNoteOnce << "Unsupported color depth: "
+                          << aTextureHost->mColorDepth;
       aParent->ReportError(
           aDeviceId, dom::GPUErrorFilter::Internal,
-          nsPrintfCString("Unsupported color depth: %s",
-                          mozilla::ToString(aSd.colorDepth()).c_str()));
+          nsPrintfCString(
+              "Unsupported color depth: %s",
+              mozilla::ToString(aTextureHost->mColorDepth).c_str()));
       return CreateError();
   }
 
-  const std::array handles = {aSd.handleY(), aSd.handleCb(), aSd.handleCr()};
-  const std::array sizes = {aSd.sizeY(), aSd.sizeCbCr(), aSd.sizeCbCr()};
-
   for (int i = 0; i < 3; i++) {
     {
+      const auto size = i == 0 ? aTextureHost->mSizeY : aTextureHost->mSizeCbCr;
       const ffi::WGPUTextureDescriptor textureDesc{
           .size =
               ffi::WGPUExtent3d{
-                  .width = static_cast<uint32_t>(sizes[i].width),
-                  .height = static_cast<uint32_t>(sizes[i].height),
+                  .width = static_cast<uint32_t>(size.width),
+                  .height = static_cast<uint32_t>(size.height),
                   .depth_or_array_layers = 1,
               },
           .mip_level_count = 1,
@@ -862,7 +843,7 @@ ExternalTextureSourceHost::CreateFromDXGIYCbCrDesc(
       ErrorBuffer error;
       ffi::wgpu_server_device_import_texture_from_shared_handle(
           aParent->GetContext(), aDeviceId, aDesc.mTextureIds[i], &textureDesc,
-          handles[i]->GetHandle(), error.ToFFI());
+          aTextureHost->mHandles[i]->GetHandle(), error.ToFFI());
       // From here on there's no need to return early with `CreateError()` in
       // case of an error, as an error creating a texture or view will be
       // propagated to any views or external textures created from them.
@@ -883,9 +864,9 @@ ExternalTextureSourceHost::CreateFromDXGIYCbCrDesc(
   }
 
   ExternalTextureSourceHost source(
-      aDesc.mTextureIds, aDesc.mViewIds, aDesc.mSize, format, colorSpace,
-      aDesc.mSampleTransform, aDesc.mLoadTransform);
-  source.mFenceId = Some(aSd.fencesHolderId());
+      aDesc.mTextureIds, aDesc.mViewIds, aDesc.mSize, aTextureHost->GetFormat(),
+      colorSpace, aDesc.mSampleTransform, aDesc.mLoadTransform);
+  source.mFenceId = Some(aTextureHost->mFencesHolderId);
   return source;
 #else
   MOZ_CRASH();
@@ -893,13 +874,12 @@ ExternalTextureSourceHost::CreateFromDXGIYCbCrDesc(
 }
 
 /* static */ ExternalTextureSourceHost
-ExternalTextureSourceHost::CreateFromMacIOSurfaceDesc(
+ExternalTextureSourceHost::CreateFromMacIOSurfaceTextureHost(
     WebGPUParent* aParent, RawId aDeviceId,
     const ExternalTextureSourceDescriptor& aDesc,
-    const layers::SurfaceDescriptorMacIOSurface& aSd) {
+    const layers::MacIOSurfaceTextureHostOGL* aTextureHost) {
 #ifdef XP_MACOSX
-  const RefPtr<MacIOSurface> ioSurface = MacIOSurface::LookupSurface(
-      aSd.surfaceId(), !aSd.isOpaque(), aSd.yUVColorSpace());
+  const RefPtr<MacIOSurface> ioSurface = aTextureHost->mSurface;
   if (!ioSurface) {
     gfxCriticalErrorOnce() << "Failed to lookup MacIOSurface";
     aParent->ReportError(aDeviceId, dom::GPUErrorFilter::Internal,
@@ -908,12 +888,12 @@ ExternalTextureSourceHost::CreateFromMacIOSurfaceDesc(
     return CreateError();
   }
 
-  // aSd.gpuFence should be null. It is only required to synchronize GPU reads
+  // mGpuFence should be null. It is only required to synchronize GPU reads
   // from an IOSurface following GPU writes, e.g. when an IOSurface is used for
   // WebGPU presentation. In our case the IOSurface has been written to from
   // the CPU or obtained from a CVPixelBuffer, and no additional synchronization
   // is required.
-  MOZ_ASSERT(!aSd.gpuFence());
+  MOZ_ASSERT(!aTextureHost->mGpuFence);
 
   const gfx::SurfaceFormat format = ioSurface->GetFormat();
   const gfx::YUVRangedColorSpace colorSpace = gfx::ToYUVRangedColorSpace(

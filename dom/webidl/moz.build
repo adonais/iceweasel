@@ -1250,7 +1250,6 @@ GENERATED_EVENTS_WEBIDL_FILES = [
     "TCPServerSocketEvent.webidl",
     "TCPSocketErrorEvent.webidl",
     "TCPSocketEvent.webidl",
-    "ToggleEvent.webidl",
     "TrackEvent.webidl",
     "UDPMessageEvent.webidl",
     "UserProximityEvent.webidl",

@@ -14,6 +14,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::RwLock;
 use std::time::{Duration, Instant};
 
+use crate::internal_metrics::LoadSizesObject;
 use crate::ErrorKind;
 
 use malloc_size_of::MallocSizeOf;
@@ -69,6 +70,7 @@ pub fn rkv_new(path: &Path) -> std::result::Result<(Rkv, RkvLoadState), rkv::Sto
         // In both instances there's not much we can do.
         // Drop the data by removing the file, and start over.
         Err(rkv::StoreError::FileInvalid) => {
+            log::debug!("rkv failed: invalid file. starting from scratch.");
             let safebin = path.join("data.safe.bin");
             fs::remove_file(safebin).map_err(|_| rkv::StoreError::FileInvalid)?;
             // Now try again, we only handle that error once.
@@ -76,6 +78,7 @@ pub fn rkv_new(path: &Path) -> std::result::Result<(Rkv, RkvLoadState), rkv::Sto
             Ok((rkv, RkvLoadState::Err(rkv::StoreError::FileInvalid)))
         }
         Err(rkv::StoreError::DatabaseCorrupted) => {
+            log::debug!("rkv failed: database corrupted. starting from scratch.");
             let safebin = path.join("data.safe.bin");
             fs::remove_file(safebin).map_err(|_| rkv::StoreError::DatabaseCorrupted)?;
             // Try again, only allowing the error once.
@@ -142,6 +145,9 @@ pub struct Database {
     /// Times an Rkv write-commit took.
     /// Re-applied as samples in a timing distribution later.
     pub(crate) write_timings: RefCell<Vec<i64>>,
+
+    /// The database size at various phases of loading.
+    load_sizes: Option<LoadSizesObject>,
 }
 
 impl MallocSizeOf for Database {
@@ -211,6 +217,12 @@ fn database_size(dir: &Path) -> Option<NonZeroU64> {
     NonZeroU64::new(total_size)
 }
 
+fn store_size(rkv: &Rkv, store: &SingleStore) -> Result<i64> {
+    let reader = rkv.read()?;
+    let iter = store.iter_start(&reader)?;
+    Ok(iter.count().try_into().unwrap_or(-1))
+}
+
 impl Database {
     /// Initializes the data store.
     ///
@@ -226,14 +238,33 @@ impl Database {
         ping_lifetime_max_time: Duration,
     ) -> Result<Self> {
         let path = data_path.join("db");
+        let mut load_sizes = LoadSizesObject {
+            new: database_size(&path).map(|x| x.get() as i64),
+            ..Default::default()
+        };
         log::debug!("Database path: {:?}", path.display());
         let file_size = database_size(&path);
 
+        load_sizes.open = file_size.map(|x| x.get() as i64);
         let (rkv, rkv_load_state) = Self::open_rkv(&path)?;
+        load_sizes.post_open = database_size(&path).map(|x| x.get() as i64);
         let user_store = rkv.open_single(Lifetime::User.as_str(), StoreOptions::create())?;
+        match store_size(&rkv, &user_store) {
+            Ok(record_count) => load_sizes.user_records = Some(record_count),
+            Err(e) => load_sizes.error = Some(e.to_string()),
+        };
+        load_sizes.post_open_user = database_size(&path).map(|x| x.get() as i64);
         let ping_store = rkv.open_single(Lifetime::Ping.as_str(), StoreOptions::create())?;
+        match store_size(&rkv, &ping_store) {
+            Ok(record_count) => load_sizes.ping_records = Some(record_count),
+            Err(e) => load_sizes.error = Some(e.to_string()),
+        };
         let application_store =
             rkv.open_single(Lifetime::Application.as_str(), StoreOptions::create())?;
+        match store_size(&rkv, &application_store) {
+            Ok(record_count) => load_sizes.application_records = Some(record_count),
+            Err(e) => load_sizes.error = Some(e.to_string()),
+        };
         let ping_lifetime_data = if delay_ping_lifetime_io {
             Some(RwLock::new(BTreeMap::new()))
         } else {
@@ -246,7 +277,7 @@ impl Database {
 
         let now = Instant::now();
 
-        let db = Self {
+        let mut db = Self {
             rkv,
             user_store,
             ping_store,
@@ -259,9 +290,19 @@ impl Database {
             file_size,
             rkv_load_state,
             write_timings,
+            load_sizes: Some(load_sizes),
         };
 
         db.load_ping_lifetime_data();
+        // Safe unwrap: just set it to Some above.
+        db.load_sizes.as_mut().unwrap().post_load_ping_lifetime_data =
+            database_size(&path).map(|x| x.get() as i64);
+        if let Some(ref ping_data) = db.ping_lifetime_data {
+            // Safe unwrap: just set load_sizes to Some above.
+            // Safe unwrap: Unless the read lock is poisoned (already?!).
+            db.load_sizes.as_mut().unwrap().ping_memory_records =
+                Some(ping_data.read().unwrap().len().try_into().unwrap_or(-1));
+        }
 
         Ok(db)
     }
@@ -278,6 +319,11 @@ impl Database {
         } else {
             None
         }
+    }
+
+    /// Get the load events.
+    pub fn load_sizes(&mut self) -> Option<LoadSizesObject> {
+        self.load_sizes.take()
     }
 
     fn get_store(&self, lifetime: Lifetime) -> &SingleStore {

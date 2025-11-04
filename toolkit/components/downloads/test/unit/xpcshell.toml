@@ -23,7 +23,6 @@ skip-if = [
 ["test_DownloadIntegration.js"]
 
 ["test_DownloadLegacy.js"]
-run-sequentially = "very high failure rate in parallel"
 skip-if = [
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1968548
 ]

@@ -218,7 +218,7 @@ class WritingMode {
 
   /**
    * True if vertical writing mode, i.e. when
-   * writing-mode: vertical-lr | vertical-rl.
+   * writing-mode: vertical-lr | vertical-rl | sideways-lr | sideways-rl.
    */
   bool IsVertical() const {
     return !!(mWritingMode & StyleWritingMode::VERTICAL);

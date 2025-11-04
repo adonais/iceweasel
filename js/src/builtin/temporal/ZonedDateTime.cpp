@@ -7,7 +7,6 @@
 #include "builtin/temporal/ZonedDateTime.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 
 #include <algorithm>

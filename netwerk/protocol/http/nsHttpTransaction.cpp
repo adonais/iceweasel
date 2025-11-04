@@ -178,7 +178,22 @@ nsresult nsHttpTransaction::Init(
 
   LOG1(("nsHttpTransaction::Init [this=%p caps=%x]\n", this, caps));
 
-  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+  bool isBeacon = false;
+  RefPtr<nsHttpChannel> httpChannel = do_QueryObject(eventsink);
+  if (httpChannel) {
+    // Beacons are sometimes sent in pagehide during browser shutdown.
+    // When that happens, we should allow the beacon to maybe succeed
+    // even though it's going to be racy (shutdown may finish first).
+    // See bug 1931956.
+    nsCOMPtr<nsILoadInfo> loadInfo = httpChannel->LoadInfo();
+    if (loadInfo->InternalContentPolicyType() ==
+        nsIContentPolicy::TYPE_BEACON) {
+      isBeacon = true;
+    }
+  }
+
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed) &&
+      !isBeacon) {
     LOG(
         ("nsHttpTransaction aborting init because of app"
          "shutdown"));
@@ -349,7 +364,6 @@ nsresult nsHttpTransaction::Init(
     }
   }
 
-  RefPtr<nsHttpChannel> httpChannel = do_QueryObject(eventsink);
   if (httpChannel) {
     RefPtr<WebTransportSessionEventListener> listener =
         httpChannel->GetWebTransportSessionEventListener();
@@ -389,7 +403,8 @@ void nsHttpTransaction::OnPendingQueueInserted(
   }
 
   // Don't create mHttp3BackupTimer if HTTPS RR is in play.
-  if (mConnInfo->IsHttp3() && !mOrigConnInfo && !mConnInfo->GetWebTransport()) {
+  if ((mConnInfo->IsHttp3() || mConnInfo->IsHttp3ProxyConnection()) &&
+      !mOrigConnInfo && !mConnInfo->GetWebTransport()) {
     // Backup timer should only be created once.
     if (!mHttp3BackupTimerCreated) {
       CreateAndStartTimer(mHttp3BackupTimer, this,
@@ -1866,13 +1881,18 @@ nsresult nsHttpTransaction::Restart() {
   // to the next
   mReuseOnRestart = false;
 
-  if (!mDoNotRemoveAltSvc &&
-      (!mConnInfo->GetRoutedHost().IsEmpty() || mConnInfo->IsHttp3()) &&
-      !mDontRetryWithDirectRoute) {
-    RefPtr<nsHttpConnectionInfo> ci;
-    mConnInfo->CloneAsDirectRoute(getter_AddRefs(ci));
-    mConnInfo = ci;
-    RemoveAlternateServiceUsedHeader(mRequestHead);
+  if (!mDoNotRemoveAltSvc && !mDontRetryWithDirectRoute) {
+    if (mConnInfo->IsHttp3ProxyConnection()) {
+      RefPtr<nsHttpConnectionInfo> ci =
+          mConnInfo->CreateConnectUDPFallbackConnInfo();
+      mConnInfo = ci;
+      RemoveAlternateServiceUsedHeader(mRequestHead);
+    } else if (!mConnInfo->GetRoutedHost().IsEmpty() || mConnInfo->IsHttp3()) {
+      RefPtr<nsHttpConnectionInfo> ci;
+      mConnInfo->CloneAsDirectRoute(getter_AddRefs(ci));
+      mConnInfo = ci;
+      RemoveAlternateServiceUsedHeader(mRequestHead);
+    }
   }
 
   // Reset mDoNotRemoveAltSvc for the next try.
@@ -3180,6 +3200,13 @@ void nsHttpTransaction::OnProxyConnectComplete(int32_t aResponseCode) {
        aResponseCode));
 
   mProxyConnectResponseCode = aResponseCode;
+
+  if (mConnInfo->IsHttp3() && mProxyConnectResponseCode == 200 &&
+      !mHttp3TunnelFallbackTimerCreated) {
+    mHttp3TunnelFallbackTimerCreated = true;
+    CreateAndStartTimer(mHttp3TunnelFallbackTimer, this,
+                        StaticPrefs::network_http_http3_inner_fallback_delay());
+  }
 }
 
 int32_t nsHttpTransaction::GetProxyConnectResponseCode() {
@@ -3329,7 +3356,10 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
       mConnInfo->CloneAndAdoptHTTPSSVCRecord(svcbRecord);
   // Don't fallback until we support WebTransport over HTTP/2.
   // TODO: implement fallback in bug 1874102.
-  bool needFastFallback = newInfo->IsHttp3() && !newInfo->GetWebTransport();
+  // Note: We don't support HTTPS RR for proxy connection yet, so disable the
+  // fallback.
+  bool needFastFallback = newInfo->IsHttp3() && !newInfo->GetWebTransport() &&
+                          !newInfo->IsHttp3ProxyConnection();
   bool foundInPendingQ = gHttpHandler->ConnMgr()->RemoveTransFromConnEntry(
       this, mHashKeyOfConnectionEntry);
 
@@ -3393,6 +3423,11 @@ void nsHttpTransaction::MaybeCancelFallbackTimer() {
     mHttp3BackupTimer->Cancel();
     mHttp3BackupTimer = nullptr;
   }
+
+  if (mHttp3TunnelFallbackTimer) {
+    mHttp3TunnelFallbackTimer->Cancel();
+    mHttp3TunnelFallbackTimer = nullptr;
+  }
 }
 
 void nsHttpTransaction::OnBackupConnectionReady(bool aTriggeredByHTTPSRR) {
@@ -3450,7 +3485,7 @@ static void CreateBackupConnection(
     nsHttpConnectionInfo* aBackupConnInfo, nsIInterfaceRequestor* aCallbacks,
     uint32_t aCaps, std::function<void(bool)>&& aResultCallback) {
   aBackupConnInfo->SetFallbackConnection(true);
-  RefPtr<SpeculativeTransaction> trans = new SpeculativeTransaction(
+  RefPtr<SpeculativeTransaction> trans = new FallbackTransaction(
       aBackupConnInfo, aCallbacks, aCaps | NS_HTTP_DISALLOW_HTTP3,
       std::move(aResultCallback));
   uint32_t limit =
@@ -3465,12 +3500,16 @@ static void CreateBackupConnection(
 void nsHttpTransaction::OnHttp3BackupTimer() {
   LOG(("nsHttpTransaction::OnHttp3BackupTimer [%p]", this));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
-  MOZ_ASSERT(mConnInfo->IsHttp3());
+  MOZ_ASSERT(mConnInfo->IsHttp3() || mConnInfo->IsHttp3ProxyConnection());
 
   mHttp3BackupTimer = nullptr;
 
-  mConnInfo->CloneAsDirectRoute(getter_AddRefs(mBackupConnInfo));
-  MOZ_ASSERT(!mBackupConnInfo->IsHttp3());
+  if (mConnInfo->IsHttp3ProxyConnection()) {
+    mBackupConnInfo = mConnInfo->CreateConnectUDPFallbackConnInfo();
+  } else {
+    mConnInfo->CloneAsDirectRoute(getter_AddRefs(mBackupConnInfo));
+    MOZ_ASSERT(!mBackupConnInfo->IsHttp3());
+  }
 
   RefPtr<nsHttpTransaction> self = this;
   auto callback = [self](bool aSucceded) {
@@ -3486,6 +3525,25 @@ void nsHttpTransaction::OnHttp3BackupTimer() {
   }
   CreateBackupConnection(mBackupConnInfo, callbacks, mCaps,
                          std::move(callback));
+}
+
+void nsHttpTransaction::OnHttp3TunnelFallbackTimer() {
+  LOG(("nsHttpTransaction::OnHttp3TunnelFallbackTimer [%p]", this));
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  mHttp3TunnelFallbackTimer = nullptr;
+
+  // Don't disturb the HTTPS RR fallback mechanism.
+  if (mOrigConnInfo) {
+    return;
+  }
+
+  DisableHttp3(false);
+  // Setting this flag since DisableHttp3 is already called.
+  mDontRetryWithDirectRoute = true;
+  if (mConnection) {
+    mConnection->CloseTransaction(this, NS_ERROR_NET_RESET);
+  }
 }
 
 void nsHttpTransaction::OnFastFallbackTimer() {
@@ -3531,7 +3589,6 @@ void nsHttpTransaction::OnFastFallbackTimer() {
 void nsHttpTransaction::HandleFallback(
     nsHttpConnectionInfo* aFallbackConnInfo) {
   if (mConnection) {
-    MOZ_ASSERT(mActivated);
     // Close the transaction with NS_ERROR_NET_RESET, since we know doing this
     // will make transaction to be restarted.
     mConnection->CloseTransaction(this, NS_ERROR_NET_RESET);
@@ -3575,6 +3632,8 @@ nsHttpTransaction::Notify(nsITimer* aTimer) {
     OnFastFallbackTimer();
   } else if (aTimer == mHttp3BackupTimer) {
     OnHttp3BackupTimer();
+  } else if (aTimer == mHttp3TunnelFallbackTimer) {
+    OnHttp3TunnelFallbackTimer();
   }
 
   return NS_OK;

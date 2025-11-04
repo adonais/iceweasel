@@ -490,7 +490,7 @@
 
         <activity
             android:name=".startupCrash.StartupCrashActivity"
-            android:exported="true"
+            android:exported="false"
             >
         </activity>
 
@@ -537,6 +537,8 @@
                     android:host="settings_search_engine"/>
                 <data android:scheme="${deepLinkScheme}"
                     android:host="settings_tracking_protection"/>
+                <data android:scheme="${deepLinkScheme}"
+                    android:host="settings_app_icon"/>
                 <data android:scheme="${deepLinkScheme}"
                     android:host="share_sheet"/>
                 <data android:scheme="${deepLinkScheme}"

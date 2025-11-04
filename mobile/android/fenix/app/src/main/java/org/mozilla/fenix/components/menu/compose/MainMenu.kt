@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -58,7 +59,6 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.ui.displayName
 import mozilla.components.feature.addons.ui.summary
@@ -98,6 +98,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param isPrivate Whether or not the current browsing mode is private
  * @param isReaderViewActive Whether or not Reader View is active or not.
  * @param isExtensionsProcessDisabled Whether or not the extensions process is disabled due to extension errors.
+ * @param isMoreMenuHighlighted Whether or not the more menu icon is highlighted.
  * @param allWebExtensionsDisabled Whether or not all web extensions are disabled.
  * @param canGoBack Whether or not the back button is enabled.
  * @param canGoForward Whether or not the forward button is enabled.
@@ -149,6 +150,7 @@ fun MainMenu(
     isPrivate: Boolean,
     isReaderViewActive: Boolean,
     isExtensionsProcessDisabled: Boolean,
+    isMoreMenuHighlighted: Boolean,
     allWebExtensionsDisabled: Boolean,
     canGoBack: Boolean,
     canGoForward: Boolean,
@@ -217,15 +219,15 @@ fun MainMenu(
                     isExtensionsExpanded = isExtensionsExpanded,
                     isMoreMenuExpanded = isMoreMenuExpanded,
                 )
-                if (scrollState.value != 0) {
-                    Divider(color = FirefoxTheme.colors.borderPrimary)
+                if (scrollState.canScrollBackward) {
+                    HorizontalDivider(color = FirefoxTheme.colors.borderPrimary)
                 }
             }
         },
         footer = {
             if (accessPoint != MenuAccessPoint.Home && (isBottomToolbar || isExpandedToolbarEnabled)) {
-                if (scrollState.value != 0) {
-                    Divider(color = FirefoxTheme.colors.borderPrimary)
+                if (scrollState.canScrollBackward) {
+                    HorizontalDivider(color = FirefoxTheme.colors.borderPrimary)
                 }
                 MenuNavigation(
                     state = MenuItemState.ENABLED,
@@ -285,6 +287,7 @@ fun MainMenu(
                 isPrivate = isPrivate,
                 isExtensionsProcessDisabled = isExtensionsProcessDisabled,
                 isExtensionsExpanded = isExtensionsExpanded,
+                isMoreMenuHighlighted = isMoreMenuHighlighted,
                 moreMenuExpanded = isMoreMenuExpanded,
                 webExtensionMenuCount = webExtensionMenuCount,
                 allWebExtensionsDisabled = allWebExtensionsDisabled,
@@ -504,6 +507,7 @@ private fun ToolsAndActionsMenuGroup(
     isPrivate: Boolean,
     isExtensionsProcessDisabled: Boolean,
     isExtensionsExpanded: Boolean,
+    isMoreMenuHighlighted: Boolean,
     moreMenuExpanded: Boolean,
     webExtensionMenuCount: Int,
     allWebExtensionsDisabled: Boolean,
@@ -592,6 +596,7 @@ private fun ToolsAndActionsMenuGroup(
 
         if (!moreMenuExpanded) {
             MoreMenuButtonGroup(
+                isMoreMenuHighlighted = isMoreMenuHighlighted,
                 onMoreMenuClick = onMoreMenuClick,
             )
         }
@@ -605,12 +610,14 @@ private fun ToolsAndActionsMenuGroup(
 
 @Composable
 private fun MoreMenuButtonGroup(
+    isMoreMenuHighlighted: Boolean,
     onMoreMenuClick: () -> Unit,
 ) {
     MenuItem(
         label = stringResource(id = R.string.browser_menu_more_settings),
         stateDescription = "Collapsed",
         beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_horizontal_24),
+        isBeforeIconHighlighted = isMoreMenuHighlighted,
         onClick = onMoreMenuClick,
     ) {
         Row(
@@ -876,6 +883,10 @@ private fun WebExtensionMenuItems(
                     BitmapPainter(image = icon.asImageBitmap())
                 }
                     ?: painterResource(iconsR.drawable.mozac_ic_web_extension_default_icon),
+                iconTint = when (webExtensionMenuItem.icon) {
+                    null -> FirefoxTheme.colors.iconPrimary
+                    else -> null
+                },
                 enabled = webExtensionMenuItem.enabled,
                 badgeText = webExtensionMenuItem.badgeText,
                 onClick = {
@@ -945,6 +956,7 @@ private fun MenuDialogPreview() {
                 isPdf = false,
                 isReaderViewActive = false,
                 isExtensionsProcessDisabled = true,
+                isMoreMenuHighlighted = false,
                 allWebExtensionsDisabled = false,
                 canGoBack = true,
                 canGoForward = true,
@@ -1008,6 +1020,7 @@ private fun MenuDialogPrivatePreview(
                 isPdf = false,
                 isReaderViewActive = false,
                 isExtensionsProcessDisabled = false,
+                isMoreMenuHighlighted = false,
                 canGoBack = true,
                 canGoForward = true,
                 allWebExtensionsDisabled = false,

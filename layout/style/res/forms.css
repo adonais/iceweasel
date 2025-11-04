@@ -13,7 +13,6 @@
   unicode-bidi: inherit;
   text-overflow: inherit;
   overflow: inherit;
-  overflow-clip-box: inherit;
   resize: inherit;
   /* Need to inherit border-radius too, so when the fieldset has rounded
      borders we don't leak out the corners for hit-testing purposes. */
@@ -95,7 +94,6 @@ input {
   font: -moz-field;
   text-rendering: optimizeLegibility;
   cursor: text;
-  overflow-clip-box: padding-box content-box;
 }
 
 textarea {
@@ -136,7 +134,6 @@ button,
 ::-moz-text-control-preview {
   overflow: auto;
   border: 0;
-  /* This is necessary to make overflow-clip-box work */
   padding: inherit;
   margin: 0;
   text-decoration: inherit;
@@ -145,7 +142,6 @@ button,
   resize: inherit;
   scrollbar-width: inherit;
   -moz-control-character-visibility: visible;
-  overflow-clip-box: inherit;
   visibility: hidden;
 }
 
@@ -229,7 +225,6 @@ select {
   /* No text-decoration reaching inside, by default */
   display: inline-block;
   break-inside: avoid;
-  overflow-clip-box: padding-box !important; /* bug 992447 */
   padding-block: 1px;
 
   /* Set some styles for drop down selects. These are overridden below for
@@ -501,7 +496,6 @@ input:is([type="color"], [type="reset"], [type="button"], [type="submit"]) {
   cursor: default;
   box-sizing: border-box;
   user-select: none;
-  overflow-clip-box: padding-box;
   break-inside: avoid;
 }
 
@@ -573,7 +567,6 @@ select:is(:disabled, :disabled:active) > button {
 /* file selector */
 input[type="file"] {
   white-space: nowrap !important;
-  overflow-clip-box: padding-box;
   color: unset;
 
   /* Revert rules which apply on all inputs. */

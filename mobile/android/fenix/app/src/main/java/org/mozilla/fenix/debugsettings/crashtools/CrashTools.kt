@@ -26,7 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.crashes.StartupCrashCanary
@@ -62,7 +62,7 @@ internal fun CrashTools(
             ),
             style = FirefoxTheme.typography.body2,
         )
-        PrimaryButton(
+        FilledButton(
             text = stringResource(R.string.crash_debug_deferral_button),
             modifier = Modifier.fillMaxWidth(),
             onClick = {
@@ -75,7 +75,7 @@ internal fun CrashTools(
             color = FirefoxTheme.colors.actionCritical,
             style = FirefoxTheme.typography.subtitle2,
         )
-        PrimaryButton(
+        FilledButton(
             text = stringResource(R.string.crash_debug_generic_crash_trigger),
             modifier = Modifier.fillMaxWidth(),
             onClick = {
@@ -87,7 +87,7 @@ internal fun CrashTools(
             color = FirefoxTheme.colors.actionCritical,
             style = FirefoxTheme.typography.subtitle2,
         )
-        PrimaryButton(
+        FilledButton(
             text = stringResource(R.string.crash_debug_crash_on_next_startup),
             modifier = Modifier.fillMaxWidth(),
             onClick = {

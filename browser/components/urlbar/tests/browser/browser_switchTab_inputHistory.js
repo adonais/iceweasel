@@ -9,7 +9,7 @@
 "use strict";
 
 const { UrlbarProviderOpenTabs } = ChromeUtils.importESModule(
-  "resource:///modules/UrlbarProviderOpenTabs.sys.mjs"
+  "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs"
 );
 
 add_setup(async function () {

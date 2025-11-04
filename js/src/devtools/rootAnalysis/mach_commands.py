@@ -123,7 +123,8 @@ def setup_env_for_shell(env, shell):
 )
 def hazards(command_context):
     """Commands related to performing the GC rooting hazard analysis"""
-    print("See `mach hazards --help` for a list of subcommands")
+    command_context._sub_mach(["help", "hazards"])
+    return 1
 
 
 @inherit_command_args("artifact", "toolchain")

@@ -42,10 +42,10 @@ add_task(async function selected_result_tip() {
     const deferred = Promise.withResolvers();
     const provider = new UrlbarTestUtils.TestProvider({
       results: [
-        new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.TIP,
-          UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-          {
+        new UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.TIP,
+          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          payload: {
             type,
             helpUrl: "https://example.com/",
             titleL10n: { id: "urlbar-search-tips-confirm" },
@@ -55,8 +55,8 @@ add_task(async function selected_result_tip() {
                 l10n: { id: "urlbar-search-tips-confirm" },
               },
             ],
-          }
-        ),
+          },
+        }),
       ],
       priority: 1,
       onEngagement: () => {
@@ -164,18 +164,18 @@ add_task(async function selected_result_intervention_update() {
 add_task(async function learn_more_link() {
   const provider = new UrlbarTestUtils.TestProvider({
     results: [
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.TIP,
-        UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-        {
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.TIP,
+        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        payload: {
           type: "test",
           titleL10n: { id: "urlbar-search-tips-confirm" },
           descriptionL10n: {
             id: "firefox-suggest-onboarding-main-accept-option-label",
           },
           descriptionLearnMoreTopic: "learn_more_link",
-        }
-      ),
+        },
+      }),
     ],
     priority: 1,
   });

@@ -358,6 +358,161 @@ add_task(function test_hasSessionData() {
   );
 });
 
+add_task(async function test_getSessionDataForContext() {
+  const sessionData = new SessionData(new RootMessageHandler("session-id-1"));
+
+  const globalContextDescriptor = {
+    type: ContextDescriptorType.All,
+  };
+
+  const userContextDescriptor = {
+    type: ContextDescriptorType.UserContext,
+    id: 1,
+  };
+
+  const browsingContextDescriptor = {
+    type: ContextDescriptorType.TopBrowsingContext,
+    id: 2,
+  };
+
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Add, globalContextDescriptor, ["global"]),
+    createUpdate(SessionDataMethod.Add, userContextDescriptor, ["userContext"]),
+    createUpdate(SessionDataMethod.Add, browsingContextDescriptor, [
+      "browsingContext",
+    ]),
+  ]);
+
+  const browsingContext1 = {
+    browserId: 2,
+    originAttributes: {
+      userContextId: 1,
+    },
+  };
+
+  const sessionDataForContext1 = sessionData.getSessionDataForContext(
+    "mod",
+    "event",
+    browsingContext1
+  );
+  equal(sessionDataForContext1.length, 3, "Get 3 session data items");
+  equal(
+    sessionDataForContext1[0].value,
+    "global",
+    "Get a session data item for the global context descriptor"
+  );
+  equal(
+    sessionDataForContext1[1].value,
+    "userContext",
+    "Get a session data item for the user context descriptor"
+  );
+  equal(
+    sessionDataForContext1[2].value,
+    "browsingContext",
+    "Get a session data item for the browsing context descriptor"
+  );
+
+  const browsingContext2 = {
+    browserId: 3,
+    originAttributes: {
+      userContextId: 2,
+    },
+  };
+
+  const sessionDataForContext2 = sessionData.getSessionDataForContext(
+    "mod",
+    "event",
+    browsingContext2
+  );
+  equal(sessionDataForContext2.length, 1, "Get 1 session data items");
+  equal(
+    sessionDataForContext2[0].value,
+    "global",
+    "Get a session data item for the global context descriptor"
+  );
+
+  const browsingContext3 = {
+    browserId: 4,
+    originAttributes: {
+      userContextId: 1,
+    },
+  };
+
+  const sessionDataForContext3 = sessionData.getSessionDataForContext(
+    "mod",
+    "event",
+    browsingContext3
+  );
+  equal(sessionDataForContext3.length, 2, "Get 2 session data items");
+  equal(
+    sessionDataForContext3[0].value,
+    "global",
+    "Get a session data item for the global context descriptor"
+  );
+  equal(
+    sessionDataForContext3[1].value,
+    "userContext",
+    "Get a session data item for the user context descriptor"
+  );
+});
+
+add_task(async function test_generateSessionDataItemUpdate() {
+  const sessionData = new SessionData(new RootMessageHandler("session-id-1"));
+
+  const browsingContextDescriptor = {
+    type: ContextDescriptorType.TopBrowsingContext,
+    id: 2,
+  };
+
+  sessionData.applySessionData([
+    createUpdate(SessionDataMethod.Add, browsingContextDescriptor, [
+      "old value",
+    ]),
+  ]);
+
+  const newValue = "new value";
+  const sessionDataItemUpdates = sessionData.generateSessionDataItemUpdate(
+    "mod",
+    "event",
+    browsingContextDescriptor,
+    false,
+    newValue
+  );
+
+  equal(sessionDataItemUpdates.length, 2, "Get 2 session data item updates");
+  equal(
+    sessionDataItemUpdates[0].method,
+    SessionDataMethod.Remove,
+    "First update is to remove the old item"
+  );
+  equal(
+    sessionDataItemUpdates[1].method,
+    SessionDataMethod.Add,
+    "Second update is to add the new item"
+  );
+  equal(sessionDataItemUpdates[1].values[0], newValue, "The new value is set");
+
+  const sessionDataItemUpdatesOnlyRemove =
+    sessionData.generateSessionDataItemUpdate(
+      "mod",
+      "event",
+      browsingContextDescriptor,
+      true,
+      newValue
+    );
+
+  equal(
+    sessionDataItemUpdatesOnlyRemove.length,
+    1,
+    "Get 1 session data item update"
+  );
+  equal(
+    sessionDataItemUpdatesOnlyRemove[0].method,
+    SessionDataMethod.Remove,
+    "Update is to remove the old item"
+  );
+});
+
 function checkEvents(events, expectedEvents) {
   // Check the arrays have the same size.
   equal(events.length, expectedEvents.length);

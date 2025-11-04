@@ -57,6 +57,16 @@ class JS_PUBLIC_API JobQueue {
                                   JS::MutableHandle<JSObject*> data) const = 0;
 
   /**
+   * If the embedding has a host-defined global, return it. This is used when
+   * we are able to optimize out the host defined data, as the embedding may
+   * still require this when running jobs.
+   *
+   * In Gecko, this is used for dealing with the incumbent global.
+   */
+  virtual bool getHostDefinedGlobal(
+      JSContext* cx, JS::MutableHandle<JSObject*> data) const = 0;
+
+  /**
    * Enqueue a reaction job `job` for `promise`, which was allocated at
    * `allocationSite`. Provide `hostDefineData` as the host defined data for
    * the reaction job's execution.
@@ -102,6 +112,14 @@ class JS_PUBLIC_API JobQueue {
    * being false after `runJobs()`.
    */
   virtual bool isDrainingStopped() const = 0;
+
+  /*
+   * When enqueueing a job, should the job be enqueued in the debug queue
+   * rather than the regular queue?
+   */
+  virtual bool useDebugQueue(JS::Handle<JSObject*> global) const {
+    return false;
+  }
 
  protected:
   friend class AutoDebuggerJobQueueInterruption;
@@ -398,9 +416,25 @@ extern JS_PUBLIC_API bool SetSettledPromiseIsHandled(JSContext* cx,
 /**
  * Returns a js::SavedFrame linked list of the stack that lead to the given
  * Promise's allocation.
+ *
+ * The promise parameter here should be an unwrapped promise.
  */
 extern JS_PUBLIC_API JSObject* GetPromiseAllocationSite(
     JS::HandleObject promise);
+
+/**
+ * A more flexible version of the above: Handles the cases where
+ * 1. maybePromise is wrapped
+ * 2. maybePromise is null
+ * 3. maybePromise isn't actually a promise.
+ *
+ * Returns js::SavedFrame if the passed argument is a
+ * wrapped promise (that's not a dead object wrapper) and it
+ * has an allocation site.
+ */
+extern JS_PUBLIC_API JSObject*
+MaybeGetPromiseAllocationSiteFromPossiblyWrappedPromise(
+    JS::HandleObject maybePromise);
 
 extern JS_PUBLIC_API JSObject* GetPromiseResolutionSite(
     JS::HandleObject promise);

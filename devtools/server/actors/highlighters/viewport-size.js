@@ -4,7 +4,6 @@
 
 "use strict";
 
-const EventEmitter = require("resource://devtools/shared/event-emitter.js");
 const {
   setIgnoreLayoutChanges,
 } = require("resource://devtools/shared/layout/utils.js");
@@ -139,8 +138,6 @@ class ViewportSizeHighlighter {
     this.parent = null;
     this.markup = null;
     this.isReady = null;
-
-    EventEmitter.emit(this, "destroy");
   }
 
   show() {

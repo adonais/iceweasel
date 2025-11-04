@@ -13,4 +13,10 @@ sealed class SupportedMenuNotifications {
      * This is used to indicate completed downloads.
      */
     object Downloads : SupportedMenuNotifications()
+
+    /**
+     * Represents a notification related to open in app.
+     * This is used to indicate the link can be opened in an external app.
+     */
+    object OpenInApp : SupportedMenuNotifications()
 }

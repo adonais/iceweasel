@@ -30,11 +30,10 @@
   .widgets-scroll-message {
     @include wallpaper-contrast-fix;
 
-    color: var(--newtab-text-primary-color);
+    color: var(--newtab-contextual-text-primary-color);
     position: absolute;
     bottom: 0;
     border-radius: var(--button-border-radius);
-    background: var(--button-background-color);
     padding: var(--space-small) var(--space-large);
 
     p {

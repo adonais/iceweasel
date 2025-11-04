@@ -9,6 +9,7 @@ import com.google.common.io.Resources.getResource
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.Crash
 import mozilla.components.lib.crash.CrashReporter
+import mozilla.components.lib.crash.RuntimeTag
 import mozilla.components.support.ktx.kotlin.toDate
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
@@ -791,7 +792,7 @@ class MozillaSocorroServiceTest {
                 processType = "main",
                 breadcrumbs = arrayListOf(),
                 remoteType = null,
-                runtimeTags = mapOf(CrashReporter.RELEASE_RUNTIME_TAG to version),
+                runtimeTags = mapOf(RuntimeTag.RELEASE to version),
             )
             service.report(crash)
 

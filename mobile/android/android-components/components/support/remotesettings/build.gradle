@@ -17,31 +17,16 @@ buildscript {
     }
 }
 
-
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlinx-serialization'
 
 android {
-    compileSdkVersion = config.compileSdkVersion
-
-    defaultConfig {
-        minSdkVersion = config.minSdkVersion
-        compileSdk = config.compileSdkVersion
-        targetSdkVersion = config.targetSdkVersion
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled = false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-
     namespace = 'mozilla.components.support.remotesettings'
 }
 
 dependencies {
+    implementation project(':components:support-appservices')
     implementation project(':components:support-base')
     implementation project(':components:support-ktx')
     implementation project(':components:support-utils')
@@ -61,6 +46,6 @@ dependencies {
     testImplementation libs.robolectric
 }
 
-apply from: '../../../android-lint.gradle'
+apply from: '../../../common-config.gradle'
 apply from: '../../../publish.gradle'
 ext.configurePublish(config.componentsGroupId, project.name, project.ext.description)

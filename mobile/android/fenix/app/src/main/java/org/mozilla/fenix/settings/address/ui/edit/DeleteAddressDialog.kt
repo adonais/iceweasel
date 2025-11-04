@@ -44,14 +44,14 @@ internal fun DeleteAddressDialog(store: AddressStore) {
             onDismissRequest = { store.dispatch(DeleteDialogAction.CancelTapped) },
             confirmButton = {
                 TextButton(
-                    text = stringResource(R.string.addressess_confirm_dialog_ok_button).uppercase(),
+                    text = stringResource(R.string.addressess_confirm_dialog_ok_button),
                     onClick = { store.dispatch(DeleteDialogAction.DeleteTapped) },
                     modifier = Modifier.testTag(EditAddressTestTag.DIALOG_DELETE_BUTTON),
                 )
             },
             dismissButton = {
                 TextButton(
-                    text = stringResource(R.string.addressess_confirm_dialog_cancel_button).uppercase(),
+                    text = stringResource(R.string.addressess_confirm_dialog_cancel_button),
                     onClick = { store.dispatch(DeleteDialogAction.CancelTapped) },
                     modifier = Modifier.testTag(EditAddressTestTag.DIALOG_CANCEL_BUTTON),
                 )

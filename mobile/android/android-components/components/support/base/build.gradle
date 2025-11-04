@@ -9,12 +9,6 @@ def generatedSrcDir = new File(layout.buildDirectory.get().asFile, "generated/co
 
 android {
     defaultConfig {
-        minSdkVersion = config.minSdkVersion
-        compileSdk = config.compileSdkVersion
-        targetSdkVersion = config.targetSdkVersion
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
         def appServicesVersion = ApplicationServicesConfig.version
         if (gradle.hasProperty("localProperties.branchBuild.application-services.version")) {
             appServicesVersion = gradle["localProperties.branchBuild.application-services.version"]
@@ -27,13 +21,6 @@ android {
             buildConfigField("String", "VCS_HASH", "\"" + gradle.mozconfig.source_repo.MOZ_SOURCE_STAMP + "\"")
         } else {
             buildConfigField("String", "VCS_HASH", "\"\"")
-        }
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled = false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -75,42 +62,58 @@ dependencies {
     testImplementation libs.robolectric
 }
 
-preBuild.finalizedBy("generateComponentEnum")
-
 /**
  * Generates a "Components" enum listing all published components.
  */
 tasks.register("generateComponentEnum") {
     def buildConfigCache = buildConfig
+    def publishedProjects = buildConfigCache.projects.findAll { project ->
+        project.value.publish
+    }
+    def file = new File(generatedSrcDir, "Component.kt")
+
+    inputs.property("publishedProjects", publishedProjects.collect { project ->
+        project.key + ":" + project.value.publish
+    }.sort())
+
+    outputs.file(file)
+    
     doLast {
         generatedSrcDir.mkdirs()
 
-        def file = new File(generatedSrcDir, "Component.kt")
-        file.delete()
-        file.createNewFile()
-
-        file << "/* This Source Code Form is subject to the terms of the Mozilla Public\n" +
+        def content = new StringBuilder()
+        content << "/* This Source Code Form is subject to the terms of the Mozilla Public\n" +
                 " * License, v. 2.0. If a copy of the MPL was not distributed with this\n" +
                 " * file, You can obtain one at http://mozilla.org/MPL/2.0/. */\n"
 
-        file << "package mozilla.components.support.base" << "\n"
-        file << "\n"
-        file << "// Automatically generated file. DO NOT MODIFY" << "\n"
-        file << "\n"
-        file << "enum class Component {" << "\n"
+        content << "package mozilla.components.support.base" << "\n"
+        content << "\n"
+        content << "// Automatically generated file. DO NOT MODIFY" << "\n"
+        content << "\n"
+        content << "enum class Component {" << "\n"
 
-        file << buildConfigCache.projects.findAll { project ->
-            project.value.publish
-        }.collect { project ->
+        content << publishedProjects.collect { project ->
             "    " + project.key.replaceFirst(/^components:/, "").replace("-", "_").toUpperCase(Locale.US)
         }.join(", \n")
 
-        file << "\n"
-        file << "}\n"
-        file << "\n"
+        content << "\n"
+        content << "}\n"
+        content << "\n"
+
+        file.text = content.toString()
     }
 }
 
-apply from: '../../../android-lint.gradle'
+afterEvaluate {
+    tasks.matching { it.name.startsWith("compile") && it.name.endsWith("Kotlin") }.configureEach {
+        dependsOn("generateComponentEnum")
+    }
+
+    tasks.matching { it.name == "sourceReleaseJar" || it.name == "sourcesJar" }.configureEach {
+        dependsOn("generateComponentEnum")
+    }
+}
+
+apply from: '../../../common-config.gradle'
 apply from: '../../../publish.gradle'
 ext.configurePublish(config.componentsGroupId, project.name, project.ext.description)

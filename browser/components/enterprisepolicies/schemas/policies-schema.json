@@ -167,6 +167,18 @@
       }
     },
 
+    "BrowserDataBackup": {
+      "type": ["boolean", "object"],
+      "properties": {
+        "AllowBackup": {
+          "type": "boolean"
+        },
+        "AllowRestore": {
+          "type": "boolean"
+        }
+      }
+    },
+
     "CaptivePortal": {
       "type": "boolean"
     },
@@ -996,6 +1008,24 @@
       "type": "array",
       "items": {
         "type": "string"
+      }
+    },
+
+    "LocalNetworkAccess": {
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "type": "boolean"
+        },
+        "BlockTrackers": {
+          "type": "boolean"
+        },
+        "EnablePrompting": {
+          "type": "boolean"
+        },
+        "Locked": {
+          "type": "boolean"
+        }
       }
     },
 

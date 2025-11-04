@@ -1029,11 +1029,6 @@ impl InternDebug for PictureKey {}
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[derive(MallocSizeOf)]
-pub struct PictureData;
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(MallocSizeOf)]
 pub struct PictureTemplate;
 
 impl From<PictureKey> for PictureTemplate {

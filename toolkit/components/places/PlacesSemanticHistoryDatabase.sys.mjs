@@ -37,6 +37,9 @@ const MAX_WASTED_SPACE_PERC = 0.6;
 // Maximum number of _chunksNN tables in sqlite-vec.
 const MAX_CHUNKS_TABLES = 100;
 
+/**
+ * Handles the database connection, reading and writing for semantic history.
+ */
 export class PlacesSemanticHistoryDatabase {
   #asyncShutdownBlocker;
   #conn;
@@ -141,6 +144,7 @@ export class PlacesSemanticHistoryDatabase {
 
   /**
    * Closes the connection to the database, if it's open.
+   *
    * @returns {Promise<void>} resolves when done.
    */
   async closeConnection() {
@@ -213,6 +217,7 @@ export class PlacesSemanticHistoryDatabase {
 
   /**
    * Creates the necessary virtual tables in the semantic.sqlite database.
+   *
    * @returns {Promise<void>} resolves when done.
    */
   async #createDatabaseEntities() {
@@ -229,6 +234,7 @@ export class PlacesSemanticHistoryDatabase {
   /**
    * Verifies that the schema is current, there's no missing entities or
    * changed embedding size, and there's not excessive fragmentation.
+   *
    * @returns {Promise<boolean>} whether the schema is consistent or not.
    */
   async #checkDatabaseHealth() {
@@ -354,6 +360,7 @@ export class PlacesSemanticHistoryDatabase {
 
   /**
    * Returns the path to the semantic database.
+   *
    * @returns {string} The path to the semantic database.
    */
   get databaseFilePath() {
@@ -362,6 +369,7 @@ export class PlacesSemanticHistoryDatabase {
 
   /**
    * Removes the semantic database file and auxiliary files.
+   *
    * @returns {Promise<void>} resolves when done.
    */
   async removeDatabaseFiles() {

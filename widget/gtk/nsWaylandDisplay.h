@@ -81,6 +81,10 @@ class nsWaylandDisplay {
   wl_keyboard* GetKeyboard() { return mKeyboard; }
   void ClearKeyboard();
 
+  wl_touch* GetTouch() { return mTouch; }
+  void SetTouch(wl_touch* aTouch);
+  void ClearTouch();
+
   void SetSeat(wl_seat* aSeat, int aSeatId);
   wl_seat* GetSeat() { return mSeat; }
   void RemoveSeat(int aSeatId);
@@ -158,6 +162,7 @@ class nsWaylandDisplay {
   int mSeatId = -1;
   wl_keyboard* mKeyboard = nullptr;
   wl_pointer* mPointer = nullptr;
+  wl_touch* mTouch = nullptr;
   zwp_idle_inhibit_manager_v1* mIdleInhibitManager = nullptr;
   zwp_relative_pointer_manager_v1* mRelativePointerManager = nullptr;
   zwp_pointer_constraints_v1* mPointerConstraints = nullptr;

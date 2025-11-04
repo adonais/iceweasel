@@ -1013,27 +1013,19 @@ var basicShapeUnbalancedValues = [
   "inset(1px 2px 3px 4px round 5px / 6px",
 ];
 
-var basicShapeXywhRectValues = [];
-if (IsCSSPropertyPrefEnabled("layout.css.basic-shape-xywh.enabled")) {
-  basicShapeXywhRectValues.push(
-    "xywh(1px 2% 3px 4em)",
-    "xywh(1px 2% 3px 4em round 0px)",
-    "xywh(1px 2% 3px 4em round 0px 1%)",
-    "xywh(1px 2% 3px 4em round 0px 1% 2px)",
-    "xywh(1px 2% 3px 4em round 0px 1% 2px 3em)"
-  );
-}
-
-if (IsCSSPropertyPrefEnabled("layout.css.basic-shape-rect.enabled")) {
-  basicShapeXywhRectValues.push(
-    "rect(auto auto auto auto)",
-    "rect(1px 2% auto 4em)",
-    "rect(1px 2% auto 4em round 0px)",
-    "rect(1px 2% auto 4em round 0px 1%)",
-    "rect(1px 2% auto 4em round 0px 1% 2px)",
-    "rect(1px 2% auto 4em round 0px 1% 2px 3em)"
-  );
-}
+var basicShapeXywhRectValues = [
+  "xywh(1px 2% 3px 4em)",
+  "xywh(1px 2% 3px 4em round 0px)",
+  "xywh(1px 2% 3px 4em round 0px 1%)",
+  "xywh(1px 2% 3px 4em round 0px 1% 2px)",
+  "xywh(1px 2% 3px 4em round 0px 1% 2px 3em)",
+  "rect(auto auto auto auto)",
+  "rect(1px 2% auto 4em)",
+  "rect(1px 2% auto 4em round 0px)",
+  "rect(1px 2% auto 4em round 0px 1%)",
+  "rect(1px 2% auto 4em round 0px 1% 2px)",
+  "rect(1px 2% auto 4em round 0px 1% 2px 3em)",
+];
 
 var basicShapeShapeValues = [];
 var basicShapeShapeValuesWithFillRule = [];
@@ -5516,6 +5508,7 @@ var gCSSProperties = {
     domProp: "cursor",
     inherited: true,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["auto"],
     other_values: [
       "crosshair",
@@ -8265,6 +8258,7 @@ var gCSSProperties = {
     domProp: "textEmphasisColor",
     inherited: true,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     prerequisites: { color: "black" },
     initial_values: ["currentColor", "black", "rgb(0,0,0)"],
     other_values: ["red", "rgba(255,255,255,0.5)", "transparent"],
@@ -8283,6 +8277,7 @@ var gCSSProperties = {
     domProp: "textEmphasisPosition",
     inherited: true,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["auto"],
     other_values: [
       "over right",
@@ -8314,6 +8309,7 @@ var gCSSProperties = {
     domProp: "textEmphasisStyle",
     inherited: true,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["none"],
     other_values: [
       "filled",
@@ -8433,6 +8429,7 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_first_letter: true,
     applies_to_first_line: true,
+    applies_to_marker: true,
     applies_to_placeholder: true,
     applies_to_cue: true,
     prerequisites: { color: "blue" },
@@ -9052,6 +9049,7 @@ var gCSSProperties = {
     domProp: "hyphens",
     inherited: true,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["manual"],
     other_values: ["none", "auto"],
     invalid_values: [],
@@ -10452,6 +10450,7 @@ var gCSSProperties = {
     domProp: "MozHyphens",
     inherited: true,
     type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
+    applies_to_marker: true,
     alias_for: "hyphens",
     subproperties: ["hyphens"],
   },
@@ -10475,6 +10474,7 @@ var gCSSProperties = {
     domProp: "textOrientation",
     inherited: true,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["mixed"],
     other_values: [
       "upright",
@@ -13136,48 +13136,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.scroll-anchoring.enabled")) {
   };
 }
 
-if (IsCSSPropertyPrefEnabled("layout.css.overflow-clip-box.enabled")) {
-  gCSSProperties["overflow-clip-box-block"] = {
-    domProp: "overflowClipBoxBlock",
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    applies_to_placeholder: true,
-    initial_values: ["padding-box"],
-    other_values: ["content-box"],
-    invalid_values: ["auto", "border-box", "0", "padding-box padding-box"],
-  };
-  gCSSProperties["overflow-clip-box-inline"] = {
-    domProp: "overflowClipBoxInline",
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    applies_to_placeholder: true,
-    initial_values: ["padding-box"],
-    other_values: ["content-box"],
-    invalid_values: ["none", "border-box", "0", "content-box content-box"],
-  };
-  gCSSProperties["overflow-clip-box"] = {
-    domProp: "overflowClipBox",
-    inherited: false,
-    type: CSS_TYPE_TRUE_SHORTHAND,
-    subproperties: ["overflow-clip-box-block", "overflow-clip-box-inline"],
-    initial_values: ["padding-box"],
-    other_values: [
-      "content-box",
-      "padding-box content-box",
-      "content-box padding-box",
-      "content-box content-box",
-    ],
-    invalid_values: [
-      "none",
-      "auto",
-      "content-box none",
-      "border-box",
-      "0",
-      "content-box, content-box",
-    ],
-  };
-}
-
 gCSSProperties["overscroll-behavior-x"] = {
   domProp: "overscrollBehaviorX",
   inherited: false,
@@ -13401,10 +13359,10 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
       "x-end",
       "span-x-start",
       "span-x-end",
-      "x-self-start",
-      "x-self-end",
-      "span-x-self-start",
-      "span-x-self-end",
+      "self-x-start",
+      "self-x-end",
+      "span-self-x-start",
+      "span-self-x-end",
       "top",
       "bottom",
       "span-top",
@@ -13413,10 +13371,10 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
       "y-end",
       "span-y-start",
       "span-y-end",
-      "y-self-start",
-      "y-self-end",
-      "span-y-self-start",
-      "span-y-self-end",
+      "self-y-start",
+      "self-y-end",
+      "span-self-y-start",
+      "span-self-y-end",
       "block-start",
       "block-end",
       "span-block-start",
@@ -14213,9 +14171,9 @@ if (IsCSSPropertyPrefEnabled("layout.css.text-autospace.enabled")) {
       applies_to_first_letter: true,
       applies_to_first_line: true,
       applies_to_placeholder: true,
-      initial_values: ["normal"],
+      initial_values: ["no-autospace"],
       other_values: [
-        "no-autospace",
+        "normal",
         "auto",
         "ideograph-alpha",
         "ideograph-numeric",

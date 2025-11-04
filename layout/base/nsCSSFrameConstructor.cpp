@@ -16,6 +16,7 @@
 #include "RetainedDisplayListBuilder.h"
 #include "RubyUtils.h"
 #include "StickyScrollContainer.h"
+#include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/DebugOnly.h"
@@ -52,7 +53,6 @@
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/HTMLSharedListElement.h"
 #include "mozilla/dom/HTMLSummaryElement.h"
-#include "nsAbsoluteContainingBlock.h"
 #include "nsAtom.h"
 #include "nsAutoLayoutPhase.h"
 #include "nsBackdropFrame.h"
@@ -1342,15 +1342,6 @@ nsFrameConstructorSaveState::~nsFrameConstructorSaveState() {
 // views, which would make most of this function go away.
 static void MoveChildrenTo(nsIFrame* aOldParent, nsContainerFrame* aNewParent,
                            nsFrameList& aFrameList) {
-#ifdef DEBUG
-  bool sameGrandParent = aOldParent->GetParent() == aNewParent->GetParent();
-
-  if (aNewParent->HasView() || aOldParent->HasView() || !sameGrandParent) {
-    // Move the frames into the new view
-    nsContainerFrame::ReparentFrameViewList(aFrameList, aOldParent, aNewParent);
-  }
-#endif
-
   aFrameList.ApplySetParent(aNewParent);
 
   if (aNewParent->PrincipalChildList().IsEmpty() &&

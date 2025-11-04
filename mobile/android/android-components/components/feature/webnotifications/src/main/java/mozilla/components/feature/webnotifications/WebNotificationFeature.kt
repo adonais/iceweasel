@@ -10,7 +10,9 @@ import android.app.NotificationManager
 import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mozilla.components.browser.icons.BrowserIcons
@@ -68,7 +70,10 @@ class WebNotificationFeature(
         }
     }
 
-    override fun onShowNotification(webNotification: WebNotification) {
+    override fun onShowNotification(
+        webNotification: WebNotification,
+    ): Deferred<Boolean> {
+        val deferred = CompletableDeferred<Boolean>()
         CoroutineScope(coroutineContext).launch {
             // Only need to check permissions for notifications from web pages. Permissions for
             // web extensions are managed via the extension's manifest and approved by the user
@@ -96,8 +101,19 @@ class WebNotificationFeature(
                 activityClass,
                 SharedIdsHelper.getNextIdForTag(context, PENDING_INTENT_TAG),
             )
-            notificationsDelegate.notify(webNotification.tag, NOTIFICATION_ID, notification)
+            notificationsDelegate.notify(
+                webNotification.tag,
+                NOTIFICATION_ID,
+                notification,
+                onPermissionGranted = {
+                    deferred.complete(true)
+                },
+                onPermissionRejected = {
+                    deferred.complete(false)
+                },
+            )
         }
+        return deferred
     }
 
     override fun onCloseNotification(webNotification: WebNotification) {

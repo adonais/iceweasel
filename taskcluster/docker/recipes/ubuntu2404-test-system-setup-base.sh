@@ -169,4 +169,13 @@ rm -rf /run/systemd/seats
 # Further cleanup
 apt-get autoremove --purge
 
+# Overwrite Ubuntu's Yaru theme with GTK's default (Adwaita), for consistency
+cat > /etc/gtk-3.0/settings.ini <<EOF
+[Settings]
+gtk-theme-name = Adwaita
+gtk-icon-theme-name = Yaru
+gtk-sound-theme-name = Yaru
+gtk-icon-sizes = panel-menu-bar=24,24
+EOF
+
 rm -f "$0"

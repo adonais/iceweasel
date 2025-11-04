@@ -12,7 +12,7 @@ Components
 
 You should understand the list of components that your team is responsible for.
 Each component must have a Triage Owner. (File a bug to update a component's
-Triage Owner, or see this sheet in order to set up a triage rotation).
+Triage Owner, or see the `Rotating triage <#rotating-triage>`__ section).
 
 Triage Owners
 ~~~~~~~~~~~~~

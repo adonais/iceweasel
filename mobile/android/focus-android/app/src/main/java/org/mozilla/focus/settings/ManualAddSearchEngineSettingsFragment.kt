@@ -16,11 +16,10 @@ import android.view.ViewGroup
 import android.widget.EditText
 import androidx.annotation.WorkerThread
 import androidx.core.view.forEach
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -41,6 +40,8 @@ import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.ext.settings
 import org.mozilla.focus.ext.showToolbar
 import org.mozilla.focus.search.ManualAddSearchEnginePreference
+import org.mozilla.focus.settings.ManualAddSearchEngineSettingsFragment.Companion.SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS
+import org.mozilla.focus.settings.ManualAddSearchEngineSettingsFragment.Companion.VALID_RESPONSE_CODE_UPPER_BOUND
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.utils.SupportUtils
 import org.mozilla.focus.utils.ViewUtils
@@ -49,13 +50,11 @@ import java.net.MalformedURLException
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
-@Suppress("TooManyFunctions")
 class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
     override fun onCreatePreferences(p0: Bundle?, p1: String?) {
         addPreferencesFromResource(R.xml.manual_add_search_engine)
     }
 
-    private var scope: CoroutineScope? = null
     private var menuItemForActiveAsyncTask: MenuItem? = null
     private var job: Job? = null
 
@@ -103,8 +102,11 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
                 setUiIsValidatingAsync(true, menuItem)
 
                 menuItemForActiveAsyncTask = menuItem
-                scope?.launch {
-                    validateSearchEngine(engineName, searchQuery, requireComponents.client)
+
+                viewLifecycleOwner.lifecycleScope.launch {
+                    withContext(Dispatchers.IO) {
+                        validateSearchEngine(engineName, searchQuery, requireComponents.client)
+                    }
                 }
             } else {
                 SearchEngines.saveEngineTapped.record(SearchEngines.SaveEngineTappedExtra(false))
@@ -125,12 +127,10 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        scope = CoroutineScope(Dispatchers.IO)
         return super.onCreateView(inflater, container, savedInstanceState)
     }
 
     override fun onDestroyView() {
-        scope?.cancel()
         super.onDestroyView()
         view?.hideKeyboard()
     }
@@ -148,7 +148,7 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
         if (isValidating) {
             view?.alpha = DISABLED_ALPHA
             // Delay showing the loading indicator to prevent it flashing on the screen
-            job = scope?.launch(Dispatchers.Main) {
+            job = viewLifecycleOwner.lifecycleScope.launch {
                 delay(LOADING_INDICATOR_DELAY)
                 pref?.setProgressViewShown(isValidating)
                 updateViews()
@@ -156,7 +156,7 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
         } else {
             view?.alpha = 1f
             job?.cancel()
-            pref?.setProgressViewShown(isValidating)
+            pref?.setProgressViewShown(false)
             updateViews()
         }
     }
@@ -182,6 +182,21 @@ class ManualAddSearchEngineSettingsFragment : BaseSettingsFragment() {
         private const val DISABLED_ALPHA = 0.5f
         private const val LOADING_INDICATOR_DELAY: Long = 1000
 
+        /**
+         * Checks if a given search query URL is valid.
+         *
+         * A URL is considered valid if the network request is successful and returns a status code
+         * less than [VALID_RESPONSE_CODE_UPPER_BOUND] (typically meaning a success or redirect, but not an error).
+         *
+         * @param client The [Client] to use for making the network request.
+         * @param query The search query URL string to validate.
+         *              This string should contain "%s" as a placeholder for the search term.
+         * @return `true` if the search query URL is valid, `false` otherwise (e.g., malformed URL, network error, etc).
+         *
+         * @see URLStringUtils.toNormalizedURL
+         * @see SEARCH_QUERY_VALIDATION_TIMEOUT_MILLIS
+         * @see VALID_RESPONSE_CODE_UPPER_BOUND
+         */
         @WorkerThread
         @JvmStatic
         fun isValidSearchQueryURL(client: Client, query: String): Boolean {

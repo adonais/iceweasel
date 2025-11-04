@@ -6,14 +6,14 @@
 "use strict";
 
 add_task(async function autosettings() {
-  let result = new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.TIP,
-    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-    {
+  let result = new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.TIP,
+    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    payload: {
       type: "test",
       titleL10n: { id: "urlbar-search-tips-confirm" },
-    }
-  );
+    },
+  });
 
   info("Check the following properties are set automatically if TIP result");
   Assert.ok(result.isRichSuggestion);
@@ -21,10 +21,10 @@ add_task(async function autosettings() {
 });
 
 add_task(async function ui() {
-  let result = new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.TIP,
-    UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-    {
+  let result = new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.TIP,
+    source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+    payload: {
       type: "test",
       icon: "chrome://global/skin/icons/search-glass.svg",
       titleL10n: { id: "urlbar-search-tips-confirm" },
@@ -43,8 +43,8 @@ add_task(async function ui() {
       helpL10n: {
         id: "urlbar-result-menu-tip-get-help",
       },
-    }
-  );
+    },
+  });
 
   let provider = new UrlbarTestUtils.TestProvider({
     results: [result],
@@ -126,18 +126,18 @@ add_task(async function learn_more() {
     info(`Setup learn more link for ${topic} topic`);
     let provider = new UrlbarTestUtils.TestProvider({
       results: [
-        new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.TIP,
-          UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-          {
+        new UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.TIP,
+          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          payload: {
             type: "test",
             titleL10n: { id: "urlbar-search-tips-confirm" },
             descriptionL10n: {
               id: "firefox-suggest-onboarding-main-accept-option-label",
             },
             descriptionLearnMoreTopic: topic,
-          }
-        ),
+          },
+        }),
       ],
       priority: 1,
     });

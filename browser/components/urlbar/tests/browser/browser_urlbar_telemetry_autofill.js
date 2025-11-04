@@ -118,25 +118,21 @@ function createOtherAutofillProvider(searchString, autofilledValue) {
     priority: Infinity,
     type: UrlbarUtils.PROVIDER_TYPE.HEURISTIC,
     results: [
-      Object.assign(
-        new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.URL,
-          UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-          {
-            title: "Test",
-            url: "http://example.com/",
-          }
-        ),
-        {
-          heuristic: true,
-          autofill: {
-            value: autofilledValue,
-            selectionStart: searchString.length,
-            selectionEnd: autofilledValue.length,
-            // Leave out `type` to trigger "other"
-          },
-        }
-      ),
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        heuristic: true,
+        autofill: {
+          value: autofilledValue,
+          selectionStart: searchString.length,
+          selectionEnd: autofilledValue.length,
+          // Leave out `type` to trigger "other"
+        },
+        payload: {
+          title: "Test",
+          url: "http://example.com/",
+        },
+      }),
     ],
   });
 }

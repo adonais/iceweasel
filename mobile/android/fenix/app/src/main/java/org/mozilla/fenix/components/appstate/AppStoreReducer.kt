@@ -173,6 +173,10 @@ internal object AppStoreReducer {
             snackbarState = SnackbarState.BookmarkDeleted(title = action.title),
         )
 
+        is AppAction.BookmarkAction.BookmarkOperationResultReported -> state.copy(
+            snackbarState = SnackbarState.BookmarkOperationResultReported(action.globalResultReport),
+        )
+
         is AppAction.DeleteAndQuitStarted -> {
             state.copy(snackbarState = SnackbarState.DeletingBrowserDataInProgress)
         }

@@ -106,7 +106,7 @@
   appearance: none;
   background-color: var(--arrowpanel-field-background);
   color: inherit;
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   border: 1px solid var(--panel-separator-color);
   margin: 0;
 }

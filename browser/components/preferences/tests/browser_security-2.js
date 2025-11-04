@@ -20,6 +20,20 @@ registerCleanupFunction(function () {
   );
 });
 
+function waitForSettingChange(setting) {
+  return new Promise(resolve => {
+    setting.on("change", function handler() {
+      setting.off("change", handler);
+      resolve();
+    });
+  });
+}
+
+async function waitForSettingControlChange(control) {
+  await waitForSettingChange(control.setting);
+  await new Promise(resolve => requestAnimationFrame(resolve));
+}
+
 // This test only opens the Preferences once, and then reloads the page
 // each time that it wants to test various preference combinations. We
 // only use one tab (instead of opening/closing for each test) for all
@@ -51,14 +65,15 @@ add_task(async function () {
       !val,
       "block uncommon checkbox is set correctly"
     );
-
+    let update = waitForSettingControlChange(checkbox.control);
     // scroll the checkbox into view, otherwise the synthesizeMouseAtCenter will be ignored, and click it
     checkbox.scrollIntoView();
     EventUtils.synthesizeMouseAtCenter(
-      checkbox,
+      checkbox.inputEl,
       {},
       gBrowser.selectedBrowser.contentWindow
     );
+    await update;
 
     // check that setting is now turned on or off
     is(

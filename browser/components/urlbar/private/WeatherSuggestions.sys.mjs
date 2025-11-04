@@ -2,20 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { SuggestProvider } from "resource:///modules/urlbar/private/SuggestFeature.sys.mjs";
+import { SuggestProvider } from "moz-src:///browser/components/urlbar/private/SuggestFeature.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   GeolocationUtils:
-    "resource:///modules/urlbar/private/GeolocationUtils.sys.mjs",
-  MerinoClient: "resource:///modules/MerinoClient.sys.mjs",
-  QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/GeolocationUtils.sys.mjs",
+  MerinoClient: "moz-src:///browser/components/urlbar/MerinoClient.sys.mjs",
+  QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
-  UrlbarView: "resource:///modules/UrlbarView.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
 });
 
 const MERINO_PROVIDER = "accuweather";
@@ -233,69 +233,60 @@ export class WeatherSuggestions extends SuggestProvider {
 
     let titleL10n = await this.#getTitleL10n(suggestion.city, merinoSuggestion);
 
-    return Object.assign(
-      new lazy.UrlbarResult(
-        lazy.UrlbarUtils.RESULT_TYPE.URL,
-        lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-        {
-          url: merinoSuggestion.url,
-          titleL10n: {
-            id: titleL10n.id,
-            args: {
-              temperature:
-                merinoSuggestion.current_conditions.temperature[unit],
-              unit: unit.toUpperCase(),
-              ...titleL10n.args,
-            },
-            parseMarkup: true,
-            cacheable: true,
-            excludeArgsFromCacheKey: true,
-          },
-          bottomTextL10n: {
-            id: "urlbar-result-weather-provider-sponsored",
-            args: { provider: WEATHER_PROVIDER_DISPLAY_NAME },
-            cacheable: true,
-          },
-          helpUrl: lazy.QuickSuggest.HELP_URL,
-        }
+    return new lazy.UrlbarResult({
+      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
+      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      suggestedIndex: 1,
+      isRichSuggestion: true,
+      richSuggestionIconVariation: String(
+        merinoSuggestion.current_conditions.icon_id
       ),
-      {
-        suggestedIndex: 1,
-        isRichSuggestion: true,
-        richSuggestionIconVariation: String(
-          merinoSuggestion.current_conditions.icon_id
-        ),
-      }
-    );
+      payload: {
+        url: merinoSuggestion.url,
+        titleL10n: {
+          id: titleL10n.id,
+          args: {
+            temperature: merinoSuggestion.current_conditions.temperature[unit],
+            unit: unit.toUpperCase(),
+            ...titleL10n.args,
+          },
+          parseMarkup: true,
+          cacheable: true,
+          excludeArgsFromCacheKey: true,
+        },
+        bottomTextL10n: {
+          id: "urlbar-result-weather-provider-sponsored",
+          args: { provider: WEATHER_PROVIDER_DISPLAY_NAME },
+          cacheable: true,
+        },
+        helpUrl: lazy.QuickSuggest.HELP_URL,
+      },
+    });
   }
 
   #makeDynamicResult(suggestion, unit) {
-    return Object.assign(
-      new lazy.UrlbarResult(
-        lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC,
-        lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-        {
-          url: suggestion.url,
-          input: suggestion.url,
-          iconId: suggestion.current_conditions.icon_id,
-          dynamicType: WEATHER_DYNAMIC_TYPE,
-          city: suggestion.city_name,
-          region: suggestion.region_code,
-          temperatureUnit: unit,
-          temperature: suggestion.current_conditions.temperature[unit],
-          currentConditions: suggestion.current_conditions.summary,
-          forecast: suggestion.forecast.summary,
-          high: suggestion.forecast.high[unit],
-          low: suggestion.forecast.low[unit],
-          showRowLabel: true,
-          helpUrl: lazy.QuickSuggest.HELP_URL,
-        }
-      ),
-      {
-        showFeedbackMenu: true,
-        suggestedIndex: 1,
-      }
-    );
+    return new lazy.UrlbarResult({
+      type: lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      showFeedbackMenu: true,
+      suggestedIndex: 1,
+      payload: {
+        url: suggestion.url,
+        input: suggestion.url,
+        iconId: suggestion.current_conditions.icon_id,
+        dynamicType: WEATHER_DYNAMIC_TYPE,
+        city: suggestion.city_name,
+        region: suggestion.region_code,
+        temperatureUnit: unit,
+        temperature: suggestion.current_conditions.temperature[unit],
+        currentConditions: suggestion.current_conditions.summary,
+        forecast: suggestion.forecast.summary,
+        high: suggestion.forecast.high[unit],
+        low: suggestion.forecast.low[unit],
+        showRowLabel: true,
+        helpUrl: lazy.QuickSuggest.HELP_URL,
+      },
+    });
   }
 
   getViewUpdate(result) {

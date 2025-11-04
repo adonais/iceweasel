@@ -9,7 +9,6 @@
 #include <math.h>
 
 #include "SVGPointList.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/SMILValue.h"
 #include "nsMathUtils.h"
 

@@ -88,11 +88,15 @@ struct WindowProcMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
+    schema.AddKeyFormat("messageLoop", MS::Format::String,
+                        MS::PayloadFlags::Hidden);
     schema.AddKeyFormat("uMsg", MS::Format::Integer);
+    // Add name as a hidden field to make it searchable
+    schema.AddKeyFormat("name", MS::Format::String, MS::PayloadFlags::Hidden);
     schema.SetChartLabel(
         "{marker.data.messageLoop} | {marker.data.name} ({marker.data.uMsg})");
     schema.SetTableLabel(
-        "{marker.name} - {marker.data.messageLoop} - {marker.data.name} "
+        "{marker.data.messageLoop} - {marker.data.name} "
         "({marker.data.uMsg})");
     schema.SetTooltipLabel(
         "{marker.data.messageLoop} - {marker.name} - {marker.data.name}");
@@ -110,6 +114,20 @@ AutoProfilerMessageMarker::AutoProfilerMessageMarker(
     Span<const char> aMsgLoopName, HWND hWnd, UINT msg, WPARAM wParam,
     LPARAM lParam)
     : mMsgLoopName(aMsgLoopName), mMsg(msg), mWParam(wParam), mLParam(lParam) {
+  // Sanitize wParam for keyboard messages that might contain sensitive data
+  // Char messages contain actual character data
+  if (msg == WM_CHAR || msg == WM_SYSCHAR || msg == WM_IME_CHAR) {
+    mWParam = 0;
+  } else if (msg == WM_KEYDOWN || msg == WM_KEYUP) {
+    // Key messages: only sanitize printable character keys
+    if ((wParam >= 0x30 && wParam <= 0x39) ||  // 0-9
+        (wParam >= 0x41 && wParam <= 0x5A) ||  // A-Z
+        (wParam >= 0xBA && wParam <= 0xE4) ||  // Punctuation
+        (wParam == 0x20)) {                    // Space
+      mWParam = 0;
+    }
+  }
+
   if (profiler_thread_is_being_profiled_for_markers()) {
     mOptions.emplace(MarkerOptions(MarkerTiming::IntervalStart()));
     nsWindow* win = WinUtils::GetNSWindowPtr(hWnd);
@@ -179,7 +197,7 @@ NativeEventLogger::NativeEventLogger(Span<const char> aMsgLoopName, HWND hwnd,
       mMsgLoopName(aMsgLoopName.data()),
       mHwnd(hwnd),
       mMsg(msg),
-      mWParam(wParam),
+      mWParam(mProfilerMarker.WParam()),
       mLParam(lParam),
       mResult(mozilla::Nothing()),
       mShouldLogPostCall(false) {

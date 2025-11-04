@@ -3,6 +3,12 @@
 
 "use strict";
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["toolkit.osKeyStore.unofficialBuildOnlyLogin", ""]],
+  });
+});
+
 const { MockFilePicker } = SpecialPowers;
 const tempDir = createTemporarySaveDirectory();
 MockFilePicker.displayDirectory = tempDir;

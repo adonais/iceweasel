@@ -270,11 +270,7 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
     loadValue(src, dest);
   }
   void tagValue(JSValueType type, Register payload, ValueOperand dest) {
-    MOZ_ASSERT(dest.typeReg() != dest.payloadReg());
-    if (payload != dest.payloadReg()) {
-      movl(payload, dest.payloadReg());
-    }
-    movl(ImmType(type), dest.typeReg());
+    boxNonDouble(type, payload, dest);
   }
   void pushValue(ValueOperand val) {
     push(val.typeReg());
@@ -771,25 +767,8 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
       vmovd(temp, dest.typeReg());
     }
   }
-  void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest) {
-    if (src != dest.payloadReg()) {
-      movl(src, dest.payloadReg());
-    }
-    movl(ImmType(type), dest.typeReg());
-  }
-  void boxNonDouble(Register type, Register src, const ValueOperand& dest) {
-    MOZ_ASSERT(type != dest.payloadReg() && src != dest.typeReg());
-
-    if (src != dest.payloadReg()) {
-      movl(src, dest.payloadReg());
-    }
-    if (type != dest.typeReg()) {
-      movl(Imm32(JSVAL_TAG_CLEAR), dest.typeReg());
-      orl(type, dest.typeReg());
-    } else {
-      orl(Imm32(JSVAL_TAG_CLEAR), dest.typeReg());
-    }
-  }
+  void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest);
+  void boxNonDouble(Register type, Register src, const ValueOperand& dest);
 
   void unboxNonDouble(const ValueOperand& src, Register dest, JSValueType type,
                       Register scratch = InvalidReg) {

@@ -329,50 +329,6 @@ async function dragAndDrop(
   }
 }
 
-// The dragAndDrop function is specific to tabs.
-// This function allows us to customize the drop destination to interaction cue,
-// promo card, other containers, or tabs themselves. It also provides an option
-// to wait for a condition between initial drag and final drop.
-/**
- * @param {Element} src
- * @param {Element} dest
- * @param {Promise<void>} [dragCond]
- * @param {Promise<void>} [dropCond]
- * @param {object} [dragEvent={}]
- */
-async function customDragAndDrop(
-  src,
-  dest,
-  dragCond = null,
-  dropCond = null,
-  dragEvent = {}
-) {
-  EventUtils.startDragSession(window, "move");
-
-  info("Start drag");
-  let [result, dataTransfer] = EventUtils.synthesizeDragOver(
-    src,
-    // In some cases, the dest is hidden and we use coords instead.
-    // Default to src in this scenario.
-    BrowserTestUtils.isHidden(dest) && dragEvent?.clientX && dragEvent?.clientY
-      ? src
-      : dest,
-    null,
-    "move",
-    window,
-    window,
-    dragEvent
-  );
-  await dragCond;
-
-  info("Start drop");
-  EventUtils.synthesizeDropAfterDragOver(result, dataTransfer, dest);
-  let srcWindowUtils = EventUtils._getDOMWindowUtils(window);
-  const srcDragSession = srcWindowUtils.dragSession;
-  srcDragSession.endDragSession(true, EventUtils._parseModifiers(dragEvent));
-  await dropCond;
-}
-
 function getUrl(tab) {
   return tab.linkedBrowser.currentURI.spec;
 }

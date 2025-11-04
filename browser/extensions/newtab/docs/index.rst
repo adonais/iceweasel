@@ -24,12 +24,12 @@ You will need the following:
 - Node.js 10+ (On Mac, the best way to install Node.js is to use the install link on the `Node.js homepage`_)
 - npm (packaged with Node.js)
 
-To install dependencies, run the following from the root of the mozilla-central repository.
-(Using ``mach`` to call ``npm`` and ``node`` commands will ensure you're using the correct versions of Node and npm.)
+To install node dependencies, run the following from the root of the mozilla-central repository.
+(This command uses ``mach`` to call ``npm`` and ``node`` commands to ensure the correct versions of Node and npm are being referenced.)
 
 .. code-block:: shell
 
-  (cd browser/extensions/newtab && ../../../mach npm install)
+  ./mach newtab install
 
 
 Which files should you edit?
@@ -47,7 +47,7 @@ To build assets and run Firefox, run the following from the root of the mozilla-
 
 .. code-block:: shell
 
-  ./mach npm run bundle --prefix=browser/extensions/newtab && ./mach build && ./mach run
+  ./mach newtab bundle && ./mach build && ./mach run
 
 Continuous development / debugging
 ----------------------------------

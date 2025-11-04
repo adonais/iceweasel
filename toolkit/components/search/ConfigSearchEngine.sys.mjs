@@ -552,14 +552,6 @@ export class ConfigSearchEngine extends SearchEngine {
   }
 
   /**
-   * @returns {?string}
-   *   The built-in identifier of config engines.
-   */
-  get identifier() {
-    return this._telemetryId;
-  }
-
-  /**
    * Returns the icon URL for the search engine closest to the preferred width.
    *
    * @param {number} preferredWidth

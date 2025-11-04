@@ -98,6 +98,43 @@ add_task(async function test_corruptdb() {
   await db.removeDatabaseFiles();
 });
 
+add_task(async function test_differentDimensionsReplacesDatabase() {
+  let db = new PlacesSemanticHistoryDatabase({
+    embeddingSize: EMBEDDING_SIZE,
+    fileName: "places_semantic.sqlite",
+  });
+  let conn = await db.getConnection();
+  Assert.ok(
+    !!(
+      await conn.execute(
+        `SELECT INSTR(sql, :needle) > 0
+       FROM sqlite_master WHERE name = 'vec_history'`,
+        { needle: `FLOAT[${EMBEDDING_SIZE}]` }
+      )
+    )[0].getResultByIndex(0),
+    "Check embeddings size for the table"
+  );
+  await db.closeConnection();
+
+  db = new PlacesSemanticHistoryDatabase({
+    embeddingSize: EMBEDDING_SIZE + 16,
+    fileName: "places_semantic.sqlite",
+  });
+  conn = await db.getConnection();
+  Assert.ok(
+    !!(
+      await conn.execute(
+        `SELECT INSTR(sql, :needle) > 0
+       FROM sqlite_master WHERE name = 'vec_history'`,
+        { needle: `FLOAT[${EMBEDDING_SIZE + 16}]` }
+      )
+    )[0].getResultByIndex(0),
+    "Check that the database was replaced"
+  );
+  await db.closeConnection();
+  await db.removeDatabaseFiles();
+});
+
 add_task(async function test_healthydb() {
   let db = new PlacesSemanticHistoryDatabase({
     embeddingSize: EMBEDDING_SIZE,

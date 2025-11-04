@@ -20,9 +20,6 @@ kind-dependencies:
     - toolchain
 
 only-for-build-platforms:
-    - linux-shippable/opt
-    - linux-devedition/opt
-    - linux/opt
     - linux64-shippable/opt
     - linux64-devedition/opt
     - linux64-asan-reporter-shippable/opt
@@ -65,9 +62,6 @@ tasks:
         mozharness:
             config:
                 by-build-platform:
-                    linux\b.*:
-                        - repackage/base.py
-                        - repackage/linux32_signed.py
                     linux64\b.*:
                         - repackage/base.py
                         - repackage/linux64_signed.py

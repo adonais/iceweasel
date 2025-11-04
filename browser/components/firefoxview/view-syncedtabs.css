@@ -113,6 +113,6 @@ label {
   text-decoration: underline;
   display: inline-block;
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   margin-block: 0.5rem;
 }

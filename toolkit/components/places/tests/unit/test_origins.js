@@ -1036,9 +1036,10 @@ add_task(async function test_cutoff() {
  * Returns the expected frecency of the origin of the given URLs, i.e., the sum
  * of their frecencies.  Each URL is expected to have the same origin.
  *
- * @param  urls
- *         An array of URL strings.
- * @return The expected origin frecency.
+ * @param {(string|nsIURL|URL)[]} urls
+ *   An array of URL strings.
+ * @returns {number}
+ *   The expected origin frecency.
  */
 async function expectedOriginFrecency(urls) {
   let value = 0;
@@ -1058,13 +1059,13 @@ async function expectedOriginFrecency(urls) {
 /**
  * Asserts that the moz_origins table and the origin frecency stats are correct.
  *
- * @param expectedOrigins
- *        An array of expected origins.  Each origin in the array is itself an
- *        array that looks like this:
- *          [prefix, host, [url1, url2, ..., urln]]
- *        The element at index 2 is an array of all the URLs with the origin.
- *        If you don't care about checking frecencies and origin frecency stats,
- *        this element can be `undefined`.
+ * @param {[string, string, (string|nsIURI|URL)[]]} expectedOrigins
+ *   An array of expected origins.  Each origin in the array is itself an
+ *   array that looks like this:
+ *     [prefix, host, [url1, url2, ..., urln]]
+ *   The element at index 2 is an array of all the URLs with the origin.
+ *   If you don't care about checking frecencies and origin frecency stats,
+ *   this element can be `undefined`.
  */
 async function checkDB(expectedOrigins) {
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
@@ -1103,8 +1104,8 @@ async function checkDB(expectedOrigins) {
 /**
  * Asserts that the origin frecency threshold is correct.
  *
- * @param expectedOriginFrecencies
- *        An array of expected origin frecencies.
+ * @param {number[]} expectedOriginFrecencies
+ *   An array of expected origin frecencies.
  */
 async function checkThreshold(expectedOriginFrecencies) {
   const DEFAULT_THRESHOLD = 2.0;

@@ -26,8 +26,10 @@
 // PerfStats::RecordMeasurement{Start,End} manually. Use
 // RecordMeasurementCount() for incrementing counters.
 //
-// Controlling: Use ChromeUtils.SetPerfStatsCollectionMask(mask), where mask=0
-// disables all metrics and mask=0xFFFFFFFF enables all of them.
+// Controlling: Use ChromeUtils.setPerfStatsFeatures(array), where an empty
+// array disables all metrics. Pass metric names as strings, e.g.
+// ["LayerTransactions", "Rasterizing"]. To enable all features, use
+// ChromeUtils.enableAllPerfStatsFeatures();
 //
 // Reporting: Results can be accessed with ChromeUtils.CollectPerfStats().
 // Browsertime will sum results across processes and report them.
@@ -155,6 +157,10 @@ class PerfStats {
                              const nsACString& aPerfStats) {
     GetSingleton()->StorePerfStatsInternal(aParent, aPerfStats);
   }
+
+  // Returns the mask with the bit set for a given metric name, or 0 if not
+  // found
+  static MetricMask GetFeatureMask(const char* aMetricName);
 
  private:
   static PerfStats* GetSingleton();

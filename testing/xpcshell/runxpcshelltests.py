@@ -68,6 +68,8 @@ TBPL_RETRY = 4  # defined in mozharness
 # Be also aware that we can override this value with the threadCount option
 # on the command line to tweak it for a concrete CPU/memory combination.
 NUM_THREADS = int(cpu_count() * 4)
+if sys.platform == "win32":
+    NUM_THREADS = int(cpu_count() * 2)
 
 EXPECTED_LOG_ACTIONS = set(
     [
@@ -91,6 +93,7 @@ import mozcrash
 import mozfile
 import mozinfo
 from manifestparser import TestManifest
+from manifestparser.expression import parse
 from manifestparser.filters import chunk_by_slice, failures, pathprefix, tags
 from manifestparser.util import normsep
 from mozlog import commandline
@@ -222,6 +225,7 @@ class XPCShellTestThread(Thread):
         self.extraPrefs = kwargs.get("extraPrefs")
         self.verboseIfFails = kwargs.get("verboseIfFails")
         self.headless = kwargs.get("headless")
+        self.selfTest = kwargs.get("selfTest")
         self.runFailures = kwargs.get("runFailures")
         self.timeoutAsPass = kwargs.get("timeoutAsPass")
         self.crashAsPass = kwargs.get("crashAsPass")
@@ -361,10 +365,7 @@ class XPCShellTestThread(Thread):
         Simple wrapper to check for crashes.
         On a remote system, this is more complex and we need to overload this function.
         """
-        quiet = False
-        if self.crashAsPass:
-            quiet = True
-
+        quiet = self.crashAsPass or self.retry
         return mozcrash.log_crashes(
             self.log, dump_directory, symbols_path, test=test_name, quiet=quiet
         )
@@ -417,6 +418,15 @@ class XPCShellTestThread(Thread):
             self.failCount = 1
 
     def testTimeout(self, proc):
+        # Set these flags first to prevent test_end from being logged again
+        # while we output the full log.
+        self.done = True
+        self.timedout = True
+
+        # Kill the test process before calling log_full_output that can take a
+        # a while due to stack fixing.
+        self.killTimeout(proc)
+
         if self.test_object["expected"] == "pass":
             expected = "PASS"
         else:
@@ -429,6 +439,7 @@ class XPCShellTestThread(Thread):
                 expected="TIMEOUT",
                 message="Test timed out",
             )
+            self.log_full_output(mark_failures_as_expected=True)
         else:
             result = "TIMEOUT"
             if self.timeoutAsPass:
@@ -443,9 +454,6 @@ class XPCShellTestThread(Thread):
             )
             self.log_full_output()
 
-        self.done = True
-        self.timedout = True
-        self.killTimeout(proc)
         self.log.info("xpcshell return code: %s" % self.getReturnCode(proc))
         self.postCheck(proc)
         self.clean_temp_dirs(self.test_object["path"])
@@ -547,7 +555,7 @@ class XPCShellTestThread(Thread):
         """
         if self.conditionedProfileDir:
             profileDir = self.conditioned_profile_copy
-        elif self.interactive or self.singleFile:
+        elif self.interactive or (self.singleFile and not self.selfTest):
             profileDir = os.path.join(gettempdir(), self.profileName, "xpcshellprofile")
             try:
                 # This could be left over from previous runs
@@ -706,12 +714,15 @@ class XPCShellTestThread(Thread):
             line = line.decode("utf-8")
         return line
 
-    def log_line(self, line):
+    def log_line(self, line, time=None):
         """Log a line of output (either a parser json object or text output from
         the test process"""
         if isinstance(line, (str, bytes)):
             line = self.fix_text_output(line).rstrip("\r\n")
-            self.log.process_output(self.proc_ident, line, command=self.command)
+            kwargs = {"command": self.command, "test": self.test_object["id"]}
+            if time is not None:
+                kwargs["time"] = time
+            self.log.process_output(self.proc_ident, line, **kwargs)
         else:
             if "message" in line:
                 line["message"] = self.fix_text_output(line["message"])
@@ -723,14 +734,44 @@ class XPCShellTestThread(Thread):
                 line["thread"] = current_thread().name
             self.log.log_raw(line)
 
-    def log_full_output(self):
-        """Logs any buffered output from the test process, and clears the buffer."""
+    def log_full_output(self, mark_failures_as_expected=False):
+        """Logs any buffered output from the test process, and clears the buffer.
+
+        Args:
+            mark_failures_as_expected: If True, failures will be marked as expected
+                (TEST-EXPECTED-FAIL instead of TEST-UNEXPECTED-FAIL). This is used
+                when a test will be retried.
+        """
         if not self.output_lines:
             return
-        self.log.info(">>>>>>>")
-        for line in self.output_lines:
-            self.log_line(line)
-        self.log.info("<<<<<<<")
+        log_message = f"full log for {self.test_object['id']}"
+        self.log.info(f">>>>>>> Begin of {log_message}")
+        self.log.group_start("replaying " + log_message)
+        for timestamp, line in self.output_lines:
+            if isinstance(line, dict):
+                # Always ensure the 'test' field is present for resource usage profiles
+                if "test" not in line:
+                    line["test"] = self.test_object["id"]
+
+                if mark_failures_as_expected:
+                    if line.get("action") == "test_status" and "expected" in line:
+                        # Ensure the 'expected' field matches the 'status' to avoid failing the job
+                        line["expected"] = line.get("status")
+                    elif line.get("action") == "log" and line.get("level") == "ERROR":
+                        # Convert ERROR log to test_status so it gets colored
+                        # properly without causing a test failure.
+                        line["action"] = "test_status"
+                        line["status"] = "ERROR"
+                        line["expected"] = "ERROR"
+                        line["subtest"] = ""
+                        del line["level"]
+                self.log_line(line)
+            else:
+                # For text lines, we need to provide the timestamp that was
+                # recorded when appending the message to self.output_lines
+                self.log_line(line, time=timestamp)
+        self.log.info(f"<<<<<<< End of {log_message}")
+        self.log.group_end("replaying " + log_message)
         self.output_lines = []
 
     def report_message(self, message):
@@ -738,7 +779,15 @@ class XPCShellTestThread(Thread):
         if self.verbose:
             self.log_line(message)
         else:
-            self.output_lines.append(message)
+            # Store timestamp only for string messages (dicts already have timestamps)
+            # We need valid timestamps to replay messages correctly in resource
+            # usage profiles.
+            import time
+
+            timestamp = (
+                int(time.time() * 1000) if isinstance(message, (str, bytes)) else None
+            )
+            self.output_lines.append((timestamp, message))
 
     def process_line(self, line_string):
         """Parses a single line of output, determining its significance and
@@ -993,6 +1042,14 @@ class XPCShellTestThread(Thread):
             if self.timedout:
                 return
 
+            # Check for crashes before logging test_end
+            found_crash = self.checkForCrashes(
+                self.tempDir, self.symbolsPath, test_name=name
+            )
+            if found_crash:
+                status = "CRASH"
+                message = "Test crashed"
+
             if status != expected or ended_before_crash_reporter_init:
                 if ended_before_crash_reporter_init:
                     self.log.test_end(
@@ -1003,11 +1060,16 @@ class XPCShellTestThread(Thread):
                         group=group,
                     )
                 elif self.retry:
+                    retry_message = (
+                        "Test crashed, will retry"
+                        if status == "CRASH"
+                        else "Test failed or timed out, will retry"
+                    )
                     self.log.test_end(
                         name,
                         status,
                         expected=status,
-                        message="Test failed or timed out, will retry",
+                        message=retry_message,
                         group=group,
                     )
                     self.clean_temp_dirs(path)
@@ -1047,16 +1109,6 @@ class XPCShellTestThread(Thread):
                     self.passCount = 1
                 else:
                     self.todoCount = 1
-
-            if self.checkForCrashes(self.tempDir, self.symbolsPath, test_name=name):
-                if self.retry:
-                    self.clean_temp_dirs(path)
-                    return
-
-                # If we assert during shutdown there's a chance the test has passed
-                # but we haven't logged full output, so do so here.
-                self.log_full_output()
-                self.failCount = 1
 
             if self.logfiles and process_output:
                 self.createLogFile(name, process_output)
@@ -1218,8 +1270,10 @@ class XPCShellTests:
                 )
                 sys.exit(1)
 
-        if len(self.alltests) == 1 and not verify:
-            self.singleFile = os.path.basename(self.alltests[0]["path"])
+        # Count non-disabled tests for --profiler validation
+        enabled_tests = [t for t in self.alltests if "disabled" not in t]
+        if len(enabled_tests) == 1 and not verify:
+            self.singleFile = os.path.basename(enabled_tests[0]["path"])
         else:
             self.singleFile = None
 
@@ -1741,6 +1795,7 @@ class XPCShellTests:
 
     def runSelfTest(self):
         import unittest
+        from concurrent.futures import ThreadPoolExecutor, as_completed
 
         import selftest
 
@@ -1766,7 +1821,70 @@ class XPCShellTests:
             self.log.suite_start(tests_by_manifest, name=group)
             self.log.group_start(name="selftests")
 
-            return unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
+            if self.sequential or len(test_cases) <= 1:
+                return unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
+
+            def run_single_test(test_case):
+                result = unittest.TestResult()
+                test_name = test_case._testMethodName
+                this.log.test_start(test_name, group=group)
+                status = "PASS"
+                try:
+                    test_case.run(result)
+                    if not result.wasSuccessful():
+                        status = "FAIL"
+                except Exception as e:
+                    result.addError(test_case, (type(e), e, None))
+                    status = "ERROR"
+                finally:
+                    this.log.test_end(test_name, status, expected="PASS", group=group)
+                    return {
+                        "result": result,
+                        "name": test_name,
+                    }
+
+            success = True
+
+            # Limit parallel self-tests to 32 on macOS to avoid "too many open files" error.
+            max_workers = (
+                min(32, self.threadCount)
+                if sys.platform == "darwin"
+                else self.threadCount
+            )
+
+            self.log.info(
+                f"Running {len(test_cases)} self-tests in parallel with up to {max_workers} workers..."
+            )
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # Submit all tests
+                future_to_test = {
+                    executor.submit(run_single_test, test): test for test in test_cases
+                }
+
+                # Print the status of tests as they finish
+                for future in as_completed(future_to_test):
+                    try:
+                        test_result = future.result()
+                        result_obj = test_result["result"]
+
+                        if not result_obj.wasSuccessful():
+                            success = False
+                            test_name = test_result["name"]
+                            if result_obj.failures:
+                                self.log.error(f"FAIL: {test_name}")
+                                for test, traceback in result_obj.failures:
+                                    self.log.error(f"  Failure: {traceback}")
+                            if result_obj.errors:
+                                self.log.error(f"ERROR: {test_name}")
+                                for test, traceback in result_obj.errors:
+                                    self.log.error(f"  Error: {traceback}")
+
+                    except Exception as e:
+                        self.log.error(f"Exception in test execution: {e}")
+                        success = False
+
+            return success
+
         finally:
             # The self tests modify mozinfo, so we need to reset it.
             mozinfo.info.clear()
@@ -1861,6 +1979,7 @@ class XPCShellTests:
         self.threadCount = options.get("threadCount") or NUM_THREADS
         self.jscovdir = options.get("jscovdir")
         self.headless = options.get("headless")
+        self.selfTest = options.get("selfTest")
         self.runFailures = options.get("runFailures")
         self.timeoutAsPass = options.get("timeoutAsPass")
         self.crashAsPass = options.get("crashAsPass")
@@ -1873,7 +1992,6 @@ class XPCShellTests:
             self.appPath = options.get("msixAppPath")
             self.xrePath = options.get("msixXrePath")
             self.app_binary = options.get("msix_app_binary")
-            self.threadCount = 2
             self.xpcshell = None
 
         self.testCount = 0
@@ -1961,7 +2079,7 @@ class XPCShellTests:
         self.buildTestList(
             options.get("test_tags"), options.get("testPaths"), options.get("verify")
         )
-        if self.singleFile:
+        if self.singleFile and not self.selfTest:
             self.sequential = True
 
         if options.get("shuffle"):
@@ -2044,6 +2162,7 @@ class XPCShellTests:
             "extraPrefs": options.get("extraPrefs") or [],
             "verboseIfFails": self.verboseIfFails,
             "headless": self.headless,
+            "selfTest": self.selfTest,
             "runFailures": self.runFailures,
             "timeoutAsPass": self.timeoutAsPass,
             "crashAsPass": self.crashAsPass,
@@ -2099,6 +2218,10 @@ class XPCShellTests:
         if options.get("repeat", 0) > 0:
             self.sequential = True
 
+        def _match_run_sequentially(value, **values):
+            """Helper function to evaluate run-sequentially conditions like skip-if/run-if"""
+            return any(parse(e, strict=True, **values) for e in value.splitlines() if e)
+
         if not options.get("verify"):
             for test_object in self.alltests:
                 # Test identifiers are provided for the convenience of logging. These
@@ -2122,7 +2245,12 @@ class XPCShellTests:
                         mobileArgs=mobileArgs,
                         **kwargs,
                     )
-                    if "run-sequentially" in test_object or self.sequential:
+                    if (
+                        "run-sequentially" in test_object
+                        and _match_run_sequentially(
+                            test_object["run-sequentially"], **mozinfo.info
+                        )
+                    ) or self.sequential:
                         sequential_tests.append(test)
                     else:
                         tests_queue.append(test)
@@ -2296,6 +2424,9 @@ class XPCShellTests:
                     if test.retry or test.is_alive():
                         # if the join call timed out, test.is_alive => True
                         self.try_again_list.append(test.test_object)
+                        # Print the failure output now, marking failures as expected
+                        # since we'll retry sequentially
+                        test.log_full_output(mark_failures_as_expected=True)
                         continue
                     # did the test encounter any exception?
                     if test.exception:
@@ -2335,6 +2466,9 @@ class XPCShellTests:
                 self.test_ended(test)
                 if (test.failCount > 0 or test.passCount <= 0) and test.retry:
                     self.try_again_list.append(test.test_object)
+                    # Print the failure output now, marking failures as expected
+                    # since we'll retry sequentially
+                    test.log_full_output(mark_failures_as_expected=True)
                     continue
                 self.addTestResults(test)
                 # did the test encounter any exception?
@@ -2374,7 +2508,8 @@ class XPCShellTests:
             self.log.group_end(name="retry")
 
         # restore default SIGINT behaviour
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        if self.sequential:
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
 
         # Clean up any slacker directories that might be lying around
         # Some might fail because of windows taking too long to unlock them.

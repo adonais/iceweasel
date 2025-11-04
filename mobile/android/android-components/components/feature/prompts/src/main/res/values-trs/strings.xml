@@ -79,6 +79,10 @@
   <string name="mozac_feature_prompt_repost_positive_button_text">Nā’nïnj ñû gān’ānj nej dâto</string>
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
   <string name="mozac_feature_prompt_repost_negative_button_text">Dūyichin\'</string>
+  <!-- Pressing this will dismiss the dialog and allow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">Nādusîj</string>
+  <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_negative_button_text">Dūyichin\'</string>
   <!-- Text for the title of a save credit card dialog. -->
   <string name="mozac_feature_prompts_save_credit_card_prompt_title">Nā’nïnj sà’ hue’êt tarjeta nan anj.</string>
   <!-- Text for the title of an update credit card dialog. -->
@@ -103,4 +107,8 @@
   <string name="mozac_feature_prompts_identity_credentials_privacy_policy_title">Gārasun %1$s da’ rūgûñu’ūnj man gāyi’ìt sēsiûn</string>
   <!-- Title of the Identity Credential privacy policy dialog description. The %1$s will be replaced with the name of the provider, %2$s will be replaced with the account, %3$s will be replaced with the privacy policy url and  %4$s will be replaced with the terms of service. -->
   <string name="mozac_feature_prompts_identity_credentials_privacy_policy_description" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[Gāyi’ì sēsiûn riña %1$s ngà ‘ngō %2$s kuendâ nīkò’ rukû <a href=\"%3$s\">Nuguan’ guendâ gā huì gāchē nunt</a> nī <a href=\"%4$s\">Sa da’huît gīni’înt da’ gā’hue gārasunt</a>]]></string>
+  <!-- Text for the positive button of the Identity Credential dialogs. -->
+  <string name="mozac_feature_prompts_identity_credentials_continue">Guij ne\' ñāan</string>
+  <!-- Text for the cancel button of the Identity Credential dialogs. -->
+  <string name="mozac_feature_prompts_identity_credentials_cancel">Dūyichin\'</string>
 </resources>

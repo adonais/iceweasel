@@ -549,6 +549,15 @@ class AccessibilityProxy {
     this.simulatorFront = this.accessibilityFront.simulatorFront;
     if (this.simulatorFront) {
       this.simulate = types => this.simulatorFront.simulate({ types });
+
+      // Re-apply a potential existing simulation
+      const { simulation } = this.#panel.panelWin.view.store.getState();
+      const simulationType = Object.keys(simulation).find(
+        name => simulation[name]
+      );
+      if (simulationType) {
+        await this.simulate([simulationType]);
+      }
     } else {
       this.simulate = null;
     }

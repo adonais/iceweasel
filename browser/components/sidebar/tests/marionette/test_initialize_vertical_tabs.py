@@ -262,3 +262,32 @@ class TestInitializeVerticalTabs(MarionetteTestCase):
         """
         )
         self.assertEqual(pref_value, "hide-sidebar")
+
+    def test_hide_drag_to_pin_promo_if_horizontal_tabs_pinned(self):
+        # Pin a tab using the horizontal tabstrip.
+        self.restart_with_prefs(
+            {
+                "sidebar.revamp": False,
+                "sidebar.verticalTabs": False,
+            }
+        )
+        self.marionette.execute_async_script(
+            """
+            let resolve = arguments[0];
+            let tab = gBrowser.selectedTab;
+            tab.addEventListener("TabPinned", resolve, { once: true });
+            gBrowser.pinTab(tab);
+            """
+        )
+
+        # Switch to vertical tabs.
+        self.marionette.execute_script(
+            """
+            Services.prefs.setBoolPref("sidebar.verticalTabs", true);
+            """
+        )
+
+        promo_card = self.marionette.find_element(By.ID, "drag-to-pin-promo-card")
+        self.assertFalse(
+            promo_card.is_displayed(), "Drag-to-pin promo card is not displayed."
+        )

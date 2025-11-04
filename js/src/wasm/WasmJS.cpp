@@ -18,7 +18,6 @@
 
 #include "wasm/WasmJS.h"
 
-#include "mozilla/EndianUtils.h"
 #include "mozilla/Maybe.h"
 
 #include <algorithm>

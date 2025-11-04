@@ -7,8 +7,11 @@ package mozilla.components.feature.sitepermissions
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.DialogInterface
+import android.content.Intent
+import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.graphics.Color
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.VISIBLE
@@ -22,9 +25,11 @@ import android.widget.TextView
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toDrawable
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.ktx.android.content.appName
 import mozilla.components.support.ktx.kotlin.ifNullOrEmpty
 import mozilla.components.support.ktx.util.PromptAbuserDetector
 
@@ -182,7 +187,9 @@ internal open class SitePermissionsDialogFragment : AppCompatDialogFragment() {
                     permissionRequestId,
                     sessionId,
                     userSelectionCheckBox,
-                )
+                ) {
+                    if (!areSystemNotificationsEnabled()) showSettingsPrompt()
+                }
                 dismiss()
             }
         }
@@ -223,6 +230,37 @@ internal open class SitePermissionsDialogFragment : AppCompatDialogFragment() {
         }
 
         return rootView
+    }
+
+    private fun areSystemNotificationsEnabled() =
+        NotificationManagerCompat.from(requireContext()).areNotificationsEnabled()
+
+    private fun showSettingsPrompt() {
+        with(requireContext()) {
+            NotificationPermissionDialogFragment.newInstance(
+                dialogTitleString = title,
+                dialogMessageString = getString(
+                    R.string.mozac_feature_sitepermissions_notification_permission_rationale_dialog_message,
+                    appName,
+                ),
+                positiveButtonText = getString(
+                    R.string.mozac_feature_sitepermissions_notification_permission_rationale_dialog_settings_label,
+                ),
+                negativeButtonText = getString(
+                    R.string.mozac_feature_sitepermissions_notification_permission_rationale_dialog_dismiss_label,
+                ),
+                positiveButtonAction = {
+                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+                        flags = FLAG_ACTIVITY_NEW_TASK
+                    }
+                    startActivity(intent)
+                },
+            ).showNow(
+                parentFragmentManager,
+                NotificationPermissionDialogFragment.FRAGMENT_TAG,
+            )
+        }
     }
 
     private fun showDoNotAskAgainCheckbox(

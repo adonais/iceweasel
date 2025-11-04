@@ -7,18 +7,18 @@
 // position.
 
 add_task(async function suggestedIndex() {
-  let result1 = new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.URL,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
-    { url: "http://mozilla.org/1" }
-  );
-  result1.suggestedIndex = 2;
-  let result2 = new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.URL,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
-    { url: "http://mozilla.org/2" }
-  );
-  result2.suggestedIndex = 6;
+  let result1 = new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.URL,
+    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    suggestedIndex: 2,
+    payload: { url: "http://mozilla.org/1" },
+  });
+  let result2 = new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.URL,
+    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    suggestedIndex: 6,
+    payload: { url: "http://mozilla.org/2" },
+  });
 
   let provider = new UrlbarTestUtils.TestProvider({
     results: [result1, result2],
@@ -73,12 +73,12 @@ add_task(async function suggestedIndex() {
 add_task(async function suggestedIndex_append() {
   // When suggestedIndex is greater than the number of results the result is
   // appended.
-  let result = new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.URL,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
-    { url: "http://mozilla.org/append/" }
-  );
-  result.suggestedIndex = 4;
+  let result = new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.URL,
+    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    suggestedIndex: 4,
+    payload: { url: "http://mozilla.org/append/" },
+  });
 
   let provider = new UrlbarTestUtils.TestProvider({ results: [result] });
   UrlbarProvidersManager.registerProvider(provider);

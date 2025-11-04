@@ -347,17 +347,11 @@ void HttpChannelChild::ProcessOnStartRequest(
   LOG(("HttpChannelChild::ProcessOnStartRequest [this=%p]\n", this));
   MOZ_ASSERT(OnSocketThread());
 
-  TimeStamp start = TimeStamp::Now();
-
   mAltDataInputStream = DeserializeIPCStream(aAltData.altDataInputStream());
 
   mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
       this, [self = UnsafePtr<HttpChannelChild>(this), aResponseHead,
-             aUseResponseHead, aRequestHeaders, aArgs, start]() {
-        TimeDuration delay = TimeStamp::Now() - start;
-        glean::networking::http_content_onstart_delay.AccumulateRawDuration(
-            delay);
-
+             aUseResponseHead, aRequestHeaders, aArgs]() {
         self->OnStartRequest(aResponseHead, aUseResponseHead, aRequestHeaders,
                              aArgs);
       }));
@@ -868,27 +862,6 @@ void HttpChannelChild::SendOnDataFinished(const nsresult& aChannelStatus) {
   }
 }
 
-class RecordStopRequestDelta final {
- public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RecordStopRequestDelta);
-
-  TimeStamp mOnStopRequestTime;
-  TimeStamp mOnDataFinishedTime;
-
- private:
-  ~RecordStopRequestDelta() {
-    if (mOnDataFinishedTime.IsNull() || mOnStopRequestTime.IsNull()) {
-      return;
-    }
-
-    TimeDuration delta = (mOnStopRequestTime - mOnDataFinishedTime);
-    MOZ_ASSERT((delta.ToMilliseconds() >= 0),
-               "OnDataFinished after OnStopRequest");
-    glean::networking::http_content_ondatafinished_to_onstop_delay
-        .AccumulateRawDuration(delta);
-  }
-};
-
 void HttpChannelChild::ProcessOnStopRequest(
     const nsresult& aChannelStatus, const ResourceTimingStructArgs& aTiming,
     const nsHttpHeaderArray& aResponseTrailers,
@@ -906,29 +879,12 @@ void HttpChannelChild::ProcessOnStopRequest(
     mEncodedBodySize = aTiming.encodedBodySize();
   }
 
-  RefPtr<RecordStopRequestDelta> timing;
-  TimeStamp start = TimeStamp::Now();
   if (StaticPrefs::network_send_OnDataFinished()) {
-    timing = new RecordStopRequestDelta;
     mEventQ->RunOrEnqueue(new ChannelFunctionEvent(
         [self = UnsafePtr<HttpChannelChild>(this)]() {
           return self->GetODATarget();
         },
-        [self = UnsafePtr<HttpChannelChild>(this), status = aChannelStatus,
-         start, timing]() {
-          TimeStamp now = TimeStamp::Now();
-          TimeDuration delay = now - start;
-          glean::networking::http_content_ondatafinished_delay
-              .AccumulateRawDuration(delay);
-          // We can be on main thread or background thread at this point
-          // http_content_ondatafinished_delay_2 is used to track
-          // delay observed between dispatch the OnDataFinished on the socket
-          // thread and running OnDataFinished on the background thread
-          if (!NS_IsMainThread()) {
-            glean::networking::http_content_ondatafinished_delay_2
-                .AccumulateRawDuration(delay);
-          }
-          timing->mOnDataFinishedTime = now;
+        [self = UnsafePtr<HttpChannelChild>(this), status = aChannelStatus]() {
           self->SendOnDataFinished(status);
         }));
   }
@@ -936,14 +892,7 @@ void HttpChannelChild::ProcessOnStopRequest(
       this, [self = UnsafePtr<HttpChannelChild>(this), aChannelStatus, aTiming,
              aResponseTrailers,
              consoleReports = CopyableTArray{aConsoleReports.Clone()},
-             aFromSocketProcess, start, timing]() mutable {
-        TimeStamp now = TimeStamp::Now();
-        TimeDuration delay = now - start;
-        glean::networking::http_content_onstop_delay.AccumulateRawDuration(
-            delay);
-        if (timing) {
-          timing->mOnStopRequestTime = now;
-        }
+             aFromSocketProcess]() mutable {
         self->OnStopRequest(aChannelStatus, aTiming, aResponseTrailers);
         if (!aFromSocketProcess) {
           self->DoOnConsoleReport(std::move(consoleReports));

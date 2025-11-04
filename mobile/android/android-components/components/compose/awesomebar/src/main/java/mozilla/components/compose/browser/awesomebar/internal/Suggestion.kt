@@ -64,6 +64,7 @@ internal fun Suggestion(
             SuggestionIcon(
                 icon = icon,
                 indicator = suggestion.indicatorIcon,
+                modifier = Modifier.align(Alignment.CenterVertically),
             )
         }
         SuggestionTitleAndDescription(
@@ -128,9 +129,10 @@ private fun SuggestionTitleAndDescription(
 private fun SuggestionIcon(
     icon: Bitmap,
     indicator: Drawable?,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .width(30.dp)
             .height(38.dp),
     ) {

@@ -1,4 +1,4 @@
-// |jit-test| --enable-symbols-as-weakmap-keys; skip-if: getBuildConfiguration("release_or_beta")
+// |jit-test| --enable-symbols-as-weakmap-keys
 
 // https://tc39.es/ecma262/#sec-addtokeptobjects
 // When the abstract operation AddToKeptObjects is called with a target object

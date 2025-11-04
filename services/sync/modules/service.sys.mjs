@@ -577,13 +577,14 @@ Sync11Service.prototype = {
           });
         }
         break;
-      case "weave:service:setup-complete":
+      case "weave:service:setup-complete": {
         let status = this._checkSetup();
         if (status != STATUS_DISABLED && status != CLIENT_NOT_CONFIGURED) {
           this._startTracking();
         }
         break;
-      case "nsPref:changed":
+      }
+      case "nsPref:changed": {
         if (this._ignorePrefObserver) {
           return;
         }
@@ -595,6 +596,7 @@ Sync11Service.prototype = {
         }
         this._handleEngineStatusChanged(engine);
         break;
+      }
       case "weave:service:sync:finish":
         if (this._queuedSyncReason) {
           this.sync({ why: this._queuedSyncReason });

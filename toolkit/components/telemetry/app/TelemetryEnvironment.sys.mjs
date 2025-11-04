@@ -15,7 +15,7 @@ const Utils = TelemetryUtils;
 
 import {
   AddonManager,
-  AddonManagerPrivate,
+  EnvironmentAddonBuilder,
 } from "resource://gre/modules/AddonManager.sys.mjs";
 
 const lazy = {};
@@ -44,8 +44,6 @@ if (AppConstants.MOZ_UPDATER) {
   );
 }
 
-// The maximum length of a string (e.g. description) in the addons section.
-const MAX_ADDON_STRING_LENGTH = 100;
 // The maximum length of a string value in the settings.attribution object.
 const MAX_ATTRIBUTION_STRING_LENGTH = 100;
 // The maximum lengths for the experiment id and branch in the experiments section.
@@ -403,26 +401,12 @@ const SEARCH_ENGINE_MODIFIED_TOPIC = "browser-search-engine-modified";
 const SEARCH_SERVICE_TOPIC = "browser-search-service";
 const SESSIONSTORE_WINDOWS_RESTORED_TOPIC = "sessionstore-windows-restored";
 const PREF_CHANGED_TOPIC = "nsPref:changed";
-const GMP_PROVIDER_REGISTERED_TOPIC = "gmp-provider-registered";
 const AUTO_UPDATE_PREF_CHANGE_TOPIC =
   UpdateUtils.PER_INSTALLATION_PREFS["app.update.auto"].observerTopic;
 const BACKGROUND_UPDATE_PREF_CHANGE_TOPIC =
   UpdateUtils.PER_INSTALLATION_PREFS["app.update.background.enabled"]
     .observerTopic;
 const SERVICES_INFO_CHANGE_TOPIC = "sync-ui-state:update";
-
-/**
- * Enforces the parameter to a boolean value.
- * @param aValue The input value.
- * @return {Boolean|Object} If aValue is a boolean or a number, returns its truthfulness
- *         value. Otherwise, return null.
- */
-function enforceBoolean(aValue) {
-  if (typeof aValue !== "number" && typeof aValue !== "boolean") {
-    return null;
-  }
-  return Boolean(aValue);
-}
 
 /**
  * Get the current browser locale.
@@ -592,411 +576,6 @@ function getGfxAdapter(aSuffix = "") {
   };
 }
 
-/**
- * Encapsulates the asynchronous magic interfacing with the addon manager. The builder
- * is owned by a parent environment object and is an addon listener.
- */
-function EnvironmentAddonBuilder(environment) {
-  this._environment = environment;
-
-  // The pending task blocks addon manager shutdown. It can either be the initial load
-  // or a change load.
-  this._pendingTask = null;
-
-  // Have we added an observer to listen for blocklist changes that still needs to be
-  // removed:
-  this._gmpProviderObserverAdded = false;
-
-  // Set to true once initial load is complete and we're watching for changes.
-  this._loaded = false;
-
-  // The state reported by the shutdown blocker if we hang shutdown.
-  this._shutdownState = "Initial";
-}
-EnvironmentAddonBuilder.prototype = {
-  /**
-   * Get the initial set of addons.
-   * @returns Promise<void> when the initial load is complete.
-   */
-  async init() {
-    AddonManager.beforeShutdown.addBlocker(
-      "EnvironmentAddonBuilder",
-      () => this._shutdownBlocker(),
-      { fetchState: () => this._shutdownState }
-    );
-
-    this._pendingTask = (async () => {
-      try {
-        this._shutdownState = "Awaiting _updateAddons";
-        // Gather initial addons details
-        await this._updateAddons();
-
-        if (!this._environment._addonsAreFull) {
-          // The addon database has not been loaded, wait for it to
-          // initialize and gather full data as soon as it does.
-          this._shutdownState = "Awaiting AddonManagerPrivate.databaseReady";
-          await AddonManagerPrivate.databaseReady;
-
-          // Now gather complete addons details.
-          this._shutdownState = "Awaiting second _updateAddons";
-          await this._updateAddons();
-        }
-      } catch (err) {
-        this._environment._log.error("init - Exception in _updateAddons", err);
-      } finally {
-        this._pendingTask = null;
-        this._shutdownState = "_pendingTask init complete. No longer blocking.";
-      }
-    })();
-
-    return this._pendingTask;
-  },
-
-  /**
-   * Register an addon listener and watch for changes.
-   */
-  watchForChanges() {
-    this._loaded = true;
-    AddonManager.addAddonListener(this);
-  },
-
-  // AddonListener
-  onEnabled(addon) {
-    this._onAddonChange(addon);
-  },
-  onDisabled(addon) {
-    this._onAddonChange(addon);
-  },
-  onInstalled(addon) {
-    this._onAddonChange(addon);
-  },
-  onUninstalling(addon) {
-    this._onAddonChange(addon);
-  },
-  onUninstalled(addon) {
-    this._onAddonChange(addon);
-  },
-  onPropertyChanged(addon, propertiesChanged) {
-    // Avoid to update the telemetry environment for onPropertyChanged
-    // calls that we are not actually interested in (and quarantineIgnoredByApp
-    // is not expected to change at runtime, unless the entire active addons
-    // entry is also replaced, e.g. on the extension being uninstalled and
-    // installed again).
-    if (!propertiesChanged.includes("quarantineIgnoredByUser")) {
-      return;
-    }
-    this._onAddonChange(addon);
-  },
-
-  _onAddonChange(addon) {
-    if (addon && addon.isBuiltin && !addon.isSystem) {
-      return;
-    }
-    this._environment._log.trace("_onAddonChange");
-    this._checkForChanges("addons-changed");
-  },
-
-  // nsIObserver
-  observe(aSubject, aTopic) {
-    this._environment._log.trace("observe - Topic " + aTopic);
-    if (aTopic == GMP_PROVIDER_REGISTERED_TOPIC) {
-      Services.obs.removeObserver(this, GMP_PROVIDER_REGISTERED_TOPIC);
-      this._gmpProviderObserverAdded = false;
-      let gmpPluginsPromise = this._getActiveGMPlugins();
-      gmpPluginsPromise.then(
-        gmpPlugins => {
-          let { addons } = this._environment._currentEnvironment;
-          addons.activeGMPlugins = gmpPlugins;
-        },
-        err => {
-          this._environment._log.error(
-            "blocklist observe: Error collecting plugins",
-            err
-          );
-        }
-      );
-    }
-  },
-
-  _checkForChanges(changeReason) {
-    if (this._pendingTask) {
-      this._environment._log.trace(
-        "_checkForChanges - task already pending, dropping change with reason " +
-          changeReason
-      );
-      return;
-    }
-
-    this._shutdownState = "_checkForChanges awaiting _updateAddons";
-    this._pendingTask = this._updateAddons().then(
-      result => {
-        this._pendingTask = null;
-        this._shutdownState = "No longer blocking, _updateAddons resolved";
-        if (result.changed) {
-          this._environment._onEnvironmentChange(
-            changeReason,
-            result.oldEnvironment
-          );
-        }
-      },
-      err => {
-        this._pendingTask = null;
-        this._shutdownState = "No longer blocking, _updateAddons rejected";
-        this._environment._log.error(
-          "_checkForChanges: Error collecting addons",
-          err
-        );
-      }
-    );
-  },
-
-  _shutdownBlocker() {
-    if (this._loaded) {
-      AddonManager.removeAddonListener(this);
-      if (this._gmpProviderObserverAdded) {
-        Services.obs.removeObserver(this, GMP_PROVIDER_REGISTERED_TOPIC);
-      }
-    }
-
-    // At startup, _pendingTask is set to a Promise that does not resolve
-    // until the addons database has been read so complete details about
-    // addons are available.  Returning it here will cause it to block
-    // profileBeforeChange, guranteeing that full information will be
-    // available by the time profileBeforeChangeTelemetry is fired.
-    return this._pendingTask;
-  },
-
-  /**
-   * Collect the addon data for the environment.
-   *
-   * This should only be called from _pendingTask; otherwise we risk
-   * running this during addon manager shutdown.
-   *
-   * @returns Promise<Object> This returns a Promise resolved with a status object with the following members:
-   *   changed - Whether the environment changed.
-   *   oldEnvironment - Only set if a change occured, contains the environment data before the change.
-   */
-  async _updateAddons() {
-    this._environment._log.trace("_updateAddons");
-
-    let addons = {
-      activeAddons: await this._getActiveAddons(),
-      theme: await this._getActiveTheme(),
-      activeGMPlugins: await this._getActiveGMPlugins(),
-    };
-
-    let result = {
-      changed:
-        !this._environment._currentEnvironment.addons ||
-        !ObjectUtils.deepEqual(
-          addons.activeAddons,
-          this._environment._currentEnvironment.addons.activeAddons
-        ),
-    };
-
-    if (result.changed) {
-      this._environment._log.trace("_updateAddons: addons differ");
-      result.oldEnvironment = Cu.cloneInto(
-        this._environment._currentEnvironment,
-        {}
-      );
-    }
-    this._environment._currentEnvironment.addons = addons;
-
-    // Convert into the appropriate schema and record the addon environment
-    // data in Glean
-    let activeAddonsGlean = Object.entries(addons.activeAddons).map(
-      ([id, { type, ...rest }]) => ({ id, addonType: type, ...rest })
-    );
-    Glean.addons.activeAddons.set(activeAddonsGlean);
-    Glean.addons.theme.set(addons.theme);
-    Glean.addons.activeGMPlugins.set(
-      Object.entries(addons.activeGMPlugins).map(([id, value]) => ({
-        id,
-        ...value,
-      }))
-    );
-
-    return result;
-  },
-
-  /**
-   * Get the addon data in object form.
-   * @return Promise<object> containing the addon data.
-   */
-  async _getActiveAddons() {
-    // Request addons, asynchronously.
-    // "theme" is excluded because it is already handled by _getActiveTheme.
-    let { addons: allAddons, fullData } = await AddonManager.getActiveAddons(
-      AddonManagerPrivate.getAddonTypesByProvider("XPIProvider").filter(
-        addonType => addonType != "theme"
-      )
-    );
-
-    this._environment._addonsAreFull = fullData;
-    let activeAddons = {};
-    for (let addon of allAddons) {
-      // Don't collect any information about the new built-in search webextensions
-      if (addon.isBuiltin && !addon.isSystem) {
-        continue;
-      }
-      // Weird addon data in the wild can lead to exceptions while collecting
-      // the data.
-      try {
-        // Make sure to have valid dates (built-in add-ons are
-        // expected to not have a valid update date).
-        let updateDate = isNaN(addon.updateDate?.valueOf())
-          ? new Date(0)
-          : new Date(Math.max(0, addon.updateDate));
-
-        activeAddons[addon.id] = {
-          version: limitStringToLength(addon.version, MAX_ADDON_STRING_LENGTH),
-          scope: addon.scope,
-          type: addon.type,
-          updateDay: Utils.millisecondsToDays(updateDate.getTime()),
-          isSystem: addon.isSystem,
-          isWebExtension: addon.isWebExtension,
-          multiprocessCompatible: true,
-        };
-
-        // getActiveAddons() gives limited data during startup and full
-        // data after the addons database is loaded.
-        if (fullData) {
-          // Make sure to have valid dates (built-in add-ons are
-          // expected to not have a valid install date).
-          let installDate = isNaN(addon.installDate?.valueOf())
-            ? new Date(0)
-            : new Date(Math.max(0, addon.installDate));
-
-          Object.assign(activeAddons[addon.id], {
-            blocklisted:
-              addon.blocklistState !== Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
-            description: limitStringToLength(
-              addon.description,
-              MAX_ADDON_STRING_LENGTH
-            ),
-            name: limitStringToLength(addon.name, MAX_ADDON_STRING_LENGTH),
-            userDisabled: enforceBoolean(addon.userDisabled),
-            appDisabled: addon.appDisabled,
-            foreignInstall: enforceBoolean(addon.foreignInstall),
-            hasBinaryComponents: false,
-            installDay: Utils.millisecondsToDays(installDate.getTime()),
-            signedState: addon.signedState,
-            signedTypes: JSON.stringify(addon.signedTypes),
-            quarantineIgnoredByApp: enforceBoolean(
-              addon.quarantineIgnoredByApp
-            ),
-            quarantineIgnoredByUser: enforceBoolean(
-              addon.quarantineIgnoredByUser
-            ),
-          });
-        }
-      } catch (ex) {
-        this._environment._log.error(
-          "_getActiveAddons - An addon was discarded due to an error",
-          ex
-        );
-        continue;
-      }
-    }
-
-    return activeAddons;
-  },
-
-  /**
-   * Get the currently active theme data in object form.
-   * @return Promise<object> containing the active theme data.
-   */
-  async _getActiveTheme() {
-    // Request themes, asynchronously.
-    let { addons: themes } = await AddonManager.getActiveAddons(["theme"]);
-
-    let activeTheme = {};
-    // We only store information about the active theme.
-    let theme = themes.find(theme => theme.isActive);
-    if (theme) {
-      // Make sure to have valid dates.
-      let installDate = new Date(Math.max(0, theme.installDate));
-      let updateDate = new Date(Math.max(0, theme.updateDate));
-
-      activeTheme = {
-        id: theme.id,
-        blocklisted:
-          theme.blocklistState !== Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
-        description: limitStringToLength(
-          theme.description,
-          MAX_ADDON_STRING_LENGTH
-        ),
-        name: limitStringToLength(theme.name, MAX_ADDON_STRING_LENGTH),
-        userDisabled: enforceBoolean(theme.userDisabled),
-        appDisabled: theme.appDisabled,
-        version: limitStringToLength(theme.version, MAX_ADDON_STRING_LENGTH),
-        scope: theme.scope,
-        foreignInstall: enforceBoolean(theme.foreignInstall),
-        hasBinaryComponents: false,
-        installDay: Utils.millisecondsToDays(installDate.getTime()),
-        updateDay: Utils.millisecondsToDays(updateDate.getTime()),
-        signedState: theme.signedState,
-        signedTypes: JSON.stringify(theme.signedTypes),
-      };
-    }
-
-    return activeTheme;
-  },
-
-  /**
-   * Get the GMPlugins data in object form.
-   *
-   * @return Object containing the GMPlugins data.
-   *
-   * This should only be called from _pendingTask; otherwise we risk
-   * running this during addon manager shutdown.
-   */
-  async _getActiveGMPlugins() {
-    // If we haven't yet loaded the blocklist, pass back dummy data for now,
-    // and add an observer to update this data as soon as we get it.
-    if (!AddonManager.hasProvider("GMPProvider")) {
-      if (!this._gmpProviderObserverAdded) {
-        Services.obs.addObserver(this, GMP_PROVIDER_REGISTERED_TOPIC);
-        this._gmpProviderObserverAdded = true;
-      }
-      return {
-        "dummy-gmp": {
-          version: "0.1",
-          userDisabled: false,
-          applyBackgroundUpdates: 1,
-        },
-      };
-    }
-    // Request plugins, asynchronously.
-    let allPlugins = await AddonManager.getAddonsByTypes(["plugin"]);
-
-    let activeGMPlugins = {};
-    for (let plugin of allPlugins) {
-      // Only get info for active GMplugins.
-      if (!plugin.isGMPlugin || !plugin.isActive) {
-        continue;
-      }
-
-      try {
-        activeGMPlugins[plugin.id] = {
-          version: plugin.version,
-          userDisabled: enforceBoolean(plugin.userDisabled),
-          applyBackgroundUpdates: plugin.applyBackgroundUpdates,
-        };
-      } catch (ex) {
-        this._environment._log.error(
-          "_getActiveGMPlugins - A GMPlugin was discarded due to an error",
-          ex
-        );
-        continue;
-      }
-    }
-
-    return activeGMPlugins;
-  },
-};
-
 function EnvironmentCache() {
   this._log = Log.repository.getLoggerWithMessagePrefix(
     LOGGER_NAME,
@@ -1031,8 +610,14 @@ function EnvironmentCache() {
   // until the initial environment has been built.
 
   let p = [this._updateSettings()];
-  this._addonBuilder = new EnvironmentAddonBuilder(this);
-  p.push(this._addonBuilder.init());
+
+  // NOTE: on mobile builds the EnvironmentAddonBuilder instance is directly
+  // created and managed from inside AddonManager.sys.mjs, whereas on Desktop
+  // TelemetryEnvironment is still expected to be collecting the activeAddons.
+  if (EnvironmentAddonBuilder.isTelemetryEnvironmentEnabled()) {
+    this._addonBuilder = new EnvironmentAddonBuilder(this);
+    p.push(this._addonBuilder.init());
+  }
 
   this._currentEnvironment.profile = {};
   p.push(this._updateProfile());
@@ -1053,7 +638,9 @@ function EnvironmentCache() {
   let setup = () => {
     this._initTask = null;
     this._startWatchingPrefs();
-    this._addonBuilder.watchForChanges();
+    // NOTE: on mobile builds the EnvironmentAddonBuilder instance is directly
+    // created and managed from inside AddonManager.sys.mjs.
+    this._addonBuilder?.watchForChanges();
     this._updateGraphicsFeatures();
     return this.currentEnvironment;
   };
@@ -1066,10 +653,6 @@ function EnvironmentCache() {
       return setup();
     }
   );
-
-  // Addons may contain partial or full data depending on whether the Addons DB
-  // has had a chance to load. Do we have full data yet?
-  this._addonsAreFull = false;
 }
 EnvironmentCache.prototype = {
   /**
@@ -1475,12 +1058,13 @@ EnvironmentCache.prototype = {
         // the session was restored.
         this._updateDefaultBrowser();
         break;
-      case PREF_CHANGED_TOPIC:
+      case PREF_CHANGED_TOPIC: {
         let options = this._watchedPrefs.get(aData);
         if (options && !options.requiresRestart) {
           this._onPrefChanged(aData);
         }
         break;
+      }
       case AUTO_UPDATE_PREF_CHANGE_TOPIC:
         this._currentEnvironment.settings.update.autoDownload = aData == "true";
         Glean.updateSettings.autoDownload.set(

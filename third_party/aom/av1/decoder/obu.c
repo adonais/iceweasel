@@ -869,6 +869,9 @@ static size_t read_padding(AV1_COMMON *const cm, const uint8_t *data,
 int aom_decode_frame_from_obus(struct AV1Decoder *pbi, const uint8_t *data,
                                const uint8_t *data_end,
                                const uint8_t **p_data_end) {
+#if CONFIG_COLLECT_COMPONENT_TIMING
+  start_timing(pbi, aom_decode_frame_from_obus_time);
+#endif
   AV1_COMMON *const cm = &pbi->common;
   int frame_decoding_finished = 0;
   int is_first_tg_obu_received = 1;
@@ -1121,5 +1124,29 @@ int aom_decode_frame_from_obus(struct AV1Decoder *pbi, const uint8_t *data,
   }
 
   if (pbi->error.error_code != AOM_CODEC_OK) return -1;
+
+#if CONFIG_COLLECT_COMPONENT_TIMING
+  end_timing(pbi, aom_decode_frame_from_obus_time);
+
+  // Print out timing information.
+  int i;
+  fprintf(stderr,
+          "\n Frame number: %d, Frame type: %s, Show Frame: %d, Show existing "
+          "frame: %d\n",
+          cm->current_frame.frame_number,
+          get_frame_type_enum(cm->current_frame.frame_type), cm->show_frame,
+          cm->show_existing_frame);
+  // Exclude show_existing_frame since it doesn't take much time.
+  if (!cm->show_existing_frame) {
+    for (i = 0; i < kTimingComponents; i++) {
+      pbi->component_time[i] += pbi->frame_component_time[i];
+      fprintf(stderr, " %s:  %" PRId64 " us (total: %" PRId64 " us)\n",
+              get_component_name(i), pbi->frame_component_time[i],
+              pbi->component_time[i]);
+      pbi->frame_component_time[i] = 0;
+    }
+  }
+#endif
+
   return frame_decoding_finished;
 }

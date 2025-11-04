@@ -27,12 +27,11 @@ async def test_max_total_data_size(
     add_data_collector,
     fetch,
 ):
-    network_events = await setup_network_test(
+    await setup_network_test(
         events=[
             RESPONSE_COMPLETED_EVENT,
         ]
     )
-    network_events[RESPONSE_COMPLETED_EVENT]
 
     await bidi_session.browsing_context.navigate(
         context=top_context["context"],

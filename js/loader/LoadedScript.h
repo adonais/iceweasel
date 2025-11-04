@@ -22,6 +22,7 @@
 
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
+#include "nsICacheInfoChannel.h"  // nsICacheInfoChannel
 #include "nsIMemoryReporter.h"
 
 #include "jsapi.h"
@@ -246,6 +247,12 @@ class LoadedScript : public nsIMemoryReporter {
   // Determine whether the mScriptData or mScriptBytecode is used.
   DataType mDataType;
 
+  // The consumer-defined number of times that this loaded script is used.
+  //
+  // In DOM ScriptLoader, this is used for counting the number of times that
+  // the in-memory-cached script is used, clamped at UINT8_MAX.
+  uint8_t mFetchCount = 0;
+
  private:
   ScriptKind mKind;
 
@@ -277,6 +284,12 @@ class LoadedScript : public nsIMemoryReporter {
   TranscodeBuffer mScriptBytecode;
 
   RefPtr<Stencil> mStencil;
+
+  // The cache info channel used when saving the bytecode to the necko cache.
+  nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
+
+  // The SRI data and the padding, used when saving the bytecode.
+  JS::TranscodeBuffer mSRI;
 };
 
 // Provide accessors for any classes `Derived` which is providing the

@@ -103,7 +103,7 @@ ifdef COMPILE_ENVIRONMENT
 stage-all: stage-cppunittests
 endif
 
-TEST_PKGS_TARGZ := \
+TEST_PKGS_TARZST := \
   common \
   condprof \
   cppunittest \
@@ -124,7 +124,7 @@ TEST_PKGS_TARGZ := \
 
 ifdef LINK_GTEST_DURING_COMPILE
 stage-all: stage-gtest
-TEST_PKGS_TARGZ += gtest
+TEST_PKGS_TARZST += gtest
 endif
 
 PKG_ARG = --$(1) '$(PKG_BASENAME).$(1).tests.$(2)'
@@ -136,7 +136,7 @@ test-packages-manifest:
       --jsshell $(JSSHELL_NAME) \
       --dest-file '$(MOZ_TEST_PACKAGES_FILE)' \
       $(call PKG_ARG,common,zip) \
-      $(foreach pkg,$(TEST_PKGS_TARGZ),$(call PKG_ARG,$(pkg),tar.gz))
+      $(foreach pkg,$(TEST_PKGS_TARZST),$(call PKG_ARG,$(pkg),tar.zst))
 
 ifdef UPLOAD_PATH
 test_archive_dir = $(UPLOAD_PATH)
@@ -158,7 +158,7 @@ package-tests-$(1): stage-all package-tests-prepare-dest download-wpt-manifest
 package-tests: package-tests-$(1)
 endef
 
-$(foreach name,$(TEST_PKGS_TARGZ),$(eval $(call package_archive,$(name),tar.gz)))
+$(foreach name,$(TEST_PKGS_TARZST),$(eval $(call package_archive,$(name),tar.zst)))
 
 ifeq ($(MOZ_BUILD_APP),mobile/android)
 stage-all: stage-android

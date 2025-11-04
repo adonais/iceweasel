@@ -201,6 +201,14 @@ tags = "os_integration"
 
 ["browser_multiple_select_after_load.js"]
 
+["browser_navigation_api_restore.js"]
+support-files = [
+  "empty_frame.html",
+  "entry1.html",
+  "entry2.html",
+  "entry3.html",
+]
+
 ["browser_newtab_userTypedValue.js"]
 
 ["browser_not_collect_when_idle.js"]

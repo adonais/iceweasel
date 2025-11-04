@@ -4,6 +4,7 @@
 
 package mozilla.components.support.ktx.kotlinx.coroutines.flow
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.filter
@@ -48,6 +49,7 @@ import kotlinx.coroutines.flow.flatMapConcat
  * ---
  * ```
  */
+@OptIn(ExperimentalCoroutinesApi::class) // flatMapConcat
 fun <T, R> Flow<List<T>>.filterChanged(transform: (T) -> R): Flow<T> {
     var lastMappedValues: Map<T, R>? = null
     return flatMapConcat { values ->

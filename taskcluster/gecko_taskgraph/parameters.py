@@ -21,7 +21,7 @@ gecko_parameters_schema = {
     Required("build_number"): int,
     Required("enable_always_target"): Any(bool, [str]),
     Required("files_changed"): [str],
-    Required("hg_branch"): str,
+    Required("hg_branch"): Any(None, str),
     Required("message"): str,
     Required("next_version"): Any(None, str),
     Required("optimize_strategies"): Any(None, str),

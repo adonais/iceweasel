@@ -63,7 +63,9 @@ class StudiesView(
             val experimentsKey = context.getPreferenceKey(R.string.pref_key_experimentation_v2)
             context.settings().preferences.edit(commit = true) { putBoolean(experimentsKey, isChecked) }
 
-            experiments.globalUserParticipation = isChecked
+            // Use experimentParticipation for studies-specific settings
+            experiments.experimentParticipation = isChecked
+            experiments.rolloutParticipation = isChecked
         }
         bindDescription()
 

@@ -412,7 +412,16 @@ let config = [
   {
     name: "mozilla/require-jsdoc",
     files: wrapPaths({ paths: ["**"] }),
-    ...mozilla.configs["flat/valid-jsdoc"],
+    ...mozilla.configs["flat/require-jsdoc"],
+  },
+  {
+    name: "rollout-no-browser-refs-in-toolkit",
+    files: ["toolkit/**"],
+    ignores: ["toolkit/**/test/**", "toolkit/**/tests/**"],
+    plugins: { mozilla },
+    rules: {
+      "mozilla/no-browser-refs-in-toolkit": "error",
+    },
   },
   {
     name: "no-newtab-refs-outside-newtab",

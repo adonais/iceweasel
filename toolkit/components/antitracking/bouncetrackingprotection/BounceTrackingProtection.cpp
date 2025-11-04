@@ -294,7 +294,11 @@ nsresult BounceTrackingProtection::RecordStatefulBounces(
   // Assert: navigable’s bounce tracking record is not null.
   const Maybe<BounceTrackingRecord>& record =
       aBounceTrackingState->GetBounceTrackingRecord();
-  NS_ENSURE_TRUE(record, NS_ERROR_FAILURE);
+  if (!record) {
+    MOZ_LOG(gBounceTrackingProtectionLog, LogLevel::Debug,
+            ("GetBounceTrackingRecord returned nothing"));
+    return NS_ERROR_FAILURE;
+  }
 
   // Get the bounce tracker map and the user activation map.
   RefPtr<BounceTrackingStateGlobal> globalState =

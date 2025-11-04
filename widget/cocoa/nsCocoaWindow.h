@@ -111,6 +111,10 @@ class TextInputHandler;
 - (void)setEffectViewWrapperForStyle:(mozilla::WindowShadow)aStyle;
 @property(nonatomic) mozilla::WindowShadow shadowStyle;
 
+- (void)updateTitlebarTransparency;
+- (void)setTitlebarSeparatorStyle:(NSTitlebarSeparatorStyle)aStyle
+    API_AVAILABLE(macos(11.0));
+
 - (void)releaseJSObjects;
 
 @end
@@ -387,13 +391,9 @@ class nsCocoaWindow final : public nsBaseWidget {
   bool WidgetPaintsBackground() override { return true; }
 
   void CreateCompositor(int aWidth, int aHeight) override;
-  static void FinishCreateCompositor(
-      int aWidth, int aHeight,
-      mozilla::ipc::Endpoint<mozilla::layers::PNativeLayerRemoteParent>&&
-          aParentEndpoint,
-      RefPtr<mozilla::layers::NativeLayerRootRemoteMacParent>
-          aNativeLayerRootRemoteMacParent);
   void DestroyCompositor() override;
+  void NotifyCompositorSessionLost(
+      mozilla::layers::CompositorSession* aSession) override;
   void SetCompositorWidgetDelegate(
       mozilla::widget::CompositorWidgetDelegate*) override;
 
@@ -562,8 +562,6 @@ class nsCocoaWindow final : public nsBaseWidget {
   RefPtr<mozilla::layers::NativeLayerRootCA> mNativeLayerRoot;
   RefPtr<mozilla::layers::NativeLayerRootRemoteMacParent>
       mNativeLayerRootRemoteMacParent;
-  mozilla::ipc::Endpoint<mozilla::layers::PNativeLayerRemoteChild>
-      mChildEndpoint;
 
   // In BasicLayers mode, this is the CoreAnimation layer that contains the
   // rendering from Gecko. It is a sublayer of mNativeLayerRoot's underlying

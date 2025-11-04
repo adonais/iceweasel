@@ -12,7 +12,8 @@ from mozperftest.tests.support import temp_file
 from mozperftest.tools import PerformanceChangeDetected, run_change_detector
 
 
-def test_change_detector_basic(kwargs=None, return_value=({}, {})):
+@pytest.mark.asyncio
+async def test_change_detector_basic(kwargs=None, return_value=({}, {})):
     mocked_detector = mock.MagicMock()
     mocked_detector_module = mock.MagicMock()
     mocked_detector_module.ChangeDetector = mocked_detector
@@ -47,8 +48,9 @@ def test_change_detector_basic(kwargs=None, return_value=({}, {})):
     return mocked_detector_module
 
 
-def test_change_detector_with_task_name():
-    test_change_detector_basic(
+@pytest.mark.asyncio
+async def test_change_detector_with_task_name():
+    await test_change_detector_basic(
         {
             "task_names": ["test-platform/opt-browsertime-test"],
             "new_test_name": None,
@@ -62,9 +64,10 @@ def test_change_detector_with_task_name():
     )
 
 
-def test_change_detector_option_failure():
+@pytest.mark.asyncio
+async def test_change_detector_option_failure():
     with pytest.raises(Exception):
-        test_change_detector_basic(
+        await test_change_detector_basic(
             {
                 "test_name": None,
                 "new_test_name": None,
@@ -78,7 +81,7 @@ def test_change_detector_option_failure():
         )
 
     with pytest.raises(Exception):
-        test_change_detector_basic(
+        await test_change_detector_basic(
             {
                 "test_name": "browsertime-test",
                 "new_test_name": None,
@@ -92,9 +95,10 @@ def test_change_detector_option_failure():
         )
 
 
-def test_change_detector_with_detection():
+@pytest.mark.asyncio
+async def test_change_detector_with_detection():
     with pytest.raises(PerformanceChangeDetected):
-        test_change_detector_basic(
+        await test_change_detector_basic(
             {
                 "task_names": ["test-platform/opt-browsertime-test"],
                 "new_test_name": None,

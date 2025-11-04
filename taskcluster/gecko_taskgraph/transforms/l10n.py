@@ -419,3 +419,27 @@ def make_job_description(config, jobs):
             job_description["shipping-product"] = job["shipping-product"]
 
         yield job_description
+
+
+@transforms.add
+def add_macos_signing_artifacts(config, jobs):
+    for job in jobs:
+        if "macosx" not in job["name"]:
+            yield job
+            continue
+        build_dep = None
+        for dep_job in get_dependencies(config, job):
+            if dep_job.kind == "build":
+                build_dep = dep_job
+                break
+        assert build_dep, f"l10n job {job['name']} has no build dependency"
+        for path, artifact in build_dep.task["payload"]["artifacts"].items():
+            if path.startswith("public/build/security/"):
+                job["worker"].setdefault("artifacts", []).append(
+                    {
+                        "name": path,
+                        "path": artifact["path"],
+                        "type": "file",
+                    }
+                )
+        yield job

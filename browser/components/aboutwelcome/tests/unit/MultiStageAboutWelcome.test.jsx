@@ -43,6 +43,7 @@ describe("MultiStageAboutWelcome module", () => {
       AWWaitForMigrationClose: () => Promise.resolve(),
       AWSelectTheme: () => Promise.resolve(),
       AWFinish: () => Promise.resolve(),
+      AWEvaluateAttributeTargeting: () => Promise.resolve(false),
     });
     sandbox = sinon.createSandbox();
   });
@@ -245,6 +246,16 @@ describe("MultiStageAboutWelcome module", () => {
         assert.ok(wrapper.exists());
       });
 
+      it("should render a primary and secondary button", () => {
+        const wrapper = mount(<WelcomeScreen {...EASY_SETUP_SCREEN_PROPS} />);
+        assert.ok(wrapper.find(".primary").exists());
+        assert.equal(
+          wrapper.find(".secondary-cta:not(.top) button.secondary").length,
+          1,
+          "One secondary button"
+        );
+      });
+
       it("should render secondary.top button", () => {
         let SCREEN_PROPS = {
           content: {
@@ -258,6 +269,52 @@ describe("MultiStageAboutWelcome module", () => {
         };
         const wrapper = mount(<SecondaryCTA {...SCREEN_PROPS} />);
         assert.ok(wrapper.find("div.secondary-cta.top").exists());
+      });
+
+      it("should render a secondary top 'Sign in' button if user isn't signed in", async () => {
+        globals.set("AWEvaluateAttributeTargeting", expression => {
+          return Promise.resolve(expression.includes("!isFxASignedIn"));
+        });
+
+        const wrapper = mount(<WelcomeScreen {...EASY_SETUP_SCREEN_PROPS} />);
+        await spinEventLoop();
+        wrapper.update();
+
+        const secondaryTopButton = wrapper.find(".secondary-cta.top");
+        assert.ok(secondaryTopButton.exists(), "secondary button top exists");
+
+        const signInButton = secondaryTopButton.find(
+          '[data-l10n-id="mr1-onboarding-sign-in-button-label"]'
+        );
+
+        assert.equal(
+          signInButton.length,
+          1,
+          "One 'Sign in' secondary top button"
+        );
+      });
+
+      it("should render a secondary top 'Restore Backup' button when backup restore is enabled", async () => {
+        globals.set("AWEvaluateAttributeTargeting", expression => {
+          return Promise.resolve(expression.includes("backupRestoreEnabled"));
+        });
+
+        const wrapper = mount(<WelcomeScreen {...EASY_SETUP_SCREEN_PROPS} />);
+        await spinEventLoop();
+        wrapper.update();
+
+        const secondaryTopButton = wrapper.find(".secondary-cta.top");
+        assert.ok(secondaryTopButton.exists(), "Secondary button top exists");
+
+        let backup = secondaryTopButton.find(
+          '[data-l10n-id="restore-from-backup-secondary-top-button"]'
+        );
+
+        assert.equal(
+          backup.length,
+          1,
+          "One secondary 'Backup Restore' top button"
+        );
       });
 
       it("should render the arrow icon in the secondary button", () => {
@@ -311,23 +368,6 @@ describe("MultiStageAboutWelcome module", () => {
           wrapper.find("div.indicator").prop("style"),
           "--progress-bar-progress",
           "50%"
-        );
-      });
-
-      it("should have a primary, secondary and secondary.top button in the rendered input", () => {
-        const wrapper = mount(<WelcomeScreen {...EASY_SETUP_SCREEN_PROPS} />);
-        assert.ok(wrapper.find(".primary").exists());
-        assert.ok(
-          wrapper
-            .find(".secondary-cta button.secondary[value='secondary_button']")
-            .exists()
-        );
-        assert.ok(
-          wrapper
-            .find(
-              ".secondary-cta.top button.secondary[value='secondary_button_top']"
-            )
-            .exists()
         );
       });
     });
@@ -1078,7 +1118,7 @@ describe("MultiStageAboutWelcome module", () => {
           AboutWelcomeUtils.handleUserAction.resetHistory();
         }
       });
-      it("Should handle a campaign action when applicable", async () => {
+      it("should handle a campaign action when applicable", async () => {
         let actionSpy = sandbox.spy(AboutWelcomeUtils, "handleCampaignAction");
         let telemetrySpy = sandbox.spy(
           AboutWelcomeUtils,
@@ -1111,7 +1151,7 @@ describe("MultiStageAboutWelcome module", () => {
         assert.equal(telemetrySpy.firstCall.args[1], "CAMPAIGN_ACTION");
         globals.restore();
       });
-      it("Should not handle a campaign action when the action has already been handled", async () => {
+      it("should not handle a campaign action when the action has already been handled", async () => {
         let actionSpy = sandbox.spy(AboutWelcomeUtils, "handleCampaignAction");
         let telemetrySpy = sandbox.spy(
           AboutWelcomeUtils,
@@ -1140,7 +1180,7 @@ describe("MultiStageAboutWelcome module", () => {
         assert.notCalled(telemetrySpy);
         globals.restore();
       });
-      it("Should not send telemetrty when campaign action handling fails", async () => {
+      it("should not send telemetrty when campaign action handling fails", async () => {
         let actionSpy = sandbox.spy(AboutWelcomeUtils, "handleCampaignAction");
         let telemetrySpy = sandbox.spy(
           AboutWelcomeUtils,
@@ -1238,7 +1278,7 @@ describe("MultiStageAboutWelcome module", () => {
         globals.restore();
       });
 
-      it("Should dismiss when resolve boolean is true and needAwait true", async () => {
+      it("should dismiss when resolve boolean is true and needAwait true", async () => {
         TEST_ACTION.dismiss = "actionResult";
         TEST_ACTION.needsAwait = true;
         // `needsAwait` is true, so the handleUserAction function should return a `Promise<boolean>`
@@ -1275,7 +1315,7 @@ describe("MultiStageAboutWelcome module", () => {
         assert.calledOnce(finishStub);
       });
 
-      it("Should not dismiss when resolve boolean is false and needAwait true", async () => {
+      it("should not dismiss when resolve boolean is false and needAwait true", async () => {
         TEST_ACTION.dismiss = "actionResult";
         TEST_ACTION.needsAwait = true;
         // `needsAwait` is true, so the handleUserAction function should return a `Promise<boolean>`
@@ -1309,7 +1349,7 @@ describe("MultiStageAboutWelcome module", () => {
         assert.notCalled(finishStub);
       });
 
-      it("Should dismiss when true and handleUserAction not awaited", async () => {
+      it("should dismiss when true and handleUserAction not awaited", async () => {
         TEST_ACTION.dismiss = true;
         // `needsAwait` is not set, so the handleUserAction function should return a `Promise<undefined>`
         awSendToParentStub.callsFake(

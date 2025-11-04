@@ -17,6 +17,7 @@ import org.mozilla.fenix.debugsettings.addresses.AddressesTools
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsState
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsStore
 import org.mozilla.fenix.debugsettings.crashtools.CrashTools
+import org.mozilla.fenix.debugsettings.creditcards.CreditCardsTools
 import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
 import org.mozilla.fenix.debugsettings.gleandebugtools.ui.GleanDebugToolsScreen
 import org.mozilla.fenix.debugsettings.logins.LoginsTools
@@ -48,6 +49,10 @@ enum class DebugDrawerRoute(val route: String, @param:StringRes val title: Int) 
     Addresses(
         route = "addresses",
         title = R.string.debug_drawer_addresses_title,
+    ),
+    CreditCards(
+        route = "credit_cards",
+        title = R.string.debug_drawer_credit_cards_title,
     ),
     CfrTools(
         route = "cfr_tools",
@@ -130,6 +135,17 @@ enum class DebugDrawerRoute(val route: String, @param:StringRes val title: Int) 
                         content = {
                             AddressesTools(
                                 debugLocalesRepository = addressesDebugLocalesRepository,
+                                creditCardsAddressesStorage = creditCardsAddressesStorage,
+                            )
+                        }
+                    }
+
+                    CreditCards -> {
+                        onClick = {
+                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.CreditCards)
+                        }
+                        content = {
+                            CreditCardsTools(
                                 creditCardsAddressesStorage = creditCardsAddressesStorage,
                             )
                         }

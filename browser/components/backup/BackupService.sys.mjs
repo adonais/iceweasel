@@ -20,7 +20,10 @@ import {
 import { BackupError } from "resource:///modules/backup/BackupError.mjs";
 
 const BACKUP_DIR_PREF_NAME = "browser.backup.location";
+const BACKUP_ERROR_CODE_PREF_NAME = "browser.backup.errorCode";
 const SCHEDULED_BACKUPS_ENABLED_PREF_NAME = "browser.backup.scheduled.enabled";
+const BACKUP_ARCHIVE_ENABLED_PREF_NAME = "browser.backup.archive.enabled";
+const BACKUP_RESTORE_ENABLED_PREF_NAME = "browser.backup.restore.enabled";
 const IDLE_THRESHOLD_SECONDS_PREF_NAME =
   "browser.backup.scheduled.idle-threshold-seconds";
 const MINIMUM_TIME_BETWEEN_BACKUPS_SECONDS_PREF_NAME =
@@ -29,6 +32,12 @@ const LAST_BACKUP_TIMESTAMP_PREF_NAME =
   "browser.backup.scheduled.last-backup-timestamp";
 const LAST_BACKUP_FILE_NAME_PREF_NAME =
   "browser.backup.scheduled.last-backup-file";
+const BACKUP_RETRY_LIMIT_PREF_NAME = "browser.backup.backup-retry-limit";
+const DISABLED_ON_IDLE_RETRY_PREF_NAME =
+  "browser.backup.disabled-on-idle-backup-retry";
+const BACKUP_DEBUG_INFO_PREF_NAME = "browser.backup.backup-debug-info";
+const MAXIMUM_NUMBER_OF_UNREMOVABLE_STAGING_ITEMS_PREF_NAME =
+  "browser.backup.max-num-unremovable-staging-items";
 
 const SCHEMAS = Object.freeze({
   BACKUP_MANIFEST: 1,
@@ -65,6 +74,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
   JsonSchema: "resource://gre/modules/JsonSchema.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   UIState: "resource://services-sync/UIState.sys.mjs",
 });
 
@@ -92,7 +102,7 @@ ChromeUtils.defineLazyGetter(lazy, "BinaryInputStream", () =>
 
 ChromeUtils.defineLazyGetter(lazy, "gFluentStrings", function () {
   return new Localization(
-    ["branding/brand.ftl", "preview/backupSettings.ftl"],
+    ["branding/brand.ftl", "browser/backupSettings.ftl"],
     true
   );
 });
@@ -100,12 +110,8 @@ ChromeUtils.defineLazyGetter(lazy, "gFluentStrings", function () {
 ChromeUtils.defineLazyGetter(lazy, "gDOMLocalization", function () {
   return new DOMLocalization([
     "branding/brand.ftl",
-    "preview/backupSettings.ftl",
+    "browser/backupSettings.ftl",
   ]);
-});
-
-ChromeUtils.defineLazyGetter(lazy, "defaultParentDirPath", function () {
-  return Services.dirsvc.get("Docs", Ci.nsIFile).path;
 });
 
 XPCOMUtils.defineLazyPreferenceGetter(
@@ -154,6 +160,27 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "minimumTimeBetweenBackupsSeconds",
   MINIMUM_TIME_BETWEEN_BACKUPS_SECONDS_PREF_NAME,
   86400 /* 1 day */
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "backupRetryLimit",
+  BACKUP_RETRY_LIMIT_PREF_NAME,
+  100
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "isRetryDisabledOnIdle",
+  DISABLED_ON_IDLE_RETRY_PREF_NAME,
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "maximumNumberOfUnremovableStagingItems",
+  MAXIMUM_NUMBER_OF_UNREMOVABLE_STAGING_ITEMS_PREF_NAME,
+  5
 );
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -565,6 +592,86 @@ export class BackupService extends EventTarget {
   static #backupFileName = null;
 
   /**
+   * Number of retries that have occured in this session on error
+   */
+  static #errorRetries = 0;
+
+  /**
+   * @typedef {object} EnabledStatus
+   * @property {boolean} enabled
+   *   True if the feature is enabled.
+   * @property {string} [reason]
+   *   Reason the feature is disabled if `enabled` is false.
+   */
+
+  /**
+   * Context for whether creating a backup archive is enabled.
+   *
+   * @type {EnabledStatus}
+   */
+  get archiveEnabledStatus() {
+    // Check if disabled by Nimbus killswitch.
+    const archiveKillswitchTriggered =
+      lazy.NimbusFeatures.backupService.getVariable("archiveKillswitch");
+    if (archiveKillswitchTriggered) {
+      return {
+        enabled: false,
+        reason: "Archiving a profile disabled remotely.",
+        internalReason: "nimbus",
+      };
+    }
+
+    if (!Services.prefs.getBoolPref(BACKUP_ARCHIVE_ENABLED_PREF_NAME)) {
+      return {
+        enabled: false,
+        reason: "Archiving a profile disabled by user pref.",
+      };
+    }
+
+    if (Services.prefs.getBoolPref("privacy.sanitize.sanitizeOnShutdown")) {
+      return {
+        enabled: false,
+        reason: "Backup is disabled for users with sanitizeOnShutdown enabled.",
+      };
+    }
+
+    return { enabled: true };
+  }
+
+  /**
+   * Context for whether restore from backup is enabled.
+   *
+   * @type {EnabledStatus}
+   */
+  get restoreEnabledStatus() {
+    // Check if disabled by Nimbus killswitch.
+    const restoreKillswitchTriggered =
+      lazy.NimbusFeatures.backupService.getVariable("restoreKillswitch");
+    if (restoreKillswitchTriggered) {
+      return {
+        enabled: false,
+        reason: "Restore from backup disabled remotely.",
+      };
+    }
+
+    if (!Services.prefs.getBoolPref(BACKUP_RESTORE_ENABLED_PREF_NAME)) {
+      return {
+        enabled: false,
+        reason: "Restoring a profile disabled by user pref.",
+      };
+    }
+
+    if (Services.prefs.getBoolPref("privacy.sanitize.sanitizeOnShutdown")) {
+      return {
+        enabled: false,
+        reason: "Backup is disabled for users with sanitizeOnShutdown enabled.",
+      };
+    }
+
+    return { enabled: true };
+  }
+
+  /**
    * Set to true if a backup is currently in progress. Causes stateUpdate()
    * to be called.
    *
@@ -597,11 +704,14 @@ export class BackupService extends EventTarget {
   }
 
   /**
-   * True if a recovery is currently in progress.
+   * Sets the recovery error code and updates the state.
    *
-   * @type {boolean}
+   * @param {number} errorCode - The error code to set
    */
-  #recoveryInProgress = false;
+  setRecoveryError(errorCode) {
+    this.#_state.recoveryErrorCode = errorCode;
+    this.stateUpdate();
+  }
 
   /**
    * An object holding the current state of the BackupService instance, for
@@ -623,6 +733,8 @@ export class BackupService extends EventTarget {
     lastBackupDate: null,
     lastBackupFileName: "",
     supportBaseLink: Services.urlFormatter.formatURLPref("app.support.baseURL"),
+    recoveryInProgress: false,
+    recoveryErrorCode: 0,
   };
 
   /**
@@ -695,13 +807,25 @@ export class BackupService extends EventTarget {
   #takenMeasurements = false;
 
   /**
+   * Stores whether backing up has been disabled at some point during this
+   * session. If it has been, the backupDisabledReason telemetry metric is set
+   * on each backup. (It cannot be unset due to Glean limitations.)
+   *
+   * @type {boolean}
+   */
+  #wasArchivePreviouslyDisabled = false;
+
+  /**
    * The path of the default parent directory for saving backups.
    * The current default is the Documents directory.
    *
    * @returns {string} The path of the default parent directory
    */
   static get DEFAULT_PARENT_DIR_PATH() {
-    return lazy.defaultParentDirPath;
+    return (
+      BackupService.oneDriveFolderPath?.path ||
+      Services.dirsvc.get("Docs", Ci.nsIFile).path
+    );
   }
 
   /**
@@ -907,6 +1031,22 @@ export class BackupService extends EventTarget {
   }
 
   /**
+   * The user's personal OneDrive folder, or null if none exists.
+   *
+   * @returns {nsIFile|null} The OneDrive folder or null
+   */
+  static get oneDriveFolderPath() {
+    try {
+      let oneDriveDir = Services.dirsvc.get("OneDrPD", Ci.nsIFile);
+      // This check should be redundant -- the OneDrive folder should exist.
+      return oneDriveDir.exists() ? oneDriveDir : null;
+    } catch {
+      // Ignore exceptions.  The OneDrive folder not existing is an exception.
+    }
+    return null;
+  }
+
+  /**
    * Returns a reference to a BackupService singleton. If this is the first time
    * that this getter is accessed, this causes the BackupService singleton to be
    * be instantiated.
@@ -951,6 +1091,7 @@ export class BackupService extends EventTarget {
   constructor(backupResources = DefaultBackupResources) {
     super();
     lazy.logConsole.debug("Instantiated");
+    this.#registerStatusObservers();
 
     for (const resourceName in backupResources) {
       let resource = backupResources[resourceName];
@@ -965,10 +1106,19 @@ export class BackupService extends EventTarget {
       if (!this.#backupWriteAbortController.signal.aborted) {
         await this.deleteLastBackup();
         if (lazy.scheduledBackupsPref) {
-          await this.createBackupOnIdleDispatch();
+          await this.createBackupOnIdleDispatch({
+            reason: "user deleted some data",
+          });
         }
       }
     }, BackupService.REGENERATION_DEBOUNCE_RATE_MS);
+
+    let backupStatus = this.archiveEnabledStatus;
+    if (!backupStatus.enabled) {
+      let internalReason = backupStatus.internalReason;
+      this.#wasArchivePreviouslyDisabled = true;
+      Glean.browserBackup.backupDisabledReason.set(internalReason);
+    }
   }
 
   /**
@@ -1035,7 +1185,6 @@ export class BackupService extends EventTarget {
     } catch (e) {
       lazy.logConsole.warn("Could not create configured destination path: ", e);
     }
-
     lazy.logConsole.warn(
       "The destination directory was invalid. Attempting to fall back to " +
         "default parent folder: ",
@@ -1072,9 +1221,9 @@ export class BackupService extends EventTarget {
       return homeDirPath;
     } catch (e) {
       lazy.logConsole.warn("Could not create Home destination path: ", e);
-      throw new Error(
+      throw new BackupError(
         "Could not resolve to a writable destination folder path.",
-        { cause: ERRORS.FILE_SYSTEM_ERROR }
+        ERRORS.FILE_SYSTEM_ERROR
       );
     }
   }
@@ -1092,7 +1241,10 @@ export class BackupService extends EventTarget {
    * @returns {Promise<string, Error>}
    */
   async resolveExistingArchiveDestFolderPath(configuredDestFolderPath) {
-    if (await IOUtils.exists(configuredDestFolderPath)) {
+    if (
+      configuredDestFolderPath &&
+      (await IOUtils.exists(configuredDestFolderPath))
+    ) {
       return configuredDestFolderPath;
     }
 
@@ -1139,7 +1291,7 @@ export class BackupService extends EventTarget {
     // If all else fails, this is the download link we'll put into the rendered
     // template.
     const ULTIMATE_FALLBACK_DOWNLOAD_URL =
-      "https://www.mozilla.org/firefox/download/thanks/?s=direct&utm_medium=firefox-desktop&utm_source=backup&utm_campaign=firefox-backup-2024&utm_content=control";
+      "https://www.firefox.com/?utm_medium=firefox-desktop&utm_source=html-backup";
     const FALLBACK_DOWNLOAD_URL = Services.prefs.getStringPref(
       `browser.backup.template.fallback-download.${updateChannel}`,
       ULTIMATE_FALLBACK_DOWNLOAD_URL
@@ -1168,16 +1320,34 @@ export class BackupService extends EventTarget {
    * @param {string} [options.profilePath=PathUtils.profileDir]
    *   The path to the profile to backup. By default, this is the current
    *   profile.
+   * @param {string} [options.reason=unknown]
+   *   The reason for starting the backup. This is sent along with the
+   *   backup.backup_start event.
    * @returns {Promise<CreateBackupResult|null>}
    *   A promise that resolves to information about the backup that was
    *   created, or null if the backup failed.
    */
-  async createBackup({ profilePath = PathUtils.profileDir } = {}) {
+  async createBackup({
+    profilePath = PathUtils.profileDir,
+    reason = "unknown",
+  } = {}) {
+    let status = this.archiveEnabledStatus;
+    if (!status.enabled) {
+      lazy.logConsole.debug(status.reason);
+      this.#wasArchivePreviouslyDisabled = true;
+      Glean.browserBackup.backupDisabledReason.set(status.internalReason);
+      return null;
+    } else if (this.#wasArchivePreviouslyDisabled) {
+      Glean.browserBackup.backupDisabledReason.set("reenabled");
+    }
+
     // createBackup does not allow re-entry or concurrent backups.
     if (this.#backupInProgress) {
       lazy.logConsole.warn("Backup attempt already in progress");
       return null;
     }
+
+    Glean.browserBackup.backupStart.record({ reason });
 
     return locks.request(
       BackupService.WRITE_BACKUP_LOCK_NAME,
@@ -1186,6 +1356,10 @@ export class BackupService extends EventTarget {
         let currentStep = STEPS.CREATE_BACKUP_ENTRYPOINT;
         this.#backupInProgress = true;
         const backupTimer = Glean.browserBackup.totalBackupTime.start();
+
+        // reset the error state prefs
+        Services.prefs.clearUserPref(BACKUP_DEBUG_INFO_PREF_NAME);
+        Services.prefs.setIntPref(BACKUP_ERROR_CODE_PREF_NAME, ERRORS.NONE);
 
         try {
           lazy.logConsole.debug(
@@ -1343,7 +1517,12 @@ export class BackupService extends EventTarget {
             renamedStagingPath,
             backupDirPath
           ).finally(async () => {
-            await IOUtils.remove(renamedStagingPath, { recursive: true });
+            // retryReadonly is needed in case there were read only files in
+            // the profile.
+            await IOUtils.remove(renamedStagingPath, {
+              recursive: true,
+              retryReadonly: true,
+            });
           });
 
           currentStep = STEPS.CREATE_BACKUP_CREATE_ARCHIVE;
@@ -1362,7 +1541,9 @@ export class BackupService extends EventTarget {
             this.#encState,
             manifest.meta
           ).finally(async () => {
-            await IOUtils.remove(compressedStagingPath);
+            await IOUtils.remove(compressedStagingPath, {
+              retryReadonly: true,
+            });
           });
 
           // Record the size of the complete single-file archive
@@ -1395,7 +1576,15 @@ export class BackupService extends EventTarget {
           this.#_state.lastBackupDate = nowSeconds;
           Glean.browserBackup.totalBackupTime.stopAndAccumulate(backupTimer);
 
-          Glean.browserBackup.created.record();
+          Glean.browserBackup.created.record({
+            encrypted: this.#_state.encryptionEnabled,
+            location: this.classifyLocationForTelemetry(archiveDestFolderPath),
+            size: archiveSizeBytesNearestMebibyte,
+          });
+
+          // we should reset any values that were set for retry error handling
+          Services.prefs.clearUserPref(DISABLED_ON_IDLE_RETRY_PREF_NAME);
+          BackupService.#errorRetries = 0;
 
           return { manifest, archivePath };
         } catch (e) {
@@ -1404,12 +1593,73 @@ export class BackupService extends EventTarget {
             error_code: String(e.cause || ERRORS.UNKNOWN),
             backup_step: String(currentStep),
           });
-          return null;
+
+          // TODO: show more specific error messages to the user
+          Services.prefs.setIntPref(
+            BACKUP_ERROR_CODE_PREF_NAME,
+            ERRORS.UNKNOWN
+          );
+
+          Services.prefs.setStringPref(
+            BACKUP_DEBUG_INFO_PREF_NAME,
+            JSON.stringify({
+              lastBackupAttempt: Math.floor(Date.now() / 1000),
+              errorCode: e instanceof BackupError ? e : ERRORS.UNKNOWN,
+              lastRunStep: currentStep,
+            })
+          );
+
+          throw e;
         } finally {
           this.#backupInProgress = false;
         }
       }
     );
+  }
+
+  /**
+   * Creates a coarse name corresponding to the location where the backup will
+   * be stored. This is sent by telemetry, and aims to anonymize the data.
+   *
+   * Normally, the path should end in 'Restore Firefox'; if it doesn't, you
+   * might be passing the wrong path and will get the wrong result.
+   *
+   * This isn't private so it can be used by the tests; avoid relying on this
+   * code from elsewhere.
+   *
+   * @param {string} path The absolute path that contains the backup file.
+   * @returns {string} A coarse location to send with the telemetry.
+   */
+  classifyLocationForTelemetry(path) {
+    let knownLocations = {
+      onedrive: "OneDrPD",
+      documents: "Docs",
+    };
+
+    let location;
+    try {
+      // By default, the backup will go into a folder called 'Restore Firefox',
+      // so we actually want the parent directory.
+      location = lazy.nsLocalFile(path).parent;
+    } catch (e) {
+      // initWithPath (at least on Windows) is _really_ picky; e.g.
+      // "C:/Windows/system32" will fail. Bail out if something went wrong so
+      // this doesn't affect the backup.
+      return `Error: ${e.name ?? "Unknown error"}`;
+    }
+
+    for (let label of Object.keys(knownLocations)) {
+      try {
+        let candidate = Services.dirsvc.get(knownLocations[label], Ci.nsIFile);
+        if (candidate.equals(location)) {
+          return label;
+        }
+      } catch (e) {
+        // ignore (maybe it wasn't found?)
+      }
+    }
+
+    return "other";
   }
 
   /**
@@ -1501,7 +1751,9 @@ export class BackupService extends EventTarget {
 
   /**
    * Constructs the staging folder for the backup in the passed in backup
-   * folder. If a pre-existing staging folder exists, it will be cleared out.
+   * folder. If the backup (snapshots) folder isn't empty, it will be cleared
+   * out.  If that process fails to remove more than
+   * lazy.maximumNumberOfUnremovableStagingItems then the backup is aborted.
    *
    * @param {string} backupDirPath
    *   The path to the backup folder.
@@ -1509,16 +1761,71 @@ export class BackupService extends EventTarget {
    *   The path to the empty staging folder.
    */
   async #prepareStagingFolder(backupDirPath) {
-    let stagingPath = PathUtils.join(backupDirPath, "staging");
-    lazy.logConsole.debug("Checking for pre-existing staging folder");
-    if (await IOUtils.exists(stagingPath)) {
-      // A pre-existing staging folder exists. A previous backup attempt must
-      // have failed or been interrupted. We'll clear it out.
-      lazy.logConsole.warn("A pre-existing staging folder exists. Clearing.");
-      await IOUtils.remove(stagingPath, { recursive: true });
+    lazy.logConsole.debug(`Clearing snapshot folder ${backupDirPath}`);
+    let numUnremovableStagingItems = 0;
+    let folder = await IOUtils.getFile(backupDirPath);
+    let folderEntries = folder.directoryEntries;
+    if (folderEntries) {
+      let unremovableContents = [];
+      for (let folderItem of folderEntries) {
+        try {
+          lazy.logConsole.debug(`Removing ${folderItem.path}`);
+          await IOUtils.remove(folderItem, {
+            recursive: true,
+            retryReadonly: true,
+          });
+        } catch (e) {
+          lazy.logConsole.warn(
+            `Failed to remove stale snapshot item ${folderItem.path}.  Exception: ${e}`
+          );
+          // Whatever the problem was with removing the snapshot dir contents
+          // (presumably a staging dir or archive), keep going until
+          // maximumNumberOfUnremovableStagingItems + 1 have failed to be
+          // removed, at which point we abandon the backup, in order to avoid
+          // filling drive space.
+          numUnremovableStagingItems++;
+          unremovableContents.push(folderItem.path);
+          if (
+            numUnremovableStagingItems >
+            lazy.maximumNumberOfUnremovableStagingItems
+          ) {
+            let error = new BackupError(
+              `Failed to remove ${numUnremovableStagingItems} items from ${backupDirPath}`,
+              ERRORS.FILE_SYSTEM_ERROR
+            );
+            error.stack = e.stack;
+            error.unremovableContents = unremovableContents;
+            throw error;
+          }
+        }
+      }
     }
-    await IOUtils.makeDirectory(stagingPath);
 
+    lazy.logConsole.debug(
+      `${numUnremovableStagingItems} unremovable staging items found.  Proceeding with backup.  Determining staging folder.`
+    );
+    let stagingPath;
+    for (let i = 0; i < lazy.maximumNumberOfUnremovableStagingItems + 1; i++) {
+      // Attempt to use "staging-i" as the name of the staging folder.
+      let potentialStagingPath = PathUtils.join(backupDirPath, "staging-" + i);
+      if (!(await IOUtils.exists(potentialStagingPath))) {
+        stagingPath = potentialStagingPath;
+        await IOUtils.makeDirectory(stagingPath);
+        break;
+      }
+    }
+
+    if (!stagingPath) {
+      // Should be impossible.  We determined there were no more than
+      // maximumNumberOfUnremovableStagingItems items but we then found
+      // maximumNumberOfUnremovableStagingItems + 1 staging folders.
+      throw new BackupError(
+        `Internal error in attempt to create staging folder`,
+        ERRORS.FILE_SYSTEM_ERROR
+      );
+    }
+
+    lazy.logConsole.debug(`Staging folder ${stagingPath} is prepared`);
     return stagingPath;
   }
 
@@ -1734,11 +2041,15 @@ export class BackupService extends EventTarget {
       AppConstants.MOZ_UPDATE_CHANNEL
     );
 
-    let supportLinkHref =
-      Services.urlFormatter.formatURLPref("app.support.baseURL") +
-      "recover-from-backup";
+    let supportURI = new URL(
+      "firefox-backup",
+      Services.urlFormatter.formatURLPref("app.support.baseURL")
+    );
+    supportURI.searchParams.set("utm_medium", "firefox-desktop");
+    supportURI.searchParams.set("utm_source", "html-backup");
+
     let supportLink = templateDOM.querySelector("#support-link");
-    supportLink.href = supportLinkHref;
+    supportLink.href = supportURI.href;
 
     // Now insert the logo as a dataURL, since we want the single-file backup
     // archive to be entirely self-contained.
@@ -1754,26 +2065,26 @@ export class BackupService extends EventTarget {
     let logoNode = templateDOM.querySelector("#logo");
     logoNode.src = logoDataURL;
 
-    let encStateNode = templateDOM.querySelector("#encryption-state");
+    let encStateNode = templateDOM.querySelector("#encryption-state-value");
     lazy.gDOMLocalization.setAttributes(
       encStateNode,
       isEncrypted
-        ? "backup-file-encryption-state-encrypted"
-        : "backup-file-encryption-state-not-encrypted"
+        ? "backup-file-encryption-state-value-encrypted"
+        : "backup-file-encryption-state-value-not-encrypted"
     );
 
-    let lastBackedUpNode = templateDOM.querySelector("#last-backed-up");
-    lazy.gDOMLocalization.setArgs(lastBackedUpNode, {
+    let createdDateNode = templateDOM.querySelector("#creation-date-value");
+    lazy.gDOMLocalization.setArgs(createdDateNode, {
       // It's very unlikely that backupMetadata.date isn't a valid Date string,
       // but if it _is_, then Fluent will cause us to crash in debug builds.
       // We fallback to the current date if all else fails.
       date: new Date(backupMetadata.date).getTime() || new Date().getTime(),
     });
 
-    let creationDeviceNode = templateDOM.querySelector("#creation-device");
-    lazy.gDOMLocalization.setArgs(creationDeviceNode, {
-      machineName: backupMetadata.machineName,
-    });
+    let creationDeviceNode = templateDOM.querySelector(
+      "#creation-device-value"
+    );
+    creationDeviceNode.textContent = backupMetadata.machineName;
 
     try {
       await lazy.gDOMLocalization.translateFragment(
@@ -2174,7 +2485,7 @@ export class BackupService extends EventTarget {
           if (!(e instanceof BackupError)) {
             throw new BackupError(
               "Failed to parse archive header",
-              ERRORS.FILE_SYSTEM_ERROR
+              ERRORS.CORRUPTED_ARCHIVE
             );
           }
           throw e;
@@ -2294,7 +2605,10 @@ export class BackupService extends EventTarget {
       );
     }
 
-    await IOUtils.remove(extractionDestPath, { ignoreAbsent: true });
+    await IOUtils.remove(extractionDestPath, {
+      ignoreAbsent: true,
+      retryReadonly: true,
+    });
 
     let archiveFile = await IOUtils.getFile(archivePath);
     let archiveStream = await this.createBinaryReadableStream(
@@ -2366,9 +2680,19 @@ export class BackupService extends EventTarget {
           existingBackupPath !== renamedBackupPath &&
           existingBackupPath.match(expectedFormatRegex)
         ) {
-          await IOUtils.remove(existingBackupPath, {
-            recursive: true,
-          });
+          try {
+            // If any copied source files were read-only then we need to remove
+            // read-only status from them to delete the staging folder.
+            await IOUtils.remove(existingBackupPath, {
+              recursive: true,
+              retryReadonly: true,
+            });
+          } catch (e) {
+            // Ignore any failures in removing staging items.
+            lazy.logConsole.debug(
+              `Failed to remove staging item ${existingBackupPath}. Exception ${e}`
+            );
+          }
         }
       }
       return renamedBackupPath;
@@ -2410,11 +2734,20 @@ export class BackupService extends EventTarget {
       appVersion: AppConstants.MOZ_APP_VERSION,
       buildID: AppConstants.MOZ_BUILDID,
       profileName,
+      deviceName: Services.sysinfo.get("device") || Services.dns.myHostName,
       machineName: lazy.fxAccounts.device.getLocalName(),
       osName: Services.sysinfo.getProperty("name"),
       osVersion: Services.sysinfo.getProperty("version"),
       legacyClientID: await lazy.ClientID.getClientID(),
       profileGroupID: await lazy.ClientID.getProfileGroupID(),
+      healthTelemetryEnabled: Services.prefs.getBoolPref(
+        "datareporting.healthreport.uploadEnabled",
+        false
+      ),
+      usageTelemetryEnabled: Services.prefs.getBoolPref(
+        "datareporting.usage.uploadEnabled",
+        false
+      ),
     };
 
     let fxaState = lazy.UIState.get();
@@ -2476,14 +2809,21 @@ export class BackupService extends EventTarget {
     profilePath = PathUtils.profileDir,
     profileRootPath = null
   ) {
+    const status = this.restoreEnabledStatus;
+    if (!status.enabled) {
+      throw new Error(status.reason);
+    }
+
     // No concurrent recoveries.
-    if (this.#recoveryInProgress) {
+    if (this.#_state.recoveryInProgress) {
       lazy.logConsole.warn("Recovery attempt already in progress");
       return null;
     }
 
     try {
-      this.#recoveryInProgress = true;
+      this.#_state.recoveryInProgress = true;
+      this.#_state.recoveryErrorCode = 0;
+      this.stateUpdate();
       const RECOVERY_FILE_DEST_PATH = PathUtils.join(
         profilePath,
         BackupService.PROFILE_FOLDER_NAME,
@@ -2518,10 +2858,11 @@ export class BackupService extends EventTarget {
       // Now that we've decompressed it, reclaim some disk space by getting rid of
       // the ZIP file.
       try {
-        await IOUtils.remove(RECOVERY_FILE_DEST_PATH);
+        await IOUtils.remove(RECOVERY_FILE_DEST_PATH, { retryReadonly: true });
       } catch (_) {
         lazy.logConsole.warn("Could not remove ", RECOVERY_FILE_DEST_PATH);
       }
+
       try {
         // We're using a try/finally here to clean up the temporary OSKeyStore.
         // We need to make sure that cleanup occurs _after_ the recovery has
@@ -2553,7 +2894,8 @@ export class BackupService extends EventTarget {
         }
       }
     } finally {
-      this.#recoveryInProgress = false;
+      this.#_state.recoveryInProgress = false;
+      this.stateUpdate();
     }
   }
 
@@ -2714,6 +3056,7 @@ export class BackupService extends EventTarget {
             `Failed to recover resource: ${resourceKey}`,
             e
           );
+          throw e;
         }
       }
 
@@ -2764,6 +3107,19 @@ export class BackupService extends EventTarget {
         BackupService.POST_RECOVERY_FILE_NAME
       );
       await IOUtils.writeJSON(postRecoveryPath, postRecovery);
+
+      // In a release scenario, this should always be true
+      // this makes it easier to get around setting up profiles for testing other functionality
+      if (profileSvc.currentProfile) {
+        // if our current profile was default, let's make the new one default
+        if (profileSvc.currentProfile === profileSvc.defaultProfile) {
+          profileSvc.defaultProfile = profile;
+        }
+
+        // let's rename the old profile with a prefix old-[profile_name]
+        profile.name = profileSvc.currentProfile.name;
+        profileSvc.currentProfile.name = `old-${profileSvc.currentProfile.name}`;
+      }
 
       await profileSvc.asyncFlush();
 
@@ -2831,7 +3187,10 @@ export class BackupService extends EventTarget {
         lazy.logConsole.debug(`Done post-recovery step for ${resourceKey}`);
       }
     } finally {
-      await IOUtils.remove(postRecoveryFile, { ignoreAbsent: true });
+      await IOUtils.remove(postRecoveryFile, {
+        ignoreAbsent: true,
+        retryReadonly: true,
+      });
       this.#postRecoveryResolver();
     }
   }
@@ -2911,6 +3270,17 @@ export class BackupService extends EventTarget {
       SCHEDULED_BACKUPS_ENABLED_PREF_NAME,
       shouldEnableScheduledBackups
     );
+
+    if (shouldEnableScheduledBackups) {
+      // reset the error states when reenabling backup
+      Services.prefs.setIntPref(BACKUP_ERROR_CODE_PREF_NAME, ERRORS.NONE);
+    } else {
+      // set user-disabled pref if backup is being disabled
+      Services.prefs.setBoolPref(
+        "browser.backup.scheduled.user-disabled",
+        true
+      );
+    }
   }
 
   /**
@@ -2922,7 +3292,10 @@ export class BackupService extends EventTarget {
   onUpdateScheduledBackups(isScheduledBackupsEnabled) {
     if (this.#_state.scheduledBackupsEnabled != isScheduledBackupsEnabled) {
       if (isScheduledBackupsEnabled) {
-        Glean.browserBackup.toggleOn.record();
+        Glean.browserBackup.toggleOn.record({
+          encrypted: this.#_state.encryptionEnabled,
+          location: this.classifyLocationForTelemetry(lazy.backupDirPref),
+        });
       } else {
         Glean.browserBackup.toggleOff.record();
       }
@@ -2953,7 +3326,10 @@ export class BackupService extends EventTarget {
 
     const USING_DEFAULT_DIR_PATH =
       lazy.backupDirPref ==
-      PathUtils.join(lazy.defaultParentDirPath, BackupService.BACKUP_DIR_NAME);
+      PathUtils.join(
+        BackupService.DEFAULT_PARENT_DIR_PATH,
+        BackupService.BACKUP_DIR_NAME
+      );
     Glean.browserBackup.locationOnDevice.set(USING_DEFAULT_DIR_PATH ? 1 : 2);
 
     // Next, we'll measure the available disk space on the storage
@@ -3090,8 +3466,6 @@ export class BackupService extends EventTarget {
       );
     }
 
-    // TODO: Enforce other password rules here, such as ensuring that the
-    // password is not considered common.
     ({ instance: encState } =
       await lazy.ArchiveEncryptionState.initialize(password));
     if (!encState) {
@@ -3143,7 +3517,10 @@ export class BackupService extends EventTarget {
     // It'd be pretty strange, but not impossible, for something else to have
     // gotten rid of the encryption state file at this point. We'll ignore it
     // if that's the case.
-    await IOUtils.remove(encStateFile, { ignoreAbsent: true });
+    await IOUtils.remove(encStateFile, {
+      ignoreAbsent: true,
+      retryReadonly: true,
+    });
 
     this.#encState = null;
     this.#_state.encryptionEnabled = false;
@@ -3325,6 +3702,7 @@ export class BackupService extends EventTarget {
       }
       case "quit-application-granted": {
         this.uninitBackupScheduler();
+        this.#unregisterStatusObservers();
         break;
       }
       case "passwordmgr-storage-changed": {
@@ -3375,6 +3753,46 @@ export class BackupService extends EventTarget {
     }
   }
 
+  #registerStatusObservers() {
+    // We don't use this.#observer since any changes to the prefs or nimbus should
+    // immediately reflect across any observers, instead of waiting on idle
+    Services.prefs.addObserver(
+      BACKUP_ARCHIVE_ENABLED_PREF_NAME,
+      this.#notifyStatusObservers
+    );
+    Services.prefs.addObserver(
+      BACKUP_RESTORE_ENABLED_PREF_NAME,
+      this.#notifyStatusObservers
+    );
+    Services.prefs.addObserver(
+      "privacy.sanitize.sanitizeOnShutdown",
+      this.#notifyStatusObservers
+    );
+    lazy.NimbusFeatures.backupService.onUpdate(this.#notifyStatusObservers);
+  }
+
+  #unregisterStatusObservers() {
+    Services.prefs.removeObserver(
+      BACKUP_ARCHIVE_ENABLED_PREF_NAME,
+      this.#notifyStatusObservers
+    );
+    Services.prefs.removeObserver(
+      BACKUP_RESTORE_ENABLED_PREF_NAME,
+      this.#notifyStatusObservers
+    );
+    Services.prefs.removeObserver(
+      "privacy.sanitize.sanitizeOnShutdown",
+      this.#notifyStatusObservers
+    );
+  }
+
+  /**
+   * Notify any listeners about the availability of the backup service.
+   */
+  #notifyStatusObservers = () => {
+    Services.obs.notifyObservers(null, "backup-service-status-updated");
+  };
+
   /**
    * Called when the last known backup should be deleted and a new one
    * created. This uses the #regenerationDebouncer to debounce clusters of
@@ -3424,16 +3842,24 @@ export class BackupService extends EventTarget {
         now - lastBackupDate > lazy.minimumTimeBetweenBackupsSeconds
       ) {
         lazy.logConsole.debug(
-          "Last backup exceeded minimum time between backups. Queing a " +
+          "Last backup exceeded minimum time between backups. Queueing a " +
             "backup via idleDispatch."
         );
+
         // Just because the user hasn't sent us events in a while doesn't mean
         // that the browser itself isn't busy. It might be, for example, playing
         // video or doing a complex calculation that the user is actively
         // waiting to complete, and we don't want to draw resources from that.
         // Instead, we'll use ChromeUtils.idleDispatch to wait until the event
         // loop in the parent process isn't so busy with higher priority things.
-        this.createBackupOnIdleDispatch();
+        let expectedBackupTime =
+          lastBackupDate + lazy.minimumTimeBetweenBackupsSeconds;
+        this.createBackupOnIdleDispatch({
+          reason:
+            expectedBackupTime < this._startupTimeUnixSeconds
+              ? "missed"
+              : "idle",
+        });
       } else {
         lazy.logConsole.debug(
           "Last backup was too recent. Not creating one for now."
@@ -3443,16 +3869,62 @@ export class BackupService extends EventTarget {
   }
 
   /**
+   * Gets the time that Firefox started as milliseconds since the Unix epoch.
+   *
+   * This is in a getter to make it easier for tests to stub it out.
+   */
+  get _startupTimeUnixSeconds() {
+    let startupTimeMs = Services.startup.getStartupInfo().process.getTime();
+    return Math.floor(startupTimeMs / 1000);
+  }
+
+  /**
    * Calls BackupService.createBackup at the next moment when the event queue
    * is not busy with higher priority events. This is intentionally broken out
    * into its own method to make it easier to stub out in tests.
+   *
+   * @param {...*} args
+   *   Arguments to pass through to createBackup.
    */
-  createBackupOnIdleDispatch() {
+  createBackupOnIdleDispatch(...args) {
+    let now = Math.floor(Date.now() / 1000);
+    let errorStateDebugInfo = Services.prefs.getStringPref(
+      BACKUP_DEBUG_INFO_PREF_NAME,
+      ""
+    );
+
+    // we retry failing backups every minimumTimeBetweenBackupsSeconds if
+    // isRetryDisabledOnIdle is true. If isRetryDisabledOnIdle is false,
+    // we retry on next idle until we hit backupRetryLimit and switch isRetryDisabledOnIdle to true
+    if (
+      lazy.isRetryDisabledOnIdle &&
+      errorStateDebugInfo &&
+      now - JSON.parse(errorStateDebugInfo).lastBackupAttempt <
+        lazy.minimumTimeBetweenBackupsSeconds
+    ) {
+      lazy.logConsole.debug(
+        `We've already retried in the last ${lazy.minimumTimeBetweenBackupsSeconds}s. Waiting for next valid idleDispatch to try again.`
+      );
+      return;
+    }
+
     ChromeUtils.idleDispatch(() => {
       lazy.logConsole.debug(
         "idleDispatch fired. Attempting to create a backup."
       );
-      this.createBackup();
+
+      this.createBackup(...args).catch(e => {
+        lazy.logConsole.debug(
+          `There was an error creating backup on idle dispatch: ${e}`
+        );
+
+        BackupService.#errorRetries += 1;
+        if (BackupService.#errorRetries > lazy.backupRetryLimit) {
+          // We've had too many errors with retries, let's only backup on next timestamp
+          Services.prefs.setBoolPref(DISABLED_ON_IDLE_RETRY_PREF_NAME, true);
+          Glean.browserBackup.backupThrottled.record();
+        }
+      });
     });
   }
 
@@ -3511,11 +3983,31 @@ export class BackupService extends EventTarget {
    */
   async getBackupFileInfo(backupFilePath) {
     lazy.logConsole.debug(`Getting info from backup file at ${backupFilePath}`);
-    let { archiveJSON, isEncrypted } = await this.sampleArchive(backupFilePath);
-    this.#_state.backupFileInfo = {
-      isEncrypted,
-      date: archiveJSON?.meta?.date,
-    };
+    try {
+      let { archiveJSON, isEncrypted } =
+        await this.sampleArchive(backupFilePath);
+      this.#_state.backupFileInfo = {
+        isEncrypted,
+        date: archiveJSON?.meta?.date,
+        deviceName: archiveJSON?.meta?.deviceName,
+      };
+      this.#_state.backupFileToRestore = backupFilePath;
+      // Clear any existing recovery error from state since we've successfully got our file info
+      this.setRecoveryError(ERRORS.NONE);
+    } catch (error) {
+      this.setRecoveryError(error.cause);
+      // Nullify the file info when we catch errors that indicate the file is invalid
+      switch (error.cause) {
+        case ERRORS.FILE_SYSTEM_ERROR:
+        case ERRORS.CORRUPTED_ARCHIVE:
+        case ERRORS.UNSUPPORTED_BACKUP_VERSION:
+          this.#_state.backupFileInfo = null;
+          this.#_state.backupFileToRestore = null;
+          break;
+        default:
+          break;
+      }
+    }
     this.stateUpdate();
   }
 
@@ -3549,12 +4041,32 @@ export class BackupService extends EventTarget {
   }
 
   /**
-   * Looks for valid backup files in the default location to auto populate the file picker.
+   * Searches for a valid backup file in the default backup folder.
+   *
+   * This function checks the possible backup directory's for `.html` backup files.
+   * If multiple backups are present and `multipleFiles` is false, it will not select one.
+   * Optionally validates each candidate file before selecting it.
+   *
+   * @param {object} [options={}] - Configuration options.
+   * @param {boolean} [options.validateFile=true] - Whether to validate each backup file before selecting it.
+   * @param {boolean} [options.multipleFiles=false] - Whether to allow selecting when multiple backup files are found.
+   * @param {boolean} [options.speedUpHeuristic=false] - Whether we want to avoid performance bottlenecks in exchange for
+   *                              possibly missing valid files.
+   *
+   * @returns {Promise<object>} A result object with the following properties:
+   * - {boolean} multipleBackupsFound — True if more than one backup candidate was found and `multipleFiles` is false.
    */
-  async findIfABackupFileExists() {
+  async findIfABackupFileExists({
+    validateFile = true,
+    multipleFiles = false,
+    speedUpHeuristic = false,
+  } = {}) {
     // Do we already have a backup for this browser? if so, we don't need to do any searching!
     if (this.#_state.lastBackupFileName) {
-      return;
+      return {
+        found: true,
+        multipleBackupsFound: false,
+      };
     }
 
     try {
@@ -3562,24 +4074,62 @@ export class BackupService extends EventTarget {
       let archiveDestPath = await this.resolveExistingArchiveDestFolderPath(
         this.#_state.backupDirPath
       );
+
       let dirExists = await this.#infalliblePathExists(archiveDestPath);
-      if (dirExists) {
-        const files = await IOUtils.getChildren(archiveDestPath);
+      if (!dirExists) {
+        return {
+          multipleBackupsFound: false,
+        };
+      }
 
-        for (const file of files) {
-          // The backup is always a html file, disregard any other files in the folder
-          if (!file.endsWith(".html")) {
-            continue;
+      let files = await IOUtils.getChildren(archiveDestPath);
+      // filtering is an O(N) operation, we can return early if there's too many files
+      // in this folder to filter to avoid a performance bottleneck
+      if (speedUpHeuristic && files && files.length > 1000) {
+        return {
+          multipleBackupsFound: false,
+        };
+      }
+
+      // The backup is always a html file and starts with "FirefoxBackup_"
+      // disregard any other files in the folder
+      let maybeBackupFiles = files.filter(f => {
+        let name = PathUtils.filename(f);
+
+        // Note: The Firefox backup filename is localized (see BackupService.BACKUP_FILE_NAME).
+        // For now, we use a hardcoded regex string directly for performance reasons.
+        return /^FirefoxBackup_.*\.html$/.test(name);
+      });
+
+      // if we aren't validating files, and there's more than 1 html file, we decide
+      // that there's no valid backup file found
+      if (!multipleFiles && maybeBackupFiles.length > 1 && !validateFile) {
+        return { multipleBackupsFound: true };
+      }
+
+      // Sort the files by the timestamp at the end of the filename,
+      // so the newest valid file is selected as the file to restore
+      if (multipleFiles && maybeBackupFiles.length > 1 && validateFile) {
+        maybeBackupFiles.sort((a, b) => {
+          let nameA = PathUtils.filename(a);
+          let nameB = PathUtils.filename(b);
+          const match = /_(\d{8}-\d{4})\.html$/;
+          let timestampA = nameA.match(match)?.[1];
+          let timestampB = nameB.match(match)?.[1];
+
+          // If either file doesn't match the expected pattern, maintain the original order
+          if (!timestampA || !timestampB) {
+            return 0;
           }
-          try {
-            await this.sampleArchive(file);
-            this.#_state.backupFileToRestore = file;
-            this.stateUpdate();
 
-            // TODO: support multiple valid backups for different profiles.
-            // Currently, we break out of the loop and select the first profile that works.
-            // We want to eventually support showing multiple valid profiles to the user.
-            break;
+          return timestampB.localeCompare(timestampA);
+        });
+      }
+
+      for (const file of maybeBackupFiles) {
+        if (validateFile) {
+          try {
+            await this.getBackupFileInfo(file);
           } catch (e) {
             lazy.logConsole.log(
               "Not a valid backup file in the default folder",
@@ -3587,20 +4137,86 @@ export class BackupService extends EventTarget {
               e
             );
 
-            if (this.#_state.backupFileToRestore !== file) {
-              continue;
+            // If this was previously selected but is no longer valid, unbind it
+            if (this.#_state.backupFileToRestore === file) {
+              this.#_state.backupFileToRestore = null;
+              this.#_state.backupFileInfo = null;
+              this.stateUpdate();
             }
 
-            // If this is the file that's selected already, but was tampered with, we should unbind it
-            this.#_state.backupFileToRestore = null;
-            this.#_state.backupFileInfo = null;
-            this.stateUpdate();
+            // let's move on to finding another file
+            continue;
           }
         }
+
+        this.#_state.backupFileToRestore = file;
+        this.stateUpdate();
+
+        // In the case that multiple files were found,
+        // but we also validated files to set the newest backup file as the file to restore,
+        // we still want to return that multiple backups were found.
+        if (multipleFiles && maybeBackupFiles.length > 1 && validateFile) {
+          return { multipleBackupsFound: true };
+        }
+
+        // TODO: support multiple valid backups for different profiles.
+        // Currently, we break out of the loop and select the first profile that works.
+        // We want to eventually support showing multiple valid profiles to the user.
+        return { multipleBackupsFound: false };
       }
     } catch (e) {
-      // no folder to go to!
+      lazy.logConsole.error(
+        "There was an error while looking for backups: ",
+        e
+      );
     }
+
+    return { multipleBackupsFound: false };
+  }
+
+  /**
+   * Searches for backup files in predefined "well-known" locations.
+   *
+   * This function wraps findIfABackupFileExists to present the result
+   * in an object for processing in the frontend.
+   *
+   * Assumptions:
+   * - Intended to be called before `about:welcome` opens.
+   * - Clears any existing `lastBackupFileName` and `backupFileToRestore`
+   *   in the internal state prior to searching.
+   *
+   * @param {object} [options] - Configuration options.
+   * @param {boolean} [options.validateFile=false] - Whether to validate each backup file
+   *   before selecting it.
+   * @param {boolean} [options.multipleFiles=false] - Whether to allow selecting a file
+   *   when multiple files are found
+   *
+   * @returns {Promise<object>} A result object with the following properties:
+   * - {boolean} found — Whether a backup file was found.
+   * - {string|null} backupFileToRestore — Path or identifier of the backup file (if found).
+   * - {boolean} multipleBackupsFound — Currently always `false`, reserved for future use.
+   */
+  async findBackupsInWellKnownLocations({
+    validateFile = false,
+    multipleFiles = false,
+  } = {}) {
+    this.#_state.lastBackupFileName = "";
+    this.#_state.backupFileToRestore = null;
+
+    let { multipleBackupsFound } = await this.findIfABackupFileExists({
+      validateFile,
+      multipleFiles,
+    });
+
+    // if a valid backup file was found, backupFileToRestore should be set
+    if (this.#_state.backupFileToRestore) {
+      return {
+        found: true,
+        backupFileToRestore: this.#_state.backupFileToRestore,
+        multipleBackupsFound,
+      };
+    }
+    return { found: false, backupFileToRestore: null, multipleBackupsFound };
   }
 
   /**
@@ -3641,7 +4257,14 @@ export class BackupService extends EventTarget {
     }
 
     // If the location changed, delete the last backup there if one exists.
-    await this.deleteLastBackup();
+    try {
+      await this.deleteLastBackup();
+    } catch {
+      lazy.logConsole.error(
+        "Error deleting last backup while editing the backup location."
+      );
+      // Fall through so the new backup directory is set.
+    }
     this.setParentDirPath(path);
   }
 
@@ -3696,7 +4319,7 @@ export class BackupService extends EventTarget {
           // folder. If not, delete that folder too.
           let children = await IOUtils.getChildren(lazy.backupDirPref);
           if (!children.length) {
-            await IOUtils.remove(lazy.backupDirPref);
+            await IOUtils.remove(lazy.backupDirPref, { retryReadony: true });
           }
         }
       }

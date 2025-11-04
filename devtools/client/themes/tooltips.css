@@ -300,6 +300,8 @@ strong {
   background: transparent;
   border: none;
   padding: 0;
+  min-width: 1px;
+  min-height: 1px;
   -moz-window-shadow: none;
   --panel-border-radius: 0px;
   --panel-padding: 0px;

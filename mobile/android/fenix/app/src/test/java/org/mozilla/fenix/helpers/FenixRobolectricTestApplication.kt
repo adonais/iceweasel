@@ -8,6 +8,7 @@ import io.mockk.mockk
 import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
+import org.mozilla.fenix.crashes.StartupCrashCanary
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.perf.runBlockingIncrement
 
@@ -25,7 +26,7 @@ class FenixRobolectricTestApplication : FenixApplication() {
 
     override val components = mockk<Components>()
 
-    override fun initializeWithStartupCrashCheck() = Unit
+    override fun checkForStartupCrash(canary: StartupCrashCanary, initialize: () -> Unit) = Unit
 
     override fun initializeNimbus() = Unit
 

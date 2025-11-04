@@ -142,7 +142,7 @@ NS_IMETHODIMP ChangeStyleTransaction::DoTransaction() {
 
   const OwningNonNull<HTMLEditor> htmlEditor = *mHTMLEditor;
   const OwningNonNull<nsStyledElement> styledElement = *mStyledElement;
-  const nsCOMPtr<nsICSSDeclaration> cssDecl = styledElement->Style();
+  const nsCOMPtr<nsDOMCSSDeclaration> cssDecl = styledElement->Style();
 
   // FIXME(bug 1606994): Using atoms forces a string copy here which is not
   // great.
@@ -235,7 +235,7 @@ nsresult ChangeStyleTransaction::SetStyle(bool aAttributeWasSet,
     nsAutoCString propertyNameString;
     mProperty->ToUTF8String(propertyNameString);
 
-    const nsCOMPtr<nsICSSDeclaration> cssDecl = styledElement->Style();
+    const nsCOMPtr<nsDOMCSSDeclaration> cssDecl = styledElement->Style();
 
     ErrorResult error;
     if (aValue.IsEmpty()) {

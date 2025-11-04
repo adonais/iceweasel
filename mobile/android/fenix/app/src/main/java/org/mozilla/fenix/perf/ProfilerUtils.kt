@@ -97,6 +97,23 @@ private val networking_threads = arrayOf(
     "Renderer", "Socket Thread", "StreamTrans", "SwComposite", "TRR Background",
 )
 
+private val debug_features = arrayOf(
+    "cpu",
+    "java",
+    "ipcmessages",
+    "js",
+    "markersallthreads",
+    "processcpu",
+    "samplingallthreads",
+    "stackwalk",
+    "unregisteredthreads",
+    "flows",
+)
+
+private val debug_threads = arrayOf(
+    "*",
+)
+
 /**
  * Profiler settings enum for grouping features and settings together
  */
@@ -105,6 +122,14 @@ enum class ProfilerSettings(val threads: Array<String>, val features: Array<Stri
     Graphics(graphics_threads, graphics_features),
     Media(media_threads, media_features),
     Networking(networking_threads, networking_features),
+    Debug(debug_threads, debug_features),
+    ;
+
+    init {
+        require(features.contains("java")) {
+            "ProfilerSettings.$name must include the 'java' feature."
+        }
+    }
 }
 
 /**

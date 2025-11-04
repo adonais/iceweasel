@@ -188,6 +188,54 @@ firefox.ai.runtime:
       error:
         description: error class
         type: string
+  engine_run:
+    type: event
+    description: >
+      The performance and memory characteristics of a single run of the inference engine.
+    extra_keys:
+      cpu_milliseconds:
+        description: The combined milliseconds of every cpu core that was running.
+        type: quantity
+      wall_milliseconds:
+        description: The amount of wall time the run request took.
+        type: quantity
+      cores:
+        description: The number of cores on the machine.
+        type: quantity
+      cpu_utilization:
+        description: The percentage of the user's CPU used.
+        type: quantity
+      memory_bytes:
+        description: The number of RSS bytes for the inference process.
+        type: quantity
+      feature_id:
+        description: >
+          A unique id to describe the feature. e.g. pdfjs-alt-text, suggest-NER,
+          link-preview.
+        type: string
+      engine_id:
+        type: string
+        description: >
+          Similar to the feature id, but is used to ensure only one engine is created
+          under this name.
+      model_id:
+        type: string
+        description: >
+          The identifier for what model is being used by the engine,
+          e.g. Xenova/all-MiniLM-L6-v2
+      backend:
+        type: string
+        description: The backend that is being used, e.g. onnx, onnx-native, wllama
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1992779
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1992779
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - tziade@mozilla.com
+      - gtatum@mozilla.com
+    expires: never
 
 model_management:
   remove_initiated:

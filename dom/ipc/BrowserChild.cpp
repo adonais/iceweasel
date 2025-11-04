@@ -1612,6 +1612,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEvent(
       // event listener.  Therefore, the cloned event in the queue shouldn't
       // cause eMouseRawUpdate later when it'll be dispatched.
       WidgetMouseEvent pendingMouseMoveEvent(aEvent);
+      // We don't want to dispatch aEvent immediately, so the cloned event
+      // should track the cllback id. And the callback id of cloned event will
+      // be moved again if there is no coalesced data yet when coalescing.
+      pendingMouseMoveEvent.mCallbackId = std::move(aEvent.mCallbackId);
       pendingMouseMoveEvent.convertToPointerRawUpdate = false;
       data->Coalesce(pendingMouseMoveEvent, aGuid, aInputBlockId);
       mCoalescedMouseEventFlusher->StartObserver();
@@ -1638,6 +1642,10 @@ mozilla::ipc::IPCResult BrowserChild::RecvRealMouseMoveEvent(
     // event listener.  Therefore, the cloned event in the queue shouldn't
     // cause eMouseRawUpdate later when it'll be dispatched.
     WidgetMouseEvent pendingMouseMoveEvent(aEvent);
+    // The cloned event should track the cllback id. And the callback id of
+    // cloned event will be moved again if there is no coalesced data yet when
+    // coalescing.
+    pendingMouseMoveEvent.mCallbackId = std::move(aEvent.mCallbackId);
     pendingMouseMoveEvent.convertToPointerRawUpdate = false;
     newData->Coalesce(pendingMouseMoveEvent, aGuid, aInputBlockId);
 

@@ -17,7 +17,6 @@
 
 #include "ErrorList.h"
 #include "gtest/gtest.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/FixedBufferOutputStream.h"
@@ -31,7 +30,6 @@
 #include "mozilla/dom/quota/EncryptedBlock.h"
 #include "mozilla/dom/quota/EncryptingOutputStream_impl.h"
 #include "mozilla/dom/quota/NSSCipherStrategy.h"
-#include "mozilla/fallible.h"
 #include "nsCOMPtr.h"
 #include "nsError.h"
 #include "nsICloneableInputStream.h"

@@ -81,7 +81,7 @@ export class FormValidationParent extends JSWindowActorParent {
 
   receiveMessage(aMessage) {
     switch (aMessage.name) {
-      case "FormValidation:ShowPopup":
+      case "FormValidation:ShowPopup": {
         let browser = this.browsingContext.top.embedderElement;
         let window = browser.ownerGlobal;
         let data = aMessage.data;
@@ -103,6 +103,7 @@ export class FormValidationParent extends JSWindowActorParent {
 
         this._showPopup(browser, data);
         break;
+      }
       case "FormValidation:HidePopup":
         this._hidePopup();
         break;

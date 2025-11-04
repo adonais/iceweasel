@@ -219,7 +219,7 @@ enum aome_enc_control_id {
    */
   AOME_SET_CPUUSED = 13,
 
-  /*!\brief Codec control function to enable automatic set and use alf frames,
+  /*!\brief Codec control function to enable automatic set and use arf frames,
    * unsigned int parameter
    *
    * - 0 = disable

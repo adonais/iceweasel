@@ -333,20 +333,6 @@ async function testFileAccessMacOnly() {
     func: readDir,
   });
 
-  // /Network is not present on macOS 10.15 (xnu 19). Don't
-  // test this directory on 10.15 and later.
-  if (AppConstants.isPlatformAndVersionAtMost("macosx", 18)) {
-    // Test that we cannot read from /Network at level 3
-    let network = GetDir("/Network");
-    tests.push({
-      desc: "/Network",
-      ok: false,
-      browser: webBrowser,
-      file: network,
-      minLevel: minHomeReadSandboxLevel(),
-      func: readDir,
-    });
-  }
   // Test that we cannot read from /Users at level 3
   let users = GetDir("/Users");
   tests.push({

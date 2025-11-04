@@ -48,7 +48,7 @@ support-files = [
 ["test_add_preexisting_cert.js"]
 
 ["test_allow_all_cert_errors.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_baseline_requirements_subject_common_name.js"]
 
@@ -78,7 +78,7 @@ run-if = ["os != 'android'"]
 # nsCertificateDialogs not available in geckoview, bug 1554276
 
 ["test_cert_chains.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_cert_dbKey.js"]
 
@@ -94,10 +94,10 @@ run-if = ["nightly_build"]
 ["test_cert_override_read.js"]
 
 ["test_cert_overrides.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_cert_overrides_read_only.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_cert_sha1.js"]
 
@@ -121,7 +121,7 @@ tags = "addons psm blocklist"
 ["test_client_auth_remember_service_read.js"]
 
 ["test_client_auth_speculative_connection.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_constructX509FromBase64.js"]
 
@@ -129,7 +129,7 @@ run-sequentially = "hardcoded ports"
 
 ["test_crlite_filters.js"]
 run-if = ["debug"] # Requires hard-coded debug-only data
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 tags = "remote-settings psm"
 
 ["test_crlite_preexisting.js"]
@@ -137,12 +137,12 @@ run-if = ["debug"] # Requires hard-coded debug-only data
 
 ["test_ct.js"]
 run-if = ["debug"] # Requires hard-coded debug-only data
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix"]
 
 ["test_ct_stapled.js"]
 run-if = ["debug"] # Requires hard-coded debug-only data
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 skip-if = ["os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix"]
 
 ["test_data_storage.js"]
@@ -156,15 +156,15 @@ skip-if = [
 ]
 
 ["test_delegated_credentials.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_der.js"]
 
 ["test_encrypted_client_hello.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_encrypted_client_hello_client_only.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_enterprise_roots.js"]
 # This feature is implemented for Windows and OS X. However, we don't currently
@@ -176,10 +176,10 @@ run-if = [
 
 ["test_ev_certs.js"]
 tags = "blocklist psm"
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_faulty_server.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_forget_about_site_security_headers.js"]
 
@@ -190,26 +190,26 @@ run-sequentially = "hardcoded ports"
 ["test_intermediate_basic_usage_constraints.js"]
 
 ["test_intermediate_preloads.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 tags = "blocklist psm remote-settings"
 
 ["test_keysize.js"]
 
 ["test_keysize_ev.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_logoutAndTeardown.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_missing_intermediate.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_name_constraints.js"]
 
 ["test_nonascii_path.js"]
 
 ["test_nsCertType.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_nsIX509CertValidity.js"]
 
@@ -218,37 +218,37 @@ run-sequentially = "hardcoded ports"
 ["test_nss_errors_service.js"]
 
 ["test_ocsp_caching.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_ocsp_enabled_pref.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_ocsp_must_staple.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_ocsp_no_hsts_upgrade.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_ocsp_private_caching.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_ocsp_required.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_ocsp_stapling.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_ocsp_stapling_expired.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_ocsp_stapling_with_intermediate.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_ocsp_timeout.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_ocsp_url.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_oskeystore.js"]
 skip-if = [
@@ -268,7 +268,7 @@ run-if = [
 ["test_password_prompt.js"]
 
 ["test_pinning.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_sdr.js"]
 
@@ -281,12 +281,12 @@ run-if = ["os != 'android'"] # Not relevant to Android. See the comment in the t
 ["test_self_signed_certs.js"]
 
 ["test_session_resumption.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_signed_apps.js"]
 
 ["test_ssl_status.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 
 ["test_sss_eviction.js"]
 run-if = ["!condprof"] # Bug 1769154 - as designed

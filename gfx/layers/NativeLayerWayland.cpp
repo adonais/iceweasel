@@ -893,9 +893,9 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
   if (auto* external = AsNativeLayerWaylandExternal()) {
     if (RefPtr surface = external->GetSurface()) {
       if (auto* surfaceYUV = surface->GetAsDMABufSurfaceYUV()) {
-        mSurface->SetColorRepresentationLocked(surfaceLock,
-                                               surfaceYUV->GetYUVColorSpace(),
-                                               surfaceYUV->IsFullRange());
+        mSurface->SetColorRepresentationLocked(
+            surfaceLock, surfaceYUV->GetYUVColorSpace(),
+            surfaceYUV->IsFullRange(), surfaceYUV->GetWPChromaLocation());
       }
     }
   }
@@ -998,9 +998,7 @@ NativeLayerWaylandRender::NativeLayerWaylandRender(
 
 void NativeLayerWaylandRender::AttachExternalImage(
     wr::RenderTextureHost* aExternalImage) {
-  MOZ_RELEASE_ASSERT(
-      false,
-      "NativeLayerWaylandRender::AttachExternalImage() not implemented.");
+  MOZ_CRASH("NativeLayerWaylandRender::AttachExternalImage() not implemented.");
 }
 
 bool NativeLayerWaylandRender::IsFrontBufferChanged() {
@@ -1085,10 +1083,9 @@ Maybe<GLuint> NativeLayerWaylandRender::NextSurfaceAsFramebuffer(
         mSize, mRootLayer->GetDRMFormat());
   }
 
+  MOZ_DIAGNOSTIC_ASSERT(mInProgressBuffer,
+                        "NativeLayerWaylandRender: Failed to obtain buffer");
   if (!mInProgressBuffer) {
-    gfxCriticalError() << "Failed to obtain buffer";
-    wr::RenderThread::Get()->HandleWebRenderError(
-        wr::WebRenderError::NEW_SURFACE);
     return Nothing();
   }
 
@@ -1099,7 +1096,11 @@ Maybe<GLuint> NativeLayerWaylandRender::NextSurfaceAsFramebuffer(
   // create one without depth buffer
   Maybe<GLuint> fbo = mSurfacePoolHandle->GetFramebufferForBuffer(
       mInProgressBuffer, aNeedsDepth);
-  MOZ_RELEASE_ASSERT(fbo, "GetFramebufferForBuffer failed.");
+  MOZ_DIAGNOSTIC_ASSERT(
+      fbo, "NativeLayerWaylandRender: Failed to create framebuffer!");
+  if (!fbo) {
+    return Nothing();
+  }
 
   if (mFrontBuffer) {
     LOGVERBOSE(
@@ -1129,9 +1130,20 @@ void NativeLayerWaylandRender::ReadBackFrontBuffer(
         gfx::IntRect r = iter.Get();
         Maybe<GLuint> sourceFB =
             mSurfacePoolHandle->GetFramebufferForBuffer(mFrontBuffer, false);
+        MOZ_DIAGNOSTIC_ASSERT(sourceFB,
+                              "NativeLayerWaylandRender: Failed to get "
+                              "mFrontBuffer framebuffer!");
+        if (!sourceFB) {
+          return;
+        }
         Maybe<GLuint> destFB = mSurfacePoolHandle->GetFramebufferForBuffer(
             mInProgressBuffer, false);
-        MOZ_RELEASE_ASSERT(sourceFB && destFB);
+        MOZ_DIAGNOSTIC_ASSERT(destFB,
+                              "NativeLayerWaylandRender: Failed to get "
+                              "mInProgressBuffer framebuffer!");
+        if (!destFB) {
+          return;
+        }
         mSurfacePoolHandle->gl()->BlitHelper()->BlitFramebufferToFramebuffer(
             sourceFB.value(), destFB.value(), r, r, LOCAL_GL_NEAREST);
       }
@@ -1276,8 +1288,7 @@ void NativeLayerWaylandExternal::DiscardBackbuffersLocked(
 RefPtr<DrawTarget> NativeLayerWaylandExternal::NextSurfaceAsDrawTarget(
     const IntRect& aDisplayRect, const IntRegion& aUpdateRegion,
     BackendType aBackendType) {
-  MOZ_RELEASE_ASSERT(
-      false,
+  MOZ_CRASH(
       "NativeLayerWaylandExternal::NextSurfaceAsDrawTarget() not implemented!");
   return nullptr;
 }
@@ -1285,9 +1296,9 @@ RefPtr<DrawTarget> NativeLayerWaylandExternal::NextSurfaceAsDrawTarget(
 Maybe<GLuint> NativeLayerWaylandExternal::NextSurfaceAsFramebuffer(
     const IntRect& aDisplayRect, const IntRegion& aUpdateRegion,
     bool aNeedsDepth) {
-  MOZ_RELEASE_ASSERT(false,
-                     "NativeLayerWaylandExternal::NextSurfaceAsFramebuffer() "
-                     "not implemented!");
+  MOZ_CRASH(
+      "NativeLayerWaylandExternal::NextSurfaceAsFramebuffer() "
+      "not implemented!");
   return Nothing();
 }
 

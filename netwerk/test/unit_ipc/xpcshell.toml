@@ -1,5 +1,5 @@
 [DEFAULT]
-head = "head_channels_clone.js ../unit/head_servers.js head_trr_clone.js head_http3_clone.js"
+head = "head_channels_clone.js head_trr_clone.js head_http3_clone.js"
 # Several tests rely on redirecting to data: URIs, which was allowed for a long
 # time but now forbidden. So we enable it just for these tests.
 prefs = ["network.allow_redirect_to_data=true"]
@@ -150,14 +150,14 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_http3_prio_disabled_wrap.js"]
-run-sequentially = "http3server"
+run-sequentially = ["true"] # http3server
 skip-if = [
-  "os == 'android' && android_version == '34' && processor == 'x86_64'", # Bug 1982955
+  "os == 'android' && os_version == '14' && processor == 'x86_64'", # Bug 1982955
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix", # Bug 1807925
 ]
 
 ["test_http3_prio_enabled_wrap.js"]
-run-sequentially = "http3server"
+run-sequentially = ["true"] # http3server
 skip-if = ["true"] # Will be reenabled in bug 1865394
 
 ["test_httpcancel_wrap.js"]
@@ -181,6 +181,7 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_predictor_wrap.js"]
+run-sequentially = ["os == 'mac'"] # frequent timeouts on Mac in parallel
 
 ["test_progress_wrap.js"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
@@ -217,7 +218,7 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 ["test_redirect_veto_parent.js"]
 skip-if = ["isolated_process"] # Bug 1709961
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
-run-sequentially = "doesn't play nice with others."
+run-sequentially = ["true"] # doesn't play nice with others.
 
 ["test_redirect_veto_wrap.js"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]

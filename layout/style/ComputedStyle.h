@@ -70,6 +70,12 @@ class ComputedStyle {
     Servo_GetComputedValue(this, aId, &aOut);
   }
 
+  // Returns the computed typed value of the given property.
+  bool GetPropertyTypedValue(const nsACString& aProperty,
+                             StylePropertyTypedValueResult& aOut) const {
+    return Servo_GetComputedTypedValue(this, &aProperty, &aOut);
+  }
+
   // Return the ComputedStyle whose style data should be used for the R,
   // G, and B components of color, background-color, and border-*-color
   // if RelevantLinkIsVisited().
@@ -189,6 +195,8 @@ class ComputedStyle {
   }
 
   bool HasAnchorPosReference() const;
+
+  bool MaybeAnchorPosReferencesDiffer(const ComputedStyle* aOther) const;
 
   ComputedStyle* GetCachedInheritingAnonBoxStyle(
       PseudoStyleType aPseudoType) const {

@@ -70,7 +70,7 @@ struct SizeComputationInput {
   gfxContext* mRenderingContext;
 
   // Cache of referenced anchors for this computation.
-  AnchorPosReferencedAnchors* mReferencedAnchors = nullptr;
+  AnchorPosReferenceData* mAnchorPosReferenceData = nullptr;
 
   nsMargin ComputedPhysicalMargin() const {
     return mComputedMargin.GetPhysicalMargin(mWritingMode);
@@ -133,7 +133,7 @@ struct SizeComputationInput {
   // Callers using this constructor must call InitOffsets on their own.
   SizeComputationInput(
       nsIFrame* aFrame, gfxContext* aRenderingContext,
-      AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
+      AnchorPosReferenceData* aAnchorPosReferenceData = nullptr);
 
   SizeComputationInput(nsIFrame* aFrame, gfxContext* aRenderingContext,
                        WritingMode aContainingBlockWritingMode,
@@ -627,9 +627,9 @@ struct ReflowInput : public SizeComputationInput {
    *        call nsIFrame::ComputeSize() internally.
    * @param aComputeSizeFlags A set of flags used when we call
    *        nsIFrame::ComputeSize() internally.
-   * @param aReferencedAnchors A cache of referenced anchors to be populated (If
-   *        specified) for this reflowed frame. Should live for the lifetime of
-   *        this ReflowInput.
+   * @param aAnchorPosReferenceData A cache of referenced anchors to be
+   * populated (If specified) for this reflowed frame. Should live for the
+   * lifetime of this ReflowInput.
    */
   ReflowInput(nsPresContext* aPresContext,
               const ReflowInput& aParentReflowInput, nsIFrame* aFrame,
@@ -638,7 +638,7 @@ struct ReflowInput : public SizeComputationInput {
               InitFlags aFlags = {},
               const StyleSizeOverrides& aSizeOverrides = {},
               ComputeSizeFlags aComputeSizeFlags = {},
-              AnchorPosReferencedAnchors* aReferencedAnchors = nullptr);
+              AnchorPosReferenceData* aAnchorPosReferenceData = nullptr);
 
   /**
    * This method initializes various data members. It is automatically called by
@@ -700,9 +700,6 @@ struct ReflowInput : public SizeComputationInput {
                                          WritingMode aWM);
 
   static constexpr float kNormalLineHeightFactor = 1.2f;
-
-  LogicalSize ComputeContainingBlockRectangle(
-      nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const;
 
   /**
    * Apply the mComputed(Min/Max)ISize constraints to the content
@@ -855,6 +852,15 @@ struct ReflowInput : public SizeComputationInput {
                        const Maybe<LogicalMargin>& aPadding,
                        LayoutFrameType aFrameType);
 
+  /**
+   * Compute the content-box rect of the containing block frame in mFrame's
+   * writing-mode (mWritingMode).
+   *
+   * Note: the block-size in the return value may be unconstrained.
+   */
+  LogicalSize ComputeContainingBlockRectangle(
+      nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const;
+
   // Returns the nearest containing block or block frame (whether or not
   // it is a containing block) for the specified frame.  Also returns
   // the inline-start edge and logical size of the containing block's
@@ -975,7 +981,8 @@ struct ReflowInput : public SizeComputationInput {
 
 inline AnchorPosResolutionParams AnchorPosResolutionParams::From(
     const mozilla::ReflowInput* aRI) {
-  return {aRI->mFrame, aRI->mStyleDisplay->mPosition, aRI->mReferencedAnchors};
+  return {aRI->mFrame, aRI->mStyleDisplay->mPosition,
+          aRI->mStylePosition->mPositionArea, aRI->mAnchorPosReferenceData};
 }
 
 #endif  // mozilla_ReflowInput_h

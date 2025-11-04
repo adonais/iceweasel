@@ -33,6 +33,8 @@
 
       const LABEL_L10N_ID = "browsing-use-autoscroll";
       const GROUP_L10N_ID = "pane-experimental-reset";
+      const PREF_ONE = "test.settings-group.itemone";
+      const PREF_TWO = "test.settings-group.itemtwo";
 
       function renderTemplate(config) {
         return testHelpers.renderTemplate(html`
@@ -60,24 +62,21 @@
         });
         MozXULElement.insertFTLIfNeeded("branding/brand.ftl");
         MozXULElement.insertFTLIfNeeded("browser/preferences/preferences.ftl");
+        Preferences.addAll([
+          { id: PREF_ONE, type: "bool" },
+          { id: PREF_TWO, type: "bool" },
+        ]);
       });
 
       add_task(async function testSettingGroupSimple() {
-        const PREF_ONE = "test.settings-group.itemone";
         const SETTING_ONE = "setting-item-one";
-        const PREF_TWO = "test.settings-group.itemtwo";
         const SETTING_TWO = "setting-item-two";
         await SpecialPowers.pushPrefEnv({
           set: [
             [PREF_ONE, true],
             [PREF_TWO, false],
-            ["settings.revamp.design", true],
           ],
         });
-        Preferences.addAll([
-          { id: PREF_ONE, type: "bool" },
-          { id: PREF_TWO, type: "bool" },
-        ]);
         Preferences.addSetting({
           id: SETTING_ONE,
           pref: PREF_ONE,
@@ -113,6 +112,167 @@
           item2.config.id,
           SETTING_TWO,
           "Second setting-control id is correct"
+        );
+        await SpecialPowers.popPrefEnv();
+      });
+
+      add_task(async function testSettingGroupVisibility() {
+        const SETTING_ONE = "setting-item-one";
+        const SETTING_TWO = "setting-item-two";
+        await SpecialPowers.pushPrefEnv({
+          set: [
+            [PREF_ONE, false],
+            [PREF_TWO, false],
+          ],
+        });
+        Preferences.addSetting({
+          id: SETTING_ONE,
+          pref: PREF_ONE,
+          visible: (_, setting) => setting.value,
+        });
+        Preferences.addSetting({
+          id: SETTING_TWO,
+          pref: PREF_TWO,
+          visible: (_, setting) => setting.value,
+        });
+        let config = {
+          l10nId: GROUP_L10N_ID,
+          items: [
+            { l10nId: LABEL_L10N_ID, id: SETTING_ONE },
+            { l10nId: LABEL_L10N_ID, id: SETTING_TWO },
+          ],
+        };
+
+        let result = await renderTemplate(config);
+        let group = result.querySelector("setting-group");
+        ok(group, "setting-group is created");
+        let [control1, control2] = group.children[0].children;
+        is(control1.hidden, true, "First setting-control should be hidden");
+        is(control2.hidden, true, "Second setting-control should be hidden");
+
+        ok(
+          group.hidden,
+          "setting-group should be hidden since its controls are hidden"
+        );
+
+        Services.prefs.setBoolPref(PREF_ONE, true);
+        await TestUtils.waitForCondition(
+          () => !control1.hidden,
+          "Control 1 should be visible after changing pref value"
+        );
+        await TestUtils.waitForCondition(
+          () => !group.hidden,
+          "Group should be visible since one of the controls is visible"
+        );
+        is(
+          control2.hidden,
+          true,
+          "The second setting-control should still be hidden"
+        );
+        Services.prefs.setBoolPref(PREF_TWO, true);
+        await TestUtils.waitForCondition(
+          () => !control2.hidden,
+          "Control 2 should be visible after changing pref value"
+        );
+        ok(!control1.hidden, "Control 1 should still be visible");
+        ok(!group.hidden, "Group should still be visible");
+
+        Services.prefs.setBoolPref(PREF_ONE, false);
+        Services.prefs.setBoolPref(PREF_TWO, false);
+
+        await TestUtils.waitForCondition(
+          () => control1.hidden,
+          "Control 1 should be hidden after changing pref value"
+        );
+        await TestUtils.waitForCondition(
+          () => control2.hidden,
+          "Control 2 should be hidden after changing pref value"
+        );
+
+        await TestUtils.waitForCondition(
+          () => group.hidden,
+          "Group should be hidden now that the controls are hidden"
+        );
+      });
+
+      add_task(async function testSettingGroupCallbacks() {
+        const SETTING_ONE = "setting-first";
+        const SETTING_TWO = "setting-second";
+
+        let clickCallbacks = [];
+        let changeCallbacks = [];
+
+        await SpecialPowers.pushPrefEnv({
+          set: [[PREF_ONE, true]],
+        });
+        Preferences.addSetting({
+          id: SETTING_ONE,
+          pref: PREF_ONE,
+          onUserClick(_, __, setting) {
+            clickCallbacks.push(setting.id);
+          },
+          onUserChange(_, __, setting) {
+            changeCallbacks.push(setting.id);
+          },
+        });
+        Preferences.addSetting({
+          id: SETTING_TWO,
+          onUserClick(_, __, setting) {
+            clickCallbacks.push(setting.id);
+          },
+        });
+        let config = {
+          l10nId: GROUP_L10N_ID,
+          items: [
+            {
+              l10nId: LABEL_L10N_ID,
+              id: SETTING_ONE,
+            },
+            {
+              l10nId: LABEL_L10N_ID,
+              id: SETTING_TWO,
+              control: "moz-box-button",
+            },
+          ],
+        };
+
+        let result = await renderTemplate(config);
+        let group = result.querySelector("setting-group");
+        let fieldset = group.children[0];
+        let [item1, item2] = fieldset.children;
+
+        is(
+          item1.controlEl.localName,
+          "moz-checkbox",
+          "First setting control renders a moz-checkbox."
+        );
+        is(
+          item2.controlEl.localName,
+          "moz-box-button",
+          "First setting control renders a moz-box-button."
+        );
+
+        let settingOne = Preferences.getSetting(SETTING_ONE);
+        let settingChanged = waitForSettingChange(settingOne);
+        synthesizeMouseAtCenter(item1.controlEl, {});
+        await settingChanged;
+
+        is(
+          clickCallbacks.length,
+          0,
+          "onUserClick is not called when clicking on moz-checkbox."
+        );
+        is(
+          changeCallbacks.length,
+          1,
+          "onUserChange called when clicking on moz-checkbox."
+        );
+
+        synthesizeMouseAtCenter(item2.controlEl, {});
+        is(
+          clickCallbacks.length,
+          1,
+          "onUserClick is called when clicking on moz-box-button."
         );
       });
     </script>

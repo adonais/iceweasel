@@ -6,6 +6,9 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html } from "chrome://global/content/vendor/lit.all.mjs";
 import { LINKS } from "chrome://browser/content/ipprotection/ipprotection-constants.mjs";
 
+/**
+ * A custom element that handles the signed out status of IP Protection.
+ */
 export default class IPProtectionSignedOutContentElement extends MozLitElement {
   static queries = {
     learnMoreLinkEl: "#learn-more-vpn-signed-out",

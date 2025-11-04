@@ -128,7 +128,8 @@ export const CommonUtils = {
   /**
    * Obtain DOMNode id from an accessible. This simply queries the .id property
    * on the accessible, but it catches exceptions which might occur if the
-   * accessible has died.
+   * accessible has died or was constructed from a pseudoelement
+   * like ::details-content.
    * @param  {nsIAccessible} accessible  accessible
    * @return {String?}                   DOMNode id if available
    */
@@ -136,7 +137,9 @@ export const CommonUtils = {
     try {
       return accessible.id;
     } catch (e) {
-      // This will fail if the accessible has died.
+      // This will fail if the accessible has died, or if
+      // the accessible was constructed from a pseudoelement
+      // like ::details-content.
     }
     return null;
   },

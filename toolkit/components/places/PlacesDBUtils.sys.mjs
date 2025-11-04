@@ -31,10 +31,6 @@ export var PlacesDBUtils = {
 
   /**
    * Executes integrity check and common maintenance tasks.
-   *
-   * @returns a Map[taskName(String) -> Object]. The Object has the following properties:
-   *         - succeeded: boolean
-   *         - logs: an array of strings containing the messages logged by the task.
    */
   async maintenanceOnIdle() {
     let tasks = [
@@ -97,9 +93,9 @@ export var PlacesDBUtils = {
   /**
    * Checks integrity and tries to fix the database through a reindex.
    *
-   * @returns {Promise} resolves if database is sane or is made sane.
-   * @resolves to an array of logs for this task.
-   * @rejects if we're unable to fix corruption or unable to check status.
+   * @returns {Promise<string[]>}
+   *   Resolves with the logs if database is sane or is made sane. Rejects if
+   *   we're unable to fix corruption or unable to check status.
    */
   async checkIntegrity() {
     let logs = [];
@@ -133,9 +129,9 @@ export var PlacesDBUtils = {
   /**
    * Checks data coherence and tries to fix most common errors.
    *
-   * @returns {Promise} resolves when coherence is checked.
-   * @resolves to an array of logs for this task.
-   * @rejects if database is not coherent.
+   * @returns {Promise<string[]>}
+   *   Resolves with the logs when coherence is checked. Rejects if database is
+   *   not coherent.
    */
   async checkCoherence() {
     let logs = [];
@@ -168,9 +164,8 @@ export var PlacesDBUtils = {
   /**
    * Runs incremental vacuum on databases supporting it.
    *
-   * @returns {Promise} resolves when done.
-   * @resolves to an array of logs for this task.
-   * @rejects if we were unable to vacuum.
+   * @returns {Promise<string[]>}
+   *   Resolves with the logs when done. Rejects if we were unable to vacuum.
    */
   async incrementalVacuum() {
     let logs = [];
@@ -209,8 +204,8 @@ export var PlacesDBUtils = {
   /**
    * Expire orphan previews that don't have a Places entry anymore.
    *
-   * @returns {Promise} resolves when done.
-   * @resolves to an array of logs for this task.
+   * @returns {Promise<string[]>}
+   *   Resolves with the logs when done.
    */
   async deleteOrphanPreviews() {
     let logs = [];
@@ -831,9 +826,9 @@ export var PlacesDBUtils = {
    * Note: although this function isn't actually async, we keep it async to
    * allow us to maintain a simple, consistent API for the tasks within this object.
    *
-   * @returns {Promise<Array<string>>}
+   * @returns {Promise<string[]>}
    *   Resolves when database is vacuumed to an array of logs for this task.
-   * @rejects if we are unable to vacuum database.
+   *   Rejects if we are unable to vacuum database.
    */
   async vacuum() {
     let logs = [];
@@ -861,8 +856,8 @@ export var PlacesDBUtils = {
    * Note: although this function isn't actually async, we keep it async to
    * allow us to maintain a simple, consistent API for the tasks within this object.
    *
-   * @returns {Promise} resolves when the database in cleaned up.
-   * @resolves to an array of logs for this task.
+   * @returns {Promise<string[]>}
+   *   Resolves with the logs when the database in cleaned up.
    */
   async expire() {
     let logs = [];
@@ -894,9 +889,9 @@ export var PlacesDBUtils = {
   /**
    * Collects statistical data on the database.
    *
-   * @returns {Promise} resolves when statistics are collected.
-   * @resolves to an array of logs for this task.
-   * @rejects if we are unable to collect stats for some reason.
+   * @returns {Promise<string[]>}
+   *   Resolves with the logs when statistics are collected. Rejects if we are
+   *   unable to collect stats for some reason.
    */
   async stats() {
     let logs = [];
@@ -938,6 +933,8 @@ export var PlacesDBUtils = {
        *
        * @typedef {object} ExpirationWrappedJSObject
        * @property {function(): Promise<number>} getPagesLimit
+       *   A function that returns the maximum number of pages that should be
+       *   retained.
        */
 
       // This has to be type cast because wrappedJSObject is an object.

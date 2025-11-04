@@ -22,6 +22,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Document.h"
 
 #include "nsArrayEnumerator.h"
 #include "nsEnumeratorUtils.h"
@@ -228,6 +229,16 @@ void nsFilePicker::ReadValuesFromNonPortalFileChooser(
 void nsFilePicker::InitNative(nsIWidget* aParent, const nsAString& aTitle) {
   mParentWidget = aParent;
   mTitle.Assign(aTitle);
+
+  if (mParentWidget) {
+    auto window = static_cast<nsWindow*>(mParentWidget.get());
+    if (GtkWidget* widget = window->GetGtkWidget()) {
+      if (auto* title = gtk_window_get_title(GTK_WINDOW(widget))) {
+        mTitle.AppendLiteral(" - ");
+        mTitle.Append(NS_ConvertUTF8toUTF16(title));
+      }
+    }
+  }
 }
 
 NS_IMETHODIMP

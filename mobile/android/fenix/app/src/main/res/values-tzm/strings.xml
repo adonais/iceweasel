@@ -230,8 +230,6 @@
   <string name="bookmark_folder_label">ASDAW</string>
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">ISEM</string>
-  <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Rnu asdaw</string>
   <!--
     Site Permissions
 
@@ -280,8 +278,6 @@
   <string name="qr_scanner_confirmation_dialog_message">Ssureg %1$s ad irẓem %2$s</string>
   <!-- QR code scanner prompt dialog positive option to allow navigation to scanned link -->
   <string name="qr_scanner_dialog_positive">SSUREG</string>
-  <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Kkes</string>
   <!-- Title for the tabs item in Delete browsing data -->
   <string name="preferences_delete_browsing_data_tabs_title_2">Rẓem iseksal</string>
   <!--

@@ -88,7 +88,6 @@ static MOZ_ALWAYS_INLINE bool WeakCollectionPutEntryInternal(
 }
 
 static unsigned GetErrorNumber(bool isWeakMap) {
-#ifdef NIGHTLY_BUILD
   bool symbolsAsWeakMapKeysEnabled =
       JS::Prefs::experimental_symbols_as_weakmap_keys();
 
@@ -96,7 +95,6 @@ static unsigned GetErrorNumber(bool isWeakMap) {
     return isWeakMap ? JSMSG_WEAKMAP_KEY_CANT_BE_HELD_WEAKLY
                      : JSMSG_WEAKSET_VAL_CANT_BE_HELD_WEAKLY;
   }
-#endif
 
   return isWeakMap ? JSMSG_WEAKMAP_KEY_MUST_BE_AN_OBJECT
                    : JSMSG_WEAKSET_VAL_MUST_BE_AN_OBJECT;

@@ -14,7 +14,9 @@
         <item name="postSplashScreenTheme">@style/NormalTheme</item>
     </style>
 
-    <style name="NormalThemeBase" parent="Theme.MaterialComponents.DayNight.NoActionBar.Bridge">
+    <style name="NormalThemeBase" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="preferenceTheme">@style/PreferenceTheme</item>
+
         <!-- Android system styling -->
         <item name="searchViewStyle">@style/SearchViewStyle</item>
         <item name="autoCompleteTextViewStyle">@style/AutoCompleteTextViewStyle</item>
@@ -31,8 +33,7 @@
         <item name="android:colorAccent">@color/fx_mobile_text_color_primary</item>
         <item name="android:textColorPrimary">@color/state_list_text_color</item>
         <item name="android:textColorSecondary">@color/secondary_state_list_text_color</item>
-        <item name="alertDialogStyle">@style/DialogStyleNormal</item>
-        <item name="alertDialogTheme">@style/DialogStyleNormal</item>
+        <item name="materialAlertDialogTheme">@style/BaseDialogStyle</item>
         <item name="android:windowEnableSplitTouch">false</item>
         <item name="android:splitMotionEvents">false</item>
         <item name="bottomSheetDialogTheme">@style/BottomSheet</item>
@@ -206,20 +207,49 @@
 
     <style name="NormalTheme" parent="NormalThemeBase" />
 
-    <style name="BaseDialogStyle" parent="Theme.MaterialComponents.Dialog.Alert">
-        <item name="colorControlNormal">?attr/textPrimary</item>
-        <item name="textColorAlertDialogListItem">?attr/textPrimary</item>
-        <item name="android:titleTextStyle">@style/HeaderTextStyle</item>
-        <item name="android:windowTitleStyle">@style/HeaderTextStyle</item>
-        <item name="dialogCornerRadius">@dimen/tab_corner_radius</item>
-        <item name="android:colorBackground">?attr/layer2</item>
-        <item name="colorAccent">?accent</item>
-        <item name="android:textColorPrimary">?attr/textPrimary</item>
+    <style name="BaseDialogStyle.Private" parent="BaseDialogStyle">
+        <item name="android:background">?attr/layer2</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.App.Title.Text.Private</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.App.Body.Text.Private</item>
     </style>
 
-    <style name="DialogStyleLight" parent="BaseDialogStyle">
-        <item name="buttonBarNegativeButtonStyle">@style/DialogButtonStyleLight</item>
-        <item name="buttonBarPositiveButtonStyle">@style/DialogButtonStyleLight</item>
+    <style name="MaterialAlertDialog.App.Body.Text.Private" parent="MaterialAlertDialog.App.Body.Text">
+        <item name="android:textColor">@color/fx_mobile_private_text_color_primary</item>
+    </style>
+
+    <style name="MaterialAlertDialog.App.Title.Text.Private" parent="MaterialAlertDialog.App.Title.Text">
+        <item name="android:textColor">@color/fx_mobile_private_text_color_primary</item>
+    </style>
+
+    <style name="BaseDialogStyle" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.App.Title.Text</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.App.Body.Text</item>
+        <item name="android:background">?attr/colorSurfaceContainerHigh</item>
+        <item name="colorAccent">?accent</item>
+        <item name="buttonBarPositiveButtonStyle">@style/DialogButtonStyle</item>
+        <item name="buttonBarNegativeButtonStyle">@style/DialogButtonStyle</item>
+        <item name="shapeAppearance">@style/MaterialAlertDialogShapeAppearance</item>
+    </style>
+
+    <style name="DialogButtonStyle" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:titleTextStyle">@style/Button14TextStyle</item>
+    </style>
+
+    <style name="MaterialAlertDialog.App.Body.Text" parent="MaterialAlertDialog.Material3.Body.Text">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:titleTextStyle">@style/Body12TextStyle</item>
+    </style>
+
+    <style name="MaterialAlertDialog.App.Title.Text" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:titleTextStyle">@style/Header14TextStyle</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <style name="MaterialAlertDialogShapeAppearance" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/material_dialog_corner_radius</item>
     </style>
 
     <style name="SelectPromptHeaderTextStyle" parent="Header16TextStyle">
@@ -227,28 +257,8 @@
         <item name="drawableTint">?accentHighContrast</item>
     </style>
 
-    <style name="DialogStyleDark" parent="BaseDialogStyle">
-        <item name="buttonBarNegativeButtonStyle">@style/DialogButtonStyleDark</item>
-        <item name="buttonBarPositiveButtonStyle">@style/DialogButtonStyleDark</item>
-    </style>
 
-    <style name="DialogButtonStyleLight" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
-        <item name="android:background">@drawable/ripple_button</item>
-        <item name="android:textColor">?accentBright</item>
-        <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight">@integer/font_weight_medium</item>
-    </style>
-
-    <style name="DialogButtonStyleDark" parent="Widget.MaterialComponents.Button.TextButton.Dialog">
-        <item name="android:background">@drawable/ripple_button_dark</item>
-        <item name="android:textColor">?accentUsedOnDarkBackground</item>
-        <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
-        <item name="android:fontWeight">@integer/font_weight_medium</item>
-    </style>
-
-    <style name="DialogStyleNormal" parent="DialogStyleLight"/>
-
-    <style name="PrivateThemeBase" parent="Theme.MaterialComponents.NoActionBar.Bridge">
+    <style name="PrivateThemeBase" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Android system styling -->
         <item name="searchViewStyle">@style/SearchViewStyle</item>
         <item name="autoCompleteTextViewStyle">@style/AutoCompleteTextViewStyle</item>
@@ -264,8 +274,7 @@
         <item name="colorControlActivated">@color/accent_high_contrast_private_theme</item>
         <item name="android:textColorPrimary">@color/state_list_text_color</item>
         <item name="android:textColorSecondary">@color/secondary_state_list_text_color</item>
-        <item name="alertDialogStyle">@style/DialogStyleDark</item>
-        <item name="alertDialogTheme">@style/DialogStyleDark</item>
+        <item name="materialAlertDialogTheme">@style/BaseDialogStyle.Private</item>
         <item name="android:windowEnableSplitTouch">false</item>
         <item name="android:splitMotionEvents">false</item>
         <item name="bottomSheetDialogTheme">@style/BottomSheetPrivate</item>
@@ -454,6 +463,11 @@
         <item name="android:windowContentOverlay">@null</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowTranslucentNavigation">true</item>
+    </style>
+
+    <style name="PreferenceTheme" parent="PreferenceThemeOverlay.v14.Material">
+        <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_light</item>
+        <item name="android:fontWeight">@integer/font_weight_light</item>
     </style>
 
     <style name="HeaderTextStyle" parent="TextAppearance.MaterialComponents.Subtitle1">
@@ -753,5 +767,12 @@
         <item name="android:windowIsFloating">true</item>
         <item name="android:background">@android:color/transparent</item>
         <item name="android:colorBackgroundCacheHint">@null</item>
+    </style>
+
+    <style name="TabManagerDialogStyle" parent="Theme.AppCompat.Light.Dialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsFloating">false</item>
     </style>
 </resources>

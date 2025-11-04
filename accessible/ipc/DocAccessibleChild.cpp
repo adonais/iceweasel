@@ -76,7 +76,8 @@ AccessibleData DocAccessibleChild::SerializeAcc(LocalAccessible* aAcc) {
     }
   }
 
-  return AccessibleData(aAcc->ID(), aAcc->Role(), aAcc->LocalParent()->ID(),
+  return AccessibleData(aAcc->ID(), aAcc->NativeRole(),
+                        aAcc->LocalParent()->ID(),
                         static_cast<int32_t>(aAcc->IndexInParent()),
                         static_cast<AccType>(aAcc->mType),
                         static_cast<AccGenericType>(genericTypes),

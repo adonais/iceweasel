@@ -48,6 +48,6 @@ tasks:
         name: maybe-release-firefox-android
         shipping-product: firefox-android
         worker:
-            phase: promote_android
+            phase: ship_android
         treeherder:
             platform: fenix-android-all/opt

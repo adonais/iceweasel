@@ -59,6 +59,8 @@ class RenderCompositorNative : public RenderCompositor {
   bool MaybeGrabScreenshot(const gfx::IntSize& aWindowSize) override;
   bool MaybeProcessScreenshotQueue() override;
 
+  void WaitUntilPresentationFlushed() override;
+
   // Interface for wr::Compositor
   void CompositorBeginFrame() override;
   void CompositorEndFrame() override;
@@ -171,6 +173,9 @@ class RenderCompositorNativeOGL : public RenderCompositorNative {
             wr::DeviceIntRect aDirtyRect,
             wr::DeviceIntRect aValidRect) override;
   void Unbind() override;
+
+  void AttachExternalImage(wr::NativeSurfaceId aId,
+                           wr::ExternalImageId aExternalImage) override;
 
  protected:
   void InsertFrameDoneSync();

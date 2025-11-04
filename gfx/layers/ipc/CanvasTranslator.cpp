@@ -358,22 +358,29 @@ void CanvasTranslator::GetDataSurface(uint64_t aSurfaceRef) {
   MOZ_ASSERT(IsInTaskQueue());
 
   ReferencePtr surfaceRef = reinterpret_cast<void*>(aSurfaceRef);
-  gfx::SourceSurface* surface = LookupSourceSurface(surfaceRef);
-  if (!surface) {
+  RefPtr<gfx::DataSourceSurface> dataSurface = LookupDataSurface(surfaceRef);
+  if (!dataSurface) {
+    gfx::SourceSurface* surface = LookupSourceSurface(surfaceRef);
+    if (!surface) {
+      return;
+    }
+    dataSurface = surface->GetDataSurface();
+    if (!dataSurface) {
+      return;
+    }
+  }
+  gfx::DataSourceSurface::ScopedMap map(dataSurface,
+                                        gfx::DataSourceSurface::READ);
+  if (!map.IsMapped()) {
     return;
   }
 
-  UniquePtr<gfx::DataSourceSurface::ScopedMap> map = GetPreparedMap(surfaceRef);
-  if (!map) {
-    return;
-  }
-
-  auto dstSize = surface->GetSize();
-  auto srcSize = map->GetSurface()->GetSize();
-  gfx::SurfaceFormat format = surface->GetFormat();
+  auto dstSize = dataSurface->GetSize();
+  auto srcSize = map.GetSurface()->GetSize();
+  gfx::SurfaceFormat format = dataSurface->GetFormat();
   int32_t bpp = BytesPerPixel(format);
   int32_t dataFormatWidth = dstSize.width * bpp;
-  int32_t srcStride = map->GetStride();
+  int32_t srcStride = map.GetStride();
   if (dataFormatWidth > srcStride || srcSize != dstSize) {
     return;
   }
@@ -387,7 +394,7 @@ void CanvasTranslator::GetDataSurface(uint64_t aSurfaceRef) {
   }
 
   uint8_t* dst = mDataSurfaceShmem.DataAs<uint8_t>();
-  const uint8_t* src = map->GetData();
+  const uint8_t* src = map.GetData();
   const uint8_t* endSrc = src + (srcSize.height * srcStride);
   while (src < endSrc) {
     memcpy(dst, src, dataFormatWidth);
@@ -1887,27 +1894,6 @@ void CanvasTranslator::AddDataSurface(
 
 void CanvasTranslator::RemoveDataSurface(gfx::ReferencePtr aRefPtr) {
   mDataSurfaces.Remove(aRefPtr);
-}
-
-void CanvasTranslator::SetPreparedMap(
-    gfx::ReferencePtr aSurface,
-    UniquePtr<gfx::DataSourceSurface::ScopedMap> aMap) {
-  mMappedSurface = aSurface;
-  mPreparedMap = std::move(aMap);
-}
-
-UniquePtr<gfx::DataSourceSurface::ScopedMap> CanvasTranslator::GetPreparedMap(
-    gfx::ReferencePtr aSurface) {
-  if (!mPreparedMap) {
-    // We might fail to set the map during, for example, device resets.
-    return nullptr;
-  }
-
-  MOZ_RELEASE_ASSERT(mMappedSurface == aSurface,
-                     "aSurface must match previously stored surface.");
-
-  mMappedSurface = nullptr;
-  return std::move(mPreparedMap);
 }
 
 }  // namespace layers

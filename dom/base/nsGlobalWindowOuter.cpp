@@ -9,7 +9,6 @@
 #include <algorithm>
 
 #include "mozilla/Assertions.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/ScopeExit.h"
 #include "nsGlobalWindowInner.h"
 
@@ -278,6 +277,16 @@ static inline nsGlobalWindowInner* GetCurrentInnerWindowInternal(
     return err_rval;                                       \
   }                                                        \
   return GetCurrentInnerWindowInternal(this)->method args; \
+  PR_END_MACRO
+
+#define FORWARD_TO_INNER_WITH_STRONG_REF(method, args, err_rval)           \
+  PR_BEGIN_MACRO                                                           \
+  if (!mInnerWindow) {                                                     \
+    NS_WARNING("No inner window available!");                              \
+    return err_rval;                                                       \
+  }                                                                        \
+  RefPtr<nsGlobalWindowInner> inner = GetCurrentInnerWindowInternal(this); \
+  return inner->method args;                                               \
   PR_END_MACRO
 
 #define FORWARD_TO_INNER_VOID(method, args)         \
@@ -3410,7 +3419,14 @@ CSSToLayoutDeviceScale nsGlobalWindowOuter::CSSToDevScaleForBaseWindow(
 }
 
 nsresult nsGlobalWindowOuter::GetInnerSize(CSSSize& aSize) {
-  EnsureSizeAndPositionUpToDate();
+  if (mDoc && mDoc->IsTopLevelContentDocument() &&
+      nsLayoutUtils::ShouldHandleMetaViewport(mDoc)) {
+    // Window.inner{Width,Height} depend on minimum-scale size and to get the
+    // up-to-date minimum-scale size we need to flush layout.
+    FlushPendingNotifications(FlushType::Layout);
+  } else {
+    EnsureSizeAndPositionUpToDate();
+  }
 
   NS_ENSURE_STATE(mDocShell);
 
@@ -3428,14 +3444,13 @@ nsresult nsGlobalWindowOuter::GetInnerSize(CSSSize& aSize) {
     viewManager->FlushDelayedResize();
   }
 
-  // FIXME: Bug 1598487 - Return the layout viewport instead of the ICB.
-  nsSize viewportSize = presContext->GetVisibleArea().Size();
+  nsSize innerSize = presShell->GetInnerSize();
   if (presContext->GetDynamicToolbarState() == DynamicToolbarState::Collapsed) {
-    viewportSize =
-        nsLayoutUtils::ExpandHeightForViewportUnits(presContext, viewportSize);
+    innerSize =
+        nsLayoutUtils::ExpandHeightForViewportUnits(presContext, innerSize);
   }
 
-  aSize = CSSPixel::FromAppUnits(viewportSize);
+  aSize = CSSPixel::FromAppUnits(innerSize);
 
   switch (StaticPrefs::dom_innerSize_rounding()) {
     case 1:
@@ -3460,7 +3475,8 @@ double nsGlobalWindowOuter::GetInnerWidthOuter(ErrorResult& aError) {
 }
 
 nsresult nsGlobalWindowOuter::GetInnerWidth(double* aInnerWidth) {
-  FORWARD_TO_INNER(GetInnerWidth, (aInnerWidth), NS_ERROR_UNEXPECTED);
+  FORWARD_TO_INNER_WITH_STRONG_REF(GetInnerWidth, (aInnerWidth),
+                                   NS_ERROR_UNEXPECTED);
 }
 
 double nsGlobalWindowOuter::GetInnerHeightOuter(ErrorResult& aError) {
@@ -3470,7 +3486,8 @@ double nsGlobalWindowOuter::GetInnerHeightOuter(ErrorResult& aError) {
 }
 
 nsresult nsGlobalWindowOuter::GetInnerHeight(double* aInnerHeight) {
-  FORWARD_TO_INNER(GetInnerHeight, (aInnerHeight), NS_ERROR_UNEXPECTED);
+  FORWARD_TO_INNER_WITH_STRONG_REF(GetInnerHeight, (aInnerHeight),
+                                   NS_ERROR_UNEXPECTED);
 }
 
 CSSIntSize nsGlobalWindowOuter::GetOuterSize(CallerType aCallerType,
@@ -6523,7 +6540,7 @@ void nsGlobalWindowOuter::PageHidden(bool aIsEnteringBFCacheInParent) {
   FORWARD_TO_INNER_VOID(PageHidden, (aIsEnteringBFCacheInParent));
 }
 
-already_AddRefed<nsICSSDeclaration>
+already_AddRefed<nsDOMCSSDeclaration>
 nsGlobalWindowOuter::GetComputedStyleHelperOuter(Element& aElt,
                                                  const nsAString& aPseudoElt,
                                                  bool aDefaultStylesOnly,
@@ -6532,7 +6549,7 @@ nsGlobalWindowOuter::GetComputedStyleHelperOuter(Element& aElt,
     return nullptr;
   }
 
-  RefPtr<nsICSSDeclaration> compStyle = NS_NewComputedDOMStyle(
+  RefPtr<nsDOMCSSDeclaration> compStyle = NS_NewComputedDOMStyle(
       &aElt, aPseudoElt, mDoc,
       aDefaultStylesOnly ? nsComputedDOMStyle::StyleType::DefaultOnly
                          : nsComputedDOMStyle::StyleType::All,

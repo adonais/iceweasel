@@ -38,6 +38,7 @@ dependencies {
     implementation project(':components:service-glean')
     implementation project(':components:support-base')
     implementation project(':components:support-utils')
+    implementation project(':components:support-ktx')
 
     implementation libs.androidx.appcompat
     implementation libs.androidx.core.ktx

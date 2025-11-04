@@ -12,7 +12,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import {
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -23,9 +23,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   LaterRun: "resource:///modules/LaterRun.sys.mjs",
   SearchStaticData:
     "moz-src:///toolkit/components/search/SearchStaticData.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarProviderTopSites:
+    "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
@@ -179,37 +180,34 @@ export class UrlbarProviderSearchTips extends UrlbarProvider {
       return;
     }
 
-    let result = new lazy.UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.TIP,
-      UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-      {
-        type: tip,
-        buttons: [{ l10n: { id: "urlbar-search-tips-confirm" } }],
-        icon,
-      }
-    );
-
+    let result;
     switch (tip) {
       case TIPS.ONBOARD:
-        result.heuristic = true;
-        result.payload.titleL10n = {
-          id: "urlbar-search-tips-onboard",
-          args: {
-            engineName: defaultEngine.name,
+        result = this.#makeResult({
+          tip,
+          icon,
+          titleL10n: {
+            id: "urlbar-search-tips-onboard",
+            args: {
+              engineName: defaultEngine.name,
+            },
           },
-        };
+          heuristic: true,
+        });
         break;
       case TIPS.REDIRECT:
-        result.heuristic = false;
-        result.payload.titleL10n = {
-          id: "urlbar-search-tips-redirect-2",
-          args: {
-            engineName: defaultEngine.name,
+        result = this.#makeResult({
+          tip,
+          icon,
+          titleL10n: {
+            id: "urlbar-search-tips-redirect-2",
+            args: {
+              engineName: defaultEngine.name,
+            },
           },
-        };
+        });
         break;
     }
-
     addCallback(this, result);
   }
 
@@ -421,6 +419,20 @@ export class UrlbarProviderSearchTips extends UrlbarProvider {
 
       window.gURLBar.search("", { focus: tip == TIPS.ONBOARD });
     }, SHOW_TIP_DELAY_MS);
+  }
+
+  #makeResult({ tip, icon, titleL10n, heuristic = false }) {
+    return new lazy.UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.TIP,
+      source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      heuristic,
+      payload: {
+        type: tip,
+        buttons: [{ l10n: { id: "urlbar-search-tips-confirm" } }],
+        icon,
+        titleL10n,
+      },
+    });
   }
 }
 

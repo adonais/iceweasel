@@ -8,10 +8,7 @@
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/extension_set.h>
 #include <google/protobuf/wire_format_lite.h>
-#include <google/protobuf/descriptor.h>
-#include <google/protobuf/generated_message_reflection.h>
-#include <google/protobuf/reflection_ops.h>
-#include <google/protobuf/wire_format.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
 
@@ -114,127 +111,6 @@ PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORIT
 }  // namespace common
 }  // namespace proto
 }  // namespace opentelemetry
-static ::_pb::Metadata file_level_metadata_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto[6];
-static constexpr ::_pb::EnumDescriptor const** file_level_enum_descriptors_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto = nullptr;
-static constexpr ::_pb::ServiceDescriptor const** file_level_service_descriptors_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto = nullptr;
-
-const uint32_t TableStruct_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::AnyValue, _internal_metadata_),
-  ~0u,  // no _extensions_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::AnyValue, _impl_._oneof_case_[0]),
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
-  ::_pbi::kInvalidFieldOffsetTag,
-  ::_pbi::kInvalidFieldOffsetTag,
-  ::_pbi::kInvalidFieldOffsetTag,
-  ::_pbi::kInvalidFieldOffsetTag,
-  ::_pbi::kInvalidFieldOffsetTag,
-  ::_pbi::kInvalidFieldOffsetTag,
-  ::_pbi::kInvalidFieldOffsetTag,
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::AnyValue, _impl_.value_),
-  ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::ArrayValue, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::ArrayValue, _impl_.values_),
-  ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::KeyValueList, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::KeyValueList, _impl_.values_),
-  ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::KeyValue, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::KeyValue, _impl_.key_),
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::KeyValue, _impl_.value_),
-  ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::InstrumentationScope, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::InstrumentationScope, _impl_.name_),
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::InstrumentationScope, _impl_.version_),
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::InstrumentationScope, _impl_.attributes_),
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::InstrumentationScope, _impl_.dropped_attributes_count_),
-  ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::EntityRef, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  ~0u,  // no _inlined_string_donated_
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::EntityRef, _impl_.schema_url_),
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::EntityRef, _impl_.type_),
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::EntityRef, _impl_.id_keys_),
-  PROTOBUF_FIELD_OFFSET(::opentelemetry::proto::common::v1::EntityRef, _impl_.description_keys_),
-};
-static const ::_pbi::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, -1, -1, sizeof(::opentelemetry::proto::common::v1::AnyValue)},
-  { 14, -1, -1, sizeof(::opentelemetry::proto::common::v1::ArrayValue)},
-  { 21, -1, -1, sizeof(::opentelemetry::proto::common::v1::KeyValueList)},
-  { 28, -1, -1, sizeof(::opentelemetry::proto::common::v1::KeyValue)},
-  { 36, -1, -1, sizeof(::opentelemetry::proto::common::v1::InstrumentationScope)},
-  { 46, -1, -1, sizeof(::opentelemetry::proto::common::v1::EntityRef)},
-};
-
-static const ::_pb::Message* const file_default_instances[] = {
-  &::opentelemetry::proto::common::v1::_AnyValue_default_instance_._instance,
-  &::opentelemetry::proto::common::v1::_ArrayValue_default_instance_._instance,
-  &::opentelemetry::proto::common::v1::_KeyValueList_default_instance_._instance,
-  &::opentelemetry::proto::common::v1::_KeyValue_default_instance_._instance,
-  &::opentelemetry::proto::common::v1::_InstrumentationScope_default_instance_._instance,
-  &::opentelemetry::proto::common::v1::_EntityRef_default_instance_._instance,
-};
-
-const char descriptor_table_protodef_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n*opentelemetry/proto/common/v1/common.p"
-  "roto\022\035opentelemetry.proto.common.v1\"\214\002\n\010"
-  "AnyValue\022\026\n\014string_value\030\001 \001(\tH\000\022\024\n\nbool"
-  "_value\030\002 \001(\010H\000\022\023\n\tint_value\030\003 \001(\003H\000\022\026\n\014d"
-  "ouble_value\030\004 \001(\001H\000\022@\n\013array_value\030\005 \001(\013"
-  "2).opentelemetry.proto.common.v1.ArrayVa"
-  "lueH\000\022C\n\014kvlist_value\030\006 \001(\0132+.openteleme"
-  "try.proto.common.v1.KeyValueListH\000\022\025\n\013by"
-  "tes_value\030\007 \001(\014H\000B\007\n\005value\"E\n\nArrayValue"
-  "\0227\n\006values\030\001 \003(\0132\'.opentelemetry.proto.c"
-  "ommon.v1.AnyValue\"G\n\014KeyValueList\0227\n\006val"
-  "ues\030\001 \003(\0132\'.opentelemetry.proto.common.v"
-  "1.KeyValue\"O\n\010KeyValue\022\013\n\003key\030\001 \001(\t\0226\n\005v"
-  "alue\030\002 \001(\0132\'.opentelemetry.proto.common."
-  "v1.AnyValue\"\224\001\n\024InstrumentationScope\022\014\n\004"
-  "name\030\001 \001(\t\022\017\n\007version\030\002 \001(\t\022;\n\nattribute"
-  "s\030\003 \003(\0132\'.opentelemetry.proto.common.v1."
-  "KeyValue\022 \n\030dropped_attributes_count\030\004 \001"
-  "(\r\"X\n\tEntityRef\022\022\n\nschema_url\030\001 \001(\t\022\014\n\004t"
-  "ype\030\002 \001(\t\022\017\n\007id_keys\030\003 \003(\t\022\030\n\020descriptio"
-  "n_keys\030\004 \003(\tB{\n io.opentelemetry.proto.c"
-  "ommon.v1B\013CommonProtoP\001Z(go.opentelemetr"
-  "y.io/proto/otlp/common/v1\252\002\035OpenTelemetr"
-  "y.Proto.Common.V1b\006proto3"
-  ;
-static ::_pbi::once_flag descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_once;
-const ::_pbi::DescriptorTable descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto = {
-    false, false, 945, descriptor_table_protodef_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto,
-    "opentelemetry/proto/common/v1/common.proto",
-    &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_once, nullptr, 0, 6,
-    schemas, file_default_instances, TableStruct_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto::offsets,
-    file_level_metadata_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto, file_level_enum_descriptors_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto,
-    file_level_service_descriptors_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto,
-};
-PROTOBUF_ATTRIBUTE_WEAK const ::_pbi::DescriptorTable* descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_getter() {
-  return &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto;
-}
-
-// Force running AddDescriptors() at dynamic initialization time.
-PROTOBUF_ATTRIBUTE_INIT_PRIORITY2 static ::_pbi::AddDescriptorsRunner dynamic_init_dummy_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto(&descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto);
 namespace opentelemetry {
 namespace proto {
 namespace common {
@@ -288,19 +164,19 @@ void AnyValue::set_allocated_kvlist_value(::opentelemetry::proto::common::v1::Ke
 }
 AnyValue::AnyValue(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
   // @@protoc_insertion_point(arena_constructor:opentelemetry.proto.common.v1.AnyValue)
 }
 AnyValue::AnyValue(const AnyValue& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite() {
   AnyValue* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.value_){}
     , /*decltype(_impl_._cached_size_)*/{}
     , /*decltype(_impl_._oneof_case_)*/{}};
 
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
   clear_has_value();
   switch (from.value_case()) {
     case kStringValue: {
@@ -354,7 +230,7 @@ inline void AnyValue::SharedCtor(
 
 AnyValue::~AnyValue() {
   // @@protoc_insertion_point(destructor:opentelemetry.proto.common.v1.AnyValue)
-  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<std::string>()) {
   (void)arena;
     return;
   }
@@ -422,7 +298,7 @@ void AnyValue::Clear() {
   (void) cached_has_bits;
 
   clear_value();
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  _internal_metadata_.Clear<std::string>();
 }
 
 const char* AnyValue::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
@@ -437,7 +313,7 @@ const char* AnyValue::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx)
           auto str = _internal_mutable_string_value();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "opentelemetry.proto.common.v1.AnyValue.string_value"));
+          CHK_(::_pbi::VerifyUTF8(str, nullptr));
         } else
           goto handle_unusual;
         continue;
@@ -501,7 +377,7 @@ const char* AnyValue::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx)
     }
     ptr = UnknownFieldParse(
         tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        _internal_metadata_.mutable_unknown_fields<std::string>(),
         ptr, ctx);
     CHK_(ptr != nullptr);
   }  // while
@@ -568,8 +444,8 @@ uint8_t* AnyValue::_InternalSerialize(
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+    target = stream->WriteRaw(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).data(),
+        static_cast<int>(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size()), target);
   }
   // @@protoc_insertion_point(serialize_to_array_end:opentelemetry.proto.common.v1.AnyValue)
   return target;
@@ -631,19 +507,22 @@ size_t AnyValue::ByteSizeLong() const {
       break;
     }
   }
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    total_size += _internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size();
+  }
+  int cached_size = ::_pbi::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData AnyValue::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    AnyValue::MergeImpl
-};
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*AnyValue::GetClassData() const { return &_class_data_; }
+void AnyValue::CheckTypeAndMergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::MessageLite& from) {
+  MergeFrom(*::_pbi::DownCast<const AnyValue*>(
+      &from));
+}
 
-
-void AnyValue::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<AnyValue*>(&to_msg);
-  auto& from = static_cast<const AnyValue&>(from_msg);
+void AnyValue::MergeFrom(const AnyValue& from) {
+  AnyValue* const _this = this;
   // @@protoc_insertion_point(class_specific_merge_from_start:opentelemetry.proto.common.v1.AnyValue)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
@@ -684,7 +563,7 @@ void AnyValue::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTO
       break;
     }
   }
-  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
 }
 
 void AnyValue::CopyFrom(const AnyValue& from) {
@@ -705,11 +584,10 @@ void AnyValue::InternalSwap(AnyValue* other) {
   swap(_impl_._oneof_case_[0], other->_impl_._oneof_case_[0]);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata AnyValue::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(
-      &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_getter, &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_once,
-      file_level_metadata_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto[0]);
+std::string AnyValue::GetTypeName() const {
+  return "opentelemetry.proto.common.v1.AnyValue";
 }
+
 
 // ===================================================================
 
@@ -719,18 +597,18 @@ class ArrayValue::_Internal {
 
 ArrayValue::ArrayValue(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
   // @@protoc_insertion_point(arena_constructor:opentelemetry.proto.common.v1.ArrayValue)
 }
 ArrayValue::ArrayValue(const ArrayValue& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite() {
   ArrayValue* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.values_){from._impl_.values_}
     , /*decltype(_impl_._cached_size_)*/{}};
 
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
   // @@protoc_insertion_point(copy_constructor:opentelemetry.proto.common.v1.ArrayValue)
 }
 
@@ -746,7 +624,7 @@ inline void ArrayValue::SharedCtor(
 
 ArrayValue::~ArrayValue() {
   // @@protoc_insertion_point(destructor:opentelemetry.proto.common.v1.ArrayValue)
-  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<std::string>()) {
   (void)arena;
     return;
   }
@@ -769,7 +647,7 @@ void ArrayValue::Clear() {
   (void) cached_has_bits;
 
   _impl_.values_.Clear();
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  _internal_metadata_.Clear<std::string>();
 }
 
 const char* ArrayValue::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
@@ -802,7 +680,7 @@ const char* ArrayValue::_InternalParse(const char* ptr, ::_pbi::ParseContext* ct
     }
     ptr = UnknownFieldParse(
         tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        _internal_metadata_.mutable_unknown_fields<std::string>(),
         ptr, ctx);
     CHK_(ptr != nullptr);
   }  // while
@@ -829,8 +707,8 @@ uint8_t* ArrayValue::_InternalSerialize(
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+    target = stream->WriteRaw(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).data(),
+        static_cast<int>(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size()), target);
   }
   // @@protoc_insertion_point(serialize_to_array_end:opentelemetry.proto.common.v1.ArrayValue)
   return target;
@@ -851,26 +729,29 @@ size_t ArrayValue::ByteSizeLong() const {
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    total_size += _internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size();
+  }
+  int cached_size = ::_pbi::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ArrayValue::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    ArrayValue::MergeImpl
-};
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ArrayValue::GetClassData() const { return &_class_data_; }
+void ArrayValue::CheckTypeAndMergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::MessageLite& from) {
+  MergeFrom(*::_pbi::DownCast<const ArrayValue*>(
+      &from));
+}
 
-
-void ArrayValue::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<ArrayValue*>(&to_msg);
-  auto& from = static_cast<const ArrayValue&>(from_msg);
+void ArrayValue::MergeFrom(const ArrayValue& from) {
+  ArrayValue* const _this = this;
   // @@protoc_insertion_point(class_specific_merge_from_start:opentelemetry.proto.common.v1.ArrayValue)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
   _this->_impl_.values_.MergeFrom(from._impl_.values_);
-  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
 }
 
 void ArrayValue::CopyFrom(const ArrayValue& from) {
@@ -890,11 +771,10 @@ void ArrayValue::InternalSwap(ArrayValue* other) {
   _impl_.values_.InternalSwap(&other->_impl_.values_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata ArrayValue::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(
-      &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_getter, &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_once,
-      file_level_metadata_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto[1]);
+std::string ArrayValue::GetTypeName() const {
+  return "opentelemetry.proto.common.v1.ArrayValue";
 }
+
 
 // ===================================================================
 
@@ -904,18 +784,18 @@ class KeyValueList::_Internal {
 
 KeyValueList::KeyValueList(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
   // @@protoc_insertion_point(arena_constructor:opentelemetry.proto.common.v1.KeyValueList)
 }
 KeyValueList::KeyValueList(const KeyValueList& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite() {
   KeyValueList* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.values_){from._impl_.values_}
     , /*decltype(_impl_._cached_size_)*/{}};
 
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
   // @@protoc_insertion_point(copy_constructor:opentelemetry.proto.common.v1.KeyValueList)
 }
 
@@ -931,7 +811,7 @@ inline void KeyValueList::SharedCtor(
 
 KeyValueList::~KeyValueList() {
   // @@protoc_insertion_point(destructor:opentelemetry.proto.common.v1.KeyValueList)
-  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<std::string>()) {
   (void)arena;
     return;
   }
@@ -954,7 +834,7 @@ void KeyValueList::Clear() {
   (void) cached_has_bits;
 
   _impl_.values_.Clear();
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  _internal_metadata_.Clear<std::string>();
 }
 
 const char* KeyValueList::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
@@ -987,7 +867,7 @@ const char* KeyValueList::_InternalParse(const char* ptr, ::_pbi::ParseContext* 
     }
     ptr = UnknownFieldParse(
         tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        _internal_metadata_.mutable_unknown_fields<std::string>(),
         ptr, ctx);
     CHK_(ptr != nullptr);
   }  // while
@@ -1014,8 +894,8 @@ uint8_t* KeyValueList::_InternalSerialize(
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+    target = stream->WriteRaw(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).data(),
+        static_cast<int>(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size()), target);
   }
   // @@protoc_insertion_point(serialize_to_array_end:opentelemetry.proto.common.v1.KeyValueList)
   return target;
@@ -1036,26 +916,29 @@ size_t KeyValueList::ByteSizeLong() const {
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    total_size += _internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size();
+  }
+  int cached_size = ::_pbi::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData KeyValueList::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    KeyValueList::MergeImpl
-};
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*KeyValueList::GetClassData() const { return &_class_data_; }
+void KeyValueList::CheckTypeAndMergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::MessageLite& from) {
+  MergeFrom(*::_pbi::DownCast<const KeyValueList*>(
+      &from));
+}
 
-
-void KeyValueList::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<KeyValueList*>(&to_msg);
-  auto& from = static_cast<const KeyValueList&>(from_msg);
+void KeyValueList::MergeFrom(const KeyValueList& from) {
+  KeyValueList* const _this = this;
   // @@protoc_insertion_point(class_specific_merge_from_start:opentelemetry.proto.common.v1.KeyValueList)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
   (void) cached_has_bits;
 
   _this->_impl_.values_.MergeFrom(from._impl_.values_);
-  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
 }
 
 void KeyValueList::CopyFrom(const KeyValueList& from) {
@@ -1075,11 +958,10 @@ void KeyValueList::InternalSwap(KeyValueList* other) {
   _impl_.values_.InternalSwap(&other->_impl_.values_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata KeyValueList::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(
-      &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_getter, &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_once,
-      file_level_metadata_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto[2]);
+std::string KeyValueList::GetTypeName() const {
+  return "opentelemetry.proto.common.v1.KeyValueList";
 }
+
 
 // ===================================================================
 
@@ -1094,19 +976,19 @@ KeyValue::_Internal::value(const KeyValue* msg) {
 }
 KeyValue::KeyValue(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
   // @@protoc_insertion_point(arena_constructor:opentelemetry.proto.common.v1.KeyValue)
 }
 KeyValue::KeyValue(const KeyValue& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite() {
   KeyValue* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.key_){}
     , decltype(_impl_.value_){nullptr}
     , /*decltype(_impl_._cached_size_)*/{}};
 
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
   _impl_.key_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
     _impl_.key_.Set("", GetArenaForAllocation());
@@ -1138,7 +1020,7 @@ inline void KeyValue::SharedCtor(
 
 KeyValue::~KeyValue() {
   // @@protoc_insertion_point(destructor:opentelemetry.proto.common.v1.KeyValue)
-  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<std::string>()) {
   (void)arena;
     return;
   }
@@ -1166,7 +1048,7 @@ void KeyValue::Clear() {
     delete _impl_.value_;
   }
   _impl_.value_ = nullptr;
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  _internal_metadata_.Clear<std::string>();
 }
 
 const char* KeyValue::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
@@ -1181,7 +1063,7 @@ const char* KeyValue::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx)
           auto str = _internal_mutable_key();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "opentelemetry.proto.common.v1.KeyValue.key"));
+          CHK_(::_pbi::VerifyUTF8(str, nullptr));
         } else
           goto handle_unusual;
         continue;
@@ -1204,7 +1086,7 @@ const char* KeyValue::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx)
     }
     ptr = UnknownFieldParse(
         tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        _internal_metadata_.mutable_unknown_fields<std::string>(),
         ptr, ctx);
     CHK_(ptr != nullptr);
   }  // while
@@ -1240,8 +1122,8 @@ uint8_t* KeyValue::_InternalSerialize(
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+    target = stream->WriteRaw(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).data(),
+        static_cast<int>(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size()), target);
   }
   // @@protoc_insertion_point(serialize_to_array_end:opentelemetry.proto.common.v1.KeyValue)
   return target;
@@ -1269,19 +1151,22 @@ size_t KeyValue::ByteSizeLong() const {
         *_impl_.value_);
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    total_size += _internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size();
+  }
+  int cached_size = ::_pbi::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData KeyValue::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    KeyValue::MergeImpl
-};
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*KeyValue::GetClassData() const { return &_class_data_; }
+void KeyValue::CheckTypeAndMergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::MessageLite& from) {
+  MergeFrom(*::_pbi::DownCast<const KeyValue*>(
+      &from));
+}
 
-
-void KeyValue::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<KeyValue*>(&to_msg);
-  auto& from = static_cast<const KeyValue&>(from_msg);
+void KeyValue::MergeFrom(const KeyValue& from) {
+  KeyValue* const _this = this;
   // @@protoc_insertion_point(class_specific_merge_from_start:opentelemetry.proto.common.v1.KeyValue)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
@@ -1294,7 +1179,7 @@ void KeyValue::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTO
     _this->_internal_mutable_value()->::opentelemetry::proto::common::v1::AnyValue::MergeFrom(
         from._internal_value());
   }
-  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
 }
 
 void KeyValue::CopyFrom(const KeyValue& from) {
@@ -1320,11 +1205,10 @@ void KeyValue::InternalSwap(KeyValue* other) {
   swap(_impl_.value_, other->_impl_.value_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata KeyValue::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(
-      &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_getter, &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_once,
-      file_level_metadata_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto[3]);
+std::string KeyValue::GetTypeName() const {
+  return "opentelemetry.proto.common.v1.KeyValue";
 }
+
 
 // ===================================================================
 
@@ -1334,12 +1218,12 @@ class InstrumentationScope::_Internal {
 
 InstrumentationScope::InstrumentationScope(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
   // @@protoc_insertion_point(arena_constructor:opentelemetry.proto.common.v1.InstrumentationScope)
 }
 InstrumentationScope::InstrumentationScope(const InstrumentationScope& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite() {
   InstrumentationScope* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.attributes_){from._impl_.attributes_}
@@ -1348,7 +1232,7 @@ InstrumentationScope::InstrumentationScope(const InstrumentationScope& from)
     , decltype(_impl_.dropped_attributes_count_){}
     , /*decltype(_impl_._cached_size_)*/{}};
 
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
   _impl_.name_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
     _impl_.name_.Set("", GetArenaForAllocation());
@@ -1392,7 +1276,7 @@ inline void InstrumentationScope::SharedCtor(
 
 InstrumentationScope::~InstrumentationScope() {
   // @@protoc_insertion_point(destructor:opentelemetry.proto.common.v1.InstrumentationScope)
-  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<std::string>()) {
   (void)arena;
     return;
   }
@@ -1420,7 +1304,7 @@ void InstrumentationScope::Clear() {
   _impl_.name_.ClearToEmpty();
   _impl_.version_.ClearToEmpty();
   _impl_.dropped_attributes_count_ = 0u;
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  _internal_metadata_.Clear<std::string>();
 }
 
 const char* InstrumentationScope::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
@@ -1435,7 +1319,7 @@ const char* InstrumentationScope::_InternalParse(const char* ptr, ::_pbi::ParseC
           auto str = _internal_mutable_name();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "opentelemetry.proto.common.v1.InstrumentationScope.name"));
+          CHK_(::_pbi::VerifyUTF8(str, nullptr));
         } else
           goto handle_unusual;
         continue;
@@ -1445,7 +1329,7 @@ const char* InstrumentationScope::_InternalParse(const char* ptr, ::_pbi::ParseC
           auto str = _internal_mutable_version();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "opentelemetry.proto.common.v1.InstrumentationScope.version"));
+          CHK_(::_pbi::VerifyUTF8(str, nullptr));
         } else
           goto handle_unusual;
         continue;
@@ -1481,7 +1365,7 @@ const char* InstrumentationScope::_InternalParse(const char* ptr, ::_pbi::ParseC
     }
     ptr = UnknownFieldParse(
         tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        _internal_metadata_.mutable_unknown_fields<std::string>(),
         ptr, ctx);
     CHK_(ptr != nullptr);
   }  // while
@@ -1534,8 +1418,8 @@ uint8_t* InstrumentationScope::_InternalSerialize(
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+    target = stream->WriteRaw(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).data(),
+        static_cast<int>(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size()), target);
   }
   // @@protoc_insertion_point(serialize_to_array_end:opentelemetry.proto.common.v1.InstrumentationScope)
   return target;
@@ -1575,19 +1459,22 @@ size_t InstrumentationScope::ByteSizeLong() const {
     total_size += ::_pbi::WireFormatLite::UInt32SizePlusOne(this->_internal_dropped_attributes_count());
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    total_size += _internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size();
+  }
+  int cached_size = ::_pbi::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData InstrumentationScope::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    InstrumentationScope::MergeImpl
-};
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*InstrumentationScope::GetClassData() const { return &_class_data_; }
+void InstrumentationScope::CheckTypeAndMergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::MessageLite& from) {
+  MergeFrom(*::_pbi::DownCast<const InstrumentationScope*>(
+      &from));
+}
 
-
-void InstrumentationScope::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<InstrumentationScope*>(&to_msg);
-  auto& from = static_cast<const InstrumentationScope&>(from_msg);
+void InstrumentationScope::MergeFrom(const InstrumentationScope& from) {
+  InstrumentationScope* const _this = this;
   // @@protoc_insertion_point(class_specific_merge_from_start:opentelemetry.proto.common.v1.InstrumentationScope)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
@@ -1603,7 +1490,7 @@ void InstrumentationScope::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, c
   if (from._internal_dropped_attributes_count() != 0) {
     _this->_internal_set_dropped_attributes_count(from._internal_dropped_attributes_count());
   }
-  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
 }
 
 void InstrumentationScope::CopyFrom(const InstrumentationScope& from) {
@@ -1634,11 +1521,10 @@ void InstrumentationScope::InternalSwap(InstrumentationScope* other) {
   swap(_impl_.dropped_attributes_count_, other->_impl_.dropped_attributes_count_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata InstrumentationScope::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(
-      &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_getter, &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_once,
-      file_level_metadata_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto[4]);
+std::string InstrumentationScope::GetTypeName() const {
+  return "opentelemetry.proto.common.v1.InstrumentationScope";
 }
+
 
 // ===================================================================
 
@@ -1648,12 +1534,12 @@ class EntityRef::_Internal {
 
 EntityRef::EntityRef(::PROTOBUF_NAMESPACE_ID::Arena* arena,
                          bool is_message_owned)
-  : ::PROTOBUF_NAMESPACE_ID::Message(arena, is_message_owned) {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite(arena, is_message_owned) {
   SharedCtor(arena, is_message_owned);
   // @@protoc_insertion_point(arena_constructor:opentelemetry.proto.common.v1.EntityRef)
 }
 EntityRef::EntityRef(const EntityRef& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  : ::PROTOBUF_NAMESPACE_ID::MessageLite() {
   EntityRef* const _this = this; (void)_this;
   new (&_impl_) Impl_{
       decltype(_impl_.id_keys_){from._impl_.id_keys_}
@@ -1662,7 +1548,7 @@ EntityRef::EntityRef(const EntityRef& from)
     , decltype(_impl_.type_){}
     , /*decltype(_impl_._cached_size_)*/{}};
 
-  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
   _impl_.schema_url_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
     _impl_.schema_url_.Set("", GetArenaForAllocation());
@@ -1705,7 +1591,7 @@ inline void EntityRef::SharedCtor(
 
 EntityRef::~EntityRef() {
   // @@protoc_insertion_point(destructor:opentelemetry.proto.common.v1.EntityRef)
-  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<std::string>()) {
   (void)arena;
     return;
   }
@@ -1734,7 +1620,7 @@ void EntityRef::Clear() {
   _impl_.description_keys_.Clear();
   _impl_.schema_url_.ClearToEmpty();
   _impl_.type_.ClearToEmpty();
-  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  _internal_metadata_.Clear<std::string>();
 }
 
 const char* EntityRef::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
@@ -1749,7 +1635,7 @@ const char* EntityRef::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx
           auto str = _internal_mutable_schema_url();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "opentelemetry.proto.common.v1.EntityRef.schema_url"));
+          CHK_(::_pbi::VerifyUTF8(str, nullptr));
         } else
           goto handle_unusual;
         continue;
@@ -1759,7 +1645,7 @@ const char* EntityRef::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx
           auto str = _internal_mutable_type();
           ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
           CHK_(ptr);
-          CHK_(::_pbi::VerifyUTF8(str, "opentelemetry.proto.common.v1.EntityRef.type"));
+          CHK_(::_pbi::VerifyUTF8(str, nullptr));
         } else
           goto handle_unusual;
         continue;
@@ -1772,7 +1658,7 @@ const char* EntityRef::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx
             auto str = _internal_add_id_keys();
             ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
             CHK_(ptr);
-            CHK_(::_pbi::VerifyUTF8(str, "opentelemetry.proto.common.v1.EntityRef.id_keys"));
+            CHK_(::_pbi::VerifyUTF8(str, nullptr));
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<26>(ptr));
         } else
@@ -1787,7 +1673,7 @@ const char* EntityRef::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx
             auto str = _internal_add_description_keys();
             ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
             CHK_(ptr);
-            CHK_(::_pbi::VerifyUTF8(str, "opentelemetry.proto.common.v1.EntityRef.description_keys"));
+            CHK_(::_pbi::VerifyUTF8(str, nullptr));
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<34>(ptr));
         } else
@@ -1804,7 +1690,7 @@ const char* EntityRef::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx
     }
     ptr = UnknownFieldParse(
         tag,
-        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        _internal_metadata_.mutable_unknown_fields<std::string>(),
         ptr, ctx);
     CHK_(ptr != nullptr);
   }  // while
@@ -1863,8 +1749,8 @@ uint8_t* EntityRef::_InternalSerialize(
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
+    target = stream->WriteRaw(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).data(),
+        static_cast<int>(_internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size()), target);
   }
   // @@protoc_insertion_point(serialize_to_array_end:opentelemetry.proto.common.v1.EntityRef)
   return target;
@@ -1908,19 +1794,22 @@ size_t EntityRef::ByteSizeLong() const {
         this->_internal_type());
   }
 
-  return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
+  if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
+    total_size += _internal_metadata_.unknown_fields<std::string>(::PROTOBUF_NAMESPACE_ID::internal::GetEmptyString).size();
+  }
+  int cached_size = ::_pbi::ToCachedSize(total_size);
+  SetCachedSize(cached_size);
+  return total_size;
 }
 
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData EntityRef::_class_data_ = {
-    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
-    EntityRef::MergeImpl
-};
-const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*EntityRef::GetClassData() const { return &_class_data_; }
+void EntityRef::CheckTypeAndMergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::MessageLite& from) {
+  MergeFrom(*::_pbi::DownCast<const EntityRef*>(
+      &from));
+}
 
-
-void EntityRef::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
-  auto* const _this = static_cast<EntityRef*>(&to_msg);
-  auto& from = static_cast<const EntityRef&>(from_msg);
+void EntityRef::MergeFrom(const EntityRef& from) {
+  EntityRef* const _this = this;
   // @@protoc_insertion_point(class_specific_merge_from_start:opentelemetry.proto.common.v1.EntityRef)
   GOOGLE_DCHECK_NE(&from, _this);
   uint32_t cached_has_bits = 0;
@@ -1934,7 +1823,7 @@ void EntityRef::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROT
   if (!from._internal_type().empty()) {
     _this->_internal_set_type(from._internal_type());
   }
-  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<std::string>(from._internal_metadata_);
 }
 
 void EntityRef::CopyFrom(const EntityRef& from) {
@@ -1965,11 +1854,10 @@ void EntityRef::InternalSwap(EntityRef* other) {
   );
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata EntityRef::GetMetadata() const {
-  return ::_pbi::AssignDescriptors(
-      &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_getter, &descriptor_table_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto_once,
-      file_level_metadata_opentelemetry_2fproto_2fcommon_2fv1_2fcommon_2eproto[5]);
+std::string EntityRef::GetTypeName() const {
+  return "opentelemetry.proto.common.v1.EntityRef";
 }
+
 
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace v1

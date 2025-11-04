@@ -602,7 +602,7 @@ void
 dumpObject(CK_OBJECT_HANDLE id, SDB *db, SDB *keydb, PRBool isKey)
 {
     CK_RV crv;
-    int i;
+    size_t i;
     CK_ATTRIBUTE template;
     char buffer[2048];
     char *alloc = NULL;
@@ -809,5 +809,26 @@ main(int argc, char **argv)
     /* now dump the objects in the cert database */
     dumpDB(certdb, "CertDB", keydb, PR_FALSE);
     dumpDB(keydb, "KeyDB", keydb, PR_TRUE);
+
+    crv = sdb_Close(certdb);
+    if (crv != CKR_OK) {
+        PR_fprintf(PR_STDERR,
+                   "Couldn't close cert database in %s, error=%s (0x%08x)\n",
+                   dbDir, ErrorName(crv), (int)crv);
+    }
+
+    crv = sdb_Close(keydb);
+    if (crv != CKR_OK) {
+        PR_fprintf(PR_STDERR,
+                   "Couldn't close key database in %s, error=%s (0x%08x)\n",
+                   dbDir, ErrorName(crv), (int)crv);
+    }
+
+    crv = s_shutdown();
+    if (crv != CKR_OK) {
+        PR_fprintf(PR_STDERR,
+                   "Error in s_shutdown, error=%s (0x%08x)\n",
+                   ErrorName(crv), (int)crv);
+    }
     return 0;
 }

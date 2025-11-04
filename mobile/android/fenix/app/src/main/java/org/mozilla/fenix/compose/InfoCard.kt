@@ -32,7 +32,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.shopping.ui.ext.headingResource
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
@@ -139,11 +139,11 @@ fun InfoCard(
         buttonText?.let {
             Spacer(modifier = Modifier.height(8.dp))
 
-            PrimaryButton(
+            FilledButton(
                 text = it.text,
                 modifier = Modifier.fillMaxWidth(),
-                textColor = type.buttonTextColor,
-                backgroundColor = type.buttonBackgroundColor,
+                contentColor = type.buttonTextColor,
+                containerColor = type.buttonBackgroundColor,
                 onClick = it.onClick,
             )
         }

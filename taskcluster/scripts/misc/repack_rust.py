@@ -570,7 +570,6 @@ def expand_platform(name):
         "android_x86-64": "x86_64-linux-android",
         "android_aarch64": "aarch64-linux-android",
         "linux64": "x86_64-unknown-linux-gnu",
-        "linux32": "i686-unknown-linux-gnu",
         "mac": "x86_64-apple-darwin",
         "macos": "x86_64-apple-darwin",
         "mac64": "x86_64-apple-darwin",
@@ -643,7 +642,7 @@ def args():
         action="append",
         default=[],
         help="Additional target platform to support:"
-        " e.g. linux32 or i686-pc-windows-gnu."
+        " e.g. linux64 or i686-pc-windows-gnu."
         " can be given more than once.",
     )
     args = parser.parse_args()

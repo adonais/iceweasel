@@ -11,7 +11,6 @@
 #include "uiautomation.h"
 
 #include "IUnknownImpl.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 
 namespace mozilla::a11y {

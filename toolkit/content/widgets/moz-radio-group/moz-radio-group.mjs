@@ -18,6 +18,7 @@ import { MozBaseInputElement } from "../lit-utils.mjs";
  * @property {string} label - Label for the group of moz-radio elements.
  * @property {string} description - Description for the group of moz-radio elements.
  * @property {string} supportPage - Support page for the group of moz-radio elements.
+ * @property {number} headingLevel - Render the label in a heading of this level.
  * @property {string} name
  *  Input name of the radio group. Propagates to moz-radio children.
  * @property {string} value

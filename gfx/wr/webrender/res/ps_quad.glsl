@@ -230,9 +230,11 @@ vec2 scale_offset_map_point(vec4 scale_offset, vec2 p) {
 }
 
 RectWithEndpoint scale_offset_map_rect(vec4 scale_offset, RectWithEndpoint r) {
+    vec2 p0 = scale_offset_map_point(scale_offset, r.p0);
+    vec2 p1 = scale_offset_map_point(scale_offset, r.p1);
     return RectWithEndpoint(
-        scale_offset_map_point(scale_offset, r.p0),
-        scale_offset_map_point(scale_offset, r.p1)
+        min(p0, p1),
+        max(p0, p1)
     );
 }
 

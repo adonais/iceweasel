@@ -23,13 +23,21 @@ function Widgets() {
 
   const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
   const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
+  const nimbusListsTrainhopEnabled =
+    prefs.trainhopConfig?.widgets?.listsEnabled;
+  const nimbusTimerTrainhopEnabled =
+    prefs.trainhopConfig?.widgets?.timerEnabled;
 
   const listsEnabled =
-    (nimbusListsEnabled || prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) &&
+    (nimbusListsTrainhopEnabled ||
+      nimbusListsEnabled ||
+      prefs[PREF_WIDGETS_SYSTEM_LISTS_ENABLED]) &&
     prefs[PREF_WIDGETS_LISTS_ENABLED];
 
   const timerEnabled =
-    (nimbusTimerEnabled || prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) &&
+    (nimbusTimerTrainhopEnabled ||
+      nimbusTimerEnabled ||
+      prefs[PREF_WIDGETS_SYSTEM_TIMER_ENABLED]) &&
     prefs[PREF_WIDGETS_TIMER_ENABLED];
 
   const recommendedStoriesEnabled = prefs[PREF_FEEDS_SECTION_TOPSTORIES];

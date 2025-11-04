@@ -239,6 +239,8 @@ bool IsSameSite(nsIChannel* aHTTPChannel) {
 
 // Helper function to determine whether a request was triggered
 // by the end user in the context of SecFetch.
+// The more secure/closed state to return for this function is "false".
+// A user triggered action is less restricted because it is not cross-origin.
 bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
   /*
    * The goal is to distinguish between "webby" navigations that are controlled
@@ -250,8 +252,7 @@ bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
   ExtContentPolicyType contentType = loadInfo->GetExternalContentPolicyType();
 
   // A request issued by the browser is always user initiated.
-  if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
-      contentType == ExtContentPolicy::TYPE_OTHER) {
+  if (loadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
     return true;
   }
 
@@ -286,12 +287,12 @@ bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
   if (referrerInfo) {
     nsCOMPtr<nsIURI> originalReferrer;
     referrerInfo->GetOriginalReferrer(getter_AddRefs(originalReferrer));
-    if (originalReferrer) {
-      return false;
+    if (!originalReferrer) {
+      return true;
     }
   }
 
-  return true;
+  return false;
 }
 
 void mozilla::dom::SecFetch::AddSecFetchDest(nsIHttpChannel* aHTTPChannel) {

@@ -132,9 +132,21 @@ namespace InspectorUtils {
   // This interface may not be the clearest, but we want to match
   // what has been established by the GeckoView API
   [ChromeOnly] undefined setVerticalClipping(BrowsingContext? aContext,
-                                             long aOffset);
+                                             float aOffset);
   [ChromeOnly] undefined setDynamicToolbarMaxHeight(BrowsingContext? aContext,
-                                             long aHeight);
+                                             float aHeight);
+
+  // This element is not a grid container.
+  const unsigned short GRID_NONE = 0;
+  // This element is a grid container, and might additionally be a subgrid.
+  const unsigned short GRID_CONTAINER = 1;
+  // This element is a subgrid in the row direction.
+  const unsigned short GRID_SUBGRID_ROW = 2;
+  // This element is a subgrid in the col direction.
+  const unsigned short GRID_SUBGRID_COL = 4;
+  // Returns a set of GRID_* flags based on whether the element is a grid
+  // container or not.
+  unsigned short getGridContainerType(Element aElement);
 };
 
 enum DeclarationOrigin {
@@ -142,6 +154,7 @@ enum DeclarationOrigin {
   "user-agent",
   "pres-hints",
   "style-attribute",
+  "position-fallback",
   "animations",
   "transitions",
   "smil",

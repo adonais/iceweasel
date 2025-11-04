@@ -92,6 +92,9 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
   nsresult CompileJsonModule(JSContext* aCx, JS::CompileOptions& aOptions,
                              ModuleLoadRequest* aRequest,
                              JS::MutableHandle<JSObject*> aModuleOut);
+  nsresult CompileCssModule(JSContext* aCx, JS::CompileOptions& aOptions,
+                            ModuleLoadRequest* aRequest,
+                            JS::MutableHandle<JSObject*> aModuleOut);
 
  private:
   const Kind mKind;

@@ -316,10 +316,19 @@ nsresult nsContentSink::ProcessLinkFromHeader(const net::LinkHeader& aHeader,
     }
 
     if (linkTypes & LinkStyle::ePRELOAD) {
-      PreloadHref(aHeader.mHref, aHeader.mAs, aHeader.mType, aHeader.mMedia,
-                  aHeader.mNonce, aHeader.mIntegrity, aHeader.mSrcset,
-                  aHeader.mSizes, aHeader.mCrossOrigin, aHeader.mReferrerPolicy,
-                  aEarlyHintPreloaderId, aHeader.mFetchPriority);
+      PreloadHref(aHeader.mHref, aHeader.mAs, aHeader.mRel, aHeader.mType,
+                  aHeader.mMedia, aHeader.mNonce, aHeader.mIntegrity,
+                  aHeader.mSrcset, aHeader.mSizes, aHeader.mCrossOrigin,
+                  aHeader.mReferrerPolicy, aEarlyHintPreloaderId,
+                  aHeader.mFetchPriority);
+    }
+
+    if (linkTypes & LinkStyle::eCOMPRESSION_DICTIONARY) {
+      PreloadHref(aHeader.mHref, u"fetch"_ns, aHeader.mRel, aHeader.mType,
+                  aHeader.mMedia, aHeader.mNonce, aHeader.mIntegrity,
+                  aHeader.mSrcset, aHeader.mSizes, aHeader.mCrossOrigin,
+                  aHeader.mReferrerPolicy, aEarlyHintPreloaderId,
+                  aHeader.mFetchPriority);
     }
 
     if ((linkTypes & LinkStyle::eMODULE_PRELOAD) &&
@@ -431,15 +440,13 @@ void nsContentSink::PrefetchHref(const nsAString& aHref, const nsAString& aAs,
   }
 }
 
-void nsContentSink::PreloadHref(const nsAString& aHref, const nsAString& aAs,
-                                const nsAString& aType, const nsAString& aMedia,
-                                const nsAString& aNonce,
-                                const nsAString& aIntegrity,
-                                const nsAString& aSrcset,
-                                const nsAString& aSizes, const nsAString& aCORS,
-                                const nsAString& aReferrerPolicy,
-                                uint64_t aEarlyHintPreloaderId,
-                                const nsAString& aFetchPriority) {
+void nsContentSink::PreloadHref(
+    const nsAString& aHref, const nsAString& aAs, const nsAString& aRel,
+    const nsAString& aType, const nsAString& aMedia, const nsAString& aNonce,
+    const nsAString& aIntegrity, const nsAString& aSrcset,
+    const nsAString& aSizes, const nsAString& aCORS,
+    const nsAString& aReferrerPolicy, uint64_t aEarlyHintPreloaderId,
+    const nsAString& aFetchPriority) {
   auto encoding = mDocument->GetDocumentCharacterSet();
   nsCOMPtr<nsIURI> uri;
   NS_NewURI(getter_AddRefs(uri), aHref, encoding, mDocument->GetDocBaseURI());
@@ -464,8 +471,8 @@ void nsContentSink::PreloadHref(const nsAString& aHref, const nsAString& aAs,
   }
 
   mDocument->Preloads().PreloadLinkHeader(
-      uri, aHref, policyType, aAs, aType, aNonce, aIntegrity, aSrcset, aSizes,
-      aCORS, aReferrerPolicy, aEarlyHintPreloaderId, aFetchPriority);
+      uri, aHref, policyType, aAs, aRel, aType, aNonce, aIntegrity, aSrcset,
+      aSizes, aCORS, aReferrerPolicy, aEarlyHintPreloaderId, aFetchPriority);
 }
 
 void nsContentSink::PreloadModule(
@@ -506,9 +513,9 @@ void nsContentSink::PreloadModule(
   moduleLoader->DisallowImportMaps();
 
   mDocument->Preloads().PreloadLinkHeader(
-      uri, aHref, nsIContentPolicy::TYPE_SCRIPT, u"script"_ns, u"module"_ns,
-      aNonce, aIntegrity, u""_ns, u""_ns, aCORS, aReferrerPolicy,
-      aEarlyHintPreloaderId, aFetchPriority);
+      uri, aHref, nsIContentPolicy::TYPE_SCRIPT, u"script"_ns,
+      u"modulepreload"_ns, u"module"_ns, aNonce, aIntegrity, u""_ns, u""_ns,
+      aCORS, aReferrerPolicy, aEarlyHintPreloaderId, aFetchPriority);
 }
 
 void nsContentSink::PrefetchDNS(const nsAString& aHref) {
@@ -904,11 +911,7 @@ nsresult nsContentSink::WillParseImpl(void) {
   uint32_t currentTime = PR_IntervalToMicroseconds(PR_IntervalNow());
 
   if (StaticPrefs::content_sink_enable_perf_mode() == 0) {
-    nsViewManager* vm = presShell->GetViewManager();
-    NS_ENSURE_TRUE(vm, NS_ERROR_FAILURE);
-    uint32_t lastEventTime;
-    vm->GetLastUserEventTime(lastEventTime);
-
+    uint32_t lastEventTime = nsViewManager::GetLastUserEventTime();
     bool newDynLower = mDocument->IsInBackgroundWindow() ||
                        ((currentTime - mBeginLoadTime) >
                             StaticPrefs::content_sink_initial_perf_time() &&

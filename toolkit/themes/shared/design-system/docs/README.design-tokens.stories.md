@@ -328,7 +328,8 @@ Any semantic tokens within a scale, such as the `--font-size-root` example below
 --font-size-small: 0.867rem;  /* 13px */
 --font-size-large: 1.133rem;  /* 17px */
 --font-size-xlarge: 1.467rem; /* 22px */
---font-size-xxlarge: 2.2rem;  /* 33px */
+--font-size-xxlarge: 1.6rem;  /* 24px */
+--font-size-xxxlarge: 2.2rem; /* 33px */
 ```
 
 ## Theming

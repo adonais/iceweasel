@@ -1452,18 +1452,35 @@ static bool DrainJobQueue(JSContext* cx, unsigned argc, Value* vp) {
 static bool GlobalOfFirstJobInQueue(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  RootedObject job(cx, cx->internalJobQueue->maybeFront());
-  if (!job) {
-    JS_ReportErrorASCII(cx, "Job queue is empty");
-    return false;
+  if (JS::Prefs::use_js_microtask_queue()) {
+    if (cx->microTaskQueues->microTaskQueue.empty()) {
+      JS_ReportErrorASCII(cx, "Job queue is empty");
+      return false;
+    }
+
+    auto& job = cx->microTaskQueues->microTaskQueue.front();
+    RootedObject global(cx, JS::GetExecutionGlobalFromJSMicroTask(job));
+    MOZ_ASSERT(global);
+    if (!cx->compartment()->wrap(cx, &global)) {
+      return false;
+    }
+
+    args.rval().setObject(*global);
+  } else {
+    RootedObject job(cx, cx->internalJobQueue->maybeFront());
+    if (!job) {
+      JS_ReportErrorASCII(cx, "Job queue is empty");
+      return false;
+    }
+
+    RootedObject global(cx, &job->nonCCWGlobal());
+    if (!cx->compartment()->wrap(cx, &global)) {
+      return false;
+    }
+
+    args.rval().setObject(*global);
   }
 
-  RootedObject global(cx, &job->nonCCWGlobal());
-  if (!cx->compartment()->wrap(cx, &global)) {
-    return false;
-  }
-
-  args.rval().setObject(*global);
   return true;
 }
 
@@ -3291,6 +3308,14 @@ static int js_fgets(char* buf, int size, FILE* file) {
  */
 static bool ReadLine(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
+
+  // Don't support readline() on worker threads because js_fgets is not
+  // thread-safe. This also avoids non-deterministic behavior for fuzzers that
+  // use readline() for communication.
+  if (GetShellContext(cx)->isWorker) {
+    JS_ReportErrorASCII(cx, "readline() is not supported on worker threads");
+    return false;
+  }
 
   static constexpr size_t BUFSIZE = 256;
   FILE* from = stdin;
@@ -7421,7 +7446,7 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
       if (!timeZone) {
         return false;
       }
-      behaviors.setTimeZoneCopyZ(timeZone.get());
+      behaviors.setTimeZoneOverride(timeZone.get());
     }
 
     if (!JS_GetProperty(cx, opts, "alwaysUseFdlibm", &v)) {
@@ -7440,7 +7465,7 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
       if (!locale) {
         return false;
       }
-      creationOptions.setLocaleCopyZ(locale.get());
+      behaviors.setLocaleOverride(locale.get());
     }
   }
 
@@ -8150,12 +8175,11 @@ static bool SetSharedObject(JSContext* cx, unsigned argc, Value* vp) {
             cx, &obj->as<WasmMemoryObject>()
                      .buffer()
                      .as<SharedArrayBufferObject>());
-        MOZ_ASSERT(!sab->isGrowable(), "unexpected growable shared buffer");
         tag = MailboxTag::WasmMemory;
         value.sarb.buffer = sab->rawBufferObject();
         value.sarb.length = sab->byteLength();
         value.sarb.isHugeMemory = obj->as<WasmMemoryObject>().isHuge();
-        value.sarb.isGrowable = false;
+        value.sarb.isGrowable = sab->isGrowable();
         if (!value.sarb.buffer->addReference()) {
           JS_ReportErrorASCII(cx,
                               "Reference count overflow on SharedArrayBuffer");
@@ -13211,12 +13235,12 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-error-iserror")) {
     JS::Prefs::set_experimental_error_iserror(true);
   }
+  if (op.getBoolOption("enable-symbols-as-weakmap-keys")) {
+    JS::Prefs::setAtStartup_experimental_symbols_as_weakmap_keys(true);
+  }
 #ifdef NIGHTLY_BUILD
   if (op.getBoolOption("enable-async-iterator-helpers")) {
     JS::Prefs::setAtStartup_experimental_async_iterator_helpers(true);
-  }
-  if (op.getBoolOption("enable-symbols-as-weakmap-keys")) {
-    JS::Prefs::setAtStartup_experimental_symbols_as_weakmap_keys(true);
   }
   if (op.getBoolOption("enable-iterator-sequencing")) {
     JS::Prefs::setAtStartup_experimental_iterator_sequencing(true);

@@ -1636,9 +1636,9 @@ class GeckoEngine(
             get() = runtime.settings.cookieBehaviorOptInPartitioningPBM
             set(value) { runtime.settings.setCookieBehaviorOptInPartitioningPBM(value) }
 
-        override var certificateTransparencyMode: Int
-            get() = runtime.settings.certificateTransparencyMode
-            set(value) { runtime.settings.setCertificateTransparencyMode(value) }
+        override var certificateTransparencyMode: Int?
+            get() = runtime.settings.certificateTransparencyMode.or(2)
+            set(value) { value?.let { runtime.settings.setCertificateTransparencyMode(value) } }
 
         override var postQuantumKeyExchangeEnabled: Boolean?
             get() = runtime.settings.postQuantumKeyExchangeEnabled.or(false)
@@ -1655,6 +1655,10 @@ class GeckoEngine(
         override var lnaBlockingEnabled: Boolean
             get() = runtime.settings.lnaBlockingEnabled
             set(value) { runtime.settings.setLnaBlockingEnabled(value) }
+
+        override var crliteChannel: String?
+            get() = runtime.settings.crliteChannel
+            set(value) { value?.let { runtime.settings.setCrliteChannel(value) } }
     }.apply {
         defaultSettings?.let {
             this.javascriptEnabled = it.javascriptEnabled
@@ -1702,10 +1706,10 @@ class GeckoEngine(
             this.dohAutoselectEnabled = it.dohAutoselectEnabled
             this.bannedPorts = it.bannedPorts
             this.lnaBlockingEnabled = it.lnaBlockingEnabled
+            this.crliteChannel = it.crliteChannel
         }
     }
 
-    @Suppress("ComplexMethod")
     internal fun ContentBlockingController.LogEntry.BlockingData.getLoadedCategory(): TrackingCategory {
         val socialTrackingProtectionEnabled = settings.trackingProtectionPolicy?.strictSocialTrackingProtection
             ?: false

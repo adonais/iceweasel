@@ -1,5 +1,8 @@
 "use strict";
 
+const { BrowserUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/BrowserUtils.sys.mjs"
+);
 const { EnrollmentsContext, MatchStatus } = ChromeUtils.importESModule(
   "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs"
 );
@@ -11,9 +14,6 @@ const { PanelTestProvider } = ChromeUtils.importESModule(
 );
 const { TelemetryEnvironment } = ChromeUtils.importESModule(
   "resource://gre/modules/TelemetryEnvironment.sys.mjs"
-);
-const { TestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TestUtils.sys.mjs"
 );
 const { UnenrollmentCause } = ChromeUtils.importESModule(
   "resource://nimbus/lib/ExperimentManager.sys.mjs"
@@ -40,6 +40,35 @@ function assertEnrollments(store, expectedActive, expectedInactive) {
       );
     }
   }
+}
+
+async function assertSyncTimestamps(expectedTimestamps, message) {
+  await NimbusTestUtils.flushStore();
+
+  const timestamps = await NimbusEnrollments.loadSyncTimestamps();
+
+  Assert.deepEqual(
+    Object.fromEntries(timestamps.entries()),
+    expectedTimestamps,
+    message
+  );
+}
+
+async function updateAndAssertEnrollmentsUpdatedNotified(
+  loader,
+  shouldNotify,
+  message
+) {
+  const didObserve = await Promise.race([
+    BrowserUtils.promiseObserved("nimbus:enrollments-updated").then(() => true),
+    loader.updateRecipes("test").then(() => false),
+  ]);
+
+  Assert.equal(
+    didObserve,
+    shouldNotify,
+    `${shouldNotify ? "should" : "should not"} send nimbus:enrollments-updated: ${message}`
+  );
 }
 
 add_setup(async function setup() {
@@ -2299,9 +2328,6 @@ async function testRsClientGetThrows(collectionName) {
 
   loader.remoteSettingsClients[collectionName].get.throws();
 
-  // This topic is only notified if we reach the end of updateRecipes().
-  const updatePromise = TestUtils.topicObserved("nimbus:enrollments-updated");
-
   await manager.enroll(
     NimbusTestUtils.factories.recipe.withFeatureConfig("recipe", {
       featureId: "no-feature-firefox-desktop",
@@ -2309,22 +2335,15 @@ async function testRsClientGetThrows(collectionName) {
     "rs-loader"
   );
 
-  await loader.updateRecipes();
-  await updatePromise;
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    false,
+    "collection threw"
+  );
 
   Assert.ok(
     loader.getRecipesFromAllCollections.calledOnce,
     "getRecipesFromAllCollections called once"
-  );
-
-  Assert.deepEqual(
-    // We can't use .returned() because it is an async function and therefore
-    // returns a promise. Instead, we just call the function again.
-    await loader.getRecipesFromAllCollections(),
-    {
-      loadingError: true,
-      recipes: [],
-    }
   );
 
   Assert.ok(
@@ -2651,4 +2670,686 @@ add_task(async function testUnenrolledInAnotherProfileBetweenUpdates() {
 
   await cleanup();
   resetEnrollmentPrefs();
+});
+
+add_task(async function test_remoteSettingsSyncError_backwardsSync() {
+  const experiment = NimbusTestUtils.factories.recipe("experiment");
+  const secureExperiment = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "secureExperiment",
+    {
+      featureId: "prefFlips",
+      value: {
+        prefs: {},
+      },
+    }
+  );
+
+  await assertSyncTimestamps({}, "No timestamps");
+
+  const { manager, loader, cleanup } = await NimbusTestUtils.setupTest({
+    clearTelemetry: true,
+  });
+  Services.fog.testResetFOG(); // Clear the empty events that were triggered during initialization.
+
+  await assertSyncTimestamps(
+    {
+      "nimbus-desktop-experiments (stubbed)": 0,
+      "nimbus-secure-experiments (stubbed)": 0,
+    },
+    "timestamps updated"
+  );
+
+  loader.remoteSettingsClients.experiments.db.getLastModified.resolves(12345);
+  loader.remoteSettingsClients.experiments.get.resolves([experiment]);
+  loader.remoteSettingsClients.secureExperiments.db.getLastModified.resolves(
+    23456
+  );
+  loader.remoteSettingsClients.secureExperiments.get.resolves([
+    secureExperiment,
+  ]);
+
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    true,
+    "collections healthy"
+  );
+  await assertSyncTimestamps(
+    {
+      "nimbus-desktop-experiments (stubbed)": 12345,
+      "nimbus-secure-experiments (stubbed)": 23456,
+    },
+    "timestamps updated"
+  );
+  Assert.ok(manager.store.get("experiment")?.active, "experiment enrolled");
+  Assert.ok(
+    manager.store.get("secureExperiment").active,
+    "secureExperiment enrolled"
+  );
+
+  Services.fog.testResetFOG();
+
+  // If a collections goes backwards, we will not sync.
+  loader.remoteSettingsClients.experiments.db.getLastModified.resolves(1);
+  loader.remoteSettingsClients.experiments.get.resolves([]);
+  loader.remoteSettingsClients.secureExperiments.db.getLastModified.resolves(
+    34567
+  );
+  loader.remoteSettingsClients.secureExperiments.get.resolves([]);
+
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    false,
+    "experiments moved backwards"
+  );
+  await assertSyncTimestamps(
+    {
+      "nimbus-desktop-experiments (stubbed)": 12345,
+      "nimbus-secure-experiments (stubbed)": 23456,
+    },
+    "timestamps not updated"
+  );
+  Assert.ok(manager.store.get("experiment")?.active, "experiment enrolled");
+  Assert.ok(
+    manager.store.get("secureExperiment")?.active,
+    "secureExperiment enrolled"
+  );
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "empty",
+      },
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "backwards-sync",
+      },
+    ],
+    "experiments moved backwards"
+  );
+
+  Services.fog.testResetFOG();
+
+  loader.remoteSettingsClients.experiments.db.getLastModified.resolves(45678);
+  loader.remoteSettingsClients.secureExperiments.db.getLastModified.resolves(1);
+
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    false,
+    "experiments moved backwards"
+  );
+  await assertSyncTimestamps(
+    {
+      "nimbus-desktop-experiments (stubbed)": 12345,
+      "nimbus-secure-experiments (stubbed)": 23456,
+    },
+    "timestamps not updated"
+  );
+  Assert.ok(manager.store.get("experiment")?.active, "experiment enrolled");
+  Assert.ok(
+    manager.store.get("secureExperiment")?.active,
+    "secureExperiment enrolled"
+  );
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "empty",
+      },
+      {
+        collection: "nimbus-secure-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "backwards-sync",
+      },
+    ],
+    "secureExperiments moved backwards"
+  );
+
+  Services.fog.testResetFOG();
+
+  // If both collections move backwards, we will only see a single error.
+  loader.remoteSettingsClients.experiments.db.getLastModified.resolves(1);
+  loader.remoteSettingsClients.secureExperiments.db.getLastModified.resolves(1);
+
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    false,
+    "both collections moved backwards"
+  );
+  await assertSyncTimestamps(
+    {
+      "nimbus-desktop-experiments (stubbed)": 12345,
+      "nimbus-secure-experiments (stubbed)": 23456,
+    },
+    "timestamps not updated"
+  );
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "empty",
+      },
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "backwards-sync",
+      },
+    ],
+    "experiments moved backwards"
+  );
+
+  Services.fog.testResetFOG();
+
+  // If both collections are the same we won't see any errors.
+  loader.remoteSettingsClients.experiments.db.getLastModified.resolves(12345);
+  loader.remoteSettingsClients.experiments.get.resolves([experiment]);
+  loader.remoteSettingsClients.secureExperiments.db.getLastModified.resolves(
+    23456
+  );
+  loader.remoteSettingsClients.secureExperiments.get.resolves([
+    secureExperiment,
+  ]);
+
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    true,
+    "collections healthy"
+  );
+  await assertSyncTimestamps(
+    {
+      "nimbus-desktop-experiments (stubbed)": 12345,
+      "nimbus-secure-experiments (stubbed)": 23456,
+    },
+    "timestamps not updated"
+  );
+  Assert.ok(manager.store.get("experiment").active, "experiment enrolled");
+  Assert.ok(
+    manager.store.get("secureExperiment").active,
+    "secureExperiment enrolled"
+  );
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [],
+    "No events"
+  );
+
+  // Both collections should be allowed to move forwards.
+  loader.remoteSettingsClients.experiments.db.getLastModified.resolves(23456);
+  loader.remoteSettingsClients.experiments.get.resolves([]);
+
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    true,
+    "collections healthy"
+  );
+  await assertSyncTimestamps(
+    {
+      "nimbus-desktop-experiments (stubbed)": 23456,
+      "nimbus-secure-experiments (stubbed)": 23456,
+    },
+    "timestamps updated"
+  );
+  Assert.ok(!manager.store.get("experiment").active, "experiment unenrolled");
+  Assert.ok(
+    manager.store.get("secureExperiment").active,
+    "secureExperiment enrolled"
+  );
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "empty",
+      },
+    ],
+    "Experiment collection is empty"
+  );
+
+  Services.fog.testResetFOG();
+
+  loader.remoteSettingsClients.secureExperiments.db.getLastModified.resolves(
+    34567
+  );
+  loader.remoteSettingsClients.secureExperiments.get.resolves([]);
+
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    true,
+    "collections healthy"
+  );
+  await assertSyncTimestamps(
+    {
+      "nimbus-desktop-experiments (stubbed)": 23456,
+      "nimbus-secure-experiments (stubbed)": 34567,
+    },
+    "timestamps updated"
+  );
+  Assert.ok(!manager.store.get("experiment").active, "experiment unenrolled");
+  Assert.ok(
+    !manager.store.get("secureExperiment").active,
+    "secureExperiment unenrolled"
+  );
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "empty",
+      },
+    ],
+    "Collections empty"
+  );
+
+  await cleanup();
+});
+
+add_task(async function test_remoteSettingsSyncError_empty() {
+  const experiment = NimbusTestUtils.factories.recipe("experiment");
+  const secureExperiment = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "secureExperiment",
+    {
+      featureId: "prefFlips",
+      value: {
+        prefs: {},
+      },
+    }
+  );
+
+  Services.fog.testResetFOG();
+  const { manager, loader, cleanup } = await NimbusTestUtils.setupTest({
+    clearTelemetry: true,
+  });
+
+  // If both collections are empty we will see telemetry for both. There is a
+  // migration event and an enabled event during startup.
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "enabled",
+        reason: "empty",
+      },
+    ],
+    "Submitted initial remoteSettingsSyncError telemetry"
+  );
+  Services.fog.testResetFOG();
+
+  // We should observe an enrollment update.
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    true,
+    "empty collections don't prevent enrollment update"
+  );
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "empty",
+      },
+    ],
+    "Empty event telemetry submitted"
+  );
+
+  Services.fog.testResetFOG();
+
+  // If secureExperiments is empty we will see a single event and observe that
+  // enrollments updated.
+  loader.remoteSettingsClients.experiments.get.resolves([experiment]);
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    true,
+    "empty collections don't prevent enrollment update"
+  );
+
+  Assert.ok(manager.store.get("experiment")?.active, "experiment is active");
+  Assert.ok(
+    !manager.store.has("secureExperiment"),
+    "secureExperiment is not enrolled"
+  );
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [],
+    "Empty secureExperiments collection does not emit telemetry"
+  );
+
+  Services.fog.testResetFOG();
+
+  // If experiments is empty we will see a single event and observe that
+  // enrollments updated.
+  loader.remoteSettingsClients.experiments.get.resolves([]);
+  loader.remoteSettingsClients.secureExperiments.get.resolves([
+    secureExperiment,
+  ]);
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    true,
+    "empty collections don't prevent enrollment update"
+  );
+
+  Assert.ok(
+    !manager.store.get("experiment").active,
+    "experiment is not active"
+  );
+  Assert.ok(
+    manager.store.get("secureExperiment")?.active,
+    "secureExperiment is active"
+  );
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "empty",
+      },
+    ],
+    "Empty experiments collection"
+  );
+
+  Services.fog.testResetFOG();
+
+  // If both collections contain recipes we will see no events.
+  loader.remoteSettingsClients.experiments.get.resolves([
+    { ...experiment, slug: "experiment2" },
+  ]);
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    true,
+    "healthy collections"
+  );
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [],
+    "No events"
+  );
+  Assert.ok(
+    !manager.store.get("experiment").active,
+    "experiment is not active (ended)"
+  );
+  Assert.ok(manager.store.get("experiment2")?.active, "experiment2 is active");
+  Assert.ok(
+    manager.store.get("secureExperiment")?.active,
+    "secureExperiment is active"
+  );
+
+  await NimbusTestUtils.cleanupManager(["experiment2", "secureExperiment"]);
+  await cleanup();
+});
+
+add_task(async function test_remoteSettingsSyncError_getException() {
+  const { loader, cleanup } = await NimbusTestUtils.setupTest({
+    clearTelemetry: true,
+  });
+  Services.fog.testResetFOG(); // Clear the empty events that were triggered during initialization.
+
+  loader.remoteSettingsClients.experiments.get.rejects(new Error("ruh roh"));
+  await updateAndAssertEnrollmentsUpdatedNotified(loader, false, "get threw");
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "get-exception",
+      },
+    ],
+    "get() threw"
+  );
+
+  await cleanup();
+});
+
+add_task(async function test_remoteSettingsSyncError_invalidLastModified() {
+  const { loader, cleanup } = await NimbusTestUtils.setupTest({
+    clearTelemetry: true,
+  });
+  Services.fog.testResetFOG(); // Clear the empty events that were triggered during initialization.
+
+  loader.remoteSettingsClients.experiments.db.getLastModified.resolves("never");
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    false,
+    "lastModified invalid"
+  );
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "empty",
+      },
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "invalid-last-modified",
+      },
+    ],
+    "getLastModified should have thrown"
+  );
+
+  await cleanup();
+});
+
+add_task(async function test_remoteSettingsSyncError_lastModifiedException() {
+  const { loader, cleanup } = await NimbusTestUtils.setupTest({
+    clearTelemetry: true,
+  });
+  Services.fog.testResetFOG(); // Clear the empty events that were triggered during initialization.
+
+  loader.remoteSettingsClients.experiments.db.getLastModified.rejects(
+    new Error("ruh roh")
+  );
+
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    false,
+    "lastModified threw"
+  );
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "last-modified-exception",
+      },
+    ],
+    "getLastModified should have thrown"
+  );
+
+  await cleanup();
+});
+
+add_task(async function test_remoteSettingsSyncError_nullLastModified() {
+  const experiment = NimbusTestUtils.factories.recipe("experiment");
+  const secureExperiment = NimbusTestUtils.factories.recipe.withFeatureConfig(
+    "secureExperiment",
+    {
+      featureId: "prefFlips",
+      value: {
+        prefs: {},
+      },
+    }
+  );
+
+  const { manager, loader, cleanup } = await NimbusTestUtils.setupTest({
+    clearTelemetry: true,
+  });
+  Services.fog.testResetFOG(); // Clear the empty events that were triggered during initialization.
+
+  // If the experiments collection contains an experiment but the
+  // secureExperiments collection does not and has null lastModified then
+  // enrollments will not update.
+  loader.remoteSettingsClients.experiments.get.resolves([experiment]);
+  loader.remoteSettingsClients.secureExperiments.db.getLastModified.resolves(
+    null
+  );
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    false,
+    "secureExperiments has null lastModified"
+  );
+
+  Assert.equal(manager.store.getAll().length, 0, "Enrollments did not update");
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-secure-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "null-last-modified",
+      },
+    ],
+    "secureExperiments has null lastModified"
+  );
+  Services.fog.testResetFOG();
+
+  // If the secureExperiments collection contains an experiment but the
+  // experiments collection does not and has null lastModified then enrollments
+  // will not update.
+  loader.remoteSettingsClients.experiments.get.resolves([]);
+  loader.remoteSettingsClients.experiments.db.getLastModified.resolves(null);
+  loader.remoteSettingsClients.secureExperiments.get.resolves([
+    secureExperiment,
+  ]);
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    false,
+    "experiments has null lastModified"
+  );
+
+  Assert.equal(manager.store.getAll().length, 0, "Enrollments did not update");
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "null-last-modified",
+      },
+    ],
+    "Submitted failure telemetry"
+  );
+  Services.fog.testResetFOG();
+
+  // If both collections are empty with null lastModified then enrollments will
+  // not update but we will only see a single null-last-modified event.
+  loader.remoteSettingsClients.secureExperiments.get.resolves([]);
+  loader.remoteSettingsClients.secureExperiments.db.getLastModified.resolves(
+    null
+  );
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    false,
+    "lastModified is not null for both collections"
+  );
+
+  Assert.equal(manager.store.getAll().length, 0, "Enrollments did not update");
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "null-last-modified",
+      },
+    ],
+    "Submitted failure telemetry"
+  );
+  Services.fog.testResetFOG();
+
+  // If neither collection has null lastModified we should see no
+  // null-last-modified events, but we will see empty events.
+  loader.remoteSettingsClients.experiments.db.getLastModified.resolves(0);
+  loader.remoteSettingsClients.secureExperiments.db.getLastModified.resolves(0);
+  await updateAndAssertEnrollmentsUpdatedNotified(
+    loader,
+    true,
+    "empty collections don't prevent enrollment update"
+  );
+
+  Assert.deepEqual(
+    Glean.nimbusEvents.remoteSettingsSyncError
+      .testGetValue("events")
+      ?.map(ev => ev.extra) ?? [],
+    [
+      {
+        collection: "nimbus-desktop-experiments (stubbed)",
+        force_sync: "false",
+        trigger: "test",
+        reason: "empty",
+      },
+    ],
+    "Submitted failure telemetry"
+  );
+
+  await cleanup();
 });

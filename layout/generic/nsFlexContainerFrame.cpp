@@ -59,8 +59,6 @@ static mozilla::LazyLogModule gFlexContainerLog("FlexContainer");
 #define FLEX_LOGV(message, ...) \
   MOZ_LOG(gFlexContainerLog, LogLevel::Verbose, ("  " message, ##__VA_ARGS__));
 
-static const char* BoolToYesNo(bool aArg) { return aArg ? "yes" : "no"; }
-
 // Returns the OrderState enum we should pass to CSSOrderAwareFrameIterator
 // (depending on whether aFlexContainer has
 // NS_STATE_FLEX_NORMAL_FLOW_CHILDREN_IN_CSS_ORDER state bit).
@@ -1373,7 +1371,7 @@ StyleAlignFlags nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
              "We should've converted 'stretch' to the fallback alignment!");
   MOZ_ASSERT(alignment != StyleAlignFlags::FLEX_START &&
                  alignment != StyleAlignFlags::FLEX_END,
-             "nsAbsoluteContainingBlock doesn't know how to handle "
+             "AbsoluteContainingBlock doesn't know how to handle "
              "flex-relative axis for flex containers!");
 
   return (alignment | alignmentFlags);
@@ -1691,7 +1689,7 @@ void nsFlexContainerFrame::ResolveAutoFlexBasisAndMinSize(
   FLEX_ITEM_LOG(
       aFlexItem.Frame(),
       "Resolving auto main size? %s; resolving auto min main size? %s",
-      BoolToYesNo(isMainSizeAuto), BoolToYesNo(isMainMinSizeAuto));
+      YesOrNo(isMainSizeAuto), YesOrNo(isMainMinSizeAuto));
 
   nscoord resolvedMinSize;  // (only set/used if isMainMinSizeAuto==true)
   bool minSizeNeedsToMeasureContent = false;  // assume the best
@@ -2981,8 +2979,12 @@ nsresult nsFlexContainerFrame::GetFrameName(nsAString& aResult) const {
 void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                             const nsDisplayListSet& aLists) {
   nsDisplayListCollection tempLists(aBuilder);
-
   DisplayBorderBackgroundOutline(aBuilder, tempLists);
+  if (HidesContent()) {
+    tempLists.MoveTo(aLists);
+    return;
+  }
+
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, tempLists);
   }

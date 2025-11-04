@@ -22,7 +22,6 @@
 #include "WebGLVertexArray.h"
 #include "gfxEnv.h"
 #include "jsfriendapi.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_webgl.h"
 #include "nsPrintfCString.h"

@@ -7,7 +7,9 @@
 #include "builtin/temporal/Temporal.h"
 
 #include "mozilla/Casting.h"
-#include "mozilla/CheckedInt.h"
+#ifdef DEBUG
+#  include "mozilla/CheckedInt.h"
+#endif
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"

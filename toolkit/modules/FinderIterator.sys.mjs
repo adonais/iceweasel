@@ -78,7 +78,8 @@ export class FinderIterator {
    *                                          Optional, defaults to `false`.
    * @param {Object}  options.listener        Listener object that implements the
    *                                          following callback functions:
-   *                                           - onIteratorRangeFound({Range} range);
+   *                                           - onIteratorRangeFound({Range} range, {Object} extra);
+   *                                             extra.context contains text snippet around the match
    *                                           - onIteratorReset();
    *                                           - onIteratorRestart({Object} iterParams);
    *                                           - onIteratorStart({Object} iterParams);
@@ -90,6 +91,7 @@ export class FinderIterator {
    * @param {Boolean} [options.useSubFrames]    Whether to iterate over subframes.
    *                                            Optional, defaults to `false`.
    * @param {String}  options.word              Word to search for
+   * @param {Number} contextRange - Number of characters to extract before and after target string
    * @return {Promise}
    */
   start({
@@ -104,6 +106,7 @@ export class FinderIterator {
     useCache,
     word,
     useSubFrames,
+    contextRange,
   }) {
     // Take care of default values for non-required options.
     if (typeof allowDistance != "number") {
@@ -199,7 +202,7 @@ export class FinderIterator {
     // Start!
     this.running = true;
     this._currentParams = iterParams;
-    this._findAllRanges(finder, ++this._spawnId);
+    this._findAllRanges(finder, ++this._spawnId, contextRange);
 
     return promise;
   }
@@ -370,6 +373,84 @@ export class FinderIterator {
   }
 
   /**
+   * Extracts context around a found Range.
+   * Returns normalized text slices so indices are stable with FindBar behavior.
+   *
+   * @param {Range} range - DOM range for a single match.
+   * @param {Number} contextRange - Number of characters to extract before and after target string
+   */
+  _extractSnippet(range, contextRange) {
+    const blockSelector =
+      "p,li,dt,dd,td,th,pre,code,h1,h2,h3,h4,h5,h6,article,section,blockquote,div";
+
+    const defaultResult = {
+      before: "",
+      match: "",
+      after: "",
+      start: -1,
+      end: -1,
+    };
+
+    try {
+      const doc = range?.startContainer?.ownerDocument;
+      if (!doc || range.collapsed) {
+        return defaultResult;
+      }
+
+      // Pick a stable block container for context
+      let node = range.commonAncestorContainer;
+      if (node.nodeType === Node.TEXT_NODE) {
+        node = node.parentElement || node.parentNode;
+      }
+
+      // Find the nearest block-level container (p, div, h1, etc.) to anchor our context extraction
+      const block =
+        (node?.closest && node.closest(blockSelector)) || node || doc.body;
+
+      // Build ranges
+      const blockRange = doc.createRange();
+      blockRange.selectNodeContents(block);
+
+      const preRange = blockRange.cloneRange();
+      preRange.setEnd(range.startContainer, range.startOffset);
+
+      const postRange = blockRange.cloneRange();
+      postRange.setStart(range.endContainer, range.endOffset);
+
+      const preRaw = preRange.toString();
+      const matchRaw = range.toString();
+      const postRaw = postRange.toString();
+
+      // Consistent normalization across all three strings
+      const normalizeWhitespace = text => text.replace(/\s+/g, " ");
+      const preNorm = normalizeWhitespace(preRaw);
+      const matchNorm = normalizeWhitespace(matchRaw);
+      const postNorm = normalizeWhitespace(postRaw);
+
+      const start = preNorm.length; // offset in normalized block text
+      const end = start + matchNorm.length;
+      const sliceText = (text, start, end) => text.slice(start, end);
+
+      const beforeStr = sliceText(
+        preNorm,
+        Math.max(0, preNorm.length - contextRange),
+        preNorm.length
+      );
+      const afterStr = sliceText(postNorm, 0, contextRange);
+
+      return {
+        before: beforeStr,
+        match: matchNorm,
+        after: afterStr,
+        start,
+        end,
+      };
+    } catch {
+      return defaultResult;
+    }
+  }
+
+  /**
    * Internal; check if an iteration request is available in the previous result
    * that we cached.
    *
@@ -534,9 +615,10 @@ export class FinderIterator {
    * @param {Number}       spawnId Since `stop()` is synchronous and this method
    *                               is not, this identifier is used to learn if
    *                               it's supposed to still continue after a pause.
+   * @param {Number} contextRange - Number of characters to extract before and after target string
    * @yield {Range}
    */
-  async _findAllRanges(finder, spawnId) {
+  async _findAllRanges(finder, spawnId, contextRange = 0) {
     if (this._timeout) {
       if (this._timer) {
         clearTimeout(this._timer);
@@ -597,7 +679,13 @@ export class FinderIterator {
             continue;
           }
 
-          listener.onIteratorRangeFound(range);
+          if (contextRange) {
+            listener.onIteratorRangeFound(range, {
+              context: this._extractSnippet(range, contextRange),
+            });
+          } else {
+            listener.onIteratorRangeFound(range);
+          }
 
           if (limit !== -1 && --limit === 0) {
             // We've reached our limit; no need to do more work for this listener.

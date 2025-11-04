@@ -62,7 +62,10 @@ class WebCompatReporterSubmissionMiddleware(
                     webCompatInfo?.let {
                         val enteredUrlMatchesTabUrl = context.state.enteredUrl == webCompatInfo.url
                         if (enteredUrlMatchesTabUrl) {
-                            setTabAntiTrackingMetrics(antiTracking = webCompatInfo.antitracking)
+                            setTabAntiTrackingMetrics(
+                                antiTracking = webCompatInfo.antitracking,
+                                sendBlockedUrls = context.state.includeEtpBlockedUrls,
+                            )
                             setTabFrameworksMetrics(frameworks = webCompatInfo.frameworks)
                             setTabLanguageMetrics(languages = webCompatInfo.languages)
                             setTabUserAgentMetrics(userAgent = webCompatInfo.userAgent)
@@ -98,8 +101,14 @@ class WebCompatReporterSubmissionMiddleware(
         }
     }
 
-    private fun setTabAntiTrackingMetrics(antiTracking: WebCompatInfoDto.WebCompatAntiTrackingDto) {
+    private fun setTabAntiTrackingMetrics(
+        antiTracking: WebCompatInfoDto.WebCompatAntiTrackingDto,
+        sendBlockedUrls: Boolean,
+    ) {
         BrokenSiteReportTabInfoAntitracking.blockList.set(antiTracking.blockList)
+        if (sendBlockedUrls) {
+            BrokenSiteReportTabInfoAntitracking.blockedOrigins.set(antiTracking.blockedOrigins)
+        }
         BrokenSiteReportTabInfoAntitracking.btpHasPurgedSite.set(antiTracking.btpHasPurgedSite)
         BrokenSiteReportTabInfoAntitracking.etpCategory.set(antiTracking.etpCategory)
         BrokenSiteReportTabInfoAntitracking.hasMixedActiveContentBlocked.set(

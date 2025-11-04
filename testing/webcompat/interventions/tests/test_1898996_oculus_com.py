@@ -6,6 +6,7 @@ SUPPORTED_TEXT = "Log in to start casting"
 UNSUPPORTED_TEXT = "please use a supported web browser"
 
 
+@pytest.mark.skip_platforms("android")
 @pytest.mark.asyncio
 @pytest.mark.with_interventions
 async def test_enabled(client):
@@ -14,6 +15,7 @@ async def test_enabled(client):
     assert not client.find_text(UNSUPPORTED_TEXT, is_displayed=True)
 
 
+@pytest.mark.skip_platforms("android")
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
 async def test_disabled(client):

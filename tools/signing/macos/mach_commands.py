@@ -448,7 +448,12 @@ def auto_detect_channel(ctx, app):
             logging.ERROR,
             "macos-sign",
             {"plist": info_plist},
-            "Couldn't read bundle ID from {plist}",
+            (
+                "Couldn't read bundle ID from {plist} or bundle ID "
+                f"({bundleid}) not in [{NIGHTLY_BUNDLEID}, {DEVEDITION_BUNDLEID}"
+                f", {RELEASE_BUNDLEID}]. You can try to specify the channel"
+                " manually with -c $CHANNEL"
+            ),
         )
         sys.exit(1)
 

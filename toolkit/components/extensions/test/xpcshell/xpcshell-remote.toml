@@ -34,6 +34,13 @@ skip-if = ["tsan"]
 ["test_ext_ipcBlob.js"]
 skip-if = ["os == 'android' && processor == 'x86_64'"]
 
+["test_ext_proxy_http3.js"]
+support-files = ["!/netwerk/test/unit/proxy-ca.pem", "!/netwerk/test/unit/http2-ca.pem"]
+skip-if = [
+  "msix", # H3 server not working on msix
+  "os == 'android' && !fission",
+]
+
 ["test_extension_process_alive.js"]
 
 ["test_process_crash_telemetry.js"]

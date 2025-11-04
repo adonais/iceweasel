@@ -505,7 +505,7 @@ class Tree extends Component {
       style: PropTypes.object,
       // Prevents blur when Tree loses focus
       preventBlur: PropTypes.bool,
-      initiallyExpanded: PropTypes.func,
+      getInitiallyExpanded: PropTypes.func,
     };
   }
 
@@ -571,10 +571,13 @@ class Tree extends Component {
   }
 
   _autoExpand() {
-    const { autoExpandDepth, autoExpandNodeChildrenLimit, initiallyExpanded } =
-      this.props;
+    const {
+      autoExpandDepth,
+      autoExpandNodeChildrenLimit,
+      getInitiallyExpanded,
+    } = this.props;
 
-    if (!autoExpandDepth && !initiallyExpanded) {
+    if (!autoExpandDepth && !getInitiallyExpanded) {
       return;
     }
 
@@ -583,7 +586,7 @@ class Tree extends Component {
     // collapsed nodes. Any initially expanded items will be expanded regardless
     // of how deep they are.
     const autoExpand = (item, currentDepth) => {
-      const initial = initiallyExpanded && initiallyExpanded(item);
+      const initial = getInitiallyExpanded && getInitiallyExpanded(item);
 
       if (!initial && currentDepth >= autoExpandDepth) {
         return;
@@ -618,9 +621,9 @@ class Tree extends Component {
     } else if (length != 0) {
       autoExpand(roots[0], 0);
 
-      if (initiallyExpanded) {
+      if (getInitiallyExpanded) {
         for (let i = 1; i < length; i++) {
-          if (initiallyExpanded(roots[i])) {
+          if (getInitiallyExpanded(roots[i])) {
             autoExpand(roots[i], 0);
           }
         }

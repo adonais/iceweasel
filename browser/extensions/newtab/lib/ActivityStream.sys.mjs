@@ -99,6 +99,29 @@ const LOCALE_SECTIONS_CONFIG =
 
 const BROWSER_URLBAR_PLACEHOLDERNAME = "browser.urlbar.placeholderName";
 
+export const WEATHER_OPTIN_REGIONS = [
+  "DE",
+  "GB",
+  "FR",
+  "ES",
+  "IT",
+  "CH",
+  "AT",
+  "BE",
+  "IE",
+  "NL",
+  "PL",
+  "CZ",
+  "SE",
+  "SG",
+  "HU",
+  "SK",
+  "FI",
+  "DK",
+  "NO",
+  "PT",
+];
+
 export function csvPrefHasValue(stringPrefName, value) {
   if (typeof stringPrefName !== "string") {
     throw new Error(`The stringPrefName argument is not a string`);
@@ -140,6 +163,10 @@ function showWeather({ geo, locale }) {
     csvPrefHasValue(REGION_WEATHER_CONFIG, geo) &&
     csvPrefHasValue(LOCALE_WEATHER_CONFIG, locale)
   );
+}
+
+function showWeatherOptIn({ geo }) {
+  return WEATHER_OPTIN_REGIONS.includes(geo);
 }
 
 function showTopicsSelection({ geo, locale }) {
@@ -331,6 +358,45 @@ export const PREFS_CONFIG = new Map([
     {
       title: "showWeather",
       value: true,
+    },
+  ],
+  [
+    "system.showWeatherOptIn",
+    {
+      title: "system.showWeatherOptIn",
+      // pref is dynamic
+      getValue: showWeatherOptIn,
+    },
+  ],
+  [
+    "discoverystream.optIn-region-weather-config",
+    {
+      title: "Regions for weather opt-in.",
+      value: "DE,GB,FR,ES,IT,CH,AT,BE,IE,NL,PL,CZ,SE,SG,HU,SK,FI,DK,NO,PT",
+    },
+  ],
+  [
+    "weather.optInDisplayed",
+    {
+      title:
+        "Enable opt-in dialog to display for weather widget in GDPR regions.",
+      value: false,
+    },
+  ],
+  [
+    "weather.optInAccepted",
+    {
+      title:
+        "User choice made when prompted with the opt-in dialog for weather.",
+      value: false,
+    },
+  ],
+  [
+    "weather.staticData.enabled",
+    {
+      title:
+        "Static weather data shown when user has not set/enabled location from opt-in.",
+      value: false,
     },
   ],
   [
@@ -659,6 +725,13 @@ export const PREFS_CONFIG = new Map([
       title: "Boolean flag to enable inferred personalizaton",
       // pref is dynamic
       getValue: useInferredPersonalization,
+    },
+  ],
+  [
+    "discoverystream.sections.personalization.inferred.interests.override",
+    {
+      title:
+        "Testing feature to allow specification of specific user interests",
     },
   ],
   [
@@ -1193,6 +1266,13 @@ export const PREFS_CONFIG = new Map([
       title: "Enables topic labels for discovery stream",
       // pref is dynamic
       getValue: showTopicLabels,
+    },
+  ],
+  [
+    "discoverystream.spocs.onDemand",
+    {
+      title: "Set sponsored content to only update cache when requested.",
+      value: false,
     },
   ],
   [

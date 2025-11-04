@@ -420,7 +420,7 @@
     This text is shown in a dialog if no app could be found for a custom link protocol. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar") and %2$s is the name of
     the app store installed on the device (usually that's Google Play).
   -->
-  <string name="external_app_prompt_no_app">Te kanaj se aplicación weli kitapua ini ilpika. Tiweli tikisa tik %1$s pal tiktemua %2$s ipal se aplicación weli kitapua.\n\n</string>
+  <string name="external_app_prompt_no_app">Te kanaj se aplicación weli kitapua ini ilpika. Tiweli tikisa tik %1$s pal tiktemua %2$s ipal se aplicación weli kitapua.</string>
   <!-- This label is shown above a list of apps that can be used to open a given link -->
   <string name="external_multiple_apps_matched_exit">Tikneki tikisa tik ne ichtaka pashalulis?</string>
   <!-- Snackbar that will be displayed after a download has completed. %1$s is the file name. -->

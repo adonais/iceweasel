@@ -62,6 +62,7 @@ UNIFIED_SOURCES += [
     "TestStringStream.cpp",
     "TestSubstringTuple.cpp",
     "TestSynchronization.cpp",
+    "TestTargetShutdownTask.cpp",
     "TestTArray.cpp",
     "TestTArray2.cpp",
     "TestTaskController.cpp",

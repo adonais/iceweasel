@@ -1,7 +1,6 @@
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import {
   DiscoveryStreamAdminInner,
-  CollapseToggle,
   DiscoveryStreamAdminUI,
   Personalization,
   ToggleStoryButton,
@@ -265,28 +264,6 @@ describe("DiscoveryStreamAdmin", () => {
       wrapper.find("button").simulate("click");
 
       assert.equal(result, "spoc");
-    });
-  });
-});
-
-describe("CollapseToggle", () => {
-  let wrapper;
-  beforeEach(() => {
-    wrapper = shallow(<CollapseToggle location={{ routes: [""] }} />);
-  });
-
-  describe("rendering inner content", () => {
-    it("should not render DiscoveryStreamAdminInner for about:newtab (no hash)", () => {
-      wrapper.setProps({ location: { hash: "", routes: [""] } });
-      assert.lengthOf(wrapper.find(DiscoveryStreamAdminInner), 0);
-    });
-
-    it("should render DiscoveryStreamAdminInner for about:newtab#devtools and subroutes", () => {
-      wrapper.setProps({ location: { hash: "#devtools", routes: [""] } });
-      assert.lengthOf(wrapper.find(DiscoveryStreamAdminInner), 1);
-
-      wrapper.setProps({ location: { hash: "#devtools-foo", routes: [""] } });
-      assert.lengthOf(wrapper.find(DiscoveryStreamAdminInner), 1);
     });
   });
 });

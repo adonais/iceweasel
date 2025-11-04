@@ -184,7 +184,6 @@ CFTypeRefPtr<IOSurfaceRef> SurfacePoolCA::LockedPool::ObtainSurfaceFromPool(
             (__bridge NSString*)
             kIOSurfacePixelFormat : @(kCVPixelFormatType_32BGRA),
             (__bridge NSString*)kIOSurfaceBytesPerElement : @(4),
-            (__bridge NSString*)kIOSurfaceIsGlobal : @(YES),
           }));
   if (surface) {
     if (StaticPrefs::gfx_color_management_native_srgb()) {

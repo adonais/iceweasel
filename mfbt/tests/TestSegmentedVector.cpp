@@ -10,7 +10,7 @@
 
 #include "mozilla/Alignment.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/MulOverflowMask.h"
+#include "mozilla/CheckedArithmetic.h"
 
 using mozilla::SegmentedVector;
 
@@ -20,10 +20,11 @@ class InfallibleAllocPolicy {
  public:
   template <typename T>
   T* pod_malloc(size_t aNumElems) {
-    if (aNumElems & mozilla::MulOverflowMask<sizeof(T)>()) {
+    size_t size;
+    if (!mozilla::SafeMul(aNumElems, sizeof(T), &size)) {
       MOZ_CRASH("TestSegmentedVector.cpp: overflow");
     }
-    T* rv = static_cast<T*>(malloc(aNumElems * sizeof(T)));
+    T* rv = static_cast<T*>(malloc(size));
     if (!rv) {
       MOZ_CRASH("TestSegmentedVector.cpp: out of memory");
     }

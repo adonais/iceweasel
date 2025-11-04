@@ -98,13 +98,13 @@ NS_INSTANTIATE_METHOD_RETURNING_ANY_EDITOR_DOM_POINT(
     IgnoreNonEditableNodes aIgnoreNonEditableNodes,
     const nsIContent* aPrecedingLimiterContent);
 
+// FIXME: I think the scanner should not cross the <button> element boundaries.
 constexpr static const AncestorTypes kScanAnyRootAncestorTypes = {
     // If the point is in a block, we need to scan only in the block
     AncestorType::ClosestBlockElement,
     // So, we want a root element of the (shadow) tree root element of the
-    // point
-    // if there is no parent block
-    AncestorType::AllowRootOrAncestorLimiterElement,
+    // point if there is no parent block
+    AncestorType::ReturnAncestorLimiterIfNoProperAncestor,
     // Basically, given point shouldn't be a void element, so, ignore
     // ancestor
     // void elements
@@ -114,7 +114,7 @@ constexpr static const AncestorTypes kScanEditableRootAncestorTypes = {
     AncestorType::EditableElement,
     // And the others are same as kScanAnyRootAncestorTypes
     AncestorType::ClosestBlockElement,
-    AncestorType::AllowRootOrAncestorLimiterElement,
+    AncestorType::ReturnAncestorLimiterIfNoProperAncestor,
     AncestorType::IgnoreHRElement};
 
 template <typename EditorDOMPointType>

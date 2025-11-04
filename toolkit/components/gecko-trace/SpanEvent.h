@@ -11,12 +11,9 @@ namespace mozilla::gecko_trace {
 
 using string_view = std::string_view;
 
-// TODO: Support Span types in AttributeValue
-using AttributeValue = Variant<bool, int64_t, string_view
-                               // ,Span<bool>,
-                               // Span<int64_t>,
-                               // Span<string_view>
-                               >;
+using AttributeValue =
+    Variant<bool, int64_t, string_view, mozilla::Span<const bool>,
+            mozilla::Span<const int64_t>, mozilla::Span<const string_view>>;
 
 // Note: Consider adding a mechanism to prevent manual implementation of
 // this interface for types.
@@ -25,13 +22,13 @@ class SpanEvent {
   virtual ~SpanEvent() = default;
 
   /**
-   * Iterate over all key-value pairs in this event.
+   * Iterate overall key-value pairs in this event.
    *
-   * Calls the provided callback function for each attribute set on this event
+   * Calls the provided callback function for each attribute set in this event
    * instance. The iteration includes attributes from parent classes if this
    * event inherits from other events.
    *
-   * @param aCallback Function to call for each key-value pair.
+   * @param `aCallback` Function to call for each key-value pair.
    *                  Should return true to continue iteration, false to stop.
    * @return true if all callbacks returned true, false if any returned false
    */

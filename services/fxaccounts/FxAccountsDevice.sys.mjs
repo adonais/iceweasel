@@ -604,7 +604,7 @@ export class FxAccountsDevice {
           );
         });
         break;
-      case ON_DEVICE_DISCONNECTED_NOTIFICATION:
+      case ON_DEVICE_DISCONNECTED_NOTIFICATION: {
         let json = JSON.parse(data);
         if (!json.isLocalDevice) {
           // If we're the device being disconnected, don't bother fetching a new
@@ -617,6 +617,7 @@ export class FxAccountsDevice {
           });
         }
         break;
+      }
       case ONVERIFIED_NOTIFICATION:
         this.updateDeviceRegistrationIfNecessary().catch(error => {
           log.warn(

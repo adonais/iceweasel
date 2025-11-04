@@ -1045,6 +1045,8 @@ class nsDocShell final : public nsDocLoader,
                              int32_t aCurVerticalPos);
   nsPoint GetCurScrollPos();
 
+  void RestoreScrollPosFromActiveSHE();
+
   already_AddRefed<mozilla::dom::ChildSHistory> GetRootSessionHistory();
 
   bool CSSErrorReportingEnabled() const { return mCSSErrorReportingEnabled; }

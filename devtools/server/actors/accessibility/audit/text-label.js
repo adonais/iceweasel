@@ -186,7 +186,7 @@ const formGroupingRule = function (accessible) {
             score: FAIL,
             issue: FORM_OPTGROUP_NO_NAME_FROM_LABEL,
           };
-    case "FIELDSET":
+    case "FIELDSET": {
       if (!name) {
         return { score: FAIL, issue: FORM_FIELDSET_NO_NAME };
       }
@@ -206,6 +206,7 @@ const formGroupingRule = function (accessible) {
             score: WARNING,
             issue: FORM_FIELDSET_NO_NAME_FROM_LEGEND,
           };
+    }
     default:
       return null;
   }
@@ -253,13 +254,14 @@ const internalFrameRule = function (accessible) {
   switch (DOMNode.nodeName) {
     case "FRAME":
       return mustHaveNonEmptyNameRule(FRAME_NO_NAME, accessible);
-    case "IFRAME":
+    case "IFRAME": {
       const name = getAccessibleName(accessible);
       const title = DOMNode.title && DOMNode.title.trim();
 
       return title && title === name
         ? null
         : { score: FAIL, issue: IFRAME_NO_NAME_FROM_TITLE };
+    }
     case "OBJECT": {
       const type = DOMNode.getAttribute("type");
       if (!type || !type.startsWith("image/")) {

@@ -319,6 +319,8 @@ newtab-custom-pocket-subtitle = Exceptional content curated by { -pocket-brand-n
 newtab-custom-stories-toggle =
     .label = Recommended stories
     .description = Exceptional content curated by the { -brand-product-name } family
+newtab-custom-stories-personalized-toggle =
+    .label = Stories
 newtab-custom-pocket-sponsored = Sponsored stories
 newtab-custom-pocket-show-recent-saves = Show recent saves
 newtab-custom-recent-title = Recent activity
@@ -600,3 +602,30 @@ newtab-trending-searches-learn-more = Learn more
 newtab-trending-searches-dismiss = Hide trending searches
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Trending searches
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-pause =
+    .title = Pause
+newtab-widget-timer-label-play =
+    .label = Play
+newtab-widget-timer-label-pause =
+    .label = Pause
+newtab-widget-timer-reset =
+    .title = Reset
+newtab-widget-timer-menu-notifications = Turn off notifications
+newtab-widget-timer-menu-notifications-on = Turn on notifications
+newtab-widget-timer-menu-hide = Hide timer
+newtab-widget-timer-menu-learn-more = Learn more
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Scroll for more
+newtab-widget-message-title = Stay focused with lists and a built-in timer
+# to-dos stands for "things to do".
+newtab-widget-message-copy = From quick reminders to daily to-dos, focus sessions to stretch breaks — stay on task and on time.
+newtab-promo-card-title = Support { -brand-product-name }
+newtab-promo-card-body = Our sponsors support our mission to build a better web
+newtab-promo-card-cta = Learn more
+newtab-promo-card-dismiss-button =
+    .title = Dismiss
+    .aria-label = Dismiss

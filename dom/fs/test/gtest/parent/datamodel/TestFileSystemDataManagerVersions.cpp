@@ -20,7 +20,6 @@
 #include "mozIStorageService.h"
 #include "mozStorageCID.h"
 #include "mozStorageHelper.h"
-#include "mozilla/Array.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/Result.h"
 #include "mozilla/dom/FileSystemTypes.h"

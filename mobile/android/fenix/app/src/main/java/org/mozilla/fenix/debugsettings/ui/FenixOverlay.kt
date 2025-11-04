@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -93,26 +94,19 @@ fun FenixOverlay(
                         intent.data = debugViewLink.toUri()
                         context.startActivity(intent)
                     },
-                    showToast = { pingType ->
-                        val toast = Toast.makeText(
-                            context,
-                            context.getString(
-                                R.string.glean_debug_tools_send_ping_toast_message,
-                                pingType,
-                            ),
-                            Toast.LENGTH_LONG,
-                        )
-                        toast.show()
+                    showToast = stringResource(R.string.glean_debug_tools_send_ping_toast_message).let { template ->
+                        { pingType: String ->
+                            Toast.makeText(context, template.format(pingType), Toast.LENGTH_LONG).show()
+                        }
                     },
                 ),
             ),
         ),
         loginsStorage = loginsStorage,
-        addressesDebugLocalesRepository = context.components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
-            SharedPrefsAddressesDebugLocalesRepository(
-                context,
-            )
-        },
+        addressesDebugLocalesRepository =
+            context.components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
+                SharedPrefsAddressesDebugLocalesRepository(context)
+            },
         creditCardsAddressesStorage = context.components.core.autofillStorage,
         inactiveTabsEnabled = inactiveTabsEnabled,
     )

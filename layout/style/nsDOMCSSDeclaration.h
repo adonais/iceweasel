@@ -94,6 +94,7 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
   void SetProperty(const nsACString& propertyName, const nsACString& value,
                    const nsACString& priority, nsIPrincipal* aSubjectPrincipal,
                    mozilla::ErrorResult& aRv) override;
+  using nsICSSDeclaration::SetProperty;
   uint32_t Length() override;
 
   // WebIDL interface for CSSStyleProperties

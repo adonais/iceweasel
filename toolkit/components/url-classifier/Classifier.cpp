@@ -488,6 +488,8 @@ nsresult Classifier::CheckURIFragments(
     return NS_ERROR_FAILURE;
   }
 
+  bool hasAnyHit = false;
+
   // Now check each lookup fragment against the entries in the DB.
   for (uint32_t i = 0; i < aSpecFragments.Length(); i++) {
     Completion lookupHash;
@@ -517,7 +519,15 @@ nsresult Classifier::CheckURIFragments(
       result->mTableName.Assign(cache->TableName());
       result->mPartialHashLength = confirmed ? COMPLETE_SIZE : matchLength;
       result->mProtocolV2 = LookupCache::Cast<LookupCacheV2>(cache);
+
+      hasAnyHit = true;
     }
+  }
+
+  if (hasAnyHit) {
+    glean::urlclassifier::lookup_hit.Get(aTable).Add(1);
+  } else {
+    glean::urlclassifier::lookup_miss.Get(aTable).Add(1);
   }
 
   return NS_OK;

@@ -13,7 +13,6 @@
 #include "nsXPCOM.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/glue/Debug.h"
-#include "mozilla/DbgMacro.h"
 #include "mozilla/Likely.h"
 #include <stdarg.h>
 

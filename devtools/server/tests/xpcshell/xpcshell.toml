@@ -163,6 +163,7 @@ run-if = ["false"] # tests for breakpoint actors are obsolete bug 1524374
 ["test_dbgglobal.js"]
 
 ["test_extension_storage_actor.js"]
+run-sequentially = ["true"] # frequent timeouts in parallel
 skip-if = [
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && !opt", # Bug 1612707, Bug 1980334
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1813406

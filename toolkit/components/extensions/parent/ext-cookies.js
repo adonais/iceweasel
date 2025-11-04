@@ -590,7 +590,7 @@ this.cookies = class extends ExtensionAPIPersistent {
             notify(true, cookie, "overwrite");
             notify(false, cookie, "explicit");
             break;
-          case COOKIES_BATCH_DELETED:
+          case COOKIES_BATCH_DELETED: {
             let cookieArray = notification.batchDeletedCookies.QueryInterface(
               Ci.nsIArray
             );
@@ -603,6 +603,7 @@ this.cookies = class extends ExtensionAPIPersistent {
               }
             }
             break;
+          }
         }
       };
 

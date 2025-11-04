@@ -56,6 +56,7 @@ win32/debug:
             - sysroot-wasm32-wasi
             - vs
             - onnxruntime-i686-windows-msvc
+            - winappsdk-x86-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -106,6 +107,7 @@ win32/opt:
             - sysroot-wasm32-wasi
             - vs
             - onnxruntime-i686-windows-msvc
+            - winappsdk-x86-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -156,6 +158,7 @@ win32-fuzzing/debug:
             - sysroot-wasm32-wasi
             - vs
             - onnxruntime-i686-windows-msvc
+            - winappsdk-x86-pc-windows-msvc
         fetch:
             - upx-3.95-win
     optimization:
@@ -209,6 +212,7 @@ win64/debug:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -259,6 +263,7 @@ win64-non-unified/plain:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -309,6 +314,7 @@ win64-fuzzing/debug:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
     optimization:
@@ -356,6 +362,7 @@ win64-plain/debug:
             - sysroot-wasm32-wasi
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
     optimization:
         skip-unless-expanded: null
 
@@ -406,6 +413,7 @@ win64/opt:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -451,6 +459,7 @@ win64-plain/opt:
             - sysroot-wasm32-wasi
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
     optimization:
         skip-unless-expanded: null
 
@@ -514,6 +523,7 @@ win32-shippable/opt:
             - sysroot-wasm32-wasi
             - vs
             - onnxruntime-i686-windows-msvc
+            - winappsdk-x86-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -569,6 +579,7 @@ win64-shippable/opt:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -621,6 +632,7 @@ win64-nightlyasrelease/opt:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -666,6 +678,7 @@ win32-add-on-devel/opt:
             - sysroot-wasm32-wasi
             - vs
             - onnxruntime-i686-windows-msvc
+            - winappsdk-x86-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -712,6 +725,7 @@ win64-add-on-devel/opt:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -758,6 +772,7 @@ win64-noopt/debug:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -803,6 +818,7 @@ win32-noopt/debug:
             - sysroot-wasm32-wasi
             - vs
             - onnxruntime-i686-windows-msvc
+            - winappsdk-x86-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -846,6 +862,7 @@ win32-rusttests/opt:
             - win64-mozmake
             - win64-dump_syms
             - vs
+            - winappsdk-x86-pc-windows-msvc
     optimization:
         test-inclusive: [rusttests]
 
@@ -889,6 +906,7 @@ win32-rusttests/debug:
             - win64-mozmake
             - win64-dump_syms
             - vs
+            - winappsdk-x86-pc-windows-msvc
     optimization:
         test-inclusive: [rusttests]
 
@@ -930,6 +948,7 @@ win64-rusttests/opt:
             - win64-dump_syms
             - vs
             - dxc-x86_64-pc-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
     optimization:
         test-inclusive: [rusttests]
 
@@ -971,6 +990,7 @@ win64-rusttests/debug:
             - win64-dump_syms
             - vs
             - dxc-x86_64-pc-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
     optimization:
         test-inclusive: [rusttests]
 
@@ -1025,6 +1045,7 @@ win64-ccov/opt:
             - sysroot-wasm32-wasi
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
 
 win64-fuzzing-ccov/opt:
     description: "Win64 Fuzzing Opt w/ Coverage"
@@ -1077,6 +1098,7 @@ win64-fuzzing-ccov/opt:
             - sysroot-wasm32-wasi
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
 
 win64-asan/debug:
     description: "Win64 Debug ASAN"
@@ -1123,6 +1145,7 @@ win64-asan/debug:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
     optimization:
@@ -1174,6 +1197,7 @@ win64-asan/opt:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -1236,6 +1260,7 @@ win64-asan-reporter-shippable/opt:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -1283,6 +1308,7 @@ win64-asan-fuzzing/opt:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
     optimization:
@@ -1348,6 +1374,7 @@ win32-devedition/opt:
             - sysroot-wasm32-wasi
             - vs
             - onnxruntime-i686-windows-msvc
+            - winappsdk-x86-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -1404,6 +1431,7 @@ win64-devedition/opt:
             - vs
             - dxc-x86_64-pc-windows-msvc
             - onnxruntime-x86_64-windows-msvc
+            - winappsdk-x86_64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -1452,6 +1480,7 @@ win64-aarch64/debug:
             - sysroot-wasm32-wasi
             - vs
             - dxc-aarch64-pc-windows-msvc
+            - winappsdk-aarch64-pc-windows-msvc
         fetch:
             - upx-3.95-win
     optimization:
@@ -1503,6 +1532,7 @@ win64-aarch64/opt:
             - sysroot-wasm32-wasi
             - vs
             - dxc-aarch64-pc-windows-msvc
+            - winappsdk-aarch64-pc-windows-msvc
         fetch:
             - upx-3.95-win
     optimization:
@@ -1559,6 +1589,7 @@ win64-aarch64-shippable/opt:
             - sysroot-wasm32-wasi
             - vs
             - dxc-aarch64-pc-windows-msvc
+            - winappsdk-aarch64-pc-windows-msvc
         fetch:
             - upx-3.95-win
 
@@ -1614,5 +1645,6 @@ win64-aarch64-devedition/opt:
             - sysroot-wasm32-wasi
             - vs
             - dxc-aarch64-pc-windows-msvc
+            - winappsdk-aarch64-pc-windows-msvc
         fetch:
             - upx-3.95-win

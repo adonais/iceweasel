@@ -245,8 +245,10 @@ export class FeatureModel {
     interestVectorModel,
     tileImportance,
     modelType,
-    rescale = true,
+    rescale = false,
     logScale = false,
+    normalize = false,
+    normalizeL1 = false,
     privateFeatures = [],
   }) {
     this.modelId = modelId;
@@ -255,6 +257,8 @@ export class FeatureModel {
     this.interestVectorModel = interestVectorModel;
     this.rescale = rescale;
     this.logScale = logScale;
+    this.normalize = normalize;
+    this.normalizeL1 = normalizeL1;
     this.modelType = modelType;
     this.privateFeatures = privateFeatures;
   }
@@ -273,6 +277,7 @@ export class FeatureModel {
       tileImportance,
       interestVectorModel,
       normalize: json.normalize,
+      normalizeL1: json.normalize_l1,
       rescale: json.rescale,
       logScale: json.log_scale,
       clickScale: json.clickScale,
@@ -316,6 +321,7 @@ export class FeatureModel {
   computeInterestVector({
     dataForIntervals,
     indexSchema,
+    applyPostProcessing = false,
     applyThresholding = false,
     applyDifferentialPrivacy = false,
   }) {
@@ -365,16 +371,8 @@ export class FeatureModel {
       delete totalResults[SPECIAL_FEATURE_CLICK];
     }
 
-    if (this.logScale) {
-      totalResults = dictApply(totalResults, x => Math.log(x + 1));
-    }
-
-    if (this.rescale) {
-      let divisor = Math.max(...Object.values(totalResults));
-      if (divisor <= 0.001) {
-        divisor = 0.001;
-      }
-      totalResults = dictApply(totalResults, x => x / divisor);
+    if (applyPostProcessing) {
+      totalResults = this.applyPostProcessing(totalResults);
     }
 
     if (this.clickScale && numClicks > 0) {
@@ -422,6 +420,40 @@ export class FeatureModel {
     }
   }
 
+  applyPostProcessing(valueDict) {
+    let res = valueDict;
+    if (this.logScale) {
+      res = dictApply(valueDict, x => Math.log(x + 1));
+    }
+
+    if (this.rescale) {
+      let divisor = Math.max(...Object.values(res));
+      if (divisor <= 1e-6) {
+        divisor = 1e-6;
+      }
+      res = dictApply(res, x => x / divisor);
+    }
+
+    if (this.normalizeL1) {
+      let magnitude = Object.values(res).reduce((sum, c) => sum + c, 0);
+      if (magnitude <= 1e-6) {
+        magnitude = 1e-6;
+      }
+      res = dictApply(res, x => x / magnitude);
+    }
+
+    if (this.normalize) {
+      let magnitude = Math.sqrt(
+        Object.values(res).reduce((sum, c) => sum + c ** 2, 0)
+      );
+      if (magnitude <= 1e-6) {
+        magnitude = 1e-6;
+      }
+      res = dictApply(res, x => x / magnitude);
+    }
+    return res;
+  }
+
   /**
    * Computes interest vectors based on click-through rate (CTR) by dividing the click dictionary
    * by the impression dictionary. Applies differential privacy using Laplace noise, and optionally
@@ -446,7 +478,8 @@ export class FeatureModel {
     model_id = "unknown",
     condensePrivateValues = true,
   }) {
-    const inferredInterests = divideDict(clicks, impressions);
+    let inferredInterests = divideDict(clicks, impressions);
+
     const originalInterestValues = { ...inferredInterests };
 
     const resultObject = {
@@ -455,7 +488,9 @@ export class FeatureModel {
 
     if (this.supportsCoarseInterests()) {
       // always true
-      const coarseValues = { ...originalInterestValues };
+      const coarseValues = this.applyPostProcessing({
+        ...originalInterestValues,
+      });
       this.applyThresholding(coarseValues, false);
       resultObject.coarseInferredInterests = { ...coarseValues, model_id };
     }
@@ -469,6 +504,7 @@ export class FeatureModel {
             this.privateFeatures.includes(key)
           )
         );
+        this.applyPostProcessing({ ...originalInterestValues });
       }
       this.applyThresholding(coarsePrivateValues, true);
 

@@ -271,7 +271,9 @@ mod test {
 
         metric.accumulate(42);
 
-        let metric_data = metric.test_get_value(Some("test-ping".to_string())).unwrap();
+        let metric_data = metric
+            .test_get_value(Some("test-ping".to_string()))
+            .unwrap();
         assert_eq!(1, metric_data.values[&42494]);
         assert_eq!(43008, metric_data.sum);
     }
@@ -291,7 +293,9 @@ mod test {
             child_metric.accumulate(13 * 9);
         }
 
-        let metric_data = parent_metric.test_get_value(Some("test-ping".to_string())).unwrap();
+        let metric_data = parent_metric
+            .test_get_value(Some("test-ping".to_string()))
+            .unwrap();
         assert_eq!(1, metric_data.values[&42494]);
         assert_eq!(43008, metric_data.sum);
 

@@ -38,6 +38,7 @@ clippy:
         - toolkit/crashreporter/mozannotation_client/
         - toolkit/crashreporter/mozannotation_server/
         - toolkit/components/kvstore/
+        - toolkit/components/gecko-trace/
         - toolkit/components/glean/
         - toolkit/components/uniffi-bindgen-gecko-js/
         - toolkit/library/rust/

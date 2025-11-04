@@ -31,7 +31,7 @@ const webl10n = new LocalizationHelper(
   "devtools/client/locales/webconsole.properties"
 );
 
-function savedFrameToLocation(frame) {
+function savedFrameToDebuggerLocation(frame) {
   const { source: url, line, column, sourceId } = frame;
   return {
     url,
@@ -40,8 +40,11 @@ function savedFrameToLocation(frame) {
     line,
 
     // The column received from spidermonkey Frame objects are 1-based,
-    // while most of DevTools frontend consider it to be 0-based.
-    column: column - 1,
+    // and RDP's console message as well as page errors are providing 1-based columns,
+    // but most of DevTools frontend consider it to be 0-based, especially the debugger.
+    //
+    // Column set to 0 is unknown column location.
+    column: column >= 1 ? column - 1 : null,
 
     // The sourceId will be a string if it's a source actor ID, otherwise
     // it is either a Spidermonkey-internal ID from a SavedFrame or missing,
@@ -118,7 +121,7 @@ class Frame extends Component {
 
   componentDidMount() {
     if (this.props.sourceMapURLService) {
-      const location = savedFrameToLocation(this.props.frame);
+      const location = savedFrameToDebuggerLocation(this.props.frame);
       // Many things that make use of this component either:
       // a) Pass in no sourceId because they have no way to know.
       // b) Pass in no sourceId because the actor wasn't created when the
@@ -146,27 +149,23 @@ class Frame extends Component {
 
   /**
    * Get current location's source, line, and column.
-   * @returns {{source: string, line: number|null, column: number|null}}
+   * @returns {{sourceURL: string, line: number|null, column: number|null}}
    */
   #getCurrentLocationInfo = () => {
     const { frame } = this.props;
     const { originalLocation } = this.state;
 
-    const generatedLocation = savedFrameToLocation(frame);
+    const generatedLocation = savedFrameToDebuggerLocation(frame);
     const currentLocation = originalLocation || generatedLocation;
 
-    const source = currentLocation.url || "";
-    const line =
-      currentLocation.line != void 0 ? Number(currentLocation.line) : null;
-    // column is 0-based while we always display 1-based numbers
-    const column =
-      currentLocation.column != void 0
-        ? Number(currentLocation.column) + 1
-        : null;
+    const column = Number.parseInt(currentLocation.column, 10);
+
     return {
-      source,
-      line,
-      column,
+      sourceURL: currentLocation.url || "",
+      // line is 1-based
+      line: Number(currentLocation.line) || null,
+      // column is 0-based while we display 1-based numbers
+      column: typeof column == "number" ? column + 1 : null,
     };
   };
 
@@ -175,9 +174,9 @@ class Frame extends Component {
    * @returns {string}
    */
   #getCurrentLocationUnicodeHostName = () => {
-    const { source } = this.#getCurrentLocationInfo();
+    const { sourceURL } = this.#getCurrentLocationInfo();
 
-    const { host } = getSourceNames(source);
+    const { host } = getSourceNames(sourceURL);
     return host ? getUnicodeHostname(host) : "";
   };
 
@@ -189,7 +188,7 @@ class Frame extends Component {
     const { frame } = this.props;
     const { originalLocation } = this.state;
 
-    const generatedLocation = savedFrameToLocation(frame);
+    const generatedLocation = savedFrameToDebuggerLocation(frame);
 
     // Reparse the URL to determine if we should link this; `getSourceNames`
     // has already cached this indirectly. We don't want to attempt to
@@ -210,8 +209,8 @@ class Frame extends Component {
   #getTopElementProps = () => {
     const { className } = this.props;
 
-    const { source, line, column } = this.#getCurrentLocationInfo();
-    const { long } = getSourceNames(source);
+    const { sourceURL, line, column } = this.#getCurrentLocationInfo();
+    const { long } = getSourceNames(sourceURL);
     const props = {
       "data-url": long,
       className: "frame-link" + (className ? ` ${className}` : ""),
@@ -237,9 +236,9 @@ class Frame extends Component {
   #getSourceElementsProps = () => {
     const { frame, onClick, messageSource } = this.props;
 
-    const generatedLocation = savedFrameToLocation(frame);
-    const { source, line, column } = this.#getCurrentLocationInfo();
-    const { long } = getSourceNames(source);
+    const generatedLocation = savedFrameToDebuggerLocation(frame);
+    const { sourceURL, line, column } = this.#getCurrentLocationInfo();
+    const { long } = getSourceNames(sourceURL);
     let url = getUnicodeUrl(long);
 
     // Exclude all falsy values, including `0`, as line numbers start with 1.
@@ -275,7 +274,7 @@ class Frame extends Component {
             onClick(generatedLocation);
           }
         },
-        href: source,
+        href: sourceURL,
         draggable: false,
       };
     }
@@ -327,8 +326,8 @@ class Frame extends Component {
     const { showEmptyPathAsHost, showFullSourceUrl } = this.props;
     const { originalLocation } = this.state;
 
-    const { source } = this.#getCurrentLocationInfo();
-    const { short, long, host } = getSourceNames(source);
+    const { sourceURL } = this.#getCurrentLocationInfo();
+    const { short, long, host } = getSourceNames(sourceURL);
     const unicodeShort = getUnicodeUrlPath(short);
     const unicodeLong = getUnicodeUrl(long);
     let displaySource = showFullSourceUrl ? unicodeLong : unicodeShort;

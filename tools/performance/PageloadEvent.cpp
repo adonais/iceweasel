@@ -10,18 +10,23 @@
 #include "mozilla/RandomNum.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/glean/DomMetrics.h"
+#include "mozilla/glean/GleanPings.h"
 
 #include "nsIChannel.h"
 #include "nsIEffectiveTLDService.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsIURI.h"
 #include "nsIX509Cert.h"
+#include "nsThreadUtils.h"
 
 #include "ScopedNSSTypes.h"
 #include "cert.h"
 #include "portreg.h"
 
 namespace mozilla::performance::pageload_event {
+
+/* static */
+uint32_t PageloadEventData::sPageLoadEventCounter = 0;
 
 // We don't want to record an event for every page load, so instead we
 // randomly sample the events based on the channel.
@@ -253,13 +258,24 @@ bool PageloadEventData::MaybeSetPublicRegistrableDomain(nsCOMPtr<nsIURI> aURI,
   return true;
 }
 
-mozilla::glean::perf::PageLoadExtra PageloadEventData::ToPageLoadExtra() const {
-  mozilla::glean::perf::PageLoadExtra out;
+void PageloadEventData::SendAsPageLoadEvent() {
+  mozilla::glean::perf::PageLoadExtra extra;
 
-#define COPY_METRIC(name, type) out.name = this->name;
+#define COPY_METRIC(name, type) extra.name = this->name;
   FOR_EACH_PAGELOAD_METRIC(COPY_METRIC)
 #undef COPY_METRIC
-  return out;
+
+  mozilla::glean::perf::page_load.Record(mozilla::Some(extra));
+
+  // Send the PageLoadPing after every 10 page loads, or on startup.
+  if (++sPageLoadEventCounter >= 10) {
+    NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
+        NS_NewRunnableFunction(
+            "PageLoadPingIdleTask",
+            [] { mozilla::glean_pings::Pageload.Submit("threshold"_ns); }),
+        EventQueuePriority::Idle));
+    sPageLoadEventCounter = 0;
+  }
 }
 
 static mozilla::Maybe<uint32_t> AddMultiplicativeNoise(
@@ -281,19 +297,49 @@ static mozilla::Maybe<uint32_t> AddMultiplicativeNoise(
   return mozilla::Some(output);
 }
 
-mozilla::glean::perf::PageLoadDomainExtra
-PageloadEventData::ToPageLoadDomainExtra() const {
-  mozilla::glean::perf::PageLoadDomainExtra out;
-  out.domain = this->mDomain;
-  out.httpVer = this->httpVer;
-  out.sameOriginNav = this->sameOriginNav;
-  out.documentFeatures = this->documentFeatures;
-  out.loadType = this->loadType;
+void PageloadEventData::SendAsPageLoadDomainEvent() {
+  MOZ_ASSERT(HasDomain());
+
+  mozilla::glean::perf::PageLoadDomainExtra extra;
+  extra.domain = this->mDomain;
+  extra.httpVer = this->httpVer;
+  extra.sameOriginNav = this->sameOriginNav;
+  extra.documentFeatures = this->documentFeatures;
+  extra.loadType = this->loadType;
 
   // Add some noise to any numerical metrics.
-  out.lcpTime = AddMultiplicativeNoise(this->lcpTime);
+  extra.lcpTime = AddMultiplicativeNoise(this->lcpTime);
 
-  return out;
+#ifdef NIGHTLY_BUILD
+  extra.channel = mozilla::Some("nightly"_ns);
+#else
+  extra.channel = mozilla::Some("release"_ns);
+#endif
+
+  // Get the major version number.
+  nsCString version(MOZ_STRINGIFY(MOZ_APP_VERSION_DISPLAY));
+  int32_t dotIndex = version.FindChar('.');
+  if (dotIndex != kNotFound) {
+    version.SetLength(dotIndex);
+  }
+  nsresult rv;
+  int32_t majorVersion = version.ToInteger(&rv);
+  if (NS_SUCCEEDED(rv)) {
+    extra.appVersionMajor = mozilla::Some(static_cast<uint32_t>(majorVersion));
+  }
+
+  // If the event is a page_load_domain event, then immediately send it.
+  mozilla::glean::perf::page_load_domain.Record(mozilla::Some(extra));
+
+  // The etld events must be sent by themselves for privacy preserving
+  // reasons.
+  NS_SUCCEEDED(NS_DispatchToMainThreadQueue(
+      NS_NewRunnableFunction("PageloadBaseDomainPingIdleTask",
+                             [] {
+                               mozilla::glean_pings::PageloadBaseDomain.Submit(
+                                   "pageload"_ns);
+                             }),
+      EventQueuePriority::Idle));
 }
 
 }  // namespace mozilla::performance::pageload_event

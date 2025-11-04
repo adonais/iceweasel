@@ -193,9 +193,6 @@ void MFCDMCapabilitiesIPDLToKeySystemConfig(
   }
   aKeySystemConfig.mPersistentState = aCDMConfig.persistentState();
   aKeySystemConfig.mDistinctiveIdentifier = aCDMConfig.distinctiveID();
-  aKeySystemConfig.mIsHDCP22Compatible = aCDMConfig.isHDCP22Compatible()
-                                             ? *aCDMConfig.isHDCP22Compatible()
-                                             : false;
   EME_LOG("New Capabilities=%s",
           NS_ConvertUTF16toUTF8(aKeySystemConfig.GetDebugInfo()).get());
 }

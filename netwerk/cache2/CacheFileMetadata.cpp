@@ -245,7 +245,8 @@ nsresult CacheFileMetadata::WriteMetadata(
     memcpy(p, mBuf, mElementsSize);
     p += mElementsSize;
   }
-
+  LOG(("CacheFileMetadata::WriteMetadata() [this=%p, key=%s, mElementsSize=%d]",
+       this, mKey.get(), mElementsSize));
   CacheHash::Hash32_t hash;
   hash = CacheHash::Hash(mWriteBuf + sizeof(uint32_t),
                          p - mWriteBuf - sizeof(uint32_t));

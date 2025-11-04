@@ -715,6 +715,7 @@ add_task(async function test_tabContextMenu_addTabsToGroup() {
   let moreTabs = Array.from({ length: 8 }).map(() =>
     BrowserTestUtils.addTab(win.gBrowser, "https://example.com")
   );
+  await TabGroupTestUtils.ensureTabsLoaded(moreTabs);
 
   info("select first ungrouped tab and multi-select three more tabs");
   win.gBrowser.selectedTab = moreTabs[0];

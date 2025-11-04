@@ -178,7 +178,9 @@ mod test {
                 numerator: 1,
                 denominator: 100
             },
-            metric.test_get_value(Some("test-ping".to_string())).unwrap()
+            metric
+                .test_get_value(Some("test-ping".to_string()))
+                .unwrap()
         );
     }
 
@@ -219,7 +221,9 @@ mod test {
                 numerator: 45,
                 denominator: 33
             },
-            parent_metric.test_get_value(Some("test-ping".to_string())).unwrap(),
+            parent_metric
+                .test_get_value(Some("test-ping".to_string()))
+                .unwrap(),
             "Values from the 'processes' should be summed"
         );
     }

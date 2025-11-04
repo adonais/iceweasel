@@ -33,6 +33,12 @@ class SitePermissionOptionsFragment : BaseComposeFragment() {
         const val FRAGMENT_TAG = "SitePermissionOptionsFragment"
         private const val SITE_PERMISSION = "sitePermission"
 
+        /**
+         * Creates a new instance of [SitePermissionOptionsFragment] with the given [SitePermission].
+         *
+         * @param sitePermission The [SitePermission] to be displayed in the fragment.
+         * @return A new instance of [SitePermissionOptionsFragment].
+         */
         fun addSitePermission(sitePermission: SitePermission): SitePermissionOptionsFragment {
             val fragment = SitePermissionOptionsFragment()
             fragment.arguments = Bundle().apply {

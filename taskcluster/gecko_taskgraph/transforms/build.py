@@ -281,8 +281,8 @@ def add_signing_artifacts(config, jobs):
                         entitlement_directory=entitlement_directory,
                         browser_entitlement=browser_entitlement,
                     )
-        # Add utility.xml if not prod
-        if not is_prod_project:
+        # Add utility.xml if not prod/shippable
+        if not is_prod_project or not is_shippable:
             job["worker"]["artifacts"].append(
                 {
                     "name": "public/build/security/utility.xml",

@@ -3257,7 +3257,7 @@ avif:
 mfcdm:
   eme_playback:
     objects: ["gecko"]
-    bug_numbers: [1873394, 1902169]
+    bug_numbers: [1873394, 1902169, 1989168]
     description:
       Record the information about the EME playback when using the media engine.
       The value of this event is the key system name.
@@ -3265,7 +3265,7 @@ mfcdm:
       - firefox
     record_in_processes: ["all"]
     release_channel_collection: opt-out
-    expiry_version: "146"
+    expiry_version: "152"
     notification_emails:
       - media-alerts@mozilla.com
     extra_keys:
@@ -3277,7 +3277,7 @@ mfcdm:
       dropped_frames: The amount of video frames don't get rendered but dropped
   error:
     objects: ["gecko"]
-    bug_numbers: [1873394, 1902169]
+    bug_numbers: [1873394, 1902169, 1989168]
     description:
       Record the error or crash happened while using the media engine playback.
       The value of this event is the name of error.
@@ -3285,7 +3285,7 @@ mfcdm:
       - firefox
     record_in_processes: ["all"]
     release_channel_collection: opt-out
-    expiry_version: "146"
+    expiry_version: "152"
     notification_emails:
       - media-alerts@mozilla.com
     extra_keys:
@@ -3844,6 +3844,13 @@ browser.backup:
     record_in_processes: [main]
     release_channel_collection: opt-out
     expiry_version: never
+    extra_keys:
+      encrypted: Whether or not encryption is enabled for the backup.
+      location: >
+        The location of the backup. This can be either "onedrive",
+        "documents", or "other". "other" will be sent if the parent directory
+        of the backup doesn't match the default "documents" or "onedrive"
+        save paths.
   toggle_off:
     objects: ["BackupService"]
     description: >
@@ -3870,6 +3877,16 @@ browser.backup:
     record_in_processes: [main]
     release_channel_collection: opt-out
     expiry_version: never
+    extra_keys:
+      encrypted: Whether or not encryption is enabled for the backup.
+      location: >
+        The location of the backup. This can be either "onedrive",
+        "documents", or "other". "other" will be sent if the parent directory
+        of the backup doesn't match the default "documents" or "onedrive"
+        save paths.
+      size: >
+        The size-on-disk of the created backup. This is rounded to the
+        nearest mebibyte to reduce fingerprintability.
   change_location:
     objects: ["BackupService"]
     description: >

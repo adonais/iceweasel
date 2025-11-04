@@ -11,7 +11,6 @@
 #include "DDLogValue.h"
 #include "DDLoggedTypeTraits.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/DefineEnum.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/NonDereferenceable.h"
 #include "nsString.h"

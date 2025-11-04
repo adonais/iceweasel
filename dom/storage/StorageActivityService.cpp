@@ -285,7 +285,14 @@ StorageActivityService::MoveOriginInTime(nsIPrincipal* aPrincipal,
 
 NS_IMETHODIMP
 StorageActivityService::TestOnlyReset() {
+  const bool shouldRemoveObserver = mActivities.Count() > 0;
   mActivities.Clear();
+  if (shouldRemoveObserver) {
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->RemoveObserver(this, OBSERVER_TOPIC_IDLE_DAILY);
+    }
+  }
   return NS_OK;
 }
 

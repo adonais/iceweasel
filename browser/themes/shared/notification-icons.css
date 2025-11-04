@@ -10,7 +10,7 @@
   fill: currentColor;
   fill-opacity: var(--urlbar-icon-fill-opacity);
   color: inherit;
-  border-radius: var(--urlbar-icon-border-radius);
+  border-radius: var(--urlbar-inner-border-radius);
 
   &:hover {
     background-color: hsla(0, 0%, 70%, 0.2);
@@ -45,7 +45,7 @@
   &:focus-visible {
     outline: var(--focus-outline);
     outline-offset: var(--focus-outline-inset);
-    border-radius: var(--urlbar-icon-border-radius);
+    border-radius: var(--urlbar-inner-border-radius);
   }
 
   #nav-bar:not([keyNav]) & {
@@ -56,7 +56,7 @@
 .blocked-permission-icon:focus-visible {
   outline: var(--focus-outline);
   outline-offset: calc(var(--urlbar-icon-padding) + var(--focus-outline-inset));
-  border-radius: 1px;
+  border-radius: var(--border-radius-xsmall);
 }
 
 /* INDIVIDUAL NOTIFICATIONS */

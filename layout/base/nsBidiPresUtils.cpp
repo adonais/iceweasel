@@ -633,9 +633,6 @@ static void SplitInlineAncestors(nsContainerFrame* aParent,
 
       nsFrameList tail = parent->StealFramesAfter(frame);
 
-      // Reparent views as necessary
-      nsContainerFrame::ReparentFrameViewList(tail, parent, newParent);
-
       // The parent's continuation adopts the siblings after the split.
       MOZ_ASSERT(!newParent->IsBlockFrameOrSubclass(),
                  "blocks should not be IsBidiSplittable");

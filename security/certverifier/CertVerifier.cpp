@@ -544,12 +544,12 @@ Result CertVerifier::VerifyCert(
 
   // We configure the OCSP fetching modes separately for EV and non-EV
   // verifications.
-  NSSCertDBTrustDomain::OCSPFetching defaultOCSPFetching =
+  NSSCertDBTrustDomain::RevocationCheckMode defaultRevCheckMode =
       (mOCSPDownloadConfig == ocspOff) || (mOCSPDownloadConfig == ocspEVOnly) ||
               (flags & FLAG_LOCAL_ONLY)
-          ? NSSCertDBTrustDomain::NeverFetchOCSP
-      : !mOCSPStrict ? NSSCertDBTrustDomain::FetchOCSPForDVSoftFail
-                     : NSSCertDBTrustDomain::FetchOCSPForDVHardFail;
+          ? NSSCertDBTrustDomain::RevocationCheckLocalOnly
+      : !mOCSPStrict ? NSSCertDBTrustDomain::RevocationCheckMayFetch
+                     : NSSCertDBTrustDomain::RevocationCheckRequired;
 
   Input stapledOCSPResponseInput;
   const Input* stapledOCSPResponse = nullptr;
@@ -576,7 +576,7 @@ Result CertVerifier::VerifyCert(
       // XXX: We don't really have a trust bit for SSL client authentication so
       // just use trustEmail as it is the closest alternative.
       NSSCertDBTrustDomain trustDomain(
-          trustEmail, defaultOCSPFetching, mOCSPCache, mSignatureCache.get(),
+          trustEmail, defaultRevCheckMode, mOCSPCache, mSignatureCache.get(),
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
           mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
           originAttributes, mThirdPartyRootInputs,
@@ -599,17 +599,18 @@ Result CertVerifier::VerifyCert(
       // chosen by the server.
 
       // Try to validate for EV first.
-      NSSCertDBTrustDomain::OCSPFetching evOCSPFetching =
+      NSSCertDBTrustDomain::RevocationCheckMode evRevCheckMode =
           (mOCSPDownloadConfig == ocspOff) || (flags & FLAG_LOCAL_ONLY)
-              ? NSSCertDBTrustDomain::LocalOnlyOCSPForEV
-              : NSSCertDBTrustDomain::FetchOCSPForEV;
+              ? NSSCertDBTrustDomain::RevocationCheckLocalOnly
+          : !mOCSPStrict ? NSSCertDBTrustDomain::RevocationCheckMayFetch
+                         : NSSCertDBTrustDomain::RevocationCheckRequired;
 
       nsTArray<CertPolicyId> evPolicies;
       GetKnownEVPolicies(certBytes, evPolicies);
       rv = Result::ERROR_UNKNOWN_ERROR;
       for (const auto& evPolicy : evPolicies) {
         NSSCertDBTrustDomain trustDomain(
-            trustSSL, evOCSPFetching, mOCSPCache, mSignatureCache.get(),
+            trustSSL, evRevCheckMode, mOCSPCache, mSignatureCache.get(),
             mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
             mCertShortLifetimeInDays, MIN_RSA_BITS, mCRLiteMode,
             originAttributes, mThirdPartyRootInputs,
@@ -671,7 +672,7 @@ Result CertVerifier::VerifyCert(
         }
 
         NSSCertDBTrustDomain trustDomain(
-            trustSSL, defaultOCSPFetching, mOCSPCache, mSignatureCache.get(),
+            trustSSL, defaultRevCheckMode, mOCSPCache, mSignatureCache.get(),
             mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
             mCertShortLifetimeInDays, keySizeOptions[i], mCRLiteMode,
             originAttributes, mThirdPartyRootInputs,
@@ -733,7 +734,7 @@ Result CertVerifier::VerifyCert(
       }
 
       NSSCertDBTrustDomain trustDomain(
-          trustType, defaultOCSPFetching, mOCSPCache, mSignatureCache.get(),
+          trustType, defaultRevCheckMode, mOCSPCache, mSignatureCache.get(),
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
           mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
           originAttributes, mThirdPartyRootInputs,
@@ -751,7 +752,7 @@ Result CertVerifier::VerifyCert(
 
     case VerifyUsage::EmailSigner: {
       NSSCertDBTrustDomain trustDomain(
-          trustEmail, defaultOCSPFetching, mOCSPCache, mSignatureCache.get(),
+          trustEmail, defaultRevCheckMode, mOCSPCache, mSignatureCache.get(),
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
           mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
           originAttributes, mThirdPartyRootInputs,
@@ -779,7 +780,7 @@ Result CertVerifier::VerifyCert(
       // usage it is trying to verify for, and base its algorithm choices
       // based on the result of the verification(s).
       NSSCertDBTrustDomain trustDomain(
-          trustEmail, defaultOCSPFetching, mOCSPCache, mSignatureCache.get(),
+          trustEmail, defaultRevCheckMode, mOCSPCache, mSignatureCache.get(),
           mTrustCache.get(), pinArg, mOCSPTimeoutSoft, mOCSPTimeoutHard,
           mCertShortLifetimeInDays, MIN_RSA_BITS_WEAK, mCRLiteMode,
           originAttributes, mThirdPartyRootInputs,

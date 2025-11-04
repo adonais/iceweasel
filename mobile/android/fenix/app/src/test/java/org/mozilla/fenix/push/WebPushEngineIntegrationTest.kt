@@ -14,8 +14,8 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.webpush.WebPushDelegate
@@ -35,7 +35,7 @@ import org.mozilla.fenix.helpers.MockkRetryTestRule
 
 class WebPushEngineIntegrationTest {
 
-    private val scope = TestScope(UnconfinedTestDispatcher())
+    private val scope = TestScope(StandardTestDispatcher())
 
     @MockK private lateinit var engine: Engine
 
@@ -71,14 +71,21 @@ class WebPushEngineIntegrationTest {
     fun `methods are no-op before calling start`() = scope.runTest {
         integration.onMessageReceived("push", null)
         integration.onSubscriptionChanged("push")
+
+        testScheduler.advanceUntilIdle()
         verify { handler wasNot Called }
 
         integration.start()
+        testScheduler.advanceUntilIdle()
 
         integration.onMessageReceived("push", null)
+        testScheduler.advanceUntilIdle()
+
         verify { handler.onPushMessage("push", null) }
 
         integration.onSubscriptionChanged("push")
+        testScheduler.advanceUntilIdle()
+
         verify { handler.onSubscriptionChanged("push") }
     }
 

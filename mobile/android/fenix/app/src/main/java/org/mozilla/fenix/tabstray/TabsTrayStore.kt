@@ -234,6 +234,11 @@ sealed class TabsTrayAction : Action {
     object CloseAllPrivateTabs : TabsTrayAction()
 
     /**
+     * [TabsTrayAction] fired when the three-dot menu is displayed to the user.
+     */
+    object ThreeDotMenuShown : TabsTrayAction()
+
+    /**
      * [TabsTrayAction] fired when the user requests to bookmark selected tabs.
      */
     data class BookmarkSelectedTabs(val tabCount: Int) : TabsTrayAction()
@@ -285,6 +290,7 @@ internal object TabsTrayReducer {
             is TabsTrayAction.CloseAllNormalTabs -> state
             is TabsTrayAction.CloseAllPrivateTabs -> state
             is TabsTrayAction.BookmarkSelectedTabs -> state
+            is TabsTrayAction.ThreeDotMenuShown -> state
         }
     }
 }

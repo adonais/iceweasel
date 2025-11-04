@@ -6,11 +6,20 @@ use std::{
     fs::File,
     io::{self, BufRead},
     net::Ipv4Addr,
+    path::Path,
 };
 
 use nserror::*;
 use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
+
+#[cfg(windows)]
+use {
+    std::{fs::OpenOptions, os::windows::fs::OpenOptionsExt},
+    windows_sys::Win32::Storage::FileSystem::{
+        FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE,
+    },
+};
 
 /// HTTP leading whitespace, defined in netwerk/protocol/http/nsHttp.h
 static HTTP_LWS: &[u8] = b" \t";
@@ -32,6 +41,26 @@ fn trim_token(token: &[u8]) -> &[u8] {
         .count();
 
     &token[ltrim..ltrim + rtrim]
+}
+
+// Small helper that opens for reading in a fail-fast, cross-platform way.
+// This is necessary because on windows it's possible that File::open will
+// succeed but reading from the file would hang. See bug 1970349
+fn open_read_fast_fail(path: &Path) -> io::Result<File> {
+    #[cfg(windows)]
+    {
+        // If another process opened the file with *no* sharing, this will fail
+        // immediately with a sharing violation instead of letting a later read hang.
+        OpenOptions::new()
+            .read(true)
+            .share_mode(FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE)
+            .open(path)
+    }
+
+    #[cfg(not(windows))]
+    {
+        File::open(path)
+    }
 }
 
 #[no_mangle]
@@ -303,9 +332,13 @@ pub type ParsingCallback = extern "C" fn(&ThinVec<nsCString>) -> bool;
 
 #[no_mangle]
 pub extern "C" fn rust_parse_etc_hosts(path: &nsACString, callback: ParsingCallback) {
-    let file = match File::open(&*path.to_utf8()) {
-        Ok(file) => io::BufReader::new(file),
-        Err(..) => return,
+    let path_str = path.to_utf8();
+    let path = Path::new(&*path_str);
+
+    // Try to open in a way that fails immediately if locked (on Windows).
+    let file = match open_read_fast_fail(path) {
+        Ok(f) => io::BufReader::new(f),
+        Err(..) => return, // Not readable right now; bail out quietly like before.
     };
 
     let mut array = ThinVec::new();

@@ -12,6 +12,10 @@ const idnService = Cc["@mozilla.org/network/idn-service;1"].getService(
   Ci.nsIIDNService
 );
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 const kSafe = 1;
 const kUnsafe = 2;
 const kInvalid = 3;

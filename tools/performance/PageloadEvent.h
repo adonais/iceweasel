@@ -28,28 +28,30 @@ struct PageLoadDomainExtra;
 // This is a list of metrics that exist in either PageloadExtra or
 // PageloadDomainExtra. The only exclusion is the domain field since it
 // requires some special handling.
-#define FOR_EACH_PAGELOAD_METRIC(_) \
-  _(dnsLookupTime, uint32_t)        \
-  _(documentFeatures, uint32_t)     \
-  _(fcpTime, uint32_t)              \
-  _(hasSsd, bool)                   \
-  _(httpVer, uint32_t)              \
-  _(jsExecTime, uint32_t)           \
-  _(delazifyTime, uint32_t)         \
-  _(lcpTime, uint32_t)              \
-  _(loadTime, uint32_t)             \
-  _(loadType, nsCString)            \
-  _(redirectCount, uint32_t)        \
-  _(redirectTime, uint32_t)         \
-  _(responseTime, uint32_t)         \
-  _(sameOriginNav, bool)            \
-  _(timeToRequestStart, uint32_t)   \
-  _(tlsHandshakeTime, uint32_t)     \
-  _(trrDomain, nsCString)           \
-  _(userFeatures, uint32_t)         \
-  _(usingWebdriver, bool)           \
-  _(cacheDisposition, uint32_t)     \
-  _(networkType, uint32_t)
+#define FOR_EACH_PAGELOAD_METRIC(_)     \
+  _(dnsLookupTime, uint32_t)            \
+  _(documentFeatures, uint32_t)         \
+  _(fcpTime, uint32_t)                  \
+  _(hasSsd, bool)                       \
+  _(httpVer, uint32_t)                  \
+  _(jsExecTime, uint32_t)               \
+  _(delazifyTime, uint32_t)             \
+  _(lcpTime, uint32_t)                  \
+  _(loadTime, uint32_t)                 \
+  _(loadType, nsCString)                \
+  _(redirectCount, uint32_t)            \
+  _(redirectTime, uint32_t)             \
+  _(responseTime, uint32_t)             \
+  _(sameOriginNav, bool)                \
+  _(timeToRequestStart, uint32_t)       \
+  _(tlsHandshakeTime, uint32_t)         \
+  _(trrDomain, nsCString)               \
+  _(userFeatures, uint32_t)             \
+  _(usingWebdriver, bool)               \
+  _(cacheDisposition, uint32_t)         \
+  _(networkType, uint32_t)              \
+  _(androidAppLinkLaunchType, uint32_t) \
+  _(androidAppLinkToNavigationStart, uint32_t)
 
 namespace mozilla::performance::pageload_event {
 /*
@@ -87,22 +89,27 @@ class PageloadEventData {
   // Define ETLD separately since we want a special setter for it.
   mozilla::Maybe<nsCString> mDomain;
 
+  // Number of page loads after which a normal pageload ping is sent.
+  static uint32_t sPageLoadEventCounter;
+
  public:
   // Define a setter for every member.
   FOR_EACH_PAGELOAD_METRIC(DEFINE_SETTER)
 
   bool MaybeSetPublicRegistrableDomain(nsCOMPtr<nsIURI> aURI,
                                        nsIChannel* aChannel);
-  bool HasDomain() { return mDomain.isSome() && !mDomain.value().IsEmpty(); }
+  bool HasDomain() const {
+    return mDomain.isSome() && !mDomain.value().IsEmpty();
+  }
 
-  bool HasLoadTime() { return loadTime.isSome(); }
+  bool HasLoadTime() const { return loadTime.isSome(); }
 
   // Define setters for the individual bit features.
   void SetUserFeature(UserFeature aFeature);
   void SetDocumentFeature(DocumentFeature aFeature);
 
-  mozilla::glean::perf::PageLoadExtra ToPageLoadExtra() const;
-  mozilla::glean::perf::PageLoadDomainExtra ToPageLoadDomainExtra() const;
+  void SendAsPageLoadEvent();
+  void SendAsPageLoadDomainEvent();
 };
 #undef DEFINE_METRIC
 #undef DEFINE_SETTER

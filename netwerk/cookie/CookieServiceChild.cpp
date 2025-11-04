@@ -325,8 +325,6 @@ CookieServiceChild::RecordDocumentCookie(Cookie* aCookie,
     COOKIE_LOGSTRING(LogLevel::Error,
                      ("Invalid first-party partitioned cookie without "
                       "partitioned cookie attribution from the document."));
-    mozilla::glean::networking::set_invalid_first_party_partitioned_cookie.Add(
-        1);
     MOZ_ASSERT(false);
     return CookieNotificationAction::NoActionNeeded;
   }

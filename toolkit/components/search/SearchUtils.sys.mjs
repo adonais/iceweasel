@@ -244,19 +244,34 @@ export var SearchUtils = {
    *   The URL string from which to create an nsIChannel.
    * @param {nsContentPolicyType} contentPolicyType
    *   The type of document being loaded.
+   * @param {object} [originAttributes]
+   *   The origin attributes to associate to this channel.
    * @returns {nsIChannel}
    *   an nsIChannel object, or null if the url is invalid.
    */
-  makeChannel(url, contentPolicyType) {
+  makeChannel(url, contentPolicyType, originAttributes = null) {
     if (!contentPolicyType) {
       throw new Error("makeChannel called with invalid content policy type");
     }
     try {
       let uri = typeof url == "string" ? Services.io.newURI(url) : url;
-      let principal =
-        uri.scheme == "moz-extension"
-          ? Services.scriptSecurityManager.createContentPrincipal(uri, {})
-          : Services.scriptSecurityManager.createNullPrincipal({});
+      let principal;
+      if (uri.scheme == "moz-extension") {
+        principal = Services.scriptSecurityManager.createContentPrincipal(
+          uri,
+          {}
+        );
+      } else {
+        if (!originAttributes) {
+          originAttributes = {};
+          try {
+            originAttributes.firstPartyDomain =
+              Services.eTLD.getSchemelessSite(uri);
+          } catch {}
+        }
+        principal =
+          Services.scriptSecurityManager.createNullPrincipal(originAttributes);
+      }
 
       return Services.io.newChannelFromURI(
         uri,

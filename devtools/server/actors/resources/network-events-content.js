@@ -258,7 +258,7 @@ class NetworkEventContentWatcher {
         resourceUpdates.fromCache = updateResource.fromCache;
         resourceUpdates.fromServiceWorker = updateResource.fromServiceWorker;
         break;
-      case NETWORK_EVENT_TYPES.RESPONSE_START:
+      case NETWORK_EVENT_TYPES.RESPONSE_START: {
         // For cached image requests channel.responseStatus is set to 200 as
         // expected. However responseStatusText is empty. In this case fallback
         // to the expected statusText "OK".
@@ -278,6 +278,7 @@ class NetworkEventContentWatcher {
           NETWORK_EVENT_TYPES.RESPONSE_HEADERS,
         ]);
         break;
+      }
       case NETWORK_EVENT_TYPES.RESPONSE_CONTENT:
         resourceUpdates.contentSize = updateResource.contentSize;
         resourceUpdates.mimeType = updateResource.mimeType;

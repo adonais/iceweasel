@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os == 'win'"]
 
 ["test_stub_installer.js"]
 run-if = ["!msix"]

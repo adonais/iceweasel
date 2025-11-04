@@ -17,9 +17,9 @@
 #include "mozilla/Types.h"
 
 #include <algorithm>
-#include <climits>
+#include <cstdint>
 #include <limits>
-#include <stdint.h>
+#include <type_traits>
 
 namespace mozilla {
 
@@ -37,8 +37,6 @@ namespace mozilla {
  * these algorithms.  If you must make changes, keep a careful eye out for
  * compiler bustage, particularly PGO-specific bustage.
  */
-
-namespace detail {
 
 /*
  * These implementations assume float/double are 32/64-bit single/double
@@ -67,8 +65,6 @@ struct FloatingPointTrait<double> {
   static constexpr unsigned kSignificandWidth = 52;
 };
 
-}  // namespace detail
-
 /*
  *  This struct contains details regarding the encoding of floating-point
  *  numbers that can be useful for direct bit manipulation. As of now, the
@@ -96,9 +92,9 @@ struct FloatingPointTrait<double> {
  *  http://en.wikipedia.org/wiki/Floating_point#IEEE_754:_floating_point_in_modern_computers
  */
 template <typename T>
-struct FloatingPoint final : private detail::FloatingPointTrait<T> {
+struct FloatingPoint final : private FloatingPointTrait<T> {
  private:
-  using Base = detail::FloatingPointTrait<T>;
+  using Base = FloatingPointTrait<T>;
 
  public:
   /**

@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 #include <mozilla/RefPtr.h>
+#include "mozilla/Base64.h"
 #include "nsEscape.h"
 #include "nsString.h"
 #include "nsUrlClassifierUtils.h"
@@ -271,26 +272,44 @@ TEST(UrlClassifierUtils, MakeUpdateRequestV5)
   nsresult rv = utils->MakeUpdateRequestV5(listNames, states, request);
   EXPECT_EQ(rv, NS_OK);
   // The expected request contains
-  // 1. The V5 list name "uws-4b"
+  // 1. The V5 list name "uws-4b" or "uwsa-4b" depending on the platform.
   // 2. The decoded state for the above kTestState.
+#ifndef MOZ_WIDGET_ANDROID
   ASSERT_TRUE(request.EqualsLiteral(
       "&names=uws-4b&version=Cg0IAxAGGAEiAzAwMTABEMfKERoCGAm5biH4"));
+#else
+  ASSERT_TRUE(request.EqualsLiteral(
+      "&names=uwsa-4b&version=Cg0IAxAGGAEiAzAwMTABEMfKERoCGAm5biH4"));
+#endif
 }
 
 TEST(UrlClassifierUtils, makeFindFullHashRequestV5)
 {
   nsTArray<nsCString> hashPrefixes;
-  hashPrefixes.AppendElement("\xAA\xBB\xCC\xDD"_ns);
-  hashPrefixes.AppendElement("\xEE\xFF\x00\x11"_ns);
-  hashPrefixes.AppendElement("\x12\x34\x56\x78"_ns);
-  hashPrefixes.AppendElement("\xDE\xAD\xBE\xEF"_ns);
-  hashPrefixes.AppendElement("\xFE\xED\xFA\xCE"_ns);
+
+  nsAutoCString hashPrefixesEncoded;
+  nsresult rv =
+      mozilla::Base64Encode("\xAA\xBB\xCC\xDD"_ns, hashPrefixesEncoded);
+  EXPECT_EQ(rv, NS_OK);
+  hashPrefixes.AppendElement(hashPrefixesEncoded);
+  rv = mozilla::Base64Encode("\xEE\xFF\x00\x11"_ns, hashPrefixesEncoded);
+  EXPECT_EQ(rv, NS_OK);
+  hashPrefixes.AppendElement(hashPrefixesEncoded);
+  rv = mozilla::Base64Encode("\x12\x34\x56\x78"_ns, hashPrefixesEncoded);
+  EXPECT_EQ(rv, NS_OK);
+  hashPrefixes.AppendElement(hashPrefixesEncoded);
+  rv = mozilla::Base64Encode("\xDE\xAD\xBE\xEF"_ns, hashPrefixesEncoded);
+  EXPECT_EQ(rv, NS_OK);
+  hashPrefixes.AppendElement(hashPrefixesEncoded);
+  rv = mozilla::Base64Encode("\xFE\xED\xFA\xCE"_ns, hashPrefixesEncoded);
+  EXPECT_EQ(rv, NS_OK);
+  hashPrefixes.AppendElement(hashPrefixesEncoded);
 
   nsCOMPtr<nsIUrlClassifierUtils> utils =
       do_GetService("@mozilla.org/url-classifier/utils;1");
 
   nsCString request;
-  nsresult rv = utils->MakeFindFullHashRequestV5(hashPrefixes, request);
+  rv = utils->MakeFindFullHashRequestV5(hashPrefixes, request);
   EXPECT_EQ(rv, NS_OK);
 
   ASSERT_TRUE(request.EqualsLiteral(

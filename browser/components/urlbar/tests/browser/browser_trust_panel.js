@@ -52,6 +52,8 @@ add_task(async function basic_test() {
     waitForLoad: true,
   });
 
+  await BrowserTestUtils.waitForCondition(() => urlbarIcon(window) != "none");
+
   Assert.equal(urlbarIcon(window), ETP_ACTIVE_ICON, "Showing trusted icon");
 
   await toggleETP(tab);

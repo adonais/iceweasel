@@ -9,7 +9,6 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/BitSet.h"
-#include "mozilla/DoublyLinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 

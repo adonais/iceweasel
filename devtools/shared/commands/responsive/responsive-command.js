@@ -20,7 +20,16 @@ class ResponsiveCommand {
   async setElementPickerState(state, pickerType) {
     const fronts = await this.getAllResponsiveFronts();
     await Promise.all(
-      fronts.map(front => front.setElementPickerState(state, pickerType))
+      fronts.map(async front => {
+        try {
+          await front.setElementPickerState(state, pickerType);
+        } catch (e) {
+          if (front.isDestroyed()) {
+            return;
+          }
+          throw e;
+        }
+      })
     );
   }
 }

@@ -341,7 +341,6 @@ class nsWindow final : public nsBaseWidget {
   GdkWindow* GetGdkWindow() const { return mGdkWindow; };
   GdkWindow* GetToplevelGdkWindow() const;
   GtkWidget* GetGtkWidget() const { return mShell; }
-  nsIFrame* GetFrame() const;
   nsWindow* GetEffectiveParent();
   bool IsDestroyed() const { return mIsDestroyed; }
   bool IsPopup() const;
@@ -439,6 +438,7 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntPoint GdkEventCoordsToDevicePixels(gdouble aX, gdouble aY);
   LayoutDeviceIntRect GdkRectToDevicePixels(const GdkRectangle&);
   LayoutDeviceIntMargin GtkBorderToDevicePixels(const GtkBorder&);
+  LayoutDeviceRect GdkRectToFloatDevicePixels(const GdkRectangle&);
 
   bool WidgetTypeSupportsAcceleration() override;
   bool WidgetTypeSupportsNativeCompositing() override;
@@ -623,10 +623,8 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntSize mLastSizeRequest;
   // Same but for positioning. Used to track move requests.
   LayoutDeviceIntPoint mLastMoveRequest;
-  // Margin from outer bounds to inner bounds _including CSD decorations_.
+  // Margin from mBounds to the client rect (including CSD decorations).
   LayoutDeviceIntMargin mClientMargin;
-  // The part of mClientMargin that comes from our CSD decorations.
-  LayoutDeviceIntMargin mCsdMargin;
 
   // This field omits duplicate scroll events caused by GNOME bug 726878.
   guint32 mLastScrollEventTime = GDK_CURRENT_TIME;

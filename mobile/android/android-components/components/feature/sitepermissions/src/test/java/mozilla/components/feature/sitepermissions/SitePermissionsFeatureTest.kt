@@ -355,6 +355,7 @@ class SitePermissionsFeatureTest {
     @Test
     fun `GIVEN shouldStore true WHEN onContentPermissionGranted() THEN storeSitePermissions() called`() {
         // given
+        doReturn(listOf(ContentNotification())).`when`(mockPermissionRequest).permissions
         doNothing().`when`(sitePermissionFeature)
             .storeSitePermissions(any(), any(), any(), any())
 
@@ -383,6 +384,7 @@ class SitePermissionsFeatureTest {
     @Test
     fun `GIVEN permissionRequest WHEN onPositiveButtonPress() THEN consumePermissionRequest, onContentPermissionGranted are called`() {
         // given
+        doReturn(listOf(ContentNotification())).`when`(mockPermissionRequest).permissions
         doNothing().`when`(sitePermissionFeature).consumePermissionRequest(any(), any())
         doNothing().`when`(sitePermissionFeature)
             .onContentPermissionGranted(mockPermissionRequest, true)
@@ -396,8 +398,11 @@ class SitePermissionsFeatureTest {
         // then
         verify(sitePermissionFeature)
             .consumePermissionRequest(mockPermissionRequest, SESSION_ID)
-        verify(sitePermissionFeature)
-            .onContentPermissionGranted(mockPermissionRequest, true)
+        verify(sitePermissionFeature).onContentPermissionGranted(
+            eq(mockPermissionRequest),
+            eq(true),
+            any(),
+        )
     }
 
     @Test

@@ -12,6 +12,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.addTextChangedListener
 import androidx.navigation.NavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +33,7 @@ import mozilla.components.support.ktx.kotlin.toNormalizedUrl
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Pings
+import org.mozilla.fenix.GleanMetrics.ShortcutsLibrary
 import org.mozilla.fenix.GleanMetrics.TopSites
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
@@ -97,6 +99,11 @@ interface TopSiteController {
      * @see [TopSiteInteractor.onShowAllTopSitesClicked]
      */
     fun handleShowAllTopSitesClicked()
+
+    /**
+     * @see [TopSiteInteractor.onShortcutsLibraryViewed]
+     */
+    fun handleShortcutsLibraryViewed()
 }
 
 /**
@@ -156,7 +163,7 @@ class DefaultTopSiteController(
             titleEditText.setText(topSite.title)
             urlEditText.setText(topSite.url)
 
-            AlertDialog.Builder(it).apply {
+            MaterialAlertDialogBuilder(it).apply {
                 setTitle(R.string.top_sites_edit_dialog_title)
                 setView(customLayout)
                 setPositiveButton(R.string.top_sites_edit_dialog_save) { _, _ -> }
@@ -367,6 +374,10 @@ class DefaultTopSiteController(
             R.id.homeFragment,
             HomeFragmentDirections.actionHomeFragmentToShortcutsFragment(),
         )
+    }
+
+    override fun handleShortcutsLibraryViewed() {
+        ShortcutsLibrary.viewed.record(NoExtras())
     }
 
     /**

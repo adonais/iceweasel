@@ -13,8 +13,6 @@
 #include "WebGLTexture.h"
 #include "WebGLTypes.h"
 #include "WebGLVertexArray.h"
-#include "mozilla/Casting.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/ResultVariant.h"
 
 namespace mozilla {

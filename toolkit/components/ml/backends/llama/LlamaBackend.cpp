@@ -339,7 +339,8 @@ ChatMessageResult LlamaBackend::FormatChat(
 }
 
 LlamaBackend::SamplerResult LlamaBackend::InitializeSampler(
-    const mozilla::dom::Sequence<LlamaSamplerConfig>& aSamplers) {
+    const mozilla::dom::Sequence<LlamaSamplerConfig>& aSamplers,
+    const llama_vocab* vocab) {
   LOGV("Entered {}", __PRETTY_FUNCTION__);
 
   MOZ_ASSERT(mLib, "No shared library pointer in InitializeSampler, fix this");
@@ -360,6 +361,8 @@ LlamaBackend::SamplerResult LlamaBackend::InitializeSampler(
                                   mLib->llama_sampler_init_greedy());
   }
 
+  auto n_vocab = mLib->llama_vocab_n_tokens(vocab);
+
   for (const auto& samplerConfig : aSamplers) {
     llama_sampler* samplerElement = nullptr;
 
@@ -373,6 +376,27 @@ LlamaBackend::SamplerResult LlamaBackend::InitializeSampler(
                         ? samplerConfig.mSeed.Value()
                         : LLAMA_DEFAULT_SEED;
         samplerElement = mLib->llama_sampler_init_dist(seed);
+        break;
+      }
+
+      case LlamaSamplerType::Top_k:
+        samplerElement = mLib->llama_sampler_init_top_k(samplerConfig.mTopK);
+        break;
+
+      case LlamaSamplerType::Top_p:
+        samplerElement = mLib->llama_sampler_init_top_p(samplerConfig.mTopP,
+                                                        samplerConfig.mMinKeep);
+        break;
+
+      case LlamaSamplerType::Logit_bias: {
+        nsTArray<llama_logit_bias> logitBias;
+        logitBias.SetCapacity(samplerConfig.mLogitBias.Length());
+        for (const auto& val : samplerConfig.mLogitBias) {
+          logitBias.AppendElement(llama_logit_bias{val.mToken, val.mBias});
+        }
+
+        samplerElement = mLib->llama_sampler_init_logit_bias(
+            n_vocab, samplerConfig.mLogitBias.Length(), logitBias.Elements());
         break;
       }
 
@@ -411,15 +435,6 @@ ResultStatus LlamaBackend::Generate(
     }
   });
 
-  auto samplerResult = InitializeSampler(aOptions.mSamplers);
-
-  if (samplerResult.isErr()) {
-    LOGE("{}", samplerResult.inspectErr().mMessage);
-    return mozilla::Err(samplerResult.inspectErr());
-  }
-
-  auto sampler = samplerResult.unwrap();
-
   if (!mModel) {
     auto msg = nsFmtCString(FMT_STRING("{}: error: Model not loaded"),
                             __PRETTY_FUNCTION__);
@@ -429,6 +444,23 @@ ResultStatus LlamaBackend::Generate(
 
   // Just a non-owned pointer to existing data, so fast to get each time
   const llama_vocab* vocab = mLib->llama_model_get_vocab(mModel.get());
+
+  if (!vocab) {
+    auto msg =
+        nsFmtCString(FMT_STRING("{}: error: Unable to get model vocabulary."),
+                     __PRETTY_FUNCTION__);
+    LOGE("{}", msg);
+    return mozilla::Err(Error{msg});
+  }
+
+  auto samplerResult = InitializeSampler(aOptions.mSamplers, vocab);
+
+  if (samplerResult.isErr()) {
+    LOGE("{}", samplerResult.inspectErr().mMessage);
+    return mozilla::Err(samplerResult.inspectErr());
+  }
+
+  auto sampler = samplerResult.unwrap();
 
   const size_t estimatedNumPromptTokens = aOptions.mPrompt.Length() + 1;
   LOGD("{} Estimated tokenization size is {} {}", __PRETTY_FUNCTION__,

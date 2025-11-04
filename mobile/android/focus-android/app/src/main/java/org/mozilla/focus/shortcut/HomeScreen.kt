@@ -56,7 +56,6 @@ object HomeScreen {
     /**
      * Create a shortcut for the given website on the device's home screen.
      */
-    @Suppress("LongParameterList")
     fun installShortCut(
         context: Context,
         icon: Bitmap,

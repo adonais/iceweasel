@@ -15,6 +15,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
@@ -277,6 +278,7 @@ class DefaultQuickSettingsControllerTest {
         assertTrue(requestRuntimePermissionsInvoked)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `handlePermissionsChange should store the updated permission and reload webpage`() =
         runTestOnMain {
@@ -291,6 +293,7 @@ class DefaultQuickSettingsControllerTest {
             }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `handleAutoplayAdd should store the updated permission and reload webpage`() =
         runTestOnMain {

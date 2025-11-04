@@ -135,6 +135,22 @@ panel-item[type="file"]::part(button) {
   background-position: 6px center;
 }
 
+@media (forced-colors) {
+  panel-item:not(.selected)::part(button):hover {
+    fill: SelectedItemText;
+    color: SelectedItem;
+  }
+
+  panel-item.selected::part(button) {
+    border-block: 1px solid ButtonText;
+  }
+}
+
+panel-item.selected {
+  background-color: var(--button-background-color-active);
+  color: var(--button-text-color-active);
+}
+
 panel-item[type="file"]:-moz-locale-dir(rtl)::part(button),
 panel-item[type="file"]:dir(rtl)::part(button) {
   background-position-x: right 6px;
@@ -255,6 +271,8 @@ summary {
  * rotating masked element.
  */
 .progress-icon-parent {
+  /* stylelint rule disabled to support workaround for Bug 1671784 */
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-border-radius-tokens */
   border-radius: 0.01px;
   overflow: hidden;
   display: flex;

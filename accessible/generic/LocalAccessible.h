@@ -167,11 +167,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   virtual void ApplyARIAState(uint64_t* aState) const;
 
   /**
-   * Return enumerated accessible role (see constants in Role.h).
-   */
-  virtual mozilla::a11y::role Role() const override;
-
-  /**
    * Return accessible role specified by ARIA (see constants in
    * roles).
    */
@@ -181,7 +176,7 @@ class LocalAccessible : public nsISupports, public Accessible {
    * Returns enumerated accessible role from native markup (see constants in
    * Role.h). Doesn't take into account ARIA roles.
    */
-  virtual mozilla::a11y::role NativeRole() const;
+  virtual mozilla::a11y::role NativeRole() const override;
 
   virtual uint64_t State() override;
 
@@ -430,6 +425,10 @@ class LocalAccessible : public nsISupports, public Accessible {
   virtual void ScrollToPoint(uint32_t aCoordinateType, int32_t aX,
                              int32_t aY) override;
 
+  virtual bool IsScrollable() const override;
+
+  virtual bool IsPopover() const override;
+
   /**
    * Get a pointer to accessibility interface for this node, which is specific
    * to the OS/accessibility toolkit we're running on.
@@ -440,6 +439,11 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual bool GetStringARIAAttr(nsAtom* aAttrName,
                                  nsAString& aAttrValue) const override;
+
+  virtual bool ARIAAttrValueIs(nsAtom* aAttrName,
+                               nsAtom* aAttrValue) const override;
+
+  virtual bool HasARIAAttr(nsAtom* aAttrName) const override;
 
   //////////////////////////////////////////////////////////////////////////////
   // Downcasting and types
@@ -858,17 +862,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   //////////////////////////////////////////////////////////////////////////////
   // Miscellaneous helpers
 
-  /**
-   * Return ARIA role (helper method).
-   */
-  mozilla::a11y::role ARIATransformRole(mozilla::a11y::role aRole) const;
-
-  /**
-   * Return the minimum role that should be used as a last resort if the element
-   * does not have a more specific role.
-   */
-  mozilla::a11y::role GetMinimumRole(mozilla::a11y::role aRole) const;
-
   //////////////////////////////////////////////////////////////////////////////
   // Name helpers
 
@@ -1032,20 +1025,11 @@ class LocalAccessible : public nsISupports, public Accessible {
    */
   nsIFrame* FindNearestAccessibleAncestorFrame();
 
-  /*
-   * This function assumes that the current role is not valid. It searches for a
-   * fallback role in the role attribute string, and returns it. If there is no
-   * valid fallback role in the role attribute string, the function returns the
-   * native role. The aRolesToSkip parameter will cause the function to skip any
-   * roles found in the role attribute string when searching for the next valid
-   * role.
-   */
-  role FindNextValidARIARole(
-      std::initializer_list<nsStaticAtom*> aRolesToSkip) const;
-
   LocalAccessible* GetCommandForDetailsRelation() const;
 
   LocalAccessible* GetPopoverTargetDetailsRelation() const;
+
+  LocalAccessible* GetAnchorPositionTargetDetailsRelation() const;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

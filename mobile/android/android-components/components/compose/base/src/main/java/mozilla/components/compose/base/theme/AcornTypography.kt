@@ -161,7 +161,6 @@ val defaultTypography = AcornTypography(
 
 @Composable
 @Preview
-@Suppress("LongMethod")
 private fun NewTypographyPreview() {
     val textStyles = listOf(
         Pair("Headline 5", defaultTypography.headline5),

@@ -431,15 +431,15 @@ class FontInspector {
       case "vh":
       case "vw":
       case "vmin":
-      case "vmax":
+      case "vmax": {
         const dim = await node.getOwnerGlobalDimensions().catch(console.error);
         if (dim) {
           box.width = dim.innerWidth;
           box.height = dim.innerHeight;
         }
         break;
-
-      case "%":
+      }
+      case "%": {
         const style = await this.pageStyle
           .getComputed(node)
           .catch(console.error);
@@ -448,6 +448,7 @@ class FontInspector {
           box.height = style.height.value;
         }
         break;
+      }
     }
 
     return box;

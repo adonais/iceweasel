@@ -36,8 +36,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.button.PrimaryButton
-import mozilla.components.compose.base.button.SecondaryButton
+import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.button.OutlinedButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -139,13 +139,13 @@ fun ResearchSurfaceSurvey(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth(BUTTON_WIDTH),
                 ) {
-                    PrimaryButton(
+                    FilledButton(
                         text = onAcceptButtonText,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = onAccept,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    SecondaryButton(
+                    OutlinedButton(
                         text = onDismissButtonText,
                         modifier = Modifier.fillMaxWidth(),
                         onClick = onDismiss,

@@ -17,6 +17,9 @@ import {
 } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
+/** @import MozCheckbox from "../../../../../toolkit/content/widgets/moz-checkbox/moz-checkbox.mjs"*/
+/** @import { Setting } from "chrome://global/content/preferences/Setting.mjs"; */
+
 /**
  * A Lit directive that applies all properties of an object to a DOM element.
  *
@@ -98,17 +101,6 @@ class SpreadDirective extends Directive {
 const spread = directive(SpreadDirective);
 
 /**
- * @type Map<string, HTMLElement>
- */
-const controlInstances = new Map();
-function getControlInstance(control = "moz-checkbox") {
-  if (!controlInstances.has(control)) {
-    controlInstances.set(control, document.createElement(control));
-  }
-  return controlInstances.get(control);
-}
-
-/**
  * Mapping of parent control tag names to the literal tag name for their
  * expected children. eg. "moz-radio-group"->literal`moz-radio`.
  * @type Map<string, literal>
@@ -116,6 +108,7 @@ function getControlInstance(control = "moz-checkbox") {
 const KNOWN_OPTIONS = new Map([
   ["moz-radio-group", literal`moz-radio`],
   ["moz-select", literal`moz-option`],
+  ["moz-visual-picker", literal`moz-visual-picker-item`],
 ]);
 
 /**
@@ -136,6 +129,9 @@ const ITEM_SLOT_BY_PARENT = new Map([
 ]);
 
 export class SettingControl extends MozLitElement {
+  /**
+   * @type {Setting | undefined}
+   */
   #lastSetting;
 
   static properties = {
@@ -148,6 +144,26 @@ export class SettingControl extends MozLitElement {
   constructor() {
     super();
     this.controlRef = createRef();
+
+    /**
+     * @type {Preferences['getSetting'] | undefined}
+     */
+    this.getSetting = undefined;
+
+    /**
+     * @type {Setting | undefined}
+     */
+    this.setting = undefined;
+
+    /**
+     * @type {PreferencesSettingsConfig | undefined}
+     */
+    this.config = undefined;
+
+    /**
+     * @type {boolean | undefined}
+     */
+    this.parentDisabled = undefined;
   }
 
   createRenderRoot() {
@@ -164,7 +180,7 @@ export class SettingControl extends MozLitElement {
 
   async getUpdateComplete() {
     let result = await super.getUpdateComplete();
-    await this.controlEl.updateComplete;
+    await this.controlEl?.updateComplete;
     return result;
   }
 
@@ -173,6 +189,9 @@ export class SettingControl extends MozLitElement {
     this.requestUpdate();
   };
 
+  /**
+   * @type {MozLitElement['willUpdate']}
+   */
   willUpdate(changedProperties) {
     if (changedProperties.has("setting")) {
       if (this.#lastSetting) {
@@ -182,11 +201,41 @@ export class SettingControl extends MozLitElement {
       this.setValue();
       this.setting.on("change", this.onSettingChange);
     }
+    let prevHidden = this.hidden;
     this.hidden = !this.setting.visible;
+    if (prevHidden != this.hidden) {
+      this.dispatchEvent(new Event("visibility-change", { bubbles: true }));
+    }
+  }
+
+  /**
+   * @type {MozLitElement['updated']}
+   */
+  updated() {
+    const control = this.controlRef?.value;
+    if (!control) {
+      return;
+    }
+
+    // Set the value based on the control's API.
+    if ("checked" in control) {
+      control.checked = this.value;
+    } else if ("pressed" in control) {
+      control.pressed = this.value;
+    } else if ("value" in control) {
+      control.value = this.value;
+    }
+
+    control.requestUpdate();
   }
 
   /**
    * The default properties that controls and options accept.
+   * Note: for the disabled property, a setting can either be locked,
+   * or controlled by an extension but not both.
+   *
+   * @param {PreferencesSettingsConfig} config
+   * @returns {Record<string, any>}
    */
   getCommonPropertyMapping(config) {
     return {
@@ -197,6 +246,8 @@ export class SettingControl extends MozLitElement {
         : undefined,
       ".iconSrc": config.iconSrc,
       ".supportPage": config.supportPage,
+      ".setting": this.setting,
+      ".control": this,
       "data-subcategory": config.subcategory,
       ...config.controlAttrs,
     };
@@ -217,21 +268,10 @@ export class SettingControl extends MozLitElement {
   getControlPropertyMapping(config) {
     const props = this.getCommonPropertyMapping(config);
     props[".parentDisabled"] = this.parentDisabled;
-    props[".control"] = this;
     props["?disabled"] =
       this.setting.disabled ||
       this.setting.locked ||
       this.isControlledByExtension();
-
-    // Set the value based on the control's API.
-    let instance = getControlInstance(config.control);
-    if ("checked" in instance) {
-      props[".checked"] = this.value;
-    } else if ("pressed" in instance) {
-      props[".pressed"] = this.value;
-    } else if ("value" in instance) {
-      props[".value"] = this.value;
-    }
 
     return props;
   }
@@ -244,9 +284,15 @@ export class SettingControl extends MozLitElement {
     this.value = this.setting.value;
   };
 
+  /**
+   * @param {MozCheckbox | HTMLInputElement} el
+   * @returns {boolean | string | undefined}
+   */
   controlValue(el) {
     if (el.constructor.activatedProperty && el.localName != "moz-radio") {
       return el[el.constructor.activatedProperty];
+    } else if (el.localName == "moz-input-folder") {
+      return el.folder;
     }
     return el.value;
   }

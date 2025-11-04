@@ -46,6 +46,7 @@ class DefaultWebCompatReporterRetrievalServiceTest {
                 hasMixedDisplayContentBlocked = false,
                 hasTrackingContentBlocked = false,
                 isPrivateBrowsing = false,
+                blockedOrigins = listOf("https://blockedUrlExample.com"),
             ),
             browser = WebCompatInfoDto.WebCompatBrowserDto(
                 addons = listOf(
@@ -142,6 +143,7 @@ class DefaultWebCompatReporterRetrievalServiceTest {
                 hasMixedDisplayContentBlocked = false,
                 hasTrackingContentBlocked = false,
                 isPrivateBrowsing = false,
+                blockedOrigins = listOf("https://blockedUrlExample.com", "https://blockedUrlExample2.com"),
             ),
             browser = WebCompatInfoDto.WebCompatBrowserDto(
                 addons = listOf(

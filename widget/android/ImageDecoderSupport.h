@@ -19,11 +19,6 @@ class ImageDecoderSupport final
  public:
   static void Decode(jni::String::Param aUri, int32_t aDesiredLength,
                      jni::Object::Param aResult);
-
- private:
-  static nsresult DecodeInternal(const nsAString& aUri,
-                                 imgIContainerCallback* aCallback,
-                                 imgINotificationObserver* aObserver);
 };
 
 }  // namespace widget

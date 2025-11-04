@@ -7,7 +7,9 @@
 //!
 //! [position]: https://drafts.csswg.org/css-backgrounds-3/#position
 
+use crate::logical_geometry::{PhysicalSide, WritingMode};
 use crate::parser::{Parse, ParserContext};
+use crate::properties::LonghandId;
 use crate::selector_map::PrecomputedHashMap;
 use crate::str::HTML_SPACE_CHARACTERS;
 use crate::values::computed::LengthPercentage as ComputedLengthPercentage;
@@ -355,6 +357,7 @@ impl<S: Side> PositionComponent<S> {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[css(comma)]
 pub struct AnchorName(
@@ -407,6 +410,7 @@ impl Parse for AnchorName {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum AnchorScope {
@@ -471,6 +475,7 @@ impl Parse for AnchorScope {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum PositionAnchor {
@@ -560,7 +565,7 @@ impl Parse for PositionTryFallbacksTryTactic {
         _context: &ParserContext,
         input: &mut Parser<'i, 't>,
     ) -> Result<Self, ParseError<'i>> {
-        let first = input.try_parse(PositionTryFallbacksTryTacticKeyword::parse)?;
+        let first = PositionTryFallbacksTryTacticKeyword::parse(input)?;
         let second = input
             .try_parse(PositionTryFallbacksTryTacticKeyword::parse)
             .unwrap_or_default();
@@ -575,8 +580,88 @@ impl Parse for PositionTryFallbacksTryTactic {
 }
 
 impl PositionTryFallbacksTryTactic {
-    fn is_empty(&self) -> bool {
+    /// Returns whether there's any tactic.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
         self.0.is_none()
+    }
+
+    fn flip_vertical(id: LonghandId) -> LonghandId {
+        match id {
+            LonghandId::Top => LonghandId::Bottom,
+            LonghandId::Bottom => LonghandId::Top,
+            LonghandId::MarginTop => LonghandId::MarginBottom,
+            LonghandId::MarginBottom => LonghandId::MarginTop,
+            _ => id,
+        }
+    }
+
+    fn flip_horizontal(id: LonghandId) -> LonghandId {
+        match id {
+            LonghandId::Left => LonghandId::Right,
+            LonghandId::Right => LonghandId::Left,
+            LonghandId::MarginLeft => LonghandId::MarginRight,
+            LonghandId::MarginRight => LonghandId::MarginLeft,
+            _ => id,
+        }
+    }
+
+    fn flip_start(id: LonghandId, wm: WritingMode) -> LonghandId {
+        use LonghandId::*;
+        let (physical_side, is_margin) = match id {
+            // TODO(emilio): Needs some work to use the same cascade implementation for these.
+            // Also to make justify-self: left | right map to align-self properly.
+            // AlignSelf => return JustifySelf,
+            // JustifySelf => return AlignSelf,
+
+            Width => return Height,
+            Height => return Width,
+            MinWidth => return MinHeight,
+            MinHeight => return MinWidth,
+            MaxWidth => return MaxHeight,
+            MaxHeight => return MaxWidth,
+
+            Top => (PhysicalSide::Top, false),
+            Right => (PhysicalSide::Right, false),
+            Bottom => (PhysicalSide::Bottom, false),
+            Left => (PhysicalSide::Left, false),
+
+            MarginTop => (PhysicalSide::Top, true),
+            MarginRight => (PhysicalSide::Right, true),
+            MarginBottom => (PhysicalSide::Bottom, true),
+            MarginLeft => (PhysicalSide::Left, true),
+            _ => return id,
+        };
+
+        match wm.flipped_start_side(physical_side) {
+            PhysicalSide::Top => if is_margin { MarginTop } else { Top },
+            PhysicalSide::Right => if is_margin { MarginRight } else { Right  },
+            PhysicalSide::Bottom => if is_margin { MarginBottom } else { Bottom },
+            PhysicalSide::Left => if is_margin { MarginLeft } else { Left },
+        }
+    }
+
+    /// Applies a try tactic to a given property.
+    pub fn apply_to_property(&self, mut id: LonghandId, wm: WritingMode) -> LonghandId {
+        debug_assert!(!id.is_logical(), "Logical props should've been replaced already");
+        debug_assert!(!self.is_empty(), "Should have something to do");
+        // TODO(emilio): Consider building a LonghandIdSet to check for unaffected properties, and
+        // bailing out earlier?
+        for tactic in [self.0, self.1, self.2] {
+            id = match tactic {
+                PositionTryFallbacksTryTacticKeyword::None => break,
+                PositionTryFallbacksTryTacticKeyword::FlipInline |
+                PositionTryFallbacksTryTacticKeyword::FlipBlock => {
+                    if wm.is_horizontal() == (tactic == PositionTryFallbacksTryTacticKeyword::FlipInline) {
+                        Self::flip_horizontal(id)
+                    } else {
+                        Self::flip_vertical(id)
+                    }
+                },
+                PositionTryFallbacksTryTacticKeyword::FlipStart => Self::flip_start(id, wm),
+            }
+        }
+        id
     }
 }
 
@@ -670,6 +755,7 @@ pub enum PositionTryFallbacksItem {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[css(comma)]
 #[repr(C)]
@@ -727,6 +813,7 @@ impl Parse for PositionTryFallbacks {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum PositionTryOrder {
@@ -770,6 +857,7 @@ impl PositionTryOrder {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[css(bitflags(single = "always", mixed = "anchors-valid,anchors-visible,no-overflow"))]
 #[repr(C)]
@@ -839,76 +927,114 @@ pub enum PositionAreaType {
 )]
 #[allow(missing_docs)]
 #[repr(u8)]
-/// Possible values for the `position-area` preperty's keywords.
+/// Possible values for the `position-area` property's keywords.
 /// https://drafts.csswg.org/css-anchor-position-1/#propdef-position-area
 pub enum PositionAreaKeyword {
     #[default]
-    None,
+    None = 0,
 
     // Common (shared) keywords:
-    Center,
-    SpanAll,
+    Center = 1,
+    SpanAll = 2,
 
-    // Horizontal keywords:
-    Left,
-    Right,
-    SpanLeft,
-    SpanRight,
-    XStart,
-    XEnd,
-    SpanXStart,
-    SpanXEnd,
-    XSelfStart,
-    XSelfEnd,
-    SpanXSelfStart,
-    SpanXSelfEnd,
-    // Vertical keywords:
-    Top,
-    Bottom,
-    SpanTop,
-    SpanBottom,
-    YStart,
-    YEnd,
-    SpanYStart,
-    SpanYEnd,
-    YSelfStart,
-    YSelfEnd,
-    SpanYSelfStart,
-    SpanYSelfEnd,
+    // Purely physical edges:
+    Left = 3,
+    Right = 4,
+    Top = 5,
+    Bottom = 6,
 
-    // Block keywords:
-    BlockStart,
-    BlockEnd,
-    SpanBlockStart,
-    SpanBlockEnd,
-    // Inline keywords:
-    InlineStart,
-    InlineEnd,
-    SpanInlineStart,
-    SpanInlineEnd,
+    // Flow-relative physical-axis edges:
+    XStart = 7,
+    XEnd = 8,
+    YStart = 9,
+    YEnd = 10,
 
-    // "Self" block keywords:
-    SelfBlockStart,
-    SelfBlockEnd,
-    SpanSelfBlockStart,
-    SpanSelfBlockEnd,
-    // "Self" inline keywords:
-    SelfInlineStart,
-    SelfInlineEnd,
-    SpanSelfInlineStart,
-    SpanSelfInlineEnd,
+    // Logical edges:
+    BlockStart = 11,
+    BlockEnd = 12,
+    InlineStart = 13,
+    InlineEnd = 14,
 
-    // Inferred axis keywords:
-    Start,
-    End,
-    SpanStart,
-    SpanEnd,
+    // Inferred-axis edges:
+    Start = 15,
+    End = 16,
 
-    // "Self" inferred axis keywords:
-    SelfStart,
-    SelfEnd,
-    SpanSelfStart,
-    SpanSelfEnd,
+    // Flags that modify the above edge values. We require these to be separate
+    // bits in the underlying u8 value, so that they can be individually tested
+    // and masked independently of the rest of the value.
+    // These are not exposed to CSS, they only function as part of the composite
+    // values defined below.
+    #[css(skip)]
+    Span = 1u8 << 5,
+    #[css(skip)]
+    SelfWM = 1u8 << 6, // use target's writing-mode to resolve logical edges
+
+    // Composite values with Span:
+    SpanLeft = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::Left as u8,
+    SpanRight = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::Right as u8,
+    SpanTop = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::Top as u8,
+    SpanBottom = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::Bottom as u8,
+
+    SpanXStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::XStart as u8,
+    SpanXEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::XEnd as u8,
+    SpanYStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::YStart as u8,
+    SpanYEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::YEnd as u8,
+
+    SpanBlockStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::BlockStart as u8,
+    SpanBlockEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::BlockEnd as u8,
+    SpanInlineStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::InlineStart as u8,
+    SpanInlineEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::InlineEnd as u8,
+
+    SpanStart = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::Start as u8,
+    SpanEnd = PositionAreaKeyword::Span as u8 | PositionAreaKeyword::End as u8,
+
+    // Values using the Self element's writing-mode:
+    SelfXStart = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::XStart as u8,
+    SelfXEnd = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::XEnd as u8,
+    SelfYStart = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::YStart as u8,
+    SelfYEnd = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::YEnd as u8,
+
+    SelfBlockStart = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::BlockStart as u8,
+    SelfBlockEnd = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::BlockEnd as u8,
+    SelfInlineStart = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::InlineStart as u8,
+    SelfInlineEnd = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::InlineEnd as u8,
+
+    SelfStart = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::Start as u8,
+    SelfEnd = PositionAreaKeyword::SelfWM as u8 | PositionAreaKeyword::End as u8,
+
+    // Values with Span and SelfWM:
+    SpanSelfXStart = PositionAreaKeyword::Span as u8
+        | PositionAreaKeyword::SelfWM as u8
+        | PositionAreaKeyword::XStart as u8,
+    SpanSelfXEnd = PositionAreaKeyword::Span as u8
+        | PositionAreaKeyword::SelfWM as u8
+        | PositionAreaKeyword::XEnd as u8,
+    SpanSelfYStart = PositionAreaKeyword::Span as u8
+        | PositionAreaKeyword::SelfWM as u8
+        | PositionAreaKeyword::YStart as u8,
+    SpanSelfYEnd = PositionAreaKeyword::Span as u8
+        | PositionAreaKeyword::SelfWM as u8
+        | PositionAreaKeyword::YEnd as u8,
+
+    SpanSelfBlockStart = PositionAreaKeyword::Span as u8
+        | PositionAreaKeyword::SelfWM as u8
+        | PositionAreaKeyword::BlockStart as u8,
+    SpanSelfBlockEnd = PositionAreaKeyword::Span as u8
+        | PositionAreaKeyword::SelfWM as u8
+        | PositionAreaKeyword::BlockEnd as u8,
+    SpanSelfInlineStart = PositionAreaKeyword::Span as u8
+        | PositionAreaKeyword::SelfWM as u8
+        | PositionAreaKeyword::InlineStart as u8,
+    SpanSelfInlineEnd = PositionAreaKeyword::Span as u8
+        | PositionAreaKeyword::SelfWM as u8
+        | PositionAreaKeyword::InlineEnd as u8,
+
+    SpanSelfStart = PositionAreaKeyword::Span as u8
+        | PositionAreaKeyword::SelfWM as u8
+        | PositionAreaKeyword::Start as u8,
+    SpanSelfEnd = PositionAreaKeyword::Span as u8
+        | PositionAreaKeyword::SelfWM as u8
+        | PositionAreaKeyword::End as u8,
 }
 
 #[allow(missing_docs)]
@@ -928,11 +1054,11 @@ impl PositionAreaKeyword {
         match self {
             // X-axis
             Left | Right | SpanLeft | SpanRight | XStart | XEnd | SpanXStart | SpanXEnd
-            | XSelfStart | XSelfEnd | SpanXSelfStart | SpanXSelfEnd => PositionAreaType::Physical,
+            | SelfXStart | SelfXEnd | SpanSelfXStart | SpanSelfXEnd => PositionAreaType::Physical,
 
             // Y-axis
             Top | Bottom | SpanTop | SpanBottom | YStart | YEnd | SpanYStart | SpanYEnd
-            | YSelfStart | YSelfEnd | SpanYSelfStart | SpanYSelfEnd => PositionAreaType::Physical,
+            | SelfYStart | SelfYEnd | SpanSelfYStart | SpanSelfYEnd => PositionAreaType::Physical,
 
             // Block
             BlockStart | BlockEnd | SpanBlockStart | SpanBlockEnd => PositionAreaType::Logical,
@@ -960,6 +1086,9 @@ impl PositionAreaKeyword {
             Center | SpanAll => PositionAreaType::Common,
 
             None => PositionAreaType::None,
+
+            // Flag bits that cannot occur by themselves
+            SelfWM | Span => panic!("invalid PositionAreaKeyword value"),
         }
     }
 
@@ -975,10 +1104,10 @@ impl PositionAreaKeyword {
                 | XEnd
                 | SpanXStart
                 | SpanXEnd
-                | XSelfStart
-                | XSelfEnd
-                | SpanXSelfStart
-                | SpanXSelfEnd
+                | SelfXStart
+                | SelfXEnd
+                | SpanSelfXStart
+                | SpanSelfXEnd
                 | BlockStart
                 | BlockEnd
                 | SpanBlockStart
@@ -1002,10 +1131,10 @@ impl PositionAreaKeyword {
                 | YEnd
                 | SpanYStart
                 | SpanYEnd
-                | YSelfStart
-                | YSelfEnd
-                | SpanYSelfStart
-                | SpanYSelfEnd
+                | SelfYStart
+                | SelfYEnd
+                | SpanSelfYStart
+                | SpanSelfYEnd
                 | InlineStart
                 | InlineEnd
                 | SpanInlineStart
@@ -1035,6 +1164,7 @@ impl PositionAreaKeyword {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C)]
 /// https://drafts.csswg.org/css-anchor-position-1/#propdef-position-area
@@ -1224,6 +1354,7 @@ impl Side for VerticalPositionKeyword {
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[css(bitflags(
     mixed = "row,column,dense",
@@ -1335,6 +1466,7 @@ pub enum MasonryItemOrder {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C)]
 /// Controls how the Masonry layout algorithm works
@@ -1701,6 +1833,7 @@ fn is_name_code_point(c: char) -> bool {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 pub enum GridTemplateAreas {
     /// The `none` value.

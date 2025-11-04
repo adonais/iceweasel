@@ -243,7 +243,7 @@ class CollectionTest : TestSetup() {
         }.openThreeDotMenu {
         }.openSaveToCollection {
         }.selectExistingCollection(collectionName) {
-            verifySnackBarText("Tab saved!")
+            verifySnackBarText("Tab saved")
         }.goToHomescreen(composeTestRule) {
             verifyCollectionIsDisplayed(composeTestRule, collectionName)
         }.expandCollection(composeTestRule, collectionName) {
@@ -273,7 +273,7 @@ class CollectionTest : TestSetup() {
             selectAddTabToCollection(composeTestRule)
             verifyTabsSelectedCounterText(1)
             saveTabsSelectedForCollection()
-            verifySnackBarText("Tab saved!")
+            verifySnackBarText("Tab saved")
             verifyTabSavedInCollection(composeTestRule, secondWebPage.title)
         }
     }

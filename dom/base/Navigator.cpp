@@ -2139,12 +2139,20 @@ nsresult Navigator::GetUserAgent(nsPIDOMWindowInner* aWindow,
   }
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(doc->GetChannel());
   if (httpChannel) {
-    nsAutoCString userAgent;
-    rv = httpChannel->GetRequestHeader("User-Agent"_ns, userAgent);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
+    bool IsUserAgentHeaderOutdated;
+    Unused << httpChannel->GetIsUserAgentHeaderOutdated(
+        &IsUserAgentHeaderOutdated);
+
+    // Do not return user agent from the request
+    // if the user agent of the channel is outdated.
+    if (!IsUserAgentHeaderOutdated) {
+      nsAutoCString userAgent;
+      rv = httpChannel->GetRequestHeader("User-Agent"_ns, userAgent);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+      CopyASCIItoUTF16(userAgent, aUserAgent);
     }
-    CopyASCIItoUTF16(userAgent, aUserAgent);
   }
   return NS_OK;
 }

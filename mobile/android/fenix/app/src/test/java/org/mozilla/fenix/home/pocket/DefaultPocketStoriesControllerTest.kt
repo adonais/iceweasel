@@ -31,6 +31,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.GleanMetrics.Pocket
+import org.mozilla.fenix.GleanMetrics.StoriesLibrary
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.ContentRecommendationsAction
@@ -586,6 +587,13 @@ class DefaultPocketStoriesControllerTest {
                 HomeFragmentDirections.actionHomeFragmentToStoriesFragment(),
             )
         }
+    }
+
+    fun `WHEN screen is shown THEN impression is logged`() {
+        assertNull(StoriesLibrary.viewed.testGetValue())
+        val controller = createController()
+        controller.handleDiscoverMoreScreenViewed()
+        assertNotNull(StoriesLibrary.viewed.testGetValue())
     }
 
     private fun createController(

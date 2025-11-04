@@ -426,6 +426,8 @@ class InternalRequest final : public AtomicSafeRefCounted<InternalRequest> {
   // destination.
   static RequestDestination MapContentPolicyTypeToRequestDestination(
       nsContentPolicyType aContentPolicyType);
+  static RequestDestination MapContentPolicyTypeToRequestDestination(
+      ExtContentPolicyType aContentPolicyType);
 
  private:
   static bool IsNavigationContentPolicy(nsContentPolicyType aContentPolicyType);

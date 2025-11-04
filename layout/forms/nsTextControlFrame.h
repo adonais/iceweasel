@@ -248,8 +248,7 @@ class nsTextControlFrame : public nsContainerFrame,
    * value. This should only be called when we have no editor yet.
    * @throws NS_ERROR_UNEXPECTED if the div has no text content
    */
-  nsresult UpdateValueDisplay(bool aNotify, bool aBeforeEditorInit = false,
-                              const nsAString* aValue = nullptr);
+  nsresult UpdateValueDisplay(bool aNotify);
 
   /**
    * Find out whether an attribute exists on the content or not.

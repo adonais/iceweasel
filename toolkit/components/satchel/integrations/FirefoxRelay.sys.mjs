@@ -38,8 +38,11 @@ const gConfig = (function () {
       "signon.firefoxRelay.privacy_policy_url"
     ),
     allowListForFirstOfferPref: "signon.firefoxRelay.allowListForFirstOffer",
+    denyListForFutureOffersPref: "signon.firefoxRelay.denyListForFutureOffers",
     allowListRemoteSettingsCollectionPref:
       "signon.firefoxRelay.allowListRemoteSettingsCollection",
+    denyListRemoteSettingsCollectionPref:
+      "signon.firefoxRelay.denyListRemoteSettingsCollection",
   };
 })();
 
@@ -108,6 +111,7 @@ const AUTH_TOKEN_ERROR_CODE = 418;
 
 let gFlowId;
 let gAllowListCollection;
+let gDenyListCollection;
 
 async function getRelayTokenAsync() {
   try {
@@ -276,6 +280,7 @@ function getDisableIntegration(disableStrings, feature) {
     },
   };
 }
+
 async function showReusableMasksAsync(browser, origin, error) {
   const [reusableMasks, status] = await getReusableMasksAsync(browser, origin);
   if (!reusableMasks) {
@@ -466,7 +471,66 @@ function isSignup(scenarioName) {
   return scenarioName == "SignUpFormScenario";
 }
 
-async function onAllowList(origin) {
+// Helper to load/cache RemoteSettings collections
+async function getListCollection({
+  cache,
+  setCache,
+  collectionPref,
+  defaultCollection,
+}) {
+  if (!cache()) {
+    const collectionName = Services.prefs.getStringPref(
+      gConfig[collectionPref],
+      defaultCollection
+    );
+    try {
+      const list = await lazy.RemoteSettings(collectionName).get();
+      setCache(list);
+      lazy.RemoteSettings(collectionName).on("sync", () => {
+        setCache(null);
+      });
+    } catch (ex) {
+      if (ex instanceof lazy.RemoteSettingsClient.UnknownCollectionError) {
+        lazy.log.warn(
+          "Could not get Remote Settings collection.",
+          collectionPref,
+          ex
+        );
+      }
+      throw ex;
+    }
+  }
+  return cache();
+}
+
+function isOriginInList(list, origin) {
+  const originHost = new URL(origin).host;
+  return list.some(record => record.domain == originHost);
+}
+
+async function shouldNotShowRelay(origin) {
+  const denyListForFutureOffers = Services.prefs.getBoolPref(
+    gConfig.denyListForFutureOffersPref,
+    true
+  );
+  if (!denyListForFutureOffers) {
+    return false;
+  }
+  if (!origin) {
+    return true;
+  }
+  const list = await getListCollection({
+    cache: () => gDenyListCollection,
+    setCache: v => {
+      gDenyListCollection = v;
+    },
+    collectionPref: "denyListRemoteSettingsCollectionPref",
+    defaultCollection: "fxrelay-denylist",
+  });
+  return isOriginInList(list, origin);
+}
+
+async function shouldShowRelay(origin) {
   const allowListForFirstOffer = Services.prefs.getBoolPref(
     gConfig.allowListForFirstOfferPref,
     true
@@ -477,41 +541,27 @@ async function onAllowList(origin) {
   if (!origin) {
     return false;
   }
-  if (!gAllowListCollection) {
-    const allowListRemoteSettingsCollection = Services.prefs.getStringPref(
-      gConfig.allowListRemoteSettingsCollectionPref,
-      "fxrelay-allowlist"
-    );
-    try {
-      gAllowListCollection = await lazy
-        .RemoteSettings(allowListRemoteSettingsCollection)
-        .get();
-      lazy.RemoteSettings(allowListRemoteSettingsCollection).on("sync", () => {
-        gAllowListCollection = null;
-      });
-    } catch (ex) {
-      if (ex instanceof lazy.RemoteSettingsClient.UnknownCollectionError) {
-        lazy.log.warn(
-          "Could not get Remote Settings collection.",
-          gConfig.allowListRemoteSettingsCollection,
-          ex
-        );
-      }
-      throw ex;
-    }
-  }
-  const originHost = new URL(origin).host;
-  return gAllowListCollection.some(
-    allowListRecord => allowListRecord.domain == originHost
-  );
+  const list = await getListCollection({
+    cache: () => gAllowListCollection,
+    setCache: v => {
+      gAllowListCollection = v;
+    },
+    collectionPref: "allowListRemoteSettingsCollectionPref",
+    defaultCollection: "fxrelay-allowlist",
+  });
+  return isOriginInList(list, origin);
 }
 
 class RelayOffered {
   async *autocompleteItemsAsync(origin, scenarioName, hasInput) {
+    const originOnDenyList = await shouldNotShowRelay(origin);
+    if (originOnDenyList) {
+      return;
+    }
     const hasFxA = await hasFirefoxAccountAsync();
     const showRelayOnAllowlistSiteToAllUsers =
       Services.prefs.getBoolPref(gConfig.showToAllBrowsersPref, false) &&
-      (await onAllowList(origin));
+      (await shouldShowRelay(origin));
     if (
       !hasInput &&
       isSignup(scenarioName) &&
@@ -684,6 +734,7 @@ class RelayOffered {
           if (await this.notifyServerTermsAcceptedAsync(browser)) {
             feature.markAsEnabled();
             fillUsername(await generateUsernameAsync(browser, origin));
+            Glean.relayIntegration.placedEmailMask.record({ value: gFlowId });
           }
         };
         for (const notificationToObserve of notificationsToObserve) {
@@ -793,6 +844,7 @@ class RelayOffered {
         if (await this.notifyServerTermsAcceptedAsync(browser)) {
           feature.markAsEnabled();
           fillUsername(await generateUsernameAsync(browser, origin));
+          Glean.relayIntegration.placedEmailMask.record({ value: gFlowId });
         }
       },
     };
@@ -816,6 +868,12 @@ class RelayOffered {
             case "shown": {
               const document = notification.owner.panel.ownerDocument;
               customizeNotificationHeader(notification, "with-domain");
+              const learnMore = document.querySelector(
+                '[data-l10n-name="firefox-relay-learn-more-url"]'
+              );
+              if (learnMore) {
+                learnMore.href = gConfig.learnMoreURL;
+              }
               const baseDomain = Services.eTLD.getBaseDomain(
                 Services.io.newURI(origin)
               );
@@ -861,7 +919,8 @@ class RelayOffered {
 
 class RelayEnabled {
   async *autocompleteItemsAsync(origin, scenarioName, hasInput) {
-    if (!hasInput && isSignup(scenarioName)) {
+    const originOnDenyList = await shouldNotShowRelay(origin);
+    if (!hasInput && isSignup(scenarioName) && !originOnDenyList) {
       const hasFxA = await hasFirefoxAccountAsync();
       const [title] = await formatMessages("firefox-relay-use-mask-title-1");
 
@@ -882,6 +941,7 @@ class RelayEnabled {
   }
 
   async generateUsername(browser, origin) {
+    Glean.relayIntegration.placedEmailMask.record({ value: gFlowId });
     return generateUsernameAsync(browser, origin);
   }
 }

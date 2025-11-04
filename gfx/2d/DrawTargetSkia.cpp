@@ -425,16 +425,13 @@ static sk_sp<SkImage> ExtractSubset(sk_sp<SkImage> aImage,
 
 static void FreeAlphaPixels(void* aBuf, void*) { sk_free(aBuf); }
 
-static bool ExtractAlphaBitmap(const sk_sp<SkImage>& aImage,
-                               SkBitmap* aResultBitmap,
-                               bool aAllowReuse = false) {
+static void FreeAlphaImage(const void*, void* aBuf) { sk_free(aBuf); }
+
+static sk_sp<SkImage> ExtractAlphaImage(const sk_sp<SkImage>& aImage,
+                                        bool aAllowReuse = false) {
   SkPixmap pixmap;
-  if (aAllowReuse && aImage->isAlphaOnly() && aImage->peekPixels(&pixmap)) {
-    SkBitmap bitmap;
-    bitmap.installPixels(pixmap.info(), pixmap.writable_addr(),
-                         pixmap.rowBytes());
-    *aResultBitmap = bitmap;
-    return true;
+  if (aAllowReuse && aImage->isAlphaOnly()) {
+    return aImage;
   }
   SkImageInfo info = SkImageInfo::MakeA8(aImage->width(), aImage->height());
   // Skia does not fully allocate the last row according to stride.
@@ -444,25 +441,23 @@ static bool ExtractAlphaBitmap(const sk_sp<SkImage>& aImage,
   if (stride) {
     CheckedInt<size_t> size = stride;
     size *= info.height();
-    // We need to leave room for an additional 3 bytes for a potential overrun
-    // in our blurring code.
-    size += 3;
     if (size.isValid()) {
       void* buf = sk_malloc_flags(size.value(), 0);
       if (buf) {
-        SkBitmap bitmap;
-        if (bitmap.installPixels(info, buf, stride, FreeAlphaPixels, nullptr) &&
-            aImage->readPixels(bitmap.info(), bitmap.getPixels(),
-                               bitmap.rowBytes(), 0, 0)) {
-          *aResultBitmap = bitmap;
-          return true;
+        SkPixmap pixmap(info, buf, stride);
+        if (aImage->readPixels(pixmap, 0, 0)) {
+          if (sk_sp<SkImage> result =
+                  SkImages::RasterFromPixmap(pixmap, FreeAlphaImage, buf)) {
+            return result;
+          }
         }
+        sk_free(buf);
       }
     }
   }
 
   gfxWarning() << "Failed reading alpha pixels for Skia bitmap";
-  return false;
+  return nullptr;
 }
 
 static void SetPaintPattern(SkPaint& aPaint, const Pattern& aPattern,
@@ -807,33 +802,17 @@ void DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface* aSurface,
 
   auto shadowDest = IntPoint::Round(aDest + aShadow.mOffset);
 
-  SkBitmap blurMask;
+  sk_sp<SkImageFilter> blurFilter(
+      SkImageFilters::Blur(aShadow.mSigma, aShadow.mSigma, nullptr));
+
+  shadowPaint.setImageFilter(blurFilter);
+  shadowPaint.setColor(ColorToSkColor(aShadow.mColor, 1.0f));
+
   // Extract the alpha channel of the image into a bitmap. If the image is A8
   // format already, then we can directly reuse the bitmap rather than create a
   // new one as the surface only needs to be drawn from once.
-  if (ExtractAlphaBitmap(image, &blurMask, true)) {
-    // Prefer using our own box blur instead of Skia's. It currently performs
-    // much better than SkBlurImageFilter or SkBlurMaskFilter on the CPU.
-    AlphaBoxBlur blur(Rect(0, 0, blurMask.width(), blurMask.height()),
-                      int32_t(blurMask.rowBytes()), aShadow.mSigma,
-                      aShadow.mSigma);
-    blur.Blur(reinterpret_cast<uint8_t*>(blurMask.getPixels()));
-    blurMask.notifyPixelsChanged();
-
-    shadowPaint.setColor(ColorToSkColor(aShadow.mColor, 1.0f));
-
-    mCanvas->drawImage(blurMask.asImage(), shadowDest.x, shadowDest.y,
-                       SkSamplingOptions(SkFilterMode::kLinear), &shadowPaint);
-  } else {
-    sk_sp<SkImageFilter> blurFilter(
-        SkImageFilters::Blur(aShadow.mSigma, aShadow.mSigma, nullptr));
-    sk_sp<SkColorFilter> colorFilter(SkColorFilters::Blend(
-        ColorToSkColor(aShadow.mColor, 1.0f), SkBlendMode::kSrcIn));
-
-    shadowPaint.setImageFilter(blurFilter);
-    shadowPaint.setColorFilter(colorFilter);
-
-    mCanvas->drawImage(image, shadowDest.x, shadowDest.y,
+  if (sk_sp<SkImage> alphaImage = ExtractAlphaImage(image, true)) {
+    mCanvas->drawImage(alphaImage, shadowDest.x, shadowDest.y,
                        SkSamplingOptions(SkFilterMode::kLinear), &shadowPaint);
   }
 
@@ -845,6 +824,16 @@ void DrawTargetSkia::DrawSurfaceWithShadow(SourceSurface* aSurface,
   }
 
   mCanvas->restore();
+}
+
+void DrawTargetSkia::Blur(const GaussianBlur& aBlur) {
+  if (mSurface) {
+    MarkChanged();
+    if (aBlur.BlurSkSurface(mSurface)) {
+      return;
+    }
+  }
+  DrawTarget::Blur(aBlur);
 }
 
 void DrawTargetSkia::FillRect(const Rect& aRect, const Pattern& aPattern,
@@ -1493,6 +1482,11 @@ void DrawTargetSkia::MaskSurface(const Pattern& aSource, SourceSurface* aMask,
                                  Point aOffset, const DrawOptions& aOptions) {
   Maybe<MutexAutoLock> lock;
   sk_sp<SkImage> maskImage = GetSkImageForSurface(aMask, &lock);
+  if (!maskImage) {
+    gfxDebug() << "Failed get Skia mask image for MaskSurface";
+    return;
+  }
+
   SkMatrix maskOffset = SkMatrix::Translate(
       PointToSkPoint(aOffset + Point(aMask->GetRect().TopLeft())));
   sk_sp<SkShader> maskShader = maskImage->makeShader(
@@ -1816,9 +1810,6 @@ bool DrawTargetSkia::Init(const IntSize& aSize, SurfaceFormat aFormat) {
     // the bitmap pixels manually.
     CheckedInt<size_t> size = stride;
     size *= info.height();
-    // We need to leave room for an additional 3 bytes for a potential overrun
-    // in our blurring code.
-    size += 3;
     if (!size.isValid()) {
       return false;
     }

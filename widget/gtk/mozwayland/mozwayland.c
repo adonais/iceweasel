@@ -35,6 +35,7 @@ const struct wl_interface wl_shm_pool_interface;
 const struct wl_interface wl_subcompositor_interface;
 const struct wl_interface wl_subsurface_interface;
 const struct wl_interface wl_surface_interface;
+const struct wl_interface wl_touch_interface;
 const struct wl_interface xdg_popup_interface;
 const struct wl_interface xdg_positioner_interface;
 const struct wl_interface xdg_surface_interface;

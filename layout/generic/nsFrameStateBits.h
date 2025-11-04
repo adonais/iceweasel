@@ -144,12 +144,6 @@ FRAME_STATE_BIT(Generic, 11, NS_FRAME_TOO_DEEP_IN_FRAME_TREE)
 // PresShell::FrameNeedsReflow.  Pass the right arguments instead.
 FRAME_STATE_BIT(Generic, 12, NS_FRAME_HAS_DIRTY_CHILDREN)
 
-// If this bit is set, the frame has an associated view
-FRAME_STATE_BIT(Generic, 13, NS_FRAME_HAS_VIEW)
-
-// If this bit is set, the frame was created from anonymous content.
-FRAME_STATE_BIT(Generic, 14, NS_FRAME_INDEPENDENT_SELECTION)
-
 // If this bit is set, the frame is part of the mangled frame hierarchy
 // that results when an inline has been split because of a nested block.
 // See the comments in nsCSSFrameConstructor::ConstructInline for
@@ -195,12 +189,6 @@ FRAME_STATE_BIT(Generic, 33, NS_FRAME_DRAWING_AS_PAINTSERVER)
 // situation (possibly the frame itself).
 FRAME_STATE_BIT(Generic, 34,
                 NS_FRAME_DESCENDANT_INTRINSIC_ISIZE_DEPENDS_ON_BSIZE)
-
-// A flag that tells us we can take the common path with respect to style
-// properties for this frame when building event regions. This flag is cleared
-// when any styles are changed and then we recompute it on the next build
-// of the event regions.
-FRAME_STATE_BIT(Generic, 35, NS_FRAME_SIMPLE_EVENT_REGIONS)
 
 // Frame is a display root and the retained layer tree needs to be updated
 // at the next paint via display list construction.

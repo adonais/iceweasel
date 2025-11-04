@@ -474,8 +474,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Ŝanĝi al Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Ŝanĝi al Celsius
 newtab-weather-menu-hide-weather = Kaŝi veteron en nova langeto
 newtab-weather-menu-learn-more = Pli da informo
+newtab-weather-menu-detect-my-location = Trovi mian pozicion
 # This message is shown if user is working offline
 newtab-weather-error-not-available = En tiu ĉi momento ne haveblas veteraj datumoj.
+newtab-weather-opt-in-see-weather = Ĉu vi volas vidi la veteron por via loko?
+newtab-weather-opt-in-not-now =
+    .label = Ne nun
+newtab-weather-opt-in-yes =
+    .label = Jes
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Novjorko
 
 ## Topic Labels
 
@@ -642,6 +650,9 @@ newtab-widget-lists-input-menu-move-up = Movi supren
 newtab-widget-lists-input-menu-move-down = Movi malsupren
 newtab-widget-lists-input-menu-delete = Forigi
 newtab-widget-lists-input-menu-edit = Modifi
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Krei novan liston
 newtab-widget-lists-name-label-default =
     .label = Listo de taskoj
 newtab-widget-lists-name-placeholder-default =

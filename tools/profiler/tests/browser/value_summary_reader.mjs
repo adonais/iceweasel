@@ -36,12 +36,14 @@ const OBJECT_KIND_WRAPPED_PRIMITIVE_OBJECT = 4;
 const OBJECT_KIND_GENERIC_OBJECT = 5;
 const OBJECT_KIND_PROXY_OBJECT = 6;
 const OBJECT_KIND_EXTERNAL = 7;
+const OBJECT_KIND_ERROR = 8;
 
 const MAX_COLLECTION_VALUES = 16;
 
 const EXTERNAL_SUMMARY_EXPECTED_VERSION = 1;
 const EXTERNAL_SUMMARY_KIND_OTHER = 0;
 const EXTERNAL_SUMMARY_KIND_NODE = 1;
+const EXTERNAL_SUMMARY_KIND_EXCEPTION = 2;
 
 // const EXTERNAL_NODE_SUBKIND_OTHER = 0; (handled implicitly)
 const EXTERNAL_NODE_SUBKIND_ELEMENT = 1;
@@ -73,71 +75,71 @@ class BufferReader {
   }
 
   readUint8() {
-    let result = this.#view.getUint8(this.#index);
+    const result = this.#view.getUint8(this.#index);
     this.#index += 1;
     return result;
   }
 
   readUint16() {
-    let result = this.#view.getUint16(this.#index, true);
+    const result = this.#view.getUint16(this.#index, true);
     this.#index += 2;
     return result;
   }
 
   readUint32() {
-    let result = this.#view.getUint32(this.#index, true);
+    const result = this.#view.getUint32(this.#index, true);
     this.#index += 4;
     return result;
   }
 
   readInt8() {
-    let result = this.#view.getInt8(this.#index);
+    const result = this.#view.getInt8(this.#index);
     this.#index += 1;
     return result;
   }
 
   readInt16() {
-    let result = this.#view.getInt16(this.#index, true);
+    const result = this.#view.getInt16(this.#index, true);
     this.#index += 2;
     return result;
   }
 
   readInt32() {
-    let result = this.#view.getInt32(this.#index, true);
+    const result = this.#view.getInt32(this.#index, true);
     this.#index += 4;
     return result;
   }
 
   readFloat64() {
-    let result = this.#view.getFloat64(this.#index, true);
+    const result = this.#view.getFloat64(this.#index, true);
     this.#index += 8;
     return result;
   }
 
   readString() {
-    let encodingAndLength = this.readUint16();
-    let length = encodingAndLength & ~(0b11 << 14);
-    let encoding = encodingAndLength >> 14;
+    const encodingAndLength = this.readUint16();
+    const length = encodingAndLength & ~(0b11 << 14);
+    const encoding = encodingAndLength >> 14;
     if (length == 0) {
       return "";
     }
 
     let result = "";
     if (encoding == STRING_ENCODING_LATIN1) {
-      let decoder = new TextDecoder("latin1");
+      const decoder = new TextDecoder("latin1");
       result = decoder.decode(
         this.#view.buffer.slice(this.#index, this.#index + length)
       );
       this.#index += length;
     } else if (encoding == STRING_ENCODING_UTF8) {
-      let decoder = new TextDecoder("utf-8");
+      const decoder = new TextDecoder("utf-8");
       result = decoder.decode(
         this.#view.buffer.slice(this.#index, this.#index + length)
       );
       this.#index += length;
     } else if (encoding == STRING_ENCODING_TWO_BYTE) {
-      let decoder = new TextDecoder("utf-16"); // this isn't quite right, is it? ugh.
-      let size = length * 2;
+      const decoder = new TextDecoder("utf-16"); // this isn't quite right, is it? ugh.
+      const size = length * 2;
       result = decoder.decode(
         this.#view.buffer.slice(this.#index, this.#index + size)
       );
@@ -148,15 +150,15 @@ class BufferReader {
 }
 
 function readArrayLikeSummary(result, reader, flags, depth, shapes) {
-  let shapeId = reader.readUint32();
-  let shape = shapes[shapeId];
+  const shapeId = reader.readUint32();
+  const shape = shapes[shapeId];
 
   if (!shape || shape.length <= 0) {
     return;
   }
   result.class = shape[0];
 
-  let preview = {};
+  const preview = {};
   preview.kind = "ArrayLike";
 
   preview.items = [];
@@ -168,7 +170,7 @@ function readArrayLikeSummary(result, reader, flags, depth, shapes) {
         continue;
       }
 
-      let nestedSummary = readValueSummary(reader, depth + 1, shapes);
+      const nestedSummary = readValueSummary(reader, depth + 1, shapes);
       preview.items.push(nestedSummary);
     }
   }
@@ -180,30 +182,30 @@ function readFunctionSummary(result, reader) {
   result.class = "Function";
   result.name = reader.readString();
   result.parameterNames = [];
-  let numParameterNames = reader.readUint32();
+  const numParameterNames = reader.readUint32();
   for (let i = 0; i < numParameterNames && i < MAX_COLLECTION_VALUES; i++) {
     result.parameterNames.push(reader.readString());
   }
 }
 
 function readMapLikeSummary(result, reader, flags, depth, shapes) {
-  let shapeId = reader.readUint32();
-  let shape = shapes[shapeId];
+  const shapeId = reader.readUint32();
+  const shape = shapes[shapeId];
 
   if (!shape || shape.length <= 0) {
     return;
   }
   result.class = shape[0];
 
-  let preview = {};
+  const preview = {};
   preview.kind = "MapLike";
 
   preview.entries = [];
   preview.size = reader.readUint32();
   if (depth < 1) {
     for (let i = 0; i < preview.length && i < MAX_COLLECTION_VALUES; i++) {
-      let keySummary = readValueSummary(reader, depth + 1, shapes);
-      let valueSummary = readValueSummary(reader, depth + 1, shapes);
+      const keySummary = readValueSummary(reader, depth + 1, shapes);
+      const valueSummary = readValueSummary(reader, depth + 1, shapes);
       preview.entries.push([
         {
           configurable: true,
@@ -225,26 +227,26 @@ function readMapLikeSummary(result, reader, flags, depth, shapes) {
 }
 
 function readGenericObjectSummary(result, reader, flags, depth, shapes) {
-  let shapeId = reader.readUint32();
-  let shape = shapes[shapeId];
+  const shapeId = reader.readUint32();
+  const shape = shapes[shapeId];
 
   if (!shape || shape.length <= 0) {
     return;
   }
   result.class = shape[0];
 
-  let preview = {};
+  const preview = {};
   preview.kind = "Object";
 
-  let hasDenseElements = !!(flags & GENERIC_OBJECT_HAS_DENSE_ELEMENTS);
-  let ownProperties = {};
+  const hasDenseElements = !!(flags & GENERIC_OBJECT_HAS_DENSE_ELEMENTS);
+  const ownProperties = {};
   let ownPropertiesLength = reader.readUint32();
 
   if (depth < 1) {
     for (let i = 1; i < shape.length && i <= MAX_COLLECTION_VALUES; i++) {
-      let header = reader.peekUint8();
-      let id = shape[i];
-      let desc = {
+      const header = reader.peekUint8();
+      const id = shape[i];
+      const desc = {
         configurable: true,
         enumerable: true,
       };
@@ -253,7 +255,7 @@ function readGenericObjectSummary(result, reader, flags, depth, shapes) {
         desc.get = readValueSummary(reader, depth + 1, shapes);
         desc.set = readValueSummary(reader, depth + 1, shapes);
       } else {
-        let nestedSummary = readValueSummary(reader, depth + 1, shapes);
+        const nestedSummary = readValueSummary(reader, depth + 1, shapes);
         desc.writable = true;
         desc.value = nestedSummary;
       }
@@ -262,7 +264,7 @@ function readGenericObjectSummary(result, reader, flags, depth, shapes) {
   }
 
   if (hasDenseElements) {
-    let elementsLength = reader.readUint32();
+    const elementsLength = reader.readUint32();
     if (depth < 1) {
       for (let i = 0; i < elementsLength && i < MAX_COLLECTION_VALUES; i++) {
         if (reader.peekUint8() == JSVAL_TYPE_MAGIC) {
@@ -270,7 +272,7 @@ function readGenericObjectSummary(result, reader, flags, depth, shapes) {
           continue;
         }
         ownPropertiesLength++;
-        let nestedSummary = readValueSummary(reader, depth + 1, shapes);
+        const nestedSummary = readValueSummary(reader, depth + 1, shapes);
         ownProperties[i] = {
           configurable: true,
           enumerable: true,
@@ -288,8 +290,8 @@ function readGenericObjectSummary(result, reader, flags, depth, shapes) {
 }
 
 function readClassFromShape(result, reader, shapes) {
-  let shapeId = reader.readUint32();
-  let shape = shapes[shapeId];
+  const shapeId = reader.readUint32();
+  const shape = shapes[shapeId];
 
   if (!shape || shape.length <= 0) {
     return;
@@ -298,12 +300,12 @@ function readClassFromShape(result, reader, shapes) {
 }
 
 function readNodeSummary(result, reader, depth, shapes) {
-  let preview = {};
+  const preview = {};
   preview.kind = "DOMNode";
   preview.nodeType = reader.readUint16();
   preview.nodeName = reader.readString().toLowerCase();
-  let subkindAndIsConnected = reader.readUint8();
-  let subkind = subkindAndIsConnected & ~(1 << 7);
+  const subkindAndIsConnected = reader.readUint8();
+  const subkind = subkindAndIsConnected & ~(1 << 7);
   preview.isConnected = subkindAndIsConnected >> 7;
 
   if (subkind == EXTERNAL_NODE_SUBKIND_ELEMENT) {
@@ -314,8 +316,8 @@ function readNodeSummary(result, reader, depth, shapes) {
       i < preview.attributesLength && i < MAX_COLLECTION_VALUES;
       i++
     ) {
-      let attrName = reader.readString();
-      let attrVal = reader.readString();
+      const attrName = reader.readString();
+      const attrVal = reader.readString();
       preview.attributes[attrName] = attrVal;
     }
   } else if (subkind == EXTERNAL_NODE_SUBKIND_ATTR) {
@@ -344,18 +346,32 @@ function readNodeSummary(result, reader, depth, shapes) {
   result.preview = preview;
 }
 
+function readExceptionSummary(result, reader, _depth, _shapes) {
+  result.class = "Error";
+  const preview = {};
+  preview.kind = "DOMException";
+  preview.name = reader.readString();
+  preview.message = reader.readString();
+  preview.code = reader.readUint16();
+  preview.result = reader.readUint32();
+  preview.lineNumber = reader.readUint32();
+  preview.columnNumber = reader.readUint32();
+  preview.stack = reader.readString();
+  result.preview = preview;
+}
+
 function readExternalObjectSummary(result, reader, depth, shapes) {
   readClassFromShape(result, reader, shapes);
 
-  let startIndex = reader.getIndex();
-  let size = reader.readUint32();
+  const startIndex = reader.getIndex();
+  const size = reader.readUint32();
   try {
-    let version = reader.readUint8();
+    const version = reader.readUint8();
     if (version != EXTERNAL_SUMMARY_EXPECTED_VERSION) {
       return;
     }
 
-    let kind = reader.readUint8();
+    const kind = reader.readUint8();
     if (kind == EXTERNAL_SUMMARY_KIND_OTHER) {
       return;
     }
@@ -365,6 +381,10 @@ function readExternalObjectSummary(result, reader, depth, shapes) {
         readNodeSummary(result, reader, depth, shapes);
         break;
       }
+      case EXTERNAL_SUMMARY_KIND_EXCEPTION: {
+        readExceptionSummary(result, reader, depth, shapes);
+        break;
+      }
       default:
     }
   } finally {
@@ -372,8 +392,30 @@ function readExternalObjectSummary(result, reader, depth, shapes) {
   }
 }
 
+function readErrorObjectSummary(result, reader, depth, shapes) {
+  const shapeId = reader.readUint32();
+  const shape = shapes[shapeId];
+
+  if (!shape || shape.length <= 0) {
+    return;
+  }
+
+  const preview = {};
+  result.type = "object";
+  result.class = shape[0];
+  result.isError = true;
+  preview.kind = "Error";
+  preview.name = reader.readString();
+  preview.message = reader.readString();
+  preview.stack = reader.readString();
+  preview.fileName = reader.readString();
+  preview.lineNumber = reader.readUint32();
+  preview.columnNumber = reader.readUint32();
+  result.preview = preview;
+}
+
 function readObjectSummary(reader, flags, depth, shapes) {
-  let result = {
+  const result = {
     type: "object",
     class: undefined,
     ownPropertyLength: 0,
@@ -383,7 +425,7 @@ function readObjectSummary(reader, flags, depth, shapes) {
     frozen: false,
   };
 
-  let kind = reader.readUint8();
+  const kind = reader.readUint8();
   switch (kind) {
     case OBJECT_KIND_NOT_IMPLEMENTED:
       readClassFromShape(result, reader, shapes);
@@ -399,6 +441,9 @@ function readObjectSummary(reader, flags, depth, shapes) {
       break;
     case OBJECT_KIND_EXTERNAL:
       readExternalObjectSummary(result, reader, depth, shapes);
+      break;
+    case OBJECT_KIND_ERROR:
+      readErrorObjectSummary(result, reader, depth, shapes);
       break;
     case OBJECT_KIND_WRAPPED_PRIMITIVE_OBJECT: {
       result.wrappedValue = readValueSummary(reader, depth, shapes);
@@ -426,13 +471,13 @@ function readObjectSummary(reader, flags, depth, shapes) {
 }
 
 function readValueSummary(reader, depth, shapes) {
-  let header = reader.readUint8();
-  let type = header & 0x0f;
-  let flags = (header & 0xf0) >> 4;
+  const header = reader.readUint8();
+  const type = header & 0x0f;
+  const flags = (header & 0xf0) >> 4;
   switch (type) {
     case JSVAL_TYPE_DOUBLE:
       if (flags == NUMBER_IS_OUT_OF_LINE_MAGIC) {
-        let value = reader.readFloat64();
+        const value = reader.readFloat64();
         if (value === Infinity) {
           return { type: "Infinity" };
         } else if (value === -Infinity) {

@@ -818,9 +818,7 @@ void GCMarker::markImplicitEdges(T* markedThing) {
 
 template void GCMarker::markImplicitEdges(JSObject*);
 template void GCMarker::markImplicitEdges(BaseScript*);
-#ifdef NIGHTLY_BUILD
 template void GCMarker::markImplicitEdges(JS::Symbol*);
-#endif
 
 }  // namespace js
 
@@ -1041,12 +1039,10 @@ void GCMarker::traverse(GetterSetter* thing) {
 }
 template <uint32_t opts>
 void GCMarker::traverse(JS::Symbol* thing) {
-#ifdef NIGHTLY_BUILD
   if constexpr (bool(opts & MarkingOptions::MarkImplicitEdges)) {
     pushThing<opts>(thing);
     return;
   }
-#endif
   traceChildren<opts>(thing);
 }
 template <uint32_t opts>
@@ -1550,7 +1546,6 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
       }
 
       case MarkStack::SymbolTag: {
-#ifdef NIGHTLY_BUILD
         auto* symbol = ptr.as<JS::Symbol>();
         if constexpr (bool(opts & MarkingOptions::MarkImplicitEdges)) {
           markImplicitEdges(symbol);
@@ -1558,9 +1553,6 @@ inline bool GCMarker::processMarkStackTop(SliceBudget& budget) {
         AutoSetTracingSource asts(tracer(), symbol);
         symbol->traceChildren(tracer());
         return true;
-#else
-        MOZ_CRASH("symbols-as-weakmap-keys is enabled only on Nightly");
-#endif
       }
 
       case MarkStack::JitCodeTag: {

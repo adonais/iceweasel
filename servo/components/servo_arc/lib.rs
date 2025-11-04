@@ -1064,7 +1064,7 @@ impl<A, B> ArcUnion<A, B> {
 
     /// Returns an enum representing a borrow of either A or B.
     #[inline]
-    pub fn borrow(&self) -> ArcUnionBorrow<A, B> {
+    pub fn borrow(&self) -> ArcUnionBorrow<'_, A, B> {
         if self.is_first() {
             let ptr = self.p.as_ptr() as *const ArcInner<A>;
             let borrow = unsafe { ArcBorrow::from_ref(&(*ptr).data) };
@@ -1101,7 +1101,7 @@ impl<A, B> ArcUnion<A, B> {
     }
 
     /// Returns a borrow of the first type if applicable, otherwise `None`.
-    pub fn as_first(&self) -> Option<ArcBorrow<A>> {
+    pub fn as_first(&self) -> Option<ArcBorrow<'_, A>> {
         match self.borrow() {
             ArcUnionBorrow::First(x) => Some(x),
             ArcUnionBorrow::Second(_) => None,
@@ -1109,7 +1109,7 @@ impl<A, B> ArcUnion<A, B> {
     }
 
     /// Returns a borrow of the second type if applicable, otherwise None.
-    pub fn as_second(&self) -> Option<ArcBorrow<B>> {
+    pub fn as_second(&self) -> Option<ArcBorrow<'_, B>> {
         match self.borrow() {
             ArcUnionBorrow::First(_) => None,
             ArcUnionBorrow::Second(x) => Some(x),

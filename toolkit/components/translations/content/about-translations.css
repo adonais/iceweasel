@@ -2,176 +2,148 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
+  --AT-viewport-padding: 20px;
+
   /* Provide defaults for when this page is viewed in "toolkit". */
   background-color: var(--background-color-canvas, #fff);
   color: var(--text-color, #15141a);
 
-  /* Provide backup values for some of the variables used in "browser" so that the styles
-     look nice by default in "toolkit". */
-  --AT-box-background: var(--background-color-box);
-  --AT-box-border-color: var(--in-content-box-border-color, #9e9ea0);
-  --AT-box-info-background: var(--background-color-box-info, #f0f0f4);
-
   /* Variables used in the page layout */
-  --AT-page-margin: 20px;
   --AT-input-padding: 20px;
   /* This is somewhat arbitrary, but works well for the current design. If the computed
      header height changes, this will need to be adjusted. */
   --AT-header-height: 156px;
-  --AT-input-height: calc(min(400px, calc(100vh - var(--AT-header-height))));
-  --AT-select-arrow-inset: 5px;
+
+  --AT-input-height: calc(clamp(300px, 100vh - var(--AT-header-height), 300px) - var(--AT-viewport-padding) * 2);
+
+  --AT-content-width: calc(var(--AT-input-height) * 4.5);
+  --AT-content-max: calc(100vw - var(--AT-viewport-padding) * 2);
 }
 
 body {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  inset: 0;
-  position: absolute;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
   visibility: hidden;
+  row-gap: var(--space-xlarge);
+  margin-block: var(--space-xlarge);
+}
+
+#about-translations-header {
+  display: flex;
   flex-direction: column;
-}
-
-.about-translations-header {
-  display: grid;
-  grid-template-columns: 1fr max-content 1fr;
-  gap: var(--space-small);
-  padding: var(--space-xsmall);
-}
-
-/* Increase the selector specificity to override the base `select` styles. */
-select.about-translations-select {
-  position: relative;
-  padding-inline: 10px 20px;
-  padding-block: 0;
-  min-width: 50%;
-  width: max-content;
-  margin: 5px;
-  background-position: right var(--AT-select-arrow-inset) center;
-}
-
-select#language-to {
-  justify-self: end;
-}
-
-.language-swap-icon {
-  width: 20px;
-  height: 20px;
-  background-image: url("chrome://global/skin/icons/arrows-updown.svg");
-  background-size: contain;
+  width: min(var(--AT-content-width), var(--AT-content-max));
   margin: 0 auto;
-  -moz-context-properties: fill;
-  fill: currentColor;
-  transform: rotateY(180deg) rotateZ(90deg);
+  row-gap: var(--space-medium);
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 
-select.about-translations-select:dir(rtl) {
-  background-position-x: left var(--AT-select-arrow-inset);
-}
-
-.about-translations-contents {
+#about-translations-logo-and-h1 {
   display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  width: calc(100% - var(--AT-page-margin) * 2);
-  max-width: 1200px;
-  background-color: var(--AT-box-background);
-  border: 1px solid var(--AT-box-border-color);
-  border-radius: var(--border-radius-small);
+  align-items: start;
+  justify-content: start;
+  column-gap: var(--space-small);
 }
 
-.about-translations-input {
-  display: flex;
+#about-translations-logo {
+  width: var(--icon-size-large);
+  height: var(--icon-size-large);
+}
+
+#about-translations-h1 {
+  margin: 0;
+}
+
+.about-translations-message-bar {
+  display: none;
+}
+
+#about-translations-main-user-interface {
+  display: none;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: var(--space-medium);
+  width: min(var(--AT-content-width), var(--AT-content-max));
+  margin: 0 auto;
+}
+
+.about-translations-select {
+  font-size: var(--font-size-large);
   width: 100%;
-  border-top: 1px solid var(--AT-box-border-color);
+  margin: 0;
 }
 
-.about-translations-input-start {
-  border-inline-end: 1px solid var(--AT-box-border-color);
+#about-translations-swap-languages-button[type~="icon"]::part(button) {
+  width: var(--size-item-xlarge);
+  height: var(--size-item-xlarge);
+  transform: rotate(90deg) scaleX(-1);
+  background-image: url("chrome://global/skin/icons/arrows-updown.svg");
+  background-size: var(--size-item-medium);
 }
 
-.about-translations-input > * {
-  position: relative;
-  width: 50%;
-}
-
-.about-translations-input-textarea {
-  /* Override user's dragging of the textarea width. */
-  width: 100% !important;
+#about-translations-input-section {
+  width: 100%;
   height: var(--AT-input-height);
-  box-sizing: border-box;
+  max-height: var(--AT-input-height);
+  min-height: calc(var(--AT-input-height) * 0.5);
+}
+
+.about-translations-textarea {
+  width: 100%;
+  height: var(--AT-input-height);
+  min-height: var(--AT-input-height);
   margin: 0;
   padding: var(--AT-input-padding);
-  border: 0;
+  overflow: hidden;
+  resize: none;
 }
 
-.about-translations-input-results-blank {
-  opacity: 0.7;
+#about-translations-empty-section {
+  width: auto;
+  height: auto;
 }
 
-.about-translations-input-results {
-  position: absolute;
-  inset: 0;
-  padding: var(--AT-input-padding);
-  box-sizing: border-box;
-  overflow-y: scroll;
-}
+@media (max-width: 1200px) {
+  #about-translations-main-user-interface {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto 1fr 1fr;
+    gap: var(--space-medium);
+    max-width: calc(100vw - var(--AT-viewport-padding) * 2);
+  }
 
-.about-translations-info {
-  display: none;
-  padding: 10px;
-  background-color: var(--AT-box-info-background);
-  border-radius: var(--border-radius-small);
-  margin-bottom: var(--AT-input-padding);
-}
+  #about-translations-source-select {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  #about-translations-swap-languages-button {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  #about-translations-target-select {
+    grid-column: 3;
+    grid-row: 1;
+  }
 
-.about-translations-info-message {
-  flex: 1;
-  align-self: center;
-}
+  #about-translations-empty-section {
+    display: none;
+  }
 
-.about-translations-info-icon {
-  width: 16px;
-  height: 16px;
-  margin: 10px;
-  background-image: url("chrome://global/skin/icons/info.svg");
-  -moz-context-properties: fill;
-  fill: currentColor;
-}
+  #about-translations-input-section {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 
-@media (max-width: 700px) {
-  :root {
-    --AT-page-margin: 10px;
-  }
-  h1 {
-    margin-top: 15px;
-  }
-  body {
-    padding-bottom: var(--AT-page-margin);
-  }
-  .about-translations-input {
-    flex-direction: column;
-    flex: 1;
-  }
-  .about-translations-input-textarea,
-  .about-translations-input {
-    font-size: 16px;
-  }
-  .about-translations-input > * {
-    width: 100%;
-    flex: 1;
-  }
-  .about-translations-input-end {
-    border-top: 1px solid var(--AT-box-border-color);
-  }
-  .about-translations-input-textarea {
-    height: 100%;
-  }
-  .about-translations-contents {
-    flex: 1;
-  }
-  select.about-translations-select {
-    width: 100%;
+  #about-translations-target-textarea {
+    grid-column: 1 / -1;
+    grid-row: 3;
   }
 }

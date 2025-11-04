@@ -68,7 +68,6 @@ open class NestedGeckoView(context: Context) : GeckoView(context), NestedScrolli
         isNestedScrollingEnabled = true
     }
 
-    @Suppress("ComplexMethod")
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         val event = MotionEvent.obtain(ev)

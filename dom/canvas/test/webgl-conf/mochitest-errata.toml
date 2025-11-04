@@ -5,7 +5,7 @@
 # See python/mozbuild/mozbuild/mozinfo.py for incoming data.
 
 ##########
-# android_version strings
+# os_version strings
 #   https://en.wikipedia.org/wiki/Android_version_history
 #   * Android           13.0: 33 (pixel 5 phones)
 #   * Android           14.0: 34 (samsung a55 phones)
@@ -29,7 +29,6 @@ fail-if = ["true"]
 fail-if = [
   "os == 'linux'",
   "os == 'mac'",
-  "os == 'android' && android_version == '33'",
 ]
 
 ["generated/test_2_conformance2__attribs__gl-vertex-attrib-i-render.html"]
@@ -160,7 +159,6 @@ skip-if = ["os == 'android'"]
 skip-if = ["os == 'android'"]
 
 ["generated/test_2_conformance2__extensions__ovr_multiview2_transform_feedback.html"]
-fail-if = ["os == 'android' && android_version == '33'"]
 
 ["generated/test_2_conformance2__extensions__required-extensions.html"]
 # has_etc1 == has_etc should be true. Was false
@@ -237,7 +235,7 @@ skip-if = [
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'",
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'",
   "os == 'win'",
-  "os == 'android' && android_version == '34'",
+  "os == 'android' && os_version == '14'",
 ]
 
 ["generated/test_2_conformance2__offscreencanvas__offscreencanvas-sync.html"]
@@ -251,7 +249,6 @@ skip-if = [
 
 ["generated/test_2_conformance2__programs__gl-get-frag-data-location.html"]
 # gl.getFragDataLocation(programEs2, 'gl_FragColor') should be -1. Was 0.
-fail-if = ["os == 'android' && android_version == '33'"]
 
 ["generated/test_2_conformance2__query__occlusion-query-scissor.html"]
 skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'"]
@@ -322,7 +319,7 @@ fail-if = ["os == 'linux'"]
 # check COLOR_ATTACHMENT0
 skip-if = [
   "os == 'win'",
-  "os == 'android' && android_version == '34'",
+  "os == 'android' && os_version == '14'",
 ]
 
 # -
@@ -931,7 +928,7 @@ skip-if = ["os == 'linux'"]
 skip-if = [
   "os == 'linux'",
   "os == 'win'",
-  "os == 'android' && android_version == '34'",
+  "os == 'android' && os_version == '14'",
 ]
 
 ["generated/test_2_conformance2__textures__misc__generate-mipmap-with-large-base-level.html"]
@@ -940,7 +937,6 @@ skip-if = [
 ["generated/test_2_conformance2__textures__misc__immutable-tex-render-feedback.html"]
 # E.g. getError expected: NO_ERROR. Was INVALID_VALUE : after draw with texture
 fail-if = [
-  "os == 'android' && android_version == '33'",
   "os == 'linux'",
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'",
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'",
@@ -950,7 +946,7 @@ fail-if = [
 # Assertion failure: [GFX1]: void mozilla::gl::GLContext::fFramebufferTexture2D(GLenum, GLenum, GLenum, GLuint, GLint): Generated unexpected GL_INVALID_VALUE error
 skip-if = [
   "os == 'linux' && debug",
-  "os == 'android' && android_version == '34' && debug",
+  "os == 'android' && os_version == '14' && debug",
 ]
 
 ["generated/test_2_conformance2__textures__misc__origin-clean-conformance-offscreencanvas.html"]
@@ -1448,7 +1444,6 @@ skip-if = ["os == 'win'"]
 ["generated/test_2_conformance__rendering__bind-framebuffer-flush-bug.html"]
 
 ["generated/test_2_conformance__rendering__blending.html"]
-fail-if = ["os == 'android' && android_version == '33'"]
 
 ["generated/test_2_conformance__rendering__gl-scissor-test.html"]
 fail-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'"]
@@ -1620,7 +1615,6 @@ skip-if = ["os == 'win'"]
 skip-if = ["os == 'mac' && os_version == '10.15'"]
 
 ["generated/test_conformance__extensions__ext-sRGB.html"]
-fail-if = ["os == 'android' && android_version == '33'"]
 
 ["generated/test_conformance__extensions__oes-texture-float-with-image-data.html"]
 
@@ -1639,7 +1633,7 @@ skip-if = ["os == 'android'"]
 ["generated/test_conformance__extensions__webgl-compressed-texture-size-limit.html"]
 
 ["generated/test_conformance__extensions__webgl-depth-texture.html"]
-skip-if = ["os == 'android' && android_version == '34'"]
+skip-if = ["os == 'android' && os_version == '14'"]
 
 ["generated/test_conformance__glsl__bugs__array-of-struct-with-int-first-position.html"]
 # Crashes
@@ -1954,7 +1948,6 @@ skip-if = ["os == 'android'"]
 ["generated/test_conformance__rendering__blending.html"]
 # Android 13.0 Pixel5 AArch64
 # dom/canvas/test/webgl-conf/generated/test_conformance__rendering__blending.html | Expected [100,2,3,4], was [1,2,3,4]
-fail-if = ["os == 'android' && android_version == '33'"]
 
 ["generated/test_conformance__rendering__clipping-wide-points.html"]
 fail-if = ["os == 'linux'"]
@@ -2204,8 +2197,7 @@ skip-if = ["os == 'android'"]
 skip-if = [
   "win11_2009", # win11 - 50/50 intermittent
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # win11 - 50/50 intermittent
-  "os == 'android' && android_version == '33'", # Bug 1873144
-  "os == 'android' && android_version == '34'", # Bug 1873144
+  "os == 'android' && os_version == '14'", # Bug 1873144
 ]
 ####################
 # Bugs surfaced during fx93 CTS update

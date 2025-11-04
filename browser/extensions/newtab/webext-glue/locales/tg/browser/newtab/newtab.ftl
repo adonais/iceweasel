@@ -478,6 +478,12 @@ newtab-weather-menu-hide-weather = Нинҳон кардани обу ҳаво �
 newtab-weather-menu-learn-more = Маълумоти бештар
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Айни ҳол маълумот дар бораи обу ҳаво дастнорас аст.
+newtab-weather-opt-in-not-now =
+    .label = Ҳоло не
+newtab-weather-opt-in-yes =
+    .label = Ҳа
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Шаҳри Ню-Йорк
 
 ## Topic Labels
 
@@ -644,6 +650,9 @@ newtab-widget-lists-input-menu-move-up = Ба боло гузоштан
 newtab-widget-lists-input-menu-move-down = Ба поён гузоштан
 newtab-widget-lists-input-menu-delete = Нест кардан
 newtab-widget-lists-input-menu-edit = Таҳрир кардан
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Эҷод кардани рӯйхати нав
 newtab-widget-lists-name-label-default =
     .label = Рӯйхати вазифаҳо
 newtab-widget-lists-name-placeholder-default =

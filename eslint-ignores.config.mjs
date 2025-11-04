@@ -95,6 +95,7 @@ export default [
 
   // Ignore devtools generated code
   "devtools/**/*.snapshot.mjs",
+  "tools/profiler/tests/browser/browser_test_feature_jstracing_objtestutils.snapshot.mjs",
   "devtools/client/webconsole/test/node/fixtures/stubs/*.js",
   "!devtools/client/webconsole/test/node/fixtures/stubs/index.js",
   "devtools/client/shared/source-map-loader/test/browser/fixtures/*.js",
@@ -158,6 +159,7 @@ export default [
   "dom/base/test/jsmodules/module_badSyntax.mjs",
   "dom/base/test/jsmodules/test_syntaxErrorInline.html",
   "dom/base/test/jsmodules/test_syntaxErrorInlineAsync.html",
+  "dom/base/test/jsmodules/parse_error.js",
   "dom/base/test/test_bug687859.html",
   "dom/media/webrtc/tests/mochitests/identity/idp-bad.js",
   "dom/security/test/general/file_nonscript.json",
@@ -210,6 +212,9 @@ export default [
   "mobile/android/android-components/docs/assets/js/icon-js.js",
   "mobile/android/fenix/app/src/androidTest/assets/",
   "mobile/android/focus-android/app/src/androidTest/assets/",
+
+  // Contains pref files.
+  "mobile/ios/app/",
 
   // Pre-processed/pref files
   "modules/libpref/greprefs.js",

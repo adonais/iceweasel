@@ -270,6 +270,18 @@ async function waitForMessageByType(hud, text, typeSelector) {
 }
 
 /**
+ * Wait for the Source editor to be available.
+ *
+ * @param {Object} panel
+ * @returns
+ */
+async function waitForSourceEditor(panel) {
+  return waitUntil(() => {
+    return !!panel.querySelector(".cm-editor");
+  });
+}
+
+/**
  * Execute an input expression.
  *
  * @param {Object} hud : The webconsole.
@@ -520,25 +532,14 @@ function waitForNodeMutation(node, observeConfig = {}) {
  *                         @see findMessageByType.
  *        - typeSelector: {string} A part of selector for the message, to
  *                                 specify the message type.
- *        - expectUrl: {boolean} Whether the URL in the opened source should
- *                               match the link, or whether it is expected to
- *                               be null.
- *        - expectLine: {boolean} It indicates if there is the need to check
- *                                the line.
- *        - expectColumn: {boolean} It indicates if there is the need to check
- *                                the column.
+ *        - url : {String|null} URL expected to be opened.
+ *        - line : {Number|null} Line expected to be opened.
+ *        - column : {Number|null} Column expected to be opened.
  *        - logPointExpr: {String} The logpoint expression
  */
 async function testOpenInDebugger(
   hud,
-  {
-    text,
-    typeSelector,
-    expectUrl = true,
-    expectLine = true,
-    expectColumn = true,
-    logPointExpr = undefined,
-  }
+  { text, typeSelector, url, column, line, logPointExpr = undefined }
 ) {
   info(`Finding message for open-in-debugger test; text is "${text}"`);
   const messageNode = await waitFor(() =>
@@ -546,103 +547,13 @@ async function testOpenInDebugger(
   );
   const locationNode = messageNode.querySelector(".message-location");
   ok(locationNode, "The message does have a location link");
-  await checkClickOnNode(
-    hud,
+
+  await clickAndAssertFrameLinkNode(
     hud.toolbox,
     locationNode,
-    expectUrl,
-    expectLine,
-    expectColumn,
+    { url, column, line },
     logPointExpr
   );
-}
-
-/**
- * Helper function for testOpenInDebugger.
- */
-async function checkClickOnNode(
-  hud,
-  toolbox,
-  frameLinkNode,
-  expectUrl,
-  expectLine,
-  expectColumn,
-  logPointExpr
-) {
-  info("checking click on node location");
-
-  // If the debugger hasn't fully loaded yet and breakpoints are still being
-  // added when we click on the logpoint link, the logpoint panel might not
-  // render. Work around this for now, see bug 1592854.
-  await waitForTime(1000);
-
-  const onSourceInDebuggerOpened = once(hud, "source-in-debugger-opened");
-
-  EventUtils.sendMouseEvent(
-    { type: "click" },
-    frameLinkNode.querySelector(".frame-link-filename")
-  );
-
-  await onSourceInDebuggerOpened;
-
-  const dbg = toolbox.getPanel("jsdebugger");
-
-  // Wait for the source to finish loading, if it is pending.
-  await waitFor(
-    () =>
-      !!dbg._selectors.getSelectedSource(dbg._getState()) &&
-      !!dbg._selectors.getSelectedLocation(dbg._getState())
-  );
-
-  if (expectUrl) {
-    const url = frameLinkNode.getAttribute("data-url");
-    ok(url, `source url found ("${url}")`);
-
-    is(
-      dbg._selectors.getSelectedSource(dbg._getState()).url,
-      url,
-      "expected source url"
-    );
-  }
-  if (expectLine) {
-    const line = frameLinkNode.getAttribute("data-line");
-    ok(line, `source line found ("${line}")`);
-
-    is(
-      parseInt(dbg._selectors.getSelectedLocation(dbg._getState()).line, 10),
-      parseInt(line, 10),
-      "expected source line"
-    );
-  }
-  if (expectColumn) {
-    const column = frameLinkNode.getAttribute("data-column");
-    ok(column, `source column found ("${column}")`);
-
-    // Redux location object uses 0-based column, while we display a 1-based one.
-    is(
-      parseInt(dbg._selectors.getSelectedLocation(dbg._getState()).column, 10) +
-        1,
-      parseInt(column, 10),
-      "expected source column"
-    );
-  }
-
-  if (logPointExpr !== undefined && logPointExpr !== "") {
-    const inputEl = dbg.panelWin.document.activeElement;
-
-    const isPanelFocused =
-      inputEl.classList.contains("cm-content") &&
-      inputEl.closest(".conditional-breakpoint-panel.log-point");
-
-    ok(isPanelFocused, "The textarea of logpoint panel is focused");
-
-    const inputValue = inputEl.parentElement.parentElement.innerText.trim();
-    is(
-      inputValue,
-      logPointExpr,
-      "The input in the open logpoint panel matches the logpoint expression"
-    );
-  }
 }
 
 /**

@@ -1526,7 +1526,7 @@ struct HistogramMarker {
     schema.SetTooltipLabel(
         "{marker.data.id}[{marker.data.key}] {marker.data.val}");
     schema.SetTableLabel(
-        "{marker.name} - {marker.data.id}[{marker.data.key}]: "
+        "{marker.data.id}[{marker.data.key}]: "
         "{marker.data.val}");
     return schema;
   }

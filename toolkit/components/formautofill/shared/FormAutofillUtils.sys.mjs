@@ -227,6 +227,7 @@ FormAutofillUtils = {
     const prefName = AUTOFILL_CREDITCARDS_OS_AUTH_LOCKED_PREF;
     Services.prefs.setBoolPref(prefName, enable);
     Services.prefs.lockPref(prefName);
+    Services.obs.notifyObservers(null, "OSAuthEnabledChange");
   },
 
   async verifyUserOSAuth(

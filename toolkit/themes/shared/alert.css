@@ -20,7 +20,7 @@
 
   #alertBox {
     margin: 10px;
-    border-radius: 1px;
+    border-radius: var(--border-radius-xsmall);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.59);
   }
 
@@ -40,7 +40,7 @@
   }
 
   #alertBox {
-    border-radius: 1px;
+    border-radius: var(--border-radius-xsmall);
   }
 }
 

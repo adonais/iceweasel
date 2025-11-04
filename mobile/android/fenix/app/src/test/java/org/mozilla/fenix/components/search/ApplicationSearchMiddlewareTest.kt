@@ -8,6 +8,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.BrowserAction
@@ -20,6 +21,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ApplicationSearchMiddlewareTest {
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `GIVEN ApplicationSearchLoaderMiddleware WHEN InitAction is received THEN dispatch ApplicationSearchEnginesLoaded`() = runTest {
         val middleware = ApplicationSearchMiddleware(

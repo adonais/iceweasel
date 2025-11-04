@@ -394,6 +394,22 @@ class InactivePropertyHelper {
         fixId: "inactive-css-not-block-container-fix",
         msgId: "inactive-css-not-block-container",
       },
+      // Block, flex, and grid container properties used on non-block, non-flex or non-grid container elements.
+      {
+        invalidProperties: [
+          "overflow",
+          "overflow-block",
+          "overflow-inline",
+          "overflow-x",
+          "overflow-y",
+        ],
+        when: () =>
+          !this.isBlockContainer() &&
+          !this.flexContainer &&
+          !this.gridContainer,
+        fixId: "inactive-css-not-block-flex-grid-container-fix",
+        msgId: "inactive-css-not-block-flex-grid-container",
+      },
       // shape-image-threshold, shape-margin, shape-outside properties used on non-floated elements.
       {
         invalidProperties: [

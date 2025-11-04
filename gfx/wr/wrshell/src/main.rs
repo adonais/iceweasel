@@ -7,6 +7,8 @@ mod command;
 mod debug_commands;
 mod gui;
 mod net;
+mod script_commands;
+mod wrench;
 
 use argh::FromArgs;
 use std::str;
@@ -50,6 +52,7 @@ fn main() {
 
     let mut cmd_list = command::CommandList::new();
     debug_commands::register(&mut cmd_list);
+    script_commands::register(&mut cmd_list);
 
     match args.mode {
         Mode::Repl => {

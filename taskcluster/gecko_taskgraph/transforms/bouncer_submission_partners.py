@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 
 
 PARTNER_PLATFORMS_TO_BOUNCER = {
-    "linux-shippable": "linux",
     "linux64-shippable": "linux64",
     "macosx64-shippable": "osx",
     "win32-shippable": "win",

@@ -134,7 +134,10 @@ mod test {
         let metric = &metrics::test_only_ipc::an_unordered_labeled_boolean;
         metric.get("a_label").set(true);
 
-        assert!(metric.get("a_label").test_get_value(Some("test-ping".to_string())).unwrap());
+        assert!(metric
+            .get("a_label")
+            .test_get_value(Some("test-ping".to_string()))
+            .unwrap());
     }
 
     #[test]

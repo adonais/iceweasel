@@ -16,6 +16,7 @@
 #include "mozilla/MaybeLeakRefPtr.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/ProfilerRunnable.h"
+#include "mozilla/TargetShutdownTaskSet.h"
 #include "nsIEventTarget.h"
 #include "nsITargetShutdownTask.h"
 #include "nsThreadUtils.h"
@@ -84,18 +85,15 @@ class MessageLoop::EventTarget : public nsISerialEventTarget,
   NS_DECL_NSIEVENTTARGET_FULL
 
   void TargetShutdown() override {
-    nsTArray<nsCOMPtr<nsITargetShutdownTask>> shutdownTasks;
+    TargetShutdownTaskSet::TasksArray shutdownTasks;
     {
       mozilla::MutexAutoLock lock(mMutex);
       if (mShutdownTasksRun) {
         return;
       }
-      mShutdownTasksRun = true;
-      shutdownTasks = std::move(mShutdownTasks);
-      mShutdownTasks.Clear();
+      shutdownTasks = mShutdownTasks.Extract();
     }
-
-    for (auto& task : shutdownTasks) {
+    for (const auto& task : shutdownTasks) {
       task->TargetShutdown();
     }
   }
@@ -110,7 +108,6 @@ class MessageLoop::EventTarget : public nsISerialEventTarget,
     if (mLoop) {
       mLoop->RemoveDestructionObserver(this);
     }
-    MOZ_ASSERT(mShutdownTasks.IsEmpty());
   }
 
   void WillDestroyCurrentMessageLoop() override {
@@ -128,8 +125,7 @@ class MessageLoop::EventTarget : public nsISerialEventTarget,
 
   mozilla::Mutex mMutex;
   bool mShutdownTasksRun MOZ_GUARDED_BY(mMutex) = false;
-  nsTArray<nsCOMPtr<nsITargetShutdownTask>> mShutdownTasks
-      MOZ_GUARDED_BY(mMutex);
+  TargetShutdownTaskSet mShutdownTasks MOZ_GUARDED_BY(mMutex);
   MessageLoop* mLoop MOZ_GUARDED_BY(mMutex);
 };
 
@@ -173,7 +169,7 @@ NS_IMETHODIMP
 MessageLoop::EventTarget::DelayedDispatch(already_AddRefed<nsIRunnable> aEvent,
                                           uint32_t aDelayMs) {
   mozilla::MutexAutoLock lock(mMutex);
-  if (!mLoop) {
+  if (!mLoop || mShutdownTasksRun) {
     return NS_ERROR_NOT_INITIALIZED;
   }
 
@@ -187,18 +183,17 @@ MessageLoop::EventTarget::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
   if (!mLoop || mShutdownTasksRun) {
     return NS_ERROR_UNEXPECTED;
   }
-  MOZ_ASSERT(!mShutdownTasks.Contains(aTask));
-  mShutdownTasks.AppendElement(aTask);
+  mShutdownTasks.AddTask(aTask);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 MessageLoop::EventTarget::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   mozilla::MutexAutoLock lock(mMutex);
-  if (!mLoop || mShutdownTasksRun) {
+  if (!mLoop) {
     return NS_ERROR_UNEXPECTED;
   }
-  return mShutdownTasks.RemoveElement(aTask) ? NS_OK : NS_ERROR_UNEXPECTED;
+  return mShutdownTasks.RemoveTask(aTask);
 }
 
 //------------------------------------------------------------------------------

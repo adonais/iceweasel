@@ -1,5 +1,9 @@
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
+
 /* import-globals-from trr_common.js */
 
 // Allow telemetry probes which may otherwise be disabled for some

@@ -8,6 +8,10 @@
 
 "use strict";
 
+const { NodeHTTPServer } = ChromeUtils.importESModule(
+  "resource://testing-common/NodeServer.sys.mjs"
+);
+
 const responseServerTiming = [
   { metric: "metric", duration: "123.4", description: "description" },
   { metric: "metric2", duration: "456.78", description: "description1" },

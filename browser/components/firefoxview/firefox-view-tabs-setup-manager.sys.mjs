@@ -247,7 +247,7 @@ export const TabsSetupFlowManager = new (class {
         }
         this._lastFxASignedIn = this.fxaSignedIn;
         break;
-      case TOPIC_DEVICELIST_UPDATED:
+      case TOPIC_DEVICELIST_UPDATED: {
         this.logger.debug("Handling observer notification:", topic, data);
         const { deviceStateChanged, deviceAdded } = await this.refreshDevices();
         if (deviceStateChanged) {
@@ -261,6 +261,7 @@ export const TabsSetupFlowManager = new (class {
           }
         }
         break;
+      }
       case FXA_DEVICE_CONNECTED:
       case FXA_DEVICE_DISCONNECTED:
         await lazy.fxAccounts.device.refreshDeviceList({ ignoreCached: true });

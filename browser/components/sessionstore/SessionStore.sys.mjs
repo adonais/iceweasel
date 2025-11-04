@@ -126,6 +126,7 @@ const TAB_EVENTS = [
   "TabUngrouped",
   "TabGroupCollapse",
   "TabGroupExpand",
+  "TabSplitViewActivate",
 ];
 
 const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
@@ -200,6 +201,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
 ChromeUtils.defineLazyGetter(lazy, "blankURI", () => {
   return Services.io.newURI("about:blank");
 });
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "gRestoreWindowsToVirtualDesktop",
+  "browser.sessionstore.restore_windows_to_virtual_desktop"
+);
 
 /**
  * |true| if we are in debug mode, |false| otherwise.
@@ -1920,6 +1927,11 @@ var SessionStoreInternal = {
           this._notifyOfClosedObjectsChange();
         }
         break;
+      case "TabSplitViewActivate":
+        for (const tab of aEvent.detail.tabs) {
+          this.maybeRestoreTabContent(tab);
+        }
+        break;
       case "oop-browser-crashed":
       case "oop-browser-buildid-mismatch":
         if (aEvent.isTopFrame) {
@@ -3633,23 +3645,27 @@ var SessionStoreInternal = {
         aWindow.gBrowser.tabContainer.selectedIndex;
 
       let tab = aWindow.gBrowser.selectedTab;
-      let browser = tab.linkedBrowser;
+      this.maybeRestoreTabContent(tab);
+    }
+  },
 
-      if (TAB_STATE_FOR_BROWSER.get(browser) == TAB_STATE_NEEDS_RESTORE) {
-        // If BROWSER_STATE is still available for the browser and it is
-        // If __SS_restoreState is still on the browser and it is
-        // TAB_STATE_NEEDS_RESTORE, then we haven't restored this tab yet.
-        //
-        // It's possible that this tab was recently revived, and that
-        // we've deferred showing the tab crashed page for it (if the
-        // tab crashed in the background). If so, we need to re-enter
-        // the crashed state, since we'll be showing the tab crashed
-        // page.
-        if (lazy.TabCrashHandler.willShowCrashedTab(browser)) {
-          this.enterCrashedState(browser);
-        } else {
-          this.restoreTabContent(tab);
-        }
+  maybeRestoreTabContent(tab) {
+    let browser = tab.linkedBrowser;
+
+    if (TAB_STATE_FOR_BROWSER.get(browser) == TAB_STATE_NEEDS_RESTORE) {
+      // If BROWSER_STATE is still available for the browser and it is
+      // If __SS_restoreState is still on the browser and it is
+      // TAB_STATE_NEEDS_RESTORE, then we haven't restored this tab yet.
+      //
+      // It's possible that this tab was recently revived, and that
+      // we've deferred showing the tab crashed page for it (if the
+      // tab crashed in the background). If so, we need to re-enter
+      // the crashed state, since we'll be showing the tab crashed
+      // page.
+      if (lazy.TabCrashHandler.willShowCrashedTab(browser)) {
+        this.enterCrashedState(browser);
+      } else {
+        this.restoreTabContent(tab);
       }
     }
   },
@@ -5726,7 +5742,7 @@ var SessionStoreInternal = {
     this._sendWindowRestoringNotification(aWindow);
     this._setWindowStateBusy(aWindow);
 
-    if (winData.workspaceID) {
+    if (winData.workspaceID && lazy.gRestoreWindowsToVirtualDesktop) {
       this._log.debug(`Moving window to workspace: ${winData.workspaceID}`);
       aWindow.moveToWorkspace(winData.workspaceID);
     }
@@ -5906,14 +5922,6 @@ var SessionStoreInternal = {
     arrowScrollbox.smoothScroll = smoothScroll;
 
     Glean.sessionRestore.restoreWindow.stopAndAccumulate(timerId);
-
-    this._setWindowStateReady(aWindow);
-
-    this._sendWindowRestoredNotification(aWindow);
-
-    Services.obs.notifyObservers(aWindow, NOTIFY_SINGLE_WINDOW_RESTORED);
-
-    this._sendRestoreCompletedNotifications();
   },
 
   /**
@@ -5937,7 +5945,6 @@ var SessionStoreInternal = {
         return true;
       } catch (error) {
         // Can't setup speculative connection for this url.
-        console.error(error);
         return false;
       }
     }
@@ -5977,9 +5984,11 @@ var SessionStoreInternal = {
   _restoreWindowsFeaturesAndTabs(windows) {
     // First, we restore window features, so that when users start interacting
     // with a window, we don't steal the window focus.
+    let resizePromises = [];
     for (let window of windows) {
       let state = this._statesToRestore[WINDOW_RESTORE_IDS.get(window)];
-      this.restoreWindowFeatures(window, state.windows[0]);
+      // Wait for these promises after we've restored data into them below.
+      resizePromises.push(this.restoreWindowFeatures(window, state.windows[0]));
     }
 
     // Then we restore data into windows.
@@ -5991,6 +6000,20 @@ var SessionStoreInternal = {
         state.options || { overwriteTabs: true }
       );
       WINDOW_RESTORE_ZINDICES.delete(window);
+    }
+    for (let resizePromise of resizePromises) {
+      resizePromise.then(resizedWindow => {
+        this._setWindowStateReady(resizedWindow);
+
+        this._sendWindowRestoredNotification(resizedWindow);
+
+        Services.obs.notifyObservers(
+          resizedWindow,
+          NOTIFY_SINGLE_WINDOW_RESTORED
+        );
+
+        this._sendRestoreCompletedNotifications();
+      });
     }
   },
 
@@ -6496,6 +6519,7 @@ var SessionStoreInternal = {
       }
     }
 
+    let promiseParts = Promise.withResolvers();
     aWindow.setTimeout(() => {
       this.restoreDimensions(
         aWindow,
@@ -6507,7 +6531,9 @@ var SessionStoreInternal = {
         aWinData.sizemodeBeforeMinimized || ""
       );
       this.restoreSidebar(aWindow, aWinData.sidebar, aWinData.isPopup);
+      promiseParts.resolve(aWindow);
     }, 0);
+    return promiseParts.promise;
   },
 
   /**
@@ -7432,6 +7458,16 @@ var SessionStoreInternal = {
         // notification in order not to retrigger startup observers that
         // are listening for NOTIFY_WINDOWS_RESTORED.
         Services.obs.notifyObservers(null, NOTIFY_BROWSER_STATE_RESTORED);
+      }
+
+      // If all windows are on other virtual desktops (on Windows), open a new
+      // window on this desktop so the user isn't left wondering where their
+      // session went. See bug 1812489.
+      let anyWindowNotCloaked = this._browserWindows[Symbol.iterator]().some(
+        window => !window.isCloaked
+      );
+      if (!anyWindowNotCloaked) {
+        lazy.BrowserWindowTracker.openWindow();
       }
 
       this._browserSetState = false;

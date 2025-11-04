@@ -259,14 +259,21 @@ cctools-port:
     fetch:
         type: git
         repo: https://github.com/tpoechtrager/cctools-port
-        revision: 30518813875aed656aa7f18b6d485feee25f8f87
+        revision: 55943b0c68c0eaf8b8ad2f51f63738bbc7b0c86b
 
 libtapi:
     description: libtapi source code
     fetch:
         type: git
         repo: https://github.com/tpoechtrager/apple-libtapi
-        revision: b4f141a16c7c82f75973429c92242a8c7de3ddb1
+        revision: aed9334283e3e290bba622ee980bde2322e4d516
+
+libdispatch:
+    description: libdispatch source code
+    fetch:
+        type: git
+        repo: https://github.com/tpoechtrager/apple-libdispatch
+        revision: 323b9b4e0ca05d6c56a0c2f2d7d8d47363e612b7
 
 ldid:
     description: ldid source code
@@ -543,9 +550,10 @@ sonatype-nexus:
     description: Sonatype Nexus Maven repository service
     fetch:
         type: static-url
-        url: https://download.sonatype.com/nexus/oss/nexus-2.14.18-01-bundle.tar.gz
-        sha256: 350af8b270bec7fda5861a15b8a5b7870fd8903d0b9a210754113d5a966ce6a6
-        size: 83493896
+        # https://download.sonatype.com/nexus/oss/nexus-2.15.2-03-bundle.tar.gz
+        url: https://tooltool.mozilla-releng.net/sha512/8d0cd58839f95b8fa02eba82fd532b15795b59e93968bcfcf179383849cf3a09f3c2a76480c5583ebf4ee1b1528bfccbda5ad6d92f175817ebc6179d85a93b5b
+        sha256: cec1d80dad0be8a34a902aa00e666da547f51e83dc3a4a28b50b3ec36fe433a8
+        size: 89526162
         artifact-name: sonatype-nexus.tar.zst
         strip-components: 1
         add-prefix: sonatype-nexus/
@@ -822,3 +830,20 @@ jj:
         type: git
         repo: https://github.com/jj-vcs/jj
         revision: 94269d2e7228ff502b2116258e5ae6b3b07ec434
+
+firefox-profiler:
+    description: firefox profiler source code
+    fetch:
+        type: git
+        repo: https://github.com/firefox-devtools/profiler
+        revision: 5a054f9ae741515b8112d4c248e8ac096ee7a3ce
+
+# See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
+windowsappsdk-redist:
+    description: Windows App SDK Redistributable
+    fetch:
+        type: static-url
+        url: https://aka.ms/windowsappsdk/1.8/1.8.250916003/Microsoft.WindowsAppRuntime.Redist.1.8.zip
+        sha256: a2dccd1d4d3b47857e1f4c36a140b976ff2da61fff8dc9fcf029cd8e829a61fc
+        size: 463549393
+        artifact-name: Microsoft.WindowsAppRuntime.Redist.tar.zst

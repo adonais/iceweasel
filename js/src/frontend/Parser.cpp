@@ -1276,23 +1276,22 @@ Maybe<EvalScope::ParserData*> ParserBase::newEvalScopeData(
   return NewEvalScopeData(fc_, scope, stencilAlloc(), pc_);
 }
 
-static Maybe<FunctionScope::ParserData*> NewFunctionScopeData(
-    FrontendContext* fc, ParseContext::Scope& scope, bool hasParameterExprs,
-    LifoAlloc& alloc, ParseContext* pc) {
-  ParserBindingNameVector positionalFormals(fc);
-  ParserBindingNameVector formals(fc);
-  ParserBindingNameVector vars(fc);
+Maybe<FunctionScope::ParserData*> ParserBase::newFunctionScopeData(
+    ParseContext::Scope& scope, bool hasParameterExprs) {
+  ParserBindingNameVector positionalFormals(fc_);
+  ParserBindingNameVector formals(fc_);
+  ParserBindingNameVector vars(fc_);
 
   bool allBindingsClosedOver =
-      pc->sc()->allBindingsClosedOver() || scope.tooBigToOptimize();
+      pc_->sc()->allBindingsClosedOver() || scope.tooBigToOptimize();
   bool argumentBindingsClosedOver =
-      allBindingsClosedOver || pc->isGeneratorOrAsync();
-  bool hasDuplicateParams = pc->functionBox()->hasDuplicateParameters;
+      allBindingsClosedOver || pc_->isGeneratorOrAsync();
+  bool hasDuplicateParams = pc_->functionBox()->hasDuplicateParameters;
 
   // Positional parameter names must be added in order of appearance as they are
   // referenced using argument slots.
-  for (size_t i = 0; i < pc->positionalFormalParameterNames().length(); i++) {
-    TaggedParserAtomIndex name = pc->positionalFormalParameterNames()[i];
+  for (size_t i = 0; i < pc_->positionalFormalParameterNames().length(); i++) {
+    TaggedParserAtomIndex name = pc_->positionalFormalParameterNames()[i];
 
     ParserBindingName bindName;
     if (name) {
@@ -1308,9 +1307,9 @@ static Maybe<FunctionScope::ParserData*> NewFunctionScopeData(
       // name should be on the environment, as otherwise the environment
       // object would have multiple, same-named properties.
       if (hasDuplicateParams) {
-        for (size_t j = pc->positionalFormalParameterNames().length() - 1;
+        for (size_t j = pc_->positionalFormalParameterNames().length() - 1;
              j > i; j--) {
-          if (TaggedParserAtomIndex(pc->positionalFormalParameterNames()[j]) ==
+          if (TaggedParserAtomIndex(pc_->positionalFormalParameterNames()[j]) ==
               name) {
             closedOver = false;
             break;
@@ -1326,7 +1325,7 @@ static Maybe<FunctionScope::ParserData*> NewFunctionScopeData(
     }
   }
 
-  for (BindingIter bi = scope.bindings(pc); bi; bi++) {
+  for (BindingIter bi = scope.bindings(pc_); bi; bi++) {
     ParserBindingName binding(bi.name(),
                               allBindingsClosedOver || bi.closedOver());
     switch (bi.kind()) {
@@ -1360,12 +1359,21 @@ static Maybe<FunctionScope::ParserData*> NewFunctionScopeData(
     }
   }
 
+  // This should already be checked by GeneralParser::functionArguments.
+  MOZ_ASSERT(positionalFormals.length() <= UINT16_MAX);
+
+  if (positionalFormals.length() + formals.length() > UINT16_MAX) {
+    error(JSMSG_TOO_MANY_FUN_ARGS);
+    return Nothing();
+  }
+
   FunctionScope::ParserData* bindings = nullptr;
   uint32_t numBindings =
       positionalFormals.length() + formals.length() + vars.length();
 
   if (numBindings > 0) {
-    bindings = NewEmptyBindingData<FunctionScope>(fc, alloc, numBindings);
+    bindings =
+        NewEmptyBindingData<FunctionScope>(fc_, stencilAlloc(), numBindings);
     if (!bindings) {
       return Nothing();
     }
@@ -1380,7 +1388,7 @@ static Maybe<FunctionScope::ParserData*> NewFunctionScopeData(
   return Some(bindings);
 }
 
-// Compute if `NewFunctionScopeData` would return any binding list with any
+// Compute if `newFunctionScopeData` would return any binding list with any
 // entry marked as closed-over. This is done without the need to allocate the
 // binding list. If true, an EnvironmentObject will be needed at runtime.
 bool FunctionScopeHasClosedOverBindings(ParseContext* pc) {
@@ -1402,12 +1410,6 @@ bool FunctionScopeHasClosedOverBindings(ParseContext* pc) {
   }
 
   return false;
-}
-
-Maybe<FunctionScope::ParserData*> ParserBase::newFunctionScopeData(
-    ParseContext::Scope& scope, bool hasParameterExprs) {
-  return NewFunctionScopeData(fc_, scope, hasParameterExprs, stencilAlloc(),
-                              pc_);
 }
 
 VarScope::ParserData* NewEmptyVarScopeData(FrontendContext* fc,

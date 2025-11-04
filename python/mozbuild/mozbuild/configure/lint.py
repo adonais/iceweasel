@@ -126,7 +126,11 @@ class LintSandbox(ConfigureSandbox):
         used_args = set()
 
         for instr in Bytecode(func):
-            if instr.opname in ("LOAD_FAST", "LOAD_CLOSURE"):
+            if instr.opname == "LOAD_FAST_LOAD_FAST":
+                for argval in instr.argval:
+                    if argval in all_args:
+                        used_args.add(argval)
+            elif instr.opname in ("LOAD_FAST", "LOAD_CLOSURE"):
                 if instr.argval in all_args:
                     used_args.add(instr.argval)
 
@@ -352,9 +356,12 @@ class LintSandbox(ConfigureSandbox):
                 # Raise the same kind of error as what would happen during
                 # execution.
                 e = NameError(f"global name '{instr.argval}' is not defined")
-                if instr.starts_line is None:
+                # python 3.13 changed .starts_line to be a bool and moved the
+                # line number itself to .line_number.
+                line_number = getattr(instr, "line_number", instr.starts_line)
+                if line_number is None:
                     self._raise_from(e, func)
                 else:
-                    self._raise_from(e, func, instr.starts_line - code.co_firstlineno)
+                    self._raise_from(e, func, line_number - code.co_firstlineno)
 
         return wrapped

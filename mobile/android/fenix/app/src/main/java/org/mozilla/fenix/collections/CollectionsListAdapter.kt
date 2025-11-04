@@ -9,6 +9,8 @@ import android.view.ViewGroup
 import android.widget.CheckedTextView
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.updatePaddingRelative
 import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.support.ktx.android.view.putCompoundDrawablesRelativeWithIntrinsicBounds
@@ -47,11 +49,21 @@ class CollectionsListAdapter(
             )
             holder.textView.compoundDrawablePadding =
                 resources.getDimensionPixelSize(R.dimen.tab_tray_new_collection_drawable_padding)
+            val drawable = AppCompatResources.getDrawable(
+                holder.textView.context,
+                iconsR.drawable.mozac_ic_plus_24,
+            )?.mutate()
+            drawable?.let {
+                DrawableCompat.setTint(
+                    it,
+                    ContextCompat.getColor(
+                        holder.textView.context,
+                        R.color.fx_mobile_icon_color_primary,
+                    ),
+                )
+            }
             holder.textView.putCompoundDrawablesRelativeWithIntrinsicBounds(
-                start = AppCompatResources.getDrawable(
-                    holder.textView.context,
-                    iconsR.drawable.mozac_ic_plus_24,
-                ),
+                start = drawable,
             )
         } else {
             holder.textView.isChecked = checkedPosition == position

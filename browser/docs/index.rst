@@ -15,6 +15,7 @@ This is the nascent documentation of the Firefox front-end code.
    CategoryManagerIndirection
    components/customizableui/docs/index
    components/enterprisepolicies/docs/index
+   components/taskbartabs/docs/index
    extensions/formautofill/docs/index
    extensions/newtab/docs/index
    components/aboutwelcome/docs/index

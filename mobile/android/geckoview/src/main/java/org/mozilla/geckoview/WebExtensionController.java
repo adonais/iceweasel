@@ -29,6 +29,7 @@ import org.mozilla.gecko.util.BundleEventListener;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.geckoview.WebExtension.InstallException;
+import org.mozilla.geckoview.WebExtension.InvalidMetaDataException;
 
 /**
  * Controller for managing WebExtensions within a GeckoRuntime instance. Provides functionality for
@@ -1051,52 +1052,60 @@ public class WebExtensionController {
 
     Log.d(LOGTAG, "handleMessage " + event);
 
-    if ("GeckoView:WebExtension:InstallPrompt".equals(event)) {
-      installPromptRequest(bundle, callback);
-      return;
-    } else if ("GeckoView:WebExtension:UpdatePrompt".equals(event)) {
-      updatePrompt(bundle, callback);
-      return;
-    } else if ("GeckoView:WebExtension:DebuggerListUpdated".equals(event)) {
-      if (mDebuggerDelegate != null) {
-        mDebuggerDelegate.onExtensionListUpdated();
+    try {
+      if ("GeckoView:WebExtension:InstallPrompt".equals(event)) {
+        installPromptRequest(bundle, callback);
+        return;
+      } else if ("GeckoView:WebExtension:UpdatePrompt".equals(event)) {
+        updatePrompt(bundle, callback);
+        return;
+      } else if ("GeckoView:WebExtension:DebuggerListUpdated".equals(event)) {
+        if (mDebuggerDelegate != null) {
+          mDebuggerDelegate.onExtensionListUpdated();
+        }
+        return;
+      } else if ("GeckoView:WebExtension:OnDisabling".equals(event)) {
+        onDisabling(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnOptionalPermissionsChanged".equals(event)) {
+        onOptionalPermissionsChanged(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnDisabled".equals(event)) {
+        onDisabled(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnEnabling".equals(event)) {
+        onEnabling(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnEnabled".equals(event)) {
+        onEnabled(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnUninstalling".equals(event)) {
+        onUninstalling(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnUninstalled".equals(event)) {
+        onUninstalled(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnInstalling".equals(event)) {
+        onInstalling(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnInstalled".equals(event)) {
+        onInstalled(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnDisabledProcessSpawning".equals(event)) {
+        onDisabledProcessSpawning();
+        return;
+      } else if ("GeckoView:WebExtension:OnInstallationFailed".equals(event)) {
+        onInstallationFailed(bundle);
+        return;
+      } else if ("GeckoView:WebExtension:OnReady".equals(event)) {
+        onReady(bundle);
+        return;
       }
-      return;
-    } else if ("GeckoView:WebExtension:OnDisabling".equals(event)) {
-      onDisabling(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnOptionalPermissionsChanged".equals(event)) {
-      onOptionalPermissionsChanged(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnDisabled".equals(event)) {
-      onDisabled(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnEnabling".equals(event)) {
-      onEnabling(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnEnabled".equals(event)) {
-      onEnabled(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnUninstalling".equals(event)) {
-      onUninstalling(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnUninstalled".equals(event)) {
-      onUninstalled(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnInstalling".equals(event)) {
-      onInstalling(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnInstalled".equals(event)) {
-      onInstalled(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnDisabledProcessSpawning".equals(event)) {
-      onDisabledProcessSpawning();
-      return;
-    } else if ("GeckoView:WebExtension:OnInstallationFailed".equals(event)) {
-      onInstallationFailed(bundle);
-      return;
-    } else if ("GeckoView:WebExtension:OnReady".equals(event)) {
-      onReady(bundle);
+    } catch (final InvalidMetaDataException e) {
+      Log.e(LOGTAG, "Unexpected invalid bundle data on event " + event, e);
+      if (callback != null) {
+        callback.sendError("Unexpected invalid WebExtensions metaData on event " + event);
+      }
       return;
     }
 

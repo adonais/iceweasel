@@ -965,6 +965,18 @@ private fun AcornColors.toM3ColorScheme(
     surfaceContainerHighest = surfaceContainerHighest,
     surfaceContainerLow = surfaceContainerLow,
     surfaceContainerLowest = surfaceContainerLowest,
+    primaryFixed = PhotonColors.Violet05,
+    primaryFixedDim = primaryContainer,
+    onPrimaryFixed = PhotonColors.DarkGrey90,
+    onPrimaryFixedVariant = textInverted,
+    secondaryFixed = secondaryContainer,
+    secondaryFixedDim = secondaryContainer,
+    onSecondaryFixed = textPrimary,
+    onSecondaryFixedVariant = textInverted,
+    tertiaryFixed = tertiaryContainer,
+    tertiaryFixedDim = tertiaryContainer,
+    onTertiaryFixed = textPrimary,
+    onTertiaryFixedVariant = textInverted,
 )
 
 /**
@@ -1054,19 +1066,3 @@ val ColorScheme.surfaceDimVariant: Color
     @Composable
     @ReadOnlyComposable
     get() = AcornTheme.colors.surfaceDimVariant
-
-/**
- * Primary Fixed
- *
- * A fixed accent color. This maintains the same tone across all themes.
- */
-val ColorScheme.primaryFixed: Color
-    get() = Color(0xFFE7DFFF)
-
-/**
- * On Primary Fixed
- *
- * Used for text and icons against the [ColorScheme.primaryFixed] color.
- */
-val ColorScheme.onPrimaryFixed: Color
-    get() = Color(0xFF15141A)

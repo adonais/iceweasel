@@ -76,8 +76,10 @@ class Queue {
       Pop();
     }
     if (mHead) {
+      MOZ_ASSERT(mHead == mTail);
       free(mHead);
       mHead = nullptr;
+      mTail = nullptr;
     }
   }
 
@@ -171,16 +173,35 @@ class Queue {
 
   size_t ShallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     size_t n = 0;
-    if (mHead) {
-      for (Page* page = mHead; page != mTail; page = page->mNext) {
-        n += aMallocSizeOf(page);
-      }
+    for (Page* page = mHead; page != nullptr; page = page->mNext) {
+      n += aMallocSizeOf(page);
     }
     return n;
   }
 
   size_t ShallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this) + ShallowSizeOfExcludingThis(aMallocSizeOf);
+  }
+
+  template <typename Callback>
+  void Iterate(Callback&& aCallback) {
+    if (mCount == 0) {
+      return;
+    }
+
+    uint16_t start = mOffsetHead;
+    uint32_t count = mCount;
+    uint16_t countInPage = mHeadLength;
+    for (Page* page = mHead; page != nullptr; page = page->mNext) {
+      IterateOverPage(page, start, countInPage,
+                      std::forward<Callback>(aCallback));
+      start = 0;
+      count -= countInPage;
+      countInPage = std::min(count, static_cast<uint32_t>(ItemsPerPage));
+      MOZ_ASSERT(count < mCount);
+    }
+
+    MOZ_ASSERT(count == 0);
   }
 
  private:
@@ -203,6 +224,18 @@ class Queue {
     return static_cast<Page*>(moz_xcalloc(1, sizeof(Page)));
   }
 
+  template <typename Callback>
+  void IterateOverPage(Page* aPage, size_t aOffsetStart, size_t aCount,
+                       Callback&& aCallback) {
+    size_t aOffsetEnd = aOffsetStart + aCount;
+    MOZ_ASSERT(aCount <= ItemsPerPage);
+    MOZ_ASSERT(aOffsetEnd > aOffsetStart);
+    for (size_t i = aOffsetStart; i < aOffsetEnd; ++i) {
+      // The initial page may be circular
+      aCallback(aPage->mEvents[i % ItemsPerPage]);
+    }
+  }
+
   Page* mHead = nullptr;
   Page* mTail = nullptr;
 
@@ -212,5 +245,17 @@ class Queue {
 };
 
 }  // namespace mozilla
+
+template <class T, size_t RequestedItemsPerPage>
+inline void ImplCycleCollectionUnlink(
+    mozilla::Queue<T, RequestedItemsPerPage>& aField) {
+  aField.Clear();
+}
+
+template <class T, size_t RequestedItemsPerPage, typename Callback>
+inline void ImplCycleCollectionIndexedContainer(
+    mozilla::Queue<T, RequestedItemsPerPage>& aField, Callback&& aCallback) {
+  aField.Iterate(std::forward<Callback>(aCallback));
+}
 
 #endif  // mozilla_Queue_h

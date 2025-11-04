@@ -30,7 +30,7 @@ impl gecko_profiler::ProfilerMarker for ObjectMetricMarker {
         use gecko_profiler::schema::*;
         let mut schema = MarkerSchema::new(&[Location::MarkerChart, Location::MarkerTable]);
         schema.set_tooltip_label("{marker.data.id}");
-        schema.set_table_label("{marker.name} - {marker.data.id}: {marker.data.value}");
+        schema.set_table_label("{marker.data.id}: {marker.data.value}");
         schema.add_key_label_format_with_flags(
             "id",
             "Metric",

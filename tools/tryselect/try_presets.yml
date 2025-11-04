@@ -27,22 +27,22 @@ android-geckoview:
         # Lint
         - "^source-test-mozlint android-lints$ | eslint$ | rejected-words$ | file-perm$ | file-whitespace$"
         # Miscellaneous Tests
-        - "^test-android !shippable '64 'em-7 'gtest | 'cpp | junit-fis"
+        - "^test-android !shippable '64 'em-14 'gtest | 'cpp | junit-fis"
         # Mochitests
-        - "^test-android !shippable !cf !gli !iso      'em-7 'media | 'plain"
+        - "^test-android !shippable !cf !gli !iso      'em-14 'media | 'plain"
         - "^test-android !shippable !cf !gli !iso !swr 'hw 'media 'debug"
         - "^test-android !shippable !cf !gli !iso !swr 'hw 'mochitest-webgl 'nofis"
         # Reftests
-        - "^test-android !shippable !iso 'em-7 'geckoview-crashtest | 'geckoview-reftest 'nofis"
+        - "^test-android !shippable !iso 'em-14 'geckoview-crashtest | 'geckoview-reftest 'nofis"
         # Web Platform Tests
-        - "^test-android !shippable !headless 'em-7 'wdspec"
-        - "^test-android !shippable       !cf !iso            'em-7 'web-platform-tests-crashtest 'debug"
-        - "^test-android !shippable       !cf !iso       !swr 'em-7 'web-platform-tests-crashtest"
-        - "^test-android !shippable !back !cf !iso !ship !swr 'em-7 'web-platform-tests-nofis"
-        - "^test-android !shippable !back !cf !iso            'em-7 'web-platform-tests-reftest 'nofis 'debug"
-        - "^test-android !shippable !back !cf !iso       !swr 'em-7 'web-platform-tests-reftest 'nofis"
+        - "^test-android !shippable !headless 'em-14 'wdspec"
+        - "^test-android !shippable       !cf !iso            'em-14 'web-platform-tests-crashtest 'debug"
+        - "^test-android !shippable       !cf !iso       !swr 'em-14 'web-platform-tests-crashtest"
+        - "^test-android !shippable !back !cf !iso !ship !swr 'em-14 'web-platform-tests-nofis"
+        - "^test-android !shippable !back !cf !iso            'em-14 'web-platform-tests-reftest 'nofis 'debug"
+        - "^test-android !shippable !back !cf !iso       !swr 'em-14 'web-platform-tests-reftest 'nofis"
         # XPCShell
-        - "^test-android !shippable !iso 'em-7 'xpcshell"
+        - "^test-android !shippable !iso 'em-14 'xpcshell"
 
 builds:
     selector: fuzzy
@@ -225,7 +225,7 @@ layout:
         |mach try --preset layout -xq "linux64 'opt"|
     query:
         # Most mochitest + reftest + crashtest + wpt
-        - "!asan !tsan !jsreftest !shippable !webgl !condprof !media !webgpu 'mochitest | 'web-platform | 'crashtest | 'reftest"
+        - "!asan !tsan !jsreftest !shippable !webgl !condprof !media !webgpu !a11y-checks 'mochitest | 'web-platform | 'crashtest | 'reftest"
         # Style system unit tests
         - "'rusttests"
 

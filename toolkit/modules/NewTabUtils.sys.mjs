@@ -14,7 +14,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BinarySearch: "resource://gre/modules/BinarySearch.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  pktApi: "chrome://pocket/content/pktApi.sys.mjs",
 });
 
 let BrowserWindowTracker;
@@ -39,9 +38,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIIDNService"
 );
 
-// Boolean preferences that control newtab content
-const PREF_NEWTAB_ENABLED = "browser.newtabpage.enabled";
-
 // The maximum number of results PlacesProvider retrieves from history.
 const HISTORY_RESULTS_LIMIT = 100;
 
@@ -64,10 +60,6 @@ const ACTIVITY_STREAM_DEFAULT_RECENT = 5 * 24 * 60 * 60;
 // This value will be multiplied by the current window's devicePixelRatio.
 // If devicePixelRatio cannot be found, it will be multiplied by 2.
 const DEFAULT_SMALL_FAVICON_WIDTH = 16;
-
-const POCKET_UPDATE_TIME = 24 * 60 * 60 * 1000; // 1 day
-const POCKET_INACTIVE_TIME = 7 * 24 * 60 * 60 * 1000; // 1 week
-const PREF_POCKET_LATEST_SINCE = "extensions.pocket.settings.latestSince";
 
 /**
  * Calculate the MD5 hash for a string.
@@ -210,113 +202,6 @@ LinksStorage.prototype = {
       this.remove(key);
     }
   },
-};
-
-/**
- * Singleton that serves as a registry for all open 'New Tab Page's.
- */
-var AllPages = {
-  /**
-   * The array containing all active pages.
-   */
-  _pages: [],
-
-  /**
-   * Cached value that tells whether the New Tab Page feature is enabled.
-   */
-  _enabled: null,
-
-  /**
-   * Adds a page to the internal list of pages.
-   * @param aPage The page to register.
-   */
-  register: function AllPages_register(aPage) {
-    this._pages.push(aPage);
-    this._addObserver();
-  },
-
-  /**
-   * Removes a page from the internal list of pages.
-   * @param aPage The page to unregister.
-   */
-  unregister: function AllPages_unregister(aPage) {
-    let index = this._pages.indexOf(aPage);
-    if (index > -1) {
-      this._pages.splice(index, 1);
-    }
-  },
-
-  /**
-   * Returns whether the 'New Tab Page' is enabled.
-   */
-  get enabled() {
-    if (this._enabled === null) {
-      this._enabled = Services.prefs.getBoolPref(PREF_NEWTAB_ENABLED, false);
-    }
-
-    return this._enabled;
-  },
-
-  /**
-   * Enables or disables the 'New Tab Page' feature.
-   */
-  set enabled(aEnabled) {
-    if (this.enabled != aEnabled) {
-      Services.prefs.setBoolPref(PREF_NEWTAB_ENABLED, !!aEnabled);
-    }
-  },
-
-  /**
-   * Returns the number of registered New Tab Pages (i.e. the number of open
-   * about:newtab instances).
-   */
-  get length() {
-    return this._pages.length;
-  },
-
-  /**
-   * Updates all currently active pages but the given one.
-   * @param aExceptPage The page to exclude from updating.
-   * @param aReason The reason for updating all pages.
-   */
-  update(aExceptPage, aReason = "") {
-    for (let page of this._pages.slice()) {
-      if (aExceptPage != page) {
-        page.update(aReason);
-      }
-    }
-  },
-
-  /**
-   * Implements the nsIObserver interface to get notified when the preference
-   * value changes or when a new copy of a page thumbnail is available.
-   */
-  observe: function AllPages_observe(aSubject, aTopic, aData) {
-    if (aTopic == "nsPref:changed") {
-      // Clear the cached value.
-      switch (aData) {
-        case PREF_NEWTAB_ENABLED:
-          this._enabled = null;
-          break;
-      }
-    }
-    // and all notifications get forwarded to each page.
-    this._pages.forEach(function (aPage) {
-      aPage.observe(aSubject, aTopic, aData);
-    }, this);
-  },
-
-  /**
-   * Adds a preference and new thumbnail observer and turns itself into a
-   * no-op after the first invokation.
-   */
-  _addObserver: function AllPages_addObserver() {
-    Services.prefs.addObserver(PREF_NEWTAB_ENABLED, this);
-    Services.obs.addObserver(this, "page-thumbnail:create");
-    this._addObserver = function () {};
-  },
-
-  QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
 };
 
 /**
@@ -924,11 +809,6 @@ var ActivityStreamProvider = {
         link =>
           // eslint-disable-next-line no-async-promise-executor
           new Promise(async resolve => {
-            // Never add favicon data for pocket items
-            if (link.type === "pocket") {
-              resolve(link);
-              return;
-            }
             let iconData;
             try {
               let linkUri = Services.io.newURI(link.url);
@@ -954,86 +834,6 @@ var ActivityStreamProvider = {
           })
       )
     );
-  },
-
-  /**
-   * Helper function which makes the call to the Pocket API to fetch the user's
-   * saved Pocket items.
-   */
-  fetchSavedPocketItems(requestData) {
-    const latestSince =
-      Services.prefs.getStringPref(PREF_POCKET_LATEST_SINCE, 0) * 1000;
-
-    // Do not fetch Pocket items for users that have been inactive for too long, or are not logged in
-    if (
-      !lazy.pktApi.isUserLoggedIn() ||
-      Date.now() - latestSince > POCKET_INACTIVE_TIME
-    ) {
-      return Promise.resolve(null);
-    }
-
-    return new Promise((resolve, reject) => {
-      lazy.pktApi.retrieve(requestData, {
-        success(data) {
-          resolve(data);
-        },
-        error(error) {
-          reject(error);
-        },
-      });
-    });
-  },
-
-  /**
-   * Get the most recently Pocket-ed items from a user's Pocket list. See:
-   * https://getpocket.com/developer/docs/v3/retrieve for details
-   *
-   * @param {Object} aOptions
-   *   {int} numItems: The max number of pocket items to fetch
-   */
-  async getRecentlyPocketed(aOptions) {
-    const pocketSecondsAgo =
-      Math.floor(Date.now() / 1000) - ACTIVITY_STREAM_DEFAULT_RECENT;
-    const requestData = {
-      detailType: "complete",
-      count: aOptions.numItems,
-      since: pocketSecondsAgo,
-    };
-    let data;
-    try {
-      data = await this.fetchSavedPocketItems(requestData);
-      if (!data) {
-        return [];
-      }
-    } catch (e) {
-      console.error(e);
-      return [];
-    }
-    /* Extract relevant parts needed to show this card as a highlight:
-     * url, preview image, title, description, and the unique item_id
-     * necessary for Pocket to identify the item
-     */
-    let items = Object.values(data.list)
-      // status "0" means not archived or deleted
-      .filter(item => item.status === "0")
-      .map(item => ({
-        date_added: item.time_added * 1000,
-        description: item.excerpt,
-        preview_image_url: item.image && item.image.src,
-        title: item.resolved_title,
-        url: item.resolved_url,
-        pocket_id: item.item_id,
-        open_url: item.open_url,
-      }));
-
-    // Append the query param to let Pocket know this item came from highlights
-    for (let item of items) {
-      let url = new URL(item.open_url);
-      url.searchParams.append("src", "fx_new_tab");
-      item.open_url = url.href;
-    }
-
-    return this._processHighlights(items, aOptions, "pocket");
   },
 
   /**
@@ -1417,10 +1217,6 @@ var ActivityStreamProvider = {
  * A set of actions which influence what sites shown on the Activity Stream page
  */
 var ActivityStreamLinks = {
-  _savedPocketStories: null,
-  _pocketLastUpdated: 0,
-  _pocketLastLatest: 0,
-
   /**
    * Block a url
    *
@@ -1429,10 +1225,6 @@ var ActivityStreamLinks = {
    */
   blockURL(aLink) {
     BlockedLinks.block(aLink);
-    // If we're blocking a pocket item, invalidate the cache too
-    if (aLink.pocket_id) {
-      this._savedPocketStories = null;
-    }
   },
 
   onLinkBlocked(aLink) {
@@ -1488,7 +1280,6 @@ var ActivityStreamLinks = {
    * @param {Object} aOptions
    *   {bool} excludeBookmarks: Don't add bookmark items.
    *   {bool} excludeHistory: Don't add history items.
-   *   {bool} excludePocket: Don't add Pocket items.
    *   {bool} withFavicons: Add favicon data: URIs, when possible.
    *   {int}  numItems: Maximum number of (bookmark or history) items to return.
    *
@@ -1503,29 +1294,6 @@ var ActivityStreamLinks = {
       results.push(
         ...(await ActivityStreamProvider.getRecentBookmarks(aOptions))
       );
-    }
-
-    // Add the Pocket items if we need more and want them
-    if (aOptions.numItems - results.length > 0 && !aOptions.excludePocket) {
-      const latestSince = ~~Services.prefs.getStringPref(
-        PREF_POCKET_LATEST_SINCE,
-        0
-      );
-      // Invalidate the cache, get new stories, and update timestamps if:
-      //  1. we do not have saved to Pocket stories already cached OR
-      //  2. it has been too long since we last got Pocket stories OR
-      //  3. there has been a paged saved to pocket since we last got new stories
-      if (
-        !this._savedPocketStories ||
-        Date.now() - this._pocketLastUpdated > POCKET_UPDATE_TIME ||
-        this._pocketLastLatest < latestSince
-      ) {
-        this._savedPocketStories =
-          await ActivityStreamProvider.getRecentlyPocketed(aOptions);
-        this._pocketLastUpdated = Date.now();
-        this._pocketLastLatest = latestSince;
-      }
-      results.push(...this._savedPocketStories);
     }
 
     // Add in history if we need more and want them
@@ -1946,7 +1714,6 @@ var Links = {
     let { sortedLinks, siteMap, linkMap } = links;
     let existingLink = linkMap.get(aLink.url);
     let insertionLink = null;
-    let updatePages = false;
 
     if (existingLink) {
       // Update our copy's position in O(lg n) by first removing it from its
@@ -1965,7 +1732,6 @@ var Links = {
         sortedLinks.splice(idx, 1);
 
         if (aDeleted) {
-          updatePages = true;
           linkMap.delete(existingLink.url);
           this._decrementSiteMap(siteMap, existingLink);
         } else {
@@ -1979,7 +1745,6 @@ var Links = {
       // Update our copy's title in O(1).
       if ("title" in aLink && aLink.title != existingLink.title) {
         existingLink.title = aLink.title;
-        updatePages = true;
       }
     } else if (this._sortProperties.every(prop => prop in aLink)) {
       // Before doing the O(lg n) insertion below, do an O(1) check for the
@@ -2008,11 +1773,6 @@ var Links = {
         linkMap.delete(lastLink.url);
         this._decrementSiteMap(siteMap, lastLink);
       }
-      updatePages = true;
-    }
-
-    if (updatePages) {
-      AllPages.update(null, "links-changed");
     }
   },
 
@@ -2020,13 +1780,7 @@ var Links = {
    * Called by a provider to notify us when many links change.
    */
   onManyLinksChanged: function Links_onManyLinksChanged(aProvider) {
-    this._populateProviderCache(
-      aProvider,
-      () => {
-        AllPages.update(null, "links-changed");
-      },
-      true
-    );
+    this._populateProviderCache(aProvider, () => {}, true);
   },
 
   _indexOf: function Links__indexOf(aArray, aLink) {
@@ -2046,15 +1800,7 @@ var Links = {
    * sanitization.
    */
   observe: function Links_observe() {
-    // Make sure to update open about:newtab instances. If there are no opened
-    // pages we can just wait for the next new tab to populate the cache again.
-    if (AllPages.length && AllPages.enabled) {
-      this.populateCache(function () {
-        AllPages.update();
-      }, true);
-    } else {
-      this.resetCache();
-    }
+    this.resetCache();
   },
 
   _callObservers(methodName, ...args) {
@@ -2168,11 +1914,6 @@ var ExpirationFilter = {
 
   filterForThumbnailExpiration:
     function ExpirationFilter_filterForThumbnailExpiration(aCallback) {
-      if (!AllPages.enabled) {
-        aCallback([]);
-        return;
-      }
-
       Links.populateCache(function () {
         let urls = [];
 
@@ -2256,10 +1997,6 @@ export var NewTabUtils = {
     return false;
   },
 
-  isTopPlacesSite(aSite) {
-    return this.isTopSiteGivenProvider(aSite, PlacesProvider);
-  },
-
   /**
    * Restores all sites that have been removed from the grid.
    */
@@ -2269,9 +2006,7 @@ export var NewTabUtils = {
     PinnedLinks.resetCache();
     BlockedLinks.resetCache();
 
-    Links.populateCache(function () {
-      AllPages.update();
-    }, true);
+    Links.populateCache(() => {}, true);
   },
 
   /**
@@ -2409,7 +2144,6 @@ export var NewTabUtils = {
   },
 
   links: Links,
-  allPages: AllPages,
   pinnedLinks: PinnedLinks,
   blockedLinks: BlockedLinks,
   activityStreamLinks: ActivityStreamLinks,

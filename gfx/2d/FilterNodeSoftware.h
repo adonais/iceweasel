@@ -382,7 +382,7 @@ class FilterNodeTableTransferSoftware
   void FillLookupTable(ptrdiff_t aComponent, uint8_t aTable[256]) override;
 
  private:
-  void FillLookupTableImpl(std::vector<Float>& aTableValues,
+  void FillLookupTableImpl(const std::vector<Float>& aTableValues,
                            uint8_t aTable[256]);
 
   std::vector<Float> mTableR;
@@ -405,7 +405,7 @@ class FilterNodeDiscreteTransferSoftware
   void FillLookupTable(ptrdiff_t aComponent, uint8_t aTable[256]) override;
 
  private:
-  void FillLookupTableImpl(std::vector<Float>& aTableValues,
+  void FillLookupTableImpl(const std::vector<Float>& aTableValues,
                            uint8_t aTable[256]);
 
   std::vector<Float> mTableR;

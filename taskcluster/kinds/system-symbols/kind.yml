@@ -41,8 +41,8 @@ tasks:
             type: generic
         worker:
             env:
-                PROCESSED_PACKAGES_INDEX: gecko.v2.mozilla-central.latest.system-symbols.mac
                 PROCESSED_PACKAGES_PATH: public/build/processed-packages.gz
+                REPOSADO_METADATA_PATH: public/build/reposado-metadata.tar.gz
             artifacts:
                 - name: public/build
                   type: directory

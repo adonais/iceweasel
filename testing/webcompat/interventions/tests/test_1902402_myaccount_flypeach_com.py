@@ -35,15 +35,8 @@ async def visit_site(client):
 
 
 @pytest.mark.asyncio
-@pytest.mark.with_interventions
-async def test_enabled(client):
+@pytest.mark.without_interventions
+async def test_regression(client):
     await visit_site(client)
     client.await_css(LOGIN_CSS, is_displayed=True, timeout=20)
     assert not await client.find_alert()
-
-
-@pytest.mark.asyncio
-@pytest.mark.without_interventions
-async def test_disabled(client):
-    await visit_site(client)
-    assert await client.await_alert("found")

@@ -306,6 +306,7 @@ export class ReportBrokenSiteChild extends JSWindowActorChild {
 
       const {
         blockList,
+        blockedOrigins,
         isPrivateBrowsing,
         hasMixedActiveContentBlocked,
         hasMixedDisplayContentBlocked,
@@ -349,6 +350,7 @@ export class ReportBrokenSiteChild extends JSWindowActorChild {
         addons,
         applicationName,
         blockList,
+        blockedOrigins,
         buildId,
         devicePixelRatio,
         experiments,

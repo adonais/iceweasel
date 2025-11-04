@@ -25,6 +25,7 @@
   color: var(--text-color);
   box-shadow: var(--logins-dialog-shadow);
   border: var(--logins-dialog-border);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-border-radius-tokens */
   border-radius: var(--logins-dialog-border-radius);
 
   /* show a border in high contrast mode */

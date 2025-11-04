@@ -9,11 +9,11 @@
 "use strict";
 
 const TEST_URL = "http://example.com";
-const MATCH = new UrlbarResult(
-  UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-  UrlbarUtils.RESULT_SOURCE.TABS,
-  { url: TEST_URL }
-);
+const MATCH = new UrlbarResult({
+  type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+  source: UrlbarUtils.RESULT_SOURCE.TABS,
+  payload: { url: TEST_URL },
+});
 const TELEMETRY_1ST_RESULT = "PLACES_AUTOCOMPLETE_1ST_RESULT_TIME_MS";
 const TELEMETRY_6_FIRST_RESULTS = "PLACES_AUTOCOMPLETE_6_FIRST_RESULTS_TIME_MS";
 
@@ -191,11 +191,11 @@ add_task(async function test_n_autocomplete_results() {
     );
     await provider.addResults(
       [
-        new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-          UrlbarUtils.RESULT_SOURCE.TABS,
-          { url: TEST_URL + "/" + i }
-        ),
+        new UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+          source: UrlbarUtils.RESULT_SOURCE.TABS,
+          payload: { url: TEST_URL + "/" + i },
+        }),
       ],
       false
     );
@@ -224,11 +224,11 @@ add_task(async function test_n_autocomplete_results() {
   // Add one more, to check neither are updated.
   resultsPromise = promiseControllerNotification(controller, "onQueryResults");
   await provider.addResults([
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      UrlbarUtils.RESULT_SOURCE.TABS,
-      { url: TEST_URL + "/6" }
-    ),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      payload: { url: TEST_URL + "/6" },
+    }),
   ]);
   await resultsPromise;
 

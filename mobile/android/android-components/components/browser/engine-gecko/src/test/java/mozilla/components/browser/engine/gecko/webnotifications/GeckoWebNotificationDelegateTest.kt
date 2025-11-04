@@ -4,23 +4,39 @@
 
 package mozilla.components.browser.engine.gecko.webnotifications
 
+import kotlinx.coroutines.CompletableDeferred
 import mozilla.components.concept.engine.webnotifications.WebNotification
 import mozilla.components.concept.engine.webnotifications.WebNotificationDelegate
+import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.mock
+import mozilla.components.support.test.rule.MainCoroutineRule
+import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.mozilla.geckoview.WebNotification as GeckoViewWebNotification
 import org.mozilla.geckoview.WebNotificationAction as GeckoViewWebNotificationAction
 
 class GeckoWebNotificationDelegateTest {
 
+    @get:Rule
+    val coroutinesTestRule = MainCoroutineRule()
+
+    private val webNotificationDelegate: WebNotificationDelegate = mock()
+
+    @Before
+    fun setup() {
+        `when`(webNotificationDelegate.onShowNotification(any())).thenReturn(CompletableDeferred(true))
+    }
+
     @Test
-    fun `onShowNotification is forwarded to delegate`() {
-        val webNotificationDelegate: WebNotificationDelegate = mock()
+    fun `onShowNotification is forwarded to delegate`() = runTestOnMain {
         val geckoViewWebNotification: GeckoViewWebNotification = mockWebNotification(
             title = "title",
             tag = "tag",
@@ -37,7 +53,12 @@ class GeckoWebNotificationDelegateTest {
 
         val notificationCaptor = argumentCaptor<WebNotification>()
         geckoWebNotificationDelegate.onShowNotification(geckoViewWebNotification)
-        verify(webNotificationDelegate).onShowNotification(notificationCaptor.capture())
+
+        // (verify will only return null even though the return type is Deferred)
+        @Suppress("UNUSED_VARIABLE")
+        val result = verify(webNotificationDelegate).onShowNotification(
+            notificationCaptor.capture(),
+        )
 
         val notification = notificationCaptor.value
         assertEquals(notification.title, geckoViewWebNotification.title)
@@ -56,7 +77,6 @@ class GeckoWebNotificationDelegateTest {
 
     @Test
     fun `onCloseNotification is forwarded to delegate`() {
-        val webNotificationDelegate: WebNotificationDelegate = mock()
         val geckoViewWebNotification: GeckoViewWebNotification = mockWebNotification(
             title = "title",
             tag = "tag",
@@ -90,8 +110,7 @@ class GeckoWebNotificationDelegateTest {
     }
 
     @Test
-    fun `notification without a source are from web extensions`() {
-        val webNotificationDelegate: WebNotificationDelegate = mock()
+    fun `notification without a source are from web extensions`() = runTestOnMain {
         val geckoViewWebNotification: GeckoViewWebNotification = mockWebNotification(
             title = "title",
             tag = "tag",
@@ -108,7 +127,12 @@ class GeckoWebNotificationDelegateTest {
 
         val notificationCaptor = argumentCaptor<WebNotification>()
         geckoWebNotificationDelegate.onShowNotification(geckoViewWebNotification)
-        verify(webNotificationDelegate).onShowNotification(notificationCaptor.capture())
+
+        // (verify will only return null even though the return type is Deferred)
+        @Suppress("UNUSED_VARIABLE")
+        val result = verify(webNotificationDelegate).onShowNotification(
+            notificationCaptor.capture(),
+        )
 
         val notification = notificationCaptor.value
         assertEquals(notification.title, geckoViewWebNotification.title)

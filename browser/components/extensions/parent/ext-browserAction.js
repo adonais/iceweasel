@@ -686,7 +686,7 @@ this.browserAction = class extends ExtensionAPIPersistent {
         break;
       }
 
-      case "popupshowing":
+      case "popupshowing": {
         const menu = event.target;
         const trigger = menu.triggerNode;
         const node = window.document.getElementById(this.id);
@@ -699,8 +699,9 @@ this.browserAction = class extends ExtensionAPIPersistent {
           this.updateContextMenu(menu);
         }
         break;
+      }
 
-      case "auxclick":
+      case "auxclick": {
         if (event.button !== 1) {
           return;
         }
@@ -717,6 +718,7 @@ this.browserAction = class extends ExtensionAPIPersistent {
           CustomizableUI.hidePanelForNode(event.target);
         }
         break;
+      }
     }
   }
 

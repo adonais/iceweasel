@@ -24,7 +24,6 @@
 #include "mozIStorageStatement.h"
 #include "mozIStorageValueArray.h"
 #include "mozilla/Casting.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/ResultExtensions.h"

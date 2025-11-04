@@ -13,6 +13,7 @@ import android.os.StrictMode
 import androidx.annotation.VisibleForTesting
 import mozilla.components.feature.intent.ext.sanitize
 import mozilla.components.feature.intent.processing.IntentProcessor
+import mozilla.components.feature.intent.processing.TabIntentProcessor.Companion.EXTRA_APP_LINK_LAUNCH_TYPE
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.EXTRA_ACTIVITY_REFERRER_CATEGORY
 import mozilla.components.support.utils.EXTRA_ACTIVITY_REFERRER_PACKAGE
@@ -42,8 +43,17 @@ class IntentReceiverActivity : Activity() {
         // DO NOT MOVE ANYTHING ABOVE THIS getProfilerTime CALL.
         val startTimeProfiler = components.core.engine.profiler?.getProfilerTime()
 
+        // DO NOT MOVE the app link intent launch type setting below the super.onCreate call
+        // as it impacts the activity lifecycle observer and causes false launch type detection.
+        // e.g. COLD launch is interpreted as WARM due to [Activity.onActivityCreated] being called
+        // earlier.
+        if (intent.dataString != null) { // data is null when there's no URI to load, e.g. Search widget.
+            val type = components.appLinkIntentLaunchTypeProvider.getExternalIntentLaunchType(HomeActivity::class.java)
+            intent.putExtra(EXTRA_APP_LINK_LAUNCH_TYPE, type)
+        }
+
         // StrictMode violation on certain devices such as Samsung
-        components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+        components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
             super.onCreate(savedInstanceState)
         }
 
@@ -113,7 +123,7 @@ class IntentReceiverActivity : Activity() {
             )
         }
         // StrictMode violation on certain devices such as Samsung
-        components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+        components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
             startActivity(intent)
         }
         finish() // must finish() after starting the other activity

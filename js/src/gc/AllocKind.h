@@ -72,6 +72,10 @@ namespace gc {
     D(OBJECT4,             Object,       JSObject,              JSObject_Slots4,       None,       true,   true) \
     D(OBJECT4_FOREGROUND,  Object,       JSObject,              JSObject_Slots4,       Foreground, true,   true) \
     D(OBJECT4_BACKGROUND,  Object,       JSObject,              JSObject_Slots4,       Background, true,   true) \
+    D(ARRAYBUFFER6,        Object,       JSObject,              JSObject_Slots6,       Background, true,   true) \
+    D(OBJECT6,             Object,       JSObject,              JSObject_Slots6,       None,       true,   true) \
+    D(OBJECT6_FOREGROUND,  Object,       JSObject,              JSObject_Slots6,       Foreground, true,   true) \
+    D(OBJECT6_BACKGROUND,  Object,       JSObject,              JSObject_Slots6,       Background, true,   true) \
     D(ARRAYBUFFER8,        Object,       JSObject,              JSObject_Slots8,       Background, true,   true) \
     D(OBJECT8,             Object,       JSObject,              JSObject_Slots8,       None,       true,   true) \
     D(OBJECT8_FOREGROUND,  Object,       JSObject,              JSObject_Slots8,       Foreground, true,   true) \

@@ -5,6 +5,8 @@
 
 import re
 
+from taskgraph.util.attributes import _match_run_on
+
 INTEGRATION_PROJECTS = {
     "autoland",
 }
@@ -12,6 +14,7 @@ INTEGRATION_PROJECTS = {
 TRUNK_PROJECTS = INTEGRATION_PROJECTS | {"mozilla-central", "comm-central"}
 
 RELEASE_PROJECTS = {
+    "firefox",  # https://github.com/mozilla-firefox/firefox
     "mozilla-central",
     "mozilla-beta",
     "mozilla-release",
@@ -31,6 +34,8 @@ RELEASE_PROJECTS = {
     "larch",
     # maple is also an L3 branch: https://phabricator.services.mozilla.com/D184833
     "maple",
+    # bug 1988213: cypress project branch
+    "cypress",
 }
 
 RELEASE_PROMOTION_PROJECTS = {
@@ -48,6 +53,7 @@ TEMPORARY_PROJECTS = set(
 )
 
 TRY_PROJECTS = {
+    "staging-firefox",  # https://github.com/mozilla-releng/staging-firefox
     "try",
     "try-comm-central",
 }
@@ -114,6 +120,9 @@ def match_run_on_hg_branches(hg_branch, run_on_hg_branches):
             return True
 
     return False
+
+
+match_run_on_repo_type = _match_run_on
 
 
 def copy_attributes_from_dependent_job(dep_job, denylist=()):

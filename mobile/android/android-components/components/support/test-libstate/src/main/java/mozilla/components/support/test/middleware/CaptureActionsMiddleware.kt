@@ -60,7 +60,7 @@ class CaptureActionsMiddleware<S : State, A : Action> : Middleware<S, A> {
      * store. Throws [AssertionError] if no such action was dispatched.
      */
     @Synchronized
-    fun <X : A> assertLastAction(clazz: KClass<X>, block: (X) -> Unit) {
+    fun <X : A> assertLastAction(clazz: KClass<X>, block: (X) -> Unit = {}) {
         val action = findLastAction(clazz)
         block(action)
     }

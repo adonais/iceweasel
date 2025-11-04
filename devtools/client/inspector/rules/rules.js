@@ -837,79 +837,97 @@ CssRuleView.prototype = {
 
   /**
    * Called when the user enters a search term in the filter style search box.
+   * The actual filtering (done in _doFilterStyles) will be throttled if the search input
+   * isn't empty, but will happen immediately when the search gets cleared.
    */
   _onFilterStyles() {
     if (this._filterChangedTimeout) {
       clearTimeout(this._filterChangedTimeout);
     }
 
-    const filterTimeout = this.searchValue.length ? FILTER_CHANGED_TIMEOUT : 0;
-    this.searchClearButton.hidden = this.searchValue.length === 0;
+    const isSearchEmpty = this.searchValue.length === 0;
+    this.searchClearButton.hidden = isSearchEmpty;
 
-    this._filterChangedTimeout = setTimeout(() => {
-      this.searchData = {
-        searchPropertyMatch: FILTER_PROP_RE.exec(this.searchValue),
-        searchPropertyName: this.searchValue,
-        searchPropertyValue: this.searchValue,
-        strictSearchValue: "",
-        strictSearchPropertyName: false,
-        strictSearchPropertyValue: false,
-        strictSearchAllValues: false,
-      };
+    // If the search is cleared update the UI directly so calls to this function (or any
+    // callsite of it) can assume the UI is up to date directly after the call.
+    if (isSearchEmpty) {
+      this._doFilterStyles();
+    } else {
+      this._filterChangedTimeout = setTimeout(
+        () => this._doFilterStyles(),
+        FILTER_CHANGED_TIMEOUT
+      );
+    }
+  },
 
-      if (this.searchData.searchPropertyMatch) {
-        // Parse search value as a single property line and extract the
-        // property name and value. If the parsed property name or value is
-        // contained in backquotes (`), extract the value within the backquotes
-        // and set the corresponding strict search for the property to true.
-        if (FILTER_STRICT_RE.test(this.searchData.searchPropertyMatch[1])) {
-          this.searchData.strictSearchPropertyName = true;
-          this.searchData.searchPropertyName = FILTER_STRICT_RE.exec(
-            this.searchData.searchPropertyMatch[1]
-          )[1];
-        } else {
-          this.searchData.searchPropertyName =
-            this.searchData.searchPropertyMatch[1];
-        }
+  /**
+   * Actually update search data and update the UI to reflect the current search.
+   *
+   * @emits ruleview-filtered
+   */
+  _doFilterStyles() {
+    this.searchData = {
+      searchPropertyMatch: FILTER_PROP_RE.exec(this.searchValue),
+      searchPropertyName: this.searchValue,
+      searchPropertyValue: this.searchValue,
+      strictSearchValue: "",
+      strictSearchPropertyName: false,
+      strictSearchPropertyValue: false,
+      strictSearchAllValues: false,
+    };
 
-        if (FILTER_STRICT_RE.test(this.searchData.searchPropertyMatch[2])) {
-          this.searchData.strictSearchPropertyValue = true;
-          this.searchData.searchPropertyValue = FILTER_STRICT_RE.exec(
-            this.searchData.searchPropertyMatch[2]
-          )[1];
-        } else {
-          this.searchData.searchPropertyValue =
-            this.searchData.searchPropertyMatch[2];
-        }
-
-        // Strict search for stylesheets will match the property line regex.
-        // Extract the search value within the backquotes to be used
-        // in the strict search for stylesheets in _highlightStyleSheet.
-        if (FILTER_STRICT_RE.test(this.searchValue)) {
-          this.searchData.strictSearchValue = FILTER_STRICT_RE.exec(
-            this.searchValue
-          )[1];
-        }
-      } else if (FILTER_STRICT_RE.test(this.searchValue)) {
-        // If the search value does not correspond to a property line and
-        // is contained in backquotes, extract the search value within the
-        // backquotes and set the flag to perform a strict search for all
-        // the values (selector, stylesheet, property and computed values).
-        const searchValue = FILTER_STRICT_RE.exec(this.searchValue)[1];
-        this.searchData.strictSearchAllValues = true;
-        this.searchData.searchPropertyName = searchValue;
-        this.searchData.searchPropertyValue = searchValue;
-        this.searchData.strictSearchValue = searchValue;
+    if (this.searchData.searchPropertyMatch) {
+      // Parse search value as a single property line and extract the
+      // property name and value. If the parsed property name or value is
+      // contained in backquotes (`), extract the value within the backquotes
+      // and set the corresponding strict search for the property to true.
+      if (FILTER_STRICT_RE.test(this.searchData.searchPropertyMatch[1])) {
+        this.searchData.strictSearchPropertyName = true;
+        this.searchData.searchPropertyName = FILTER_STRICT_RE.exec(
+          this.searchData.searchPropertyMatch[1]
+        )[1];
+      } else {
+        this.searchData.searchPropertyName =
+          this.searchData.searchPropertyMatch[1];
       }
 
-      this._clearHighlight(this.element);
-      this._clearRules();
-      this._createEditors();
+      if (FILTER_STRICT_RE.test(this.searchData.searchPropertyMatch[2])) {
+        this.searchData.strictSearchPropertyValue = true;
+        this.searchData.searchPropertyValue = FILTER_STRICT_RE.exec(
+          this.searchData.searchPropertyMatch[2]
+        )[1];
+      } else {
+        this.searchData.searchPropertyValue =
+          this.searchData.searchPropertyMatch[2];
+      }
 
-      this.inspector.emit("ruleview-filtered");
+      // Strict search for stylesheets will match the property line regex.
+      // Extract the search value within the backquotes to be used
+      // in the strict search for stylesheets in _highlightStyleSheet.
+      if (FILTER_STRICT_RE.test(this.searchValue)) {
+        this.searchData.strictSearchValue = FILTER_STRICT_RE.exec(
+          this.searchValue
+        )[1];
+      }
+    } else if (FILTER_STRICT_RE.test(this.searchValue)) {
+      // If the search value does not correspond to a property line and
+      // is contained in backquotes, extract the search value within the
+      // backquotes and set the flag to perform a strict search for all
+      // the values (selector, stylesheet, property and computed values).
+      const searchValue = FILTER_STRICT_RE.exec(this.searchValue)[1];
+      this.searchData.strictSearchAllValues = true;
+      this.searchData.searchPropertyName = searchValue;
+      this.searchData.searchPropertyValue = searchValue;
+      this.searchData.strictSearchValue = searchValue;
+    }
 
-      this._filterChangeTimeout = null;
-    }, filterTimeout);
+    this._clearHighlight(this.element);
+    this._clearRules();
+    this._createEditors();
+
+    this.inspector.emit("ruleview-filtered");
+
+    this._filterChangeTimeout = null;
   },
 
   /**

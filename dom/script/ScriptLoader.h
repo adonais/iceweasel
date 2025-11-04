@@ -724,13 +724,13 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
   nsresult MaybePrepareForCacheAfterExecute(ScriptLoadRequest* aRequest,
                                             nsresult aRv);
 
-  // Returns true if MaybePrepareForCacheAfterExecute is called
-  // for given script load request.
-  bool IsAlreadyHandledForCachePreparation(ScriptLoadRequest* aRequest);
-
   void MaybePrepareModuleForCacheBeforeExecute(
       JSContext* aCx, ModuleLoadRequest* aRequest) override;
 
+  // Queue the top-level module load request for caching if we decided to cache
+  // it, or cleanup the module load request fields otherwise.
+  //
+  // This method must be called after executing the script.
   nsresult MaybePrepareModuleForCacheAfterExecute(ModuleLoadRequest* aRequest,
                                                   nsresult aRv) override;
 
@@ -785,6 +785,9 @@ class ScriptLoader final : public JS::loader::ScriptLoaderInterface {
                              nsCString& aMimeType,
                              const JS::TranscodeBuffer& aSRI,
                              JS::Stencil* aStencil);
+
+  void StoreCacheInfo(JS::loader::LoadedScript* aLoadedScript,
+                      ScriptLoadRequest* aRequest);
 
   /**
    * Stop collecting delazifications for all requests.

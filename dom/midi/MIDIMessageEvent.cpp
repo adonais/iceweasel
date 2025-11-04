@@ -9,7 +9,6 @@
 #include "js/GCAPI.h"
 #include "js/Realm.h"
 #include "jsfriendapi.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/EventBinding.h"
 #include "mozilla/dom/MIDIMessageEventBinding.h"

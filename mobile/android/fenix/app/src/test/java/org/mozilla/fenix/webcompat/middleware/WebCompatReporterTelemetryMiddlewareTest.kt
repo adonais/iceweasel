@@ -61,6 +61,30 @@ class WebCompatReporterTelemetryMiddlewareTest {
     }
 
     @Test
+    fun `WHEN send report button is clicked and ETP checkbox is unchecked THEN record telemetry`() {
+        val store = createStore()
+        assertNull(Webcompatreporting.send.testGetValue())
+
+        store.dispatch(WebCompatReporterAction.SendReportClicked).joinBlocking()
+
+        val snapshot = Webcompatreporting.send.testGetValue()!!
+        assertEquals(1, snapshot.size)
+        assertEquals("send", snapshot.single().name)
+        assertEquals("false", snapshot.single().extra?.get("sent_with_blocked_trackers"))
+    }
+
+    @Test
+    fun `WHEN send report button is clicked and checkbox is checked THEN record telemetry`() {
+        val store = createStore()
+        store.dispatch(WebCompatReporterAction.IncludeEtpBlockedUrlsChanged(true))
+
+        store.dispatch(WebCompatReporterAction.SendReportClicked).joinBlocking()
+
+        val snapshot = Webcompatreporting.send.testGetValue()!!.single()
+        assertEquals("true", snapshot.extra?.get("sent_with_blocked_trackers"))
+    }
+
+    @Test
     fun `WHEN learn more button is clicked THEN record learn more button telemetry`() {
         val store = createStore()
         assertNull(Webcompatreporting.learnMore.testGetValue())

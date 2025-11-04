@@ -586,3 +586,10 @@ newtab-trending-searches-learn-more = Saber mais
 newtab-trending-searches-dismiss = Ocultar pesquisas em alta
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Pesquisas populares
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-promo-card-dismiss-button =
+    .title = Dispensar
+    .aria-label = Dispensar

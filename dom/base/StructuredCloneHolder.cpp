@@ -22,6 +22,9 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_dom.h"
+#ifdef MOZ_WEBRTC
+#  include "mozilla/StaticPrefs_media.h"
+#endif
 #include "mozilla/dom/AudioData.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BindingUtils.h"
@@ -52,6 +55,12 @@
 #include "mozilla/dom/MessagePortBinding.h"
 #include "mozilla/dom/OffscreenCanvas.h"
 #include "mozilla/dom/OffscreenCanvasBinding.h"
+#ifdef MOZ_WEBRTC
+#  include "mozilla/dom/RTCEncodedAudioFrame.h"
+#  include "mozilla/dom/RTCEncodedAudioFrameBinding.h"
+#  include "mozilla/dom/RTCEncodedVideoFrame.h"
+#  include "mozilla/dom/RTCEncodedVideoFrameBinding.h"
+#endif
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamBinding.h"
 #include "mozilla/dom/ScriptSettings.h"
@@ -1155,6 +1164,30 @@ JSObject* StructuredCloneHolder::CustomReadHandler(
     }
   }
 
+#ifdef MOZ_WEBRTC
+  if (StaticPrefs::media_peerconnection_enabled() &&
+      aTag == SCTAG_DOM_RTCENCODEDVIDEOFRAME &&
+      CloneScope() == StructuredCloneScope::SameProcess &&
+      aCloneDataPolicy.areIntraClusterClonableSharedObjectsAllowed()) {
+    JS::Rooted<JSObject*> global(aCx, mGlobal->GetGlobalJSObject());
+    if (RTCEncodedVideoFrame_Binding::ConstructorEnabled(aCx, global)) {
+      return RTCEncodedVideoFrame::ReadStructuredClone(
+          aCx, mGlobal, aReader, RtcEncodedVideoFrames()[aIndex]);
+    }
+  }
+
+  if (StaticPrefs::media_peerconnection_enabled() &&
+      aTag == SCTAG_DOM_RTCENCODEDAUDIOFRAME &&
+      CloneScope() == StructuredCloneScope::SameProcess &&
+      aCloneDataPolicy.areIntraClusterClonableSharedObjectsAllowed()) {
+    JS::Rooted<JSObject*> global(aCx, mGlobal->GetGlobalJSObject());
+    if (RTCEncodedAudioFrame_Binding::ConstructorEnabled(aCx, global)) {
+      return RTCEncodedAudioFrame::ReadStructuredClone(
+          aCx, mGlobal, aReader, RtcEncodedAudioFrames()[aIndex]);
+    }
+  }
+#endif
+
   return ReadFullySerializableObjects(aCx, aReader, aTag, false);
 }
 
@@ -1297,6 +1330,29 @@ bool StructuredCloneHolder::CustomWriteHandler(
     }
   }
 
+#ifdef MOZ_WEBRTC
+  // See if this is an RTCEncodedVideoFrame object.
+  if (StaticPrefs::media_peerconnection_enabled()) {
+    RTCEncodedVideoFrame* rtcFrame = nullptr;
+    if (NS_SUCCEEDED(UNWRAP_OBJECT(RTCEncodedVideoFrame, &obj, rtcFrame))) {
+      SameProcessScopeRequired(aSameProcessScopeRequired);
+      return CloneScope() == StructuredCloneScope::SameProcess
+                 ? rtcFrame->WriteStructuredClone(aWriter, this)
+                 : false;
+    }
+  }
+
+  // See if this is an RTCEncodedAudioFrame object.
+  if (StaticPrefs::media_peerconnection_enabled()) {
+    RTCEncodedAudioFrame* rtcFrame = nullptr;
+    if (NS_SUCCEEDED(UNWRAP_OBJECT(RTCEncodedAudioFrame, &obj, rtcFrame))) {
+      SameProcessScopeRequired(aSameProcessScopeRequired);
+      return CloneScope() == StructuredCloneScope::SameProcess
+                 ? rtcFrame->WriteStructuredClone(aWriter, this)
+                 : false;
+    }
+  }
+#endif
   {
     // We only care about streams, so ReflectorToISupportsStatic is fine.
     nsCOMPtr<nsISupports> base = xpc::ReflectorToISupportsStatic(aObj);

@@ -8,7 +8,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Casting.h"
-#include "mozilla/EnumSet.h"
 
 #include <algorithm>
 #include <utility>

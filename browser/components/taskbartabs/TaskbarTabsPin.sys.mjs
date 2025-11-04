@@ -25,6 +25,7 @@ export const TaskbarTabsPin = {
    * Pins the provided Taskbar Tab to the taskbar.
    *
    * @param {TaskbarTab} aTaskbarTab - A Taskbar Tab to pin to the taskbar.
+   * @param {TaskbarTabsRegistry} aRegistry - The registry to track pin resources with.
    * @returns {Promise} Resolves once finished.
    */
   async pinTaskbarTab(aTaskbarTab, aRegistry) {
@@ -51,14 +52,24 @@ export const TaskbarTabsPin = {
    * Unpins the provided Taskbar Tab from the taskbar.
    *
    * @param {TaskbarTab} aTaskbarTab - The Taskbar Tab to unpin from the taskbar.
+   * @param {TaskbarTabsRegistry} aRegistry - remove pinned resource tracking from.
    * @returns {Promise} Resolves once finished.
    */
   async unpinTaskbarTab(aTaskbarTab, aRegistry) {
+    let unpinError = null;
+    let removalError = null;
+
     try {
       lazy.logConsole.info("Unpinning Taskbar Tab from the taskbar.");
 
       let { relativePath } = await generateShortcutInfo(aTaskbarTab);
-      lazy.ShellService.unpinShortcutFromTaskbar("Programs", relativePath);
+
+      try {
+        lazy.ShellService.unpinShortcutFromTaskbar("Programs", relativePath);
+      } catch (e) {
+        lazy.logConsole.error(`Failed to unpin shortcut: ${e.message}`);
+        unpinError = e;
+      }
 
       let iconFile = getIconFile(aTaskbarTab);
 
@@ -74,12 +85,18 @@ export const TaskbarTabsPin = {
         }),
         IOUtils.remove(iconFile.path),
       ]);
-
-      Glean.webApp.unpin.record({ result: "Success" });
     } catch (e) {
-      lazy.logConsole.error(`An error occurred while unpinning: ${e.message}`);
-      Glean.webApp.unpin.record({ result: e.name ?? "Unknown exception" });
+      lazy.logConsole.error(
+        `An error occurred while uninstalling: ${e.message}`
+      );
+      removalError = e;
     }
+
+    const message = e => (e ? (e.name ?? "Unknown exception") : "Success");
+    Glean.webApp.unpin.record({
+      result: message(unpinError),
+      removal_result: message(removalError),
+    });
   },
 
   /**
@@ -121,6 +138,7 @@ async function createTaskbarIconFromFavicon(aTaskbarTab) {
  *
  * @param {TaskbarTab} aTaskbarTab - The Taskbar Tab to generate a shortcut for.
  * @param {nsIFile} aFileIcon - The icon file to use for the shortcut.
+ * @param {TaskbarTabsRegistry} aRegistry - The registry used to save the shortcut path.
  * @returns {Promise<string>} The path to the created shortcut.
  */
 async function createShortcut(aTaskbarTab, aFileIcon, aRegistry) {

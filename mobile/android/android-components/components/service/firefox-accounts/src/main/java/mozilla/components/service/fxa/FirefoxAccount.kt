@@ -11,6 +11,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
 import mozilla.appservices.fxaclient.FxaClient
+import mozilla.appservices.fxaclient.FxaEvent
+import mozilla.appservices.fxaclient.FxaState
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.sync.AuthFlowUrl
 import mozilla.components.concept.sync.DeviceConstellation
@@ -96,6 +98,8 @@ class FirefoxAccount internal constructor(
     }
 
     internal fun getAuthState() = inner.getAuthState()
+
+    internal fun processEvent(event: FxaEvent): FxaState = inner.processEvent(event)
 
     internal fun simulateNetworkError() = inner.simulateNetworkError()
     internal fun simulateTemporaryAuthTokenIssue() = inner.simulateTemporaryAuthTokenIssue()

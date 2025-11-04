@@ -101,7 +101,7 @@ struct TaskMarker : BaseMarkerType<TaskMarker> {
                                                MS::Location::MarkerTable};
   static constexpr const char* ChartLabel = "{marker.data.name}";
   static constexpr const char* TableLabel =
-      "{marker.name} - {marker.data.name} - priority: "
+      "{marker.data.name} - priority: "
       "{marker.data.priorityName} ({marker.data.priority})"
       " task: {marker.data.task}";
 
@@ -156,7 +156,7 @@ struct IncompleteTaskMarker : BaseMarkerType<IncompleteTaskMarker> {
                                                MS::Location::MarkerTable};
   static constexpr const char* ChartLabel = "{marker.data.name}";
   static constexpr const char* TableLabel =
-      "{marker.name} - {marker.data.name} - priority: "
+      "{marker.data.name} - priority: "
       "{marker.data.priorityName} ({marker.data.priority})"
       " task: {marker.data.task}";
 
@@ -517,8 +517,10 @@ void TaskController::AddTask(already_AddRefed<Task>&& aTask) {
 #endif
 
   LogTask::LogDispatch(task);
-  PROFILER_MARKER("TaskController::AddTask", OTHER, {}, FlowMarker,
-                  Flow::FromPointer(task.get()));
+  PROFILER_MARKER("TaskController::AddTask", OTHER,
+                  {MarkerStack::MaybeCapture(
+                      profiler_feature_active(ProfilerFeature::Flows))},
+                  FlowMarker, Flow::FromPointer(task.get()));
 
   std::pair<std::set<RefPtr<Task>, Task::PriorityCompare>::iterator, bool>
       insertion;

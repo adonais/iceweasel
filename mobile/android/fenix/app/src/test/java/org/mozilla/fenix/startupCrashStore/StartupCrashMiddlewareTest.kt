@@ -3,6 +3,7 @@ package org.mozilla.fenix.startupCrashStore
 import android.text.format.DateUtils
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -30,6 +31,7 @@ import org.mozilla.fenix.utils.Settings
 
 private const val FIVE_DAYS_IN_MILLIS = DateUtils.DAY_IN_MILLIS * 5
 
+@OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
 @RunWith(AndroidJUnit4::class)
 class StartupCrashMiddlewareTest {
 
@@ -110,7 +112,7 @@ class StartupCrashMiddlewareTest {
         val middleware = StartupCrashMiddleware(
             settings = settings,
             crashReporter = crashReporter,
-            reinitializeHandler = { called = true },
+            restartHandler = { called = true },
             startupCrashCanaryCache = canaryRepo,
             currentTimeInMillis = currentTime,
             scope = scope,

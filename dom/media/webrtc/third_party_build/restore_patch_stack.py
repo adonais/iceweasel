@@ -7,6 +7,7 @@ import re
 import shutil
 import sys
 from enum import Enum, auto
+from pathlib import Path
 
 from fetch_github_repo import fetch_repo
 from run_operations import get_last_line, run_git, run_hg, run_shell
@@ -88,7 +89,18 @@ def restore_patch_stack(
     # restore the patches to moz-libwebrtc repo, use run_shell instead of
     # run_hg to allow filepath wildcard
     print("Restoring patch stack")
-    run_shell(f"cd {github_path} && git am {patch_directory}/*.patch")
+    test_directory = Path(patch_directory)
+    pre_stack_file_cnt = len(
+        list(Path(patch_directory).glob("p[0-9][0-9][0-9][0-9].patch"))
+    )
+    print(f"Restoring {pre_stack_file_cnt} pre-stack patch files")
+    if pre_stack_file_cnt > 0:
+        run_shell(f"cd {github_path} && git am {patch_directory}/p*.patch")
+
+    norm_stack_files = list(test_directory.glob("s*.patch"))
+    norm_stack_file_cnt = len(norm_stack_files)
+    print(f"Restoring {norm_stack_file_cnt} normal patch files")
+    run_shell(f"cd {github_path} && git am {patch_directory}/s*.patch")
 
     # it is also helpful to restore the no-op-cherry-pick-msg files to
     # the state directory so that if we're restoring a patch-stack we

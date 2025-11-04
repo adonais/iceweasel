@@ -11,10 +11,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.service.autofill.Dataset
 import android.view.autofill.AutofillManager
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -101,7 +101,7 @@ internal class AutofillConfirmFragment : DialogFragment() {
         get() = getConfirmActivity().configuration
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        return AlertDialog.Builder(requireContext())
+        return MaterialAlertDialogBuilder(requireContext())
             .setTitle(
                 getString(R.string.mozac_feature_autofill_confirmation_title),
             )

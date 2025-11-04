@@ -89,6 +89,9 @@ skip-if = [
 
 ["test_gethash.html"]
 
+["test_lookup_completion_telemetry.html"]
+support-files = ["telemetryFrame.html"]
+
 ["test_socialtracking.html"]
 
 ["test_socialtracking_annotate.html"]

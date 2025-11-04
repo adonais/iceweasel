@@ -124,7 +124,7 @@ skip-if = [
 ["test_bug279495.html"]
 skip-if = [
   "os == 'android' && debug && processor == 'x86_64'", # Bug 1781600
-  "os == 'android' && android_version == '34' && processor == 'x86_64' && opt && fission", # Bug 1781600
+  "os == 'android' && os_version == '14' && processor == 'x86_64' && opt && fission", # Bug 1781600
 ]
 
 ["test_bug344861.html"]
@@ -194,7 +194,7 @@ skip-if = ["!sessionHistoryInParent"] # the old implementation behaves inconsist
 
 ["test_child.html"]
 skip-if = [
-  "os == 'android' && android_version == '34' && processor == 'x86_64' && opt && fission", # Bug 1982945
+  "os == 'android' && os_version == '14' && processor == 'x86_64' && opt && fission", # Bug 1982945
 ]
 
 ["test_contentpolicy_block_window.html"]
@@ -213,7 +213,7 @@ support-files = ["file_evict_from_bfcache.html"]
 skip-if = [
   "http2",
   "http3",
-  "os == 'android' && android_version == '34' && processor == 'x86_64' && opt && fission", # Bug 1982945
+  "os == 'android' && os_version == '14' && processor == 'x86_64' && opt && fission", # Bug 1982945
 ]
 
 ["test_load_history_entry.html"]
@@ -245,7 +245,7 @@ support-files = [
 skip-if = [
   "http2",
   "http3",
-  "os == 'android' && android_version == '34' && processor == 'x86_64' && opt && fission", # Bug 1982945
+  "os == 'android' && os_version == '14' && processor == 'x86_64' && opt && fission", # Bug 1982945
 ]
 
 ["test_online_offline_bfcache.html"]

@@ -141,7 +141,7 @@ add_task(async function test_status_card() {
   let timerUpdatedPromise = BrowserTestUtils.waitForMutationCondition(
     content.shadowRoot,
     { childList: true, subtree: true },
-    () => content._connectionTimeInterval
+    () => JSON.parse(content.statusCardEl.dataset.l10nArgs).time != ""
   );
 
   // Set state as if protection is enabled
@@ -169,7 +169,7 @@ add_task(async function test_status_card() {
   let timerStoppedPromise = BrowserTestUtils.waitForMutationCondition(
     content.shadowRoot,
     { childList: true, subtree: true },
-    () => !content._connectionTimeInterval
+    () => JSON.parse(content.statusCardEl.dataset.l10nArgs).time === ""
   );
 
   // Set state as if protection is disabled
@@ -201,6 +201,10 @@ add_task(async function test_ipprotection_events_on_toggle() {
   const userEnableEventName = "IPProtection:UserEnable";
   const userDisableEventName = "IPProtection:UserDisable";
 
+  // Reset service state.
+  cleanupService();
+  await IPProtectionService.updateState();
+
   let button = document.getElementById(lazy.IPProtectionWidget.WIDGET_ID);
   let panelView = PanelMultiView.getViewNode(
     document,
@@ -214,8 +218,11 @@ add_task(async function test_ipprotection_events_on_toggle() {
 
   let content = panelView.querySelector(lazy.IPProtectionPanel.CONTENT_TAGNAME);
 
-  await setAndUpdateIsSignedOut(content, false);
-  IPProtectionService.isSignedIn = true;
+  setupService({
+    isSignedIn: true,
+    isEnrolled: true,
+  });
+  await IPProtectionService.updateState();
 
   Assert.ok(
     BrowserTestUtils.isVisible(content),
@@ -232,13 +239,15 @@ add_task(async function test_ipprotection_events_on_toggle() {
     userEnableEventName
   );
 
-  IPProtectionService.isEnrolled = true;
-  IPProtectionService.isEntitled = true;
-
   content.connectionToggleEl.click();
 
   await enableEventPromise;
   Assert.ok("Enable event was found after clicking the toggle");
+  let userEnabledPref = Services.prefs.getBoolPref(
+    "browser.ipProtection.userEnabled",
+    false
+  );
+  Assert.equal(userEnabledPref, true, "userEnabled pref should be set to true");
 
   let disableEventPromise = BrowserTestUtils.waitForEvent(
     window,
@@ -248,15 +257,21 @@ add_task(async function test_ipprotection_events_on_toggle() {
 
   await disableEventPromise;
   Assert.ok("Disable event was found after clicking the toggle");
-
-  IPProtectionService.isEnrolled = false;
-  IPProtectionService.isEntitled = false;
-  IPProtectionService.isSignedIn = false;
+  userEnabledPref = Services.prefs.getBoolPref(
+    "browser.ipProtection.userEnabled",
+    true
+  );
+  Assert.equal(
+    userEnabledPref,
+    false,
+    "userEnabled pref should be set to false"
+  );
 
   // Close the panel
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
   EventUtils.synthesizeKey("KEY_Escape");
   await panelHiddenPromise;
+  cleanupService();
 });
 
 add_task(async function test_support_link() {

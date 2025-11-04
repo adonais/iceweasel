@@ -463,6 +463,9 @@ class DXGIYCbCrTextureHostD3D11 : public TextureHost {
 
   void SetReadFence(RefPtr<FenceD3D11> aReadFence);
 
+  // Handles will be closed automatically when `UniqueFileHandle` gets
+  // destroyed.
+  const RefPtr<gfx::FileHandleWrapper> mHandles[3];
   const gfx::IntSize mSize;
   const gfx::IntSize mSizeY;
   const gfx::IntSize mSizeCbCr;
@@ -472,9 +475,6 @@ class DXGIYCbCrTextureHostD3D11 : public TextureHost {
   const CompositeProcessFencesHolderId mFencesHolderId;
 
  protected:
-  // Handles will be closed automatically when `UniqueFileHandle` gets
-  // destroyed.
-  RefPtr<gfx::FileHandleWrapper> mHandles[3];
   bool mIsLocked = false;
   RefPtr<FenceD3D11> mReadFence;
 };

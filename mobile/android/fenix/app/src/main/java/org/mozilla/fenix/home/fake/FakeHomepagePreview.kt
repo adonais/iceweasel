@@ -118,6 +118,7 @@ internal object FakeHomepagePreview {
             ) { /* no op */ }
 
             override fun onDiscoverMoreClicked() { /* no op */ }
+            override fun onDiscoverMoreScreenViewed() { /* no op */ }
         }
 
     internal val privateBrowsingInteractor
@@ -148,6 +149,8 @@ internal object FakeHomepagePreview {
             override fun onTopSiteLongClicked(topSite: TopSite) { /* no op */ }
 
             override fun onShowAllTopSitesClicked() { /* no op */ }
+
+            override fun onShortcutsLibraryViewed() { /* no op */ }
         }
 
     internal val recentTabInteractor

@@ -1,5 +1,9 @@
 [DEFAULT]
 support-files = ["head.js"]
+prefs = [
+  # Show old design when Network Error Page new design is active
+  "security.certerrors.felt-privacy-v1=false"
+]
 
 ["browser_CaptivePortalWatcher.js"]
 skip-if = ["os == 'win'"] # Bug 1313894

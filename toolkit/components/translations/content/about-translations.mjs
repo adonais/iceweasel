@@ -6,248 +6,1022 @@
 // about-translations.mjs is running in an unprivileged context, and these injected functions
 // allow for the page to get access to additional privileged features.
 
-/* global AT_getSupportedLanguages, AT_log, AT_getScriptDirection,
-   AT_logError, AT_createTranslationsPort, AT_isHtmlTranslation,
-   AT_isTranslationEngineSupported, AT_identifyLanguage, AT_telemetry */
+/* global AT_getAppLocale, AT_getSupportedLanguages, AT_log, AT_getScriptDirection,
+   AT_getDisplayName, AT_logError, AT_createTranslationsPort, AT_isHtmlTranslation,
+   AT_isTranslationEngineSupported, AT_identifyLanguage, AT_openSupportPage, AT_telemetry */
 
 import { Translator } from "chrome://global/content/translations/Translator.mjs";
-import { TranslationsUtils } from "chrome://global/content/translations/TranslationsUtils.mjs";
-
-// Allow tests to override this value so that they can run faster.
-// This is the delay in milliseconds.
-window.DEBOUNCE_DELAY = 200;
-// Allow tests to test the debounce behavior by counting debounce runs.
-window.DEBOUNCE_RUN_COUNT = 0;
-
-// Limits how long the "text" parameter can be in the URL.
-const URL_MAX_TEXT_LENGTH = 5000;
-
-const l10nIds = {
-  resultsPlaceholder: "about-translations-results-placeholder",
-  translatingMessage: "about-translations-translating-message",
-};
 
 /**
+ * Allows tests to override the delay milliseconds so that they can run faster.
+ */
+window.DEBOUNCE_DELAY = 200;
+
+/**
+ * Limits how long the "text" parameter can be in the URL.
+ */
+const URL_MAX_TEXT_LENGTH = 5000;
+
+/**
+ * @typedef {import("../translations").LanguagePair} LanguagePair
  * @typedef {import("../translations").SupportedLanguages} SupportedLanguages
  */
 
-/**
- * The model and controller for initializing about:translations.
- */
-class TranslationsState {
+class AboutTranslations {
   /**
-   * This class is responsible for all UI updated.
+   * The set of languages that are supported by the Translations feature.
    *
-   * @type {TranslationsUI}
+   * @type {SupportedLanguages}
    */
-  ui;
+  #supportedLanguages;
 
   /**
-   * The language to translate from, in the form of a BCP 47 language tag,
-   * e.g. "en" or "fr".
+   * A monotonically increasing number that represents a unique ID
+   * for each translation request.
    *
-   * @type {string}
+   * @type {number}
    */
-  sourceLanguage = "";
+  #translationId = 0;
 
   /**
-   * The language to translate to, in the form of a BCP 47 language tag,
-   * e.g. "en" or "fr".
+   * The previous source text that was translated.
    *
-   * @type {string}
-   */
-  targetLanguage = "";
-
-  /**
-   * The model variant.
-   *
-   * @type {string | undefined}
-   */
-  sourceVariant;
-
-  /**
-   * The model variant.
-   *
-   * @type {string | undefined}
-   */
-  targetVariant;
-
-  /**
-   * @type {LanguagePair | null}
-   */
-  languagePair = null;
-
-  /**
-   * The message to translate, cached so that it can be determined if the text
-   * needs to be re-translated.
+   * This is used to calculate the difference of lengths in the texts,
+   * which informs whether we should display a translating placeholder.
    *
    * @type {string}
    */
-  messageToTranslate = "";
+  #previousSourceText = "";
 
   /**
-   * Only send one translation in at a time to the worker.
+   * The BCP-47 language tag of the currently detected language.
    *
-   * @type {Promise<string[]>}
+   * Defaults to an empty string if the detect-language option is not selected,
+   * or if the detector was not confident enough to determine a language tag.
+   *
+   * @type {string}
    */
-  translationRequest = Promise.resolve([]);
+  #detectedLanguage = "";
 
   /**
-   * The translator is only valid for a single language pair, and needs
-   * to be recreated if the language pair changes.
+   * The translator for the current language pair.
    *
    * @type {null | Translator}
    */
-  translator = null;
+  #translator = null;
 
   /**
-   * @param {boolean} isSupported
+   * The elements that comprise the about:translations UI.
+   *
+   * Use the {@link AboutTranslations#elements} getter to instantiate and retrieve them.
+   *
+   * @type {Record<string, Element>}
    */
-  constructor(isSupported) {
-    /**
-     * Is the engine supported by the device?
-     *
-     * @type {boolean}
-     */
-    this.isTranslationEngineSupported = isSupported;
+  #lazyElements;
 
-    /**
-     * @type {SupportedLanguages}
-     */
-    this.supportedLanguages = isSupported
-      ? AT_getSupportedLanguages()
-      : Promise.resolve([]);
+  /**
+   * The localized placeholder text to display when translating.
+   *
+   * @type {string}
+   */
+  #translatingPlaceholderText;
 
-    this.ui = new TranslationsUI(this);
-    this.ui.setup();
+  /**
+   * A promise that resolves when the about:translations UI has successfully initialized,
+   * or rejects if the UI failed to initialize.
+   *
+   * @type {PromiseWithResolvers}
+   */
+  #readyPromiseWithResolvers = Promise.withResolvers();
 
-    // Set the UI as ready after all of the state promises have settled.
-    this.updateFromURL()
+  /**
+   * The orientation of the page's content.
+   *
+   * When the page orientation is horizontal the source and target text areas
+   * are displayed side by side with the source text area at the inline start
+   * and the target text area at the inline end.
+   *
+   * When the page orientation is vertical the source text area is displayed
+   * above the target text area, independent of locale bidirectionality.
+   *
+   * When the page orientation is vertical, each text area spans the full width
+   * of the content, and resizing the window width or changing the zoom level
+   * must trigger text-area resizing, where as resizing the text areas is not
+   * necessary for these scenarios when the page orientation is horizontal.
+   *
+   * @type {("vertical"|"horizontal")}
+   */
+  #pageOrientation = "horizontal";
+
+  /**
+   * A timeout id that gets set when a pending callback is scheduled
+   * to synchronize the heights of the source and target text areas.
+   *
+   * This helps ensure that we do not make repeated calls to this function
+   * that would cause unnecessary and excessive reflow.
+   *
+   * @type {number | null}
+   */
+  #synchronizeTextAreaHeightsTimeoutId = null;
+
+  /**
+   * Constructs a new {@link AboutTranslations} instance.
+   *
+   * @param {boolean} isTranslationsEngineSupported
+   *        Whether the translations engine is supported by the current system.
+   */
+  constructor(isTranslationsEngineSupported) {
+    AT_telemetry("onOpen", {
+      maintainFlow: false,
+    });
+
+    if (!isTranslationsEngineSupported) {
+      this.#readyPromiseWithResolvers.reject();
+      this.#showUnsupportedInfoMessage();
+      return;
+    }
+
+    this.#setup()
       .then(() => {
-        this.ui.setAsReady();
+        this.#readyPromiseWithResolvers.resolve();
       })
       .catch(error => {
-        AT_logError("Failed to load the supported languages", error);
+        AT_logError(error);
+        this.#readyPromiseWithResolvers.reject(error);
+        this.#showLanguageLoadErrorMessage();
       });
   }
 
   /**
-   * Identifies the human language in which the message is written and returns
-   * the BCP 47 language tag of the language it is determined to be.
+   * Resolves when the about:translations page has successfully initialized.
    *
-   * e.g. "en" for English.
-   *
-   * @param {string} message
+   * @returns {Promise<void>}
    */
-  async identifyLanguage(message) {
-    const start = performance.now();
-    const { langTag, confidence } = await AT_identifyLanguage(message);
-    const duration = performance.now() - start;
-    AT_log(
-      `[ ${langTag}(${(confidence * 100).toFixed(2)}%) ]`,
-      `Source language identified in ${duration / 1000} seconds`
-    );
-    return langTag;
+  async ready() {
+    await this.#readyPromiseWithResolvers.promise;
   }
 
   /**
-   * Update the translation state from the src, trg, and text
-   * URL parameters when the page is opened or reloaded.
+   * Instantiates and returns the elements that comprise the UI.
+   *
+   * @returns {{
+   *   mainUserInterface: HTMLElement,
+   *   unsupportedInfoMessage: HTMLElement,
+   *   languageLoadErrorMessage: HTMLElement,
+   *   learnMoreLink: HTMLAnchorElement,
+   *   detectLanguageOption: HTMLOptionElement,
+   *   sourceLanguageSelector: HTMLSelectElement,
+   *   targetLanguageSelector: HTMLSelectElement,
+   *   swapLanguagesButton: HTMLElement,
+   *   sourceTextArea: HTMLTextAreaElement,
+   *   targetTextArea: HTMLTextAreaElement,
+   * }}
    */
-  async updateFromURL() {
-    let supportedLanguages = await this.supportedLanguages;
-    let newParams = new URLSearchParams(window.location.href.split("#")[1]);
-    let newSrc = newParams.get("src");
-    let newTrg = newParams.get("trg");
-    let newText = newParams.get("text");
-    if (!newText) {
-      newText = "";
+  get elements() {
+    if (this.#lazyElements) {
+      return this.#lazyElements;
     }
-    this.messageToTranslate = newText;
-    this.ui.translationFrom.value = newText;
 
-    if (newSrc == "detect") {
-      // Check if target is in supported languages
-      if (
-        !supportedLanguages.targetLanguages.some(
-          ({ langTag }) => langTag === newTrg
+    this.#lazyElements = {
+      mainUserInterface: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-main-user-interface")
+      ),
+      unsupportedInfoMessage: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-unsupported-info-message")
+      ),
+      languageLoadErrorMessage: /** @type {HTMLElement} */ (
+        document.getElementById(
+          "about-translations-language-load-error-message"
         )
-      ) {
-        this.ui.updateTranslation("");
-        return;
+      ),
+      learnMoreLink: /** @type {HTMLAnchorElement} */ (
+        document.getElementById("about-translations-learn-more-link")
+      ),
+      detectLanguageOption: /** @type {HTMLOptionElement} */ (
+        document.getElementById("about-translations-detect-language-option")
+      ),
+      sourceLanguageSelector: /** @type {HTMLSelectElement} */ (
+        document.getElementById("about-translations-source-select")
+      ),
+      targetLanguageSelector: /** @type {HTMLSelectElement} */ (
+        document.getElementById("about-translations-target-select")
+      ),
+      swapLanguagesButton: /** @type {HTMLElement} */ (
+        document.getElementById("about-translations-swap-languages-button")
+      ),
+      sourceTextArea: /** @type {HTMLTextAreaElement} */ (
+        document.getElementById("about-translations-source-textarea")
+      ),
+      targetTextArea: /** @type {HTMLTextAreaElement} */ (
+        document.getElementById("about-translations-target-textarea")
+      ),
+    };
+
+    return this.#lazyElements;
+  }
+
+  /**
+   * Sets the internal data member for which orientation the page is in.
+   *
+   * This information is important for performance regarding in which situations
+   * we need to dynamically resize the <textarea> elements on the page.
+   *
+   * @returns {boolean} True if the page orientation changed, otherwise false.
+   */
+  #updatePageOrientation() {
+    const orientationAtStart = this.#pageOrientation;
+
+    // Keep this value up to date with the media query rule in about-translations.css
+    this.#pageOrientation =
+      window.innerWidth > 1200 ? "horizontal" : "vertical";
+
+    const orientationChanged = orientationAtStart !== this.#pageOrientation;
+
+    if (orientationChanged) {
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:PageOrientationChanged", {
+          detail: { orientation: this.#pageOrientation },
+        })
+      );
+    }
+
+    return orientationChanged;
+  }
+
+  /**
+   * An async setup function to initialize the about:translations page.
+   *
+   * Performs all initialization steps and finally reveals the main UI.
+   */
+  async #setup() {
+    this.#initializeEventListeners();
+    this.#updatePageOrientation();
+
+    this.#translatingPlaceholderText = await document.l10n.formatValue(
+      "about-translations-translating-message"
+    );
+
+    await this.#setupLanguageSelectors();
+    await this.#updateUIFromURL();
+
+    // Even though we just updated the UI from the URL, this will
+    // clear any invalid parameters that may have been passed in the URL.
+    this.#updateURLFromUI();
+
+    this.#updateSourceScriptDirection();
+    this.#updateTargetScriptDirection();
+
+    this.#showMainUserInterface();
+    this.#setInitialFocus();
+  }
+
+  /**
+   * Populates the language selector elements with supported languages.
+   *
+   * This is a one-time operation performed during initialization.
+   */
+  async #populateLanguageSelectors() {
+    this.#supportedLanguages = await AT_getSupportedLanguages();
+
+    const { sourceLanguageSelector, targetLanguageSelector } = this.elements;
+
+    for (const { langTagKey, displayName } of this.#supportedLanguages
+      .sourceLanguages) {
+      const option = document.createElement("option");
+      option.value = langTagKey;
+      option.text = displayName;
+      sourceLanguageSelector.add(option);
+    }
+
+    for (const { langTagKey, displayName } of this.#supportedLanguages
+      .targetLanguages) {
+      const option = document.createElement("option");
+      option.value = langTagKey;
+      option.text = displayName;
+      targetLanguageSelector.add(option);
+    }
+  }
+
+  /**
+   * Sets up the language selectors during initialization.
+   */
+  async #setupLanguageSelectors() {
+    await this.#populateLanguageSelectors();
+
+    const { sourceLanguageSelector, targetLanguageSelector } = this.elements;
+    sourceLanguageSelector.disabled = false;
+    targetLanguageSelector.disabled = false;
+  }
+
+  /**
+   * Initializes all relevant event listeners for the UI elements.
+   */
+  #initializeEventListeners() {
+    const {
+      learnMoreLink,
+      swapLanguagesButton,
+      sourceLanguageSelector,
+      targetLanguageSelector,
+      sourceTextArea,
+    } = this.elements;
+
+    learnMoreLink.addEventListener("click", this);
+    swapLanguagesButton.addEventListener("click", this);
+    sourceLanguageSelector.addEventListener("input", this);
+    targetLanguageSelector.addEventListener("input", this);
+    sourceTextArea.addEventListener("input", this);
+    window.addEventListener("resize", this);
+    window.visualViewport.addEventListener("resize", this);
+  }
+
+  /**
+   * The event handler for all UI interactions.
+   *
+   * @param {Event} event
+   */
+  handleEvent = ({ type, target }) => {
+    const {
+      learnMoreLink,
+      swapLanguagesButton,
+      sourceLanguageSelector,
+      targetLanguageSelector,
+      sourceTextArea,
+    } = this.elements;
+
+    switch (type) {
+      case "click": {
+        if (target.id === swapLanguagesButton.id) {
+          this.#disableSwapLanguagesButton();
+
+          this.#maybeSwapLanguages();
+          this.#maybeRequestTranslation();
+        } else if (target.id === learnMoreLink.id) {
+          AT_openSupportPage();
+        }
+
+        break;
       }
-    } else if (
-      // The language pair is invalid
-      !supportedLanguages.languagePairs.some(
-        ({ sourceLanguage, targetLanguage }) =>
-          sourceLanguage === newSrc && targetLanguage === newTrg
-      ) &&
-      // English pivot cannot be used
-      !(
-        supportedLanguages.languagePairs.some(
-          ({ sourceLanguage, targetLanguage }) =>
-            sourceLanguage === newSrc && targetLanguage === "en"
-        ) &&
-        supportedLanguages.languagePairs.some(
-          ({ sourceLanguage, targetLanguage }) =>
-            sourceLanguage === "en" && targetLanguage === newTrg
-        )
-      )
-    ) {
-      this.ui.updateTranslation("");
+      case "input": {
+        const { id } = target;
+
+        if (id === sourceLanguageSelector.id) {
+          if (sourceLanguageSelector.value !== this.#detectedLanguage) {
+            this.#resetDetectLanguageOptionText();
+            this.#disableSwapLanguagesButton();
+          } else {
+            // The source-language selector was previously set to "detect", but was
+            // explicitly changed to the detected language, so there is no action to take.
+            this.#resetDetectLanguageOptionText();
+            return;
+          }
+        }
+
+        if (id === targetLanguageSelector.id) {
+          this.#disableSwapLanguagesButton();
+        }
+
+        if (
+          id === sourceLanguageSelector.id ||
+          id === targetLanguageSelector.id ||
+          id === sourceTextArea.id
+        ) {
+          this.#maybeRequestTranslation();
+        }
+
+        break;
+      }
+      case "resize": {
+        if (target === window || target === window.visualViewport) {
+          const orientationChanged = this.#updatePageOrientation();
+
+          if (orientationChanged) {
+            // The page orientation changed, so we need to update the text-area heights immediately.
+            this.#ensureTextAreaHeightsMatch({ scheduleCallback: false });
+          } else if (this.#pageOrientation === "vertical") {
+            // Otherwise we only need to eventually update the text-area heights in vertical orientation.
+            this.#ensureTextAreaHeightsMatch({ scheduleCallback: true });
+          }
+        }
+
+        break;
+      }
+    }
+  };
+
+  /**
+   * Shows the main UI and hides any stand-alone message bars.
+   */
+  #showMainUserInterface() {
+    const {
+      unsupportedInfoMessage,
+      languageLoadErrorMessage,
+      mainUserInterface,
+    } = this.elements;
+
+    unsupportedInfoMessage.style.display = "none";
+    languageLoadErrorMessage.style.display = "none";
+
+    mainUserInterface.style.display = "grid";
+  }
+
+  /**
+   * Shows the message that translations are not supported in the current environment.
+   */
+  #showUnsupportedInfoMessage() {
+    const {
+      unsupportedInfoMessage,
+      languageLoadErrorMessage,
+      mainUserInterface,
+    } = this.elements;
+
+    mainUserInterface.style.display = "none";
+    languageLoadErrorMessage.style.display = "none";
+
+    unsupportedInfoMessage.style.display = "flex";
+  }
+
+  /**
+   * Shows the message that the list of languages could not be loaded.
+   */
+  #showLanguageLoadErrorMessage() {
+    const {
+      unsupportedInfoMessage,
+      languageLoadErrorMessage,
+      mainUserInterface,
+    } = this.elements;
+
+    mainUserInterface.style.display = "none";
+    unsupportedInfoMessage.style.display = "none";
+
+    languageLoadErrorMessage.style.display = "flex";
+  }
+
+  /**
+   * Returns the language pair formed by the values of the language selectors.
+   * Returns null if one or more of the selectors has no selected value.
+   *
+   * @returns {null | LanguagePair}
+   */
+  #getSelectedLanguagePair() {
+    const { sourceLanguageSelector, targetLanguageSelector } = this.elements;
+
+    let selectedSourceLanguage;
+    if (this.#isDetectLanguageSelected()) {
+      selectedSourceLanguage = this.#detectedLanguage;
+    } else {
+      selectedSourceLanguage = sourceLanguageSelector.value;
+    }
+
+    const [sourceLanguage, sourceVariant] = selectedSourceLanguage.split(",");
+    const [targetLanguage, targetVariant] =
+      targetLanguageSelector.value.split(",");
+
+    if (sourceLanguage === "" || targetLanguage === "") {
+      // At least one selector is empty, so we cannot create a language pair.
+      return null;
+    }
+
+    return {
+      sourceLanguage,
+      targetLanguage,
+      sourceVariant,
+      targetVariant,
+    };
+  }
+
+  /**
+   * Returns true if we do not yet support the detected language for Translations,
+   * otherwise false.
+   *
+   * @returns {boolean}
+   */
+  #isDetectedLanguageUnsupported() {
+    if (!this.#isDetectLanguageSelected()) {
+      // The detect-language option is not selected so this is not relevant.
+      return false;
+    }
+
+    return !this.elements.sourceLanguageSelector.querySelector(
+      `[value^=${this.#detectedLanguage}]`
+    );
+  }
+
+  /**
+   * Returns true if the source-language selector is set to the detect-language
+   * option, otherwise false.
+   *
+   * @returns {boolean}
+   */
+  #isDetectLanguageSelected() {
+    return this.elements.sourceLanguageSelector.value === "detect";
+  }
+
+  /**
+   * Updates the display value of the source-language selector with the identified
+   * language of the source text, only if the source-language selector is set to
+   * the detect-language option.
+   */
+  async #maybeUpdateDetectedSourceLanguage() {
+    if (!this.#isDetectLanguageSelected()) {
+      this.#resetDetectLanguageOptionText();
       return;
     }
 
-    // Update the parameters if they have changed
-    this.sourceLanguage = newSrc;
-    this.targetLanguage = newTrg;
-    this.messageToTranslate = newText;
-    this.ui.sourceLanguage.value = newSrc;
-    this.ui.targetLanguage.value = newTrg;
-    this.ui.translationFrom.value = newText;
-    this.maybeUpdateDetectedLanguage();
-    this.maybeCreateNewTranslator();
-    if (newSrc === "detect") {
-      await this.maybeUpdateDetectedLanguage();
+    const detectedLanguage = await this.#identifySourceLanguage();
+    if (!this.#isDetectLanguageSelected()) {
+      this.#resetDetectLanguageOptionText();
+      return;
     }
-    await this.maybeCreateNewTranslator();
+
+    const previousDetectedLanguage = this.#detectedLanguage;
+    this.#detectedLanguage = detectedLanguage;
+
+    const { sourceTextArea } = this.elements;
+
+    if (detectedLanguage) {
+      const displayName = await AT_getDisplayName(detectedLanguage);
+      this.#populateDetectLanguageOption({ detectedLanguage, displayName });
+      sourceTextArea.setAttribute(
+        "dir",
+        AT_getScriptDirection(detectedLanguage)
+      );
+    } else {
+      this.#resetDetectLanguageOptionText();
+      sourceTextArea.setAttribute(
+        "dir",
+        AT_getScriptDirection(AT_getAppLocale())
+      );
+    }
+
+    if (previousDetectedLanguage !== detectedLanguage) {
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:DetectedLanguageUpdated", {
+          detail: { language: detectedLanguage },
+        })
+      );
+    }
   }
 
   /**
-   * Update the URL with the current state whenever a translation is
-   * requested or languages are modified.
+   * Sets the textContent of the about-translations-detect option in the
+   * about-translations-source-select dropdown.
    *
-   * If the text is too long, it is truncated to URL_MAX_TEXT_LENGTH.
+   * Passing an empty display name will reset to the default string.
+   * Passing a display name will set the text to the given language.
+   *
+   * @param {object} params
+   * @param {string} params.detectedLanguage - The BCP-47 language tag of the detected language.
+   * @param {string} params.displayName - The display name of the detected language.
    */
-  async updateURL() {
-    let params = new URLSearchParams();
-    if (this.ui.detectOptionIsSelected()) {
-      params.append("src", "detect");
-    } else if (this.ui.sourceLanguage.value) {
-      params.append("src", encodeURIComponent(this.ui.sourceLanguage.value));
+  #populateDetectLanguageOption({ detectedLanguage, displayName }) {
+    const { detectLanguageOption } = this.elements;
+    detectLanguageOption.setAttribute("language", detectedLanguage);
+    document.l10n.setAttributes(
+      detectLanguageOption,
+      "about-translations-detect-language",
+      { language: displayName }
+    );
+  }
+
+  /**
+   * Restores the detect-language option to its default value.
+   */
+  #resetDetectLanguageOptionText() {
+    const { detectLanguageOption } = this.elements;
+    this.#detectedLanguage = "";
+    detectLanguageOption.removeAttribute("language");
+    document.l10n.setAttributes(
+      detectLanguageOption,
+      "about-translations-detect-default"
+    );
+  }
+
+  /**
+   * Returns true if the source-language selector contains the given language,
+   * otherwise false.
+   *
+   * @param {string} language - A BCP-47 language tag or prefix.
+   * @returns {boolean}
+   */
+  #sourceSelectorHasLanguage(language) {
+    return this.elements.sourceLanguageSelector.querySelector(
+      `[value^=${language}]`
+    );
+  }
+
+  /**
+   * Returns true if the target-language selector contains the given language,
+   * otherwise false.
+   *
+   * @param {string} language - A BCP-47 language tag or prefix.
+   * @returns {boolean}
+   */
+  #targetSelectorHasLanguage(language) {
+    return this.elements.targetLanguageSelector.querySelector(
+      `[value^=${language}]`
+    );
+  }
+
+  /**
+   * Determines whether the currently selected source/target languages can be swapped.
+   *
+   * @returns {boolean}
+   */
+  #selectedLanguagePairIsSwappable() {
+    const selectedLanguagePair = this.#getSelectedLanguagePair();
+    return (
+      // There is an actively selected language pair.
+      selectedLanguagePair &&
+      // The source and target languages are different languages.
+      selectedLanguagePair.sourceLanguage !==
+        selectedLanguagePair.targetLanguage &&
+      // The source language list contains the currently selected target language.
+      this.#sourceSelectorHasLanguage(selectedLanguagePair.targetLanguage) &&
+      // The target language list contains the currently selected source language.
+      this.#targetSelectorHasLanguage(selectedLanguagePair.sourceLanguage)
+    );
+  }
+
+  /**
+   * Disables the swap-languages button.
+   */
+  #disableSwapLanguagesButton() {
+    const { swapLanguagesButton } = this.elements;
+    if (swapLanguagesButton.disabled === true) {
+      return;
     }
 
-    if (this.ui.targetLanguage.value) {
-      params.append("trg", encodeURIComponent(this.ui.targetLanguage.value));
+    swapLanguagesButton.disabled = true;
+    document.dispatchEvent(
+      new CustomEvent("AboutTranslationsTest:SwapLanguagesButtonDisabled")
+    );
+  }
+
+  /**
+   * Enables the swap-languages button.
+   */
+  #enableSwapLanguagesButton() {
+    const { swapLanguagesButton } = this.elements;
+    if (swapLanguagesButton.disabled === false) {
+      return;
     }
 
-    let textParam = this.messageToTranslate;
-    let tooLong = textParam.length > URL_MAX_TEXT_LENGTH;
-    textParam = tooLong
-      ? textParam
-      : textParam.substring(0, URL_MAX_TEXT_LENGTH);
+    swapLanguagesButton.disabled = false;
+    document.dispatchEvent(
+      new CustomEvent("AboutTranslationsTest:SwapLanguagesButtonEnabled")
+    );
+  }
 
-    if (textParam) {
-      params.append("text", textParam);
+  /**
+   * Updates the enabled state of the swap-languages button based on the current
+   * values of the language selectors.
+   */
+  #updateSwapLanguagesButtonEnabledState() {
+    if (this.#selectedLanguagePairIsSwappable()) {
+      this.#enableSwapLanguagesButton();
+    } else {
+      this.#disableSwapLanguagesButton();
+    }
+  }
+
+  /**
+   * If the currently selected language pair is determined to be swappable,
+   * swaps the active source language with the active target language,
+   * and moves the translated output to be the new source text.
+   */
+  #maybeSwapLanguages() {
+    if (!this.#selectedLanguagePairIsSwappable()) {
+      return;
+    }
+
+    const {
+      sourceLanguageSelector,
+      targetLanguageSelector,
+      sourceTextArea,
+      targetTextArea,
+    } = this.elements;
+
+    const selectedLanguagePair = this.#getSelectedLanguagePair();
+
+    sourceLanguageSelector.value = selectedLanguagePair.targetLanguage;
+    targetLanguageSelector.value = selectedLanguagePair.sourceLanguage;
+    sourceTextArea.value = targetTextArea.value;
+
+    this.#updateSourceScriptDirection();
+    this.#updateTargetScriptDirection();
+    this.#ensureTextAreaHeightsMatch({ scheduleCallback: false });
+
+    if (sourceTextArea.value) {
+      this.#displayTranslatingPlaceholder();
+    }
+
+    // When swapping languages, the target language will become the source language,
+    // therefore the "detect" option is guaranteed to not be selected, and we need
+    // to ensure that we reset the option text back to the default in case the user
+    // opens the source-text dropdown menu.
+    this.#resetDetectLanguageOptionText();
+  }
+
+  /**
+   * Attempts to identify the BCP-47 language tag of the source text.
+   * Returns an empty string if no language could be identified.
+   *
+   * @returns {string} The BCP-47 language tag of the identified language.
+   */
+  async #identifySourceLanguage() {
+    const sourceText = this.#getSourceText();
+    if (!sourceText) {
+      return "";
+    }
+
+    const { language, confident } = await AT_identifyLanguage(sourceText);
+    if (!confident) {
+      return "";
+    }
+
+    if (language === "zh") {
+      // CLD2 detects simplified Chinese as "zh" and traditional Chinese as "zh-Hant".
+      // But we need to be explicit about the script tag in both cases.
+      return "zh-Hans";
+    }
+
+    return language;
+  }
+
+  /**
+   * Returns the trimmed value of the source <textarea>.
+   *
+   * @returns {string}
+   */
+  #getSourceText() {
+    return this.elements.sourceTextArea.value.trim();
+  }
+
+  /**
+   * Sets the value of the source <textarea> and dispatches an input event.
+   *
+   * @param {string} value
+   */
+  #setSourceText(value) {
+    const { sourceTextArea } = this.elements;
+
+    sourceTextArea.value = value;
+    sourceTextArea.dispatchEvent(new Event("input"));
+
+    this.#updateSourceScriptDirection();
+    this.#ensureTextAreaHeightsMatch({ scheduleCallback: false });
+  }
+
+  /**
+   * Sets the value of the target <textarea>.
+   *
+   * @param {string} value
+   */
+  #setTargetText(value) {
+    this.elements.targetTextArea.value = value;
+
+    if (!value) {
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:ClearTargetText")
+      );
+    }
+
+    this.#updateTargetScriptDirection();
+    this.#ensureTextAreaHeightsMatch({ scheduleCallback: false });
+  }
+
+  /**
+   * Displays the translating placeholder text if the conditions are correct to do so.
+   * We do this when switching to a new language pair, when rebuilding the translator,
+   * or if the text is long enough that translating may incur a significant wait time.
+   */
+  #maybeDisplayTranslatingPlaceholder() {
+    const sourceText = this.#getSourceText();
+
+    if (
+      // We will need to request a new translator, which will take time.
+      !this.#translatorMatchesSelectedLanguagePair() ||
+      // The current translator matches, but we need to request a new port, which takes time.
+      this.#translator?.portClosed ||
+      // The source text is long enough to take noticeable time to translate,
+      // and has changed enough from the previous source text to warrant a placeholder.
+      (sourceText.length > 5000 &&
+        Math.abs(sourceText.length - this.#previousSourceText.length) > 500)
+    ) {
+      this.#displayTranslatingPlaceholder();
+    }
+
+    this.#previousSourceText = sourceText;
+  }
+
+  /**
+   * Shows the translating placeholder in the target textarea and disables
+   * the swap-languages button while translation is in progress.
+   */
+  #displayTranslatingPlaceholder() {
+    const { targetTextArea } = this.elements;
+
+    this.#setTargetText(this.#translatingPlaceholderText);
+    this.#disableSwapLanguagesButton();
+
+    targetTextArea.setAttribute(
+      "dir",
+      AT_getScriptDirection(AT_getAppLocale())
+    );
+
+    document.dispatchEvent(
+      new CustomEvent("AboutTranslationsTest:ShowTranslatingPlaceholder")
+    );
+  }
+
+  /**
+   * Returns true if the current {@link Translator} instance is sufficient
+   * to translate the actively selected language pair, otherwise false.
+   *
+   * @returns {boolean}
+   */
+  #translatorMatchesSelectedLanguagePair() {
+    if (!this.#translator) {
+      // There is no active translator, therefore the language pair cannot match it.
+      return false;
+    }
+
+    const selectedLanguagePair = this.#getSelectedLanguagePair();
+    if (!selectedLanguagePair) {
+      // No valid language pair is selected, therefore it cannot match the translator.
+      return false;
+    }
+
+    return this.#translator.matchesLanguagePair(selectedLanguagePair);
+  }
+
+  /**
+   * Sets the initial focus on the most appropriate UI element based on the context.
+   */
+  #setInitialFocus() {
+    const { targetLanguageSelector, sourceTextArea } = this.elements;
+
+    if (targetLanguageSelector.value === "") {
+      targetLanguageSelector.focus();
+    } else {
+      sourceTextArea.focus();
+    }
+  }
+
+  /**
+   * Reads the current URL hash and updates the UI to reflect the parameters.
+   * Invalid parameters are ignored.
+   */
+  async #updateUIFromURL() {
+    const supportedLanguages = this.#supportedLanguages;
+    const urlParams = new URLSearchParams(window.location.href.split("#")[1]);
+    const sourceLanguage = urlParams.get("src");
+    const targetLanguage = urlParams.get("trg");
+    const sourceText = urlParams.get("text") ?? "";
+    const { sourceLanguageSelector, targetLanguageSelector } = this.elements;
+
+    if (sourceLanguage === "detect") {
+      await this.#maybeUpdateDetectedSourceLanguage();
+    } else if (
+      supportedLanguages.sourceLanguages.some(
+        ({ langTagKey }) => langTagKey === sourceLanguage
+      )
+    ) {
+      sourceLanguageSelector.value = sourceLanguage;
+    }
+
+    if (
+      supportedLanguages.targetLanguages.some(
+        ({ langTagKey }) => langTagKey === targetLanguage
+      )
+    ) {
+      targetLanguageSelector.value = targetLanguage;
+    }
+
+    this.#setSourceText(sourceText);
+  }
+
+  /**
+   * Updates the URL hash to reflect the current state of the UI.
+   */
+  #updateURLFromUI() {
+    const { sourceLanguageSelector, targetLanguageSelector } = this.elements;
+
+    const params = new URLSearchParams();
+
+    const sourceLanguage = sourceLanguageSelector.value;
+    if (sourceLanguage) {
+      params.append("src", sourceLanguage);
+    }
+
+    const targetLanguage = targetLanguageSelector.value;
+    if (targetLanguage) {
+      params.append("trg", targetLanguage);
+    }
+
+    const sourceText = this.#getSourceText().substring(0, URL_MAX_TEXT_LENGTH);
+    if (sourceText) {
+      params.append("text", sourceText);
     }
 
     window.location.hash = params;
+
+    document.dispatchEvent(
+      new CustomEvent("AboutTranslationsTest:URLUpdatedFromUI", {
+        detail: { sourceLanguage, targetLanguage, sourceText },
+      })
+    );
   }
 
   /**
-   * Only request a translation when it's ready.
+   * Sets the text direction ("dir" attribute) of the source text area
+   * based on its content and the currently selected source language.
    */
-  maybeRequestTranslation = debounce({
+  #updateSourceScriptDirection() {
+    const appLocale = AT_getAppLocale();
+    const selectedLanguagePair = this.#getSelectedLanguagePair();
+    const selectedSourceLanguage = selectedLanguagePair?.sourceLanguage;
+    const { sourceTextArea } = this.elements;
+
+    if (selectedSourceLanguage && sourceTextArea.value) {
+      sourceTextArea.setAttribute(
+        "dir",
+        AT_getScriptDirection(selectedSourceLanguage)
+      );
+    } else {
+      sourceTextArea.setAttribute("dir", AT_getScriptDirection(appLocale));
+    }
+  }
+
+  /**
+   * Sets the text direction ("dir" attribute) of the target text area
+   * based on its content and the currently selected target language.
+   */
+  #updateTargetScriptDirection() {
+    const appLocale = AT_getAppLocale();
+    const selectedLanguagePair = this.#getSelectedLanguagePair();
+    const selectedTargetLanguage = selectedLanguagePair?.targetLanguage;
+    const { targetTextArea } = this.elements;
+
+    if (selectedTargetLanguage && targetTextArea.value) {
+      targetTextArea.setAttribute(
+        "dir",
+        AT_getScriptDirection(selectedTargetLanguage)
+      );
+    } else {
+      targetTextArea.setAttribute("dir", AT_getScriptDirection(appLocale));
+    }
+  }
+
+  /**
+   * Ensures that the translator matches the selected language pair,
+   * destroying the previous non-matching translator if needed, and
+   * creating a new translator.
+   *
+   * @returns {Promise<boolean>} true if the translator was reassigned, otherwise false.
+   */
+  async #ensureTranslatorMatchesSelectedLanguagePair() {
+    if (this.#translatorMatchesSelectedLanguagePair()) {
+      return false;
+    }
+
+    this.#translator?.destroy();
+
+    const selectedLanguagePair = this.#getSelectedLanguagePair();
+
+    this.#translator = await Translator.create({
+      languagePair: selectedLanguagePair,
+      requestTranslationsPort,
+      allowSameLanguage: true,
+      activeRequestCapacity: 1,
+    });
+
+    return true;
+  }
+
+  /**
+   * Destroys the active {@link Translator} instance, if any.
+   */
+  #destroyTranslator() {
+    if (this.#translator) {
+      this.#translator.destroy();
+      this.#translator = null;
+    }
+  }
+
+  /**
+   * Rebuilds the translator unconditionally and immediately re-evaluates whether
+   * a translation request should be made.
+   */
+  rebuildTranslator() {
+    this.#destroyTranslator();
+    this.#maybeRequestTranslation();
+  }
+
+  /**
+   * Requests translation on a debounce timer, only if the UI conditions are correct to do so.
+   */
+  #maybeRequestTranslation = debounce({
     /**
      * Debounce the translation requests so that the worker doesn't fire for every
      * single keyboard input, but instead the keyboard events are ignored until
@@ -255,642 +1029,190 @@ class TranslationsState {
      * in a new translation request.
      */
     onDebounce: async () => {
-      // If a translation is requested, something may have changed that needs to be updated in the url
-      this.updateURL();
-      if (!this.isTranslationEngineSupported) {
-        // Never translate when the engine isn't supported.
-        return;
-      }
+      try {
+        this.#updateURLFromUI();
+        this.#ensureTextAreaHeightsMatch({ scheduleCallback: false });
 
-      // The contents of "this" can change between async steps, store a local variable
-      // binding of these values.
-      const { messageToTranslate, translator, languagePair } = this;
+        await this.#maybeUpdateDetectedSourceLanguage();
 
-      if (!languagePair || !messageToTranslate || !translator) {
-        // Not everything is set for translation.
-        this.ui.updateTranslation("");
-        return;
-      }
+        const sourceText = this.#getSourceText();
+        const selectedLanguagePair = this.#getSelectedLanguagePair();
 
-      // Ensure the previous translation has finished so that only the latest
-      // translation goes through.
-      await this.translationRequest;
-
-      if (
-        // Check if the current configuration has changed and if this is stale. If so
-        // then skip this request, as there is already a newer request with more up to
-        // date information.
-        this.translator !== translator ||
-        this.languagePair !== languagePair ||
-        this.messageToTranslate !== messageToTranslate
-      ) {
-        return;
-      }
-
-      const start = performance.now();
-      this.translationRequest = this.translator.translate(
-        messageToTranslate,
-        AT_isHtmlTranslation()
-      );
-      this.ui.setResultPlaceholderTextContent(l10nIds.translatingMessage);
-      const translation = await this.translationRequest;
-      this.ui.setResultPlaceholderTextContent(l10nIds.resultsPlaceholder);
-
-      // The measure events will show up in the Firefox Profiler.
-      performance.measure(
-        `Translations: Translate "${this.languagePairKey}" with ${messageToTranslate.length} characters.`,
-        {
-          start,
-          end: performance.now(),
+        if (!sourceText || !selectedLanguagePair) {
+          // The conditions for translation are not met.
+          this.#setTargetText("");
+          this.#destroyTranslator();
+          this.#updateSwapLanguagesButtonEnabledState();
+          this.elements.targetTextArea.setAttribute(
+            "dir",
+            AT_getScriptDirection(AT_getAppLocale())
+          );
+          return;
         }
-      );
 
-      this.ui.updateTranslation(translation);
-      const duration = performance.now() - start;
-      AT_log(`Translation done in ${duration / 1000} seconds`);
+        if (this.#isDetectedLanguageUnsupported()) {
+          this.#updateSwapLanguagesButtonEnabledState();
+          this.#setTargetText("");
+          return;
+        }
+
+        const translationId = ++this.#translationId;
+        this.#maybeDisplayTranslatingPlaceholder();
+
+        await this.#ensureTranslatorMatchesSelectedLanguagePair();
+        if (translationId !== this.#translationId) {
+          // This translation request is no longer relevant.
+          return;
+        }
+
+        document.dispatchEvent(
+          new CustomEvent("AboutTranslationsTest:TranslationRequested", {
+            detail: { translationId },
+          })
+        );
+
+        const startTime = performance.now();
+        const translationRequest = this.#translator.translate(
+          sourceText,
+          AT_isHtmlTranslation()
+        );
+
+        const translatedText = await translationRequest;
+        if (translationId !== this.#translationId) {
+          // This translation request is no longer relevant.
+          return;
+        }
+
+        performance.measure(
+          `AboutTranslations: Translate ${selectedLanguagePair.sourceLanguage} → ${selectedLanguagePair.targetLanguage} with ${sourceText.length} characters.`,
+          {
+            start: startTime,
+            end: performance.now(),
+          }
+        );
+
+        this.#setTargetText(translatedText);
+        this.#updateSwapLanguagesButtonEnabledState();
+        document.dispatchEvent(
+          new CustomEvent("AboutTranslationsTest:TranslationComplete", {
+            detail: { translationId },
+          })
+        );
+
+        const duration = performance.now() - startTime;
+        AT_log(`Translation done in ${duration / 1000} seconds`);
+      } catch (error) {
+        AT_logError(error);
+      }
     },
 
     // Mark the events so that they show up in the Firefox Profiler. This makes it handy
     // to visualize the debouncing behavior.
     doEveryTime: () => {
+      const sourceText = this.#getSourceText();
       performance.mark(
-        `Translations: input changed to ${this.messageToTranslate.length} characters`
+        `Translations: input changed to ${sourceText.length} code units.`
       );
+
+      if (!sourceText) {
+        this.#setTargetText("");
+      }
+
+      this.#updateSourceScriptDirection();
     },
   });
 
   /**
-   * Any time a language pair is changed, a new Translator needs to be created.
+   * Ensures that the heights of the source and target text areas match by syncing
+   * them to the maximum height of either of their content.
+   *
+   * There are many situations in which this function needs to be called:
+   *   - Every time the source text is updated
+   *   - Every time a translation occurs
+   *   - Every time the window is resized
+   *   - Every time the zoom level is changed
+   *   - Etc.
+   *
+   * Some of these events happen infrequently, or are already debounced, such as
+   * each time a translation occurs. In these situations it is okay to synchronize
+   * the text-area heights immediately.
+   *
+   * Some of these events can trigger quite rapidly, such as resizing the window
+   * via click-and-drag semantics. In this case, a single callback should be scheduled
+   * to synchronize the text-area heights to prevent unnecessary and excessive reflow.
+   *
+   * @param {object} params
+   * @param {boolean} params.scheduleCallback
    */
-  async maybeCreateNewTranslator() {
-    // If we may need to re-building the worker, the old translation is no longer valid.
-    this.ui.updateTranslation("");
-    // These are cases in which it wouldn't make sense or be possible to load any translations models.
+  #ensureTextAreaHeightsMatch({ scheduleCallback }) {
+    if (scheduleCallback) {
+      if (this.#synchronizeTextAreaHeightsTimeoutId) {
+        // There is already a pending callback: no need to schedule another.
+        return;
+      }
+
+      this.#synchronizeTextAreaHeightsTimeoutId = setTimeout(
+        this.#synchronizeTextAreasToMaxContentHeight,
+        100
+      );
+
+      return;
+    }
+
+    this.#synchronizeTextAreasToMaxContentHeight();
+  }
+
+  /**
+   * Calculates the heights of the content in both the source and target text areas,
+   * then syncs them both to the maximum calculated content height among the two.
+   *
+   * This function is intentionally written as a lambda so that it can be passed
+   * as a callback without the need to explicitly bind `this` to the function object.
+   *
+   * Prefer calling #ensureTextAreaHeightsMatch to make it clear whether this function
+   * needs to run immediately, or is okay to be scheduled as a callback.
+   *
+   * @see {AboutTranslations#ensureTextAreaHeightsMatch}
+   */
+  #synchronizeTextAreasToMaxContentHeight = () => {
+    const { sourceTextArea, targetTextArea } = this.elements;
+
+    // This will be the same for both the source and target text areas.
+    const textAreaRatioBefore =
+      parseFloat(sourceTextArea.style.height) / sourceTextArea.scrollWidth;
+
+    sourceTextArea.style.height = "auto";
+    targetTextArea.style.height = "auto";
+
+    const maxContentHeight = Math.ceil(
+      Math.max(sourceTextArea.scrollHeight, targetTextArea.scrollHeight)
+    );
+    const maxContentHeightPixels = `${maxContentHeight}px`;
+
+    sourceTextArea.style.height = maxContentHeightPixels;
+    targetTextArea.style.height = maxContentHeightPixels;
+
+    const textAreaRatioAfter = maxContentHeight / sourceTextArea.scrollWidth;
+    const ratioDelta = textAreaRatioAfter - textAreaRatioBefore;
+    const changeThreshold = 0.001;
 
     if (
-      // If sourceLanguage or targetLanguage are unpopulated we cannot load anything.
-      !this.sourceLanguage ||
-      !this.targetLanguage ||
-      // If sourceLanguage's value is "detect", rather than a BCP 47 language tag, then no language
-      // has been detected yet.
-      this.sourceLanguage === "detect" ||
-      // If sourceLanguage and targetLanguage are the same, this means that the detected language
-      // is the same as the targetLanguage, and we do not want to translate from one language to itself.
-      this.sourceLanguage === this.targetLanguage ||
-      // If the state's languages do not match the UI's languages, then we may be in the middle of
-      // transitioning the state, so we should not create a new translator yet.
-      this.targetLanguage !== this.ui.targetLanguage.value ||
-      (this.sourceLanguage !== this.ui.sourceLanguage.value &&
-        this.ui.sourceLanguage.value !== "detect")
+      // The text-area heights were not 0px prior to growing.
+      textAreaRatioBefore > changeThreshold &&
+      // The text-area aspect ratio changed beyond typical floating-point error.
+      Math.abs(ratioDelta) > changeThreshold
     ) {
-      return;
-    }
-
-    const start = performance.now();
-    AT_log(
-      `Creating a new translator for "${this.sourceLanguage}" to "${this.targetLanguage}"`
-    );
-
-    const requestTranslationsPort = languagePair => {
-      const { promise, resolve } = Promise.withResolvers();
-
-      const getResponse = ({ data }) => {
-        if (
-          data.type == "GetTranslationsPort" &&
-          data.languagePair.sourceLanguage === languagePair.sourceLanguage &&
-          data.languagePair.targetLanguage === languagePair.targetLanguage &&
-          data.languagePair.sourceVariant == languagePair.sourceVariant &&
-          data.languagePair.targetVariant == languagePair.targetVariant
-        ) {
-          window.removeEventListener("message", getResponse);
-          resolve(data.port);
-        }
-      };
-
-      window.addEventListener("message", getResponse);
-      AT_createTranslationsPort(languagePair);
-
-      return promise;
-    };
-
-    this.languagePair = {
-      sourceLanguage: this.sourceLanguage,
-      targetLanguage: this.targetLanguage,
-      sourceVariant: this.sourceVariant,
-      targetVariant: this.targetVariant,
-    };
-    this.languagePairKey = TranslationsUtils.serializeLanguagePair(
-      this.languagePair
-    );
-
-    try {
-      const translatorPromise = Translator.create(
-        this.languagePair,
-        requestTranslationsPort
-      );
-      const duration = performance.now() - start;
-
-      // Signal to tests that the translator was created so they can exit.
-      window.postMessage("translator-ready");
-
-      this.translator = await translatorPromise;
-      AT_log(`Created a new Translator in ${duration / 1000} seconds`);
-
-      this.maybeRequestTranslation();
-    } catch (error) {
-      this.languagePair = null;
-      this.languagePairKey = null;
-      this.ui.showInfo("about-translations-engine-error");
-      this.ui.setResultPlaceholderTextContent(l10nIds.resultsPlaceholder);
-      AT_logError("Failed to get the Translations worker", error);
-    }
-  }
-
-  /**
-   * Updates the sourceLanguage to match the detected language only if the
-   * about-translations-detect option is selected in the language-from dropdown.
-   *
-   * If the new sourceLanguage is different than the previous sourceLanguage this
-   * may update the UI to display the new language and may rebuild the translations
-   * worker if there is a valid selected target language.
-   */
-  async maybeUpdateDetectedLanguage() {
-    if (!this.ui.detectOptionIsSelected() || this.messageToTranslate === "") {
-      // If we are not detecting languages or if the message has been cleared
-      // we should ensure that the UI is not displaying a detected language
-      // and there is no need to run any language detection.
-      this.ui.setDetectOptionTextContent("");
-      return;
-    }
-
-    const [langTag, supportedLanguages] = await Promise.all([
-      this.identifyLanguage(this.messageToTranslate),
-      this.supportedLanguages,
-    ]);
-
-    // Only update the language if the detected language matches
-    // one of our supported languages.
-    const entry = supportedLanguages.sourceLanguages.find(
-      ({ langTag: existingTag }) => existingTag === langTag
-    );
-    if (entry) {
-      const { displayName } = entry;
-      await this.setSourceLanguage(langTag);
-      this.ui.setDetectOptionTextContent(displayName);
-    }
-  }
-
-  /**
-   * @param {string} langTagKey
-   */
-  async setSourceLanguage(langTagKey) {
-    const [langTag, variant] = langTagKey.split(",");
-    if (langTag !== this.sourceLanguage || variant !== this.sourceVariant) {
-      this.sourceLanguage = langTag;
-      this.sourceVariant = variant;
-      await this.maybeCreateNewTranslator();
-    }
-  }
-
-  /**
-   * @param {string} langTagKey
-   */
-  setTargetLanguage(langTagKey) {
-    const [langTag, variant] = langTagKey.split(",");
-    if (langTag !== this.targetLanguage || this.targetVariant !== variant) {
-      this.targetLanguage = langTag;
-      this.targetVariant = variant;
-      this.maybeCreateNewTranslator();
-    }
-  }
-
-  /**
-   * @param {string} message
-   */
-  async setMessageToTranslate(message) {
-    if (message !== this.messageToTranslate) {
-      this.messageToTranslate = message;
-      await this.maybeUpdateDetectedLanguage();
-      this.maybeRequestTranslation();
-    }
-  }
-}
-
-/**
- *
- */
-class TranslationsUI {
-  /** @type {HTMLSelectElement} */
-  sourceLanguage = document.getElementById("language-from");
-  /** @type {HTMLSelectElement} */
-  targetLanguage = document.getElementById("language-to");
-  /** @type {HTMLButtonElement} */
-  languageSwap = document.getElementById("language-swap");
-  /** @type {HTMLTextAreaElement} */
-  translationFrom = document.getElementById("translation-from");
-  /** @type {HTMLDivElement} */
-  translationTo = document.getElementById("translation-to");
-  /** @type {HTMLDivElement} */
-  translationToBlank = document.getElementById("translation-to-blank");
-  /** @type {HTMLDivElement} */
-  translationInfo = document.getElementById("translation-info");
-  /** @type {HTMLDivElement} */
-  translationInfoMessage = document.getElementById("translation-info-message");
-  /** @type {HTMLDivElement} */
-  translationResultsPlaceholder = document.getElementById(
-    "translation-results-placeholder"
-  );
-  /** @type {HTMLElement} */
-  messageBar = document.getElementById("messageBar");
-  /** @type {TranslationsState} */
-  state;
-
-  /**
-   * The detect-language option element. We want to maintain a handle to this so that
-   * we can dynamically update its display text to include the detected language.
-   *
-   * @type {HTMLOptionElement}
-   */
-  #detectOption;
-
-  /**
-   * @param {TranslationsState} state
-   */
-  constructor(state) {
-    this.state = state;
-    this.translationTo.style.visibility = "visible";
-    this.#detectOption = document.querySelector('option[value="detect"]');
-    AT_telemetry("onOpen", {
-      maintainFlow: false,
-    });
-  }
-
-  /**
-   * Do the initial setup.
-   */
-  setup() {
-    if (!this.state.isTranslationEngineSupported) {
-      this.showInfo("about-translations-no-support");
-      this.disableUI();
-      return;
-    }
-    this.setupDropdowns().catch(error => {
-      console.error("Failed to set up dropdowns:", error);
-      this.showError("about-translations-language-load-error");
-    });
-    this.setupTextarea();
-    this.setupLanguageSwapButton();
-  }
-
-  /**
-   * Signals that the UI is ready, for tests.
-   */
-  setAsReady() {
-    document.body.setAttribute("ready", "");
-  }
-
-  /**
-   * Once the models have been synced from remote settings, populate them with the display
-   * names of the languages.
-   */
-  async setupDropdowns() {
-    const supportedLanguages = await this.state.supportedLanguages;
-
-    // Update the DOM elements with the display names.
-    for (const {
-      langTagKey,
-      displayName,
-    } of supportedLanguages.targetLanguages) {
-      const option = document.createElement("option");
-      option.value = langTagKey;
-      option.text = displayName;
-      this.targetLanguage.add(option);
-    }
-
-    for (const {
-      langTagKey,
-      displayName,
-    } of supportedLanguages.sourceLanguages) {
-      const option = document.createElement("option");
-      option.value = langTagKey;
-      option.text = displayName;
-      this.sourceLanguage.add(option);
-    }
-
-    // Enable the controls.
-    this.sourceLanguage.disabled = false;
-    this.targetLanguage.disabled = false;
-
-    // Focus the language dropdowns if they are empty.
-    if (this.sourceLanguage.value == "") {
-      this.sourceLanguage.focus();
-    } else if (this.targetLanguage.value == "") {
-      this.targetLanguage.focus();
-    }
-
-    this.state.setSourceLanguage(this.sourceLanguage.value);
-    this.state.setTargetLanguage(this.targetLanguage.value);
-
-    await this.updateOnLanguageChange();
-
-    this.sourceLanguage.addEventListener("input", async () => {
-      this.state.targetLanguage = this.targetLanguage.value;
-      this.translationTo.setAttribute("lang", this.targetLanguage.value);
-      this.state.setSourceLanguage(this.sourceLanguage.value);
-
-      await this.updateOnLanguageChange();
-    });
-
-    this.targetLanguage.addEventListener("input", async () => {
-      this.state.sourceLanguage = this.sourceLanguage.value;
-      this.translationTo.setAttribute("lang", this.targetLanguage.value);
-      this.state.setTargetLanguage(this.targetLanguage.value);
-
-      await this.updateOnLanguageChange();
-    });
-  }
-
-  /**
-   * Sets up the language swap button, so that when it's clicked, it:
-   * - swaps the selected source adn target lanauges
-   * - replaces the text to translate with the previous translation result
-   */
-  setupLanguageSwapButton() {
-    this.languageSwap.addEventListener("click", async () => {
-      const translationToValue = this.translationTo.innerText;
-
-      const newSourceLanguage = this.sanitizeTargetLangTagAsSourceLangTag(
-        this.targetLanguage.value
-      );
-      const newTargetLanguage =
-        this.sanitizeSourceLangTagAsTargetLangTag(this.sourceLanguage.value) ||
-        this.state.sourceLanguage;
-
-      this.sourceLanguage.value = newSourceLanguage;
-      this.state.sourceLanguage = newSourceLanguage;
-
-      this.targetLanguage.value = newTargetLanguage;
-      this.state.targetLanguage = newTargetLanguage;
-
-      this.translationFrom.value = translationToValue;
-      this.state.messageToTranslate = translationToValue;
-
-      await this.updateOnLanguageChange();
-
-      if (newSourceLanguage == "detect") {
-        await this.state.maybeUpdateDetectedLanguage();
-      }
-
-      await this.state.maybeCreateNewTranslator();
-    });
-  }
-
-  /**
-   * Get the target language dropdown option equivalent to the given source language dropdown option.
-   * `detect` will be converted to `` as `detect` is not a valid option in the target language dropdown
-   *
-   * @param {string} sourceLangTag
-   */
-  sanitizeSourceLangTagAsTargetLangTag(sourceLangTag) {
-    if (sourceLangTag === "detect") {
-      return "";
-    }
-    return sourceLangTag;
-  }
-
-  /**
-   * Get the source language dropdown option equivalent to the given target language dropdown option.
-   * `` will be converted to `detect` as `` is not a valid option in the source language dropdown
-   *
-   * @param {string} targetLangTag
-   */
-  sanitizeTargetLangTagAsSourceLangTag(targetLangTag) {
-    if (targetLangTag === "") {
-      return "detect";
-    }
-    return targetLangTag;
-  }
-
-  /**
-   * Show an error message to the user.
-   *
-   * @param {string} l10nId
-   */
-  showError(l10nId) {
-    document.l10n.setAttributes(this.messageBar, l10nId);
-    this.messageBar.hidden = false;
-    this.messageBar.setAttribute("type", "error");
-  }
-
-  /**
-   * Show an info message to the user.
-   *
-   * @param {string} l10nId
-   */
-  showInfo(l10nId) {
-    document.l10n.setAttributes(this.messageBar, l10nId);
-    this.messageBar.hidden = false;
-    this.messageBar.setAttribute("type", "info");
-  }
-
-  /**
-   * Hides the info UI.
-   */
-  hideInfo() {
-    this.translationInfo.style.display = "none";
-  }
-
-  /**
-   * Returns true if about-translations-detect is the currently
-   * selected option in the language-from dropdown, otherwise false.
-   *
-   * @returns {boolean}
-   */
-  detectOptionIsSelected() {
-    return this.sourceLanguage.value === "detect";
-  }
-
-  /**
-   * Sets the textContent of the about-translations-detect option in the
-   * language-from dropdown to include the detected language's display name.
-   *
-   * @param {string} displayName
-   */
-  setDetectOptionTextContent(displayName) {
-    // Set the text to the fluent value that takes an arg to display the language name.
-    if (displayName) {
-      document.l10n.setAttributes(
-        this.#detectOption,
-        "about-translations-detect-lang",
-        { language: displayName }
-      );
-    } else {
-      // Reset the text to the fluent value that does not display any language name.
-      document.l10n.setAttributes(
-        this.#detectOption,
-        "about-translations-detect"
+      document.dispatchEvent(
+        new CustomEvent("AboutTranslationsTest:TextAreaHeightsChanged", {
+          detail: {
+            textAreaHeights: ratioDelta < 0 ? "decreased" : "increased",
+          },
+        })
       );
     }
-  }
 
-  /**
-   * Sets the translation result placeholder text based on the l10n id provided
-   *
-   * @param {string} l10nId
-   */
-  setResultPlaceholderTextContent(l10nId) {
-    document.l10n.setAttributes(this.translationResultsPlaceholder, l10nId);
-  }
-
-  /**
-   * React to language changes.
-   */
-  async updateOnLanguageChange() {
-    this.#updateDropdownLanguages();
-    this.#updateMessageDirections();
-    await this.#updateLanguageSwapButton();
-    this.state.updateURL();
-  }
-
-  /**
-   * You cant translate from one language to another language. Hide the options
-   * if this is the case.
-   */
-  #updateDropdownLanguages() {
-    for (const option of this.sourceLanguage.options) {
-      option.hidden = false;
-    }
-    for (const option of this.targetLanguage.options) {
-      option.hidden = false;
-    }
-    if (this.state.targetLanguage) {
-      const option = this.sourceLanguage.querySelector(
-        `[value=${this.state.targetLanguage}]`
-      );
-      if (option) {
-        option.hidden = true;
-      }
-    }
-    if (this.state.sourceLanguage) {
-      const option = this.targetLanguage.querySelector(
-        `[value=${this.state.sourceLanguage}]`
-      );
-      if (option) {
-        option.hidden = true;
-      }
-    }
-    this.state.maybeUpdateDetectedLanguage();
-  }
-
-  /**
-   * Define the direction of the language message text, otherwise it might not display
-   * correctly. For instance English in an RTL UI would display incorrectly like so:
-   *
-   * LTR text in LTR UI:
-   *
-   * ┌──────────────────────────────────────────────┐
-   * │ This is in English.                          │
-   * └──────────────────────────────────────────────┘
-   *
-   * LTR text in RTL UI:
-   * ┌──────────────────────────────────────────────┐
-   * │                          .This is in English │
-   * └──────────────────────────────────────────────┘
-   *
-   * LTR text in RTL UI, but in an LTR container:
-   * ┌──────────────────────────────────────────────┐
-   * │ This is in English.                          │
-   * └──────────────────────────────────────────────┘
-   *
-   * The effects are similar, but reversed for RTL text in an LTR UI.
-   */
-  #updateMessageDirections() {
-    if (this.state.targetLanguage) {
-      this.translationTo.setAttribute(
-        "dir",
-        AT_getScriptDirection(this.state.targetLanguage)
-      );
-    } else {
-      this.translationTo.removeAttribute("dir");
-    }
-    if (this.state.sourceLanguage) {
-      this.translationFrom.setAttribute(
-        "dir",
-        AT_getScriptDirection(this.state.sourceLanguage)
-      );
-    } else {
-      this.translationFrom.removeAttribute("dir");
-    }
-  }
-
-  /**
-   * Disable the language swap button if sourceLanguage is equivalent to targetLanguage, or if the languages are not a valid option in the opposite direction
-   */
-  async #updateLanguageSwapButton() {
-    const sourceLanguage = this.state.sourceLanguage;
-    const targetLanguage = this.state.targetLanguage;
-
-    if (
-      sourceLanguage ===
-      this.sanitizeTargetLangTagAsSourceLangTag(targetLanguage)
-    ) {
-      this.languageSwap.disabled = true;
-      return;
-    }
-
-    if (this.translationFrom.value && !this.translationTo.innerText) {
-      this.languageSwap.disabled = true;
-      return;
-    }
-
-    const supportedLanguages = await this.state.supportedLanguages;
-
-    const isSourceLanguageValidAsTargetLanguage =
-      sourceLanguage === "detect" ||
-      supportedLanguages.languagePairs.some(
-        ({ targetLanguage }) => targetLanguage === sourceLanguage
-      );
-    const isTargetLanguageValidAsSourceLanguage =
-      targetLanguage === "" ||
-      supportedLanguages.languagePairs.some(
-        ({ sourceLanguage }) => sourceLanguage === targetLanguage
-      );
-
-    this.languageSwap.disabled =
-      !isSourceLanguageValidAsTargetLanguage ||
-      !isTargetLanguageValidAsSourceLanguage;
-  }
-
-  setupTextarea() {
-    this.state.setMessageToTranslate(this.translationFrom.value);
-    this.translationFrom.addEventListener("input", async () => {
-      await this.state.setMessageToTranslate(this.translationFrom.value);
-      this.#updateLanguageSwapButton();
-    });
-  }
-
-  disableUI() {
-    this.translationFrom.disabled = true;
-    this.sourceLanguage.disabled = true;
-    this.targetLanguage.disabled = true;
-    this.languageSwap.disabled = true;
-  }
-
-  /**
-   * @param {string} message
-   */
-  updateTranslation(message) {
-    this.translationTo.innerText = message;
-    if (message) {
-      this.translationTo.style.visibility = "visible";
-      this.translationToBlank.style.visibility = "hidden";
-      this.hideInfo();
-    } else {
-      this.translationTo.style.visibility = "hidden";
-      this.translationToBlank.style.visibility = "visible";
-    }
-    this.#updateLanguageSwapButton();
-  }
+    this.#synchronizeTextAreaHeightsTimeoutId = null;
+  };
 }
 
 /**
@@ -899,26 +1221,69 @@ class TranslationsUI {
 window.addEventListener("AboutTranslationsChromeToContent", ({ detail }) => {
   switch (detail.type) {
     case "enable": {
-      // While the feature is in development, hide the feature behind a pref. See the
-      // "browser.translations.enable" pref in modules/libpref/init/all.js and Bug 971044
-      // for the status of enabling this project.
-      if (window.translationsState) {
-        throw new Error("about:translations was already initialized.");
+      if (window.aboutTranslations) {
+        throw new Error(
+          "Attempt to initialize about:translations page more than once."
+        );
       }
-      AT_isTranslationEngineSupported().then(isSupported => {
-        window.translationsState = new TranslationsState(isSupported);
-      });
-      document.body.style.visibility = "visible";
+
+      AT_isTranslationEngineSupported()
+        .then(async isTranslationsEngineSupported => {
+          window.aboutTranslations = new AboutTranslations(
+            isTranslationsEngineSupported
+          );
+          await window.aboutTranslations.ready();
+        })
+        .catch(error => {
+          AT_logError(error);
+        })
+        .finally(() => {
+          // This lets test cases know that they can start making assertions.
+          document.body.setAttribute("ready-for-testing", "");
+          document.body.style.visibility = "visible";
+        });
+
       break;
     }
     case "rebuild-translator": {
-      window.translationsState.maybeCreateNewTranslator();
+      window.aboutTranslations.rebuildTranslator();
       break;
     }
-    default:
+    default: {
       throw new Error("Unknown AboutTranslationsChromeToContent event.");
+    }
   }
 });
+
+/**
+ * Creates a new message port to handle translation requests for the given
+ * language pair.
+ *
+ * @param {LanguagePair} languagePair
+ * @returns {Promise<MessagePort>}
+ */
+function requestTranslationsPort(languagePair) {
+  const { promise, resolve } = Promise.withResolvers();
+
+  /** @param {{data: {type:string, languagePair: LanguagePair, port: MessagePort}}} */
+  const getResponse = ({ data }) => {
+    if (
+      data.type == "GetTranslationsPort" &&
+      data.languagePair.sourceLanguage === languagePair.sourceLanguage &&
+      data.languagePair.targetLanguage === languagePair.targetLanguage &&
+      data.languagePair.sourceVariant == languagePair.sourceVariant &&
+      data.languagePair.targetVariant == languagePair.targetVariant
+    ) {
+      window.removeEventListener("message", getResponse);
+      resolve(data.port);
+    }
+  };
+
+  window.addEventListener("message", getResponse);
+  AT_createTranslationsPort(languagePair);
+
+  return promise;
+}
 
 /**
  * Debounce a function so that it is only called after some wait time with no activity.
@@ -953,7 +1318,6 @@ function debounce({ onDebounce, doEveryTime }) {
       // It's been long enough to go ahead and call the function.
       timeoutId = null;
       lastDispatch = null;
-      window.DEBOUNCE_RUN_COUNT += 1;
       onDebounce(...args);
       return;
     }
@@ -965,7 +1329,6 @@ function debounce({ onDebounce, doEveryTime }) {
       // Timeout ended, call the function.
       timeoutId = null;
       lastDispatch = null;
-      window.DEBOUNCE_RUN_COUNT += 1;
       onDebounce(...args);
     }, timeLeft);
   };

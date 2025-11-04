@@ -334,11 +334,8 @@ class HTMLTextAreaElement final : public TextControlElement,
   /**
    * Get the value, whether it is from the content or the frame.
    * @param aValue the value [out]
-   * @param aIgnoreWrap whether to ignore the wrap attribute when getting the
-   *        value.  If this is true, linebreaks will not be inserted even if
-   *        wrap=hard.
    */
-  void GetValueInternal(nsAString& aValue, bool aIgnoreWrap) const;
+  void GetValueInternal(nsAString& aValue) const;
 
   /**
    * Setting the value.

@@ -66,12 +66,17 @@ open class StrictModeManager(
     val suppressionCount = AtomicLong(0)
 
     /***
-     * Enables strict mode for debug purposes. meant to be run only in the main process.
+     * Enables strict mode for debug purposes. Meant to be run only in the main process. For
+     * simplicity it is also only supported on the main thread.
      * @param withPenaltyDeath boolean value to decide setting the penaltyDeath as a penalty.
      */
     fun enableStrictMode(withPenaltyDeath: Boolean) {
         if (!isEnabledByBuildConfig) {
             return
+        }
+
+        if (!mainLooper.isCurrentThread) {
+            throw IllegalStateException("StrictModeManager only supported on main thread")
         }
 
         val threadPolicy = buildThreadPolicy(withPenaltyDeath)
@@ -164,49 +169,45 @@ open class StrictModeManager(
     }
 
     /**
-     * Runs the given [functionBlock] and sets the given [StrictMode.ThreadPolicy] after its
-     * completion when in a build configuration that has StrictMode enabled. If StrictMode is
-     * not enabled, simply runs the [functionBlock]. This function is written in the style of
-     * [AutoCloseable.use].
+     * Runs the given [functionBlock] while temporarily suppressing StrictMode checks if they are
+     * enabled by using the [allowFn] before the call. A Gecko Profiler marker is recorded even
+     * if the strict mode checks are disabled to allow investigating performance of release builds.
      *
-     * This function contains perf improvements so it should be
-     * called instead of [mozilla.components.support.ktx.android.os.resetAfter] (using the wrong
-     * method should be prevented by a lint check). This is significantly less convenient to run than
-     * when it was written as an extension function on [StrictMode.ThreadPolicy] but I think this is
-     * okay: it shouldn't be easy to ignore StrictMode.
+     * For convenience we allow calling this on non-main threads in which case the [functionBlock]
+     * is run wihtou profiler markers or StrictMode effects.
      *
      * @return the value returned by [functionBlock].
      */
-    open fun <R> resetAfter(policy: StrictMode.ThreadPolicy, functionBlock: () -> R): R {
-        fun instrumentedFunctionBlock(): R {
-            val startProfilerTime = components.core.engine.profiler?.getProfilerTime()
-            val returnValue = functionBlock()
-
-            if (mainLooper.thread === Thread.currentThread()) { // markers only supported on main thread.
-                components.core.engine.profiler?.addMarker("StrictMode.resetAfter", startProfilerTime)
-            }
-            return returnValue
+    open fun <R> allowViolation(allowFn: () -> StrictMode.ThreadPolicy, functionBlock: () -> R): R {
+        // To make things easier for callers, we allow this to be called from non-main threads but in that case
+        // simply run their block without any profiling or StrictMode effects.
+        if (!mainLooper.isCurrentThread) {
+            return functionBlock()
         }
 
-        // Calling resetAfter takes 1-2ms (unknown device) so we only execute it if StrictMode can
-        // actually be enabled. https://github.com/mozilla-mobile/fenix/issues/11617
-        return if (isEnabledByBuildConfig) {
-            // This can overflow and crash. However, it's unlikely we'll suppress StrictMode 9
-            // quintillion times in a build config where StrictMode is enabled so we don't handle it
-            // because it'd increase complexity.
-            val suppressionCount = suppressionCount.incrementAndGet()
+        // Run the functionBlock inside a profiler marker even if we won't use StrictMode so that we
+        // can still track the performance of the code.
+        val startProfilerTime = components.core.engine.profiler?.getProfilerTime()
 
-            // We log so that devs are more likely to notice that we're suppressing StrictMode violations.
+        val returnValue = if (isEnabledByBuildConfig) {
+            // Log that we are suppressing a violation to developer convenience. Technically this
+            // count can throw on overflow but it is 64-bit and won't practically happen.
+            val suppressionCount = suppressionCount.incrementAndGet()
             logger.warn("StrictMode violation suppressed: #$suppressionCount")
 
+            // Apply the policy variation, run block, then restore policy.
+            val policy = allowFn()
             try {
-                instrumentedFunctionBlock()
+                functionBlock()
             } finally {
                 applyThreadPolicy(policy)
             }
         } else {
-            instrumentedFunctionBlock()
+            functionBlock()
         }
+
+        components.core.engine.profiler?.addMarker("StrictMode.allow", startProfilerTime)
+        return returnValue
     }
 
     /**

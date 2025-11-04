@@ -14,7 +14,7 @@ prefs = ["security.allow_parent_unrestricted_js_loads=true"]
 ["fetch.js"]
 
 ["large-pipeto.js"]
-run-sequentially = "very high failure rate in parallel"
+run-sequentially = ["os == 'mac'"] # almost perma timeout on Mac
 
 ["proper-realm-cancel.js"]
 

@@ -4816,7 +4816,7 @@ async function runQuerySelectionEventTestAtTextChangeNotification() {
         case "request-to-cancel":
           aTIP.cancelComposition();
           break;
-        case "notify-text-change":
+        case "notify-text-change": {
           const textContent = synthesizeQueryTextContent(0, 100);
           if (textContent?.text.includes("abc")) {
             break;  // Different notification which we want to test, wait next one.
@@ -4839,6 +4839,7 @@ async function runQuerySelectionEventTestAtTextChangeNotification() {
           }
           resolve();
           break;
+        }
       }
       return true;
     });

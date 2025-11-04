@@ -37,8 +37,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/MacroForEach.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/RefPtr.h"
@@ -149,7 +147,7 @@ struct FrameMessageMarker {
                              MS::PayloadFlags::Searchable);
     schema.AddKeyLabelFormat("sync", "Sync", MS::Format::String);
     schema.SetTooltipLabel("FrameMessage - {marker.name}");
-    schema.SetTableLabel("{marker.name} - {marker.data.name}");
+    schema.SetTableLabel("{marker.data.name}");
     return schema;
   }
 };

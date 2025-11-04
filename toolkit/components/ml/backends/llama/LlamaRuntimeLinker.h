@@ -47,10 +47,17 @@ namespace mozilla::llama {
   X(struct llama_sampler*, llama_sampler_init_greedy, (void))               \
   X(struct llama_sampler*, llama_sampler_init_temp, (float t))              \
   X(struct llama_sampler*, llama_sampler_init_dist, (uint32_t seed))        \
+  X(struct llama_sampler*, llama_sampler_init_top_k, (int32_t k))           \
+  X(struct llama_sampler*, llama_sampler_init_top_p,                        \
+    (float p, size_t min_keep))                                             \
+  X(struct llama_sampler*, llama_sampler_init_logit_bias,                   \
+    (int32_t n_vocab, int32_t n_logit_bias,                                 \
+     const llama_logit_bias* logit_bias))                                   \
   X(void, llama_memory_clear, (llama_memory_t mem, bool data))              \
   X(llama_memory_t, llama_get_memory, (const struct llama_context* ctx))    \
   X(const struct llama_vocab*, llama_model_get_vocab,                       \
     (const struct llama_model* model))                                      \
+  X(int32_t, llama_vocab_n_tokens, (const struct llama_vocab* vocab))       \
   X(int32_t, llama_tokenize,                                                \
     (const struct llama_vocab* vocab, const char* text, int32_t text_len,   \
      llama_token* tokens, int32_t n_tokens_max, bool add_special,           \

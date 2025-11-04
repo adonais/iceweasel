@@ -245,13 +245,27 @@ add_task(async function test_guards_against_commandline_strings() {
 
   Assert.throws(
     () => registry.findTaskbarTab(invalidUrl, validUserContextId),
-    /Invalid argument, `aUrl` should be instance of `nsIURI`/,
+    /Invalid argument, `aUrl` should be instance of `nsIURL`/,
     "Should reject URLs provided as a string."
   );
   Assert.throws(
     () => registry.findTaskbarTab(validUrl, invalidUserContextId),
     /Invalid argument, `aUserContextId` should be type of `number`/,
     "Should reject userContextId provided as a string."
+  );
+});
+
+add_task(async function test_guards_against_non_urls() {
+  // about:blank is a URI, but not a URL.
+  const url = Services.io.newURI("about:blank");
+  const userContextId = 0;
+
+  const registry = new TaskbarTabsRegistry();
+
+  throws(
+    () => registry.findOrCreateTaskbarTab(url, userContextId),
+    /Invalid argument, `aUrl` should be instance of `nsIURL`/,
+    "Should reject URIs that are not URLs."
   );
 });
 
@@ -304,4 +318,39 @@ add_task(async function test_shortcutRelativePath_is_saved() {
     "some\\path\\string.lnk",
     "Shortcut relative path should be saved"
   );
+});
+
+add_task(async function test_multiple_match_longest_prefix() {
+  const registry = new TaskbarTabsRegistry();
+
+  const uriWithPrefix = prefix =>
+    Services.io.newURI("https://example.com" + prefix);
+
+  const createWithScope = uri =>
+    registry.findOrCreateTaskbarTab(uri, 0, {
+      manifest: {
+        scope: uri.spec,
+      },
+    });
+  const find = prefix => registry.findTaskbarTab(uriWithPrefix(prefix), 0);
+
+  // Register them in an arbitrary order.
+  const ttAB = createWithScope(uriWithPrefix("/ab"));
+  const ttA = createWithScope(uriWithPrefix("/a"));
+  const ttABC = createWithScope(uriWithPrefix("/abc"));
+  const ttABCD = createWithScope(uriWithPrefix("/abc/d/"));
+
+  equal(find("/q"), null, "/q does not exist");
+  equal(find("/a").id, ttA.id, "/a matches /a");
+  equal(find("/az").id, ttA.id, "/a matches /az");
+
+  equal(find("/ab").id, ttAB.id, "/ab matches /ab");
+  equal(find("/abq").id, ttAB.id, "/abq matches /ab");
+
+  equal(find("/abc").id, ttABC.id, "/abc matches /abc");
+  equal(find("/abc/").id, ttABC.id, "/abc/ matches /abc");
+  equal(find("/abc/d").id, ttABC.id, "/abc/d matches /abc (not /abc/d/)");
+
+  equal(find("/abc/d/").id, ttABCD.id, "/abc/d/ matches /abc/d/");
+  equal(find("/abc/d/efgh").id, ttABCD.id, "/abc/d/efgh matches /abc/d/");
 });

@@ -5,7 +5,6 @@
 package org.mozilla.fenix.downloads
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.state.createTab
@@ -22,7 +21,6 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 
-@ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class DownloadSnackbarTest {
     @get:Rule

@@ -45,7 +45,6 @@ enum class PhoneFeature(val androidPermissionsList: Array<String>) : Parcelable 
         return context.isPermissionGranted(androidPermissionsList.asIterable())
     }
 
-    @Suppress("ComplexMethod")
     fun getActionLabel(
         context: Context,
         sitePermissions: SitePermissions? = null,

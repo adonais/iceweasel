@@ -55,25 +55,18 @@ internal fun EditLoginScreen(store: LoginsStore) {
         },
         containerColor = FirefoxTheme.colors.layer1,
     ) { paddingValues ->
-
-        if (state.biometricAuthenticationDialogState.shouldShow) {
-            BiometricAuthenticationDialog(store = store)
-        }
-
-        if (state.biometricAuthenticationState == BiometricAuthenticationState.Authorized) {
-            Column(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
-                EditLoginUrl(url = editState.login.url)
-                Spacer(modifier = Modifier.height(8.dp))
-                EditLoginUsername(store = store, user = editState.login.username)
-                Spacer(modifier = Modifier.height(8.dp))
-                EditLoginPassword(store = store, pass = editState.login.password)
-            }
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+            EditLoginUrl(url = editState.login.url)
+            Spacer(modifier = Modifier.height(8.dp))
+            EditLoginUsername(store = store, user = editState.login.username)
+            Spacer(modifier = Modifier.height(8.dp))
+            EditLoginPassword(store = store, pass = editState.login.password)
         }
     }
 }

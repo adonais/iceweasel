@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from taskgraph.util.schema import Schema, optionally_keyed_by
-from voluptuous import Any, Optional, Required
+from voluptuous import All, Any, Extra, Optional, Required
 from voluptuous.validators import Length
 
 graph_config_schema = Schema(
@@ -113,7 +113,20 @@ graph_config_schema = Schema(
             Optional("run"): {
                 Optional("use-caches"): Any(bool, [str]),
             },
+            Required("repositories"): All(
+                {
+                    str: {
+                        Required("name"): str,
+                        Optional("project-regex"): str,
+                        Optional("ssh-secret-name"): str,
+                        Extra: str,
+                    }
+                },
+                Length(min=1),
+            ),
         },
-        Required("expiration-policy"): optionally_keyed_by("project", {str: str}),
+        Required("expiration-policy"): optionally_keyed_by(
+            "project", "level", {str: str}
+        ),
     }
 )

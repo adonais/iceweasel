@@ -108,7 +108,7 @@ bool nsXHTMLContentSerializer::HasLongLines(const nsString& text,
 }
 
 NS_IMETHODIMP
-nsXHTMLContentSerializer::AppendText(nsIContent* aText, int32_t aStartOffset,
+nsXHTMLContentSerializer::AppendText(Text* aText, int32_t aStartOffset,
                                      int32_t aEndOffset) {
   NS_ENSURE_ARG(aText);
   NS_ENSURE_STATE(mOutput);

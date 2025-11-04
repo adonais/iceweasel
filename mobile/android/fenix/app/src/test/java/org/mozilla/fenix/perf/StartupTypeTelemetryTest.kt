@@ -12,6 +12,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import mozilla.components.support.ktx.kotlin.crossProduct
 import mozilla.components.support.test.robolectric.testContext
@@ -69,6 +70,7 @@ class StartupTypeTelemetryTest {
         verify { lifecycle.addObserver(any()) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `GIVEN all possible path and state combinations WHEN record telemetry THEN the labels are incremented the appropriate number of times`() = runTestOnMain {
         val allPossibleInputArgs = StartupState.entries.crossProduct(
@@ -95,6 +97,7 @@ class StartupTypeTelemetryTest {
         assertNull(PerfStartup.startupType["__other__"].testGetValue())
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `WHEN record is called THEN telemetry is recorded with the appropriate label`() = runTestOnMain {
         every { stateProvider.getStartupStateForStartedActivity(activityClass) } returns StartupState.COLD

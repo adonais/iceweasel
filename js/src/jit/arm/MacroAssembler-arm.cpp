@@ -2936,6 +2936,19 @@ void MacroAssemblerARMCompat::boxDouble(FloatRegister src,
 
 void MacroAssemblerARMCompat::boxNonDouble(JSValueType type, Register src,
                                            const ValueOperand& dest) {
+  MOZ_ASSERT(type != JSVAL_TYPE_UNDEFINED && type != JSVAL_TYPE_NULL);
+  MOZ_ASSERT(dest.typeReg() != dest.payloadReg());
+
+#ifdef DEBUG
+  if (type == JSVAL_TYPE_BOOLEAN) {
+    Label upperBitsZeroed;
+    as_cmp(src, Imm8(1));
+    ma_b(&upperBitsZeroed, Assembler::BelowOrEqual);
+    breakpoint();
+    bind(&upperBitsZeroed);
+  }
+#endif
+
   if (src != dest.payloadReg()) {
     ma_mov(src, dest.payloadReg());
   }
@@ -2945,6 +2958,39 @@ void MacroAssemblerARMCompat::boxNonDouble(JSValueType type, Register src,
 void MacroAssemblerARMCompat::boxNonDouble(Register type, Register src,
                                            const ValueOperand& dest) {
   MOZ_ASSERT(type != dest.payloadReg() && src != dest.typeReg());
+
+#ifdef DEBUG
+  Label ok, isNullOrUndefined, isBoolean;
+
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_NULL),
+                    &isNullOrUndefined);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_UNDEFINED),
+                    &isNullOrUndefined);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BOOLEAN),
+                    &isBoolean);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_INT32), &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_MAGIC), &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_STRING), &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_SYMBOL), &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_PRIVATE_GCTHING),
+                    &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BIGINT), &ok);
+  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_OBJECT), &ok);
+  breakpoint();
+  {
+    bind(&isNullOrUndefined);
+    as_cmp(src, Imm8(0));
+    ma_b(&ok, Assembler::Zero);
+    breakpoint();
+  }
+  {
+    bind(&isBoolean);
+    as_cmp(src, Imm8(1));
+    ma_b(&ok, Assembler::BelowOrEqual);
+    breakpoint();
+  }
+  bind(&ok);
+#endif
 
   if (src != dest.payloadReg()) {
     ma_mov(src, dest.payloadReg());
@@ -3193,15 +3239,6 @@ void MacroAssemblerARMCompat::loadUnalignedValue(const Address& src,
     ma_ldr(type, dest.typeReg(), scratch2);
     ma_ldr(payload, dest.payloadReg(), scratch2);
   }
-}
-
-void MacroAssemblerARMCompat::tagValue(JSValueType type, Register payload,
-                                       ValueOperand dest) {
-  MOZ_ASSERT(dest.typeReg() != dest.payloadReg());
-  if (payload != dest.payloadReg()) {
-    ma_mov(payload, dest.payloadReg());
-  }
-  ma_mov(ImmType(type), dest.typeReg());
 }
 
 void MacroAssemblerARMCompat::pushValue(ValueOperand val) {

@@ -15,8 +15,8 @@
 #include "mozilla/dom/CharacterData.h"
 #include "mozilla/dom/Element.h"
 #include "nsAtom.h"
+#include "nsDOMCSSDeclaration.h"
 #include "nsIContent.h"
-#include "nsICSSDeclaration.h"
 #include "nsIMutationObserver.h"
 #include "nsINode.h"
 #include "nsPrintfCString.h"
@@ -754,7 +754,7 @@ class MOZ_STACK_CLASS AutoCSSDeclarationAPIWrapper
 
   MOZ_CAN_RUN_SCRIPT AutoCSSDeclarationAPIWrapper(
       EditorBase& aEditorBase, nsStyledElement& aStyledElement,
-      nsICSSDeclaration* aDeclaration = nullptr)
+      nsDOMCSSDeclaration* aDeclaration = nullptr)
       : AutoDOMAPIWrapperBase(aEditorBase),
         mStyledElement(aStyledElement),
         mCSSDeclaration(aDeclaration ? *aDeclaration
@@ -854,7 +854,7 @@ class MOZ_STACK_CLASS AutoCSSDeclarationAPIWrapper
 
  protected:
   MOZ_KNOWN_LIVE nsStyledElement& mStyledElement;
-  MOZ_KNOWN_LIVE const OwningNonNull<nsICSSDeclaration> mCSSDeclaration;
+  MOZ_KNOWN_LIVE const OwningNonNull<nsDOMCSSDeclaration> mCSSDeclaration;
   nsAutoCString mRemovedValue;
   // For avoiding to copy the strings, we store the given string pointers only
   // while calling the API because it's enough to check whether checking

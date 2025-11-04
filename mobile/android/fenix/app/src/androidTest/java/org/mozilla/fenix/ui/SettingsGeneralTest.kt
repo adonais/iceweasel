@@ -18,6 +18,7 @@ import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RecyclerViewIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.getLoremIpsumAsset
 import org.mozilla.fenix.helpers.TestHelper.mDevice
+import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.checkTextSizeOnWebsite
@@ -129,6 +130,12 @@ class SettingsGeneralTest : TestSetup() {
         homeScreen {
         }.openThreeDotMenu {
         }.openSettings {
+            waitForAppWindowToBeUpdated()
+            registerAndCleanupIdlingResources(
+                RecyclerViewIdlingResource(activityIntentTestRule.activity.findViewById(R.id.recycler_view), 1),
+            ) {
+                verifyLanguageButton()
+            }
         }.openLanguageSubMenu {
             verifyLanguageListIsDisplayed()
             openSearchBar()
@@ -150,6 +157,12 @@ class SettingsGeneralTest : TestSetup() {
             }.enterURLAndEnterToBrowser("test".toUri()) {
             }.openThreeDotMenu {
             }.openSettings(localizedText = FR_SETTINGS) {
+                waitForAppWindowToBeUpdated()
+                registerAndCleanupIdlingResources(
+                    RecyclerViewIdlingResource(activityIntentTestRule.activity.findViewById(R.id.recycler_view), 1),
+                ) {
+                    verifyLanguageButton(localizedText = FRENCH_LANGUAGE_HEADER)
+                }
             }.openLanguageSubMenu(localizedText = FRENCH_LANGUAGE_HEADER) {
                 verifyLanguageHeaderIsTranslated(FRENCH_LANGUAGE_HEADER)
                 verifySelectedLanguage(FRENCH_SYSTEM_LOCALE_OPTION)

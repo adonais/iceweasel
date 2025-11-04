@@ -94,7 +94,7 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   }
 
   void AppendWriteRequest(RefPtr<Promise>& aRequest) {
-    mWriteRequests.AppendElement(aRequest);
+    mWriteRequests.Push(RefPtr<Promise>(aRequest));
   }
 
   // CreateWritableStream
@@ -237,7 +237,7 @@ class WritableStream : public nsISupports, public nsWrapperCache {
   WriterState mState = WriterState::Writable;
   JS::Heap<JS::Value> mStoredError;
   RefPtr<WritableStreamDefaultWriter> mWriter;
-  nsTArray<RefPtr<Promise>> mWriteRequests;
+  mozilla::Queue<RefPtr<Promise>> mWriteRequests;
 
   HoldDropJSObjectsCaller mHoldDropCaller;
 };

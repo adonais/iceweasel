@@ -9,7 +9,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/dom/CSSStyleValue.h"
-#include "nsStringFwd.h"
+#include "nsString.h"
 
 template <class T>
 struct already_AddRefed;
@@ -27,24 +27,28 @@ class GlobalObject;
 
 class CSSKeywordValue final : public CSSStyleValue {
  public:
-  explicit CSSKeywordValue(nsCOMPtr<nsISupports> aParent);
+  CSSKeywordValue(nsCOMPtr<nsISupports> aParent, const nsACString& aValue);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   // start of CSSKeywordValue Web IDL declarations
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-csskeywordvalue-csskeywordvalue
   static already_AddRefed<CSSKeywordValue> Constructor(
       const GlobalObject& aGlobal, const nsACString& aValue, ErrorResult& aRv);
 
   void GetValue(nsCString& aRetVal) const;
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-csskeywordvalue-value
   void SetValue(const nsACString& aArg, ErrorResult& aRv);
 
   // end of CSSKeywordValue Web IDL declarations
 
  private:
   virtual ~CSSKeywordValue() = default;
+
+  nsCString mValue;
 };
 
 }  // namespace dom

@@ -10,7 +10,7 @@ task-defaults:
         kind: test
         tier: 1
     platform: lint/opt
-    worker-type: t-linux-docker
+    worker-type: t-linux-docker-amd
     worker:
         docker-image: {in-tree: "lint"}
         max-run-time: 1800
@@ -235,9 +235,14 @@ typescript:
             # Files that are likely audited.
             # These should be kept in sync with the list of includes in
             # tools/lint/typescript.yml
-            - 'browser/components/search/**/*.{js,jsx,mjs,ts}'
-            - 'browser/components/urlbar/**/*.{js,jsx,mjs,ts}'
-            - 'toolkit/components/search/**/*.{js,jsx,mjs,ts}'
+            # Not adding `jsx` for these since we know there's no jsx files in
+            # these directories.
+            - 'browser/components/search/**/*.*js'
+            - 'browser/components/search/**/*.ts'
+            - 'browser/components/urlbar/**/*.*js'
+            - 'browser/components/urlbar/**/*.ts'
+            - 'toolkit/components/search/**/*.*js'
+            - 'toolkit/components/search/**/*.ts'
             # Support Files
             - 'tools/@types/**'
             - 'tools/lint/typescript.yml'

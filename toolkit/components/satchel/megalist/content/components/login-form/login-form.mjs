@@ -43,6 +43,7 @@ export class LoginForm extends MozLitElement {
     this.originValue = "";
     this.usernameValue = "";
     this.passwordValue = "";
+    this.isInvalid = false;
     this._showDeleteCard = false;
   }
 
@@ -96,7 +97,7 @@ export class LoginForm extends MozLitElement {
   }
 
   #shouldShowWarning(field, input, warning) {
-    if (!input.checkValidity()) {
+    if (!input.checkValidity() || this.isInvalid) {
       // FIXME: for some reason checkValidity does not apply the :invalid style
       // to the field. For now, we reset the input value to "" apply :invalid
       // styling.
@@ -123,6 +124,8 @@ export class LoginForm extends MozLitElement {
       this.#removeWarning(warning);
       field.removeAttribute("aria-describedby");
     }
+
+    this.isInvalid = !field.input.checkValidity();
   }
 
   onCancel(e) {

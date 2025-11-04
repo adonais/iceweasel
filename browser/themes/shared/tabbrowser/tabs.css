@@ -29,7 +29,7 @@
   --tab-pinned-margin-inline-expanded: var(--space-xsmall);
   --tab-pinned-min-width-expanded: calc(var(--tab-pinned-expanded-background-width) + 2 * var(--tab-pinned-margin-inline-expanded));
   --tab-pinned-container-margin-inline-expanded: var(--space-small);
-  --tab-border-radius: 4px;
+  --tab-border-radius: var(--toolbarbutton-border-radius);
   --tab-overflow-clip-margin: 2px;
   --tab-close-button-padding: 6px;
   --tab-block-margin: 4px;
@@ -145,6 +145,14 @@
 
   &[noshadowfortests] {
     --tab-selected-shadow: none;
+  }
+
+  &[orient="horizontal"] {
+    --tab-group-label-highlight-radius: 2px;
+  }
+
+  &[orient="vertical"] {
+    --tab-group-label-highlight-radius: 4px;
   }
 }
 
@@ -529,11 +537,6 @@
   &[busy] {
     display: none;
   }
-
-  &.profiles-tab {
-    fill: var(--toolbar-bgcolor);
-    stroke: var(--toolbar-color);
-  }
 }
 
 .tab-sharing-icon-overlay,
@@ -797,8 +800,11 @@
   height: 24px;
   box-sizing: border-box;
   padding: var(--tab-close-button-padding);
-  border-radius: var(--tab-border-radius);
   list-style-image: url(resource://content-accessible/close-12.svg);
+
+  /* Adjust border radius by the distance to the tab. This is a hardcoded approximation
+     because the exact distance is intentionally not always equal across all sides. */
+  border-radius: calc(var(--tab-border-radius) - 3px);
 
   #tabbrowser-tabs[orient="horizontal"] &[pinned],
   :root:not([sidebar-expand-on-hover]) #tabbrowser-tabs[orient="vertical"] &[pinned],
@@ -1045,9 +1051,15 @@
   margin-inline: var(--space-small);
   width: 100%;
   padding: var(--space-xsmall);
+  border-radius: var(--tab-border-radius);
 
   tab-split-view-wrapper[hasactivetab] > & {
     background-color: var(--tab-hover-background-color);
+
+    @media (forced-colors) {
+      border: 1px solid SelectedItem;
+      background: ButtonFace;
+    }
   }
 
   > .tabbrowser-tab {
@@ -1084,12 +1096,19 @@
   }
 
   tab-split-view-wrapper:not([hasactivetab]) & {
+    outline: var(--tab-outline);
+    outline-offset: var(--tab-outline-offset);
+
     &:hover {
       background-color: var(--tab-hover-background-color);
       outline-color: var(--tab-hover-outline-color);
     }
 
     .tabbrowser-tab {
+      .tab-background {
+        outline-color: transparent;
+      }
+
       &:hover .tab-background {
         background-color: transparent;
         outline-color: transparent;
@@ -1104,7 +1123,7 @@
   }
 
   #tabbrowser-tabs[orient="vertical"] & {
-    border-radius: var(--border-radius-large);
+    border-radius: var(--tab-border-radius);
     gap: var(--space-xsmall);
 
     @container vertical-tabs-container (max-width: 210px) {
@@ -1157,7 +1176,7 @@
 
     tab-group:not([collapsed]) > .tabbrowser-tab:last-of-type > .tab-stack > .tab-background > &,
     tab-group[collapsed]:not([hasmultipletabs]) & {
-      inset-inline-end: 0;
+      inset-inline-end: calc(var(--tab-border-radius) / 2);
       border-start-end-radius: calc(var(--tab-group-line-thickness) / 2);
       border-end-end-radius: calc(var(--tab-group-line-thickness) / 2);
     }
@@ -1188,7 +1207,7 @@
   #tabbrowser-tabs[movingtab]:not([movingtab-group],[movingtab-ungroup]) .tabbrowser-tab:is(:active,[multiselected]) > .tab-stack > .tab-background > & {
     display: flex;
     background-color: light-dark(var(--dragover-tab-group-color), var(--dragover-tab-group-color-invert));
-    border-radius: 1px;
+    border-radius: var(--border-radius-xsmall);
   }
 
   #tabbrowser-tabs:is([movingtab-group], [movingtab-ungroup]) &:is([selected], [multiselected]) {
@@ -1206,7 +1225,7 @@ tab-group {
   --tab-group-line-color: light-dark(var(--tab-group-color), var(--tab-group-color-invert));
 
   #tabbrowser-tabs[orient="horizontal"] &[movingtabgroup][collapsed] > .tabbrowser-tab[visuallyselected],
-  #tabbrowser-tabs[orient="horizontal"] &[collapsed] > .tabbrowser-tab:not([visuallyselected]) {
+  #tabbrowser-tabs[orient="horizontal"] &[collapsed] > .tabbrowser-tab:not([visuallyselected], [multiselected]) {
     min-width: 0 !important;
     max-width: 0 !important;
     padding: 0;
@@ -1214,7 +1233,7 @@ tab-group {
   }
 
   #tabbrowser-tabs[orient="vertical"] &[movingtabgroup][collapsed] > .tabbrowser-tab[visuallyselected],
-  #tabbrowser-tabs[orient="vertical"] &[collapsed] > .tabbrowser-tab:not([visuallyselected]) {
+  #tabbrowser-tabs[orient="vertical"] &[collapsed] > .tabbrowser-tab:not([visuallyselected], [multiselected]) {
     display: none;
   }
 
@@ -1361,7 +1380,11 @@ tab-group {
 
 .tab-group-label-hover-highlight {
   tab-group[collapsed] & {
-    border-radius: 2px;
+    /* Since effective border radius is the sum of border-radius and box-shadow
+     * spread radius, make sure that these values vary together in order to add
+     * up to --tab-border-radius.
+     */
+    border-radius: calc(var(--tab-border-radius) - var(--tab-group-label-highlight-radius));
 
     #tabbrowser-tabs[orient="horizontal"] & {
       padding-block: 4px;
@@ -1386,18 +1409,7 @@ tab-group {
   tab-group[collapsed]:not([movingtabgroup]) &:hover,
   tab-group[previewpanelactive] & {
     background-color: var(--tab-hover-background-color);
-
-    #tabbrowser-tabs[orient="horizontal"] & {
-      box-shadow: 0 0 0 2px var(--tab-hover-background-color);
-    }
-
-    #tabbrowser-tabs[orient="vertical"] & {
-      box-shadow: 0 0 0 3px var(--tab-hover-background-color);
-    }
-
-    #tabbrowser-tabs[orient="vertical"][expanded] & {
-      box-shadow: 0 0 0 4px var(--tab-hover-background-color);
-    }
+    box-shadow: 0 0 0 var(--tab-group-label-highlight-radius) var(--tab-hover-background-color);
   }
 }
 
@@ -1409,7 +1421,11 @@ tab-group {
   white-space: nowrap;
   overflow: hidden;
   text-shadow: none;
-  border-radius: var(--tab-border-radius);
+  /* .tab-group-label-hover-highlight shadow surrounds the .tab-group-label; keep
+   * the border radius of the inside element 2px smaller so that these two elements
+   * look good when hovering over a collapsed tab group label.
+   */
+  border-radius: calc(var(--tab-border-radius) - 2px);
   line-height: calc(var(--tab-group-label-height) - var(--tab-group-line-thickness));
   min-height: var(--tab-group-label-height);
   min-width: var(--tab-group-label-height);
@@ -1624,32 +1640,23 @@ tab-group {
 
   &::part(scrollbutton-up),
   &::part(scrollbutton-down) {
+    --arrowscrollbox-scrollicon-border-radius: var(--tab-border-radius);
+    --arrowscrollbox-scrollicon-hover-background-color: var(--toolbarbutton-hover-background);
+    --arrowscrollbox-scrollicon-active-background-color: var(--toolbarbutton-active-background);
+    --arrowscrollbox-scrollicon-padding: var(--toolbarbutton-inner-padding) 2px;
+
     appearance: none;
-    background-clip: padding-box;
-    border: 4px solid transparent;
-    border-radius: calc(var(--tab-border-radius) + 4px);
+    padding: 0 4px;
     fill: var(--toolbarbutton-icon-fill);
     margin: 0;
   }
 
   #navigator-toolbox:not(:hover) &:not([highlight])::part(scrollbutton-down) {
-    transition: 1s background-color ease-out;
+    --arrowscrollbox-scrollicon-transition: 1s background-color ease-out;
   }
 
   &[highlight]::part(scrollbutton-down) {
-    background-color: SelectedItem;
-  }
-
-  &:not([scrolledtostart])::part(scrollbutton-up):hover,
-  &:not([scrolledtoend])::part(scrollbutton-down):hover {
-    background-color: var(--toolbarbutton-hover-background);
-    color: inherit;
-  }
-
-  &:not([scrolledtostart])::part(scrollbutton-up):hover:active,
-  &:not([scrolledtoend])::part(scrollbutton-down):hover:active {
-    background-color: var(--toolbarbutton-active-background);
-    color: inherit;
+    --arrowscrollbox-scrollicon-background-color: SelectedItem;
   }
 
   &[scrolledtostart]::part(overflow-start-indicator),
@@ -1690,7 +1697,7 @@ tab-group {
   appearance: none;
   min-height: var(--tab-min-height);
   line-height: var(--tab-label-line-height);
-  border-radius: var(--border-radius-medium);
+  border-radius: var(--tab-border-radius);
   padding: 0 calc(var(--tab-inline-padding) - var(--tab-inner-inline-margin));
   width: var(--tab-collapsed-background-width);
   margin-inline: var(--tab-inner-inline-margin);
@@ -1765,12 +1772,8 @@ tab-group {
     overflow-y: auto;
   }
 
-  .tab-background {
-    border-radius: var(--border-radius-medium);
-
-    .tabbrowser-tab:not(:hover) > .tab-stack > &:not([selected], [multiselected]) {
-      background-color: color-mix(in srgb, currentColor 7%, transparent);
-    }
+  .tabbrowser-tab:not(:hover) > .tab-stack > .tab-background:not([selected], [multiselected]) {
+    background-color: color-mix(in srgb, currentColor 7%, transparent);
   }
 
   &::part(items-wrapper) {
@@ -1907,7 +1910,6 @@ tab-group {
 
   .tab-background {
     flex-direction: row-reverse;
-    border-radius: var(--border-radius-medium);
     margin-inline: var(--tab-inner-inline-margin);
   }
 

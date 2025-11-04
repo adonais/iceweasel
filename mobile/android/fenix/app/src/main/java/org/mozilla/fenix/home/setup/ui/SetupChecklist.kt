@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,9 +30,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.theme.layout.AcornLayout
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
@@ -72,7 +72,7 @@ fun SetupChecklist(setupChecklistState: SetupChecklistState, interactor: SetupCh
             )
 
             if (setupChecklistState.progress.allTasksCompleted()) {
-                Divider()
+                HorizontalDivider()
 
                 RemoveChecklistButton(interactor)
             }
@@ -134,7 +134,7 @@ private fun RemoveChecklistButton(interactor: SetupChecklistInteractor) {
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            PrimaryButton(
+            FilledButton(
                 text = stringResource(R.string.setup_checklist_button_remove),
                 modifier = Modifier.width(width = FirefoxTheme.layout.size.maxWidth.small),
                 onClick = { interactor.onRemoveChecklistButtonClicked() },

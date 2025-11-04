@@ -2164,21 +2164,45 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
   AutoCreatedBy acb(masm, "GenerateImportJitExit");
 
   AssertExpectedSP(masm);
-  masm.setFramePushed(0);
 
-  // JIT calls use the following stack layout:
+  // The JS ABI uses the following layout:
   //
-  //   | WasmToJSJitFrameLayout | this | arg1..N | saved instance | ...
-  //   ^
-  //   +-- sp
+  //   | caller's frame | <-  aligned to WasmStackAlignment
+  //   +----------------+
+  //   | return address | <- RetAddrAndFP
+  //   | caller fp      | <---- fp/current sp
+  //   +................+
+  //   | saved instance | <-- Stored relative to fp, not sp
+  //   | padding?       |
+  //   | undefined args?|
+  //   | ...            |
+  //   | defined args   |
+  //   | ...            |
+  //   | this           | <- If this is JitStack-aligned, the layout will be too
+  //   +................+
+  //   | callee token   | <- PreFrame
+  //   | descriptor     | <---- sp after allocating stack frame
+  //   +----------------+
+  //   | return address |
+  //   | frame pointer  | <- Must be JitStack-aligned
   //
-  // The JIT ABI requires that sp be JitStackAlignment-aligned after pushing
-  // the return address and frame pointer.
+  // Note: WasmStackAlignment requires that sp be WasmStackAlignment-aligned
+  // when calling, *before* pushing the return address and frame pointer. The JS
+  // ABI requires that sp be JitStackAlignment-aligned *after* pushing the
+  // return address and frame pointer.
   static_assert(WasmStackAlignment >= JitStackAlignment, "subsumes");
-  const unsigned sizeOfInstanceSlot = sizeof(void*);
+
+  // We allocate a full 8 bytes for the instance register, even on 32-bit,
+  // because alignment padding will round it up anyway. Treating it as 8 bytes
+  // is easier in the OOL underflow path.
+  const unsigned sizeOfInstanceSlot = sizeof(Value);
   const unsigned sizeOfRetAddrAndFP = 2 * sizeof(void*);
   const unsigned sizeOfPreFrame =
       WasmToJSJitFrameLayout::Size() - sizeOfRetAddrAndFP;
+
+  // These values are used if there is no arguments underflow.
+  // If we need to push extra undefined arguments, we calculate them
+  // dynamically in an out-of-line path.
   const unsigned sizeOfThisAndArgs =
       (1 + funcType.args().length()) * sizeof(Value);
   const unsigned totalJitFrameBytes = sizeOfRetAddrAndFP + sizeOfPreFrame +
@@ -2189,10 +2213,37 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
                             totalJitFrameBytes) -
       sizeOfRetAddrAndFP;
 
-  GenerateJitExitPrologue(masm, jitFramePushed, fallbackOffset, offsets);
+  // Generate a minimal prologue. Don't allocate a stack frame until we know
+  // how big it should be.
+  GenerateJitExitPrologue(masm, fallbackOffset, offsets);
 
-  // 1. Descriptor.
+  // 1. Allocate the stack frame.
+  // 1.1. Get the callee. This must be a JSFunction if we're using this JIT
+  // exit.
+  Register callee = ABINonArgReturnReg0;
+  Register scratch = ABINonArgReturnReg1;
+  Register scratch2 = ABINonVolatileReg;
+  masm.loadPtr(
+      Address(InstanceReg, Instance::offsetInData(
+                               funcImportInstanceOffset +
+                               offsetof(FuncImportInstanceData, callable))),
+      callee);
+
+  // 1.2 Check to see if we are passing enough arguments. If not, we have to
+  // allocate a larger stack frame and push `undefined` for the extra args.
+  // (Passing too many arguments is not a problem; the JS ABI expects at *least*
+  // numFormals arguments.)
+  Label argUnderflow, argUnderflowRejoin;
+  Register numFormals = scratch2;
   unsigned argc = funcType.args().length();
+  masm.loadFunctionArgCount(callee, numFormals);
+  masm.branch32(Assembler::GreaterThan, numFormals, Imm32(argc), &argUnderflow);
+
+  // Otherwise, we can compute the stack frame size statically.
+  masm.subFromStackPtr(Imm32(jitFramePushed));
+  masm.bind(&argUnderflowRejoin);
+
+  // 2. Descriptor.
   size_t argOffset = 0;
   uint32_t descriptor =
       MakeFrameDescriptorForJitCall(FrameType::WasmToJSJit, argc);
@@ -2200,9 +2251,8 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
                 Address(masm.getStackPointer(), argOffset));
   argOffset += sizeof(size_t);
 
-  // 2. Callee, part 1 -- need the callee register for argument filling, so
-  // record offset here and set up callee later.
-  size_t calleeArgOffset = argOffset;
+  // 3. Callee.
+  masm.storePtr(callee, Address(masm.getStackPointer(), argOffset));
   argOffset += sizeof(size_t);
   MOZ_ASSERT(argOffset == sizeOfPreFrame);
 
@@ -2211,47 +2261,19 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
   argOffset += sizeof(Value);
 
   // 4. Fill the arguments.
-  Register scratch = ABINonArgReturnReg1;   // Repeatedly clobbered
-  Register scratch2 = ABINonArgReturnReg0;  // Reused as callee below
   FillArgumentArrayForJitExit(masm, InstanceReg, funcImportIndex, funcType,
                               argOffset, scratch, scratch2, throwLabel);
-  argOffset += funcType.args().length() * sizeof(Value);
-  MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame);
 
-  // Preserve instance because the JIT callee clobbers it.
-  const size_t savedInstanceOffset = argOffset;
-  masm.storePtr(InstanceReg,
-                Address(masm.getStackPointer(), savedInstanceOffset));
+  // 5. Preserve the instance register. We store it at a fixed negative offset
+  // to the frame pointer so that we can recover it after the call without
+  // needing to know how many arguments were passed.
+  Address savedInstanceReg(FramePointer, -int32_t(sizeof(size_t)));
+  masm.storePtr(InstanceReg, savedInstanceReg);
 
-  // 2. Callee, part 2 -- now that the register is free, set up the callee.
-  Register callee = ABINonArgReturnReg0;  // Live until call
-
-  // 2.1. Get the callee. This must be a JSFunction if we're using this JIT
-  // exit.
-  masm.loadPtr(
-      Address(InstanceReg, Instance::offsetInData(
-                               funcImportInstanceOffset +
-                               offsetof(FuncImportInstanceData, callable))),
-      callee);
-
-  // 2.2. Save callee.
-  masm.storePtr(callee, Address(masm.getStackPointer(), calleeArgOffset));
-
-  // 5. Check if we need to rectify arguments.
-  masm.loadFunctionArgCount(callee, scratch);
-
-  Label rectify;
-  masm.branch32(Assembler::Above, scratch, Imm32(funcType.args().length()),
-                &rectify);
-
-  // 6. If we haven't rectified arguments, load callee executable entry point.
-
+  // 6. Load callee executable entry point.
   masm.loadJitCodeRaw(callee, callee);
 
-  Label rejoinBeforeCall;
-  masm.bind(&rejoinBeforeCall);
-
-  AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddrAndFP);
+  masm.assertStackAlignment(JitStackAlignment, sizeOfRetAddrAndFP);
 #ifdef JS_CODEGEN_ARM64
   AssertExpectedSP(masm);
   // Manually resync PSP.  Omitting this causes eg tests/wasm/import-export.js
@@ -2269,18 +2291,16 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
 
   // The JIT callee clobbers all registers other than the frame pointer, so
   // restore InstanceReg here.
-  AssertStackAlignment(masm, JitStackAlignment, sizeOfRetAddrAndFP);
-  masm.loadPtr(Address(masm.getStackPointer(), savedInstanceOffset),
-               InstanceReg);
+  masm.assertStackAlignment(JitStackAlignment, sizeOfRetAddrAndFP);
+  masm.loadPtr(savedInstanceReg, InstanceReg);
 
   // The frame was aligned for the JIT ABI such that
   //   (sp - 2 * sizeof(void*)) % JitStackAlignment == 0
   // But now we possibly want to call one of several different C++ functions,
   // so subtract 2 * sizeof(void*) so that sp is aligned for an ABI call.
   static_assert(ABIStackAlignment <= JitStackAlignment, "subsumes");
-  masm.reserveStack(sizeOfRetAddrAndFP);
-  unsigned nativeFramePushed = masm.framePushed();
-  AssertStackAlignment(masm, ABIStackAlignment);
+  masm.subFromStackPtr(Imm32(sizeOfRetAddrAndFP));
+  masm.assertStackAlignment(ABIStackAlignment);
 
 #ifdef DEBUG
   {
@@ -2341,19 +2361,62 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
   Label done;
   masm.bind(&done);
 
-  GenerateJitExitEpilogue(masm, masm.framePushed(), offsets);
+  masm.moveToStackPtr(FramePointer);
+  GenerateJitExitEpilogue(masm, offsets);
 
-  {
-    // Call the arguments rectifier.
-    masm.bind(&rectify);
-    masm.loadPtr(Address(InstanceReg, Instance::offsetOfJSJitArgsRectifier()),
-                 callee);
-    masm.jump(&rejoinBeforeCall);
+  masm.bind(&argUnderflow);
+  // We aren't passing enough arguments.
+  //
+  // Compute the size of the stack frame (in Value-sized slots). On 32-bit, the
+  // instance reg slot is 4 bytes of data and 4 bytes of alignment padding.
+  Register numSlots = scratch;
+  static_assert(sizeof(WasmToJSJitFrameLayout) % JitStackAlignment == 0);
+  MOZ_ASSERT(sizeOfPreFrame % sizeof(Value) == 0);
+  const uint32_t numSlotsForPreFrame = sizeOfPreFrame / sizeof(Value);
+  const uint32_t extraSlots = numSlotsForPreFrame + 2;  // this + instance
+  if (JitStackValueAlignment == 1) {
+    // If we only need 8-byte alignment, no padding is necessary.
+    masm.add32(Imm32(extraSlots), numFormals, numSlots);
+  } else {
+    MOZ_ASSERT(JitStackValueAlignment == 2);
+    MOZ_ASSERT(sizeOfRetAddrAndFP == sizeOfPreFrame);
+    // We have to allocate space for the preframe, `this`, the arguments, and
+    // the saved instance. While doing so, we have to ensure that `this` is
+    // aligned to JitStackAlignment, which will in turn guarantee the correct
+    // alignment of the frame layout in the callee. To ensure alignment, we can
+    // add padding between the arguments and the saved instance. sp was aligned
+    // to WasmStackAlignment before pushing the return address / frame pointer
+    // for this stub.
+    //
+    //                           (this)  (args)           (instance)
+    // numSlots:        PreFrame + 1 + numFormals + padding + 1
+    // aligned if even:            1 + numFormals + padding + 1 + RetAddrAndFP
+    //
+    // Conveniently, since numSlotsForPreFrame and numSlotsForRetAddrAndFP are
+    // the same, these calculations give the same value. So we can ensure
+    // alignment by rounding numSlots up to the next even number.
+    masm.add32(Imm32(extraSlots + 1), numFormals, numSlots);
+    masm.and32(Imm32(~1), numSlots);
   }
+
+  // Adjust the stack pointer
+  masm.lshift32(Imm32(3), scratch);
+  masm.subFromStackPtr(scratch);
+
+  // Fill the undefined arguments.
+  Label loop;
+  masm.bind(&loop);
+  masm.sub32(Imm32(1), numFormals);
+  BaseValueIndex argAddr(masm.getStackPointer(), numFormals,
+                         2 * sizeof(uintptr_t) +  // descriptor + callee
+                             sizeof(Value));      // this
+  masm.storeValue(UndefinedValue(), BaseValueIndex(masm.getStackPointer(),
+                                                   numFormals, argOffset));
+  masm.branch32(Assembler::Above, numFormals, Imm32(argc), &loop);
+  masm.jump(&argUnderflowRejoin);
 
   if (oolConvert.used()) {
     masm.bind(&oolConvert);
-    masm.setFramePushed(nativeFramePushed);
 
     // Coercion calls use the following stack layout (sp grows to the left):
     //   | args | padding | Value argv[1] | padding | exit Frame |
@@ -2361,8 +2424,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
     MOZ_ALWAYS_TRUE(coerceArgTypes.append(MIRType::Pointer));
     unsigned offsetToCoerceArgv =
         AlignBytes(StackArgBytesForNativeABI(coerceArgTypes), sizeof(Value));
-    MOZ_ASSERT(nativeFramePushed >= offsetToCoerceArgv + sizeof(Value));
-    AssertStackAlignment(masm, ABIStackAlignment);
+    masm.assertStackAlignment(ABIStackAlignment);
 
     // Store return value into argv[0].
     masm.storeValue(JSReturnOperand,
@@ -2391,7 +2453,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
 
     // Call coercion function. Note that right after the call, the value of
     // FP is correct because FP is non-volatile in the native ABI.
-    AssertStackAlignment(masm, ABIStackAlignment);
+    masm.assertStackAlignment(ABIStackAlignment);
     const ValTypeVector& results = funcType.results();
     if (results.length() > 0) {
       // NOTE that once there can be more than one result and we can box some of
@@ -2441,10 +2503,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm,
     ClearExitFP(masm, scratch);
 
     masm.jump(&done);
-    masm.setFramePushed(0);
   }
-
-  MOZ_ASSERT(masm.framePushed() == 0);
 
   return FinishOffsets(masm, offsets);
 }

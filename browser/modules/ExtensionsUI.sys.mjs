@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AppMenuNotifications: "resource://gre/modules/AppMenuNotifications.sys.mjs",
   ExtensionData: "resource://gre/modules/Extension.sys.mjs",
   ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   OriginControls: "resource://gre/modules/ExtensionPermissions.sys.mjs",
   QuarantinedDomains: "resource://gre/modules/ExtensionPermissions.sys.mjs",
 });
@@ -420,7 +421,8 @@ export var ExtensionsUI = {
       !!strings.dataCollectionPermissions?.collectsTechnicalAndInteractionData;
 
     const incognitoPermissionName = "internal:privateBrowsingAllowed";
-    let grantPrivateBrowsingAllowed = false;
+    let grantPrivateBrowsingAllowed =
+      lazy.PrivateBrowsingUtils.permanentPrivateBrowsing;
     if (
       showIncognitoCheckbox &&
       // Usually false, unless the user tries to install a XPI file whose ID

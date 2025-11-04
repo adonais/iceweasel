@@ -74,12 +74,6 @@ TaskQueue::TaskQueue(already_AddRefed<nsIEventTarget> aTarget,
       mIsShutdown(false),
       mName(aName) {}
 
-TaskQueue::~TaskQueue() {
-  // We should never free the TaskQueue if it was destroyed abnormally, meaning
-  // that all cleanup tasks should be complete if we do.
-  MOZ_ASSERT(mShutdownTasks.IsEmpty());
-}
-
 NS_IMPL_ADDREF_INHERITED(TaskQueue, SupportsThreadSafeWeakPtr<TaskQueue>)
 NS_IMPL_RELEASE_INHERITED(TaskQueue, SupportsThreadSafeWeakPtr<TaskQueue>)
 
@@ -116,8 +110,10 @@ nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
     return currentThread->TailDispatcher().AddTask(this, aRunnable.forget());
   }
 
-  PROFILER_MARKER("TaskQueue::DispatchLocked", OTHER, {}, FlowMarker,
-                  Flow::FromPointer(aRunnable.get()));
+  PROFILER_MARKER("TaskQueue::DispatchLocked", OTHER,
+                  {MarkerStack::MaybeCapture(
+                      profiler_feature_active(ProfilerFeature::Flows))},
+                  FlowMarker, Flow::FromPointer(aRunnable.get()));
   LogRunnable::LogDispatch(aRunnable);
   mTasks.Push({std::move(aRunnable), aFlags});
 
@@ -143,21 +139,14 @@ nsresult TaskQueue::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
   if (mIsShutdown) {
     return NS_ERROR_UNEXPECTED;
   }
-
-  MOZ_ASSERT(!mShutdownTasks.Contains(aTask));
-  mShutdownTasks.AppendElement(aTask);
-  return NS_OK;
+  return mShutdownTasks.AddTask(aTask);
 }
 
 nsresult TaskQueue::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
   NS_ENSURE_ARG(aTask);
 
   MonitorAutoLock mon(mQueueMonitor);
-  if (mIsShutdown) {
-    return NS_ERROR_UNEXPECTED;
-  }
-
-  return mShutdownTasks.RemoveElement(aTask) ? NS_OK : NS_ERROR_UNEXPECTED;
+  return mShutdownTasks.RemoveTask(aTask);
 }
 
 void TaskQueue::AwaitIdle() {
@@ -191,6 +180,7 @@ void TaskQueue::AwaitShutdownAndIdle() {
   }
   AwaitIdleLocked();
 }
+
 RefPtr<ShutdownPromise> TaskQueue::BeginShutdown() {
   // Dispatch any tasks for this queue waiting in the caller's tail dispatcher,
   // since this is the last opportunity to do so.
@@ -199,14 +189,14 @@ RefPtr<ShutdownPromise> TaskQueue::BeginShutdown() {
   }
 
   MonitorAutoLock mon(mQueueMonitor);
-  // Dispatch any cleanup tasks to the queue before we put it into full
+  // Dispatch all cleanup tasks to the queue before we put it into full
   // shutdown.
-  for (auto& task : mShutdownTasks) {
+  TargetShutdownTaskSet::TasksArray tasks = mShutdownTasks.Extract();
+  for (auto& task : tasks) {
     nsCOMPtr runnable{task->AsRunnable()};
     MOZ_ALWAYS_SUCCEEDS(
         DispatchLocked(runnable, NS_DISPATCH_NORMAL, TailDispatch));
   }
-  mShutdownTasks.Clear();
   mIsShutdown = true;
 
   RefPtr<ShutdownPromise> p = mShutdownPromise.Ensure(__func__);

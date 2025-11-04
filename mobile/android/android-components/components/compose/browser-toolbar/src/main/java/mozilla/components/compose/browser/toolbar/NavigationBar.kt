@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,7 +18,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
@@ -43,7 +44,7 @@ fun NavigationBar(
 ) {
     Box(
         modifier = Modifier
-            .height(60.dp)
+            .height(if (toolbarGravity == Top) 60.dp else 48.dp)
             .background(color = AcornTheme.colors.layer1)
             .pointerInput(Unit) {
                 awaitPointerEventScope {
@@ -59,13 +60,14 @@ fun NavigationBar(
             actions = actions,
             onInteraction = onInteraction,
             modifier = Modifier
+                .padding(horizontal = 12.dp)
                 .fillMaxWidth()
                 .align(Alignment.Center),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.SpaceBetween,
         )
 
         if (toolbarGravity == Top) {
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.align(Alignment.TopCenter),
             )
         }

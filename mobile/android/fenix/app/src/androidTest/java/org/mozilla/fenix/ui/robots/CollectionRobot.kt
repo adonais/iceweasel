@@ -21,6 +21,7 @@ import androidx.test.espresso.action.ViewActions.pressImeActionButton
 import androidx.test.espresso.matcher.RootMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import org.mozilla.fenix.R
@@ -225,12 +226,16 @@ class CollectionRobot {
     }
 
     fun swipeTabLeft(title: String) {
-        itemContainingText(title).swipeLeft(6)
+        Log.i(TAG, "swipeTabLeft: Trying to swipe left the collections tab with title: $title")
+        mDevice.findObject(By.textContains(title)).swipe(Direction.LEFT, 1.0f, 1000)
+        Log.i(TAG, "swipeTabLeft: Swiped left the collections tab with title: $title")
         waitForAppWindowToBeUpdated()
     }
 
     fun swipeTabRight(title: String) {
-        itemContainingText(title).swipeRight(6)
+        Log.i(TAG, "swipeTabRight: Trying to swipe right the collections tab with title: $title")
+        mDevice.findObject(By.textContains(title)).swipe(Direction.RIGHT, 1.0f, 1000)
+        Log.i(TAG, "swipeTabRight: Swiped right the collections tab with title: $title")
         waitForAppWindowToBeUpdated()
     }
 

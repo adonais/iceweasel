@@ -8,9 +8,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
-  AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   BrowserUsageTelemetry: "resource:///modules/BrowserUsageTelemetry.sys.mjs",
-  BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   FxAccounts: "resource://gre/modules/FxAccounts.sys.mjs",
@@ -46,15 +44,6 @@ const BACKGROUND_PAGE_ACTIONS_ALLOWED = new Set([
 ]);
 const MAX_BUTTONS = 4;
 
-// Array of which colorway/theme ids can be activated.
-ChromeUtils.defineLazyGetter(lazy, "COLORWAY_IDS", () =>
-  [...lazy.BuiltInThemes.builtInThemeMap.keys()].filter(
-    id =>
-      id.endsWith("-colorway@mozilla.org") &&
-      !lazy.BuiltInThemes.themeIsExpired(id)
-  )
-);
-
 // Prefix for any target matching a search engine.
 const TARGET_SEARCHENGINE_PREFIX = "searchEngine-";
 
@@ -82,6 +71,8 @@ export var UITour = {
   },
 
   _annotationPanelMutationObservers: new WeakMap(),
+
+  _initForBrowserObserverAdded: false,
 
   highlightEffects: ["random", "wobble", "zoom", "color", "focus-outline"],
   targets: new Map([
@@ -655,8 +646,10 @@ export var UITour = {
     }
     this.tourBrowsersByWindow.get(window).add(aBrowser);
 
-    Services.obs.addObserver(this, "message-manager-close");
-
+    if (!this._initForBrowserObserverAdded) {
+      this._initForBrowserObserverAdded = true;
+      Services.obs.addObserver(this, "message-manager-close");
+    }
     window.addEventListener("SSWindowClosing", this);
   },
 
@@ -1576,9 +1569,6 @@ export var UITour = {
       case "availableTargets":
         this.getAvailableTargets(aBrowser, aWindow, aCallbackID);
         break;
-      case "colorway":
-        this.sendPageCallback(aBrowser, aCallbackID, lazy.COLORWAY_IDS);
-        break;
       case "search":
       case "selectedSearchEngine":
         Services.search
@@ -1643,7 +1633,7 @@ export var UITour = {
     }
   },
 
-  async setConfiguration(aWindow, aConfiguration, aValue) {
+  async setConfiguration(aWindow, aConfiguration, _aValue) {
     switch (aConfiguration) {
       case "defaultBrowser":
         // Ignore aValue in this case because the default browser can only
@@ -1654,22 +1644,6 @@ export var UITour = {
             await shell.setDefaultBrowser(false);
           }
         } catch (e) {}
-        break;
-      case "colorway":
-        // Potentially revert to a previous theme.
-        let toEnable = this._prevTheme;
-
-        // Activate the allowed colorway.
-        if (lazy.COLORWAY_IDS.includes(aValue)) {
-          // Save the previous theme if this is the first activation.
-          if (!this._prevTheme) {
-            this._prevTheme = (
-              await lazy.AddonManager.getAddonsByTypes(["theme"])
-            ).find(theme => theme.isActive);
-          }
-          toEnable = await lazy.AddonManager.getAddonByID(aValue);
-        }
-        toEnable?.enable();
         break;
       default:
         lazy.log.error(
@@ -1809,10 +1783,7 @@ export var UITour = {
       appinfo.defaultBrowser = isDefaultBrowser;
 
       let canSetDefaultBrowserInBackground = true;
-      if (
-        AppConstants.platform == "win" ||
-        AppConstants.isPlatformAndVersionAtLeast("macosx", "10.10")
-      ) {
+      if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
         canSetDefaultBrowserInBackground = false;
       } else if (AppConstants.platform == "linux") {
         // The ShellService may not exist on some versions of Linux.

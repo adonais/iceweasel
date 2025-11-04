@@ -1340,6 +1340,12 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
                             StaticPrefs::javascript_options_gc_delay() * 2));
   }
 
+  // https://html.spec.whatwg.org/multipage/browsing-the-web.html#unload-a-document
+  // Create an RAII object on mDocument that will increment the
+  // should-ignore-opens-during-unload counter on initialization
+  // and decrement it again when it goes out of scope.
+  IgnoreOpensDuringUnload ignoreOpens(mDocument);
+
   mDocument->OnPageHide(!aIsUnload, nullptr);
 
   // inform the window so that the focus state is reset.
@@ -1361,12 +1367,6 @@ nsDocumentViewer::PageHide(bool aIsUnload) {
       NS_WARNING("window not set for document!");
       return NS_ERROR_NULL_POINTER;
     }
-
-    // https://html.spec.whatwg.org/multipage/browsing-the-web.html#unload-a-document
-    // Create an RAII object on mDocument that will increment the
-    // should-ignore-opens-during-unload counter on initialization
-    // and decrement it again when it goes out of scope.
-    IgnoreOpensDuringUnload ignoreOpens(mDocument);
 
     // Now, fire an Unload event to the document...
     nsEventStatus status = nsEventStatus_eIgnore;

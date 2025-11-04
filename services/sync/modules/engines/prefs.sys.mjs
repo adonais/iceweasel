@@ -299,7 +299,7 @@ PrefStore.prototype = {
           break;
 
         // default is to just set the pref
-        default:
+        default: {
           if (value == null) {
             // Pref has gone missing. The best we can do is reset it.
             if (this._prefs.prefHasUserValue(pref)) {
@@ -351,6 +351,7 @@ PrefStore.prototype = {
           ) {
             this._prefs.setBoolPref(PREF_SYNC_SEEN_PREFIX + pref, true);
           }
+        }
       }
     }
     // Themes are a little messy. Themes which have been installed are handled

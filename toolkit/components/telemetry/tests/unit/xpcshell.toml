@@ -54,8 +54,11 @@ tags = "addons"
 skip-if = ["os == 'android'"]
 
 ["test_TOUNotificationFlow.js"]
-skip-if = ["os == 'android'"]
-# The TOU notification flow is desktop only
+skip-if = [
+  "appname == 'thunderbird'",
+  "os == 'android'",
+]
+# The TOU notification flow is desktop-only and not used by Thunderbird.
 
 ["test_TelemetryClientID_reset.js"]
 skip-if = ["os == 'android'"] # Disabled as Android/GeckoView doesn't run TelemetryController
@@ -76,7 +79,6 @@ skip-if = [
   "os == 'win' && msix", # https://bugzilla.mozilla.org/show_bug.cgi?id=1807929
 ]
 tags = "addons"
-run-sequentially = "very high failure rate in parallel"
 
 ["test_TelemetryEnvironment_search.js"]
 skip-if = [
@@ -134,7 +136,6 @@ skip-if = ["artifact"] # See bug 1945662.
 
 ["test_UserInteraction_annotations.js"]
 # BHR is disabled on tsan, asan and outside of Nightly.
-run-sequentially = "very high failure rate in parallel"
 skip-if = [
   "debug",
   "asan",
@@ -151,6 +152,14 @@ skip-if = [
 
 ["test_UtilityScalars.js"]
 run-if = ["os == 'win'"]
+
+["test_canUpload_truth_table.js"]
+skip-if = [
+  "appname == 'thunderbird'",
+  "os == 'android'",
+]
+# The policy notification/acceptance flows are desktop only and not used by
+# Thunderbird or Android.
 
 ["test_client_id.js"]
 

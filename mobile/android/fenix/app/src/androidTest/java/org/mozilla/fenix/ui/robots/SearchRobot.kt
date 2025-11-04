@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -77,13 +78,20 @@ class SearchRobot {
     fun verifyScanButtonVisibility(visible: Boolean = true) =
         assertUIObjectExists(scanButton(), exists = visible)
 
+    @OptIn(ExperimentalTestApi::class)
     fun verifyScanButtonWithComposableToolbar(composeTestRule: ComposeTestRule, isDisplayed: Boolean) {
         if (isDisplayed) {
+            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Waiting for $waitingTime until the scan QR button is exists")
+            composeTestRule.waitUntilExactlyOneExists(hasContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner)), waitingTime)
+            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Waited for $waitingTime until the scan QR button is exists")
             Log.i(TAG, "verifyScanButtonWithComposableToolbar: Trying to verify that the scan QR button is displayed")
             composeTestRule.onNodeWithContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner))
                 .assertIsDisplayed()
             Log.i(TAG, "verifyScanButtonWithComposableToolbar: Verified that the scan QR button is displayed")
         } else {
+            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Waiting for $waitingTime until the scan QR button does not is exist")
+            composeTestRule.waitUntilDoesNotExist(hasContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner)), waitingTime)
+            Log.i(TAG, "verifyScanButtonWithComposableToolbar: Waited for $waitingTime until the scan QR button does not is exist")
             Log.i(TAG, "verifyScanButtonWithComposableToolbar: Trying to verify that the scan QR button is not displayed")
             composeTestRule.onNodeWithContentDescription(getStringResource(qrR.string.mozac_feature_qr_scanner))
                 .assertIsNotDisplayed()
@@ -660,10 +668,10 @@ private fun browserToolbarEditView() =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/mozac_browser_toolbar_edit_url_view"))
 
 private fun dismissPermissionButton() =
-    mDevice.findObject(UiSelector().text("DISMISS"))
+    mDevice.findObject(UiSelector().text("Dismiss"))
 
 private fun goToPermissionsSettingsButton() =
-    mDevice.findObject(UiSelector().text("GO TO SETTINGS"))
+    mDevice.findObject(UiSelector().text("Go to settings"))
 
 private fun scanButton() = itemWithDescription("Scan")
 

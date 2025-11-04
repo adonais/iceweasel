@@ -38,6 +38,7 @@ interface CSSStyleRule : CSSGroupingRule {
 
 enum SelectorWarningKind {
   "UnconstrainedHas",
+  "SiblingCombinatorAfterScope",
 };
 
 dictionary SelectorWarning {

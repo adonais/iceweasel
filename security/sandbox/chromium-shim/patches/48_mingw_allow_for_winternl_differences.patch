@@ -88,10 +88,10 @@ diff --git a/sandbox/win/src/nt_internals.h b/sandbox/win/src/nt_internals.h
  typedef NTSTATUS(WINAPI* NtImpersonateAnonymousTokenFunction)(
      IN HANDLE ThreadHandle);
  
- typedef NTSTATUS(WINAPI* NtSetInformationThreadFunction)(
-     IN HANDLE ThreadHandle,
-     IN THREADINFOCLASS ThreadInformationClass,
-     IN PVOID ThreadInformation,
+ typedef NTSTATUS(WINAPI* NtOpenSectionFunction)(
+     OUT PHANDLE SectionHandle, IN ACCESS_MASK DesiredAccess,
+     IN POBJECT_ATTRIBUTES ObjectAttributes);
+ 
 @@ -235,18 +243,20 @@ typedef NTSTATUS(WINAPI* NtOpenKeyFuncti
  
  typedef NTSTATUS(WINAPI* NtOpenKeyExFunction)(

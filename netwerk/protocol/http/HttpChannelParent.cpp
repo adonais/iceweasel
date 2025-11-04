@@ -85,7 +85,7 @@ struct ChannelMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
-    schema.SetTableLabel("{marker.name} - {marker.data.url}");
+    schema.SetTableLabel("{marker.data.url}");
     schema.AddKeyFormat("url", MS::Format::Url, MS::PayloadFlags::Searchable);
     schema.AddStaticLabelValue(
         "Description",
@@ -651,7 +651,7 @@ bool HttpChannelParent::DoAsyncOpen(
 
   MOZ_ASSERT(!mBgParent);
   MOZ_ASSERT(mPromise.IsEmpty());
-  // Wait for HttpBackgrounChannel to continue the async open procedure.
+  // Wait for HttpBackgroundChannel to continue the async open procedure.
   ++mAsyncOpenBarrier;
   RefPtr<HttpChannelParent> self = this;
   WaitForBgParent(mChannel->ChannelId())

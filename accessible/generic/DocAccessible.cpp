@@ -23,6 +23,7 @@
 #include "TreeWalker.h"
 #include "xpcAccessibleDocument.h"
 
+#include "AnchorPositioningUtils.h"
 #include "nsIDocShell.h"
 #include "mozilla/dom/Document.h"
 #include "nsPIDOMWindow.h"
@@ -464,6 +465,27 @@ void DocAccessible::QueueCacheUpdateForDependentRelations(
     }
     QueueCacheUpdate(relatedAcc, CacheDomain::Relations);
   }
+
+  if (nsIFrame* anchorFrame = nsCoreUtils::GetAnchorForPositionedFrame(
+          mPresShell, aAcc->GetFrame())) {
+    // If this accessible is anchored, retrieve the anchor and update its
+    // relations.
+    if (LocalAccessible* anchorAcc = GetAccessible(anchorFrame->GetContent())) {
+      if (!mInsertedAccessibles.Contains(anchorAcc)) {
+        QueueCacheUpdate(anchorAcc, CacheDomain::Relations);
+      }
+    }
+  }
+
+  if (nsIFrame* positionedFrame = nsCoreUtils::GetPositionedFrameForAnchor(
+          mPresShell, aAcc->GetFrame())) {
+    // If this accessible is an anchor, retrieve the positioned frame and
+    // refresh the cache on all its anchors.
+    if (LocalAccessible* targetAcc =
+            GetAccessible(positionedFrame->GetContent())) {
+      RefreshAnchorRelationCacheForTarget(targetAcc);
+    }
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -753,7 +775,7 @@ void DocAccessible::HandleScroll(nsINode* aTarget) {
 }
 
 std::pair<nsPoint, nsRect> DocAccessible::ComputeScrollData(
-    LocalAccessible* aAcc) {
+    const LocalAccessible* aAcc, bool aShouldScaleByResolution) {
   nsPoint scrollPoint;
   nsRect scrollRange;
 
@@ -767,9 +789,13 @@ std::pair<nsPoint, nsRect> DocAccessible::ComputeScrollData(
     // is currently only used on Android, and popups are rendered natively
     // there.
     if (sf) {
-      scrollPoint = sf->GetScrollPosition() * mPresShell->GetResolution();
+      scrollPoint = sf->GetScrollPosition();
       scrollRange = sf->GetScrollRange();
-      scrollRange.ScaleRoundOut(mPresShell->GetResolution());
+
+      if (aShouldScaleByResolution) {
+        scrollPoint = scrollPoint * mPresShell->GetResolution();
+        scrollRange.ScaleRoundOut(mPresShell->GetResolution());
+      }
     }
   }
 
@@ -3087,6 +3113,12 @@ void DocAccessible::MaybeHandleChangeToHiddenNameOrDescription(
     if (HasAccessible(content)) {
       // This node isn't hidden. Events for name/description dependents will be
       // fired elsewhere.
+      // ... but we do need to handle firing an event for text value changes on
+      // meters, since inner meter text is never rendered by layout.
+      if (content->IsHTMLElement(nsGkAtoms::meter)) {
+        FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE,
+                         GetAccessible(content));
+      }
       break;
     }
     nsAtom* id = content->GetID();
@@ -3154,4 +3186,27 @@ bool DocAccessible::ProcessAnchorJump() {
   // We've processed this anchor jump now. Clear it so it isn't processed again.
   mAnchorJumpElm = nullptr;
   return true;
+}
+
+void DocAccessible::RefreshAnchorRelationCacheForTarget(
+    LocalAccessible* aTarget) {
+  nsIFrame* frame = aTarget->GetFrame();
+  if (!frame || !frame->HasProperty(nsIFrame::AnchorPosReferences())) {
+    return;
+  }
+
+  AnchorPosReferenceData* referencedAnchors =
+      frame->GetProperty(nsIFrame::AnchorPosReferences());
+  for (auto& entry : *referencedAnchors) {
+    const auto& anchorName = entry.GetKey();
+    if (const nsIFrame* anchorFrame =
+            mPresShell->GetAnchorPosAnchor(anchorName, frame)) {
+      if (LocalAccessible* anchorAcc =
+              GetAccessible(anchorFrame->GetContent())) {
+        if (!mInsertedAccessibles.Contains(anchorAcc)) {
+          QueueCacheUpdate(anchorAcc, CacheDomain::Relations);
+        }
+      }
+    }
+  }
 }

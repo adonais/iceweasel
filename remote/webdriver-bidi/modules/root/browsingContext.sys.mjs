@@ -84,6 +84,21 @@ const CreateType = {
 };
 
 /**
+ * @typedef {object} DownloadEndStatus
+ */
+
+/**
+ * Enum of values for the status of the browsingContext.downloadEnd event.
+ *
+ * @readonly
+ * @enum {DownloadStatus}
+ */
+const DownloadEndStatus = {
+  canceled: "canceled",
+  complete: "complete",
+};
+
+/**
  * @typedef {string} LocatorType
  */
 
@@ -195,6 +210,7 @@ class BrowsingContextModule extends RootBiDiModule {
     this.#navigationListener = new lazy.NavigationListener(
       this.messageHandler.navigationManager
     );
+    this.#navigationListener.on("download-end", this.#onDownloadEnd);
     this.#navigationListener.on("download-started", this.#onDownloadStarted);
     this.#navigationListener.on(
       "fragment-navigated",
@@ -1981,6 +1997,36 @@ class BrowsingContextModule extends RootBiDiModule {
     }
   };
 
+  #onDownloadEnd = async (eventName, data) => {
+    if (this.#subscribedEvents.has("browsingContext.downloadEnd")) {
+      const { navigationId, navigableId, canceled, filepath, timestamp, url } =
+        data;
+
+      const browsingContextInfo = {
+        context: navigableId,
+        navigation: navigationId,
+        status: canceled
+          ? DownloadEndStatus.canceled
+          : DownloadEndStatus.complete,
+        timestamp,
+        url,
+      };
+
+      if (!canceled) {
+        // Note: filepath should not be set for canceled downloads.
+        // https://www.w3.org/TR/webdriver-bidi/#cddl-type-browsingcontextdownloadcanceledparams
+        browsingContextInfo.filepath = filepath;
+      }
+
+      const context = this.#getBrowsingContext(navigableId);
+      this.#emitContextEventForBrowsingContext(
+        context.id,
+        "browsingContext.downloadEnd",
+        browsingContextInfo
+      );
+    }
+  };
+
   #onDownloadStarted = async (eventName, data) => {
     if (this.#subscribedEvents.has("browsingContext.downloadWillBegin")) {
       const { navigationId, navigableId, suggestedFilename, timestamp, url } =
@@ -2180,6 +2226,7 @@ class BrowsingContextModule extends RootBiDiModule {
     this.#subscribedEvents.delete(event);
 
     const hasNavigationEvent =
+      this.#subscribedEvents.has("browsingContext.downloadEnd") ||
       this.#subscribedEvents.has("browsingContext.downloadWillBegin") ||
       this.#subscribedEvents.has("browsingContext.fragmentNavigated") ||
       this.#subscribedEvents.has("browsingContext.historyUpdated") ||
@@ -2211,6 +2258,7 @@ class BrowsingContextModule extends RootBiDiModule {
         this.#subscribedEvents.add(event);
         break;
       }
+      case "browsingContext.downloadEnd":
       case "browsingContext.downloadWillBegin":
       case "browsingContext.fragmentNavigated":
       case "browsingContext.historyUpdated":
@@ -2237,6 +2285,7 @@ class BrowsingContextModule extends RootBiDiModule {
         this.#stopListeningToContextEvent(event);
         break;
       }
+      case "browsingContext.downloadEnd":
       case "browsingContext.downloadWillBegin":
       case "browsingContext.fragmentNavigated":
       case "browsingContext.historyUpdated":
@@ -2384,6 +2433,7 @@ class BrowsingContextModule extends RootBiDiModule {
       "browsingContext.contextCreated",
       "browsingContext.contextDestroyed",
       "browsingContext.domContentLoaded",
+      "browsingContext.downloadEnd",
       "browsingContext.downloadWillBegin",
       "browsingContext.fragmentNavigated",
       "browsingContext.historyUpdated",

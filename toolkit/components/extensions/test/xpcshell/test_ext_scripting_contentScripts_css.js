@@ -47,7 +47,7 @@ add_task(async function test_registerContentScripts_css() {
       // content scripts.
       browser.test.onMessage.addListener(async (msg, data) => {
         switch (msg) {
-          case "load-test-case":
+          case "load-test-case": {
             const { title, params, skipCheckScriptRegistration } = data;
             const expectedScripts = [];
 
@@ -85,6 +85,7 @@ add_task(async function test_registerContentScripts_css() {
 
             browser.test.sendMessage(`${msg}-done`);
             break;
+          }
           default:
             browser.test.fail(`received unexpected message: ${msg}`);
         }
@@ -485,7 +486,7 @@ add_task(async function test_css_origin() {
       // content scripts.
       browser.test.onMessage.addListener(async (msg, data) => {
         switch (msg) {
-          case "test-css-origin":
+          case "test-css-origin": {
             const { title, params } = data;
             const expectedScripts = [];
 
@@ -520,6 +521,7 @@ add_task(async function test_css_origin() {
 
             browser.test.sendMessage(`${msg}-done`);
             break;
+          }
           default:
             browser.test.fail(`received unexpected message: ${msg}`);
         }

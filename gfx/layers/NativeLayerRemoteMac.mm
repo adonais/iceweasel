@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "CFTypeRefPtr.h"
 #include "gfxUtils.h"
 #include "GLBlitHelper.h"
 #ifdef XP_MACOSX
@@ -20,19 +21,17 @@
 #include "mozilla/gfx/Swizzle.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/webrender/RenderMacIOSurfaceTextureHost.h"
+#include "NativeLayerCA.h"
 #include "ScopedGLHelpers.h"
 
 namespace mozilla {
 namespace layers {
 
-using gfx::DataSourceSurface;
 using gfx::IntPoint;
 using gfx::IntRect;
 using gfx::IntRegion;
 using gfx::IntSize;
 using gfx::Matrix4x4;
-using gfx::SurfaceFormat;
-using gl::GLContext;
 
 NativeLayerRemoteMac::NativeLayerRemoteMac(
     const IntSize& aSize, bool aIsOpaque,
@@ -46,7 +45,7 @@ NativeLayerRemoteMac::NativeLayerRemoteMac(bool aIsOpaque)
     : mIsOpaque(aIsOpaque) {}
 
 NativeLayerRemoteMac::NativeLayerRemoteMac(gfx::DeviceColor aColor)
-    : mColor(aColor), mIsOpaque(aColor.a >= 1.0f) {}
+    : mColor(Some(aColor)), mIsOpaque(aColor.a >= 1.0f) {}
 
 NativeLayerRemoteMac::~NativeLayerRemoteMac() {
   if (mCommandQueue) {
@@ -75,6 +74,7 @@ void NativeLayerRemoteMac::AttachExternalImage(
   mDisplayRect = displayRect;
 
   bool isDRM = aExternalImage->IsFromDRMSource();
+  bool changedIsDRM = mIsDRM != isDRM;
   mIsDRM = isDRM;
 
   bool isHDR = false;
@@ -91,6 +91,10 @@ void NativeLayerRemoteMac::AttachExternalImage(
   mIsHDR = isHDR;
 
   mDirtyLayerInfo |= changedDisplayRect;
+  mSnapshotLayer.mMutatedFrontSurface = true;
+  mSnapshotLayer.mMutatedSize |= changedDisplayRect;
+  mSnapshotLayer.mMutatedDisplayRect |= changedDisplayRect;
+  mSnapshotLayer.mMutatedIsDRM |= changedIsDRM;
   mDirtyChangedSurface = true;
 }
 
@@ -106,6 +110,7 @@ IntSize NativeLayerRemoteMac::GetSize() {
 void NativeLayerRemoteMac::SetPosition(const IntPoint& aPosition) {
   if (mPosition != aPosition) {
     mDirtyLayerInfo = true;
+    mSnapshotLayer.mMutatedPosition = true;
     mPosition = aPosition;
   }
 }
@@ -117,6 +122,7 @@ void NativeLayerRemoteMac::SetTransform(const Matrix4x4& aTransform) {
 
   if (mTransform != aTransform) {
     mDirtyLayerInfo = true;
+    mSnapshotLayer.mMutatedTransform = true;
     mTransform = aTransform;
   }
 }
@@ -125,6 +131,7 @@ void NativeLayerRemoteMac::SetSamplingFilter(
     gfx::SamplingFilter aSamplingFilter) {
   if (mSamplingFilter != aSamplingFilter) {
     mDirtyLayerInfo = true;
+    mSnapshotLayer.mMutatedSamplingFilter = true;
     mSamplingFilter = aSamplingFilter;
   }
 }
@@ -158,6 +165,7 @@ void NativeLayerRemoteMac::SetRoundedClipRect(
     const Maybe<gfx::RoundedRect>& aRoundedClipRect) {
   if (mRoundedClipRect != aRoundedClipRect) {
     mDirtyLayerInfo = true;
+    mSnapshotLayer.mMutatedRoundedClipRect = true;
     mRoundedClipRect = aRoundedClipRect;
   }
 }
@@ -176,6 +184,7 @@ gfx::IntRect NativeLayerRemoteMac::CurrentSurfaceDisplayRect() {
 void NativeLayerRemoteMac::SetSurfaceIsFlipped(bool aIsFlipped) {
   if (SurfaceIsFlipped() != aIsFlipped) {
     mDirtyLayerInfo = true;
+    mSnapshotLayer.mMutatedSurfaceIsFlipped = true;
     if (mSurfaceHandler) {
       mSurfaceHandler->SetSurfaceIsFlipped(aIsFlipped);
     } else {
@@ -226,6 +235,7 @@ void NativeLayerRemoteMac::NotifySurfaceReady() {
   bool changedDisplayRect = mSurfaceHandler->NotifySurfaceReady();
   mDirtyLayerInfo |= changedDisplayRect;
   mDirtyChangedSurface = true;
+  mSnapshotLayer.mMutatedFrontSurface = true;
 }
 
 void NativeLayerRemoteMac::DiscardBackbuffers() {
@@ -237,18 +247,15 @@ void NativeLayerRemoteMac::FlushDirtyLayerInfoToCommandQueue() {
   auto ID = reinterpret_cast<uint64_t>(this);
 
   if (mDirtyChangedSurface) {
-    uint32_t surfaceID = 0;
+    IOSurfacePort surfacePort;
     auto surfaceWithInvalidRegion = FrontSurface();
     if (surfaceWithInvalidRegion) {
-      // Get the unique ID for this IOSurfaceRef, which only works
-      // because kIOSurfaceIsGlobal was set to true when this
-      // IOSurface was created.
-      auto surfaceRef = surfaceWithInvalidRegion->mSurface.get();
-      surfaceID = IOSurfaceGetID(surfaceRef);
+      surfacePort =
+          IOSurfacePort::FromSurface(surfaceWithInvalidRegion->mSurface);
     }
 
     mCommandQueue->AppendCommand(mozilla::layers::CommandChangedSurface(
-        ID, surfaceID, IsDRM(), IsHDR(), GetSize()));
+        ID, std::move(surfacePort), IsDRM(), IsHDR(), GetSize()));
     mDirtyChangedSurface = false;
   }
 
@@ -259,6 +266,28 @@ void NativeLayerRemoteMac::FlushDirtyLayerInfoToCommandQueue() {
         static_cast<int8_t>(SamplingFilter()), SurfaceIsFlipped()));
     mDirtyLayerInfo = false;
   }
+}
+
+void NativeLayerRemoteMac::UpdateSnapshotLayer() {
+  CFTypeRefPtr<IOSurfaceRef> surface;
+  if (auto frontSurface = FrontSurface()) {
+    surface = frontSurface->mSurface;
+  }
+
+  IntRect rect = GetRect();
+  IntRect displayRect = CurrentSurfaceDisplayRect();
+
+  bool specializeVideo = false;
+  bool isVideo = false;
+  mSnapshotLayer.ApplyChanges(
+      NativeLayerCAUpdateType::All, rect.Size(), mIsOpaque, rect.TopLeft(),
+      mTransform, displayRect, mClipRect, mRoundedClipRect, mBackingScale,
+      mSurfaceIsFlipped, mSamplingFilter, specializeVideo, surface, mColor,
+      mIsDRM, isVideo);
+}
+
+CALayer* NativeLayerRemoteMac::CALayerForSnapshot() {
+  return mSnapshotLayer.UnderlyingCALayer();
 }
 
 }  // namespace layers

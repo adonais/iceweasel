@@ -71,7 +71,8 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
     if (lhs == rhs) {
       masm.ma_b(lhs, rhs, &bail, c);
     } else {
-      ScratchRegisterScope scratch(masm);
+      UseScratchRegisterScope temps(&masm);
+      Register scratch = temps.Acquire();
       masm.and_(scratch, lhs, rhs);
       masm.ma_b(scratch, scratch, &bail, c);
     }
@@ -79,7 +80,8 @@ class CodeGeneratorRiscv64 : public CodeGeneratorShared {
   }
   void bailoutIfFalseBool(Register reg, LSnapshot* snapshot) {
     Label bail;
-    ScratchRegisterScope scratch(masm);
+    UseScratchRegisterScope temps(&masm);
+    Register scratch = temps.Acquire();
     masm.ma_and(scratch, reg, Imm32(0xFF));
     masm.ma_b(scratch, scratch, &bail, Assembler::Zero);
     bailoutFrom(&bail, snapshot);

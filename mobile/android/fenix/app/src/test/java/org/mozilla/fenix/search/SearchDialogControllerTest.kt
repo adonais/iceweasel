@@ -4,9 +4,9 @@
 
 package org.mozilla.fenix.search
 
-import androidx.appcompat.app.AlertDialog
 import androidx.navigation.NavController
 import androidx.navigation.NavDirections
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.mockk.MockKAnnotations
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
@@ -37,7 +37,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.UnifiedSearch
+import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -54,6 +54,8 @@ import org.mozilla.fenix.search.SearchDialogFragmentDirections.Companion.actionG
 import org.mozilla.fenix.search.SearchDialogFragmentDirections.Companion.actionGlobalSearchEngineFragment
 import org.mozilla.fenix.search.toolbar.SearchSelectorMenu
 import org.mozilla.fenix.settings.SupportUtils
+import org.mozilla.fenix.telemetry.ACTION_SEARCH_ENGINE_SELECTED
+import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 
@@ -563,14 +565,7 @@ class SearchDialogControllerTest {
         verify { store.dispatch(SearchFragmentAction.SearchShortcutEngineSelected(searchEngine, browsingMode, settings)) }
 
         middleware.assertNotDispatched(AwesomeBarAction.EngagementFinished::class)
-
-        assertNotNull(UnifiedSearch.engineSelected.testGetValue())
-        val recordedEvents = UnifiedSearch.engineSelected.testGetValue()!!
-        assertEquals(1, recordedEvents.size)
-        val eventExtra = recordedEvents.single().extra
-        assertNotNull(eventExtra)
-        assertTrue(eventExtra!!.containsKey("engine"))
-        assertEquals(searchEngine.name, eventExtra["engine"])
+        assertSearchEngineSelectedTelemetryRecorded(searchEngine.name)
     }
 
     @Test
@@ -579,7 +574,7 @@ class SearchDialogControllerTest {
         every { searchEngine.type } returns SearchEngine.Type.APPLICATION
         every { searchEngine.id } returns HISTORY_SEARCH_ENGINE_ID
 
-        assertNull(UnifiedSearch.engineSelected.testGetValue())
+        assertNull(Toolbar.buttonTapped.testGetValue())
 
         var focusToolbarInvoked = false
         createController(
@@ -595,13 +590,7 @@ class SearchDialogControllerTest {
 
         middleware.assertNotDispatched(AwesomeBarAction.EngagementFinished::class)
 
-        assertNotNull(UnifiedSearch.engineSelected.testGetValue())
-        val recordedEvents = UnifiedSearch.engineSelected.testGetValue()!!
-        assertEquals(1, recordedEvents.size)
-        val eventExtra = recordedEvents.single().extra
-        assertNotNull(eventExtra)
-        assertTrue(eventExtra!!.containsKey("engine"))
-        assertEquals("history", eventExtra["engine"])
+        assertSearchEngineSelectedTelemetryRecorded("history")
     }
 
     @Test
@@ -610,7 +599,7 @@ class SearchDialogControllerTest {
         every { searchEngine.type } returns SearchEngine.Type.APPLICATION
         every { searchEngine.id } returns BOOKMARKS_SEARCH_ENGINE_ID
 
-        assertNull(UnifiedSearch.engineSelected.testGetValue())
+        assertNull(Toolbar.buttonTapped.testGetValue())
 
         var focusToolbarInvoked = false
         createController(
@@ -626,13 +615,7 @@ class SearchDialogControllerTest {
 
         middleware.assertNotDispatched(AwesomeBarAction.EngagementFinished::class)
 
-        assertNotNull(UnifiedSearch.engineSelected.testGetValue())
-        val recordedEvents = UnifiedSearch.engineSelected.testGetValue()!!
-        assertEquals(1, recordedEvents.size)
-        val eventExtra = recordedEvents.single().extra
-        assertNotNull(eventExtra)
-        assertTrue(eventExtra!!.containsKey("engine"))
-        assertEquals("bookmarks", eventExtra["engine"])
+        assertSearchEngineSelectedTelemetryRecorded("bookmarks")
     }
 
     @Test
@@ -641,7 +624,7 @@ class SearchDialogControllerTest {
         every { searchEngine.type } returns SearchEngine.Type.APPLICATION
         every { searchEngine.id } returns TABS_SEARCH_ENGINE_ID
 
-        assertNull(UnifiedSearch.engineSelected.testGetValue())
+        assertNull(Toolbar.buttonTapped.testGetValue())
 
         var focusToolbarInvoked = false
         createController(
@@ -657,13 +640,7 @@ class SearchDialogControllerTest {
 
         middleware.assertNotDispatched(AwesomeBarAction.EngagementFinished::class)
 
-        assertNotNull(UnifiedSearch.engineSelected.testGetValue())
-        val recordedEvents = UnifiedSearch.engineSelected.testGetValue()!!
-        assertEquals(1, recordedEvents.size)
-        val eventExtra = recordedEvents.single().extra
-        assertNotNull(eventExtra)
-        assertTrue(eventExtra!!.containsKey("engine"))
-        assertEquals("tabs", eventExtra["engine"])
+        assertSearchEngineSelectedTelemetryRecorded("tabs")
     }
 
     @Test
@@ -716,7 +693,7 @@ class SearchDialogControllerTest {
 
     @Test
     fun `show camera permissions needed dialog`() {
-        val dialogBuilder: AlertDialog.Builder = mockk(relaxed = true)
+        val dialogBuilder: MaterialAlertDialogBuilder = mockk(relaxed = true)
 
         val spyController = spyk(createController())
         every { spyController.buildDialog() } returns dialogBuilder
@@ -756,5 +733,16 @@ class SearchDialogControllerTest {
             clearToolbar = clearToolbar,
             dismissDialogAndGoBack = dismissDialogAndGoBack,
         )
+    }
+
+    private fun assertSearchEngineSelectedTelemetryRecorded(
+        extra: String,
+    ) {
+        val values = Toolbar.buttonTapped.testGetValue()
+        assertNotNull(values)
+        val last = values!!.last()
+        assertEquals(ACTION_SEARCH_ENGINE_SELECTED, last.extra?.get("item"))
+        assertEquals(SOURCE_ADDRESS_BAR, last.extra?.get("source"))
+        assertEquals(extra, last.extra?.get("extra"))
     }
 }

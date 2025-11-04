@@ -12,6 +12,34 @@
   }
 }
 
+.text-content.has-support-page {
+  display: flex;
+
+  &.has-description {
+    flex-wrap: wrap;
+  }
+
+  .label-wrapper {
+    width: 100%;
+    display: flex;
+    gap: var(--space-small);
+    align-items: center;
+
+    .support-page {
+      margin-inline-start: var(--space-xsmall);
+    }
+  }
+
+  .description,
+  .support-page {
+    display: inline;
+  }
+}
+
+.description + .support-page {
+  font-size: var(--font-size-small);
+}
+
 .box-container {
   padding: var(--box-padding);
   font-size: inherit;

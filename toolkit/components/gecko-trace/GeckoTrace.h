@@ -7,10 +7,7 @@
 
 #include "mozilla/Logging.h"
 
-#include <memory>
-#include <string_view>
-
-#include "mozilla/gecko_trace/SpanEvent.h"
+#include "mozilla/GeckoTraceEvents.h"
 
 #define GECKO_TRACE_SCOPE(component, span_name)                  \
   auto GECKO_TRACE_SCOPE_##__COUNTER__ =                         \
@@ -79,7 +76,7 @@ class Span {
   constexpr void AddEvent(const SpanEvent&) const {}
   [[nodiscard]] inline std::shared_ptr<Scope> Enter() const {
     // Use thread_local to ensure each thread gets its own instance, avoiding
-    // reference counting and contention on a global control block.
+    // reference-counting and contention on a global control block.
     //
     // https://github.com/open-telemetry/opentelemetry-cpp/pull/3037#issuecomment-2380002451
     static thread_local auto sNoopScope = std::make_shared<Scope>();
@@ -125,5 +122,14 @@ constexpr void Init() {}
 #endif  // GECKO_TRACE_ENABLE
 
 }  // namespace mozilla::gecko_trace
+
+#ifdef GECKO_TRACE_ENABLE
+extern "C" {
+void recv_gecko_trace_export(const uint8_t* buffer, uintptr_t length);
+}
+#else
+inline constexpr void recv_gecko_trace_export(const uint8_t* /*buffer*/,
+                                              uintptr_t /*length*/) {}
+#endif
 
 #endif  // GECKO_TRACE_H

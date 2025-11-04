@@ -59,6 +59,7 @@ class WebNotificationTest : BaseSessionTest() {
                 assertThat("Vibrate should match", notification.vibrate, equalTo(intArrayOf()))
                 assertThat("Source should match", notification.source, equalTo(createTestUrl(HELLO_HTML_PATH)))
                 assertThat("Origin should match", notification.origin, equalTo(GeckoSessionTestRule.TEST_ENDPOINT))
+                notification.show()
                 notificationResult.complete(null)
             }
         })
@@ -113,6 +114,7 @@ class WebNotificationTest : BaseSessionTest() {
             override fun onShowNotification(notification: WebNotification) {
                 assertNotificationData(notification, requireInteraction)
                 assertThat("privateBrowsing should match", notification.privateBrowsing, equalTo(true))
+                notification.show()
                 notificationResult.complete(null)
             }
         })
@@ -211,6 +213,7 @@ class WebNotificationTest : BaseSessionTest() {
         sessionRule.delegateDuringNextWait(object : WebNotificationDelegate {
             @GeckoSessionTestRule.AssertCalled
             override fun onShowNotification(notification: WebNotification) {
+                notification.show()
                 notificationResult.complete(notification)
             }
         })
@@ -269,6 +272,7 @@ class WebNotificationTest : BaseSessionTest() {
         sessionRule.delegateDuringNextWait(object : WebNotificationDelegate {
             @GeckoSessionTestRule.AssertCalled
             override fun onShowNotification(notification: WebNotification) {
+                notification.show()
                 notificationResult.complete(notification)
             }
         })
@@ -318,6 +322,7 @@ class WebNotificationTest : BaseSessionTest() {
             @GeckoSessionTestRule.AssertCalled
             override fun onShowNotification(notification: WebNotification) {
                 notificationShown = notification
+                notification.show()
                 notificationResult.complete(null)
             }
         })
@@ -347,6 +352,7 @@ class WebNotificationTest : BaseSessionTest() {
             @GeckoSessionTestRule.AssertCalled
             override fun onShowNotification(notification: WebNotification) {
                 notificationShown = notification
+                notification.show()
                 notificationResult.complete(null)
             }
         })
@@ -374,6 +380,7 @@ class WebNotificationTest : BaseSessionTest() {
         sessionRule.delegateDuringNextWait(object : WebNotificationDelegate {
             @GeckoSessionTestRule.AssertCalled
             override fun onShowNotification(notification: WebNotification) {
+                notification.show()
                 notificationResult.complete(notification)
             }
         })
@@ -412,6 +419,7 @@ class WebNotificationTest : BaseSessionTest() {
         sessionRule.delegateDuringNextWait(object : WebNotificationDelegate {
             @GeckoSessionTestRule.AssertCalled
             override fun onShowNotification(notification: WebNotification) {
+                notification.show()
                 notificationResult.complete(notification)
             }
         })

@@ -18,7 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.error
 import androidx.compose.ui.semantics.semantics
@@ -44,13 +48,14 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Dropdown
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.text.Text.Resource
 import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.compose.base.textfield.TextFieldColors
+import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.R
@@ -94,7 +99,8 @@ fun WebCompatReporter(
         containerColor = FirefoxTheme.colors.layer2,
     ) { paddingValues ->
         Column(
-            modifier = Modifier.verticalScroll(rememberScrollState())
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
                 .imePadding()
                 .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -172,7 +178,11 @@ fun WebCompatReporter(
             TextField(
                 value = state.problemDescription,
                 onValueChange = {
-                    store.dispatch(WebCompatReporterAction.ProblemDescriptionChanged(newProblemDescription = it))
+                    store.dispatch(
+                        WebCompatReporterAction.ProblemDescriptionChanged(
+                            newProblemDescription = it,
+                        ),
+                    )
                 },
                 placeholder = stringResource(id = R.string.webcompat_reporter_problem_description_placeholder_text),
                 errorText = "",
@@ -183,6 +193,51 @@ fun WebCompatReporter(
                     inputColor = FirefoxTheme.colors.textSecondary,
                 ),
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier
+                    .toggleable(
+                        value = state.includeEtpBlockedUrls,
+                        role = Role.Checkbox,
+                        onValueChange = { isChecked ->
+                            store.dispatch(
+                                WebCompatReporterAction.IncludeEtpBlockedUrlsChanged(
+                                    include = isChecked,
+                                ),
+                            )
+                        },
+                    )
+                    .padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = state.includeEtpBlockedUrls,
+                    onCheckedChange = null,
+                    modifier = Modifier,
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = FirefoxTheme.colors.formSelected,
+                        uncheckedColor = FirefoxTheme.colors.formDefault,
+                    ),
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
+                    Text(
+                        text = stringResource(id = R.string.webcompat_reporter_etp_checkbox_text),
+                        color = FirefoxTheme.colors.textPrimary,
+                        style = AcornTheme.typography.subtitle1,
+                    )
+
+                    Text(
+                        text = stringResource(id = R.string.webcompat_reporter_etp_checkbox_description),
+                        color = FirefoxTheme.colors.textSecondary,
+                        style = AcornTheme.typography.body2,
+                    )
+                }
+            }
 
             Row(
                 modifier = Modifier
@@ -218,7 +273,7 @@ fun WebCompatReporter(
 
                     Spacer(modifier = Modifier.width(10.dp))
 
-                    PrimaryButton(
+                    FilledButton(
                         text = stringResource(id = R.string.webcompat_reporter_send),
                         modifier = Modifier
                             .wrapContentSize()
@@ -302,11 +357,11 @@ private class WebCompatPreviewParameterProvider : PreviewParameterProvider<WebCo
                 enteredUrl = "www.example.com/url_parameters_that_break_the_page",
                 reason = BrokenSiteReason.Slow,
                 problemDescription = "The site wouldn’t load and after I tried xyz it still wouldn’t " +
-                    "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
-                    "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
-                    "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
-                    "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
-                    "load and then again ",
+                        "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
+                        "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
+                        "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
+                        "load and then again site wouldn’t load and after I tried xyz it still wouldn’t " +
+                        "load and then again ",
             ),
         )
 }

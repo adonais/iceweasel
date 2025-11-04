@@ -15,7 +15,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   JsonSchemaValidator:
     "resource://gre/modules/components-utils/JsonSchemaValidator.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 /**
@@ -37,133 +37,223 @@ ChromeUtils.defineESModuleGetters(lazy, {
  */
 export class UrlbarResult {
   /**
-   * Creates a result.
-   *
-   * @param {Values<typeof lazy.UrlbarUtils.RESULT_TYPE>} resultType
-   * @param {Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>} resultSource
-   * @param {object} payload data for this result. A payload should always
-   *        contain a way to extract a final url to visit. The url getter
-   *        should have a case for each of the types.
-   * @param {object} [payloadHighlights] payload highlights, if any. Each
-   *        property in the payload may have a corresponding property in this
-   *        object. The value of each property should be an array of [index,
-   *        length] tuples. Each tuple indicates a substring in the corresponding
-   *        payload property.
+   * @typedef {object} Payload
+   * @property {string} [qsSuggestion]
+   *   The suggestion text from quick suggest.
    */
-  constructor(resultType, resultSource, payload, payloadHighlights = {}) {
+
+  /**
+   * @param {object} params
+   * @param {Values<typeof lazy.UrlbarUtils.RESULT_TYPE>} params.type
+   * @param {Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>} params.source
+   * @param {UrlbarAutofillData} [params.autofill]
+   * @param {number} [params.exposureTelemetry]
+   * @param {Values<typeof lazy.UrlbarUtils.RESULT_GROUP>} [params.group]
+   * @param {boolean} [params.heuristic]
+   * @param {boolean} [params.hideRowLabel]
+   * @param {boolean} [params.isBestMatch]
+   * @param {boolean} [params.isRichSuggestion]
+   * @param {boolean} [params.isSuggestedIndexRelativeToGroup]
+   * @param {string} [params.providerName]
+   * @param {number} [params.resultSpan]
+   * @param {number} [params.richSuggestionIconSize]
+   * @param {string} [params.richSuggestionIconVariation]
+   * @param {string} [params.rowLabel]
+   * @param {boolean} [params.showFeedbackMenu]
+   * @param {number} [params.suggestedIndex]
+   * @param {Payload} [params.payload]
+   * @param {object} [params.payloadHighlights]
+   * @param {boolean} [params.testForceNewContent] Used for test only.
+   */
+  constructor({
+    type,
+    source,
+    autofill,
+    exposureTelemetry = lazy.UrlbarUtils.EXPOSURE_TELEMETRY.NONE,
+    group,
+    heuristic = false,
+    hideRowLabel = false,
+    isBestMatch = false,
+    isRichSuggestion = false,
+    isSuggestedIndexRelativeToGroup = false,
+    providerName,
+    resultSpan,
+    richSuggestionIconSize,
+    richSuggestionIconVariation,
+    rowLabel,
+    showFeedbackMenu = false,
+    suggestedIndex,
+    payload,
+    payloadHighlights = {},
+    testForceNewContent,
+  }) {
     // Type describes the payload and visualization that should be used for
     // this result.
-    if (!Object.values(lazy.UrlbarUtils.RESULT_TYPE).includes(resultType)) {
+    if (!Object.values(lazy.UrlbarUtils.RESULT_TYPE).includes(type)) {
       throw new Error("Invalid result type");
     }
-    this.type = resultType;
+    this.#type = type;
 
     // Source describes which data has been used to derive this result. In case
     // multiple sources are involved, use the more privacy restricted.
-    if (!Object.values(lazy.UrlbarUtils.RESULT_SOURCE).includes(resultSource)) {
+    if (!Object.values(lazy.UrlbarUtils.RESULT_SOURCE).includes(source)) {
       throw new Error("Invalid result source");
     }
-    this.source = resultSource;
-
-    // UrlbarView is responsible for updating this.
-    this.rowIndex = -1;
-
-    // May be used to indicate an heuristic result. Heuristic results can bypass
-    // source filters in the ProvidersManager, that otherwise may skip them.
-    this.heuristic = false;
-
-    // Allows us to track the exposure of a result through the query process.
-    this.exposureTelemetry = lazy.UrlbarUtils.EXPOSURE_TELEMETRY.NONE;
+    this.#source = source;
 
     // The payload contains result data. Some of the data is common across
     // multiple types, but most of it will vary.
     if (!payload || typeof payload != "object") {
       throw new Error("Invalid result payload");
     }
-    this.payload = this.validatePayload(payload);
+    this.#payload = this.#validatePayload(payload);
 
     if (!payloadHighlights || typeof payloadHighlights != "object") {
       throw new Error("Invalid result payload highlights");
     }
-    this.payloadHighlights = payloadHighlights;
-
     // Make sure every property in the payload has an array of highlights.  If a
     // payload property does not have a highlights array, then give it one now.
     // That way the consumer doesn't need to check whether it exists.
     for (let name in payload) {
-      if (!(name in this.payloadHighlights)) {
-        this.payloadHighlights[name] = [];
+      if (!(name in payloadHighlights)) {
+        payloadHighlights[name] = [];
       }
     }
+    this.#payloadHighlights = Object.freeze(payloadHighlights);
 
-    if (this.type == lazy.UrlbarUtils.RESULT_TYPE.TIP) {
-      this.isRichSuggestion = true;
-      this.richSuggestionIconSize = 24;
+    this.#autofill = autofill;
+    this.#exposureTelemetry = exposureTelemetry;
+    this.#group = group;
+    this.#heuristic = heuristic;
+    this.#hideRowLabel = hideRowLabel;
+    this.#isBestMatch = isBestMatch;
+    this.#isRichSuggestion = isRichSuggestion;
+    this.#isSuggestedIndexRelativeToGroup = isSuggestedIndexRelativeToGroup;
+    this.#richSuggestionIconSize = richSuggestionIconSize;
+    this.#richSuggestionIconVariation = richSuggestionIconVariation;
+    this.#providerName = providerName;
+    this.#resultSpan = resultSpan;
+    this.#rowLabel = rowLabel;
+    this.#showFeedbackMenu = showFeedbackMenu;
+    this.#suggestedIndex = suggestedIndex;
+
+    if (this.#type == lazy.UrlbarUtils.RESULT_TYPE.TIP) {
+      this.#isRichSuggestion = true;
+      this.#richSuggestionIconSize = 24;
     }
+
+    this.#testForceNewContent = testForceNewContent;
   }
 
-  /**
-   * Autofill data associated with this result.
-   *
-   * @type {?UrlbarAutofillData}
-   */
-  autofill;
+  get type() {
+    return this.#type;
+  }
 
-  /**
-   * Used for tests to force the group returned by UrlbarUtils.getResultGroup.
-   *
-   * @type {Values<typeof lazy.UrlbarUtils.RESULT_GROUP>}
-   */
-  group;
+  get source() {
+    return this.#source;
+  }
 
-  /**
-   * Whether this is the best suggest match for a set of results.
-   */
-  isBestMatch = false;
+  get autofill() {
+    return this.#autofill;
+  }
 
-  /**
-   * Whether this suggestion should be displayed as a rich suggestion.
-   */
-  isRichSuggestion = false;
+  get exposureTelemetry() {
+    return this.#exposureTelemetry;
+  }
+  set exposureTelemetry(value) {
+    this.#exposureTelemetry = value;
+  }
 
-  /**
-   * True if the suggested index is relative to the group.
-   */
-  isSuggestedIndexRelativeToGroup = false;
+  get group() {
+    return this.#group;
+  }
 
-  /**
-   * The name of the UrlbarProvider providing the result.
-   *
-   * @type {?string}
-   */
-  providerName;
+  get heuristic() {
+    return this.#heuristic;
+  }
+
+  get hideRowLabel() {
+    return this.#hideRowLabel;
+  }
+
+  get isBestMatch() {
+    return this.#isBestMatch;
+  }
+
+  get isRichSuggestion() {
+    return this.#isRichSuggestion;
+  }
+  set isRichSuggestion(value) {
+    this.#isRichSuggestion = value;
+  }
+
+  get isSuggestedIndexRelativeToGroup() {
+    return this.#isSuggestedIndexRelativeToGroup;
+  }
+  set isSuggestedIndexRelativeToGroup(value) {
+    this.#isSuggestedIndexRelativeToGroup = value;
+  }
+
+  get providerName() {
+    return this.#providerName;
+  }
+  set providerName(value) {
+    this.#providerName = value;
+  }
 
   /**
    * The type of the UrlbarProvider providing the result.
    *
    * @type {?Values<typeof lazy.UrlbarUtils.PROVIDER_TYPE>}
    */
-  providerType;
+  get providerType() {
+    return this.#providerType;
+  }
+  set providerType(value) {
+    this.#providerType = value;
+  }
 
-  /**
-   * How many result lines this result should span.
-   *
-   * @type {?number}
-   */
-  resultSpan;
+  get resultSpan() {
+    return this.#resultSpan;
+  }
 
-  /**
-   * An optional hint to the muxer that can be set to suggest a specific
-   * position among the results.
-   *
-   * @type {?number}
-   */
-  suggestedIndex;
+  get richSuggestionIconSize() {
+    return this.#richSuggestionIconSize;
+  }
 
-  /**
-   * @type {?number}
-   */
-  userContextId;
+  get richSuggestionIconVariation() {
+    return this.#richSuggestionIconVariation;
+  }
+  set richSuggestionIconSize(value) {
+    this.#richSuggestionIconSize = value;
+  }
+
+  get rowLabel() {
+    return this.#rowLabel;
+  }
+
+  get showFeedbackMenu() {
+    return this.#showFeedbackMenu;
+  }
+
+  get suggestedIndex() {
+    return this.#suggestedIndex;
+  }
+  set suggestedIndex(value) {
+    this.#suggestedIndex = value;
+  }
+
+  get payload() {
+    return this.#payload;
+  }
+
+  get payloadHighlights() {
+    return this.#payloadHighlights;
+  }
+
+  get testForceNewContent() {
+    return this.#testForceNewContent;
+  }
 
   /**
    * Returns a title that could be used as a label for this result.
@@ -272,7 +362,7 @@ export class UrlbarResult {
    * @param {object} payload The payload object.
    * @returns {object} `payload` if it's valid.
    */
-  validatePayload(payload) {
+  #validatePayload(payload) {
     let schema = lazy.UrlbarUtils.getPayloadSchema(this.type);
     if (!schema) {
       throw new Error(`Unrecognized result type: ${this.type}`);
@@ -317,7 +407,7 @@ export class UrlbarResult {
    *        UrlbarUtils.getTokenMatches().  If it's an array, then
    *        payloadHighlights will be an array of arrays of match highlights,
    *        one element per element in payloadPropertyValue.
-   * @returns {Array} An array [payload, payloadHighlights].
+   * @returns {{ payload: object, payloadHighlights: object }}
    */
   static payloadAndSimpleHighlights(tokens, payloadInfo) {
     // Convert scalar values in payloadInfo to [value] arrays.
@@ -366,22 +456,33 @@ export class UrlbarResult {
     }
 
     let entries = Object.entries(payloadInfo);
-    return [
-      entries.reduce((payload, [name, [val, _]]) => {
+    return {
+      payload: entries.reduce((payload, [name, [val, _]]) => {
         payload[name] = val;
         return payload;
       }, {}),
-      entries.reduce((highlights, [name, [val, highlightType]]) => {
-        if (highlightType) {
-          highlights[name] = !Array.isArray(val)
-            ? lazy.UrlbarUtils.getTokenMatches(tokens, val || "", highlightType)
-            : val.map(subval =>
-                lazy.UrlbarUtils.getTokenMatches(tokens, subval, highlightType)
-              );
-        }
-        return highlights;
-      }, {}),
-    ];
+      payloadHighlights: entries.reduce(
+        (highlights, [name, [val, highlightType]]) => {
+          if (highlightType) {
+            highlights[name] = !Array.isArray(val)
+              ? lazy.UrlbarUtils.getTokenMatches(
+                  tokens,
+                  val || "",
+                  highlightType
+                )
+              : val.map(subval =>
+                  lazy.UrlbarUtils.getTokenMatches(
+                    tokens,
+                    subval,
+                    highlightType
+                  )
+                );
+          }
+          return highlights;
+        },
+        {}
+      ),
+    };
   }
 
   static _dynamicResultTypesByName = new Map();
@@ -455,4 +556,26 @@ export class UrlbarResult {
     }
     return JSON.stringify(this);
   }
+
+  #type;
+  #source;
+  #autofill;
+  #exposureTelemetry;
+  #group;
+  #heuristic;
+  #hideRowLabel;
+  #isBestMatch;
+  #isRichSuggestion;
+  #isSuggestedIndexRelativeToGroup;
+  #providerName;
+  #providerType;
+  #resultSpan;
+  #richSuggestionIconSize;
+  #richSuggestionIconVariation;
+  #rowLabel;
+  #showFeedbackMenu;
+  #suggestedIndex;
+  #payload;
+  #payloadHighlights;
+  #testForceNewContent;
 }

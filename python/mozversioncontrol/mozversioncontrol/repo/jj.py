@@ -227,10 +227,10 @@ class JujutsuRepository(Repository):
     def diff_stream(self, rev=None, extensions=(), exclude_file=None, context=8):
         if rev is None:
             rev = self.HEAD_REVSET
-        args = ["diff", "--from", f"roots({rev})-", "--to", f"heads({rev})", "--git"]
+        args = ["diff", "-r", rev, "--git"]
 
         # File patterns to include
-        patterns = [f'glob:"*{dot_extension}"' for dot_extension in extensions]
+        patterns = [f'glob:"**/*{dot_extension}"' for dot_extension in extensions]
         if not patterns:
             patterns = ["all()"]
 

@@ -14,8 +14,8 @@ import android.view.LayoutInflater
 import android.view.inputmethod.EditorInfo.IME_NULL
 import android.widget.EditText
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.inputmethod.EditorInfoCompat.IME_FLAG_NO_PERSONALIZED_LEARNING
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.feature.prompts.R
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 
@@ -53,7 +53,7 @@ internal class TextPromptDialogFragment : AbstractPromptTextDialogFragment(), Te
         }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = AlertDialog.Builder(requireContext())
+        val builder = MaterialAlertDialogBuilder(requireContext())
             .setTitle(title)
             .setCancelable(true)
             .setPositiveButton(android.R.string.ok) { _, _ ->
@@ -71,7 +71,7 @@ internal class TextPromptDialogFragment : AbstractPromptTextDialogFragment(), Te
     }
 
     @SuppressLint("InflateParams")
-    private fun addLayout(builder: AlertDialog.Builder): AlertDialog.Builder {
+    private fun addLayout(builder: MaterialAlertDialogBuilder): MaterialAlertDialogBuilder {
         val inflater = LayoutInflater.from(requireContext())
         val view = inflater.inflate(R.layout.mozac_feature_text_prompt, null)
 

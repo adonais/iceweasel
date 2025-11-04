@@ -220,15 +220,6 @@ NS_IMETHODIMP FetchCompleteRunnable::RunOnWorkletThread() {
 
   request->mBaseURL = mURI;
   request->OnFetchComplete(mResult);
-
-  if (NS_FAILED(mResult)) {
-    if (request->IsTopLevel()) {
-      request->LoadFailed();
-    } else {
-      request->Cancel();
-    }
-  }
-
   moduleLoader->RemoveRequest(mURI);
   return NS_OK;
 }

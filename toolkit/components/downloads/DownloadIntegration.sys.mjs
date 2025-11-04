@@ -1391,7 +1391,7 @@ var DownloadObserver = {
           "ON_LEAVE_PRIVATE_BROWSING"
         );
         break;
-      case "last-pb-context-exited":
+      case "last-pb-context-exited": {
         let promise = (async function () {
           let list = await Downloads.getList(Downloads.PRIVATE);
           let downloads = await list.getAll();
@@ -1411,6 +1411,7 @@ var DownloadObserver = {
           promise.catch(ex => console.error(ex));
         }
         break;
+      }
       case "sleep_notification":
       case "suspend_process_notification":
       case "network:offline-about-to-go-offline":
@@ -1433,7 +1434,7 @@ var DownloadObserver = {
         }
         break;
       case "wake_notification":
-      case "resume_process_notification":
+      case "resume_process_notification": {
         let wakeDelay = Services.prefs.getIntPref(
           "browser.download.manager.resumeOnWakeDelay",
           10000
@@ -1447,6 +1448,7 @@ var DownloadObserver = {
           );
         }
         break;
+      }
       case "network:offline-status-changed":
         if (aData == "online") {
           this._resumeOfflineDownloads();

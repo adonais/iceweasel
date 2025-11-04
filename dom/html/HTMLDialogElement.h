@@ -29,7 +29,8 @@ class HTMLDialogElement final : public nsGenericHTMLElement {
   explicit HTMLDialogElement(
       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)),
-        mPreviouslyFocusedElement(nullptr) {}
+        mPreviouslyFocusedElement(nullptr),
+        mRequestCloseSourceElement(nullptr) {}
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLDialogElement, dialog)
 
@@ -58,20 +59,40 @@ class HTMLDialogElement final : public nsGenericHTMLElement {
     mReturnValue = aReturnValue;
   }
 
-  nsAString& RequestCloseReturnValue() { return mRequestCloseReturnValue; }
+  void GetRequestCloseReturnValue(Optional<nsAString>& aReturnValue) {
+    if (mRequestCloseReturnValue.isSome()) {
+      aReturnValue = &mRequestCloseReturnValue.ref();
+    }
+  }
+  void ClearRequestCloseReturnValue() { mRequestCloseReturnValue.reset(); }
   void SetRequestCloseReturnValue(const nsAString& aReturnValue) {
-    mRequestCloseReturnValue = aReturnValue;
+    mRequestCloseReturnValue.emplace(aReturnValue);
   }
 
   nsresult BindToTree(BindContext&, nsINode&) override;
   void UnbindFromTree(UnbindContext&) override;
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Close(
-      const mozilla::dom::Optional<nsAString>& aReturnValue);
+      const mozilla::dom::Optional<nsAString>& aReturnValue) {
+    return Close(nullptr, aReturnValue);
+  }
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Close(
+      Element* aSource, const mozilla::dom::Optional<nsAString>& aReturnValue);
+  MOZ_CAN_RUN_SCRIPT void RequestClose(
+      const mozilla::dom::Optional<nsAString>& aReturnValue) {
+    RequestClose(nullptr, aReturnValue);
+  }
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void RequestClose(
-      const mozilla::dom::Optional<nsAString>& aReturnValue);
+      Element* aSource, const mozilla::dom::Optional<nsAString>& aReturnValue);
+
+  RefPtr<Element> GetRequestCloseSourceElement();
+
   MOZ_CAN_RUN_SCRIPT void Show(ErrorResult& aError);
-  MOZ_CAN_RUN_SCRIPT void ShowModal(ErrorResult& aError);
+
+  MOZ_CAN_RUN_SCRIPT void ShowModal(Element* aSource, ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT void ShowModal(ErrorResult& aError) {
+    return ShowModal(nullptr, aError);
+  }
 
   void AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                     const nsAttrValue* aValue, const nsAttrValue* aOldValue,
@@ -93,7 +114,7 @@ class HTMLDialogElement final : public nsGenericHTMLElement {
                                                 Command aCommand,
                                                 ErrorResult& aRv) override;
 
-  nsString mRequestCloseReturnValue;
+  Maybe<nsString> mRequestCloseReturnValue;
   nsString mReturnValue;
 
  protected:
@@ -105,7 +126,7 @@ class HTMLDialogElement final : public nsGenericHTMLElement {
   void AddToTopLayerIfNeeded();
   void RemoveFromTopLayerIfNeeded();
   void StorePreviouslyFocusedElement();
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void QueueToggleEventTask();
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void QueueToggleEventTask(Element* aSource);
   void SetDialogCloseWatcherIfNeeded();
   void SetCloseWatcherEnabledState();
 
@@ -113,6 +134,8 @@ class HTMLDialogElement final : public nsGenericHTMLElement {
   void CleanupSteps();
 
   nsWeakPtr mPreviouslyFocusedElement;
+
+  nsWeakPtr mRequestCloseSourceElement;
 
   RefPtr<AsyncEventDispatcher> mToggleEventDispatcher;
 

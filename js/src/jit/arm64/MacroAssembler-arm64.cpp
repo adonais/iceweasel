@@ -44,19 +44,68 @@ static inline ARMRegister R(Register r, Width w) {
   return ARMRegister(r, unsigned(w));
 }
 
-void MacroAssemblerCompat::boxValue(JSValueType type, Register src,
-                                    Register dest) {
-  MOZ_ASSERT(src != dest);
+#ifdef DEBUG
+static constexpr int32_t PayloadSize(JSValueType type) {
+  switch (type) {
+    case JSVAL_TYPE_UNDEFINED:
+    case JSVAL_TYPE_NULL:
+      return 0;
+    case JSVAL_TYPE_BOOLEAN:
+      return 1;
+    case JSVAL_TYPE_INT32:
+    case JSVAL_TYPE_MAGIC:
+      return 32;
+    case JSVAL_TYPE_STRING:
+    case JSVAL_TYPE_SYMBOL:
+    case JSVAL_TYPE_PRIVATE_GCTHING:
+    case JSVAL_TYPE_BIGINT:
+    case JSVAL_TYPE_OBJECT:
+      return JSVAL_TAG_SHIFT;
+    case JSVAL_TYPE_DOUBLE:
+    case JSVAL_TYPE_UNKNOWN:
+      break;
+  }
+  MOZ_CRASH("bad value type");
+}
+#endif
+
+static void AssertValidPayload(MacroAssemblerCompat& masm, JSValueType type,
+                               Register payload, Register scratch) {
+#ifdef DEBUG
+  // All bits above the payload must be zeroed.
+  Label upperBitsZeroed;
+  masm.Lsr(ARMRegister(scratch, 64), ARMRegister(payload, 64),
+           PayloadSize(type));
+  masm.Cbz(ARMRegister(scratch, 64), &upperBitsZeroed);
+  masm.breakpoint();
+  masm.bind(&upperBitsZeroed);
+#endif
+}
+
+void MacroAssemblerCompat::tagValue(JSValueType type, Register payload,
+                                    ValueOperand dest) {
+  MOZ_ASSERT(type != JSVAL_TYPE_UNDEFINED && type != JSVAL_TYPE_NULL);
 
 #ifdef DEBUG
-  if (type == JSVAL_TYPE_INT32 || type == JSVAL_TYPE_BOOLEAN) {
-    Label upper32BitsZeroed;
-    movePtr(ImmWord(UINT32_MAX), dest);
-    asMasm().branchPtr(Assembler::BelowOrEqual, src, dest, &upper32BitsZeroed);
-    breakpoint();
-    bind(&upper32BitsZeroed);
+  {
+    vixl::UseScratchRegisterScope temps(this);
+    Register scratch = temps.AcquireX().asUnsized();
+
+    AssertValidPayload(*this, type, payload, scratch);
   }
 #endif
+
+  Orr(ARMRegister(dest.valueReg(), 64), ARMRegister(payload, 64),
+      Operand(ImmShiftedTag(type).value));
+}
+
+void MacroAssemblerCompat::boxValue(JSValueType type, Register src,
+                                    Register dest) {
+  MOZ_ASSERT(type != JSVAL_TYPE_UNDEFINED && type != JSVAL_TYPE_NULL);
+  MOZ_ASSERT(src != dest);
+
+  AssertValidPayload(*this, type, src, dest);
+
   Orr(ARMRegister(dest, 64), ARMRegister(src, 64),
       Operand(ImmShiftedTag(type).value));
 }
@@ -66,19 +115,63 @@ void MacroAssemblerCompat::boxValue(Register type, Register src,
   MOZ_ASSERT(src != dest);
 
 #ifdef DEBUG
-  Label check, done;
-  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_INT32), &check);
-  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BOOLEAN), &check);
-  asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_NULL), &check);
-  asMasm().branch32(Assembler::NotEqual, type, Imm32(JSVAL_TYPE_UNDEFINED),
-                    &done);
   {
-    bind(&check);
-    asMasm().branchPtr(Assembler::BelowOrEqual, src, ImmWord(UINT32_MAX),
-                       &done);
+    vixl::UseScratchRegisterScope temps(this);
+    Register scratch = temps.AcquireX().asUnsized();
+
+    Label check, isNullOrUndefined, isBoolean, isInt32OrMagic, isPointerSized;
+
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_NULL),
+                      &isNullOrUndefined);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_UNDEFINED),
+                      &isNullOrUndefined);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BOOLEAN),
+                      &isBoolean);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_INT32),
+                      &isInt32OrMagic);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_MAGIC),
+                      &isInt32OrMagic);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_STRING),
+                      &isPointerSized);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_SYMBOL),
+                      &isPointerSized);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_PRIVATE_GCTHING),
+                      &isPointerSized);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_BIGINT),
+                      &isPointerSized);
+    asMasm().branch32(Assembler::Equal, type, Imm32(JSVAL_TYPE_OBJECT),
+                      &isPointerSized);
     breakpoint();
+    {
+      bind(&isNullOrUndefined);
+      move32(Imm32(PayloadSize(JSVAL_TYPE_NULL)), scratch);
+      jump(&check);
+    }
+    {
+      bind(&isBoolean);
+      move32(Imm32(PayloadSize(JSVAL_TYPE_BOOLEAN)), scratch);
+      jump(&check);
+    }
+    {
+      bind(&isInt32OrMagic);
+      move32(Imm32(PayloadSize(JSVAL_TYPE_INT32)), scratch);
+      jump(&check);
+    }
+    {
+      bind(&isPointerSized);
+      move32(Imm32(PayloadSize(JSVAL_TYPE_STRING)), scratch);
+      // fall-through
+    }
+    bind(&check);
+
+    // All bits above the payload must be zeroed.
+    Label upperBitsZeroed;
+    Lsr(ARMRegister(scratch, 64), ARMRegister(src, 64),
+        ARMRegister(scratch, 64));
+    Cbz(ARMRegister(scratch, 64), &upperBitsZeroed);
+    breakpoint();
+    bind(&upperBitsZeroed);
   }
-  bind(&done);
 #endif
 
   Orr(ARMRegister(dest, 64), ARMRegister(type, 64),
@@ -1528,10 +1621,9 @@ void MacroAssembler::call(ImmPtr imm) {
   // eg testcase: asm.js/testTimeout5.js
   syncStackPtr();
   vixl::UseScratchRegisterScope temps(this);
-  MOZ_ASSERT(temps.IsAvailable(ScratchReg64));  // ip0
-  temps.Exclude(ScratchReg64);
-  movePtr(imm, ScratchReg64.asUnsized());
-  Blr(ScratchReg64);
+  const Register scratch = temps.AcquireX().asUnsized();
+  movePtr(imm, scratch);
+  Blr(ARMRegister(scratch, 64));
 }
 
 void MacroAssembler::call(ImmWord imm) { call(ImmPtr((void*)imm.value)); }
@@ -2038,7 +2130,7 @@ void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
 
 void MacroAssembler::wasmBoundsCheck64(Condition cond, Register64 index,
                                        Address boundsCheckLimit, Label* label) {
-  branchPtr(InvertCondition(cond), boundsCheckLimit, index.reg, label);
+  branchPtr(SwapCmpOperandsCondition(cond), boundsCheckLimit, index.reg, label);
   if (JitOptions.spectreIndexMasking) {
     csel(ARMRegister(index.reg, 64), vixl::xzr, ARMRegister(index.reg, 64),
          cond);

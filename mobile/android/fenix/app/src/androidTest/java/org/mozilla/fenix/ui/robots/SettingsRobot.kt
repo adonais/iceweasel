@@ -117,10 +117,10 @@ class SettingsRobot {
         onView(withText(R.string.preferences_autofill)).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyAutofillButton: Verified that the \"Autofill\" button is visible")
     }
-    fun verifyLanguageButton() {
-        scrollToElementByText(getStringResource(R.string.preferences_language))
+    fun verifyLanguageButton(localizedText: String = getStringResource(R.string.preferences_language)) {
+        scrollToElementByText(localizedText)
         Log.i(TAG, "verifyLanguageButton: Trying to verify that the \"Language\" button is visible")
-        onView(withText(R.string.preferences_language)).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        onView(withText(localizedText)).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
         Log.i(TAG, "verifyLanguageButton: Verified that the \"Language\" button is visible")
     }
     fun verifyDefaultBrowserToggle(isEnabled: Boolean) {

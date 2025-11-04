@@ -116,16 +116,14 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
  public:
   typedef mozilla::pkix::Result Result;
 
-  enum OCSPFetching {
-    NeverFetchOCSP = 0,
-    FetchOCSPForDVSoftFail = 1,
-    FetchOCSPForDVHardFail = 2,
-    FetchOCSPForEV = 3,
-    LocalOnlyOCSPForEV = 4,
+  enum RevocationCheckMode {
+    RevocationCheckLocalOnly = 0,
+    RevocationCheckMayFetch = 1,
+    RevocationCheckRequired = 2,
   };
 
   NSSCertDBTrustDomain(
-      SECTrustType certDBTrustType, OCSPFetching ocspFetching,
+      SECTrustType certDBTrustType, RevocationCheckMode ocspFetching,
       OCSPCache& ocspCache, SignatureCache* signatureCache,
       TrustCache* trustCache, void* pinArg,
       mozilla::TimeDuration ocspTimeoutSoft,
@@ -258,19 +256,16 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
       const mozilla::pkix::CertID& certID, mozilla::pkix::Time time,
       mozilla::pkix::Duration validityDuration, const nsCString& aiaLocation,
       const bool crliteCoversCertificate, const Result crliteResult,
-      /*optional*/ const mozilla::pkix::Input* stapledOCSPResponse,
-      /*out*/ bool& softFailure);
+      /*optional*/ const mozilla::pkix::Input* stapledOCSPResponse);
 
   Result SynchronousCheckRevocationWithServer(
       const mozilla::pkix::CertID& certID, const nsCString& aiaLocation,
       mozilla::pkix::Time time, uint16_t maxOCSPLifetimeInDays,
       const Result cachedResponseResult, const Result stapledOCSPResponseResult,
-      const bool crliteFilterCoversCertificate, const Result crliteResult,
-      /*out*/ bool& softFailure);
+      const bool crliteFilterCoversCertificate, const Result crliteResult);
   Result HandleOCSPFailure(const Result cachedResponseResult,
                            const Result stapledOCSPResponseResult,
-                           const Result error,
-                           /*out*/ bool& softFailure);
+                           const Result error);
 
   bool ShouldSkipSelfSignedNonTrustAnchor(mozilla::pkix::Input certDER);
   Result CheckCandidates(IssuerChecker& checker,
@@ -279,7 +274,7 @@ class NSSCertDBTrustDomain : public mozilla::pkix::TrustDomain {
                          bool& keepGoing);
 
   const SECTrustType mCertDBTrustType;
-  const OCSPFetching mOCSPFetching;
+  const RevocationCheckMode mOCSPFetching;
   OCSPCache& mOCSPCache;            // non-owning!
   SignatureCache* mSignatureCache;  // non-owning!
   TrustCache* mTrustCache;          // non-owning!

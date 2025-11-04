@@ -14,9 +14,9 @@ import android.text.style.URLSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.core.text.HtmlCompat
 import androidx.core.text.getSpans
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.feature.prompts.R
 import mozilla.components.feature.prompts.dialog.AbstractPromptTextDialogFragment
 import mozilla.components.feature.prompts.dialog.KEY_MESSAGE
@@ -33,7 +33,7 @@ internal const val KEY_ICON = "KEY_ICON"
 internal class PrivacyPolicyDialogFragment : AbstractPromptTextDialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val builder = AlertDialog.Builder(requireContext())
+        val builder = MaterialAlertDialogBuilder(requireContext())
             .setTitle(title)
             .setCancelable(true)
             .setPositiveButton(R.string.mozac_feature_prompts_identity_credentials_continue) { _, _ ->
@@ -47,7 +47,7 @@ internal class PrivacyPolicyDialogFragment : AbstractPromptTextDialogFragment() 
             .create()
     }
 
-    internal fun setMessage(builder: AlertDialog.Builder): AlertDialog.Builder {
+    internal fun setMessage(builder: MaterialAlertDialogBuilder): MaterialAlertDialogBuilder {
         val inflater = LayoutInflater.from(requireContext())
         val view = inflater.inflate(R.layout.mozac_feature_prompt_simple_text, null)
         val textView = view.findViewById<TextView>(R.id.labelView)

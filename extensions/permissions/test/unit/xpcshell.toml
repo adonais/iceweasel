@@ -29,6 +29,9 @@ run-if = ["e10s"]
 firefox-appdir = "browser"
 
 ["test_permmanager_load_invalid_entries.js"]
+skip-if = [
+  "os == 'android' && os_version == '14' && processor == 'x86_64'" , # Bug 1834534
+]
 
 ["test_permmanager_local_files.js"]
 

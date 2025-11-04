@@ -4,7 +4,6 @@
 
 package org.mozilla.focus.fragment
 
-import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -21,13 +20,11 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
-import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -74,6 +71,7 @@ import mozilla.components.support.locale.ActivityContextWrapper
 import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.ext.requestInPlacePermissions
 import mozilla.telemetry.glean.private.NoExtras
+import org.mozilla.focus.Components
 import org.mozilla.focus.GleanMetrics.Browser
 import org.mozilla.focus.GleanMetrics.CookieBanner
 import org.mozilla.focus.GleanMetrics.Downloads
@@ -265,7 +263,6 @@ class BrowserFragment :
         }
     }
 
-    @Suppress("LongMethod", "ComplexMethod")
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentBrowserBinding.inflate(inflater, container, false)
 
@@ -277,11 +274,27 @@ class BrowserFragment :
         return binding.root
     }
 
-    @SuppressLint("VisibleForTests")
-    @Suppress("ComplexCondition", "LongMethod")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val components = requireComponents
 
+        initializeFindInPageFeature(view, components)
+        initializeFullScreenIntegrationFeature(view, components)
+        initializePictureInPictureFeature(components)
+        initializeContextMenuFeature(view, components)
+        initializeSessionFeature(view, components)
+        initializePromptFeature(view, components)
+        initializeDownloadsFeature(view, components)
+        initializeShareResourceFeature(view, components)
+        initializeAppLinksFeature(view, components)
+        initializeTopSitesFeature(view, components)
+        customizeToolbar()
+        initializeUiBasedOnTabType(view, components)
+        initializeMediaSessionFullscreenFeature(view, components)
+        initializeSitePermissionsFeature(view)
+        setupImeInsets(view)
+    }
+
+    private fun initializeFindInPageFeature(view: View, components: Components) {
         findInPageIntegration.set(
             FindInPageIntegration(
                 components.store,
@@ -292,7 +305,9 @@ class BrowserFragment :
             this,
             view,
         )
+    }
 
+    private fun initializeFullScreenIntegrationFeature(view: View, components: Components) {
         fullScreenIntegration.set(
             FullScreenIntegration(
                 requireActivity(),
@@ -306,14 +321,18 @@ class BrowserFragment :
             this,
             view,
         )
+    }
 
+    private fun initializePictureInPictureFeature(components: Components) {
         pictureInPictureFeature = PictureInPictureFeature(
             store = components.store,
             activity = requireActivity(),
             crashReporting = components.crashReporter,
             tabId = tabId,
         )
+    }
 
+    private fun initializeContextMenuFeature(view: View, components: Components) {
         contextMenuFeature.set(
             ContextMenuFeature(
                 parentFragmentManager,
@@ -335,7 +354,9 @@ class BrowserFragment :
             this,
             view,
         )
+    }
 
+    private fun initializeSessionFeature(view: View, components: Components) {
         sessionFeature.set(
             SessionFeature(
                 components.store,
@@ -347,7 +368,9 @@ class BrowserFragment :
             this,
             view,
         )
+    }
 
+    private fun initializePromptFeature(view: View, components: Components) {
         promptFeature.set(
             PromptFeature(
                 fragment = this,
@@ -378,13 +401,20 @@ class BrowserFragment :
             this,
             view,
         )
+    }
 
+    private fun initializeDownloadsFeature(view: View, components: Components) {
         downloadsFeature.set(
             DownloadsFeature(
                 requireContext().applicationContext,
                 components.store,
                 components.downloadsUseCases,
                 fragmentManager = childFragmentManager,
+                promptsStyling = DownloadsFeature.PromptsStyling(
+                    gravity = Gravity.CENTER,
+                    positiveButtonBackgroundColor = R.color.contrastColor,
+                    positiveButtonTextColor = R.color.colorPrimary,
+                ),
                 tabId = tabId,
                 downloadManager = FetchDownloadManager(
                     requireContext().applicationContext,
@@ -412,7 +442,9 @@ class BrowserFragment :
             this,
             view,
         )
+    }
 
+    private fun initializeShareResourceFeature(view: View, components: Components) {
         shareResourceFeature.set(
             ShareResourceFeature(
                 context = requireContext().applicationContext,
@@ -423,7 +455,9 @@ class BrowserFragment :
             this,
             view,
         )
+    }
 
+    private fun initializeAppLinksFeature(view: View, components: Components) {
         appLinksFeature.set(
             feature = AppLinksFeature(
                 requireContext(),
@@ -445,11 +479,13 @@ class BrowserFragment :
             owner = this,
             view = view,
         )
+    }
 
+    private fun initializeTopSitesFeature(view: View, components: Components) {
         topSitesFeature.set(
             feature = TopSitesFeature(
                 view = DefaultTopSitesView(requireComponents.appStore),
-                storage = requireComponents.topSitesStorage,
+                storage = components.topSitesStorage,
                 config = {
                     TopSitesConfig(
                         totalSites = TOP_SITES_MAX_LIMIT,
@@ -461,9 +497,9 @@ class BrowserFragment :
             owner = this,
             view = view,
         )
+    }
 
-        customizeToolbar()
-
+    private fun initializeUiBasedOnTabType(view: View, components: Components) {
         val customTabConfig = tab.ifCustomTab()?.config
         if (customTabConfig != null) {
             initialiseCustomTabUi(
@@ -475,6 +511,7 @@ class BrowserFragment :
             // We to add support for Custom Tabs here, however in order to send the window request
             // back to us through the intent system, we need to register a unique schema that we
             // can handle. For example, Fenix Nighlyt does this today with `fenix-nightly://`.
+            // See https://bugzilla.mozilla.org/show_bug.cgi?id=1804556
         } else {
             initialiseNormalBrowserUi(requireContext().isAccessibilityEnabled())
 
@@ -487,39 +524,26 @@ class BrowserFragment :
                 view = view,
             )
         }
+    }
 
-        // Feature that handles MediaSession state changes
+    private fun initializeMediaSessionFullscreenFeature(view: View, components: Components) {
         fullScreenMediaSessionFeature.set(
-            feature = MediaSessionFullscreenFeature(requireActivity(), requireComponents.store, tryGetCustomTabId()),
+            feature = MediaSessionFullscreenFeature(requireActivity(), components.store, tryGetCustomTabId()),
             owner = this,
             view = view,
         )
-
-        setSitePermissions(view)
-
-        ImeInsetsSynchronizer.setup(
-            targetView = view,
-            synchronizeViewWithIME = false,
-            onIMEAnimationStarted = { isKeyboardShowingUp, _ ->
-                if (!isKeyboardShowingUp) {
-                    (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = 0
-                    view.requestLayout()
-                }
-            },
-            onIMEAnimationFinished = { isKeyboardShowingUp, keyboardHeight ->
-                if (isKeyboardShowingUp || keyboardHeight == 0) {
-                    (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = keyboardHeight
-                    view.requestLayout()
-                }
-            },
-        )
     }
 
-    private fun setSitePermissions(rootView: View) {
+    private fun initializeSitePermissionsFeature(rootView: View) {
         sitePermissionsFeature.set(
             feature = SitePermissionsFeature(
                 context = requireContext(),
                 fragmentManager = parentFragmentManager,
+                promptsStyling = SitePermissionsFeature.PromptsStyling(
+                    gravity = Gravity.CENTER,
+                    positiveButtonBackgroundColor = R.color.contrastColor,
+                    positiveButtonTextColor = R.color.colorPrimary,
+                ),
                 onNeedToRequestPermissions = { permissions ->
                     if (SitePermissionOptionsStorage(requireContext()).isSitePermissionNotBlocked(permissions)) {
                         requestPermissionLauncher.launch(permissions)
@@ -541,6 +565,25 @@ class BrowserFragment :
             requireComponents.sessionUseCases.reload(tabId)
             requireComponents.appStore.dispatch(AppAction.SitePermissionOptionChange(false))
         }
+    }
+
+    private fun setupImeInsets(view: View) {
+        ImeInsetsSynchronizer.setup(
+            targetView = view,
+            synchronizeViewWithIME = false,
+            onIMEAnimationStarted = { isKeyboardShowingUp, _ ->
+                if (!isKeyboardShowingUp) {
+                    (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = 0
+                    view.requestLayout()
+                }
+            },
+            onIMEAnimationFinished = { isKeyboardShowingUp, keyboardHeight ->
+                if (isKeyboardShowingUp || keyboardHeight == 0) {
+                    (view.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin = keyboardHeight
+                    view.requestLayout()
+                }
+            },
+        )
     }
 
     override fun onAccessibilityStateChanged(enabled: Boolean) {
@@ -584,7 +627,7 @@ class BrowserFragment :
             requireComponents.topSitesUseCases,
             tabId,
             ::shareCurrentUrl,
-            ::setShouldRequestDesktop,
+            ::toggleDesktopSite,
             ::showAddToHomescreenDialog,
             ::showFindInPageBar,
             ::openSelectBrowser,
@@ -726,6 +769,9 @@ class BrowserFragment :
         binding.crashContainer.isVisible = false
     }
 
+    /**
+     * Returns true if the crash reporter fragment is visible.
+     */
     fun crashReporterIsVisible(): Boolean = requireActivity().supportFragmentManager.let {
         it.findFragmentByTag(CrashReporterFragment.FRAGMENT_TAG)?.isVisible == true
     }
@@ -868,7 +914,7 @@ class BrowserFragment :
 
     override fun onHomePressed() = pictureInPictureFeature?.onHomePressed() ?: false
 
-    @Suppress("ComplexMethod", "ReturnCount")
+    @Suppress("ReturnCount")
     override fun onBackPressed(): Boolean {
         if (findInPageIntegration.onBackPressed()) {
             return true
@@ -911,6 +957,15 @@ class BrowserFragment :
         return true
     }
 
+    /**
+     * Erases the current tab or all tabs.
+     *
+     * If [shouldEraseAllTabs] is true, all tabs will be removed and the user will be navigated
+     * to the home screen. Otherwise, only the current tab will be removed and the user will be
+     * navigated to the previously selected tab.
+     *
+     * @param shouldEraseAllTabs Whether to erase all tabs or just the current tab.
+     */
     fun erase(shouldEraseAllTabs: Boolean = false) {
         if (shouldEraseAllTabs) {
             requireComponents.appStore.dispatch(AppAction.NavigateUp(null))
@@ -1004,15 +1059,18 @@ class BrowserFragment :
         requireActivity().finish()
     }
 
-    private fun setShouldRequestDesktop(enabled: Boolean) {
-        if (enabled) {
-            PreferenceManager.getDefaultSharedPreferences(requireContext()).edit {
-                putBoolean(requireContext().getString(R.string.has_requested_desktop), true)
-            }
-        }
+    /**
+     * Toggles the "Request desktop site" setting for the current tab.
+     *
+     * @param enabled True to request the desktop site, false to request the mobile site.
+     */
+    private fun toggleDesktopSite(enabled: Boolean) {
         requireComponents.sessionUseCases.requestDesktopSite(enabled, tab.id)
     }
 
+    /**
+     * Show tracking protection panel.
+     */
     fun showTrackingProtectionPanel() {
         trackingProtectionPanel = TrackingProtectionPanel(
             context = requireContext(),
@@ -1107,6 +1165,11 @@ class BrowserFragment :
         null
     }
 
+    /**
+     * Handles a tab crash by showing the crash reporter.
+     *
+     * @param crash The crash that occurred.
+     */
     fun handleTabCrash(crash: Crash) {
         showCrashReporter(crash)
     }
@@ -1118,6 +1181,13 @@ class BrowserFragment :
 
         private const val REQUEST_KEY_DOWNLOAD_PERMISSIONS = "downloadFeature"
         private const val REQUEST_KEY_PROMPT_PERMISSIONS = "promptFeature"
+
+        /**
+         * Creates a new [BrowserFragment] instance for the given tab ID.
+         *
+         * @param tabId The ID of the tab to create the fragment for.
+         * @return A new [BrowserFragment] instance.
+         */
         fun createForTab(tabId: String): BrowserFragment {
             val fragment = BrowserFragment()
             fragment.arguments = Bundle().apply {

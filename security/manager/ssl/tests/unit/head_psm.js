@@ -132,7 +132,6 @@ const NO_FLAGS = 0;
 const CRLiteModeDisabledPrefValue = 0;
 const CRLiteModeTelemetryOnlyPrefValue = 1;
 const CRLiteModeEnforcePrefValue = 2;
-const CRLiteModeConfirmRevocationsValue = 3;
 
 // Convert a string to an array of bytes consisting of the char code at each
 // index.

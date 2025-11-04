@@ -8,7 +8,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/EnumSet.h"
 
 #include <cmath>
 #include <cstdlib>

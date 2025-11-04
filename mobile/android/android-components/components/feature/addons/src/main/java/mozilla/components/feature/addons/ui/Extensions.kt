@@ -6,10 +6,10 @@ package mozilla.components.feature.addons.ui
 
 import android.content.Context
 import android.widget.ImageView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toDrawable
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.R
 import mozilla.components.feature.addons.update.AddonUpdater
@@ -120,7 +120,7 @@ fun AddonUpdater.Status?.toLocalizedString(context: Context): String {
  * Shows a dialog containing all the information related to the given [AddonUpdater.UpdateAttempt].
  */
 fun AddonUpdater.UpdateAttempt.showInformationDialog(context: Context) {
-    AlertDialog.Builder(context)
+    MaterialAlertDialogBuilder(context)
         .setTitle(R.string.mozac_feature_addons_updater_dialog_title)
         .setMessage(getDialogMessage(context))
         .show()

@@ -9,7 +9,6 @@
 #include "fs/FileSystemAsyncCopy.h"
 #include "fs/FileSystemShutdownBlocker.h"
 #include "fs/FileSystemThreadSafeStreamOwner.h"
-#include "mozilla/Buffer.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/InputStreamLengthHelper.h"
 #include "mozilla/MozPromise.h"

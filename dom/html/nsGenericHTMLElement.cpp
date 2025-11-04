@@ -688,7 +688,8 @@ void nsGenericHTMLElement::AfterSetPopoverAttr() {
 
     if (IsPopoverOpen()) {
       HidePopoverInternal(/* aFocusPreviousElement = */ true,
-                          /* aFireEvents = */ true, IgnoreErrors());
+                          /* aFireEvents = */ true, /* aSource*/ nullptr,
+                          IgnoreErrors());
       // Event handlers could have removed the popover attribute, or changed
       // its value.
       // https://github.com/whatwg/html/issues/9034
@@ -2866,7 +2867,7 @@ void nsGenericHTMLFormControlElementWithState::HandlePopoverTargetAction(
   bool shouldShow = canShow && !popover->IsPopoverOpen();
 
   if (shouldHide) {
-    popover->HidePopover(IgnoreErrors());
+    popover->HidePopoverInternal(true, true, this, IgnoreErrors());
   } else if (shouldShow) {
     popover->ShowPopoverInternal(this, IgnoreErrors());
   }
@@ -2903,7 +2904,7 @@ MOZ_CAN_RUN_SCRIPT bool nsGenericHTMLElement::HandleCommandInternal(
 
   if (canHide && IsPopoverOpen()) {
     HidePopoverInternal(/* aFocusPreviousElement = */ true,
-                        /* aFireEvents = */ true, IgnoreErrors());
+                        /* aFireEvents = */ true, aSource, IgnoreErrors());
     return true;
   }
 
@@ -3290,7 +3291,7 @@ void nsGenericHTMLElement::PopoverPseudoStateUpdate(bool aOpen, bool aNotify) {
 
 already_AddRefed<ToggleEvent> nsGenericHTMLElement::CreateToggleEvent(
     const nsAString& aEventType, const nsAString& aOldState,
-    const nsAString& aNewState, Cancelable aCancelable) {
+    const nsAString& aNewState, Cancelable aCancelable, Element* aSource) {
   ToggleEventInit init;
   init.mBubbles = false;
   init.mOldState = aOldState;
@@ -3299,23 +3300,26 @@ already_AddRefed<ToggleEvent> nsGenericHTMLElement::CreateToggleEvent(
   RefPtr<ToggleEvent> event = ToggleEvent::Constructor(this, aEventType, init);
   event->SetTrusted(true);
   event->SetTarget(this);
+  event->SetSource(aSource);
   return event.forget();
 }
 
 bool nsGenericHTMLElement::FireToggleEvent(const nsAString& aOldState,
                                            const nsAString& aNewState,
-                                           const nsAString& aType) {
+                                           const nsAString& aType,
+                                           Element* aSource) {
   const auto cancelable = aType == u"beforetoggle"_ns && aNewState == u"open"_ns
                               ? Cancelable::eYes
                               : Cancelable::eNo;
-  RefPtr event = CreateToggleEvent(aType, aOldState, aNewState, cancelable);
+  RefPtr event =
+      CreateToggleEvent(aType, aOldState, aNewState, cancelable, aSource);
   EventDispatcher::DispatchDOMEvent(this, nullptr, event, nullptr, nullptr);
   return event->DefaultPrevented();
 }
 
 // https://html.spec.whatwg.org/#queue-a-popover-toggle-event-task
 void nsGenericHTMLElement::QueuePopoverEventTask(
-    PopoverVisibilityState aOldState) {
+    PopoverVisibilityState aOldState, Element* aSource) {
   auto* data = GetPopoverData();
   MOZ_ASSERT(data, "Should have popover data");
 
@@ -3323,14 +3327,15 @@ void nsGenericHTMLElement::QueuePopoverEventTask(
     aOldState = queuedToggleEventTask->GetOldState();
   }
 
-  auto task =
-      MakeRefPtr<PopoverToggleEventTask>(do_GetWeakReference(this), aOldState);
+  auto task = MakeRefPtr<PopoverToggleEventTask>(
+      do_GetWeakReference(this), do_GetWeakReference(aSource), aOldState);
   data->SetToggleEventTask(task);
   OwnerDoc()->Dispatch(task.forget());
 }
 
 void nsGenericHTMLElement::RunPopoverToggleEventTask(
-    PopoverToggleEventTask* aTask, PopoverVisibilityState aOldState) {
+    PopoverToggleEventTask* aTask, PopoverVisibilityState aOldState,
+    Element* aSource) {
   auto* data = GetPopoverData();
   if (!data) {
     return;
@@ -3348,7 +3353,7 @@ void nsGenericHTMLElement::RunPopoverToggleEventTask(
   };
   FireToggleEvent(stringForState(aOldState),
                   stringForState(data->GetPopoverVisibilityState()),
-                  u"toggle"_ns);
+                  u"toggle"_ns, aSource);
 }
 
 // https://html.spec.whatwg.org/#dom-showpopover
@@ -3361,7 +3366,7 @@ void nsGenericHTMLElement::ShowPopover(const ShowPopoverOptions& aOptions,
   return ShowPopoverInternal(MOZ_KnownLive(source), aRv);
 }
 
-void nsGenericHTMLElement::ShowPopoverInternal(Element* aInvoker,
+void nsGenericHTMLElement::ShowPopoverInternal(Element* aSource,
                                                ErrorResult& aRv) {
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, nullptr, aRv)) {
     return;
@@ -3380,7 +3385,7 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aInvoker,
   });
 
   // Fire beforetoggle event and re-check popover validity.
-  if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns)) {
+  if (FireToggleEvent(u"closed"_ns, u"open"_ns, u"beforetoggle"_ns, aSource)) {
     return;
   }
   if (!CheckPopoverValidity(PopoverVisibilityState::Hidden, document, aRv)) {
@@ -3391,7 +3396,7 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aInvoker,
   nsWeakPtr originallyFocusedElement;
   if (IsAutoPopover()) {
     auto originalState = GetPopoverAttributeState();
-    RefPtr<nsINode> ancestor = GetTopmostPopoverAncestor(aInvoker, true);
+    RefPtr<nsINode> ancestor = GetTopmostPopoverAncestor(aSource, true);
     if (!ancestor) {
       ancestor = document;
     }
@@ -3432,9 +3437,9 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aInvoker,
   {
     auto* popoverData = GetPopoverData();
     popoverData->SetPopoverVisibilityState(PopoverVisibilityState::Showing);
-    popoverData->SetInvoker(aInvoker);
-    if (aInvoker && aInvoker->IsHTMLElement()) {
-      aInvoker->SetAssociatedPopover(*this);
+    popoverData->SetInvoker(aSource);
+    if (aSource && aSource->IsHTMLElement()) {
+      aSource->SetAssociatedPopover(*this);
     }
   }
 
@@ -3446,24 +3451,28 @@ void nsGenericHTMLElement::ShowPopoverInternal(Element* aInvoker,
   }
 
   // Queue popover toggle event task.
-  QueuePopoverEventTask(PopoverVisibilityState::Hidden);
+  QueuePopoverEventTask(PopoverVisibilityState::Hidden, aSource);
 }
 
 void nsGenericHTMLElement::HidePopoverWithoutRunningScript() {
   HidePopoverInternal(/* aFocusPreviousElement = */ false,
-                      /* aFireEvents = */ false, IgnoreErrors());
+                      /* aFireEvents = */ false,
+                      /* aSource = */ nullptr, IgnoreErrors());
 }
 
 // https://html.spec.whatwg.org/#dom-hidepopover
 void nsGenericHTMLElement::HidePopover(ErrorResult& aRv) {
   HidePopoverInternal(/* aFocusPreviousElement = */ true,
-                      /* aFireEvents = */ true, aRv);
+                      /* aFireEvents = */ true,
+                      /* aSource = */ nullptr, aRv);
 }
 
 void nsGenericHTMLElement::HidePopoverInternal(bool aFocusPreviousElement,
                                                bool aFireEvents,
+                                               mozilla::dom::Element* aSource,
                                                ErrorResult& aRv) {
-  OwnerDoc()->HidePopover(*this, aFocusPreviousElement, aFireEvents, aRv);
+  OwnerDoc()->HidePopover(*this, aFocusPreviousElement, aFireEvents, aSource,
+                          aRv);
 }
 
 void nsGenericHTMLElement::ForgetPreviouslyFocusedElementAfterHidingPopover() {

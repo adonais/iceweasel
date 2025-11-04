@@ -969,7 +969,7 @@ static void AssertNoWasmExitFPInJitExit(MacroAssembler& masm) {
 #endif
 }
 
-void wasm::GenerateJitExitPrologue(MacroAssembler& masm, unsigned framePushed,
+void wasm::GenerateJitExitPrologue(MacroAssembler& masm,
                                    uint32_t fallbackOffset,
                                    ImportOffsets* offsets) {
   masm.haltingAlign(CodeAlignment);
@@ -1001,15 +1001,14 @@ void wasm::GenerateJitExitPrologue(MacroAssembler& masm, unsigned framePushed,
   AssertNoWasmExitFPInJitExit(masm);
 
   MOZ_ASSERT(masm.framePushed() == 0);
-  masm.reserveStack(framePushed);
 }
 
-void wasm::GenerateJitExitEpilogue(MacroAssembler& masm, unsigned framePushed,
+void wasm::GenerateJitExitEpilogue(MacroAssembler& masm,
                                    CallableOffsets* offsets) {
   // Inverse of GenerateJitExitPrologue:
-  MOZ_ASSERT(masm.framePushed() == framePushed);
+  MOZ_ASSERT(masm.framePushed() == 0);
   AssertNoWasmExitFPInJitExit(masm);
-  GenerateCallableEpilogue(masm, framePushed, ExitReason::None(),
+  GenerateCallableEpilogue(masm, /*framePushed*/ 0, ExitReason::None(),
                            &offsets->ret);
   MOZ_ASSERT(masm.framePushed() == 0);
 }

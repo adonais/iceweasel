@@ -175,11 +175,10 @@ async function testClearedRequests() {
     content.document.querySelector("iframe").remove();
   });
 
-  // HAR will try to re-fetch lazy data and may throw on the iframe fetch request.
-  // This subtest is meants to verify we aren't throwing here and HAR export
-  // works fine, even if some requests can't be fetched.
   const har = await copyAllAsHARWithContextMenu(monitor);
-  is(har.log.entries.length, 2, "There must be two requests");
+  // Har will fetch the two HTML documents (top document and iframe)
+  // as well as the fetch request from within the iframe.
+  is(har.log.entries.length, 3, "There must be three requests");
   is(
     har.log.entries[0].request.url,
     topDocumentURL,

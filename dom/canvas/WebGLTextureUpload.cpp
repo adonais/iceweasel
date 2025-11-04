@@ -21,7 +21,6 @@
 #include "WebGLFramebuffer.h"
 #include "WebGLTexelConversions.h"
 #include "WebGLTexture.h"
-#include "mozilla/Casting.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_webgl.h"

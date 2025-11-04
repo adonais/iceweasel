@@ -257,6 +257,12 @@ support-files = ["browser_relay_utils.js"]
 ["browser_relay_telemetry.js"]
 support-files = ["browser_relay_utils.js"]
 
+["browser_relay_use.js"]
+support-files = ["browser_relay_utils.js"]
+
+["browser_rust_mirror.js"]
+skip-if = ["os == 'android'"]
+
 ["browser_telemetry_SignUpFormRuleset.js"]
 
 ["browser_test_changeContentInputValue.js"]

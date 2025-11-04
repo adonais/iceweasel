@@ -5,47 +5,13 @@
 
 import unittest
 
+import pytest
 from mozunit import main
-from taskgraph.util.attributes import attrmatch
 
-from gecko_taskgraph.util.attributes import match_run_on_projects
-
-
-class Attrmatch(unittest.TestCase):
-    def test_trivial_match(self):
-        """Given no conditions, anything matches"""
-        self.assertTrue(attrmatch({}))
-
-    def test_missing_attribute(self):
-        """If a filtering attribute is not present, no match"""
-        self.assertFalse(attrmatch({}, someattr=10))
-
-    def test_literal_attribute(self):
-        """Literal attributes must match exactly"""
-        self.assertTrue(attrmatch({"att": 10}, att=10))
-        self.assertFalse(attrmatch({"att": 10}, att=20))
-
-    def test_set_attribute(self):
-        """Set attributes require set membership"""
-        self.assertTrue(attrmatch({"att": 10}, att={9, 10}))
-        self.assertFalse(attrmatch({"att": 10}, att={19, 20}))
-
-    def test_callable_attribute(self):
-        """Callable attributes are called and any False causes the match to fail"""
-        self.assertTrue(attrmatch({"att": 10}, att=lambda val: True))
-        self.assertFalse(attrmatch({"att": 10}, att=lambda val: False))
-
-        def even(val):
-            return val % 2 == 0
-
-        self.assertTrue(attrmatch({"att": 10}, att=even))
-        self.assertFalse(attrmatch({"att": 11}, att=even))
-
-    def test_all_matches_required(self):
-        """If only one attribute does not match, the result is False"""
-        self.assertFalse(attrmatch({"a": 1}, a=1, b=2, c=3))
-        self.assertFalse(attrmatch({"a": 1, "b": 2}, a=1, b=2, c=3))
-        self.assertTrue(attrmatch({"a": 1, "b": 2, "c": 3}, a=1, b=2, c=3))
+from gecko_taskgraph.util.attributes import (
+    match_run_on_projects,
+    match_run_on_repo_type,
+)
 
 
 class MatchRunOnProjects(unittest.TestCase):
@@ -93,6 +59,20 @@ class MatchRunOnProjects(unittest.TestCase):
             match_run_on_projects("mozilla-release", ["release", "birch", "maple"])
         )
         self.assertTrue(match_run_on_projects("birch", ["birch", "trunk"]))
+
+
+@pytest.mark.parametrize(
+    "repo_type,run_on_repo_types,expected",
+    (
+        ("hg", ["hg"], True),
+        ("hg", [], False),
+        ("hg", ["all"], True),
+        ("git", ["git", "hg"], True),
+        ("git", ["hg"], False),
+    ),
+)
+def test_match_run_on_repo_type(repo_type, run_on_repo_types, expected):
+    assert match_run_on_repo_type(repo_type, run_on_repo_types) == expected
 
 
 if __name__ == "__main__":

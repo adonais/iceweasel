@@ -7,7 +7,6 @@
 
 #include <utility>
 
-#include "mozilla/FloatingPoint.h"
 #include "txExpr.h"
 #include "txInstructions.h"
 #include "txKey.h"

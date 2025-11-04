@@ -20,7 +20,7 @@
 
   --urlbarView-small-font-size: 0.85em;
 
-  --urlbarView-results-padding: 4px;
+  --urlbarView-results-padding: 7px;
   --urlbarView-row-gutter: 2px;
   --urlbarView-item-inline-padding: var(--urlbar-icon-padding);
   --urlbarView-item-block-padding: 6px;
@@ -97,10 +97,8 @@
   display: block;
   text-shadow: none;
   overflow: clip;
-  margin-inline: calc(5px + var(--urlbar-container-padding));
-  width: calc(100% - 2 * (5px + var(--urlbar-container-padding)));
-  /* Match urlbar-background's border. */
-  border-inline: 1px solid transparent;
+  margin-inline: var(--urlbarView-results-padding);
+  width: calc(100% - 2 * var(--urlbarView-results-padding));
 }
 
 .urlbarView-body-inner {
@@ -113,7 +111,7 @@
 }
 
 .urlbarView-results {
-  padding-block: var(--urlbarView-results-padding);
+  padding-block: calc(var(--urlbarView-results-padding) - var(--urlbarView-row-gutter));
   white-space: nowrap;
 
   /* Vertically center the one-offs when no results are present. */
@@ -151,7 +149,7 @@
      hover area is contiguous and a row is always hovered as the user moves the
      mouse across rows, even though each row's highlighted area is smaller. */
   border: var(--urlbarView-row-gutter) solid transparent;
-  border-radius: calc(var(--urlbarView-row-gutter) + var(--toolbarbutton-border-radius));
+  border-radius: calc(var(--urlbarView-row-gutter) + var(--urlbar-inner-border-radius));
   background-clip: padding-box;
 
   /* Must hide the overflowing rows while the view is updating */
@@ -480,7 +478,7 @@
 
 .urlbarView-button:where(:not(:empty):not(.urlbarView-button-result-menu)),
 .urlbarView-splitbutton-dropmarker {
-  border-radius: var(--toolbarbutton-border-radius);
+  border-radius: var(--urlbar-inner-border-radius);
   padding: 0.5em 1em;
   font-size: 0.93em;
   font-weight: var(--font-weight-bold);
@@ -903,7 +901,7 @@
     width: 52px;
     height: 52px;
     flex-basis: 52px;
-    border-radius: 2px;
+    border-radius: var(--border-radius-xsmall);
   }
 }
 
@@ -1071,7 +1069,7 @@
 .urlbarView-row[type$="_amo"][icon-size="24"] > .urlbarView-row-inner > .urlbarView-favicon {
   padding: calc((var(--urlbarView-top-pick-large-icon-box-size) - 24px) / 2);
   background-color: var(--urlbar-box-focus-bgcolor);
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
 }
 
 .urlbarView-row[type$="_amo"][icon-size="24"]:is([selected], :hover) > .urlbarView-row-inner > .urlbarView-favicon {
@@ -1315,116 +1313,121 @@
   }
 }
 
-/* Market suggestions */
+/* Basic style for Realtime suggestions */
 
-.urlbarView-row[dynamicType="market"] > .urlbarView-row-inner {
+.urlbarView-realtime-root {
+  --green-status-color: light-dark(var(--color-green-60), var(--color-green-20));
+  --red-status-color: light-dark(var(--color-red-70), var(--color-red-40));
+
   /* Remove the usual inner padding. Each item in the row will have its own. */
   padding: 0;
-}
 
-.urlbarView-market-item {
-  display: flex;
-  align-items: center;
+  > .urlbarView-realtime-item {
+    display: flex;
+    align-items: center;
 
-  /* This should match the radius on `.urlbarView-row`. Only visible when there
+    /* This should match the radius on `.urlbarView-row`. Only visible when there
      are multiple items in a row. */
-  border-radius: calc(var(--urlbarView-row-gutter) + var(--toolbarbutton-border-radius));
+    border-radius: calc(var(--urlbarView-row-gutter) + var(--toolbarbutton-border-radius));
 
-  /* Inline spacing between multiple items in a row */
-  margin-inline-end: var(--space-small);
+    /* Inline spacing between multiple items in a row */
+    margin-inline-end: var(--space-small);
 
-  /* The block and inline-start padding should match the normal inner inline
+    /* The block and inline-start padding should match the normal inner inline
      padding we removed above, in order to keep the first item's image aligned
      with the text and images in other rows. */
-  padding: var(--urlbarView-item-inline-padding);
-  padding-inline-end: var(--space-large);
+    padding: var(--urlbarView-item-inline-padding);
+    padding-inline-end: var(--space-large);
 
-  --market-up-color: light-dark(var(--color-green-60), var(--color-green-20));
-  --market-down-color: light-dark(var(--color-red-70), var(--color-red-40));
+    .urlbarView-realtime-root:not([selectable]) > &:not([selected]):hover {
+      background-color: var(--urlbarView-hover-background);
+    }
 
+    &[selected] {
+      color: var(--urlbarView-highlight-color);
+      background-color: var(--urlbarView-highlight-background);
+    }
+
+    > .urlbarView-realtime-image-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--urlbarView-top-pick-large-icon-box-size);
+      height: var(--urlbarView-top-pick-large-icon-box-size);
+      margin-inline-end: var(--space-medium);
+      background-color: var(--market-image-bg-color);
+      border: 1px solid transparent;
+      border-radius: var(--border-radius-small);
+
+      fill: currentColor;
+      fill-opacity: var(--urlbar-icon-fill-opacity);
+      -moz-context-properties: fill, fill-opacity;
+
+      > .urlbarView-realtime-image {
+        width: 36px;
+        height: auto;
+        max-height: 36px;
+      }
+    }
+
+    > .urlbarView-realtime-description {
+      display: flex;
+      flex-direction: column;
+      text-align: start;
+      grid-row-gap: var(--space-xsmall);
+
+      > .urlbarView-realtime-description-bottom {
+        display: flex;
+        align-items: center;
+        font-size: var(--urlbarView-small-font-size);
+        color: var(--urlbarView-secondary-text-color);
+      }
+
+      > .urlbarView-realtime-description-top > .urlbarView-realtime-description-separator::before,
+      > .urlbarView-realtime-description-bottom > .urlbarView-realtime-description-separator::before {
+        margin-inline: var(--space-xsmall);
+        content: "·";
+        display: inline;
+      }
+    }
+  }
+}
+
+/* Market suggestions specific */
+
+.urlbarView-row[dynamicType="market"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
   --market-image-bg-color: var(--urlbar-box-focus-bgcolor);
   --market-image-down-bg-color: light-dark(var(--color-red-0), var(--color-red-90));
   --market-image-up-bg-color: light-dark(var(--color-green-0), var(--color-green-90));
 
-  .urlbarView-row[dynamicType="market"] > .urlbarView-dynamic-market-root:not([selectable]) > &:not([selected]):hover {
-    background-color: var(--urlbarView-hover-background);
-  }
+  > .urlbarView-realtime-image-container[is-arrow] {
+    border-color: color-mix(in srgb, currentColor 10%, transparent);
 
-  &[selected] {
-    color: var(--urlbarView-highlight-color);
-    background-color: var(--urlbarView-highlight-background);
-  }
-
-  > .urlbarView-market-image-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: var(--urlbarView-top-pick-large-icon-box-size);
-    height: var(--urlbarView-top-pick-large-icon-box-size);
-    margin-inline-end: var(--space-medium);
-    background-color: var(--market-image-bg-color);
-    border: 1px solid transparent;
-    border-radius: var(--border-radius-small);
-
-    fill: currentColor;
-    fill-opacity: var(--urlbar-icon-fill-opacity);
-    -moz-context-properties: fill, fill-opacity;
-
-    > .urlbarView-market-image {
-      width: 36px;
-      height: auto;
-      max-height: 36px;
+    .urlbarView-realtime-item[change="down"] > & {
+      fill: var(--red-status-color);
+      border-color: color-mix(in srgb, var(--red-status-color) 10%, transparent);
+      background-color: var(--market-image-down-bg-color);
+    }
+    .urlbarView-realtime-item[change="up"] > & {
+      fill: var(--green-status-color);
+      border-color: color-mix(in srgb, var(--green-status-color) 10%, transparent);
+      background-color: var(--market-image-up-bg-color);
     }
 
-    &[is-arrow] {
-      border-color: color-mix(in srgb, currentColor 10%, transparent);
-
-      .urlbarView-market-item[change="down"] > & {
-        fill: var(--market-down-color);
-        border-color: color-mix(in srgb, var(--market-down-color) 10%, transparent);
-        background-color: var(--market-image-down-bg-color);
-      }
-      .urlbarView-market-item[change="up"] > & {
-        fill: var(--market-up-color);
-        border-color: color-mix(in srgb, var(--market-up-color) 10%, transparent);
-        background-color: var(--market-image-up-bg-color);
-      }
-
-      > .urlbarView-market-image {
-        width: 20px;
-        height: 20px;
-      }
+    > .urlbarView-realtime-image {
+      width: 20px;
+      height: 20px;
     }
   }
 
-  > .urlbarView-market-description {
-    display: flex;
-    flex-direction: column;
-    text-align: start;
-    grid-row-gap: var(--space-xsmall);
-
-    > .urlbarView-market-description-top > .urlbarView-market-description-separator,
-    > .urlbarView-market-description-bottom > .urlbarView-market-description-separator {
-      margin-inline: var(--space-xsmall);
-    }
-
-    > .urlbarView-market-description-top {
+  > .urlbarView-realtime-description {
+    > .urlbarView-realtime-description-top {
       > .urlbarView-market-name {
         font-weight: var(--font-weight-bold);
       }
     }
 
-    > .urlbarView-market-description-bottom {
-      font-size: var(--urlbarView-small-font-size);
-
-      .urlbarView-row[dynamicType="market"]:not([selected])
-        > .urlbarView-row-inner
-        > .urlbarView-market-item:not([selected])
-        > .urlbarView-market-description
-        > & {
-        color: var(--urlbarView-secondary-text-color);
-      }
-
+    > .urlbarView-realtime-description-bottom {
       > .urlbarView-market-todays-change-perc {
         font-weight: var(--font-weight-bold);
       }
@@ -1437,22 +1440,75 @@
       }
     }
 
-    .urlbarView-row[dynamicType="market"]:not([selected])
-      > .urlbarView-row-inner
-      > .urlbarView-market-item[change="up"]:not([selected])
+    .urlbarView-row:not([selected])
+      > .urlbarView-realtime-root
+      > .urlbarView-realtime-item[change="up"]:not([selected])
       > &
-      > .urlbarView-market-description-bottom
+      > .urlbarView-realtime-description-bottom
       > .urlbarView-market-todays-change-perc {
-      color: var(--market-up-color);
+      color: var(--green-status-color);
     }
 
-    .urlbarView-row[dynamicType="market"]:not([selected])
-      > .urlbarView-row-inner
-      > .urlbarView-market-item[change="down"]:not([selected])
+    .urlbarView-row:not([selected])
+      > .urlbarView-realtime-root
+      > .urlbarView-realtime-item[change="down"]:not([selected])
       > &
-      > .urlbarView-market-description-bottom
+      > .urlbarView-realtime-description-bottom
       > .urlbarView-market-todays-change-perc {
-      color: var(--market-down-color);
+      color: var(--red-status-color);
+    }
+  }
+}
+
+/* Yelp realtime suggestions specific */
+
+.urlbarView-row[dynamicType="yelpRealtime"] > .urlbarView-realtime-root > .urlbarView-realtime-item {
+  --star-size: 12px;
+
+  > .urlbarView-realtime-image-container > .urlbarView-realtime-image {
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
+  }
+
+  > .urlbarView-realtime-description {
+    > .urlbarView-realtime-description-top > .urlbarView-yelpRealtime-title {
+      font-weight: var(--font-weight-bold);
+    }
+
+    > .urlbarView-realtime-description-bottom {
+      > .urlbarView-yelpRealtime-description-popularity-star {
+        display: inline-block;
+        width: var(--star-size);
+        height: var(--star-size);
+        background-image: url("chrome://global/skin/icons/rating-star.svg");
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: var(--star-size) var(--star-size);
+        margin-inline-end: 0.3ch;
+
+        fill: var(--icon-color);
+        -moz-context-properties: fill;
+      }
+
+      .urlbarView-row:not([selected])
+        > .urlbarView-realtime-root
+        > .urlbarView-realtime-item[state="open"]:not([selected])
+        > .urlbarView-realtime-description
+        > &
+        > .urlbarView-yelpRealtime-description-business-hours
+        > span {
+        color: var(--green-status-color);
+      }
+      .urlbarView-row:not([selected])
+        > .urlbarView-realtime-root
+        > .urlbarView-realtime-item[state="closed"]:not([selected])
+        > .urlbarView-realtime-description
+        > &
+        > .urlbarView-yelpRealtime-description-business-hours
+        > span {
+        color: var(--red-status-color);
+      }
     }
   }
 }

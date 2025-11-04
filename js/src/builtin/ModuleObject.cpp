@@ -7,7 +7,6 @@
 #include "builtin/ModuleObject.h"
 
 #include "mozilla/DebugOnly.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/ScopeExit.h"
 
 #include "builtin/Promise.h"
@@ -218,18 +217,20 @@ static bool GetModuleType(JSContext* cx,
                           JS::ModuleType& moduleType) {
   for (const ImportAttribute& importAttribute : maybeAttributes) {
     if (importAttribute.key() == cx->names().type) {
-      int32_t isJsonString;
-      if (!js::CompareStrings(cx, cx->names().json, importAttribute.value(),
-                              &isJsonString)) {
+      Rooted<JSLinearString*> typeStr(
+          cx, importAttribute.value()->ensureLinear(cx));
+      if (!typeStr) {
         return false;
       }
 
-      if (isJsonString == 0) {
+      if (js::EqualStrings(typeStr, cx->names().json)) {
         moduleType = JS::ModuleType::JSON;
-        return true;
+      } else if (js::EqualStrings(typeStr, cx->names().css)) {
+        moduleType = JS::ModuleType::CSS;
+      } else {
+        moduleType = JS::ModuleType::Unknown;
       }
 
-      moduleType = JS::ModuleType::Unknown;
       return true;
     }
   }

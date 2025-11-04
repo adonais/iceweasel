@@ -187,7 +187,11 @@ class AwesomeBarComposable(
                         .pointerInput(WindowInsets.isImeVisible) {
                             detectTapGestures(
                                 // Hide the keyboard for any touches in the empty area of the awesomebar
-                                onPress = { view.hideKeyboard() },
+                                onPress = {
+                                    focusManager.clearFocus()
+                                    view.hideKeyboard()
+                                    appStore.dispatch(SearchEnded)
+                                },
                             )
                         },
                 ) {

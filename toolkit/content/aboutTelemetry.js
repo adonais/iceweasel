@@ -36,9 +36,6 @@ const MAX_BAR_CHARS = 25;
 const PREF_TELEMETRY_SERVER_OWNER = "toolkit.telemetry.server_owner";
 const PREF_TELEMETRY_ENABLED = "toolkit.telemetry.enabled";
 const PREF_DEBUG_SLOW_SQL = "toolkit.telemetry.debugSlowSql";
-const PREF_SYMBOL_SERVER_URI = "profiler.symbolicationUrl";
-const DEFAULT_SYMBOL_SERVER_URI =
-  "https://symbolication.services.mozilla.com/symbolicate/v4";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 
 // ms idle before applying the filter (allow uninterrupted typing)
@@ -977,89 +974,6 @@ var RawPayloadData = {
       });
   },
 };
-
-function SymbolicationRequest(
-  aPrefix,
-  aRenderHeader,
-  aMemoryMap,
-  aStacks,
-  aDurations = null
-) {
-  this.prefix = aPrefix;
-  this.renderHeader = aRenderHeader;
-  this.memoryMap = aMemoryMap;
-  this.stacks = aStacks;
-  this.durations = aDurations;
-}
-/**
- * A callback for onreadystatechange. It replaces the numeric stack with
- * the symbolicated one returned by the symbolication server.
- */
-SymbolicationRequest.prototype.handleSymbolResponse =
-  async function SymbolicationRequest_handleSymbolResponse() {
-    if (this.symbolRequest.readyState != 4) {
-      return;
-    }
-
-    let fetchElement = document.getElementById(this.prefix + "-fetch-symbols");
-    fetchElement.hidden = true;
-    let hideElement = document.getElementById(this.prefix + "-hide-symbols");
-    hideElement.hidden = false;
-    let div = document.getElementById(this.prefix);
-    removeAllChildNodes(div);
-    let errorMessage = await document.l10n.formatValue(
-      "about-telemetry-error-fetching-symbols"
-    );
-
-    if (this.symbolRequest.status != 200) {
-      div.appendChild(document.createTextNode(errorMessage));
-      return;
-    }
-
-    let jsonResponse = {};
-    try {
-      jsonResponse = JSON.parse(this.symbolRequest.responseText);
-    } catch (e) {
-      div.appendChild(document.createTextNode(errorMessage));
-      return;
-    }
-
-    for (let i = 0; i < jsonResponse.length; ++i) {
-      let stack = jsonResponse[i];
-      this.renderHeader(i, this.durations);
-
-      for (let symbol of stack) {
-        div.appendChild(document.createTextNode(symbol));
-        div.appendChild(document.createElement("br"));
-      }
-      div.appendChild(document.createElement("br"));
-    }
-  };
-/**
- * Send a request to the symbolication server to symbolicate this stack.
- */
-SymbolicationRequest.prototype.fetchSymbols =
-  function SymbolicationRequest_fetchSymbols() {
-    let symbolServerURI = Preferences.get(
-      PREF_SYMBOL_SERVER_URI,
-      DEFAULT_SYMBOL_SERVER_URI
-    );
-    let request = {
-      memoryMap: this.memoryMap,
-      stacks: this.stacks,
-      version: 3,
-    };
-    let requestJSON = JSON.stringify(request);
-
-    this.symbolRequest = new XMLHttpRequest();
-    this.symbolRequest.open("POST", symbolServerURI, true);
-    this.symbolRequest.setRequestHeader("Content-type", "application/json");
-    this.symbolRequest.setRequestHeader("Content-length", requestJSON.length);
-    this.symbolRequest.setRequestHeader("Connection", "close");
-    this.symbolRequest.onreadystatechange =
-      this.handleSymbolResponse.bind(this);
-    this.symbolRequest.send(requestJSON);
-  };
 
 var Histogram = {
   /**

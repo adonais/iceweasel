@@ -80,6 +80,8 @@ class PwaTest : TestSetup() {
 
         navigationToolbar {
         }.enterURLAndEnterToBrowser(pwaPage.toUri()) {
+            waitForPageToLoad()
+            verifyUrl("mozilla-mobile.github.io/testapp/loginForm")
             verifyPageContent("Login Form")
         }.openThreeDotMenu {
         }.clickAddAppToHomeScreen {

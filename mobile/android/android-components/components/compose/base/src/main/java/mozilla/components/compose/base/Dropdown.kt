@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -168,7 +169,7 @@ fun Dropdown(
             }
         }
 
-        Divider(color = AcornTheme.colors.formDefault)
+        HorizontalDivider(color = AcornTheme.colors.formDefault)
     }
 }
 

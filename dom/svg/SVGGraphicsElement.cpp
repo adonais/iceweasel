@@ -121,9 +121,7 @@ already_AddRefed<SVGMatrix> SVGGraphicsElement::GetCTM() {
     currentDoc->FlushPendingNotifications(FlushType::Layout);
   }
   gfx::Matrix m = SVGContentUtils::GetCTM(this);
-  RefPtr<SVGMatrix> mat =
-      m.IsSingular() ? nullptr : new SVGMatrix(ThebesMatrix(m));
-  return mat.forget();
+  return do_AddRef(new SVGMatrix(ThebesMatrix(m)));
 }
 
 already_AddRefed<SVGMatrix> SVGGraphicsElement::GetScreenCTM() {
@@ -132,9 +130,7 @@ already_AddRefed<SVGMatrix> SVGGraphicsElement::GetScreenCTM() {
     currentDoc->FlushPendingNotifications(FlushType::Layout);
   }
   gfx::Matrix m = SVGContentUtils::GetScreenCTM(this);
-  RefPtr<SVGMatrix> mat =
-      m.IsSingular() ? nullptr : new SVGMatrix(ThebesMatrix(m));
-  return mat.forget();
+  return do_AddRef(new SVGMatrix(ThebesMatrix(m)));
 }
 
 bool SVGGraphicsElement::IsSVGFocusable(bool* aIsFocusable,

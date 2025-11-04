@@ -57,7 +57,6 @@ static MOZ_ALWAYS_INLINE void PodSet(T* aDst, const T& aSrc, size_t aNElem) {
 const uint8_t JS_FRESH_NURSERY_PATTERN = 0x2F;
 const uint8_t JS_SWEPT_NURSERY_PATTERN = 0x2B;
 const uint8_t JS_ALLOCATED_NURSERY_PATTERN = 0x2D;
-const uint8_t JS_NOTINUSE_TRAILER_PATTERN = 0x43;
 const uint8_t JS_FRESH_TENURED_PATTERN = 0x4F;
 const uint8_t JS_MOVED_TENURED_PATTERN = 0x49;
 const uint8_t JS_SWEPT_TENURED_PATTERN = 0x4B;

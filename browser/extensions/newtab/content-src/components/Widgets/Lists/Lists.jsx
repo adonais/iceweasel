@@ -669,7 +669,7 @@ function Lists({ dispatch, handleUserInteraction }) {
         <moz-reorderable-list
           ref={reorderListRef}
           itemSelector="fieldset .task-type-tasks"
-          dragSelector=".checkbox-wrapper"
+          dragSelector=".checkbox-wrapper:has(.task-label)"
         >
           <fieldset>
             {/* Incomplete List  */}
@@ -823,7 +823,7 @@ function ListItem({
       key={task.id}
       onTransitionEnd={handleTransitionEnd}
     >
-      <div className="checkbox-wrapper">
+      <div className="checkbox-wrapper" key={isEditing}>
         <input
           type="checkbox"
           onChange={handleCheckboxChange}

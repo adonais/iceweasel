@@ -59,6 +59,17 @@ namespace mozilla {
 //          textContent:          SmallString
 //        NodeSubkind::Comment ->
 //          textContent:          SmallString
+//    SummaryKind::Exception ->
+//      name:                     SmallString
+//      message:                  SmallString
+//      code:                     uint16_t
+//                                Only defined for DOM Exceptions, otherwise set
+//                                to 0.
+//      result:                   uint16_t
+//      filename:                 SmallString
+//      lineNumber:               uint32_t
+//      columnNumber:             uint32_t
+//      stack:                    SmallString
 class ExecutionTracerIntegration {
  public:
   // This version will be baked into each entry, and should be incremented
@@ -70,6 +81,7 @@ class ExecutionTracerIntegration {
   enum class SummaryKind : uint8_t {
     Other,
     Node,
+    Exception,
     // TODO: more SummaryKinds will be implemented soon.
   };
 
@@ -88,6 +100,10 @@ class ExecutionTracerIntegration {
 
   static bool WriteNodeSummary(JSContext* aCx, nsINode* aNode, bool aNested,
                                JS_TracerSummaryWriter* aWriter);
+
+  static bool WriteExceptionSummary(JSContext* aCx, JS::Handle<JSObject*> aObj,
+                                    bool aNested,
+                                    JS_TracerSummaryWriter* aWriter);
 };
 }  // namespace mozilla
 #endif

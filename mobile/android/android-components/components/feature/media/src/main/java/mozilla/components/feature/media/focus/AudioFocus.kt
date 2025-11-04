@@ -70,7 +70,6 @@ internal class AudioFocus(
     }
 
     @Synchronized
-    @Suppress("ComplexMethod")
     override fun onAudioFocusChange(focusChange: Int) {
         logger.debug("onAudioFocusChange($focusChange)")
         val sessionState = sessionId?.let {

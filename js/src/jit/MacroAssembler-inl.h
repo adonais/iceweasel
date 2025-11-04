@@ -263,15 +263,21 @@ void MacroAssembler::Push(FrameDescriptor descriptor) {
   Push(Imm32(descriptor.value()));
 }
 
+void MacroAssembler::makeFrameDescriptorForJitCall(FrameType type,
+                                                   Register argc, Register dest,
+                                                   bool hasInlineICScript) {
+  lshift32(Imm32(FrameDescriptor::NumActualArgsShift), argc, dest);
+  FrameDescriptor base(type, 0, hasInlineICScript);
+  if (base.value()) {
+    or32(Imm32(base.value()), dest);
+  }
+}
+
 void MacroAssembler::pushFrameDescriptorForJitCall(FrameType type,
                                                    Register argc,
                                                    Register scratch,
                                                    bool hasInlineICScript) {
-  lshift32(Imm32(FrameDescriptor::NumActualArgsShift), argc, scratch);
-  FrameDescriptor base(type, 0, hasInlineICScript);
-  if (base.value()) {
-    or32(Imm32(base.value()), scratch);
-  }
+  makeFrameDescriptorForJitCall(type, argc, scratch, hasInlineICScript);
   push(scratch);
 }
 
@@ -544,9 +550,8 @@ void MacroAssembler::branchIfObjectEmulatesUndefined(Register objReg,
 
   Label done;
 
-  loadPtr(
-      AbsoluteAddress(runtime()->addressOfHasSeenObjectEmulateUndefinedFuse()),
-      scratch);
+  loadRuntimeFuse(RuntimeFuses::FuseIndex::HasSeenObjectEmulateUndefinedFuse,
+                  scratch);
   branchPtr(Assembler::Equal, scratch, ImmPtr(nullptr), &done);
 
   loadObjClassUnsafe(objReg, scratch);

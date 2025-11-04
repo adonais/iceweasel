@@ -56,6 +56,7 @@ class MouseEvent;
 class MessageEvent;
 class PointerEvent;
 class TimeEvent;
+class ToggleEvent;
 class UIEvent;
 class WantsPopupControlCheck;
 class XULCommandEvent;
@@ -135,6 +136,9 @@ class Event : public nsISupports, public nsWrapperCache {
 
   // MessageEvent has a non-autogeneratable initMessageEvent and more.
   virtual MessageEvent* AsMessageEvent() { return nullptr; }
+
+  // ToggleEvent has a non-autogeneratable initToggleEvent.
+  virtual ToggleEvent* AsToggleEvent() { return nullptr; }
 
   void InitEvent(const nsAString& aEventTypeArg, bool aCanBubble,
                  bool aCancelable) {

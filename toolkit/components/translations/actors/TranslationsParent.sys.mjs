@@ -370,12 +370,17 @@ export class TranslationsParent extends JSWindowActorParent {
    *     Notes: The 2.x WASM binary introduces segmentation changes that are necessary
    *            to translate CJK languages.
    *
-   * 3.x Wasm Major Versions
+   * 3.x WASM Major Versions
    *
    *   - This update introduces memory savings that required a new bergamot-translator.js
    *     file due to ASM offsets, but makes no other changes.
+   *
+   * 4.X WASM Major Versions
+   *
+   *   - This update changes the format of the WASM to be compressed with zstd.
+   *     The WASM is decompressed only when loaded into the engine.
    */
-  static BERGAMOT_MAJOR_VERSION = 3;
+  static BERGAMOT_MAJOR_VERSION = 4;
 
   /**
    * The BERGAMOT_MAJOR_VERSION defined above has only a single value, because there will
@@ -415,6 +420,7 @@ export class TranslationsParent extends JSWindowActorParent {
    *
    *   - Compatible with 1.x Bergamot WASM binaries.
    *   - Compatible with 2.x Bergamot WASM binaries.
+   *   - Compatible with 3.x Bergamot WASM binaries.
    *
    *   Notes: 1.x models are referred to as "tiny" models, and are the models that were shipped with the original
    *          release of Translations in Firefox.
@@ -422,14 +428,21 @@ export class TranslationsParent extends JSWindowActorParent {
    * 2.x Model Major Versions
    *
    *   - Compatible with 2.x Bergamot WASM binaries.
+   *   - Compatible with 3.x Bergamot WASM binaries.
    *
    *   Notes: 2.x models are defined by any of two characteristics. The first characteristic is any CJK language model.
    *          Only the 2.x WASM binaries support the segmentation concerns needed to interop with CJK language models.
    *          The second characteristic is any "base" language model, which is larger than the "tiny" 1.x models.
    *          Compatibility for base models is dependent on the code changes in Bug 1926100.
+   *
+   * 3.X Model Major Versions
+   *
+   *   - Compatible with 4.x Bergamot WASM binaries.
+   *
+   *   Notes: 3.x models are compressed with zstd. They are decompressed only when they are loaded into the engine.
    */
-  static LANGUAGE_MODEL_MAJOR_VERSION_MIN = 1;
-  static LANGUAGE_MODEL_MAJOR_VERSION_MAX = 2;
+  static LANGUAGE_MODEL_MAJOR_VERSION_MIN = 3;
+  static LANGUAGE_MODEL_MAJOR_VERSION_MAX = 3;
 
   /**
    * Contains the state that would affect UI. Anytime this state is changed, a dispatch
@@ -1628,9 +1641,8 @@ export class TranslationsParent extends JSWindowActorParent {
    */
   static async getTranslationsEnginePayload(languagePair) {
     const wasmStartTime = ChromeUtils.now();
-    const bergamotWasmArrayBufferPromise =
-      TranslationsParent.#getBergamotWasmArrayBuffer();
-    bergamotWasmArrayBufferPromise
+    const bergamotWasmBlobPromise = TranslationsParent.#getBergamotWasmBlob();
+    bergamotWasmBlobPromise
       .then(() => {
         ChromeUtils.addProfilerMarker(
           "TranslationsParent",
@@ -1688,10 +1700,11 @@ export class TranslationsParent extends JSWindowActorParent {
       "Loading translation model files"
     );
 
-    const bergamotWasmArrayBuffer = await bergamotWasmArrayBufferPromise;
+    const bergamotWasmBlob = await bergamotWasmBlobPromise;
 
     return {
-      bergamotWasmArrayBuffer,
+      bergamotWasmBlob,
+      bergamotWasmArrayBuffer: null,
       translationModelPayloads,
       isMocked: TranslationsParent.#isTranslationsEngineMocked,
     };
@@ -1768,8 +1781,8 @@ export class TranslationsParent extends JSWindowActorParent {
           const languagePairMap = new Map();
 
           for (const {
-            fromLang: sourceLanguage,
-            toLang: targetLanguage,
+            sourceLanguage,
+            targetLanguage,
             variant,
           } of records.values()) {
             const key = TranslationsParent.nonPivotKey(
@@ -2157,7 +2170,7 @@ export class TranslationsParent extends JSWindowActorParent {
     }
 
     /** @type {RemoteSettingsClient} */
-    const client = lazy.RemoteSettings("translations-models");
+    const client = lazy.RemoteSettings("translations-models-v2");
     TranslationsParent.#translationModelsRemoteClient = client;
     client.on("sync", TranslationsParent.#handleTranslationsModelsSync);
 
@@ -2175,8 +2188,8 @@ export class TranslationsParent extends JSWindowActorParent {
    *   @param {object} [options.filters={}]
    *     The filters to apply when retrieving the records from RemoteSettings.
    *     Filters should correspond to properties on the RemoteSettings records themselves.
-   *     For example, A filter to retrieve only records with a `fromLang` value of "en" and a `toLang` value of "es":
-   *     { filters: { fromLang: "en", toLang: "es" } }
+   *     For example, A filter to retrieve only records with a `sourceLanguage` value of "en" and a `targetLanguage` value of "es":
+   *     { filters: { sourceLanguage: "en", targetLanguage: "es" } }
    *   @param {number} options.minSupportedMajorVersion
    *     The minimum major record version that is supported in this build of Firefox.
    *   @param {number} options.maxSupportedMajorVersion
@@ -2321,8 +2334,8 @@ export class TranslationsParent extends JSWindowActorParent {
         // to guarantee uniqueness.
         lookupKey: record =>
           `${record.name}${TranslationsParent.nonPivotKey(
-            record.fromLang,
-            record.toLang,
+            record.sourceLanguage,
+            record.targetLanguage,
             record.variant
           )}`,
       });
@@ -2384,65 +2397,65 @@ export class TranslationsParent extends JSWindowActorParent {
       return records;
     }
     // lang -> pivot
-    const hasToPivot = new Set();
+    const hasTargetPivot = new Set();
     // pivot -> en
-    const hasFromPivot = new Set();
+    const hasSourcePivot = new Set();
 
-    const fromLangs = new Set();
-    const toLangs = new Set();
+    const sourceLanguages = new Set();
+    const targetLanguages = new Set();
 
-    for (const { fromLang, toLang } of records) {
-      fromLangs.add(fromLang);
-      toLangs.add(toLang);
+    for (const { sourceLanguage, targetLanguage } of records) {
+      sourceLanguages.add(sourceLanguage);
+      targetLanguages.add(targetLanguage);
 
-      if (toLang === PIVOT_LANGUAGE) {
+      if (targetLanguage === PIVOT_LANGUAGE) {
         // lang -> pivot
-        hasToPivot.add(fromLang);
+        hasTargetPivot.add(sourceLanguage);
       }
-      if (fromLang === PIVOT_LANGUAGE) {
+      if (sourceLanguage === PIVOT_LANGUAGE) {
         // pivot -> en
-        hasFromPivot.add(toLang);
+        hasSourcePivot.add(targetLanguage);
       }
     }
 
-    const fromLangsToRemove = new Set();
-    const toLangsToRemove = new Set();
+    const sourceLanguagesToRemove = new Set();
+    const targetLanguagesToRemove = new Set();
 
-    for (const lang of fromLangs) {
-      if (lang === PIVOT_LANGUAGE) {
+    for (const language of sourceLanguages) {
+      if (language === PIVOT_LANGUAGE) {
         continue;
       }
       // Check for "lang -> pivot"
-      if (!hasToPivot.has(lang)) {
+      if (!hasTargetPivot.has(language)) {
         TranslationsParent.reportError(
           new Error(
-            `The "from" language model "${lang}" is being discarded as it doesn't have a pivot language.`
+            `The source language model "${language}" is being discarded as it doesn't have a pivot language.`
           )
         );
-        fromLangsToRemove.add(lang);
+        sourceLanguagesToRemove.add(language);
       }
     }
 
-    for (const lang of toLangs) {
-      if (lang === PIVOT_LANGUAGE) {
+    for (const language of targetLanguages) {
+      if (language === PIVOT_LANGUAGE) {
         continue;
       }
       // Check for "pivot -> lang"
-      if (!hasFromPivot.has(lang)) {
+      if (!hasSourcePivot.has(language)) {
         TranslationsParent.reportError(
           new Error(
-            `The "to" language model "${lang}" is being discarded as it doesn't have a pivot language.`
+            `The target language model "${language}" is being discarded as it doesn't have a pivot language.`
           )
         );
-        toLangsToRemove.add(lang);
+        targetLanguagesToRemove.add(language);
       }
     }
 
     const after = records.filter(record => {
-      if (fromLangsToRemove.has(record.fromLang)) {
+      if (sourceLanguagesToRemove.has(record.sourceLanguage)) {
         return false;
       }
-      if (toLangsToRemove.has(record.toLang)) {
+      if (targetLanguagesToRemove.has(record.targetLanguage)) {
         return false;
       }
       return true;
@@ -2471,8 +2484,8 @@ export class TranslationsParent extends JSWindowActorParent {
     const recordGroups = new Map();
     for (const record of records) {
       const key = TranslationsParent.nonPivotKey(
-        record.fromLang,
-        record.toLang,
+        record.sourceLanguage,
+        record.targetLanguage,
         record.variant
       );
 
@@ -2516,7 +2529,7 @@ export class TranslationsParent extends JSWindowActorParent {
     }
 
     /** @type {RemoteSettingsClient} */
-    const client = lazy.RemoteSettings("translations-wasm");
+    const client = lazy.RemoteSettings("translations-wasm-v2");
     TranslationsParent.#translationsWasmRemoteClient = client;
     client.on("sync", TranslationsParent.#handleTranslationsWasmSync);
 
@@ -2539,17 +2552,20 @@ export class TranslationsParent extends JSWindowActorParent {
    * 2. Uncomment the .wasm file in: toolkit/components/translations/jar.mn
    * 3. Run: ./mach build
    * 4. Run: ./mach run
+   *
+   * @returns {Promise<Blob | null>}
    */
-  static async #maybeFetchLocalBergamotWasmArrayBuffer() {
+  static async #maybeFetchLocalBergamotWasmBlob() {
     if (TranslationsParent.#lookForLocalWasmBuild) {
       // Attempt to get a local copy of the translator. Most likely this will be a 404.
       try {
         const response = await fetch(
-          "chrome://global/content/translations/bergamot-translator.wasm"
+          "chrome://global/content/translations/bergamot-translator.wasm.zst"
         );
-        const arrayBuffer = response.arrayBuffer();
+
         lazy.console.log(`Using a local copy of Bergamot.`);
-        return arrayBuffer;
+
+        return response.blob();
       } catch {
         // Only attempt to fetch once, if it fails don't try again.
         TranslationsParent.#lookForLocalWasmBuild = false;
@@ -2565,14 +2581,14 @@ export class TranslationsParent extends JSWindowActorParent {
    * https://github.com/mozilla/bergamot-translator/
    */
   /**
-   * @returns {Promise<ArrayBuffer>}
+   * @returns {Promise<Blob>}
    */
-  static async #getBergamotWasmArrayBuffer() {
+  static async #getBergamotWasmBlob() {
     const start = Date.now();
     const client = TranslationsParent.#getTranslationsWasmRemoteClient();
 
     const localCopy =
-      await TranslationsParent.#maybeFetchLocalBergamotWasmArrayBuffer();
+      await TranslationsParent.#maybeFetchLocalBergamotWasmBlob();
     if (localCopy) {
       return localCopy;
     }
@@ -2641,17 +2657,18 @@ export class TranslationsParent extends JSWindowActorParent {
     try {
       await chaosModeError(1 / 3);
 
-      /** @type {{buffer: ArrayBuffer}} */
-      const { buffer } = await client.attachments.download(
+      const payload = await client.attachments.download(
         await TranslationsParent.#bergamotWasmRecord
       );
+
+      const blob = payload.blob ?? new Blob([payload.buffer]);
 
       const duration = Date.now() - start;
       lazy.console.log(
         `"bergamot-translator" wasm binary loaded in ${duration / 1000} seconds`
       );
 
-      return buffer;
+      return blob;
     } catch (error) {
       TranslationsParent.#bergamotWasmRecord = null;
       throw error;
@@ -2747,7 +2764,7 @@ export class TranslationsParent extends JSWindowActorParent {
     }
 
     queue.push({
-      download: () => TranslationsParent.#getBergamotWasmArrayBuffer(),
+      download: () => TranslationsParent.#getBergamotWasmBlob(),
     });
 
     return downloadManager(queue);
@@ -2852,16 +2869,16 @@ export class TranslationsParent extends JSWindowActorParent {
       if (isDownloaded) {
         downloadedPairs.add(
           TranslationsParent.nonPivotKey(
-            record.fromLang,
-            record.toLang,
+            record.sourceLanguage,
+            record.targetLanguage,
             record.variant
           )
         );
       } else {
         nonDownloadedPairs.add(
           TranslationsParent.nonPivotKey(
-            record.fromLang,
-            record.toLang,
+            record.sourceLanguage,
+            record.targetLanguage,
             record.variant
           )
         );
@@ -2926,10 +2943,13 @@ export class TranslationsParent extends JSWindowActorParent {
       for (const record of records.values()) {
         if (
           lazy.TranslationsUtils.langTagsMatch(
-            record.fromLang,
+            record.sourceLanguage,
             sourceLanguage
           ) &&
-          lazy.TranslationsUtils.langTagsMatch(record.toLang, targetLanguage)
+          lazy.TranslationsUtils.langTagsMatch(
+            record.targetLanguage,
+            targetLanguage
+          )
         ) {
           matchedRecords.add(record);
           matchFound = true;
@@ -3035,11 +3055,11 @@ export class TranslationsParent extends JSWindowActorParent {
 
         if (
           !lazy.TranslationsUtils.langTagsMatch(
-            record.fromLang,
+            record.sourceLanguage,
             sourceLanguage
           ) ||
           !lazy.TranslationsUtils.langTagsMatch(
-            record.toLang,
+            record.targetLanguage,
             targetLanguage
           ) ||
           record.variant !== variant
@@ -3054,19 +3074,19 @@ export class TranslationsParent extends JSWindowActorParent {
 
         await chaosMode(1 / 3);
 
-        /** @type {{buffer: ArrayBuffer }} */
-        const { buffer } = await client.attachments.download(record);
+        const payload = await client.attachments.download(record);
+        const blob = payload.blob ?? new Blob([payload.buffer]);
 
         languageModelFiles[record.fileType] = {
-          buffer,
+          blob,
           record,
         };
 
         const duration = Date.now() - start;
         lazy.console.log(
           `Translation model fetched in ${duration / 1000} seconds:`,
-          record.fromLang,
-          record.toLang,
+          record.sourceLanguage,
+          record.targetLanguage,
           record.variant,
           record.fileType,
           record.version
@@ -3124,8 +3144,11 @@ export class TranslationsParent extends JSWindowActorParent {
     await Promise.all(
       records.map(async record => {
         if (
-          !lazy.TranslationsUtils.langTagsMatch(record.fromLang, language) &&
-          !lazy.TranslationsUtils.langTagsMatch(record.toLang, language)
+          !lazy.TranslationsUtils.langTagsMatch(
+            record.sourceLanguage,
+            language
+          ) &&
+          !lazy.TranslationsUtils.langTagsMatch(record.targetLanguage, language)
         ) {
           return;
         }
@@ -3204,10 +3227,13 @@ export class TranslationsParent extends JSWindowActorParent {
 
         if (
           !lazy.TranslationsUtils.langTagsMatch(
-            record.fromLang,
+            record.sourceLanguage,
             sourceLanguage
           ) ||
-          !lazy.TranslationsUtils.langTagsMatch(record.toLang, targetLanguage)
+          !lazy.TranslationsUtils.langTagsMatch(
+            record.targetLanguage,
+            targetLanguage
+          )
         ) {
           return;
         }

@@ -428,7 +428,9 @@ export class Tracer extends Component {
             className,
             showFunctionName: true,
             showAnonymousFunctionName: true,
-            frame,
+            // Frame's savedFrameToLocation mess up with the frame object
+            // by incrementing the column unexpectedly.
+            frame: { ...frame, column: frame.column + 1 },
             sourceMapURLService: window.sourceMapURLService,
           })
         );

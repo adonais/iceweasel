@@ -10,10 +10,12 @@
 #include "js/ContextOptions.h"
 #include "js/Exception.h"
 #include "js/Initialization.h"
+#include "js/friend/MicroTask.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/EventQueue.h"
 #include "mozilla/FlowMarkers.h"
+#include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/dom/AtomList.h"
 #include "mozilla/dom/WorkletGlobalScope.h"
@@ -163,14 +165,22 @@ class WorkletJSContext final : public CycleCollectedJSContext {
 #endif
 
     JS::JobQueueMayNotBeEmpty(cx);
-    if (!runnable->isInList()) {
-      // A recycled object may be in the list already.
-      mMicrotasksToTrace.insertBack(runnable);
+    if (StaticPrefs::javascript_options_use_js_microtask_queue()) {
+      PROFILER_MARKER_FLOW_ONLY("WorkletJSContext::DispatchToMicroTask", OTHER,
+                                {}, FlowMarker,
+                                Flow::FromPointer(runnable.get()));
+      bool ret = mozilla::EnqueueMicroTask(cx, std::move(aRunnable));
+      MOZ_RELEASE_ASSERT(ret);
+    } else {
+      if (!runnable->isInList()) {
+        // A recycled object may be in the list already.
+        mMicrotasksToTrace.insertBack(runnable);
+      }
+      PROFILER_MARKER_FLOW_ONLY("WorkletJSContext::DispatchToMicroTask", OTHER,
+                                {}, FlowMarker,
+                                Flow::FromPointer(runnable.get()));
+      GetMicroTaskQueue().push_back(std::move(runnable));
     }
-    PROFILER_MARKER_FLOW_ONLY("WorkletJSContext::DispatchToMicroTask", OTHER,
-                              {}, FlowMarker,
-                              Flow::FromPointer(runnable.get()));
-    GetMicroTaskQueue().push_back(std::move(runnable));
   }
 
   bool IsSystemCaller() const override {

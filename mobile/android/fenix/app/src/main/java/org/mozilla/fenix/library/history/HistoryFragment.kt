@@ -19,7 +19,6 @@ import android.view.ViewGroup
 import android.widget.RadioGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -59,6 +58,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
@@ -174,21 +174,17 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler, 
 
     private var verificationResultLauncher: ActivityResultLauncher<Intent> =
         registerForVerification(onVerified = ::openHistoryInPrivate)
-
-    private val qrScanFenixFeature by lazy(LazyThreadSafetyMode.NONE) {
+    private var qrScanFenixFeature: ViewBoundFeatureWrapper<QrScanFenixFeature>? =
         ViewBoundFeatureWrapper<QrScanFenixFeature>()
-    }
-    private val qrScannerLauncher: ActivityResultLauncher<Intent> =
+    private val qrScanLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            qrScanFenixFeature.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
+            qrScanFenixFeature?.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
         }
-
-    private val voiceSearchFeature by lazy(LazyThreadSafetyMode.NONE) {
+    private var voiceSearchFeature: ViewBoundFeatureWrapper<VoiceSearchFeature>? =
         ViewBoundFeatureWrapper<VoiceSearchFeature>()
-    }
     private val voiceSearchLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            voiceSearchFeature.get()?.handleVoiceSearchResult(result.resultCode, result.data)
+            voiceSearchFeature?.get()?.handleVoiceSearchResult(result.resultCode, result.data)
         }
 
     private val menuBinding by lazy {
@@ -301,24 +297,8 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler, 
 
         if (requireContext().settings().shouldUseComposableToolbar) {
             toolbarStore = buildToolbarStore()
-            qrScanFenixFeature.set(
-                feature = QrScanFenixFeature(
-                    context = requireContext(),
-                    appStore = requireContext().components.appStore,
-                    qrScanActivityLauncher = qrScannerLauncher,
-                ),
-                owner = viewLifecycleOwner,
-                view = view,
-            )
-            voiceSearchFeature.set(
-                feature = VoiceSearchFeature(
-                    context = requireContext(),
-                    appStore = requireContext().components.appStore,
-                    voiceSearchLauncher = voiceSearchLauncher,
-                ),
-                owner = viewLifecycleOwner,
-                view = view,
-            )
+            qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
+            voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
         }
 
         consumeFrom(historyStore) {
@@ -793,7 +773,7 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler, 
         private val onDeleteTimeRange: (selectedTimeFrame: RemoveTimeFrame?) -> Unit,
     ) : DialogFragment() {
         override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
-            AlertDialog.Builder(requireContext()).apply {
+            MaterialAlertDialogBuilder(requireContext()).apply {
                 val layout = getLayoutInflater().inflate(R.layout.delete_history_time_range_dialog, null)
                 val radioGroup = layout.findViewById<RadioGroup>(R.id.radio_group)
                 radioGroup.check(R.id.last_hour_button)
@@ -837,7 +817,7 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler, 
             EnvironmentRehydrated(
                 BrowserToolbarEnvironment(
                     context = requireContext(),
-                    viewLifecycleOwner = viewLifecycleOwner,
+                    fragment = this,
                     navController = findNavController(),
                     browsingModeManager = (requireActivity() as HomeActivity).browsingModeManager,
                 ),

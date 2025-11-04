@@ -38,7 +38,6 @@ skip-if = ["true"] #depends on fix for bug 1048446
 ["test_sanityEventUtils.html"]
 skip-if = [
   "fission && xorigin", # Bug 1716411 - New fission platform triage
-  "os == 'android' && android_version == '24' && processor == 'x86_64' && opt", # Bug 1704064
 ]
 
 ["test_sanityException.html"]

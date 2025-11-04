@@ -771,9 +771,7 @@ TableWidget.prototype = {
       return;
     }
 
-    while (this.menupopup.firstChild) {
-      this.menupopup.firstChild.remove();
-    }
+    this.menupopup.replaceChildren();
 
     for (const column of this.columns.values()) {
       if (privateColumns.includes(column.id)) {
@@ -1781,12 +1779,7 @@ Cell.prototype = {
 
     if (Node.isInstance(value)) {
       this.label.removeAttribute("value");
-
-      while (this.label.firstChild) {
-        this.label.firstChild.remove();
-      }
-
-      this.label.appendChild(value);
+      this.label.replaceChildren(value);
     } else {
       this.label.setAttribute("value", value + "");
     }

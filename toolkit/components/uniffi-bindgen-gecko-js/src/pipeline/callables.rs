@@ -138,7 +138,8 @@ fn handle_callable(
                         );
                     }
                     callable.is_js_async = true;
-                    callable.uniffi_scaffolding_method = "UniFFIScaffolding.callAsyncWrapper".to_string();
+                    callable.uniffi_scaffolding_method =
+                        "UniFFIScaffolding.callAsyncWrapper".to_string();
                 }
                 ConcurrencyMode::FireAndForget => {
                     if !matches!(

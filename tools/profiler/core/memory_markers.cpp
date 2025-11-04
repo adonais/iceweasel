@@ -25,7 +25,10 @@ struct PurgeArenaMarker : mozilla::BaseMarkerType<PurgeArenaMarker> {
       {"id", MS::InputType::Uint32, "Arena Id", MS::Format::Integer},
       {"label", MS::InputType::CString, "Arena", MS::Format::String},
       {"caller", MS::InputType::CString, "Caller", MS::Format::String},
-      {"pages", MS::InputType::Uint32, "Number of pages", MS::Format::Integer},
+      {"pages_dirty", MS::InputType::Uint32, "Number of dirty pages cleaned",
+       MS::Format::Integer},
+      {"pages_clean", MS::InputType::Uint32,
+       "Number of clean pages amoung dirty pages cleaned", MS::Format::Integer},
       {"syscalls", MS::InputType::Uint32, "Number of system calls",
        MS::Format::Integer},
       {"chunks", MS::InputType::Uint32, "Number of chunks processed",
@@ -34,12 +37,17 @@ struct PurgeArenaMarker : mozilla::BaseMarkerType<PurgeArenaMarker> {
 
   static void StreamJSONMarkerData(
       mozilla::baseprofiler::SpliceableJSONWriter& aWriter, uint32_t aId,
-      const String8View& aLabel, const String8View& aCaller, uint32_t aPages,
-      uint32_t aSyscalls, uint32_t aChunks, const String8View& aResult) {
+      const String8View& aLabel, const String8View& aCaller,
+      uint32_t aPagesDirty, uint32_t aPagesTotal, uint32_t aSyscalls,
+      uint32_t aChunks, const String8View& aResult) {
     aWriter.IntProperty("id", aId);
     aWriter.StringProperty("label", aLabel);
     aWriter.StringProperty("caller", aCaller);
-    aWriter.IntProperty("pages", aPages);
+    aWriter.IntProperty("pages_dirty", aPagesDirty);
+    uint32_t pages_clean = aPagesTotal - aPagesDirty;
+    if (pages_clean) {
+      aWriter.IntProperty("pages_clean", aPagesTotal - aPagesDirty);
+    }
     aWriter.IntProperty("syscalls", aSyscalls);
     aWriter.IntProperty("chunks", aChunks);
     aWriter.StringProperty("result", aResult);
@@ -79,8 +87,8 @@ class GeckoProfilerMallocCallbacks : public MallocProfilerCallbacks {
         PurgeArenaMarker, aStats.arena_id,
         ProfilerString8View::WrapNullTerminatedString(aStats.arena_label),
         ProfilerString8View::WrapNullTerminatedString(aStats.caller),
-        aStats.pages, aStats.system_calls, aStats.chunks,
-        ProfilerString8View::WrapNullTerminatedString(result));
+        aStats.pages_dirty, aStats.pages_total, aStats.system_calls,
+        aStats.chunks, ProfilerString8View::WrapNullTerminatedString(result));
   }
 };
 }  // namespace profiler

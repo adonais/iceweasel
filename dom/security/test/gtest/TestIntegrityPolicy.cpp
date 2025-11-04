@@ -50,10 +50,6 @@ void AssertSerializationForHeadersForIntegrityPolicy(
 
 TEST(IntegrityPolicy, Serialization)
 {
-  const auto* prefKey = "security.integrity_policy.enabled";
-  bool oldPref = Preferences::GetBool(prefKey);
-  Preferences::SetBool(prefKey, true);
-
   // Test serialization for an empty policy
   AssertSerializationForHeadersForIntegrityPolicy(
       ""_ns, ""_ns, "SBL/Mhv/QjuX/EClaW2tIgAAAAAAAAAAwAAAAAAAAEYAAAABAAA="_ns);
@@ -86,6 +82,4 @@ TEST(IntegrityPolicy, Serialization)
       "blocked-destinations=(script), endpoints=(endpoint1 endpoint2)"_ns,
       "blocked-destinations=(script), endpoints=(endpoint1 endpoint2)"_ns,
       "SBL/Mhv/QjuX/EClaW2tIgAAAAAAAAAAwAAAAAAAAEYAAAABAQAAAAEAAAABAAAAAgAAAAllbmRwb2ludDEAAAAJZW5kcG9pbnQyAQAAAAEAAAABAAAAAgAAAAllbmRwb2ludDEAAAAJZW5kcG9pbnQy"_ns);
-
-  Preferences::SetBool(prefKey, oldPref);
 }

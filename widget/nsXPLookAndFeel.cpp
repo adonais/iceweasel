@@ -121,6 +121,7 @@ static const char sIntPrefs[][45] = {
     "ui.windowsMica",
     "ui.windowsMicaPopups",
     "ui.macBigSurTheme",
+    "ui.macTahoeTheme",
     "ui.alertNotificationOrigin",
     "ui.scrollToClick",
     "ui.IMERawInputUnderlineStyle",
@@ -711,7 +712,7 @@ nscolor nsXPLookAndFeel::GetStandinForNativeColor(ColorID aID,
       COLOR(Activetext, 0xee, 0x00, 0x00)
       COLOR(Visitedtext, 0x55, 0x1A, 0x8B)
       COLOR(MozAutofillBackground, 0xff, 0xfc, 0xc8)
-      COLOR(TargetTextBackground, 0xff, 0xeb, 0xcd)
+      COLOR(TargetTextBackground, 0xf5, 0xcc, 0x58)  // --yellow-20
       COLOR(TargetTextForeground, 0x00, 0x00, 0x00)
     default:
       break;
@@ -869,6 +870,12 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       // This is the light version of this color, but darkened to have good
       // contrast with our white-ish FieldText.
       color = NS_RGB(0x72, 0x6c, 0x00);
+      break;
+    case ColorID::TargetTextBackground:
+      color = NS_RGB(0xff, 0xf4, 0xd0);  // --yellow-0
+      break;
+    case ColorID::TargetTextForeground:
+      color = NS_RGB(0x00, 0x00, 0x00);
       break;
     default:
       return Nothing();

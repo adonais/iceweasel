@@ -20,23 +20,24 @@ loadScripts(
 );
 
 // All the A11Y metrics in tools/performance/PerfStats.h.
-const ALL_A11Y_PERFSTATS_MASK =
-  (1 << 29) |
-  (1 << 30) |
-  (1 << 31) |
-  (1 << 32) |
-  (1 << 33) |
-  (1 << 34) |
-  (1 << 35) |
-  (1 << 36) |
-  (1 << 37) |
-  (1 << 38) |
-  (1 << 39) |
-  (1 << 40) |
-  (1 << 41) |
-  (1 << 42) |
-  (1 << 43) |
-  (1 << 44);
+const ALL_A11Y_PERFSTATS_FEATURES = [
+  "A11Y_DoInitialUpdate",
+  "A11Y_ProcessQueuedCacheUpdate",
+  "A11Y_ContentRemovedNode",
+  "A11Y_ContentRemovedAcc",
+  "A11Y_PruneOrInsertSubtree",
+  "A11Y_ShutdownChildrenInSubtree",
+  "A11Y_ShowEvent",
+  "A11Y_RecvCache",
+  "A11Y_ProcessShowEvent",
+  "A11Y_CoalesceEvents",
+  "A11Y_CoalesceMutationEvents",
+  "A11Y_ProcessHideEvent",
+  "A11Y_SendCache",
+  "A11Y_WillRefresh",
+  "A11Y_AccessibilityServiceInit",
+  "A11Y_PlatformShowHideEvent",
+];
 
 const LOG_PREFIX = "perfMetrics";
 
@@ -52,7 +53,7 @@ function logToPerfMetrics(stat) {
  */
 async function timeThis(func) {
   const start = performance.now();
-  ChromeUtils.setPerfStatsCollectionMask(ALL_A11Y_PERFSTATS_MASK);
+  ChromeUtils.setPerfStatsFeatures(ALL_A11Y_PERFSTATS_FEATURES);
   const journal = {};
 
   // Run the specified testing task
@@ -62,7 +63,7 @@ async function timeThis(func) {
   journal.A11Y_TotalTime = performance.now() - start;
 
   const stats = JSON.parse(await ChromeUtils.collectPerfStats());
-  ChromeUtils.setPerfStatsCollectionMask(0);
+  ChromeUtils.setPerfStatsFeatures([]);
   // Filter stuff out of stats that we don't care about.
   // Filter out the GPU process, since accessibility doesn't do anything there.
   stats.processes = stats.processes.filter(process => process.type != "gpu");

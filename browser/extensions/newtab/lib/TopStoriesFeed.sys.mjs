@@ -640,7 +640,7 @@ export class TopStoriesFeed {
       case at.INIT:
         this.lazyLoadTopStories();
         break;
-      case at.SYSTEM_TICK:
+      case at.SYSTEM_TICK: {
         let stories;
         let topics;
         if (Date.now() - this.storiesLastUpdated >= STORIES_UPDATE_TIME) {
@@ -651,6 +651,7 @@ export class TopStoriesFeed {
         }
         this.doContentUpdate({ stories, topics }, false);
         break;
+      }
       case at.UNINIT:
         this.uninit();
         break;

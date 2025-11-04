@@ -186,10 +186,6 @@ let propNameAllowlist = [
   // Ignore token properties that follow the pattern --color-[name]-[number]
   // This enables us to provide our full color palette for developers.
   { propName: /--color-[a-z]+-\d+/, isFromDevTools: false },
-
-  // Design system border radius tokens that are defined but not yet used
-  // these should be removed once they are used in the codebase.
-  { propName: "--border-radius-xsmall", isFromDevTools: false },
 ];
 
 // Add suffix to stylesheets' URI so that we always load them here and

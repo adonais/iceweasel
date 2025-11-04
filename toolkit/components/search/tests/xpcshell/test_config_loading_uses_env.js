@@ -58,12 +58,12 @@ add_task(async function test_locale_selection() {
   Assert.equal(sortedEngines.length, 1, "Should have only one engine");
 
   Assert.equal(
-    Services.search.defaultEngine.identifier,
+    Services.search.defaultEngine.id,
     "appDefault",
     "Should have the correct default engine"
   );
   Assert.equal(
-    Services.search.defaultPrivateEngine.identifier,
+    Services.search.defaultPrivateEngine.id,
     // 'de' only displays google, so we'll be using the same engine as the
     // normal default.
     "appDefault",
@@ -84,12 +84,12 @@ add_task(async function test_switch_locales() {
   );
 
   Assert.equal(
-    Services.search.defaultEngine.identifier,
+    Services.search.defaultEngine.id,
     "appDefault",
     "Should have the correct default engine"
   );
   Assert.equal(
-    Services.search.defaultPrivateEngine.identifier,
+    Services.search.defaultPrivateEngine.id,
     "localeFR",
     "Should have the correct private default engine"
   );
@@ -102,18 +102,18 @@ add_task(async function test_region_selection() {
 
   let sortedEngines = await Services.search.getEngines();
   Assert.deepEqual(
-    sortedEngines.map(e => e.identifier),
+    sortedEngines.map(e => e.id),
     ["appDefault", "localeFR", "notDELocale", "regionGB"],
     "Should have the correct engine list"
   );
 
   Assert.equal(
-    Services.search.defaultEngine.identifier,
+    Services.search.defaultEngine.id,
     "appDefault",
     "Should have the correct default engine"
   );
   Assert.equal(
-    Services.search.defaultPrivateEngine.identifier,
+    Services.search.defaultPrivateEngine.id,
     "localeFR",
     "Should have the correct private default engine"
   );

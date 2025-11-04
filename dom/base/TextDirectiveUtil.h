@@ -575,10 +575,8 @@ template <TextScanDirection direction>
     return 0;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(
-      !nsContentUtils::IsHTMLWhitespace(aReferenceString.First()));
-  MOZ_DIAGNOSTIC_ASSERT(
-      !nsContentUtils::IsHTMLWhitespace(aReferenceString.Last()));
+  MOZ_ASSERT(!nsContentUtils::IsHTMLWhitespace(aReferenceString.First()));
+  MOZ_ASSERT(!nsContentUtils::IsHTMLWhitespace(aReferenceString.Last()));
   uint32_t referenceStringPosition =
       direction == TextScanDirection::Left ? aReferenceString.Length() - 1 : 0;
 

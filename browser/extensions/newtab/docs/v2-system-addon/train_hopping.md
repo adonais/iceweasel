@@ -179,9 +179,9 @@ This means that if we add a new feature to New Tab that is solely contained with
 
 This also means we can potentially catch train-hop compatibility failures with these jobs. Anything that causes New Tab to fail to initialize or pass any of its `mochitest-browser` tests will naturally cause the job to fail, which can be an early signal that train-hop compatibility has been broken.
 
-These tests are currently `Tier 3`, so they are hidden by default. They can be revealed by clicking the `3` button in Treeherder, and searching for `trainhop` in the search field. The jobs run on all Tier 1 desktop platforms.
+These tests are currently `Tier 2`, so failures do not automatically result in a backout - however, we should strive to fix failures as soon as they occur in order to unblock train-hopping. The jobs run on all Tier 1 desktop platforms.
 
-[This link](https://treeherder.mozilla.org/jobs?repo=mozilla-central&tier=1%2C2%2C3&searchStr=trainhop) should show the most recent `trainhop` jobs occurring on `main`.
+[This link](https://treeherder.mozilla.org/jobs?repo=mozilla-central&searchStr=trainhop) should show the most recent `trainhop` jobs occurring on `main`.
 
 The Treeherder "group name" for those jobs is `nt-trainhop`, and the symbol for the `mochitest-browser` tests are `Mbc-beta` and `Mbc-release` for the tests running on the most recent Beta and Release versions, respectively.
 
@@ -214,8 +214,6 @@ To use the above steps for the Release channel, it is necessary to use an “unb
 When attempting to fix the issue, it may be useful to push those changes to `try` in order to test whether or not your fixes have indeed solved the train-hop compatibility issue. There is a try preset that you can use:
 
 `./mach try --preset desktop-newtab-trainhop --artifact`
-
-Note that these try jobs are currently `Tier 3`, meaning that they’ll not be visible in Treeherder by default. You must click on the `3` toggle near the top of Treeherder to make them visible.
 
 # Performing a train-hop
 

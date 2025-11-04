@@ -416,7 +416,6 @@ function checkPayload(payload, reason, successfulPings) {
   // available on all platforms.
 
   Assert.ok("MEMORY_TOTAL" in payload.histograms); // UNITS_BYTES
-  Assert.ok("MEMORY_JS_GC_HEAP" in payload.histograms); // UNITS_BYTES
   Assert.ok("MEMORY_JS_COMPARTMENTS_SYSTEM" in payload.histograms); // UNITS_COUNT
 
   Assert.ok(

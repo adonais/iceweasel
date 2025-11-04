@@ -40,6 +40,7 @@ class FenixBrowserUseCasesTest {
     private lateinit var searchUseCases: SearchUseCases
     private lateinit var defaultSearchUseCase: SearchUseCases.DefaultSearchUseCase
     private lateinit var useCases: FenixBrowserUseCases
+    private lateinit var homepageTitle: String
 
     @Before
     fun setup() {
@@ -78,11 +79,12 @@ class FenixBrowserUseCasesTest {
 
         every { searchUseCases.defaultSearch } returns defaultSearchUseCase
 
+        homepageTitle = testContext.getString(R.string.tab_tray_homepage_tab)
         useCases = FenixBrowserUseCases(
             addNewTabUseCase = addNewTabUseCase,
             loadUrlUseCase = loadUrlUseCase,
             searchUseCases = searchUseCases,
-            homepageTitle = testContext.getString(R.string.tab_tray_homepage_tab),
+            homepageTitle = homepageTitle,
             profiler = profiler,
         )
     }
@@ -315,7 +317,7 @@ class FenixBrowserUseCasesTest {
         verify {
             addNewTabUseCase.invoke(
                 url = ABOUT_HOME_URL,
-                title = testContext.getString(R.string.tab_tray_homepage_tab),
+                title = homepageTitle,
                 private = true,
             )
         }
@@ -325,7 +327,7 @@ class FenixBrowserUseCasesTest {
         verify {
             addNewTabUseCase.invoke(
                 url = ABOUT_HOME_URL,
-                title = testContext.getString(R.string.tab_tray_homepage_tab),
+                title = homepageTitle,
                 private = false,
             )
         }

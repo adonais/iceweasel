@@ -7,6 +7,7 @@ package org.mozilla.fenix.addons
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.browser.state.action.ExtensionsProcessAction
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.argumentCaptor
@@ -38,7 +39,7 @@ class ExtensionsProcessDisabledForegroundControllerTest {
     fun `WHEN showExtensionsProcessDisabledPrompt is true AND positive button clicked then enable extension process spawning`() {
         val browserStore = BrowserStore()
         val dialog: AlertDialog = mock()
-        val builder: AlertDialog.Builder = mock()
+        val builder: MaterialAlertDialogBuilder = mock()
         val controller = ExtensionsProcessDisabledForegroundController(
             context = testContext,
             appStore = AppStore(AppState(isForeground = true)),
@@ -79,7 +80,7 @@ class ExtensionsProcessDisabledForegroundControllerTest {
     fun `WHEN showExtensionsProcessDisabledPrompt is true AND negative button clicked then dismiss without enabling extension process spawning`() {
         val browserStore = BrowserStore()
         val dialog: AlertDialog = mock()
-        val builder: AlertDialog.Builder = mock()
+        val builder: MaterialAlertDialogBuilder = mock()
         val controller = ExtensionsProcessDisabledForegroundController(
             context = testContext,
             appStore = AppStore(AppState(isForeground = true)),
@@ -120,7 +121,7 @@ class ExtensionsProcessDisabledForegroundControllerTest {
     fun `WHEN dispatching the same event twice THEN the dialog should only be created once`() {
         val browserStore = BrowserStore()
         val dialog: AlertDialog = mock()
-        val builder: AlertDialog.Builder = mock()
+        val builder: MaterialAlertDialogBuilder = mock()
         val controller = ExtensionsProcessDisabledForegroundController(
             context = testContext,
             appStore = AppStore(AppState(isForeground = true)),

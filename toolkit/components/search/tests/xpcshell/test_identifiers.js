@@ -50,14 +50,6 @@ function checkIdentifier(engineName, expectedIdentifier, expectedTelemetryId) {
     expectedTelemetryId,
     "Should have the correct telemetry Id"
   );
-
-  // TODO: Bug 1877721 - We have 3 forms of identifiers which causes confusion,
-  // we can remove the identifier for nsISearchEngine.
-  Assert.equal(
-    engine.identifier,
-    expectedIdentifier,
-    "Should have the correct identifier"
-  );
 }
 
 add_task(async function test_appProvided_basic() {

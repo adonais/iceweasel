@@ -436,6 +436,16 @@ bool GlobalObject::resolveConstructor(JSContext* cx,
     return false;
   }
 
+  if (JS::Prefs::objectfuse_for_js_builtin_ctors_protos()) {
+    if (proto &&
+        !NativeObject::setHasObjectFuse(cx, proto.as<NativeObject>())) {
+      return false;
+    }
+    if (!NativeObject::setHasObjectFuse(cx, ctor.as<NativeObject>())) {
+      return false;
+    }
+  }
+
   if (!isObjectOrFunction) {
     // Any operations that modifies the global object should be placed
     // after any other fallible operations.

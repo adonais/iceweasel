@@ -40,7 +40,6 @@ class CustomTabWindowFeature(
      * Transform a [CustomTabConfig] into a [CustomTabsIntent] that creates a
      * new custom tab with the same styling and layout
      */
-    @Suppress("ComplexMethod")
     @VisibleForTesting(otherwise = PRIVATE)
     internal fun configToIntent(config: CustomTabConfig?): CustomTabsIntent {
         val intent = CustomTabsIntent.Builder().apply {

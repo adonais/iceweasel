@@ -15,8 +15,8 @@ transforms = TransformSequence()
 APPLICATIONS = ["fx"]
 
 DOCKER_TO_WORKER = {
-    "ubuntu2404-test": "t-linux-docker",
-    "ubuntu1804-test": "t-linux-docker",
+    "ubuntu2404-test": "t-linux-docker-amd",
+    "ubuntu1804-test": "t-linux-docker-amd",
 }
 DOCKER_TO_PLATFORM = {
     "ubuntu2404-test": "linux2404-64",

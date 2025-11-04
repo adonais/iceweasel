@@ -11,6 +11,9 @@
 }
 
 .picker-item {
+  --visual-picker-item-border-radius-inner: calc(var(--visual-picker-item-border-radius) - var(--visual-picker-item-border-width));
+
+  overflow: hidden;
   border: var(--visual-picker-item-border-width) solid var(--visual-picker-item-border-color);
   border-radius: var(--visual-picker-item-border-radius);
   margin: 2px;
@@ -31,12 +34,33 @@
   }
 
   ::slotted(:first-child) {
-    --visual-picker-item-child-border-radius: calc(var(--visual-picker-item-border-radius) - var(--visual-picker-item-border-width));
+    --visual-picker-item-child-border-radius: var(--visual-picker-item-border-radius-inner);
     border-radius: var(--visual-picker-item-child-border-radius);
   }
 
   .label {
     margin: 0;
     padding: var(--space-small);
+  }
+
+  img {
+    display: block;
+    width: 100%;
+  }
+}
+
+.image-item {
+  background-color: var(--background-color-box);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  &:hover {
+    background-color: var(--button-background-color-hover);
+  }
+
+  &:hover:active {
+    background-color: var(--button-background-color-active);
   }
 }

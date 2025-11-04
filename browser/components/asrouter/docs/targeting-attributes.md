@@ -16,6 +16,9 @@ Please note that some targeting attributes require stricter controls on the tele
 * [attachedFxAOAuthClients](#attachedfxaoauthclients)
 * [attributionData](#attributiondata)
 * [backgroundTaskName](#backgroundtaskname)
+* [backupsInfo](#backupsinfo)
+* [backupArchiveEnabled](#backuparchiveenabled)
+* [backupRestoreEnabled](#backuprestoreenabled)
 * [blockedCountByType](#blockedcountbytype)
 * [browserIsSelected](#browserisselected)
 * [browserSettings](#browsersettings)
@@ -24,7 +27,9 @@ Please note that some targeting attributes require stricter controls on the tele
 * [creditCardsSaved](#creditcardssaved)
 * [currentDate](#currentdate)
 * [currentTabGroups](#currenttabgroups)
+* [currentTabInstalledAsWebApp](#currenttabinstalledaswebapp)
 * [currentProfileId](#currentprofileid)
+* [profileGroupProfileCount](#profileGroupProfileCount)
 * [defaultPDFHandler](#defaultpdfhandler)
 * [devToolsOpenedCount](#devtoolsopenedcount)
 * [distributionId](#distributionid)
@@ -48,6 +53,7 @@ Please note that some targeting attributes require stricter controls on the tele
 * [isDefaultBrowserUncached](#isdefaultbrowseruncached)
 * [isDefaultHandler](#isdefaulthandler)
 * [isDeviceMigration](#isdevicemigration)
+* [isEncryptedBackup](#isEncryptedBackup)
 * [isFxAEnabled](#isfxaenabled)
 * [isFxASignedIn](#isfxasignedin)
 * [isMajorUpgrade](#ismajorupgrade)
@@ -665,6 +671,17 @@ Pref used by system administrators to disallow add-ons from installed altogether
 ```ts
 declare const xpinstallEnabled: boolean;
 ```
+
+### `currentTabInstalledAsWebApp`
+
+Returns whether the current tab has a matching Web App (Taskbar Tab) installed.
+
+#### Definition
+
+```ts
+declare const currentTabInstalledAsWebApp: Promise<boolean>;
+```
+
 ### `currentTabGroups`
 
 Returns the number of currently open tab groups.
@@ -1151,3 +1168,40 @@ Returns the stable profile group ID used for data reporting.
 ### `currentProfileId`
 
 The integer-valued identifier of the current selectable profile, as reported by `SelectableProfileService`, converted to a string.
+
+### `profileGroupProfileCount`
+
+The number of profiles in the current profile group or zero if either the
+feature is not enabled or the user has not created any profiles.
+
+### `backupsInfo`
+
+Provides information about the backups a user has in the default directory.
+
+#### Definition
+
+```ts
+declare const backupsInfo: {
+  // True if exactly one backup was found.
+  found: boolean;
+
+  // True if multiple backups were found.
+  multipleBackupsFound: boolean;
+
+  // Absolute path to the selected backup to restore when `found` is true.
+  // Null when no single file is selected (none or multiple).
+  backupFileToRestore: string | null;
+};
+```
+
+### `backupArchiveEnabled`
+
+Indicates whether the archive function is enabled by BackupService.
+
+### `backupRestoreEnabled`
+
+Indicates whether the restore function is enabled by BackupService.
+
+### `isEncryptedBackup`
+
+Indicates whether a user has selected an encrypted or non-encrypted backup method during the spotlight onboarding flow. (Refers to the `messaging-system-action.backupChooser` pref.)

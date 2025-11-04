@@ -110,6 +110,11 @@ static int ChildProcessInitImpl(int aArgc, char** aArgv) {
 
   mozilla::SetGeckoChildID(aArgv[aArgc - 2]);
 
+#if defined(MOZ_MEMORY)
+  jemalloc_reset_small_alloc_randomization(
+      /* aRandomizeSmall */ !XRE_IsContentProcess());
+#endif
+
   nsresult rv =
       bootstrap.inspect()->XRE_InitChildProcess(aArgc - 2, aArgv, &childData);
 

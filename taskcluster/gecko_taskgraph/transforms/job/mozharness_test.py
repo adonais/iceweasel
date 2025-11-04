@@ -8,7 +8,7 @@ import re
 
 from taskgraph.util import json
 from taskgraph.util.schema import Schema
-from taskgraph.util.taskcluster import get_artifact_path, get_artifact_url
+from taskgraph.util.taskcluster import get_artifact_path
 from voluptuous import Extra, Optional, Required
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
@@ -60,9 +60,7 @@ mozharness_test_run_schema = Schema(
 
 def test_packages_url(taskdesc):
     """Account for different platforms that name their test packages differently"""
-    artifact_url = get_artifact_url(
-        "<build>", get_artifact_path(taskdesc, "target.test_packages.json")
-    )
+    artifact_path = "target.test_packages.json"
     # for android shippable we need to add 'en-US' to the artifact url
     test = taskdesc["run"]["test"]
     if (
@@ -73,9 +71,8 @@ def test_packages_url(taskdesc):
         )
         and not is_external_browser(test.get("try-name", ""))
     ):
-        head, tail = os.path.split(artifact_url)
-        artifact_url = os.path.join(head, "en-US", tail)
-    return artifact_url
+        artifact_path = os.path.join("en-US", artifact_path)
+    return f"<build/{get_artifact_path(taskdesc, artifact_path)}>"
 
 
 def installer_url(taskdesc):
@@ -83,16 +80,9 @@ def installer_url(taskdesc):
     mozharness = test["mozharness"]
 
     if "installer-url" in mozharness:
-        installer_url = mozharness["installer-url"]
-    else:
-        upstream_task = (
-            "<build-signing>" if mozharness["requires-signed-builds"] else "<build>"
-        )
-        installer_url = get_artifact_url(
-            upstream_task, mozharness["build-artifact-name"]
-        )
-
-    return installer_url
+        return mozharness["installer-url"]
+    upstream_task = "build-signing" if mozharness["requires-signed-builds"] else "build"
+    return f"<{upstream_task}/{mozharness['build-artifact-name']}>"
 
 
 @run_job_using("docker-worker", "mozharness-test", schema=mozharness_test_run_schema)
@@ -124,10 +114,6 @@ def mozharness_test_on_docker(config, job, taskdesc):
 
     installer = installer_url(taskdesc)
 
-    mozharness_url = get_artifact_url(
-        "<build>", get_artifact_path(taskdesc, "mozharness.zip")
-    )
-
     worker.setdefault("artifacts", [])
     worker["artifacts"].extend(
         [
@@ -154,7 +140,7 @@ def mozharness_test_on_docker(config, job, taskdesc):
         {
             "MOZHARNESS_CONFIG": " ".join(mozharness["config"]),
             "MOZHARNESS_SCRIPT": mozharness["script"],
-            "MOZILLA_BUILD_URL": {"task-reference": installer},
+            "MOZILLA_BUILD_URL": {"artifact-reference": installer},
             "NEED_WINDOW_MANAGER": "true",
             "ENABLE_E10S": str(bool(test.get("e10s"))).lower(),
             "WORKING_DIR": "/builds/worker",
@@ -204,7 +190,7 @@ def mozharness_test_on_docker(config, job, taskdesc):
     if not test["checkout"]:
         # Support vcs checkouts regardless of whether the task runs from
         # source or not in case it is needed on an interactive loaner.
-        support_vcs_checkout(config, job, taskdesc)
+        support_vcs_checkout(config, job, taskdesc, config.repo_configs)
 
     # If we have a source checkout, run mozharness from it instead of
     # downloading a zip file with the same content.
@@ -213,14 +199,15 @@ def mozharness_test_on_docker(config, job, taskdesc):
             **run
         )
     else:
-        env["MOZHARNESS_URL"] = {"task-reference": mozharness_url}
+        mozharness_url = f"<build/{get_artifact_path(taskdesc, 'mozharness.zip')}>"
+        env["MOZHARNESS_URL"] = {"artifact-reference": mozharness_url}
 
     extra_config = {
         "installer_url": installer,
         "test_packages_url": test_packages_url(taskdesc),
     }
     env["EXTRA_MOZHARNESS_CONFIG"] = {
-        "task-reference": json.dumps(extra_config, sort_keys=True)
+        "artifact-reference": json.dumps(extra_config, sort_keys=True)
     }
 
     # Bug 1634554 - pass in decision task artifact URL to mozharness for WPT.
@@ -385,7 +372,7 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
                 "MOZHARNESS_URL": {
                     "artifact-reference": "<build/public/build/mozharness.zip>"
                 },
-                "MOZILLA_BUILD_URL": {"task-reference": installer},
+                "MOZILLA_BUILD_URL": {"artifact-reference": installer},
                 "NEED_XVFB": "false",
                 "XPCOM_DEBUG_BREAK": "warn",
                 "NO_FAIL_ON_TEST_ERRORS": "1",
@@ -400,7 +387,7 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
         "test_packages_url": test_packages_url(taskdesc),
     }
     env["EXTRA_MOZHARNESS_CONFIG"] = {
-        "task-reference": json.dumps(extra_config, sort_keys=True)
+        "artifact-reference": json.dumps(extra_config, sort_keys=True)
     }
 
     # Bug 1634554 - pass in decision task artifact URL to mozharness for WPT.

@@ -543,6 +543,94 @@ export function updateWeights(input, do_clamp = true) {
   return weights;
 }
 
+/**
+ * Reorder GUIDs into their desired positions.
+ * - First claimant for a slot gets it.
+ * - Collisions are resolved by filling remaining slots left→right in original order.
+ * - If a requested position >= guids.length, that item goes to the last slot.
+ *
+ * @param {string[]} guids
+ * @param {Map<string, number>} posMap  Map of guid → desired 0-based index
+ * @returns {string[]} reordered guids
+ */
+export function placeGuidsByPositions(guids, posMap) {
+  const size = guids.length;
+  const out = Array(size).fill(null);
+  const placed = new Set();
+
+  // Pass 1: try to place at desired index (clamp > size-1 to size-1)
+  for (let i = 0; i < guids.length; i++) {
+    const g = guids[i];
+    let idx = posMap.get(g);
+    if (!Number.isInteger(idx) || idx < 0) {
+      continue;
+    }
+
+    if (idx >= size) {
+      idx = size - 1; // clamp oversize → last slot
+    }
+
+    if (out[idx] === null) {
+      out[idx] = g;
+      placed.add(i);
+    }
+    // collisions handled in pass 2
+  }
+
+  // Pass 2: fill holes with unplaced guids, in input order
+  let cursor = 0;
+  const putNext = item => {
+    while (cursor < size && out[cursor] !== null) {
+      cursor++;
+    }
+    if (cursor < size) {
+      out[cursor++] = item;
+    }
+  };
+
+  for (let i = 0; i < guids.length; i++) {
+    if (!placed.has(i)) {
+      putNext(guids[i]);
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Given last-click positions aligned to guids, shift by numSponsored (clamp negatives to 0,
+ * preserve nulls), then place GUIDs accordingly.
+ *
+ *  positions and guids are each arrays in the same order, here we map
+ *  guid to poisitions, we do this here to put as much as possible on the promise
+ *  we shift from "positions" which is absolute shortcut position to array index
+ *  which ignores the sponsored shortcuts.
+ *
+ * This function has a known shortcoming where the positions will be incorrect if the number
+ * of sponsored shortcuts changes. We accept this because 1) changes should be very rare
+ * 2) it fails safely 3) the differences should be off by the change in the number of sponsored
+ * shortcuts which is at most 3
+ * @param {(number|null|undefined)[]} positions  // aligned with guids
+ * @param {string[]} guids
+ * @param {number} numSponsored
+ * @returns {string[]} reordered guids
+ */
+export function applyStickyClicks(positions, guids, numSponsored) {
+  const guidToPos = new Map(
+    guids.map((g, i) => {
+      const pos = positions[i];
+      if (pos === null) {
+        return [g, null]; // preserve nulls
+      }
+      const shifted = pos - numSponsored;
+      return [g, shifted < 0 ? 0 : shifted]; // clamp negatives
+    })
+  );
+
+  // Use either variant depending on how you want collisions handled:
+  return placeGuidsByPositions(guids, guidToPos, { oneBased: false });
+}
+
 export class RankShortcutsWorker {
   async weightedSampleTopSites(input) {
     return weightedSampleTopSites(input);
@@ -555,5 +643,8 @@ export class RankShortcutsWorker {
   }
   async buildFrecencyFeatures(raw_frec, visit_totals) {
     return buildFrecencyFeatures(raw_frec, visit_totals);
+  }
+  async applyStickyClicks(positions, topsites, numSponsored) {
+    return applyStickyClicks(positions, topsites, numSponsored);
   }
 }

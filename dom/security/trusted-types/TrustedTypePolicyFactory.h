@@ -20,9 +20,6 @@
 #include "nsTArray.h"
 #include "nsWrapperCache.h"
 
-template <typename T>
-struct already_AddRefed;
-
 class DOMString;
 
 namespace mozilla {

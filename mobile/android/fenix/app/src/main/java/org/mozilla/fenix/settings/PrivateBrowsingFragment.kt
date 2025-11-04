@@ -53,6 +53,10 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
     }
 
     private fun updatePreferences() {
+        val biometricManager = BiometricManager.from(requireContext())
+        val deviceCapable = biometricManager.isHardwareAvailable()
+        val userHasEnabledCapability = biometricManager.isAuthenticatorAvailable()
+
         requirePreference<Preference>(R.string.pref_key_add_private_browsing_shortcut).apply {
             setOnPreferenceClickListener {
                 val privateShortcutCreateManager = PrivateShortcutCreateManager(
@@ -70,6 +74,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_allow_screenshots_in_private_mode).apply {
+            isEnabled = !(context.settings().privateBrowsingModeLocked && biometricManager.isAuthenticatorAvailable())
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
                 override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
                     if ((activity as? HomeActivity)?.browsingModeManager?.mode?.isPrivate == true &&
@@ -83,10 +88,6 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
                 }
             }
         }
-
-        val biometricManager = BiometricManager.from(requireContext())
-        val deviceCapable = biometricManager.isHardwareAvailable()
-        val userHasEnabledCapability = biometricManager.isAuthenticatorAvailable()
 
         // Show divider only if user does not have a device lock set
         requirePreference<PreferenceCategory>(R.string.pref_key_pbm_lock_category_divider).apply {
@@ -151,6 +152,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_private_browsing_locked_enabled).apply {
             isChecked = !isChecked
         }
+        updateScreenshotPreference(newValue)
     }
 
     private fun onSuccessfulAuthenticationUsingPrimaryPrompt(
@@ -163,6 +165,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
         requireContext().settings().privateBrowsingModeLocked = pbmLockEnabled
         // Update switch state manually
         (preference as? SwitchPreference)?.isChecked = pbmLockEnabled
+        updateScreenshotPreference(pbmLockEnabled)
     }
 
     private fun recordPbmLockFeatureEnabledStateTelemetry(pbmLockEnabled: Boolean) {
@@ -171,5 +174,19 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
         } else {
             PrivateBrowsingLocked.featureDisabled.record()
         }
+    }
+
+    private fun updateScreenshotPreference(pbmLockEnabled: Boolean) {
+        requirePreference<SwitchPreference>(R.string.pref_key_allow_screenshots_in_private_mode)
+            .apply {
+                if (pbmLockEnabled) {
+                    requireContext().settings().allowScreenshotsInPrivateMode = false
+                    isChecked = false
+                    if ((activity as? HomeActivity)?.browsingModeManager?.mode?.isPrivate == true) {
+                        activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    }
+                }
+                isEnabled = !pbmLockEnabled
+            }
     }
 }

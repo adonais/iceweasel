@@ -321,8 +321,6 @@
   <string name="bookmark_menu_open_in_private_tab_button">Vèrxi en scheda anonima</string>
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Scanseƚa</string>
-  <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Salva</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -332,24 +330,16 @@
   <string name="edit_bookmark_fragment_title">Modìfega segnaƚibro</string>
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Modìfega carteƚa</string>
-  <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Va rento par visuaƚixare i segnaƚibri sincronixà</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">INDIRISO</string>
   <!-- Bookmark FOLDER editing field label -->
   <string name="bookmark_folder_label">CARTEȽA</string>
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">NÒME</string>
-  <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Xonta carteƚa</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Seƚesiona carteƚa</string>
-  <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">El tìtoƚo el xe obligatorio</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">Indiriso no vàƚido</string>
-  <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Nisun segnaƚibro chive</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
@@ -495,10 +485,8 @@
   <!--
     Snackbar
 
-    Text shown in snackbar when user deletes a collection
+    Text shown in snackbar when user closes a tab
   -->
-  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Rancura scanseƚà</string>
-  <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Scheda sarà</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">Schede sarà</string>
@@ -519,8 +507,6 @@
   <string name="qr_scanner_dialog_negative">NEGA</string>
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">Scanseƚare %1$s?</string>
-  <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Scanseƚa</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Sto cua el xe on testo de exenpio. Mostra n’anteprima de cofà aparirà el testo cò te aumenti o riduxi ƚe dimension de i caratari co sta inpostasion.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -771,8 +757,6 @@
   <string name="confirm_clear_permission_site">Scanseƚare sto parmeso par sto sito?</string>
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Nisuna ecesion par i siti</string>
-  <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">Scanseƚare sto segnalibro?</string>
   <!--
     text shown before the issuer name to indicate who its verified by, %1$s is the name of
     the certificate authority that verified the ticket

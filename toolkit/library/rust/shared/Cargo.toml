@@ -107,12 +107,14 @@ wpf-gpu-raster = { git = "https://github.com/FirefoxGraphics/wpf-gpu-raster", re
 aa-stroke = { git = "https://github.com/FirefoxGraphics/aa-stroke", rev = "a821fa621c2def48e90c82774b4c6563b5a8ea4a" }
 etagere = { version = "0.2.13", features = ["ffi"] }
 
-url = "2.5.0"
-urlpattern = "0.3.0"
+url = "2.5.7"
+urlpattern = "0.4.0"
 urlpattern_glue = { path = "../../../../netwerk/base/urlpattern_glue" }
 uritemplate_glue = { path = "../../../../netwerk/base/uritemplate_glue" }
 
 libz-rs-sys = { version = "0.4.1", features = ["custom-prefix"], optional = true }
+
+gecko-trace = { path = "../../../components/gecko-trace" }
 
 [target.'cfg(any(target_os = "android", target_os = "macos", target_os = "ios", all(target_os = "windows", not(target_arch = "aarch64"))))'.dependencies]
 osclientcerts = { path = "../../../../security/manager/ssl/osclientcerts" }

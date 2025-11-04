@@ -36,7 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction
@@ -106,7 +106,7 @@ private fun BottomSheet(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         sheetState = sheetState,
-        containerColor = FirefoxTheme.colors.layer3,
+        containerColor = FirefoxTheme.colors.layer2,
     ) {
         Box(
             modifier = Modifier
@@ -216,7 +216,7 @@ private fun RateStep(onRateButtonClick: () -> Unit, modifier: Modifier = Modifie
 
         Spacer(Modifier.height(20.dp))
 
-        PrimaryButton(
+        FilledButton(
             text = stringResource(
                 R.string.review_prompt_rate_button,
                 stringResource(R.string.firefox),
@@ -250,7 +250,7 @@ private fun FeedbackStep(onLeaveFeedbackButtonClick: () -> Unit, modifier: Modif
 
         Spacer(Modifier.height(20.dp))
 
-        PrimaryButton(
+        FilledButton(
             text = stringResource(R.string.review_prompt_feedback_button),
             modifier = Modifier.fillMaxWidth(),
             onClick = onLeaveFeedbackButtonClick,

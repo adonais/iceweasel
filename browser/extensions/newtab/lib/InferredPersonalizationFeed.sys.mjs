@@ -26,7 +26,7 @@ import { MODEL_TYPE } from "./InferredModel/InferredConstants.sys.mjs";
 
 const CACHE_KEY = "inferred_personalization_feed";
 const DISCOVERY_STREAM_CACHE_KEY = "discovery_stream";
-const INTEREST_VECTOR_UPDATE_HOURS = 8;
+const INTEREST_VECTOR_UPDATE_HOURS = 24;
 const HOURS_TO_MS = 60 * 60 * 1000;
 
 const PREF_USER_INFERRED_PERSONALIZATION =
@@ -43,6 +43,9 @@ function timeMSToSeconds(timeMS) {
 const CLICK_TABLE = "moz_newtab_story_click";
 const IMPRESSION_TABLE = "moz_newtab_story_impression";
 const TEST_MODEL_ID = "TEST";
+
+const OLD_DATA_PRESERVE_DAYS_DEFAULT = 30 * 6;
+const OLD_DATA_CLEAR_CHECK_FREQUENCY_MS = 5 * 3600 * 24 * 1000; // 5 days
 
 /**
  * A feature that periodically generates a interest vector for inferred personalization.
@@ -70,6 +73,11 @@ export class InferredPersonalizationFeed {
       this.store.getState().Prefs.values[PREF_USER_INFERRED_PERSONALIZATION] &&
       this.store.getState().Prefs.values[PREF_SYSTEM_INFERRED_PERSONALIZATION]
     );
+  }
+
+  isStoreData() {
+    return !!this.store.getState().Prefs.values?.trainhopConfig
+      ?.newTabSectionsExperiment?.personalizationStoreFeaturesEnabled;
   }
 
   async init() {
@@ -131,14 +139,15 @@ export class InferredPersonalizationFeed {
       intervals,
       CLICK_TABLE
     );
-
+    const isClickModel = model.modelType === MODEL_TYPE.CLICKS;
     const interests = model.computeInterestVectors({
       dataForIntervals: aggClickPerInterval,
       indexSchema: schema,
       model_id: inferredModel.model_id,
+      applyPostProcessing: isClickModel,
     });
 
-    if (model.modelType === MODEL_TYPE.CLICKS) {
+    if (isClickModel) {
       return interests;
     }
 
@@ -193,9 +202,20 @@ export class InferredPersonalizationFeed {
         interestVectorRefreshHours * HOURS_TO_MS
       )
     ) {
+      let lastClearedDB = interest_vector?.lastClearedDB ?? this.Date().now();
+      const needsCleanup =
+        this.Date().now() - lastClearedDB >= OLD_DATA_CLEAR_CHECK_FREQUENCY_MS;
+      if (needsCleanup) {
+        await this.clearOldData(
+          values?.inferredPersonalizationConfig?.history_cull_days ||
+            OLD_DATA_PRESERVE_DAYS_DEFAULT
+        );
+        lastClearedDB = this.Date().now();
+      }
       interest_vector = {
         data: await this.generateInterestVector(),
         lastUpdated: this.Date().now(),
+        lastClearedDB,
       };
     }
     await this.cache.set("interest_vector", interest_vector);
@@ -281,6 +301,35 @@ export class InferredPersonalizationFeed {
     const { activityStreamProvider } = lazy.NewTabUtils;
     const interactions = await activityStreamProvider.executePlacesQuery(sql);
     return interactions;
+  }
+
+  /**
+   * Deletes older data from a table
+   * @param {int} preserveAgeDays Number of days to preserve
+   * @param {*} table Table to clear
+   */
+  async clearOldDataOfTable(preserveAgeDays, table) {
+    let sql = `DELETE FROM ${table}
+      WHERE timestamp_s < ${timeMSToSeconds(this.Date().now()) - preserveAgeDays * 60 * 24}`;
+    try {
+      await lazy.PlacesUtils.withConnectionWrapper(
+        "newtab/lib/InferredPersonalizationFeed.sys.mjs: clearOldDataOfTable",
+        async db => {
+          await db.execute(sql);
+        }
+      );
+    } catch (ex) {
+      console.error(`Error clearning places data ${ex}`);
+    }
+  }
+
+  /**
+   * Deletes older data from impression and click tables
+   * @param {int} preserveAgeDays Number of days to preserve (defaults to 6 months)
+   */
+  async clearOldData(preserveAgeDays) {
+    await this.clearOldDataOfTable(preserveAgeDays, IMPRESSION_TABLE);
+    await this.clearOldDataOfTable(preserveAgeDays, CLICK_TABLE);
   }
 
   async recordInferredPersonalizationInteraction(
@@ -385,15 +434,16 @@ export class InferredPersonalizationFeed {
         }
         break;
       case at.PLACES_HISTORY_CLEARED:
-        // TODO Handle places history clear
+        await this.clearOldData(0);
         break;
       case at.DISCOVERY_STREAM_IMPRESSION_STATS:
-        if (this.loaded && this.isEnabled()) {
+        // We have the ability to collect feature impressions when the feature is off
+        if (this.isEnabled() || this.isStoreData()) {
           await this.handleDiscoveryStreamImpressionStats(action);
         }
         break;
       case at.DISCOVERY_STREAM_USER_EVENT:
-        if (this.loaded && this.isEnabled()) {
+        if (this.isEnabled() || this.isStoreData()) {
           await this.handleDiscoveryStreamUserEvent(action);
         }
         break;

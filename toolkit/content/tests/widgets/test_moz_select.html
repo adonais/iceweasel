@@ -131,11 +131,31 @@
 
         let mozOptions = select.querySelectorAll("moz-option");
         mozOptions[0].iconSrc = "chrome://global/skin/icons/info.svg";
+        mozOptions[1].iconSrc = "chrome://global/skin/icons/warning.svg";
         await TestUtils.waitForTick();
         await select.updateComplete;
 
         info("New iconSrc value was added to the selected option.");
         ok(selectWrapper.classList.contains("with-icon"), "Select has an icon");
+        is(
+          select.shadowRoot.querySelector(".select-option-icon").src,
+          mozOptions[0].iconSrc,
+          "Select displays the icon of the selected option"
+        );
+
+        select.value = "value";
+        await select.updateComplete;
+        is(select.value, "value", "Second option is selected");
+        is(
+          select.inputEl.value,
+          select.value,
+          "Select element value is updated"
+        );
+        is(
+          select.shadowRoot.querySelector(".select-option-icon").src,
+          mozOptions[1].iconSrc,
+          "Select displays the icon of the newly selected option"
+        );
       });
     </script>
   </head>

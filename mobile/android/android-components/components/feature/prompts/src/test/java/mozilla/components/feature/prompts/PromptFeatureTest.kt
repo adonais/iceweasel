@@ -378,6 +378,7 @@ class PromptFeatureTest {
         // then
         verify(feature.loginPicker!!).dismissCurrentLoginSelect(selectLoginPrompt)
         assertEquals(true, result)
+        assertEquals(null, feature.activePromptRequest)
     }
 
     @Test
@@ -412,6 +413,7 @@ class PromptFeatureTest {
             selectLoginPrompt,
         )
         assertEquals(true, result)
+        assertEquals(null, feature.activePromptRequest)
     }
 
     @Test
@@ -619,6 +621,7 @@ class PromptFeatureTest {
 
         // then
         assertEquals(false, result)
+        assertNotNull(feature.activePromptRequest)
     }
 
     @Test
@@ -714,6 +717,7 @@ class PromptFeatureTest {
 
         verify(feature.creditCardPicker!!).dismissSelectCreditCardRequest(selectCreditCardRequest)
         assertEquals(true, result)
+        assertEquals(null, feature.activePromptRequest)
     }
 
     @Test
@@ -744,6 +748,7 @@ class PromptFeatureTest {
         val result = feature.dismissSelectPrompts()
 
         assertEquals(false, result)
+        assertNotNull(feature.activePromptRequest)
     }
 
     @Test
@@ -775,6 +780,7 @@ class PromptFeatureTest {
 
         verify(feature).dismissSelectPrompts()
         assertEquals(true, result)
+        assertEquals(null, feature.activePromptRequest)
     }
 
     @Test
@@ -874,6 +880,7 @@ class PromptFeatureTest {
         val result = feature.dismissSelectPrompts()
 
         assertEquals(false, result)
+        assertNotNull(feature.activePromptRequest)
     }
 
     @Test

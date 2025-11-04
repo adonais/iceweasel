@@ -1441,11 +1441,17 @@ nsresult nsUrlClassifierLookupCallback::HandleResults() {
     if (!result->Confirmed()) {
       LOG(("Skipping result %s from table %s (not confirmed)",
            result->PartialHashHex().get(), result->mTableName.get()));
+      glean::urlclassifier::CompletionExtra extra = {
+          .hit = Some(false), .tableName = Some(result->mTableName)};
+      glean::urlclassifier::completion.Record(Some(extra));
       continue;
     }
 
     LOG(("Confirmed result %s from table %s", result->PartialHashHex().get(),
          result->mTableName.get()));
+    glean::urlclassifier::CompletionExtra extra = {
+        .hit = Some(true), .tableName = Some(result->mTableName)};
+    glean::urlclassifier::completion.Record(Some(extra));
 
     if (tables.IndexOf(result->mTableName) == nsTArray<nsCString>::NoIndex) {
       tables.AppendElement(result->mTableName);

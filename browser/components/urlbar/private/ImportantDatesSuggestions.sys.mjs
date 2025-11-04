@@ -2,15 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { SuggestProvider } from "resource:///modules/urlbar/private/SuggestFeature.sys.mjs";
+import { SuggestProvider } from "moz-src:///browser/components/urlbar/private/SuggestFeature.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
-  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+  QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarSearchUtils:
+    "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 const SHOW_COUNTDOWN_THRESHOLD_DAYS = 30;
@@ -212,37 +213,32 @@ export class ImportantDatesSuggestions extends SuggestProvider {
     }
 
     let dateString = this.#formatDateOrRange(eventDateOrRange);
-    return Object.assign(
-      new lazy.UrlbarResult(
-        lazy.UrlbarUtils.RESULT_TYPE.SEARCH,
-        lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-        {
-          title: dateString,
-          description,
-          engine: lazy.UrlbarSearchUtils.getDefaultEngine(
-            queryContext.isPrivate
-          ).name,
-          descriptionL10n,
-          query: payload.name,
-          lowerCaseSuggestion: payload.name.toLowerCase(),
-          icon: "chrome://browser/skin/calendar-24.svg",
-          helpUrl: lazy.QuickSuggest.HELP_URL,
-          isManageable: true,
-          isBlockable: true,
-        },
-        {
-          title: [
-            // Make whole title bold.
-            [0, dateString.length],
-          ],
-        }
-      ),
-      {
-        isBestMatch: true,
-        hideRowLabel: true,
-        richSuggestionIconSize: 24,
-      }
-    );
+    return new lazy.UrlbarResult({
+      type: lazy.UrlbarUtils.RESULT_TYPE.SEARCH,
+      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      isBestMatch: true,
+      hideRowLabel: true,
+      richSuggestionIconSize: 24,
+      payload: {
+        title: dateString,
+        description,
+        engine: lazy.UrlbarSearchUtils.getDefaultEngine(queryContext.isPrivate)
+          .name,
+        descriptionL10n,
+        query: payload.name,
+        lowerCaseSuggestion: payload.name.toLowerCase(),
+        icon: "chrome://browser/skin/calendar-24.svg",
+        helpUrl: lazy.QuickSuggest.HELP_URL,
+        isManageable: true,
+        isBlockable: true,
+      },
+      payloadHighlights: {
+        title: [
+          // Make whole title bold.
+          [0, dateString.length],
+        ],
+      },
+    });
   }
 
   onEngagement(_queryContext, controller, details, _searchString) {

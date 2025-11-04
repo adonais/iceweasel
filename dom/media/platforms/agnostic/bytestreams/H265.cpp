@@ -1540,6 +1540,56 @@ already_AddRefed<mozilla::MediaByteBuffer> H265::CreateNewExtraData(
   return extradata.forget();
 }
 
+/* static */
+Result<bool, nsresult> H265::IsKeyFrame(const mozilla::MediaRawData* aSample) {
+  if (aSample->mCrypto.IsEncrypted()) {
+    LOG("Can't check if encrypted sample is keyframe");
+    return Err(NS_ERROR_DOM_MEDIA_DEMUXER_ERR);
+  }
+
+  size_t sampleSize = aSample->Size();
+  auto hvcc = HVCCConfig::Parse(aSample);
+  if (hvcc.isErr()) {
+    LOG("Only support extracting extradata from HVCC");
+    return Err(NS_ERROR_DOM_MEDIA_DEMUXER_ERR);
+  }
+  const auto nalLenSize = hvcc.unwrap().NALUSize();
+  BufferReader reader(aSample->Data(), sampleSize);
+  RefPtr<mozilla::MediaByteBuffer> extradata = new mozilla::MediaByteBuffer;
+  while (reader.Remaining() > nalLenSize) {
+    // ISO/IEC 14496-15, 4.2.3.2 Syntax. (NALUSample) Reading the size of NALU.
+    uint32_t nalLen = 0;
+    switch (nalLenSize) {
+      case 1:
+        Unused << reader.ReadU8().map(
+            [&](uint8_t x) mutable { return nalLen = x; });
+        break;
+      case 2:
+        Unused << reader.ReadU16().map(
+            [&](uint16_t x) mutable { return nalLen = x; });
+        break;
+      case 3:
+        Unused << reader.ReadU24().map(
+            [&](uint32_t x) mutable { return nalLen = x; });
+        break;
+      default:
+        MOZ_DIAGNOSTIC_ASSERT(nalLenSize == 4);
+        Unused << reader.ReadU32().map(
+            [&](uint32_t x) mutable { return nalLen = x; });
+        break;
+    }
+    const uint8_t* p = reader.Read(nalLen);
+    if (!p) {
+      break;
+    }
+    const H265NALU nalu(p, nalLen);
+    if (nalu.IsIframe()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 #undef LOG
 #undef LOGV
 

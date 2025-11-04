@@ -25,8 +25,11 @@ ChromeUtils.defineESModuleGetters(this, {
   QueryCache: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
   Spotlight: "resource:///modules/asrouter/Spotlight.sys.mjs",
   TargetingContext: "resource://messaging-system/targeting/Targeting.sys.mjs",
+  TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
+  TaskbarTabsPin: "resource:///modules/taskbartabs/TaskbarTabsPin.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
   TelemetrySession: "resource://gre/modules/TelemetrySession.sys.mjs",
 });
@@ -964,6 +967,51 @@ add_task(async function check_xpinstall_enabled() {
   // flip to true, check targeting reflects that
   await pushPrefs(["xpinstall.enabled", true]);
   is(await ASRouterTargeting.Environment.xpinstallEnabled, true);
+});
+
+add_task(async function check_current_tab_installed_as_web_app() {
+  // By default, Taskbar Tabs will try and pin this to the taskbar, but we
+  // don't want to do that in this test.
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(TaskbarTabsPin, "pinTaskbarTab");
+  sandbox.stub(TaskbarTabsPin, "unpinTaskbarTab");
+
+  const kUri = "https://example.com";
+
+  await BrowserTestUtils.withNewTab(kUri, async () => {
+    is(
+      await ASRouterTargeting.Environment.currentTabInstalledAsWebApp,
+      false,
+      "no taskbar tab exists yet"
+    );
+
+    const tt = await TaskbarTabs.findOrCreateTaskbarTab(
+      Services.io.newURI(kUri),
+      0
+    );
+    is(
+      await ASRouterTargeting.Environment.currentTabInstalledAsWebApp,
+      true,
+      "should be true when a Taskbar Tab exists for this tab"
+    );
+
+    await BrowserTestUtils.withNewTab("mochi.test:8888", async () => {
+      is(
+        await ASRouterTargeting.Environment.currentTabInstalledAsWebApp,
+        false,
+        "should be false even if a Taskbar Tab exists for a different tab"
+      );
+    });
+
+    await TaskbarTabs.removeTaskbarTab(tt.id);
+    is(
+      await ASRouterTargeting.Environment.currentTabInstalledAsWebApp,
+      false,
+      "should be false after removing the Taskbar Tab"
+    );
+  });
+
+  sandbox.restore();
 });
 
 add_task(async function check_pinned_tabs() {
@@ -2334,4 +2382,113 @@ add_task(async function test_newtabAddonVersion() {
     message,
     "should select correct item when filtering by newtabAddonVersion"
   );
+});
+
+add_task(async function check_backupsInfo() {
+  const sandbox = sinon.createSandbox();
+  registerCleanupFunction(() => sandbox.restore());
+
+  const testBackupResponse = {
+    found: true,
+    backupFileToRestore: "/tmp/profile-backup.jsonlz4",
+    multipleBackupsFound: false,
+  };
+
+  const stub = sandbox
+    .stub(QueryCache.getters.backupsInfo, "get")
+    .resolves(testBackupResponse);
+
+  Assert.deepEqual(
+    await ASRouterTargeting.Environment.backupsInfo,
+    testBackupResponse,
+    "Should return structured backup info from the cached getter"
+  );
+
+  const message = { id: "foo", targeting: "backupsInfo.found" };
+  is(
+    await ASRouterTargeting.findMatchingMessage({ messages: [message] }),
+    message,
+    "Should select message when a backup was found"
+  );
+
+  Assert.ok(stub.called, "backupsInfo getter was called");
+});
+
+add_task(async function check_isEncryptedBackup() {
+  const sandbox = sinon.createSandbox();
+  registerCleanupFunction(() => sandbox.restore());
+
+  is(
+    await ASRouterTargeting.Environment.isEncryptedBackup,
+    false,
+    "should return false if the pref is unset"
+  );
+
+  await pushPrefs(["messaging-system-action.backupChooser", "easy"]);
+  is(
+    await ASRouterTargeting.Environment.isEncryptedBackup,
+    false,
+    "should return false if the pref value is easy"
+  );
+
+  await pushPrefs(["messaging-system-action.backupChooser", "full"]);
+  is(
+    await ASRouterTargeting.Environment.isEncryptedBackup,
+    true,
+    "should return true if the pref value is full"
+  );
+});
+
+add_task(async function check_backupArchiveEnabled() {
+  const sandbox = sinon.createSandbox();
+  registerCleanupFunction(() => sandbox.restore());
+
+  await pushPrefs(["browser.backup.archive.enabled", true]);
+
+  is(
+    await ASRouterTargeting.Environment.backupArchiveEnabled,
+    true,
+    "should return true if the killswitch is not on"
+  );
+
+  const archiveExperiment = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "backupService",
+    value: { archiveKillswitch: true },
+  });
+
+  is(
+    await ASRouterTargeting.Environment.backupArchiveEnabled,
+    false,
+    "should return false if the killswitch is on"
+  );
+
+  // End the experiment.
+  await archiveExperiment();
+});
+
+add_task(async function check_backupRestoreEnabled() {
+  const sandbox = sinon.createSandbox();
+  registerCleanupFunction(() => sandbox.restore());
+
+  await pushPrefs(["browser.backup.restore.enabled", true]);
+
+  is(
+    await ASRouterTargeting.Environment.backupRestoreEnabled,
+    true,
+    "should return true if the killswitch is not on"
+  );
+
+  const restoreExperiment = await NimbusTestUtils.enrollWithFeatureConfig({
+    featureId: "backupService",
+    value: { restoreKillswitch: true },
+  });
+
+  is(
+    await ASRouterTargeting.Environment.backupRestoreEnabled,
+    false,
+    "should return false if the killswitch is on"
+  );
+
+  // End the experiment.
+  await restoreExperiment();
 });

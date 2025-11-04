@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 function loadBergamot(Module) {
-  var BERGAMOT_VERSION_FULL = "v0.6.0+1de4a085d";
+  var BERGAMOT_VERSION_FULL = "v0.6.0+4a6a44c0";
   null;
 
   var Module = typeof Module != "undefined" ? Module : {};
@@ -147,7 +147,7 @@ function loadBergamot(Module) {
         break;
 
       case "i64":
-        (tempI64 = [
+        ((tempI64 = [
           value >>> 0,
           ((tempDouble = value),
           +Math.abs(tempDouble) >= 1
@@ -161,7 +161,7 @@ function loadBergamot(Module) {
             : 0),
         ]),
           (HEAP32[ptr >> 2] = tempI64[0]),
-          (HEAP32[(ptr + 4) >> 2] = tempI64[1]);
+          (HEAP32[(ptr + 4) >> 2] = tempI64[1]));
         break;
 
       case "float":
@@ -643,9 +643,13 @@ function loadBergamot(Module) {
       receiveInstance(result.instance);
     }
     function instantiateArrayBuffer(receiver) {
+      // This function has been patched from the original version.
+      // See Bug 1988289.
       return getBinaryPromise()
-        .then(function (binary) {
-          return WebAssembly.instantiate(binary, info);
+        .then(binary => {
+          const module = new WebAssembly.Module(binary);
+          const instance = new WebAssembly.Instance(module, info);
+          return { module, instance };
         })
         .then(function (instance) {
           return instance;

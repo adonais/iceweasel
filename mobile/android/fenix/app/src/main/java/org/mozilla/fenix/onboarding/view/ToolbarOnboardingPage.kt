@@ -43,7 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
@@ -160,7 +160,7 @@ fun ToolbarOnboardingPage(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                PrimaryButton(
+                FilledButton(
                     text = primaryButton.text,
                     modifier = Modifier
                         .width(width = FirefoxTheme.layout.size.maxWidth.small)

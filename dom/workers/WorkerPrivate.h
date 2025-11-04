@@ -26,6 +26,7 @@
 #include "mozilla/Result.h"
 #include "mozilla/StaticPrefs_extensions.h"
 #include "mozilla/StorageAccess.h"
+#include "mozilla/TargetShutdownTaskSet.h"
 #include "mozilla/ThreadBound.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
 #include "mozilla/UniquePtr.h"
@@ -1443,6 +1444,16 @@ class WorkerPrivate final
   workerinternals::Queue<WorkerRunnable*, 4> mDebuggerQueue
       MOZ_GUARDED_BY(mMutex);
 
+  // This counts the numbers of dispatching WorkerControlRunnables.
+  // This is used to decouple the lock sequence between WorkerPrivate::mMutex
+  // and FutexThread::Lock. If this count is not zero, it means there are some
+  // WorkerControlRunnables are dispatching, and WorkerControlRunables might
+  // unlock WorkerPrivate::mMutex to request JS execution interrupt on the
+  // Worker thread.
+  // When a Worker starts shutdown, before releasing mJSContext, this value must
+  // be ensured to be zero.
+  uint32_t mDispatchingControlRunnables MOZ_GUARDED_BY(mMutex);
+
   // Touched on multiple threads, protected with mMutex. Only modified on the
   // worker thread
   JSContext* mJSContext MOZ_GUARDED_BY(mMutex);
@@ -1705,8 +1716,7 @@ class WorkerPrivate final
   Atomic<uint32_t> mTopLevelWorkerFinishedRunnableCount;
   Atomic<uint32_t> mWorkerFinishedRunnableCount;
 
-  nsTArray<nsCOMPtr<nsITargetShutdownTask>> mShutdownTasks
-      MOZ_GUARDED_BY(mMutex);
+  TargetShutdownTaskSet mShutdownTasks MOZ_GUARDED_BY(mMutex);
   bool mShutdownTasksRun MOZ_GUARDED_BY(mMutex) = false;
 
   bool mCCFlagSaysEligible MOZ_GUARDED_BY(mMutex){true};

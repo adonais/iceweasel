@@ -479,8 +479,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Переключить
 newtab-weather-menu-change-temperature-units-celsius = Переключиться на градусы Цельсия
 newtab-weather-menu-hide-weather = Скрыть погоду на новой вкладке
 newtab-weather-menu-learn-more = Подробнее
+newtab-weather-menu-detect-my-location = Определить моё местоположение
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Данные о погоде сейчас недоступны.
+newtab-weather-opt-in-see-weather = Хотите видеть погоду для вашего местоположения?
+newtab-weather-opt-in-not-now =
+    .label = Не сейчас
+newtab-weather-opt-in-yes =
+    .label = Да
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Нью-Йорк
 
 ## Topic Labels
 
@@ -647,6 +655,9 @@ newtab-widget-lists-input-menu-move-up = Вверх
 newtab-widget-lists-input-menu-move-down = Вниз
 newtab-widget-lists-input-menu-delete = Удалить
 newtab-widget-lists-input-menu-edit = Изменить
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Создать новый список
 newtab-widget-lists-name-label-default =
     .label = Список задач
 newtab-widget-lists-name-placeholder-default =

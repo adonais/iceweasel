@@ -130,6 +130,15 @@ void Message::SetAttachedFileHandles(
   attached_handles_ = std::move(handles);
 }
 
+bool Message::has_any_attachments() const {
+  return !attached_ports_.IsEmpty() || !attached_handles_.IsEmpty()
+#if defined(XP_DARWIN)
+         || !attached_send_rights_.IsEmpty() ||
+         !attached_receive_rights_.IsEmpty()
+#endif
+      ;
+}
+
 uint32_t Message::num_handles() const { return attached_handles_.Length(); }
 
 void Message::WritePort(mozilla::ipc::ScopedPort port) {

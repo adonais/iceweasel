@@ -35,6 +35,8 @@ class nsIStringInputStream;
 #  define HTTP_UNCOMPRESSED_TYPE "uncompressed"
 #  define HTTP_ZSTD_TYPE "zstd"
 #  define HTTP_ZST_TYPE "zst"
+#  define HTTP_BROTLI_DICTIONARY_TYPE "dcb"
+#  define HTTP_ZSTD_DICTIONARY_TYPE "dcz"
 
 namespace mozilla {
 namespace net {
@@ -64,6 +66,8 @@ class nsHTTPCompressConv : public nsIStreamConverter,
     HTTP_COMPRESS_BROTLI,
     HTTP_COMPRESS_IDENTITY,
     HTTP_COMPRESS_ZSTD,
+    HTTP_COMPRESS_BROTLI_DICTIONARY,
+    HTTP_COMPRESS_ZSTD_DICTIONARY,
   };
 
  private:

@@ -283,7 +283,6 @@ class AddonsManagerAdapter(
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    @Suppress("LongMethod")
     internal fun bindAddon(
         holder: AddonViewHolder,
         addon: Addon,
@@ -354,7 +353,6 @@ class AddonsManagerAdapter(
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    @Suppress("ComplexMethod")
     internal fun createListWithSections(addons: List<Addon>, excludedAddonIDs: List<String> = emptyList()): List<Any> {
         val itemsWithSections = ArrayList<Any>()
         val installedAddons = ArrayList<Addon>()

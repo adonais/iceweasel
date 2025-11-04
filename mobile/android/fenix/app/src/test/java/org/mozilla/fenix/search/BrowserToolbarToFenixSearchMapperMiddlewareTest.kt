@@ -8,7 +8,7 @@ import androidx.lifecycle.Lifecycle
 import io.mockk.every
 import io.mockk.mockk
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchQueryUpdated
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ToggleEditMode
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.EnterEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.lib.state.Middleware
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
@@ -41,7 +41,7 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
         val captorMiddleware = CaptureActionsMiddleware<SearchFragmentState, SearchFragmentAction>()
         val searchStore = buildSearchStore(listOf(searchStatusMapperMiddleware, captorMiddleware))
 
-        toolbarStore.dispatch(ToggleEditMode(true))
+        toolbarStore.dispatch(EnterEditMode)
 
         captorMiddleware.assertLastAction(SearchStarted::class) {
             assertNull(it.selectedSearchEngine)
@@ -64,7 +64,7 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
     @Test
     fun `GIVEN search was started WHEN there's a new query in the toolbar THEN update the search state`() {
         val searchStore = buildSearchStore(listOf(buildMiddleware()))
-        toolbarStore.dispatch(ToggleEditMode(true))
+        toolbarStore.dispatch(EnterEditMode)
 
         searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = false))
 
@@ -84,7 +84,7 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
     @Test
     fun `GIVEN search was started for the current URL WHEN there's a new query in the toolbar THEN don't update the search state`() {
         val searchStore = buildSearchStore(listOf(buildMiddleware()))
-        toolbarStore.dispatch(ToggleEditMode(true))
+        toolbarStore.dispatch(EnterEditMode)
 
         searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = true))
         toolbarStore.dispatch(SearchQueryUpdated("https://mozilla.org", isQueryPrefilled = true))

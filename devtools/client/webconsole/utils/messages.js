@@ -182,7 +182,7 @@ function transformConsoleAPICallResource(
       ];
       break;
     case "count":
-    case "countReset":
+    case "countReset": {
       // Chrome RDP doesn't have a special type for count.
       type = MESSAGE_TYPE.LOG;
       const { counter } = consoleMessageResource;
@@ -202,6 +202,7 @@ function transformConsoleAPICallResource(
         parameters = null;
       }
       break;
+    }
     case "timeStamp":
       type = MESSAGE_TYPE.NULL_MESSAGE;
       break;
@@ -276,6 +277,7 @@ function transformConsoleAPICallResource(
     ? {
         source: consoleMessageResource.filename,
         sourceId: consoleMessageResource.sourceId,
+        // Both line and column are 1-based
         line: consoleMessageResource.lineNumber,
         column: consoleMessageResource.columnNumber,
       }
@@ -344,6 +346,7 @@ function transformPageErrorResource(pageErrorResource, override = {}) {
     ? {
         source: pageError.sourceName,
         sourceId: pageError.sourceId,
+        // Both line and column are 1-based
         line: pageError.lineNumber,
         column: pageError.columnNumber,
       }

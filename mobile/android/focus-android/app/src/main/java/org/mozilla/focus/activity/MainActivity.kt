@@ -58,7 +58,7 @@ import org.mozilla.focus.utils.SupportUtils
 
 private const val REQUEST_TIME_OUT = 2000L
 
-@Suppress("TooManyFunctions", "LargeClass")
+@Suppress("LargeClass")
 /**
  * The main entry point for the app.
  */

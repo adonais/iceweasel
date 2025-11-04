@@ -10,7 +10,9 @@
 #include "mozilla/EventQueue.h"
 #include "mozilla/CondVar.h"
 #include "mozilla/SynchronizedEventQueue.h"
+#include "mozilla/TargetShutdownTaskSet.h"
 #include "nsCOMPtr.h"
+#include "nsITargetShutdownTask.h"
 #include "nsTArray.h"
 
 class nsIEventTarget;
@@ -83,8 +85,7 @@ class ThreadEventQueue final : public SynchronizedEventQueue {
 
   bool mEventsAreDoomed MOZ_GUARDED_BY(mLock) = false;
   nsCOMPtr<nsIThreadObserver> mObserver MOZ_GUARDED_BY(mLock);
-  nsTArray<nsCOMPtr<nsITargetShutdownTask>> mShutdownTasks
-      MOZ_GUARDED_BY(mLock);
+  TargetShutdownTaskSet mShutdownTasks MOZ_GUARDED_BY(mLock);
   bool mShutdownTasksRun MOZ_GUARDED_BY(mLock) = false;
 
   const bool mIsMainThread;

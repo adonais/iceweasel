@@ -494,4 +494,20 @@ describe("<Lists>", () => {
       "Expected add icon not to be greyed when under limit"
     );
   });
+
+  it("should cancel creating a new list when Escape key is pressed", () => {
+    const editList = wrapper.find("panel-item").at(0);
+    editList.props().onClick();
+    wrapper.update();
+
+    let editableInput = wrapper.find("input.edit-list");
+    assert.ok(editableInput.exists());
+
+    editableInput.simulate("keyDown", { key: "Escape" });
+    wrapper.update();
+
+    // after cancelling, the input should be gone (list creation cancelled)
+    editableInput = wrapper.find("input.edit-list");
+    assert.strictEqual(editableInput.exists(), false);
+  });
 });

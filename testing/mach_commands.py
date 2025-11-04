@@ -7,7 +7,9 @@ import logging
 import os
 import sys
 from datetime import date, timedelta
-from typing import Optional
+
+# ruff linter deprecates List, required for Python 3.8 compatibility
+from typing import List, Optional  # noqa UP035
 
 import requests
 from mach.decorators import Command, CommandArgument, SubCommand
@@ -1235,52 +1237,39 @@ def manifest(_command_context):
     "-b",
     "--bugzilla",
     default=None,
-    dest="bugzilla",
-    help="Bugzilla instance (or disable)",
+    help="Bugzilla instance [disable]",
 )
 @CommandArgument(
-    "-m", "--meta-bug-id", default=None, dest="meta_bug_id", help="Meta Bug id"
+    "-C",
+    "--clear-cache",
+    nargs="?",
+    const="all",
+    default=None,
+    help="clear cache REVISION (or all)",
 )
 @CommandArgument(
-    "-s",
-    "--turbo",
+    "-c",
+    "--carryover",
     action="store_true",
-    dest="turbo",
-    help="Skip all secondary failures",
+    help="Set carryover mode (only skip failures for platform matches)",
 )
-@CommandArgument(
-    "-t", "--save-tasks", default=None, dest="save_tasks", help="Save tasks to file"
-)
-@CommandArgument(
-    "-T", "--use-tasks", default=None, dest="use_tasks", help="Use tasks from file"
-)
-@CommandArgument(
-    "-f",
-    "--save-failures",
-    default=None,
-    dest="save_failures",
-    help="Save failures to file",
-)
-@CommandArgument(
-    "-F",
-    "--use-failures",
-    default=None,
-    dest="use_failures",
-    help="Use failures from file",
-)
-@CommandArgument(
-    "-M",
-    "--max-failures",
-    default=-1,
-    dest="max_failures",
-    help="Maximum number of failures to skip (-1 == no limit)",
-)
-@CommandArgument("-v", "--verbose", action="store_true", help="Verbose mode")
 @CommandArgument(
     "-d",
     "--dry-run",
     action="store_true",
     help="Determine manifest changes, but do not write them",
+)
+@CommandArgument(
+    "-F",
+    "--use-failures",
+    default=None,
+    help="Use failures from file",
+)
+@CommandArgument(
+    "-f",
+    "--save-failures",
+    default=None,
+    help="Save failures to file",
 )
 @CommandArgument(
     "-I",
@@ -1289,17 +1278,47 @@ def manifest(_command_context):
     help="Use implicit variables in reftest manifests",
 )
 @CommandArgument(
+    "-i",
+    "--task-id",
+    default=None,
+    help="Task id to write a condition for instead of all tasks from the push",
+)
+@CommandArgument(
+    "-M",
+    "--max-failures",
+    type=int,
+    default=-1,
+    help="Maximum number of failures to skip (-1 == no limit)",
+)
+@CommandArgument("-m", "--meta-bug-id", type=int, default=None, help="Meta Bug id")
+@CommandArgument(
     "-n",
     "--new-version",
-    dest="new_version",
+    default=None,
     help="New version to use for annotations",
 )
 @CommandArgument(
-    "-i",
-    "--task-id",
-    dest="task_id",
-    help="Task id to write a condition for instead of all tasks from the push",
+    "-r",
+    "--failure-ratio",
+    type=float,
+    default=0.4,
+    help="Ratio of test failures/total to skip [0.4]",
 )
+@CommandArgument(
+    "-s",
+    "--turbo",
+    action="store_true",
+    help="Skip all secondary failures",
+)
+@CommandArgument("-T", "--use-tasks", default=None, help="Use tasks from file")
+@CommandArgument("-t", "--save-tasks", default=None, help="Save tasks to file")
+@CommandArgument(
+    "-u",
+    "--user-agent",
+    default=None,
+    help="User-Agent to use for mozci if queries are forbidden from treeherder",
+)
+@CommandArgument("-v", "--verbose", action="store_true", help="Verbose mode")
 def skipfails(
     command_context,
     try_url,
@@ -1316,22 +1335,12 @@ def skipfails(
     implicit_vars=False,
     new_version=None,
     task_id=None,
+    user_agent=None,
+    carryover=False,
+    failure_ratio=0.4,
+    clear_cache=None,
 ):
     from skipfails import Skipfails
-
-    if meta_bug_id is not None:
-        try:
-            meta_bug_id = int(meta_bug_id)
-        except ValueError:
-            meta_bug_id = None
-
-    if max_failures is not None:
-        try:
-            max_failures = int(max_failures)
-        except ValueError:
-            max_failures = -1
-    else:
-        max_failures = -1
 
     Skipfails(
         command_context,
@@ -1343,6 +1352,8 @@ def skipfails(
         implicit_vars,
         new_version,
         task_id,
+        user_agent,
+        clear_cache,
     ).run(
         meta_bug_id,
         save_tasks,
@@ -1350,6 +1361,8 @@ def skipfails(
         save_failures,
         use_failures,
         max_failures,
+        carryover,
+        failure_ratio,
     )
 
 
@@ -1419,7 +1432,7 @@ def high_freq_skipfails(command_context, failures: str, days: str):
 )
 def clean_skipfails(
     command_context,
-    manifest_search_path: list[str],
+    manifest_search_path: List[str],
     os_name: Optional[str] = None,
     os_version: Optional[str] = None,
     processor: Optional[str] = None,

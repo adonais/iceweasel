@@ -18,7 +18,7 @@ import org.mozilla.fenix.home.HomeFragment
 
 /**
  * A binding for observing [ContentState.url] and navigating to the [HomeFragment] if
- * the current session's url is updated to [ABOUT_HOME].
+ * the current session's url is updated to [ABOUT_HOME_URL].
  */
 class AboutHomeBinding(
     browserStore: BrowserStore,

@@ -15,6 +15,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.RecentlyClosedAction
@@ -245,6 +246,7 @@ class DefaultRecentlyClosedControllerTest {
         assertNull(RecentlyClosedTabs.menuShare.testGetValue()!!.single().extra)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // runCurrent
     @Test
     fun handleRestore() = runTest {
         val item: TabState = mockk(relaxed = true)
@@ -261,6 +263,7 @@ class DefaultRecentlyClosedControllerTest {
         assertNull(RecentlyClosedTabs.openTab.testGetValue()!!.single().extra)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // runCurrent
     @Test
     fun `GIVEN normal browsing mode WHEN handleRestore is called THEN openToBrowser is invoked`() = runTest {
         val item: TabState = mockk(relaxed = true)
@@ -282,6 +285,7 @@ class DefaultRecentlyClosedControllerTest {
         verify { activity.openToBrowser(from = eq(BrowserDirection.FromRecentlyClosed)) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // runCurrent
     @Test
     fun `GIVEN private browsing mode WHEN handleRestore is called THEN handleOpen is invoked with private mode`() = runTest {
         val item: TabState = mockk(relaxed = true)

@@ -27,6 +27,9 @@ skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64' && deb
 ["browser_networkobserver_decode_text.js"]
 skip-if = ["http3"] # Bug 1969598
 
+["browser_networkobserver_decode_text_missing_charset.js"]
+skip-if = ["http3"] # Bug 1969598
+
 ["browser_networkobserver_invalid_constructor.js"]
 
 ["browser_networkobserver_override.js"]

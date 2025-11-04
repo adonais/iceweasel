@@ -15,6 +15,8 @@ import androidx.fragment.app.FragmentTransaction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.feature.sitepermissions.SitePermissionsFeature.PromptsStyling
 import mozilla.components.support.ktx.util.PromptAbuserDetector
+import mozilla.components.support.test.any
+import mozilla.components.support.test.eq
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.After
@@ -299,7 +301,12 @@ class SitePermissionsDialogFragmentTest {
 
         val positiveButton = dialog.findViewById<Button>(R.id.allow_button)
         positiveButton.performClick()
-        verify(mockFeature).onPositiveButtonPress(permissionRequestId, "sessionId", false)
+        verify(mockFeature).onPositiveButtonPress(
+            eq(permissionRequestId),
+            eq("sessionId"),
+            eq(false),
+            any(),
+        )
     }
 
     @Test
@@ -428,8 +435,12 @@ class SitePermissionsDialogFragmentTest {
 
         val positiveButton = dialog.findViewById<Button>(R.id.allow_button)
         positiveButton.performClick()
-        verify(mockFeature)
-            .onPositiveButtonPress(permissionRequestId, "sessionId", true)
+        verify(mockFeature).onPositiveButtonPress(
+            eq(permissionRequestId),
+            eq("sessionId"),
+            eq(true),
+            any(),
+        )
     }
 
     @Test

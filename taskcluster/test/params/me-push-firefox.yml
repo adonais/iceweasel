@@ -7775,8 +7775,6 @@ existing_tasks:
   toolchain-android-arm-libunwind-16: JBZIolMrQ1et-WeyzeCXIQ
   toolchain-android-x64-compiler-rt-16: VogJ2fY4TZKNJn1MYjwDXw
   toolchain-android-x64-libunwind-16: QZOnAeWsTb6X7EXcMwkalQ
-  toolchain-android-x86-compiler-rt-16: LPmITGXjRwmk6RRqBPYorg
-  toolchain-android-x86-libunwind-16: aveX0gGbT3ydLB3mX5w2ag
   toolchain-clang-dist-toolchain: clDGBrRFQ5qmfKNFpZ5jMg
   toolchain-linux32-llvm-symbolizer-16: b00sSguDR1afiiWpzmKnCg
   toolchain-linux32-toolchain-sysroot: WaiGPfSGSHmmU8c_HVEtsA
@@ -7844,7 +7842,6 @@ existing_tasks:
   toolchain-linux64-winchecksec: fKhj283KSpy8tLLqz0SjMw
   toolchain-linux64-wine: YF1iG3ynTxWXtilE4CfzQw
   toolchain-linux64-x64-compiler-rt-16: VPQTxhhKRsqMULYxX1fDwg
-  toolchain-linux64-x86-compiler-rt-16: GcpY6FueQ0CuyrKJNdZjtw
   toolchain-linux64-xar: YWldEboJTOm0_jXus7XQ0A
   toolchain-macosx64-aarch64-cargo-vet: YhvITXBGRCqfEcIpD_BFEw
   toolchain-macosx64-aarch64-cbindgen: HqQOKaIETMGz55LGQps1CA
@@ -7966,7 +7963,6 @@ release_partner_config:
         locales:
           - zh-CN
         platforms:
-          - linux-shippable
           - linux64-shippable
           - macosx64-shippable
         upload_to_candidates: 'true'

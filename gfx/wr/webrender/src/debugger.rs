@@ -4,11 +4,13 @@
  
 use crate::{DebugCommand, RenderApi};
 use crate::profiler::Profiler;
+use crate::composite::CompositeState;
 use std::collections::HashMap;
 use api::crossbeam_channel;
 use api::DebugFlags;
 use api::debugger::{DebuggerMessage, SetDebugFlagsMessage, ProfileCounterDescriptor};
 use api::debugger::{UpdateProfileCountersMessage, InitProfileCountersMessage, ProfileCounterId};
+use api::debugger::{CompositorDebugInfo, CompositorDebugTile};
 use std::thread;
 use tiny_http::{Server, Response, ReadWrite, Method};
 use base64::prelude::*;
@@ -29,9 +31,11 @@ use sha1::{Sha1, Digest};
 #[derive(Clone)]
 pub enum DebugQueryKind {
     /// Query the current spatial tree
-    SpatialTree {
-
-    },
+    SpatialTree {},
+    /// Query the compositing config
+    CompositorConfig {},
+    /// Query the compositing view
+    CompositorView {},
 }
 
 /// Details about the debug query being requested
@@ -147,7 +151,13 @@ pub fn start(api: RenderApi) {
     println!("Start debug server on {}", base_url);
 
     thread::spawn(move || {
-        let server = Server::http(address).unwrap();
+        let server = match Server::http(address) {
+            Ok(server) => server,
+            Err(..) => {
+                println!("\tUnable to bind WR debug server (another process may already be listening)");
+                return;
+            }
+        };
 
         for mut request in server.incoming_requests() {
             let url = base_url.join(request.url()).expect("bad url");
@@ -190,25 +200,30 @@ pub fn start(api: RenderApi) {
                 }
                 "/query" => {
                     // Query internal state about WR.
-                    match args.get("type").map(|s| s.as_str()) {
-                        Some("spatial-tree") => {
-                            let (tx, rx) = crossbeam_channel::unbounded();
-                            let query = DebugQuery {
-                                result: tx,
-                                kind: DebugQueryKind::SpatialTree {
+                    let (tx, rx) = crossbeam_channel::unbounded();
 
-                                },
-                            };
-                            api.send_debug_cmd(
-                                DebugCommand::Query(query)
-                            );
-                            let result = rx.recv().expect("no response");
-                            request.respond(Response::from_string(result)).ok();
-                        }
+                    let kind = match args.get("type").map(|s| s.as_str()) {
+                        Some("spatial-tree") => DebugQueryKind::SpatialTree {},
+                        Some("composite-view") => DebugQueryKind::CompositorView {},
+                        Some("composite-config") => DebugQueryKind::CompositorConfig {},
                         _ => {
                             request.respond(Response::from_string("Unknown query")).ok();
+                            return;
                         }
-                    }
+                    };
+
+                    let query = DebugQuery {
+                        result: tx,
+                        kind,
+                    };
+                    api.send_debug_cmd(
+                        DebugCommand::Query(query)
+                    );
+                    let result = match rx.recv() {
+                        Ok(result) => result,
+                        Err(..) => "No response received from WR".into(),
+                    };
+                    request.respond(Response::from_string(result)).ok();
                 }
                 "/debugger-socket" => {
                     // Connect to a realtime stream of events from WR. This is handled
@@ -299,4 +314,28 @@ pub fn construct_server_ws_frame(payload: &str) -> Vec<u8> {
     frame.extend_from_slice(payload_bytes);
 
     frame
+}
+
+impl From<&CompositeState> for CompositorDebugInfo {
+    fn from(state: &CompositeState) -> Self {
+        let tiles = state.tiles
+            .iter()
+            .map(|tile| {
+                CompositorDebugTile {
+                    local_rect: tile.local_rect,
+                    clip_rect: tile.device_clip_rect,
+                    device_rect: state.get_device_rect(
+                        &tile.local_rect,
+                        tile.transform_index,
+                    ),
+                    z_id: tile.z_id.0,
+                }
+            })
+            .collect();
+
+        CompositorDebugInfo {
+            enabled_z_layers: !0,
+            tiles,
+        }
+    }
 }

@@ -1031,6 +1031,8 @@ export const FormAutofillHeuristics = {
       return ["email", inferredInfo];
     }
 
+    let fathomFoundType;
+
     if (lazy.FormAutofillUtils.isFathomCreditCardsEnabled()) {
       // We don't care fields that are not supported by fathom
       const fathomFields = fields.filter(r =>
@@ -1046,7 +1048,13 @@ export const FormAutofillHeuristics = {
       }
       // At this point, use fathom's recommendation if it has one
       if (matchedFieldName) {
-        return [matchedFieldName, inferredInfo];
+        // If the name was matched, fall through and try to detect if the
+        // field also matches an address type, which may be a better match.
+        if (matchedFieldName != "cc-name") {
+          return [matchedFieldName, inferredInfo];
+        }
+
+        fathomFoundType == CC_TYPE;
       }
 
       // Continue to run regex-based heuristics even when fathom doesn't recognize
@@ -1097,7 +1105,11 @@ export const FormAutofillHeuristics = {
     }
 
     // Find a matched field name using regexp-based heuristics
-    const matchedFieldNames = this._findMatchedFieldNames(element, fields);
+    const matchedFieldNames = this._findMatchedFieldNames(
+      element,
+      fields,
+      fathomFoundType
+    );
 
     return [matchedFieldNames, inferredInfo];
   },
@@ -1299,7 +1311,7 @@ export const FormAutofillHeuristics = {
    * @param {Array<string>} fieldNames An array of field names to compare against.
    * @returns {Array} An array of the matching field names.
    */
-  _findMatchedFieldNames(element, fieldNames) {
+  _findMatchedFieldNames(element, fieldNames, foundType = "") {
     if (!fieldNames.length) {
       return [];
     }
@@ -1310,7 +1322,6 @@ export const FormAutofillHeuristics = {
       lazy.FormAutofillUtils.isCreditCardField(name) ? CC_TYPE : ADDR_TYPE,
     ]);
 
-    let foundType;
     let attribute = true;
     let matchedFieldNames = [];
 

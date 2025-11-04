@@ -472,7 +472,7 @@ export var E10SUtils = {
           ? FILE_REMOTE_TYPE
           : DEFAULT_REMOTE_TYPE;
 
-      case "about":
+      case "about": {
         let module = this.getAboutModule(aURI);
         // If the module doesn't exist then an error page will be loading, that
         // should be ok to load in any process
@@ -530,8 +530,9 @@ export var E10SUtils = {
         }
 
         return NOT_REMOTE;
+      }
 
-      case "chrome":
+      case "chrome": {
         let chromeReg = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(
           Ci.nsIXULChromeRegistry
         );
@@ -547,6 +548,7 @@ export var E10SUtils = {
         }
 
         return NOT_REMOTE;
+      }
 
       case "moz-extension":
         // Extension iframes should load in the same process

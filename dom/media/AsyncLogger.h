@@ -218,7 +218,7 @@ class AsyncLogger {
               using MS = MarkerSchema;
               MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
               schema.SetChartLabel("{marker.data.name}");
-              schema.SetTableLabel("{marker.name} - {marker.data.name}");
+              schema.SetTableLabel("{marker.data.name}");
               schema.AddKeyLabelFormat("name", "Comment", MS::Format::String,
                                        MS::PayloadFlags::Searchable);
               return schema;

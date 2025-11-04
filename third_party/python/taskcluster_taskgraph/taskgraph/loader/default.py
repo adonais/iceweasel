@@ -16,7 +16,7 @@ DEFAULT_TRANSFORMS = [
 ]
 
 
-def loader(kind, path, config, params, loaded_tasks):
+def loader(kind, path, config, params, loaded_tasks, write_artifacts):
     """
     This default loader builds on the `transform` loader by providing sensible
     default transforms that the majority of simple tasks will need.
@@ -30,4 +30,4 @@ def loader(kind, path, config, params, loaded_tasks):
                 f"Transform {t} is already present in the loader's default transforms; it must not be defined in the kind"
             )
     transform_refs.extend(DEFAULT_TRANSFORMS)
-    return transform_loader(kind, path, config, params, loaded_tasks)
+    return transform_loader(kind, path, config, params, loaded_tasks, write_artifacts)

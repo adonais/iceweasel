@@ -49,6 +49,15 @@
       align-items: center;
     }
 
+    #backup-filepicker-label {
+      text-align: start;
+      font-weight: var(--label-font-weight, normal);
+    }
+
+    #restore-from-backup-no-backup-file-link {
+      text-align: start;
+    }
+
     #backup-filepicker-input {
       flex: 1;
       margin-block: var(--space-xsmall);
@@ -65,6 +74,28 @@
       &:dir(rtl) {
         background-position: calc(100% - var(--space-small)) 50%;
       }
+
+      &:is(textarea) {
+        background-position: var(--space-small) var(--space-small);
+        background-size: var(--icon-size);
+        resize: none;
+        overflow: hidden;
+      }
+
+      &:is(textarea):dir(rtl) {
+        background-position: calc(100% - var(--space-small)) var(--space-small);
+      }
+    }
+
+    #backup-filepicker-button {
+      margin-block: var(--space-xsmall);
+    }
+
+    #restore-from-backup-backup-found-info {
+      text-align: start;
+      color: var(--text-color-deemphasized);
+      font-size: var(--font-size-small);
+      margin-top: var(--space-xsmall);
     }
   }
 
@@ -75,15 +106,23 @@
     & > #backup-password-label {
       display: flex;
       flex-direction: column;
+      text-align: start;
     }
 
     & > #backup-password-label > input {
       margin-inline-start: 0;
+      margin-block: var(--space-xsmall);
+      font-weight: var(--label-font-weight, normal);
+    }
+
+    & > #backup-password-error {
+      text-align: start;
     }
 
     & > #backup-password-description {
       color: var(--text-color-deemphasized);
       font-size: var(--font-size-small);
+      text-align: start;
     }
   }
 
@@ -99,5 +138,50 @@
   .field-error {
     color: var(--text-color-error);
     font-size: var(--font-size-small);
+    margin-block-start: var(--space-xsmall);
+  }
+}
+
+/* about:welcome embedded styles */
+:host([aboutwelcomeembedded]) {
+  #restore-from-backup-wrapper {
+    #restore-from-backup-button-group {
+      justify-content: flex-start;
+    }
+
+    #backup-filepicker-controls #backup-filepicker {
+      align-items: flex-end;
+    }
+
+    #password-entry-controls,
+    #backup-filepicker {
+      max-width: 400px;
+    }
+
+    #backup-filepicker-controls {
+      @media (800px < width <= 960px) {
+        #backup-filepicker {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        #backup-filepicker-input:is(textarea) {
+          flex: 1 1 auto;
+        }
+      }
+    }
+
+    .field-error {
+      text-align: start;
+    }
+
+    @media (width <= 800px) {
+      #restore-from-backup-button-group {
+        justify-content: center;
+      }
+
+      #restore-from-backup-confirm-button {
+        min-width: 240px;
+      }
+    }
   }
 }

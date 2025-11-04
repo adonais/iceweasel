@@ -6,6 +6,7 @@ URL = "https://workhub.transcribeme.com/Exam"
 
 USERNAME_CSS = "input[name=username]"
 PASSWORD_CSS = "input[name=password]"
+EXPIRED_CSS = "app-renewpassword"
 SIGN_IN_CSS = "#btn-login"
 UNSUPPORTED_CSS = "#chromeOnlyPopup"
 
@@ -24,7 +25,16 @@ async def does_unsupported_popup_appear(client, credentials):
     password.send_keys(credentials["password"])
     sign_in.click()
 
-    client.await_css(UNSUPPORTED_CSS)
+    unsupported, expired = client.await_first_element_of(
+        [
+            client.css(UNSUPPORTED_CSS),
+            client.css(EXPIRED_CSS),
+        ]
+    )
+    if expired:
+        pytest.skip("Your password has expired. Please visit the site and renew it.")
+        return
+
     await asyncio.sleep(1)
     return client.find_css(UNSUPPORTED_CSS, is_displayed=True)
 

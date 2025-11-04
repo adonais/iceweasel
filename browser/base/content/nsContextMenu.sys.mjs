@@ -346,7 +346,6 @@ export class nsContextMenu {
     }
 
     this.hasTextFragments = context.hasTextFragments;
-    this.textDirectiveTarget = context.textDirectiveTarget;
     this.textFragmentURL = null;
   } // setContext
 
@@ -481,7 +480,7 @@ export class nsContextMenu {
         this.onEditable ||
         this.browser.currentURI.schemeIs("view-source")
       ) &&
-      this.textDirectiveTarget;
+      (this.hasTextFragments || this.isContentSelected);
     this.showItem("context-copy-link-to-highlight", shouldShow);
     this.showItem("context-copy-clean-link-to-highlight", shouldShow);
 
@@ -1402,7 +1401,7 @@ export class nsContextMenu {
 
         count = 0;
       } else if (!menuItem.hidden) {
-        if (menuItem.localName == "menu") {
+        if (menuItem.localName == "menu" && menuItem.menupopup) {
           this.showHideSeparators(menuItem.menupopup);
         } else if (menuItem.localName == "menugroup") {
           this.showHideSeparators(menuItem);
@@ -2991,7 +2990,7 @@ export class nsContextMenu {
       );
       this.window.document.l10n.setAttributes(
         menuitem,
-        "main-context-menu-visual-search",
+        "main-context-menu-visual-search-2",
         {
           engine: visualSearchUrl.displayName || menuitem.engine.name,
         }

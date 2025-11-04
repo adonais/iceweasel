@@ -156,4 +156,14 @@ class TabsTrayTelemetryMiddlewareTest {
 
         eventStore.assertEventsEqual(listOf("bookmark_added", "bookmark_added"))
     }
+
+    @Test
+    fun `WHEN the three dot button's menu is shown THEN the metric is reported`() {
+        assertNull(TabsTray.menuOpened.testGetValue())
+
+        store.dispatch(TabsTrayAction.ThreeDotMenuShown)
+        store.waitUntilIdle()
+
+        assertNotNull(TabsTray.menuOpened.testGetValue())
+    }
 }

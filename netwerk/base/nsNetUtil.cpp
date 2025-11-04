@@ -4044,6 +4044,128 @@ void WarnIgnoredPreload(const mozilla::dom::Document& aDoc, nsIURI& aURI) {
                                   "PreloadIgnoredInvalidAttr", params);
 }
 
+bool NS_ParseUseAsDictionary(const nsACString& aValue, nsACString& aMatch,
+                             nsACString& aMatchId,
+                             nsTArray<nsCString>& aMatchDestItems,
+                             nsACString& aType) {
+  // Note: match= is required
+  // Use-As-Dictionary = %s"match" /
+  //                     %il"match-dest" /
+  //                     %s"id" /
+  //                     %t"type" ; case-sensitive
+
+  nsCOMPtr<nsISFVService> sfv = GetSFVService();
+
+  nsCOMPtr<nsISFVDictionary> parsedHeader;
+  nsresult rv;
+  if (NS_FAILED(
+          rv = sfv->ParseDictionary(aValue, getter_AddRefs(parsedHeader)))) {
+    return false;
+  }
+
+  nsCOMPtr<nsISFVItemOrInnerList> match;
+  rv = parsedHeader->Get("match"_ns, getter_AddRefs(match));
+  if (NS_FAILED(rv)) {
+    return false;  // match is required, fail if not found
+  }
+  if (nsCOMPtr<nsISFVItem> listItem = do_QueryInterface(match)) {
+    nsCOMPtr<nsISFVBareItem> value;
+    rv = listItem->GetValue(getter_AddRefs(value));
+    if (NS_FAILED(rv)) {
+      return false;
+    }
+    if (nsCOMPtr<nsISFVString> stringVal = do_QueryInterface(value)) {
+      if (NS_FAILED(stringVal->GetValue(aMatch))) {
+        return false;
+      }
+      if (aMatch.IsEmpty()) {
+        return false;  // match is required, fail if not found
+      }
+    } else {
+      return false;
+    }
+  } else {
+    return false;
+  }
+
+  nsCOMPtr<nsISFVItemOrInnerList> matchdest;
+  rv = parsedHeader->Get("match-dest"_ns, getter_AddRefs(matchdest));
+  if (NS_SUCCEEDED(rv)) {
+    if (nsCOMPtr<nsISFVInnerList> innerList = do_QueryInterface(matchdest)) {
+      // Extract the first entry of each inner list, which should contain the
+      // endpoint's URL string
+      nsTArray<RefPtr<nsISFVItem>> items;
+      if (NS_FAILED(innerList->GetItems(items))) {
+        return false;
+      }
+      // Don't check items.IsEmpty() because an empty list is valid
+
+      for (auto& item : items) {
+        nsCOMPtr<nsISFVBareItem> value;
+        if (NS_FAILED(item->GetValue(getter_AddRefs(value)))) {
+          return false;
+        }
+        if (nsCOMPtr<nsISFVString> stringVal = do_QueryInterface(value)) {
+          nsAutoCString string;
+          if (NS_FAILED(stringVal->GetValue(string))) {
+            return false;
+          }
+          aMatchDestItems.AppendElement(string);
+        } else {
+          return false;  // match-dest is an inner list of strings
+        }
+      }
+    }
+  }
+
+  nsCOMPtr<nsISFVItemOrInnerList> matchid;
+  rv = parsedHeader->Get("id"_ns, getter_AddRefs(matchid));
+  if (NS_SUCCEEDED(rv)) {
+    if (nsCOMPtr<nsISFVItem> listItem = do_QueryInterface(matchid)) {
+      nsCOMPtr<nsISFVBareItem> value;
+      rv = listItem->GetValue(getter_AddRefs(value));
+      if (NS_FAILED(rv)) {
+        return false;
+      }
+      if (nsCOMPtr<nsISFVString> stringVal = do_QueryInterface(value)) {
+        if (NS_FAILED(stringVal->GetValue(aMatchId))) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  nsCOMPtr<nsISFVItemOrInnerList> type;
+  rv = parsedHeader->Get("type"_ns, getter_AddRefs(type));
+  if (NS_SUCCEEDED(rv)) {
+    if (nsCOMPtr<nsISFVItem> listItem = do_QueryInterface(type)) {
+      nsCOMPtr<nsISFVBareItem> value;
+      rv = listItem->GetValue(getter_AddRefs(value));
+      if (NS_FAILED(rv)) {
+        return false;
+      }
+      if (nsCOMPtr<nsISFVToken> tokenVal = do_QueryInterface(value)) {
+        if (NS_FAILED(tokenVal->GetValue(aType))) {
+          return false;
+        }
+        if (!aType.Equals("raw"_ns)) {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 nsresult HasRootDomain(const nsACString& aInput, const nsACString& aHost,
                        bool* aResult) {
   if (NS_WARN_IF(!aResult)) {
@@ -4222,5 +4344,65 @@ bool IsLocalOrPrivateNetworkAccess(
   return IsPrivateNetworkAccess(aParentIPAddressSpace, aTargetIPAddressSpace) ||
          IsLocalHostAccess(aParentIPAddressSpace, aTargetIPAddressSpace);
 }
+
+Result<ActivateStorageAccess, nsresult> ParseActivateStorageAccess(
+    const nsACString& aActivateStorageAcess) {
+  nsCOMPtr<nsISFVService> sfv = GetSFVService();
+
+  // Parse storage acces values
+  //  * Activate-Storage-Access: load
+  //  * Activate-Storage-Access: retry; allowed-origin="https://foo.bar"
+  //  * Activate-Storage-Access: retry; allowed-origin=*
+  // into ActivateStorageAccess struct. See ActivateStorageAccessVariant for
+  // documentation on fields
+  nsCOMPtr<nsISFVItem> parsedHeader;
+  MOZ_TRY(sfv->ParseItem(aActivateStorageAcess, getter_AddRefs(parsedHeader)));
+
+  nsCOMPtr<nsISFVBareItem> value;
+  MOZ_TRY(parsedHeader->GetValue(getter_AddRefs(value)));
+
+  nsCOMPtr<nsISFVToken> token = do_QueryInterface(value);
+  if (!token) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  nsAutoCString tokenValue;
+  token->GetValue(tokenValue);
+
+  if (tokenValue.EqualsLiteral("load")) {
+    return ActivateStorageAccess{
+        ActivateStorageAccessVariant::Load,
+    };
+  }
+  if (!tokenValue.EqualsLiteral("retry")) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  nsCOMPtr<nsISFVParams> params;
+  MOZ_TRY(parsedHeader->GetParams(getter_AddRefs(params)));
+
+  nsCOMPtr<nsISFVBareItem> item;
+  MOZ_TRY(params->Get("allowed-origin"_ns, getter_AddRefs(item)));
+
+  // Evaluate whether the token value is a wildcard symbol.
+  nsCOMPtr<nsISFVToken> itemToken = do_QueryInterface(item);
+  if (itemToken) {
+    itemToken->GetValue(tokenValue);
+    if (!tokenValue.EqualsLiteral("*")) {
+      return Err(NS_ERROR_FAILURE);
+    }
+    return ActivateStorageAccess{
+        ActivateStorageAccessVariant::RetryAny,
+    };
+  }
+
+  // Evaluate whether the token value is an origin.
+  nsCOMPtr<nsISFVString> itemString = do_QueryInterface(item);
+  if (!itemString) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  ActivateStorageAccess result{ActivateStorageAccessVariant::RetryOrigin};
+  itemString->GetValue(result.origin);
+  return result;
+}
+
 }  // namespace net
 }  // namespace mozilla

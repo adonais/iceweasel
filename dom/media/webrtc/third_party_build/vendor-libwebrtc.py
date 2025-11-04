@@ -40,6 +40,8 @@ def get_excluded_files():
         "presubmit_test_mocks.py",
         "pylintrc",
         "api/location.h",
+        "modules/desktop_capture/linux/x11/x_error_trap.cc",
+        "modules/desktop_capture/linux/x11/x_error_trap.h",
         "rtc_base/trace_event.h",
     ]
 

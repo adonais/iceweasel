@@ -143,7 +143,7 @@ private val searchSuggestionLearnMoreLink: UiObject =
 private val searchSuggestionsSwitch: UiObject =
     mDevice.findObject(
         UiSelector()
-            .resourceId("$packageName:id/switchWidget"),
+            .resourceId("android:id/switch_widget"),
     )
 
 private val urlAutocompleteSubMenu =

@@ -76,6 +76,15 @@ class TRRServiceChannel : public HttpBaseChannel,
 
   NS_IMETHOD SetNotificationCallbacks(
       nsIInterfaceRequestor* aCallbacks) override;
+  NS_IMETHOD GetDecompressDictionary(
+      DictionaryCacheEntry** aDictionary) override {
+    *aDictionary = nullptr;
+    return NS_OK;
+  }
+  NS_IMETHOD SetDecompressDictionary(
+      DictionaryCacheEntry* aDictionary) override {
+    return NS_OK;
+  }
   // nsISupportsPriority
   NS_IMETHOD SetPriority(int32_t value) override;
   // nsIClassOfService

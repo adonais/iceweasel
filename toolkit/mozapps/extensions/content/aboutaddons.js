@@ -2219,13 +2219,14 @@ class AddonDetails extends HTMLElement {
   handleEvent(e) {
     if (e.type == "view-changed" && e.target == this.deck) {
       switch (this.deck.selectedViewName) {
-        case "release-notes":
+        case "release-notes": {
           let releaseNotes = this.querySelector("update-release-notes");
           let uri = this.releaseNotesUri;
           if (uri) {
             releaseNotes.loadForUri(uri);
           }
           break;
+        }
         case "preferences":
           if (getOptionsType(this.addon) == "inline") {
             this.inlineOptions.ensureBrowserCreated();

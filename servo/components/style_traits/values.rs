@@ -7,8 +7,6 @@
 use app_units::Au;
 use cssparser::ToCss as CssparserToCss;
 use cssparser::{serialize_string, ParseError, Parser, Token, UnicodeRange};
-#[cfg(feature = "gecko")]
-use nsstring::nsCString;
 use servo_arc::Arc;
 use std::fmt::{self, Write};
 
@@ -96,13 +94,12 @@ pub trait ToCss {
         s
     }
 
-    /// Serialize `self` in CSS syntax and return a nsCString.
+    /// Serialize `self` in CSS syntax and return a CssString.
     ///
     /// (This is a convenience wrapper for `to_css` and probably should not be overridden.)
     #[inline]
-    #[cfg(feature = "gecko")]
-    fn to_css_nscstring(&self) -> nsCString {
-        let mut s = nsCString::new();
+    fn to_css_cssstring(&self) -> CssString {
+        let mut s = CssString::new();
         self.to_css(&mut CssWriter::new(&mut s)).unwrap();
         s
     }
@@ -226,6 +223,29 @@ where
         self.inner.write_char(c)
     }
 }
+
+/// To avoid accidentally instantiating multiple monomorphizations of large
+/// serialization routines, we define explicit concrete types and require
+/// them in those routines. This avoids accidental mixing of String and
+/// nsACString arguments in Gecko, which would cause code size to blow up.
+#[cfg(feature = "gecko")]
+pub type CssStringWriter = ::nsstring::nsACString;
+
+/// String type that coerces to CssStringWriter, used when serialization code
+/// needs to allocate a temporary string. In Gecko, this is backed by
+/// nsCString, which allows the result to be passed directly to C++ without
+/// conversion or copying. This makes it suitable not only for temporary
+/// serialization but also for values that need to cross the Rust/C++ boundary.
+#[cfg(feature = "gecko")]
+pub type CssString = ::nsstring::nsCString;
+
+/// String. The comments for the Gecko types explain the need for this abstraction.
+#[cfg(feature = "servo")]
+pub type CssStringWriter = String;
+
+/// String. The comments for the Gecko types explain the need for this abstraction.
+#[cfg(feature = "servo")]
+pub type CssString = String;
 
 /// Convenience wrapper to serialise CSS values separated by a given string.
 pub struct SequenceWriter<'a, 'b: 'a, W: 'b> {
@@ -573,3 +593,82 @@ pub mod specified {
         }
     }
 }
+
+/// A property-agnostic representation of a value, used by Typed OM.
+///
+/// `TypedValue` is the internal counterpart of the various `CSSStyleValue`
+/// subclasses defined by the Typed OM specification. It captures values that
+/// can be represented independently of any particular property.
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub enum TypedValue {
+    /// A keyword value (e.g. `"block"`, `"none"`, `"thin"`).
+    ///
+    /// Keywords are stored as a `CssString` so they can be represented and
+    /// transferred independently of any specific property. This corresponds
+    /// to `CSSKeywordValue` in the Typed OM specification.
+    Keyword(CssString),
+}
+
+/// Reifies a value into its Typed OM representation.
+///
+/// This trait is the Typed OM analogue of [`ToCss`]. Instead of serializing
+/// values into CSS syntax, it converts them into [`TypedValue`]s that can be
+/// exposed to the DOM as `CSSStyleValue` subclasses.
+///
+/// This trait is derivable with `#[derive(ToTyped)]`. The derived
+/// implementation behaves as follows:
+///
+/// * For enums whose variants are all unit variants (representing keywords),
+///   it automatically reifies the value as [`TypedValue::Keyword`], using the
+///   same serialization logic as [`ToCss`].
+/// * For all other cases, the derived implementation does not attempt to reify
+///   anything and falls back to the default method (which always returns
+///   `None`).
+///
+/// Over time, the derive may be extended to cover additional common patterns,
+/// similar to how `ToCss` supports multiple attribute annotations.
+pub trait ToTyped {
+    /// Attempt to convert `self` into a [`TypedValue`].
+    ///
+    /// Returns `Some(TypedValue)` if the value can be reified into a
+    /// property-agnostic CSSStyleValue subclass. Returns `None` if the value
+    /// is unrepresentable, in which case reification produces a property-tied
+    /// CSSStyleValue instead.
+    fn to_typed(&self) -> Option<TypedValue> {
+        None
+    }
+}
+
+impl<T> ToTyped for Box<T>
+where
+    T: ?Sized + ToTyped,
+{
+    fn to_typed(&self) -> Option<TypedValue> {
+        (**self).to_typed()
+    }
+}
+
+impl ToTyped for Au {
+    fn to_typed(&self) -> Option<TypedValue> {
+        // XXX Should return TypedValue::Numeric in px units once that variant
+        // is available. Tracked in bug 1990419.
+        None
+    }
+}
+
+macro_rules! impl_to_typed_for_predefined_type {
+    ($name: ty) => {
+        impl<'a> ToTyped for $name {
+            fn to_typed(&self) -> Option<TypedValue> {
+                // XXX Should return TypedValue::Numeric with unit "number"
+                // once that variant is available. Tracked in bug 1990419.
+                None
+            }
+        }
+    };
+}
+
+impl_to_typed_for_predefined_type!(f32);
+impl_to_typed_for_predefined_type!(i8);
+impl_to_typed_for_predefined_type!(i32);

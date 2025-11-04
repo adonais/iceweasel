@@ -260,6 +260,7 @@ void InternalRequest::SetInterceptionContentPolicyType(
 }
 
 /* static */
+/* static */
 RequestDestination InternalRequest::MapContentPolicyTypeToRequestDestination(
     nsContentPolicyType aContentPolicyType) {
   switch (aContentPolicyType) {
@@ -365,6 +366,63 @@ RequestDestination InternalRequest::MapContentPolicyTypeToRequestDestination(
   }
 
   MOZ_ASSERT(false, "Unhandled nsContentPolicyType value");
+  return RequestDestination::_empty;
+}
+
+/* static */
+RequestDestination InternalRequest::MapContentPolicyTypeToRequestDestination(
+    ExtContentPolicyType aContentPolicyType) {
+  switch (aContentPolicyType) {
+    case ExtContentPolicyType::TYPE_INVALID:
+    case ExtContentPolicyType::TYPE_OTHER:
+      return RequestDestination::_empty;
+    case ExtContentPolicyType::TYPE_SCRIPT:
+      return RequestDestination::Script;
+    case ExtContentPolicyType::TYPE_IMAGE:
+      return RequestDestination::Image;
+    case ExtContentPolicyType::TYPE_STYLESHEET:
+      return RequestDestination::Style;
+    case ExtContentPolicyType::TYPE_OBJECT:
+      return RequestDestination::Object;
+    case ExtContentPolicyType::TYPE_DOCUMENT:
+      return RequestDestination::Document;
+    case ExtContentPolicyType::TYPE_SUBDOCUMENT:
+      return RequestDestination::Iframe;
+    case ExtContentPolicyType::TYPE_PING:
+    case ExtContentPolicyType::TYPE_XMLHTTPREQUEST:
+    case ExtContentPolicyType::TYPE_DTD:
+      return RequestDestination::_empty;
+    case ExtContentPolicyType::TYPE_FONT:
+      return RequestDestination::Font;
+    case ExtContentPolicyType::TYPE_MEDIA:
+    case ExtContentPolicyType::TYPE_WEBSOCKET:
+      return RequestDestination::_empty;
+    case ExtContentPolicyType::TYPE_CSP_REPORT:
+      return RequestDestination::Report;
+    case ExtContentPolicyType::TYPE_XSLT:
+      return RequestDestination::Xslt;
+    case ExtContentPolicyType::TYPE_BEACON:
+    case ExtContentPolicyType::TYPE_FETCH:
+      return RequestDestination::_empty;
+    case ExtContentPolicyType::TYPE_IMAGESET:
+      return RequestDestination::Image;
+    case ExtContentPolicyType::TYPE_WEB_MANIFEST:
+      return RequestDestination::Manifest;
+    case ExtContentPolicyType::TYPE_SAVEAS_DOWNLOAD:
+    case ExtContentPolicyType::TYPE_SPECULATIVE:
+      return RequestDestination::_empty;
+    case ExtContentPolicyType::TYPE_UA_FONT:
+      return RequestDestination::Font;
+    case ExtContentPolicyType::TYPE_PROXIED_WEBRTC_MEDIA:
+    case ExtContentPolicyType::TYPE_WEB_IDENTITY:
+    case ExtContentPolicyType::TYPE_WEB_TRANSPORT:
+      return RequestDestination::_empty;
+    case ExtContentPolicyType::TYPE_JSON:
+      return RequestDestination::Json;
+      // Do not add default: so that compilers can catch the missing case.
+  }
+
+  MOZ_ASSERT(false, "Unhandled ExContentPolicyType value");
   return RequestDestination::_empty;
 }
 

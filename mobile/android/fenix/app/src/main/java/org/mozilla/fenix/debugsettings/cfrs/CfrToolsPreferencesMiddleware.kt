@@ -22,7 +22,6 @@ class CfrToolsPreferencesMiddleware(
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main),
 ) : Middleware<CfrToolsState, CfrToolsAction> {
 
-    @Suppress("LongMethod")
     override fun invoke(
         context: MiddlewareContext<CfrToolsState, CfrToolsAction>,
         next: (CfrToolsAction) -> Unit,

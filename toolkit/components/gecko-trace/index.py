@@ -7,4 +7,5 @@
 
 gecko_trace_files = [
     "toolkit/components/gecko-trace/gecko-trace.yaml",
+    "dom/quota/gecko-trace.yaml",
 ]

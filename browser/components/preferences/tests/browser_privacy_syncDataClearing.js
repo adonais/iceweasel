@@ -199,6 +199,9 @@ add_task(async function test_syncWithCustomPrefs() {
 
   alwaysClearBox.click();
 
+  // Wait for UI to update.
+  await new Promise(resolve => requestAnimationFrame(resolve));
+
   ok(!alwaysClearBox.checked, "AlwaysClear is deselected");
   is(
     deleteOnCloseBox.checked,

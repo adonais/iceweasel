@@ -233,7 +233,7 @@ with only_when(host_is_osx | target_is_osx):
     )
 
     def mac_sdk_min_version():
-        return "15.5"
+        return "26.0"
 
     @depends(
         "--with-macos-sdk",
@@ -297,36 +297,6 @@ with only_when(host_is_osx | target_is_osx):
         return sdk
 
     set_config("MACOS_SDK_DIR", macos_sdk)
-
-
-with only_when(target_is_osx):
-    with only_when(cross_compiling):
-        option(
-            "--with-macos-private-frameworks",
-            env="MACOS_PRIVATE_FRAMEWORKS_DIR",
-            nargs=1,
-            help="Location of private frameworks to use",
-        )
-
-        @depends_if("--with-macos-private-frameworks")
-        @imports(_from="os.path", _import="isdir")
-        def macos_private_frameworks(value):
-            if value and not isdir(value[0]):
-                die(
-                    "PrivateFrameworks not found not found in %s. When using "
-                    "--with-macos-private-frameworks, you must specify a valid "
-                    "directory",
-                    value[0],
-                )
-            return value[0]
-
-    @depends(macos_private_frameworks, macos_sdk)
-    def macos_private_frameworks(value, sdk):
-        if value:
-            return value
-        return os.path.join(sdk or "/", "System/Library/PrivateFrameworks")
-
-    set_config("MACOS_PRIVATE_FRAMEWORKS_DIR", macos_private_frameworks)
 
 
 with only_when(target_is_ios):
@@ -2193,41 +2163,35 @@ include("arm.configure", when=depends(target.cpu)(lambda cpu: cpu == "arm"))
 # Libstdc++ feature detection
 # ==============================================================
 
-with only_when("--enable-debug"):
-    using_libstdcxx = try_compile(
-        language="C++",
-        includes=["new"],
-        body="#ifndef __GLIBCXX__\n#error 1\n#endif",
-        when=depends(c_compiler)(lambda c: c.type != "clang-cl"),
-    )
+using_msvc_stl = depends(cxx_compiler)(lambda c: c.type == "clang-cl")
 
-    libstdcxx_assertions = depends(when=using_libstdcxx)("_GLIBCXX_ASSERTIONS")
+using_msvc_stl_202503_or_newer = try_compile(
+    language="C++",
+    includes=["new"],
+    body="#if !defined(_MSVC_STL_UPDATE) || _MSVC_STL_UPDATE < 202503L\n#error 1\n#endif",
+    when=using_msvc_stl,
+)
 
-    using_libcxx = try_compile(
-        language="C++",
-        includes=["new"],
-        body="#ifndef _LIBCPP_VERSION\n#error 1\n#endif",
-        when=~using_libstdcxx,
-    )
+using_libstdcxx = try_compile(
+    language="C++",
+    includes=["new"],
+    body="#ifndef __GLIBCXX__\n#error 1\n#endif",
+    when=~using_msvc_stl,
+)
 
-    @depends(
-        try_compile(language="C++", body="#if _LIBCPP_STD_VER >= 18\n#error 1\n#endif"),
-        when=using_libcxx,
-    )
-    def libcxx_assertions(modern_libcxx):
-        if modern_libcxx:
-            return "_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG"
-        else:
-            return "_LIBCPP_HARDENING_MODE_DEBUG"
+using_libcxx = try_compile(
+    language="C++",
+    includes=["new"],
+    body="#ifndef _LIBCPP_VERSION\n#error 1\n#endif",
+    when=~using_libstdcxx,
+)
 
-    @depends(
-        libstdcxx_assertions,
-        libcxx_assertions,
-        when=libstdcxx_assertions | libcxx_assertions,
-    )
-    @checking("which standard c++ library assertions to use")
-    def stdlibcxx_assertions(libstdcxx, libcxx):
-        return libstdcxx or libcxx
+using_libcxx_19_or_newer = try_compile(
+    language="C++",
+    includes=["new"],
+    body="#if _LIBCPP_VERSION < 190000\n#error 1\n#endif",
+    when=using_libcxx,
+)
 
 
 @depends(
@@ -2894,10 +2858,9 @@ option(
     "--enable-optimize",
     c_compiler,
     target,
-    stdlibcxx_assertions,
 )
 def security_hardening_cflags(
-    hardening_flag, asan, debug, optimize, c_compiler, target, cxx_assert
+    hardening_flag, asan, debug, optimize, c_compiler, target
 ):
     compiler_is_gccish = c_compiler.type in ("gcc", "clang")
     mingw_clang = c_compiler.type == "clang" and target.os == "WINNT"
@@ -2919,10 +2882,6 @@ def security_hardening_cflags(
         if compiler_is_gccish and optimize and not asan:
             flags.append("-U_FORTIFY_SOURCE")
             flags.append("-D_FORTIFY_SOURCE=2")
-
-        # Lib c++ debug mode
-        if cxx_assert:
-            flags.append(f"-D{cxx_assert}")
 
         # fstack-protector ------------------------------------
         # Enable only if hardening is not disabled and ASAN is
@@ -3010,6 +2969,52 @@ set_config(
     "MOZ_TRIVIAL_AUTO_VAR_INIT",
     security_hardening_cflags.trivial_auto_var_init,
 )
+
+
+option(
+    "--enable-stl-hardening",
+    default=moz_debug,
+    help="{Enable|Disable} C++ STL hardening",
+)
+
+
+@depends(
+    "--enable-stl-hardening",
+    moz_debug,
+    using_msvc_stl_202503_or_newer,
+    using_libstdcxx,
+    using_libcxx,
+    using_libcxx_19_or_newer,
+)
+def stl_hardening_flags(
+    enabled,
+    debug,
+    using_msvc_stl_202503_or_newer,
+    using_libstdcxx,
+    using_libcxx,
+    using_libcxx_19_or_newer,
+):
+    if not enabled:
+        return
+
+    if using_msvc_stl_202503_or_newer:
+        return ["-D_MSVC_STL_HARDENING=1"]
+    if using_libstdcxx:
+        return ["-D_GLIBCXX_ASSERTIONS=1"]
+    if using_libcxx:
+        if using_libcxx_19_or_newer:
+            if debug:
+                return ["-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG"]
+            else:
+                return ["-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
+        else:
+            return ["-D_LIBCPP_ENABLE_ASSERTIONS=1"]
+
+    if enabled.origin != "default":
+        die("C++ STL does not support hardening")
+
+
+set_config("MOZ_STL_HARDENING_FLAGS", stl_hardening_flags)
 
 
 # Intel Control-flow Enforcement Technology

@@ -264,14 +264,49 @@ def gradle_android_api_lint_tasks(build_config):
 set_config("GRADLE_ANDROID_API_LINT_TASKS", gradle_android_api_lint_tasks)
 
 
+def spotless_projects():
+    return [
+        "geckoview",
+        "geckoview_example",
+        "annotations",
+        "exoplayer2",
+        "messaging_example",
+        "port_messaging_example",
+        "test_runner",
+    ]
+
+
+@dependable
+def gradle_android_format_lint_apply_tasks():
+    tasks = []
+    for project in spotless_projects():
+        for spotless_task in ["spotlessJavaApply", "spotlessKotlinApply"]:
+            tasks.append(
+                "{project}:{spotless_task}".format(
+                    project=project,
+                    spotless_task=spotless_task,
+                )
+            )
+    return tasks
+
+
 set_config(
-    "GRADLE_ANDROID_FORMAT_LINT_FIX_TASKS", ["spotlessJavaApply", "spotlessKotlinApply"]
+    "GRADLE_ANDROID_FORMAT_LINT_FIX_TASKS", gradle_android_format_lint_apply_tasks
 )
 
 
 @dependable
 def gradle_android_format_lint_check_tasks():
-    return ["spotlessJavaCheck", "spotlessKotlinCheck"]
+    tasks = []
+    for project in spotless_projects():
+        for spotless_task in ["spotlessJavaCheck", "spotlessKotlinCheck"]:
+            tasks.append(
+                "{project}:{spotless_task}".format(
+                    project=project,
+                    spotless_task=spotless_task,
+                )
+            )
+    return tasks
 
 
 set_config(

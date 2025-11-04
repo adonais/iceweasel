@@ -33,9 +33,11 @@ export interface TranslationModelRecord {
   // The full model name, e.g. "lex.50.50.deen.s2t.bin"
   name: string;
   // The BCP 47 language tag, e.g. "de"
-  fromLang: string;
+  sourceLanguage: string;
   // The BCP 47 language tag, e.g. "en"
-  toLang: string;
+  targetLanguage: string;
+  // The architecture of the model, e.g "base", "base-memory", "tiny"
+  architecture: string;
   // A model variant. This is a developer-only property that can be used in Nightly or
   // local builds to test different types of models.
   variant?: string;
@@ -43,6 +45,10 @@ export interface TranslationModelRecord {
   version: string;
   // e.g. "lex"
   fileType: string;
+  // The sha256 hash of the decompressed file
+  decompressedHash: string;
+  // The size of the decompressed file (bytes)
+  decompressedSize: number;
   // The file attachment for this record
   attachment: Attachment;
   // e.g. 1673023100578
@@ -70,6 +76,10 @@ export interface WasmRecord {
   license: string;
   // The semver number, used for handling future format changes. e.g. 1.0
   version: string;
+  // The sha256 hash of the decompressed file
+  decompressedHash: string;
+  // The size of the decompressed wasm file (bytes)
+  decompressedSize: number;
   // The file attachment for this record
   attachment: Attachment;
   // e.g. 1673455932527
@@ -202,7 +212,8 @@ interface RemoteSettingsClient {
  * A single language model file.
  */
 interface LanguageTranslationModelFile {
-  buffer: ArrayBuffer;
+  blob: Blob | null;
+  buffer?: ArrayBuffer;
   record: TranslationModelRecord;
 }
 
@@ -249,7 +260,8 @@ type LanguageTranslationModelFilesAligned = {
  * and so the engine will be mocked.
  */
 interface TranslationsEnginePayload {
-  bergamotWasmArrayBuffer: ArrayBuffer;
+  bergamotWasmBlob: Blob | null;
+  bergamotWasmArrayBuffer?: ArrayBuffer;
   translationModelPayloads: TranslationModelPayload[];
   isMocked: boolean;
 }

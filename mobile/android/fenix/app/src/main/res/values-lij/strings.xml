@@ -349,12 +349,6 @@
   <string name="tab_crash_close">Særa feuggio</string>
   <!-- Restore tab button text on the tab crash page -->
   <string name="tab_crash_restore">Repiggia feuggio</string>
-  <!--
-    Bookmarks
-
-    Confirmation message for a dialog confirming if the user wants to delete the selected folder
-  -->
-  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">T\'ê seguo de voei scancelâ sta cartella?</string>
   <!-- Screen title for adding a bookmarks folder -->
   <string name="bookmark_add_folder">Azonzi cartella</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
@@ -371,8 +365,6 @@
   <string name="bookmark_menu_open_in_private_tab_button">Arvi in feuggio privou</string>
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Scancella</string>
-  <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Sarva</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -382,31 +374,21 @@
   <string name="edit_bookmark_fragment_title">Cangia segnalibbro</string>
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Cangia cartella</string>
-  <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Intra pe vedde i seganlibbri scincronizæ</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">INDIRISSO</string>
   <!-- Bookmark FOLDER editing field label -->
   <string name="bookmark_folder_label">CARTELLA</string>
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">NOMME</string>
-  <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Azonzi cartella</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Seleçionn-a cartella</string>
-  <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Ti devi mette \'n titolo</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">Indirisso grammo</string>
-  <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Nisciun segnalibbro chi</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">Scancelou %1$s</string>
-  <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Segnalibbri scancelæ</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">ANULLA</string>
   <!--
@@ -557,10 +539,8 @@
   <!--
     Snackbar
 
-    Text shown in snackbar when user deletes a collection
+    Text shown in snackbar when user closes a tab
   -->
-  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Coleçion scancelâ</string>
-  <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Feuggio serou</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">Feuggi seræ</string>
@@ -581,8 +561,6 @@
   <string name="qr_scanner_dialog_negative">NO PERMETTE</string>
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">T\'ê seguo de voei scancelâ %1$s?</string>
-  <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Scancella</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Sto chi o l\'é \'n testo d\'ezenpio. Serve pe fa vedde comme saiâ o testo quande ti t\'aomenti o ti diminoisci o testo con sta inpostaçion.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -862,8 +840,6 @@
   <string name="confirm_clear_permission_site">Te seguo de scancelâ sto permisso pe sto scito?</string>
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Nisciunn-a eceçion pe-i sciti</string>
-  <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">T\'ê seguo de voei scancelâ sto segnalibbro?</string>
   <!--
     text shown before the issuer name to indicate who its verified by, %1$s is the name of
     the certificate authority that verified the ticket

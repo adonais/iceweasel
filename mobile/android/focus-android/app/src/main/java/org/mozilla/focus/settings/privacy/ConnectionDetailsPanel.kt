@@ -18,7 +18,6 @@ import org.mozilla.focus.ext.components
 import com.google.android.material.R as materialR
 import mozilla.components.ui.icons.R as iconsR
 
-@SuppressWarnings("LongParameterList")
 class ConnectionDetailsPanel(
     context: Context,
     private val tabTitle: String,

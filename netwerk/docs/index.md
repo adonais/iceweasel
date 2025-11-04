@@ -37,6 +37,7 @@ mochitest_with_http3.md
 sec-necko-components.md
 cache2/doc
 http/http3.md
+http/connect_udp.md
 Necko Bird’s-eye View  <https://docs.google.com/presentation/d/1BRCK4WMYg-dUy07PB5H4jFVTpc4YnkQX8f5Y3KXqCs8>
 Gecko HTTP Walkthrough <https://docs.google.com/presentation/d/1iuYNLJfz24MN9SS5ljjhG07452-kZKtXmOeGjcc1-lU/>
 http/prioritization.md

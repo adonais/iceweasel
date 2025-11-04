@@ -137,17 +137,21 @@ Function PromptForInstall
 FunctionEnd
 
 Function .onInit
+  ; After elevation, this is re-run with /UAC: on the command line. In this
+  ; case, we do not want to prompt the user---they've already been prompted!
   ${GetParameters} $0
-  ; If the only parameter is "/Prompt", ask the user before anything else.
-  ; The "only parameter" requirement is needed, because when we show the user
-  ; the UAC prompt, we restart the stub installer with the same parameters,
-  ; plus a couple of extras related to elevation.
-  ${If} $0 == "/Prompt"
-    Call PromptForInstall
-    Pop $0
-    ${If} $0 != "yes"
-      StrCpy $AbortInstallation "true"
-      Quit
+  ClearErrors
+  ${GetOptions} "$0" "/UAC:" $1
+  ${If} ${Errors}
+    ClearErrors
+    ${GetOptions} "$0" "/Prompt" $1
+    ${IfNot} ${Errors}
+      Call PromptForInstall
+      Pop $0
+      ${If} $0 != "yes"
+        StrCpy $AbortInstallation "true"
+        Quit
+      ${EndIf}
     ${EndIf}
   ${EndIf}
   Call CommonOnInit

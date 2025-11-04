@@ -31,3 +31,6 @@ browser.jar:
    content/browser/preferences/widgets/setting-control.mjs              (widgets/setting-control/setting-control.mjs)
    content/browser/preferences/widgets/setting-group.mjs                (widgets/setting-group/setting-group.mjs)
    content/browser/preferences/widgets/setting-group.css                (widgets/setting-group/setting-group.css)
+   content/browser/preferences/widgets/setting-pane.mjs                 (widgets/setting-pane/setting-pane.mjs)
+   content/browser/preferences/widgets/security-privacy-card.mjs        (widgets/security-privacy/security-privacy-card/security-privacy-card.mjs)
+   content/browser/preferences/widgets/security-privacy-card.css        (widgets/security-privacy/security-privacy-card/security-privacy-card.css)

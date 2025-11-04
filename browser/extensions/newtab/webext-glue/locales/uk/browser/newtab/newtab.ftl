@@ -88,6 +88,14 @@ newtab-confirm-delete-history-p2 = Цю дію неможливо скасува
 
 newtab-topsite-sponsored = Спонсоровано
 
+## Label used by screen readers for pinned top sites
+
+# Variables:
+#   $title (string) - The label or hostname of the site.
+topsite-label-pinned =
+    .aria-label = { $title } (закріплено)
+    .title = { $title }
+
 ## Context Menu - Action Tooltips.
 
 # General tooltip for context menus.
@@ -312,6 +320,9 @@ newtab-custom-pocket-subtitle = Добірні матеріали від { -pock
 newtab-custom-stories-toggle =
     .label = Рекомендовані матеріали
     .description = Виняткові матеріали, відібрані командою { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Історії
+newtab-custom-stories-personalized-checkbox-label = Персоналізовані історії на основі вашої активності
 newtab-custom-pocket-sponsored = Матеріали від спонсорів
 newtab-custom-pocket-show-recent-saves = Показати останні збереження
 newtab-custom-recent-title = Недавня активність
@@ -322,6 +333,19 @@ newtab-custom-weather-toggle =
 newtab-custom-trending-search-toggle =
     .label = Популярні пошукові запити
     .description = Популярні пошукові запити
+newtab-custom-widget-weather-toggle =
+    .label = Погода
+newtab-custom-widget-trending-search-toggle =
+    .label = Популярні пошукові запити
+newtab-custom-widget-lists-toggle =
+    .label = Списки
+newtab-custom-widget-timer-toggle =
+    .label = Таймер
+newtab-custom-widget-section-title = Віджети
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Закрити
+    .aria-label = Закрити меню
 newtab-custom-close-button = Закрити
 newtab-custom-settings = Керувати іншими налаштуваннями
 
@@ -334,6 +358,7 @@ newtab-wallpaper-custom-color = Виберіть колір
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = Зображення перевищує обмеження розміру файлу в { $file_size } МБ. Спробуйте вивантажити менший файл.
+newtab-wallpaper-error-upload-file-type = Не вдалося вивантажити ваш файл. Повторіть спробу з файлом зображення.
 newtab-wallpaper-error-file-type = Не вдалося вивантажити ваш файл. Повторіть спробу з іншим типом файлу.
 newtab-wallpaper-light-red-panda = Червона панда
 newtab-wallpaper-light-mountain = Біла гора
@@ -539,6 +564,12 @@ newtab-custom-wallpaper-title = Користувацькі шпалери
 newtab-custom-wallpaper-subtitle = Вивантажте власне зображення або виберіть особливий колір, щоб персоналізувати { -brand-product-name }.
 newtab-custom-wallpaper-cta = Спробувати
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-title = Оберіть шпалери, щоб персоналізувати { -brand-product-name }
+newtab-new-user-custom-wallpaper-subtitle = Персоналізуйте кожну нову вкладку завдяки власним шпалерам і кольорам.
+newtab-new-user-custom-wallpaper-cta = Спробувати зараз
+
 ## Strings for download mobile highlight
 
 newtab-download-mobile-highlight-title = Завантажити { -brand-product-name } для мобільних пристроїв
@@ -587,3 +618,76 @@ newtab-trending-searches-learn-more = Докладніше
 newtab-trending-searches-dismiss = Приховати популярні пошукові запити
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Популярні пошукові запити
+
+## Strings for task / to-do list productivity widget
+
+# "Add one" means adding a new task to the list (e.g., "Walk the dog")
+newtab-widget-lists-empty-cta = Можливості безмежні. Додайте ще.
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Нове
+newtab-widget-lists-label-beta =
+    .label = Beta
+# When tasks have been previous marked as complete, they will appear in their own separate list beneath incomplete items
+# Variables:
+#   $number (number) - Amount of list items marked complete
+newtab-widget-lists-completed-list = Завершено ({ $number })
+newtab-widget-task-list-menu-copy = Копіювати
+newtab-widget-lists-menu-edit = Редагувати назву списку
+newtab-widget-lists-menu-create = Створити новий список
+newtab-widget-lists-menu-delete = Видалити цей список
+newtab-widget-lists-menu-copy = Копіювати список до буфера обміну
+newtab-widget-lists-menu-hide = Приховати всі списки
+newtab-widget-lists-menu-learn-more = Докладніше
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Додати запис
+newtab-widget-lists-input-error = Введіть текст, щоб додати запис
+newtab-widget-lists-input-menu-open-link = Відкрити посилання
+newtab-widget-lists-input-menu-move-up = Посунути вгору
+newtab-widget-lists-input-menu-move-down = Посунути вниз
+newtab-widget-lists-input-menu-delete = Видалити
+newtab-widget-lists-input-menu-edit = Редагувати
+newtab-widget-lists-name-label-default =
+    .label = Список завдань
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Список завдань
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Новий список
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Таймер
+newtab-widget-timer-notification-focus = Час зосередження вичерпано. Гарна робота. Потрібна перерва?
+newtab-widget-timer-notification-break = Ваша перерва закінчилася. Готові зосередитися?
+newtab-widget-timer-notification-warning = Сповіщення вимкнено
+newtab-widget-timer-mode-focus =
+    .label = Зосередження
+newtab-widget-timer-mode-break =
+    .label = Перерва
+newtab-widget-timer-play =
+    .title = Відтворити
+newtab-widget-timer-pause =
+    .title = Призупинити
+newtab-widget-timer-label-play =
+    .label = Відтворити
+newtab-widget-timer-label-pause =
+    .label = Призупинити
+newtab-widget-timer-reset =
+    .title = Скинути
+newtab-widget-timer-menu-notifications = Вимкнути сповіщення
+newtab-widget-timer-menu-notifications-on = Увімкнути сповіщення
+newtab-widget-timer-menu-hide = Приховати таймер
+newtab-widget-timer-menu-learn-more = Докладніше
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Прокрутіть, щоб переглянути більше
+newtab-widget-message-title = Будьте зосередженими завдяки спискам і вбудованому таймеру
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Миттєві нагадування, щоденні справи, сеанси зосередження і перерви – контролюйте свої завдання і виконуйте їх вчасно.
+newtab-promo-card-title = Підтримка { -brand-product-name }
+newtab-promo-card-body = Наші спонсори підтримують нашу місію зі створення кращого інтернету
+newtab-promo-card-cta = Докладніше
+newtab-promo-card-dismiss-button =
+    .title = Відхилити
+    .aria-label = Відхилити

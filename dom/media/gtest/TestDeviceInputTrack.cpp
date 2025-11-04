@@ -55,7 +55,7 @@ class MockGraphImpl : public MediaTrackGraphImpl {
 
     MOCK_METHOD0(Start, void());
     MOCK_METHOD0(Shutdown, void());
-    MOCK_METHOD0(IterationDuration, uint32_t());
+    MOCK_METHOD0(IterationDuration, TimeDuration());
     MOCK_METHOD0(EnsureNextIteration, void());
     MOCK_CONST_METHOD0(OnThread, bool());
     MOCK_CONST_METHOD0(ThreadRunning, bool());

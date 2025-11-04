@@ -1748,7 +1748,6 @@ fuzzy(0-1,0-5) == 956513-1.svg 956513-1-ref.svg
 fuzzy(0-1,0-80) == 961887-1.html 961887-1-ref.html
 == 961887-2.html 961887-2-ref.html
 == 961887-3.html 961887-3-ref.html
-fuzzy(0-1,0-2) pref(layout.css.overflow-clip-box.enabled,true) pref(layout.forms.reveal-password-button.enabled,false) == 966992-1.html 966992-1-ref.html
 == 966510-1.html 966510-1-ref.html
 == 966510-2.html 966510-2-ref.html
 fuzzy(0-1,0-123) == 978911-1.svg 978911-1-ref.svg
@@ -1763,7 +1762,6 @@ fuzzy(0-1,0-123) == 978911-1.svg 978911-1-ref.svg
 == 987680-1.html 987680-1-ref.html
 # Fuzzy on WR due to alpha blending
 fuzzy(0-1,0-1473) == 991046-1.html 991046-1-ref.html
-pref(layout.css.overflow-clip-box.enabled,true) fuzzy(0-2,0-845) == 992447.html 992447-ref.html
 == 1003425-1.html 1003425-1-ref.html
 == 1003425-2.html 1003425-2-ref.html
 == 1005405-1.html 1005405-1-ref.html
@@ -1902,7 +1900,6 @@ fuzzy(0-1,0-1) == 1202512-2.html 1202512-2-ref.html
 == 1219985-7.html 1219985-ref-transparent-clear.html
 == 1219985-8.html 1219985-ref-opaque-clear.html
 == 1222226-1.html 1222226-1-ref.html
-pref(layout.css.overflow-clip-box.enabled,true) == 1226278.html 1226278-ref.html
 == 1230466.html about:blank
 random-if(gtkWidget) != 1238243-1.html 1238243-1-notref.html # may fail on Linux, depending on Korean fonts available
 == 1238243-2.html 1238243-2-ref.html

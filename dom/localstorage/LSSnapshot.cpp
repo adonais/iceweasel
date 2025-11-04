@@ -22,6 +22,7 @@
 
 #include "ErrorList.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/GeckoTrace.h"
 #include "mozilla/MacroForEach.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
@@ -326,6 +327,8 @@ nsresult LSSnapshot::GetKeys(nsTArray<nsString>& aKeys) {
 
 nsresult LSSnapshot::SetItem(const nsAString& aKey, const nsAString& aValue,
                              LSNotifyInfo& aNotifyInfo) {
+  GECKO_TRACE_SCOPE("dom::localstorage", "LSSnapshot::SetItem");
+
   AssertIsOnOwningThread();
   MOZ_ASSERT(mActor);
   MOZ_ASSERT(mInitialized);
@@ -381,6 +384,8 @@ nsresult LSSnapshot::SetItem(const nsAString& aKey, const nsAString& aValue,
       quota::ScopedLogExtraInfo scope{
           quota::ScopedLogExtraInfo::kTagContextTainted,
           "dom::localstorage::LSSnapshot::SetItem::UpdateUsage"_ns};
+      GECKO_TRACE_SCOPE("dom::localstorage",
+                        "LSSnapshot::SetItem::UpdateUsage");
       QM_TRY(MOZ_TO_RESULT(UpdateUsage(delta)), QM_PROPAGATE, QM_NO_CLEANUP,
              ([]() {
                static uint32_t counter = 0u;

@@ -231,7 +231,7 @@ class LintRoller:
                 setupargs.update(self._setupargs)
                 setupargs["name"] = linter["name"]
                 setupargs["log"] = logging.LoggerAdapter(
-                    logger, {"lintname": linter["name"]}
+                    logger, {"lintname": linter["name"], "pid": os.getpid()}
                 )
                 if virtualenv_manager is not None:
                     setupargs["virtualenv_manager"] = virtualenv_manager

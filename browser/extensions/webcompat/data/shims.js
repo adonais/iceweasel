@@ -8,127 +8,6 @@
 
 const AVAILABLE_SHIMS = [
   {
-    hiddenInAboutCompat: true,
-    id: "LiveTestShim",
-    platform: "all",
-    name: "Live test shim",
-    bug: "livetest",
-    file: "live-test-shim.js",
-    matches: ["*://webcompat-addon-testbed.herokuapp.com/shims_test.js"],
-    needsShimHelpers: ["getOptions", "optIn"],
-  },
-  {
-    hiddenInAboutCompat: true,
-    id: "MochitestShim",
-    platform: "all",
-    branch: ["all:ignoredOtherPlatform"],
-    name: "Test shim for Mochitests",
-    bug: "mochitest",
-    file: "mochitest-shim-1.js",
-    matches: [
-      "*://example.com/browser/browser/extensions/webcompat/tests/browser/shims_test.js",
-    ],
-    needsShimHelpers: ["getOptions", "optIn"],
-    options: {
-      simpleOption: true,
-      complexOption: { a: 1, b: "test" },
-      branchValue: { value: true, branches: [] },
-      platformValue: { value: true, platform: "neverUsed" },
-    },
-    unblocksOnOptIn: ["*://trackertest.org/*"],
-  },
-  {
-    hiddenInAboutCompat: true,
-    disabled: true,
-    id: "MochitestShim2",
-    platform: "all",
-    name: "Test shim for Mochitests (disabled by default)",
-    bug: "mochitest",
-    file: "mochitest-shim-2.js",
-    matches: [
-      "*://example.com/browser/browser/extensions/webcompat/tests/browser/shims_test_2.js",
-    ],
-    needsShimHelpers: ["getOptions", "optIn"],
-    options: {
-      simpleOption: true,
-      complexOption: { a: 1, b: "test" },
-      branchValue: { value: true, branches: [] },
-      platformValue: { value: true, platform: "neverUsed" },
-    },
-    unblocksOnOptIn: ["*://trackertest.org/*"],
-  },
-  {
-    hiddenInAboutCompat: true,
-    id: "MochitestShim3",
-    platform: "all",
-    name: "Test shim for Mochitests (host)",
-    bug: "mochitest",
-    file: "mochitest-shim-3.js",
-    notHosts: ["example.com"],
-    matches: [
-      "*://example.com/browser/browser/extensions/webcompat/tests/browser/shims_test_3.js",
-    ],
-  },
-  {
-    hiddenInAboutCompat: true,
-    id: "MochitestShim4",
-    platform: "all",
-    name: "Test shim for Mochitests (notHost)",
-    bug: "mochitest",
-    file: "mochitest-shim-3.js",
-    hosts: ["example.net"],
-    matches: [
-      "*://example.com/browser/browser/extensions/webcompat/tests/browser/shims_test_3.js",
-    ],
-  },
-  {
-    hiddenInAboutCompat: true,
-    id: "MochitestShim5",
-    platform: "all",
-    name: "Test shim for Mochitests (branch)",
-    bug: "mochitest",
-    file: "mochitest-shim-3.js",
-    branches: ["never matches"],
-    matches: [
-      "*://example.com/browser/browser/extensions/webcompat/tests/browser/shims_test_3.js",
-    ],
-  },
-  {
-    hiddenInAboutCompat: true,
-    id: "MochitestShim6",
-    platform: "never matches",
-    name: "Test shim for Mochitests (platform)",
-    bug: "mochitest",
-    file: "mochitest-shim-3.js",
-    matches: [
-      "*://example.com/browser/browser/extensions/webcompat/tests/browser/shims_test_3.js",
-    ],
-  },
-  {
-    hiddenInAboutCompat: true,
-    id: "EmbedTestShim",
-    platform: "desktop",
-    name: "Test shim for smartblock embed unblocking",
-    bug: "1892175",
-    runFirst: "embed-test-shim.js",
-    // Blank stub file just so we run the script above when the matched script
-    // files get blocked.
-    file: "empty-script.js",
-    matches: [
-      "https://itisatracker.org/browser/browser/extensions/webcompat/tests/browser/embed_test.js",
-    ],
-    // Use instagram logo as an example
-    logos: ["instagram.svg"],
-    needsShimHelpers: [
-      "embedClicked",
-      "smartblockEmbedReplaced",
-      "smartblockGetFluentString",
-    ],
-    isSmartblockEmbedShim: true,
-    onlyIfBlockedByETP: true,
-    unblocksOnOptIn: ["*://itisatracker.org/*"],
-  },
-  {
     id: "AddThis",
     platform: "all",
     name: "AddThis",
@@ -512,6 +391,8 @@ const AVAILABLE_SHIMS = [
       "wjactv.com",
       "keprtv.com",
       "katu.com",
+      "kfoxtv.com",
+      "thenationaldesk.com",
     ],
     matches: [
       "*://www.googletagservices.com/tag/js/gpt.js*",

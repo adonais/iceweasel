@@ -186,6 +186,7 @@ export const ReportContent = spocs => {
               id="report-group"
               data-l10n-id="newtab-report-ads-why-reporting"
               className="report-ads-options"
+              headingLevel="3"
             >
               <moz-radio
                 data-l10n-id="newtab-report-ads-reason-not-interested"
@@ -209,6 +210,7 @@ export const ReportContent = spocs => {
               id="report-group"
               data-l10n-id="newtab-report-content-why-reporting-this"
               className="report-content-options"
+              headingLevel="3"
             >
               <moz-radio
                 data-l10n-id="newtab-report-content-wrong-category"

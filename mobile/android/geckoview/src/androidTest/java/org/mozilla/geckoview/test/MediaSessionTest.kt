@@ -995,10 +995,6 @@ class MediaSessionTest : BaseSessionTest() {
 
     @Test
     fun fullscreenVideoWithActivated() {
-        // Bug 1981579
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            assumeThat(sessionRule.env.isIsolatedProcess, equalTo(false))
-        }
         sessionRule.setPrefsUntilTestEnd(
             mapOf(
                 "media.autoplay.default" to 0,

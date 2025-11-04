@@ -1,6 +1,7 @@
 if (typeof enableExecutionTracing == "undefined") {
   quit();
 }
+const VALUE_SUMMARY_VERSION = 2;
 
 const JSVAL_TYPE_DOUBLE = 0x00;
 const JSVAL_TYPE_INT32 = 0x01;
@@ -167,7 +168,7 @@ g.disableExecutionTracing();
 assertEq(trace.length, 1);
 
 let versionReader = new BufferReader(trace[0].valueBuffer, 0);
-assertEq(versionReader.readUint32(), 1);
+assertEq(versionReader.readUint32(), VALUE_SUMMARY_VERSION);
 
 function testSingleArgument(event, cb) {
   assertEq(typeof event.values, "number");

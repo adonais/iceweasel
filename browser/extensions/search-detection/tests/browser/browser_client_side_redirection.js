@@ -108,6 +108,7 @@ async function testClientSideRedirect({
     Assert.equal(1, ssr.length);
     Assert.equal(addonId, ssr[0].extra.addonId);
     Assert.equal(addonVersion, ssr[0].extra.addonVersion);
+    Assert.equal("example.org", ssr[0].extra.origin);
     Assert.equal(String(sameSiteParamChanged), ssr[0].extra.paramChanged);
   }
 }

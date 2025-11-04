@@ -7,6 +7,8 @@
 #include "NativeFontResourceFreeType.h"
 #include "UnscaledFontFreeType.h"
 
+#include "mozilla/fallible.h"
+
 namespace mozilla::gfx {
 
 NativeFontResourceFreeType::NativeFontResourceFreeType(

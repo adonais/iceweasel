@@ -7,9 +7,14 @@
 /* import-globals-from head_cache.js */
 /* import-globals-from head_cookies.js */
 /* import-globals-from head_channels.js */
-/* import-globals-from head_servers.js */
-
 /* globals require, __dirname, global, Buffer, process */
+
+var { NodeHTTP2Server: TRRNodeHttp2Server, NodeServer: TRRNodeServer } =
+  ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
+
+const { AppConstants: TRRAppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 
 /// Sets the TRR related prefs and adds the certificate we use for the HTTP2
 /// server.
@@ -25,7 +30,7 @@ function trr_test_setup() {
 
   Services.prefs.setBoolPref("network.http.http2.enabled", true);
   // the TRR server is on 127.0.0.1
-  if (AppConstants.platform == "android") {
+  if (TRRAppConstants.platform == "android") {
     Services.prefs.setCharPref("network.trr.bootstrapAddr", "10.0.2.2");
   } else {
     Services.prefs.setCharPref("network.trr.bootstrapAddr", "127.0.0.1");
@@ -382,7 +387,7 @@ function getRequestCount(domain, type) {
 }
 
 // A convenient wrapper around NodeServer
-class TRRServer extends NodeHTTP2Server {
+class TRRServer extends TRRNodeHttp2Server {
   /// Starts the server
   /// @port - default 0
   ///    when provided, will attempt to listen on that port.
@@ -520,7 +525,7 @@ class TRRProxy {
   // Starts the proxy
   async start(port) {
     info("TRRProxy start!");
-    this.processId = await NodeServer.fork();
+    this.processId = await TRRNodeServer.fork();
     info("processid=" + this.processId);
     await this.execute(TRRProxyCode);
     this.port = await this.execute(`TRRProxyCode.startServer(${port})`);
@@ -529,19 +534,19 @@ class TRRProxy {
 
   // Executes a command in the context of the node server
   async execute(command) {
-    return NodeServer.execute(this.processId, command);
+    return TRRNodeServer.execute(this.processId, command);
   }
 
   // Stops the server
   async stop() {
     if (this.processId) {
-      await NodeServer.execute(this.processId, `TRRProxyCode.closeProxy()`);
-      await NodeServer.kill(this.processId);
+      await TRRNodeServer.execute(this.processId, `TRRProxyCode.closeProxy()`);
+      await TRRNodeServer.kill(this.processId);
     }
   }
 
   async request_count() {
-    let data = await NodeServer.execute(
+    let data = await TRRNodeServer.execute(
       this.processId,
       `TRRProxyCode.proxyRequestCount()`
     );

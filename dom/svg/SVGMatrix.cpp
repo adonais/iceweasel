@@ -8,7 +8,7 @@
 
 #include <math.h>
 
-#include "mozilla/FloatingPoint.h"
+#include "mozilla/dom/DOMMatrix.h"
 #include "mozilla/dom/SVGMatrixBinding.h"
 #include "nsError.h"
 
@@ -91,8 +91,17 @@ void SVGMatrix::SetF(float aF, ErrorResult& aRv) {
   SetMatrix(mx);
 }
 
-already_AddRefed<SVGMatrix> SVGMatrix::Multiply(SVGMatrix& aMatrix) {
-  return do_AddRef(new SVGMatrix(aMatrix.GetMatrix() * GetMatrix()));
+already_AddRefed<SVGMatrix> SVGMatrix::Multiply(const DOMMatrix2DInit& aMatrix,
+                                                ErrorResult& aRv) {
+  auto matrix2D = DOMMatrixReadOnly::ToValidatedMatrixDouble(aMatrix, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+  if (!matrix2D.IsFinite()) {
+    aRv.ThrowTypeError<MSG_NOT_FINITE>("SVGMatrix::Multiply matrix");
+    return nullptr;
+  }
+  return do_AddRef(new SVGMatrix(matrix2D * GetMatrix()));
 }
 
 already_AddRefed<SVGMatrix> SVGMatrix::Inverse(ErrorResult& aRv) {

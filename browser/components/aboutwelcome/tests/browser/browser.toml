@@ -52,6 +52,8 @@ skip-if = ["os == 'linux' && bits == 64"] # Bug 1757875
 ["browser_aboutwelcome_observer.js"]
 https_first_disabled = true
 
+["browser_aboutwelcome_restore_backup.js"]
+
 ["browser_aboutwelcome_rtamo.js"]
 run-if = [
   "os == 'win'", #  import is only available on Windows and macOS

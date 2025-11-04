@@ -166,7 +166,7 @@ KeyShortcuts.parseElectronKey = function (str) {
   return shortcut;
 };
 
-KeyShortcuts.stringify = function (shortcut) {
+KeyShortcuts.stringifyShortcut = function (shortcut) {
   if (shortcut === null) {
     // parseElectronKey might return null in several situations.
     return "";
@@ -193,6 +193,39 @@ KeyShortcuts.stringify = function (shortcut) {
   }
   list.push(key);
   return list.join("+");
+};
+
+/*
+ * Converts an Electron accelerator string into
+ * a pretty Unicode-based hotkey string
+ *
+ * on MacOS:
+ * CommandOrControl+, CmdOrCtrl+, Command+, Control+ => ⌘
+ * Shift+ => ⇧
+ * Alt+ => ⌥
+ *
+ * on other OS:
+ * CommandOrControl+, CmdOrCtrl+ => Ctrl+
+ * Shift+ => Shift+
+ *
+ * @param {string} electronKeyString
+ *        String containing the Electron accelerator string
+ * @returns Unicode based hotkey string
+ */
+KeyShortcuts.stringifyFromElectronKey = function (electronKeyString) {
+  // Debugger stores its L10N globally
+  const ctrlString = globalThis.L10N ? globalThis.L10N.getStr("ctrl") : "Ctrl";
+
+  if (isOSX) {
+    return electronKeyString
+      .replace(/Shift\+/g, "\u21E7")
+      .replace(/Command\+|Cmd\+/g, "\u2318")
+      .replace(/CommandOrControl\+|CmdOrCtrl\+/g, "\u2318")
+      .replace(/Alt\+/g, "\u2325");
+  }
+  return electronKeyString
+    .replace(/CommandOrControl\+|CmdOrCtrl\+/g, `${ctrlString}+`)
+    .replace(/Shift\+/g, "Shift+");
 };
 
 /*

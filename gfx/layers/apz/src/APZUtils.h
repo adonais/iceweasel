@@ -21,7 +21,6 @@
 #include "mozilla/gfx/CompositorHitTestInfo.h"
 #include "mozilla/gfx/Point.h"
 #include "mozilla/layers/APZPublicUtils.h"  // for DispatchToContent
-#include "mozilla/DefineEnum.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/FloatingPoint.h"
 

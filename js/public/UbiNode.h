@@ -383,11 +383,11 @@ class StackFrame {
   // virtual constructors. See the comment above Node's copy constructor for
   // more details; that comment applies here as well.
   StackFrame(const StackFrame& rhs) {
-    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    memcpy(storage.bytes(), rhs.storage.bytes(), sizeof(storage));
   }
 
   StackFrame& operator=(const StackFrame& rhs) {
-    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    memcpy(storage.bytes(), rhs.storage.bytes(), sizeof(storage));
     return *this;
   }
 
@@ -755,11 +755,11 @@ class Node {
   // through vtables for copying and assignment that are just going to move
   // two words around. The compiler knows how to optimize memcpy.
   Node(const Node& rhs) {
-    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    memcpy(storage.bytes(), rhs.storage.bytes(), sizeof(storage));
   }
 
   Node& operator=(const Node& rhs) {
-    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    memcpy(storage.bytes(), rhs.storage.bytes(), sizeof(storage));
     return *this;
   }
 

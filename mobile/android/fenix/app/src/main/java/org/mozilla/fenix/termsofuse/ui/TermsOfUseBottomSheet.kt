@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
@@ -22,15 +24,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Devices.TABLET
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.theme.FirefoxTheme
+
+private val sheetMaxWidth = 450.dp
 
 /**
  * The terms of service prompt.
@@ -89,6 +96,7 @@ private fun BottomSheet(
 ) {
     ModalBottomSheet(
         onDismissRequest = { onDismissRequest() },
+        sheetMaxWidth = sheetMaxWidth,
         sheetState = sheetState,
         containerColor = FirefoxTheme.colors.layer2,
     ) {
@@ -116,13 +124,12 @@ private fun BottomSheetContent(
     onLearnMoreClicked: () -> Unit = {},
 ) {
     val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                horizontal = 32.dp,
-            ),
+            .verticalScroll(scrollState)
+            .padding(horizontal = 32.dp),
     ) {
         Image(
             painter = painterResource(id = R.drawable.ic_firefox),
@@ -132,7 +139,7 @@ private fun BottomSheetContent(
                 .align(Alignment.CenterHorizontally),
         )
 
-        Spacer(Modifier.size(20.dp))
+        Spacer(Modifier.size(16.dp))
 
         Text(
             modifier = Modifier
@@ -142,7 +149,7 @@ private fun BottomSheetContent(
             color = FirefoxTheme.colors.textPrimary,
         )
 
-        Spacer(Modifier.size(20.dp))
+        Spacer(Modifier.size(16.dp))
 
         BottomSheetMessage(
             onTermsOfUseClicked = onTermsOfUseClicked,
@@ -150,9 +157,9 @@ private fun BottomSheetContent(
             onLearnMoreClicked = onLearnMoreClicked,
         )
 
-        Spacer(Modifier.size(34.dp))
+        Spacer(Modifier.size(16.dp))
 
-        PrimaryButton(
+        FilledButton(
             modifier = Modifier.fillMaxWidth(),
             text = stringResource(R.string.terms_of_use_prompt_accept),
         ) {
@@ -164,8 +171,6 @@ private fun BottomSheetContent(
                 onDismiss()
             }
         }
-
-        Spacer(Modifier.size(10.dp))
 
         TextButton(
             modifier = Modifier.fillMaxWidth(),
@@ -218,7 +223,7 @@ private fun BottomSheetMessage(
         style = FirefoxTheme.typography.body2.copy(
             color = FirefoxTheme.colors.textSecondary,
         ),
-        shouldApplyAccessibleSize = true,
+        linkTextDecoration = TextDecoration.Underline,
     )
 
     Spacer(Modifier.size(20.dp))
@@ -234,14 +239,64 @@ private fun BottomSheetMessage(
         style = FirefoxTheme.typography.body2.copy(
             color = FirefoxTheme.colors.textSecondary,
         ),
-        shouldApplyAccessibleSize = true,
+        linkTextDecoration = TextDecoration.Underline,
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@FlexibleWindowLightDarkPreview
+@PreviewLightDark
 @Composable
-private fun TermsOfUseBottomSheetPreview() {
+private fun TermsOfUseBottomSheetMobilePortraitPreview() {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    FirefoxTheme {
+        BottomSheet(sheetState = sheetState)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Preview copied from [androidx.compose.ui.tooling.preview.PreviewScreenSizes].
+ */
+@Preview(
+    name = "Phone - Landscape",
+    device = "spec:width=411dp,height=891dp,orientation=landscape,dpi=420",
+    showSystemUi = true,
+)
+@Composable
+private fun TermsOfUseBottomSheetMobileLandscapePreview() {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    FirefoxTheme {
+        BottomSheet(sheetState = sheetState)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Preview copied from [androidx.compose.ui.tooling.preview.PreviewScreenSizes].
+ */
+@Preview(
+    name = "Tablet - Portrait",
+    device = "spec:width=1280dp,height=800dp,dpi=240,orientation=portrait",
+    showSystemUi = true,
+)
+@Composable
+private fun TermsOfUseBottomSheetTabletPortraitPreview() {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    FirefoxTheme {
+        BottomSheet(sheetState = sheetState)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * Preview copied from [androidx.compose.ui.tooling.preview.PreviewScreenSizes].
+ */
+@Preview(name = "Tablet - Landscape", device = TABLET, showSystemUi = true)
+@Composable
+private fun TermsOfUseBottomSheetTabletLandscapePreview() {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     FirefoxTheme {

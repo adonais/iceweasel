@@ -1,0 +1,26 @@
+[DEFAULT]
+subsuite = "a11y"
+support-files = [
+  "head.js",
+  "!/accessible/tests/browser/shared-head.js",
+  "!/accessible/tests/mochitest/*.js",
+  "!/accessible/tests/mochitest/events/slow_image.sjs",
+  "!/accessible/tests/mochitest/letters.gif",
+  "!/accessible/tests/mochitest/moz.png",
+]
+prefs = [
+  # Required for the eval in invokeContentTask in shared-head.js
+  "security.allow_eval_with_system_principal=true",
+  # Required for CSS positioning
+  "layout.css.anchor-positioning.enabled=true"
+]
+
+["browser_anchor_positioning.js"]
+
+["browser_popover_and_command.js"]
+
+["browser_relations_general.js"]
+
+["browser_relations_general_002.js"]
+
+["browser_shadow_dom_and_custom_elements.js"]

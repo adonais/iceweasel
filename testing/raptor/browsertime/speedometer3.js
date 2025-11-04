@@ -61,10 +61,13 @@ module.exports = logTest(
         await commands.measure.start(url);
         await startMeasurements(context, commands);
 
-        // A feature mask of 0x1C000000 will enable only
-        // the GC perfstats counters.
+        // Measure the GC perfstats counters over the entire sp3 run.
         if (context.options.browser === "firefox") {
-          await commands.perfStats.start(0x1c_00_00_00);
+          await commands.perfStats.start([
+            "MinorGC",
+            "MajorGC",
+            "NonIdleMajorGC",
+          ]);
         }
 
         await commands.js.runAndWait(`

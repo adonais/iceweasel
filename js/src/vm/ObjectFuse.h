@@ -28,8 +28,8 @@
 // to be mutated) so that IC stubs can guard on this and return the constant
 // property value. In Warp, the guard becomes an invalidation dependency and the
 // property value is a constant in the MIR graph, enabling additional compiler
-// optimizations. ObjectFuse is currently used for the global object and the
-// global lexical environment.
+// optimizations. ObjectFuse is currently used for the global object, the
+// global lexical environment, and certain builtin constructors and prototypes.
 //
 // Each ObjectFuse has a generation counter. When the generation is bumped, IC
 // guards will fail and dependent Ion scripts that are affected by the operation

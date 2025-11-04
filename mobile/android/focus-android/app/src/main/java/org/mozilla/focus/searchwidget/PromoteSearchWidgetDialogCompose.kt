@@ -27,7 +27,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -53,7 +52,14 @@ private fun PromoteSearchWidgetDialogComposePreview() {
     }
 }
 
-@Suppress("LongMethod")
+/**
+ * Composable that displays a dialog to promote the search widget.
+ *
+ * This dialog informs the user about the search widget and provides an option to add it.
+ *
+ * @param onAddSearchWidgetButtonClick A lambda function to be executed when the "Add Widget" button is clicked.
+ * @param onDismiss A lambda function to be executed when the dialog is dismissed.
+ */
 @Composable
 fun PromoteSearchWidgetDialogCompose(
     onAddSearchWidgetButtonClick: () -> Unit,
@@ -103,45 +109,54 @@ fun PromoteSearchWidgetDialogCompose(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text(
-                            text = stringResource(
-                                id = R.string.promote_search_widget_dialog_title,
-                            ),
-                            modifier = Modifier
-                                .padding(16.dp),
-                            color = focusColors.dialogTextColor,
-                            textAlign = TextAlign.Center,
-                            style = focusTypography.dialogTitle,
-                        )
-                        Text(
-                            text = stringResource(
-                                id = R.string.promote_search_widget_dialog_subtitle,
-                                LocalContext.current.getString(R.string.onboarding_short_app_name),
-                            ),
-                            modifier = Modifier
-                                .padding(top = 16.dp, start = 16.dp, end = 16.dp),
-                            color = focusColors.dialogTextColor,
-                            textAlign = TextAlign.Center,
-                            style = focusTypography.dialogContent,
-                        )
-                        Image(
-                            painter = painterResource(R.drawable.focus_search_widget_promote_dialog),
-                            contentDescription = LocalContext.current.getString(
-                                R.string.promote_search_widget_dialog_picture_content_description,
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(start = 10.dp, end = 10.dp)
-                                .background(
-                                    colorResource(id = R.color.promote_search_widget_dialog_background),
-                                ),
-                        )
+                        DialogTitle()
+                        DialogSubtitle()
+                        DialogImage()
                         ComponentAddWidgetButton({ onAddSearchWidgetButtonClick() }, { onDismiss() }, openDialog)
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun DialogTitle() {
+    Text(
+        text = stringResource(id = R.string.promote_search_widget_dialog_title),
+        modifier = Modifier.padding(16.dp),
+        color = focusColors.dialogTextColor,
+        textAlign = TextAlign.Center,
+        style = focusTypography.dialogTitle,
+    )
+}
+
+@Composable
+private fun DialogSubtitle() {
+    Text(
+        text = stringResource(
+            id = R.string.promote_search_widget_dialog_subtitle,
+            stringResource(R.string.onboarding_short_app_name),
+        ),
+        modifier = Modifier.padding(top = 16.dp, start = 16.dp, end = 16.dp),
+        color = focusColors.dialogTextColor,
+        textAlign = TextAlign.Center,
+        style = focusTypography.dialogContent,
+    )
+}
+
+@Composable
+private fun DialogImage() {
+    Image(
+        painter = painterResource(R.drawable.focus_search_widget_promote_dialog),
+        contentDescription = stringResource(R.string.promote_search_widget_dialog_picture_content_description),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 10.dp, end = 10.dp)
+            .background(
+                colorResource(id = R.color.promote_search_widget_dialog_background),
+            ),
+    )
 }
 
 @Composable

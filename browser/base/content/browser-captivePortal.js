@@ -288,7 +288,7 @@ var CaptivePortalWatcher = {
       case "activate":
         this._delayedCaptivePortalDetected();
         break;
-      case "TabSelect":
+      case "TabSelect": {
         if (this._notificationPromise) {
           await this._notificationPromise;
         }
@@ -312,6 +312,7 @@ var CaptivePortalWatcher = {
           button.style.visibility = "visible";
         }
         break;
+      }
     }
   },
 

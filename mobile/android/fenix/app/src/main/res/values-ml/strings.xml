@@ -290,9 +290,9 @@
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">വഴികാട്ടൽവ്യവസ്ഥ</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button">തുണ</string>
+  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">തുണ</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button">ക്രമീകരണങ്ങള്‍</string>
+  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">ക്രമീകരണങ്ങള്‍</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
   <string name="browser_extensions_menu_handlebar_content_description">വിപുലീകരണ കുറിപ്പടി കടലാസു് അടയ്ക്കുക</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
@@ -327,8 +327,6 @@
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="browser_menu_default_banner_title">%1$s-നെ തനിമട്ടാക്കുക</string>
-  <!-- Label text within the set as default banner -->
-  <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">ഞൊടികൾ മാത്രമെടുക്കും. എപ്പോഴെങ്കിലും മാറ്റാം.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">ഉടൻ, സ്വകാര്യം, താങ്ങൾക്കുവേണ്ടി\u0020</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
@@ -438,15 +436,15 @@
     Title for set firefox as default browser screen used by Nimbus experiments.
     Note: The word "Firefox" should NOT be translated
   -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources">ദശലക്ഷക്കണക്കിന് ആൾക്കാർ ഫയർഫോക്സിനെ സ്നേഹിക്കുന്നെന്തിന എന്നു് കണ്ടുപ്പിടിക്കുക</string>
+  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">ദശലക്ഷക്കണക്കിന് ആൾക്കാർ ഫയർഫോക്സിനെ സ്നേഹിക്കുന്നെന്തിന എന്നു് കണ്ടുപ്പിടിക്കുക</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources">കൂടുതൽ തെരഞ്ഞെടുപ്പുകൾതോടു് സുരക്ഷിതമായി തിരയുക</string>
+  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">കൂടുതൽ തെരഞ്ഞെടുപ്പുകൾതോടു് സുരക്ഷിതമായി തിരയുക</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">ഞങ്ങളുടെ ലാഭേച്ഛയില്ലാത്ത അന്വേഷിയന്ത്രം താങ്ങളെ വെബിലുടനീളം ഒളിമായി പിന്തുടരുന്നതിൽ നിന്ന് കമ്പനികളെ തടയാൻ സഹായിക്കുന്നു.</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources">ലാഭേച്ഛയില്ലാത്ത ഒരു അന്വേഷിയന്ത്രം തിരഞ്ഞെടുത്ത് 100 ദശലക്ഷത്തിലധികം ആൾക്കാർ അവരുടെ സ്വകാര്യത സംരക്ഷിക്കുന്നു.</string>
+  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">ലാഭേച്ഛയില്ലാത്ത ഒരു അന്വേഷിയന്ത്രം തിരഞ്ഞെടുത്ത് 100 ദശലക്ഷത്തിലധികം ആൾക്കാർ അവരുടെ സ്വകാര്യത സംരക്ഷിക്കുന്നു.</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources">അറിയപ്പെടുന്ന പിന്തു‌ർച്ചയന്ത്രങ്ങൾ? തന്നെതാനെ തടഞ്ഞു. വിപുലീകണങ്ങൾ? 700 മൊത്തം ശ്രമിച്ചു നോക്കാം. പീ.ഡീ.എഫുകൾ? ഞങ്ങളുടെ അന്തരനിർമിത വായനസഹായി അവയെ കൈകാര്യം ചെയ്യാൻ എളുപ്പമാക്കുന്നു.</string>
+  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">അറിയപ്പെടുന്ന പിന്തു‌ർച്ചയന്ത്രങ്ങൾ? തന്നെതാനെ തടഞ്ഞു. വിപുലീകണങ്ങൾ? 700 മൊത്തം ശ്രമിച്ചു നോക്കാം. പീ.ഡീ.എഫുകൾ? ഞങ്ങളുടെ അന്തരനിർമിത വായനസഹായി അവയെ കൈകാര്യം ചെയ്യാൻ എളുപ്പമാക്കുന്നു.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">തനതു അന്വേഷിയായി വയ്ക്കുക</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -1107,6 +1105,8 @@
     Header of the Sync and save your data preference view
   -->
   <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">ദത്ത സമന്വയിപ്പിച്ച് കരുതിവയ്ക്കുക</string>
+  <!-- Header of the Sign in preference view -->
+  <string name="preferences_sign_in">പ്രവേശിക്കുക</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">വീണ്ടും ബന്ധിപ്പിക്കുന്നതിന് പ്രവേശിക്കുക</string>
   <!-- Preference for removing FxA account -->
@@ -1578,8 +1578,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">പൊട്ടിയ സൈറ്റിന്റെ വിവരം അറിയിക്കുക</string>
-  <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">%1$s-ലുള്ള കുഴപ്പങ്ങൾ നന്നാക്കാനും എല്ലാവൎക്കതു മെച്ചപ്പെടുത്താനും താങ്ങളുടെ റിപ്പോർട്ട് ഞങ്ങളെ തുണയ്ക്കുന്നു. കൂടുതലറിയുക</string>
   <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
   <string name="webcompat_reporter_learn_more">കൂടുതലറിയുക</string>
   <!-- The text field label of the URL text field. This is displayed above the user-inputted URL. -->
@@ -1660,13 +1658,9 @@
   <!--
     Bookmarks
 
-    Confirmation message for a dialog confirming if the user wants to delete the selected folder
+    Confirmation message for a dialog confirming if the user wants to delete multiple items.
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">ഈ അറയെ മായ്ക്കണമെന്നു് താങ്കൾക്ക് ഉറപ്പാണോ?</string>
-  <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
   <string name="bookmark_delete_folders_confirmation_dialog">തിരഞ്ഞെടുക്കപ്പെട്ട ഇനങ്ങൾ മായ്ക്കണമെന്നു് ഉറപ്പുണ്ടോ?</string>
-  <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s തിരഞ്ഞെടുത്ത ഇനങ്ങൾ മായ്ക്കും.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">റദ്ദാക്കുക</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1695,8 +1689,6 @@
   <string name="bookmark_menu_open_all_in_private_tabs_button">എല്ലാം പുതിയ സ്വകാര്യ ടാബുകളിൽ തുറക്കുക</string>
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">നീക്കം ചെയ്യുക</string>
-  <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">സൂക്ഷിക്കുക</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
   <string name="bookmark_sort_menu_custom">ഇഷ്ടാനുസൃതക്രമത്തിലാക്കുക</string>
   <!-- Label for button to sort bookmarks by newest in the bookmark sorting overflow menu. -->
@@ -1716,8 +1708,6 @@
   <string name="edit_bookmark_fragment_title">അടയാളക്കുറിപ്പ് തിരുത്തുക</string>
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">അറ തിരുത്തുക</string>
-  <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">സമന്വയിപ്പിച്ച ബുക്ക്മാർക്കുകൾ കാണാൻ പ്രവേശിക്കുക</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1728,33 +1718,21 @@
   <string name="bookmark_name_label">പേര്</string>
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">പേരു്</string>
-  <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">അറ ചേർക്കുക</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">അറ തിരഞ്ഞെടുക്കുക</string>
-  <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">നിർബന്ധമായും ഒരു ശീർഷകം ഉണ്ടായിരിക്കണം</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">URL അസാധുവാണ്</string>
-  <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">അടയാളക്കുറിപ്പുകളൊന്നുമില്ല</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s നീക്കം ചെയ്തു</string>
-  <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">അടയാളക്കുറിപ്പുകൾ നീക്കം ചെയ്തു</string>
-  <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">തിരഞ്ഞെടുത്ത അറകൾ മായ്ക്കുന്നു</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">പൂർവസ്ഥിതിയാക്കുക</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
   <string name="bookmark_delete_single_item">%s മായച്ചതു്</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">മായച്ച ഇനങ്ങൾ: %s</string>
-  <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">തിരയൽ പദങ്ങൾ പറയുക</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">പുറകോട്ട് ചെല്ലുക</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2043,10 +2021,8 @@
   <!--
     Snackbar
 
-    Text shown in snackbar when user deletes a collection
+    Text shown in snackbar when user closes a tab
   -->
-  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">ശേഖരം ഇല്ലാതാക്കി</string>
-  <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">ടാബ് അടച്ചു</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">ടാബുകൾ അടച്ചു</string>
@@ -2079,8 +2055,6 @@
   <string name="qr_scanner_dialog_invalid_ok">ശരി</string>
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">%1$s നീക്കം ചെയ്യണമെന്ന് താങ്കൾക്ക് ഉറപ്പാണോ?</string>
-  <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">നീക്കം ചെയ്യുക</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">ഇതൊരു ഉദാഹരണ വാചകമാണ്. നിങ്ങൾ അക്ഷരത്തിന്റെ വലുപ്പം കൂട്ടുകയോ കുറയ്ക്കുകയോ ചെയ്യുമ്പോൾ എങ്ങനെ ദൃശ്യമാകുമെന്ന് കാണിക്കാൻ ഇത് സഹായിക്കുന്നു.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2697,8 +2671,6 @@
   <string name="confirm_clear_permission_site">ഈ സൈറ്റിനായുള്ള ഈ അനുമതി മായ്‌ക്കണമെന്ന് താങ്കൾക്ക് ഉറപ്പാണോ?</string>
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">സൈറ്റ് ഒഴിവാക്കലുകളൊന്നുമില്ല</string>
-  <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">ഈ അടയാളക്കുറിപ്പ് നീക്കം ചെയ്യണമെന്ന് താങ്കൾക്ക് ഉറപ്പാണോ?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">കുറുക്കുവഴികളിലേക്കു് ചേർക്കുക</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -2867,8 +2839,6 @@
   <string name="radio_preference_info_content_description">കൂടുതൽ വിവരങ്ങൾക്ക് അമർത്തുക</string>
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">മുകളിലേക്ക് ചെല്ലുക</string>
-  <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">അടയ്ക്കുക</string>
   <!--
     Pocket recommended stories
 
@@ -3478,8 +3448,6 @@
   <string name="setup_checklist_task_toolbar_selection">കരുപ്പട്ട ഇടം തിരഞ്ഞെടുക്കുക</string>
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">വിപുലീകരണങ്ങൾ കാണുക</string>
-  <!-- The title of the search widget task for the setup checklist -->
-  <string name="setup_checklist_task_search_widget" moz:removedIn="143" tools:ignore="UnusedResources">തിരയൽ വിജ്ജറ്റു് സ്ഥാപിക്കുക</string>
   <!--
     ===== Setup checklist feature: Group titles =====
 

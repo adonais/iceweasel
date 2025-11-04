@@ -152,7 +152,7 @@ class nsHttpConnection final : public HttpConnectionBase,
   int64_t ContentBytesWritten() { return mContentBytesWritten; }
 
   void SetupSecondaryTLS();
-  void SetInSpdyTunnel();
+  void SetInTunnel() override;
 
   // Check active connections for traffic (or not). SPDY connections send a
   // ping, ordinary HTTP connections get some time to get traffic to be
@@ -194,24 +194,14 @@ class nsHttpConnection final : public HttpConnectionBase,
                                                uint32_t*);
 
   nsresult CreateTunnelStream(nsAHttpTransaction* httpTransaction,
-                              nsHttpConnection** aHttpConnection,
-                              bool aIsExtendedCONNECT = false);
+                              HttpConnectionBase** aHttpConnection,
+                              bool aIsExtendedCONNECT = false) override;
 
   bool RequestDone() { return mRequestDone; }
 
  private:
-  enum HttpConnectionState {
-    UNINITIALIZED,
-    SETTING_UP_TUNNEL,
-    REQUEST,
-  } mState{HttpConnectionState::UNINITIALIZED};
-  void ChangeState(HttpConnectionState newState);
-
-  // Tunnel retated functions:
-  bool TunnelSetupInProgress() { return mState == SETTING_UP_TUNNEL; }
-  void SetTunnelSetupDone();
-  nsresult CheckTunnelIsNeeded();
-  nsresult SetupProxyConnectStream();
+  void SetTunnelSetupDone() override;
+  nsresult SetupProxyConnectStream() override;
   nsresult SendConnectRequest(void* closure, uint32_t* transactionBytes);
 
   void HandleTunnelResponse(uint16_t responseStatus, bool* reset);

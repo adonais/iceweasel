@@ -33,6 +33,7 @@ use style_traits::{CssWriter, SpecifiedValueInfo};
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[repr(C, u8)]
@@ -150,6 +151,7 @@ impl<LengthPercentage: Parse> Parse for LengthPercentageOrAuto<LengthPercentage>
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 pub enum GenericSize<LengthPercent> {
@@ -164,7 +166,6 @@ pub enum GenericSize<LengthPercent> {
     #[cfg(feature = "gecko")]
     #[animation(error)]
     MozAvailable,
-    #[cfg(feature = "gecko")]
     #[animation(error)]
     WebkitFillAvailable,
     #[animation(error)]
@@ -182,14 +183,15 @@ where
 {
     fn collect_completion_keywords(f: style_traits::KeywordsCollectFn) {
         LengthPercent::collect_completion_keywords(f);
-        f(&["auto", "stretch", "fit-content"]);
+        f(&["auto", "fit-content", "max-content", "min-content"]);
         if cfg!(feature = "gecko") {
-            f(&[
-                "max-content",
-                "min-content",
-                "-moz-available",
-                "-webkit-fill-available",
-            ]);
+            f(&["-moz-available"]);
+        }
+        if static_prefs::pref!("layout.css.stretch-size-keyword.enabled") {
+            f(&["stretch"]);
+        }
+        if static_prefs::pref!("layout.css.webkit-fill-available.enabled") {
+            f(&["-webkit-fill-available"]);
         }
         if static_prefs::pref!("layout.css.anchor-positioning.enabled") {
             f(&["anchor-size"]);
@@ -228,6 +230,7 @@ impl<LengthPercentage> Size<LengthPercentage> {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 pub enum GenericMaxSize<LengthPercent> {
@@ -242,7 +245,6 @@ pub enum GenericMaxSize<LengthPercent> {
     #[cfg(feature = "gecko")]
     #[animation(error)]
     MozAvailable,
-    #[cfg(feature = "gecko")]
     #[animation(error)]
     WebkitFillAvailable,
     #[animation(error)]
@@ -260,14 +262,15 @@ where
 {
     fn collect_completion_keywords(f: style_traits::KeywordsCollectFn) {
         LP::collect_completion_keywords(f);
-        f(&["none", "stretch", "fit-content"]);
+        f(&["none", "fit-content", "max-content", "min-content"]);
         if cfg!(feature = "gecko") {
-            f(&[
-                "max-content",
-                "min-content",
-                "-moz-available",
-                "-webkit-fill-available",
-            ]);
+            f(&["-moz-available"]);
+        }
+        if static_prefs::pref!("layout.css.stretch-size-keyword.enabled") {
+            f(&["stretch"]);
+        }
+        if static_prefs::pref!("layout.css.webkit-fill-available.enabled") {
+            f(&["-webkit-fill-available"]);
         }
         if static_prefs::pref!("layout.css.anchor-positioning.enabled") {
             f(&["anchor-size"]);
@@ -302,6 +305,7 @@ impl<LengthPercentage> MaxSize<LengthPercentage> {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 pub enum GenericLengthOrNumber<L, N> {
@@ -346,6 +350,7 @@ impl<L, N: Zero> Zero for LengthOrNumber<L, N> {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 #[allow(missing_docs)]
@@ -564,6 +569,7 @@ pub enum AnchorSizeKeyword {
     ToAnimatedZero,
     ToComputedValue,
     ToResolvedValue,
+    ToTyped,
 )]
 #[repr(C)]
 pub enum GenericMargin<LP> {

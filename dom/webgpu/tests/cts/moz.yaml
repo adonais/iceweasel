@@ -8,8 +8,8 @@ origin:
   name: WebGPU CTS
   description: WebGPU Compliance Test Suite
   url: https://gpuweb.github.io/cts/
-  release: 42c0504c66193d231d31f1b64c1213c639281bc9 (2025-09-04T02:31:30Z).
-  revision: 42c0504c66193d231d31f1b64c1213c639281bc9
+  release: d822a3cff5bd96c5ed68fe35d5a0e9e041776a00 (2025-10-02T02:02:11Z).
+  revision: d822a3cff5bd96c5ed68fe35d5a0e9e041776a00
   license: ['BSD-3-Clause']
 
 updatebot:

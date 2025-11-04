@@ -547,8 +547,8 @@ export class MozCachedOHTTPChannel {
    *   Object containing extracted data, or null if invalid.
    *   Returns null if URL parsing fails, no 'url' parameter found,
    *   target URL is not HTTPS, or target URL is malformed.
-   * @returns {nsIURI} returns.resourceURI - The decoded target image URI (HTTPS only)
-   * @returns {string} returns.host - The moz-cached-ohttp host (e.g., "newtab-image")
+   *   `resourceURI` is the decoded target image URI (HTTPS only).
+   *   `host` is the moz-cached-ohttp host (e.g., "newtab-image").
    */
   #extractHostAndResourceURI() {
     try {
@@ -1007,6 +1007,7 @@ export class MozCachedOHTTPChannel {
    * @param {MessageChannelPort} cacheStreamUpdatePort
    *   MessagePort for sending error cleanup messages to the parent actor.
    *   Used to doom the cache entry when an error occurs during the request.
+   * @param {boolean} cacheOutputStream
    */
   #cleanupCacheOnError(cacheStreamUpdatePort, cacheOutputStream) {
     try {

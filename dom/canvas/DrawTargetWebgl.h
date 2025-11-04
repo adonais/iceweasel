@@ -173,6 +173,16 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
   Maybe<uint32_t> mBlurProgramSampler;
   Maybe<uint32_t> mBlurProgramClipMask;
   Maybe<uint32_t> mBlurProgramClipBounds;
+  RefPtr<WebGLProgram> mFilterProgram;
+  Maybe<uint32_t> mFilterProgramViewport;
+  Maybe<uint32_t> mFilterProgramTransform;
+  Maybe<uint32_t> mFilterProgramTexMatrix;
+  Maybe<uint32_t> mFilterProgramTexBounds;
+  Maybe<uint32_t> mFilterProgramColorMatrix;
+  Maybe<uint32_t> mFilterProgramColorOffset;
+  Maybe<uint32_t> mFilterProgramSampler;
+  Maybe<uint32_t> mFilterProgramClipMask;
+  Maybe<uint32_t> mFilterProgramClipBounds;
 
   struct SolidProgramUniformState {
     Maybe<Array<float, 2>> mViewport;
@@ -204,6 +214,16 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
     Maybe<Array<float, 1>> mSwizzle;
     Maybe<Array<float, 4>> mClipBounds;
   } mBlurProgramUniformState;
+
+  struct FilterProgramUniformState {
+    Maybe<Array<float, 2>> mViewport;
+    Maybe<Array<float, 4>> mTransform;
+    Maybe<Array<float, 4>> mTexMatrix;
+    Maybe<Array<float, 4>> mTexBounds;
+    Maybe<Array<float, 16>> mColorMatrix;
+    Maybe<Array<float, 4>> mColorOffset;
+    Maybe<Array<float, 4>> mClipBounds;
+  } mFilterProgramUniformState;
 
   // Scratch framebuffer used to wrap textures for miscellaneous utility ops.
   RefPtr<WebGLFramebuffer> mScratchFramebuffer;
@@ -348,7 +368,7 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
                               const IntSize& aViewportSize = IntSize());
   already_AddRefed<TextureHandle> AllocateTextureHandle(
       SurfaceFormat aFormat, const IntSize& aSize, bool aAllowShared = true,
-      bool aRenderable = false, BackingTexture* aAvoid = nullptr);
+      bool aRenderable = false, const WebGLTexture* aAvoid = nullptr);
   void DrawQuad();
   void DrawTriangles(const PathVertexRange& aRange);
   bool DrawRectAccel(const Rect& aRect, const Pattern& aPattern,
@@ -361,6 +381,16 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
                      const PathVertexRange* aVertexRange = nullptr,
                      const Matrix* aRectXform = nullptr,
                      uint8_t aBlendStage = 0);
+
+  already_AddRefed<WebGLTexture> GetFilterInputTexture(
+      const RefPtr<SourceSurface>& aSurface, const IntRect& aSourceRect,
+      RefPtr<TextureHandle>* aHandle, IntPoint& aOffset, SurfaceFormat& aFormat,
+      IntRect& aBounds, IntSize& aBackingSize);
+  bool FilterRect(const Rect& aDestRect, const Matrix5x4& aColorMatrix,
+                  const RefPtr<SourceSurface>& aSurface,
+                  const IntRect& aSourceRect, const DrawOptions& aOptions,
+                  RefPtr<TextureHandle>* aHandle,
+                  RefPtr<TextureHandle>* aTargetHandle = nullptr);
   bool BlurRectPass(const Rect& aDestRect, const Point& aSigma,
                     bool aHorizontal, const RefPtr<SourceSurface>& aSurface,
                     const IntRect& aSourceRect,
@@ -450,7 +480,6 @@ class SharedContextWebgl : public mozilla::RefCounted<SharedContextWebgl>,
 class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   friend class FilterNodeWebgl;
   friend class FilterNodeDeferInputWebgl;
-  friend class FilterNodeGaussianBlurWebgl;
   friend class SourceSurfaceWebgl;
   friend class SharedContextWebgl;
 
@@ -690,6 +719,14 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
       const StrokeOptions* aStrokeOptions = nullptr,
       SurfaceFormat aFormat = SurfaceFormat::B8G8R8A8);
 
+  bool FilterSurface(const Matrix5x4& aColorMatrix, SourceSurface* aSurface,
+                     const IntRect& aSourceRect, const Point& aDest,
+                     const DrawOptions& aOptions = DrawOptions());
+  bool BlurSurface(float aSigma, SourceSurface* aSurface,
+                   const IntRect& aSourceRect, const Point& aDest,
+                   const DrawOptions& aOptions = DrawOptions(),
+                   const DeviceColor& aColor = DeviceColor(1, 1, 1, 1));
+
   void SetTransform(const Matrix& aTransform) override;
   void* GetNativeSurface(NativeSurfaceType aType) override;
 
@@ -756,11 +793,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
   void DrawCircle(const Point& aOrigin, float aRadius, const Pattern& aPattern,
                   const DrawOptions& aOptions,
                   const StrokeOptions* aStrokeOptions = nullptr);
-
-  bool BlurSurface(float aSigma, SourceSurface* aSurface,
-                   const IntRect& aSourceRect, const Point& aDest,
-                   const DrawOptions& aOptions = DrawOptions(),
-                   const DeviceColor& aColor = DeviceColor(1, 1, 1, 1));
 
   bool MarkChanged();
 

@@ -17,6 +17,7 @@ import kotlinx.serialization.json.jsonObject
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.Crash
 import mozilla.components.lib.crash.GleanMetrics.CrashMetrics
+import mozilla.components.lib.crash.RuntimeTag
 import mozilla.components.support.test.whenever
 import mozilla.telemetry.glean.Glean
 import mozilla.telemetry.glean.config.Configuration
@@ -737,6 +738,10 @@ class GleanCrashReporterServiceTest {
             12340000,
             RuntimeException("Test", java.io.IOException("IO")),
             arrayListOf(),
+            runtimeTags = mapOf(
+                RuntimeTag.VERSION_NAME to "142.0.0",
+                RuntimeTag.BUILD_ID to "1337",
+            ),
         )
 
         service.record(crash)
@@ -767,6 +772,8 @@ class GleanCrashReporterServiceTest {
                 assertEquals("main", GleanCrash.processType.testGetValue())
                 assertEquals(false, GleanCrash.startup.testGetValue())
                 assertEquals("java_exception", GleanCrash.cause.testGetValue())
+                assertEquals("1337", GleanCrash.appBuild.testGetValue())
+                assertEquals("142.0.0", GleanCrash.appDisplayVersion.testGetValue())
                 val exc = GleanCrash.javaException.testGetValue()
                 assertNotNull(exc)
                 val throwables = exc?.jsonObject?.get("throwables")

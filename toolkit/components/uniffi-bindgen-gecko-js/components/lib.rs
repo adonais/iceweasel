@@ -12,6 +12,8 @@ mod reexport_appservices_uniffi_scaffolding {
     filter_adult::uniffi_reexport_scaffolding!();
     error_support::uniffi_reexport_scaffolding!();
     tracing_support::uniffi_reexport_scaffolding!();
+    logins::uniffi_reexport_scaffolding!();
+    init_rust_components::uniffi_reexport_scaffolding!();
 }
 
 // Define extern "C" versions of these UniFFI functions, so that they can be called from C++

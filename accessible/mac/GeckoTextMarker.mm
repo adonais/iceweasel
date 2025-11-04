@@ -528,9 +528,19 @@ int32_t GeckoTextMarkerRange::Length() const {
 
 NSValue* GeckoTextMarkerRange::Bounds() const {
   LayoutDeviceIntRect rect = mRange ? mRange.Bounds() : LayoutDeviceIntRect();
+  // We need to find the NSScreen that this range belongs to. Because we
+  // are not guaranteed to get a native accessible for the range's start or
+  // end acc (whitespace, for ex. has no native acc) we fetch the doc
+  // and then use its native acc to retrieve the screen.
+  Accessible* acc = nsAccUtils::DocumentFor(mRange.Start().mAcc);
+  NSScreen* screen =
+      utils::GetNSScreenForAcc(GetNativeFromGeckoAccessible(acc));
+  CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(screen);
 
+  // Regardless of screen selected above, VO is only happy if we use the
+  // main screen height for Y coordinate conversion. This is consistent with
+  // moxHitTest and moxFrame.
   NSScreen* mainView = [[NSScreen screens] objectAtIndex:0];
-  CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(mainView);
   NSRect r =
       NSMakeRect(static_cast<CGFloat>(rect.x) / scaleFactor,
                  [mainView frame].size.height -

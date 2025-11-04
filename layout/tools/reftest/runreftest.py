@@ -540,9 +540,6 @@ class RefTest:
             browserEnv["TZ"] = "PST8PDT"
             browserEnv["LC_ALL"] = "en_US.UTF-8"
 
-        # This should help with consistency
-        browserEnv["GTK_THEME"] = "Adwaita"
-
         for v in options.environment:
             ix = v.find("=")
             if ix <= 0:

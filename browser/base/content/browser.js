@@ -17,7 +17,7 @@ ChromeUtils.defineESModuleGetters(this, {
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
   ActionsProviderContextualSearch:
-    "resource:///modules/ActionsProviderContextualSearch.sys.mjs",
+    "moz-src:///browser/components/urlbar/ActionsProviderContextualSearch.sys.mjs",
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   BrowserTelemetryUtils: "resource://gre/modules/BrowserTelemetryUtils.sys.mjs",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
@@ -105,12 +105,13 @@ ChromeUtils.defineESModuleGetters(this, {
   UITour: "moz-src:///browser/components/uitour/UITour.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
-  UrlbarInput: "resource:///modules/UrlbarInput.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
+  UrlbarInput: "moz-src:///browser/components/urlbar/UrlbarInput.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderSearchTips:
-    "resource:///modules/UrlbarProviderSearchTips.sys.mjs",
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+    "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
+  UrlbarTokenizer:
+    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   Weave: "resource://services-sync/main.sys.mjs",
   WebNavigationFrames: "resource://gre/modules/WebNavigationFrames.sys.mjs",
   webrtcUI: "resource:///modules/webrtcUI.sys.mjs",
@@ -472,6 +473,7 @@ ChromeUtils.defineLazyGetter(this, "PopupNotifications", () => {
         return anchorElement;
       }
       let fallback = [
+        document.getElementById("trust-icon-container"),
         gURLBar.querySelector(".searchmode-switcher-icon"),
         document.getElementById("identity-icon"),
         document.getElementById("remote-control-icon"),
@@ -1962,10 +1964,13 @@ var XULBrowserWindow = {
     if (url) {
       url = Services.textToSubURI.unEscapeURIForUI(url);
 
-      // Encode bidirectional formatting characters.
-      // (RFC 3987 sections 3.2 and 4.1 paragraph 6)
+      /**
+       * Encode bidirectional formatting characters.
+       * @see https://url.spec.whatwg.org/#url-rendering-i18n
+       * @see https://www.unicode.org/reports/tr9/#Directional_Formatting_Characters
+       */
       url = url.replace(
-        /[\u200e\u200f\u202a\u202b\u202c\u202d\u202e]/g,
+        /[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g,
         encodeURIComponent
       );
 
@@ -3291,14 +3296,23 @@ const DynamicShortcutTooltip = {
     if (!this.cache.has(nodeId) && nodeId in this.nodeToTooltipMap) {
       let strId = this.nodeToTooltipMap[nodeId];
       let args = [];
+      let shouldCache = true;
       if (nodeId in this.nodeToShortcutMap) {
         let shortcutId = this.nodeToShortcutMap[nodeId];
         let shortcut = document.getElementById(shortcutId);
         if (shortcut) {
-          args.push(ShortcutUtils.prettifyShortcut(shortcut));
+          let prettyShortcut = ShortcutUtils.prettifyShortcut(shortcut);
+          args.push(prettyShortcut);
+          if (!prettyShortcut) {
+            shouldCache = false;
+          }
         }
       }
-      this.cache.set(nodeId, gNavigatorBundle.getFormattedString(strId, args));
+      let string = gNavigatorBundle.getFormattedString(strId, args);
+      if (shouldCache) {
+        this.cache.set(nodeId, string);
+      }
+      return string;
     }
     return this.cache.get(nodeId);
   },

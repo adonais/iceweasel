@@ -177,6 +177,7 @@ export class GeckoViewNavigation extends GeckoViewModule {
           headerFilter,
           originalInput,
           textDirectiveUserActivation,
+          appLinkLaunchType,
         } = aData;
 
         let navFlags = convertFlags(flags);
@@ -278,6 +279,7 @@ export class GeckoViewNavigation extends GeckoViewModule {
           policyContainer,
           textDirectiveUserActivation,
           schemelessInput,
+          appLinkLaunchType,
         });
         break;
       }

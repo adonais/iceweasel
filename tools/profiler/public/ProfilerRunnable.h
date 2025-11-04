@@ -48,7 +48,7 @@ struct RunnableMarker : BaseMarkerType<RunnableMarker> {
                                                MS::Location::MarkerTable};
   static constexpr const char* ChartLabel = "{marker.data.name}";
   static constexpr const char* TableLabel =
-      "{marker.name} - {marker.data.name}"
+      "{marker.data.name}"
       " runnable: {marker.data.runnable}";
 
   static constexpr bool IsStackBased = true;

@@ -1,0 +1,69 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+.check-bullet,
+.alert-bullet,
+.throbber-bullet {
+  -moz-context-properties: fill;
+  display: inline-block;
+  vertical-align: text-top;
+  height: var(--icon-size);
+  width: var(--icon-size);
+  margin-inline-end: var(--space-medium);
+}
+.check-bullet {
+  fill: var(--icon-color-success);
+}
+
+.alert-bullet {
+  fill: var(--icon-color-warning);
+}
+
+small {
+  font-size: var(--font-size-small);
+  color: var(--text-color-deemphasized);
+}
+
+.status-container {
+  display: flex;
+}
+
+.status-bullet-container {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  gap: var(--space-medium);
+}
+
+.status-bullet {
+  display: flex;
+  margin: 0;
+}
+
+.status-label-holder {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+#heading {
+  font-size: var(--font-size-root);
+  font-weight: var(--font-weight-bold);
+}
+
+moz-card {
+  margin-block-end: var(--space-xxlarge);
+}
+
+.status-label-holder > moz-box-link {
+  margin-top: 0.5ex;
+}
+
+.status-image {
+  margin-inline-start: var(--space-xsmall);
+}

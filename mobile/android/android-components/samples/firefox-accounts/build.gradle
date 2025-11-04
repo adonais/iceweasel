@@ -42,6 +42,7 @@ dependencies {
     implementation project(':components:service-firefox-accounts')
     implementation project(':components:support-appservices')
     implementation project(':components:support-base')
+    implementation project(':components:support-ktx')
 
     implementation libs.androidx.appcompat
     implementation libs.androidx.browser

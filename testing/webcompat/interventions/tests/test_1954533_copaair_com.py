@@ -12,10 +12,16 @@ MONTH_SELECTOR_CSS = "#month"
 MONTH_CSS = "#month-open [data-value='3']"
 DAY_SELECTOR_CSS = "#day"
 DAY_CSS = "#day-open [data-value='6']"
-COUNTRY_SELECTOR_CSS = "#option"
+GENDER_SELECTOR_CSS = "#gender"
+GENDER_MALE_CSS = "#menu-gender [data-value='Male']"
+COUNTRY_SELECTOR_CSS = "[aria-label='enrollmentFormNationalityWCAG'] #option"
 COUNTRY_CSS = "#option-open [data-value='CA'], #option-open [data-value='0']"
+COUNTRY_RESIDENCE_SELECTOR_CSS = (
+    "[aria-label='enrollmentFormResidenceCountryWCAG'] #option"
+)
+COUNTRY_RESIDENCE_CSS = "#option-open [data-value='CA'], #option-open [data-value='0']"
 DOC_SELECTOR_CSS = "#memberDoc"
-DOC_CSS = "#memberDoc-open [data-value='p']"
+DOC_CSS = "#memberDoc-open [aria-label='Passport']"
 DOC_NUMBER_CSS = "[id='input-memberDoc.documentId']"
 DOC_COUNTRY_SELECTOR_CSS = "[id='memberDoc.issuingCountry']"
 DOC_COUNTRY_CSS = "[id='memberDoc.issuingCountry-open'] [data-value='CA'], [id='memberDoc.issuingCountry-open'] [data-value='0']"
@@ -63,8 +69,14 @@ async def get_accept_button(client, in_headless_mode):
     client.click(client.await_css(MONTH_CSS, is_displayed=True), force=True)
     client.click(client.await_css(DAY_SELECTOR_CSS, is_displayed=True), force=True)
     client.click(client.await_css(DAY_CSS, is_displayed=True), force=True)
+    client.click(client.await_css(GENDER_SELECTOR_CSS, is_displayed=True), force=True)
+    client.click(client.await_css(GENDER_MALE_CSS, is_displayed=True), force=True)
     client.click(client.await_css(COUNTRY_SELECTOR_CSS, is_displayed=True), force=True)
-    client.click(client.await_css(COUNTRY_CSS, is_displayed=True), force=True)
+    client.soft_click(client.await_css(COUNTRY_CSS, is_displayed=True))
+    client.click(
+        client.await_css(COUNTRY_RESIDENCE_SELECTOR_CSS, is_displayed=True), force=True
+    )
+    client.soft_click(client.await_css(COUNTRY_RESIDENCE_CSS, is_displayed=True))
     client.click(client.await_css(DOC_SELECTOR_CSS, is_displayed=True), force=True)
     client.click(client.await_css(DOC_CSS, is_displayed=True), force=True)
     client.await_css(DOC_NUMBER_CSS, is_displayed=True).send_keys("1235123")

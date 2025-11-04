@@ -169,6 +169,7 @@ test_newtab({
     Assert.ok(getWeatherWidget(), "Weather widget is rendered");
   },
   async after() {
+    sinon.restore();
     Services.prefs.clearUserPref(
       "browser.newtabpage.activity-stream.showWeather"
     );

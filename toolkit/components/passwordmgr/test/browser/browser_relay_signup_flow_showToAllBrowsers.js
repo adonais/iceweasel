@@ -111,7 +111,7 @@ add_task(
     Assert.equal(
       rsSandbox.getFakes()[0].callCount,
       rsSandboxRemoteSettingsGetCallsBeforeSecondACPopup,
-      "FirefoxRelay onAllowList should only call RemoteSettings.get() once."
+      "FirefoxRelay shouldShowRelay should only call RemoteSettings.get() once."
     );
     rsSandbox.restore();
   }

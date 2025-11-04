@@ -57,6 +57,10 @@ toolkit.jar:
    content/global/mozilla.html
    content/global/aboutMozilla.css
    content/global/preferencesBindings.js
+   content/global/preferences/AsyncSetting.mjs  (preferences/AsyncSetting.mjs)
+   content/global/preferences/Preference.mjs    (preferences/Preference.mjs)
+   content/global/preferences/Preferences.mjs   (preferences/Preferences.mjs)
+   content/global/preferences/Setting.mjs       (preferences/Setting.mjs)
    content/global/process-content.js
    content/global/resetProfile.css
    content/global/resetProfile.js

@@ -10,7 +10,6 @@
 #define mozilla_DoublyLinkedList_h
 
 #include <algorithm>
-#include <iosfwd>
 #include <iterator>
 #include <type_traits>
 
@@ -525,8 +524,8 @@ class SafeDoublyLinkedList {
 
   bool isEmpty() const { return mList.isEmpty(); }
   bool contains(T* aElm) {
-    for (auto iter = mList.begin(); iter != mList.end(); ++iter) {
-      if (&*iter == aElm) {
+    for (const T& el : *this) {
+      if (aElm == &el) {
         return true;
       }
     }

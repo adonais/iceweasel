@@ -264,13 +264,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
       break;
   }
 
-  if (aScheme == ColorScheme::Dark) {
-    if (auto color = GenericDarkColor(aID)) {
-      aColor = *color;
-      return NS_OK;
-    }
-  }
-
   if (mHighContrastOn) {
     switch (aID) {
       case ColorID::MozButtonhoverborder:
@@ -278,12 +271,14 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
       case ColorID::MozColheaderhover:
       case ColorID::MozButtonactivetext:
       case ColorID::MozColheaderactivetext:
+      case ColorID::TargetTextBackground:
         aColor = GetColorForSysColorIndex(COLOR_HIGHLIGHT);
         return NS_OK;
       case ColorID::MozButtonhovertext:
       case ColorID::MozColheaderhovertext:
       case ColorID::MozButtonactiveface:
       case ColorID::MozColheaderactive:
+      case ColorID::TargetTextForeground:
         aColor = GetColorForSysColorIndex(COLOR_HIGHLIGHTTEXT);
         return NS_OK;
       case ColorID::MozButtondisabledborder:
@@ -317,6 +312,13 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
       }
       default:
         break;
+    }
+  }
+
+  if (aScheme == ColorScheme::Dark) {
+    if (auto color = GenericDarkColor(aID)) {
+      aColor = *color;
+      return NS_OK;
     }
   }
 

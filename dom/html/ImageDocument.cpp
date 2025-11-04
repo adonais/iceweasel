@@ -28,12 +28,12 @@
 #include "mozilla/dom/MouseEvent.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
+#include "nsDOMCSSDeclaration.h"
 #include "nsDOMTokenList.h"
 #include "nsDocShell.h"
 #include "nsError.h"
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
-#include "nsICSSDeclaration.h"
 #include "nsIChannel.h"
 #include "nsIContentPolicy.h"
 #include "nsIDOMEventListener.h"
@@ -532,7 +532,7 @@ void ImageDocument::UpdateRemoteStyle(StyleImageRendering aImageRendering) {
             aImageRendering));
   }
 
-  nsCOMPtr<nsICSSDeclaration> style = mImageContent->Style();
+  nsCOMPtr<nsDOMCSSDeclaration> style = mImageContent->Style();
   switch (aImageRendering) {
     case StyleImageRendering::Auto:
     case StyleImageRendering::Smooth:

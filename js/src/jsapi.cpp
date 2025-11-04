@@ -1795,17 +1795,21 @@ static RefCountedString* CopyStringZ(const char* str) {
   return new (memoryPtr) RefCountedString(strPtr);
 }
 
-JS::RealmCreationOptions& JS::RealmCreationOptions::setLocaleCopyZ(
-    const char* locale) {
-  locale_ = CopyStringZ<JS::LocaleString>(locale);
+JS::RealmBehaviors& JS::RealmBehaviors::setLocaleOverride(const char* locale) {
+  if (locale) {
+    localeOverride_ = CopyStringZ<JS::LocaleString>(locale);
+  } else {
+    localeOverride_ = nullptr;
+  }
   return *this;
 }
 
-JS::RealmBehaviors& JS::RealmBehaviors::setTimeZoneCopyZ(const char* timeZone) {
+JS::RealmBehaviors& JS::RealmBehaviors::setTimeZoneOverride(
+    const char* timeZone) {
   if (timeZone) {
-    timeZone_ = CopyStringZ<JS::TimeZoneString>(timeZone);
+    timeZoneOverride_ = CopyStringZ<JS::TimeZoneString>(timeZone);
   } else {
-    timeZone_ = nullptr;
+    timeZoneOverride_ = nullptr;
   }
   return *this;
 }
@@ -1823,7 +1827,7 @@ void JS::SetRealmLocaleOverride(Realm* realm, const char* locale) {
 }
 
 void JS::SetRealmTimezoneOverride(Realm* realm, const char* timezone) {
-  realm->setTimeZone(timezone);
+  realm->setTimeZoneOverride(timezone);
 }
 
 void JS::SetRealmNonLive(Realm* realm) { realm->setNonLive(); }
@@ -3200,7 +3204,7 @@ JS_PUBLIC_API void JS_RequestInterruptCallbackCanWait(JSContext* cx) {
 }
 
 JS::AutoSetAsyncStackForNewCalls::AutoSetAsyncStackForNewCalls(
-    JSContext* cx, HandleObject stack, const char* asyncCause,
+    JSContext* cx, JSObject* stack, const char* asyncCause,
     JS::AutoSetAsyncStackForNewCalls::AsyncCallKind kind)
     : cx(cx),
       oldAsyncStack(cx, cx->asyncStackForNewActivations()),

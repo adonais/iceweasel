@@ -140,7 +140,7 @@ class SettingsAdvancedTest : TestSetup() {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(youTubeSchemaLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
-            clickPageObject(itemWithResIdAndText("android:id/button2", "CANCEL"))
+            clickPageObject(itemWithResIdAndText("android:id/button2", "Cancel"))
             verifyUrl(externalLinksPage.url.toString())
         }
     }
@@ -171,7 +171,7 @@ class SettingsAdvancedTest : TestSetup() {
             clickPageObject(youTubeSchemaLink)
             verifyOpenLinkInAnotherAppPrompt(appName = "YouTube")
             waitForAppWindowToBeUpdated()
-            clickPageObject(itemWithResIdAndText("android:id/button1", "OPEN"))
+            clickPageObject(itemWithResIdAndText("android:id/button1", "Open"))
             mDevice.waitForIdle()
             assertYoutubeAppOpens()
         }
@@ -209,7 +209,7 @@ class SettingsAdvancedTest : TestSetup() {
                 url = "youtube",
                 pageObject = youTubeSchemaLink,
             )
-            clickPageObject(itemWithResIdAndText("android:id/button2", "CANCEL"))
+            clickPageObject(itemWithResIdAndText("android:id/button2", "Cancel"))
             verifyUrl(externalLinksPage.url.toString())
         }
     }
@@ -246,7 +246,7 @@ class SettingsAdvancedTest : TestSetup() {
                 pageObject = youTubeSchemaLink,
             )
             waitForAppWindowToBeUpdated()
-            clickPageObject(itemWithResIdAndText("android:id/button1", "OPEN"))
+            clickPageObject(itemWithResIdAndText("android:id/button1", "Open"))
             mDevice.waitForIdle()
             assertYoutubeAppOpens()
         }

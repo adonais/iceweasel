@@ -79,7 +79,7 @@ export class _MomentsPageHub {
   executeAction(message) {
     const { id, data } = message.content.action;
     switch (id) {
-      case "moments-wnp":
+      case "moments-wnp": {
         const { url, expireDelta } = data;
         let { expire } = data;
         if (!expire) {
@@ -96,6 +96,7 @@ export class _MomentsPageHub {
         this._addImpression(message);
         this._blockMessageById(message.id);
         break;
+      }
     }
   }
 

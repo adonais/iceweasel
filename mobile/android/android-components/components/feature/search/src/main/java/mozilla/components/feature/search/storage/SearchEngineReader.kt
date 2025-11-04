@@ -123,7 +123,6 @@ internal class SearchEngineReader(
     }
 
     @Throws(XmlPullParserException::class, IOException::class)
-    @Suppress("ComplexMethod")
     private fun readSearchPlugin(parser: XmlPullParser, builder: SearchEngineBuilder) {
         if (XmlPullParser.START_TAG != parser.eventType) {
             throw XmlPullParserException("Expected start tag: " + parser.positionDescription)

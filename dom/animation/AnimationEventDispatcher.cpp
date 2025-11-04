@@ -42,8 +42,7 @@ struct CSSAnimationMarker {
                              MS::Format::String);
     schema.AddKeyFormat("Target", MS::Format::String);
     schema.SetChartLabel("{marker.data.Name}");
-    schema.SetTableLabel(
-        "{marker.name} - {marker.data.Name}: {marker.data.properties}");
+    schema.SetTableLabel("{marker.data.Name}: {marker.data.properties}");
     return schema;
   }
 };
@@ -73,7 +72,7 @@ struct CSSTransitionMarker {
     schema.AddKeyFormat("Canceled", MS::Format::String);
     schema.AddKeyFormat("Target", MS::Format::String);
     schema.SetChartLabel("{marker.data.property}");
-    schema.SetTableLabel("{marker.name} - {marker.data.property}");
+    schema.SetTableLabel("{marker.data.property}");
     return schema;
   }
 };

@@ -31,6 +31,11 @@ add_task(async function testSettingGroupTelemetry() {
       win.Preferences.addSetting({
         id: "test-button",
       });
+      win.Preferences.addSetting({
+        id: "test-picker",
+        get: () => "light",
+        set: () => {},
+      });
 
       let group = doc.createElement("setting-group");
       group.groupId = "testing";
@@ -45,7 +50,6 @@ add_task(async function testSettingGroupTelemetry() {
             id: "test-radio",
             l10nId: "httpsonly-radio-disabled3",
             control: "moz-radio-group",
-            optionControl: "moz-radio",
             options: [
               {
                 id: "test-radio-one",
@@ -70,7 +74,6 @@ add_task(async function testSettingGroupTelemetry() {
             id: "test-select",
             l10nId: "httpsonly-radio-disabled3",
             control: "moz-select",
-            optionControl: "moz-option",
             options: [
               {
                 id: "test-select-one",
@@ -81,6 +84,32 @@ add_task(async function testSettingGroupTelemetry() {
                 id: "test-select-two",
                 l10nId: "httpsonly-radio-enabled-pbm",
                 value: "two",
+              },
+            ],
+          },
+          {
+            id: "test-picker",
+            control: "moz-visual-picker",
+            options: [
+              {
+                value: "light",
+                l10nId: "preferences-web-appearance-choice-light2",
+                controlAttrs: {
+                  id: "test-picker-light",
+                  class: "appearance-chooser-item",
+                  imagesrc:
+                    "chrome://browser/content/preferences/web-appearance-light.svg",
+                },
+              },
+              {
+                value: "dark",
+                l10nId: "preferences-web-appearance-choice-dark2",
+                controlAttrs: {
+                  id: "test-picker-dark",
+                  class: "appearance-chooser-item",
+                  imagesrc:
+                    "chrome://browser/content/preferences/web-appearance-dark.svg",
+                },
               },
             ],
           },
@@ -96,13 +125,19 @@ add_task(async function testSettingGroupTelemetry() {
       let checkbox = doc.getElementById("test-checkbox");
       EventUtils.synthesizeMouseAtCenter(checkbox.inputEl, {}, win);
       EventUtils.synthesizeMouseAtCenter(checkbox.labelEl, {}, win);
+      // Check that clicking the description is not counted as a click.
+      AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
       EventUtils.synthesizeMouseAtCenter(checkbox.descriptionEl, {}, win);
+      AccessibilityUtils.resetEnv();
 
       let button = doc.getElementById("test-button");
       is(button.buttonEl.disabled, true, "button is disabled");
       let radio = doc.getElementById("test-radio-two");
       EventUtils.synthesizeMouseAtCenter(radio.inputEl, {}, win);
+      // Check that clicking the description is not counted as a click.
+      AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
       EventUtils.synthesizeMouseAtCenter(radio.descriptionEl, {}, win);
+      AccessibilityUtils.resetEnv();
 
       // Ensure the button disabled state updated.
       await new Promise(r => win.requestAnimationFrame(r));
@@ -118,6 +153,23 @@ add_task(async function testSettingGroupTelemetry() {
       EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
       EventUtils.synthesizeKey("KEY_Enter", {}, win);
       await popupHidden;
+
+      // Focus the visual picker via the keyboard.
+      EventUtils.synthesizeKey("KEY_Tab", {}, win);
+
+      let picker = doc.getElementById("test-picker");
+      let secondItem = doc.getElementById("test-picker-dark");
+      AccessibilityUtils.setEnv({
+        mustHaveAccessibleRule: false,
+      });
+      EventUtils.synthesizeMouseAtCenter(secondItem.itemEl, {}, win);
+
+      // Ensure the selected state of the picker updated.
+      await picker.updateComplete;
+
+      // Navigate to the second picker item and select it via keyboard.
+      EventUtils.synthesizeKey("KEY_ArrowRight", {}, win);
+      AccessibilityUtils.resetEnv();
 
       // Check that telemetry appeared:
       const { TelemetryTestUtils } = ChromeUtils.importESModule(
@@ -146,6 +198,18 @@ add_task(async function testSettingGroupTelemetry() {
         snapshot,
         "browser.ui.interaction.preferences_paneGeneral",
         "test-select",
+        1
+      );
+      TelemetryTestUtils.assertKeyedScalar(
+        snapshot,
+        "browser.ui.interaction.preferences_paneGeneral",
+        "test-picker-light",
+        1
+      );
+      TelemetryTestUtils.assertKeyedScalar(
+        snapshot,
+        "browser.ui.interaction.preferences_paneGeneral",
+        "test-picker-dark",
         1
       );
     }

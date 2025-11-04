@@ -164,7 +164,6 @@
     "browser/components/originattributes/test/browser/browser.ini": 58.43,
     "browser/components/ion/test/browser/browser.ini": 1.63,
     "browser/components/places/tests/browser/browser.ini": 106.52,
-    "browser/components/pocket/test/browser.ini": 3.48,
     "browser/components/preferences/tests/browser.ini": 295.7,
     "browser/components/preferences/tests/siteData/browser.ini": 22.9,
     "browser/components/privatebrowsing/test/browser/browser.ini": 103.74,

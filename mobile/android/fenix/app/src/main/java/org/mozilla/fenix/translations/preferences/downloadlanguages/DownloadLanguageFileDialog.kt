@@ -29,7 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.feature.downloads.DefaultFileSizeFormatter
 import mozilla.components.feature.downloads.FileSizeFormatter
@@ -112,7 +112,7 @@ fun DownloadLanguageFileDialog(
                     stringResource(id = R.string.download_language_file_dialog_positive_button_text)
                 }
 
-            PrimaryButton(
+            FilledButton(
                 text = primaryButtonText,
                 modifier = Modifier
                     .padding(top = 16.dp)

@@ -16,13 +16,13 @@
 #include "mozilla/ViewportFrame.h"
 
 #include "MobileViewportManager.h"
+#include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/RestyleManager.h"
 #include "mozilla/ScrollContainerFrame.h"
 #include "mozilla/dom/ViewTransition.h"
-#include "nsAbsoluteContainingBlock.h"
 #include "nsCanvasFrame.h"
 #include "nsGkAtoms.h"
 #include "nsLayoutUtils.h"
@@ -30,8 +30,6 @@
 #include "nsSubDocumentFrame.h"
 
 using namespace mozilla;
-
-using AbsPosReflowFlags = nsAbsoluteContainingBlock::AbsPosReflowFlags;
 
 // ScrollContainerFrame can create two other wrap lists for scrollbars and such.
 static constexpr uint16_t kFirstTopLayerIndex = 2;
@@ -507,11 +505,13 @@ void ViewportFrame::Reflow(nsPresContext* aPresContext,
     // size and dynamic toolbar into account because
     // ::-moz-snapshot-containing-block should include those areas.
     //
-    // We will take them into account in nsAbsoluteContainingBlock::Reflow(),
+    // We will take them into account in AbsoluteContainingBlock::Reflow(),
     // for kid frames other than ::-moz-snapshot-containing-block.
     const nsRect cb(nsPoint(), reflowInput.ComputedPhysicalSize());
-    // XXX could be optimized
-    AbsPosReflowFlags flags = AbsPosReflowFlags::CBWidthAndHeightChanged;
+    // XXX: To optimize the performance, set the flags only when the CB width or
+    // height actually changes.
+    AbsPosReflowFlags flags{AbsPosReflowFlag::CBWidthChanged,
+                            AbsPosReflowFlag::CBHeightChanged};
     GetAbsoluteContainingBlock()->Reflow(this, aPresContext, reflowInput,
                                          aStatus, cb, flags,
                                          /* aOverflowAreas = */ nullptr);

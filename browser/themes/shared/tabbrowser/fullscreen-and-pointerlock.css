@@ -38,6 +38,7 @@
   font: message-box;
 
   align-items: center;
+  color-scheme: dark;
   background-color: rgba(45, 62, 72, 0.9);
   color: #fafafa;
   box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.5);

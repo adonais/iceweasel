@@ -16,7 +16,6 @@ const selectors = require("resource://devtools/client/performance-new/store/sele
  * @typedef {import("../@types/perf").RecordingSettings} RecordingSettings
  * @typedef {import("../@types/perf").Presets} Presets
  * @typedef {import("../@types/perf").PanelWindow} PanelWindow
- * @typedef {import("perf").ProfileAndAdditionalInformation} ProfileAndAdditionalInformation
  */
 
 /**
@@ -178,7 +177,7 @@ exports.startRecording = perfFront => {
 /**
  * Stops the profiler, and opens the profile in a new window.
  * @param {PerfFront} perfFront
- * @return {ThunkAction<Promise<ProfileAndAdditionalInformation>>}
+ * @return {ThunkAction<Promise<MockedExports.ProfileAndAdditionalInformation>>}
  */
 exports.getProfileAndStopProfiler = perfFront => {
   return async ({ dispatch }) => {

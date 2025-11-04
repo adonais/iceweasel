@@ -396,6 +396,7 @@ PK11_ImportDERPrivateKeyInfoAndReturnKey
 PK11_ImportEncryptedPrivateKeyInfoAndReturnKey
 PK11_ImportPublicKey
 PK11_ImportSymKey
+PK11_ImportSymKeyWithFlags
 PK11_InitPin
 PK11_IsDisabled
 PK11_IsFIPS
@@ -745,6 +746,11 @@ CERT_FindCertByNicknameOrEmailAddrCX
 SECKEY_GetPrivateKeyType
 SEC_DerSignDataWithAlgorithmID
 SEC_CreateSignatureAlgorithmParameters
+SECITEM_MakeItem
+SECOID_FindOIDTagFromDescripton
+SEC_CreateSignatureAlgorithmID
+SECKEY_GetKeyTypeString
+SEC_GetSignatureAlgorithmOidTagByKey
 # These symbols are not used by Firefox itself, but are used by Java's security
 # libraries, which in turn are used by Java applets/plugins/etc.  Provide them
 # to make Java code happy.

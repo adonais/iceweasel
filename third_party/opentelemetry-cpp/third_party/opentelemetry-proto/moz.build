@@ -20,6 +20,8 @@ EXPORTS.opentelemetry.proto.collector.trace.v1 = [
     "opentelemetry/proto/collector/trace/v1/trace_service.pb.h"
 ]
 
+DEFINES["GOOGLE_PROTOBUF_NO_RTTI"] = True
+
 SOURCES += [
     "opentelemetry/proto/collector/trace/v1/trace_service.pb.cc",
     "opentelemetry/proto/common/v1/common.pb.cc",

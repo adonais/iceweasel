@@ -7,7 +7,6 @@
 #ifndef AlignedTArray_h__
 #define AlignedTArray_h__
 
-#include "mozilla/Alignment.h"
 #include "nsTArray.h"
 
 /**

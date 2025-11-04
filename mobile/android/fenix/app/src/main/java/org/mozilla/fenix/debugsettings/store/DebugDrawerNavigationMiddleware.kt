@@ -41,6 +41,8 @@ class DebugDrawerNavigationMiddleware(
                     navController.navigate(route = DebugDrawerRoute.Logins.route)
                 is DebugDrawerAction.NavigateTo.Addresses ->
                     navController.navigate(route = DebugDrawerRoute.Addresses.route)
+                is DebugDrawerAction.NavigateTo.CreditCards ->
+                    navController.navigate(route = DebugDrawerRoute.CreditCards.route)
                 is DebugDrawerAction.NavigateTo.CfrTools ->
                     navController.navigate(route = DebugDrawerRoute.CfrTools.route)
                 is DebugDrawerAction.NavigateTo.GleanDebugTools ->

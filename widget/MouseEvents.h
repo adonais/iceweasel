@@ -341,6 +341,11 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     }
   }
 
+  WidgetMouseEvent(const WidgetMouseEvent& aEvent)
+      : WidgetMouseEventBase(aEvent), WidgetPointerHelper(aEvent) {
+    AssignMouseEventDataOnly(aEvent);
+  }
+
 #ifdef DEBUG
   virtual ~WidgetMouseEvent() { AssertContextMenuEventButtonConsistency(); }
 #endif
@@ -410,7 +415,12 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets) {
     AssignMouseEventBaseData(aEvent, aCopyTargets);
     AssignPointerHelperData(aEvent, /* aCopyCoalescedEvents */ true);
+    AssignMouseEventDataOnly(aEvent);
+  }
 
+  void AssignMouseEventDataOnly(const WidgetMouseEvent& aEvent) {
+    // NOTE: Intentionally not copying mClickTarget, it should only be used by
+    //       the original mouseup event to dispatch the click event.
     mReason = aEvent.mReason;
     mContextMenuTrigger = aEvent.mContextMenuTrigger;
     mExitFrom = aEvent.mExitFrom;
@@ -418,6 +428,9 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
     mIgnoreCapturingContent = aEvent.mIgnoreCapturingContent;
     mClickEventPrevented = aEvent.mClickEventPrevented;
+    // NOTE: Intentionally not copying mSynthesizeMoveAfterDispatch, it should
+    //       only be used by the original event to check whether we need to
+    //       synthesize an additional mousemove or pointermove event.
     mTriggerEvent = aEvent.mTriggerEvent;
     // NOTE: Intentionally not copying mCallbackId, it should only be tracked by
     //       the original event or propagated to the cross-process event.

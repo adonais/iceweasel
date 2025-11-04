@@ -6,7 +6,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   ActionsProviderQuickActions:
-    "resource:///modules/ActionsProviderQuickActions.sys.mjs",
+    "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs",
 });
 
 add_setup(async () => {
@@ -90,8 +90,12 @@ add_task(async function minimum_search_string() {
     UrlbarPrefs.set("quickactions.minimumSearchString", minimumSearchString);
     for (let i = 1; i < 4; i++) {
       let context = createContext(searchString.substring(0, i), {});
+      let controller = UrlbarTestUtils.newMockController();
       let result = await ActionsProviderQuickActions.queryActions(context);
-      let isActive = await ActionsProviderQuickActions.isActive(context);
+      let isActive = await ActionsProviderQuickActions.isActive(
+        context,
+        controller
+      );
 
       if (i >= minimumSearchString) {
         Assert.equal(result[0].key, "newaction", "Matched the new action");
@@ -113,9 +117,10 @@ add_task(async function interventions_disabled() {
     getProvider: name => UrlbarProvidersManager.getProvider(name),
   };
   let context = createContext("test", { isPrivate: false });
+  let controller = UrlbarTestUtils.newMockController();
 
   Assert.ok(
-    !(await interventionsProvider.isActive(context)),
+    !(await interventionsProvider.isActive(context, controller)),
     "Urlbar interventions are disabled when actions are enabled"
   );
   interventionsProvider.queryInstance = null;

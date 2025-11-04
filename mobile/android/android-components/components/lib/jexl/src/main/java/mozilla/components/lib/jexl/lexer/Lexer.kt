@@ -31,7 +31,7 @@ internal class Lexer(private val grammar: Grammar) {
     /**
      * Splits the JEXL expression string into a list of tokens.
      */
-    @Suppress("ComplexMethod", "LongMethod")
+    @Suppress("ComplexMethod")
     @Throws(LexerException::class)
     fun tokenize(raw: String): List<Token> {
         val input = LexerInput(raw)

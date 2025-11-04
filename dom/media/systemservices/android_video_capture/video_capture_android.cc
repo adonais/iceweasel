@@ -10,13 +10,12 @@
 
 #include "video_capture_android.h"
 
+#include "AndroidBridge.h"
 #include "device_info_android.h"
 #include "modules/utility/include/helpers_android.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/time_utils.h"
-
-#include "AndroidBridge.h"
 
 static JavaVM* g_jvm_capture = NULL;
 static jclass g_java_capturer_class = NULL;  // VideoCaptureAndroid.class.

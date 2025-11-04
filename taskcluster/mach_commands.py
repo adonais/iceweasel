@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import os
+import pathlib
 import sys
 import time
 import traceback
@@ -270,6 +271,13 @@ def taskgraph_decision(command_context, **options):
                 f"PERFHERDER_DATA: {json.dumps(perfherder_data)}",
                 file=sys.stderr,
             )
+            moz_upload_dir = os.environ.get("MOZ_UPLOAD_DIR")
+            if moz_upload_dir:
+                upload_dir = pathlib.Path(moz_upload_dir)
+                out_path = upload_dir / "perfherder-data-decision.json"
+                with out_path.open("w", encoding="utf-8") as f:
+                    json.dump(perfherder_data, f)
+
         return ret
     except Exception:
         traceback.print_exc()

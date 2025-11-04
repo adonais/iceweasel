@@ -29,14 +29,11 @@
 #include "js/experimental/TypedData.h"  // JS_NewUint8ClampedArray, JS_GetUint8ClampedArrayData
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "mozilla/Alignment.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/EndianUtils.h"
 #include "mozilla/FilterInstance.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/GeckoBindings.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MathAlgorithms.h"
@@ -974,16 +971,14 @@ class AdjustedTarget {
 
 void CanvasPattern::SetTransform(const DOMMatrix2DInit& aInit,
                                  ErrorResult& aError) {
-  RefPtr<DOMMatrixReadOnly> matrix =
-      DOMMatrixReadOnly::FromMatrix(GetParentObject(), aInit, aError);
+  Matrix matrix2D(DOMMatrixReadOnly::ToValidatedMatrixDouble(aInit, aError));
   if (aError.Failed()) {
     return;
   }
-  const auto* matrix2D = matrix->GetInternal2D();
-  if (!matrix2D->IsFinite()) {
+  if (!matrix2D.IsFinite()) {
     return;
   }
-  mTransform = Matrix(*matrix2D);
+  mTransform = Matrix(matrix2D);
 }
 
 void CanvasGradient::AddColorStop(float aOffset, const nsACString& aColorstr,
@@ -2297,7 +2292,7 @@ NS_IMETHODIMP
 CanvasRenderingContext2D::GetInputStream(
     const char* aMimeType, const nsAString& aEncoderOptions,
     mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
-    nsIInputStream** aStream) {
+    const nsACString& aRandomizationKey, nsIInputStream** aStream) {
   nsCString enccid("@mozilla.org/image/encoder;2?type=");
   enccid += aMimeType;
   nsCOMPtr<imgIEncoder> encoder = do_CreateInstance(enccid.get());
@@ -2313,9 +2308,9 @@ CanvasRenderingContext2D::GetInputStream(
     return NS_ERROR_FAILURE;
   }
 
-  return ImageEncoder::GetInputStream(imageSize.width, imageSize.height,
-                                      imageBuffer.get(), format, encoder,
-                                      aEncoderOptions, aStream);
+  return ImageEncoder::GetInputStream(
+      imageSize.width, imageSize.height, imageBuffer.get(), format, encoder,
+      aEncoderOptions, aRandomizationKey, aStream);
 }
 
 already_AddRefed<mozilla::gfx::SourceSurface>
@@ -2475,11 +2470,9 @@ void CanvasRenderingContext2D::SetTransform(const DOMMatrix2DInit& aInit,
   if (HasErrorState(aError)) {
     return;
   }
-  RefPtr<DOMMatrixReadOnly> matrix =
-      DOMMatrixReadOnly::FromMatrix(GetParentObject(), aInit, aError);
+  Matrix matrix2D(DOMMatrixReadOnly::ToValidatedMatrixDouble(aInit, aError));
   if (!aError.Failed()) {
-    Matrix newMatrix = Matrix(*(matrix->GetInternal2D()));
-    SetTransformInternal(newMatrix);
+    SetTransformInternal(matrix2D);
   }
 }
 
@@ -6537,14 +6530,14 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   mBufferProvider->ReturnSnapshot(snapshot.forget());
 
   // Check for site-specific permission.
-  CanvasUtils::ImageExtraction permission =
+  CanvasUtils::ImageExtraction extractionBehavior =
       CanvasUtils::ImageExtraction::Unrestricted;
   if (mCanvasElement) {
-    permission = CanvasUtils::ImageExtractionResult(mCanvasElement, aCx,
-                                                    &aSubjectPrincipal);
+    extractionBehavior = CanvasUtils::ImageExtractionResult(mCanvasElement, aCx,
+                                                            &aSubjectPrincipal);
   } else if (mOffscreenCanvas) {
-    permission = CanvasUtils::ImageExtractionResult(mOffscreenCanvas, aCx,
-                                                    &aSubjectPrincipal);
+    extractionBehavior = CanvasUtils::ImageExtractionResult(
+        mOffscreenCanvas, aCx, &aSubjectPrincipal);
   }
 
   // Clone the data source surface if canvas randomization is enabled. We need
@@ -6553,7 +6546,7 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   //
   // Note that we don't need to clone if we will use the place holder because
   // the place holder doesn't use actual image data.
-  if (permission == CanvasUtils::ImageExtraction::Randomize) {
+  if (extractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
     if (readback) {
       readback = CreateDataSourceSurfaceByCloning(readback);
     }
@@ -6566,12 +6559,12 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
 
   do {
     uint8_t* randomData;
-    if (permission == CanvasUtils::ImageExtraction::Placeholder) {
+    if (extractionBehavior == CanvasUtils::ImageExtraction::Placeholder) {
       // Since we cannot call any GC-able functions (like requesting the RNG
       // service) after we call JS_GetUint8ClampedArrayData, we will
       // pre-generate the randomness required for GeneratePlaceholderCanvasData.
       randomData = TryToGenerateRandomDataForPlaceholderCanvasData();
-    } else if (permission == CanvasUtils::ImageExtraction::Randomize) {
+    } else if (extractionBehavior == CanvasUtils::ImageExtraction::Randomize) {
       // Apply the random noises if canvan randomization is enabled. We don't
       // need to calculate random noises if we are going to use the place
       // holder.
@@ -6588,7 +6581,7 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
     uint8_t* data = JS_GetUint8ClampedArrayData(darray, &isShared, nogc);
     MOZ_ASSERT(!isShared);  // Should not happen, data was created above
 
-    if (permission == CanvasUtils::ImageExtraction::Placeholder) {
+    if (extractionBehavior == CanvasUtils::ImageExtraction::Placeholder) {
       FillPlaceholderCanvas(randomData, len.value(), data);
       break;
     }

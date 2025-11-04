@@ -54,6 +54,9 @@ impl Cli {
                         command::CommandOutput::TextDocument { content, .. } => {
                             Ok(Some(content))
                         }
+                        command::CommandOutput::SerdeDocument { content, .. } => {
+                            Ok(Some(content))
+                        }
                     }
                 },
             ).with_help(desc.help);

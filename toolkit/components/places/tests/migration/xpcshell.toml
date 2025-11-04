@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head = "head_migration.js"
 skip-if = ["condprof"] # Not worth running conditioned profiles on these migration
 # tests for databases. See discussion in bug 1838791.

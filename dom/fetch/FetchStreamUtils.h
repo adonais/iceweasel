@@ -7,7 +7,6 @@
 
 #include <cstdint>
 
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/dom/FetchTypes.h"
 #include "nsIInputStream.h"

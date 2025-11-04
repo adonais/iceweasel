@@ -24,7 +24,7 @@ urlbar:
         description: >
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
-          , `handoff`, `urlbar_newtab` and `urlbar_addonpage`.
+          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, and `searchbar`.
         type: string
       interaction:
         description: >
@@ -194,7 +194,7 @@ urlbar:
         description: >
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
-          , `handoff`, `urlbar_newtab` and `urlbar_addonpage`.
+          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, and `searchbar`.
         type: string
       interaction:
         description: >
@@ -315,7 +315,7 @@ urlbar:
         description: >
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
-          , `handoff`, `urlbar_newtab` and `urlbar_addonpage`.
+          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, and `searchbar`.
         type: string
       interaction:
         description: >
@@ -403,7 +403,7 @@ urlbar:
         description: >
           `sap` is the meaning of `search access point`. It records where the
           user started the search action from. The possible values are: `urlbar`
-          , `handoff`, `urlbar_newtab` and `urlbar_addonpage`.
+          , `handoff`, `urlbar_newtab`, `urlbar_addonpage`, and `searchbar`.
         type: string
       interaction:
         description: >
@@ -894,6 +894,22 @@ urlbar:
     expires: never
     send_in_pings:
       - events
+
+  pref_switch_tabs_search_all_containers:
+    lifetime: application
+    type: boolean
+    description: >
+      Whether the "Switch to Tab" feature searches across all containers.
+      Corresponds to the value of the `browser.urlbar.switchTabs.searchAllContainers` pref.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1974961
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1974961
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - fx-search-telemetry@mozilla.com
+    expires: 149
 
   autofill_deletion:
     type: counter

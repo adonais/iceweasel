@@ -138,7 +138,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_enable_toolbar_redesign).apply {
-            isVisible = Config.channel.isNightlyOrDebug
             isEnabled = context.settings().shouldUseComposableToolbar
             summary = when (context.settings().shouldUseComposableToolbar) {
                 true -> null
@@ -179,12 +178,6 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
-        requirePreference<SwitchPreference>(R.string.pref_key_override_user_specified_homepage_sections).apply {
-            isVisible = Config.channel.isNightlyOrDebug
-            isChecked = context.settings().overrideUserSpecifiedHomepageSections
-            onPreferenceChangeListener = SharedPreferenceUpdater()
-        }
-
         requirePreference<SwitchPreference>(R.string.pref_key_enable_homepage_as_new_tab).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().enableHomepageAsNewTab
@@ -194,6 +187,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_enable_discover_more_stories).apply {
             isVisible = Config.channel.isNightlyOrDebug
             isChecked = context.settings().enableDiscoverMoreStories
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_enable_private_browsing_mode_redesign).apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isChecked = context.settings().enablePrivateBrowsingModeRedesign
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -230,6 +229,12 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         requirePreference<SwitchPreference>(R.string.pref_key_enable_shortcuts_suggestions).apply {
             isVisible = true
             isChecked = context.settings().isShortcutSuggestionsVisible
+            onPreferenceChangeListener = SharedPreferenceUpdater()
+        }
+
+        requirePreference<SwitchPreference>(R.string.pref_key_allow_settings_search).apply {
+            isVisible = Config.channel.isNightlyOrDebug
+            isChecked = context.settings().isSettingsSearchEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
@@ -354,13 +359,13 @@ class SecretSettingsFragment : PreferenceFragmentCompat() {
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_terms_accepted).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = Config.channel.isNightlyOrDebug || Config.channel.isBeta
             isChecked = context.settings().hasAcceptedTermsOfService
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreference>(R.string.pref_key_debug_terms_trigger_time).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = Config.channel.isNightlyOrDebug || Config.channel.isBeta
             isChecked = context.settings().isDebugTermsOfServiceTriggerTimeEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }

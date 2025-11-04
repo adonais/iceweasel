@@ -91,7 +91,10 @@ tags = "persisted-search"
 
 ["browser_UrlbarInput_setURI.js"]
 https_first_disabled = true
-skip-if = ["os == 'mac' && os_version == '10.15' && processor == 'x86_64' && debug"] # Bug 1773790
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && debug",  # Bug 1773790
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && debug", # Bug 1773790
+]
 
 ["browser_UrlbarInput_tooltip.js"]
 
@@ -210,6 +213,12 @@ support-files = [
 ["browser_content_opener.js"]
 
 ["browser_contextualsearch.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64'", # Bug 1932516
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1932516
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1932516
+]
+
 
 ["browser_contextualsearch_install.js"]
 
@@ -647,6 +656,7 @@ support-files = ["slow-page.sjs"]
 ["browser_strip_on_share.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && asan && swgl", # Bug 1890664
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan && swgl", # Bug 1890664
 ]
 
 ["browser_strip_on_share_telemetry.js"]
@@ -703,6 +713,8 @@ https_first_disabled = true
 
 ["browser_trust_panel.js"]
 
+["browser_trust_panel_pages.js"]
+
 ["browser_trust_panel_security_view.js"]
 https_first_disabled = true
 
@@ -720,6 +732,8 @@ https_first_disabled = true
 https_first_disabled = true
 support-files = ["redirect_to.sjs"]
 
+["browser_urlbar_modifiedClick.js"]
+
 ["browser_urlbar_selection.js"]
 skip-if = [
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # bug 1570474
@@ -733,6 +747,10 @@ tags = "search-telemetry"
 support-files = [
   "urlbarTelemetrySearchSuggestions.sjs",
   "urlbarTelemetrySearchSuggestions.xml",
+]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && opt", # Bug 1775830
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1775830
 ]
 
 ["browser_urlbar_telemetry_autofill.js"]
@@ -759,6 +777,9 @@ https_first_disabled = true
 tags = "search-telemetry"
 
 ["browser_urlbar_telemetry_remotetab.js"]
+tags = "search-telemetry"
+
+["browser_urlbar_telemetry_searchContainers.js"]
 tags = "search-telemetry"
 
 ["browser_urlbar_telemetry_searchmode.js"]

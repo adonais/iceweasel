@@ -151,6 +151,8 @@ nsresult WorkerModuleLoader::CompileFetchedModule(
       return CompileJavaScriptModule(aCx, aOptions, aRequest, aModuleScript);
     case JS::ModuleType::JSON:
       return CompileJsonModule(aCx, aOptions, aRequest, aModuleScript);
+    case JS::ModuleType::CSS:
+      MOZ_CRASH("CSS modules are not supported in workers");
   }
 
   MOZ_CRASH("Unhandled module type");
@@ -218,20 +220,21 @@ WorkerScriptLoader* WorkerModuleLoader::GetScriptLoaderFor(
 }
 
 void WorkerModuleLoader::OnModuleLoadComplete(ModuleLoadRequest* aRequest) {
-  if (aRequest->IsTopLevel()) {
-    AutoJSAPI jsapi;
-    if (NS_WARN_IF(!jsapi.Init(GetGlobalObject()))) {
-      return;
-    }
-    RefPtr<WorkerScriptLoader> requestScriptLoader =
-        GetScriptLoaderFor(aRequest);
-    if (aRequest->IsDynamicImport()) {
-      aRequest->ProcessDynamicImport();
-      requestScriptLoader->TryShutdown();
-    } else {
-      requestScriptLoader->MaybeMoveToLoadedList(aRequest);
-      requestScriptLoader->ProcessPendingRequests(jsapi.cx());
-    }
+  if (aRequest->IsStaticImport()) {
+    return;
+  }
+
+  AutoJSAPI jsapi;
+  if (NS_WARN_IF(!jsapi.Init(GetGlobalObject()))) {
+    return;
+  }
+  RefPtr<WorkerScriptLoader> requestScriptLoader = GetScriptLoaderFor(aRequest);
+  if (aRequest->IsDynamicImport()) {
+    aRequest->ProcessDynamicImport();
+    requestScriptLoader->TryShutdown();
+  } else {
+    requestScriptLoader->MaybeMoveToLoadedList(aRequest);
+    requestScriptLoader->ProcessPendingRequests(jsapi.cx());
   }
 }
 

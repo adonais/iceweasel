@@ -24,6 +24,7 @@ ITEM_VALUE(CanvasRandomization,         9)
 ITEM_VALUE(CanvasImageExtractionPrompt, 10)
 ITEM_VALUE(CanvasExtractionFromThirdPartiesIsBlocked, 11)
 ITEM_VALUE(CanvasExtractionBeforeUserInputIsBlocked,  12)
+// See also EfficientCanvasRandomization = 76 below
 
 ITEM_VALUE(JSLocale,                13)
 
@@ -105,10 +106,9 @@ ITEM_VALUE(WebCodecs,                   71)
 ITEM_VALUE(MaxTouchPoints,              72)
 ITEM_VALUE(MaxTouchPointsCollapse,      73)
 ITEM_VALUE(NavigatorHWConcurrencyTiered,74)
+ITEM_VALUE(WebGLRandomization,          75)
+ITEM_VALUE(EfficientCanvasRandomization, 76)
 
-
-// !!! Don't forget to update kDefaultFingerprintingProtections in nsRFPService.cpp
-// if necessary.
 
 /*
  * In certain cases, we precompute the value of ShouldRFP for e.g. a Document.

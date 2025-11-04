@@ -171,6 +171,7 @@ export class SelectableProfile {
    * If the avatar is custom, the return value will be the path to the file on
    * disk.
    *
+   * @param {string|number} size
    * @returns {string} Path to the current avatar.
    */
   getAvatarPath(size) {
@@ -449,6 +450,14 @@ export class SelectableProfile {
           ])
         )
       );
+
+      const response = await fetch(profileObj.avatarURLs.url16);
+
+      let faviconSVGText = await response.text();
+      faviconSVGText = faviconSVGText
+        .replaceAll("context-fill", profileObj.themeBg)
+        .replaceAll("context-stroke", profileObj.themeFg);
+      profileObj.faviconSVGText = faviconSVGText;
     }
 
     return profileObj;

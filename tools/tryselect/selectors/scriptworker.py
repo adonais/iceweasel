@@ -15,7 +15,6 @@ from ..push import push_to_try
 
 TASK_TYPES = {
     "linux-signing": [
-        "build-signing-linux-shippable/opt",
         "build-signing-linux64-shippable/opt",
         "build-signing-win64-shippable/opt",
         "build-signing-win32-shippable/opt",

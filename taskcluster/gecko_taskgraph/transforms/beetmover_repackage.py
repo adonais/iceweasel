@@ -161,10 +161,12 @@ def make_task_description(config, jobs):
 
         dependencies = {
             "build": upstream_deps[build_name],
-            "repackage": upstream_deps[repackage_name],
             "signing": upstream_deps[signing_name],
-            "mar-signing": upstream_deps[mar_signing_name],
         }
+        if repackage_name in upstream_deps:
+            dependencies["repackage"] = upstream_deps[repackage_name]
+        if mar_signing_name in upstream_deps:
+            dependencies["mar-signing"] = upstream_deps[mar_signing_name]
         if "partials-signing" in upstream_deps:
             dependencies["partials-signing"] = upstream_deps["partials-signing"]
         if msi_signing_name in upstream_deps:

@@ -16,7 +16,6 @@
 #include "EditorForwards.h"
 #include "EditorUtils.h"  // for CaretPoint
 
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/ContentIterator.h"
 #include "mozilla/IntegerRange.h"

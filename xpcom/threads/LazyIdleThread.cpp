@@ -95,12 +95,12 @@ LazyIdleThread::DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) {
 
 NS_IMETHODIMP
 LazyIdleThread::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  return mTaskQueue->RegisterShutdownTask(aTask);
 }
 
 NS_IMETHODIMP
 LazyIdleThread::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  return mTaskQueue->UnregisterShutdownTask(aTask);
 }
 
 NS_IMETHODIMP

@@ -48,6 +48,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
         isUseNewCrashReporterDialog = settings.useNewCrashReporterDialog,
         isTabSwipeCFREnabled = settings.hasShownTabSwipeCFR,
         isTermsOfServiceAccepted = settings.hasAcceptedTermsOfService,
+        isComposeLoginsEnabled = settings.enableComposeLogins,
     )
 
     /**
@@ -74,6 +75,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
     override var isUseNewCrashReporterDialog: Boolean by updatedFeatureFlags::isUseNewCrashReporterDialog
     override var isTabSwipeCFREnabled: Boolean by updatedFeatureFlags::isTabSwipeCFREnabled
     override var isTermsOfServiceAccepted: Boolean by updatedFeatureFlags::isTermsOfServiceAccepted
+    override var isComposeLoginsEnabled: Boolean by updatedFeatureFlags::isComposeLoginsEnabled
 
     override fun applyFlagUpdates() {
         Log.i(TAG, "applyFlagUpdates: Trying to apply the updated feature flags: $updatedFeatureFlags")
@@ -110,6 +112,7 @@ class FeatureSettingsHelperDelegate : FeatureSettingsHelper {
         settings.useNewCrashReporterDialog = featureFlags.isUseNewCrashReporterDialog
         settings.hasShownTabSwipeCFR = !featureFlags.isTabSwipeCFREnabled
         settings.hasAcceptedTermsOfService = featureFlags.isTermsOfServiceAccepted
+        settings.enableComposeLogins = featureFlags.isComposeLoginsEnabled
     }
 }
 
@@ -134,6 +137,7 @@ private data class FeatureFlags(
     var isUseNewCrashReporterDialog: Boolean,
     var isTabSwipeCFREnabled: Boolean,
     var isTermsOfServiceAccepted: Boolean,
+    var isComposeLoginsEnabled: Boolean,
 )
 
 internal fun getETPPolicy(settings: Settings): ETPPolicy {

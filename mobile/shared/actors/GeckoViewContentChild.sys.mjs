@@ -156,11 +156,12 @@ export class GeckoViewContentChild extends GeckoViewActorChild {
         }
         break;
       }
-      case "GeckoView:DOMFullscreenExited":
+      case "GeckoView:DOMFullscreenExited": {
         // During fullscreen, window size is changed. So don't restore viewport size.
         const restoreViewSize = this.orientation() == this.lastOrientation;
         this.contentWindow?.windowUtils.exitFullscreen(!restoreViewSize);
         break;
+      }
       case "GeckoView:ZoomToInput": {
         const { contentWindow } = this;
         const dwu = contentWindow.windowUtils;

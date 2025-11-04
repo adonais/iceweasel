@@ -9,6 +9,10 @@
 COMPILE_FLAGS["OS_INCLUDES"] = []
 AllowCompilerWarnings()
 
+CXXFLAGS += [
+    "-std=gnu++20"
+]
+
 DEFINES["ABSL_ALLOCATOR_NOTHROW"] = "1"
 DEFINES["ANDROID"] = True
 DEFINES["ANDROID_NDK_VERSION_ROLL"] = "r27_1"

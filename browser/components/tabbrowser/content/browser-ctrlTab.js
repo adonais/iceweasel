@@ -2,9 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// This file is loaded into the browser window scope.
-/* eslint-env mozilla/browser-window */
-
 /**
  * Tab previews utility, produces thumbnails
  */
@@ -673,7 +670,7 @@ var ctrlTab = {
           }
         }
         break;
-      case "TabSelect":
+      case "TabSelect": {
         this.attachTab(event.target, 0);
         // If the previous tab was hidden (e.g. Firefox View), remove it from
         // the list when it's deselected.
@@ -682,6 +679,7 @@ var ctrlTab = {
           this.detachTab(previousTab);
         }
         break;
+      }
       case "TabOpen":
         this.attachTab(event.target, 1);
         break;

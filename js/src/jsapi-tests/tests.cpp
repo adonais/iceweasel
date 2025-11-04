@@ -233,9 +233,7 @@ int main(int argc, char* argv[]) {
 
   // Override prefs for jsapi-tests.
   JS::Prefs::setAtStartup_experimental_weakrefs_expose_cleanupSome(true);
-#ifdef NIGHTLY_BUILD
   JS::Prefs::setAtStartup_experimental_symbols_as_weakmap_keys(true);
-#endif
 
   if (!options.frontendOnly) {
     if (!JS_Init()) {

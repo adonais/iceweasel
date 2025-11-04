@@ -170,7 +170,8 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
     void CancelDnsResolution();
     void Abandon();
     void CloseAll();
-    nsresult SetupConn(nsAHttpTransaction* transaction, ConnectionEntry* ent,
+    nsresult SetupConn(DnsAndConnectSocket* dnsAndSock,
+                       nsAHttpTransaction* transaction, ConnectionEntry* ent,
                        nsresult status, uint32_t cap,
                        HttpConnectionBase** connection);
     [[nodiscard]] nsresult SetupStreams(DnsAndConnectSocket* dnsAndSock);
@@ -259,7 +260,7 @@ class DnsAndConnectSocket final : public nsIOutputStreamCallback,
   nsCOMPtr<nsITimer> mSynTimer;
   BackupTransportSetup mBackupTransport;
 
-  bool mIsHttp3;
+  bool mIsHttp3 = false;
 
   bool mSkipDnsResolution = false;
   bool mProxyNotTransparent = false;

@@ -35,6 +35,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/GeckoTrace.h"
 #include "mozilla/Logging.h"
 #include "mozilla/MacroForEach.h"
 #include "mozilla/Maybe.h"
@@ -739,6 +740,8 @@ Result<nsCOMPtr<nsIFile>, nsresult> GetArchiveFile(
 
 Result<nsCOMPtr<mozIStorageConnection>, nsresult>
 CreateArchiveStorageConnection(const nsAString& aStoragePath) {
+  GECKO_TRACE_SCOPE("dom::localstorage", "CreateArchiveStorageConnection");
+
   AssertIsOnIOThread();
   MOZ_ASSERT(!aStoragePath.IsEmpty());
 
@@ -1061,6 +1064,8 @@ nsresult UpdateUsageFile(nsIFile* aUsageFile, nsIFile* aUsageJournalFile,
 }
 
 Result<UsageInfo, nsresult> LoadUsageFile(nsIFile& aUsageFile) {
+  GECKO_TRACE_SCOPE("dom::localstorage", "LoadUsageFile");
+
   AssertIsOnIOThread();
 
   QM_TRY_INSPECT(const int64_t& fileSize,
@@ -2895,6 +2900,8 @@ already_AddRefed<Datastore> GetDatastore(const nsACString& aOrigin) {
 }
 
 nsresult LoadArchivedOrigins() {
+  GECKO_TRACE_SCOPE("dom::localstorage", "LoadArchivedOrigins");
+
   AssertIsOnIOThread();
   MOZ_ASSERT(!gArchivedOrigins);
 
@@ -7021,6 +7028,8 @@ void PrepareDatastoreOp::SendToIOThread() {
 }
 
 nsresult PrepareDatastoreOp::DatabaseWork() {
+  GECKO_TRACE_SCOPE("dom::localstorage", "PrepareDatastoreOp::DatabaseWork");
+
   AssertIsOnIOThread();
   MOZ_ASSERT(mArchivedOriginScope);
   MOZ_ASSERT(mUsage == 0);

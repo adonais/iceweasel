@@ -27,3 +27,11 @@ export function tabExists(state, source) {
 export function isPrettyPrinted(state, source) {
   return source.url && state.tabs.prettyPrintedURLs.has(source.url);
 }
+
+/**
+ * Reports if a given source was ignored by auto-pretty printing,
+ * or if the user manually disabled pretty printing on it
+ */
+export function isPrettyPrintedDisabled(state, source) {
+  return source.url && state.tabs.prettyPrintedDisabledURLs.has(source.url);
+}

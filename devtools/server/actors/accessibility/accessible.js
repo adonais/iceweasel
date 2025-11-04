@@ -45,11 +45,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "events",
-  "resource://devtools/shared/event-emitter.js"
-);
-loader.lazyRequireGetter(
-  this,
   "getBounds",
   "resource://devtools/server/actors/highlighters/utils/accessibility.js",
   true
@@ -627,7 +622,7 @@ class AccessibleActor extends Actor {
         }, {});
         this._lastAudit = this._lastAudit || {};
         Object.assign(this._lastAudit, audit);
-        events.emit(this, "audited", audit);
+        this.emit("audited", audit);
 
         return audit;
       })

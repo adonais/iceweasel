@@ -5,7 +5,7 @@
 Support for running jobs that are invoked via the `run-task` script.
 """
 
-
+import dataclasses
 import os
 
 from mozbuild.util import memoize
@@ -63,7 +63,16 @@ def common_setup(config, job, taskdesc, command):
     run = job["run"]
     run_cwd = run.get("cwd")
     if run["checkout"]:
-        gecko_path = support_vcs_checkout(config, job, taskdesc)
+        repo_configs = config.repo_configs
+        if len(repo_configs) > 1 and run["checkout"] is True:
+            raise Exception("Must explicitly specify checkouts with multiple repos.")
+        elif run["checkout"] is not True:
+            repo_configs = {
+                repo: dataclasses.replace(repo_configs[repo], **config)
+                for (repo, config) in run["checkout"].items()
+            }
+
+        gecko_path = support_vcs_checkout(config, job, taskdesc, repo_configs)
         command.append(f"--gecko-checkout={gecko_path}")
 
         if run_cwd:

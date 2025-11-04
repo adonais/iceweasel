@@ -31,6 +31,7 @@
 @end
 
 @protocol GeckoProcessExtension <NSObject>
+- (void)lockdownSandbox:(NSString*)revision;
 @end
 
 @protocol EventCallback <NSObject>

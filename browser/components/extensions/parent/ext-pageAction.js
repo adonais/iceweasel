@@ -236,7 +236,7 @@ this.pageAction = class extends ExtensionAPIPersistent {
 
   handleEvent(event) {
     switch (event.type) {
-      case "popupshowing":
+      case "popupshowing": {
         const menu = event.target;
         const trigger = menu.triggerNode;
         const getActionId = () => {
@@ -274,6 +274,7 @@ this.pageAction = class extends ExtensionAPIPersistent {
           });
         }
         break;
+      }
     }
   }
 

@@ -8,7 +8,6 @@
 #define mozilla_dom_cache_AutoUtils_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/InitializedOnce.h"
 #include "mozilla/dom/SafeRefPtr.h"
 #include "mozilla/dom/cache/CacheTypes.h"
 #include "mozilla/dom/cache/TypeUtils.h"

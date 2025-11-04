@@ -14,7 +14,6 @@ kind-dependencies:
     - release-partner-repack
 
 only-for-build-platforms:
-    - linux-shippable/opt
     - linux64-shippable/opt
 
 tasks:

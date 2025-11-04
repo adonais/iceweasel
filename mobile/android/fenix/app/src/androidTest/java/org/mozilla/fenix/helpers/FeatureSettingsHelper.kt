@@ -117,6 +117,11 @@ interface FeatureSettingsHelper {
     var isTermsOfServiceAccepted: Boolean
 
     /**
+     * Enable or disable the composable logins.
+     */
+    var isComposeLoginsEnabled: Boolean
+
+    /**
      * Enable or disable the translations prompt after a page that can be translated is loaded.
      */
     fun enableOrDisablePageLoadTranslationsPrompt(enableTranslationsPrompt: Boolean) {

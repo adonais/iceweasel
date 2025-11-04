@@ -94,7 +94,7 @@ function clickOnSuggestion(index, editor) {
   return new Promise(resolve => {
     info("Clicking on item " + index + " in the list");
     editor.once("after-suggest", () => executeSoon(resolve));
-    editor.popup._list.childNodes[index].click();
+    editor.popup.list.childNodes[index].click();
   });
 }
 

@@ -861,12 +861,17 @@ def main():
         }
 
         # Process completed tasks as they finish
+        error_generating_configs = False
         for future in as_completed(futures):
             try:
                 gn_configs.append(future.result())
             except Exception as e:
                 print(f"[Task] Task failed with exception: {e}")
-                sys.exit(1)
+                error_generating_configs = True
+
+        if error_generating_configs:
+            print("\nGenerating configs failed.  See errors above.\n", file=sys.stderr)
+            sys.exit(1)
 
         print("All generation tasks have been processed.")
 

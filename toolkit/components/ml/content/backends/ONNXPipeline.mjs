@@ -62,11 +62,12 @@ let transformers = null;
  * @async
  * @function importTransformers
  * @param {string} backend - The backend to use (e.g. "onnx-native" or "onnx").
- * @returns {Promise<void>} A promise that resolves once the Transformers library is imported.
+ * @returns {Promise<import("chrome://global/content/ml/transformers-dev.js")>}
+ *   A promise that resolves once the Transformers library is imported.
  */
-async function importTransformers(backend) {
+export async function importTransformers(backend) {
   if (transformers) {
-    return;
+    return transformers;
   }
 
   lazy.console.debug(`Using backend ${backend}`);
@@ -95,6 +96,8 @@ async function importTransformers(backend) {
     lazy.console.debug("Beta or Release detected, using transformers.js");
     transformers = await import("chrome://global/content/ml/transformers.js");
   }
+
+  return transformers;
 }
 
 /**

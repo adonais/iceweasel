@@ -3,7 +3,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
+import gzip
+import json
 import logging
+import os
 
 from mozbuild.util import memoize
 from taskgraph.loader.transform import loader as transform_loader
@@ -11,11 +14,14 @@ from taskgraph.util.copy import deepcopy
 from taskgraph.util.yaml import load_yaml
 
 from gecko_taskgraph import TEST_CONFIGS
+from gecko_taskgraph.util.chunking import resolver
 
 logger = logging.getLogger(__name__)
 
+ARTIFACTS_DIR = "artifacts"
 
-def loader(kind, path, config, params, loaded_tasks):
+
+def loader(kind, path, config, params, loaded_tasks, write_artifacts):
     """
     Generate tasks implementing Gecko tests.
     """
@@ -38,7 +44,7 @@ def loader(kind, path, config, params, loaded_tasks):
     test_platforms = expand_tests(test_sets_cfg, test_platforms, kind)
 
     # load the test descriptions
-    tests = transform_loader(kind, path, config, params, loaded_tasks)
+    tests = transform_loader(kind, path, config, params, loaded_tasks, write_artifacts)
     test_descriptions = {t.pop("name"): t for t in tests}
 
     # generate all tests for all test platforms
@@ -65,6 +71,22 @@ def loader(kind, path, config, params, loaded_tasks):
                 )
             )
             yield test
+
+    # this file was previously written out in `decision.py` alongside most
+    # other decision task artifacts. it was moved here to accommodate tasks
+    # being generated in subprocesses, and the fact that the `resolver` that
+    # has the data is only updated in the subprocess.
+    # see https://bugzilla.mozilla.org/show_bug.cgi?id=1989038 for additional
+    # details
+    # we must only write this file once, to ensure it is never overridden
+    # we only need `tests-by-manifest` for web-platform-tests, so we need to
+    # write it out from whichever kind contains them
+    if kind == "web-platform-tests" and write_artifacts:
+        if not os.path.isdir(ARTIFACTS_DIR):
+            os.mkdir(ARTIFACTS_DIR)
+        path = os.path.join(ARTIFACTS_DIR, "tests-by-manifest.json.gz")
+        with gzip.open(path, "wb") as f:
+            f.write(json.dumps(resolver.tests_by_manifest).encode("utf-8"))
 
 
 def get_builds_by_platform(dep_kind, loaded_tasks):
@@ -120,7 +142,14 @@ def get_test_platforms(
 
 
 PREFIX_BY_KIND = {
+    "browsertime": {"browsertime"},
     "mochitest": {"mochitest"},
+    "reftest": {"crashtest", "jsreftest", "reftest"},
+    "web-platform-tests": {
+        "web-platform-tests",
+        "test-coverage-wpt",
+        "test-verify-wpt",
+    },
 }
 
 

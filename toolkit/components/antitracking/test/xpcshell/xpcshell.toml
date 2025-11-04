@@ -10,7 +10,7 @@ prefs = ["dom.security.https_first=false"] #Disable https-first because of expli
 skip-if = ["socketprocess_networking"] # Bug 1759035
 
 ["test_purge_trackers.js"]
-run-sequentially = "very high failure rate in parallel"
+run-sequentially = ["os == 'mac'"] # frequent fail in parallel on Mac
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1760085
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && ccov && !fission", # Bug 1760085
@@ -31,8 +31,8 @@ skip-if = [
   "win10_2009 && bits == 64 && !debug", # Bug 1652119
   "win11_2009 && bits == 64 && !debug", # Bug 1652119
   "socketprocess_networking", # Bug 1759035
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt", # Bug 1987229
 ]
-run-sequentially = "very high failure rate in parallel"
 
 ["test_staticPartition_image.js"]
 skip-if = ["socketprocess_networking"] # Bug 1759035

@@ -7,6 +7,7 @@
 
 !include WinVer.nsh
 !include postupdate_helper.nsh
+!include control_utils.nsh
 
 !macro PostUpdate
   ${CreateShortcutsLog}
@@ -44,6 +45,10 @@
       WriteRegStr HKLM "Software\mozilla.org\Mozilla" "CurrentVersion" "${GREVersion}"
     ${EndIf}
   ${EndIf}
+
+  !ifdef DESKTOP_LAUNCHER_ENABLED
+    Call OnUpdateDesktopLauncherHandler
+  !endif
 
   ; Update the name/icon/AppModelID of our shortcuts as needed, then update the
   ; lastwritetime of the Start Menu shortcut to clear the tile icon cache.
@@ -293,76 +298,155 @@ ${RemoveDefaultBrowserAgentShortcut}
 !macroend
 !define HideShortcuts "!insertmacro HideShortcuts"
 
-; Installs a copy of the desktop launcher app into the current user's Desktop directory.
-Function InstallDesktopLauncherApp
-  ; We need the shell var context to be "current", but we'll restore it if we change it
-  var /GLOBAL IDLA_ResetShellVarCtxToAll
-  var /GLOBAL IDLA_IsInstalled
-  IfShellVarContextAll 0 context_is_current
-  StrCpy $IDLA_ResetShellVarCtxToAll 1
-  SetShellVarContext current
-context_is_current:
-  ; At this point, we know that the shell variable context is "current"
+; Looks for the desktop shortcut (.lnk) in the $DESKTOP directory
+; relative to the shell var context. Caller is expected to call
+; SetShellVarContext to set the shell var context.
+; Args: none
+; Return value is pushed onto the stack: "1" if the shortcut
+;    is found, "0" otherwise
+Function IsDesktopShortcutPresent
+  Push $0 ; will be used to store the result
+  Push $1 ; will be used as a temp variable
+  StrCpy $0 "0"
 
-  ; If there is an existing install of the file, update it
-  IfFileExists "$DESKTOP\${BrandShortName}.exe" do_install
-
-  ; We want to respect the user's preferences, which means that if they have deleted
-  ; the desktop launcher app, we should not install it again. If the regkey indicates
-  ; that we have installed the app, but it is not present in the install location,
-  ; we assume that the user has deleted it
-  ReadRegDWORD $IDLA_IsInstalled HKCU "Software\Mozilla\${BrandFullNameInternal}" DesktopLauncherAppInstalled
-  ; If IsInstalled is 1, we assume the user has deleted this file and jump to clean_up.
-  ; Otherwise, we continue
-  StrCmp $IDLA_IsInstalled "1" clean_up do_install
-do_install:
-  ClearErrors
-  Call DeleteDesktopShortcuts
-  SetShellVarContext current
-  CopyFiles /SILENT /FILESONLY "$INSTDIR\desktop-launcher\desktop-launcher.exe" "$DESKTOP\${BrandShortName}.exe"
-  ; If there was an error copying the file, don't set the reg key
-  IfErrors clean_up
-  WriteRegDWORD HKCU "Software\Mozilla\${BrandFullNameInternal}" DesktopLauncherAppInstalled 1
-clean_up:
-  ; Restore shell var context
-  StrCmp $IDLA_ResetShellVarCtxToAll 1 0 done
-  SetShellVarContext all
-done:
-  ; All done
-FunctionEnd
-
-
-Function CreateDesktopShortcuts
-  SetShellVarContext all  ; Set $DESKTOP to All Users
-  ${Unless} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
-    CreateShortCut "$DESKTOP\${BrandShortName}.lnk" "$INSTDIR\${FileMainEXE}"
-    ${If} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
-      ShellLink::SetShortCutWorkingDirectory "$DESKTOP\${BrandShortName}.lnk" "$INSTDIR"
-      ${If} "$AppUserModelID" != ""
-        ApplicationID::Set "$DESKTOP\${BrandShortName}.lnk" "$AppUserModelID" "true"
-      ${EndIf}
-    ${Else}
-      SetShellVarContext current  ; Set $DESKTOP to the current user's desktop
-      ${Unless} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
-        CreateShortCut "$DESKTOP\${BrandShortName}.lnk" "$INSTDIR\${FileMainEXE}"
-        ${If} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
-          ShellLink::SetShortCutWorkingDirectory "$DESKTOP\${BrandShortName}.lnk" \
-                                                 "$INSTDIR"
-          ${If} "$AppUserModelID" != ""
-            ApplicationID::Set "$DESKTOP\${BrandShortName}.lnk" "$AppUserModelID" "true"
-          ${EndIf}
-        ${EndIf}
-      ${EndUnless}
-    ${EndIf}
-  ${EndUnless}
-FunctionEnd
-
-Function DeleteDesktopShortcuts
-  SetShellVarContext all  ; Set $DESKTOP to All Users
   ${If} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
-    Delete "$DESKTOP\${BrandShortName}.lnk"
+    ShellLink::GetShortCutArgs "$DESKTOP\${BrandShortName}.lnk"
+    Pop $1
+    ${If} "$1" == ""
+      ; Let's see if we can find out anything about the shortcut
+      ShellLink::GetShortCutTarget "$DESKTOP\${BrandShortName}.lnk"
+      Pop $1
+      ${GetLongPath} "$1" $1
+      ${If} "$1" == "$INSTDIR\${FileMainEXE}"
+        ; We had permission to look at the shortcut properties and its target was the Firefox executable
+        StrCpy $0 "1" ; set the result to 1
+      ${ElseIf} "$1" == ""
+        ; Most likely case is that we don't have permission to read the shortcut properties, so just report that it exists
+        StrCpy $0 "1" ; set the result to 1
+      ${EndIf}
+    ${EndIf}
   ${EndIf}
-  SetShellVarContext current  ; Set $DESKTOP to the current user's desktop
+  Pop $1 ; restore the register
+  Exch $0 ; restore the register and place result on the stack
+FunctionEnd
+
+
+; Installs the desktop launcher and sets a registry key to show that we did it.
+Function InstallDesktopLauncher
+  ClearErrors
+  ; Copy the launcher into the user's Desktop with an appropriate name
+  CopyFiles /SILENT /FILESONLY "$INSTDIR\desktop-launcher\desktop-launcher.exe" "$DESKTOP\${BrandShortName}.exe"
+  ${If} ${FileExists} "$DESKTOP\${BrandShortName}.exe"
+    WriteRegDWORD HKCU "Software\Mozilla\${BrandFullNameInternal}" DesktopLauncherAppInstalled 1
+  ${EndIf}
+FunctionEnd
+
+
+Function OnUpdateDesktopLauncher_HKLM
+  ; This is elevated. In this instance, we won't be installing  the desktop launcher, but we may be deleting the shared shortcut
+  Push $0
+  Push $1
+  ; Have we deleted the shared shortcut before?
+  StrCpy $0 "0"
+  ReadRegDWORD $0 HKLM "Software\Mozilla\${BrandFullNameInternal}" "UpdaterDeletedShortcut"
+  Call IsDesktopShortcutPresent
+  Pop $1
+  ${If} $0 != "1"
+  ${AndIf} $1 != "0"
+    ; shared shortcut exists, and we haven't deleted it before. So let's delete it now.
+    Delete "$DESKTOP\${BrandShortName}.lnk"
+    WriteRegDWORD HKLM "Software\Mozilla\${BrandFullNameInternal}" "UpdaterDeletedShortcut" "1"
+  ${EndIf}
+  Pop $1
+  Pop $0
+FunctionEnd
+
+Function OnUpdateDesktopLauncher_HKCU
+  ; If there is a desktop launcher installed, call InstallDesktopLauncher (this is how the launcher gets updated)
+  ${If} ${FileExists} "$DESKTOP\${BrandShortName}.exe"
+    Call InstallDesktopLauncher
+    ; Early return
+    Return
+  ${EndIf}
+
+  Push $0
+  Push $1
+  Push $2
+  Push $3
+
+  ; $0 is 1 if a shortcut is found in user's desktop or 0 otherwise
+  StrCpy $0 "0"
+  ; $1 is 1 if there was a "recently deleted" shortcut or 0 otherwise
+  StrCpy $1 "0"
+  ; $2 is 1 if the desktop launcher was ever installed or 0 otherwise
+  StrCpy $2 "0"
+  ; $3 is 1 if a shortcut is found in shared desktop or 0 otherwise
+  StrCpy $3 "0"
+
+  ; see if there is a shortcut on the user's own desktop
+  Call IsDesktopShortcutPresent
+  Pop $0
+
+  ; see if there is a shortcut in the shared desktop folder
+  SetShellVarContext all
+  Call IsDesktopShortcutPresent
+  Pop $3
+  SetShellVarContext current
+
+  ReadRegDWORD $1 HKLM "Software\Mozilla\${BrandFullNameInternal}" "UpdaterDeletedShortcut"
+  ReadRegDWORD $2 HKCU "Software\Mozilla\${BrandFullNameInternal}" "DesktopLauncherAppInstalled"
+
+  ${If} $2 == "1"
+    ; We previously installed desktop launcher. Don't reinstall
+  ${ElseIf} $0 == "1"
+    ; There was a shortcut on the user's desktop. Delete it and install launcher
+    Delete "$DESKTOP\${BrandShortName}.lnk"
+    Call InstallDesktopLauncher
+  ${ElseIf} $1 == "1"
+  ${OrIf} $3 == "1"
+    ; This block covers these two cases:
+    ; - If the elevated post-update script runs before the unelevated one, then it will have deleted the shortcut and set the UpdaterDeletedShortcut regkey.
+    ; - Or, if the unelevated script is running now befor the elevated one, then there will still be a shortcut in the shared location.
+    ; In either case, we need to install the desktop launcher now. It's the responsibility of the elevated post-update script to delete
+    ; the shared shortcut, and that is implemented in OnUpdateDesktopLauncher_HKLM
+    Call InstallDesktopLauncher
+  ${EndIf}
+  Pop $3
+  Pop $2
+  Pop $1
+  Pop $0
+FunctionEnd
+
+Function OnUpdateDesktopLauncherHandler
+  Push $0
+  Push "$INSTDIR\installation_telemetry.json"
+  Call GetInstallationType
+  ; Pop the result from the stack into $0
+  Pop $0
+  ${If} $0 == "stub"
+    ${If} $RegHive == "HKLM"
+      SetShellVarContext all
+      Call OnUpdateDesktopLauncher_HKLM
+    ${Else}
+      SetShellVarContext current
+      Call OnUpdateDesktopLauncher_HKCU
+    ${EndIf}
+  ${EndIf}
+  ; Restore $0 to its original value
+  Pop $0
+FunctionEnd
+
+; For new installs, install desktop launcher
+; TODO: This case needs more nuance. To be fixed as part of Bug 1981597
+Function OnInstallDesktopLauncherHandler
+  Push $0
+  ${SwapShellVarContext} current $0
+  Call InstallDesktopLauncher
+  ${SetShellVarContextToValue} $0
+  Pop $0
+FunctionEnd
+
+Function DeleteDesktopShortcut
   ${If} ${FileExists} "$DESKTOP\${BrandShortName}.lnk"
     Delete "$DESKTOP\${BrandShortName}.lnk"
   ${EndIf}
@@ -886,6 +970,29 @@ FunctionEnd
 !macroend
 !define SetAppKeys "!insertmacro SetAppKeys"
 
+!macro RegistryWriteVersion
+  Exch $0
+  Push $R0
+  Push $R1
+  Push $R2
+  Push $R3
+
+  GetDLLVersion "$8\${FileMainEXE}" $R0 $R1
+  IntOp $R2 $R0 >> 16
+  IntOp $R2 $R2 & 0x0000FFFF ; $R2 now contains major version
+  IntOp $R3 $R0 & 0x0000FFFF ; $R3 now contains minor version
+
+  ${WriteRegStr2} $RegHive "$0" "DisplayVersion" "${AppVersion}" 0
+  ${WriteRegStr2} $RegHive "$0" "VersionMajor" "$R2" 0
+  ${WriteRegStr2} $RegHive "$0" "VersionMinor" "$R3" 0
+
+  Pop $R3
+  Pop $R2
+  Pop $R1
+  Pop $R0
+  Pop $0
+!macroend
+
 ; Add uninstall registry entries. This macro tests for write access to determine
 ; if the uninstall keys should be added to HKLM or HKCU.
 ; This expects $RegHive to already have been set correctly.
@@ -921,7 +1028,6 @@ FunctionEnd
     ${WriteRegStr2} $RegHive "$0" "Comments" "${BrandFullNameInternal} ${AppVersion}$3 (${ARCH} ${AB_CD})" 0
     ${WriteRegStr2} $RegHive "$0" "DisplayIcon" "$8\${FileMainEXE},${IDI_APPICON_ZERO_BASED}" 0
     ${WriteRegStr2} $RegHive "$0" "DisplayName" "${BrandFullNameInternal}$3 (${ARCH} ${AB_CD})" 0
-    ${WriteRegStr2} $RegHive "$0" "DisplayVersion" "${AppVersion}" 0
     ${WriteRegStr2} $RegHive "$0" "HelpLink" "${HelpLink}" 0
     ${WriteRegStr2} $RegHive "$0" "InstallLocation" "$8" 0
     ${WriteRegStr2} $RegHive "$0" "Publisher" "Mozilla" 0
@@ -941,6 +1047,9 @@ FunctionEnd
 
     ${GetSize} "$8" "/S=0K" $R2 $R3 $R4
     ${WriteRegDWORD2} $RegHive "$0" "EstimatedSize" $R2 0
+
+    Push $0
+    !insertmacro RegistryWriteVersion
   ${EndIf}
 !macroend
 !define SetUninstallKeys "!insertmacro SetUninstallKeys"
@@ -1609,9 +1718,6 @@ FunctionEnd
     ${LogDesktopShortcut} "${BrandShortName}.lnk"
 !endif
   ${EndUnless}
-!ifdef DESKTOP_LAUNCHER_ENABLED
-  Call InstallDesktopLauncherApp
-!endif
 !macroend
 !define CreateShortcutsLog "!insertmacro CreateShortcutsLog"
 

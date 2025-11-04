@@ -24,6 +24,12 @@ private:
 
 public:
   void LowerRustArgs(const dom::Sequence<dom::OwningUniFFIScaffoldingValue>& aArgs, ErrorResult& aError) override {
+    {%- if !scaffolding_call.arguments.is_empty() %}
+    if (aArgs.Length() < {{ scaffolding_call.arguments.len() }}) {
+      aError.ThrowUnknownError(nsPrintfCString("LowerRustArgs: Incorrect argument length for {{ scaffolding_call.ffi_func.name.0 }} (expected: {{ scaffolding_call.arguments.len() }}, actual: %zu)", aArgs.Length()));
+      return;
+    }
+    {%- endif %}
     {%- for arg in scaffolding_call.arguments %}
     {%- if arg.receiver %}
     {{ arg.field_name }}.LowerReciever(aArgs[{{ loop.index0 }}], aError);

@@ -39,7 +39,6 @@
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
 #include "mozilla/dom/WorkerScope.h"
-#include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
@@ -702,8 +701,6 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
 
     actor->DoFetchOp(ipcArgs);
 
-    mozilla::glean::networking::fetch_keepalive_request_count.Get("main"_ns)
-        .Add(1);
     return p.forget();
   } else {
     WorkerPrivate* worker = GetCurrentThreadWorkerPrivate();
@@ -791,12 +788,6 @@ already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
       ipcArgs.isWorkerRequest() = true;
 
       actor->DoFetchOp(ipcArgs);
-
-      if (internalRequest->GetKeepalive()) {
-        mozilla::glean::networking::fetch_keepalive_request_count
-            .Get("worker"_ns)
-            .Add(1);
-      }
 
       return p.forget();
     }

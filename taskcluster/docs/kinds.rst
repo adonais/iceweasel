@@ -175,6 +175,12 @@ Toolchain builds create the compiler toolchains used to build Firefox.  These
 will eventually be dependencies of the builds themselves, but for the moment
 are run manually via try pushes and the results uploaded to tooltool.
 
+toolchain-dxc-upload
+--------------------
+
+Upload Windows symbols for `DirectXShaderCompiler` to tecken, based on builds in `toolchain-dxc`.
+Maintained by Firefox's WebGPU team.
+
 spidermonkey
 ------------
 
@@ -183,6 +189,39 @@ spidermonkey portion.  Each task runs specific tests after the build.
 
 mochitest
 ---------
+
+See the :doc:`test kind documentation <kinds/test>` for more info.
+
+.. toctree::
+   :hidden:
+
+   kinds/test
+
+
+reftest
+-------
+
+See the :doc:`test kind documentation <kinds/test>` for more info.
+
+.. toctree::
+   :hidden:
+
+   kinds/test
+
+
+browsertime
+-----------
+
+See the :doc:`test kind documentation <kinds/test>` for more info.
+
+.. toctree::
+   :hidden:
+
+   kinds/test
+
+
+web-platform-tests
+------------------
 
 See the :doc:`test kind documentation <kinds/test>` for more info.
 
@@ -230,6 +269,13 @@ beetmover
 Beetmover, takes specific artifacts, "Beets", and pushes them to a location outside
 of Taskcluster's task artifacts, (archive.mozilla.org as one place) and in the
 process determines the final location and a "pretty" name (versioned product name)
+
+beetmover-integration
+---------------------
+Beetmover, takes specific artifacts, "Beets", and pushes them to a location outside
+of Taskcluster's task artifacts, (archive.mozilla.org as one place) and in the
+process determines the final location and a "pretty" name (versioned product name)
+This separate kind archives builds from the autoland branch.
 
 beetmover-l10n
 --------------

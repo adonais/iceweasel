@@ -4,6 +4,10 @@
 
 /* Bug 1869845 - Styles in this file are still experimental!  */
 
+body {
+  overflow: hidden;
+}
+
 .container {
   display: flex;
   flex-direction: column;

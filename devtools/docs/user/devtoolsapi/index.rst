@@ -691,7 +691,7 @@ If the loaded document exposes a ``window.setPanel(ToolPanel)`` function, the si
   * - Method
     - Description
 
-  * - ``new ToolSidebar(xul:tabbox, ToolPanel, uid, showTabstripe=true)``
+  * - ``new ToolSidebar(xul:tabbox, ToolPanel, showTabstripe=true)``
     - ToolSidebar constructor
 
   * - ``void addTab(tabId, url, selected=false)``
@@ -791,7 +791,7 @@ Add a sidebar to an existing tool:
 
 .. code-block:: JavaScript
 
-  let sidebar = new ToolSidebar(xulTabbox, toolPanel, "toolId");
+  let sidebar = new ToolSidebar(xulTabbox, toolPanel);
   sidebar.addTab("tab1", "chrome://browser/content/.../tab1.xhtml", true);
   sidebar.addTab("tab2", "chrome://browser/content/.../tab2.xhtml", false);
   sidebar.show();

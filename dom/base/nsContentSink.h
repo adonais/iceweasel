@@ -141,10 +141,11 @@ class nsContentSink : public nsICSSLoaderObserver,
   void PrefetchHref(const nsAString& aHref, const nsAString& aAs,
                     const nsAString& aType, const nsAString& aMedia);
   void PreloadHref(const nsAString& aHref, const nsAString& aAs,
-                   const nsAString& aType, const nsAString& aMedia,
-                   const nsAString& aNonce, const nsAString& aIntegrity,
-                   const nsAString& aSrcset, const nsAString& aSizes,
-                   const nsAString& aCORS, const nsAString& aReferrerPolicy,
+                   const nsAString& aRel, const nsAString& aType,
+                   const nsAString& aMedia, const nsAString& aNonce,
+                   const nsAString& aIntegrity, const nsAString& aSrcset,
+                   const nsAString& aSizes, const nsAString& aCORS,
+                   const nsAString& aReferrerPolicy,
                    uint64_t aEarlyHintPreloaderId,
                    const nsAString& aFetchPriority);
 

@@ -17,7 +17,7 @@ task-defaults:
     treeherder:
         kind: test
         tier: 1
-    worker-type: t-linux-docker
+    worker-type: t-linux-docker-amd
     worker:
         docker-image: {in-tree: android-ui-tests}
         max-run-time: 7200

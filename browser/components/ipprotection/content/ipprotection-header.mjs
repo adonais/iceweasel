@@ -10,6 +10,9 @@ import "chrome://global/content/elements/moz-badge.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
 
+/**
+ * A custom elements that implements display of the IP Protection header.
+ */
 export default class IPProtectionHeaderElement extends MozLitElement {
   static queries = {
     experimentBadgeEl: "#ipprotection-experiment-badge",

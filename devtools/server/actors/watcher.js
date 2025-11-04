@@ -577,7 +577,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
     );
 
     switch (this.sessionContext.type) {
-      case "all":
+      case "all": {
         const parentProcessTargetActor = actors.find(
           actor => actor.typeName === "parentProcessTarget"
         );
@@ -585,6 +585,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
           return new Set([parentProcessTargetActor]);
         }
         return new Set();
+      }
       case "browser-element":
       case "webextension":
         // All target actors for browser-element and webextension sessions

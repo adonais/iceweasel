@@ -152,7 +152,11 @@ add_task(async function test_enterprise_policy_hidden_default() {
     "Should have removed the application default engine"
   );
 
-  Assert.equal(Services.search.defaultEngine.identifier, "otherEngine");
+  Assert.equal(
+    Services.search.defaultEngine.id,
+    "otherEngine",
+    "Should have the expected engine set as default"
+  );
 });
 
 add_task(async function test_enterprise_policy_default() {
@@ -167,8 +171,9 @@ add_task(async function test_enterprise_policy_default() {
   Services.search.resetToAppDefaultEngine();
 
   Assert.equal(
-    Services.search.defaultEngine.identifier,
-    "otherEngineToMakeDefault"
+    Services.search.defaultEngine.id,
+    "otherEngineToMakeDefault",
+    "Should have the expected engine set as default"
   );
 });
 
@@ -184,7 +189,11 @@ add_task(async function test_enterprise_policy_invalid_default() {
 
   Services.search.resetToAppDefaultEngine();
 
-  Assert.equal(Services.search.defaultEngine.identifier, "zAppDefaultEngine");
+  Assert.equal(
+    Services.search.defaultEngine.id,
+    "zAppDefaultEngine",
+    "Should have the expected engine set as default"
+  );
 });
 
 add_task(async function test_enterprise_policy_private_default() {
@@ -203,7 +212,8 @@ add_task(async function test_enterprise_policy_private_default() {
 
   Services.search.resetToAppDefaultEngine();
   Assert.equal(
-    Services.search.defaultPrivateEngine.identifier,
-    "otherEngineToMakeDefault"
+    Services.search.defaultPrivateEngine.id,
+    "otherEngineToMakeDefault",
+    "Should have the expected engine set as default"
   );
 });

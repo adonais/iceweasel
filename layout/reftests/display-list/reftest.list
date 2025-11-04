@@ -1,3 +1,5 @@
+defaults pref(gfx.font_rendering.fallback.async,false)
+
 # These tests are testing merging RDL implementation.
 skip-if(useDrawSnapshot) == retained-dl-style-change-1.html retained-dl-style-change-1-ref.html
 skip-if(useDrawSnapshot) == retained-dl-frame-deleted-1.html retained-dl-style-change-1-ref.html
@@ -58,3 +60,5 @@ fuzzy-if(fission,0-1,0-300) == 1619370-1.html 1619370-1-ref.html
 == 1677568-1.html 1677568-1-ref.html
 == 1709452-1.html 1709452-ref.html
 == 1719346-1.html 1719346-1-ref.html
+
+defaults

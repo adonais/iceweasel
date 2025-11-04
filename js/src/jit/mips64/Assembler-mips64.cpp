@@ -161,6 +161,8 @@ void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
 }
 
 void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
+  UseScratchRegisterScope temps(*this);
+
   int64_t offset = target - branch;
   InstImm inst_bgezal = InstImm(op_regimm, zero, rt_bgezal, BOffImm16(0));
   InstImm inst_beq = InstImm(op_beq, zero, zero, BOffImm16(0));
@@ -177,9 +179,10 @@ void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
   // address after the reserved block.
   if (inst[0].encode() == inst_bgezal.encode()) {
     addLongJump(BufferOffset(branch), BufferOffset(target));
-    Assembler::WriteLoad64Instructions(inst, ScratchRegister,
+    Register scratch = temps.Acquire();
+    Assembler::WriteLoad64Instructions(inst, scratch,
                                        LabelBase::INVALID_OFFSET);
-    inst[4] = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr).encode();
+    inst[4] = InstReg(op_special, scratch, zero, ra, ff_jalr).encode();
     // There is 1 nop after this.
     return;
   }
@@ -203,16 +206,16 @@ void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
     return;
   }
 
+  Register scratch = temps.Acquire();
   if (inst[0].encode() == inst_beq.encode()) {
     // Handle long unconditional jump.
     addLongJump(BufferOffset(branch), BufferOffset(target));
-    Assembler::WriteLoad64Instructions(inst, ScratchRegister,
+    Assembler::WriteLoad64Instructions(inst, scratch,
                                        LabelBase::INVALID_OFFSET);
 #ifdef MIPSR6
-    inst[4] =
-        InstReg(op_special, ScratchRegister, zero, zero, ff_jalr).encode();
+    inst[4] = InstReg(op_special, scratch, zero, zero, ff_jalr).encode();
 #else
-    inst[4] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
+    inst[4] = InstReg(op_special, scratch, zero, zero, ff_jr).encode();
 #endif
     // There is 1 nop after this.
   } else {
@@ -220,13 +223,12 @@ void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
     inst[0] = invertBranch(inst[0], BOffImm16(7 * sizeof(uint32_t)));
     // No need for a "nop" here because we can clobber scratch.
     addLongJump(BufferOffset(branch + sizeof(uint32_t)), BufferOffset(target));
-    Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister,
+    Assembler::WriteLoad64Instructions(&inst[1], scratch,
                                        LabelBase::INVALID_OFFSET);
 #ifdef MIPSR6
-    inst[5] =
-        InstReg(op_special, ScratchRegister, zero, zero, ff_jalr).encode();
+    inst[5] = InstReg(op_special, scratch, zero, zero, ff_jalr).encode();
 #else
-    inst[5] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
+    inst[5] = InstReg(op_special, scratch, zero, zero, ff_jr).encode();
 #endif
     // There is 1 nop after this.
   }
@@ -361,7 +363,8 @@ void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
 
   if (enabled) {
     MOZ_ASSERT(i4->extractOpcode() != ((uint32_t)op_lui >> OpcodeShift));
-    InstReg jalr = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr);
+    InstReg jalr = InstReg(op_special, Register::FromCode(i3->extractRT()),
+                           zero, ra, ff_jalr);
     *i4 = jalr;
   } else {
     InstNOP nop;

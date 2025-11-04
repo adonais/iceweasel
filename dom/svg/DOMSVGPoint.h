@@ -10,7 +10,6 @@
 #include "DOMSVGPointList.h"
 #include "SVGPoint.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/gfx/2D.h"
 #include "nsCycleCollectionParticipant.h"

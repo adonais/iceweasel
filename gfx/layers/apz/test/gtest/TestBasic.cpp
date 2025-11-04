@@ -9,6 +9,7 @@
 
 #include "InputUtils.h"
 #include "mozilla/ScrollPositionUpdate.h"
+#include "mozilla/layers/ScrollableLayerGuid.h"
 
 TEST_F(APZCBasicTester, Overzoom) {
   // the visible area of the document in CSS pixels is x=10 y=0 w=100 h=100
@@ -622,7 +623,7 @@ class APZCSmoothScrollTester : public APZCBasicTester {
 
   // Test that receiving a wheel event with a timestamp far in the future does
   // not cause scrolling to get stuck.
-  void TestEventWithFutureStamp() {
+  void TestWheelEventWithFutureStamp() {
     // Set up scroll frame. Starting scroll position is (0, 0).
     ScrollMetadata metadata;
     FrameMetrics& metrics = metadata.GetMetrics();
@@ -650,6 +651,59 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     SmoothWheel(apzc, ScreenIntPoint(50, 50), ScreenPoint(0, 5),
                 futureTimeStamp);
     apzc->AssertInWheelScroll();
+
+    // Sample the animation 10 frames (a shorter overall duration than the
+    // timestamp skew).
+    for (int i = 0; i < 10; ++i) {
+      SampleAnimationOneFrame();
+    }
+
+    // Assert that we have scrolled. Without a mitigation in place for the
+    // timestamp skew, we may wait for the frame (vsync) time to catch up with
+    // the event's timestamp before doing any scrolling.
+    ASSERT_GT(apzc->GetFrameMetrics().GetVisualScrollOffset().y, 0);
+
+    // Clean up by letting the animation run until completion.
+    apzc->AdvanceAnimationsUntilEnd();
+  }
+
+  // Test that receiving a key event with a timestamp far in the future does
+  // not cause scrolling to get stuck.
+  void TestKeyEventWithFutureStamp() {
+    // Set up scroll frame. Starting scroll position is (0, 0).
+    ScrollMetadata metadata;
+    FrameMetrics& metrics = metadata.GetMetrics();
+    metrics.SetScrollableRect(CSSRect(0, 0, 1000, 10000));
+    metrics.SetLayoutViewport(CSSRect(0, 0, 1000, 1000));
+    metrics.SetZoom(CSSToParentLayerScale(1.0));
+    metrics.SetCompositionBounds(ParentLayerRect(0, 0, 1000, 1000));
+    metrics.SetVisualScrollOffset(CSSPoint(0, 0));
+    metrics.SetScrollId(ScrollableLayerGuid::START_SCROLL_ID);
+    metrics.SetIsRootContent(true);
+    // Set the line scroll amount to 100 pixels. The key event we send
+    // will scroll by a multiple of this amount.
+    metadata.SetLineScrollAmount({100, 100});
+    apzc->SetScrollMetadata(metadata);
+
+    // Note that, since we are sending the key event to the APZC instance
+    // directly, we don't need to set up a keyboard map or focus state.
+
+    // Send a key event to trigger smooth scrolling by a few lines (the number
+    // of lines is determined by toolkit.scrollbox.verticalScrollDistance).
+    WidgetKeyboardEvent keyEvent(true, eKeyDown, nullptr);
+    // Give the key event a timestamp "far" (here, 1 minute) into the future.
+    // This simulates a scenario, observed in bug 1926830, where a bug in the
+    // system toolkit or widget layers causes something to introduce a skew into
+    // the timestamps received from widget code.
+    TimeStamp futureTimeStamp = mcc->Time() + TimeDuration::FromSeconds(60);
+    keyEvent.mTimeStamp = futureTimeStamp;
+    KeyboardInput keyInput(keyEvent);
+    // The KeyboardScrollAction needs to be specified on the event explicitly,
+    // since the mapping from eKeyDown to it happens in APZCTreeManager which
+    // we are bypassing here.
+    keyInput.mAction = {KeyboardScrollAction::eScrollLine, /*aForward=*/true};
+    Unused << apzc->ReceiveInputEvent(keyInput);
+    apzc->AssertInKeyboardScroll();
 
     // Sample the animation 10 frames (a shorter overall duration than the
     // timestamp skew).
@@ -703,16 +757,28 @@ TEST_F(APZCSmoothScrollTester, ContentShiftDoesNotCauseOvershootMsd) {
   TestContentShiftDoesNotCauseOvershoot();
 }
 
-TEST_F(APZCSmoothScrollTester, FutureTimestampBezier) {
+TEST_F(APZCSmoothScrollTester, FutureWheelTimestampBezier) {
   SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
   SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", false);
-  TestEventWithFutureStamp();
+  TestWheelEventWithFutureStamp();
 }
 
-TEST_F(APZCSmoothScrollTester, FutureTimestampMsd) {
+TEST_F(APZCSmoothScrollTester, FutureWheelTimestampMsd) {
   SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
   SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", true);
-  TestEventWithFutureStamp();
+  TestWheelEventWithFutureStamp();
+}
+
+TEST_F(APZCSmoothScrollTester, FutureKeyTimestampBezier) {
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", false);
+  TestKeyEventWithFutureStamp();
+}
+
+TEST_F(APZCSmoothScrollTester, FutureKeyTimestampMsd) {
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", true);
+  TestKeyEventWithFutureStamp();
 }
 
 TEST_F(APZCBasicTester, ZoomAndScrollableRectChangeAfterZoomChange) {

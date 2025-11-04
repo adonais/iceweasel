@@ -263,7 +263,7 @@ export class _DSCard extends React.PureComponent {
       {
         mediaMatcher: "default",
         width: 296,
-        height: 148,
+        height: refinedCardsLayout ? 160 : 148,
       },
     ];
 
@@ -453,6 +453,7 @@ export class _DSCard extends React.PureComponent {
         event: "POCKET_THUMBS_UP",
         source: "THUMBS_UI",
         value: {
+          action_position: this.props.pos,
           recommendation_id: this.props.recommendation_id,
           tile_id: this.props.id,
           corpus_item_id: this.props.corpus_item_id,
@@ -549,6 +550,7 @@ export class _DSCard extends React.PureComponent {
           event: "POCKET_THUMBS_DOWN",
           source: "THUMBS_UI",
           value: {
+            action_position: this.props.pos,
             recommendation_id: this.props.recommendation_id,
             tile_id: this.props.id,
             corpus_item_id: this.props.corpus_item_id,

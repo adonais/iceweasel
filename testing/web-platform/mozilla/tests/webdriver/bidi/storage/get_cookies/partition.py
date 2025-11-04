@@ -11,7 +11,7 @@ async def test_partition_context(
     new_tab,
     test_page,
     domain_value,
-    add_cookie,
+    add_document_cookie,
     top_context,
     test_page_cross_origin,
 ):
@@ -27,7 +27,9 @@ async def test_partition_context(
 
     cookie_name = "foo"
     cookie_value = "bar"
-    await add_cookie(new_tab["context"], cookie_name, cookie_value, secure=True)
+    await add_document_cookie(
+        new_tab["context"], cookie_name, cookie_value, secure=True
+    )
 
     # Check that added cookies are present on the right context.
     cookies = await bidi_session.storage.get_cookies(
@@ -70,7 +72,7 @@ async def test_partition_context(
 # Because of Dynamic First-Party Isolation, adding the cookie with `document.cookie`
 # works only with same-origin iframes.
 async def test_partition_context_same_origin_iframe(
-    bidi_session, new_tab, inline, domain_value, add_cookie
+    bidi_session, new_tab, inline, domain_value, add_document_cookie
 ):
     iframe_url = inline("<div id='in-iframe'>foo</div>")
     source_origin = get_origin_from_url(iframe_url)
@@ -84,7 +86,9 @@ async def test_partition_context_same_origin_iframe(
 
     cookie_name = "foo"
     cookie_value = "bar"
-    await add_cookie(iframe_context["context"], cookie_name, cookie_value, secure=True)
+    await add_document_cookie(
+        iframe_context["context"], cookie_name, cookie_value, secure=True
+    )
 
     # Check that added cookies are present on the right context
     cookies = await bidi_session.storage.get_cookies(

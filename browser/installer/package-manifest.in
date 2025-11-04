@@ -85,6 +85,7 @@
 #ifdef XP_MACOSX
 @BINPATH@/@MOZ_CHILD_PROCESS_NAME@.app/
 @BINPATH@/@MOZ_EME_PROCESS_NAME@.app/
+@BINPATH@/@MOZ_GPU_PROCESS_NAME@.app/
 #endif
 #ifdef XP_WIN
 @BINPATH@/@MOZ_CHILD_PROCESS_NAME@
@@ -99,6 +100,15 @@
 #endif
 @BINPATH@/@MSVC_CXX_RUNTIME_DLL@
 #endif
+; Windows App SDK DLLs
+@BINPATH@/@DLL_PREFIX@CoreMessagingXP@DLL_SUFFIX@
+@BINPATH@/@DLL_PREFIX@marshal@DLL_SUFFIX@
+@BINPATH@/@DLL_PREFIX@Microsoft.InputStateManager@DLL_SUFFIX@
+@BINPATH@/@DLL_PREFIX@Microsoft.Internal.FrameworkUdk@DLL_SUFFIX@
+@BINPATH@/@DLL_PREFIX@Microsoft.UI.Composition.OSSupport@DLL_SUFFIX@
+@BINPATH@/@DLL_PREFIX@Microsoft.UI.Input@DLL_SUFFIX@
+@BINPATH@/@DLL_PREFIX@Microsoft.UI.Windowing.Core@DLL_SUFFIX@
+@BINPATH@/@DLL_PREFIX@Microsoft.UI.Windowing@DLL_SUFFIX@
 #endif
 #ifdef MOZ_GTK
 ; This is a standalone binary launched by Firefox on Linux to verify

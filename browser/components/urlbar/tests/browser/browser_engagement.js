@@ -177,11 +177,11 @@ class TestProvider extends UrlbarTestUtils.TestProvider {
     super({
       priority: Infinity,
       results: [
-        new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.URL,
-          UrlbarUtils.RESULT_SOURCE.HISTORY,
-          { url: "http://example.com/" }
-        ),
+        new UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.URL,
+          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          payload: { url: "http://example.com/" },
+        }),
       ],
     });
   }

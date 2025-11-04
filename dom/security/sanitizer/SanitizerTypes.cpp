@@ -6,6 +6,11 @@
 
 namespace mozilla::dom::sanitizer {
 
+bool CanonicalName::IsDataAttribute() const {
+  return StringBeginsWith(nsDependentAtomString(mLocalName), u"data-"_ns) &&
+         !mNamespace;
+}
+
 SanitizerAttributeNamespace CanonicalName::ToSanitizerAttributeNamespace()
     const {
   SanitizerAttributeNamespace result;
@@ -49,23 +54,61 @@ SanitizerElementNamespace CanonicalName::ToSanitizerElementNamespace() const {
   return result;
 }
 
+// TODO(bug 1989215): This is obviously quadratic. Fix this!
+template <typename ValueType>
+bool ListSet<ValueType>::HasDuplicates() const {
+  for (size_t i = 0; i + 1 < mValues.Length(); i++) {
+    if (mValues.IndexOf(mValues[i], i + 1) != mValues.NoIndex) {
+      return true;
+    }
+  }
+  return false;
+}
+
+template class ListSet<CanonicalName>;
+template class ListSet<CanonicalElementWithAttributes>;
+
+bool CanonicalElementWithAttributes::EqualAttributes(
+    const CanonicalElementWithAttributes& aOther) const {
+  MOZ_ASSERT(*this == aOther);
+
+  if (mAttributes.isSome() != aOther.mAttributes.isSome() ||
+      mRemoveAttributes.isSome() != aOther.mRemoveAttributes.isSome()) {
+    return false;
+  }
+
+  if (mAttributes) {
+    if (mAttributes->Values() != aOther.mAttributes->Values()) {
+      return false;
+    }
+  }
+
+  if (mRemoveAttributes) {
+    if (mRemoveAttributes->Values() != aOther.mRemoveAttributes->Values()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 CanonicalElementWithAttributes CanonicalElementWithAttributes::Clone() const {
   CanonicalElementWithAttributes elem(CanonicalName::Clone());
 
   if (mAttributes) {
-    ListSet<CanonicalName> attributes;
+    nsTArray<CanonicalName> attributes;
     for (const auto& attr : mAttributes->Values()) {
-      attributes.InsertNew(attr.Clone());
+      attributes.AppendElement(attr.Clone());
     }
-    elem.mAttributes = Some(std::move(attributes));
+    elem.mAttributes = Some(ListSet(std::move(attributes)));
   }
 
   if (mRemoveAttributes) {
-    ListSet<CanonicalName> attributes;
+    nsTArray<CanonicalName> attributes;
     for (const auto& attr : mRemoveAttributes->Values()) {
-      attributes.InsertNew(attr.Clone());
+      attributes.AppendElement(attr.Clone());
     }
-    elem.mRemoveAttributes = Some(std::move(attributes));
+    elem.mRemoveAttributes = Some(ListSet(std::move(attributes)));
   }
 
   return elem;

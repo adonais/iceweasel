@@ -52,7 +52,6 @@ class SettingsTranslationsRobot(private val composeTestRule: ComposeTestRule) {
         }
         composeTestRule.onNodeWithContentDescription("$downloadedLanguage", substring = true)
             .assertIsDisplayed()
-        composeTestRule.onNodeWithContentDescription("Delete", substring = true, useUnmergedTree = true)
         Log.i(TAG, "verifyDownloadedLanguage: Verified that $downloadedLanguage is downloaded")
     }
 

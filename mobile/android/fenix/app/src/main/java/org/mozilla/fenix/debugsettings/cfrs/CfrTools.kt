@@ -20,7 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.SecondaryButton
+import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwitchWithLabel
@@ -85,7 +85,7 @@ private fun ResetCfrTool(
 
             Spacer(modifier = Modifier.height(height = FirefoxTheme.layout.space.dynamic150))
 
-            SecondaryButton(
+            OutlinedButton(
                 text = stringResource(R.string.debug_drawer_cfr_tools_reset_cfr_timestamp),
                 modifier = Modifier.fillMaxWidth(),
             ) {

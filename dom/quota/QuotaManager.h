@@ -862,7 +862,8 @@ class QuotaManager final : public BackgroundThreadObject {
 
   OriginInfosNestedTraversable GetOriginInfosWithZeroUsage() const;
 
-  void ClearOrigins(const OriginInfosNestedTraversable& aDoomedOriginInfos);
+  void ClearOrigins(const OriginInfosNestedTraversable& aDoomedOriginInfos,
+                    const Maybe<size_t>& aMaxOriginsToClear = Nothing());
 
   void CleanupTemporaryStorage();
 

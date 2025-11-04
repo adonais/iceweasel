@@ -24,7 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import mozilla.components.compose.base.Dropdown
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
@@ -204,7 +204,7 @@ private fun GleanDebugSendPingsSection(
 
         Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.dynamic400))
 
-        PrimaryButton(
+        FilledButton(
             text = stringResource(R.string.glean_debug_tools_send_ping_button_text),
             modifier = Modifier
                 .fillMaxWidth()

@@ -10,7 +10,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteractio
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
-import org.mozilla.fenix.GleanMetrics.Events
+import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.components.toolbar.DisplayActions.AddBookmarkClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.EditBookmarkClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.MenuClicked
@@ -21,10 +21,28 @@ import org.mozilla.fenix.components.toolbar.DisplayActions.NavigateForwardLongCl
 import org.mozilla.fenix.components.toolbar.DisplayActions.RefreshClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.ShareClicked
 import org.mozilla.fenix.components.toolbar.DisplayActions.StopRefreshClicked
+import org.mozilla.fenix.components.toolbar.PageEndActionsInteractions.ReaderModeClicked
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.AddNewPrivateTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.AddNewTab
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterClicked
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterLongClicked
+import org.mozilla.fenix.telemetry.ACTION_ADD_BOOKMARK_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_ADD_NEW_PRIVATE_TAB
+import org.mozilla.fenix.telemetry.ACTION_ADD_NEW_TAB
+import org.mozilla.fenix.telemetry.ACTION_EDIT_BOOKMARK_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_MENU_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_NAVIGATE_BACK_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_NAVIGATE_BACK_LONG_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_NAVIGATE_FORWARD_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_NAVIGATE_FORWARD_LONG_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_READER_MODE_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_REFRESH_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_SHARE_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_STOP_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_TAB_COUNTER_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_TAB_COUNTER_LONG_CLICKED
+import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
+import org.mozilla.fenix.telemetry.SOURCE_NAVIGATION_BAR
 
 /**
  * [Middleware] responsible for recording telemetry of actions triggered by compose toolbars.
@@ -79,6 +97,9 @@ class BrowserToolbarTelemetryMiddleware : Middleware<BrowserToolbarState, Browse
             is ShareClicked -> {
                 trackToolbarEvent(ToolbarActionRecord.ShareClicked, action.source)
             }
+            is ReaderModeClicked -> {
+                trackToolbarEvent(ToolbarActionRecord.ReaderModeClicked, action.source)
+            }
             else -> {}
         }
 
@@ -87,20 +108,21 @@ class BrowserToolbarTelemetryMiddleware : Middleware<BrowserToolbarState, Browse
 
     @VisibleForTesting
     internal sealed class ToolbarActionRecord(val action: String) {
-        data object MenuClicked : ToolbarActionRecord("menu_press")
-        data object TabCounterClicked : ToolbarActionRecord("tabs_tray")
-        data object TabCounterLongClicked : ToolbarActionRecord("tabs_tray_long_press")
-        data object AddNewTab : ToolbarActionRecord("add_new_tab")
-        data object AddNewPrivateTab : ToolbarActionRecord("add_new_private_tab")
-        data object NavigateBackClicked : ToolbarActionRecord("back")
-        data object NavigateBackLongClicked : ToolbarActionRecord("back_long_press")
-        data object NavigateForwardClicked : ToolbarActionRecord("forward")
-        data object NavigateForwardLongClicked : ToolbarActionRecord("forward_long_press")
-        data object RefreshClicked : ToolbarActionRecord("refresh")
-        data object StopRefreshClicked : ToolbarActionRecord("stop_refresh")
-        data object AddBookmarkClicked : ToolbarActionRecord("add_bookmark")
-        data object EditBookmarkClicked : ToolbarActionRecord("edit_bookmark")
-        data object ShareClicked : ToolbarActionRecord("share")
+        data object MenuClicked : ToolbarActionRecord(ACTION_MENU_CLICKED)
+        data object TabCounterClicked : ToolbarActionRecord(ACTION_TAB_COUNTER_CLICKED)
+        data object TabCounterLongClicked : ToolbarActionRecord(ACTION_TAB_COUNTER_LONG_CLICKED)
+        data object AddNewTab : ToolbarActionRecord(ACTION_ADD_NEW_TAB)
+        data object AddNewPrivateTab : ToolbarActionRecord(ACTION_ADD_NEW_PRIVATE_TAB)
+        data object NavigateBackClicked : ToolbarActionRecord(ACTION_NAVIGATE_BACK_CLICKED)
+        data object NavigateBackLongClicked : ToolbarActionRecord(ACTION_NAVIGATE_BACK_LONG_CLICKED)
+        data object NavigateForwardClicked : ToolbarActionRecord(ACTION_NAVIGATE_FORWARD_CLICKED)
+        data object NavigateForwardLongClicked : ToolbarActionRecord(ACTION_NAVIGATE_FORWARD_LONG_CLICKED)
+        data object RefreshClicked : ToolbarActionRecord(ACTION_REFRESH_CLICKED)
+        data object StopRefreshClicked : ToolbarActionRecord(ACTION_STOP_CLICKED)
+        data object AddBookmarkClicked : ToolbarActionRecord(ACTION_ADD_BOOKMARK_CLICKED)
+        data object EditBookmarkClicked : ToolbarActionRecord(ACTION_EDIT_BOOKMARK_CLICKED)
+        data object ShareClicked : ToolbarActionRecord(ACTION_SHARE_CLICKED)
+        data object ReaderModeClicked : ToolbarActionRecord(ACTION_READER_MODE_CLICKED)
     }
 
     private fun trackToolbarEvent(
@@ -109,15 +131,17 @@ class BrowserToolbarTelemetryMiddleware : Middleware<BrowserToolbarState, Browse
     ) {
         when (source) {
             Source.AddressBar ->
-                Events.browserToolbarAction.record(
-                    Events.BrowserToolbarActionExtra(
+                Toolbar.buttonTapped.record(
+                    Toolbar.ButtonTappedExtra(
+                        source = SOURCE_ADDRESS_BAR,
                         item = toolbarActionRecord.action,
                     ),
                 )
 
             Source.NavigationBar ->
-                Events.browserNavbarAction.record(
-                    Events.BrowserNavbarActionExtra(
+                Toolbar.buttonTapped.record(
+                    Toolbar.ButtonTappedExtra(
+                        source = SOURCE_NAVIGATION_BAR,
                         item = toolbarActionRecord.action,
                     ),
                 )

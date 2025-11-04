@@ -17,9 +17,9 @@ namespace net {
 
 class Http3Session;
 
-class Http3Stream final : public nsAHttpSegmentReader,
-                          public nsAHttpSegmentWriter,
-                          public Http3StreamBase {
+class Http3Stream : public nsAHttpSegmentReader,
+                    public nsAHttpSegmentWriter,
+                    public Http3StreamBase {
  public:
   NS_DECL_NSAHTTPSEGMENTREADER
   NS_DECL_NSAHTTPSEGMENTWRITER
@@ -36,8 +36,10 @@ class Http3Stream final : public nsAHttpSegmentReader,
     return nullptr;
   }
   Http3Stream* GetHttp3Stream() override { return this; }
+  Http3ConnectUDPStream* GetHttp3ConnectUDPStream() override { return nullptr; }
+  Http3StreamTunnel* GetHttp3StreamTunnel() override { return nullptr; }
 
-  nsresult TryActivating();
+  virtual nsresult TryActivating();
 
   void CurrentBrowserIdChanged(uint64_t id);
 
@@ -61,7 +63,7 @@ class Http3Stream final : public nsAHttpSegmentReader,
   uint8_t PriorityUrgency();
   bool PriorityIncremental();
 
- private:
+ protected:
   ~Http3Stream() = default;
 
   bool GetHeadersString(const char* buf, uint32_t avail, uint32_t* countUsed);

@@ -69,6 +69,7 @@ export default class SidebarPinsPromo extends MozLitElement {
     this.addEventListener("drop", this);
     this.addEventListener("dragleave", this);
     lazy.SidebarManager.addEventListener("checkForPinnedTabsComplete", this);
+    lazy.SidebarManager.checkForPinnedTabs();
     this.launcherObserver.observe(window.SidebarController.sidebarMain, {
       attributeFilter: ["expanded"],
     });

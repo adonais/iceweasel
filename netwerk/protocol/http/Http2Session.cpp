@@ -4024,7 +4024,7 @@ WebTransportSessionBase* Http2Session::GetWebTransportSession(
 }
 
 already_AddRefed<HttpConnectionBase> Http2Session::TakeHttpConnection() {
-  MOZ_ASSERT(false, "TakeHttpConnection of Http2Session");
+  LOG(("Http2Session::TakeHttpConnection %p", this));
   return nullptr;
 }
 

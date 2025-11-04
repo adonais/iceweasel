@@ -37,11 +37,13 @@ import mozilla.components.concept.menu.MenuController
 import mozilla.components.concept.menu.Orientation
 import mozilla.components.lib.state.ext.consumeFrom
 import org.mozilla.fenix.BrowserDirection
+import org.mozilla.fenix.Config
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.SecureFragment
 import org.mozilla.fenix.biometricauthentication.AuthenticationStatus
 import org.mozilla.fenix.biometricauthentication.BiometricAuthenticationManager
+import org.mozilla.fenix.components.LogMiddleware
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.databinding.FragmentSavedLoginsBinding
 import org.mozilla.fenix.ext.components
@@ -169,6 +171,10 @@ class SavedLoginsFragment : SecureFragment(), MenuProvider {
                                 ),
                             ),
                             middleware = listOf(
+                                LogMiddleware(
+                                    tag = "LoginsStore",
+                                    shouldIncludeDetailedData = { Config.channel.isDebug },
+                                ),
                                 LoginsMiddleware(
                                     loginsStorage = requireContext().components.core.passwordsStorage,
                                     getNavController = { lifecycleHolder.composeNavController },

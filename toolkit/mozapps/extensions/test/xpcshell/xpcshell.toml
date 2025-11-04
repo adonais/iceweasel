@@ -31,6 +31,10 @@ skip-if = ["os == 'android'"] # Non-extension add-ons are not supported on Andro
 
 ["test_AddonRepository_paging.js"]
 
+["test_EnvironmentAddonBuilder_telemetry.js"]
+ # Ensure EnvironmentAddonBuilder is managed by AMTelemetry on all builds.
+prefs = ["extensions.telemetry.EnvironmentAddonBuilder=true"]
+
 ["test_ModelHubProvider.js"]
 skip-if = [
   "appname == 'thunderbird'", # Disabled in extensions.manifest
@@ -342,6 +346,10 @@ tags = "webextensions"
 run-if = ["os == 'win'"]
 
 ["test_types.js"]
+# prevents test failure due to EnvironmentAddonBuilder calls
+# to getActiveAddons used to collect the Glean activeAddons
+# metric.
+prefs = ["extensions.telemetry.EnvironmentAddonBuilder=false"]
 
 ["test_undouninstall.js"]
 skip-if = ["os == 'win'"] # Bug 1358846
@@ -388,7 +396,7 @@ tags = "webextensions"
 
 ["test_upgrade.js"]
 head = "head_addons.js head_compat.js"
-run-sequentially = "Uses global XCurProcD dir."
+run-sequentially = ["true"] # Uses global XCurProcD dir.
 
 ["test_upgrade_incompatible.js"]
 

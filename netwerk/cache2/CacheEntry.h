@@ -24,6 +24,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/TimeStamp.h"
+#include "Dictionary.h"
 
 static inline uint32_t PRTimeToSeconds(PRTime t_usec) {
   return uint32_t(t_usec / PR_USEC_PER_SEC);
@@ -75,6 +76,7 @@ class CacheEntry final : public nsIRunnable,
   nsresult SetExpirationTime(uint32_t expirationTime);
   nsresult GetOnStartTime(uint64_t* aTime);
   nsresult GetOnStopTime(uint64_t* aTime);
+  nsresult GetReadyOrRevalidating(bool* aReady);
   nsresult SetNetworkTimes(uint64_t onStartTime, uint64_t onStopTime);
   nsresult SetContentType(uint8_t aContentType);
   nsresult ForceValidFor(uint32_t aSecondsToTheFuture);
@@ -103,6 +105,8 @@ class CacheEntry final : public nsIRunnable,
   nsresult OpenAlternativeInputStream(const nsACString& type,
                                       nsIInputStream** _retval);
   nsresult GetLoadContextInfo(nsILoadContextInfo** aInfo);
+
+  nsresult SetDictionary(DictionaryCacheEntry* aDict);
 
  public:
   uint32_t GetMetadataMemoryConsumption();
@@ -427,6 +431,8 @@ class CacheEntry final : public nsIRunnable,
   mozilla::TimeStamp mLoadStart;
   uint32_t mUseCount{0};
 
+  RefPtr<DictionaryCacheEntry> mDict;
+
   const uint64_t mCacheEntryId;
 };
 
@@ -465,6 +471,9 @@ class CacheEntryHandle final : public nsICacheEntry {
   }
   NS_IMETHOD GetOnStopTime(uint64_t* aOnStopTime) override {
     return mEntry->GetOnStopTime(aOnStopTime);
+  }
+  NS_IMETHOD GetReadyOrRevalidating(bool* aReady) override {
+    return mEntry->GetReadyOrRevalidating(aReady);
   }
   NS_IMETHOD SetNetworkTimes(uint64_t onStartTime,
                              uint64_t onStopTime) override {
@@ -541,6 +550,9 @@ class CacheEntryHandle final : public nsICacheEntry {
   NS_IMETHOD GetLoadContextInfo(
       nsILoadContextInfo** aLoadContextInfo) override {
     return mEntry->GetLoadContextInfo(aLoadContextInfo);
+  }
+  NS_IMETHOD SetDictionary(DictionaryCacheEntry* aDict) override {
+    return mEntry->SetDictionary(aDict);
   }
 
   // Specific implementation:

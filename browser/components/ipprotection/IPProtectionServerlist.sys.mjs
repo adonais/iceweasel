@@ -75,6 +75,9 @@ export class Server {
   quarantined = false;
 }
 
+/**
+ * Class representing a city.
+ */
 export class City {
   /**
    * Fallback name for the city if not available
@@ -97,6 +100,9 @@ export class City {
   servers = [];
 }
 
+/**
+ * Class representing a country.
+ */
 export class Country {
   /**
    * Fallback name for the country if not available

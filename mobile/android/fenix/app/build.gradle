@@ -301,10 +301,6 @@ android {
         compose = true
     }
 
-    compileOptions {
-        coreLibraryDesugaringEnabled = true
-    }
-
     namespace = 'org.mozilla.fenix'
 }
 
@@ -548,13 +544,7 @@ nimbus {
             ? gradle.getProperty('localProperties.autoPublish.application-services.dir') : null
 }
 
-tasks.withType(KotlinCompile).configureEach {
-    kotlinOptions.freeCompilerArgs += "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi"
-}
-
 dependencies {
-    coreLibraryDesugaring libs.desugar.jdk.libs
-
     // We pick up JNA transitively by way of Glean, which is currently on version 5.14.0.
     // However, we need to force version 5.17.0 due to Google Play's 16KB page size requirement.
     // JNA 5.15.0+ crashes on Android <7, however, so it can't be bumped in Glean at this time.
@@ -661,6 +651,7 @@ dependencies {
     implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.compose.animation
     implementation libs.androidx.compose.foundation
+    implementation libs.androidx.compose.material.icons
     implementation libs.androidx.compose.material3
     implementation libs.androidx.compose.material3.adaptive
     implementation libs.androidx.compose.material3.adaptivelayout

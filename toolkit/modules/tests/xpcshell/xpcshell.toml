@@ -25,7 +25,6 @@ support-files = [
   "my_catman_2.sys.mjs",
 ]
 
-
 ["test_BrowserUtils_urlFormatting.js"]
 
 ["test_CanonicalJSON.js"]
@@ -89,6 +88,8 @@ skip-if = ["os == 'android'"]
 
 ["test_PermissionsUtils.js"]
 
+["test_PrefUtils.js"]
+
 ["test_Preferences.js"]
 
 ["test_PrivacyLevel.js"]
@@ -98,7 +99,6 @@ skip-if = ["os == 'android'"]
 ["test_Region.js"]
 
 ["test_Region_geocoding.js"]
-run-sequentially = "very high failure rate in parallel"
 
 ["test_Services.js"]
 

@@ -31,6 +31,11 @@ panel {
   }
   @media (-moz-platform: macos) {
     --menuitem-padding: 3px 9px;
+
+    @media (-moz-mac-tahoe-theme) {
+      --menuitem-padding: 4px 11px;
+      --menuitem-border-radius: 7px;
+    }
   }
 
   @media (-moz-platform: windows) {
@@ -135,11 +140,6 @@ menuseparator {
   display: none;
 }
 
-.menupopup-arrowscrollbox::part(scrollbox) {
-  /* This makes the padding / margin trick below work */
-  overflow-clip-box-block: content-box;
-}
-
 /* Prevent the scrolled contents of the menupopup from jumping vertically when
  * the arrow buttons appear / disappear, by positioning ::part(scrollbox) in
  * such a way that its edges are at the same position as the edges of
@@ -148,13 +148,13 @@ menuseparator {
 .menupopup-arrowscrollbox:not([scrolledtostart])::part(scrollbox) {
   /* scrollbutton-up is visible; shift our top edge up by its height. */
   margin-top: -16px;
-  padding-top: 16px;
+  border-top: 16px solid transparent;
 }
 
 .menupopup-arrowscrollbox:not([scrolledtoend])::part(scrollbox) {
   /* scrollbutton-down is visible; shift our bottom edge down by its height. */
   margin-bottom: -16px;
-  padding-bottom: 16px;
+  border-bottom: 16px solid transparent;
 }
 
 menubar {

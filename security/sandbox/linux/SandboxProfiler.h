@@ -53,7 +53,7 @@ using SandboxProfilerPayload = struct {
   SandboxProfilerPayloadType mType;
 };
 
-using SandboxProfilerQueue = BoundedMPSCQueue<SandboxProfilerPayload>;
+using SandboxProfilerQueue = BoundedMPSCQueue<SandboxProfilerPayload, 15>;
 
 extern struct UprofilerFuncPtrs uprofiler;
 extern bool uprofiler_initted;

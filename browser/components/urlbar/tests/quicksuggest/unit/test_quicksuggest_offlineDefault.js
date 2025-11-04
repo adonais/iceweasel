@@ -151,7 +151,7 @@ async function doTest({ locale, region, expectSuggestToBeEnabled }) {
     homeRegion: region,
     locales: [locale],
     callback: async () => {
-      await QuickSuggest._test_reinit();
+      await QuickSuggest._test_reset();
 
       for (let [name, value] of Object.entries(expectedPrefs)) {
         // Check the default-branch value.

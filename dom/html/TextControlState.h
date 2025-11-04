@@ -292,7 +292,7 @@ class TextControlState final : public SupportsWeakPtr {
    * GetValue() returns current value either with or without TextEditor.
    * The result never includes \r.
    */
-  void GetValue(nsAString& aValue, bool aIgnoreWrap, bool aForDisplay) const;
+  void GetValue(nsAString& aValue, bool aForDisplay) const;
 
   /**
    * ValueEquals() is designed for internal use so that aValue shouldn't

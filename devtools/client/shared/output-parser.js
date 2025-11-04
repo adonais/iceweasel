@@ -719,7 +719,7 @@ class OutputParser {
           }
           break;
         }
-        case "Dimension":
+        case "Dimension": {
           const value = text.substring(token.startOffset, token.endOffset);
           if (angleOK(value)) {
             this.#appendAngle(value, options);
@@ -727,6 +727,7 @@ class OutputParser {
             this.#appendTextNode(value);
           }
           break;
+        }
         case "UnquotedUrl":
         case "BadUrl":
           this.#appendURL(

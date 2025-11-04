@@ -103,6 +103,41 @@ const char* WakeLockTypeNames[] = {
 };
 #endif
 
+static int GetWakeLockTypeFromEnv() {
+  const char* lockType = PR_GetEnv("MOZ_WAKE_LOCK_TYPE");
+  if (!lockType) {
+    return Initial;
+  }
+#if defined(MOZ_ENABLE_DBUS)
+  // Support string values
+  if (!strcmp(lockType, "FreeDesktopScreensaver")) {
+    return FreeDesktopScreensaver;
+  }
+  if (!strcmp(lockType, "FreeDesktopPower")) {
+    return FreeDesktopPower;
+  }
+  if (!strcmp(lockType, "FreeDesktopPortal")) {
+    return FreeDesktopPortal;
+  }
+  if (!strcmp(lockType, "GNOME")) {
+    return GNOME;
+  }
+#endif
+#if defined(MOZ_X11)
+  if (!strcmp(lockType, "XScreenSaver")) {
+    return XScreenSaver;
+  }
+#endif
+#if defined(MOZ_WAYLAND)
+  if (!strcmp(lockType, "WaylandIdleInhibit")) {
+    return WaylandIdleInhibit;
+  }
+#endif
+  MOZ_LOG(gLinuxWakeLockLog, mozilla::LogLevel::Debug,
+          ("Invalid MOZ_WAKE_LOCK_TYPE value: %s", lockType));
+  return Initial;
+}
+
 class WakeLockTopic {
  public:
   NS_INLINE_DECL_REFCOUNTING(WakeLockTopic)
@@ -111,7 +146,7 @@ class WakeLockTopic {
     CopyUTF16toUTF8(aTopic, mTopic);
     WAKE_LOCK_LOG("WakeLockTopic::WakeLockTopic() created %s", mTopic.get());
     if (sWakeLockType == Initial) {
-      SwitchToNextWakeLockType();
+      InitializeWakeLockType();
     }
   }
 
@@ -141,6 +176,7 @@ class WakeLockTopic {
   bool IsNativeWakeLock(int aWakeLockType);
   bool IsWakeLockTypeAvailable(int aWakeLockType);
   bool SwitchToNextWakeLockType();
+  void InitializeWakeLockType();
 
 #ifdef MOZ_ENABLE_DBUS
   void DBusInhibitScreensaver(const char* aName, const char* aPath,
@@ -886,6 +922,23 @@ bool WakeLockTopic::IsNativeWakeLock(int aWakeLockType) {
     default:
       return false;
   }
+}
+
+void WakeLockTopic::InitializeWakeLockType() {
+  int lock = GetWakeLockTypeFromEnv();
+  if (lock != Initial) {
+    WAKE_LOCK_LOG("MOZ_WAKE_LOCK_TYPE set: %s", WakeLockTypeNames[lock]);
+    if (IsWakeLockTypeAvailable(lock)) {
+      sWakeLockType = lock;
+      return;
+    }
+    WAKE_LOCK_LOG(
+        "Requested WakeLockType %s not available, falling back to "
+        "auto-detection",
+        WakeLockTypeNames[lock]);
+  }
+  // Fall back to automatic detection
+  SwitchToNextWakeLockType();
 }
 
 bool WakeLockTopic::SwitchToNextWakeLockType() {

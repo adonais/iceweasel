@@ -10,7 +10,6 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Latin1.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/MulOverflowMask.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/RangedPtr.h"
 #include "mozilla/StringBuffer.h"
@@ -1785,9 +1784,8 @@ T* AutoStableStringChars::allocOwnChars(JSContext* cx, size_t count) {
               sizeof(char16_t) * JSFatInlineString::MAX_LENGTH_TWO_BYTE,
       "InlineCapacity too small to hold fat inline strings");
 
-  static_assert(
-      (JSString::MAX_LENGTH & mozilla::MulOverflowMask<sizeof(T)>()) == 0,
-      "Size calculation can overflow");
+  static_assert(JSString::MAX_LENGTH * sizeof(T) >= JSString::MAX_LENGTH,
+                "Size calculation can overflow");
   MOZ_ASSERT(count <= JSString::MAX_LENGTH);
   size_t size = sizeof(T) * count;
 

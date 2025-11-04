@@ -396,12 +396,29 @@ async function assertMixedContentBlockingState(tabbrowser, states = {}) {
 }
 
 async function loadBadCertPage(url) {
-  let loaded = BrowserTestUtils.waitForErrorPage(gBrowser.selectedBrowser);
+  const loaded = BrowserTestUtils.waitForErrorPage(gBrowser.selectedBrowser);
   BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
   await loaded;
-
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
-    content.document.getElementById("exceptionDialogButton").click();
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+    const netErrorCard =
+      content.document.querySelector("net-error-card").wrappedJSObject;
+    await netErrorCard.getUpdateComplete();
+    await EventUtils.synthesizeMouseAtCenter(
+      netErrorCard.advancedButton,
+      {},
+      content
+    );
+    await ContentTaskUtils.waitForCondition(() => {
+      return (
+        netErrorCard.exceptionButton && !netErrorCard.exceptionButton.disabled
+      );
+    }, "Waiting for exception button");
+    netErrorCard.exceptionButton.scrollIntoView(true);
+    await EventUtils.synthesizeMouseAtCenter(
+      netErrorCard.exceptionButton,
+      {},
+      content
+    );
   });
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 }

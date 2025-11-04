@@ -214,6 +214,34 @@ enum class NativeIteratorIndices : uint32_t {
   Valid = 3
 };
 
+class IteratorProperty {
+  uintptr_t raw_ = 0;
+
+ public:
+  static constexpr uintptr_t DeletedBit = 0x1;
+
+  // The copy constructor is deleted as a safeguard against writing code which
+  // would overwrite existing IteratorProperties on NativeIterators. They are
+  // intended to be written once and never changed, outside of being moved in
+  // GC callbacks.
+  IteratorProperty(const IteratorProperty&) = delete;
+
+  IteratorProperty() = default;
+  explicit IteratorProperty(JSLinearString* str) : raw_(uintptr_t(str)) {}
+  IteratorProperty(JSLinearString* str, bool deleted)
+      : raw_(uintptr_t(str) | (deleted ? DeletedBit : 0)) {}
+
+  JSLinearString* asString() const {
+    return reinterpret_cast<JSLinearString*>(raw_ & ~DeletedBit);
+  }
+
+  bool deleted() const { return raw_ & DeletedBit; }
+  void markDeleted() { raw_ |= DeletedBit; }
+  void clearDeleted() { raw_ &= ~DeletedBit; }
+
+  void traceString(JSTracer* trc);
+} JS_HAZ_GC_POINTER;
+
 struct NativeIterator : public NativeIteratorListNode {
  private:
   // Object being iterated.  Non-null except in NativeIterator sentinels,
@@ -233,15 +261,19 @@ struct NativeIterator : public NativeIteratorListNode {
   // The next property, pointing into an array of strings directly after any
   // GCPtr<Shape*>s that appear directly after |*this|, as part of an overall
   // allocation that stores |*this|, shapes, iterated strings, and maybe
-  // indices.
-  GCPtr<JSLinearString*>* propertyCursor_;  // initialized by constructor
+  // indices. Strings are stored as a JSLinearString* with a low-bit tag
+  // indicating whether they were deleted while iterating this object, in which
+  // case they should be skipped. The post barrier for writing to this is
+  // handled in NativeIterator::NativeIterator by adding iterObj_ to the
+  // whole cell buffer, and no pre barrier is required because we never modify
+  // these after initialization.
+  IteratorProperty* propertyCursor_;  // initialized by constructor
 
   // The limit/end of properties to iterate. Once |this| has been fully
   // initialized, it also equals the start of indices, if indices are present,
   // or the end of the full allocation storing |*this|, shapes, and strings, if
-  // indices are not present. Beware! This value may change as properties are
-  // deleted from the observed object.
-  GCPtr<JSLinearString*>* propertiesEnd_;  // initialized by constructor
+  // indices are not present.
+  IteratorProperty* propertiesEnd_;  // initialized by constructor
 
   HashNumber shapesHash_;  // initialized by constructor
 
@@ -361,15 +393,15 @@ struct NativeIterator : public NativeIteratorListNode {
     return mozilla::PointerRangeSize(shapesBegin(), shapesEnd());
   }
 
-  GCPtr<JSLinearString*>* propertiesBegin() const {
+  IteratorProperty* propertiesBegin() const {
     static_assert(
-        alignof(GCPtr<Shape*>) >= alignof(GCPtr<JSLinearString*>),
-        "GCPtr<JSLinearString*>s for properties must be able to appear "
+        alignof(GCPtr<Shape*>) >= alignof(IteratorProperty),
+        "IteratorPropertys for properties must be able to appear "
         "directly after any GCPtr<Shape*>s after this NativeIterator, "
         "with no padding space required for correct alignment");
     static_assert(
-        alignof(NativeIterator) >= alignof(GCPtr<JSLinearString*>),
-        "GCPtr<JSLinearString*>s for properties must be able to appear "
+        alignof(NativeIterator) >= alignof(IteratorProperty),
+        "IteratorPropertys for properties must be able to appear "
         "directly after this NativeIterator when no GCPtr<Shape*>s are "
         "present, with no padding space required for correct "
         "alignment");
@@ -383,17 +415,17 @@ struct NativeIterator : public NativeIteratorListNode {
                "isn't necessarily the start of properties and instead "
                "|propertyCursor_| is");
 
-    return reinterpret_cast<GCPtr<JSLinearString*>*>(shapesEnd_);
+    return reinterpret_cast<IteratorProperty*>(shapesEnd_);
   }
 
-  GCPtr<JSLinearString*>* propertiesEnd() const { return propertiesEnd_; }
+  IteratorProperty* propertiesEnd() const { return propertiesEnd_; }
 
-  GCPtr<JSLinearString*>* nextProperty() const { return propertyCursor_; }
+  IteratorProperty* nextProperty() const { return propertyCursor_; }
 
   PropertyIndex* indicesBegin() const {
     // PropertyIndex must be able to be appear directly after the properties
     // array, with no padding required for correct alignment.
-    static_assert(alignof(GCPtr<JSLinearString*>) >= alignof(PropertyIndex));
+    static_assert(alignof(IteratorProperty) >= alignof(PropertyIndex));
     return reinterpret_cast<PropertyIndex*>(propertiesEnd_);
   }
 
@@ -403,14 +435,17 @@ struct NativeIterator : public NativeIteratorListNode {
   }
 
   MOZ_ALWAYS_INLINE JS::Value nextIteratedValueAndAdvance() {
-    if (propertyCursor_ >= propertiesEnd_) {
-      MOZ_ASSERT(propertyCursor_ == propertiesEnd_);
-      return JS::MagicValue(JS_NO_ITER_VALUE);
+    while (propertyCursor_ < propertiesEnd_) {
+      IteratorProperty& prop = *propertyCursor_;
+      incCursor();
+      if (prop.deleted()) {
+        continue;
+      }
+      return JS::StringValue(prop.asString());
     }
 
-    JSLinearString* str = *propertyCursor_;
-    incCursor();
-    return JS::StringValue(str);
+    MOZ_ASSERT(propertyCursor_ == propertiesEnd_);
+    return JS::MagicValue(JS_NO_ITER_VALUE);
   }
 
   void resetPropertyCursorForReuse() {
@@ -421,31 +456,28 @@ struct NativeIterator : public NativeIteratorListNode {
     // this NativeIterator is reusable.  (Should we not bother resetting
     // the cursor in that case?)
 
+    // If properties were marked as deleted, unmark them.
+    if (hasUnvisitedPropertyDeletion()) {
+      for (IteratorProperty* prop = propertiesBegin(); prop < propertiesEnd();
+           prop++) {
+        prop->clearDeleted();
+      }
+      unmarkHasUnvisitedPropertyDeletion();
+    }
+
     // Note: JIT code inlines |propertyCursor_| resetting when an iterator
-    //       ends: see |CodeGenerator::visitIteratorEnd|.
+    //       ends: see |MacroAssembler::iteratorClose|.
     propertyCursor_ = propertiesBegin();
   }
 
   bool previousPropertyWas(JS::Handle<JSLinearString*> str) {
     MOZ_ASSERT(isInitialized());
-    return propertyCursor_ > propertiesBegin() && propertyCursor_[-1] == str;
+    return propertyCursor_ > propertiesBegin() &&
+           propertyCursor_[-1].asString() == str;
   }
 
   size_t numKeys() const {
     return mozilla::PointerRangeSize(propertiesBegin(), propertiesEnd());
-  }
-
-  void trimLastProperty() {
-    MOZ_ASSERT(isInitialized());
-    propertiesEnd_--;
-
-    // This invokes the pre barrier on this property, since it's no longer
-    // going to be marked, and it ensures that any existing remembered set
-    // entry will be dropped.
-    *propertiesEnd_ = nullptr;
-
-    // Indices are no longer valid.
-    disableIndices();
   }
 
   JSObject* iterObj() const { return iterObj_; }
@@ -566,6 +598,20 @@ struct NativeIterator : public NativeIteratorListNode {
     MOZ_ASSERT(!isEmptyIteratorSingleton());
 
     flagsAndCount_ |= Flags::HasUnvisitedPropertyDeletion;
+  }
+
+  void unmarkHasUnvisitedPropertyDeletion() {
+    MOZ_ASSERT(isInitialized());
+    MOZ_ASSERT(!isEmptyIteratorSingleton());
+    MOZ_ASSERT(hasUnvisitedPropertyDeletion());
+
+    flagsAndCount_ &= ~Flags::HasUnvisitedPropertyDeletion;
+  }
+
+  bool hasUnvisitedPropertyDeletion() const {
+    MOZ_ASSERT(isInitialized());
+
+    return flags() & Flags::HasUnvisitedPropertyDeletion;
   }
 
   bool hasValidIndices() const {

@@ -193,6 +193,12 @@ class MachLogger:
     def error(self, msg, name="mozperftest", **kwargs):
         self._logger(logging.ERROR, name, kwargs, msg)
 
+    def group_start(self, msg=None, name="mozperftest", **kwargs):
+        self._logger(logging.INFO, name, kwargs, msg)
+
+    def group_end(self, msg=None, name="mozperftest", **kwargs):
+        self._logger(logging.INFO, name, kwargs, msg)
+
 
 def install_package(virtualenv_manager, package, ignore_failure=False):
     """Installs a package using the virtualenv manager.

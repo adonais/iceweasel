@@ -41,16 +41,16 @@ add_task(async function viewUpdateAppendHidden() {
   // suggestions.
   provider.results = queryStrings.map(
     suggestion =>
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.SEARCH,
-        UrlbarUtils.RESULT_SOURCE.SEARCH,
-        {
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.SEARCH,
+        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        payload: {
           query: queries[0],
           suggestion,
           lowerCaseSuggestion: suggestion.toLocaleLowerCase(),
           engine: Services.search.defaultEngine.name,
-        }
-      )
+        },
+      })
   );
   provider.finishQueryPromise = Promise.resolve();
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
@@ -81,15 +81,15 @@ add_task(async function viewUpdateAppendHidden() {
   // results, so the view will append the history results as new rows.
   provider.results = queryStrings.map(title => {
     let url = "http://example.com/" + title;
-    return new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.URL,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
-      {
+    return new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      payload: {
         title,
         url,
         displayUrl: "http://example.com/" + title,
-      }
-    );
+      },
+    });
   });
 
   // Don't allow the search to finish until we check the updated rows.  We'll

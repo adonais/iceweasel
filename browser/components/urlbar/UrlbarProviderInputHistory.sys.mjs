@@ -12,15 +12,16 @@
 import {
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarProviderOpenTabs:
+    "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "SQL_ADAPTIVE_QUERY", () => {
@@ -137,25 +138,24 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
           continue;
         }
         let userContextId = row.getResultByName("userContextId") || 0;
-        let payload = lazy.UrlbarResult.payloadAndSimpleHighlights(
-          queryContext.tokens,
-          {
+        let { payload, payloadHighlights } =
+          lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
             url: [url, UrlbarUtils.HIGHLIGHT.TYPED],
             title: [resultTitle, UrlbarUtils.HIGHLIGHT.TYPED],
             icon: UrlbarUtils.getIconForUrl(url),
             userContextId,
             lastVisit,
-          }
-        );
+          });
         if (lazy.UrlbarPrefs.get("secondaryActions.switchToTab")) {
-          payload[0].action =
+          payload.action =
             UrlbarUtils.createTabSwitchSecondaryAction(userContextId);
         }
-        let result = new lazy.UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-          UrlbarUtils.RESULT_SOURCE.TABS,
-          ...payload
-        );
+        let result = new lazy.UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+          source: UrlbarUtils.RESULT_SOURCE.TABS,
+          payload,
+          payloadHighlights,
+        });
         addCallback(this, result);
         continue;
       }
@@ -179,9 +179,9 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
 
       let isBlockable = resultSource == UrlbarUtils.RESULT_SOURCE.HISTORY;
 
-      let result = new lazy.UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        resultSource,
+      let result = new lazy.UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: resultSource,
         ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
           url: [url, UrlbarUtils.HIGHLIGHT.TYPED],
           title: [resultTitle, UrlbarUtils.HIGHLIGHT.TYPED],
@@ -196,8 +196,8 @@ export class UrlbarProviderInputHistory extends UrlbarProvider {
               "awesome-bar-result-menu"
             : undefined,
           lastVisit,
-        })
-      );
+        }),
+      });
 
       addCallback(this, result);
     }

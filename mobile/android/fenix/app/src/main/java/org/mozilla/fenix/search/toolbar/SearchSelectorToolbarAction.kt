@@ -23,12 +23,13 @@ import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.ktx.android.content.res.resolveAttribute
 import mozilla.components.support.ktx.android.view.toScope
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.UnifiedSearch
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.search.SearchDialogFragmentStore
+import org.mozilla.fenix.telemetry.ACTION_SEARCH_ENGINE_SELECTOR_CLICKED
+import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
+import org.mozilla.fenix.GleanMetrics.Toolbar as GleanMetricsToolbar
 
 /**
  * A [Toolbar.Action] implementation that shows a [SearchSelector].
@@ -69,7 +70,13 @@ class SearchSelectorToolbarAction(
                     Orientation.DOWN
                 }
 
-                UnifiedSearch.searchMenuTapped.record(NoExtras())
+                GleanMetricsToolbar.buttonTapped.record(
+                    GleanMetricsToolbar.ButtonTappedExtra(
+                        source = SOURCE_ADDRESS_BAR,
+                        item = ACTION_SEARCH_ENGINE_SELECTOR_CLICKED,
+                    ),
+                )
+
                 menu.menuController.show(
                     anchor = it.findViewById(R.id.search_selector),
                     orientation = orientation,

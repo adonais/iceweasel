@@ -69,6 +69,9 @@ ID
 /machrc
 /.machrc
 
+# mach manifest skip-fails cache
+/.skip_fails_cache
+
 # pyenv artifact
 /.python-version
 
@@ -113,9 +116,6 @@ browser/components/asrouter/content-src/schemas/corpus/CFRMessageProvider.messag
 browser/components/asrouter/content-src/schemas/corpus/OnboardingMessageProvider.messages.json
 browser/components/asrouter/content-src/schemas/corpus/PanelTestProvider.messages.json
 browser/components/asrouter/content-src/schemas/corpus/PanelTestProvider_toast_notification.messages.json
-
-# Ignore Pocket component build and dev assets
-browser/components/pocket/content/panels/css/main.compiled.css.map
 
 # Ignore downloaded thirdparty build artifacts.
 toolkit/components/translations/bergamot-translator/thirdparty
@@ -245,6 +245,8 @@ mobile/android/android-components/**/assets/extensions/**/manifest.json
 
 # XCode project cruft
 /*.xcodeproj/
+mobile/ios/GeckoTestBrowser/GeckoTestBrowser.xcodeproj/project.xcworkspace/xcuserdata
+mobile/ios/GeckoTestBrowser/GeckoTestBrowser.xcodeproj/xcuserdata
 
 # Rust/Cargo output from running `cargo` directly
 /target/

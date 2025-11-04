@@ -104,7 +104,7 @@ class nsAccUtils {
    */
   static HyperTextAccessible* GetTextContainer(nsINode* aNode);
 
-  static Accessible* TableFor(Accessible* aRow);
+  static Accessible* TableFor(const Accessible* aRow);
   static LocalAccessible* TableFor(LocalAccessible* aRow);
 
   static const LocalAccessible* TableFor(const LocalAccessible* aAcc) {
@@ -303,6 +303,13 @@ class nsAccUtils {
                                      nsCaseTreatment aCaseSensitive);
 
   static bool IsEditableARIACombobox(const LocalAccessible* aAccessible);
+
+  /**
+   * Return true if the CSS positioned target of an anchor is a valid details
+   * related accessible.
+   */
+  static bool IsValidDetailsTargetForAnchor(const Accessible* aDetails,
+                                            const Accessible* aTarget);
 };
 
 }  // namespace a11y

@@ -197,10 +197,10 @@ class GleanMetricsService(context: Context) : MetricsService {
         MozillaProducts.isFenixDefaultBrowser.set(isFenixDefaultBrowser)
 
         // tracking protection metrics
-        TrackingProtection.hasAdvertisingBlocked.set(settings.hasAdvertisingBlocked())
-        TrackingProtection.hasAnalyticsBlocked.set(settings.hasAnalyticsBlocked())
+        TrackingProtection.hasAdvertisingBlocked.set(settings.shouldBlockAdTrackers())
+        TrackingProtection.hasAnalyticsBlocked.set(settings.shouldBlockAnalyticTrackers())
         TrackingProtection.hasContentBlocked.set(settings.shouldBlockOtherTrackers())
-        TrackingProtection.hasSocialBlocked.set(settings.hasSocialBlocked())
+        TrackingProtection.hasSocialBlocked.set(settings.shouldBlockSocialTrackers())
 
         // theme telemetry
         val currentTheme =

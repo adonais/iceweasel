@@ -7,7 +7,6 @@
 #include "vm/JSONPrinter.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/IntegerPrintfMacros.h"
 
 #include <stdarg.h>

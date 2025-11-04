@@ -561,7 +561,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
           this._handleMarkerHover(this.hoveredPoint);
         }
         break;
-      case "mousemove":
+      case "mousemove": {
         if (!this[_dragging]) {
           this._handleMouseMoveNotDragging(pageX, pageY);
           return;
@@ -587,6 +587,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
           this._handleInsetMove(point, pageX, pageY);
         }
         break;
+      }
       case "dblclick":
         if (this.shapeType === "polygon" && !this.transformMode) {
           const { percentX, percentY } = this.convertPageCoordsToPercent(
@@ -2935,10 +2936,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       case "em":
         ratio = 1 / parseFloat(getComputedStyle(this.currentNode).fontSize);
         break;
-      case "rem":
+      case "rem": {
         const root = this.currentNode.ownerDocument.documentElement;
         ratio = 1 / parseFloat(getComputedStyle(root).fontSize);
         break;
+      }
       case "vw":
         ratio = 100 / windowWidth;
         break;

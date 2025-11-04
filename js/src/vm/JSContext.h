@@ -25,6 +25,7 @@
 #include "js/ContextOptions.h"  // JS::ContextOptions
 #include "js/Debug.h"           // JS::CustomObjectSummaryCallback
 #include "js/Exception.h"
+#include "js/friend/MicroTask.h"
 #include "js/GCVector.h"
 #include "js/Interrupt.h"
 #include "js/Promise.h"
@@ -93,6 +94,9 @@ class InternalJobQueue : public JS::JobQueue {
   bool getHostDefinedData(JSContext* cx,
                           JS::MutableHandle<JSObject*> data) const override;
 
+  bool getHostDefinedGlobal(JSContext*,
+                            JS::MutableHandle<JSObject*>) const override;
+
   bool enqueuePromiseJob(JSContext* cx, JS::HandleObject promise,
                          JS::HandleObject job, JS::HandleObject allocationSite,
                          JS::HandleObject hostDefinedData) override;
@@ -149,6 +153,48 @@ enum class InterruptReason : uint32_t {
 };
 
 enum class ShouldCaptureStack { Maybe, Always };
+
+// Use TempAllocPolicy to report OOM
+// MG:XXX: It would be nice to explore the typical depth of the queue
+//         to see if we can get it all inline in the common case.
+// MG:XXX: This appears to be broken for non-zero values of inline!
+using MicroTaskQueue = js::TraceableFifo<JS::Value, 0, TempAllocPolicy>;
+
+// A pair of microtask queues; one debug and one 'regular' (non-debug).
+struct MicroTaskQueueSet {
+  explicit MicroTaskQueueSet(JSContext* cx)
+      : microTaskQueue(cx), debugMicroTaskQueue(cx) {}
+
+  // We want to swap so we need move constructors
+  MicroTaskQueueSet(MicroTaskQueueSet&&) = default;
+  MicroTaskQueueSet& operator=(MicroTaskQueueSet&&) = default;
+
+  // Don't copy.
+  MicroTaskQueueSet(const MicroTaskQueueSet&) = delete;
+  MicroTaskQueueSet& operator=(const MicroTaskQueueSet&) = delete;
+
+  bool enqueueRegularMicroTask(JSContext* cx, const JS::MicroTask&);
+  bool enqueueDebugMicroTask(JSContext* cx, const JS::MicroTask&);
+  bool prependRegularMicroTask(JSContext* cx, const JS::MicroTask&);
+
+  JS::MicroTask popFront();
+  JS::MicroTask popDebugFront();
+
+  bool empty() { return microTaskQueue.empty() && debugMicroTaskQueue.empty(); }
+
+  void trace(JSTracer* trc) {
+    microTaskQueue.trace(trc);
+    debugMicroTaskQueue.trace(trc);
+  }
+
+  void clear() {
+    microTaskQueue.clear();
+    debugMicroTaskQueue.clear();
+  }
+
+  MicroTaskQueue microTaskQueue;
+  MicroTaskQueue debugMicroTaskQueue;
+};
 
 } /* namespace js */
 
@@ -1007,6 +1053,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   bool hasExecutionTracer() { return false; }
 #endif
 
+  JS::PersistentRooted<js::UniquePtr<js::MicroTaskQueueSet>> microTaskQueues;
 }; /* struct JSContext */
 
 inline JSContext* JSRuntime::mainContextFromOwnThread() {

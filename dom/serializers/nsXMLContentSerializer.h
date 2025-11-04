@@ -41,10 +41,11 @@ class nsXMLContentSerializer : public nsIContentSerializer {
                   bool aRewriteEncodingDeclaration,
                   bool* aNeedsPreformatScanning, nsAString& aOutput) override;
 
-  NS_IMETHOD AppendText(nsIContent* aText, int32_t aStartOffset,
+  NS_IMETHOD AppendText(mozilla::dom::Text* aText, int32_t aStartOffset,
                         int32_t aEndOffset) override;
 
-  NS_IMETHOD AppendCDATASection(nsIContent* aCDATASection, int32_t aStartOffset,
+  NS_IMETHOD AppendCDATASection(mozilla::dom::Text* aCDATASection,
+                                int32_t aStartOffset,
                                 int32_t aEndOffset) override;
 
   NS_IMETHOD AppendProcessingInstruction(
@@ -200,7 +201,7 @@ class nsXMLContentSerializer : public nsIContentSerializer {
    * retrieve the text content of the node and append it to the given string
    * It doesn't increment the column position
    */
-  nsresult AppendTextData(nsIContent* aNode, int32_t aStartOffset,
+  nsresult AppendTextData(mozilla::dom::Text* aText, int32_t aStartOffset,
                           int32_t aEndOffset, nsAString& aStr,
                           bool aTranslateEntities);
 

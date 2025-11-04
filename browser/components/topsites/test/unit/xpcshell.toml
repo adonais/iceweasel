@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 firefox-appdir = "browser"
 
 ["test_FaviconProvider.js"]

@@ -22,7 +22,7 @@ kind-dependencies:
 # move this into the single job ??
 task-defaults:
     attributes:
-        build_platform: linux-shippable
+        build_platform: linux64-shippable
         build_type: opt
         artifact_prefix: releng/partner
         shippable: true

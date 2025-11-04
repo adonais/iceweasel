@@ -16,9 +16,7 @@
 export const DEFAULT_ENGINE_ID = "default-engine";
 
 /**
- * @constant
- * @type {Array<string>}
- * @description Supported backends.
+ * Supported backends.
  */
 export const BACKENDS = Object.freeze({
   onnx: "onnx",
@@ -26,6 +24,8 @@ export const BACKENDS = Object.freeze({
   onnxNative: "onnx-native",
   llamaCpp: "llama.cpp",
   bestLlama: "best-llama",
+  openai: "openai",
+  staticEmbeddings: "static-embeddings",
 });
 
 /**
@@ -230,72 +230,74 @@ export const ModelHub = {
 };
 
 /**
- * Enum for execution priority.
- *
- * Defines the priority of the task:
- *
- * - "High" is absolutely needed for Firefox.
- * - "Normal" is the default priority.
- * - "Low" is for 3rd party calls.
+ * Enum for execution priority of a task.
  *
  * @readonly
  * @enum {string}
  */
 export const ExecutionPriority = {
+  // The task is absolutely needed for Firefox.
   HIGH: "HIGH",
+  // The default priority.
   NORMAL: "NORMAL",
+  // 3rd party calls.
   LOW: "LOW",
 };
 
 /**
- * Enum for model quantization levels.
- *
- * Defines the quantization level of the task:
- *
- * - 'fp32': Full precision 32-bit floating point (`''`)
- * - 'fp16': Half precision 16-bit floating point (`'_fp16'`)
- * - 'q8': Quantized 8-bit (`'_quantized'`)
- * - 'int8': Integer 8-bit quantization (`'_int8'`)
- * - 'uint8': Unsigned integer 8-bit quantization (`'_uint8'`)
- * - 'q4': Quantized 4-bit (`'_q4'`)
- * - 'bnb4': Binary/Boolean 4-bit quantization (`'_bnb4'`)
- * - 'q4f16': 16-bit floating point model with 4-bit block weight quantization (`'_q4f16'`)
+ * Enum for model quantization levels. Not all models support all values.
  *
  * @readonly
  * @enum {string}
  */
 export const QuantizationLevel = {
+  // Full precision 32-bit floating point (`''`)
   FP32: "fp32",
+  // Half precision 16-bit floating point (`'_fp16'`)
   FP16: "fp16",
+  // Floating point 8 with the exponential taking 5 bits, and the mantissa taking 2.
+  // This format can express a wide dynamic range of float values because of the
+  // extra bits in the exponential, but with the trade off of lower precision of stored
+  // values because of the small mantissa. The max finite values are ±57,344.
+  FP8_E5M2: "fp8_e5m2",
+  // Floating point 8 with the exponential taking 4 bits, and the mantissa taking 3.
+  // This format is best for values without a wide dynamic range. The higher bits
+  // in the mantissa retains more precision The max finite values are ±448.
+  FP8_E4M3: "fp8_e4m3",
+  // Quantized 8-bit (`'_quantized'`)
   Q8: "q8",
+  // Integer 8-bit quantization (`'_int8'`)
   INT8: "int8",
+  // Unsigned integer 8-bit quantization (`'_uint8'`)
   UINT8: "uint8",
+  // Quantized 4-bit (`'_q4'`)
   Q4: "q4",
+  // Binary/Boolean 4-bit quantization (`'_bnb4'`)
   BNB4: "bnb4",
+  // 16-bit floating point model with 4-bit block weight quantization (`'_q4f16'`)
   Q4F16: "q4f16",
 };
 
 /**
  * Enum for KV cache quantization levels.
  *
- * - 'q8_0': Quantized 8-bit with optimized storage (`'_q8_0'`) (block-based)
- * - 'q4_0': Quantized 4-bit version 0 (`'_q4_0'`) (block-based)
- * - 'q4_1': Quantized 4-bit version 1 (`'_q4_1'`) (block-based)
- * - 'q5_1': Quantized 5-bit version 1 (`'_q5_1'`) (block-based)
- * - 'q5_0': Quantized 5-bit version 0 (`'_q5_0'`) (block-based)
- * - 'f16':  Half-precision (16-bit floating point) (`'_f16'`)
- * - 'f32':  Full precision  (32-bit floating point) (`'_f32'`)
- *
  * @readonly
  * @enum {string}
  */
 export const KVCacheQuantizationLevel = {
+  // Quantized 8-bit with optimized storage (`'_q8_0'`) (block-based)
   Q8_0: "q8_0",
+  // Quantized 4-bit version 0 (`'_q4_0'`) (block-based)
   Q4_0: "q4_0",
+  // Quantized 4-bit version 1 (`'_q4_1'`) (block-based)
   Q4_1: "q4_1",
+  // Quantized 5-bit version 1 (`'_q5_1'`) (block-based)
   Q5_1: "q5_1",
+  // Quantized 5-bit version 0 (`'_q5_0'`) (block-based)
   Q5_0: "q5_0",
+  // Half-precision (16-bit floating point) (`'_f16'`)
   F16: "f16",
+  // Full precision  (32-bit floating point) (`'_f32'`)
   F32: "f32",
 };
 
@@ -336,7 +338,8 @@ export const LogLevel = {
 export const AllowedBoolean = [false, true];
 
 /**
- * @typedef {import("../../translations/actors/TranslationsEngineParent.sys.mjs").TranslationsEngineParent} TranslationsEngineParent
+ * @import { TranslationsEngineParent } from "../../translations/actors/TranslationsEngineParent.sys.mjs"
+ * @import { StaticEmbeddingsOptions } from "./backends/StaticEmbeddingsPipeline.d.ts"
  */
 
 const PIPELINE_TEST_NAMES = ["moz-echo", "test-echo"];
@@ -568,6 +571,27 @@ export class PipelineOptions {
   backend = null;
 
   /**
+   * The base URL to use for openai API requests.
+   *
+   * @type {?string}
+   */
+  baseURL = null;
+
+  /**
+   * The API key to use for openai API requests.
+   *
+   * @type {?string}
+   */
+  apiKey = null;
+
+  /**
+   * The options for the engine when using static embeddings.
+   *
+   * @type {?StaticEmbeddingsOptions}
+   */
+  staticEmbeddingsOptions = null;
+
+  /**
    * Create a PipelineOptions instance.
    *
    * @param {object} options - The options for the pipeline. Must include mandatory fields.
@@ -656,7 +680,7 @@ export class PipelineOptions {
   #validateId(field, value) {
     // Define a regular expression to match the optional organization and required name
     // `organization/` part is optional, and both parts should follow the taskName pattern.
-    const validPattern = /^(?:[a-zA-Z0-9_\-\.]+\/)?[a-zA-Z0-9_\-\.]+$/;
+    const validPattern = /^(?:[a-zA-Z0-9_\-\.\:]+\/)?[a-zA-Z0-9_\-\.\:]+$/;
 
     // Check if the value matches the pattern
     if (!validPattern.test(value)) {
@@ -770,6 +794,9 @@ export class PipelineOptions {
       "numThreadsDecoding",
       "modelFile",
       "backend",
+      "baseURL",
+      "apiKey",
+      "staticEmbeddingsOptions",
     ];
 
     if (options instanceof PipelineOptions) {
@@ -786,20 +813,24 @@ export class PipelineOptions {
       }
       // Validating featureId
       if (key === "featureId") {
-        if (FEATURES.hasOwnProperty(options[key])) {
+        const featureId = options[key];
+        if (FEATURES.hasOwnProperty(featureId)) {
           // if featureId is set and engineId is not set, we set it
           if (
             options.engineId == null ||
             options.engineId === DEFAULT_ENGINE_ID
           ) {
-            options.engineId = FEATURES[options[key]].engineId;
+            options.engineId = FEATURES[featureId].engineId;
             this.engineId = options.engineId;
           }
-        } else {
+        } else if (
+          // Allow tests to define a feature id.
+          featureId != "test-feature"
+        ) {
           // we want an explicit list of features.
           throw new PipelineOptionsValidationError(
             key,
-            options[key],
+            featureId,
             `Should be one of ${Object.keys(FEATURES).join(", ")}`
           );
         }
@@ -856,7 +887,9 @@ export class PipelineOptions {
 
       if (
         key === "backend" &&
-        !Object.values(BACKENDS).includes(options[key])
+        !Object.values(BACKENDS).includes(options[key]) &&
+        // Allow tests to define a test backend.
+        options[key] != "test-backend"
       ) {
         throw new PipelineOptionsValidationError(
           key,
@@ -906,6 +939,9 @@ export class PipelineOptions {
       numThreadsDecoding: this.numThreadsDecoding,
       modelFile: this.modelFile,
       backend: this.backend,
+      baseURL: this.baseURL,
+      apiKey: this.apiKey,
+      staticEmbeddingsOptions: this.staticEmbeddingsOptions,
     };
   }
 

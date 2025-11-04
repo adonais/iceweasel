@@ -74,6 +74,12 @@ interface TopSiteInteractor {
      * shortcuts on the homepage.
      */
     fun onShowAllTopSitesClicked()
+
+    /**
+     * Sends telemetry related to the shortcuts library being viewed.
+     *
+     */
+    fun onShortcutsLibraryViewed()
 }
 
 /**
@@ -122,5 +128,9 @@ class DefaultTopSiteInteractor(
 
     override fun onShowAllTopSitesClicked() {
         controller.handleShowAllTopSitesClicked()
+    }
+
+    override fun onShortcutsLibraryViewed() {
+        controller.handleShortcutsLibraryViewed()
     }
 }

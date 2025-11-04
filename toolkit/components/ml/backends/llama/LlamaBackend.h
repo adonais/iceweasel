@@ -123,7 +123,8 @@ class LlamaBackend {
 
  private:
   SamplerResult InitializeSampler(
-      const mozilla::dom::Sequence<LlamaSamplerConfig>& aSamplers);
+      const mozilla::dom::Sequence<LlamaSamplerConfig>& aSamplers,
+      const llama_vocab* vocab);
 
   // Pointer to the dynamically loaded llama library
   LlamaLibWrapper* mLib = nullptr;

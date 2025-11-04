@@ -8,7 +8,6 @@
 #define gc_GCRuntime_h
 
 #include "mozilla/Atomics.h"
-#include "mozilla/DoublyLinkedList.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"

@@ -49,6 +49,7 @@ class QuickSettingsSheetDialogFragmentTest {
         store = BrowserStore()
         every { fragment.view } returns mockk(relaxed = true)
         every { fragment.lifecycle } returns lifecycleOwner.lifecycle
+        every { fragment.viewLifecycleOwner } returns lifecycleOwner
         every { fragment.activity } returns mockk(relaxed = true)
     }
 

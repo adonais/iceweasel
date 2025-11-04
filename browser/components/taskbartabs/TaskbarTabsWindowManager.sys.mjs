@@ -47,6 +47,8 @@ export class TaskbarTabsWindowManager {
   async replaceTabWithWindow(aTaskbarTab, aTab) {
     let originWindow = aTab.ownerGlobal;
 
+    Glean.webApp.moveToTaskbar.record({});
+
     // Save the parent window of this tab, so we can revert back if needed.
     let tabId = getTabId(aTab);
     let windowId = getWindowId(originWindow);

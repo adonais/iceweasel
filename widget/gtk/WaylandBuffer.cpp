@@ -256,7 +256,7 @@ already_AddRefed<WaylandBufferDMABUF> WaylandBufferDMABUF::CreateRGBA(
 already_AddRefed<WaylandBufferDMABUF> WaylandBufferDMABUF::CreateExternal(
     RefPtr<DMABufSurface> aSurface) {
   const auto size =
-      LayoutDeviceIntSize(aSurface->GetWidth(), aSurface->GetWidth());
+      LayoutDeviceIntSize(aSurface->GetWidth(), aSurface->GetHeight());
   RefPtr<WaylandBufferDMABUF> buffer = new WaylandBufferDMABUF(size);
 
   LOGWAYLAND("WaylandBufferDMABUF::CreateExternal() [%p] UID %d [%d x %d]",

@@ -12,7 +12,6 @@
 #include "MFMediaEngineStream.h"
 #include "MediaEventSource.h"
 #include "MediaInfo.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/TaskQueue.h"
 
 namespace mozilla {

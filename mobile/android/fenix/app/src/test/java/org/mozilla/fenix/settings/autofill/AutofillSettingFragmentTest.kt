@@ -11,6 +11,7 @@ import androidx.preference.SwitchPreference
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCard
@@ -41,6 +42,7 @@ class AutofillSettingFragmentTest {
     private lateinit var autofillSettingFragment: AutofillSettingFragment
     private val navController: NavController = mockk(relaxed = true)
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Before
     fun setUp() = runTestOnMain {
         every { testContext.components.settings } returns mockk(relaxed = true)

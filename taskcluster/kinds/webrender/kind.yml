@@ -256,8 +256,8 @@ tasks:
                   name: public/build/wrench-debug.apk
                   path: /builds/worker/checkouts/gecko/gfx/wr/target/debug/apk/wrench.apk
                 - type: file
-                  name: public/build/reftests.tar.gz
-                  path: /builds/worker/checkouts/gecko/gfx/wr/wrench/reftests.tar.gz
+                  name: public/build/reftests.tar.zst
+                  path: /builds/worker/checkouts/gecko/gfx/wr/wrench/reftests.tar.zst
                 - type: file
                   name: public/build/mozdevice.tar.gz
                   path: /builds/worker/checkouts/gecko/testing/mozbase/mozdevice.tar.gz
@@ -269,7 +269,7 @@ tasks:
             cwd: '{checkout}/gfx/wr/wrench'
             command: >-
                 $GECKO_PATH/taskcluster/scripts/misc/wrench-android-build.sh debug &&
-                tar czf reftests.tar.gz reftests/ &&
+                tar -c --zstd -f reftests.tar.zst reftests/ &&
                 cd $GECKO_PATH/testing/mozbase &&
                 tar czf mozdevice.tar.gz mozdevice/ &&
                 cd $GECKO_PATH/third_party/python &&
@@ -306,8 +306,8 @@ tasks:
                   name: public/build/wrench-release.apk
                   path: /builds/worker/checkouts/gecko/gfx/wr/target/release/apk/wrench.apk
                 - type: file
-                  name: public/build/reftests.tar.gz
-                  path: /builds/worker/checkouts/gecko/gfx/wr/wrench/reftests.tar.gz
+                  name: public/build/reftests.tar.zst
+                  path: /builds/worker/checkouts/gecko/gfx/wr/wrench/reftests.tar.zst
                 - type: file
                   name: public/build/mozdevice.tar.gz
                   path: /builds/worker/checkouts/gecko/testing/mozbase/mozdevice.tar.gz
@@ -319,7 +319,7 @@ tasks:
             cwd: '{checkout}/gfx/wr/wrench'
             command: >-
                 $GECKO_PATH/taskcluster/scripts/misc/wrench-android-build.sh release &&
-                tar czf reftests.tar.gz reftests/ &&
+                tar -c --zstd -f reftests.tar.zst reftests/ &&
                 cd $GECKO_PATH/testing/mozbase &&
                 tar czf mozdevice.tar.gz mozdevice/ &&
                 cd $GECKO_PATH/third_party/python &&
@@ -458,7 +458,7 @@ tasks:
             webrender-wrench-android-debug:
                 - artifact: 'wrench-debug.apk'
                   extract: false
-                - 'reftests.tar.gz'
+                - 'reftests.tar.zst'
                 - 'mozdevice.tar.gz'
                 - 'six.tar.gz'
             android-build:
@@ -506,7 +506,7 @@ tasks:
             webrender-wrench-android-release:
                 - artifact: 'wrench-release.apk'
                   extract: false
-                - 'reftests.tar.gz'
+                - 'reftests.tar.zst'
                 - 'mozdevice.tar.gz'
                 - 'six.tar.gz'
             android-build:
@@ -554,7 +554,7 @@ tasks:
             webrender-wrench-android-debug:
                 - artifact: 'wrench-debug.apk'
                   extract: false
-                - 'reftests.tar.gz'
+                - 'reftests.tar.zst'
                 - 'mozdevice.tar.gz'
                 - 'six.tar.gz'
             android-build:
@@ -602,7 +602,7 @@ tasks:
             webrender-wrench-android-release:
                 - artifact: 'wrench-release.apk'
                   extract: false
-                - 'reftests.tar.gz'
+                - 'reftests.tar.zst'
                 - 'mozdevice.tar.gz'
                 - 'six.tar.gz'
             android-build:
@@ -650,7 +650,7 @@ tasks:
             webrender-wrench-android-debug:
                 - artifact: 'wrench-debug.apk'
                   extract: false
-                - 'reftests.tar.gz'
+                - 'reftests.tar.zst'
                 - 'mozdevice.tar.gz'
                 - 'six.tar.gz'
             android-build:
@@ -698,7 +698,7 @@ tasks:
             webrender-wrench-android-release:
                 - artifact: 'wrench-release.apk'
                   extract: false
-                - 'reftests.tar.gz'
+                - 'reftests.tar.zst'
                 - 'mozdevice.tar.gz'
                 - 'six.tar.gz'
             android-build:

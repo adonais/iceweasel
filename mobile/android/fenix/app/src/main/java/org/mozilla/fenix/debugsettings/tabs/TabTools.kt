@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,8 +39,7 @@ import androidx.core.text.isDigitsOnly
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.compose.base.Divider
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.compose.base.utils.toLocaleString
 import mozilla.components.lib.state.ext.observeAsState
@@ -174,7 +174,7 @@ private fun TabCounter(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Divider()
+        HorizontalDivider()
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -266,7 +266,7 @@ private fun TabCreationTool(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        PrimaryButton(
+        FilledButton(
             text = stringResource(id = R.string.debug_drawer_tab_tools_tab_creation_tool_button_text_active),
             modifier = Modifier.fillMaxWidth(),
             enabled = !hasError,
@@ -278,7 +278,7 @@ private fun TabCreationTool(
         Spacer(modifier = Modifier.height(8.dp))
 
         if (inactiveTabsEnabled) {
-            PrimaryButton(
+            FilledButton(
                 text = stringResource(id = R.string.debug_drawer_tab_tools_tab_creation_tool_button_text_inactive),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !hasError,
@@ -290,7 +290,7 @@ private fun TabCreationTool(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        PrimaryButton(
+        FilledButton(
             text = stringResource(id = R.string.debug_drawer_tab_tools_tab_creation_tool_button_text_private),
             modifier = Modifier.fillMaxWidth(),
             enabled = !hasError,

@@ -11,8 +11,8 @@ import {
   appendRTLClassNameIfNeeded,
   maybeEscapePropertyName,
   wrapRender,
-} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
-import { MODE } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
+} from "./rep-utils.mjs";
+import { MODE } from "./constants.mjs";
 
 /**
  * Property for Obj (local JS objects), Grip (remote JS objects)

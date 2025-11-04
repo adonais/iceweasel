@@ -1180,6 +1180,9 @@ export class SearchEngine {
    * - other-<name>: The engine name prefixed by `other-` for non-config-engines.
    *
    * @returns {string}
+   * @deprecated This should not be used for new telemetry. It is a combined
+   * field that contains multiple values. Report separate
+   * id/partner_code/other fields instead.
    */
   get telemetryId() {
     let telemetryId = this._telemetryId || `other-${this.name}`;
@@ -1187,16 +1190,6 @@ export class SearchEngine {
       return telemetryId + "-addon";
     }
     return telemetryId;
-  }
-
-  /**
-   * Return the built-in identifier of config engines.
-   *
-   * @returns {?string}
-   *   Returns a valid if this is a built-in engine, null otherwise.
-   */
-  get identifier() {
-    return null;
   }
 
   get hidden() {

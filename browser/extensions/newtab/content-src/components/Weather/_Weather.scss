@@ -242,6 +242,16 @@
     }
   }
 
+  &:has(.staticWeatherInfo) {
+    &:hover {
+      box-shadow: none;
+
+      ~ .weatherSponsorText {
+        visibility: hidden;
+      }
+    }
+  }
+
   &:focus-within {
     overflow: visible;
   }
@@ -271,6 +281,73 @@
   }
 }
 
+.weatherOptIn {
+  position: absolute;
+  inset-block-end: calc(var(--space-medium) * -1.5);
+  inset-inline-start: calc(var(--space-xxlarge) * -9);
+
+  dialog {
+    background: var(--newtab-background-color-secondary);
+    border: 1px solid var(--border-color-card);
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--box-shadow-card);
+    display: flex;
+    width: 332px;
+
+    .weatherOptInImg {
+      -webkit-mask: url('chrome://browser/skin/weather/mostly-sunny.svg') no-repeat center;
+      mask: url('chrome://browser/skin/weather/mostly-sunny.svg') no-repeat center;
+      background-color: var(--button-icon-fill);
+      mask-size: cover;
+      margin-inline-end: var(--space-medium);
+      height: var(--icon-size-xlarge);
+      width: var(--icon-size-xlarge);
+    }
+  }
+
+  dialog .weatherOptInContent {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    h3 {
+      font-size: var(--button-font-size);
+      font-weight: var(--font-weight-bold);
+      margin-block: 0 var(--space-medium);
+    }
+
+    moz-button-group {
+      align-self: flex-end;
+
+      moz-button:first-of-type {
+        margin-inline-end: var(--space-small);
+      }
+    }
+  }
+
+  @media (min-width: $break-point-large) {
+    inset-block-end: calc(var(--space-medium) * -1);
+    inset-inline-start: calc(var(--space-xxlarge) * -5.5);
+  }
+}
+
+// Arrow pointed upwards from the right side of the dialog
+dialog::after {
+  content: '';
+  position: absolute;
+  inset-block-start: calc(var(--space-small) * -1);
+  inset-inline-end: 5%;
+  transform: translateX(-50%) rotate(225deg);
+  height: 16px;
+  width: 16px;
+  background: var(--newtab-background-color-secondary);
+  box-shadow: 4px 4px 6px -2px var(--box-shadow-card);
+  border-inline-end: 1px solid var(--border-color-card);
+  border-block-end: 1px solid var(--border-color-card);
+}
+
+
+
 .weatherInfoLink, .weatherButtonContextMenuWrapper {
   appearance: none;
   background-color: var(--background-color-ghost);
@@ -288,10 +365,6 @@
     &:active {
       background-color: var(--button-background-color-ghost-active);
     }
-  }
-
-  &:focus-visible {
-    outline: var(--focus-outline);
   }
 
   // Bug 1908010 - This overwrites the design system color because of a
@@ -340,12 +413,31 @@
 
   &:focus-visible {
     border-radius: var(--border-radius-medium);
+    outline: var(--focus-outline);
+    z-index: 1;
 
     ~ .weatherButtonContextMenuWrapper {
       &::after {
         background-color: transparent
       }
     }
+  }
+}
+
+.weatherInfoLink.staticWeatherInfo {
+  .weatherIcon {
+    filter: opacity(60%);
+  }
+
+  .weatherText {
+    color: var(--text-color-disabled)
+  }
+
+  &:hover,
+  &:active {
+    box-shadow: none;
+    cursor: default;
+    background-color: var(--newtab-weather-background-color);
   }
 }
 
@@ -379,8 +471,9 @@
     }
   }
 
-  &:focus-visible {
+  &:has(:focus-visible) {
     border-radius: var(--border-radius-medium);
+    outline: var(--focus-outline);
 
     &::after {
       background-color: transparent
@@ -402,6 +495,10 @@
   border: 0;
   appearance: none;
   min-width: var(--size-item-large);
+
+  &:focus {
+    outline: none;
+  }
 }
 
 .weatherText {
@@ -485,22 +582,18 @@
 
   &.iconId1 {
     content: url('chrome://browser/skin/weather/sunny.svg');
-    // height: var(--size-item-large);
   }
 
   &.iconId2 {
     content: url('chrome://browser/skin/weather/mostly-sunny.svg');
-    // height: var(--size-item-large);
   }
 
   &:is(.iconId3, .iconId4, .iconId6) {
     content: url('chrome://browser/skin/weather/partly-sunny.svg');
-    // height: var(--size-item-large);
   }
 
   &.iconId5 {
     content: url('chrome://browser/skin/weather/hazy-sunshine.svg');
-    // height: var(--size-item-large);
   }
 
   &:is(.iconId7, .iconId8) {
@@ -517,7 +610,6 @@
 
   &:is(.iconId13, .iconId14) {
     content: url('chrome://browser/skin/weather/mostly-cloudy-with-showers.svg');
-    // height: var(--size-item-large);
   }
 
   &.iconId15 {

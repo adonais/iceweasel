@@ -75,6 +75,7 @@ skip-if = [
 ]
 
 ["browser_datetime_datetimepicker.js"]
+fail-if = ["a11y_checks"] # Patch D167463 for Bug 1802201 is addressing the remaining failures
 skip-if = [
   "tsan", # Frequently times out on TSan
   "os == 'win' && asan", # fails on asan

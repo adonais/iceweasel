@@ -9,7 +9,6 @@ support-files = [
 skip-if = ["os == 'android'"]
 
 ["test_crash_service.js"]
-run-sequentially = "very high failure rate in parallel"
 skip-if = [
   "os == 'android'",
 ]

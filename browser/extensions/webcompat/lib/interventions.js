@@ -8,22 +8,46 @@
 
 class Interventions {
   constructor(availableInterventions, customFunctions) {
+    this._originalInterventions = availableInterventions;
+
     this.INTERVENTION_PREF = "perform_injections";
 
     this._interventionsEnabled = true;
 
     this._readyPromise = new Promise(done => (this._resolveReady = done));
 
-    this._availableInterventions = Object.entries(availableInterventions).map(
-      ([id, obj]) => {
-        obj.id = id;
-        return obj;
-      }
+    this._availableInterventions = this._reformatSourceJSON(
+      availableInterventions
     );
     this._customFunctions = customFunctions;
 
     this._activeListenersPerIntervention = new Map();
     this._contentScriptsPerIntervention = new Map();
+  }
+
+  _reformatSourceJSON(availableInterventions) {
+    return Object.entries(availableInterventions).map(([id, obj]) => {
+      obj.id = id;
+      return obj;
+    });
+  }
+
+  async onRemoteSettingsUpdate(updatedInterventions) {
+    const oldReadyPromise = this._readyPromise;
+    this._readyPromise = new Promise(done => (this._resolveReady = done));
+    await oldReadyPromise;
+    this._updateInterventions(updatedInterventions);
+  }
+
+  async _updateInterventions(updatedInterventions) {
+    await this.disableInterventions();
+    this._availableInterventions =
+      this._reformatSourceJSON(updatedInterventions);
+    await this.enableInterventions();
+  }
+
+  async _resetToDefaultInterventions() {
+    await this._updateInterventions(this._originalInterventions);
   }
 
   ready() {
@@ -157,6 +181,9 @@ class Interventions {
   }
 
   async _enableInterventionsNow(whichInterventions) {
+    // resolveReady may change while we're updating
+    const resolveReady = this._resolveReady;
+
     const skipped = [];
 
     const channel = await browser.appConstants.getEffectiveUpdateChannel();
@@ -168,7 +195,16 @@ class Interventions {
     const os = await InterventionHelpers.getOS();
     this.currentPlatform = os;
 
+    const customFunctionNames = new Set(Object.keys(this._customFunctions));
+
     for (const config of whichInterventions) {
+      config.active = false;
+
+      if (config.isMissingFiles) {
+        skipped.push(config.label);
+        continue;
+      }
+
       for (const intervention of config.interventions) {
         intervention.enabled = false;
         if (!(await this._check_for_needed_prefs(intervention))) {
@@ -184,6 +220,14 @@ class Interventions {
           continue;
         }
         if (!(await InterventionHelpers.checkPlatformMatches(intervention))) {
+          continue;
+        }
+        if (
+          InterventionHelpers.isMissingCustomFunctions(
+            intervention,
+            customFunctionNames
+          )
+        ) {
           continue;
         }
         intervention.enabled = true;
@@ -217,7 +261,7 @@ class Interventions {
         this._aboutCompatBroker.filterInterventions(whichInterventions),
     });
 
-    this._resolveReady();
+    resolveReady();
   }
 
   async enableIntervention(config) {

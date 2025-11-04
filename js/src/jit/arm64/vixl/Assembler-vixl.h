@@ -164,7 +164,7 @@ class Assembler : public MozBaseAssembler {
   }
 
   // This is chaging the condition codes for cmp a, b to the same codes for cmp b, a.
-  static inline Condition InvertCmpCondition(Condition cond) {
+  static inline Condition SwapCmpOperandsCondition(Condition cond) {
     // Conditions al and nv behave identically, as "always true". They can't be
     // inverted, because there is no "always false" condition.
     switch (cond) {
@@ -172,13 +172,13 @@ class Assembler : public MozBaseAssembler {
     case ne:
       return cond;
     case gt:
-      return le;
-    case le:
-      return gt;
-    case ge:
       return lt;
-    case lt:
+    case le:
       return ge;
+    case ge:
+      return le;
+    case lt:
+      return gt;
     case hi:
       return lo;
     case lo:

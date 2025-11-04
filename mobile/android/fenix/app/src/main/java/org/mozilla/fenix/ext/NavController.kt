@@ -12,6 +12,7 @@ import androidx.navigation.NavOptions
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.support.base.log.logger.Logger
+import org.mozilla.fenix.R
 
 /**
  * Navigate from the fragment with [id] using the given [directions].
@@ -71,4 +72,14 @@ fun NavController.hasTopDestination(fragmentClassName: String): Boolean {
         fragmentClassName,
         true,
     ) == true
+}
+
+/**
+ * Navigate into the Browser destination without casting to HomeActivity.
+ * Fragments can call: findNavController().openToBrowser(direction)
+ */
+fun NavController.openToBrowser() {
+    if (alreadyOnDestination(R.id.browserFragment)) return
+    val dest = R.id.browserFragment
+    navigate(dest)
 }

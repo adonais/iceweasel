@@ -49,12 +49,11 @@ class SpeculativeTransaction : public NullHttpTransaction {
   void Close(nsresult aReason) override;
   nsresult ReadSegments(nsAHttpSegmentReader* aReader, uint32_t aCount,
                         uint32_t* aCountRead) override;
-  void InvokeCallback();
+  void InvokeCallback() override;
 
  protected:
   virtual ~SpeculativeTransaction();
 
- private:
   Maybe<uint32_t> mParallelSpeculativeConnectLimit;
   Maybe<bool> mIgnoreIdle;
   Maybe<bool> mIsFromPredictor;
@@ -63,6 +62,20 @@ class SpeculativeTransaction : public NullHttpTransaction {
   bool mTriedToWrite = false;
   std::function<void(bool)> mCloseCallback;
   RefPtr<HTTPSRecordResolver> mResolver;
+};
+
+class FallbackTransaction : public SpeculativeTransaction {
+ public:
+  FallbackTransaction(nsHttpConnectionInfo* aConnInfo,
+                      nsIInterfaceRequestor* aCallbacks, uint32_t aCaps,
+                      std::function<void(bool)>&& aCallback)
+      : SpeculativeTransaction(aConnInfo, aCallbacks, aCaps,
+                               std::move(aCallback)) {}
+
+  bool IsForFallback() override { return true; }
+
+ private:
+  virtual ~FallbackTransaction() = default;
 };
 
 }  // namespace net

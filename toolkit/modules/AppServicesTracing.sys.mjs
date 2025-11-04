@@ -54,6 +54,9 @@ class CallbackList {
    *
    * If this changes the max level for the list, this returns the new max level otherwise it returns
    * undefined;
+   *
+   * @param {number} level
+   * @param {(event: object) => void} callback
    */
   add(level, callback) {
     const oldMaxLevel = this.maxLevel();
@@ -75,6 +78,8 @@ class CallbackList {
    *
    * If this changes the max level for the list, this returns the new max level otherwise it returns
    * undefined;
+   *
+   * @param {(event: object) => void} callback
    */
   remove(callback) {
     const index = this.items.find(i => i.callback === callback);
@@ -97,6 +102,8 @@ class CallbackList {
    * Process an event using all items in this CallbackList.
    *
    * The callbacks for item >= `event.level` will be called.
+   *
+   * @param {object} event
    */
   processEvent(event) {
     for (const item of this.items) {
@@ -271,6 +278,9 @@ function loggerEventHandler(event) {
 
 /**
  * send output from a target to a Log.sys.jsm logger.
+ *
+ * @param {string} target
+ * @param {any} log
  */
 export function setupLoggerForTarget(target, log) {
   if (typeof log == "string") {
@@ -293,6 +303,9 @@ export function setupLoggerForTarget(target, log) {
   tracingEventHandler.register(target, tracing_level, loggerEventHandler);
 }
 
+/**
+ * Handles forwarding a log.
+ */
 class LogForwarder extends EventSink {
   static PREF_CRATES_TO_FORWARD = "toolkit.rust-components.logging.crates";
 
@@ -341,7 +354,9 @@ class LogForwarder extends EventSink {
   }
 
   /**
-   * Parse the tracing pref value
+   * Parse the tracing pref value.
+   *
+   * @param {string} prefValue
    */
   parsePrefValue(prefValue) {
     const parsed = {

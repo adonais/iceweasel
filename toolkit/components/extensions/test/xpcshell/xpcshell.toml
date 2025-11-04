@@ -112,7 +112,6 @@ head = "head.js head_schemas.js"
 
 ["test_ext_secfetch.js"]
 skip-if = ["socketprocess_networking"] # Bug 1759035
-run-sequentially = "very high failure rate in parallel"
 
 ["test_ext_shared_array_buffer.js"]
 

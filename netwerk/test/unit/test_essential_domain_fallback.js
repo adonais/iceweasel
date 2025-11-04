@@ -9,6 +9,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ServiceRequest: "resource://gre/modules/ServiceRequest.sys.mjs",
 });
 
+const { NodeHTTPSServer } = ChromeUtils.importESModule(
+  "resource://testing-common/NodeServer.sys.mjs"
+);
+
 function waitForNotificationPromise(notification) {
   return new Promise(resolve => {
     function observer(aSubject, _aTopic, _aData) {

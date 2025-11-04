@@ -3,8 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env mozilla/browser-window */
-
 {
   // start private scope for Tabbrowser
   /**
@@ -118,7 +116,7 @@
           "resource:///modules/taskbartabs/TaskbarTabsUtils.sys.mjs",
         TaskbarTabs: "resource:///modules/taskbartabs/TaskbarTabs.sys.mjs",
         UrlbarProviderOpenTabs:
-          "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
+          "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
       });
       ChromeUtils.defineLazyGetter(this, "tabLocalization", () => {
         return new Localization(
@@ -198,6 +196,8 @@
       window.addEventListener("TabGroupCreateByUser", this);
       window.addEventListener("TabGrouped", this);
       window.addEventListener("TabUngrouped", this);
+      window.addEventListener("TabSplitViewActivate", this);
+      window.addEventListener("TabSplitViewDeactivate", this);
 
       this.tabContainer.init();
       this._setupInitialBrowserAndTab();
@@ -377,6 +377,24 @@
      */
     _printPreviewBrowsers = new Set();
 
+    /** @type {MozTabSplitViewWrapper} */
+    #activeSplitView = null;
+
+    /**
+     * List of browsers which are currently in an active Split View.
+     *
+     * @type {MozBrowser[]}
+     */
+    get splitViewBrowsers() {
+      const browsers = [];
+      if (this.#activeSplitView) {
+        for (const tab of this.#activeSplitView.tabs) {
+          browsers.push(tab.linkedBrowser);
+        }
+      }
+      return browsers;
+    }
+
     _switcher = null;
 
     _soundPlayingAttrRemovalTimer = 0;
@@ -459,6 +477,13 @@
 
     get selectedBrowser() {
       return this._selectedBrowser;
+    }
+
+    get selectedBrowsers() {
+      const splitViewBrowsers = this.splitViewBrowsers;
+      return splitViewBrowsers.length
+        ? splitViewBrowsers
+        : [this._selectedBrowser];
     }
 
     _setupInitialBrowserAndTab() {
@@ -2756,6 +2781,10 @@
 
     /**
      * Loads a tab with a default null principal unless specified
+     *
+     * @param {string} aURI
+     * @param {object} [params]
+     *   Options from `Tabbrowser.addTab`.
      */
     addWebTab(aURI, params = {}) {
       if (!params.triggeringPrincipal) {
@@ -2772,6 +2801,12 @@
       return this.addTab(aURI, params);
     }
 
+    /**
+     * @param {MozTabbrowserTab} tab
+     * @returns {void}
+     *   New tab will be the `Tabbrowser.selectedTab` or the subject of a
+     *   notification on the `browser-open-newtab-start` topic.
+     */
     addAdjacentNewTab(tab) {
       Services.obs.notifyObservers(
         {
@@ -2787,6 +2822,29 @@
         },
         "browser-open-newtab-start"
       );
+    }
+
+    /**
+     * Creates a tab directly after `tab`.
+     *
+     * @param {MozTabbrowserTab} adjacentTab
+     * @param {string} uriString
+     * @param {object} [options]
+     *   Options from `Tabbrowser.addTab`.
+     */
+    addAdjacentTab(adjacentTab, uriString, options = {}) {
+      // If the caller opted out of tab group membership but `tab` is in a
+      // tab group, insert the tab after `tab`'s group. Otherwise, insert the
+      // new tab right after `tab`.
+      const tabIndex =
+        !options.tabGroup && adjacentTab.group
+          ? adjacentTab.group.tabs.at(-1)._tPos + 1
+          : adjacentTab._tPos + 1;
+
+      return this.addTab(uriString, {
+        ...options,
+        tabIndex,
+      });
     }
 
     /**
@@ -2806,6 +2864,12 @@
     /**
      * @param {string} uriString
      * @param {object} options
+     * @param {object} [options.eventDetail]
+     *   Additional information to include in the `CustomEvent.detail`
+     *   of the resulting TabOpen event.
+     * @param {boolean} [options.fromExternal]
+     *   Whether this tab was opened from a URL supplied to Firefox from an
+     *   external application.
      * @param {MozTabbrowserTabGroup} [options.tabGroup]
      *   A related tab group where this tab should be added, when applicable.
      *   When present, the tab is expected to reside in this tab group. When
@@ -3022,7 +3086,11 @@
 
       if (insertTab) {
         // Fire a TabOpen event
-        this._fireTabOpen(t, eventDetail);
+        const tabOpenDetail = {
+          ...eventDetail,
+          fromExternal,
+        };
+        this._fireTabOpen(t, tabOpenDetail);
 
         this._kickOffBrowserLoad(b, {
           uri,
@@ -3157,18 +3225,6 @@
     }
 
     /**
-     * Removes the split view. This has the effect of closing all the tabs
-     * in the split view.
-     *
-     * @param {MozTabSplitViewWrapper} [splitView]
-     *   The split view to remove.
-     */
-    async removeSplitView(splitView) {
-      this.removeTabs(splitView.tabs);
-      splitView.remove();
-    }
-
-    /**
      * Removes a tab from a split view wrapper. This also removes the split view wrapper component
      *
      * @param {MozTabSplitViewWrapper} [splitView]
@@ -3185,6 +3241,32 @@
         );
       }
       splitview.remove();
+    }
+
+    /**
+     * Show the list of tabs <browsers> that are part of a split view.
+     *
+     * @param {MozTabbrowserTab[]} tabs
+     */
+    showSplitViewPanels(tabs) {
+      const panels = [];
+      for (const tab of tabs) {
+        this._insertBrowser(tab);
+        tab.linkedBrowser.docShellIsActive = true;
+        panels.push(tab.linkedPanel);
+      }
+      this.tabpanels.splitViewPanels = panels;
+    }
+
+    /**
+     * Hide the list of tabs <browsers> that are part of a split view.
+     *
+     * @param {MozTabbrowserTab[]} tabs
+     */
+    hideSplitViewPanels(tabs) {
+      for (const tab of tabs) {
+        this.tabpanels.removePanelFromSplitView(tab.linkedPanel);
+      }
     }
 
     /**
@@ -5483,7 +5565,16 @@
         } else {
           allTabsUnloaded = true;
           // all tabs are unloaded - show Firefox View if it's present, otherwise open a new tab
-          if (FirefoxViewHandler.tab || FirefoxViewHandler.button) {
+          // Firefox View counts as present if its tab is already open, or if the button
+          // is visible, so as to not do this in private browsing mode or if the user
+          // has removed the button from their toolbar (bug 1946432, bug 1989429)
+          let firefoxViewAvailable =
+            FirefoxViewHandler.tab &&
+            FirefoxViewHandler.button?.checkVisibility({
+              checkVisibilityCSS: true,
+              visibilityProperty: true,
+            });
+          if (firefoxViewAvailable) {
             FirefoxViewHandler.openTab("opentabs");
           } else {
             this.selectedTab = this.addTrustedTab(BROWSER_NEW_TAB_URL, {
@@ -6476,7 +6567,7 @@
       }
 
       this.#handleTabMove(aTab, () =>
-        aSplitViewWrapper.wrapper.appendChild(aTab)
+        aSplitViewWrapper.container.appendChild(aTab)
       );
       this.removeFromMultiSelectedTabs(aTab);
       this.tabContainer._notifyBackgroundTab(aTab);
@@ -6679,7 +6770,7 @@
       let newTab = this.addWebTab("about:blank", params);
       let newBrowser = this.getBrowserForTab(newTab);
 
-      aTab.container.finishAnimateTabMove();
+      aTab.container.tabDragAndDrop.finishAnimateTabMove();
 
       if (!createLazyBrowser) {
         // Stop the about:blank load.
@@ -7376,7 +7467,6 @@
       }
 
       // Add a line to the tooltip with additional tab context (e.g. container
-      // membership, tab group membership) when applicable.
       let containerName = tab.userContextId
         ? ContextualIdentityService.getUserContextLabel(tab.userContextId)
         : "";
@@ -7494,8 +7584,10 @@
         case "visibilitychange": {
           const inactive = document.hidden;
           if (!this._switcher) {
-            this.selectedBrowser.preserveLayers(inactive);
-            this.selectedBrowser.docShellIsActive = !inactive;
+            for (const browser of this.selectedBrowsers) {
+              browser.preserveLayers(inactive);
+              browser.docShellIsActive = !inactive;
+            }
           }
           break;
         }
@@ -7552,6 +7644,14 @@
           }
           break;
         }
+        case "TabSplitViewActivate":
+          this.#activeSplitView = aEvent.originalTarget;
+          break;
+        case "TabSplitViewDeactivate":
+          if (this.#activeSplitView === aEvent.originalTarget) {
+            this.#activeSplitView = null;
+          }
+          break;
         case "activate":
         // Intentional fallthrough
         case "deactivate":

@@ -13,6 +13,7 @@
 #include "tempfile_name.h"
 
 #define DOWNLOAD_PAGE L"https://www.mozilla.org/firefox/new/"
+#define STUB_INSTALLER_ARGS L"/Prompt /LaunchedBy:desktoplauncher"
 
 int wmain() {
   // For telemetry purposes, let's set the env variable to indicate that
@@ -58,7 +59,7 @@ int wmain() {
     sei.cbSize = sizeof(sei);
     sei.fMask = SEE_MASK_WAITFORINPUTIDLE | SEE_MASK_NOASYNC;
     sei.lpFile = tempfileName.value().c_str();
-    sei.lpParameters = L"/Prompt";
+    sei.lpParameters = STUB_INSTALLER_ARGS;
     sei.nShow = SW_SHOWNORMAL;
     ShellExecuteExW(&sei);
 

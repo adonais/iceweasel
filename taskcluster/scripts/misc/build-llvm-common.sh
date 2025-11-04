@@ -27,7 +27,7 @@ aarch64-apple-darwin)
   ;;
 x86_64-apple-darwin)
   arch=x86_64
-  export MACOSX_DEPLOYMENT_TARGET=10.12
+  export MACOSX_DEPLOYMENT_TARGET=10.15
   ;;
 esac
 
@@ -39,11 +39,11 @@ case "$target" in
     -DCMAKE_LIPO=$MOZ_FETCHES_DIR/clang/bin/llvm-lipo
     -DCMAKE_SYSTEM_NAME=Darwin
     -DCMAKE_SYSTEM_VERSION=$MACOSX_DEPLOYMENT_TARGET
-    -DCMAKE_OSX_SYSROOT=$MOZ_FETCHES_DIR/MacOSX15.4.sdk
+    -DCMAKE_OSX_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.0.sdk
     -DCMAKE_EXE_LINKER_FLAGS=-fuse-ld=lld
     -DCMAKE_SHARED_LINKER_FLAGS=-fuse-ld=lld
     -DDARWIN_osx_ARCHS=$arch
-    -DDARWIN_osx_SYSROOT=$MOZ_FETCHES_DIR/MacOSX15.4.sdk
+    -DDARWIN_osx_SYSROOT=$MOZ_FETCHES_DIR/MacOSX26.0.sdk
     -DDARWIN_macosx_OVERRIDE_SDK_VERSION=11.0
     -DDARWIN_osx_BUILTIN_ARCHS=$arch
     -DLLVM_DEFAULT_TARGET_TRIPLE=$target
@@ -56,7 +56,7 @@ case "$target" in
   # obviously missing when cross-compiling, so create a fake one. The exact
   # version doesn't really matter: as of writing, cmake checks at most for 10.5.
   echo "#!/bin/sh" > sw_vers
-  echo echo 10.12 >> sw_vers
+  echo echo 10.15 >> sw_vers
   chmod +x sw_vers
   PATH="$PATH:$PWD"
   ;;

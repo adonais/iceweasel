@@ -291,6 +291,22 @@ var SessionFileInternal = {
           );
         } else if (
           DOMException.isInstance(ex) &&
+          ex.name == "NotReadableError"
+        ) {
+          // The file might incorrectly jsonlz4 encoded
+          // We'll count it as "corrupted".
+          lazy.sessionStoreLogger.error(
+            `NotReadableError when reading session file: ${key}`,
+            ex
+          );
+          corrupted = true;
+          Glean.sessionRestore.backupCanBeLoadedSessionFile.record({
+            can_load: "false",
+            path_key: key,
+            loadfail_reason: ` ${ex.name}: Could not read session file`,
+          });
+        } else if (
+          DOMException.isInstance(ex) &&
           ex.name == "NotAllowedError"
         ) {
           // The file might be inaccessible due to wrong permissions

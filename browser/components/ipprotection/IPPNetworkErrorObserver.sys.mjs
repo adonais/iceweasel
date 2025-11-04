@@ -26,8 +26,8 @@ export class IPPNetworkErrorObserver {
     }
     this.#active = false;
     this.#isolationKeys.clear();
+    Services.obs.removeObserver(this, "http-on-failed-opening-request");
     Services.obs.removeObserver(this, "http-on-stop-request");
-    Services.obs.addObserver(this, "http-on-failed-opening-request");
   }
 
   addIsolationKey(key) {

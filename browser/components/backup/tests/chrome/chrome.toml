@@ -1,6 +1,8 @@
 [DEFAULT]
 prefs = [
     "browser.backup.scheduled.enabled=false",
+    "browser.backup.archive.enabled=true",
+    "browser.backup.restore.enabled=true",
 ]
 support-files = ["head.js"]
 

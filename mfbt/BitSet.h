@@ -11,6 +11,12 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Span.h"
 
+#include <array>
+#include <climits>
+#include <cstddef>
+#include <cstdint>
+#include <type_traits>
+
 namespace mozilla {
 
 enum MemoryOrdering : uint8_t;

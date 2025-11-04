@@ -117,8 +117,15 @@ export var Utils = {
   },
 
   get CERT_CHAIN_ROOT_IDENTIFIER() {
-    if (this.SERVER_URL == AppConstants.REMOTE_SETTINGS_SERVER_URL) {
-      return Ci.nsIContentSignatureVerifier.ContentSignatureProdRoot;
+    if (Services.env.exists("XPCSHELL_TEST_PROFILE_DIR")) {
+      return Ci.nsIX509CertDB.AppXPCShellRoot;
+    }
+    if (
+      this.SERVER_URL.match(
+        /^https?:\/\/(remote-settings\.localhost|127\.0\.0\.1|localhost)(:\d+)?\/v1/
+      )
+    ) {
+      return Ci.nsIContentSignatureVerifier.ContentSignatureLocalRoot;
     }
     if (this.SERVER_URL.includes("allizom.")) {
       return Ci.nsIContentSignatureVerifier.ContentSignatureStageRoot;
@@ -126,10 +133,7 @@ export var Utils = {
     if (this.SERVER_URL.includes("dev.")) {
       return Ci.nsIContentSignatureVerifier.ContentSignatureDevRoot;
     }
-    if (Services.env.exists("XPCSHELL_TEST_PROFILE_DIR")) {
-      return Ci.nsIX509CertDB.AppXPCShellRoot;
-    }
-    return Ci.nsIContentSignatureVerifier.ContentSignatureLocalRoot;
+    return Ci.nsIContentSignatureVerifier.ContentSignatureProdRoot;
   },
 
   get LOAD_DUMPS() {

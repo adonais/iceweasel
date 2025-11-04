@@ -53,8 +53,6 @@ tasktype_map:
 platform_names:
     filename_platform:
         by-platform:
-            linux-shippable: 'linux-i686'
-            linux-devedition: 'linux-i686'
             linux64-shippable: 'linux-x86_64'
             linux64-devedition: 'linux-x86_64'
             linux64-aarch64-shippable: 'linux-aarch64'
@@ -71,8 +69,6 @@ platform_names:
             win64-asan-reporter-shippable: 'win64-asan-reporter'
     stage_platform:
         by-platform:
-            linux-shippable: 'linux'
-            linux-devedition: 'linux'
             linux64-asan-reporter-shippable: 'linux64-asan-reporter'
             linux64-shippable: 'linux64'
             linux64-devedition: 'linux64'
@@ -184,7 +180,6 @@ mapping:
             - langpack-copy
             - signing
         only_for_platforms:
-            - linux-shippable
             - linux64-shippable
             - linux64-aarch64-shippable
             - macosx64-shippable
@@ -211,11 +206,9 @@ mapping:
         from:
             - repackage-deb-l10n
         only_for_platforms:
-            - linux-shippable
             - linux64-shippable
             - linux64-aarch64-shippable
             - linux64-aarch64-devedition
-            - linux-devedition
             - linux64-devedition
         pretty_name: firefox-${version}.${locale}.langpack.deb
         checksums_path: firefox-${version}.${locale}.langpack.deb
@@ -262,7 +255,6 @@ mapping:
         from:
             - signing
         only_for_platforms:
-            - linux-shippable
             - linux64-shippable
             - linux64-aarch64-shippable
             - linux64-asan-reporter-shippable
@@ -284,7 +276,6 @@ mapping:
         from:
             - signing
         only_for_platforms:
-            - linux-shippable
             - linux64-shippable
             - linux64-aarch64-shippable
             - linux64-asan-reporter-shippable
@@ -463,7 +454,6 @@ mapping:
         from:
             - repackage-deb
         only_for_platforms:
-            - linux-shippable
             - linux64-shippable
             - linux64-aarch64-shippable
         pretty_name: firefox-${version}.${locale}.${filename_platform}.deb

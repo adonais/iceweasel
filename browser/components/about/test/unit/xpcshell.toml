@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head =  ''
 # make the firefox services (eg newtab-service) available to xpcshell
 firefox-appdir = "browser"

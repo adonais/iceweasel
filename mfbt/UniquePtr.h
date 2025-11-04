@@ -15,8 +15,6 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/CompactPair.h"
-#include "mozilla/Compiler.h"
 
 namespace mozilla {
 

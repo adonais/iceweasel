@@ -126,8 +126,8 @@ class UserFontConfigHelperTest : public testing::Test {
   void CreateHelperAndCallAddRules() {
     UserFontConfigHelper policyHelper(sTestRegKey, sWinUserProfile,
                                       sLocalAppData);
-    // Only allow one page to test
-    sandboxing::SizeTrackingConfig trackingPolicy(&mConfig, 1);
+    sandboxing::SizeTrackingConfig trackingPolicy(&mConfig,
+                                                  mNumberOfStoragePages);
     policyHelper.AddRules(trackingPolicy);
   }
 
@@ -135,6 +135,8 @@ class UserFontConfigHelperTest : public testing::Test {
   StrictMock<MockConfig> mConfig;
   const Expectation mWinUserFontCall;
   HKEY mTestUserFontKey = nullptr;
+  // Only allow one page to test by default.
+  int32_t mNumberOfStoragePages = 1;
 };
 
 TEST_F(UserFontConfigHelperTest, WindowsDirRProgramDatauleAddedOnKeyFailure) {
@@ -164,33 +166,37 @@ TEST_F(UserFontConfigHelperTest, PathsInsideUsersDirAddedIgnoringCase) {
   CreateHelperAndCallAddRules();
 }
 
-TEST_F(UserFontConfigHelperTest, PathsOutsideUsersDirNotAdded) {
+TEST_F(UserFontConfigHelperTest, PathsOutsideUsersDirAdded) {
   SetUpPaths({LR"(C:\ProgramData\Fonts\FontFile1.ttf)",
               LR"(C:\programdata\Fonts\FontFile2.ttf)"});
 
-  EXPECT_READONLY_EQ(LR"(C:\ProgramData\Fonts\FontFile1.ttf)").Times(0);
-  EXPECT_READONLY_EQ(LR"(C:\programdata\Fonts\FontFile2.ttf)").Times(0);
+  EXPECT_READONLY_EQ(LR"(C:\ProgramData\Fonts\FontFile1.ttf)")
+      .After(mWinUserFontCall);
+  EXPECT_READONLY_EQ(LR"(C:\programdata\Fonts\FontFile2.ttf)")
+      .After(mWinUserFontCall);
 
   CreateHelperAndCallAddRules();
 }
 
-TEST_F(UserFontConfigHelperTest, MultipleFontsInAndOutside) {
-  SetUpPaths({
-      LR"(C:\Users\Moz User\Fonts\FontFile1.ttf)",
-      LR"(C:\Users\Moz User\Fonts\FontFile2.ttf)",
-      LR"(C:\Users\Moz User\Fonts\FontFile3.ttf)",
-      LR"(C:\ProgramData\Fonts\FontFile1.ttf)",
-      LR"(C:\ProgramData\Fonts\FontFile2.ttf)",
-  });
+TEST_F(UserFontConfigHelperTest, PathsOutsideUsersDirAddedAtEnd) {
+  // We set up the paths in a particular order, but this doesn't guarantee the
+  // order returned from registry calls. However the rule adding code should
+  // guarantee that non-user dir fonts are added at the end.
+  const auto* userFont1 = LR"(C:\Users\Moz User\Fonts\FontFile1.ttf)";
+  const auto* userFont2 = LR"(C:\Users\Moz User\Fonts\FontFile2.ttf)";
+  const auto* userFont3 = LR"(C:\Users\Moz User\Fonts\FontFile3.ttf)";
+  const auto* pdFont1 = LR"(C:\ProgramData\Fonts\FontFile1.ttf)";
+  const auto* pdFont2 = LR"(C:\ProgramData\Fonts\FontFile2.ttf)";
+  SetUpPaths({pdFont1, userFont1, pdFont2, userFont2, userFont3});
 
-  EXPECT_READONLY_EQ(LR"(C:\Users\Moz User\Fonts\FontFile1.ttf)")
-      .After(mWinUserFontCall);
-  EXPECT_READONLY_EQ(LR"(C:\Users\Moz User\Fonts\FontFile2.ttf)")
-      .After(mWinUserFontCall);
-  EXPECT_READONLY_EQ(LR"(C:\Users\Moz User\Fonts\FontFile3.ttf)")
-      .After(mWinUserFontCall);
-  EXPECT_READONLY_EQ(LR"(C:\ProgramData\Fonts\FontFile1.ttf)").Times(0);
-  EXPECT_READONLY_EQ(LR"(C:\ProgramData\Fonts\FontFile2.ttf)").Times(0);
+  // These font rules won't fit in 1 page.
+  mNumberOfStoragePages = 2;
+
+  auto& userDirFont1 = EXPECT_READONLY_EQ(userFont1).After(mWinUserFontCall);
+  auto& userDirFont2 = EXPECT_READONLY_EQ(userFont2).After(mWinUserFontCall);
+  auto& userDirFont3 = EXPECT_READONLY_EQ(userFont3).After(mWinUserFontCall);
+  EXPECT_READONLY_EQ(pdFont1).After(userDirFont1, userDirFont2, userDirFont3);
+  EXPECT_READONLY_EQ(pdFont2).After(userDirFont1, userDirFont2, userDirFont3);
 
   CreateHelperAndCallAddRules();
 }

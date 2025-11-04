@@ -28,27 +28,14 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    defaultConfig {
-        minSdkVersion = config.minSdkVersion
-        compileSdk = config.compileSdkVersion
-        targetSdkVersion = config.targetSdkVersion
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
-        debug {
-            // Export experiments proguard rules even in debug since consuming apps may still
-            // enable proguard/R8
-            consumerProguardFiles 'proguard-rules-consumer.pro'
-        }
         release {
-            minifyEnabled = false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             consumerProguardFiles 'proguard-rules-consumer.pro'
         }
-    }
-
-    buildFeatures {
-        buildConfig = true
     }
 
     namespace = 'mozilla.components.service.nimbus'
@@ -92,7 +79,7 @@ dependencies {
     testImplementation libs.robolectric
 }
 
-apply from: '../../../android-lint.gradle'
+apply from: '../../../common-config.gradle'
 apply from: '../../../publish.gradle'
 ext.configurePublish(config.componentsGroupId, project.name, project.ext.description)
 

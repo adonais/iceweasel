@@ -52,7 +52,7 @@ class nsStyledElement : public nsStyledElementBase {
       mozilla::MutationClosureData& aData) override;
   virtual nsresult BindToTree(BindContext& aContext, nsINode& aParent) override;
 
-  nsICSSDeclaration* Style();
+  nsDOMCSSDeclaration* Style();
 
   mozilla::dom::StylePropertyMap* AttributeStyleMap();
 
@@ -62,7 +62,7 @@ class nsStyledElement : public nsStyledElementBase {
   bool IsStyledElement() const final { return true; }
 
  protected:
-  nsICSSDeclaration* GetExistingStyle();
+  nsDOMCSSDeclaration* GetExistingStyle();
 
   /**
    * Parse a style attr value into a CSS rulestruct (or, if there is no

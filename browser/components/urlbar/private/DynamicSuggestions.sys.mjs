@@ -2,15 +2,15 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { SuggestProvider } from "resource:///modules/urlbar/private/SuggestFeature.sys.mjs";
+import { SuggestProvider } from "moz-src:///browser/components/urlbar/private/SuggestFeature.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  QuickSuggest: "resource:///modules/QuickSuggest.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+  QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 /**
@@ -103,18 +103,16 @@ export class DynamicSuggestions extends SuggestProvider {
 
     let resultProperties = { ...result };
     delete resultProperties.payload;
-    return Object.assign(
-      new lazy.UrlbarResult(
-        lazy.UrlbarUtils.RESULT_TYPE.URL,
-        lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-        ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-          ...payload,
-          isManageable: true,
-          helpUrl: lazy.QuickSuggest.HELP_URL,
-        })
-      ),
-      resultProperties
-    );
+    return new lazy.UrlbarResult({
+      type: lazy.UrlbarUtils.RESULT_TYPE.URL,
+      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      ...resultProperties,
+      ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+        ...payload,
+        isManageable: true,
+        helpUrl: lazy.QuickSuggest.HELP_URL,
+      }),
+    });
   }
 
   onEngagement(_queryContext, controller, details, _searchString) {
@@ -138,23 +136,19 @@ export class DynamicSuggestions extends SuggestProvider {
     // It doesn't really matter what kind of result we return since it won't be
     // shown. Use a dynamic result since that kind of makes sense and there are
     // no requirements for its payload other than `dynamicType`.
-    return Object.assign(
-      new lazy.UrlbarResult(
-        lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC,
-        lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
-        {
-          ...payload,
-          dynamicType: "exposure",
-        }
-      ),
-      {
-        // Exposure suggestions should always be hidden, and it's assumed that
-        // exposure telemetry should be recorded for them, so as a convenience
-        // set `exposureTelemetry` here. Otherwise experiments would need to set
-        // the corresponding Nimbus variables properly. (They can still do that,
-        // it's just not required.)
-        exposureTelemetry: lazy.UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
-      }
-    );
+    return new lazy.UrlbarResult({
+      type: lazy.UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      source: lazy.UrlbarUtils.RESULT_SOURCE.SEARCH,
+      // Exposure suggestions should always be hidden, and it's assumed that
+      // exposure telemetry should be recorded for them, so as a convenience
+      // set `exposureTelemetry` here. Otherwise experiments would need to set
+      // the corresponding Nimbus variables properly. (They can still do that,
+      // it's just not required.)
+      exposureTelemetry: lazy.UrlbarUtils.EXPOSURE_TELEMETRY.HIDDEN,
+      payload: {
+        ...payload,
+        dynamicType: "exposure",
+      },
+    });
   }
 }

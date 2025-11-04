@@ -27,8 +27,8 @@ if typing.TYPE_CHECKING:
 # Type of a TOML value.
 TomlItem = typing.Union[
     str,
-    typing.List["TomlItem"],
-    typing.Dict[str, "TomlItem"],
+    list["TomlItem"],
+    dict[str, "TomlItem"],
     bool,
     int,
     float,
@@ -130,15 +130,12 @@ ALLOWED_DESPITE_PREFIX = {
     "unicode-ident",  # Impractical to require icu_properties at this time
     "unicode-normalization",  # Exception until bug 1986265 is fixed.
     "unicode-width",  # icu_properties has the raw data but not the algorithm
-    "unic-char-property",  # Until https://github.com/denoland/rust-urlpattern/pull/67 is fixed
-    "unic-char-range",  # Until https://github.com/denoland/rust-urlpattern/pull/67 is fixed
-    "unic-common",  # Until https://github.com/denoland/rust-urlpattern/pull/67 is fixed
-    "unic-ucd-ident",  # Until https://github.com/denoland/rust-urlpattern/pull/67 is fixed
-    "unic-ucd-version",  # Until https://github.com/denoland/rust-urlpattern/pull/67 is fixed
     "unic-langid",  # We want to migrate to icu_locale eventually
     "unic-langid-ffi",  # FFI for previous
     "unic-langid-impl",  # Implementation detail of unic-langid
 }
+
+SEEN_ALLOWED_DESPITE_PREFIX = set()
 
 PACKAGES_WE_ALWAYS_WANT_AN_OVERRIDE_OF = [
     "autocfg",
@@ -153,6 +150,7 @@ def dont_want_package(name):
     if reason := PACKAGES_WE_DONT_WANT.get(name):
         return reason
     if name in ALLOWED_DESPITE_PREFIX:
+        SEEN_ALLOWED_DESPITE_PREFIX.add(name)
         return None
     for prefix, reason in PREFIXES_WE_DONT_WANT.items():
         if name.startswith(prefix):
@@ -179,6 +177,9 @@ class VendorRust(MozbuildObject):
                 ]
             }
         )
+
+    def generate_diff_stream(self):
+        return self.repository.diff_stream()
 
     def log(self, level, action, params, format_str):
         if level >= logging.WARNING:
@@ -479,7 +480,7 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
             with open(toml_file, encoding="utf-8") as fh:
                 toml_data = toml.load(fh)
 
-            package_entry: typing.Dict[str, TomlItem] = toml_data["package"]
+            package_entry: dict[str, TomlItem] = toml_data["package"]
             license = package_entry.get("license", None)
             license_file = package_entry.get("license-file", None)
 
@@ -638,7 +639,9 @@ license file's hash.
         # We use check_call instead of mozprocess to ensure errors are displayed.
         # We do an |update -p| here to regenerate the Cargo.lock file with minimal
         # changes. See bug 1324462
-        res = subprocess.run([cargo, "update", "-p", "gkrust"], cwd=self.topsrcdir)
+        res = subprocess.run(
+            [cargo, "update", "-p", "gkrust"], cwd=self.topsrcdir, check=False
+        )
         if res.returncode:
             self.log(logging.ERROR, "cargo_update_failed", {}, "Cargo update failed.")
             return False
@@ -689,6 +692,17 @@ license file's hash.
                     )
                     failed = True
                 grouped[package["name"]].append(package)
+
+            for name in ALLOWED_DESPITE_PREFIX:
+                if name not in SEEN_ALLOWED_DESPITE_PREFIX:
+                    self.log(
+                        logging.ERROR,
+                        "unused_allowed_despite_prefix",
+                        {"crate": name},
+                        "ALLOWED_DESPITE_PREFIX contains {crate}, "
+                        "but that crate is not actually used (anymore?).",
+                    )
+                    failed = True
 
             for name, packages in grouped.items():
                 # Allow to have crates of the same name when one depends on the other.
@@ -811,7 +825,10 @@ license file's hash.
             return False
 
         res = subprocess.run(
-            [cargo, "vendor", vendor_dir], cwd=self.topsrcdir, stdout=subprocess.PIPE
+            [cargo, "vendor", vendor_dir],
+            cwd=self.topsrcdir,
+            stdout=subprocess.PIPE,
+            check=False,
         )
         if res.returncode:
             self.log(logging.ERROR, "cargo_vendor_failed", {}, "Cargo vendor failed.")
@@ -840,9 +857,8 @@ license file's hash.
             self.log(
                 logging.ERROR,
                 "vendor_failed",
-                {},
-                """cargo vendor didn't output a unique replace-with. Found: %s."""
-                % replaces,
+                dict(replaces=replaces),
+                """cargo vendor didn't output a unique replace-with. Found: {replaces}.""",
             )
             return False
 
@@ -899,8 +915,8 @@ license file's hash.
                     if path.name == ".cargo-checksum.json":
                         continue
                     if path.is_dir():
-                        for root, dirs, files in os.walk(path, topdown=False):
-                            root = Path(root)
+                        for root_path, dirs, files in os.walk(path, topdown=False):
+                            root = Path(root_path)
                             for name in files:
                                 to_unlink = root / name
                                 try:
@@ -986,9 +1002,9 @@ The changes from `mach vendor rust` will NOT be added to version control.
                     notice=CARGO_LOCK_NOTICE,
                 ),
             )
-            self.repository.forget_add_remove_files(vendor_dir)
-            self.repository.clean_directory(vendor_dir)
             if not force:
+                self.repository.forget_add_remove_files(vendor_dir)
+                self.repository.clean_directory(vendor_dir)
                 return False
 
         # Only warn for large imports, since we may just have large code

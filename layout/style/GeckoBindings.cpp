@@ -1801,6 +1801,8 @@ void StyleSingleFontFamily::AppendToString(nsACString& aName,
       return aName.AppendLiteral("cursive");
     case StyleGenericFontFamily::Fantasy:
       return aName.AppendLiteral("fantasy");
+    case StyleGenericFontFamily::Math:
+      return aName.AppendLiteral("math");
     case StyleGenericFontFamily::SystemUi:
       return aName.AppendLiteral("system-ui");
   }
@@ -1868,7 +1870,7 @@ static nsIFrame* GetAnchorOf(const nsIFrame* aPositioned,
 
 static Maybe<AnchorPosInfo> GetAnchorPosRect(
     const nsIFrame* aPositioned, const nsAtom* aAnchorName, bool aCBRectIsvalid,
-    AnchorPosReferencedAnchors* aReferencedAnchors) {
+    AnchorPosReferenceData* aReferenceData) {
   if (!aPositioned) {
     return Nothing{};
   }
@@ -1883,8 +1885,8 @@ static Maybe<AnchorPosInfo> GetAnchorPosRect(
   const auto* containingBlock = aPositioned->GetParent();
 
   Maybe<AnchorPosResolutionData>* entry = nullptr;
-  if (aReferencedAnchors) {
-    const auto result = aReferencedAnchors->InsertOrModify(anchorName, true);
+  if (aReferenceData) {
+    const auto result = aReferenceData->InsertOrModify(anchorName, true);
     if (result.mAlreadyResolved) {
       MOZ_ASSERT(result.mEntry, "Entry exists but null?");
       return result.mEntry->map([&](const AnchorPosResolutionData& aData) {
@@ -1916,9 +1918,9 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
   if (!aParams || !aParams->mBaseParams.mFrame) {
     return false;
   }
-  const auto info = GetAnchorPosRect(aParams->mBaseParams.mFrame, aAnchorName,
-                                     !aParams->mCBSize,
-                                     aParams->mBaseParams.mReferencedAnchors);
+  const auto info = GetAnchorPosRect(
+      aParams->mBaseParams.mFrame, aAnchorName, !aParams->mCBSize,
+      aParams->mBaseParams.mAnchorPosReferenceData);
   if (info.isNothing()) {
     return false;
   }
@@ -2008,9 +2010,9 @@ bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
   }
   const auto size = [&]() -> Maybe<nsSize> {
     Maybe<AnchorPosResolutionData>* entry = nullptr;
-    if (aParams->mReferencedAnchors) {
+    if (aParams->mAnchorPosReferenceData) {
       const auto result =
-          aParams->mReferencedAnchors->InsertOrModify(anchorName, false);
+          aParams->mAnchorPosReferenceData->InsertOrModify(anchorName, false);
       if (result.mAlreadyResolved) {
         MOZ_ASSERT(result.mEntry, "Entry exists but null?");
         return result.mEntry->map(
@@ -2022,7 +2024,7 @@ bool Gecko_GetAnchorPosSize(const AnchorPosResolutionParams* aParams,
     if (!anchor) {
       return Nothing{};
     }
-    const auto size = anchor->GetSize();
+    const auto size = nsLayoutUtils::GetCombinedFragmentRects(anchor).Size();
     if (entry) {
       *entry = Some(AnchorPosResolutionData{size, Nothing{}});
     }

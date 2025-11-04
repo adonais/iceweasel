@@ -563,6 +563,13 @@ support-files = [
   "owl.mp3^headers^",
   "owl-short.mp3",
   "owl-short.mp3^headers^",
+  "partial_support_av1_ac3.mkv",
+  "partial_support_avc_ac3.mkv",
+  "partial_support_vp8_ac3.mkv",
+  "partial_support_vp9_ac3.mkv",
+  "partial_support_theora_aac.mkv",
+  "partial_support_theora_opus.mkv",
+  "partial_support_theora_vorbis.mkv",
   "pixel_aspect_ratio.mp4",
   "play_promise.js",
   "poster-test.jpg",
@@ -944,5 +951,6 @@ skip-if = ["os == 'android'"] # android(bug 1232305), bugs 1320418,1347953,13479
 ["test_vp9_superframes.html"]
 
 ["test_mkv_playback.html"]
+skip-if = ["mda_gpu && os == 'mac' && os_version == '10.15'"] # Bug 1942396
 
 ["test_unsupported_mkv.html"]

@@ -832,3 +832,74 @@ def trainhop_recipe(command_context, taskcluster_group_url):
     print("Nimbus train-hop recipe:\n\n")
     print(json.dumps(result, indent=2, sort_keys=True))
     print("\n")
+
+
+@SubCommand(
+    "newtab",
+    "bundle",
+    description="Bundle compiled newtab code.",
+)
+def bundle(command_context):
+    """
+    Runs: ./mach npm run bundle --prefix=browser/extensions/newtab
+    """
+    proc = None
+
+    try:
+        proc = subprocess.Popen(
+            ["./mach", "npm", "run", "bundle", "--prefix=browser/extensions/newtab"]
+        )
+        print("Bundling newtab started. Press Ctrl-C to terminate.")
+        proc.wait()
+    except KeyboardInterrupt:
+        if proc:
+            proc.terminate()
+            proc.wait()
+            print("Bundle process terminated.")
+    else:
+        # Successful bundle
+        if proc and proc.returncode == 0:
+            print("Bundling newtab completed.")
+        elif proc:
+            code = proc.returncode
+            print(f"Bundling newtab failed (exit code {code}). See logs above.")
+
+            if code == 127:
+                print(
+                    "Hint: Required npm binaries not found. "
+                    "Try running:\n  ./mach newtab install"
+                )
+
+    # Swallow errors (no exception raising). Return the process returncode for mach to surface.
+    return 0 if proc is None else proc.returncode
+
+
+@SubCommand(
+    "newtab",
+    "install",
+    description="Installing node dependencies for newtab extension.",
+)
+def install(command_context):
+    """
+    Runs: ./mach npm install --prefix=browser/extensions/newtab
+    """
+    proc = None
+
+    try:
+        proc = subprocess.Popen(
+            ["./mach", "npm", "install", "--prefix=browser/extensions/newtab"]
+        )
+        print(
+            "Installing node dependencies for newtab started. Press Ctrl-C to terminate."
+        )
+        proc.wait()
+    except KeyboardInterrupt:
+        if proc:
+            proc.terminate()
+            proc.wait()
+            print("Install process terminated.")
+    else:
+        print("Installing node dependencies for newtab completed.")
+
+    # Swallow errors (no exception raising). Return the process returncode for mach to surface.
+    return 0 if proc is None else proc.returncode

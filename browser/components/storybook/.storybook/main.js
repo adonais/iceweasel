@@ -15,7 +15,9 @@ module.exports = {
   stories: [
     // Show the Storybook document first in the list
     // so that navigating to firefoxux.github.io/firefox-desktop-components/
-    // lands on the Storybook.stories.md file
+    // lands on the ComponentStatus.stories.md file
+    `../**/component-status.stories.mjs`,
+    // and lands on the Storybook.stories.md file
     "../**/README.storybook.stories.md",
     // Docs section
     "../**/README.*.stories.md",

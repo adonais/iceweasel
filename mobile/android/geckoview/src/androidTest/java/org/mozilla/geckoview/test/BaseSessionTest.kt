@@ -39,6 +39,7 @@ open class BaseSessionTest(
         const val CLICK_TO_REPLACE_HTML_PATH = "/assets/www/clickToReplace.html"
         const val CLIPBOARD_READ_HTML_PATH = "/assets/www/clipboard_read.html"
         const val CONTENT_CRASH_URL = "about:crashcontent"
+        const val CONTENT_CRASH_JAVA_URL = "about:crashcontentjava"
         const val DND_HTML_PATH = "/assets/www/dnd.html"
         const val DND_XORIGIN_HTML_PATH = "/assets/www/dnd_xorigin.html"
         const val DOWNLOAD_HTML_PATH = "/assets/www/download.html"
@@ -87,6 +88,8 @@ open class BaseSessionTest(
         const val VIEWPORT_PATH = "/assets/www/viewport.html"
         const val IFRAME_REDIRECT_LOCAL = "/assets/www/iframe_redirect_local.html"
         const val IFRAME_REDIRECT_AUTOMATION = "/assets/www/iframe_redirect_automation.html"
+        const val IFRAME_SANDBOX_BLOCK = "/assets/www/iframe_sandbox_block.html"
+        const val IFRAME_SANDBOX_ALLOW = "/assets/www/iframe_sandbox_allow.html"
         const val AUTOPLAY_PATH = "/assets/www/autoplay.html"
         const val SIMPLE_SCROLL_TEST_PATH = "/assets/www/simple-scroll.html"
         const val SCROLL_TEST_PATH = "/assets/www/scroll.html"
@@ -158,6 +161,8 @@ open class BaseSessionTest(
         const val INTERACTIVE_WIDGET_HTML_PATH = "/assets/www/interactive-widget.html"
         const val INTERACTIVE_WIDGET_OVERLAYS_CONTENT_HTML_PATH = "/assets/www/interactive-widget-overlays-content.html"
         const val VIEW_TRANSITION_SNAPSHOT_SIZE = "/assets/www/view-transition-snapshot-size.html"
+        const val FRAMEBUSTING_CHILD_URI = "https://example.org/tests/junit/framebusting_child.html"
+        const val FRAMEBUSTING_PARENT_URI = "https://example.net/tests/junit/framebusting_parent.html"
 
         const val TEST_ENDPOINT = GeckoSessionTestRule.TEST_ENDPOINT
         const val TEST_HOST = GeckoSessionTestRule.TEST_HOST
@@ -318,6 +323,8 @@ open class BaseSessionTest(
 
     fun GeckoSession.teardownAlertsService() =
         sessionRule.teardownAlertsService(this)
+
+    fun GeckoSession.notifyUserGestureActivation() = sessionRule.notifyUserGestureActivation(this)
 
     var GeckoSession.active: Boolean
         get() = sessionRule.getActive(this)

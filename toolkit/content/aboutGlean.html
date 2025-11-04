@@ -58,6 +58,9 @@
           </ul>
         </p>
         <p data-l10n-id="about-glean-additional-links"></p>
+        <moz-promo id="promo" type="vibrant" data-l10n-id="about-glean-enable-new-features-promo">
+          <moz-button id="enable-new-features" slot="actions"></moz-button>
+        </moz-promo>
       </div>
       <!-- manual testing tab -->
       <div id="manual-testing" class="tab" hidden="true">
@@ -72,7 +75,10 @@
             <label for="tag-pings" data-l10n-id="about-glean-label-for-tag-pings-with-requirements"></label>
           </li>
           <li>
-            <select name="ping-names" id="ping-names"></select>
+            <select name="ping-names" id="ping-names">
+              <optgroup id="builtin-pings" data-l10n-id="about-glean-ping-list-optgroup-built-in"></optgroup>
+              <optgroup id="custom-pings" data-l10n-id="about-glean-ping-list-optgroup-custom"></optgroup>
+            </select>
             <label for="ping-names" data-l10n-id="about-glean-label-for-ping-names">
               <a data-l10n-name="custom-ping-link" href="https://mozilla.github.io/glean/book/user/pings/custom.html"></a>
             </label>

@@ -1,8 +1,11 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head = "head.js"
 firefox-appdir = "browser"
 prefs = [
   "browser.backup.log=true",
+  "browser.backup.archive.enabled=true",
+  "browser.backup.restore.enabled=true",
 ]
 
 ["test_AddonsBackupResource.js"]
@@ -19,7 +22,10 @@ prefs = [
 support-files = ["data/test_xulstore.json"]
 
 ["test_BackupService.js"]
-support-files = ["data/test_archive.template.html"]
+support-files = [
+  "data/test_archive.template.html",
+  "data/test_keep_file_open.worker.js"
+]
 
 ["test_BackupService_archive.js"]
 support-files = [
@@ -31,7 +37,13 @@ support-files = [
 
 ["test_BackupService_enable_disable_encryption.js"]
 
+["test_BackupService_enabled.js"]
+
 ["test_BackupService_finalizeSingleFileArchive.js"]
+
+["test_BackupService_onedrive.js"]
+run-if = ["os == 'win'"]
+run-sequentially = ["true"] # Mock Windows registry interferes with normal operations
 
 ["test_BackupService_recoverFromSnapshotFolder.js"]
 
@@ -43,11 +55,15 @@ support-files = [
 
 ["test_BackupService_resolveDownloadLink.js"]
 
+["test_BackupService_retryHeuristic.js"]
+
 ["test_BackupService_scheduler.js"]
 
 ["test_BackupService_schema_versions.js"]
 
 ["test_BackupService_takeMeasurements.js"]
+
+["test_BackupService_telemetry.js"]
 
 ["test_CookiesBackupResource.js"]
 
@@ -67,4 +83,10 @@ support-files = [
 
 ["test_PreferencesBackupResource_searchEngines.js"]
 
+["test_ResourceFailures.js"]
+
 ["test_SessionStoreBackupResource.js"]
+
+["test_SessionStoreBackupResource_mockSessionStore.js"]
+
+["test_backupService_findBackupsInWellKnownLocations.js"]

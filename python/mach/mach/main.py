@@ -477,11 +477,9 @@ To see more help for a specific command, run:
         fh.write(ERROR_FOOTER)
         fh.write("\n")
 
-        for l in traceback.format_exception_only(exc_type, exc_value):
-            fh.write(l)
-
-        fh.write("\n")
-        for l in traceback.format_list(stack):
+        for l in traceback.format_exception(
+            exc_type, exc_value, exc_value.__traceback__
+        ):
             fh.write(l)
 
         if not sentry_event_id:

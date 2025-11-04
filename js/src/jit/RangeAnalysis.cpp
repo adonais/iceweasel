@@ -6,6 +6,7 @@
 
 #include "jit/RangeAnalysis.h"
 
+#include "mozilla/CheckedArithmetic.h"
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
@@ -21,7 +22,6 @@
 #include "jit/MIRGraph.h"
 #include "js/Conversions.h"
 #include "js/ScalarType.h"  // js::Scalar::Type
-#include "util/CheckedArithmetic.h"
 #include "util/Unicode.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/Float16.h"
@@ -284,7 +284,7 @@ bool RangeAnalysis::addBetaNodes() {
         if (val->type() == MIRType::Int32) {
           int32_t intbound;
           if (NumberEqualsInt32(bound, &intbound) &&
-              SafeSub(intbound, 1, &intbound)) {
+              mozilla::SafeSub(intbound, 1, &intbound)) {
             bound = intbound;
           }
         }
@@ -303,7 +303,7 @@ bool RangeAnalysis::addBetaNodes() {
         if (val->type() == MIRType::Int32) {
           int32_t intbound;
           if (NumberEqualsInt32(bound, &intbound) &&
-              SafeAdd(intbound, 1, &intbound)) {
+              mozilla::SafeAdd(intbound, 1, &intbound)) {
             bound = intbound;
           }
         }
@@ -2079,7 +2079,7 @@ LoopIterationBound* RangeAnalysis::analyzeLoopIterationCount(
     MDefinition* temp = lhs.term;
     lhs.term = rhs;
     rhs = temp;
-    if (!SafeSub(0, lhs.constant, &lhs.constant)) {
+    if (!mozilla::SafeSub(0, lhs.constant, &lhs.constant)) {
       return nullptr;
     }
     lessEqual = !lessEqual;
@@ -2160,7 +2160,7 @@ LoopIterationBound* RangeAnalysis::analyzeLoopIterationCount(
     }
 
     int32_t lhsConstant;
-    if (!SafeSub(0, lhs.constant, &lhsConstant)) {
+    if (!mozilla::SafeSub(0, lhs.constant, &lhsConstant)) {
       return nullptr;
     }
     if (!iterationBound.add(lhsConstant)) {
@@ -2245,7 +2245,7 @@ void RangeAnalysis::analyzeLoopPhi(const LoopIterationBound* loopBound,
   }
 
   int32_t negativeConstant;
-  if (!SafeSub(0, modified.constant, &negativeConstant) ||
+  if (!mozilla::SafeSub(0, modified.constant, &negativeConstant) ||
       !limitSum.add(negativeConstant)) {
     return;
   }
@@ -2343,10 +2343,10 @@ bool RangeAnalysis::tryHoistBoundsCheck(const MBasicBlock* header,
   // lowerTerm >= -lowerConstant - indexConstant
 
   int32_t lowerConstant = 0;
-  if (!SafeSub(lowerConstant, index.constant, &lowerConstant)) {
+  if (!mozilla::SafeSub(lowerConstant, index.constant, &lowerConstant)) {
     return false;
   }
-  if (!SafeSub(lowerConstant, lower->sum.constant(), &lowerConstant)) {
+  if (!mozilla::SafeSub(lowerConstant, lower->sum.constant(), &lowerConstant)) {
     return false;
   }
 
@@ -2356,7 +2356,7 @@ bool RangeAnalysis::tryHoistBoundsCheck(const MBasicBlock* header,
   // upperTerm + upperConstant < boundsLength
 
   int32_t upperConstant = index.constant;
-  if (!SafeAdd(upper->sum.constant(), upperConstant, &upperConstant)) {
+  if (!mozilla::SafeAdd(upper->sum.constant(), upperConstant, &upperConstant)) {
     return false;
   }
 

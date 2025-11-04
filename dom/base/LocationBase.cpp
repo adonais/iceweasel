@@ -32,7 +32,7 @@ void LocationBase::SetURI(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
 
   bc->Navigate(aURI, aSubjectPrincipal, aRv,
                aReplace ? NavigationHistoryBehavior::Replace
-                        : NavigationHistoryBehavior::Push);
+                        : NavigationHistoryBehavior::Auto);
 }
 
 void LocationBase::SetHref(const nsACString& aHref,

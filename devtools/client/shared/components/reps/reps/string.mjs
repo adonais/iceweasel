@@ -21,7 +21,7 @@ import {
   ELLIPSIS,
   uneatLastUrlCharsRegex,
   urlRegex,
-} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
+} from "./rep-utils.mjs";
 
 /**
  * Renders a string. String value is enclosed within quotes.

@@ -188,6 +188,9 @@ BackgroundEventTarget::DelayedDispatch(already_AddRefed<nsIRunnable> aRunnable,
 
 NS_IMETHODIMP
 BackgroundEventTarget::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
+  MOZ_ASSERT_UNREACHABLE(
+      "If we start to hand out direct access to"
+      "BackgroundEventTarget, we probably want to implement this.");
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -606,6 +609,9 @@ nsThreadManager::NewNamedThread(
     nsIThread** aResult) {
   // Note: can be called from arbitrary threads
 
+  AUTO_PROFILER_MARKER_TEXT("NewThread", OTHER,
+                            MarkerOptions(MarkerStack::Capture()), aName);
+
   TimeStamp startTime = TimeStamp::Now();
 
   RefPtr<ThreadEventQueue> queue =
@@ -621,11 +627,6 @@ nsThreadManager::NewNamedThread(
     return rv;
   }
 
-  PROFILER_MARKER_TEXT(
-      "NewThread", OTHER,
-      MarkerOptions(MarkerStack::Capture(),
-                    MarkerTiming::IntervalUntilNowFrom(startTime)),
-      aName);
   if (!NS_IsMainThread()) {
     PROFILER_MARKER_TEXT(
         "NewThread (non-main thread)", OTHER,

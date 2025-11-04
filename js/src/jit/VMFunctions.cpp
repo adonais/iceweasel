@@ -507,6 +507,25 @@ bool InvokeFunction(JSContext* cx, HandleObject obj, bool constructing,
 
     RootedValue newTarget(cx, argvWithoutThis[argc]);
 
+    // The JIT ABI expects at least callee->nargs() arguments, with undefined
+    // values passed for missing formal arguments. These undefined values are
+    // passed before newTarget. We don't normally insert undefined values when
+    // calling native functions like this one, but by detecting and supporting
+    // that case here, it is easier for jit code to fall back to InvokeFunction
+    // as a slow path.
+    if (newTarget.isUndefined()) {
+      MOZ_RELEASE_ASSERT(obj->is<JSFunction>());
+      JSFunction* callee = &obj->as<JSFunction>();
+#ifdef DEBUG
+      MOZ_ASSERT(callee->nargs() > argc);
+      for (uint32_t i = argc; i < callee->nargs(); i++) {
+        MOZ_ASSERT(argvWithoutThis[i].isUndefined());
+      }
+#endif
+      newTarget = argvWithoutThis[callee->nargs()];
+      MOZ_ASSERT(newTarget.isObject());
+    }
+
     // See CreateThisFromIon for why this can be NullValue.
     if (thisv.isNull()) {
       thisv.setMagic(JS_IS_CONSTRUCTING);
@@ -562,8 +581,8 @@ bool InvokeFromInterpreterStub(JSContext* cx,
   bool constructing = CalleeTokenIsConstructing(token);
   RootedFunction fun(cx, CalleeTokenToFunction(token));
 
-  // Ensure new.target immediately follows the actual arguments (the arguments
-  // rectifier added padding).
+  // Ensure new.target immediately follows the actual arguments (the JIT
+  // ABI passes `undefined` for missing formals).
   if (constructing && numActualArgs < fun->nargs()) {
     argv[1 + numActualArgs] = argv[1 + fun->nargs()];
   }

@@ -1082,7 +1082,9 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
   // don't support unaligned accesses).
   void loadUnalignedValue(const Address& src, ValueOperand dest);
 
-  void tagValue(JSValueType type, Register payload, ValueOperand dest);
+  void tagValue(JSValueType type, Register payload, ValueOperand dest) {
+    boxNonDouble(type, payload, dest);
+  }
 
   void pushValue(ValueOperand val);
   void popValue(ValueOperand val);

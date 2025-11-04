@@ -80,6 +80,7 @@ fun createCustomTab(
     webAppManifest: WebAppManifest? = null,
     initialLoadFlags: EngineSession.LoadUrlFlags = EngineSession.LoadUrlFlags.none(),
     desktopMode: Boolean = false,
+    trackingProtection: TrackingProtectionState = TrackingProtectionState(),
 ): CustomTabSessionState {
     return CustomTabSessionState(
         id = id,
@@ -99,5 +100,6 @@ fun createCustomTab(
             crashed = crashed,
             initialLoadFlags = initialLoadFlags,
         ),
+        trackingProtection = trackingProtection,
     )
 }

@@ -480,7 +480,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
   // In case of failure, clear the mCacheInfoChannel to avoid keeping it alive.
   if (NS_FAILED(rv)) {
-    mRequest->mCacheInfo = nullptr;
+    mRequest->DropDiskCacheReference();
   }
 
   return rv;

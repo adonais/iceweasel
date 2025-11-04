@@ -1,8 +1,9 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 firefox-appdir = "browser"
 skip-if = [
-  "os == 'android'",
   "os == 'win' && msix", # Our updater is disabled in MSIX builds
+  "os == 'linux'", # build with MOZ_UPDATE_AGENT_BOOL=false
 ]
 head = "head.js"
 support-files = [
@@ -14,7 +15,7 @@ support-files = [
 ["test_backgroundupdate_actions.js"]
 
 ["test_backgroundupdate_exitcodes.js"]
-run-sequentially = "very high failure rate in parallel"
+run-sequentially = ["true"] # perma-fail in parallel
 
 ["test_backgroundupdate_glean.js"]
 
@@ -23,4 +24,3 @@ run-sequentially = "very high failure rate in parallel"
 ["test_backgroundupdate_reason_schedule.js"]
 
 ["test_backgroundupdate_reason_update.js"]
-run-sequentially = "very high failure rate in parallel"

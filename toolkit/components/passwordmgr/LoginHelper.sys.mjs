@@ -17,6 +17,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   OSKeyStore: "resource://gre/modules/OSKeyStore.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
+  NewPasswordModel: "resource://gre/modules/shared/NewPasswordModel.sys.mjs",
 });
 
 export class ParentAutocompleteOption {
@@ -1298,11 +1299,26 @@ export const LoginHelper = {
    * @returns {boolean} True if any of the rules matches
    */
   isInferredLoginForm(formElement) {
-    // This is copied from 'loginFormAttrRegex' in NewPasswordModel.sys.mjs
-    const loginExpr =
-      /login|log in|log on|log-on|sign in|sigin|sign\/in|sign-in|sign on|sign-on/i;
+    if (
+      Logic.elementAttrsMatchRegex(
+        formElement,
+        lazy.NewPasswordModel.LoginRegex
+      )
+    ) {
+      return true;
+    }
 
-    if (Logic.elementAttrsMatchRegex(formElement, loginExpr)) {
+    const buttons = Array.from(
+      formElement.querySelectorAll("button[type=submit]")
+    );
+    // Limit to form with only one submit button to avoid false positives.
+    if (
+      buttons.length == 1 &&
+      Logic.hasTextContentMatchingRegex(
+        buttons[0],
+        lazy.NewPasswordModel.LoginFormAttrRegex
+      )
+    ) {
       return true;
     }
 

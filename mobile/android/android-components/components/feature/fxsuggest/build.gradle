@@ -4,17 +4,6 @@
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-buildscript {
-    repositories {
-        maven {
-            url = "https://maven.mozilla.org/maven2"
-        }
-    }
-
-    dependencies {
-    }
-}
-
 plugins {
     alias(libs.plugins.python.envs.plugin)
     id 'org.mozilla.nimbus-gradle-plugin'
@@ -24,20 +13,6 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
 android {
-    defaultConfig {
-        minSdkVersion = config.minSdkVersion
-        compileSdk = config.compileSdkVersion
-        targetSdkVersion = config.targetSdkVersion
-        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled = false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-
     namespace = 'mozilla.components.feature.fxsuggest'
 }
 
@@ -49,6 +24,7 @@ dependencies {
     implementation project(':components:concept-engine')
     implementation project(':components:feature-session')
     implementation project(':components:service-nimbus')
+    implementation project(':components:support-appservices')
     implementation project(':components:support-base')
     implementation project(':components:support-remotesettings')
     implementation project(':components:support-ktx')
@@ -68,7 +44,7 @@ dependencies {
     testImplementation libs.robolectric
 }
 
-apply from: '../../../android-lint.gradle'
+apply from: '../../../common-config.gradle'
 apply from: '../../../publish.gradle'
 nimbus {
     // The path to the Nimbus feature manifest file

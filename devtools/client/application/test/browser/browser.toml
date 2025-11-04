@@ -34,7 +34,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 https_first_disabled = true
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1559591
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1559591
 ]
 
@@ -42,15 +41,13 @@ skip-if = [
 https_first_disabled = true
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && !http3 && !socketprocess_networking", # Bug 1559591
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && socketprocess_networking", # Bug 1559591
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && debug", # Bug 1559591
 ]
 
 ["browser_application_panel_list-several-workers.js"]
 https_first_disabled = true
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1559591
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1559591
 ]
 
@@ -61,7 +58,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_application_panel_list-unicode.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1559591
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1559591
 ]
 
@@ -84,7 +80,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_application_panel_open-links.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1467256, 1559591
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1467256, 1559591
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1467256, 1559591
   "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug T1467256, 1559591BD
@@ -96,7 +91,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_application_panel_start-service-worker.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1608640
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && asan", # Bug 1781479
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1608640
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1980084
@@ -106,8 +100,6 @@ skip-if = [
 ["browser_application_panel_target-switching.js"]
 https_first_disabled = true
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1640234
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1640234
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1640234
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1640234
 ]
@@ -115,8 +107,6 @@ skip-if = [
 ["browser_application_panel_telemetry-debug-worker.js"]
 https_first_disabled = true
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1654354
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1958918
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1654354
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan",
 ]
@@ -127,7 +117,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_application_panel_telemetry-start-worker.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1654468
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1654468
   "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && debug", # Bug 1559591
 ]
@@ -142,7 +131,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 https_first_disabled = true
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug && http3", # Bug 1559591
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1559591
 ]
 

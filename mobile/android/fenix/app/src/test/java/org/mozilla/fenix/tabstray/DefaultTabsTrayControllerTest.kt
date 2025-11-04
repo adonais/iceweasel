@@ -1216,8 +1216,8 @@ class DefaultTabsTrayControllerTest {
     fun `GIVEN one tab selected and no bookmarks previously saved WHEN saving selected tabs to bookmarks THEN save bookmark in root, report telemetry, show snackbar`() = runTestOnMain {
         var showBookmarkSnackbarInvoked = false
 
-        coEvery { bookmarksStorage.getRecentBookmarks(1) } returns listOf()
-        coEvery { bookmarksStorage.getBookmark(BookmarkRoot.Mobile.id) } returns makeBookmarkFolder(guid = BookmarkRoot.Mobile.id)
+        coEvery { bookmarksStorage.getRecentBookmarks(eq(1), any(), any()) } returns Result.success(listOf())
+        coEvery { bookmarksStorage.getBookmark(BookmarkRoot.Mobile.id) } returns Result.success(makeBookmarkFolder(guid = BookmarkRoot.Mobile.id))
         every { trayStore.state.mode.selectedTabs } returns setOf(createTab(url = "https://mozilla.org"))
 
         createController(
@@ -1237,8 +1237,8 @@ class DefaultTabsTrayControllerTest {
 
         val parentGuid = "parentGuid"
         val previousBookmark = makeBookmarkItem(parentGuid = parentGuid)
-        coEvery { bookmarksStorage.getRecentBookmarks(eq(1), any(), any()) } returns listOf(previousBookmark)
-        coEvery { bookmarksStorage.getBookmark(parentGuid) } returns makeBookmarkFolder(guid = parentGuid)
+        coEvery { bookmarksStorage.getRecentBookmarks(eq(1), any(), any()) } returns Result.success(listOf(previousBookmark))
+        coEvery { bookmarksStorage.getBookmark(parentGuid) } returns Result.success(makeBookmarkFolder(guid = parentGuid))
         every { trayStore.state.mode.selectedTabs } returns setOf(createTab(url = "https://mozilla.org"))
 
         createController(
@@ -1256,8 +1256,8 @@ class DefaultTabsTrayControllerTest {
     fun `GIVEN multiple tabs selected and no bookmarks previously saved WHEN saving selected tabs to bookmarks THEN save bookmarks in root, report telemetry, show a snackbar`() = runTestOnMain {
         var showBookmarkSnackbarInvoked = false
 
-        coEvery { bookmarksStorage.getRecentBookmarks(1) } returns listOf()
-        coEvery { bookmarksStorage.getBookmark(BookmarkRoot.Mobile.id) } returns makeBookmarkFolder(guid = BookmarkRoot.Mobile.id)
+        coEvery { bookmarksStorage.getRecentBookmarks(eq(1), any(), any()) } returns Result.failure(IllegalStateException())
+        coEvery { bookmarksStorage.getBookmark(BookmarkRoot.Mobile.id) } returns Result.success(makeBookmarkFolder(guid = BookmarkRoot.Mobile.id))
         every { trayStore.state.mode.selectedTabs } returns setOf(createTab(url = "https://mozilla.org"), createTab(url = "https://mozilla2.org"))
 
         createController(
@@ -1277,8 +1277,8 @@ class DefaultTabsTrayControllerTest {
 
         val parentGuid = "parentGuid"
         val previousBookmark = makeBookmarkItem(parentGuid = parentGuid)
-        coEvery { bookmarksStorage.getRecentBookmarks(eq(1), any(), any()) } returns listOf(previousBookmark)
-        coEvery { bookmarksStorage.getBookmark(parentGuid) } returns makeBookmarkFolder(guid = parentGuid)
+        coEvery { bookmarksStorage.getRecentBookmarks(eq(1), any(), any()) } returns Result.success(listOf(previousBookmark))
+        coEvery { bookmarksStorage.getBookmark(parentGuid) } returns Result.success(makeBookmarkFolder(guid = parentGuid))
         every { trayStore.state.mode.selectedTabs } returns setOf(createTab(url = "https://mozilla.org"), createTab(url = "https://mozilla2.org"))
 
         createController(

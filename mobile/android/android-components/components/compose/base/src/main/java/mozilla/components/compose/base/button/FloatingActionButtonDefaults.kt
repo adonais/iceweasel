@@ -8,8 +8,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
-import mozilla.components.compose.base.theme.onPrimaryFixed
-import mozilla.components.compose.base.theme.primaryFixed
 
 /**
  * Contains the default values used by Acorn FloatingActionButtons.

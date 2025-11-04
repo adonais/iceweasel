@@ -9,28 +9,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 /**
- * Forward the encodedResponseBody built by the NetworkResponse to devtools'
- * decodeResponseChunks helper.
- *
- * @param {object} encodedResponseBody
- *     A custom "encoded response body" object containing all the properties
- *     required to decode the body.
- * @returns {string}
- *     The decoded response body as a string (either text or base64).
- */
-async function decodeReponseBody(encodedResponseBody) {
-  return lazy.NetworkUtils.decodeResponseChunks(
-    encodedResponseBody.encodedData,
-    {
-      charset: encodedResponseBody.charset,
-      encoding: encodedResponseBody.encoding,
-      compressionEncodings: encodedResponseBody.compressionEncodings,
-      encodedBodySize: encodedResponseBody.encodedBodySize,
-    }
-  );
-}
-
-/**
  * The NetworkResponse class is a wrapper around the internal channel which
  * provides getters and methods closer to fetch's response concept
  * (https://fetch.spec.whatwg.org/#concept-response).
@@ -181,15 +159,26 @@ export class NetworkResponse {
 
   setResponseContent(responseContent) {
     // Extract the properties necessary to decode the response body later on.
-    const encodedResponseBody = {
-      charset: responseContent.contentCharset,
-      compressionEncodings: responseContent.compressionEncodings,
-      encodedData: responseContent.encodedData,
-      encodedBodySize: responseContent.encodedBodySize,
-      encoding: responseContent.encoding,
-      getDecodedResponseBody: async () =>
-        decodeReponseBody(encodedResponseBody),
-    };
+    let encodedResponseBody;
+
+    if (responseContent.isContentEncoded) {
+      encodedResponseBody = {
+        encoding: responseContent.encoding,
+        getDecodedResponseBody: async () =>
+          lazy.NetworkUtils.decodeResponseChunks(responseContent.encodedData, {
+            // Should always attempt to decode as UTF-8.
+            charset: "UTF-8",
+            compressionEncodings: responseContent.compressionEncodings,
+            encodedBodySize: responseContent.encodedBodySize,
+            encoding: responseContent.encoding,
+          }),
+      };
+    } else {
+      encodedResponseBody = {
+        encoding: responseContent.encoding,
+        getDecodedResponseBody: () => responseContent.text,
+      };
+    }
 
     this.#responseBodyReady.resolve(encodedResponseBody);
   }

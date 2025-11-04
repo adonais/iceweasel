@@ -1,5 +1,6 @@
 package org.mozilla.fenix.components
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.mock
@@ -24,6 +25,7 @@ class AppVisualCompletenessMiddlewareTest {
         assertTrue(queue.isReady())
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `WHEN home screen is never drawn THEN queue is marked as ready after five seconds`() = runTest {
         val queue = RunWhenReadyQueue()

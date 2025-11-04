@@ -20,6 +20,8 @@ import mozilla.appservices.suggest.SuggestionQuery
 import mozilla.components.feature.fxsuggest.facts.emitSuggestionQueryCountFact
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.remotesettings.RemoteSettingsService
+import mozilla.components.support.rusterrors.reportRustError
+import mozilla.appservices.suggest.InternalException as UniffiInternalException
 
 /**
  * A coroutine-aware wrapper around the synchronous [SuggestStore] interface.
@@ -121,6 +123,10 @@ class FxSuggestStorage(
             operation()
         } catch (e: SuggestApiException) {
             logger.warn("Ignoring exception from `$name`", e)
+            default
+        } catch (e: UniffiInternalException) {
+            Logger.error(e.toString())
+            reportRustError("suggest-internal-error", e.toString())
             default
         }
     }

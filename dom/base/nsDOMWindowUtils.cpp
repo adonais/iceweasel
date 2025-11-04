@@ -15,7 +15,6 @@
 #include "js/experimental/PCCountProfiling.h"  // JS::{Start,Stop}PCCountProfiling, JS::PurgePCCounts, JS::GetPCCountScript{Count,Summary,Contents}
 #include "mozilla/Base64.h"
 #include "mozilla/ChaosMode.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/InputTaskManager.h"
 #include "mozilla/Logging.h"
@@ -3084,6 +3083,8 @@ struct CaretInfo {
   CSSRect textFrameBoundsRelativeToRootScroller;
   /* the caret rect relative to the text frame */
   Maybe<nsRect> caretRectRelativeToTextFrame;
+  /* the primary frame or the text frame for the caret */
+  nsIFrame* frame;
 };
 
 static CaretInfo GetCaretContentAndBounds(
@@ -3092,7 +3093,7 @@ static CaretInfo GetCaretContentAndBounds(
   CSSRect bounds;
 
   if (!aRootScrollContainerFrame) {
-    return CaretInfo{content, bounds, Nothing()};
+    return CaretInfo{content, bounds, Nothing(), content->GetPrimaryFrame()};
   }
 
   Maybe<nsRect> caretRect;
@@ -3103,14 +3104,16 @@ static CaretInfo GetCaretContentAndBounds(
     RefPtr<nsCaret> caret = frame->PresShell()->GetCaret();
     if (caret && caret->IsVisible()) {
       nsRect rect;
-      if (nsIFrame* frame = caret->GetGeometry(&rect)) {
-        // This |frame| is a text frame and the returned rectangle represents
-        // the caret position relative to the text frame, so we need to pass the
-        // rectangle to ScrollFrameIntoView along with the text frame.
+      if (nsIFrame* textFrame = caret->GetGeometry(&rect)) {
+        // This |textFrame| is a text frame and the returned rectangle
+        // represents the caret position relative to the text frame, so we need
+        // to pass the rectangle to ScrollFrameIntoView along with the text
+        // frame.
         bounds = nsLayoutUtils::GetBoundingFrameRect(frame,
                                                      aRootScrollContainerFrame);
         content = frame->GetContent();
         caretRect = Some(rect);
+        frame = textFrame;
       }
     }
   }
@@ -3120,7 +3123,7 @@ static CaretInfo GetCaretContentAndBounds(
                                                    aRootScrollContainerFrame);
   }
 
-  return CaretInfo{content, bounds, caretRect};
+  return CaretInfo{content, bounds, caretRect, frame};
 }
 
 NS_IMETHODIMP
@@ -3162,15 +3165,13 @@ nsDOMWindowUtils::ZoomToFocusedInput() {
               ToString(caretInfo.textFrameBoundsRelativeToRootScroller).c_str(),
               ToString(caretInfo.caretRectRelativeToTextFrame).c_str());
 
-  // Hold a strong reference of the target content.
-  RefPtr<nsIContent> refContent = caretInfo.textContent;
   // The content may be inside a scrollable subframe inside a non-scrollable
   // root content document. In this scenario, we want to ensure that the
   // main-thread side knows to scroll the content into view before we get
   // the bounding content rect and ask APZ to zoom in to the target content.
-  if (nsIFrame* frame = refContent->GetPrimaryFrame()) {
+  if (caretInfo.frame) {
     presShell->ScrollFrameIntoView(
-        frame, caretInfo.caretRectRelativeToTextFrame,
+        caretInfo.frame, caretInfo.caretRectRelativeToTextFrame,
         ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
         ScrollAxis(WhereToScroll::Center, WhenToScroll::IfNotVisible),
         ScrollFlags::ScrollOverflowHidden);

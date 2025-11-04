@@ -23,7 +23,6 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class BookmarksFeatureTest {
 
     private val middleware = CaptureActionsMiddleware<AppState, AppAction>()
@@ -45,6 +44,7 @@ class BookmarksFeatureTest {
         coEvery { bookmarksUseCases.retrieveRecentBookmarks() }.coAnswers { listOf(bookmark) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `GIVEN no bookmarks WHEN feature starts THEN fetch bookmarks and notify store`() =
         runTestOnMain {

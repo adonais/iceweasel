@@ -287,7 +287,7 @@ class Scopes extends PureComponent {
       scopes = generatedScopes;
     }
 
-    function initiallyExpanded(item) {
+    function getInitiallyExpanded(item) {
       return expandedScopes.some(path => path == getScopeItemPath(item));
     }
 
@@ -315,7 +315,7 @@ class Scopes extends PureComponent {
           preventBlur: true,
           setExpanded: (path, expand) =>
             setExpandedScope(selectedFrame, path, expand),
-          initiallyExpanded,
+          getInitiallyExpanded,
           renderItemActions: this.renderWatchpointButton,
           shouldRenderTooltip: true,
         })

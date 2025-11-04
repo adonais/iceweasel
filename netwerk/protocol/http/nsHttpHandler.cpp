@@ -27,11 +27,13 @@
 #include "nsCOMPtr.h"
 #include "nsNetCID.h"
 #include "mozilla/AppShutdown.h"
+#include "mozilla/Base64.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/Printf.h"
 #include "mozilla/RandomNum.h"
 #include "mozilla/SHA1.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
@@ -359,6 +361,8 @@ nsresult nsHttpHandler::Init() {
   // This preference is only used in parent process.
   if (!IsNeckoChild()) {
     if (XRE_IsParentProcess()) {
+      mDictionaryCache = DictionaryCache::GetInstance();
+
       std::bitset<3> usageOfHTTPSRRPrefs;
       usageOfHTTPSRRPrefs[0] = StaticPrefs::network_dns_upgrade_with_https_rr();
       usageOfHTTPSRRPrefs[1] =
@@ -649,8 +653,91 @@ nsresult nsHttpHandler::InitConnectionMgr() {
                         mBeConservativeForProxy);
 }
 
+// We're using RequestOverride because this can get called when these are
+// set by Fetch from the old request. We need to pass a function pointer to
+// let GetDictionaryFor suspend the channel before starting the async
+// dictionary load.
+nsresult nsHttpHandler::AddAcceptAndDictionaryHeaders(
+    nsIURI* aURI, ExtContentPolicyType aType, nsHttpRequestHead* aRequest,
+    bool aSecure, bool& aAsync, nsHttpChannel* aChan,
+    void (*aSuspend)(nsHttpChannel*),
+    const std::function<bool(bool, DictionaryCacheEntry*)>& aCallback) {
+  LOG(("Adding Dictionary headers"));
+  auto guard = MakeScopeExit([&]() { (aCallback)(false, nullptr); });
+
+  nsresult rv = NS_OK;
+  // Add the "Accept-Encoding" header and possibly Dictionary headers
+  if (aSecure) {
+    // The dictionary info may require us to check the cache.
+    if (StaticPrefs::network_http_dictionaries_enable()) {
+      // Note: this is async; the lambda can happen later
+      // aCallback will now be owned by GetDictionaryFor
+      guard.release();
+      mDictionaryCache->GetDictionaryFor(
+          aURI, aType, aAsync, aChan, aSuspend,
+          [self = RefPtr(this), aRequest, aCallback](
+              bool aNeedsResume, DictionaryCacheEntry* aDict) {
+            if (!aDict) {
+              // Accept-Encoding was already set in AddStandardHeaders
+              (aCallback)(aNeedsResume, nullptr);
+              return NS_OK;
+            }
+
+            nsAutoCStringN<64> encodedHash = ":"_ns + aDict->GetHash() + ":"_ns;
+
+            // Need to retain access to the dictionary until the request
+            // completes. Note that this includes if the dictionary we offered
+            // gets replaced by another request while we're waiting for a
+            // response; in that case we need to read in a copy of the
+            // dictionary into memory before overwriting it and store in dict
+            // temporarily.
+            aRequest->SetDictionary(aDict);
+
+            // We want to make sure that the cache entry doesn't disappear out
+            // from under us if we set the header, so do the callback to
+            // Prefetch() the entry before adding the headers (so we don't
+            // have to remove the headers if Prefetch() fails).  It might fail
+            // if something is asynchronously Dooming the entry but the
+            // DictionaryCache hasn't been updated to remove the entry yet (or
+            // any other thing that were to desynchronize the DictionaryCache
+            // with the actual cache.
+            if ((aCallback)(aNeedsResume, aDict)) {
+              LOG_DICTIONARIES(
+                  ("Setting Available-Dictionary: %s", encodedHash.get()));
+              nsresult rv = aRequest->SetHeader(
+                  nsHttp::Available_Dictionary, encodedHash, false,
+                  nsHttpHeaderArray::eVarietyRequestOverride);
+              if (NS_FAILED(rv)) {
+                return rv;
+              }
+              if (!aDict->GetId().IsEmpty()) {
+                nsPrintfCString id("\"%s\"", aDict->GetId().get());
+                LOG_DICTIONARIES(("Setting Dictionary-Id: %s", id.get()));
+                rv = aRequest->SetHeader(
+                    nsHttp::Dictionary_Id, id, false,
+                    nsHttpHeaderArray::eVarietyRequestOverride);
+                if (NS_FAILED(rv)) {
+                  return rv;
+                }
+              }
+              return aRequest->SetHeader(
+                  nsHttp::Accept_Encoding, self->mDictionaryAcceptEncodings,
+                  false, nsHttpHeaderArray::eVarietyRequestOverride);
+            }
+            return NS_OK;
+          });
+    } else {
+      aAsync = false;
+    }
+  } else {
+    aAsync = false;
+  }
+  // guard may call aCallback here
+  return rv;
+}
+
 nsresult nsHttpHandler::AddStandardRequestHeaders(
-    nsHttpRequestHead* request, bool isSecure,
+    nsHttpRequestHead* request, nsIURI* aURI, bool aIsHTTPS,
     ExtContentPolicyType aContentPolicyType, bool aShouldResistFingerprinting) {
   nsresult rv;
 
@@ -697,21 +784,19 @@ nsresult nsHttpHandler::AddStandardRequestHeaders(
     if (NS_FAILED(rv)) return rv;
   }
 
-  // Add the "Accept-Encoding" header
-  if (isSecure) {
-    rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
-                            false, nsHttpHeaderArray::eVarietyRequestDefault);
-  } else {
-    rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpAcceptEncodings,
-                            false, nsHttpHeaderArray::eVarietyRequestDefault);
-  }
-  if (NS_FAILED(rv)) return rv;
-
   // add the "Send Hint" header
   if (mSafeHintEnabled || sParentalControlsEnabled) {
     rv = request->SetHeader(nsHttp::Prefer, "safe"_ns, false,
                             nsHttpHeaderArray::eVarietyRequestDefault);
     if (NS_FAILED(rv)) return rv;
+  }
+
+  if (aIsHTTPS) {
+    rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
+                            false, nsHttpHeaderArray::eVarietyRequestDefault);
+  } else {
+    rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpAcceptEncodings,
+                            false, nsHttpHeaderArray::eVarietyRequestDefault);
   }
   return NS_OK;
 }
@@ -741,8 +826,10 @@ bool nsHttpHandler::IsAcceptableEncoding(const char* enc, bool isSecure) {
   // continuing bad behavior.. so limit it to known x-* patterns
   bool rv;
   if (isSecure) {
-    rv = nsHttp::FindToken(mHttpsAcceptEncodings.get(), enc, HTTP_LWS ",") !=
-         nullptr;
+    // Should be a superset of mAcceptEncodings (unless someone messes with
+    // prefs)
+    rv = nsHttp::FindToken(mDictionaryAcceptEncodings.get(), enc,
+                           HTTP_LWS ",") != nullptr;
   } else {
     rv = nsHttp::FindToken(mHttpAcceptEncodings.get(), enc, HTTP_LWS ",") !=
          nullptr;
@@ -1416,17 +1503,30 @@ void nsHttpHandler::PrefsChanged(const char* pref) {
     nsAutoCString acceptEncodings;
     rv = Preferences::GetCString(HTTP_PREF("accept-encoding"), acceptEncodings);
     if (NS_SUCCEEDED(rv)) {
-      rv = SetAcceptEncodings(acceptEncodings.get(), false);
+      rv = SetAcceptEncodings(acceptEncodings.get(), false, false);
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
   }
 
-  if (PREF_CHANGED(HTTP_PREF("accept-encoding.secure"))) {
+  if (PREF_CHANGED(HTTP_PREF("accept-encoding.secure")) ||
+      PREF_CHANGED(HTTP_PREF("accept-encoding.dictionary"))) {
     nsAutoCString acceptEncodings;
     rv = Preferences::GetCString(HTTP_PREF("accept-encoding.secure"),
                                  acceptEncodings);
     if (NS_SUCCEEDED(rv)) {
-      rv = SetAcceptEncodings(acceptEncodings.get(), true);
+      rv = SetAcceptEncodings(acceptEncodings.get(), true, false);
+
+      // Since dictionary encodings are dependent on both accept-encoding.secure
+      // and accept-encoding.dictionary, update both if either changes (which is
+      // quite rare, so there's no real perf hit)
+      nsAutoCString acceptDictionaryEncodings;
+      rv = Preferences::GetCString(HTTP_PREF("accept-encoding.dictionary"),
+                                   acceptDictionaryEncodings);
+      if (NS_SUCCEEDED(rv) && !acceptDictionaryEncodings.IsEmpty()) {
+        acceptEncodings.Append(", "_ns);
+        acceptEncodings.Append(acceptDictionaryEncodings);
+        rv = SetAcceptEncodings(acceptEncodings.get(), true, true);
+      }
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
   }
@@ -2002,8 +2102,10 @@ nsresult nsHttpHandler::SetAcceptLanguages() {
 }
 
 nsresult nsHttpHandler::SetAcceptEncodings(const char* aAcceptEncodings,
-                                           bool isSecure) {
-  if (isSecure) {
+                                           bool isSecure, bool isDictionary) {
+  if (isDictionary) {
+    mDictionaryAcceptEncodings = aAcceptEncodings;
+  } else if (isSecure) {
     mHttpsAcceptEncodings = aAcceptEncodings;
   } else {
     // use legacy list if a secure override is not specified
@@ -2718,6 +2820,10 @@ bool nsHttpHandler::IsHttp2Excluded(const nsHttpConnectionInfo* ci) {
 }
 
 void nsHttpHandler::ExcludeHttp3(const nsHttpConnectionInfo* ci) {
+  // TODO: exclude HTTP/3 for proxy connection properly.
+  if (ci->IsHttp3ProxyConnection()) {
+    return;
+  }
   MOZ_ASSERT(ci->IsHttp3());
   ExcludeHttp2OrHttp3Internal(ci);
 }

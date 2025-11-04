@@ -76,11 +76,12 @@ add_test(function test_requestedLocales_matchOS() {
   const observer = {
     observe(aSubject, aTopic) {
       switch (aTopic) {
-        case REQ_LOC_CHANGE_EVENT:
+        case REQ_LOC_CHANGE_EVENT: {
           const reqLocs = localeService.requestedLocales;
           Assert.strictEqual(reqLocs[0], osPrefs.systemLocale);
           Services.obs.removeObserver(observer, REQ_LOC_CHANGE_EVENT);
           do_test_finished();
+        }
       }
     },
   };
@@ -104,11 +105,12 @@ add_test(function test_requestedLocales_onChange() {
   const observer = {
     observe(aSubject, aTopic) {
       switch (aTopic) {
-        case REQ_LOC_CHANGE_EVENT:
+        case REQ_LOC_CHANGE_EVENT: {
           const reqLocs = localeService.requestedLocales;
           Assert.strictEqual(reqLocs[0], "sr-RU");
           Services.obs.removeObserver(observer, REQ_LOC_CHANGE_EVENT);
           do_test_finished();
+        }
       }
     },
   };

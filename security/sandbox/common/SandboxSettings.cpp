@@ -199,6 +199,10 @@ int GetEffectiveContentSandboxLevel() {
 
 bool IsContentSandboxEnabled() { return GetEffectiveContentSandboxLevel() > 0; }
 
+bool IsGPUSandboxEnabled() {
+  return Preferences::GetInt("security.sandbox.gpu.level") > 0;
+}
+
 int GetEffectiveSocketProcessSandboxLevel() {
   if (PR_GetEnv("MOZ_DISABLE_SOCKET_PROCESS_SANDBOX")) {
     return 0;

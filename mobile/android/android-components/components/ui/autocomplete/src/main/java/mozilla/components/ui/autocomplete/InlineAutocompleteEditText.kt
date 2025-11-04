@@ -569,7 +569,6 @@ open class InlineAutocompleteEditText @JvmOverloads constructor(
      *
      * Also turns off text prediction for private mode tabs.
      */
-    @SuppressWarnings("ComplexMethod")
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
         val ic = super.onCreateInputConnection(outAttrs) ?: return null
 

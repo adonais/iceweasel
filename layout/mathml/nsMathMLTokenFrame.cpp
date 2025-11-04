@@ -150,9 +150,9 @@ void nsMathMLTokenFrame::Reflow(nsPresContext* aPresContext,
 // pass, it is not computed here because our children may be text frames
 // that do not implement the GetBoundingMetrics() interface.
 /* virtual */
-nsresult nsMathMLTokenFrame::Place(DrawTarget* aDrawTarget,
-                                   const PlaceFlags& aFlags,
-                                   ReflowOutput& aDesiredSize) {
+void nsMathMLTokenFrame::Place(DrawTarget* aDrawTarget,
+                               const PlaceFlags& aFlags,
+                               ReflowOutput& aDesiredSize) {
   mBoundingMetrics = nsBoundingMetrics();
   for (nsIFrame* childFrame : PrincipalChildList()) {
     ReflowOutput childSize(aDesiredSize.GetWritingMode());
@@ -210,6 +210,4 @@ nsresult nsMathMLTokenFrame::Place(DrawTarget* aDrawTarget,
   }
 
   SetReference(nsPoint(0, aDesiredSize.BlockStartAscent()));
-
-  return NS_OK;
 }

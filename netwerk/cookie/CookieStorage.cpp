@@ -658,8 +658,6 @@ void CookieStorage::AddCookie(CookieParser* aCookieParser,
     COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
                       "Invalid first-party partitioned cookie without "
                       "partitioned cookie attribution.");
-    mozilla::glean::networking::set_invalid_first_party_partitioned_cookie.Add(
-        1);
     MOZ_ASSERT(false);
     return;
   }

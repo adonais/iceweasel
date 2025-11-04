@@ -4,7 +4,7 @@
 
 import {
   hasInScopeLines,
-  getSourceTextContent,
+  getSourceTextContentForLocation,
   getVisibleSelectedFrame,
 } from "../../selectors/index";
 
@@ -26,7 +26,10 @@ export function setInScopeLines(editor) {
     }
 
     const { location } = visibleFrame;
-    const sourceTextContent = getSourceTextContent(getState(), location);
+    const sourceTextContent = getSourceTextContentForLocation(
+      getState(),
+      location
+    );
 
     // Ignore if in scope lines have already be computed, or if the selected location
     // doesn't have its content already fully fetched.

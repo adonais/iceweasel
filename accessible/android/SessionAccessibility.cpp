@@ -642,7 +642,6 @@ void SessionAccessibility::PopulateNodeInfo(
   aAccessible->Description(accDesc);
   uint64_t state = aAccessible->State();
   LayoutDeviceIntRect bounds = aAccessible->Bounds();
-  uint8_t actionCount = aAccessible->ActionCount();
   int32_t virtualViewID = AccessibleWrap::GetVirtualViewID(aAccessible);
   Accessible* parent = virtualViewID != kNoID ? aAccessible->Parent() : nullptr;
   int32_t parentID = parent ? AccessibleWrap::GetVirtualViewID(parent) : 0;
@@ -653,7 +652,8 @@ void SessionAccessibility::PopulateNodeInfo(
     role = roles::TEXT;
   }
 
-  uint32_t flags = AccessibleWrap::GetFlags(role, state, actionCount);
+  uint32_t flags = AccessibleWrap::GetFlags(aAccessible);
+
   int32_t className = AccessibleWrap::AndroidClass(aAccessible);
 
   nsAutoString hint;

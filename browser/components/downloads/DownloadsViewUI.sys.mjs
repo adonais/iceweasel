@@ -18,7 +18,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DownloadsCommon:
     "moz-src:///browser/components/downloads/DownloadsCommon.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -1102,12 +1102,12 @@ DownloadsViewUI.DownloadElementShell.prototype = {
         return this.download.target.exists;
 
       case "downloadsCmd_show":
-      case "downloadsCmd_deleteFile":
+      case "downloadsCmd_deleteFile": {
         let { target } = this.download;
         return (
           !this.download.deleted && (target.exists || target.partFileExists)
         );
-
+      }
       case "downloadsCmd_delete":
       case "cmd_delete":
         // We don't want in-progress downloads to be removed accidentally.

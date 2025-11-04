@@ -17,6 +17,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/GeckoTrace.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MacroArgs.h"
 #include "mozilla/Maybe.h"
@@ -1592,6 +1593,8 @@ template <typename Cancel, typename Body>
 Result<mozilla::Ok, nsresult> CollectEachFile(nsIFile& aDirectory,
                                               const Cancel& aCancel,
                                               const Body& aBody) {
+  GECKO_TRACE_SCOPE("dom::quota", "CollectEachFile");
+
   QM_TRY_INSPECT(const auto& entries, MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
                                           nsCOMPtr<nsIDirectoryEnumerator>,
                                           aDirectory, GetDirectoryEntries));
@@ -1744,6 +1747,7 @@ auto ExecuteInitialization(
                 : Some(ScopedLogExtraInfo{
                       ScopedLogExtraInfo::kTagContextTainted, aContext});
 #endif
+        GECKO_TRACE_SCOPE("dom::quota", aContext);
 
         return std::forward<Func>(aFunc)(firstInitializationAttempt);
       });

@@ -126,7 +126,6 @@ EXPORTS.mozilla.gfx += [
 # Are we targeting x86 or x64?  If so, build SSE2 files.
 if CONFIG["INTEL_ARCHITECTURE"]:
     SOURCES += [
-        "BlurSSE2.cpp",
         "ConvolutionFilterAVX2.cpp",
         "ConvolutionFilterSSE2.cpp",
         "FilterProcessingSSE2.cpp",
@@ -138,7 +137,6 @@ if CONFIG["INTEL_ARCHITECTURE"]:
     DEFINES["USE_SSE2"] = True
     # The file uses SSE2 intrinsics, so it needs special compile flags on some
     # compilers.
-    SOURCES["BlurSSE2.cpp"].flags += CONFIG["SSE2_FLAGS"]
     SOURCES["ConvolutionFilterAVX2.cpp"].flags += ["-mavx2"]
     SOURCES["ConvolutionFilterSSE2.cpp"].flags += CONFIG["SSE2_FLAGS"]
     SOURCES["FilterProcessingSSE2.cpp"].flags += CONFIG["SSE2_FLAGS"]
@@ -146,10 +144,6 @@ if CONFIG["INTEL_ARCHITECTURE"]:
     SOURCES["SwizzleAVX2.cpp"].flags += ["-mavx2"]
     SOURCES["SwizzleSSE2.cpp"].flags += CONFIG["SSE2_FLAGS"]
     SOURCES["SwizzleSSSE3.cpp"].flags += CONFIG["SSSE3_FLAGS"]
-elif CONFIG["TARGET_CPU"].startswith("mips"):
-    SOURCES += [
-        "BlurLS3.cpp",
-    ]
 
 UNIFIED_SOURCES += [
     "BezierUtils.cpp",
@@ -195,13 +189,11 @@ SOURCES += [
 
 if CONFIG["TARGET_CPU"] == "aarch64" or CONFIG["BUILD_ARM_NEON"]:
     SOURCES += [
-        "BlurNEON.cpp",
         "ConvolutionFilterNEON.cpp",
         "LuminanceNEON.cpp",
         "SwizzleNEON.cpp",
     ]
     DEFINES["USE_NEON"] = True
-    SOURCES["BlurNEON.cpp"].flags += CONFIG["NEON_FLAGS"]
     SOURCES["ConvolutionFilterNEON.cpp"].flags += CONFIG["NEON_FLAGS"]
     SOURCES["LuminanceNEON.cpp"].flags += CONFIG["NEON_FLAGS"]
     SOURCES["SwizzleNEON.cpp"].flags += CONFIG["NEON_FLAGS"]

@@ -185,12 +185,12 @@ class PanZoomControllerTest : BaseSessionTest() {
         val originalVH = mainSession.evaluateJS("window.visualViewport.height") as Double
         assertThat("Visual viewport height is not zero", originalVH, greaterThan(0.0))
 
-        val innerHeight = mainSession.evaluateJS("window.innerHeight") as Double
+        val clientHeight = mainSession.evaluateJS("document.documentElement.clientHeight") as Double
         // Need to round due to dom.InnerSize.rounded=true
         assertThat(
-            "Visual viewport height equals to window.innerHeight",
+            "Visual viewport height equals to documentElement.clientHeight",
             originalVH.roundToInt(),
-            equalTo(innerHeight.roundToInt()),
+            equalTo(clientHeight.roundToInt()),
         )
 
         val originalScale = mainSession.evaluateJS("visualViewport.scale") as Double

@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/fallible.h"
 
 #include "nsCOMPtr.h"
 #include "mozilla/RefPtr.h"

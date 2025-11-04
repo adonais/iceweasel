@@ -82,6 +82,7 @@ UNIFIED_SOURCES += [
     "CSSTranslate.cpp",
     "CSSUnitValue.cpp",
     "CSSUnparsedValue.cpp",
+    "CSSUnsupportedValue.cpp",
     "CSSVariableReferenceValue.cpp",
     "StylePropertyMap.cpp",
     "StylePropertyMapReadOnly.cpp",

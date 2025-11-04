@@ -17,6 +17,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * Class representing Session store related files within a user profile.
  */
 export class SessionStoreBackupResource extends BackupResource {
+  // Allow creator to provide a "SessionStore" object, so we can use mocks in
+  // testing.  Passing `null` means use the real service.
+  constructor(sessionStore = null) {
+    super();
+    this._sessionStore = sessionStore;
+  }
+
   static get key() {
     return "sessionstore";
   }
@@ -28,18 +35,40 @@ export class SessionStoreBackupResource extends BackupResource {
     return false;
   }
 
+  get #sessionStore() {
+    return this._sessionStore || lazy.SessionStore;
+  }
+
   async backup(
     stagingPath,
     profilePath = PathUtils.profileDir,
     _isEncrypting = false
   ) {
-    let sessionStoreState = lazy.SessionStore.getCurrentState(true);
+    let sessionStoreState = this.#sessionStore.getCurrentState(true);
     let sessionStorePath = PathUtils.join(stagingPath, "sessionstore.jsonlz4");
 
     // Preserving session cookies in a backup used on a different machine
     // may break behavior for websites. So we leave them out of the backup.
-
     sessionStoreState.cookies = [];
+
+    // Remove session storage.
+    if (sessionStoreState.windows) {
+      sessionStoreState.windows.forEach(win => {
+        if (win.tabs) {
+          win.tabs.forEach(tab => delete tab.storage);
+        }
+        if (win._closedTabs) {
+          win._closedTabs.forEach(closedTab => delete closedTab.state.storage);
+        }
+      });
+    }
+    if (sessionStoreState.savedGroups) {
+      sessionStoreState.savedGroups.forEach(group => {
+        if (group.tabs) {
+          group.tabs.forEach(tab => delete tab.state.storage);
+        }
+      });
+    }
 
     await IOUtils.writeJSON(sessionStorePath, sessionStoreState, {
       compress: true,
@@ -63,7 +92,7 @@ export class SessionStoreBackupResource extends BackupResource {
   async measure(profilePath = PathUtils.profileDir) {
     // Get the current state of the session store JSON and
     // measure it's uncompressed size.
-    let sessionStoreJson = lazy.SessionStore.getCurrentState(true);
+    let sessionStoreJson = this.#sessionStore.getCurrentState(true);
     let sessionStoreSize = new TextEncoder().encode(
       JSON.stringify(sessionStoreJson)
     ).byteLength;

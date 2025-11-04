@@ -50,6 +50,7 @@ legacy.telemetry:
       - 'third-party-modules'
       - 'temp-fog-initial-state'
       - 'captcha-detection'
+      - 'health'
 
   profile_group_id:
     type: uuid

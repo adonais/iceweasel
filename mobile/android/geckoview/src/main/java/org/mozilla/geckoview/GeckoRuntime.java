@@ -882,6 +882,8 @@ public final class GeckoRuntime implements Parcelable {
         () -> {
           if (mNotificationDelegate != null) {
             mNotificationDelegate.onShowNotification(notification);
+          } else {
+            notification.dismiss();
           }
         });
   }
@@ -893,6 +895,8 @@ public final class GeckoRuntime implements Parcelable {
         () -> {
           if (mNotificationDelegate != null) {
             mNotificationDelegate.onCloseNotification(notification);
+          } else {
+            notification.dismiss();
           }
         });
   }

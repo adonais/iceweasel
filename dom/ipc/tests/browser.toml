@@ -62,6 +62,10 @@ skip-if = [
 ]
 
 ["browser_hide_tooltip.js"]
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt", # Bug 1971068
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1971068
+]
 
 ["browser_isactiveintab.js"]
 skip-if = [

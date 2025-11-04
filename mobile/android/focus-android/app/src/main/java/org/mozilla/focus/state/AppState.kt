@@ -19,11 +19,13 @@ import java.util.UUID
  * whether they have been updated or not
  * @property secretSettingsEnabled A flag which reflects the state of debug secret settings
  * @property showEraseTabsCfr A flag which reflects the state erase tabs CFR
- * @property showStartBrowsingTabsCfr A flag which reflects the state of start browsing CFR
  * @property showSearchWidgetSnackbar A flag which reflects the state of search widget snackbar
+ * @property showTrackingProtectionCfrForTab A map where keys are tab IDs and values indicate whether
+ * to show the Tracking Protection CFR for that tab.
+ * @property showStartBrowsingTabsCfr A flag which reflects the state of start browsing CFR
  * @property showCookieBannerCfr A flag witch reflects the state of cookie banner CFR
  * @property isPinningSupported A nullable flag indicating whether pinning shortcuts to the home screen is supported.
- **/
+ */
 data class AppState(
     val screen: Screen,
     val topSites: List<TopSite> = emptyList(),
@@ -40,9 +42,7 @@ data class AppState(
 /**
  * A group of screens that the app can display.
  *
- * @property id A unique ID for identifying a screen. Only if this ID changes the screen is
- * considered a new screen that requires a navigation (as opposed to the state of the screen
- * changing).
+ * Each screen has a unique [id].
  */
 sealed class Screen {
     open val id = UUID.randomUUID().toString()
@@ -92,7 +92,7 @@ sealed class Screen {
     /**
      * The application is locked (and requires unlocking).
      *
-     * @param bundle it is used for app navigation. If the user can unlock with success he should
+     * @property bundle it is used for app navigation. If the user can unlock with success he should
      * be redirected to a certain screen.It comes from the external intent.
      */
     data class Locked(val bundle: Bundle? = null) : Screen()

@@ -6,10 +6,10 @@ task-defaults:
     worker-type: win11-64-24h2-hw
     fetches:
         build:
-            - artifact: target.condprof.tests.tar.gz
-            - artifact: target.common.tests.tar.gz
-            - artifact: target.mochitest.tests.tar.gz
-            - artifact: target.perftests.tests.tar.gz
+            - artifact: target.condprof.tests.tar.zst
+            - artifact: target.common.tests.tar.zst
+            - artifact: target.mochitest.tests.tar.zst
+            - artifact: target.perftests.tests.tar.zst
             - artifact: target.zip
         toolchain:
             - win64-node
@@ -333,7 +333,7 @@ ml-llama-summarizer-perf:
     attributes:
         batch: false
         cron: false
-    run-on-projects: []
+    run-on-projects: [autoland, mozilla-central]
     run:
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
@@ -468,16 +468,16 @@ ml-perf-autofill:
             --hooks toolkit/components/ml/tests/tools/hooks_local_hub.py
             toolkit/components/ml/tests/browser/browser_ml_autofill_perf.js
 
-tr8ns-perf-es-en:
+tr8ns-perf-tiny:
     fetches:
         fetch:
-            - translations.inference
-            - translations.esen.lex
-            - translations.esen.model
-            - translations.esen.vocab
-    description: Run Full-Page Translations with the Spanish-to-English model
+            - tr8ns.inference
+            - tr8ns.T.enru.lex
+            - tr8ns.T.enru.model
+            - tr8ns.T.enru.vocab
+    description: Run Full-Page Translations with a tiny-architecture model
     treeherder:
-        symbol: perftest(tr8ns-perf-es-en)
+        symbol: perftest(tr8ns-perf-T)
         tier: 2
     attributes:
         batch: false
@@ -491,7 +491,57 @@ tr8ns-perf-es-en:
             --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
             --flavor mochitest
             --output $MOZ_FETCHES_DIR/../artifacts
-            browser/components/translations/tests/browser/browser_translations_perf_es_en.js
+            browser/components/translations/tests/browser/browser_translations_perf_tiny.js
+
+tr8ns-perf-basememory:
+    fetches:
+        fetch:
+            - tr8ns.inference
+            - tr8ns.BM.enru.lex
+            - tr8ns.BM.enru.model
+            - tr8ns.BM.enru.vocab
+    description: Run Full-Page Translations with a base-memory-architecture model
+    treeherder:
+        symbol: perftest(tr8ns-perf-BM)
+        tier: 2
+    attributes:
+        batch: false
+        cron: false
+    run-on-projects: [autoland, mozilla-central]
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            browser/components/translations/tests/browser/browser_translations_perf_basememory.js
+
+tr8ns-perf-base:
+    fetches:
+        fetch:
+            - tr8ns.inference
+            - tr8ns.B.enru.lex
+            - tr8ns.B.enru.model
+            - tr8ns.B.enru.vocab
+    description: Run Full-Page Translations with a base-architecture model
+    treeherder:
+        symbol: perftest(tr8ns-perf-B)
+        tier: 2
+    attributes:
+        batch: false
+        cron: false
+    run-on-projects: [autoland, mozilla-central]
+    run:
+        command: >-
+            mkdir -p $MOZ_FETCHES_DIR/../artifacts &&
+            cd $MOZ_FETCHES_DIR &&
+            python3 python/mozperftest/mozperftest/runner.py
+            --mochitest-binary ${MOZ_FETCHES_DIR}/firefox/firefox.exe
+            --flavor mochitest
+            --output $MOZ_FETCHES_DIR/../artifacts
+            browser/components/translations/tests/browser/browser_translations_perf_base.js
 
 ml-perf-smart-tab:
     fetches:

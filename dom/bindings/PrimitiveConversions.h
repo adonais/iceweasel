@@ -19,7 +19,6 @@
 #include "js/Conversions.h"
 #include "js/RootingAPI.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/BindingCallContext.h"
 
 namespace mozilla::dom {

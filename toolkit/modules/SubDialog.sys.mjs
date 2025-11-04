@@ -489,8 +489,10 @@ SubDialog.prototype = {
   },
 
   async resizeDialog() {
-    this.resizeHorizontally();
-    this.resizeVertically();
+    if (this._box.getAttribute("fixedsize") != "false") {
+      this.resizeHorizontally();
+      this.resizeVertically();
+    }
 
     this._overlay.dispatchEvent(
       new CustomEvent("dialogopen", {

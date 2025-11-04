@@ -40,7 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import mozilla.components.compose.base.button.SecondaryButton
+import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
@@ -177,15 +177,15 @@ fun RecentSyncedTab(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            SecondaryButton(
+            OutlinedButton(
                 text = if (tab != null) {
                     stringResource(R.string.recent_tabs_see_all_synced_tabs_button_text)
                 } else {
                     ""
                 },
                 modifier = Modifier.fillMaxWidth(),
-                textColor = buttonTextColor,
-                backgroundColor = buttonBackgroundColor,
+                contentColor = buttonTextColor,
+                containerColor = buttonBackgroundColor,
                 onClick = onSeeAllSyncedTabsButtonClick,
             )
         }

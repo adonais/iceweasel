@@ -603,73 +603,9 @@ function matchRequest(channel, filters) {
     return windows.includes(win);
   }
 
-  // This is fallback code for the legacy WebConsole.startListeners codepath,
-  // which may still pass individual browserId/window/addonId attributes.
-  // This should be removable once we drop the WebConsole codepath for network events
-  // (bug 1721592 and followups)
-  return legacyMatchRequest(channel, filters);
-}
-
-function legacyMatchRequest(channel, filters) {
-  // Log everything if no filter is specified
-  if (!filters.browserId && !filters.window && !filters.addonId) {
-    return true;
-  }
-
-  // Ignore requests from chrome or add-on code when we are monitoring
-  // content.
-  if (
-    channel.loadInfo?.loadingDocument === null &&
-    (isChannelFromSystemPrincipal(channel) ||
-      channel.loadInfo.isInDevToolsContext)
-  ) {
-    return false;
-  }
-
-  if (filters.window) {
-    let win = lazy.NetworkHelper.getWindowForRequest(channel);
-    if (filters.matchExactWindow) {
-      return win == filters.window;
-    }
-
-    // Since frames support, this.window may not be the top level content
-    // frame, so that we can't only compare with win.top.
-    while (win) {
-      if (win == filters.window) {
-        return true;
-      }
-      if (win.parent == win) {
-        break;
-      }
-      win = win.parent;
-    }
-    return false;
-  }
-
-  if (filters.browserId) {
-    const topFrame = lazy.NetworkHelper.getTopFrameForRequest(channel);
-    // `topFrame` is typically null for some chrome requests like favicons
-    // And its `browsingContext` attribute might be null if the request happened
-    // while the tab is being closed.
-    if (topFrame?.browsingContext?.browserId == filters.browserId) {
-      return true;
-    }
-
-    // If we couldn't get the top frame BrowsingContext from the loadContext,
-    // look for it on channel.loadInfo instead.
-    if (channel.loadInfo?.browsingContext?.browserId == filters.browserId) {
-      return true;
-    }
-  }
-
-  if (
-    filters.addonId &&
-    channel.loadInfo?.loadingPrincipal?.addonId === filters.addonId
-  ) {
-    return true;
-  }
-
-  return false;
+  throw new Error(
+    "matchRequest expects either a 'targetActor' or a 'sessionContext' attribute"
+  );
 }
 
 function getBlockedReason(channel, fromCache = false) {
@@ -824,7 +760,7 @@ function setEventAsAvailable(resource, networkEvents) {
  * Helper to decode the content of a response object built by a
  * NetworkResponseListener.
  *
- * @param {Array<TypedArray>}
+ * @param {Array<TypedArray>} chunks
  *     Array of response chunks read via NetUtil.readInputStream.
  * @param {object} options
  * @param {string} options.charset
@@ -877,6 +813,7 @@ async function decodeResponseChunks(chunks, options) {
     );
   }
 
+  decodedContent = lazy.NetworkHelper.convertToUnicode(decodedContent, charset);
   if (encoding === "base64") {
     try {
       decodedContent = btoa(decodedContent);
@@ -890,20 +827,7 @@ async function decodeResponseChunks(chunks, options) {
   return decodedContent;
 }
 
-function decodeUncompressedStream(stream, length, charset) {
-  if (charset) {
-    const cis = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(
-      Ci.nsIConverterInputStream
-    );
-
-    cis.init(stream, charset, length, 0);
-    const str = {};
-    cis.readString(-1, str);
-    cis.close();
-
-    return str.value;
-  }
-
+function decodeUncompressedStream(stream, length) {
   const sis = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(
     Ci.nsIScriptableInputStream
   );
@@ -911,7 +835,7 @@ function decodeUncompressedStream(stream, length, charset) {
   return sis.readBytes(length);
 }
 
-async function decodeCompressedStream(stream, length, encodings, charset) {
+async function decodeCompressedStream(stream, length, encodings) {
   const listener = Cc["@mozilla.org/network/stream-loader;1"].createInstance(
     Ci.nsIStreamLoader
   );
@@ -950,8 +874,7 @@ async function decodeCompressedStream(stream, length, encodings, charset) {
   converter.onDataAvailable(null, stream, 0, length);
   converter.onStopRequest(null, null, null);
 
-  const result = await onDecodingComplete;
-  return lazy.NetworkHelper.convertToUnicode(result, charset);
+  return onDecodingComplete;
 }
 
 /**

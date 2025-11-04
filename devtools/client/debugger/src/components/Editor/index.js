@@ -11,7 +11,6 @@ import { connect } from "devtools/client/shared/vendor/react-redux";
 
 import { getLineText, isLineBlackboxed } from "./../../utils/source";
 import { createLocation } from "./../../utils/location";
-import { markerTypes } from "../../constants";
 import { asSettled, isFulfilled, isRejected } from "../../utils/async-value";
 
 import {
@@ -33,6 +32,7 @@ import {
   getSelectedTraceIndex,
   getShouldScrollToSelectedLocation,
   getShouldHighlightSelectedLocation,
+  getSelectedTraceLocation,
 } from "../../selectors/index";
 
 // Redux actions
@@ -46,6 +46,7 @@ import ColumnBreakpoints from "./ColumnBreakpoints";
 import DebugLine from "./DebugLine";
 import HighlightLine from "./HighlightLine";
 import ConditionalPanel from "./ConditionalPanel";
+import TracePanel from "./TracePanel";
 import InlinePreviews from "./InlinePreviews";
 import Exceptions from "./Exceptions";
 
@@ -274,7 +275,7 @@ class Editor extends PureComponent {
     if (shouldUpdateBreakableLines) {
       editor.setLineGutterMarkers([
         {
-          id: markerTypes.EMPTY_LINE_MARKER,
+          id: editor.markerTypes.EMPTY_LINE_MARKER,
           lineClassName: "empty-line",
           condition: line => {
             const lineNumber = fromEditorLine(selectedSource, line);
@@ -286,7 +287,7 @@ class Editor extends PureComponent {
 
     editor.setLineGutterMarkers([
       {
-        id: markerTypes.BLACKBOX_LINE_GUTTER_MARKER,
+        id: editor.markerTypes.BLACKBOX_LINE_GUTTER_MARKER,
         lineClassName: "blackboxed-line",
         condition: line => {
           const lineNumber = fromEditorLine(selectedSource, line);
@@ -306,7 +307,7 @@ class Editor extends PureComponent {
       (!prevState.editor && !!editor)
     ) {
       if (blackboxedRanges[selectedSource.url] == undefined) {
-        editor.removeLineContentMarker(markerTypes.BLACKBOX_LINE_MARKER);
+        editor.removeLineContentMarker(editor.markerTypes.BLACKBOX_LINE_MARKER);
         return;
       }
 
@@ -318,7 +319,7 @@ class Editor extends PureComponent {
       }
 
       editor.setLineContentMarker({
-        id: markerTypes.BLACKBOX_LINE_MARKER,
+        id: editor.markerTypes.BLACKBOX_LINE_MARKER,
         lineClassName: "blackboxed-line",
         // If the the whole source is blackboxed, lets just mark all positions.
         shouldMarkAllLines: !blackboxedRanges[selectedSource.url].length,
@@ -647,8 +648,8 @@ class Editor extends PureComponent {
     if (this.props.shouldHighlightSelectedLocation) {
       editor.focus();
     }
-
-    await editor.setCursorAt(line - 1, column);
+    // This should also scroll the editor to the specified position
+    await editor.setCursorAt(line, column);
   }
 
   async setText(props, editor) {
@@ -728,6 +729,7 @@ class Editor extends PureComponent {
       highlightedLineRange,
       isOriginalSourceAndMapScopesEnabled,
       selectedSourceTextContent,
+      selectedTraceLocation,
     } = this.props;
     const { editor } = this.state;
 
@@ -744,6 +746,11 @@ class Editor extends PureComponent {
       React.Fragment,
       null,
       React.createElement(Breakpoints, { editor }),
+      selectedTraceLocation
+        ? React.createElement(TracePanel, {
+            editor,
+          })
+        : null,
       (isPaused || isTraceSelected) &&
         selectedSource.isOriginal &&
         !selectedSource.isPrettyPrinted &&
@@ -847,6 +854,7 @@ const mapStateToProps = state => {
       selectedSource?.isOriginal && isMapScopesEnabled(state),
     shouldScrollToSelectedLocation: getShouldScrollToSelectedLocation(state),
     shouldHighlightSelectedLocation: getShouldHighlightSelectedLocation(state),
+    selectedTraceLocation: getSelectedTraceLocation(state),
   };
 };
 

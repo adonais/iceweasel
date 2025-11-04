@@ -24,7 +24,6 @@ import mozilla.components.concept.engine.translate.TranslationOperation
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.telemetry.glean.GleanTimerId
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.GleanMetrics.Addons
@@ -39,8 +38,6 @@ import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.GleanMetrics.EngineTab as EngineMetrics
 
-private const val PROGRESS_COMPLETE = 100
-
 /**
  * [Middleware] to record telemetry in response to [BrowserAction]s.
  *
@@ -48,18 +45,12 @@ private const val PROGRESS_COMPLETE = 100
  * @param settings reference to the application [Settings].
  * @param metrics [MetricController] to pass events that have been mapped from actions.
  * @param crashReporting An instance of [CrashReporting] to report caught exceptions.
- * @param nimbusSearchEngine The Nimbus search engine.
- * @param searchState Map that stores the [TabSessionState.id] & [GleanTimerId].
- * @param timerId The [GleanTimerId] for the [Metrics.searchPageLoadTime].
  */
 class TelemetryMiddleware(
     private val context: Context,
     private val settings: Settings,
     private val metrics: MetricController,
     private val crashReporting: CrashReporting? = null,
-    private val nimbusSearchEngine: String = FxNimbus.features.searchExtraParams.value().searchEngine,
-    private val searchState: MutableMap<String, GleanTimerId> = mutableMapOf(),
-    private val timerId: GleanTimerId = Metrics.searchPageLoadTime.start(),
 ) : Middleware<BrowserState, BrowserAction> {
 
     private val logger = Logger("TelemetryMiddleware")
@@ -73,13 +64,6 @@ class TelemetryMiddleware(
         // Pre process actions
 
         when (action) {
-            is ContentAction.UpdateIsSearchAction -> {
-                if (action.isSearch && nimbusSearchEngine.isNotEmpty() &&
-                    (action.searchEngineName == nimbusSearchEngine)
-                ) {
-                    searchState[action.sessionId] = timerId
-                }
-            }
             is ContentAction.UpdateLoadingStateAction -> {
                 context.state.findTab(action.sessionId)?.let { tab ->
                     val hasFinishedLoading = tab.content.loading && !action.loading
@@ -87,19 +71,6 @@ class TelemetryMiddleware(
                     // Record UriOpened event when a non-private page finishes loading
                     if (hasFinishedLoading) {
                         Events.normalAndPrivateUriCount.add()
-
-                        val progressCompleted = tab.content.progress == PROGRESS_COMPLETE
-                        if (progressCompleted) {
-                            searchState[action.sessionId]?.let {
-                                Metrics.searchPageLoadTime.stopAndAccumulate(it)
-                            }
-                        } else {
-                            searchState[action.sessionId]?.let {
-                                Metrics.searchPageLoadTime.cancel(it)
-                            }
-                        }
-
-                        searchState.remove(action.sessionId)
                     }
                 }
             }

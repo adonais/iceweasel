@@ -162,7 +162,7 @@ inline void NativeObject::initDenseElements(const Value* src, uint32_t count) {
   elementsRangePostWriteBarrier(0, count);
 }
 
-inline void NativeObject::initDenseElements(JSLinearString** src,
+inline void NativeObject::initDenseElements(IteratorProperty* src,
                                             uint32_t count) {
   MOZ_ASSERT(getDenseInitializedLength() == 0);
   MOZ_ASSERT(count <= getDenseCapacity());
@@ -172,7 +172,7 @@ inline void NativeObject::initDenseElements(JSLinearString** src,
   setDenseInitializedLength(count);
   Value* elementsBase = reinterpret_cast<Value*>(elements_);
   for (size_t i = 0; i < count; i++) {
-    elementsBase[i].setString(src[i]);
+    elementsBase[i].setString(src[i].asString());
   }
 
   elementsRangePostWriteBarrier(0, count);

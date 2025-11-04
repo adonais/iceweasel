@@ -661,7 +661,7 @@ def main():
 
     if is_darwin(target):
         os.environ["MACOSX_DEPLOYMENT_TARGET"] = (
-            "11.0" if target.startswith("aarch64") else "10.12"
+            "11.0" if target.startswith("aarch64") else "10.15"
         )
 
     if is_windows(target):

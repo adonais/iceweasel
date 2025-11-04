@@ -307,6 +307,14 @@ class HomeDeepLinkIntentProcessorTest {
         verify { out wasNot Called }
     }
 
+    @Test
+    fun `process settings_app_icon deep link`() {
+        assertTrue(processorHome.process(testIntent("settings_app_icon"), navController, out, settings))
+
+        verify { navController.navigate(NavGraphDirections.actionGlobalAppIconSelectionFragment()) }
+        verify { out wasNot Called }
+    }
+
     private fun testIntent(uri: String) = Intent("", "$DEEP_LINK_SCHEME://$uri".toUri())
 
     private fun showAddSearchWidgetPrompt(activity: Activity) {

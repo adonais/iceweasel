@@ -27,7 +27,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/FlushType.h"
-#include "mozilla/LinkedList.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -649,16 +648,16 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   virtual bool IsInSyncOperation() override;
 
  public:
-  double GetInnerWidthOuter(mozilla::ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT double GetInnerWidthOuter(mozilla::ErrorResult& aError);
 
  protected:
-  nsresult GetInnerWidth(double* aInnerWidth) override;
+  MOZ_CAN_RUN_SCRIPT nsresult GetInnerWidth(double* aInnerWidth) override;
 
  public:
-  double GetInnerHeightOuter(mozilla::ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT double GetInnerHeightOuter(mozilla::ErrorResult& aError);
 
  protected:
-  nsresult GetInnerHeight(double* aInnerHeight) override;
+  MOZ_CAN_RUN_SCRIPT nsresult GetInnerHeight(double* aInnerHeight) override;
   int32_t GetScreenXOuter(mozilla::dom::CallerType aCallerType,
                           mozilla::ErrorResult& aError);
   int32_t GetScreenYOuter(mozilla::dom::CallerType aCallerType,
@@ -796,7 +795,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   int32_t GetScrollBoundaryOuter(mozilla::Side aSide);
 
   // Outer windows only.
-  nsresult GetInnerSize(mozilla::CSSSize& aSize);
+  MOZ_CAN_RUN_SCRIPT nsresult GetInnerSize(mozilla::CSSSize& aSize);
   mozilla::CSSIntSize GetOuterSize(mozilla::dom::CallerType aCallerType,
                                    mozilla::ErrorResult& aError);
   nsRect GetInnerScreenRect();
@@ -844,7 +843,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
 
  protected:
   // Helper for getComputedStyle and getDefaultComputedStyle
-  already_AddRefed<nsICSSDeclaration> GetComputedStyleHelperOuter(
+  already_AddRefed<nsDOMCSSDeclaration> GetComputedStyleHelperOuter(
       mozilla::dom::Element& aElt, const nsAString& aPseudoElt,
       bool aDefaultStylesOnly, mozilla::ErrorResult& aRv);
 

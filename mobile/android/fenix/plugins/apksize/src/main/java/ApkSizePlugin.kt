@@ -45,8 +45,14 @@ open class ApkSizeTask : DefaultTask() {
         }
 
         val json = buildPerfherderJson(apkSizes) ?: return
-
-        println("PERFHERDER_DATA: $json")
+        val isAutomation = System.getenv("MOZ_AUTOMATION") == "1"
+        val uploadPath = System.getenv("MOZ_PERFHERDER_UPLOAD")
+        if (isAutomation && uploadPath != null) {
+            println("PERFHERDER_DATA: $json")
+            val outputFile = File(uploadPath)
+            outputFile.parentFile?.mkdirs()
+            outputFile.writeText(json.toString())
+        }
     }
 
     private fun determineApkSizes(): Map<String, Long> {

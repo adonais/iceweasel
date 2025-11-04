@@ -92,6 +92,7 @@ const PREF_SELECTED_TOPICS = "discoverystream.topicSelection.selectedTopics";
 const PREF_TOPIC_SELECTION_ENABLED = "discoverystream.topicSelection.enabled";
 const PREF_TOPIC_SELECTION_PREVIOUS_SELECTED =
   "discoverystream.topicSelection.hasBeenUpdatedPreviously";
+const PREF_SPOCS_CACHE_ONDEMAND = "discoverystream.spocs.onDemand";
 const PREF_SPOCS_CACHE_TIMEOUT = "discoverystream.spocs.cacheTimeout";
 const PREF_SPOCS_STARTUP_CACHE_ENABLED =
   "discoverystream.spocs.startupCache.enabled";
@@ -116,6 +117,9 @@ const PREF_USER_INFERRED_PERSONALIZATION =
   "discoverystream.sections.personalization.inferred.user.enabled";
 const PREF_SYSTEM_INFERRED_PERSONALIZATION =
   "discoverystream.sections.personalization.inferred.enabled";
+const PREF_INFERRED_INTERESTS_OVERRIDE =
+  "discoverystream.sections.personalization.inferred.interests.override";
+
 const PREF_MERINO_OHTTP = "discoverystream.merino-provider.ohttp.enabled";
 const PREF_BILLBOARD_ENABLED = "newtabAdSize.billboard";
 const PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
@@ -358,8 +362,6 @@ export class DiscoveryStreamFeed {
     const nimbusConfig = this.store.getState().Prefs.values?.pocketConfig || {};
     const { region } = this.store.getState().Prefs.values;
 
-    this.setupSpocsCacheUpdateTime();
-
     const hideDescriptionsRegions = nimbusConfig.hideDescriptionsRegions
       ?.split(",")
       .map(s => s.trim());
@@ -527,33 +529,46 @@ export class DiscoveryStreamFeed {
     }
     return null;
   }
-
-  get spocsCacheUpdateTime() {
-    if (this._spocsCacheUpdateTime) {
-      return this._spocsCacheUpdateTime;
+  get spocsOnDemand() {
+    if (this._spocsOnDemand === undefined) {
+      const { values } = this.store.getState().Prefs;
+      const spocsOnDemandConfig = values.trainhopConfig?.spocsOnDemand || {};
+      const spocsOnDemand =
+        spocsOnDemandConfig.enabled || values[PREF_SPOCS_CACHE_ONDEMAND];
+      this._spocsOnDemand = this.showSponsoredStories && spocsOnDemand;
     }
-    this.setupSpocsCacheUpdateTime();
-    return this._spocsCacheUpdateTime;
+
+    return this._spocsOnDemand;
   }
 
-  setupSpocsCacheUpdateTime() {
-    const spocsCacheTimeout =
-      this.store.getState().Prefs.values[PREF_SPOCS_CACHE_TIMEOUT];
-    const MAX_TIMEOUT = 30;
-    const MIN_TIMEOUT = 5;
-    // We do a bit of min max checking the configured value is between
-    // 5 and 30 minutes, to protect against unreasonable values.
-    if (
-      spocsCacheTimeout &&
-      spocsCacheTimeout <= MAX_TIMEOUT &&
-      spocsCacheTimeout >= MIN_TIMEOUT
-    ) {
-      // This value is in minutes, but we want ms.
-      this._spocsCacheUpdateTime = spocsCacheTimeout * 60 * 1000;
-    } else {
-      // The const is already in ms.
-      this._spocsCacheUpdateTime = SPOCS_FEEDS_UPDATE_TIME;
+  get spocsCacheUpdateTime() {
+    if (this._spocsCacheUpdateTime === undefined) {
+      const { values } = this.store.getState().Prefs;
+      const spocsOnDemandConfig = values.trainhopConfig?.spocsOnDemand || {};
+      const spocsCacheTimeout =
+        spocsOnDemandConfig.timeout || values[PREF_SPOCS_CACHE_TIMEOUT];
+      const MAX_TIMEOUT = 30;
+      const MIN_TIMEOUT = 5;
+
+      // We have some guard rails against misconfigured values.
+      // Ignore 0: a zero-minute timeout would cause constant fetches.
+      // Check min max times, or ensure we don't make requests on a timer.
+      const guardRailed =
+        spocsCacheTimeout &&
+        (this.spocsOnDemand ||
+          (spocsCacheTimeout <= MAX_TIMEOUT &&
+            spocsCacheTimeout >= MIN_TIMEOUT));
+
+      if (guardRailed) {
+        // This value is in minutes, but we want ms.
+        this._spocsCacheUpdateTime = spocsCacheTimeout * 60 * 1000;
+      } else {
+        // The const is already in ms.
+        this._spocsCacheUpdateTime = SPOCS_FEEDS_UPDATE_TIME;
+      }
     }
+
+    return this._spocsCacheUpdateTime;
   }
 
   /**
@@ -572,6 +587,7 @@ export class DiscoveryStreamFeed {
     const EXPIRATION_TIME = isStartup
       ? STARTUP_CACHE_EXPIRE_TIME
       : updateTimePerComponent[key];
+
     switch (key) {
       case "spocs":
         return !spocs || !(Date.now() - spocs.lastUpdated < EXPIRATION_TIME);
@@ -590,6 +606,7 @@ export class DiscoveryStreamFeed {
   async _checkExpirationPerComponent() {
     const cachedData = (await this.cache.get()) || {};
     const { feeds } = cachedData;
+
     return {
       spocs: this.showSpocs && this.isExpired({ cachedData, key: "spocs" }),
       feeds:
@@ -599,14 +616,6 @@ export class DiscoveryStreamFeed {
             this.isExpired({ cachedData, key: "feed", url })
           )),
     };
-  }
-
-  /**
-   * Returns true if any data for the cached endpoints has expired or is missing.
-   */
-  async checkIfAnyCacheExpired() {
-    const expirationPerComponent = await this._checkExpirationPerComponent();
-    return expirationPerComponent.spocs || expirationPerComponent.feeds;
   }
 
   updatePlacements(sendUpdate, layout, isStartup = false) {
@@ -1508,6 +1517,8 @@ export class DiscoveryStreamFeed {
     await this.cache.set("spocs", {
       lastUpdated: spocsState.lastUpdated,
       spocs: spocsState.spocs,
+      spocsOnDemand: this.spocsOnDemand,
+      spocsCacheUpdateTime: this.spocsCacheUpdateTime,
     });
 
     sendUpdate({
@@ -1515,6 +1526,8 @@ export class DiscoveryStreamFeed {
       data: {
         lastUpdated: spocsState.lastUpdated,
         spocs: spocsState.spocs,
+        spocsOnDemand: this.spocsOnDemand,
+        spocsCacheUpdateTime: this.spocsCacheUpdateTime,
       },
       meta: {
         isStartup,
@@ -2113,13 +2126,18 @@ export class DiscoveryStreamFeed {
 
     let inferredInterests = null;
     if (inferredPersonalization && merinoOhttpEnabled) {
-      const useLaplace =
-        !prefs.inferredPersonalizationConfig?.iv_unary_dp_in_request;
       inferredInterests =
-        (useLaplace
-          ? this.store.getState().InferredPersonalization.inferredInterests
-          : this.store.getState().InferredPersonalization
-              .coarsePrivateInferredInterests) || {};
+        this.store.getState().InferredPersonalization
+          ?.coarsePrivateInferredInterests || {};
+      if (prefs[PREF_INFERRED_INTERESTS_OVERRIDE]) {
+        try {
+          inferredInterests = JSON.parse(
+            prefs[PREF_INFERRED_INTERESTS_OVERRIDE]
+          );
+        } catch (ex) {
+          console.error("Invalid format json for inferred interest override.");
+        }
+      }
     }
 
     const requestMetadata = {
@@ -2250,6 +2268,8 @@ export class DiscoveryStreamFeed {
     await this.cache.set("spocs", {
       lastUpdated: spocsState.lastUpdated,
       spocs: spocsState.data,
+      spocsOnDemand: this.spocsOnDemand,
+      spocsCacheUpdateTime: this.spocsCacheUpdateTime,
     });
     this.store.dispatch(
       ac.AlsoToPreloaded({
@@ -2257,6 +2277,8 @@ export class DiscoveryStreamFeed {
         data: {
           lastUpdated: spocsState.lastUpdated,
           spocs: spocsState.data,
+          spocsOnDemand: this.spocsOnDemand,
+          spocsCacheUpdateTime: this.spocsCacheUpdateTime,
         },
       })
     );
@@ -2272,7 +2294,7 @@ export class DiscoveryStreamFeed {
    * @param {RefreshAll} options
    */
   async refreshAll(options = {}) {
-    const { updateOpenTabs, isStartup } = options;
+    const { updateOpenTabs, isStartup, isSystemTick } = options;
 
     const dispatch = updateOpenTabs
       ? action => this.store.dispatch(ac.BroadcastToContent(action))
@@ -2284,16 +2306,19 @@ export class DiscoveryStreamFeed {
         this.store.getState().Prefs.values[PREF_SPOCS_STARTUP_CACHE_ENABLED];
       const promises = [];
 
-      // We could potentially have either or both sponsored topsites or stories.
-      // We only make one fetch, and control which to request when we fetch.
-      // So for now we only care if we need to make this request at all.
-      const spocsPromise = this.loadSpocs(
-        dispatch,
-        isStartup && spocsStartupCacheEnabled
-      ).catch(error =>
-        console.error("Error trying to load spocs feeds:", error)
-      );
-      promises.push(spocsPromise);
+      // We don't want to make spoc requests during system tick if on demand is on.
+      if (!(this.spocsOnDemand && isSystemTick)) {
+        // We could potentially have either or both sponsored topsites or stories.
+        // We only make one fetch, and control which to request when we fetch.
+        // So for now we only care if we need to make this request at all.
+        const spocsPromise = this.loadSpocs(
+          dispatch,
+          isStartup && spocsStartupCacheEnabled
+        ).catch(error =>
+          console.error("Error trying to load spocs feeds:", error)
+        );
+        promises.push(spocsPromise);
+      }
       if (this.showStories) {
         const storiesPromise = this.loadComponentFeeds(
           dispatch,
@@ -2304,6 +2329,9 @@ export class DiscoveryStreamFeed {
         promises.push(storiesPromise);
       }
       await Promise.all(promises);
+      // We don't need to check onDemand here,
+      // even though _maybeUpdateCachedData fetches spocs.
+      // This is because isStartup and isSystemTick can never both be true.
       if (isStartup) {
         // We don't pass isStartup in _maybeUpdateCachedData on purpose,
         // because startup loads have a longer cache timer,
@@ -2395,6 +2423,7 @@ export class DiscoveryStreamFeed {
     // Reset in-memory caches.
     this._isContextualAds = undefined;
     this._spocsCacheUpdateTime = undefined;
+    this._spocsOnDemand = undefined;
   }
 
   resetDataPrefs() {
@@ -2615,6 +2644,44 @@ export class DiscoveryStreamFeed {
     );
   }
 
+  async onSpocsOnDemandUpdate() {
+    if (this.spocsOnDemand) {
+      const expirationPerComponent = await this._checkExpirationPerComponent();
+      if (expirationPerComponent.spocs) {
+        await this.loadSpocs(action =>
+          this.store.dispatch(ac.BroadcastToContent(action))
+        );
+      }
+    }
+  }
+
+  async onSystemTick() {
+    // Only refresh when enabled and after initial load has completed.
+    if (!this.config.enabled || !this.loaded) {
+      return;
+    }
+
+    const expirationPerComponent = await this._checkExpirationPerComponent();
+    let expired = false;
+
+    if (this.spocsOnDemand) {
+      // With on-demand only feeds can trigger a refresh.
+      expired = expirationPerComponent.feeds;
+    } else {
+      // Without on-demand both feeds or spocs can trigger a refresh.
+      expired = expirationPerComponent.feeds || expirationPerComponent.spocs;
+    }
+
+    if (expired) {
+      // We use isSystemTick so refreshAll can know to check onDemand
+      await this.refreshAll({ updateOpenTabs: false, isSystemTick: true });
+    }
+  }
+
+  async onTrainhopConfigChanged() {
+    this.resetSpocsOnDemand();
+  }
+
   async onPrefChangedAction(action) {
     switch (action.data.name) {
       case PREF_CONFIG:
@@ -2702,7 +2769,34 @@ export class DiscoveryStreamFeed {
         await this.updateOrRemoveSpocs();
         break;
       }
+      case PREF_SPOCS_CACHE_ONDEMAND:
+      case PREF_SPOCS_CACHE_TIMEOUT: {
+        this.resetSpocsOnDemand();
+        break;
+      }
     }
+
+    if (action.data.name === "pocketConfig") {
+      await this.onPrefChange();
+      this.setupPrefs(false /* isStartup */);
+    }
+    if (action.data.name === "trainhopConfig") {
+      await this.onTrainhopConfigChanged(action);
+    }
+  }
+
+  resetSpocsOnDemand() {
+    // This is all we have to do, because we're just changing how often caches update.
+    // No need to reset what is already fetched, we just care about the next check.
+    this._spocsCacheUpdateTime = undefined;
+    this._spocsOnDemand = undefined;
+    this.store.dispatch({
+      type: at.DISCOVERY_STREAM_SPOCS_ONDEMAND_RESET,
+      data: {
+        spocsOnDemand: this.spocsOnDemand,
+        spocsCacheUpdateTime: this.spocsCacheUpdateTime,
+      },
+    });
   }
 
   async onAction(action) {
@@ -2728,15 +2822,12 @@ export class DiscoveryStreamFeed {
         break;
       case at.DISCOVERY_STREAM_DEV_SYSTEM_TICK:
       case at.SYSTEM_TICK:
-        // Only refresh if we loaded once in .enable()
-        if (
-          this.config.enabled &&
-          this.loaded &&
-          (await this.checkIfAnyCacheExpired())
-        ) {
-          await this.refreshAll({ updateOpenTabs: false });
-        }
+        await this.onSystemTick();
         break;
+      case at.DISCOVERY_STREAM_SPOCS_ONDEMAND_UPDATE: {
+        await this.onSpocsOnDemandUpdate();
+        break;
+      }
       case at.DISCOVERY_STREAM_DEV_SYNC_RS:
         lazy.RemoteSettings.pollChanges();
         break;
@@ -2841,6 +2932,8 @@ export class DiscoveryStreamFeed {
             await this.cache.set("spocs", {
               lastUpdated: spocsState.lastUpdated,
               spocs: spocsState.data,
+              spocsOnDemand: this.spocsOnDemand,
+              spocsCacheUpdateTime: this.spocsCacheUpdateTime,
             });
 
             this.store.dispatch(
@@ -2849,6 +2942,8 @@ export class DiscoveryStreamFeed {
                 data: {
                   lastUpdated: spocsState.lastUpdated,
                   spocs: spocsState.data,
+                  spocsOnDemand: this.spocsOnDemand,
+                  spocsCacheUpdateTime: this.spocsCacheUpdateTime,
                 },
               })
             );
@@ -2916,6 +3011,8 @@ export class DiscoveryStreamFeed {
             await this.cache.set("spocs", {
               lastUpdated: spocsState.lastUpdated,
               spocs: spocsState.data,
+              spocsOnDemand: this.spocsOnDemand,
+              spocsCacheUpdateTime: this.spocsCacheUpdateTime,
             });
 
             // If we're blocking a spoc, we want open tabs to have
@@ -2968,10 +3065,6 @@ export class DiscoveryStreamFeed {
       }
       case at.PREF_CHANGED:
         await this.onPrefChangedAction(action);
-        if (action.data.name === "pocketConfig") {
-          await this.onPrefChange();
-          this.setupPrefs(false /* isStartup */);
-        }
         break;
       case at.TOPIC_SELECTION_IMPRESSION:
         this.topicSelectionImpressionEvent();

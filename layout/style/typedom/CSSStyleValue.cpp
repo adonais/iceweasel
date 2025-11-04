@@ -14,7 +14,13 @@
 namespace mozilla::dom {
 
 CSSStyleValue::CSSStyleValue(nsCOMPtr<nsISupports> aParent)
-    : mParent(std::move(aParent)) {
+    : mParent(std::move(aParent)), mValueType(ValueType::Uninitialized) {
+  MOZ_ASSERT(mParent);
+}
+
+CSSStyleValue::CSSStyleValue(nsCOMPtr<nsISupports> aParent,
+                             ValueType aValueType)
+    : mParent(std::move(aParent)), mValueType(aValueType) {
   MOZ_ASSERT(mParent);
 }
 
@@ -56,5 +62,13 @@ void CSSStyleValue::ParseAll(const GlobalObject& aGlobal,
 void CSSStyleValue::Stringify(nsAString& aRetVal) const {}
 
 // end of CSSStyleValue Web IDL implementation
+
+bool CSSStyleValue::IsCSSUnsupportedValue() const {
+  return mValueType == ValueType::Unsupported;
+}
+
+bool CSSStyleValue::IsCSSKeywordValue() const {
+  return mValueType == ValueType::Keyword;
+}
 
 }  // namespace mozilla::dom

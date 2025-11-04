@@ -176,6 +176,7 @@ export class _DiscoveryStreamBase extends React.PureComponent {
               firstVisibleTimestamp={this.props.firstVisibleTimestamp}
               ctaButtonSponsors={component.properties.ctaButtonSponsors}
               ctaButtonVariant={component.properties.ctaButtonVariant}
+              placeholder={this.props.placeholder}
             />
           );
         }
@@ -197,6 +198,7 @@ export class _DiscoveryStreamBase extends React.PureComponent {
             hideDescriptions={this.props.DiscoveryStream.hideDescriptions}
             firstVisibleTimestamp={this.props.firstVisibleTimestamp}
             spocPositions={component.spocs?.positions}
+            placeholder={this.props.placeholder}
           />
         );
       }
@@ -275,11 +277,16 @@ export class _DiscoveryStreamBase extends React.PureComponent {
 
     // There are two ways to enable widgets:
     // Via `widgets.system.*` prefs or Nimbus experiment
+    const widgetsNimbusTrainhopEnabled =
+      this.props.Prefs.values.trainhopConfig?.widgets?.enabled;
     const widgetsNimbusEnabled = this.props.Prefs.values.widgetsConfig?.enabled;
     const widgetsSystemPrefsEnabled =
       this.props.Prefs.values["widgets.system.enabled"];
 
-    const widgets = widgetsNimbusEnabled || widgetsSystemPrefsEnabled;
+    const widgets =
+      widgetsNimbusTrainhopEnabled ||
+      widgetsNimbusEnabled ||
+      widgetsSystemPrefsEnabled;
 
     const message = extractComponent("Message") || {
       header: {

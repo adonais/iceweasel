@@ -279,6 +279,15 @@
     /**
      * This is called when a one-off is clicked and when "search in new tab"
      * is selected from a one-off context menu.
+     *
+     * @param {Event} event
+     *   The event that triggered the search.
+     * @param {nsISearchEngine} engine
+     *   The search engine being used for the search.
+     * @param {string} where
+     *   Where the search should be opened (current tab, new tab, window etc).
+     * @param {object} params
+     *   The parameters associated with opening the search.
      */
     handleOneOffSearch(event, engine, where, params) {
       this.searchbar.handleSearchCommandWhere(event, engine, where, params);

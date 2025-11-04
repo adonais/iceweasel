@@ -109,10 +109,10 @@ static nscoord FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame) {
 
 SizeComputationInput::SizeComputationInput(
     nsIFrame* aFrame, gfxContext* aRenderingContext,
-    AnchorPosReferencedAnchors* aReferencedAnchors)
+    AnchorPosReferenceData* aAnchorPosReferenceData)
     : mFrame(aFrame),
       mRenderingContext(aRenderingContext),
-      mReferencedAnchors(aReferencedAnchors),
+      mAnchorPosReferenceData(aAnchorPosReferenceData),
       mWritingMode(aFrame->GetWritingMode()),
       mIsThemed(aFrame->IsThemed()),
       mComputedMargin(mWritingMode),
@@ -180,9 +180,9 @@ ReflowInput::ReflowInput(nsPresContext* aPresContext,
                          InitFlags aFlags,
                          const StyleSizeOverrides& aSizeOverrides,
                          ComputeSizeFlags aComputeSizeFlags,
-                         AnchorPosReferencedAnchors* aReferencedAnchors)
+                         AnchorPosReferenceData* aAnchorPosReferenceData)
     : SizeComputationInput(aFrame, aParentReflowInput.mRenderingContext,
-                           aReferencedAnchors),
+                           aAnchorPosReferenceData),
       mParentReflowInput(&aParentReflowInput),
       mFloatManager(aParentReflowInput.mFloatManager),
       mLineLayout(mFrame->IsLineParticipant() ? aParentReflowInput.mLineLayout
@@ -369,7 +369,8 @@ nscoord SizeComputationInput::ComputeISizeValue(
           mRenderingContext, wm, aContainingBlockSize, contentEdgeToBoxSizing,
           boxSizingToMarginEdgeISize, aSize,
           *mFrame->StylePosition()->BSize(
-              wm, AnchorPosResolutionParams::From(mFrame, mReferencedAnchors)),
+              wm,
+              AnchorPosResolutionParams::From(mFrame, mAnchorPosReferenceData)),
           mFrame->GetAspectRatio())
       .mISize;
 }
@@ -1569,7 +1570,7 @@ void ReflowInput::CalculateHypotheticalPosition(
     // the static position for a fixed-positioned frame, we need to adjust the
     // origin to exclude the scrollbar or scrollbar-gutter area. The
     // ViewportFrame's containing block rect is passed into
-    // nsAbsoluteContainingBlock::ReflowAbsoluteFrame(), and it will add the
+    // AbsoluteContainingBlock::ReflowAbsoluteFrame(), and it will add the
     // rect's origin to the fixed-positioned frame's final position if needed.
     //
     // Note: The origin of the containing block rect is adjusted in
@@ -1690,9 +1691,9 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
 
   NS_ASSERTION(!mFrame->IsTableFrame(),
                "InitAbsoluteConstraints should not be called on table frames");
-  NS_ASSERTION(mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW),
-               "Why are we here?");
-  MOZ_ASSERT(mStyleDisplay->IsAbsolutelyPositionedStyle());
+  MOZ_ASSERT(
+      mFrame->IsAbsolutelyPositioned(mStyleDisplay),
+      "InitAbsoluteConstraints should be called on abspos or fixedpos frames!");
 
   const auto anchorResolutionParams =
       AnchorPosOffsetResolutionParams::ExplicitCBFrameSize(
@@ -1895,7 +1896,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     // Solve for 'left'.
     if (iSizeIsAuto) {
       // XXXldb This, and the corresponding code in
-      // nsAbsoluteContainingBlock.cpp, could probably go away now that
+      // AbsoluteContainingBlock.cpp, could probably go away now that
       // we always compute widths.
       offsets.IStart(cbwm) = NS_AUTOOFFSET;
     } else {
@@ -1909,7 +1910,7 @@ void ReflowInput::InitAbsoluteConstraints(const ReflowInput* aCBReflowInput,
     // Solve for 'right'.
     if (iSizeIsAuto) {
       // XXXldb This, and the corresponding code in
-      // nsAbsoluteContainingBlock.cpp, could probably go away now that
+      // AbsoluteContainingBlock.cpp, could probably go away now that
       // we always compute widths.
       offsets.IEnd(cbwm) = NS_AUTOOFFSET;
     } else {
@@ -2137,14 +2138,18 @@ static nscoord CalcQuirkContainingBlockHeight(
   return std::max(result, 0);
 }
 
-// Called by InitConstraints() to compute the containing block rectangle for
-// the element. Handles the special logic for absolutely positioned elements
 LogicalSize ReflowInput::ComputeContainingBlockRectangle(
     nsPresContext* aPresContext, const ReflowInput* aContainingBlockRI) const {
-  // Unless the element is absolutely positioned, the containing block is
-  // formed by the content edge of the nearest block-level ancestor
-  LogicalSize cbSize = aContainingBlockRI->ComputedSize();
+  MOZ_ASSERT(!mFrame->IsAbsolutelyPositioned(mStyleDisplay) ||
+                 // XXX: We have a hack putting abspos continuations in overflow
+                 // container lists (bug 154892), so they are not reflowed by
+                 // AbsoluteContainingBlock until we revisit the abspos
+                 // continuations handling.
+                 mFrame->GetPrevInFlow(),
+             "AbsoluteContainingBlock always provides a containing-block size "
+             "when creating ReflowInput for its children!");
 
+  LogicalSize cbSize = aContainingBlockRI->ComputedSize();
   WritingMode wm = aContainingBlockRI->GetWritingMode();
 
   if (aContainingBlockRI->mFlags.mTreatBSizeAsIndefinite) {
@@ -2156,57 +2161,24 @@ LogicalSize ReflowInput::ComputeContainingBlockRectangle(
     cbSize.BSize(wm) = *aContainingBlockRI->mPercentageBasisInBlockAxis;
   }
 
-  if (((mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
-        // XXXfr hack for making frames behave properly when in overflow
-        // container lists, see bug 154892; need to revisit later
-        !mFrame->GetPrevInFlow()) ||
-       (mFrame->IsTableFrame() &&
-        mFrame->GetParent()->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW))) &&
-      mStyleDisplay->IsAbsolutelyPositioned(mFrame)) {
-    // See if the ancestor is block-level or inline-level
-    const auto computedPadding = aContainingBlockRI->ComputedLogicalPadding(wm);
-    if (aContainingBlockRI->mStyleDisplay->IsInlineOutsideStyle()) {
-      // Base our size on the actual size of the frame.  In cases when this is
-      // completely bogus (eg initial reflow), this code shouldn't even be
-      // called, since the code in nsInlineFrame::Reflow will pass in
-      // the containing block dimensions to our constructor.
-      // XXXbz we should be taking the in-flows into account too, but
-      // that's very hard.
-
-      LogicalMargin computedBorder =
-          aContainingBlockRI->ComputedLogicalBorderPadding(wm) -
-          computedPadding;
-      cbSize.ISize(wm) =
-          aContainingBlockRI->mFrame->ISize(wm) - computedBorder.IStartEnd(wm);
-      NS_ASSERTION(cbSize.ISize(wm) >= 0, "Negative containing block isize!");
-      cbSize.BSize(wm) =
-          aContainingBlockRI->mFrame->BSize(wm) - computedBorder.BStartEnd(wm);
-      NS_ASSERTION(cbSize.BSize(wm) >= 0, "Negative containing block bsize!");
-    } else {
-      // If the ancestor is block-level, the containing block is formed by the
-      // padding edge of the ancestor
-      cbSize += computedPadding.Size(wm);
-    }
-  } else {
-    auto IsQuirky = [](const StyleSize& aSize) -> bool {
-      return aSize.ConvertsToPercentage();
-    };
-    const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
-    // an element in quirks mode gets a containing block based on looking for a
-    // parent with a non-auto height if the element has a percent height.
-    // Note: We don't emulate this quirk for percents in calc(), or in vertical
-    // writing modes, or if the containing block is a flex or grid item.
-    if (!wm.IsVertical() && NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
-      if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
-          !aContainingBlockRI->mFrame->IsFlexOrGridItem() &&
-          (IsQuirky(*mStylePosition->GetHeight(anchorResolutionParams)) ||
-           (mFrame->IsTableWrapperFrame() &&
-            IsQuirky(*mFrame->PrincipalChildList()
-                          .FirstChild()
-                          ->StylePosition()
-                          ->GetHeight(anchorResolutionParams))))) {
-        cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(aContainingBlockRI);
-      }
+  auto IsQuirky = [](const StyleSize& aSize) -> bool {
+    return aSize.ConvertsToPercentage();
+  };
+  const auto anchorResolutionParams = AnchorPosResolutionParams::From(this);
+  // an element in quirks mode gets a containing block based on looking for a
+  // parent with a non-auto height if the element has a percent height.
+  // Note: We don't emulate this quirk for percents in calc(), or in vertical
+  // writing modes, or if the containing block is a flex or grid item.
+  if (!wm.IsVertical() && NS_UNCONSTRAINEDSIZE == cbSize.BSize(wm)) {
+    if (eCompatibility_NavQuirks == aPresContext->CompatibilityMode() &&
+        !aContainingBlockRI->mFrame->IsFlexOrGridItem() &&
+        (IsQuirky(*mStylePosition->GetHeight(anchorResolutionParams)) ||
+         (mFrame->IsTableWrapperFrame() &&
+          IsQuirky(*mFrame->PrincipalChildList()
+                        .FirstChild()
+                        ->StylePosition()
+                        ->GetHeight(anchorResolutionParams))))) {
+      cbSize.BSize(wm) = CalcQuirkContainingBlockHeight(aContainingBlockRI);
     }
   }
 
@@ -2404,8 +2376,7 @@ void ReflowInput::InitConstraints(
       mComputedMinSize.SizeTo(mWritingMode, 0, 0);
       mComputedMaxSize.SizeTo(mWritingMode, NS_UNCONSTRAINEDSIZE,
                               NS_UNCONSTRAINEDSIZE);
-    } else if (mFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW) &&
-               mStyleDisplay->IsAbsolutelyPositionedStyle() &&
+    } else if (mFrame->IsAbsolutelyPositioned(mStyleDisplay) &&
                // XXXfr hack for making frames behave properly when in overflow
                // container lists, see bug 154892; need to revisit later
                !mFrame->GetPrevInFlow()) {
@@ -2989,7 +2960,7 @@ bool SizeComputationInput::ComputeMargin(WritingMode aCBWM,
     }
     LogicalMargin m(aCBWM);
     const auto anchorResolutionParams =
-        AnchorPosResolutionParams::From(mFrame, mReferencedAnchors);
+        AnchorPosResolutionParams::From(mFrame, mAnchorPosReferenceData);
     for (const LogicalSide side : LogicalSides::All) {
       m.Side(side, aCBWM) = nsLayoutUtils::ComputeCBDependentValue(
           aPercentBasis,

@@ -50,7 +50,7 @@ var observer = {
       case "last-pb-context-exited":
         gDownloadLastDirFile = null;
         break;
-      case "browser:purge-session-history":
+      case "browser:purge-session-history": {
         gDownloadLastDirFile = null;
         if (Services.prefs.prefHasUserValue(LAST_DIR_PREF)) {
           Services.prefs.clearUserPref(LAST_DIR_PREF);
@@ -68,6 +68,7 @@ var observer = {
           aSubject.promise = promise;
         }
         break;
+      }
     }
   },
 };

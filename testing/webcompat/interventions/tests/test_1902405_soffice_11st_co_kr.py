@@ -12,6 +12,7 @@ async def await_text(client, do_expect_text):
         UNSUPPORTED_CSS,
         condition=f"elem.innerText.includes('{UNSUPPORTED_TEXT}')",
         is_displayed=do_expect_text,
+        timeout=30,
     )
 
 

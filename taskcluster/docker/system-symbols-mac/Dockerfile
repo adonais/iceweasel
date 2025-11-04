@@ -11,7 +11,7 @@ WORKDIR /builds/worker
 VOLUME /builds/worker/checkouts
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y python3-dev python3-pip python3-requests-futures python3-setuptools curl pax build-essential libxml2-dev libssl-dev zlib1g-dev libusb-dev cmake libbz2-dev libpng-dev wget zip liblzma-dev file && \
+    apt-get install --no-install-recommends -y python3-dev python3-pip python3-requests-futures python3-setuptools curl pax build-essential libxml2-dev libssl-dev zlib1g-dev libusb-dev cmake libbz2-dev libpng-dev wget zip liblzma-dev jq file && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /opt/data-reposado/

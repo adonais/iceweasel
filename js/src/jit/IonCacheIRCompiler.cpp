@@ -1055,6 +1055,16 @@ bool IonCacheIRCompiler::emitCallScriptedProxyGetShared(
   if constexpr (std::is_same_v<IdType, ValOperandId>) {
     // Same for the id, assuming it's not baked in
     storeTracedValue(masm, idVal);
+#  ifdef DEBUG
+    Label notPrivateSymbol;
+    masm.branchTestSymbol(Assembler::NotEqual, idVal, &notPrivateSymbol);
+    masm.unboxSymbol(idVal, scratch);
+    masm.branch32(
+        Assembler::NotEqual, Address(scratch, JS::Symbol::offsetOfCode()),
+        Imm32(uint32_t(JS::SymbolCode::PrivateNameSymbol)), &notPrivateSymbol);
+    masm.assumeUnreachable("Unexpected private field in callScriptedProxy");
+    masm.bind(&notPrivateSymbol);
+#  endif
   }
   uint32_t framePushedBeforeArgs = masm.framePushed();
 

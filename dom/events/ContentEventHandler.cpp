@@ -2974,9 +2974,7 @@ nsresult ContentEventHandler::OnQueryCharacterAtPoint(
   // a popup but the rootFrame is the document root.
   if (rootWidget != aEvent->mWidget) {
     MOZ_ASSERT(aEvent->mWidget, "The event must have the widget");
-    nsView* view = nsView::GetViewFor(aEvent->mWidget);
-    NS_ENSURE_TRUE(view, NS_ERROR_FAILURE);
-    rootFrame = view->GetFrame();
+    rootFrame = aEvent->mWidget->GetFrame();
     NS_ENSURE_TRUE(rootFrame, NS_ERROR_FAILURE);
     rootWidget = rootFrame->GetNearestWidget();
     NS_ENSURE_TRUE(rootWidget, NS_ERROR_FAILURE);

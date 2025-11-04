@@ -12,7 +12,6 @@
 #ifndef jit_MIR_wasm_h
 #define jit_MIR_wasm_h
 
-#include "mozilla/Array.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Vector.h"
 #ifdef JS_JITSPEW
@@ -580,6 +579,7 @@ class MWasmNeg : public MUnaryInstruction, public NoTypePolicy::Data {
  public:
   INSTRUCTION_HEADER(WasmNeg)
   TRIVIAL_NEW_WRAPPERS
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
   ALLOW_CLONE(MWasmNeg)
 };
 
@@ -789,14 +789,18 @@ class MWasmBoundsCheck : public MBinaryInstruction, public NoTypePolicy::Data {
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
 
+  const wasm::TrapSiteDesc& trapSiteDesc() const { return trapSiteDesc_; }
   Target target() const { return target_; }
   uint32_t targetIndex() const { return targetIndex_; }
 
   bool isRedundant() const { return !isGuard(); }
-
   void setRedundant() { setNotGuard(); }
 
-  const wasm::TrapSiteDesc& trapSiteDesc() const { return trapSiteDesc_; }
+  bool congruentTo(const MDefinition* ins) const override {
+    return congruentIfOperandsEqual(ins) &&
+           ins->toWasmBoundsCheck()->target() == target() &&
+           ins->toWasmBoundsCheck()->targetIndex() == targetIndex();
+  }
 
   ALLOW_CLONE(MWasmBoundsCheck)
 };
@@ -1632,6 +1636,10 @@ class MWasmParameter : public MNullaryInstruction {
  public:
   INSTRUCTION_HEADER(WasmParameter)
   TRIVIAL_NEW_WRAPPERS
+  // MWasmParameter has no getAliasSet routine.  Hence it acquires the default
+  // aliases-everything setting.  This doesn't matter in practice because these
+  // nodes only appear at the start of the function's entry block, and in any
+  // case they are not marked as movable.
 
   ABIArg abi() const { return abi_; }
 };
@@ -1678,6 +1686,9 @@ class MWasmStackArg : public MUnaryInstruction, public NoTypePolicy::Data {
 
   uint32_t spOffset() const { return spOffset_; }
   void incrementOffset(uint32_t inc) { spOffset_ += inc; }
+  AliasSet getAliasSet() const override {
+    return AliasSet::Store(AliasSet::Flag::Any);
+  }
 
   ALLOW_CLONE(MWasmStackArg)
 };
@@ -1707,6 +1718,7 @@ class MWasmRegisterResult : public MWasmResultBase<Register> {
  public:
   INSTRUCTION_HEADER(WasmRegisterResult)
   TRIVIAL_NEW_WRAPPERS
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
 
 class MWasmFloatRegisterResult : public MWasmResultBase<FloatRegister> {
@@ -1716,6 +1728,7 @@ class MWasmFloatRegisterResult : public MWasmResultBase<FloatRegister> {
  public:
   INSTRUCTION_HEADER(WasmFloatRegisterResult)
   TRIVIAL_NEW_WRAPPERS
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
 
 class MWasmBuiltinFloatRegisterResult : public MWasmResultBase<FloatRegister> {
@@ -1727,6 +1740,7 @@ class MWasmBuiltinFloatRegisterResult : public MWasmResultBase<FloatRegister> {
  public:
   INSTRUCTION_HEADER(WasmBuiltinFloatRegisterResult)
   TRIVIAL_NEW_WRAPPERS
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
 
   bool hardFP() const { return hardFP_; }
 };
@@ -1738,6 +1752,7 @@ class MWasmRegister64Result : public MWasmResultBase<Register64> {
  public:
   INSTRUCTION_HEADER(WasmRegister64Result)
   TRIVIAL_NEW_WRAPPERS
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
 };
 
 class MWasmStackResultArea : public MNullaryInstruction {
@@ -2556,9 +2571,19 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
         aliases.flags() == AliasSet::Load(AliasSet::Any).flags());
     setResultType(type);
     if (maybeTrap_) {
+      // This is safe, but see bug 1992059 for associated details.
       setGuard();
+    } else {
+      setMovable();
     }
     initWasmRefType(maybeRefType);
+    if (aliases_.flags() ==
+            AliasSet::Load(AliasSet::WasmStructOutlineDataPointer).flags() ||
+        aliases_.flags() ==
+            AliasSet::Load(AliasSet::WasmArrayDataPointer).flags()) {
+      aliases_ = AliasSet::Store(AliasSet::Any);
+      setNotMovableUnchecked();
+    }
   }
 
  public:
@@ -2582,13 +2607,14 @@ class MWasmLoadField : public MBinaryInstruction, public NoTypePolicy::Data {
       return false;
     }
     const MWasmLoadField* other = ins->toWasmLoadField();
-    return ins->isWasmLoadField() && congruentIfOperandsEqual(ins) &&
-           offset() == other->offset() &&
+    return congruentIfOperandsEqual(other) && offset() == other->offset() &&
            structFieldIndex() == other->structFieldIndex() &&
            wideningOp() == other->wideningOp() &&
            getAliasSet().flags() == other->getAliasSet().flags() &&
            hierarchy() == other->hierarchy();
   }
+
+  virtual AliasType mightAlias(const MDefinition* ins) const override;
 
 #ifdef JS_JITSPEW
   void getExtras(ExtrasCollector* extras) const override {
@@ -2951,6 +2977,7 @@ class MWasmRefAsNonNull : public MUnaryInstruction, public NoTypePolicy::Data {
   }
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
 
   ALLOW_CLONE(MWasmRefAsNonNull)
 };
@@ -3058,6 +3085,7 @@ class MWasmRefCastAbstract : public MUnaryInstruction,
   INSTRUCTION_HEADER(WasmRefCastAbstract)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, ref))
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
 
   wasm::RefType destType() const { return destType_; };
   const wasm::TrapSiteDesc& trapSiteDesc() const { return trapSiteDesc_; }
@@ -3092,6 +3120,7 @@ class MWasmRefCastConcrete : public MBinaryInstruction,
   INSTRUCTION_HEADER(WasmRefCastConcrete)
   TRIVIAL_NEW_WRAPPERS
   NAMED_OPERANDS((0, ref), (1, superSTV))
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
 
   wasm::RefType destType() const { return destType_; };
   const wasm::TrapSiteDesc& trapSiteDesc() const { return trapSiteDesc_; }

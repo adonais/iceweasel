@@ -1449,7 +1449,8 @@ bool DXGITextureHostD3D11::SupportsExternalCompositing(
     return true;
   }
   // XXX Add P010 and P016 support.
-  if (GetFormat() == gfx::SurfaceFormat::NV12) {
+  if (GetFormat() == gfx::SurfaceFormat::NV12 ||
+      GetFormat() == gfx::SurfaceFormat::P010) {
     if ((mFlags & TextureFlags::SOFTWARE_DECODED_VIDEO) &&
         (gfx::gfxVars::UseWebRenderDCompVideoSwOverlayWin())) {
       return true;
@@ -1465,6 +1466,8 @@ bool DXGITextureHostD3D11::SupportsExternalCompositing(
 DXGIYCbCrTextureHostD3D11::DXGIYCbCrTextureHostD3D11(
     TextureFlags aFlags, const SurfaceDescriptorDXGIYCbCr& aDescriptor)
     : TextureHost(TextureHostType::DXGIYCbCr, aFlags),
+      mHandles{aDescriptor.handleY(), aDescriptor.handleCb(),
+               aDescriptor.handleCr()},
       mSize(aDescriptor.size()),
       mSizeY(aDescriptor.sizeY()),
       mSizeCbCr(aDescriptor.sizeCbCr()),
@@ -1477,9 +1480,6 @@ DXGIYCbCrTextureHostD3D11::DXGIYCbCrTextureHostD3D11(
   } else {
     MOZ_ASSERT_UNREACHABLE("FencesHolderMap not available");
   }
-  mHandles[0] = aDescriptor.handleY();
-  mHandles[1] = aDescriptor.handleCb();
-  mHandles[2] = aDescriptor.handleCr();
 }
 
 DXGIYCbCrTextureHostD3D11::~DXGIYCbCrTextureHostD3D11() {

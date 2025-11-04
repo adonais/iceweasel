@@ -12,8 +12,10 @@ updater.app/Contents/MacOS/org.mozilla.updater
 plugin-container.app/Contents/PkgInfo
 updater.app/Contents/PkgInfo
 media-plugin-helper.app/Contents/PkgInfo
+gpu-helper.app/Contents/PkgInfo
 
 media-plugin-helper.app/Contents/MacOS/@MOZ_APP_DISPLAYNAME@ Media Plugin Helper
+gpu-helper.app/Contents/MacOS/@MOZ_APP_DISPLAYNAME@ GPU Helper
 plugin-container.app/Contents/MacOS/plugin-container
 
 # Duplicated on Linux by browser/branding/branding-common.mozbuild

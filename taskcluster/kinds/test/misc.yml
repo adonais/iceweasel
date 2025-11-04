@@ -24,9 +24,6 @@ geckoview-junit:
         script: android_emulator_unittest.py
         config:
             by-test-platform:
-                android-em-7.*:
-                    - android/android_common.py
-                    - android/android-x86_64.py
                 android-em-14.*:
                     - android/android_common.py
                     - android/android14-x86_64.py
@@ -95,9 +92,6 @@ test-verify:
                 default: desktop_unittest.py
         config:
             by-test-platform:
-                android-em-7.*:
-                    - android/android_common.py
-                    - android/android-x86_64.py
                 android-em-14.*:
                     - android/android_common.py
                     - android/android14-x86_64.py
@@ -148,14 +142,6 @@ test-verify:
                     - win32-node
                     - win32-minidump-stackwalk
                     - win32-fix-stacks
-                android-em-7.*:
-                    - android-emulator-linux
-                    - android-system-image-x86_64-linux
-                    - android-avd-x86_64-linux
-                    - linux64-node
-                    - linux64-minidump-stackwalk
-                    - linux64-fix-stacks
-                    - linux64-hostutils
                 android-em-14.*:
                     - android34-system-image-x86_64-linux
                     - android34-avd-x86_64-linux
@@ -166,15 +152,10 @@ test-verify:
                     - linux64-hostutils
         fetch:
             - ort.jsep.wasm
-            - translations.inference
-            - translations.esen.lex
-            - translations.esen.model
-            - translations.esen.vocab
-
-    worker-type:
-        by-test-platform:
-            .*-wayland.*: t-linux-wayland-vm
-            default: default
+            - tr8ns.inference
+            - tr8ns.T.esen.lex
+            - tr8ns.T.esen.model
+            - tr8ns.T.esen.vocab
 
 test-verify-gpu:
     description: "Extra verification of tests modified on this push on gpu instances"
@@ -207,9 +188,6 @@ test-verify-gpu:
                 default: desktop_unittest.py
         config:
             by-test-platform:
-                android-em-7.*:
-                    - android/android_common.py
-                    - android/android-x86_64.py
                 android-em-14.*:
                     - android/android_common.py
                     - android/android14-x86_64.py
@@ -223,10 +201,6 @@ test-verify-gpu:
         extra-options:
             - --verify
             - --gpu-required
-    worker-type:
-        by-test-platform:
-            .*-wayland.*: t-linux-wayland-vm
-            default: default
 
 test-coverage:
     description: "Per-test coverage"
@@ -248,9 +222,6 @@ test-coverage:
                 default: desktop_unittest.py
         config:
             by-test-platform:
-                android-em-7.*:
-                    - android/android_common.py
-                    - android/android-x86_64.py
                 android-em-14.*:
                     - android/android_common.py
                     - android/android14-x86_64.py
@@ -286,14 +257,6 @@ test-coverage:
                     - win32-node
                     - win32-minidump-stackwalk
                     - win32-fix-stacks
-                android-em-7.*:
-                    - android-emulator-linux
-                    - android-system-image-x86_64-linux
-                    - android-avd-x86_64-linux
-                    - linux64-node
-                    - linux64-minidump-stackwalk
-                    - linux64-fix-stacks
-                    - linux64-hostutils
                 android-em-14.*:
                     - android34-system-image-x86_64-linux
                     - android34-avd-x86_64-linux
@@ -328,9 +291,6 @@ test-coverage-gpu:
                 default: desktop_unittest.py
         config:
             by-test-platform:
-                android-em-7.*:
-                    - android/android_common.py
-                    - android/android-x86_64.py
                 android-em-14.*:
                     - android/android_common.py
                     - android/android14-x86_64.py

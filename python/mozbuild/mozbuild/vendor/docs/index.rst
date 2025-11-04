@@ -64,3 +64,37 @@ In the presence of patches, two steps are needed:
 
 In the absence of patches, a single step is needed, and no extra argument is
 required.
+
+
+Vendoring Actions
+=================
+
+Vendoring actions in the ``moz.yaml`` file can be configured to run either before
+or after patches are applied using separate sections:
+
+* Actions in ``update-actions`` run **before** patches are applied
+* Actions in ``post-patch-actions`` run **after** patches are applied
+
+This separation is useful when you need to run scripts that depend on Mozilla-specific
+patches being applied first, such as:
+
+* Code generation scripts that need patched configuration files
+* Build system updates that depend on patched build definitions
+* Processing steps that require Mozilla-specific modifications to be in place
+
+Example:
+
+.. code-block:: yaml
+
+   # Actions that run before patches are applied
+   update-actions:
+     - action: run-script
+       script: '{yaml_dir}/pre_patch_script.sh'
+       cwd: '{yaml_dir}'
+
+   # Actions that run after patches are applied
+   post-patch-actions:
+     - action: run-script
+       script: '{yaml_dir}/post_patch_script.sh'
+       cwd: '{yaml_dir}'
+       args: ['{revision}']

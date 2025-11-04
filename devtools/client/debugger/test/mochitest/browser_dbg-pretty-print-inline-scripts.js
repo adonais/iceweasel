@@ -174,6 +174,28 @@ add_task(async function prettyPrintSingleLineDataUrl() {
   );
 });
 
+// Asserts that files which contain characters which are
+// encoded by two code units (surrogate pairs)
+add_task(async function prettyPrintHtmlWithSurrogatePairCharacters() {
+  const TEST_URL = `doc-pretty-print-with-emojis.html`;
+  const PRETTY_PRINTED_URL = `${TEST_URL}:formatted`;
+  const dbg = await initDebugger(TEST_URL);
+
+  await selectSource(dbg, TEST_URL);
+  await togglePrettyPrint(dbg);
+  const prettyPrintedSource = findSourceContent(dbg, PRETTY_PRINTED_URL);
+  ok(prettyPrintedSource, "Pretty-printed source exists");
+
+  info("Check that the HTML file was pretty-printed as expected");
+  const expectedPrettyHtml =
+    "<!DOCTYPE html><html><head><meta charset=\"utf-8\" /></head><body>\n🥁🤯<script>\nconsole.log('%', '🤯🤯🤯🤯🤯')\n</script>🥁</body>";
+  is(
+    prettyPrintedSource.value,
+    expectedPrettyHtml,
+    "HTML file is pretty printed as expected"
+  );
+});
+
 /**
  * Return the expected pretty-printed HTML. Lines starting with ➤ indicate breakable
  * lines for easier maintenance.

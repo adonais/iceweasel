@@ -118,6 +118,12 @@ class LookAndFeel {
     MacBigSurTheme,
 
     /*
+     * A Boolean value to determine whether the macOS Tahoe-specific
+     * theming should be used.
+     */
+    MacTahoeTheme,
+
+    /*
      * AlertNotificationOrigin indicates from which corner of the
      * screen alerts slide in, and from which direction (horizontal/vertical).
      * 0, the default, represents bottom right, sliding vertically.

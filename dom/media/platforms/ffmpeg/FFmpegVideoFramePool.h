@@ -81,6 +81,9 @@ class VideoFrameSurface<LIBAV_VER> {
   void SetTransferFunction(mozilla::gfx::TransferFunction aTransferFunction) {
     mSurface->GetAsDMABufSurfaceYUV()->SetTransferFunction(aTransferFunction);
   }
+  void SetWPChromaLocation(uint32_t aWPChromaLocation) {
+    mSurface->GetAsDMABufSurfaceYUV()->SetWPChromaLocation(aWPChromaLocation);
+  }
 
   RefPtr<DMABufSurfaceYUV> GetDMABufSurface() {
     return mSurface->GetAsDMABufSurfaceYUV();

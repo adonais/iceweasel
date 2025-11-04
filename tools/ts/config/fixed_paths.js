@@ -64,6 +64,9 @@ exports.fixed = {
   "resource://test/es6module.js": ["js/xpconnect/tests/unit/es6module.js"],
   "resource://test/module.sys.mjs": undefined,
   "resource://test/not_found.mjs": undefined,
+  "resource://test/es6module_dynamic_import_syntax_error.js": undefined,
+  "resource://test/es6module_parse_error.js": undefined,
+  "resource://test/es6module_parse_error_in_import.js": undefined,
   "resource://testing-common/AppInfo.sys.mjs": [
     "testing/modules/AppInfo.sys.mjs",
   ],

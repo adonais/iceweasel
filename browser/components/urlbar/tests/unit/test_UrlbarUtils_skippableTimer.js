@@ -8,7 +8,7 @@
 "use strict";
 
 let { SkippableTimer } = ChromeUtils.importESModule(
-  "resource:///modules/UrlbarUtils.sys.mjs"
+  "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"
 );
 const { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"

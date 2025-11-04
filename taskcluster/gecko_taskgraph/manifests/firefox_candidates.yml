@@ -58,8 +58,6 @@ tasktype_map:
 platform_names:
     path_platform:
         by-platform:
-            linux-shippable: 'linux-i686'
-            linux-devedition: 'linux-i686'
             linux64-shippable: 'linux-x86_64'
             linux64-devedition: 'linux-x86_64'
             linux64-asan-reporter-shippable: 'linux-x86_64-asan-reporter'
@@ -76,8 +74,6 @@ platform_names:
             win64-asan-reporter-shippable: 'win64-asan-reporter'
     tools_platform:
         by-platform:
-            linux-shippable: 'linux'
-            linux-devedition: 'linux-devedition'
             linux64-shippable: 'linux64'
             linux64-devedition: 'linux64-devedition'
             linux64-asan-reporter-shippable: 'linux-x86_64-asan-reporter'
@@ -94,8 +90,6 @@ platform_names:
             win64-asan-reporter-shippable: 'win64-asan-reporter'
     filename_platform:
         by-platform:
-            linux-shippable: 'linux'
-            linux-devedition: 'linux'
             linux64-shippable: 'linux64'
             linux64-devedition: 'linux64'
             linux64-asan-reporter-shippable: 'linux-x86_64-asan-reporter'
@@ -181,7 +175,6 @@ mapping:
             - langpack-copy
             - signing
         only_for_platforms:
-            - linux-shippable
             - linux64-shippable
             - linux64-aarch64-shippable
             - linux64-devedition
@@ -202,10 +195,8 @@ mapping:
         from:
             - repackage-deb-l10n
         only_for_platforms:
-            - linux-shippable
             - linux64-shippable
             - linux64-aarch64-shippable
-            - linux-devedition
             - linux64-aarch64-devedition
             - linux64-devedition
         pretty_name: ${locale}.deb
@@ -255,10 +246,8 @@ mapping:
         from:
             - signing
         only_for_platforms:
-            - linux-shippable
             - linux64-shippable
             - linux64-aarch64-shippable
-            - linux-devedition
             - linux64-devedition
             - linux64-aarch64-devedition
         pretty_name: firefox-${version}.tar.xz
@@ -271,10 +260,8 @@ mapping:
         from:
             - signing
         only_for_platforms:
-            - linux-shippable
             - linux64-shippable
             - linux64-aarch64-shippable
-            - linux-devedition
             - linux64-devedition
             - linux64-aarch64-devedition
         pretty_name: firefox-${version}.tar.xz.asc
@@ -400,10 +387,8 @@ mapping:
         <<: *default
         description: "Firefox as a .deb package"
         only_for_platforms:
-            - linux-shippable
             - linux64-shippable
             - linux64-aarch64-shippable
-            - linux-devedition
             - linux64-devedition
             - linux64-aarch64-devedition
         pretty_name: firefox-${version}.deb

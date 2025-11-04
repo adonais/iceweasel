@@ -41,9 +41,6 @@ EXPORTS.libwebrtc_overrides.rtc_base += [
     "rtc_base/logging.h",
     "rtc_base/trace_event.h",
 ]
-EXPORTS.libwebrtc_overrides.rtc_base.containers += [
-    "rtc_base/containers/identity.h",
-]
 EXPORTS.libwebrtc_overrides.X11.extensions += [
     "X11/extensions/Xrandr.h",
 ]

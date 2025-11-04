@@ -8,7 +8,7 @@ import * as dom from "resource://devtools/client/shared/vendor/react-dom-factori
 
 const { span } = dom;
 
-import { JSON_NUMBER } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
+import { JSON_NUMBER } from "./constants.mjs";
 
 // Dependencies
 const validProtocols = /(http|https|ftp|data|resource|chrome):/i;

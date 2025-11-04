@@ -55,6 +55,13 @@ bool DocumentExists(Accessible* aDoc, uintptr_t aDocPtr);
 
 NSDictionary* StringAttributesFromAccAttributes(AccAttributes* aAttributes,
                                                 Accessible* aContainer);
+
+/**
+ * Get the appropriate NSScreen for the given Accessible.
+ * This should mostly return the main screen, except for
+ * in the presence of multiple monitors.
+ */
+NSScreen* GetNSScreenForAcc(mozAccessible* aAcc);
 }  // namespace utils
 }  // namespace a11y
 }  // namespace mozilla

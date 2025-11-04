@@ -145,9 +145,11 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
   LocalAccessible* OuterDocOfRemoteBrowser() const;
 
   /**
-   * Get the role of the accessible we're proxying.
+   * Get the native role of the accessible we're proxying.
    */
-  virtual role Role() const override { return mRole; }
+  virtual mozilla::a11y::role NativeRole() const override {
+    return mNativeRole;
+  }
 
   /**
    * Return true if this is an embedded object.
@@ -235,6 +237,11 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
 
   virtual bool GetStringARIAAttr(nsAtom* aAttrName,
                                  nsAString& aAttrValue) const override;
+
+  virtual bool ARIAAttrValueIs(nsAtom* aAttrName,
+                               nsAtom* aAttrValue) const override;
+
+  virtual bool HasARIAAttr(nsAtom* aAttrName) const override;
 
   virtual void Language(nsAString& aLocale) override;
 
@@ -379,6 +386,10 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
   virtual void ScrollToPoint(uint32_t aScrollType, int32_t aX,
                              int32_t aY) override;
 
+  virtual bool IsScrollable() const override;
+
+  virtual bool IsPopover() const override;
+
 #if !defined(XP_WIN)
   void Announce(const nsString& aAnnouncement, uint16_t aPriority);
 #endif  // !defined(XP_WIN)
@@ -425,7 +436,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
         mWrapper(0),
         mID(aID),
         mCachedFields(nullptr),
-        mRole(aRole) {
+        mNativeRole(aRole) {
     MOZ_COUNT_CTOR(RemoteAccessible);
   }
 
@@ -435,7 +446,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
         mWrapper(0),
         mID(0),
         mCachedFields(nullptr),
-        mRole(roles::DOCUMENT) {
+        mNativeRole(roles::DOCUMENT) {
     mGenericTypes = eDocument | eHyperText;
     MOZ_COUNT_CTOR(RemoteAccessible);
   }
@@ -444,7 +455,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
   void SetParent(RemoteAccessible* aParent);
   Maybe<nsRect> RetrieveCachedBounds() const;
   bool ApplyTransform(nsRect& aCumulativeBounds) const;
-  bool ApplyScrollOffset(nsRect& aBounds) const;
+  bool ApplyScrollOffset(nsRect& aBounds, float aResolution) const;
   void ApplyCrossDocOffset(nsRect& aBounds) const;
   void ApplyVisualViewportOffset(nsRect& aBounds) const;
   LayoutDeviceIntRect BoundsWithOffset(
@@ -524,7 +535,7 @@ class RemoteAccessible : public Accessible, public HyperTextAccessibleBase {
 
   // XXX DocAccessibleParent gets to change this to change the role of
   // documents.
-  role mRole : 27;
+  role mNativeRole : 27;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

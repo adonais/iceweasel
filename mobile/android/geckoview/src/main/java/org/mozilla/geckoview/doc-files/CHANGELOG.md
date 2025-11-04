@@ -13,6 +13,19 @@ exclude: true
 
 ⚠️  breaking change and deprecation notices
 
+## v145
+- Added [`WebNotification.show`][145.1]. Implementations of `WebNotificationDelegate.onShowNotification` should now call either `show` when the notification is successfully opened, or `dismiss` if it failed.
+- Added [`WebExtension.InvalidMetaDataException`][145.2]. ([bug 1981496]({{bugzilla}}1981496))
+- Added [`GeckoSession.PromptDelegate.RedirectPrompt`][145.3] to display a prompt when a third-party redirect is blocked.
+- Added support for controlling `security.pki.crlite_channel` via [`GeckoRuntimeSettings.setCrliteChannel`][145.4]
+- Changed certificate transparency information in TLS connections to now be required by default. This can be controlled by the [`GeckoRuntimeSettings.setCertificateTransparencyMode`][145.5] API.
+
+[145.1]: {{javadoc_uri}}/WebNotification.html#show
+[145.2]: {{javadoc_uri}}/WebExtension.InvalidMetaDataException.html
+[145.3]: {{javadoc_uri}}/GeckoSession.PromptDelegate.RedirectPrompt.html
+[145.4]: {{javadoc_uri}}/GeckoRuntimeSettings.html#setCrliteChannel
+[145.5]: {{javadoc_uri}}/GeckoRuntimeSettings.html#setCertificateTransparencyMode
+
 ## v144
 - Added [`GeckoSession.flushSessionState()`][144.1] to immediately notify the registered [`GeckoSession.ProgressDelegate`][144.2] and [`GeckoSession.HistoryDelegate`][144.3] of the current session state.
 - Added [`GeckoRuntimeSettings.getIsolatedProcessEnabled`][144.4] and [`GeckoRuntimeSettings.Builder.isolatedProcessEnabled`][144.5] to control whether content service runs on isolated process or not.
@@ -20,6 +33,8 @@ exclude: true
 - ⚠️ Removed deprecated `onOptionalPrompt` function signature. ([bug 1972510]({{bugzilla}}1972510))
 - ⚠️ Removed deprecated `onUpdatePrompt` function signature. ([bug 1974744]({{bugzilla}}1974744))
 - Added [`RequiresApi`][144.7] annotations to APIs.
+- Added `appLinkLaunchType` to [`GeckoSession.Loader`][144.8] to set the launch type of the app session for the load.([bug 1982622]({{bugzilla}}1982622))
+- ⭐ Support for [`16 KB page sizes`][144.9] is now available.
 
 [144.1]: {{javadoc_uri}}/GeckoSession.html#flushSessionState()
 [144.2]: {{javadoc_uri}}/GeckoSession.ProgressDelegate.html
@@ -28,6 +43,8 @@ exclude: true
 [144.5]: {{javadoc_uri}}/GeckoRuntimeSettings.Builder.html#isolatedProcessEnabled(boolean)
 [144.6]: {{javadoc_uri}}/ContentBlocking.SafeBrowsingProvider.html
 [144.7]: https://developer.android.com/reference/androidx/annotation/RequiresApi
+[144.8]: {{javadoc_uri}}/GeckoSession.Loader.html#appLinkLaunchType(int)
+[144.9]: https://developer.android.com/guide/practices/page-sizes
 
 ## v143
 - Added an option to set multiple preferences on [`GeckoPreferenceController`][140.1] as [`checkStateAndSetGeckoPrefs`][143.1].
@@ -1829,4 +1846,4 @@ to allow adding gecko profiler markers.
 [65.24]: {{javadoc_uri}}/CrashReporter.html#sendCrashReport(android.content.Context,android.os.Bundle,java.lang.String)
 [65.25]: {{javadoc_uri}}/GeckoResult.html
 
-[api-version]: a65be4cb5d4141092fe8845b560ab94d164005d9
+[api-version]: a15af3b5439f5bed524e92e4c59c52d139d435a8

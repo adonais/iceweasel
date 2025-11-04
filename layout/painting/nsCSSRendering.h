@@ -554,9 +554,14 @@ struct nsCSSRendering {
       mozilla::Side aStartBevelSide, nscoord aStartBevelOffset,
       mozilla::Side aEndBevelSide, nscoord aEndBevelOffset);
 
-  // NOTE: pt, dirtyRect, lineSize, ascent, offset in the following
-  //       structs are non-rounded device pixels, not app units.
+  // NOTE: pt, dirtyRect, lineSize, ascent, offset, trimLeft, and trimRight in
+  //       the following structs are non-rounded device pixels, not app units.
   struct DecorationRectParams {
+    // Checks if either start or end trim value is negative.
+    // In that situation, text decoration will extend past the edges of the
+    // text.
+    bool HasNegativeTrim() const { return trimLeft < 0.0 || trimRight < 0.0; }
+
     // The width [length] and the height [thickness] of the decoration
     // line. This is a "logical" size in textRun orientation, so that
     // for a vertical textrun, width will actually be a physical height;
@@ -589,6 +594,11 @@ struct nsCSSRendering {
     // The style of the decoration line
     mozilla::StyleTextDecorationStyle style =
         mozilla::StyleTextDecorationStyle::None;
+    // Trim start/end values for this decoration.
+    // The caller must ensure that the start/end values are translated to
+    // left/right in the line-relative direction.
+    Float trimLeft = 0.0f;
+    Float trimRight = 0.0f;
     bool vertical = false;
     bool sidewaysLeft = false;
     gfxTextRun::Range glyphRange;
@@ -750,7 +760,7 @@ struct nsCSSRendering {
  * nsContextBoxBlur
  * Creates an 8-bit alpha channel context for callers to draw in, blurs the
  * contents of that context and applies it as a 1-color mask on a
- * different existing context. Uses gfxAlphaBoxBlur as its back end.
+ * different existing context. Uses gfxGaussianBlur as its back end.
  *
  * You must call Init() first to create a suitable temporary surface to draw
  * on.  You must then draw any desired content onto the given context, then
@@ -765,7 +775,7 @@ class nsContextBoxBlur {
   typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
 
  public:
-  enum { FORCE_MASK = 0x01, DISABLE_HARDWARE_ACCELERATION_BLUR = 0x02 };
+  enum { FORCE_MASK = 0x01 };
   /**
    * Prepares a gfxContext to draw on. Do not call this twice; if you want
    * to get the gfxContext again use GetContext().
@@ -911,7 +921,7 @@ class nsContextBoxBlur {
                                      mozilla::gfx::IntSize& aOutSpreadRadius,
                                      bool aConstrainSpreadRadius = true);
 
-  gfxAlphaBoxBlur mAlphaBoxBlur;
+  gfxGaussianBlur mGaussianBlur;
   mozilla::UniquePtr<gfxContext> mOwnedContext;
   gfxContext* mContext;  // may be either mOwnedContext or mDestinationContext
   gfxContext* mDestinationCtx;

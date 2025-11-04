@@ -125,7 +125,7 @@ internal class ExpandableLayout private constructor(context: Context) : FrameLay
     //
     // Also if this view is collapsed (full height but translated) we want to treat any touch in the
     // invisible space as a dismiss event.
-    @Suppress("ComplexMethod", "ReturnCount")
+    @Suppress("ReturnCount")
     override fun onInterceptTouchEvent(ev: MotionEvent?): Boolean {
         if (shouldInterceptTouches()) {
             return when (ev?.actionMasked) {

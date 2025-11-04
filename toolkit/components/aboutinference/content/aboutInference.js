@@ -12,7 +12,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   DownloadUtils: "resource://gre/modules/DownloadUtils.sys.mjs",
-  HttpInference: "chrome://global/content/ml/HttpInference.sys.mjs",
   ModelHub: "chrome://global/content/ml/ModelHub.sys.mjs",
   getInferenceProcessInfo: "chrome://global/content/ml/Utils.sys.mjs",
   getOptimalCPUConcurrency: "chrome://global/content/ml/Utils.sys.mjs",
@@ -43,6 +42,7 @@ const TASKS = [
   "question-answering",
   "fill-mask",
   "summarization",
+  "static-embeddings",
   "translation",
   "text2text-generation",
   "text-generation",
@@ -311,7 +311,54 @@ const INFERENCE_PAD_PRESETS = {
     device: "cpu",
     backend: "onnx",
   },
-
+  "static-embeddings": {
+    inputArgs: [
+      "This is an example of encoding",
+      "The quick brown fox jumps over the lazy dog.",
+      "Curaçao, naïve fiancé, jalapeño, déjà vu.",
+      "Привет, как дела?",
+      "Бързата кафява лисица прескача мързеливото куче.",
+      "Γρήγορη καφέ αλεπού πηδάει πάνω από τον τεμπέλη σκύλο.",
+      "اللغة العربية جميلة وغنية بالتاريخ.",
+      "مرحبا بالعالم!",
+      "Simplified: 快速的棕色狐狸跳过懒狗。",
+      "Traditional: 快速的棕色狐狸跳過懶狗。",
+      "素早い茶色の狐が怠け者の犬を飛び越える。",
+      "コンピュータープログラミング",
+      "빠른 갈색 여우가 게으른 개를 뛰어넘습니다.",
+      "तेज़ भूरी लोमड़ी आलसी कुत्ते के ऊपर कूदती है।",
+      "দ্রুত বাদামী শিয়াল অলস কুকুরের উপর দিয়ে লাফ দেয়।",
+      "வேகமான பழுப்பு நரி சோம்பேறி நாயின் மேல் குதிக்கிறது.",
+      "สุนัขจิ้งจอกสีน้ำตาลกระโดดข้ามสุนัขขี้เกียจ.",
+      "ብሩክ ቡናማ ቀበሮ ሰነፍ ውሻን ተዘልሏል።",
+      // Mixed scripts:
+      "Hello 世界 مرحبا 🌍",
+      "123, αβγ, абв, العربية, 中文, हिन्दी.",
+    ],
+    runOptions: {
+      // Use mean pooling, where each static embedding is averaged together into
+      // a new vector.
+      pooling: "mean",
+      // Normalize the resulting vector.
+      normalize: true,
+    },
+    task: "static-embeddings",
+    modelHub: "mozilla",
+    modelId: "mozilla/static-embeddings",
+    modelRevision: "v1.0.0",
+    backend: "static-embeddings",
+    staticEmbeddingsOptions: {
+      // View the available models here:
+      //   https://huggingface.co/gregtatum/static-embeddings/tree/main/models
+      subfolder: "models/minishlab/potion-retrieval-32M",
+      // The precision of the embeddings: fp32, fp16, fp8_e5m2, fp8_e4m3
+      dtype: "fp8_e4m3",
+      // The dimensions available: 32, 64, 128, 256.
+      dimensions: 128,
+      // Whether or not to use ZST compression.
+      compression: true,
+    },
+  },
   "link-preview": {
     inputArgs: `Summarize this: ${TINY_ARTICLE}`,
     runOptions: {
@@ -327,6 +374,26 @@ const INFERENCE_PAD_PRESETS = {
     dtype: "q8",
     device: "cpu",
     backend: "onnx",
+  },
+  openai: {
+    inputArgs: [
+      {
+        role: "system",
+        content:
+          "You are a helpful assistant that summarizes text clearly and concisely.",
+      },
+      {
+        role: "user",
+        content: `Please summarize the following text:\n\n ${TINY_ARTICLE} /no_think`,
+      },
+    ],
+    runOptions: {},
+    task: "text-generation",
+    modelId: "qwen3:0.6b",
+    modelRevision: "main",
+    apiKey: "ollama",
+    baseURL: "http://localhost:11434/v1",
+    backend: "openai",
   },
 };
 
@@ -646,6 +713,10 @@ async function displayInfo() {
   await refreshPage();
 }
 
+/**
+ * @param {string} selectId
+ * @param {string} optionValue
+ */
 function setSelectOption(selectId, optionValue) {
   const selectElement = document.getElementById(selectId);
   if (!selectElement) {
@@ -666,7 +737,9 @@ function setSelectOption(selectId, optionValue) {
     }
   }
 
-  console.warn(`No option found with value: ${optionValue}`);
+  console.warn(
+    `No option found for "${selectId}" with value: "${optionValue}"`
+  );
 }
 
 function loadExample(name) {
@@ -775,6 +848,13 @@ async function runInference() {
       useMlock: false,
       useMmap: true,
       kvCacheDtype: "q8_0",
+    };
+  }
+
+  if (taskName == "static-embeddings") {
+    const config = INFERENCE_PAD_PRESETS["static-embeddings"];
+    additionalEngineOptions = {
+      staticEmbeddingsOptions: config.staticEmbeddingsOptions,
     };
   }
 
@@ -1022,56 +1102,6 @@ class TextareaConsole {
     this.buffer = [];
     this.textarea.value = "";
   }
-}
-
-async function runHttpInference() {
-  const output = document.getElementById("http.output");
-  output.value = "…";
-  output.value = await lazy.HttpInference.completion(
-    ["bearer", "endpoint", "model", "prompt"].reduce(
-      (config, key) => {
-        config[key] = document.getElementById("http." + key).value;
-        return config;
-      },
-      { onStream: val => (output.value = val) }
-    ),
-    await updateHttpContext()
-  );
-}
-
-async function updateHttpContext() {
-  const limit = document.getElementById("http.limit").value;
-  const { AboutNewTab, gBrowser, isBlankPageURL } =
-    window.browsingContext.topChromeWindow;
-  const recentTabs = gBrowser.tabs
-    .filter(
-      tab =>
-        !isBlankPageURL(tab.linkedBrowser.currentURI.spec) &&
-        tab != gBrowser.selectedTab
-    )
-    .toSorted((a, b) => b.lastSeenActive - a.lastSeenActive)
-    .slice(0, limit)
-    .map(tab => tab.label);
-  const context = {
-    recentTabs,
-    stories: Object.values(
-      AboutNewTab.activityStream.store.getState().DiscoveryStream.feeds.data
-    )[0]
-      ?.data.recommendations.slice(0, limit)
-      .map(rec => rec.title),
-    tabTitle: recentTabs[0],
-  };
-
-  const output = document.getElementById("http.context");
-  output.innerHTML = "";
-  const table = output.appendChild(document.createElement("table"));
-  Object.entries(context).forEach(([key, val]) => {
-    const tr = table.appendChild(document.createElement("tr"));
-    tr.appendChild(document.createElement("td")).textContent = `%${key}%`;
-    tr.appendChild(document.createElement("td")).textContent = val;
-  });
-
-  return context;
 }
 
 var selectedHub;
@@ -1326,18 +1356,10 @@ window.onload = async function () {
   });
 
   document
-    .getElementById("http.button")
-    .addEventListener("click", runHttpInference);
-  document
-    .getElementById("http.limit")
-    .addEventListener("change", updateHttpContext);
-
-  document
     .getElementById("benchmark.button")
     .addEventListener("click", runBenchmark);
 
   document.getElementById("benchmark.output").value = "";
 
-  updateHttpContext();
   await refreshPage();
 };

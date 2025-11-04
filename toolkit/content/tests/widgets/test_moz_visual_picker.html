@@ -600,9 +600,27 @@
             is(picker.value, secondItem.value, "picker value is updated.");
             verifyEvents([
               {
+                type: "click",
+                value: "second",
+                localName: "moz-visual-picker-item",
+                checked: true,
+              },
+              {
+                type: "input",
+                value: "second",
+                localName: "moz-visual-picker-item",
+                checked: true,
+              },
+              {
                 type: "input",
                 value: "second",
                 localName: "moz-visual-picker",
+              },
+              {
+                type: "change",
+                value: "second",
+                localName: "moz-visual-picker-item",
+                checked: true,
               },
               {
                 type: "change",

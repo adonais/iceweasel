@@ -35,15 +35,14 @@ from .files_changed import get_changed_files
 from .parameters import get_app_version, get_version
 from .util.backstop import ANDROID_PERFTEST_BACKSTOP_INDEX, BACKSTOP_INDEX, is_backstop
 from .util.bugbug import push_schedules
-from .util.chunking import resolver
-from .util.hg import get_hg_commit_message, get_hg_revision_branch, get_hg_revision_info
+from .util.hg import get_hg_revision_branch, get_hg_revision_info
 from .util.partials import populate_release_history
 from .util.taskcluster import insert_index
 from .util.taskgraph import find_decision_task, find_existing_tasks_from_previous_kinds
 
 logger = logging.getLogger(__name__)
 
-ARTIFACTS_DIR = "artifacts"
+ARTIFACTS_DIR = os.environ.get("MOZ_UPLOAD_DIR", "artifacts")
 
 # For each project, this gives a set of parameters specific to the project.
 # See `taskcluster/docs/parameters.rst` for information on parameters.
@@ -105,6 +104,7 @@ PER_PROJECT_PARAMETERS = {
     },
     "cypress": {
         "target_tasks_method": "cypress_tasks",
+        "release_type": "nightly-cypress",
     },
     "larch": {
         "target_tasks_method": "larch_tasks",
@@ -115,6 +115,10 @@ PER_PROJECT_PARAMETERS = {
     },
     "toolchains": {
         "target_tasks_method": "mozilla_central_tasks",
+    },
+    # git projects
+    "staging-firefox": {
+        "target_tasks_method": "default",
     },
     # the default parameters are used for projects that do not match above.
     "default": {
@@ -216,8 +220,11 @@ def taskgraph_decision(options, parameters=None):
         full_task_graph_to_manifests_by_task(full_task_json),
     )
 
-    # write out the public/tests-by-manifest.json file
-    write_artifact("tests-by-manifest.json.gz", resolver.tests_by_manifest)
+    # `tests-by-manifest.json.gz` was previously written out here
+    # it was moved to `loader/test.py` because its contents now depend on
+    # data generated in a subprocess which we do not have access to here
+    # see https://bugzilla.mozilla.org/show_bug.cgi?id=1989038 for additional
+    # details
 
     # this is just a test to check whether the from_json() function is working
     _, _ = TaskGraph.from_json(full_task_json)
@@ -296,10 +303,14 @@ def get_decision_parameters(graph_config, options):
         if n in options
     }
 
-    commit_message = get_hg_commit_message(os.path.join(GECKO, product_dir))
-
     repo_path = os.getcwd()
     repo = get_repository(repo_path)
+
+    try:
+        commit_message = repo.get_commit_message()
+    except UnicodeDecodeError:
+        commit_message = ""
+
     parameters["base_ref"] = _determine_more_accurate_base_ref(
         repo,
         candidate_base_ref=options.get("base_ref"),
@@ -315,10 +326,26 @@ def get_decision_parameters(graph_config, options):
         env_prefix=_get_env_prefix(graph_config),
     )
 
-    if head_git_rev := get_hg_revision_info(
-        GECKO, revision=parameters["head_rev"], info="extras.git_commit"
-    ):
-        parameters["head_git_rev"] = head_git_rev
+    # Set some vcs specific parameters
+    if parameters["repository_type"] == "hg":
+        if head_git_rev := get_hg_revision_info(
+            GECKO, revision=parameters["head_rev"], info="extras.git_commit"
+        ):
+            parameters["head_git_rev"] = head_git_rev
+
+        parameters["hg_branch"] = get_hg_revision_branch(
+            GECKO, revision=parameters["head_rev"]
+        )
+
+        parameters["files_changed"] = sorted(
+            get_changed_files(parameters["head_repository"], parameters["head_rev"])
+        )
+
+    elif parameters["repository_type"] == "git":
+        parameters["hg_branch"] = None
+        parameters["files_changed"] = repo.get_changed_files(
+            rev=parameters["head_rev"], base_rev=parameters["base_rev"]
+        )
 
     # Define default filter list, as most configurations shouldn't need
     # custom filters.
@@ -332,12 +359,6 @@ def get_decision_parameters(graph_config, options):
     parameters["version"] = get_version(product_dir)
     parameters["app_version"] = get_app_version(product_dir)
     parameters["message"] = try_syntax_from_message(commit_message)
-    parameters["hg_branch"] = get_hg_revision_branch(
-        GECKO, revision=parameters["head_rev"]
-    )
-    parameters["files_changed"] = sorted(
-        get_changed_files(parameters["head_repository"], parameters["head_rev"])
-    )
     parameters["next_version"] = None
     parameters["optimize_strategies"] = None
     parameters["optimize_target_tasks"] = True

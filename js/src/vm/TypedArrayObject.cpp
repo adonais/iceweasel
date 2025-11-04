@@ -4257,7 +4257,6 @@ TypedArrayObject* js::TypedArraySubarrayWithLength(
     intptr_t length) {
   MOZ_ASSERT(!obj->hasDetachedBuffer());
   MOZ_ASSERT(!obj->is<ResizableTypedArrayObject>());
-  MOZ_ASSERT(HasBuiltinTypedArraySpecies(obj, cx));
   MOZ_ASSERT(start >= 0);
   MOZ_ASSERT(length >= 0);
   MOZ_ASSERT(size_t(start + length) <= obj->length().valueOr(0));
@@ -4304,7 +4303,6 @@ TypedArrayObject* js::TypedArraySubarrayRecover(JSContext* cx,
                                                 intptr_t start,
                                                 intptr_t length) {
   MOZ_ASSERT(!obj->is<ResizableTypedArrayObject>());
-  MOZ_ASSERT(HasBuiltinTypedArraySpecies(obj, cx));
   MOZ_ASSERT(start >= 0);
   MOZ_ASSERT(length >= 0);
 

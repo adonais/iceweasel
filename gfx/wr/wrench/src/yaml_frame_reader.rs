@@ -155,7 +155,7 @@ impl ExternalImageHandler for LocalExternalImageHandler {
         key: ExternalImageId,
         _channel_index: u8,
         _is_composited: bool,
-    ) -> ExternalImage {
+    ) -> ExternalImage<'_> {
         let (id, desc) = self.texture_ids[key.0 as usize];
         ExternalImage {
             uv: TexelRect::new(0.0, 0.0, desc.size.width as f32, desc.size.height as f32),

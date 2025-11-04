@@ -28,7 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.modifier.dashedBorder
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -116,7 +116,7 @@ private fun PlaceholderCardPreview() {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        PrimaryButton(
+                        FilledButton(
                             text = stringResource(R.string.tabs_menu_save_to_collection1),
                             modifier = Modifier
                                 .fillMaxWidth()

@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 tags = "appupdate base"
 head = "head_no_service.js"
 skip-if = [
@@ -196,6 +197,7 @@ reason = "Windows only test"
 ["marStageFailurePartialZucchini.js"]
 
 ["marStageSuccessComplete.js"]
+run-sequentially = ["os == 'linux'"] # frequent fail in parallel on Linux
 skip-if = [
   "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # Bug 1871787
 ]

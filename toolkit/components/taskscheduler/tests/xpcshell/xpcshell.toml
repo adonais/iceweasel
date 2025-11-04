@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 tags = "os_integration"
 
 ["test_TaskScheduler.js"]
@@ -8,6 +9,7 @@ skip-if = [
 ]
 
 ["test_TaskSchedulerMacOSImpl.js"]
+run-sequentially = ["true"] # almost perma fail in parallel
 run-if = ["os == 'mac'"] # Test of macOS backend
 skip-if = [
   "os == 'mac' && os_version == '10.15' && processor == 'x86_64'", # Bug 1713329

@@ -5,7 +5,7 @@
 package org.mozilla.fenix.components.toolbar
 
 import android.content.Context
-import androidx.lifecycle.LifecycleOwner
+import androidx.fragment.app.Fragment
 import androidx.navigation.NavController
 import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.compose.browser.toolbar.store.Environment
@@ -20,7 +20,7 @@ import org.mozilla.fenix.browser.readermode.ReaderModeController
  * This is Activity/Fragment lifecycle dependent and should be handled carefully to avoid memory leaks.
  *
  * @property context [Context] used for various system interactions.
- * @property viewLifecycleOwner [LifecycleOwner] depending on which lifecycle related operations will be scheduled.
+ * @property fragment Hosting [Fragment] used as the lifecycle owner and context for UI operations.
  * @property navController [NavController] to use for navigating to other in-app destinations.
  * @property browsingModeManager [BrowsingModeManager] for querying the current browsing mode.
  * @property browserAnimator Helper for animating the browser content when navigating to other screens.
@@ -29,7 +29,7 @@ import org.mozilla.fenix.browser.readermode.ReaderModeController
  */
 data class BrowserToolbarEnvironment(
     val context: Context,
-    val viewLifecycleOwner: LifecycleOwner,
+    val fragment: Fragment,
     val navController: NavController,
     val browsingModeManager: BrowsingModeManager,
     val browserAnimator: BrowserAnimator? = null,

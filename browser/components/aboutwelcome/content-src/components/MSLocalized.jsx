@@ -25,6 +25,15 @@ export const CONFIGURABLE_STYLES = [
   "width",
   "borderBlockStart",
   "borderBlockEnd",
+  "top",
+  "bottom",
+  "left",
+  "right",
+  "inset",
+  "insetBlock",
+  "insetInline",
+  "minHeight",
+  "minWidth",
 ];
 const ZAP_SIZE_THRESHOLD = 160;
 

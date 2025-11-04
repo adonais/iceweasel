@@ -8,7 +8,6 @@
 
 #include "mozilla/Atomics.h"
 #include "mozilla/Casting.h"
-#include "mozilla/FloatingPoint.h"
 #ifdef JS_HAS_INTL_API
 #  include "mozilla/intl/ICU4CLibrary.h"
 #  include "mozilla/intl/Locale.h"
@@ -129,6 +128,7 @@
 #include "vm/PromiseObject.h"  // js::PromiseObject, js::PromiseSlot_*
 #include "vm/ProxyObject.h"
 #include "vm/RealmFuses.h"
+#include "vm/RuntimeFuses.h"
 #include "vm/SavedStacks.h"
 #include "vm/ScopeKind.h"
 #include "vm/Stack.h"
@@ -8689,14 +8689,7 @@ static bool GetRealmTimeZone(JSContext* cx, unsigned argc, Value* vp) {
   }
 
 #ifdef JS_HAS_INTL_API
-  TimeZoneIdentifierVector timeZoneId;
-  if (!DateTimeInfo::timeZoneId(cx->realm()->getDateTimeInfo(), timeZoneId)) {
-    ReportOutOfMemory(cx);
-    return false;
-  }
-
-  auto* str = NewStringCopy<CanGC>(
-      cx, static_cast<mozilla::Span<const char>>(timeZoneId));
+  auto* str = cx->global()->globalIntlData().defaultTimeZone(cx);
   if (!str) {
     return false;
   }
@@ -8736,10 +8729,10 @@ static bool SetRealmTimeZone(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
 
-    cx->realm()->setTimeZone(timeZone.get());
+    cx->realm()->setTimeZoneOverride(timeZone.get());
   } else {
     // Reset to use the system default time zone.
-    cx->realm()->setTimeZone(nullptr);
+    cx->realm()->setTimeZoneOverride(nullptr);
   }
 
   args.rval().setUndefined();
@@ -8804,6 +8797,66 @@ static bool SetDefaultLocale(JSContext* cx, unsigned argc, Value* vp) {
     }
   } else {
     JS_ResetDefaultLocale(cx->runtime());
+  }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool GetRealmLocale(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 0) {
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+#ifdef JS_HAS_INTL_API
+  auto* str = cx->global()->globalIntlData().defaultLocale(cx);
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+#else
+  // Realm locales require Intl support.
+  args.rval().setString(cx->emptyString());
+#endif
+
+  return true;
+}
+
+static bool SetRealmLocale(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  RootedObject callee(cx, &args.callee());
+
+  if (args.length() != 1) {
+    ReportUsageErrorASCII(cx, callee, "Wrong number of arguments");
+    return false;
+  }
+
+  if (!args[0].isString() && !args[0].isUndefined()) {
+    ReportUsageErrorASCII(cx, callee,
+                          "First argument should be a string or undefined");
+    return false;
+  }
+
+  if (args[0].isString() && !args[0].toString()->empty()) {
+    Rooted<JSString*> str(cx, args[0].toString());
+    if (!str) {
+      return false;
+    }
+
+    auto locale = StringToLocale(cx, callee, str);
+    if (!locale) {
+      return false;
+    }
+
+    cx->realm()->setLocaleOverride(locale.get());
+  } else {
+    // Reset to use the system default locale.
+    cx->realm()->setLocaleOverride(nullptr);
   }
 
   args.rval().setUndefined();
@@ -8969,10 +9022,22 @@ static bool AssertRealmFuseInvariants(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool AssertRuntimeFuseInvariants(JSContext* cx, unsigned argc,
+                                        Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  // Note: This will crash if any invariant isn't held, so it's sufficient to
+  // simply return true always.
+  cx->runtime()->runtimeFuses.ref().assertInvariants(cx);
+  args.rval().setUndefined();
+  return true;
+}
+
 static bool GetFuseState(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
   cx->realm()->realmFuses.assertInvariants(cx);
+
+  cx->runtime()->runtimeFuses.ref().assertInvariants(cx);
 
   RootedObject returnObj(cx, JS_NewPlainObject(cx));
   if (!returnObj) {
@@ -8999,12 +9064,13 @@ static bool GetFuseState(JSContext* cx, unsigned argc, Value* vp) {
   FOR_EACH_REALM_FUSE(REALM_FUSE)
 #undef REALM_FUSE
 
-#define RUNTIME_FUSE(Name)                                                   \
+#define RUNTIME_FUSE(Name, LowerName)                                        \
   fuseObj = JS_NewPlainObject(cx);                                           \
   if (!fuseObj) {                                                            \
     return false;                                                            \
   }                                                                          \
-  intactValue.setBoolean(cx->runtime()->Name.ref().intact());                \
+  intactValue.setBoolean(                                                    \
+      cx->runtime()->runtimeFuses.ref().LowerName.intact());                 \
   if (!JS_DefineProperty(cx, fuseObj, "intact", intactValue,                 \
                          JSPROP_ENUMERATE)) {                                \
     return false;                                                            \
@@ -9013,8 +9079,7 @@ static bool GetFuseState(JSContext* cx, unsigned argc, Value* vp) {
     return false;                                                            \
   }
 
-  RUNTIME_FUSE(hasSeenObjectEmulateUndefinedFuse)
-  RUNTIME_FUSE(hasSeenArrayExceedsInt32LengthFuse)
+  FOR_EACH_RUNTIME_FUSE(RUNTIME_FUSE)
 #undef RUNTIME_FUSE
 
   args.rval().setObject(*returnObj);
@@ -9030,6 +9095,19 @@ static bool PopAllFusesInRealm(JSContext* cx, unsigned argc, Value* vp) {
 
 #define FUSE(Name, LowerName) realmFuses.LowerName.popFuse(cx, realmFuses);
   FOR_EACH_REALM_FUSE(FUSE)
+#undef FUSE
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool PopAllFusesInRuntime(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  RuntimeFuses& runtimeFuses = cx->runtime()->runtimeFuses.ref();
+
+#define FUSE(Name, LowerName) runtimeFuses.LowerName.popFuse(cx);
+  FOR_EACH_RUNTIME_FUSE(FUSE)
 #undef FUSE
 
   args.rval().setUndefined();
@@ -10986,6 +11064,11 @@ JS_FN_HELP("isSmallFunction", IsSmallFunction, 1, 0,
   " Runs the realm's fuse invariant checks -- these will crash on failure. "
   " Only available in fuzzing or debug builds, so usage should be guarded. "),
 
+  JS_FN_HELP("assertRuntimeFuseInvariants", AssertRuntimeFuseInvariants, 0, 0,
+  "assertRuntimeFuseInvariants()",
+  " Runs the runtime's fuse invariant checks -- these will crash on failure. "
+  " Only available in fuzzing or debug builds, so usage should be guarded. "),
+
     JS_FN_HELP("isCCW", IsCCW, 1, 0,
 "isCCW(object)",
 "  Return true if an object is a CCW."),
@@ -10993,6 +11076,10 @@ JS_FN_HELP("isSmallFunction", IsSmallFunction, 1, 0,
   JS_FN_HELP("popAllFusesInRealm", PopAllFusesInRealm, 0, 0,
   "popAllFusesInRealm()",
   " Pops all the fuses in the current realm"),
+
+  JS_FN_HELP("popAllFusesInRuntime", PopAllFusesInRuntime, 0, 0,
+  "popAllFusesInRuntime()",
+  " Pops all the fuses in the runtime"),
 
     JS_FN_HELP("getAllPrefNames", GetAllPrefNames, 0, 0,
 "getAllPrefNames()",
@@ -11042,6 +11129,16 @@ JS_FN_HELP("setDefaultLocale", SetDefaultLocale, 1, 0,
 "  Set the runtime default locale to the given value.\n"
 "  An empty string or undefined resets the runtime locale to its default value.\n"
 "  NOTE: The input string is not fully validated, it must be a valid BCP-47 language tag."),
+
+JS_FN_HELP("getRealmLocale", GetRealmLocale, 0, 0,
+"getRealmLocale()",
+"  Get the locale for the current realm."),
+
+JS_FN_HELP("setRealmLocale", SetRealmLocale, 1, 0,
+"setRealmLocale(locale)",
+"  Set the locale for the current realm.\n"
+"  The locale must be a valid BCP-47 locale identifier.\n"
+"  An empty string or undefined resets the realm locale to the system default locale."),
 
 JS_FN_HELP("isCollectingDelazifications", IsCollectingDelazifications, 1, 0,
 "isCollectingDelazifications(fun)",

@@ -17,6 +17,7 @@ import mozilla.components.service.pocket.ext.getCurrentFlightImpressions
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.GleanMetrics.Pocket
+import org.mozilla.fenix.GleanMetrics.StoriesLibrary
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.ContentRecommendationsAction
@@ -26,6 +27,7 @@ import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.mars.MARSUseCases
 import org.mozilla.fenix.home.pocket.PocketImpression
 import org.mozilla.fenix.home.pocket.PocketRecommendedStoriesCategory
+import org.mozilla.fenix.home.pocket.interactor.PocketStoriesInteractor
 import org.mozilla.fenix.utils.Settings
 import java.lang.ref.WeakReference
 
@@ -71,6 +73,11 @@ interface PocketStoriesController {
      * Callback for when the user clicks on the "Discover more" button.
      */
     fun handleDiscoverMoreClicked()
+
+    /**
+     * @see [PocketStoriesInteractor.onDiscoverMoreScreenViewed]
+     */
+    fun handleDiscoverMoreScreenViewed()
 }
 
 /**
@@ -261,5 +268,9 @@ internal class DefaultPocketStoriesController(
             R.id.homeFragment,
             HomeFragmentDirections.actionHomeFragmentToStoriesFragment(),
         )
+    }
+
+    override fun handleDiscoverMoreScreenViewed() {
+        StoriesLibrary.viewed.record(NoExtras())
     }
 }

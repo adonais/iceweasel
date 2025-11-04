@@ -1,6 +1,5 @@
 /* -*- js-indent-level: 2; tab-width: 2; indent-tabs-mode: nil -*- */
 
-/* eslint-env mozilla/browser-window */
 /* import-globals-from chrome-harness.js */
 /* import-globals-from mochitest-e10s-utils.js */
 
@@ -435,57 +434,69 @@ Tester.prototype = {
         ? "Found an unexpected {elt} at the end of test run"
         : "Found an unexpected {elt}";
 
-    // Remove stale tabs
-    if (
-      this.currentTest &&
-      window.gBrowser &&
-      AppConstants.MOZ_APP_NAME != "thunderbird" &&
-      gBrowser.tabs.length > 1
-    ) {
-      let lastURI = "";
-      let lastURIcount = 0;
-      while (gBrowser.tabs.length > 1) {
-        let lastTab = gBrowser.tabs[gBrowser.tabs.length - 1];
-        if (!lastTab.closing) {
-          // Report the stale tab as an error only when they're not closing.
-          // Tests can finish without waiting for the closing tabs.
-          if (lastURI != lastTab.linkedBrowser.currentURI.spec) {
-            lastURI = lastTab.linkedBrowser.currentURI.spec;
-          } else {
-            lastURIcount++;
-            if (lastURIcount >= 3) {
-              this.currentTest.addResult(
-                new testResult({
-                  name: "terminating browser early - unable to close tabs; skipping remaining tests in folder",
-                  allowFailure: this.currentTest.allowFailure,
-                })
-              );
-              this.finish();
+    // Clean up the Firefox window.
+    // But not the Thunderbird window, it doesn't have these things!
+    if (AppConstants.MOZ_APP_NAME != "thunderbird") {
+      // Remove stale tabs
+      if (this.currentTest && window.gBrowser && gBrowser.tabs.length > 1) {
+        let lastURI = "";
+        let lastURIcount = 0;
+        while (gBrowser.tabs.length > 1) {
+          let lastTab = gBrowser.tabs[gBrowser.tabs.length - 1];
+          if (!lastTab.closing) {
+            // Report the stale tab as an error only when they're not closing.
+            // Tests can finish without waiting for the closing tabs.
+            if (lastURI != lastTab.linkedBrowser.currentURI.spec) {
+              lastURI = lastTab.linkedBrowser.currentURI.spec;
+            } else {
+              lastURIcount++;
+              if (lastURIcount >= 3) {
+                this.currentTest.addResult(
+                  new testResult({
+                    name: "terminating browser early - unable to close tabs; skipping remaining tests in folder",
+                    allowFailure: this.currentTest.allowFailure,
+                  })
+                );
+                this.finish();
+              }
             }
+            this.currentTest.addResult(
+              new testResult({
+                name:
+                  baseMsg.replace("{elt}", "tab") +
+                  ": " +
+                  lastTab.linkedBrowser.currentURI.spec,
+                allowFailure: this.currentTest.allowFailure,
+              })
+            );
           }
-          this.currentTest.addResult(
-            new testResult({
-              name:
-                baseMsg.replace("{elt}", "tab") +
-                ": " +
-                lastTab.linkedBrowser.currentURI.spec,
-              allowFailure: this.currentTest.allowFailure,
-            })
-          );
+          gBrowser.removeTab(lastTab);
         }
-        gBrowser.removeTab(lastTab);
       }
-    }
 
-    // Replace the last tab with a fresh one
-    if (window.gBrowser && AppConstants.MOZ_APP_NAME != "thunderbird") {
-      gBrowser.addTab("about:blank", {
-        skipAnimation: true,
-        triggeringPrincipal:
-          Services.scriptSecurityManager.getSystemPrincipal(),
-      });
-      gBrowser.removeTab(gBrowser.selectedTab, { skipPermitUnload: true });
-      gBrowser.stop();
+      // Replace the last tab with a fresh one
+      if (window.gBrowser) {
+        gBrowser.addTab("about:blank", {
+          skipAnimation: true,
+          triggeringPrincipal:
+            Services.scriptSecurityManager.getSystemPrincipal(),
+        });
+        gBrowser.removeTab(gBrowser.selectedTab, { skipPermitUnload: true });
+        gBrowser.stop();
+      }
+
+      // Tests shouldn't leave sidebars open
+      this.structuredLogger.info("checking for open sidebars");
+      const sidebarContainer = document.getElementById("sidebar-box");
+      if (!sidebarContainer.hidden) {
+        window.SidebarController.hide({ dismissPanel: true });
+        this.currentTest.addResult(
+          new testResult({
+            name: baseMsg.replace("{elt}", "open sidebar"),
+            allowFailure: this.currentTest.allowFailure,
+          })
+        );
+      }
     }
 
     // Remove stale windows

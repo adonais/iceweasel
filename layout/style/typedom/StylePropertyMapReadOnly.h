@@ -25,14 +25,16 @@ class RefPtr;
 namespace mozilla {
 
 class ErrorResult;
+struct StylePropertyTypedValueResult;
 
 namespace dom {
 
+class Element;
 class OwningUndefinedOrCSSStyleValue;
 
 class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
  public:
-  explicit StylePropertyMapReadOnly(nsCOMPtr<nsISupports> aParent);
+  StylePropertyMapReadOnly(nsCOMPtr<nsISupports> aParent, bool aComputed);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(StylePropertyMapReadOnly)
@@ -43,9 +45,11 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
 
   // start of StylePropertyMapReadOnly Web IDL declarations
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-stylepropertymapreadonly-get
   void Get(const nsACString& aProperty, OwningUndefinedOrCSSStyleValue& aRetVal,
            ErrorResult& aRv) const;
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-stylepropertymapreadonly-getall
   void GetAll(const nsACString& aProperty,
               nsTArray<RefPtr<CSSStyleValue>>& aRetVal, ErrorResult& aRv) const;
 
@@ -68,7 +72,23 @@ class StylePropertyMapReadOnly : public nsISupports, public nsWrapperCache {
  protected:
   virtual ~StylePropertyMapReadOnly() = default;
 
+  class Declarations {
+   public:
+    explicit Declarations(bool aComputed) : mComputed(aComputed) {}
+
+    // XXX This will have to be changed a bit when support for CSSStyleRule
+    // is added (There won't be Element in that case)
+    StylePropertyTypedValueResult Get(Element* aElement,
+                                      const nsACString& aProperty,
+                                      ErrorResult& aRv) const;
+
+   private:
+    const bool mComputed;
+  };
+
+  // XXX Make this RefPtr<Element>
   nsCOMPtr<nsISupports> mParent;
+  const Declarations mDeclarations;
 };
 
 }  // namespace dom

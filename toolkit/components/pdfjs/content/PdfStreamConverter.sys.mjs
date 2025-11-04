@@ -18,6 +18,7 @@ const PDF_VIEWER_ORIGIN = "resource://pdf.js";
 const PDF_VIEWER_WEB_PAGE = "resource://pdf.js/web/viewer.html";
 const MAX_NUMBER_OF_PREFS = 50;
 const PDF_CONTENT_TYPE = "application/pdf";
+const SUMO_URL = "https://support.mozilla.org/";
 
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
@@ -581,14 +582,16 @@ class ChromeActions {
         case "number":
           currentPrefs[key] = Services.prefs.getIntPref(prefName, prefValue);
           break;
-        case "string":
+        case "string": {
           // The URL contains some dynamic values (%VERSION%, ...), so we need to
           // format it.
+          const str = Services.prefs.getStringPref(prefName, prefValue);
           currentPrefs[key] =
-            key === "altTextLearnMoreUrl"
+            str.startsWith(SUMO_URL) && str.includes("%")
               ? Services.urlFormatter.formatURLPref(prefName)
-              : Services.prefs.getStringPref(prefName, prefValue);
+              : str;
           break;
+        }
       }
     }
 

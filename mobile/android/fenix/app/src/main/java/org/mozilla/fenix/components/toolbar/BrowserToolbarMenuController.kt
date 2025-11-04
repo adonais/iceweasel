@@ -6,9 +6,9 @@ package org.mozilla.fenix.components.toolbar
 
 import android.content.Intent
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
@@ -37,8 +37,8 @@ import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.GleanMetrics.AppMenu
 import org.mozilla.fenix.GleanMetrics.Collections
 import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.NavigationBar
 import org.mozilla.fenix.GleanMetrics.ReaderMode
+import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
@@ -56,6 +56,13 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
+import org.mozilla.fenix.telemetry.ACTION_NAVIGATE_BACK_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_NAVIGATE_BACK_LONG_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_NAVIGATE_FORWARD_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_NAVIGATE_FORWARD_LONG_CLICKED
+import org.mozilla.fenix.telemetry.ACTION_OPEN_IN_FENIX
+import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
+import org.mozilla.fenix.telemetry.SOURCE_CUSTOM_BAR
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.webcompat.WEB_COMPAT_REPORTER_URL
 
@@ -281,7 +288,7 @@ class DefaultBrowserToolbarMenuController(
                         .filter { it is TopSite.Default || it is TopSite.Pinned }.size
 
                     if (numPinnedSites >= settings.topSitesMaxLimit) {
-                        AlertDialog.Builder(fragment.requireContext()).apply {
+                        MaterialAlertDialogBuilder(fragment.requireContext()).apply {
                             setTitle(R.string.shortcut_max_limit_title)
                             setMessage(R.string.shortcut_max_limit_content)
                             setPositiveButton(R.string.top_sites_max_limit_confirmation_button) { dialog, _ ->
@@ -449,10 +456,10 @@ class DefaultBrowserToolbarMenuController(
     private fun trackToolbarItemInteraction(item: ToolbarMenu.Item) {
         when (item) {
             is ToolbarMenu.Item.OpenInFenix ->
-                if (item.isOnNavBar) {
-                    NavigationBar.customOpenInFenixTapped.record(NoExtras())
-                } else if (item.isOnToolbar) {
-                    Events.browserToolbarAction.record(Events.BrowserToolbarActionExtra("open_in_fenix"))
+                if (item.isOnToolbar) {
+                    Toolbar.buttonTapped.record(
+                        Toolbar.ButtonTappedExtra(source = SOURCE_CUSTOM_BAR, item = ACTION_OPEN_IN_FENIX),
+                    )
                 } else {
                     Events.browserMenuAction.record(Events.BrowserMenuActionExtra("open_in_fenix"))
                 }
@@ -466,22 +473,34 @@ class DefaultBrowserToolbarMenuController(
                 Events.browserMenuAction.record(Events.BrowserMenuActionExtra("reader_mode_appearance"))
             is ToolbarMenu.Item.Back -> {
                 when {
-                    item.isOnNavBar && item.isCustomTab && item.viewHistory ->
-                        NavigationBar.customBackLongTapped.record(NoExtras())
-                    item.isOnNavBar && item.isCustomTab && !item.viewHistory ->
-                        NavigationBar.customBackTapped.record(NoExtras())
-                    item.isOnNavBar && !item.isCustomTab && item.viewHistory ->
-                        NavigationBar.browserBackLongTapped.record(NoExtras())
-                    item.isOnNavBar && !item.isCustomTab && !item.viewHistory ->
-                        NavigationBar.browserBackTapped.record(NoExtras())
                     item.isOnToolbar && item.isCustomTab && item.viewHistory ->
-                        Events.browserToolbarAction.record(Events.BrowserToolbarActionExtra("custom_back_long_press"))
+                        Toolbar.buttonTapped.record(
+                            Toolbar.ButtonTappedExtra(
+                                source = SOURCE_CUSTOM_BAR,
+                                item = ACTION_NAVIGATE_BACK_LONG_CLICKED,
+                            ),
+                        )
                     item.isOnToolbar && item.isCustomTab && !item.viewHistory ->
-                        Events.browserToolbarAction.record(Events.BrowserToolbarActionExtra("custom_back"))
+                        Toolbar.buttonTapped.record(
+                            Toolbar.ButtonTappedExtra(
+                                source = SOURCE_CUSTOM_BAR,
+                                item = ACTION_NAVIGATE_BACK_CLICKED,
+                            ),
+                        )
                     item.isOnToolbar && !item.isCustomTab && item.viewHistory ->
-                        Events.browserToolbarAction.record(Events.BrowserToolbarActionExtra("back_long_press"))
+                        Toolbar.buttonTapped.record(
+                            Toolbar.ButtonTappedExtra(
+                                source = SOURCE_ADDRESS_BAR,
+                                item = ACTION_NAVIGATE_BACK_LONG_CLICKED,
+                            ),
+                        )
                     item.isOnToolbar && !item.isCustomTab && !item.viewHistory ->
-                        Events.browserToolbarAction.record(Events.BrowserToolbarActionExtra("back"))
+                        Toolbar.buttonTapped.record(
+                            Toolbar.ButtonTappedExtra(
+                                source = SOURCE_ADDRESS_BAR,
+                                item = ACTION_NAVIGATE_BACK_CLICKED,
+                            ),
+                        )
                     item.viewHistory ->
                         Events.browserMenuAction.record(Events.BrowserMenuActionExtra("back_long_press"))
                     else -> Events.browserMenuAction.record(Events.BrowserMenuActionExtra("back"))
@@ -489,24 +508,34 @@ class DefaultBrowserToolbarMenuController(
             }
             is ToolbarMenu.Item.Forward ->
                 when {
-                    item.isOnNavBar && item.isCustomTab && item.viewHistory ->
-                        NavigationBar.customBackLongTapped.record(NoExtras())
-                    item.isOnNavBar && item.isCustomTab && !item.viewHistory ->
-                        NavigationBar.customBackTapped.record(NoExtras())
-                    item.isOnNavBar && !item.isCustomTab && item.viewHistory ->
-                        NavigationBar.browserBackLongTapped.record(NoExtras())
-                    item.isOnNavBar && !item.isCustomTab && !item.viewHistory ->
-                        NavigationBar.browserBackTapped.record(NoExtras())
                     item.isOnToolbar && item.isCustomTab && item.viewHistory ->
-                        Events.browserToolbarAction.record(
-                            Events.BrowserToolbarActionExtra("custom_forward_long_press"),
+                        Toolbar.buttonTapped.record(
+                            Toolbar.ButtonTappedExtra(
+                                source = SOURCE_CUSTOM_BAR,
+                                item = ACTION_NAVIGATE_FORWARD_LONG_CLICKED,
+                            ),
                         )
                     item.isOnToolbar && item.isCustomTab && !item.viewHistory ->
-                        Events.browserToolbarAction.record(Events.BrowserToolbarActionExtra("custom_forward"))
+                        Toolbar.buttonTapped.record(
+                            Toolbar.ButtonTappedExtra(
+                                source = SOURCE_CUSTOM_BAR,
+                                item = ACTION_NAVIGATE_FORWARD_CLICKED,
+                            ),
+                        )
                     item.isOnToolbar && !item.isCustomTab && item.viewHistory ->
-                        Events.browserToolbarAction.record(Events.BrowserToolbarActionExtra("forward_long_press"))
+                        Toolbar.buttonTapped.record(
+                            Toolbar.ButtonTappedExtra(
+                                source = SOURCE_ADDRESS_BAR,
+                                item = ACTION_NAVIGATE_FORWARD_LONG_CLICKED,
+                            ),
+                        )
                     item.isOnToolbar && !item.isCustomTab && !item.viewHistory ->
-                        Events.browserToolbarAction.record(Events.BrowserToolbarActionExtra("forward"))
+                        Toolbar.buttonTapped.record(
+                            Toolbar.ButtonTappedExtra(
+                                source = SOURCE_ADDRESS_BAR,
+                                item = ACTION_NAVIGATE_FORWARD_CLICKED,
+                            ),
+                        )
                     item.viewHistory ->
                         Events.browserMenuAction.record(Events.BrowserMenuActionExtra("forward_long_press"))
                     else -> Events.browserMenuAction.record(Events.BrowserMenuActionExtra("forward"))

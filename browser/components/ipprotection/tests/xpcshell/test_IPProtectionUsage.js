@@ -77,6 +77,9 @@ function promiseChannelDone(chan) {
   });
 }
 
+/**
+ * Mocks a channel listener.
+ */
 class ChannelListener {
   constructor(resolve, reject) {
     this.resolve = resolve;

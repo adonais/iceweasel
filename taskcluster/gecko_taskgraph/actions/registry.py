@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-
-import re
 from collections import namedtuple
 from types import FunctionType
 
@@ -192,11 +190,6 @@ def register_callback_action(
                 "base_revision": base_revision,
             }
 
-            match = re.match(
-                r"https://(hg.mozilla.org)/(.*?)/?$", parameters[repo_param]
-            )
-            if not match:
-                raise Exception(f"Unrecognized {repo_param}")
             action = {
                 "name": name,
                 "title": title,

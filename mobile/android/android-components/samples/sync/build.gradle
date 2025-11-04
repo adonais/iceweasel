@@ -50,6 +50,7 @@ dependencies {
     implementation project(':components:service-sync-autofill')
     implementation project(':components:service-sync-logins')
     implementation project(':components:support-appservices')
+    implementation project(':components:support-ktx')
 
     implementation libs.androidx.fragment
     implementation libs.androidx.recyclerview

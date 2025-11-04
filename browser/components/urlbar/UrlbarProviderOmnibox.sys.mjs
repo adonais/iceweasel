@@ -11,7 +11,7 @@ import {
   SkippableTimer,
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -19,8 +19,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionSearchHandler:
     "resource://gre/modules/ExtensionSearchHandler.sys.mjs",
 
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
 });
 
 /**
@@ -100,17 +100,17 @@ export class UrlbarProviderOmnibox extends UrlbarProvider {
     // Fetch heuristic result.
     let keyword = queryContext.tokens[0].value;
     let description = lazy.ExtensionSearchHandler.getDescription(keyword);
-    let heuristicResult = new lazy.UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.OMNIBOX,
-      UrlbarUtils.RESULT_SOURCE.ADDON,
+    let heuristicResult = new lazy.UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.OMNIBOX,
+      source: UrlbarUtils.RESULT_SOURCE.ADDON,
+      heuristic: true,
       ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
         title: [description, UrlbarUtils.HIGHLIGHT.TYPED],
         content: [queryContext.searchString, UrlbarUtils.HIGHLIGHT.TYPED],
         keyword: [queryContext.tokens[0].value, UrlbarUtils.HIGHLIGHT.TYPED],
         icon: UrlbarUtils.ICON.EXTENSION,
-      })
-    );
-    heuristicResult.heuristic = true;
+      }),
+    });
     addCallback(this, heuristicResult);
 
     // Fetch non-heuristic results.
@@ -130,9 +130,9 @@ export class UrlbarProviderOmnibox extends UrlbarProvider {
           if (content == heuristicResult.payload.content) {
             continue;
           }
-          let result = new lazy.UrlbarResult(
-            UrlbarUtils.RESULT_TYPE.OMNIBOX,
-            UrlbarUtils.RESULT_SOURCE.ADDON,
+          let result = new lazy.UrlbarResult({
+            type: UrlbarUtils.RESULT_TYPE.OMNIBOX,
+            source: UrlbarUtils.RESULT_SOURCE.ADDON,
             ...lazy.UrlbarResult.payloadAndSimpleHighlights(
               queryContext.tokens,
               {
@@ -145,9 +145,8 @@ export class UrlbarProviderOmnibox extends UrlbarProvider {
                 isBlockable: suggestion.deletable,
                 icon: UrlbarUtils.ICON.EXTENSION,
               }
-            )
-          );
-
+            ),
+          });
           addCallback(this, result);
         }
       }

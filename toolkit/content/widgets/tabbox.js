@@ -256,9 +256,35 @@
   customElements.define("deck", MozDeck);
 
   class MozTabpanels extends MozDeck {
+    /**
+     * Panels that are currently within an active Split View.
+     *
+     * @type {string[]}
+     */
+    #splitViewPanels = [];
+
+    /**
+     * The splitter placed in between Split View panels.
+     *
+     * @type {XULElement}
+     */
+    #splitViewSplitter = null;
+
     constructor() {
       super();
       this._tabbox = null;
+    }
+
+    handleEvent(e) {
+      switch (e.type) {
+        case "focus": {
+          const browser = e.currentTarget;
+          const tab = browser.getTabBrowser().getTabForBrowser(browser);
+          const tabstrip = this.tabbox.tabs;
+          tabstrip.selectedItem = tab;
+          break;
+        }
+      }
     }
 
     get tabbox() {
@@ -269,6 +295,17 @@
       }
 
       return (this._tabbox = this.closest("tabbox"));
+    }
+
+    get splitViewSplitter() {
+      if (!this.#splitViewSplitter) {
+        const splitter = document.createXULElement("splitter");
+        splitter.className = "split-view-splitter";
+        splitter.setAttribute("resizebefore", "sibling");
+        splitter.setAttribute("resizeafter", "none");
+        this.#splitViewSplitter = splitter;
+      }
+      return this.#splitViewSplitter;
     }
 
     /**
@@ -313,6 +350,56 @@
       }
 
       return tabElmFromIndex;
+    }
+
+    set splitViewPanels(newPanels) {
+      const oldPanels = this.#splitViewPanels;
+      for (const panel of oldPanels) {
+        this.removePanelFromSplitView(panel, false);
+      }
+      for (const [i, panel] of newPanels.entries()) {
+        const panelEl = document.getElementById(panel);
+        panelEl?.classList.add("split-view-panel");
+        panelEl?.setAttribute("column", i);
+        panelEl?.querySelector("browser")?.addEventListener("focus", this);
+      }
+      this.#splitViewPanels = newPanels;
+      this.#isSplitViewActive = !!newPanels.length;
+    }
+
+    get splitViewPanels() {
+      return this.#splitViewPanels;
+    }
+
+    /**
+     * Remove split view attributes from a panel, and optionally remove it from
+     * the splitViewPanels array.
+     *
+     * @param {string} panel
+     * @param {boolean} [updateArray]
+     */
+    removePanelFromSplitView(panel, updateArray = true) {
+      const panelEl = document.getElementById(panel);
+      panelEl?.classList.remove("split-view-panel");
+      panelEl?.removeAttribute("column");
+      panelEl?.querySelector("browser")?.removeEventListener("focus", this);
+      if (updateArray) {
+        const index = this.#splitViewPanels.indexOf(panel);
+        if (index !== -1) {
+          this.#splitViewPanels.splice(index, 1);
+        }
+      }
+      this.#isSplitViewActive = !!this.#splitViewPanels.length;
+    }
+
+    set #isSplitViewActive(isActive) {
+      this.toggleAttribute("splitview", isActive);
+      this.splitViewSplitter.hidden = !isActive;
+      if (isActive) {
+        // Place splitter after first panel, so that it can be resized.
+        const firstPanel = document.getElementById(this.splitViewPanels[0]);
+        firstPanel?.after(this.#splitViewSplitter);
+      }
     }
   }
 

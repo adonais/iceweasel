@@ -105,12 +105,14 @@ class TbplFormatter(BaseFormatter):
     @output_subtests
     def crash(self, data):
         id = data["test"] if "test" in data else "pid: %s" % data["process"]
+        quiet = data.get("quiet", False)
+        crash_prefix = "INFO crashed process" if quiet else "PROCESS-CRASH"
 
         if data.get("java_stack"):
             # use "<exception> at <top frame>" as a crash signature for java exception
             sig = data["java_stack"].split("\n")
             sig = " ".join(sig[0:2])
-            rv = ["PROCESS-CRASH | %s | %s\n[%s]" % (id, sig, data["java_stack"])]
+            rv = ["%s | %s | %s\n[%s]" % (crash_prefix, id, sig, data["java_stack"])]
 
             if data.get("reason"):
                 rv.append("Mozilla crash reason: %s" % data["reason"])
@@ -121,7 +123,7 @@ class TbplFormatter(BaseFormatter):
         else:
             signature = data["signature"] if data["signature"] else "unknown top frame"
             reason = data.get("reason", "application crashed")
-            rv = ["PROCESS-CRASH | %s [%s] | %s " % (reason, signature, id)]
+            rv = ["%s | %s [%s] | %s " % (crash_prefix, reason, signature, id)]
 
             if data.get("process_type"):
                 rv.append("Process type: {}".format(data["process_type"]))

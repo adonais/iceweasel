@@ -70,6 +70,10 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/URLQueryStringStripper.h"
 #include "mozilla/EventStateManager.h"
+#include "mozilla/glean/DomMetrics.h"
+#include "mozilla/StartupTimeline.h"
+#include "GeckoProfiler.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "nsIURIFixup.h"
 #include "nsIXULRuntime.h"
 
@@ -94,7 +98,7 @@
 #include "GVAutoplayRequestStatusIPC.h"
 
 extern mozilla::LazyLogModule gAutoplayPermissionLog;
-extern mozilla::LazyLogModule gNavigationLog;
+extern mozilla::LazyLogModule gNavigationAPILog;
 extern mozilla::LazyLogModule gTimeoutDeferralLog;
 
 #define AUTOPLAY_LOG(msg, ...) \
@@ -1015,6 +1019,7 @@ void BrowsingContext::Detach(bool aFromIPC) {
 
   if (XRE_IsParentProcess()) {
     Canonical()->AddPendingDiscard();
+    Canonical()->mActiveEntryList.clear();
   }
   auto callListeners =
       MakeScopeExit([&, listeners = std::move(mDiscardListeners), id = Id()] {
@@ -2181,6 +2186,56 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
 
       cp->TransmitBlobDataIfBlobURL(aLoadState->URI());
 
+#ifdef ANDROID
+      // Generate a unique android load identifier for this url load
+      // Used to map back to the app link launch type in
+      // ContentParent::RecordAndroidAppLinkTelemetry() so we can avoid
+      // sending the app link launch type to the content process
+      uint64_t androidLoadIdentifier = nsContentUtils::GenerateTabId();
+      MOZ_ALWAYS_SUCCEEDS(
+          SetAndroidAppLinkLoadIdentifier(Some(androidLoadIdentifier)));
+
+      uint32_t appLinkLaunchType = aLoadState->GetAppLinkLaunchType();
+      cp->SetAndroidAppLinkLaunchType(androidLoadIdentifier, appLinkLaunchType);
+
+      // Record timing for cold app link launches
+      constexpr uint32_t APPLINK_COLD = 1;
+      if (appLinkLaunchType == APPLINK_COLD) {
+        const TimeStamp loadUriTime = TimeStamp::Now();
+
+        // Process creation to load URI timing
+        const TimeStamp processCreationTime = TimeStamp::ProcessCreation();
+        if (!processCreationTime.IsNull()) {
+          const TimeDuration delta = loadUriTime - processCreationTime;
+          mozilla::glean::perf::cold_applink_process_launch_to_load_uri
+              .AccumulateRawDuration(delta);
+
+          PROFILER_MARKER("Cold App Link Process Creation to Load URI", NETWORK,
+                          MarkerOptions(MarkerTiming::Interval(
+                              processCreationTime, loadUriTime)),
+                          Tracing, "AppLink");
+        }
+
+        // StartupTimeline::MAIN to load URI timing
+        const TimeStamp mainTime = StartupTimeline::Get(StartupTimeline::MAIN);
+        if (!mainTime.IsNull()) {
+          const TimeDuration mainDelta = loadUriTime - mainTime;
+          mozilla::glean::perf::cold_applink_main_to_load_uri
+              .AccumulateRawDuration(mainDelta);
+
+          PROFILER_MARKER(
+              "Cold App Link Main to Load URI", NETWORK,
+              MarkerOptions(MarkerTiming::Interval(mainTime, loadUriTime)),
+              Tracing, "AppLink");
+        }
+      }
+
+      PROFILER_MARKER_FMT("BrowsingContext::LoadURI", NETWORK, {},
+                          "android appLinkLaunchType {} URL {}",
+                          appLinkLaunchType,
+                          aLoadState->URI()->GetSpecOrDefault().get());
+#endif
+
       // Setup a confirmation callback once the content process receives this
       // load. Normally we'd expect a PDocumentChannel actor to have been
       // created to claim the load identifier by that time. If not, then it
@@ -2384,6 +2439,8 @@ void BrowsingContext::Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
                                ErrorResult& aRv,
                                NavigationHistoryBehavior aHistoryHandling,
                                bool aShouldNotForceReplaceInOnLoad) {
+  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "Navigate to {} as {}", *aURI,
+              aHistoryHandling);
   CallerType callerType = aSubjectPrincipal.IsSystemPrincipal()
                               ? CallerType::System
                               : CallerType::NonSystem;
@@ -2402,9 +2459,25 @@ void BrowsingContext::Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
 
   loadState->SetShouldNotForceReplaceInOnLoad(aShouldNotForceReplaceInOnLoad);
 
-  // The steps 12 and 13 of #navigate are handled later in
-  // nsDocShell::InternalLoad().
-  if (aHistoryHandling == NavigationHistoryBehavior::Replace) {
+  // Step 12
+  NavigationHistoryBehavior historyHandling = aHistoryHandling;
+  if (aHistoryHandling == NavigationHistoryBehavior::Auto) {
+    if (auto* document = GetExtantDocument()) {
+      bool equals = false;
+      aURI->Equals(document->GetDocumentURI(), &equals);
+      if (equals && document->GetPrincipal()) {
+        document->GetPrincipal()->Equals(&aSubjectPrincipal, &equals);
+      }
+      if (equals) {
+        historyHandling = NavigationHistoryBehavior::Replace;
+      } else {
+        historyHandling = NavigationHistoryBehavior::Push;
+      }
+    }
+  }
+
+  // Step 13 of #navigate are handled later in nsDocShell::InternalLoad().
+  if (historyHandling == NavigationHistoryBehavior::Replace) {
     loadState->SetLoadType(LOAD_STOP_CONTENT_AND_REPLACE);
   } else {
     loadState->SetLoadType(LOAD_STOP_CONTENT);
@@ -3366,6 +3439,13 @@ void BrowsingContext::DidSet(FieldIndex<IDX_UserAgentOverride>) {
     if (shell) {
       shell->ClearCachedUserAgent();
     }
+
+    if (nsCOMPtr<Document> doc = aContext->GetExtantDocument()) {
+      if (nsCOMPtr<nsIHttpChannel> httpChannel =
+              do_QueryInterface(doc->GetChannel())) {
+        Unused << httpChannel->SetIsUserAgentHeaderOutdated(true);
+      }
+    }
   });
 }
 
@@ -4285,36 +4365,42 @@ void BrowsingContext::RemoveFromSessionHistory(const nsID& aChangeID) {
 void BrowsingContext::HistoryGo(
     int32_t aOffset, uint64_t aHistoryEpoch, bool aRequireUserInteraction,
     bool aUserActivation, std::function<void(Maybe<int32_t>&&)>&& aResolver) {
+  // We always pass checkForCancelation as true here, since we'll never call
+  // HistoryGo in a context where we beforehand know that we want to skip
+  // onbeforeunload or onnavigate.
+  bool checkForCancelation = true;
   if (XRE_IsContentProcess()) {
     ContentChild::GetSingleton()->SendHistoryGo(
         this, aOffset, aHistoryEpoch, aRequireUserInteraction, aUserActivation,
-        std::move(aResolver),
+        checkForCancelation, std::move(aResolver),
         [](mozilla::ipc::
                ResponseRejectReason) { /* FIXME Is ignoring this fine? */ });
   } else {
     RefPtr<CanonicalBrowsingContext> self = Canonical();
-    aResolver(self->HistoryGo(
-        aOffset, aHistoryEpoch, aRequireUserInteraction, aUserActivation,
-        self->GetContentParent() ? Some(self->GetContentParent()->ChildID())
-                                 : Nothing()));
+    aResolver(self->HistoryGo(aOffset, aHistoryEpoch, aRequireUserInteraction,
+                              aUserActivation, checkForCancelation,
+                              self->GetContentParent()
+                                  ? Some(self->GetContentParent()->ChildID())
+                                  : Nothing()));
   }
 }
 
 void BrowsingContext::NavigationTraverse(
     const nsID& aKey, uint64_t aHistoryEpoch, bool aUserActivation,
-    std::function<void(nsresult)>&& aResolver) {
+    bool aCheckForCancelation, std::function<void(nsresult)>&& aResolver) {
   if (XRE_IsContentProcess()) {
     ContentChild::GetSingleton()->SendNavigationTraverse(
-        this, aKey, aHistoryEpoch, aUserActivation, std::move(aResolver),
+        this, aKey, aHistoryEpoch, aUserActivation, aCheckForCancelation,
+        std::move(aResolver),
         [](mozilla::ipc::
                ResponseRejectReason) { /* FIXME Is ignoring this fine? */ });
   } else {
     RefPtr<CanonicalBrowsingContext> self = Canonical();
-    self->NavigationTraverse(aKey, aHistoryEpoch, aUserActivation,
-                             self->GetContentParent()
-                                 ? Some(self->GetContentParent()->ChildID())
+    self->NavigationTraverse(
+        aKey, aHistoryEpoch, aUserActivation, aCheckForCancelation,
+        self->GetContentParent() ? Some(self->GetContentParent()->ChildID())
                                  : Nothing(),
-                             std::move(aResolver));
+        std::move(aResolver));
   }
 }
 

@@ -65,6 +65,11 @@ class TabsTrayTelemetryMiddleware(
                 TabsTray.bookmarkSelectedTabs.record(TabsTray.BookmarkSelectedTabsExtra(tabCount = action.tabCount))
                 MetricsUtils.recordBookmarkAddMetric(Source.TABS_TRAY, nimbusEventStore, count = action.tabCount)
             }
+
+            is TabsTrayAction.ThreeDotMenuShown -> {
+                TabsTray.menuOpened.record(NoExtras())
+            }
+
             else -> {
                 // no-op
             }

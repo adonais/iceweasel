@@ -43,7 +43,6 @@ import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHigh
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class RecentVisitsControllerTest {
 
@@ -124,6 +123,7 @@ class RecentVisitsControllerTest {
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun handleRemoveGroup() = runTestOnMain {
         val historyMetadataKey = HistoryMetadataKey(

@@ -3429,10 +3429,9 @@ void nsLineLayout::RelativePositionFrames(PerSpanData* psd,
     // We must position the view correctly before positioning its
     // descendants so that widgets are positioned properly (since only
     // some views have widgets).
-    if (frame->HasView()) {
+    if (auto* view = frame->GetView()) {
       nsContainerFrame::SyncFrameViewAfterReflow(
-          mPresContext, frame, frame->GetView(),
-          pfd->mOverflowAreas.InkOverflow(),
+          mPresContext, frame, view, pfd->mOverflowAreas.InkOverflow(),
           nsIFrame::ReflowChildFlags::NoSizeView);
     }
 
@@ -3478,9 +3477,9 @@ void nsLineLayout::RelativePositionFrames(PerSpanData* psd,
     // Do this here (rather than along with setting the overflow rect
     // below) so we get leaf frames as well.  No need to worry
     // about the root span, since it doesn't have a frame.
-    if (frame->HasView()) {
+    if (auto* view = frame->GetView()) {
       nsContainerFrame::SyncFrameViewAfterReflow(
-          mPresContext, frame, frame->GetView(), r.InkOverflow(),
+          mPresContext, frame, view, r.InkOverflow(),
           nsIFrame::ReflowChildFlags::NoMoveView);
     }
 

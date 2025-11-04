@@ -40,11 +40,23 @@ def pick_system(env, flavor, mach_cmd):
         VersionProducer,
     ]
 
-    if flavor in ("desktop-browser", "xpcshell"):
+    if flavor == "desktop-browser":
         return Layers(
             env,
             mach_cmd,
             desktop_layers,
+        )
+    if flavor == "xpcshell":
+        return Layers(
+            env,
+            mach_cmd,
+            [
+                PingServer,  # needs to come before Profile
+                BinarySetup,  # needs to come before macos
+                MacosDevice,
+                Profile,
+                ProxyRunner,
+            ],
         )
     if flavor == "mochitest":
         return Layers(

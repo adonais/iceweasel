@@ -13,7 +13,7 @@ import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.Crash
-import mozilla.components.lib.crash.CrashReporter
+import mozilla.components.lib.crash.RuntimeTag
 import mozilla.components.lib.crash.service.CrashReport.Annotation
 import mozilla.components.support.base.ext.getStacktraceAsJsonString
 import mozilla.components.support.base.ext.getStacktraceAsString
@@ -170,7 +170,7 @@ class MozillaSocorroService(
         isNativeCodeCrash: Boolean,
         isFatalCrash: Boolean,
     ): String? {
-        val crashVersionName = crash.runtimeTags[CrashReporter.RELEASE_RUNTIME_TAG] ?: versionName
+        val crashVersionName = crash.runtimeTags[RuntimeTag.RELEASE] ?: versionName
         val url = URL(serverUrl ?: buildServerUrl(crashVersionName))
         val boundary = generateBoundary()
         var conn: HttpURLConnection? = null
@@ -237,7 +237,7 @@ class MozillaSocorroService(
     internal fun createFormDataWriter(os: OutputStream, boundary: String, logger: Logger) =
         FormDataWriter(os, boundary, logger)
 
-    @Suppress("LongParameterList", "LongMethod", "ComplexMethod")
+    @Suppress("LongParameterList", "LongMethod")
     private fun sendCrashData(
         os: OutputStream,
         boundary: String,

@@ -107,9 +107,27 @@ async function stubRemoteSettingsAllowList(
   allowList = [{ domain: "example.org" }]
 ) {
   const allowListRS = await lazy.RemoteSettings("fxrelay-allowlist");
+  // If already stubbed, restore
+  if (allowListRS.get && allowListRS.get.restore) {
+    allowListRS.get.restore();
+  }
   const rsSandbox = sinon.createSandbox();
   rsSandbox.stub(allowListRS, "get").returns(allowList);
   allowListRS.emit("sync");
+  return rsSandbox;
+}
+
+async function stubRemoteSettingsDenyList(
+  denyList = [{ domain: "on-denylist.org" }]
+) {
+  const denyListRS = await lazy.RemoteSettings("fxrelay-denylist");
+  // If already stubbed, restore
+  if (denyListRS.get && denyListRS.get.restore) {
+    denyListRS.get.restore();
+  }
+  const rsSandbox = sinon.createSandbox();
+  rsSandbox.stub(denyListRS, "get").returns(denyList);
+  denyListRS.emit("sync");
   return rsSandbox;
 }
 
@@ -179,3 +197,10 @@ async function clickButtonAndWaitForPopupToClose(buttonToClick) {
   buttonToClick.click();
   await notificationHiddenEvent;
 }
+
+const setupRelayScenario = async scenarioName => {
+  await SpecialPowers.pushPrefEnv({
+    set: [["signon.firefoxRelay.feature", scenarioName]],
+  });
+  Services.telemetry.clearEvents();
+};

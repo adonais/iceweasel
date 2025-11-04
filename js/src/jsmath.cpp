@@ -61,6 +61,17 @@ static inline bool UseFdlibmForSinCosTan(const CallArgs& args) {
          args.callee().nonCCWRealm()->creationOptions().alwaysUseFdlibm();
 }
 
+// Stack alignment on x86 Windows is 4 byte. Align to 16 bytes when calling
+// rounding functions with double parameters.
+//
+// See |ABIStackAlignment| in "js/src/jit/x86/Assembler-x86.h".
+#if defined(JS_CODEGEN_X86) && (!defined(__GNUC__) || defined(__MINGW32__))
+#  define ALIGN_STACK_FOR_ROUNDING_FUNCTION \
+    __attribute__((force_align_arg_pointer))
+#else
+#  define ALIGN_STACK_FOR_ROUNDING_FUNCTION
+#endif
+
 template <UnaryMathFunctionType F>
 static bool math_function(JSContext* cx, CallArgs& args) {
   if (args.length() == 0) {
@@ -155,9 +166,10 @@ static bool math_atan2(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+ALIGN_STACK_FOR_ROUNDING_FUNCTION
 double js::math_ceil_impl(double x) {
   AutoUnsafeCallWithABI unsafe;
-  return fdlibm_ceil(x);
+  return std::ceil(x);
 }
 
 static bool math_ceil(JSContext* cx, unsigned argc, Value* vp) {
@@ -228,9 +240,10 @@ static bool math_exp(JSContext* cx, unsigned argc, Value* vp) {
   return math_function<math_exp_impl>(cx, args);
 }
 
+ALIGN_STACK_FOR_ROUNDING_FUNCTION
 double js::math_floor_impl(double x) {
   AutoUnsafeCallWithABI unsafe;
-  return fdlibm_floor(x);
+  return std::floor(x);
 }
 
 bool js::math_floor(JSContext* cx, unsigned argc, Value* vp) {
@@ -580,10 +593,11 @@ T js::GetBiggestNumberLessThan(T x) {
 template double js::GetBiggestNumberLessThan<>(double x);
 template float js::GetBiggestNumberLessThan<>(float x);
 
+ALIGN_STACK_FOR_ROUNDING_FUNCTION
 double js::math_round_impl(double x) {
   AutoUnsafeCallWithABI unsafe;
 
-  double result = fdlibm_ceil(x);
+  double result = std::ceil(x);
   if (x < result - 0.5) {
     result -= 1.0;
   }
@@ -593,7 +607,7 @@ double js::math_round_impl(double x) {
 float js::math_roundf_impl(float x) {
   AutoUnsafeCallWithABI unsafe;
 
-  float result = fdlibm_ceilf(x);
+  float result = std::ceil(x);
   if (x < result - 0.5f) {
     result -= 1.0f;
   }
@@ -860,14 +874,10 @@ bool js::math_hypot_handle(JSContext* cx, HandleValueArray args,
   return true;
 }
 
+ALIGN_STACK_FOR_ROUNDING_FUNCTION
 double js::math_trunc_impl(double x) {
   AutoUnsafeCallWithABI unsafe;
-  return fdlibm_trunc(x);
-}
-
-float js::math_truncf_impl(float x) {
-  AutoUnsafeCallWithABI unsafe;
-  return fdlibm_truncf(x);
+  return std::trunc(x);
 }
 
 bool js::math_trunc(JSContext* cx, unsigned argc, Value* vp) {
@@ -1276,3 +1286,5 @@ const JSClass js::MathClass = {
     JS_NULL_CLASS_OPS,
     &MathClassSpec,
 };
+
+#undef ALIGN_STACK_FOR_ROUNDING_FUNCTION

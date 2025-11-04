@@ -278,7 +278,7 @@ export class FxAccountsPairingFlow {
     const curState = stateMachine.currentState;
     try {
       switch (command) {
-        case COMMAND_PAIR_SUPP_METADATA:
+        case COMMAND_PAIR_SUPP_METADATA: {
           stateMachine.assertState(
             [PendingConfirmations, PendingLocalConfirmation],
             `Wrong state for ${command}`
@@ -291,7 +291,8 @@ export class FxAccountsPairingFlow {
             remote: ipAddress,
           } = curState.sender;
           return { ua, city, region, country, ipAddress };
-        case COMMAND_PAIR_AUTHORIZE:
+        }
+        case COMMAND_PAIR_AUTHORIZE: {
           stateMachine.assertState(
             [PendingConfirmations, PendingLocalConfirmation],
             `Wrong state for ${command}`
@@ -325,10 +326,11 @@ export class FxAccountsPairingFlow {
           });
           curState.localConfirmed();
           break;
+        }
         case COMMAND_PAIR_DECLINE:
           this._onAbort();
           break;
-        case COMMAND_PAIR_HEARTBEAT:
+        case COMMAND_PAIR_HEARTBEAT: {
           if (curState instanceof Errored || this._pairingChannel.closed) {
             return { err: curState.error.message || "Pairing channel closed" };
           }
@@ -337,6 +339,7 @@ export class FxAccountsPairingFlow {
             curState instanceof PendingRemoteConfirmation
           );
           return { suppAuthorized };
+        }
         case COMMAND_PAIR_COMPLETE:
           this.finalize();
           break;
@@ -356,7 +359,7 @@ export class FxAccountsPairingFlow {
     const curState = stateMachine.currentState;
     try {
       switch (message) {
-        case "pair:supp:request":
+        case "pair:supp:request": {
           stateMachine.assertState(
             SuppConnectionPending,
             `Wrong state for ${message}`
@@ -399,6 +402,7 @@ export class FxAccountsPairingFlow {
             keys_jwk,
           });
           break;
+        }
         case "pair:supp:authorize":
           stateMachine.assertState(
             [PendingConfirmations, PendingRemoteConfirmation],

@@ -1391,18 +1391,13 @@ export class StyleEditorUI extends EventEmitter {
   #updateAtRulesList = editor => {
     (async function () {
       const details = await this.getEditorDetails(editor);
-      const list = details.querySelector(".stylesheet-at-rules-list");
-
-      while (list.firstChild) {
-        list.firstChild.remove();
-      }
-
       const rules = editor.atRules;
       const showSidebar = Services.prefs.getBoolPref(PREF_AT_RULES_SIDEBAR);
       const sidebar = details.querySelector(".stylesheet-sidebar");
 
       let inSource = false;
 
+      const listItems = [];
       for (const rule of rules) {
         const { line, column } = rule;
 
@@ -1468,8 +1463,11 @@ export class StyleEditorUI extends EventEmitter {
 
         ruleTextContainer.append(type, cond);
         div.append(ruleTextContainer, link);
-        list.appendChild(div);
+        listItems.push(div);
       }
+
+      const list = details.querySelector(".stylesheet-at-rules-list");
+      list.replaceChildren(...listItems);
 
       sidebar.hidden = !showSidebar || !inSource;
 

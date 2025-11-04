@@ -159,6 +159,7 @@ export const ATTRIBUTE_TRANSFORMS = Object.freeze({
   ),
   primaryResolution: pick("height", "width"),
   profileAgeCreated: typeAssertions.quantity,
+  profileGroupProfileCount: typeAssertions.quantity,
   region: typeAssertions.string,
   totalBookmarksCount: typeAssertions.quantity,
   userMonthlyActivity: userMonthlyActivity =>
@@ -221,8 +222,10 @@ export const PREFS = Object.freeze({
   "browser.newtabpage.activity-stream.showSearch": PREF_BOOL,
   "browser.newtabpage.activity-stream.showSponsoredTopSites": PREF_BOOL,
   "browser.newtabpage.enabled": PREF_BOOL,
+  "browser.profiles.created": PREF_BOOL,
   "browser.startup.page": PREF_INT,
   "browser.toolbars.bookmarks.visibility": PREF_STRING,
+  "browser.urlbar.lastUrlbarSearchSeconds": PREF_INT,
   "browser.urlbar.quicksuggest.dataCollection.enabled": PREF_BOOL,
   "browser.urlbar.showSearchSuggestionsFirst": PREF_BOOL,
   "browser.urlbar.suggest.quicksuggest.sponsored": PREF_BOOL,

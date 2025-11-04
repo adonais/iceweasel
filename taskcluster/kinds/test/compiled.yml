@@ -17,9 +17,6 @@ task-defaults:
                 default: desktop_unittest.py
         config:
             by-test-platform:
-                android-em-7.*:
-                    - android/android_common.py
-                    - android/android-x86_64.py
                 android-em-14.*:
                     - android/android_common.py
                     - android/android14-x86_64.py
@@ -65,9 +62,6 @@ gtest:
                     .*android.*: built-projects
                     .*-devedition.*: []
                     .*-wayland.*: []
-                    linux2404-32/opt: []  # try only, shippable on m-c
-                    linux2404-32/debug: ['mozilla-central']  # try and m-c
-                    linux2404-32-shippable/opt: ['mozilla-central']  # try and m-c
                     default: built-projects
             inc-origin-init: []
             default: []

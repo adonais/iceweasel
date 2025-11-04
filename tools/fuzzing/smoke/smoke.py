@@ -7,11 +7,11 @@ This script can be used to perform simple calls using `jsshell`
 or whatever other tools you may add.
 
 The call is done via `taskcluster/kinds/fuzzing/kind.yml` and
-files contained in the `target.jsshell.zip` and `target.fuzztest.tests.tar.gz`
+files contained in the `target.jsshell.zip` and `target.fuzztest.tests.tar.zst`
 build artifacts are downloaded to run things.
 
 Everything included in this directory will be added in
-`target.fuzztest.tests.tar.gz` at build time, so you can add more scripts and
+`target.fuzztest.tests.tar.zst` at build time, so you can add more scripts and
 tools if you need. They will be located in `$MOZ_FETCHES_DIR` and follow the
 same directory structure than the source tree.
 """

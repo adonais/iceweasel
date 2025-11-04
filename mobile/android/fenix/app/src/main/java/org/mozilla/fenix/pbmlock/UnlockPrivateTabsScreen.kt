@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,7 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.utils.getResolvedAttrResId
 import org.mozilla.fenix.R
@@ -57,8 +59,8 @@ internal fun UnlockPrivateTabsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(FirefoxTheme.colors.layer1)
-            .padding(bottom = 24.dp),
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -131,7 +133,7 @@ private fun Footer(onUnlockClicked: () -> Unit, onLeaveClicked: () -> Unit, show
             .padding(horizontal = 16.dp)
             .fillMaxWidth(fillWidthFraction),
     ) {
-        PrimaryButton(
+        FilledButton(
             text = stringResource(id = R.string.pbm_authentication_unlock),
             modifier = Modifier.fillMaxWidth(),
             onClick = onUnlockClicked,
@@ -143,6 +145,7 @@ private fun Footer(onUnlockClicked: () -> Unit, onLeaveClicked: () -> Unit, show
             TextButton(
                 text = stringResource(R.string.pbm_authentication_leave_private_tabs),
                 onClick = onLeaveClicked,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onPrimaryContainer),
             )
         }
     }

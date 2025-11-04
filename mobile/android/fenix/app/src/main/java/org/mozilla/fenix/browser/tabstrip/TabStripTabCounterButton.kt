@@ -29,7 +29,7 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.ui.tabcounter.TabCounter
@@ -130,7 +130,7 @@ private fun TabStripTabCounterButtonPreview() {
                 privacyBadgeVisible = privacyBadgeVisible,
             )
 
-            PrimaryButton(
+            FilledButton(
                 text = "Toggle privacy badge",
                 modifier = Modifier.fillMaxWidth(),
             ) {

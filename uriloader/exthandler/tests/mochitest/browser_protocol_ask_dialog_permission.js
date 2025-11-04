@@ -32,6 +32,7 @@ const PROTOCOL_HANDLER_OPEN_PERM_KEY = "open-protocol-handler";
 const PERMISSION_KEY_DELIMITER = "^";
 
 const TEST_PROTOS = ["foo", "bar"];
+const WALLET_PROTO = "moz-test-wallet";
 
 let testDir = getChromeDir(getResolvedURI(gTestPath));
 
@@ -76,7 +77,9 @@ function getSystemProtocol() {
  * Creates dummy web protocol handlers used for testing.
  */
 function initTestHandlers() {
-  TEST_PROTOS.forEach(scheme => {
+  const allProtos = structuredClone(TEST_PROTOS);
+  allProtos.push(WALLET_PROTO);
+  allProtos.forEach(scheme => {
     let webHandler = Cc[
       "@mozilla.org/uriloader/web-handler-app;1"
     ].createInstance(Ci.nsIWebHandlerApp);
@@ -223,6 +226,7 @@ async function testOpenProto(
       actionConfirm,
       actionChangeApp,
       checkContents,
+      hasWalletWarning = false,
     } = permDialogOptions;
 
     if (actionChangeApp) {
@@ -230,15 +234,35 @@ async function testOpenProto(
     }
 
     let descriptionEl = dialogEl.querySelector("#description");
-    ok(
-      descriptionEl && BrowserTestUtils.isVisible(descriptionEl),
-      "Has a visible description element."
-    );
+    let warningEl = dialogEl.querySelector("#warning-bar");
+    if (hasWalletWarning) {
+      ok(
+        descriptionEl && !BrowserTestUtils.isVisible(descriptionEl),
+        "Has an invisible description element."
+      );
+      ok(
+        warningEl && BrowserTestUtils.isVisible(warningEl),
+        "Has a visible warning element."
+      );
+      ok(
+        !warningEl.innerHTML.toLowerCase().includes(NULL_PRINCIPAL_SCHEME),
+        "Warning does not include NullPrincipal scheme."
+      );
+    } else {
+      ok(
+        descriptionEl && BrowserTestUtils.isVisible(descriptionEl),
+        "Has a visible description element."
+      );
 
-    ok(
-      !descriptionEl.innerHTML.toLowerCase().includes(NULL_PRINCIPAL_SCHEME),
-      "Description does not include NullPrincipal scheme."
-    );
+      ok(
+        !descriptionEl.innerHTML.toLowerCase().includes(NULL_PRINCIPAL_SCHEME),
+        "Description does not include NullPrincipal scheme."
+      );
+      ok(
+        warningEl && !BrowserTestUtils.isVisible(warningEl),
+        "Has an invisible warning element."
+      );
+    }
 
     await testCheckbox(dialogEl, dialogType, {
       hasCheckbox,
@@ -466,6 +490,9 @@ registerCleanupFunction(function () {
 
 add_setup(async function () {
   initTestHandlers();
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.wallet_schemes", WALLET_PROTO]],
+  });
 });
 
 /**
@@ -1375,6 +1402,80 @@ add_task(async function test_unloaded_iframe() {
         hasCheckbox: true,
         actionConfirm: false, // Cancel dialog
       },
+    });
+  });
+});
+
+/**
+ * Tests that we show a warning UI element for a wallet scheme
+ */
+add_task(async function test_prompt_warning_for_wallet_scheme() {
+  // Test that we show the warning in the simple case.
+  await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
+    await testOpenProto(browser, WALLET_PROTO, {
+      permDialogOptions: {
+        hasCheckbox: true,
+        hasChangeApp: false,
+        chooserIsNext: true,
+        actionConfirm: true,
+        hasWalletWarning: true,
+      },
+      chooserDialogOptions: { hasCheckbox: true, actionConfirm: true },
+    });
+  });
+
+  // Test that we show the warning with a null principal
+  await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
+    await testOpenProto(browser, WALLET_PROTO, {
+      triggerLoad: () => {
+        let uri = `${WALLET_PROTO}://test`;
+        ContentTask.spawn(browser, { uri }, args => {
+          let frame = content.document.createElement("iframe");
+          frame.src = `data:text/html,<script>location.href="${args.uri}"</script>`;
+          content.document.body.appendChild(frame);
+        });
+      },
+      permDialogOptions: {
+        hasCheckbox: false,
+        chooserIsNext: true,
+        hasChangeApp: false,
+        actionConfirm: true,
+        hasWalletWarning: true,
+      },
+      chooserDialogOptions: {
+        hasCheckbox: true,
+        actionConfirm: false, // Cancel dialog
+      },
+    });
+  });
+
+  // Test that we show the warning with a system principal
+  await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
+    await testOpenProto(browser, WALLET_PROTO, {
+      permDialogOptions: {
+        hasCheckbox: false,
+        hasChangeApp: false,
+        chooserIsNext: true,
+        actionChangeApp: false,
+        hasWalletWarning: true,
+      },
+      triggerLoad: useTriggeringPrincipal(
+        Services.scriptSecurityManager.getSystemPrincipal()
+      ),
+    });
+  });
+
+  // Test that we don't show the warning for another scheme.
+  await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
+    await testOpenProto(browser, TEST_PROTOS[0], {
+      permDialogOptions: {
+        hasCheckbox: true,
+        hasChangeApp: false,
+        chooserIsNext: true,
+        actionConfirm: true,
+        hasWalletWarning: false,
+      },
+      chooserDialogOptions: { hasCheckbox: true, actionConfirm: true },
     });
   });
 });

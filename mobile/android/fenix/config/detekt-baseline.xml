@@ -1,7 +1,159 @@
 <?xml version="1.0" ?>
 <SmellBaseline>
-  <ManuallySuppressedIssues></ManuallySuppressedIssues>
+  <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>ForbiddenSuppress:AccountSettingsFragment.kt$AccountSettingsFragment$@Suppress("ComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:AddonMenuItem.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:AddonPermissionsDetailsFragment.kt$AddonPermissionsDetailsFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:AddonPermissionsScreen.kt$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:AddonPopupBaseFragment.kt$AddonPopupBaseFragment$@Suppress("DEPRECATION", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:AppStoreReducer.kt$AppStoreReducer$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:AwesomeBarComposable.kt$AwesomeBarComposable$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:BaseBrowserFragment.kt$BaseBrowserFragment$@Suppress("ComplexMethod", "LongMethod", "DEPRECATION")</ID>
+    <ID>ForbiddenSuppress:BaseBrowserFragment.kt$BaseBrowserFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:BlocklistMiddleware.kt$BlocklistMiddleware$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:BookmarkFragment.kt$BookmarkFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:BookmarksMiddleware.kt$BookmarksMiddleware$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:BookmarksMiddleware.kt$BookmarksMiddleware$@Suppress("LongMethod", "ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:BookmarksScreen.kt$@Suppress("LongMethod", "ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:BookmarksTelemetryMiddleware.kt$BookmarksTelemetryMiddleware$@Suppress("LongMethod", "ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:BrowserFragment.kt$BrowserFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:BrowserToolbarCFRPresenter.kt$BrowserToolbarCFRPresenter$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:BrowserToolbarCFRPresenter.kt$BrowserToolbarCFRPresenter$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:BrowserToolbarMenuController.kt$DefaultBrowserToolbarMenuController$@Suppress("ComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:BrowserToolbarMiddleware.kt$BrowserToolbarMiddleware$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:BrowserToolbarMiddleware.kt$BrowserToolbarMiddleware$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:BrowserToolbarMiddleware.kt$BrowserToolbarMiddleware$@Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth", "ReturnCount")</ID>
+    <ID>ForbiddenSuppress:BrowserToolbarSearchMiddleware.kt$BrowserToolbarSearchMiddleware$@Suppress("CyclomaticComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:BrowserToolbarStoreBuilder.kt$BrowserToolbarStoreBuilder$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:CfrTools.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:CfrToolsPreferencesMiddleware.kt$CfrToolsPreferencesMiddleware$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:CfrToolsStore.kt$CfrToolsReducer$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:Collection.kt$@Suppress("LongMethod", "Deprecation")</ID>
+    <ID>ForbiddenSuppress:Components.kt$Components$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:ContentRecommendationsReducer.kt$ContentRecommendationsReducer$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:Core.kt$Core$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:CreditCardEditorFragment.kt$CreditCardEditorFragment$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:CustomTabBrowserToolbarMiddleware.kt$CustomTabBrowserToolbarMiddleware$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:CustomTabMenu.kt$@Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:DebugDrawerRoute.kt$DebugDrawerRoute.Companion$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:DebugOverlay.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:DeleteBrowsingDataOnQuitFragment.kt$DeleteBrowsingDataOnQuitFragment$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:DohSettingsNavHost.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:DohSettingsScreen.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:DownloadLanguageFileDialog.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:DownloadLanguagesPreference.kt$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:DownloadLanguagesPreference.kt$@Suppress("MagicNumber", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:DownloadUIStore.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:DownloadsScreen.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:EditBookmarkFragment.kt$EditBookmarkFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:ExternalAppBrowserFragment.kt$ExternalAppBrowserFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:FakeHomepagePreview.kt$FakeHomepagePreview$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:FenixApplication.kt$FenixApplication$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:FenixApplication.kt$FenixApplication$@Suppress("ComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:FontParser.kt$FontParser$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:GleanDebugToolsScreen.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:HistoryAdapter.kt$HistoryAdapter$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:HistoryFragment.kt$HistoryFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:HistoryMetadataMiddleware.kt$HistoryMetadataMiddleware$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:HomeActivity.kt$HomeActivity$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:HomeActivity.kt$HomeActivity$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:HomeActivity.kt$HomeActivity$@SuppressWarnings("TooManyFunctions", "LargeClass", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:HomeDeepLinkIntentProcessor.kt$HomeDeepLinkIntentProcessor$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:HomeFragment.kt$HomeFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:HomeFragment.kt$HomeFragment$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:HomeMenu.kt$HomeMenu$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:HomeMenu.kt$HomeMenu$@Suppress("LargeClass", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:HomeMenuView.kt$HomeMenuView$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:Homepage.kt$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:InfoCard.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:InstalledAddonDetailsFragment.kt$InstalledAddonDetailsFragment$@SuppressWarnings("LongMethod")</ID>
+    <ID>ForbiddenSuppress:ListItem.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:LoginsMiddleware.kt$LoginsMiddleware$@Suppress("LongMethod", "ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:MainMenu.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:MainMenu.kt$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:MainMenu.kt$@Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:MarketingDataOnboardingPage.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:MarketingDataOnboardingPageRedesign.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:Menu.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:MenuDialogFragment.kt$MenuDialogFragment$@Suppress("LongMethod", "CyclomaticComplexMethod", "MagicNumber")</ID>
+    <ID>ForbiddenSuppress:MenuNavigationMiddleware.kt$MenuNavigationMiddleware$@Suppress("CyclomaticComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:MenuTelemetryMiddleware.kt$MenuTelemetryMiddleware$@Suppress("CyclomaticComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:MessageCard.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:MetricController.kt$ReleaseMetricController$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:MiddleSearchHomepage.kt$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:MozillaAccountMenuItem.kt$@SuppressWarnings("LongMethod")</ID>
+    <ID>ForbiddenSuppress:NotificationManager.kt$NotificationManager$@SuppressWarnings("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:OnboardingFragment.kt$OnboardingFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:OnboardingPage.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:OnboardingScreen.kt$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:OnboardingScreenRedesign.kt$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:OnboardingTelemetryRecorder.kt$OnboardingTelemetryRecorder$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:PagedHistoryProvider.kt$DefaultPagedHistoryProvider$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:PhoneFeature.kt$PhoneFeature$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:PocketStoriesComposables.kt$@Suppress("CyclomaticComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:PocketStoriesComposables.kt$@file:Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:ProgressBarSetupChecklistView.kt$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:ProtectionPanel.kt$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:RecentSyncedTab.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:RecentTabs.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:RecentTabs.kt$@file:Suppress("MagicNumber", "TooManyFunctions")</ID>
+    <ID>ForbiddenSuppress:RegionTools.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:ReorderableGrid.kt$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:SaveSearchEngineFragment.kt$SaveSearchEngineFragment$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:SavedLoginsAuthFragment.kt$SavedLoginsAuthFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:SavedLoginsFragment.kt$SavedLoginsFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:SavedLoginsScreen.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:SearchDialogFragment.kt$SearchDialogFragment$@SuppressWarnings("LongMethod")</ID>
+    <ID>ForbiddenSuppress:SearchDialogFragment.kt$SearchDialogFragment$@SuppressWarnings("LongMethod", "ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:SearchEngineFragment.kt$SearchEngineFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:SearchEngineShortcuts.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:SearchFragmentStore.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:SearchSuggestionsProvidersBuilder.kt$SearchSuggestionsProvidersBuilder$@Suppress("ComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:SecretSettingsFragment.kt$SecretSettingsFragment$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:SettingsFragment.kt$SettingsFragment$@Suppress("ComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:Snackbar.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:SnackbarBinding.kt$SnackbarBinding$@Suppress("LongMethod", "ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:StartupStateProvider.kt$StartupStateProvider$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:Stories.kt$@Suppress("CyclomaticComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:Stories.kt$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:String.kt$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:SwipeToDismissBox2.kt$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:SyncedTabsList.kt$@SuppressWarnings("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabGridItem.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabLayout.kt$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabListItem.kt$@Suppress("LongMethod", "LongParameterList")</ID>
+    <ID>ForbiddenSuppress:TabManagementFragment.kt$TabManagementFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabPreview.kt$TabPreview$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabPreview.kt$TabPreview$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:TabStrip.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabTools.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabsTray.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabsTray.kt$@Suppress("LongMethod", "LongParameterList")</ID>
+    <ID>ForbiddenSuppress:TabsTray.kt$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:TabsTrayBanner.kt$@Suppress("DEPRECATION", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabsTrayBanner.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabsTrayBanner.kt$@Suppress("LongMethod", "LongParameterList")</ID>
+    <ID>ForbiddenSuppress:TabsTrayBanner.kt$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabsTrayFragment.kt$TabsTrayFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabsTrayTabLayouts.kt$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:TabsTrayTabLayouts.kt$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:TelemetryMiddleware.kt$TelemetryMiddleware$@Suppress("TooGenericExceptionCaught", "ComplexMethod", "NestedBlockDepth", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:ThemeOnboardingPage.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TopSites.kt$@Suppress( "LongMethod", "LongParameterList", "Deprecation", )</ID>
+    <ID>ForbiddenSuppress:TopSites.kt$@Suppress("LongParameterList", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:TrackingProtectionPolicyFactory.kt$TrackingProtectionPolicyFactory$@Suppress("ComplexMethod")</ID>
+    <ID>ForbiddenSuppress:TranslationSettings.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TranslationsBinding.kt$TranslationsBinding$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TranslationsDialogBinding.kt$TranslationsDialogBinding$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:TranslationsDialogFragment.kt$TranslationsDialogFragment$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TranslationsDialogMiddleware.kt$TranslationsDialogMiddleware$@Suppress("LongMethod", "CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:TranslationsDialogStore.kt$TranslationsDialogReducer$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:TrustPanelFragment.kt$TrustPanelFragment$@Suppress("LongMethod", "MagicNumber")</ID>
+    <ID>ForbiddenSuppress:TrustPanelNavigationMiddleware.kt$TrustPanelNavigationMiddleware$@Suppress("CyclomaticComplexMethod", "LongMethod")</ID>
+    <ID>ForbiddenSuppress:UnsubmittedCrashDialog.kt$@Suppress("LongMethod")</ID>
+    <ID>ForbiddenSuppress:WallpaperSettings.kt$@Suppress("MagicNumber")</ID>
+    <ID>ForbiddenSuppress:WebCompatReporter.kt$@Suppress("LongMethod")</ID>
     <ID>UndocumentedPublicClass:AboutFragment.kt$AboutFragment$Companion</ID>
     <ID>UndocumentedPublicClass:AboutItem.kt$AboutItem</ID>
     <ID>UndocumentedPublicClass:AboutItem.kt$AboutItem$Crashes : AboutItem</ID>
@@ -14,8 +166,6 @@
     <ID>UndocumentedPublicClass:AboutLibrariesFragment.kt$AboutLibrariesFragment$Companion</ID>
     <ID>UndocumentedPublicClass:AboutPageAdapter.kt$AboutPageAdapter : ListAdapter</ID>
     <ID>UndocumentedPublicClass:AboutPageAdapter.kt$AboutPageListener</ID>
-    <ID>UndocumentedPublicClass:AbstractBrowserTabViewHolder.kt$AbstractBrowserTabViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:AbstractBrowserTrayList.kt$AbstractBrowserTrayList$Companion</ID>
     <ID>UndocumentedPublicClass:AccessibilityFragment.kt$AccessibilityFragment$Companion</ID>
     <ID>UndocumentedPublicClass:AccountAbnormalities.kt$AccountAbnormalities$Companion</ID>
     <ID>UndocumentedPublicClass:AccountAuthErrorPreference.kt$AccountAuthErrorPreference : Preference</ID>
@@ -41,8 +191,6 @@
     <ID>UndocumentedPublicClass:AccountSettingsInteractor.kt$AccountSettingsInteractor : AccountSettingsUserActions</ID>
     <ID>UndocumentedPublicClass:AccountSettingsInteractor.kt$AccountSettingsUserActions</ID>
     <ID>UndocumentedPublicClass:AccountUiView.kt$AccountUiView</ID>
-    <ID>UndocumentedPublicClass:AcornLayout.kt$AcornSpace$Companion</ID>
-    <ID>UndocumentedPublicClass:AcornLayout.kt$AcornWindowSize$Companion</ID>
     <ID>UndocumentedPublicClass:ActivationPing.kt$ActivationPing</ID>
     <ID>UndocumentedPublicClass:AddLoginFragment.kt$AddLoginFragment$Companion</ID>
     <ID>UndocumentedPublicClass:AddonDetailsBindingDelegate.kt$AddonDetailsInteractor</ID>
@@ -54,7 +202,6 @@
     <ID>UndocumentedPublicClass:AppAction.kt$AppAction$CollectionExpanded : AppAction</ID>
     <ID>UndocumentedPublicClass:AppAction.kt$AppAction$CollectionsChange : AppAction</ID>
     <ID>UndocumentedPublicClass:AppAction.kt$AppAction$DisbandSearchGroupAction : AppAction</ID>
-    <ID>UndocumentedPublicClass:AppAction.kt$AppAction$ModeChange : AppAction</ID>
     <ID>UndocumentedPublicClass:AppAction.kt$AppAction$RecentHistoryChange : AppAction</ID>
     <ID>UndocumentedPublicClass:AppAction.kt$AppAction$RecentTabsChange : AppAction</ID>
     <ID>UndocumentedPublicClass:AppAction.kt$AppAction$RemoveAllNonFatalCrashes : AppAction</ID>
@@ -71,24 +218,16 @@
     <ID>UndocumentedPublicClass:AutofillSettingFragment.kt$AutofillSettingFragment$Companion</ID>
     <ID>UndocumentedPublicClass:BaseBrowserFragment.kt$BaseBrowserFragment$Companion</ID>
     <ID>UndocumentedPublicClass:BiometricPromptFeature.kt$BiometricPromptFeature$Companion</ID>
-    <ID>UndocumentedPublicClass:BlankDragShadowBuilder.kt$BlankDragShadowBuilder : DragShadowBuilder</ID>
     <ID>UndocumentedPublicClass:BookmarksUseCase.kt$BookmarksUseCase$Companion</ID>
-    <ID>UndocumentedPublicClass:BottomSpacerViewHolder.kt$BottomSpacerViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:BottomSpacerViewHolder.kt$BottomSpacerViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:BrowserAnimator.kt$BrowserAnimator$Companion</ID>
     <ID>UndocumentedPublicClass:BrowserFragment.kt$BrowserFragment$Companion</ID>
     <ID>UndocumentedPublicClass:BrowserFragmentStore.kt$BrowserFragmentAction : Action</ID>
     <ID>UndocumentedPublicClass:BrowserFragmentStore.kt$BrowserFragmentStore : Store</ID>
-    <ID>UndocumentedPublicClass:BrowserTabViewHolder.kt$BrowserTabViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:BrowserTabViewHolder.kt$BrowserTabViewHolder.GridViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:BrowserTabViewHolder.kt$BrowserTabViewHolder.ListViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:BrowserToolbarController.kt$DefaultBrowserToolbarController : BrowserToolbarController</ID>
-    <ID>UndocumentedPublicClass:BrowserToolbarController.kt$DefaultBrowserToolbarController$Companion</ID>
     <ID>UndocumentedPublicClass:BrowserToolbarMenuController.kt$DefaultBrowserToolbarMenuController : BrowserToolbarMenuController</ID>
     <ID>UndocumentedPublicClass:BrowserToolbarMenuController.kt$DefaultBrowserToolbarMenuController$Companion</ID>
     <ID>UndocumentedPublicClass:BrowsingModeManager.kt$BrowsingMode$Companion</ID>
     <ID>UndocumentedPublicClass:BrowsingModeManager.kt$BrowsingModeManager</ID>
-    <ID>UndocumentedPublicClass:Chip.kt$SelectableChipColors$Companion</ID>
     <ID>UndocumentedPublicClass:CollectionCreationController.kt$CollectionCreationController</ID>
     <ID>UndocumentedPublicClass:CollectionCreationController.kt$DefaultCollectionCreationController$Companion</ID>
     <ID>UndocumentedPublicClass:CollectionCreationFragment.kt$CollectionCreationFragment : DialogFragment</ID>
@@ -105,12 +244,8 @@
     <ID>UndocumentedPublicClass:CollectionCreationTabListAdapter.kt$TabViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:CollectionCreationView.kt$CollectionCreationView</ID>
     <ID>UndocumentedPublicClass:CollectionCreationView.kt$CollectionCreationView$Companion</ID>
-    <ID>UndocumentedPublicClass:CollectionHeaderViewHolder.kt$CollectionHeaderViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:CollectionViewHolder.kt$CollectionViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:CollectionsListAdapter.kt$CollectionsListAdapter$CollectionItemViewHolder : ViewHolder</ID>
     <ID>UndocumentedPublicClass:CollectionsState.kt$CollectionsState$Companion</ID>
-    <ID>UndocumentedPublicClass:ComposeGridViewHolder.kt$ComposeGridViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:ComposeListViewHolder.kt$ComposeListViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:Config.kt$Config</ID>
     <ID>UndocumentedPublicClass:Config.kt$ReleaseChannel</ID>
     <ID>UndocumentedPublicClass:ConnectionPanelDialogFragment.kt$ConnectionPanelDialogFragment : FenixDialogFragment</ID>
@@ -133,9 +268,6 @@
     <ID>UndocumentedPublicClass:CustomTabsService.kt$CustomTabsService : AbstractCustomTabsService</ID>
     <ID>UndocumentedPublicClass:CustomizationFragment.kt$CustomizationFragment$Companion</ID>
     <ID>UndocumentedPublicClass:CustomizationFragment.kt$CustomizationFragment.Companion$Position</ID>
-    <ID>UndocumentedPublicClass:CustomizeHomeButtonViewHolder.kt$CustomizeHomeButtonViewHolder : ComposeViewHolder</ID>
-    <ID>UndocumentedPublicClass:CustomizeHomeButtonViewHolder.kt$CustomizeHomeButtonViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:DataChoicesFragment.kt$DataChoicesFragment$Companion</ID>
     <ID>UndocumentedPublicClass:DebugDrawerRoute.kt$DebugDrawerRoute$Companion</ID>
     <ID>UndocumentedPublicClass:DebugFenixApplication.kt$DebugFenixApplication : FenixApplication</ID>
     <ID>UndocumentedPublicClass:DefaultBrowserPreference.kt$DefaultBrowserPreference : Preference</ID>
@@ -152,16 +284,8 @@
     <ID>UndocumentedPublicClass:DeleteBrowsingDataOnQuitFragment.kt$DeleteBrowsingDataOnQuitFragment : PreferenceFragmentCompat</ID>
     <ID>UndocumentedPublicClass:DeleteBrowsingDataOnQuitType.kt$DeleteBrowsingDataOnQuitType</ID>
     <ID>UndocumentedPublicClass:DesktopFolders.kt$DesktopFolders</ID>
-    <ID>UndocumentedPublicClass:DownloadFragmentStore.kt$DownloadFragmentState$Companion</ID>
-    <ID>UndocumentedPublicClass:DownloadFragmentStore.kt$DownloadFragmentState$Mode</ID>
-    <ID>UndocumentedPublicClass:DownloadFragmentStore.kt$DownloadFragmentState.Mode$Editing : Mode</ID>
-    <ID>UndocumentedPublicClass:DownloadFragmentStore.kt$DownloadFragmentState.Mode$Normal : Mode</ID>
     <ID>UndocumentedPublicClass:DownloadService.kt$DownloadService : AbstractFetchDownloadService</ID>
-    <ID>UndocumentedPublicClass:DraggableItemAnimator.kt$DraggableItemAnimator : DefaultItemAnimator</ID>
     <ID>UndocumentedPublicClass:DropDownListPreference.kt$DropDownListPreference : DropDownPreference</ID>
-    <ID>UndocumentedPublicClass:DynamicDownloadDialog.kt$DynamicDownloadDialog$Companion</ID>
-    <ID>UndocumentedPublicClass:DynamicDownloadDialogBehavior.kt$DynamicDownloadDialogBehavior&lt;V : View&gt; : Behavior</ID>
-    <ID>UndocumentedPublicClass:EditBookmarkFragment.kt$EditBookmarkFragment$Companion</ID>
     <ID>UndocumentedPublicClass:Event.kt$Event</ID>
     <ID>UndocumentedPublicClass:Event.kt$Event$Search</ID>
     <ID>UndocumentedPublicClass:ExceptionsAdapter.kt$ExceptionsAdapter.AdapterItem$DeleteButton : AdapterItem</ID>
@@ -175,12 +299,9 @@
     <ID>UndocumentedPublicClass:ExtensionsProcessDisabledForegroundController.kt$ExtensionsProcessDisabledForegroundController$Companion</ID>
     <ID>UndocumentedPublicClass:FenixOnboarding.kt$FenixOnboarding : PreferencesHolder</ID>
     <ID>UndocumentedPublicClass:FenixOnboarding.kt$FenixOnboarding$Companion</ID>
-    <ID>UndocumentedPublicClass:FenixSnackbar.kt$FenixSnackbar : BaseTransientBottomBar</ID>
-    <ID>UndocumentedPublicClass:FenixSnackbar.kt$FenixSnackbar$Companion</ID>
     <ID>UndocumentedPublicClass:FenixTabCounterMenu.kt$FenixTabCounterMenu : TabCounterMenu</ID>
     <ID>UndocumentedPublicClass:FennecBookmarkShortcutsIntentProcessor.kt$FennecBookmarkShortcutsIntentProcessor$Companion</ID>
     <ID>UndocumentedPublicClass:FennecWebAppIntentProcessor.kt$FennecWebAppIntentProcessor$Companion</ID>
-    <ID>UndocumentedPublicClass:FirefoxTheme.kt$FirefoxTheme</ID>
     <ID>UndocumentedPublicClass:FirefoxTheme.kt$Theme$Companion</ID>
     <ID>UndocumentedPublicClass:FirstSessionPing.kt$FirstSessionPing</ID>
     <ID>UndocumentedPublicClass:FontEnumerationWorker.kt$FontEnumerationWorker$Companion</ID>
@@ -224,7 +345,6 @@
     <ID>UndocumentedPublicClass:HomeMenu.kt$HomeMenu$Item</ID>
     <ID>UndocumentedPublicClass:HomeMenu.kt$HomeMenu.Item$Bookmarks : Item</ID>
     <ID>UndocumentedPublicClass:HomeMenu.kt$HomeMenu.Item$CustomizeHome : Item</ID>
-    <ID>UndocumentedPublicClass:HomeMenu.kt$HomeMenu.Item$DesktopMode : Item</ID>
     <ID>UndocumentedPublicClass:HomeMenu.kt$HomeMenu.Item$Downloads : Item</ID>
     <ID>UndocumentedPublicClass:HomeMenu.kt$HomeMenu.Item$Extensions : Item</ID>
     <ID>UndocumentedPublicClass:HomeMenu.kt$HomeMenu.Item$Help : Item</ID>
@@ -234,8 +354,6 @@
     <ID>UndocumentedPublicClass:HomeMenu.kt$HomeMenu.Item$Settings : Item</ID>
     <ID>UndocumentedPublicClass:HomeMenu.kt$HomeMenu.Item$SyncAccount : Item</ID>
     <ID>UndocumentedPublicClass:HomeMenu.kt$HomeMenu.Item$WhatsNew : Item</ID>
-    <ID>UndocumentedPublicClass:HomeScreenViewModel.kt$HomeScreenViewModel : ViewModel</ID>
-    <ID>UndocumentedPublicClass:InactiveTabViewHolder.kt$InactiveTabViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:IncreasedTapAreaActionDecorator.kt$IncreasedTapAreaActionDecorator$Companion</ID>
     <ID>UndocumentedPublicClass:InstallReferrerMetricsService.kt$MetaParams$Companion</ID>
     <ID>UndocumentedPublicClass:InstallReferrerMetricsService.kt$UTMParams$Companion</ID>
@@ -281,7 +399,6 @@
     <ID>UndocumentedPublicClass:MenuDialogMiddleware.kt$MenuDialogMiddleware$Companion</ID>
     <ID>UndocumentedPublicClass:MenuPresenter.kt$MenuPresenter : OnAttachStateChangeListener</ID>
     <ID>UndocumentedPublicClass:MessageCard.kt$MessageCardColors$Companion</ID>
-    <ID>UndocumentedPublicClass:MessageCardViewHolder.kt$MessageCardViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:MessageNotificationWorker.kt$MessageNotificationWorker$Companion</ID>
     <ID>UndocumentedPublicClass:MessagingMiddleware.kt$MessagingMiddleware : Middleware</ID>
     <ID>UndocumentedPublicClass:MetricController.kt$MetricController</ID>
@@ -292,10 +409,6 @@
     <ID>UndocumentedPublicClass:MozillaProductDetector.kt$MozillaProductDetector$MozillaProducts</ID>
     <ID>UndocumentedPublicClass:NewTabShortcutIntentProcessor.kt$NewTabShortcutIntentProcessor : IntentProcessor</ID>
     <ID>UndocumentedPublicClass:NewTabShortcutIntentProcessor.kt$NewTabShortcutIntentProcessor$Companion</ID>
-    <ID>UndocumentedPublicClass:NoCollectionsMessageViewHolder.kt$NoCollectionsMessageViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:NoCollectionsMessageViewHolder.kt$NoCollectionsMessageViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:NormalBrowserPageViewHolder.kt$NormalBrowserPageViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:NormalBrowserTrayList.kt$NormalBrowserTrayList : AbstractBrowserTrayList</ID>
     <ID>UndocumentedPublicClass:NotificationManager.kt$NotificationManager$Companion</ID>
     <ID>UndocumentedPublicClass:OnSharedPreferenceChangeListener.kt$OnSharedPreferenceChangeListener : OnSharedPreferenceChangeListenerDefaultLifecycleObserver</ID>
     <ID>UndocumentedPublicClass:OnboardingTelemetryRecorder.kt$OnboardingTelemetryRecorder$Companion</ID>
@@ -304,24 +417,14 @@
     <ID>UndocumentedPublicClass:PagedHistoryProvider.kt$HistoryDB$Group : HistoryDB</ID>
     <ID>UndocumentedPublicClass:PagedHistoryProvider.kt$HistoryDB$Metadata : HistoryDB</ID>
     <ID>UndocumentedPublicClass:PagedHistoryProvider.kt$HistoryDB$Regular : HistoryDB</ID>
-    <ID>UndocumentedPublicClass:PagerIndicator.kt$PagerIndicator$Companion</ID>
     <ID>UndocumentedPublicClass:PairFragment.kt$PairFragment : FragmentUserInteractionHandler</ID>
     <ID>UndocumentedPublicClass:PairFragment.kt$PairFragment$Companion</ID>
     <ID>UndocumentedPublicClass:PasswordManagerIntentProcessor.kt$PasswordManagerIntentProcessor$Companion</ID>
-    <ID>UndocumentedPublicClass:PerformanceActivityLifecycleCallbacks.kt$PerformanceActivityLifecycleCallbacks$Companion</ID>
     <ID>UndocumentedPublicClass:PerformanceInflater.kt$InflationCounter</ID>
     <ID>UndocumentedPublicClass:PermissionStorage.kt$PermissionStorage</ID>
     <ID>UndocumentedPublicClass:PhoneFeature.kt$PhoneFeature : Parcelable</ID>
     <ID>UndocumentedPublicClass:PhoneFeature.kt$PhoneFeature$Companion</ID>
-    <ID>UndocumentedPublicClass:PocketCategoriesViewHolder.kt$PocketCategoriesViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:PocketRecommendationsHeaderViewHolder.kt$PocketRecommendationsHeaderViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:PocketStoriesViewHolder.kt$PocketStoriesViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:PlayStoreReviewPromptController.kt$PlayStoreReviewPromptController$Companion</ID>
     <ID>UndocumentedPublicClass:PoweredByNotification.kt$PoweredByNotification$Companion</ID>
-    <ID>UndocumentedPublicClass:PrivateBrowserPageViewHolder.kt$PrivateBrowserPageViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:PrivateBrowserTrayList.kt$PrivateBrowserTrayList : AbstractBrowserTrayList</ID>
-    <ID>UndocumentedPublicClass:PrivateBrowsingButtonView.kt$PrivateBrowsingButtonView$Companion</ID>
-    <ID>UndocumentedPublicClass:PrivateBrowsingDescriptionViewHolder.kt$PrivateBrowsingDescriptionViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:ProfilerMarkerFactProcessor.kt$ProfilerMarkerFactProcessor$Companion</ID>
     <ID>UndocumentedPublicClass:QuickSettingsFragmentReducer.kt$WebsitePermissionsStateReducer</ID>
     <ID>UndocumentedPublicClass:QuickSettingsFragmentState.kt$AutoplayValue</ID>
@@ -332,7 +435,6 @@
     <ID>UndocumentedPublicClass:QuickSettingsFragmentState.kt$WebsiteInfoState$Companion</ID>
     <ID>UndocumentedPublicClass:QuickSettingsFragmentState.kt$WebsitePermission$Autoplay : WebsitePermission</ID>
     <ID>UndocumentedPublicClass:QuickSettingsFragmentState.kt$WebsitePermission$Toggleable : WebsitePermission</ID>
-    <ID>UndocumentedPublicClass:QuickSettingsFragmentState.kt$WebsiteSecurityUiValues</ID>
     <ID>UndocumentedPublicClass:QuickSettingsFragmentStore.kt$QuickSettingsFragmentStore$Companion</ID>
     <ID>UndocumentedPublicClass:RadioButtonInfoPreference.kt$RadioButtonInfoPreference : RadioButtonPreference</ID>
     <ID>UndocumentedPublicClass:RadioButtonPreference.kt$RadioButtonPreference : PreferenceGroupableRadioButton</ID>
@@ -341,11 +443,7 @@
     <ID>UndocumentedPublicClass:ReEngagementNotificationWorker.kt$ReEngagementNotificationWorker$Companion</ID>
     <ID>UndocumentedPublicClass:ReaderModeController.kt$DefaultReaderModeController : ReaderModeController</ID>
     <ID>UndocumentedPublicClass:RecentSyncedTabFeature.kt$RecentSyncedTabFeature$Companion</ID>
-    <ID>UndocumentedPublicClass:RecentSyncedTabViewHolder.kt$RecentSyncedTabViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:RecentTabViewHolder.kt$RecentTabViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:RecentTabsHeaderViewHolder.kt$RecentTabsHeaderViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:RecentTabsListFeature.kt$RecentTab</ID>
-    <ID>UndocumentedPublicClass:RecentVisitsHeaderViewHolder.kt$RecentVisitsHeaderViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:RecentlyClosedAdapter.kt$RecentlyClosedAdapter : ListAdapterSelectionHolder</ID>
     <ID>UndocumentedPublicClass:RecentlyClosedController.kt$DefaultRecentlyClosedController : RecentlyClosedController</ID>
     <ID>UndocumentedPublicClass:RecentlyClosedController.kt$RecentlyClosedController</ID>
@@ -357,14 +455,8 @@
     <ID>UndocumentedPublicClass:RecentlyClosedFragmentView.kt$RecentlyClosedInteractor : SelectionInteractor</ID>
     <ID>UndocumentedPublicClass:RecentlyClosedItemViewHolder.kt$RecentlyClosedItemViewHolder : ViewHolder</ID>
     <ID>UndocumentedPublicClass:RecentlyClosedItemViewHolder.kt$RecentlyClosedItemViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:RecentlyVisitedViewHolder.kt$RecentlyVisitedViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:ResearchSurfaceDialogFragment.kt$ResearchSurfaceDialogFragment$Companion</ID>
-    <ID>UndocumentedPublicClass:ReviewPromptController.kt$ReviewPromptController$Companion</ID>
-    <ID>UndocumentedPublicClass:ReviewQualityCheckState.kt$ReviewQualityCheckState.OptedIn.ProductReviewState.Progress$Companion</ID>
-    <ID>UndocumentedPublicClass:ReviewQualityCheckTelemetryService.kt$DefaultReviewQualityCheckTelemetryService$Companion</ID>
     <ID>UndocumentedPublicClass:SaveCollectionListAdapter.kt$CollectionViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:SaveCollectionListAdapter.kt$CollectionViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:SaveCollectionListAdapter.kt$SaveCollectionListAdapter : Adapter</ID>
     <ID>UndocumentedPublicClass:SavedLoginsAuthFragment.kt$SavedLoginsAuthFragment : PreferenceFragmentCompat</ID>
     <ID>UndocumentedPublicClass:SavedLoginsFragment.kt$SavedLoginsFragment : SecureFragmentMenuProvider</ID>
     <ID>UndocumentedPublicClass:SavedLoginsListView.kt$SavedLoginsListView$Companion</ID>
@@ -382,7 +474,6 @@
     <ID>UndocumentedPublicClass:SearchEngineMenu.kt$SearchEngineMenu$Item</ID>
     <ID>UndocumentedPublicClass:SearchEngineMenu.kt$SearchEngineMenu.Item$Delete : Item</ID>
     <ID>UndocumentedPublicClass:SearchEngineMenu.kt$SearchEngineMenu.Item$Edit : Item</ID>
-    <ID>UndocumentedPublicClass:SearchSelectorBinding.kt$SearchSelectorBinding$Companion</ID>
     <ID>UndocumentedPublicClass:SearchStringValidator.kt$SearchStringValidator</ID>
     <ID>UndocumentedPublicClass:SearchStringValidator.kt$SearchStringValidator$Result</ID>
     <ID>UndocumentedPublicClass:SearchWidgetProvider.kt$SearchWidgetProvider : AppWidgetProvider</ID>
@@ -391,34 +482,7 @@
     <ID>UndocumentedPublicClass:SecretDebugMenuTrigger.kt$SecretDebugMenuTrigger$Companion</ID>
     <ID>UndocumentedPublicClass:SecretDebugSettingsFragment.kt$SecretDebugSettingsFragment : Fragment</ID>
     <ID>UndocumentedPublicClass:SecretSettingsFragment.kt$SecretSettingsFragment : PreferenceFragmentCompat</ID>
-    <ID>UndocumentedPublicClass:SelectionMenu.kt$SelectionMenu</ID>
-    <ID>UndocumentedPublicClass:SelectionMenu.kt$SelectionMenu$Item</ID>
-    <ID>UndocumentedPublicClass:SelectionMenu.kt$SelectionMenu.Item$BookmarkTabs : Item</ID>
-    <ID>UndocumentedPublicClass:SelectionMenu.kt$SelectionMenu.Item$DeleteTabs : Item</ID>
-    <ID>UndocumentedPublicClass:SelectionMenu.kt$SelectionMenu.Item$MakeInactive : Item</ID>
-    <ID>UndocumentedPublicClass:SelectionMenuIntegration.kt$SelectionMenuIntegration</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$BottomSpacer : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$CollectionHeader : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$CollectionItem : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$CustomizeHomeButton : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$NimbusMessageCard : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$NoCollectionsMessage : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$PocketCategoriesItem : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$PocketRecommendationsFooterItem : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$PocketStoriesItem : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$PrivateBrowsingDescription : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$RecentTabItem : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$RecentTabsHeader : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$RecentVisitsHeader : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$RecentVisitsItems : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$TabInCollectionItem : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$TopPlaceholderItem : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItem$TopSitePager : AdapterItem</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$AdapterItemDiffCallback : ItemCallback</ID>
-    <ID>UndocumentedPublicClass:SessionControlAdapter.kt$SessionControlAdapter : ListAdapter</ID>
     <ID>UndocumentedPublicClass:SessionControlController.kt$DefaultSessionControlController : SessionControlController</ID>
-    <ID>UndocumentedPublicClass:SessionControlInteractor.kt$CustomizeHomeIteractor</ID>
     <ID>UndocumentedPublicClass:SessionControlInteractor.kt$MessageCardInteractor</ID>
     <ID>UndocumentedPublicClass:Settings.kt$Settings$Companion</ID>
     <ID>UndocumentedPublicClass:Settings.kt$Settings$TabTimout</ID>
@@ -435,13 +499,11 @@
     <ID>UndocumentedPublicClass:ShareToAppsView.kt$ShareToAppsView</ID>
     <ID>UndocumentedPublicClass:ShareViewModel.kt$ShareViewModel : AndroidViewModel</ID>
     <ID>UndocumentedPublicClass:ShareViewModel.kt$ShareViewModel$Companion</ID>
-    <ID>UndocumentedPublicClass:SharedViewModel.kt$SharedViewModel : ViewModel</ID>
     <ID>UndocumentedPublicClass:SignOutFragment.kt$SignOutFragment : AppCompatDialogFragment</ID>
     <ID>UndocumentedPublicClass:SitePermissionsDetailsExceptionsFragment.kt$SitePermissionsDetailsExceptionsFragment : PreferenceFragmentCompat</ID>
     <ID>UndocumentedPublicClass:SitePermissionsExceptionsFragment.kt$ExceptionsAdapter$Companion</ID>
     <ID>UndocumentedPublicClass:SitePermissionsExceptionsFragment.kt$SitePermissionsExceptionsFragment : FragmentOnClickListener</ID>
     <ID>UndocumentedPublicClass:SitePermissionsExceptionsFragment.kt$SitePermissionsViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:SitePermissionsFragment.kt$SitePermissionsFragment : PreferenceFragmentCompat</ID>
     <ID>UndocumentedPublicClass:SitePermissionsManageExceptionsPhoneFeatureFragment.kt$SitePermissionsManageExceptionsPhoneFeatureFragment : Fragment</ID>
     <ID>UndocumentedPublicClass:SitePermissionsManagePhoneFeatureFragment.kt$SitePermissionsManagePhoneFeatureFragment : Fragment</ID>
     <ID>UndocumentedPublicClass:SortingStrategy.kt$SortingStrategy</ID>
@@ -464,11 +526,8 @@
     <ID>UndocumentedPublicClass:SupportUtils.kt$SupportUtils</ID>
     <ID>UndocumentedPublicClass:SupportUtils.kt$SupportUtils$MozillaPage</ID>
     <ID>UndocumentedPublicClass:SupportUtils.kt$SupportUtils$SumoTopic</ID>
-    <ID>UndocumentedPublicClass:SwipeToDismissBox.kt$SwipeToDismissAnchor$Companion</ID>
-    <ID>UndocumentedPublicClass:SyncedTabsPageViewHolder.kt$SyncedTabsPageViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:Tab.kt$Tab</ID>
     <ID>UndocumentedPublicClass:TabCollectionStorage.kt$TabCollectionStorage : Observable</ID>
-    <ID>UndocumentedPublicClass:TabDragData.kt$TabDragData</ID>
     <ID>UndocumentedPublicClass:TabHistoryAdapter.kt$TabHistoryAdapter : ListAdapter</ID>
     <ID>UndocumentedPublicClass:TabHistoryAdapter.kt$TabHistoryItem</ID>
     <ID>UndocumentedPublicClass:TabHistoryController.kt$DefaultTabHistoryController : TabHistoryController</ID>
@@ -479,25 +538,10 @@
     <ID>UndocumentedPublicClass:TabHistoryView.kt$TabHistoryView</ID>
     <ID>UndocumentedPublicClass:TabHistoryView.kt$TabHistoryViewInteractor</ID>
     <ID>UndocumentedPublicClass:TabHistoryViewHolder.kt$TabHistoryViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:TabInCollectionViewHolder.kt$TabInCollectionViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:TabStripState.kt$TabStripState$Companion</ID>
-    <ID>UndocumentedPublicClass:TabsTouchHelper.kt$TouchCallback$Companion</ID>
     <ID>UndocumentedPublicClass:TabsTrayFragment.kt$TabsTrayFragment : AppCompatDialogFragment</ID>
     <ID>UndocumentedPublicClass:TabsTrayFragment.kt$TabsTrayFragment$Companion</ID>
-    <ID>UndocumentedPublicClass:TabsTrayInactiveTabsOnboardingBinding.kt$TabsTrayInactiveTabsOnboardingBinding : AbstractBinding</ID>
-    <ID>UndocumentedPublicClass:TabsTrayInfoBannerBinding.kt$TabsTrayInfoBannerBinding : AbstractBinding</ID>
-    <ID>UndocumentedPublicClass:TabsTrayInfoBannerBinding.kt$TabsTrayInfoBannerBinding$Companion</ID>
-    <ID>UndocumentedPublicClass:TabsTrayMenu.kt$TabsTrayMenu</ID>
-    <ID>UndocumentedPublicClass:TabsTrayMenu.kt$TabsTrayMenu$Item</ID>
-    <ID>UndocumentedPublicClass:TabsTrayMenu.kt$TabsTrayMenu.Item$CloseAllTabs : Item</ID>
-    <ID>UndocumentedPublicClass:TabsTrayMenu.kt$TabsTrayMenu.Item$OpenAccountSettings : Item</ID>
-    <ID>UndocumentedPublicClass:TabsTrayMenu.kt$TabsTrayMenu.Item$OpenRecentlyClosed : Item</ID>
-    <ID>UndocumentedPublicClass:TabsTrayMenu.kt$TabsTrayMenu.Item$OpenTabSettings : Item</ID>
-    <ID>UndocumentedPublicClass:TabsTrayMenu.kt$TabsTrayMenu.Item$SelectTabs : Item</ID>
-    <ID>UndocumentedPublicClass:TabsTrayMenu.kt$TabsTrayMenu.Item$ShareAllTabs : Item</ID>
     <ID>UndocumentedPublicClass:TabsTrayStore.kt$Page$Companion</ID>
-    <ID>UndocumentedPublicClass:TextField.kt$TextFieldColors$Companion</ID>
-    <ID>UndocumentedPublicClass:TextField.kt$TextFieldStyle$Companion</ID>
     <ID>UndocumentedPublicClass:TextPercentageSeekBarPreference.kt$TextPercentageSeekBarPreference$Companion</ID>
     <ID>UndocumentedPublicClass:ThemeManager.kt$DefaultThemeManager : ThemeManager</ID>
     <ID>UndocumentedPublicClass:ThemeManager.kt$ThemeManager</ID>
@@ -532,26 +576,9 @@
     <ID>UndocumentedPublicClass:ToolbarMenu.kt$ToolbarMenu.Item$Share : Item</ID>
     <ID>UndocumentedPublicClass:ToolbarMenu.kt$ToolbarMenu.Item$Stop : Item</ID>
     <ID>UndocumentedPublicClass:ToolbarMenu.kt$ToolbarMenu.Item$SyncAccount : Item</ID>
-    <ID>UndocumentedPublicClass:ToolbarView.kt$ToolbarView$Companion</ID>
-    <ID>UndocumentedPublicClass:TopPlaceholderViewHolder.kt$TopPlaceholderViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:TopSiteItemMenu.kt$TopSiteItemMenu$Item</ID>
-    <ID>UndocumentedPublicClass:TopSiteItemMenu.kt$TopSiteItemMenu.Item$OpenInPrivateTab : Item</ID>
-    <ID>UndocumentedPublicClass:TopSiteItemMenu.kt$TopSiteItemMenu.Item$RemoveTopSite : Item</ID>
-    <ID>UndocumentedPublicClass:TopSiteItemMenu.kt$TopSiteItemMenu.Item$Settings : Item</ID>
-    <ID>UndocumentedPublicClass:TopSiteItemMenu.kt$TopSiteItemMenu.Item$SponsorPrivacy : Item</ID>
-    <ID>UndocumentedPublicClass:TopSiteItemViewHolder.kt$TopSiteItemViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:TopSiteItemViewHolder.kt$TopSiteItemViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:TopSitePagerViewHolder.kt$TopSitePagerViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:TopSitePagerViewHolder.kt$TopSitePagerViewHolder$Companion</ID>
-    <ID>UndocumentedPublicClass:TopSiteViewHolder.kt$TopSiteViewHolder : ViewHolder</ID>
-    <ID>UndocumentedPublicClass:TopSiteViewHolder.kt$TopSiteViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:TopSites.kt$TopSiteColors$Companion</ID>
-    <ID>UndocumentedPublicClass:TopSitesAdapter.kt$TopSitesAdapter : ListAdapter</ID>
-    <ID>UndocumentedPublicClass:TopSitesPagerAdapter.kt$TopSitesPagerAdapter : ListAdapter</ID>
-    <ID>UndocumentedPublicClass:TopSitesViewHolder.kt$TopSitesViewHolder$Companion</ID>
     <ID>UndocumentedPublicClass:TrackerBuckets.kt$TrackerBuckets$BucketedTrackerLog</ID>
     <ID>UndocumentedPublicClass:TrackerBuckets.kt$TrackerBuckets$Companion</ID>
-    <ID>UndocumentedPublicClass:TrackingProtectionBlockingFragment.kt$TrackingProtectionBlockingFragment : Fragment</ID>
     <ID>UndocumentedPublicClass:TrackingProtectionCategoryItem.kt$TrackingProtectionCategoryItem : ConstraintLayout</ID>
     <ID>UndocumentedPublicClass:TrackingProtectionExceptionsAdapter.kt$TrackingProtectionExceptionsAdapter$TrackingProtectionAdapterItem : Item</ID>
     <ID>UndocumentedPublicClass:TrackingProtectionExceptionsInteractor.kt$DefaultTrackingProtectionExceptionsInteractor : TrackingProtectionExceptionsInteractor</ID>
@@ -560,8 +587,6 @@
     <ID>UndocumentedPublicClass:TrackingProtectionMode.kt$TrackingProtectionMode : Parcelable</ID>
     <ID>UndocumentedPublicClass:TrackingProtectionPanelDialogFragment.kt$TrackingProtectionPanelDialogFragment : AppCompatDialogFragmentUserInteractionHandler</ID>
     <ID>UndocumentedPublicClass:TrackingProtectionPanelView.kt$TrackingProtectionPanelView$Companion</ID>
-    <ID>UndocumentedPublicClass:TrayPagerAdapter.kt$TrayPagerAdapter : Adapter</ID>
-    <ID>UndocumentedPublicClass:TrayPagerAdapter.kt$TrayPagerAdapter$Companion</ID>
     <ID>UndocumentedPublicClass:TurnOnSyncFragment.kt$TurnOnSyncFragment : FragmentAccountObserver</ID>
     <ID>UndocumentedPublicClass:TurnOnSyncFragment.kt$TurnOnSyncFragment$Companion</ID>
     <ID>UndocumentedPublicClass:UnsubmittedCrashDialog.kt$UnsubmittedCrashDialog$Companion</ID>
@@ -613,10 +638,8 @@
     <ID>UndocumentedPublicFunction:BrowserToolbarInteractor.kt$BrowserToolbarInteractor$fun onTabCounterClicked()</ID>
     <ID>UndocumentedPublicFunction:BrowserToolbarInteractor.kt$BrowserToolbarInteractor$fun onTabCounterMenuItemTapped(item: TabCounterMenu.Item)</ID>
     <ID>UndocumentedPublicFunction:BrowserToolbarMenuController.kt$BrowserToolbarMenuController$fun handleToolbarItemInteraction(item: ToolbarMenu.Item)</ID>
-    <ID>UndocumentedPublicFunction:BrowserToolbarView.kt$BrowserToolbarView$fun dismissMenu()</ID>
     <ID>UndocumentedPublicFunction:ClearSiteDataView.kt$ClearSiteDataView$fun update(webInfoState: WebsiteInfoState)</ID>
     <ID>UndocumentedPublicFunction:ClearableEditText.kt$ClearableEditText$fun onTextChanged(text: CharSequence?)</ID>
-    <ID>UndocumentedPublicFunction:ColdStartupDurationTelemetry.kt$ColdStartupDurationTelemetry$fun onHomeActivityOnCreate( visualCompletenessQueue: VisualCompletenessQueue, startupStateProvider: StartupStateProvider, safeIntent: SafeIntent, rootContainer: View, )</ID>
     <ID>UndocumentedPublicFunction:CollectionCreationBottomBarView.kt$CollectionCreationBottomBarView$fun update(step: SaveCollectionStep, state: CollectionCreationState)</ID>
     <ID>UndocumentedPublicFunction:CollectionCreationController.kt$CollectionCreationController$fun addNewCollection()</ID>
     <ID>UndocumentedPublicFunction:CollectionCreationController.kt$CollectionCreationController$fun addTabToSelection(tab: Tab)</ID>
@@ -634,7 +657,6 @@
     <ID>UndocumentedPublicFunction:CollectionCreationStore.kt$@Suppress("LongParameterList") fun createInitialCollectionCreationState( browserState: BrowserState, tabCollectionStorage: TabCollectionStorage, publicSuffixList: PublicSuffixList, saveCollectionStep: SaveCollectionStep, tabIds: Array&lt;String&gt;?, selectedTabIds: Array&lt;String&gt;?, selectedTabCollectionId: Long, ): CollectionCreationState</ID>
     <ID>UndocumentedPublicFunction:CollectionCreationTabListAdapter.kt$CollectionCreationTabListAdapter$fun updateData(tabs: List&lt;Tab&gt;, selectedTabs: Set&lt;Tab&gt;, hideCheckboxes: Boolean = false)</ID>
     <ID>UndocumentedPublicFunction:CollectionCreationTabListAdapter.kt$TabViewHolder$fun bind(tab: Tab, isSelected: Boolean, shouldHideCheckBox: Boolean)</ID>
-    <ID>UndocumentedPublicFunction:CollectionCreationView.kt$CollectionCreationView$fun onKey(keyCode: Int, event: KeyEvent): Boolean</ID>
     <ID>UndocumentedPublicFunction:CollectionCreationView.kt$CollectionCreationView$fun onResumed()</ID>
     <ID>UndocumentedPublicFunction:CollectionCreationView.kt$CollectionCreationView$fun update(state: CollectionCreationState)</ID>
     <ID>UndocumentedPublicFunction:CollectionsListAdapter.kt$CollectionsListAdapter$fun getSelectedCollection()</ID>
@@ -648,7 +670,6 @@
     <ID>UndocumentedPublicFunction:DefaultLocaleSettingsController.kt$LocaleSettingsController$fun handleDefaultLocaleSelected()</ID>
     <ID>UndocumentedPublicFunction:DefaultLocaleSettingsController.kt$LocaleSettingsController$fun handleLocaleSelected(locale: Locale)</ID>
     <ID>UndocumentedPublicFunction:DefaultLocaleSettingsController.kt$LocaleSettingsController$fun handleSearchQueryTyped(query: String)</ID>
-    <ID>UndocumentedPublicFunction:DefaultSyncController.kt$DefaultSyncController$@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) fun buildDialog(): AlertDialog.Builder</ID>
     <ID>UndocumentedPublicFunction:DefaultSyncController.kt$SyncController$fun handleCameraPermissionsNeeded()</ID>
     <ID>UndocumentedPublicFunction:DefaultSyncInteractor.kt$SyncInteractor$fun onCameraPermissionsNeeded()</ID>
     <ID>UndocumentedPublicFunction:DefaultToolbarMenu.kt$DefaultToolbarMenu$@VisibleForTesting(otherwise = PRIVATE) fun canAddToHomescreen(): Boolean</ID>
@@ -662,12 +683,8 @@
     <ID>UndocumentedPublicFunction:DeleteBrowsingDataController.kt$DeleteBrowsingDataController$suspend fun deleteTabs()</ID>
     <ID>UndocumentedPublicFunction:DeleteBrowsingDataOnQuitType.kt$DeleteBrowsingDataOnQuitType$fun getPreferenceKey(context: Context)</ID>
     <ID>UndocumentedPublicFunction:DesktopFolders.kt$DesktopFolders$suspend fun withOptionalDesktopFolders(node: BookmarkNode): BookmarkNode</ID>
-    <ID>UndocumentedPublicFunction:DownloadItem.kt$@SuppressWarnings("ComplexMethod") fun DownloadItem.getIcon(): Int</ID>
     <ID>UndocumentedPublicFunction:DownloadState.kt$fun DownloadState.isActiveDownload(): Boolean</ID>
     <ID>UndocumentedPublicFunction:Drawable.kt$fun Drawable.setBounds(size: Int)</ID>
-    <ID>UndocumentedPublicFunction:DynamicDownloadDialog.kt$DynamicDownloadDialog$fun show()</ID>
-    <ID>UndocumentedPublicFunction:DynamicDownloadDialog.kt$DynamicDownloadDialog.Companion$fun getCannotOpenFileErrorMessage(context: Context, download: DownloadState): String</ID>
-    <ID>UndocumentedPublicFunction:DynamicDownloadDialogBehavior.kt$DynamicDownloadDialogBehavior$fun forceExpand(view: View)</ID>
     <ID>UndocumentedPublicFunction:EditLoginInteractor.kt$EditLoginInteractor$fun findDuplicate(loginId: String, usernameText: String, passwordText: String)</ID>
     <ID>UndocumentedPublicFunction:EditLoginInteractor.kt$EditLoginInteractor$fun onSaveLogin(loginId: String, usernameText: String, passwordText: String)</ID>
     <ID>UndocumentedPublicFunction:ExceptionsListItemViewHolder.kt$ExceptionsListItemViewHolder$fun bind(item: T, url: String)</ID>
@@ -680,12 +697,8 @@
     <ID>UndocumentedPublicFunction:FenixDialogFragment.kt$FenixDialogFragment$fun inflateRootView(container: ViewGroup? = null): View</ID>
     <ID>UndocumentedPublicFunction:FenixOnboarding.kt$FenixOnboarding$fun finish()</ID>
     <ID>UndocumentedPublicFunction:FenixOnboarding.kt$FenixOnboarding$fun userHasBeenOnboarded(): Boolean</ID>
-    <ID>UndocumentedPublicFunction:FenixSnackbar.kt$FenixSnackbar$fun setAppropriateBackground(isError: Boolean)</ID>
-    <ID>UndocumentedPublicFunction:FenixSnackbar.kt$FenixSnackbar$fun setLength(duration: Int)</ID>
-    <ID>UndocumentedPublicFunction:FenixSnackbar.kt$FenixSnackbar$fun setText(text: String)</ID>
     <ID>UndocumentedPublicFunction:Fragment.kt$fun Fragment.breadcrumb( message: String, data: Map&lt;String, String&gt; = emptyMap(), )</ID>
     <ID>UndocumentedPublicFunction:Fragment.kt$fun Fragment.getPreferenceKey(@StringRes resourceId: Int): String</ID>
-    <ID>UndocumentedPublicFunction:Fragment.kt$fun Fragment.nav(@IdRes id: Int?, directions: NavDirections, options: NavOptions? = null)</ID>
     <ID>UndocumentedPublicFunction:FxaServer.kt$FxaServer$fun config(context: Context): ServerConfig</ID>
     <ID>UndocumentedPublicFunction:GeckoProvider.kt$GeckoProvider$@Synchronized fun getOrCreateRuntime( context: Context, autofillStorage: Lazy&lt;CreditCardsAddressesStorage&gt;, loginStorage: Lazy&lt;LoginsStorage&gt;, trackingProtectionPolicy: TrackingProtectionPolicy, ): GeckoRuntime</ID>
     <ID>UndocumentedPublicFunction:GroupableRadioButton.kt$GroupableRadioButton$fun addToRadioGroup(radioButton: GroupableRadioButton)</ID>
@@ -729,11 +742,9 @@
     <ID>UndocumentedPublicFunction:MenuPresenter.kt$MenuPresenter$fun invalidateActions()</ID>
     <ID>UndocumentedPublicFunction:MenuPresenter.kt$MenuPresenter$fun start()</ID>
     <ID>UndocumentedPublicFunction:MenuPresenter.kt$MenuPresenter$fun stop()</ID>
-    <ID>UndocumentedPublicFunction:MessageCardViewHolder.kt$MessageCardViewHolder$fun bind(message: Message)</ID>
     <ID>UndocumentedPublicFunction:MetricController.kt$MetricController$fun start(type: MetricServiceType)</ID>
     <ID>UndocumentedPublicFunction:MetricController.kt$MetricController$fun stop(type: MetricServiceType)</ID>
     <ID>UndocumentedPublicFunction:MetricController.kt$MetricController$fun track(event: Event)</ID>
-    <ID>UndocumentedPublicFunction:MetricController.kt$MetricController.Companion$fun create( services: List&lt;MetricsService&gt;, isDataTelemetryEnabled: () -&gt; Boolean, isMarketingDataTelemetryEnabled: () -&gt; Boolean, settings: Settings, ): MetricController</ID>
     <ID>UndocumentedPublicFunction:MetricsService.kt$MetricsService$fun shouldTrack(event: Event): Boolean</ID>
     <ID>UndocumentedPublicFunction:MetricsService.kt$MetricsService$fun start()</ID>
     <ID>UndocumentedPublicFunction:MetricsService.kt$MetricsService$fun stop()</ID>
@@ -743,17 +754,13 @@
     <ID>UndocumentedPublicFunction:NavController.kt$fun NavController.alreadyOnDestination(@IdRes destId: Int?): Boolean</ID>
     <ID>UndocumentedPublicFunction:NavController.kt$fun NavController.navigateSafe( @IdRes resId: Int, directions: NavDirections, )</ID>
     <ID>UndocumentedPublicFunction:NimbusBranchesView.kt$NimbusBranchesView$fun update(state: NimbusBranchesState)</ID>
-    <ID>UndocumentedPublicFunction:PagerIndicator.kt$fun Context.dpToPx(value: Float): Int</ID>
-    <ID>UndocumentedPublicFunction:PagerIndicator.kt$fun View.dpToPx(value: Float): Int</ID>
     <ID>UndocumentedPublicFunction:PasswordRevealHelper.kt$fun togglePasswordReveal(passwordText: TextView, revealPasswordButton: ImageButton)</ID>
-    <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature$@Suppress("ComplexMethod") fun getActionLabel( context: Context, sitePermissions: SitePermissions? = null, settings: Settings? = null, ): String</ID>
+    <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature$fun getActionLabel( context: Context, sitePermissions: SitePermissions? = null, settings: Settings? = null, ): String</ID>
     <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature$fun getAction(settings: Settings): SitePermissionsRules.Action</ID>
     <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature$fun getLabel(context: Context): String</ID>
     <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature$fun getStatus( sitePermissions: SitePermissions? = null, settings: Settings? = null, ): SitePermissions.Status</ID>
     <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature$fun isAndroidPermissionGranted(context: Context): Boolean</ID>
     <ID>UndocumentedPublicFunction:PhoneFeature.kt$PhoneFeature.Companion$fun findFeatureBy(permissions: Array&lt;out String&gt;): PhoneFeature?</ID>
-    <ID>UndocumentedPublicFunction:PocketStoriesViewHolder.kt$@Composable @Preview fun PocketStoriesViewHolderPreview()</ID>
-    <ID>UndocumentedPublicFunction:PrivacyContentDisplayHelper.kt$fun showPrivacyPopWindow(context: Context, activity: Activity)</ID>
     <ID>UndocumentedPublicFunction:ProfilerMarkerFactProcessor.kt$ProfilerMarkerFactProcessor.Companion$fun create(profilerProvider: () -&gt; Profiler?)</ID>
     <ID>UndocumentedPublicFunction:ProfilerMarkers.kt$ProfilerMarkers$fun addForDispatchTouchEvent(profiler: Profiler?, ev: MotionEvent?)</ID>
     <ID>UndocumentedPublicFunction:ProfilerMarkers.kt$ProfilerMarkers$fun addListenerForOnGlobalLayout(engine: Engine, activity: Activity, rootView: View)</ID>
@@ -785,11 +792,7 @@
     <ID>UndocumentedPublicFunction:RecentlyClosedFragmentView.kt$RecentlyClosedFragmentView$fun update(state: RecentlyClosedFragmentState)</ID>
     <ID>UndocumentedPublicFunction:RecentlyClosedItemViewHolder.kt$RecentlyClosedItemViewHolder$fun bind(item: TabState)</ID>
     <ID>UndocumentedPublicFunction:RecentlyVisitedItem.kt$fun RecentHistoryGroup.lastUpdated(): Long</ID>
-    <ID>UndocumentedPublicFunction:ReviewPromptController.kt$ReviewPromptController$@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) fun shouldShowPrompt(): Boolean</ID>
-    <ID>UndocumentedPublicFunction:ReviewPromptController.kt$ReviewPromptController$fun trackApplicationLaunch()</ID>
-    <ID>UndocumentedPublicFunction:ReviewPromptController.kt$ReviewPromptController$suspend fun promptReview(activity: Activity)</ID>
     <ID>UndocumentedPublicFunction:SaveCollectionListAdapter.kt$CollectionViewHolder$fun bind(collection: TabCollection)</ID>
-    <ID>UndocumentedPublicFunction:SaveCollectionListAdapter.kt$SaveCollectionListAdapter$fun updateData(tabCollections: List&lt;TabCollection&gt;, selectedTabs: Set&lt;Tab&gt;)</ID>
     <ID>UndocumentedPublicFunction:SavedLoginsInteractor.kt$SavedLoginsInteractor$fun loadAndMapLogins()</ID>
     <ID>UndocumentedPublicFunction:SavedLoginsInteractor.kt$SavedLoginsInteractor$fun onAddLoginClick()</ID>
     <ID>UndocumentedPublicFunction:SavedLoginsInteractor.kt$SavedLoginsInteractor$fun onItemClicked(item: SavedLogin)</ID>
@@ -815,11 +818,8 @@
     <ID>UndocumentedPublicFunction:SearchDialogController.kt$SearchController$fun handleTextChanged(text: String)</ID>
     <ID>UndocumentedPublicFunction:SearchDialogController.kt$SearchController$fun handleUrlCommitted(url: String, fromHomeScreen: Boolean = false)</ID>
     <ID>UndocumentedPublicFunction:SearchDialogController.kt$SearchController$fun handleUrlTapped(url: String, flags: LoadUrlFlags = LoadUrlFlags.none())</ID>
-    <ID>UndocumentedPublicFunction:SearchDialogController.kt$SearchDialogController$@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE) fun buildDialog(): AlertDialog.Builder</ID>
     <ID>UndocumentedPublicFunction:SearchDialogInteractor.kt$SearchDialogInteractor$fun onCameraPermissionsNeeded()</ID>
     <ID>UndocumentedPublicFunction:SearchStringValidator.kt$SearchStringValidator$fun isSearchStringValid(client: Client, searchString: String): Result</ID>
-    <ID>UndocumentedPublicFunction:SessionControlAdapter.kt$AdapterItem$open fun contentsSameAs(other: AdapterItem)</ID>
-    <ID>UndocumentedPublicFunction:SessionControlView.kt$SessionControlView$fun update(state: AppState, shouldReportMetrics: Boolean = false)</ID>
     <ID>UndocumentedPublicFunction:Settings.kt$Settings$@VisibleForTesting(otherwise = PRIVATE) fun setStrictETP()</ID>
     <ID>UndocumentedPublicFunction:Settings.kt$Settings$fun amoCollectionOverrideConfigured(): Boolean</ID>
     <ID>UndocumentedPublicFunction:Settings.kt$Settings$fun getDeleteDataOnQuit(type: DeleteBrowsingDataOnQuitType): Boolean</ID>
@@ -870,7 +870,6 @@
     <ID>UndocumentedPublicFunction:StartupTimeline.kt$StartupTimeline$fun onActivityCreateEndHome(activity: HomeActivity)</ID>
     <ID>UndocumentedPublicFunction:StartupTimeline.kt$StartupTimeline$fun onActivityCreateEndIntentReceiver()</ID>
     <ID>UndocumentedPublicFunction:StartupTimeline.kt$StartupTimeline$fun onApplicationInit()</ID>
-    <ID>UndocumentedPublicFunction:StartupTimeline.kt$StartupTimeline$fun onTopSitesItemBound(holder: TopSiteItemViewHolder)</ID>
     <ID>UndocumentedPublicFunction:StartupTypeTelemetry.kt$StartupTypeTelemetry$@VisibleForTesting(otherwise = NONE) fun getTestCallbacks()</ID>
     <ID>UndocumentedPublicFunction:StartupTypeTelemetry.kt$StartupTypeTelemetry$fun attachOnHomeActivityOnCreate(lifecycle: Lifecycle)</ID>
     <ID>UndocumentedPublicFunction:StorageStatsMetrics.kt$StorageStatsMetrics$@OptIn(DelicateCoroutinesApi::class) // GlobalScope usage fun report(context: Context)</ID>
@@ -878,11 +877,9 @@
     <ID>UndocumentedPublicFunction:StudiesView.kt$StudiesView$@Suppress("TooGenericExceptionCaught", "ApplySharedPref") fun bind()</ID>
     <ID>UndocumentedPublicFunction:SupportUtils.kt$SupportUtils$fun createAuthCustomTabIntent(context: Context, url: String): Intent</ID>
     <ID>UndocumentedPublicFunction:SupportUtils.kt$SupportUtils$fun createCustomTabIntent(context: Context, url: String): Intent</ID>
-    <ID>UndocumentedPublicFunction:SupportUtils.kt$SupportUtils$fun getFirefoxAccountSumoUrl(): String</ID>
     <ID>UndocumentedPublicFunction:SupportUtils.kt$SupportUtils$fun getMozillaPageUrl(page: MozillaPage, locale: Locale = Locale.getDefault()): String</ID>
     <ID>UndocumentedPublicFunction:SwipeGestureLayout.kt$SwipeGestureLayout$fun addGestureListener(listener: SwipeGestureListener)</ID>
     <ID>UndocumentedPublicFunction:SyncedTabsIntegration.kt$SyncedTabsIntegration$fun launch()</ID>
-    <ID>UndocumentedPublicFunction:SyncedTabsPageViewHolder.kt$SyncedTabsPageViewHolder$fun bind()</ID>
     <ID>UndocumentedPublicFunction:TabCollectionStorage.kt$TabCollectionStorage$fun getCollections(): LiveData&lt;List&lt;TabCollection&gt;&gt;</ID>
     <ID>UndocumentedPublicFunction:TabCollectionStorage.kt$TabCollectionStorage$suspend fun addTabsToCollection(tabCollection: TabCollection, sessions: List&lt;TabSessionState&gt;): Long?</ID>
     <ID>UndocumentedPublicFunction:TabCollectionStorage.kt$TabCollectionStorage$suspend fun createCollection(tabCollection: TabCollection): Long?</ID>
@@ -894,22 +891,10 @@
     <ID>UndocumentedPublicFunction:TabHistoryController.kt$TabHistoryController$fun handleGoToHistoryItem(item: TabHistoryItem)</ID>
     <ID>UndocumentedPublicFunction:TabHistoryView.kt$TabHistoryView$fun updateState(historyState: HistoryState)</ID>
     <ID>UndocumentedPublicFunction:TabHistoryViewHolder.kt$TabHistoryViewHolder$fun bind(item: TabHistoryItem)</ID>
-    <ID>UndocumentedPublicFunction:TabLayout.kt$fun TabLayout.isNormalModeSelected(): Boolean</ID>
-    <ID>UndocumentedPublicFunction:TabLayout.kt$fun TabLayout.isPrivateModeSelected(): Boolean</ID>
-    <ID>UndocumentedPublicFunction:TabLayout.kt$fun TabLayout.isSyncedModeSelected(): Boolean</ID>
-    <ID>UndocumentedPublicFunction:TabLayoutMediator.kt$TabLayoutMediator$fun selectTabAtPosition(position: Int)</ID>
-    <ID>UndocumentedPublicFunction:TabsTrayStore.kt$Page.Companion$fun positionToPage(position: Int): Page</ID>
-    <ID>UndocumentedPublicFunction:ThemeManager.kt$ThemeManager$fun applyStatusBarTheme(window: Window, context: Context)</ID>
     <ID>UndocumentedPublicFunction:ThemeManager.kt$ThemeManager$fun setActivityTheme(activity: Activity)</ID>
     <ID>UndocumentedPublicFunction:ThemeManager.kt$ThemeManager.Companion$@Composable fun resolveAttributeColor(attribute: Int): androidx.compose.ui.graphics.Color</ID>
-    <ID>UndocumentedPublicFunction:ThemeManager.kt$ThemeManager.Companion$fun resolveAttribute(attribute: Int, context: Context): Int</ID>
     <ID>UndocumentedPublicFunction:ToolbarIntegration.kt$ToolbarIntegration$fun invalidateMenu()</ID>
     <ID>UndocumentedPublicFunction:ToolbarView.kt$ToolbarView$fun update(searchState: SearchFragmentState)</ID>
-    <ID>UndocumentedPublicFunction:TopPlaceholderViewHolder.kt$TopPlaceholderViewHolder$fun bind()</ID>
-    <ID>UndocumentedPublicFunction:TopSiteItemViewHolder.kt$TopSiteItemViewHolder$fun bind(topSite: TopSite, position: Int)</ID>
-    <ID>UndocumentedPublicFunction:TopSitePagerViewHolder.kt$TopSitePagerViewHolder$fun bind(topSites: List&lt;TopSite&gt;)</ID>
-    <ID>UndocumentedPublicFunction:TopSitePagerViewHolder.kt$TopSitePagerViewHolder$fun update(payload: AdapterItem.TopSitePagerPayload)</ID>
-    <ID>UndocumentedPublicFunction:TopSiteViewHolder.kt$TopSiteViewHolder$fun bind(topSites: List&lt;TopSite&gt;)</ID>
     <ID>UndocumentedPublicFunction:TrackingProtectionExceptionsInteractor.kt$DefaultTrackingProtectionExceptionsInteractor$fun reloadExceptions()</ID>
     <ID>UndocumentedPublicFunction:TrackingProtectionPanelView.kt$TrackingProtectionPanelView$fun onBackPressed(): Boolean</ID>
     <ID>UndocumentedPublicFunction:Utils.kt$fun BookmarkNode.flatNodeList(excludeSubtreeRoot: String?, depth: Int = 0): List&lt;BookmarkNodeWithDepth&gt;</ID>

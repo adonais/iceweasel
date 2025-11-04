@@ -7,7 +7,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
-  PrefUtils: "resource://normandy/lib/PrefUtils.sys.mjs",
+  PrefUtils: "moz-src:///toolkit/modules/PrefUtils.sys.mjs",
   UnenrollmentCause: "resource://nimbus/lib/ExperimentManager.sys.mjs",
 });
 
@@ -579,17 +579,6 @@ export class PrefFlipsFeature {
     // this pref has to stop tracking it.
     for (const slug of entry.slugs) {
       this.#prefsBySlug.get(slug).delete(pref);
-
-      // TODO(bug 1956082): This is an async method that we are not awaiting.
-      //
-      // This function is only ever called inside a nsIPrefObserver callback,
-      // which are invoked without `await`. Awaiting here breaks tests in
-      // test_prefFlips.js, which assert about the values of prefs *after* we
-      // trigger unenrollment.
-      //
-      // There is no good way to synchronize this behaviour yet to satisfy tests and
-      // the only thing that is being deferred are the database writes, which we
-      // and our caller don't care about.
       this.manager.unenroll(slug, cause);
     }
 

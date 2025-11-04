@@ -5,7 +5,6 @@
 
 #include "txXPathResultComparator.h"
 
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/LocaleService.h"
 #include "nsComponentManagerUtils.h"

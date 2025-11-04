@@ -53,7 +53,7 @@ private fun assertOpenLinksInAppsSwitchState(enabled: Boolean = false) {
                 matches(
                     hasCousin(
                         allOf(
-                            withId(preferenceR.id.switchWidget),
+                            withId(android.R.id.switch_widget),
                             isChecked(),
                         ),
                     ),
@@ -65,7 +65,7 @@ private fun assertOpenLinksInAppsSwitchState(enabled: Boolean = false) {
                 matches(
                     hasCousin(
                         allOf(
-                            withId(preferenceR.id.switchWidget),
+                            withId(android.R.id.switch_widget),
                             isNotChecked(),
                         ),
                     ),
@@ -100,7 +100,7 @@ private fun assertRemoteDebuggingSwitchState(enabled: Boolean = false) {
                 matches(
                     hasCousin(
                         allOf(
-                            withId(preferenceR.id.switchWidget),
+                            withId(android.R.id.switch_widget),
                             isNotChecked(),
                         ),
                     ),

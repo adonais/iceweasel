@@ -14,7 +14,6 @@ import "chrome://browser/content/backup/password-rules-tooltip.mjs";
  */
 export default class PasswordValidationInputs extends MozLitElement {
   static properties = {
-    _hasCommon: { type: Boolean, state: true },
     _hasEmail: { type: Boolean, state: true },
     _passwordsMatch: { type: Boolean, state: true },
     _passwordsValid: { type: Boolean, state: true },
@@ -25,7 +24,11 @@ export default class PasswordValidationInputs extends MozLitElement {
      * track the focus state so that we can keep the tooltip open.
      */
     _tooltipFocus: { type: Boolean, state: true },
-    supportBaseLink: { type: String },
+    createPasswordLabelL10nId: {
+      type: String,
+      reflect: true,
+      attribute: "create-password-label-l10n-id",
+    },
   };
 
   static get queries() {
@@ -39,9 +42,7 @@ export default class PasswordValidationInputs extends MozLitElement {
 
   constructor() {
     super();
-    this.supportBaseLink = "";
     this._tooShort = true;
-    this._hasCommon = false;
     this._hasEmail = false;
     this._passwordsMatch = false;
     this._passwordsValid = false;
@@ -50,8 +51,9 @@ export default class PasswordValidationInputs extends MozLitElement {
 
   reset() {
     this.formEl.reset();
+    this.inputNewPasswordEl.revealPassword = false;
+    this.inputRepeatPasswordEl.revealPassword = false;
     this._showRules = false;
-    this._hasCommon = false;
     this._hasEmail = false;
     this._tooShort = true;
     this._passwordsMatch = false;
@@ -77,10 +79,17 @@ export default class PasswordValidationInputs extends MozLitElement {
 
   updatePasswordValidity() {
     const emailRegex = /^[\w!#$%&'*+/=?^`{|}~.-]+@[A-Z0-9-]+\.[A-Z0-9.-]+$/i;
+    const l10n = new Localization(["browser/backupSettings.ftl"], true);
+
     this._hasEmail = emailRegex.test(this.inputNewPasswordEl.value);
     if (this._hasEmail) {
-      // TODO: we need a localized string for this error (bug 1909983)
-      this.inputNewPasswordEl.setCustomValidity("TODO: no emails");
+      const invalid_password_email_l10n_message = l10n.formatValueSync(
+        "password-validity-has-email"
+      );
+
+      this.inputNewPasswordEl.setCustomValidity(
+        invalid_password_email_l10n_message
+      );
     } else {
       this.inputNewPasswordEl.setCustomValidity("");
     }
@@ -91,8 +100,13 @@ export default class PasswordValidationInputs extends MozLitElement {
     this._passwordsMatch =
       this.inputNewPasswordEl.value == this.inputRepeatPasswordEl.value;
     if (!this._passwordsMatch) {
-      // TODO: we need a localized string for this error  (bug 1909983)
-      this.inputRepeatPasswordEl.setCustomValidity("TODO: not matching");
+      const passwords_do_not_match_l10n_message = l10n.formatValueSync(
+        "password-validity-do-not-match"
+      );
+
+      this.inputRepeatPasswordEl.setCustomValidity(
+        passwords_do_not_match_l10n_message
+      );
     } else {
       this.inputRepeatPasswordEl.setCustomValidity("");
     }
@@ -157,7 +171,8 @@ export default class PasswordValidationInputs extends MozLitElement {
             <div id="new-password-label-wrapper-span-input">
               <span
                 id="new-password-span"
-                data-l10n-id="enable-backup-encryption-create-password-label"
+                data-l10n-id=${this.createPasswordLabelL10nId ||
+                "enable-backup-encryption-create-password-label"}
               ></span>
               <input
                 type="password"
@@ -175,10 +190,8 @@ export default class PasswordValidationInputs extends MozLitElement {
           <password-rules-tooltip
             id="password-rules"
             class=${!this._showRules && !this._tooltipFocus ? "hidden" : ""}
-            .hasCommon=${this._hasCommon}
             .hasEmail=${this._hasEmail}
             .tooShort=${this._tooShort}
-            .supportBaseLink=${this.supportBaseLink}
             @focus=${this.handleTooltipFocus}
             @blur=${this.handleTooltipBlur}
           ></password-rules-tooltip>

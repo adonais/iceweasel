@@ -57,6 +57,6 @@
   }
 }
 
-#tabgroup-preview-panel > menuitem.active-tab {
+#tabgroup-panel-content > toolbarbutton.active-tab {
   font-weight: var(--font-weight-bold);
 }

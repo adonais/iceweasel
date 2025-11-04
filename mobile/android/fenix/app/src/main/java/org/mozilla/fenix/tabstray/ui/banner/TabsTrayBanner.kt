@@ -14,13 +14,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -37,11 +37,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
-import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
@@ -60,7 +61,7 @@ import mozilla.components.ui.icons.R as iconsR
 
 private const val TAB_COUNT_SHOW_CFR = 6
 private const val ROW_HEIGHT_DP = 48
-private const val TAB_INDICATOR_ROUNDED_CORNER_DP = 100
+private val TabIndicatorRoundedCornerDp = 100.dp
 
 /**
  * Top-level UI for displaying the banner in [TabsTray].
@@ -163,7 +164,7 @@ fun TabsTrayBanner(
             !hasAcknowledgedAutoCloseBanner && showTabAutoCloseBanner -> {
                 onTabAutoCloseBannerShown()
 
-                Divider()
+                HorizontalDivider()
 
                 Banner(
                     message = stringResource(id = R.string.tab_tray_close_tabs_banner_message),
@@ -213,7 +214,7 @@ fun TabsTrayBanner(
  * @param onTabPageIndicatorClicked Invoked when the user clicks on a tab page button. Passes along the
  * [Page] that was clicked.
  */
-@Suppress("LongMethod")
+@Suppress("DEPRECATION", "LongMethod")
 @Composable
 private fun TabPageBanner(
     selectedPage: Page,
@@ -224,25 +225,28 @@ private fun TabPageBanner(
     onTabPageIndicatorClicked: (Page) -> Unit,
 ) {
     val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val selectedTabIndex = Page.pageToPosition(selectedPage)
 
     CenterAlignedTopAppBar(
         title = {
-            TabRow(
-                selectedTabIndex = Page.pageToPosition(selectedPage),
+            PrimaryTabRow(
+                selectedTabIndex = selectedTabIndex,
                 modifier = Modifier.fillMaxWidth(),
                 contentColor = MaterialTheme.colorScheme.primary,
-                divider = {},
-                indicator = { tabPositions ->
-                    val selectedTabIndex = Page.pageToPosition(selectedPage)
+                indicator = {
                     TabRowDefaults.PrimaryIndicator(
-                        modifier = Modifier
-                            .tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        modifier = Modifier.tabIndicatorOffset(
+                            selectedTabIndex = selectedTabIndex,
+                            matchContentSize = true,
+                        ),
+                        width = Dp.Unspecified,
                         shape = RoundedCornerShape(
-                            topStart = TAB_INDICATOR_ROUNDED_CORNER_DP.dp,
-                            topEnd = TAB_INDICATOR_ROUNDED_CORNER_DP.dp,
+                            topStart = TabIndicatorRoundedCornerDp,
+                            topEnd = TabIndicatorRoundedCornerDp,
                         ),
                     )
                 },
+                divider = {},
             ) {
                 val privateTabDescription = stringResource(
                     id = R.string.tabs_header_private_tabs_counter_title,
@@ -459,19 +463,12 @@ private fun generateMultiSelectBannerMenuItems(
 }
 
 @PreviewLightDark
+@Preview(locale = "es")
 @Composable
 private fun TabsTrayBannerPreview() {
     TabsTrayBannerPreviewRoot(
-        selectedPage = Page.PrivateTabs,
+        selectedPage = Page.SyncedTabs,
         normalTabCount = 5,
-    )
-}
-
-@PreviewLightDark
-@Composable
-private fun TabsTrayBannerInfinityPreview() {
-    TabsTrayBannerPreviewRoot(
-        normalTabCount = 200,
     )
 }
 

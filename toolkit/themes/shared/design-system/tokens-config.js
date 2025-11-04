@@ -502,6 +502,14 @@ function getTableName(tokenName) {
     return "icon-color";
   }
 
+  if (tokenName.includes("heading-font-size")) {
+    return "font-size";
+  }
+
+  if (tokenName.includes("heading-font-weight")) {
+    return "font-weight";
+  }
+
   let replacePattern =
     /^(button-|input-text-|input-|focus-|checkbox-|table-row-|attention-dot-|promo-)/;
   if (tokenName.match(replacePattern)) {

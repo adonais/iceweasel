@@ -1041,7 +1041,7 @@ export var PlacesUtils = {
   /**
    * Copy a single places result node, recursively if applicable.
    *
-   * @param {Object} node
+   * @param {object} node
    *    The node to copy. If not a real places node but a single
    *    title/URL combination, you must set `type` to 0 (aka RESULT_TYPE_URI),
    *    and provide a `title` and `uri` property which should both be strings.
@@ -2147,14 +2147,19 @@ export var PlacesUtils = {
   /**
    * Converts an array of Float32 into a SQL bindable blob format.
    *
-   * @param {Array<Number>} tensor
+   * @param {Array<number>|Float32Array} tensor
    * @returns {Uint8ClampedArray} SQL bindable blob.
    */
   tensorToSQLBindable(tensor) {
-    if (!tensor || !Array.isArray(tensor)) {
+    if (!tensor) {
+      throw new Error("tensorToSQLBindable received an invalid tensor");
+    } else if (Array.isArray(tensor)) {
+      return new Uint8ClampedArray(new Float32Array(tensor).buffer);
+    } else if (tensor instanceof Float32Array) {
+      return new Uint8ClampedArray(tensor.buffer);
+    } else {
       throw new Error("tensorToSQLBindable received an invalid tensor");
     }
-    return new Uint8ClampedArray(new Float32Array(tensor).buffer);
   },
 
   /**

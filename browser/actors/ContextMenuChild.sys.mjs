@@ -121,7 +121,10 @@ export class ContextMenuChild extends JSWindowActorChild {
                   },
                   this.contentWindow
                 );
-                media.dispatchEvent(event);
+                this.contentWindow.windowUtils.dispatchEventToChromeOnly(
+                  media,
+                  event
+                );
                 break;
               }
             }
@@ -318,26 +321,22 @@ export class ContextMenuChild extends JSWindowActorChild {
         ) {
           return null;
         }
-        if (!this.textDirectiveTarget) {
-          return null;
-        }
         const sel = this.contentWindow.getSelection();
-        const ranges =
-          this.textDirectiveTarget === "selection"
-            ? Array.from({ length: sel.rangeCount }, (_, i) =>
-                sel.getRangeAt(i)
-              )
-            : this.document.fragmentDirective.getTextDirectiveRanges();
-        return this.document.fragmentDirective
-          .createTextDirectiveForRanges(ranges)
-          .then(textFragment => {
-            if (textFragment) {
-              let url = URL.fromURI(this.document?.documentURIObject);
-              url.hash += `:~:${textFragment}`;
-              return url.href;
-            }
-            return null;
-          });
+        const ranges = !sel.isCollapsed
+          ? Array.from({ length: sel.rangeCount }, (_, i) => sel.getRangeAt(i))
+          : this.document.fragmentDirective.getTextDirectiveRanges();
+        return ranges
+          ? this.document.fragmentDirective
+              .createTextDirectiveForRanges(ranges)
+              .then(textFragment => {
+                if (textFragment) {
+                  let url = URL.fromURI(this.document?.documentURIObject);
+                  url.hash += `:~:${textFragment}`;
+                  return url.href;
+                }
+                return null;
+              })
+          : null;
       }
       case "ContextMenu:RemoveAllTextFragments": {
         this.document.fragmentDirective.removeAllTextDirectives();
@@ -933,28 +932,6 @@ export class ContextMenuChild extends JSWindowActorChild {
       this.document.fragmentDirective?.getTextDirectiveRanges?.() || [];
     // .hasTextFragments indicates whether the page will show highlights.
     context.hasTextFragments = !!textDirectiveRanges.length;
-    const { offsetNode, offset } =
-      node.ownerDocument.caretPositionFromPoint(
-        aEvent.clientX,
-        aEvent.clientY
-      ) || {};
-    const sel = this.contentWindow.getSelection();
-    context.textDirectiveTarget = null;
-    if (offsetNode && offset != null) {
-      if (
-        !sel.isCollapsed &&
-        Array.from({ length: sel.rangeCount }, (_, i) =>
-          sel.getRangeAt(i)
-        ).some(r => r.isPointInRange(offsetNode, offset))
-      ) {
-        context.textDirectiveTarget = "selection";
-      } else if (
-        textDirectiveRanges.some(r => r.isPointInRange(offsetNode, offset))
-      ) {
-        context.textDirectiveTarget = "textDirective";
-      }
-    }
-    this.textDirectiveTarget = context.textDirectiveTarget;
 
     // Remember the node and its owner document that was clicked
     // This may be modifed before sending to nsContextMenu

@@ -72,6 +72,8 @@ import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wallpapers.WallpaperState
 
+private const val BOTTOM_PADDING = 47
+
 /**
  * Top level composable for the homepage.
  *
@@ -116,10 +118,16 @@ internal fun Homepage(
             with(state) {
                 when (this) {
                     is HomepageState.Private -> {
-                        Box(modifier = Modifier.padding(horizontal = horizontalMargin)) {
-                            PrivateBrowsingDescription(
+                        if (privateModeRedesignEnabled) {
+                            PrivateBrowsingDescription2(
                                 onLearnMoreClick = interactor::onLearnMoreClicked,
                             )
+                        } else {
+                            Box(modifier = Modifier.padding(horizontal = horizontalMargin)) {
+                                PrivateBrowsingDescription(
+                                    onLearnMoreClick = interactor::onLearnMoreClicked,
+                                )
+                            }
                         }
                     }
 
@@ -206,12 +214,12 @@ internal fun Homepage(
                                 interactor = interactor,
                             )
                         }
-
-                        Spacer(Modifier.height(bottomSpacerHeight))
                     }
                 }
             }
         }
+
+        Spacer(Modifier.height(BOTTOM_PADDING.dp))
     }
 }
 
@@ -469,7 +477,6 @@ private fun HomepagePreview() {
                     cardBackgroundColor = WallpaperState.default.cardBackgroundColor,
                     buttonTextColor = WallpaperState.default.buttonTextColor,
                     buttonBackgroundColor = WallpaperState.default.buttonBackgroundColor,
-                    bottomSpacerHeight = 188.dp,
                     isSearchInProgress = false,
                 ),
                 interactor = FakeHomepagePreview.homepageInteractor,
@@ -509,7 +516,6 @@ private fun HomepagePreviewCollections() {
                 cardBackgroundColor = WallpaperState.default.cardBackgroundColor,
                 buttonTextColor = WallpaperState.default.buttonTextColor,
                 buttonBackgroundColor = WallpaperState.default.buttonBackgroundColor,
-                bottomSpacerHeight = 188.dp,
                 isSearchInProgress = false,
             ),
             interactor = FakeHomepagePreview.homepageInteractor,
@@ -532,7 +538,7 @@ private fun PrivateHomepagePreview() {
                     showHeader = false,
                     firstFrameDrawn = true,
                     isSearchInProgress = false,
-                    bottomSpacerHeight = 188.dp,
+                    privateModeRedesignEnabled = false,
                 ),
                 interactor = FakeHomepagePreview.homepageInteractor,
                 onTopSitesItemBound = {},

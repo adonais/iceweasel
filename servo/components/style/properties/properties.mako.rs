@@ -23,12 +23,11 @@ use crate::media_queries::Device;
 use crate::parser::ParserContext;
 use crate::selector_parser::PseudoElement;
 use crate::stylist::Stylist;
-use style_traits::{CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss};
+use style_traits::{CssStringWriter, CssWriter, KeywordsCollectFn, ParseError, SpecifiedValueInfo, StyleParseErrorKind, ToCss, TypedValue, ToTyped};
 use crate::stylesheets::{CssRuleType, CssRuleTypes, Origin};
 use crate::logical_geometry::{LogicalAxis, LogicalCorner, LogicalSide};
 use crate::use_counters::UseCounters;
 use crate::rule_tree::StrongRuleNode;
-use crate::str::CssStringWriter;
 use crate::values::{
     computed,
     resolved,
@@ -404,6 +403,19 @@ impl PropertyDeclaration {
             % for ty, vs in groupby(variants, key=lambda x: x["type"]):
             ${" | ".join("{}(ref value)".format(v["name"]) for v in vs)} => {
                 value.to_css(&mut dest)
+            }
+            % endfor
+        }
+    }
+
+    /// Like the method on ToTyped.
+    pub fn to_typed(&self) -> Option<TypedValue> {
+        use self::PropertyDeclaration::*;
+
+        match *self {
+            % for ty, vs in groupby(variants, key=lambda x: x["type"]):
+            ${" | ".join("{}(ref value)".format(v["name"]) for v in vs)} => {
+                value.to_typed()
             }
             % endfor
         }
@@ -1289,7 +1301,7 @@ impl PropertyId {
 impl PropertyDeclaration {
     /// Given a property declaration, return the property declaration id.
     #[inline]
-    pub fn id(&self) -> PropertyDeclarationId {
+    pub fn id(&self) -> PropertyDeclarationId<'_> {
         match *self {
             PropertyDeclaration::Custom(ref declaration) => {
                 return PropertyDeclarationId::Custom(&declaration.name)
@@ -1578,7 +1590,7 @@ pub mod style_structs {
                 /// Iterate over the values of ${longhand.name}.
                 #[allow(non_snake_case)]
                 #[inline]
-                pub fn ${longhand.ident}_iter(&self) -> ${longhand.camel_case}Iter {
+                pub fn ${longhand.ident}_iter(&self) -> ${longhand.camel_case}Iter<'_> {
                     ${longhand.camel_case}Iter {
                         style_struct: self,
                         current: 0,
@@ -1836,6 +1848,31 @@ impl ComputedValues {
         }
     }
 
+    /// Returns the computed value of the given longhand as a strongly-typed
+    /// `TypedValue`, if supported.
+    pub fn computed_typed_value(
+        &self,
+        property_id: LonghandId,
+    ) -> Option<TypedValue> {
+        let property_id = property_id.to_physical(self.writing_mode);
+        match property_id {
+            % for specified_type, props in groupby(data.longhands, key=lambda x: x.specified_type()):
+            <% props = list(props) %>
+            ${" |\n".join("LonghandId::{}".format(p.camel_case) for p in props)} => {
+                let value = match property_id {
+                    % for prop in props:
+                    % if not prop.logical:
+                    LonghandId::${prop.camel_case} => self.clone_${prop.ident}(),
+                    % endif
+                    % endfor
+                    _ => unsafe { debug_unreachable!() },
+                };
+                value.to_typed()
+            }
+            % endfor
+        }
+    }
+
     /// Returns the given longhand's resolved value as a property declaration.
     pub fn computed_or_resolved_declaration(
         &self,
@@ -2004,6 +2041,7 @@ impl ComputedValues {
             PropertyDeclarationId::Longhand(id) => {
                 let context = resolved::Context {
                     style: self,
+                    for_property: id.into(),
                 };
                 let mut s = String::new();
                 self.computed_or_resolved_value(

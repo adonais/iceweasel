@@ -13,7 +13,6 @@
 #  include "MediaCodecsSupport.h"
 #  include "PlatformDecoderModule.h"
 #  include "mozilla/AlreadyAddRefed.h"
-#  include "mozilla/EnumSet.h"
 #  include "mozilla/MozPromise.h"
 #  include "mozilla/RefPtr.h"
 #  include "mozilla/ipc/UtilityProcessSandboxing.h"

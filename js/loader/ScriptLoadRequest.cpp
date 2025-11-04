@@ -77,7 +77,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ScriptLoadRequest)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFetchOptions, mOriginPrincipal, mBaseURL,
                                   mLoadedScript, mCacheInfo, mLoadContext)
   tmp->mScriptForCache = nullptr;
-  tmp->DropCacheReferences();
+  tmp->DropDiskCacheReference();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ScriptLoadRequest)
@@ -125,7 +125,7 @@ void ScriptLoadRequest::Cancel() {
   }
 }
 
-void ScriptLoadRequest::DropCacheReferences() { mCacheInfo = nullptr; }
+void ScriptLoadRequest::DropDiskCacheReference() { mCacheInfo = nullptr; }
 
 bool ScriptLoadRequest::HasScriptLoadContext() const {
   return HasLoadContext() && mLoadContext->IsWindowContext();

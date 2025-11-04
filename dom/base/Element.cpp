@@ -49,7 +49,6 @@
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MouseEvents.h"
-#include "mozilla/NotNull.h"
 #include "mozilla/PointerLockManager.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/PresShellForwards.h"
@@ -5322,7 +5321,8 @@ StylePropertyMapReadOnly* Element::ComputedStyleMap() {
   nsDOMSlots* slots = DOMSlots();
 
   if (!slots->mComputedStyleMap) {
-    slots->mComputedStyleMap = MakeRefPtr<StylePropertyMapReadOnly>(this);
+    slots->mComputedStyleMap =
+        MakeRefPtr<StylePropertyMapReadOnly>(this, /* aComputed */ true);
   }
 
   return slots->mComputedStyleMap;

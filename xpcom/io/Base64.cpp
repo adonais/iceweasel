@@ -12,8 +12,6 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
-#include "plbase64.h"
-
 namespace {
 
 // BEGIN base64 encode code copied and modified from NSPR
@@ -352,6 +350,29 @@ nsresult Base64EncodeInputStream(nsIInputStream* aInputStream, nsAString& aDest,
 }
 
 nsresult Base64Encode(const char* aBinary, uint32_t aBinaryLen,
+                      Span<char> aBase64) {
+  if (aBinaryLen == 0) {
+    aBase64[0] = '\0';
+    return NS_OK;
+  }
+
+  const auto base64LenOrErr = CalculateBase64EncodedLength(aBinaryLen);
+  if (base64LenOrErr.isErr()) {
+    return base64LenOrErr.inspectErr();
+  }
+  const uint32_t base64Len = base64LenOrErr.inspect();
+  // Add one byte for null termination.
+  if (base64Len >= aBase64.Length()) {
+    aBase64[0] = '\0';
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+
+  Encode(aBinary, aBinaryLen, aBase64.data());
+  aBase64[base64Len] = '\0';
+  return NS_OK;
+}
+
+nsresult Base64Encode(const char* aBinary, uint32_t aBinaryLen,
                       char** aBase64) {
   if (aBinaryLen == 0) {
     *aBase64 = (char*)moz_xmalloc(1);
@@ -361,15 +382,15 @@ nsresult Base64Encode(const char* aBinary, uint32_t aBinaryLen,
 
   const auto base64LenOrErr = CalculateBase64EncodedLength(aBinaryLen);
   if (base64LenOrErr.isErr()) {
+    *aBase64 = nullptr;
     return base64LenOrErr.inspectErr();
   }
   const uint32_t base64Len = base64LenOrErr.inspect();
 
-  *aBase64 = nullptr;
-
   // Add one byte for null termination.
   UniqueFreePtr<char[]> base64((char*)malloc(base64Len + 1));
   if (!base64) {
+    *aBase64 = nullptr;
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -549,6 +570,7 @@ nsresult Base64Decode(const char* aBase64, uint32_t aBase64Len, char** aBinary,
                       uint32_t* aBinaryLen) {
   // Check for overflow.
   if (aBase64Len > UINT32_MAX / 3) {
+    *aBinaryLen = 0;
     return NS_ERROR_FAILURE;
   }
 
@@ -566,6 +588,7 @@ nsresult Base64Decode(const char* aBase64, uint32_t aBase64Len, char** aBinary,
   // Add one byte for null termination.
   UniqueFreePtr<char[]> binary((char*)malloc(*aBinaryLen + 1));
   if (!binary) {
+    *aBinaryLen = 0;
     return NS_ERROR_OUT_OF_MEMORY;
   }
 

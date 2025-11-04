@@ -19,6 +19,7 @@ from gecko_taskgraph.util.attributes import (
     RELEASE_PROJECTS,
     RUN_ON_PROJECT_ALIASES,
 )
+from gecko_taskgraph.util.constants import TEST_KINDS
 
 logger = logging.getLogger(__name__)
 doc_base_path = os.path.join(GECKO, "taskcluster", "docs")
@@ -416,7 +417,7 @@ def verify_test_packaging(task, taskgraph, scratch_pad, graph_config, parameters
         if exceptions:
             raise Exception("\n".join(exceptions))
         return
-    if task.kind == "test":
+    if task.kind in TEST_KINDS:
         build_task = taskgraph[task.dependencies["build"]]
         scratch_pad[build_task.label] = 1
 

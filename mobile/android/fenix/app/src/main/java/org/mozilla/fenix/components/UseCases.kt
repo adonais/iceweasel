@@ -117,7 +117,7 @@ class UseCases(
 
     val wallpaperUseCases by lazyMonitored {
         // Required to even access context.filesDir property and to retrieve current locale
-        val (rootStorageDirectory, currentLocale) = strictMode.value.resetAfter(StrictMode.allowThreadDiskReads()) {
+        val (rootStorageDirectory, currentLocale) = strictMode.value.allowViolation(StrictMode::allowThreadDiskReads) {
             val rootStorageDirectory = context.filesDir
             val currentLocale = LocaleManager.getCurrentLocale(context)?.toLanguageTag()
                 ?: LocaleManager.getSystemDefault().toLanguageTag()

@@ -74,7 +74,7 @@ async function setupHosts(scripts) {
 
   switch (AppConstants.platform) {
     case "macosx":
-    case "linux":
+    case "linux": {
       let dirProvider = {
         getFile(property) {
           if (property == "XREUserNativeManifests") {
@@ -97,8 +97,9 @@ async function setupHosts(scripts) {
         await writeManifest(script, path, path);
       }
       break;
+    }
 
-    case "win":
+    case "win": {
       const REGKEY = String.raw`Software\Mozilla\NativeMessagingHosts`;
 
       let registry = new MockRegistry();
@@ -127,6 +128,7 @@ async function setupHosts(scripts) {
         );
       }
       break;
+    }
 
     default:
       ok(

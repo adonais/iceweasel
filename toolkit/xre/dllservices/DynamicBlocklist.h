@@ -10,7 +10,6 @@
 #include <winternl.h>
 
 #include "nsWindowsHelpers.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/NativeNt.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"

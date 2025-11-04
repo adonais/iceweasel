@@ -9,8 +9,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   Preferences: "resource://gre/modules/Preferences.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 // See the `QuickSuggest.SETTINGS_UI` jsdoc below.
@@ -159,36 +159,40 @@ const SUGGEST_PREFS = Object.freeze({
 // class and keeps it in the `#featuresByName` map. See `SuggestFeature`.
 const FEATURES = {
   AddonSuggestions:
-    "resource:///modules/urlbar/private/AddonSuggestions.sys.mjs",
-  AmpSuggestions: "resource:///modules/urlbar/private/AmpSuggestions.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/AddonSuggestions.sys.mjs",
+  AmpSuggestions:
+    "moz-src:///browser/components/urlbar/private/AmpSuggestions.sys.mjs",
   DynamicSuggestions:
-    "resource:///modules/urlbar/private/DynamicSuggestions.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/DynamicSuggestions.sys.mjs",
   ImportantDatesSuggestions:
-    "resource:///modules/urlbar/private/ImportantDatesSuggestions.sys.mjs",
-  ImpressionCaps: "resource:///modules/urlbar/private/ImpressionCaps.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/ImportantDatesSuggestions.sys.mjs",
+  ImpressionCaps:
+    "moz-src:///browser/components/urlbar/private/ImpressionCaps.sys.mjs",
   MarketSuggestions:
-    "resource:///modules/urlbar/private/MarketSuggestions.sys.mjs",
-  MDNSuggestions: "resource:///modules/urlbar/private/MDNSuggestions.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/MarketSuggestions.sys.mjs",
+  MDNSuggestions:
+    "moz-src:///browser/components/urlbar/private/MDNSuggestions.sys.mjs",
   SuggestBackendMerino:
-    "resource:///modules/urlbar/private/SuggestBackendMerino.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/SuggestBackendMerino.sys.mjs",
   SuggestBackendMl:
-    "resource:///modules/urlbar/private/SuggestBackendMl.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/SuggestBackendMl.sys.mjs",
   SuggestBackendRust:
-    "resource:///modules/urlbar/private/SuggestBackendRust.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/SuggestBackendRust.sys.mjs",
   WeatherSuggestions:
-    "resource:///modules/urlbar/private/WeatherSuggestions.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/WeatherSuggestions.sys.mjs",
   WikipediaSuggestions:
-    "resource:///modules/urlbar/private/WikipediaSuggestions.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/WikipediaSuggestions.sys.mjs",
   YelpRealtimeSuggestions:
-    "resource:///modules/urlbar/private/YelpRealtimeSuggestions.sys.mjs",
-  YelpSuggestions: "resource:///modules/urlbar/private/YelpSuggestions.sys.mjs",
+    "moz-src:///browser/components/urlbar/private/YelpRealtimeSuggestions.sys.mjs",
+  YelpSuggestions:
+    "moz-src:///browser/components/urlbar/private/YelpSuggestions.sys.mjs",
 };
 
 /**
- * @import {SuggestBackendRust} from "resource:///modules/urlbar/private/SuggestBackendRust.sys.mjs"
- * @import {SuggestFeature} from "resource:///modules/urlbar/private/SuggestFeature.sys.mjs"
- * @import {SuggestProvider} from "resource:///modules/urlbar/private/SuggestFeature.sys.mjs"
- * @import {ImpressionCaps} from "resource:///modules/urlbar/private/ImpressionCaps.sys.mjs"
+ * @import {SuggestBackendRust} from "moz-src:///browser/components/urlbar/private/SuggestBackendRust.sys.mjs"
+ * @import {SuggestFeature} from "moz-src:///browser/components/urlbar/private/SuggestFeature.sys.mjs"
+ * @import {SuggestProvider} from "moz-src:///browser/components/urlbar/private/SuggestFeature.sys.mjs"
+ * @import {ImpressionCaps} from "moz-src:///browser/components/urlbar/private/ImpressionCaps.sys.mjs"
  */
 
 /**
@@ -994,22 +998,21 @@ class _QuickSuggest {
     }
   }
 
-  async _test_reinit(testOverrides = null) {
+  async _test_reset(testOverrides = null) {
     if (this.#initStarted) {
       await this.initPromise;
-      this.#initStarted = false;
-      this.#initResolvers = Promise.withResolvers();
     }
 
     if (this.rustBackend) {
-      // Make sure to await any queued ingests before re-initializing. Otherwise
-      // there could be a race between when that ingestion finishes and when the
-      // test finishes and calls `SharedRemoteSettingsService.updateServer()` to
-      // reset the remote settings server.
       await this.rustBackend.ingestPromise;
     }
 
-    await this.init(testOverrides);
+    this.#initDefaultPrefs(testOverrides);
+    this.#updateAll();
+    if (this.rustBackend) {
+      // `#updateAll()` triggers ingest, so wait for it to finish.
+      await this.rustBackend.ingestPromise;
+    }
   }
 
   #initStarted = false;

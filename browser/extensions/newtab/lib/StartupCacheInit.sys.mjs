@@ -71,6 +71,8 @@ export class StartupCacheInit {
       data: {
         lastUpdated: spocsState.lastUpdated,
         spocs: spocsState.data,
+        spocsOnDemand: spocsState.onDemand.enabled,
+        spocsCacheUpdateTime: spocsState.cacheUpdateTime,
       },
     };
     this.store.dispatch(ac.OnlyToOneContent(action, target));

@@ -139,6 +139,7 @@ add_task(async function titlebar_spacer_context() {
   let spacer = document.querySelector(
     "#TabsToolbar .titlebar-spacer[type='pre-tabs']"
   );
+  await waitForElementShown(spacer);
   EventUtils.synthesizeMouseAtCenter(spacer, {
     type: "contextmenu",
     button: 2,
@@ -146,6 +147,8 @@ add_task(async function titlebar_spacer_context() {
   await shownPromise;
 
   let expectedEntries = [
+    ["#toolbar-context-toggle-vertical-tabs", true],
+    ["---"],
     [".customize-context-moveToPanel", false],
     [".customize-context-removeFromToolbar", false],
     ["---"],

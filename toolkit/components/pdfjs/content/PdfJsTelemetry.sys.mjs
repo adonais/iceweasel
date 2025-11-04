@@ -16,11 +16,6 @@
 export class PdfJsTelemetryContent {
   static onViewerIsUsed() {
     Glean.pdfjs.used.add(1);
-    // GLAM EXPERIMENT
-    // This metric is temporary, disabled by default, and will be enabled only
-    // for the purpose of experimenting with client-side sampling of data for
-    // GLAM use. See Bug 1947604 for more information.
-    Glean.glamExperiment.used.add(1);
   }
 }
 
@@ -62,6 +57,12 @@ export class PdfJsTelemetry {
         break;
       case "signatureCertificates":
         this.onSignatureCertificates(aData.data);
+        break;
+      case "comment":
+        this.onComment(aData.data);
+        break;
+      case "commentSidebar":
+        this.onCommentSidebar(aData.data);
         break;
     }
   }
@@ -137,6 +138,9 @@ export class PdfJsTelemetry {
             action: "pdfjs.signature.added",
             data: stats.signature,
           });
+        }
+        if (stats.comments) {
+          Glean.pdfjsComment.save.record(stats.comments);
         }
         return;
       }
@@ -317,5 +321,13 @@ export class PdfJsTelemetry {
 
   static onGeckoview(id) {
     Glean.pdfjs.geckoview[id].add(1);
+  }
+
+  static onComment({ deleted }) {
+    Glean.pdfjsComment.edit[deleted ? "deleted" : "edited"].add(1);
+  }
+
+  static onCommentSidebar({ numberOfAnnotations }) {
+    Glean.pdfjsComment.sidebar.record({ comments_count: numberOfAnnotations });
   }
 }

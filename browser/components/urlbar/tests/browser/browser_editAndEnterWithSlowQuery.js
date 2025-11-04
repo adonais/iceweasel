@@ -359,34 +359,37 @@ add_task(async function test_omnibox_type() {
 add_task(async function test_heuristic() {
   const testCases = [
     {
-      testResult: new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-        { url: "https://example.com/123" }
-      ),
+      testResult: new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        heuristic: true,
+        payload: { url: "https://example.com/123" },
+      }),
       loadingURL: "https://example.com/123",
       displayedValue: "https://example.com/123",
     },
     {
-      testResult: new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      testResult: new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        heuristic: true,
         // eslint-disable-next-line @microsoft/sdl/no-insecure-url
-        { url: "http://example.com/123" }
-      ),
+        payload: { url: "http://example.com/123" },
+      }),
       // eslint-disable-next-line @microsoft/sdl/no-insecure-url
       loadingURL: "http://example.com/123",
       displayedValue: "example.com/123",
     },
     {
-      testResult: new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.SEARCH,
-        UrlbarUtils.RESULT_SOURCE.SEARCH,
-        {
+      testResult: new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.SEARCH,
+        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        heuristic: true,
+        payload: {
           engine: Services.search.defaultEngine.name,
           query: "heuristic_search",
-        }
-      ),
+        },
+      }),
       loadingURL: "https://example.com/?q=heuristic_search",
       displayedValue: "heuristic_search",
     },
@@ -394,7 +397,6 @@ add_task(async function test_heuristic() {
 
   for (const { testResult, loadingURL, displayedValue } of testCases) {
     info("Setup: " + JSON.stringify(testResult));
-    testResult.heuristic = true;
     let provider = new UrlbarTestUtils.TestProvider({
       results: [testResult],
       name: "TestProviderHeuristic",

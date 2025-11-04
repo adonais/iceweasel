@@ -304,10 +304,12 @@ nsresult ShowAlertWithCleanup(nsIAlertNotification* aAlert,
     // NotificationDB.
     // (This won't affect the following persist call by ShowAlert, as the DB
     // maintains a job queue)
+    // Note that we ignore the result of GetHistory - we still go ahead and
+    // clears notifications even if it fails, as the failure implies there's no
+    // history and thus we should clear everything.
     nsTArray<nsString> history;
-    if (NS_SUCCEEDED(alertService->GetHistory(history))) {
-      UnpersistAllNotificationsExcept(history);
-    }
+    (void)alertService->GetHistory(history);
+    UnpersistAllNotificationsExcept(history);
   }
 
   MOZ_TRY(alertService->ShowAlert(aAlert, aAlertListener));

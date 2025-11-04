@@ -109,6 +109,11 @@
   min-height: 0;
 }
 
+.browserSidebarContainer {
+  position: absolute;
+  inset: 0;
+}
+
 .sidebar-browser-stack {
   flex: 1;
 }
@@ -125,6 +130,7 @@
   padding: 0;
   color-scheme: unset;
   background: var(--tabpanel-background-color);
+  display: flex;
 
   &[pendingpaint] {
     background-image: url("chrome://global/skin/icons/pendingpaint.png");
@@ -143,6 +149,47 @@
 
   browser[tabDialogShowing] {
     -moz-user-focus: none !important;
+  }
+
+  &[splitview] {
+    --panel-min-width: 140px;
+
+    .split-view-panel {
+      position: static;
+      flex: 1;
+      min-width: var(--panel-min-width);
+      max-width: calc(100% - var(--panel-min-width));
+      margin: var(--space-xsmall);
+    }
+
+    .browserStack {
+      border-radius: var(--border-radius-medium);
+      overflow: clip;
+
+      .deck-selected > .browserContainer > & {
+        outline: var(--focus-outline);
+      }
+    }
+
+    .split-view-panel[column="0"] {
+      order: 0;
+      margin-inline-end: 0;
+    }
+
+    .split-view-splitter {
+      order: 1;
+      flex: none;
+    }
+
+    .split-view-panel[column="1"] {
+      order: 2;
+      margin-inline-start: 0;
+    }
+
+    /* Panels with a custom width shouldn't grow. */
+    .split-view-panel[width] {
+      flex: none;
+    }
   }
 }
 

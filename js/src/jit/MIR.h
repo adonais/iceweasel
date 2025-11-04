@@ -13,6 +13,7 @@
 #define jit_MIR_h
 
 #include "mozilla/Array.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/HashFunctions.h"
 #ifdef JS_JITSPEW
@@ -1141,7 +1142,7 @@ class MInstruction : public MDefinition, public InlineListNode<MInstruction> {
 
 template <size_t Arity>
 class MAryInstruction : public MInstruction {
-  mozilla::Array<MUse, Arity> operands_;
+  MOZ_NO_UNIQUE_ADDRESS mozilla::Array<MUse, Arity> operands_;
 
  protected:
   MUse* getUseFor(size_t index) final { return &operands_[index]; }
@@ -1777,8 +1778,8 @@ class MTableSwitch final : public MControlInstruction,
 
 template <size_t Arity, size_t Successors>
 class MAryControlInstruction : public MControlInstruction {
-  mozilla::Array<MUse, Arity> operands_;
-  mozilla::Array<MBasicBlock*, Successors> successors_;
+  MOZ_NO_UNIQUE_ADDRESS mozilla::Array<MUse, Arity> operands_;
+  MOZ_NO_UNIQUE_ADDRESS mozilla::Array<MBasicBlock*, Successors> successors_;
 
  protected:
   explicit MAryControlInstruction(Opcode op) : MControlInstruction(op) {}
@@ -1814,7 +1815,7 @@ class MAryControlInstruction : public MControlInstruction {
 
 template <size_t Successors>
 class MVariadicControlInstruction : public MVariadicT<MControlInstruction> {
-  mozilla::Array<MBasicBlock*, Successors> successors_;
+  MOZ_NO_UNIQUE_ADDRESS mozilla::Array<MBasicBlock*, Successors> successors_;
 
  protected:
   explicit MVariadicControlInstruction(Opcode op)
@@ -7621,6 +7622,48 @@ class MTypedArrayFill : public MQuaternaryInstruction,
   bool possiblyCalls() const override { return true; }
 
   ALLOW_CLONE(MTypedArrayFill)
+};
+
+// Inlined TypedArray.prototype.subarray
+class MTypedArraySubarray : public MTernaryInstruction,
+                            public MixPolicy<ObjectPolicy<0>, IntPtrPolicy<1>,
+                                             IntPtrPolicy<2>>::Data {
+  CompilerGCPointer<JSObject*> templateObject_;
+  gc::Heap initialHeap_;
+  bool scalarReplaced_ = false;
+
+  MTypedArraySubarray(MDefinition* object, MDefinition* start,
+                      MDefinition* length, JSObject* templateObject,
+                      gc::Heap initialHeap)
+      : MTernaryInstruction(classOpcode, object, start, length),
+        templateObject_(templateObject),
+        initialHeap_(initialHeap) {
+    setResultType(MIRType::Object);
+  }
+
+ public:
+  INSTRUCTION_HEADER(TypedArraySubarray)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, object), (1, start), (2, length))
+
+  JSObject* templateObject() const { return templateObject_; }
+  gc::Heap initialHeap() const { return initialHeap_; }
+
+  bool isScalarReplaced() const { return scalarReplaced_; }
+  void setScalarReplaced() { scalarReplaced_ = true; }
+
+  AliasSet getAliasSet() const override {
+    if (scalarReplaced_) {
+      return AliasSet::None();
+    }
+    return AliasSet::Store(AliasSet::ObjectFields);
+  }
+
+  bool possiblyCalls() const override { return true; }
+
+  [[nodiscard]] bool writeRecoverData(
+      CompactBufferWriter& writer) const override;
+  bool canRecoverOnBailout() const override { return scalarReplaced_; }
 };
 
 // Compute a 3-component "effective address":

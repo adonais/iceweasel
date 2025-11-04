@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env mozilla/browser-window */
-
 /**
  * The base view implements everything that's common to all the views.
  * It should not be instanced directly, use a derived class instead.
@@ -797,6 +795,15 @@ class PlacesViewBase {
     }
 
     if (popup._placesNode && PlacesUIUtils.getViewForNode(popup) == this) {
+      if (this.#isPopupForRecursiveFolderShortcut(popup)) {
+        // Show as an empty container for now. We may want to show a better
+        // message in the future, but since we are likely to remove recursive
+        // shortcuts in maintenance at a certain point, this should be enough.
+        this._setEmptyPopupStatus(popup, true);
+        popup._built = true;
+        return;
+      }
+
       if (!popup._placesNode.containerOpen) {
         popup._placesNode.containerOpen = true;
       }
@@ -818,6 +825,33 @@ class PlacesViewBase {
     for (let i = 0; i < aEventNames.length; i++) {
       aObject.removeEventListener(aEventNames[i], this, aCapturing);
     }
+  }
+
+  /**
+   * Walks up the parent chain to detect whether a folder shortcut resolves to
+   * a folder already present in the ancestry.
+   *
+   * @param {DOMElement} popup
+   * @returns {boolean} Whether this popup is for a recursive folder shortcut.
+   */
+  #isPopupForRecursiveFolderShortcut(popup) {
+    if (
+      !popup._placesNode ||
+      !PlacesUtils.nodeIsFolderOrShortcut(popup._placesNode)
+    ) {
+      return false;
+    }
+    let guid = PlacesUtils.getConcreteItemGuid(popup._placesNode);
+    for (
+      let parentView = popup.parentNode?.parentNode;
+      parentView?._placesNode;
+      parentView = parentView.parentNode?.parentNode
+    ) {
+      if (PlacesUtils.getConcreteItemGuid(parentView._placesNode) == guid) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 

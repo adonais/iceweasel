@@ -10,7 +10,7 @@ import {
   SkippableTimer,
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -18,11 +18,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
-  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarProviderTopSites:
+    "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarSearchUtils:
+    "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
+  UrlbarTokenizer:
+    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
 });
 
 /**
@@ -528,17 +531,15 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
         }
 
         results.push(
-          Object.assign(
-            new lazy.UrlbarResult(
-              UrlbarUtils.RESULT_TYPE.SEARCH,
-              UrlbarUtils.RESULT_SOURCE.SEARCH,
-              ...lazy.UrlbarResult.payloadAndSimpleHighlights(
-                queryContext.tokens,
-                payload
-              )
+          new lazy.UrlbarResult({
+            type: UrlbarUtils.RESULT_TYPE.SEARCH,
+            source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+            isRichSuggestion: !!entry.icon,
+            ...lazy.UrlbarResult.payloadAndSimpleHighlights(
+              queryContext.tokens,
+              payload
             ),
-            { isRichSuggestion: !!entry.icon }
-          )
+          })
         );
       } catch (err) {
         this.logger.error(err);
@@ -656,9 +657,9 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
 }
 
 function makeFormHistoryResult(queryContext, engine, entry) {
-  return new lazy.UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.SEARCH,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
+  return new lazy.UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.SEARCH,
+    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
     ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
       engine: engine.name,
       suggestion: [entry.value, UrlbarUtils.HIGHLIGHT.SUGGESTED],
@@ -668,6 +669,6 @@ function makeFormHistoryResult(queryContext, engine, entry) {
       helpUrl:
         Services.urlFormatter.formatURLPref("app.support.baseURL") +
         "awesome-bar-result-menu",
-    })
-  );
+    }),
+  });
 }

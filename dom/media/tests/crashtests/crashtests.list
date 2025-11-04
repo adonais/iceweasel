@@ -37,6 +37,7 @@ load 1749308.html
 load 1764915.html
 load 1764933.html
 load 1764940.html
-load 1766668.html
+skip-if(cocoaWidget&&/^15\.30$/.test(os_version)) load 1766668.html # macOS bug 1992504 and bug 1993405
+skip-if(!cocoaWidget||!/^15\.30$/.test(os_version)) pref(media.getusermedia.microphone.prefer_voice_stream_with_processing.enabled,false) load 1766668.html # pref to work around bug 1992504 and bug 1993405
 load 1783765.html
 skip-if(Android) skip-if(cocoaWidget&&/^15\.30$/.test(os_version)) load 1920264.html # No screenshare on Android, macOS: bug 1984994

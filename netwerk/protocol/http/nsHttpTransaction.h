@@ -274,6 +274,7 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   void OnHttp3BackupTimer();
   void OnBackupConnectionReady(bool aTriggeredByHTTPSRR);
   void OnFastFallbackTimer();
+  void OnHttp3TunnelFallbackTimer();
   void HandleFallback(nsHttpConnectionInfo* aFallbackConnInfo);
   void MaybeCancelFallbackTimer();
 
@@ -569,8 +570,10 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   bool mDontRetryWithDirectRoute = false;
   bool mFastFallbackTriggered = false;
   bool mHttp3BackupTimerCreated = false;
+  bool mHttp3TunnelFallbackTimerCreated = false;
   nsCOMPtr<nsITimer> mFastFallbackTimer;
   nsCOMPtr<nsITimer> mHttp3BackupTimer;
+  nsCOMPtr<nsITimer> mHttp3TunnelFallbackTimer;
   RefPtr<nsHttpConnectionInfo> mBackupConnInfo;
   // A clone of mConnInfo taken when this transaction is activated.
   // Describes the server that the associated connection is connected to.

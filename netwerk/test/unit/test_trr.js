@@ -1,8 +1,13 @@
 "use strict";
 
 /* import-globals-from trr_common.js */
+/* import-globals-from head_trr.js */
 
 const gDefaultPref = Services.prefs.getDefaultBranch("");
+
+const { NodeServer } = ChromeUtils.importESModule(
+  "resource://testing-common/NodeServer.sys.mjs"
+);
 
 SetParentalControlEnabled(false);
 

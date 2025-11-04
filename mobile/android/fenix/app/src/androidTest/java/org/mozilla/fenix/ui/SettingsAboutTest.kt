@@ -7,7 +7,8 @@ package org.mozilla.fenix.ui
 import androidx.test.uiautomator.UiSelector
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.BuildConfig
+import org.mozilla.fenix.Config
+import org.mozilla.fenix.ReleaseChannel
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithCondition
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.RetryTestRule
@@ -62,7 +63,7 @@ class SettingsAboutTest : TestSetup() {
 
     @Test
     fun verifyLibrariesListInReleaseBuildsTest() {
-        runWithCondition(!BuildConfig.DEBUG) {
+        runWithCondition(Config.channel.isReleased) {
             homeScreen {
             }.openThreeDotMenu {
             }.openSettings {

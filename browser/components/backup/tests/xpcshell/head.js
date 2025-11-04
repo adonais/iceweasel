@@ -4,41 +4,18 @@
 
 "use strict";
 
-const { BackupService } = ChromeUtils.importESModule(
-  "resource:///modules/backup/BackupService.sys.mjs"
-);
-
-const { BackupResource } = ChromeUtils.importESModule(
-  "resource:///modules/backup/BackupResource.sys.mjs"
-);
-
-const { MeasurementUtils } = ChromeUtils.importESModule(
-  "resource:///modules/backup/MeasurementUtils.sys.mjs"
-);
-
-const { TelemetryTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/TelemetryTestUtils.sys.mjs"
-);
-
-const { Sqlite } = ChromeUtils.importESModule(
-  "resource://gre/modules/Sqlite.sys.mjs"
-);
-
-const { sinon } = ChromeUtils.importESModule(
-  "resource://testing-common/Sinon.sys.mjs"
-);
-
-const { OSKeyStoreTestUtils } = ChromeUtils.importESModule(
-  "resource://testing-common/OSKeyStoreTestUtils.sys.mjs"
-);
-
-const { MockRegistrar } = ChromeUtils.importESModule(
-  "resource://testing-common/MockRegistrar.sys.mjs"
-);
-
-const { PrivateBrowsingUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/PrivateBrowsingUtils.sys.mjs"
-);
+ChromeUtils.defineESModuleGetters(this, {
+  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+  BackupResource: "resource:///modules/backup/BackupResource.sys.mjs",
+  MeasurementUtils: "resource:///modules/backup/MeasurementUtils.sys.mjs",
+  TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.sys.mjs",
+  Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
+  OSKeyStoreTestUtils: "resource://testing-common/OSKeyStoreTestUtils.sys.mjs",
+  MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
+});
 
 const HISTORY_ENABLED_PREF = "places.history.enabled";
 const SANITIZE_ON_SHUTDOWN_PREF = "privacy.sanitize.sanitizeOnShutdown";
@@ -347,6 +324,52 @@ function countHistogramMeasurements(histogram) {
   const snapshot = histogram.snapshot();
   const countsPerBucket = Object.values(snapshot.values);
   return countsPerBucket.reduce((sum, count) => sum + count, 0);
+}
+
+function setupProfile() {
+  // FOG needs to be initialized in order for data to flow.
+  Services.fog.initializeFOG();
+
+  // Much of this setup is copied from toolkit/profile/xpcshell/head.js. It is
+  // needed in order to put the xpcshell test environment into the state where
+  // it thinks its profile is the one pointed at by
+  // nsIToolkitProfileService.currentProfile.
+  let gProfD = do_get_profile();
+  let gDataHome = gProfD.clone();
+  gDataHome.append("data");
+  gDataHome.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+  let gDataHomeLocal = gProfD.clone();
+  gDataHomeLocal.append("local");
+  gDataHomeLocal.createUnique(Ci.nsIFile.DIRECTORY_TYPE, 0o755);
+
+  let xreDirProvider = Cc["@mozilla.org/xre/directory-provider;1"].getService(
+    Ci.nsIXREDirProvider
+  );
+  xreDirProvider.setUserDataDirectory(gDataHome, false);
+  xreDirProvider.setUserDataDirectory(gDataHomeLocal, true);
+
+  let profileSvc = Cc["@mozilla.org/toolkit/profile-service;1"].getService(
+    Ci.nsIToolkitProfileService
+  );
+
+  let createdProfile = {};
+  let didCreate = profileSvc.selectStartupProfile(
+    ["xpcshell"],
+    false,
+    AppConstants.UPDATE_CHANNEL,
+    "",
+    {},
+    {},
+    createdProfile
+  );
+  Assert.ok(didCreate, "Created a testing profile and set it to current.");
+  Assert.equal(
+    profileSvc.currentProfile,
+    createdProfile.value,
+    "Profile set to current"
+  );
+
+  return createdProfile.value;
 }
 
 /**

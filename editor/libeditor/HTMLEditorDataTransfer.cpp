@@ -501,7 +501,8 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
 
   // but don't cross tables
   nsIContent* containerContent = nullptr;
-  if (!HTMLEditUtils::IsTable(aLastInsertedPoint.GetChild())) {
+  if (!aLastInsertedPoint.GetChild() ||
+      !aLastInsertedPoint.GetChild()->IsHTMLElement(nsGkAtoms::table)) {
     containerContent = HTMLEditUtils::GetLastLeafContent(
         *aLastInsertedPoint.GetChild(), {LeafNodeType::OnlyEditableLeafNode},
         BlockInlineCheck::Unused,
@@ -513,7 +514,7 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
            maybeTableElement &&
            maybeTableElement != aLastInsertedPoint.GetChild();
            maybeTableElement = maybeTableElement->GetParentElement()) {
-        if (HTMLEditUtils::IsTable(maybeTableElement)) {
+        if (maybeTableElement->IsHTMLElement(nsGkAtoms::table)) {
           mostDistantInclusiveAncestorTableElement = maybeTableElement;
         }
       }
@@ -534,7 +535,7 @@ HTMLEditor::HTMLWithContextInserter::GetNewCaretPointAfterInsertingHTML(
   // element, put caret a end of it.
   if (containerContent->IsText() ||
       (HTMLEditUtils::IsContainerNode(*containerContent) &&
-       !HTMLEditUtils::IsTable(containerContent))) {
+       !containerContent->IsHTMLElement(nsGkAtoms::table))) {
     pointToPutCaret.SetToEndOf(containerContent);
   }
   // Otherwise, i.e., it's an atomic element, `<table>` element or data node,
@@ -709,7 +710,8 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
     // but if not we want to delete _contents_ of cells and replace
     // with non-table elements.  Use cellSelectionMode bool to
     // indicate results.
-    if (!HTMLEditUtils::IsAnyTableElement(arrayOfTopMostChildContents[0])) {
+    if (!HTMLEditUtils::IsAnyTableElementExceptColumnElement(
+            *arrayOfTopMostChildContents[0])) {
       cellSelectionMode = false;
     }
   }
@@ -955,7 +957,8 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
 
   EditorDOMPoint lastInsertedPoint;
   nsCOMPtr<nsIContent> insertedContextParentContent;
-  for (OwningNonNull<nsIContent>& content : aArrayOfTopMostChildContents) {
+  for (const OwningNonNull<nsIContent>& content :
+       aArrayOfTopMostChildContents) {
     if (NS_WARN_IF(content == aFragmentAsNode) ||
         NS_WARN_IF(content->IsHTMLElement(nsGkAtoms::body))) {
       return Err(NS_ERROR_FAILURE);
@@ -979,10 +982,11 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
     // a `<table>` or `<tr>` element, insert only the appropriate children
     // instead.
     bool inserted = false;
-    if (HTMLEditUtils::IsTableRow(content) &&
-        HTMLEditUtils::IsTableRow(pointToInsert.GetContainer()) &&
-        (HTMLEditUtils::IsTable(content) ||
-         HTMLEditUtils::IsTable(pointToInsert.GetContainer()))) {
+    if (HTMLEditUtils::IsTableRowElement(*content) &&
+        HTMLEditUtils::IsTableRowElement(
+            pointToInsert.GetContainerAs<nsIContent>()) &&
+        (content->IsHTMLElement(nsGkAtoms::table) ||
+         pointToInsert.IsContainerHTMLElement(nsGkAtoms::table))) {
       // Move children of current node to the insertion point.
       AutoTArray<OwningNonNull<nsIContent>, 24> children;
       HTMLEditUtils::CollectAllChildren(*content, children);
@@ -1037,21 +1041,24 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
     // If a list element on the clipboard, and pasting it into a list or
     // list item element, insert the appropriate children instead.  I.e.,
     // merge the list elements instead of pasting as a sublist.
-    else if (HTMLEditUtils::IsAnyListElement(content) &&
-             (HTMLEditUtils::IsAnyListElement(pointToInsert.GetContainer()) ||
-              HTMLEditUtils::IsListItem(pointToInsert.GetContainer()))) {
+    else if (HTMLEditUtils::IsListElement(*content) &&
+             (HTMLEditUtils::IsListElement(
+                  pointToInsert.GetContainerAs<nsIContent>()) ||
+              HTMLEditUtils::IsListItemElement(
+                  pointToInsert.GetContainerAs<nsIContent>()))) {
       AutoTArray<OwningNonNull<nsIContent>, 24> children;
       HTMLEditUtils::CollectAllChildren(*content, children);
       EditorDOMPoint pointToPutCaret;
       for (const OwningNonNull<nsIContent>& child : children) {
-        if (HTMLEditUtils::IsListItem(child) ||
-            HTMLEditUtils::IsAnyListElement(child)) {
+        if (HTMLEditUtils::IsListItemElement(*child) ||
+            HTMLEditUtils::IsListElement(*child)) {
           // If we're pasting into empty list item, we should remove it
           // and past current node into the parent list directly.
           // XXX This creates invalid structure if current list item element
           //     is not proper child of the parent element, or current node
           //     is a list element.
-          if (HTMLEditUtils::IsListItem(pointToInsert.GetContainer()) &&
+          if (HTMLEditUtils::IsListItemElement(
+                  pointToInsert.GetContainerAs<nsIContent>()) &&
               HTMLEditUtils::IsEmptyNode(
                   *pointToInsert.GetContainer(),
                   {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
@@ -1150,8 +1157,9 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
     }
     // If pasting into a `<pre>` element and current node is a `<pre>` element,
     // move only its children.
-    else if (HTMLEditUtils::IsPre(maybeNonEditableBlockElement) &&
-             HTMLEditUtils::IsPre(content)) {
+    else if (maybeNonEditableBlockElement &&
+             maybeNonEditableBlockElement->IsHTMLElement(nsGkAtoms::pre) &&
+             content->IsHTMLElement(nsGkAtoms::pre)) {
       // Check for pre's going into pre's.
       AutoTArray<OwningNonNull<nsIContent>, 24> children;
       HTMLEditUtils::CollectAllChildren(*content, children);
@@ -1318,7 +1326,7 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
 
 nsresult HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink(
     Element& aLinkElement, const EditorDOMPoint& aPointToPutCaret) {
-  MOZ_ASSERT(HTMLEditUtils::IsLink(&aLinkElement));
+  MOZ_ASSERT(HTMLEditUtils::IsHyperlinkElement(aLinkElement));
 
   // The reason why do that instead of just moving caret after it is, the
   // link might have ended in an invisible `<br>` element.  If so, the code
@@ -1367,7 +1375,8 @@ Element* HTMLEditor::GetLinkElement(nsINode* aNode) {
   }
   nsINode* node = aNode;
   while (node) {
-    if (HTMLEditUtils::IsLink(node)) {
+    if (node->IsElement() &&
+        HTMLEditUtils::IsHyperlinkElement(*node->AsElement())) {
       return node->AsElement();
     }
     node = node->GetParentNode();
@@ -1385,7 +1394,7 @@ nsresult HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
     // shouldn't be removed.
     if (parent) {
       if (aNodesToRemove == NodesToRemove::eAll ||
-          HTMLEditUtils::IsAnyListElement(parent)) {
+          HTMLEditUtils::IsListElement(nsIContent::FromNode(parent))) {
         ErrorResult error;
         parent->RemoveChild(aNode, error);
         NS_WARNING_ASSERTION(!error.Failed(), "nsINode::RemoveChild() failed");
@@ -3756,7 +3765,7 @@ void HTMLEditor::HTMLWithContextInserter::FragmentFromPasteCreator::
   nsIContent* child = aNode.GetFirstChild();
   while (child) {
     bool isEmptyNodeShouldNotInserted = false;
-    if (HTMLEditUtils::IsAnyListElement(child)) {
+    if (HTMLEditUtils::IsListElement(*child)) {
       // Current limitation of HTMLEditor:
       //   Cannot put caret in a list element which does not have list item
       //   element even as a descendant.  I.e., HTMLEditor does not support
@@ -4272,8 +4281,8 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
         nsTArray<OwningNonNull<Element>>& aOutArrayOfListAndTableElements) {
   for (Element* element = aContent.GetAsElementOrParentElement(); element;
        element = element->GetParentElement()) {
-    if (HTMLEditUtils::IsAnyListElement(element) ||
-        HTMLEditUtils::IsTable(element)) {
+    if (HTMLEditUtils::IsListElement(*element) ||
+        element->IsHTMLElement(nsGkAtoms::table)) {
       aOutArrayOfListAndTableElements.AppendElement(*element);
     }
   }
@@ -4286,8 +4295,10 @@ Element* HTMLEditor::AutoHTMLFragmentBoundariesFixer::
         const nsTArray<OwningNonNull<Element>>&
             aInclusiveAncestorsTableOrListElements) {
   Element* lastFoundAncestorListOrTableElement = nullptr;
-  for (auto& content : aArrayOfTopMostChildContents) {
-    if (HTMLEditUtils::IsAnyTableElementButNotTable(content)) {
+  for (const OwningNonNull<nsIContent>& content :
+       aArrayOfTopMostChildContents) {
+    if (HTMLEditUtils::IsAnyTableElementExceptTableElementAndColumElement(
+            content)) {
       Element* tableElement =
           HTMLEditUtils::GetClosestAncestorTableElement(*content);
       if (!tableElement) {
@@ -4313,7 +4324,7 @@ Element* HTMLEditor::AutoHTMLFragmentBoundariesFixer::
       continue;
     }
 
-    if (!HTMLEditUtils::IsListItem(content)) {
+    if (!HTMLEditUtils::IsListItemElement(*content)) {
       continue;
     }
     Element* listElement =
@@ -4359,7 +4370,7 @@ HTMLEditor::AutoHTMLFragmentBoundariesFixer::FindReplaceableTableElement(
   for (Element* element =
            aContentMaybeInTableElement.GetAsElementOrParentElement();
        element; element = element->GetParentElement()) {
-    if (!HTMLEditUtils::IsAnyTableElement(element) ||
+    if (!HTMLEditUtils::IsAnyTableElementExceptColumnElement(*element) ||
         element->IsHTMLElement(nsGkAtoms::table)) {
       // XXX Perhaps, the original developer of this method assumed that
       //     aTableElement won't be skipped because if it's assumed, we can
@@ -4388,7 +4399,7 @@ HTMLEditor::AutoHTMLFragmentBoundariesFixer::FindReplaceableTableElement(
 
 bool HTMLEditor::AutoHTMLFragmentBoundariesFixer::IsReplaceableListElement(
     Element& aListElement, nsIContent& aContentMaybeInListElement) const {
-  MOZ_ASSERT(HTMLEditUtils::IsAnyListElement(&aListElement));
+  MOZ_ASSERT(HTMLEditUtils::IsListElement(aListElement));
   // Perhaps, this is designed for climbing up the DOM tree from
   // aContentMaybeInListElement to aListElement and making sure that
   // aContentMaybeInListElement itself or its ancestor is an list item.
@@ -4398,7 +4409,7 @@ bool HTMLEditor::AutoHTMLFragmentBoundariesFixer::IsReplaceableListElement(
   for (Element* element =
            aContentMaybeInListElement.GetAsElementOrParentElement();
        element; element = element->GetParentElement()) {
-    if (!HTMLEditUtils::IsListItem(element)) {
+    if (!HTMLEditUtils::IsListItemElement(*element)) {
       // XXX Perhaps, the original developer of this method assumed that
       //     aListElement won't be skipped because if it's assumed, we can
       //     stop climbing up the tree in that case.
@@ -4463,7 +4474,7 @@ void HTMLEditor::AutoHTMLFragmentBoundariesFixer::
 
   // Find substructure of list or table that must be included in paste.
   Element* replaceElement;
-  if (HTMLEditUtils::IsAnyListElement(listOrTableElement)) {
+  if (HTMLEditUtils::IsListElement(*listOrTableElement)) {
     if (!IsReplaceableListElement(*listOrTableElement,
                                   firstOrLastChildContent)) {
       return;

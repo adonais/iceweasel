@@ -1976,7 +1976,8 @@ void DCSurfaceVideo::AttachExternalImage(wr::ExternalImageId aExternalImage) {
   // XXX if software decoded video frame format is nv12, it could be used as
   // video overlay.
   if (!texture || !texture->AsRenderDXGITextureHost() ||
-      texture->GetFormat() != gfx::SurfaceFormat::NV12) {
+      ((texture->GetFormat() != gfx::SurfaceFormat::NV12) &&
+       (texture->GetFormat() != gfx::SurfaceFormat::P010))) {
     gfxCriticalNote << "Unsupported RenderTexture for overlay: "
                     << gfx::hexa(texture);
     return;

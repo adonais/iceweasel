@@ -64,6 +64,12 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyFolderTitle: Verified bookmarks folder with title: $title is displayed")
     }
 
+    fun verifyBookmarkFolderDescription(numberOfBookmarksInFolder: String) {
+        Log.i(TAG, "verifyBookmarkFolderDescription: Trying to verify the number of bookmarks in folder: $numberOfBookmarksInFolder is displayed")
+        composeTestRule.onNodeWithText(text = getStringResource(R.string.bookmarks_folder_description, numberOfBookmarksInFolder)).assertIsDisplayed()
+        Log.i(TAG, "verifyBookmarkFolderDescription: Verified the number of bookmarks in folder: $numberOfBookmarksInFolder is displayed")
+    }
+
     @OptIn(ExperimentalTestApi::class)
     fun verifyBookmarkTitle(title: String) {
         Log.i(TAG, "verifyBookmarkTitle: Waiting for $waitingTime for bookmark with title: $title to exist.")

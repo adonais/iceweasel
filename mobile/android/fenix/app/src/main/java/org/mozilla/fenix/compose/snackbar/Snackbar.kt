@@ -34,7 +34,7 @@ import androidx.core.view.setPadding
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import kotlinx.coroutines.launch
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.SnackbarVisuals
 import mozilla.components.compose.base.snackbar.displaySnackbar
@@ -225,7 +225,7 @@ private fun SnackbarHostPreview() {
                 .padding(all = 16.dp),
         ) {
             Column {
-                PrimaryButton(
+                FilledButton(
                     text = "Show snackbar",
                     modifier = Modifier.fillMaxWidth(),
                 ) {

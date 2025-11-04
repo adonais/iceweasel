@@ -5298,6 +5298,31 @@
   !endif
 !macroend
 
+
+/**
+ * Converts a string whose value is expected to be "true" or "false" into a value of "0" or "1",
+ * copying the result into the variable OUTPUT. If the string is neither "true" nor "false", the
+ * DEFAULT value will be copied to OUTPUT.
+ *
+ * @param   STRING
+ *          A string that is expected to have the value of "true" or "false"
+ * @param   DEFAULT
+ *          The default value that will result if STRING is neither "true" nor "false"
+ * @param   OUTPUT
+ *          The variable where the result of "0", "1", or ${DEFAULT} will be copied
+ */
+!macro StringToBoolean STRING DEFAULT OUTPUT
+  ${If} ${STRING} == "true"
+    StrCpy ${OUTPUT} "1"
+  ${ElseIf} ${STRING} == "false"
+    StrCpy ${OUTPUT} "0"
+  ${Else}
+    StrCpy ${OUTPUT} "${DEFAULT}"
+  ${EndIf}
+!macroend
+!define StringToBoolean "!insertmacro StringToBoolean"
+
+
 /**
  * Reads a flag option from the command line and sets a variable with its state,
  * if the option is present on the command line.
@@ -5439,66 +5464,41 @@
             ${EndIf}
 
             ReadINIStr $R8 $R7 "Install" "DesktopShortcut"
-            ${If} $R8 == "false"
-              StrCpy $AddDesktopSC "0"
-            ${Else}
-              StrCpy $AddDesktopSC "1"
-            ${EndIf}
+            ${StringToBoolean} $R8 "1" $AddDesktopSC
+
+            !ifdef DESKTOP_LAUNCHER_ENABLED
+            ; If this build does not support desktop launcher installation, ignore the flag that requests it
+            ReadINIStr $R8 $R7 "Install" "DesktopLauncher"
+            ${StringToBoolean} $R8 "0" $AddDesktopLauncher
+            !endif
 
             ReadINIStr $R8 $R7 "Install" "StartMenuShortcuts"
-            ${If} $R8 == "false"
-              StrCpy $AddStartMenuSC "0"
-            ${Else}
-              StrCpy $AddStartMenuSC "1"
-            ${EndIf}
+            ${StringToBoolean} $R8 "1" $AddStartMenuSC
 
             ; We still accept the plural version for backwards compatibility,
             ; but the singular version takes priority.
             ClearErrors
             ReadINIStr $R8 $R7 "Install" "StartMenuShortcut"
-            ${If} $R8 == "false"
-              StrCpy $AddStartMenuSC "0"
-            ${ElseIfNot} ${Errors}
-              StrCpy $AddStartMenuSC "1"
-            ${EndIf}
+            ${StringToBoolean} $R8 "1" $AddStartMenuSC
 
             !ifdef MOZ_PRIVATE_BROWSING
               ReadINIStr $R8 $R7 "Install" "PrivateBrowsingShortcut"
-              ${If} $R8 == "false"
-                StrCpy $AddPrivateBrowsingSC "0"
-              ${ElseIfNot} ${Errors}
-                StrCpy $AddPrivateBrowsingSC "1"
-              ${EndIf}
+              ${StringToBoolean} $R8 "1" $AddPrivateBrowsingSC
             !endif
 
             ReadINIStr $R8 $R7 "Install" "TaskbarShortcut"
-            ${If} $R8 == "false"
-              StrCpy $AddTaskbarSC "0"
-            ${Else}
-              StrCpy $AddTaskbarSC "1"
-            ${EndIf}
+            ${StringToBoolean} $R8 "1" $AddTaskbarSC
 
             ReadINIStr $R8 $R7 "Install" "MaintenanceService"
-            ${If} $R8 == "false"
-              StrCpy $InstallMaintenanceService "0"
-            ${Else}
-              StrCpy $InstallMaintenanceService "1"
-            ${EndIf}
+            ${StringToBoolean} $R8 "1" $InstallMaintenanceService
 
             ReadINIStr $R8 $R7 "Install" "RegisterDefaultAgent"
-            ${If} $R8 == "false"
-              StrCpy $RegisterDefaultAgent "0"
-            ${Else}
-              StrCpy $RegisterDefaultAgent "1"
-            ${EndIf}
+            ${StringToBoolean} $R8 "1" $RegisterDefaultAgent
+
 
             !ifdef MOZ_OPTIONAL_EXTENSIONS
               ReadINIStr $R8 $R7 "Install" "OptionalExtensions"
-              ${If} $R8 == "false"
-                StrCpy $InstallOptionalExtensions "0"
-              ${Else}
-                StrCpy $InstallOptionalExtensions "1"
-              ${EndIf}
+              ${StringToBoolean} $R8 "1" $InstallOptionalExtensions
             !endif
 
             !ifndef NO_STARTMENU_DIR
@@ -5530,6 +5530,12 @@
         ${EndIf}
 
         ${InstallGetOption} $R8 "DesktopShortcut" $AddDesktopSC
+
+        !ifdef DESKTOP_LAUNCHER_ENABLED
+        ; If this build does not support desktop launcher installation, ignore the flag that requests it
+        ${InstallGetOption} $R8 "DesktopLauncher" $AddDesktopLauncher
+        !endif
+
         ${InstallGetOption} $R8 "StartMenuShortcuts" $AddStartMenuSC
         ; We still accept the plural version for backwards compatibility,
         ; but the singular version takes priority.

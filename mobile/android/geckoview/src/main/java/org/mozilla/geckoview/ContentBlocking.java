@@ -77,12 +77,22 @@ public class ContentBlocking {
   /** {@link SafeBrowsingProvider} configuration for Google's SafeBrowsing V5 server. */
   public static final SafeBrowsingProvider GOOGLE_SAFE_BROWSING_V5_PROVIDER =
       SafeBrowsingProvider.withName("google5")
-          .lists("")
+          .lists(
+              "goog-phish-proto",
+              "googpub-phish-proto",
+              "goog-malware-proto",
+              "goog-unwanted-proto",
+              "goog-harmful-proto")
           .updateUrl(
               "https://safebrowsing.googleapis.com/v5/hashLists:batchGet?key=%GOOGLE_SAFEBROWSING_API_KEY%")
           .getHashUrl(
               "https://safebrowsing.googleapis.com/v5/hashes:search?key=%GOOGLE_SAFEBROWSING_API_KEY%")
-          .enabled(false)
+          .reportUrl("https://safebrowsing.google.com/safebrowsing/diagnostic?site=")
+          .reportPhishingMistakeUrl("https://%LOCALE%.phish-error.mozilla.com/?url=")
+          .reportMalwareMistakeUrl("https://%LOCALE%.malware-error.mozilla.com/?url=")
+          .advisoryUrl("https://developers.google.com/safe-browsing/v4/advisory")
+          .advisoryName("Google Safe Browsing")
+          .enabled(BuildConfig.NIGHTLY_BUILD)
           .build();
 
   /** Protected constructor - this class shouldn't be instantiated. */
@@ -1479,7 +1489,11 @@ public class ContentBlocking {
       mAdvisoryName = new Pref<>(ROOT + mName + ".advisoryName", null);
       mDataSharingUrl = new Pref<>(ROOT + mName + ".dataSharingURL", null);
       mDataSharingEnabled = new Pref<>(ROOT + mName + ".dataSharing.enabled", false);
-      mEnabled = new Pref<>(ROOT + mName + ".enabled", false);
+      if (mName.equals("google5")) {
+        mEnabled = new Pref<>(ROOT + mName + ".enabled", BuildConfig.NIGHTLY_BUILD);
+      } else {
+        mEnabled = new Pref<>(ROOT + mName + ".enabled", false);
+      }
 
       if (source != null) {
         updatePrefs(source);

@@ -10,6 +10,7 @@
 
 #include "ChildIterator.h"
 #include "GeckoProfiler.h"
+#include "mozilla/AbsoluteContainingBlock.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/PresShell.h"
@@ -17,7 +18,6 @@
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
-#include "nsAbsoluteContainingBlock.h"
 #include "nsCOMPtr.h"
 #include "nsContainerFrame.h"
 #include "nsError.h"

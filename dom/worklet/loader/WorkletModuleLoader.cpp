@@ -113,6 +113,8 @@ nsresult WorkletModuleLoader::CompileFetchedModule(
       return CompileJavaScriptModule(aCx, aOptions, aRequest, aModuleScript);
     case JS::ModuleType::JSON:
       return CompileJsonModule(aCx, aOptions, aRequest, aModuleScript);
+    case JS::ModuleType::CSS:
+      MOZ_CRASH("CSS modules are not supported in worklets");
   }
 
   MOZ_CRASH("Unhandled module type");
@@ -249,7 +251,7 @@ AddModuleThrowErrorRunnable::Run() {
 }
 
 void WorkletModuleLoader::OnModuleLoadComplete(ModuleLoadRequest* aRequest) {
-  if (!aRequest->IsTopLevel()) {
+  if (aRequest->IsStaticImport()) {
     return;
   }
 

@@ -955,8 +955,16 @@ main section {
 }
 .top-site-outer .context-menu-button:focus-visible {
   background-color: var(--newtab-button-focus-background);
-  border-color: var(--newtab-button-focus-border);
+  outline: var(--focus-outline);
   opacity: 1;
+}
+.lightWallpaper .top-site-outer .context-menu-button:focus-visible::after, .darkWallpaper .top-site-outer .context-menu-button:focus-visible::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--border-radius-small);
+  outline: var(--focus-outline);
+  color-scheme: initial;
 }
 .top-site-outer .context-menu {
   inset-block-start: calc(var(--space-large) + var(--space-xlarge));
@@ -972,6 +980,10 @@ main section {
 }
 .top-site-outer .top-site-button:focus + div .context-menu-button {
   opacity: 1;
+}
+.lightWallpaper .top-site-outer .top-site-button:focus .tile, .darkWallpaper .top-site-outer .top-site-button:focus .tile {
+  outline: var(--focus-outline);
+  color-scheme: initial;
 }
 .top-site-outer .title {
   color: var(--newtab-contextual-text-primary-color);
@@ -2062,6 +2074,7 @@ main section {
   background-color: var(--newtab-background-color-secondary);
   width: 432px;
   height: 100%;
+  display: none;
   position: fixed;
   inset-block: 0;
   inset-inline-end: 0;
@@ -2072,6 +2085,9 @@ main section {
   transform: translateX(435px);
   visibility: hidden;
   cursor: default;
+}
+.customize-menu.customize-animate-enter, .customize-menu.customize-animate-exit, .customize-menu.customize-animate-enter-done, .customize-menu.customize-animate-exit-done {
+  display: block;
 }
 @media (prefers-reduced-motion: no-preference) {
   .customize-menu.customize-animate-enter, .customize-menu.customize-animate-exit, .customize-menu.customize-animate-enter-done, .customize-menu.customize-animate-exit-done {
@@ -2925,6 +2941,12 @@ main section {
 .weatherCard:hover ~ .weatherSponsorText, .weatherCard:focus-within ~ .weatherSponsorText {
   visibility: visible;
 }
+.weatherCard:has(.staticWeatherInfo):hover {
+  box-shadow: none;
+}
+.weatherCard:has(.staticWeatherInfo):hover ~ .weatherSponsorText {
+  visibility: hidden;
+}
 .weatherCard:focus-within {
   overflow: visible;
 }
@@ -2952,6 +2974,65 @@ main section {
   inset-inline-end: 0;
 }
 
+.weatherOptIn {
+  position: absolute;
+  inset-block-end: calc(var(--space-medium) * -1.5);
+  inset-inline-start: calc(var(--space-xxlarge) * -9);
+}
+.weatherOptIn dialog {
+  background: var(--newtab-background-color-secondary);
+  border: 1px solid var(--border-color-card);
+  border-radius: var(--border-radius-medium);
+  box-shadow: var(--box-shadow-card);
+  display: flex;
+  width: 332px;
+}
+.weatherOptIn dialog .weatherOptInImg {
+  -webkit-mask: url("chrome://browser/skin/weather/mostly-sunny.svg") no-repeat center;
+  mask: url("chrome://browser/skin/weather/mostly-sunny.svg") no-repeat center;
+  background-color: var(--button-icon-fill);
+  mask-size: cover;
+  margin-inline-end: var(--space-medium);
+  height: var(--icon-size-xlarge);
+  width: var(--icon-size-xlarge);
+}
+.weatherOptIn dialog .weatherOptInContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.weatherOptIn dialog .weatherOptInContent h3 {
+  font-size: var(--button-font-size);
+  font-weight: var(--font-weight-bold);
+  margin-block: 0 var(--space-medium);
+}
+.weatherOptIn dialog .weatherOptInContent moz-button-group {
+  align-self: flex-end;
+}
+.weatherOptIn dialog .weatherOptInContent moz-button-group moz-button:first-of-type {
+  margin-inline-end: var(--space-small);
+}
+@media (min-width: 866px) {
+  .weatherOptIn {
+    inset-block-end: calc(var(--space-medium) * -1);
+    inset-inline-start: calc(var(--space-xxlarge) * -5.5);
+  }
+}
+
+dialog::after {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(var(--space-small) * -1);
+  inset-inline-end: 5%;
+  transform: translateX(-50%) rotate(225deg);
+  height: 16px;
+  width: 16px;
+  background: var(--newtab-background-color-secondary);
+  box-shadow: 4px 4px 6px -2px var(--box-shadow-card);
+  border-inline-end: 1px solid var(--border-color-card);
+  border-block-end: 1px solid var(--border-color-card);
+}
+
 .weatherInfoLink, .weatherButtonContextMenuWrapper {
   appearance: none;
   background-color: var(--background-color-ghost);
@@ -2967,9 +3048,6 @@ main section {
 }
 .weatherInfoLink:hover:active, .weatherButtonContextMenuWrapper:hover:active {
   background-color: var(--button-background-color-ghost-active);
-}
-.weatherInfoLink:focus-visible, .weatherButtonContextMenuWrapper:focus-visible {
-  outline: var(--focus-outline);
 }
 .lightWallpaper .weatherInfoLink, .darkWallpaper .weatherInfoLink, .lightWallpaper .weatherButtonContextMenuWrapper, .darkWallpaper .weatherButtonContextMenuWrapper {
   background-color: var(--newtab-weather-background-color);
@@ -3010,9 +3088,23 @@ main section {
 }
 .weatherInfoLink:focus-visible {
   border-radius: var(--border-radius-medium);
+  outline: var(--focus-outline);
+  z-index: 1;
 }
 .weatherInfoLink:focus-visible ~ .weatherButtonContextMenuWrapper::after {
   background-color: transparent;
+}
+
+.weatherInfoLink.staticWeatherInfo .weatherIcon {
+  filter: opacity(60%);
+}
+.weatherInfoLink.staticWeatherInfo .weatherText {
+  color: var(--text-color-disabled);
+}
+.weatherInfoLink.staticWeatherInfo:hover, .weatherInfoLink.staticWeatherInfo:active {
+  box-shadow: none;
+  cursor: default;
+  background-color: var(--newtab-weather-background-color);
 }
 
 .weatherButtonContextMenuWrapper {
@@ -3041,10 +3133,11 @@ main section {
 .weatherButtonContextMenuWrapper:hover::after {
   background-color: transparent;
 }
-.weatherButtonContextMenuWrapper:focus-visible {
+.weatherButtonContextMenuWrapper:has(:focus-visible) {
   border-radius: var(--border-radius-medium);
+  outline: var(--focus-outline);
 }
-.weatherButtonContextMenuWrapper:focus-visible::after {
+.weatherButtonContextMenuWrapper:has(:focus-visible)::after {
   background-color: transparent;
 }
 
@@ -3062,6 +3155,9 @@ main section {
   border: 0;
   appearance: none;
   min-width: var(--size-item-large);
+}
+.weatherButtonContextMenu:focus {
+  outline: none;
 }
 
 .weatherText {
@@ -4271,11 +4367,10 @@ main section {
   padding-block-end: calc(var(--space-xlarge) * 2);
 }
 .widgets-wrapper .widgets-scroll-message {
-  color: var(--newtab-text-primary-color);
+  color: var(--newtab-contextual-text-primary-color);
   position: absolute;
   bottom: 0;
   border-radius: var(--button-border-radius);
-  background: var(--button-background-color);
   padding: var(--space-small) var(--space-large);
 }
 .lightWallpaper .widgets-wrapper .widgets-scroll-message {
@@ -4395,7 +4490,7 @@ main section {
   position: absolute;
   inset-block-start: 50%;
   transform: translateY(-50%);
-  inset-inline-start: var(--space-xlarge);
+  inset-inline-start: calc(var(--space-medium) + var(--space-small));
 }
 .lists .add-task-container .icon.icon-add.icon-disabled {
   fill: var(--text-color-disabled);
@@ -4403,7 +4498,8 @@ main section {
 .lists .add-task-container .add-task-input {
   background: var(--button-background-color);
   padding-block: var(--space-small);
-  padding-inline: var(--space-xxlarge) var(--space-large);
+  padding-inline-start: calc(var(--space-large) * 2 + var(--space-xsmall));
+  padding-inline-end: var(--space-large);
   outline: none;
   border: none;
   border-radius: var(--border-radius-small);
@@ -4422,10 +4518,12 @@ main section {
 }
 .lists .task-list-wrapper {
   height: 100%;
+  padding-block-start: var(--space-xsmall);
 }
 .lists fieldset {
-  padding: 0 var(--space-medium);
-  margin: 0 var(--space-xsmall);
+  margin: 0;
+  padding-block: 0;
+  padding-inline: var(--space-medium);
   border: none;
   overflow-y: auto;
   max-height: 165px;
@@ -4434,16 +4532,13 @@ main section {
   align-items: center;
   background: transparent;
   border-radius: var(--border-radius-small);
-  padding: var(--space-xsmall);
   display: flex;
   justify-content: space-between;
   transition: opacity 300ms ease;
+  margin-block-end: var(--space-xsmall);
 }
 .lists .task-item.task-type-tasks:last-of-type {
   margin-block-end: var(--space-small);
-}
-.lists .task-item.task-type-completed:first-of-type {
-  margin-block-start: var(--space-small);
 }
 @media (prefers-reduced-motion: no-preference) {
   .lists .task-item.exiting {
@@ -4454,6 +4549,7 @@ main section {
   display: flex;
   align-items: center;
   flex-grow: 2;
+  padding-block: var(--space-small);
 }
 .lists .task-item .checkbox-wrapper span {
   -webkit-line-clamp: 3;
@@ -4467,6 +4563,8 @@ main section {
   height: var(--space-large);
   width: var(--space-large);
   accent-color: var(--button-background-color-primary);
+  margin-inline-start: var(--space-small);
+  padding: 0;
 }
 .lists .task-item .task-label {
   position: relative;
@@ -4477,7 +4575,7 @@ main section {
   text-decoration: line-through;
 }
 .lists .task-item moz-button {
-  align-self: flex-start;
+  margin-inline-end: var(--space-xsmall);
   visibility: hidden;
 }
 .lists .task-item moz-button:has(+ panel-list[open]) {
@@ -4497,6 +4595,7 @@ main section {
   max-width: 180px;
   border: none;
   border-radius: 0;
+  user-select: text;
 }
 .lists .task-item .edit-task:focus {
   outline: var(--focus-outline);
@@ -4508,7 +4607,7 @@ main section {
   align-items: center;
   gap: var(--space-small);
   height: 100%;
-  padding-block: var(--space-large);
+  padding-block-end: var(--space-medium);
 }
 .lightWallpaper .lists .empty-list {
   color-scheme: light;
@@ -4521,6 +4620,12 @@ main section {
   text-align: center;
   color: var(--text-color-deemphasized);
   font-size: var(--font-size-small);
+  padding-inline: var(--space-medium);
+}
+.lists .completed-task-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-small);
 }
 .lists .completed-task-wrapper summary {
   list-style: none;
@@ -4674,7 +4779,6 @@ main section {
 }
 .progress-circle-wrapper .focus-visible {
   opacity: 1;
-  transition: opacity 0.3s ease;
 }
 .progress-circle-wrapper .break-hidden {
   opacity: 0;
@@ -4682,7 +4786,6 @@ main section {
 }
 .progress-circle-wrapper .break-visible {
   opacity: 1;
-  transition: opacity 0.3s ease;
 }
 .progress-circle-wrapper .progress-circle-label {
   align-items: center;
@@ -7411,15 +7514,7 @@ main section {
   text-transform: uppercase;
   font-size: var(--font-size-small);
   font-weight: var(--font-weight);
-  color: var(--newtab-contextual-text-secondary-color);
-}
-.lightWallpaper .ds-card-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle .meta .title,
-.lightWallpaper .ds-section-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle .meta .title {
-  color-scheme: light;
-}
-.darkWallpaper .ds-card-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle .meta .title,
-.darkWallpaper .ds-section-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle .meta .title {
-  color-scheme: dark;
+  color: var(--newtab-text-secondary-color);
 }
 .ds-card-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle .meta .excerpt,
 .ds-section-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle .meta .excerpt {
@@ -7456,7 +7551,6 @@ main section {
 }
 .ds-card-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle.refined-cards .meta,
 .ds-section-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle.refined-cards .meta {
-  z-index: 10;
   padding: var(--space-small) var(--space-large);
   padding-block-end: 0;
 }
@@ -7466,7 +7560,6 @@ main section {
 }
 .ds-card-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle.refined-cards .meta .title,
 .ds-section-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle.refined-cards .meta .title {
-  color-scheme: initial;
   text-transform: none;
 }
 .ds-card-grid .ds-card.ds-spoc-rectangle.ds-spoc-rectangle.refined-cards .sections-card-footer,
@@ -7525,12 +7618,13 @@ main section {
 .ds-card-grid .refined-cards .card-stp-button-hover-background {
   height: 100%;
   padding-block-start: 0;
-  background: var(--button-background-color-ghost);
+  background: transparent;
 }
 .ds-card-grid .refined-cards .card-stp-button-hover-background .card-stp-button-position-wrapper {
   inset-block-start: unset;
   inset-block-end: var(--space-medium);
   inset-inline-end: var(--space-large);
+  background: var(--button-background-color-ghost);
 }
 .ds-card-grid .refined-cards .context-menu-button {
   background-color: var(--button-background-color-ghost);
@@ -8349,6 +8443,7 @@ main section {
 
 .follow-section-button-highlight .feature-highlight-modal {
   padding: var(--space-large);
+  width: auto;
 }
 .follow-section-button-highlight .feature-highlight-modal p {
   margin: 0;
@@ -8359,6 +8454,16 @@ main section {
 .follow-section-button-highlight .feature-highlight-modal .icon-dismiss {
   margin-block-start: 0;
   margin-inline-end: 0;
+}
+.follow-section-button-highlight .feature-highlight-modal > moz-button {
+  position: absolute;
+  inset-inline-end: var(--space-large);
+  inset-block-start: var(--space-large);
+}
+@media (prefers-color-scheme: dark) {
+  .follow-section-button-highlight.is-inverted-dark-dismiss-button .feature-highlight-modal > moz-button {
+    --button-icon-fill: var(--color-gray-70);
+  }
 }
 .follow-section-button-highlight .feature-highlight-modal.arrow-inline-start {
   inset-block-start: calc(100% + var(--space-large));
@@ -8391,6 +8496,7 @@ main section {
 }
 .follow-section-button-highlight .follow-section-button-highlight-content {
   display: flex;
+  flex-direction: column;
   gap: var(--space-medium);
 }
 .follow-section-button-highlight .follow-section-button-highlight-copy {
@@ -8455,17 +8561,19 @@ main section {
   pointer-events: none;
 }
 .wallpaper-feature-highlight .feature-highlight .feature-highlight-modal > moz-button {
-  margin-inline-start: calc(-1 * var(--space-xlarge));
+  position: absolute;
+  inset-inline-end: var(--space-large);
+  inset-block-start: var(--space-large);
 }
 @media (prefers-color-scheme: dark) {
-  .wallpaper-feature-highlight .feature-highlight .feature-highlight-modal > moz-button {
-    --dark-icon-color: var(--color-gray-70);
-    background-color: var(--dark-icon-color);
+  .wallpaper-feature-highlight.is-inverted-dark-dismiss-button .feature-highlight-modal > moz-button {
+    --button-icon-fill: var(--color-gray-70);
   }
 }
 
 .shortcut-feature-highlight .feature-highlight-modal {
   padding: var(--space-large);
+  width: auto;
 }
 .shortcut-feature-highlight .feature-highlight-modal p {
   margin: 0;
@@ -8481,12 +8589,19 @@ main section {
   margin-block-start: var(--space-large);
   inset-inline-end: var(--space-xlarge);
 }
-.shortcut-feature-highlight .feature-highlight-modal img {
-  -moz-context-properties: fill;
-  fill: currentColor;
+.shortcut-feature-highlight .feature-highlight-modal > moz-button {
+  position: absolute;
+  inset-inline-end: var(--space-large);
+  inset-block-start: var(--space-large);
+}
+@media (prefers-color-scheme: dark) {
+  .shortcut-feature-highlight.is-inverted-dark-dismiss-button .feature-highlight-modal > moz-button {
+    --button-icon-fill: var(--color-gray-70);
+  }
 }
 .shortcut-feature-highlight .shortcut-feature-highlight-content {
   display: flex;
+  flex-direction: column;
   gap: var(--space-medium);
 }
 .shortcut-feature-highlight .shortcut-feature-highlight-copy {
@@ -9325,7 +9440,7 @@ main section {
   background-color: var(--background-color-canvas);
   border: 2px solid var(--border-color-card);
   color: var(--text-color);
-  padding: var(--space-xlarge);
+  padding: var(--space-xxlarge);
   border-radius: var(--border-radius-large);
   margin: var(--space-xlarge) 0;
   position: relative;
@@ -9366,7 +9481,7 @@ main section {
 @media (max-width: 724px) {
   .personalized-card-wrapper .personalized-card-inner {
     grid-template-columns: 1fr;
-    gap: var(--space-small);
+    gap: var(--space-large);
   }
   .personalized-card-wrapper .personalized-card-inner img {
     justify-self: initial;
@@ -9390,11 +9505,14 @@ main section {
     grid-row: 2;
     grid-column: 2/span 2;
   }
+  .personalized-card-wrapper .personalized-card-inner p {
+    width: 230px;
+  }
 }
 @media (min-width: 1122px) {
   .personalized-card-wrapper .personalized-card-inner {
-    grid-template-columns: 0.2fr 1fr 1fr 1fr;
-    gap: var(--space-small);
+    grid-template-columns: 0.2fr 1.2fr 0.8fr 1fr;
+    gap: var(--space-large);
   }
   .personalized-card-wrapper .personalized-card-inner img {
     width: 75px;
@@ -9425,7 +9543,7 @@ main section {
 }
 @media (min-width: 1122px) and (max-width: 1390px) {
   .personalized-card-wrapper .personalized-card-inner {
-    gap: var(--space-small);
+    grid-template-columns: 0.2fr 1fr 1fr 1fr;
   }
   .personalized-card-wrapper .personalized-card-inner h2 {
     max-width: 200px;

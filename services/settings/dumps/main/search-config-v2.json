@@ -2602,7 +2602,7 @@
               "default": "Google Lens"
             },
             "excludePartnerCodeFromTelemetry": true,
-            "isNewUntil": "2025-10-14",
+            "isNewUntil": "2025-12-01",
             "params": [
               {
                 "name": "ep",
@@ -2615,9 +2615,9 @@
       },
       "id": "7ace4aa1-e762-4f4b-87b9-b23b3c3a930b",
       "identifier": "google",
-      "last_modified": 1757010932841,
+      "last_modified": 1761573989454,
       "recordType": "engine",
-      "schema": 1756779343136,
+      "schema": 1761358547622,
       "variants": [
         {
           "environment": {
@@ -8422,5 +8422,5 @@
       "schema": 1707824831520
     }
   ],
-  "timestamp": 1760466845276
+  "timestamp": 1761573989454
 }

@@ -2,12 +2,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { WEATHER_OPTIN_REGIONS } from "./ActivityStream.sys.mjs";
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  MerinoClient: "resource:///modules/MerinoClient.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
   PersistentCache: "resource://newtab/lib/PersistentCache.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
+});
+
+ChromeUtils.defineLazyGetter(lazy, "MerinoClient", () => {
+  try {
+    return ChromeUtils.importESModule(
+      "moz-src:///browser/components/urlbar/MerinoClient.sys.mjs"
+    ).MerinoClient;
+  } catch {
+    // Fallback to URI format prior to FF 144.
+    return ChromeUtils.importESModule(
+      "resource:///modules/MerinoClient.sys.mjs"
+    ).MerinoClient;
+  }
 });
 
 import {
@@ -80,15 +95,16 @@ export class WeatherFeed {
    * This thin wrapper around the fetch call makes it easier for us to write
    * automated tests that simulate responses.
    */
-  async fetchHelper(retries = 3) {
+  async fetchHelper(retries = 3, queryOverride = null) {
     this.restartFetchTimer();
     const weatherQuery = this.store.getState().Prefs.values[PREF_WEATHER_QUERY];
     let suggestions = [];
     let retry = 0;
+    const query = queryOverride ?? weatherQuery ?? "";
     while (retry++ < retries && suggestions.length === 0) {
       try {
         suggestions = await this.merino.fetch({
-          query: weatherQuery || "",
+          query,
           providers: MERINO_PROVIDER,
           timeoutMs: 7000,
           otherParams: {
@@ -103,6 +119,7 @@ export class WeatherFeed {
 
     // results from the API or empty array if null
     this.suggestions = suggestions ?? [];
+    return this.suggestions;
   }
 
   async fetch() {
@@ -207,6 +224,41 @@ export class WeatherFeed {
     }
   }
 
+  async fetchLocationByIP() {
+    if (!this.merino) {
+      this.merino = await this.MerinoClient(MERINO_CLIENT_KEY);
+    }
+
+    // First we fetch the forecast through user's IP Address
+    // which is done by not adding in a query parameter, but keeping the "weather" request_type.
+    // This method is mentioned in the AccuWeather docs:
+    // https://apidev.accuweather.com/developers/locationsAPIguide#IPAddress
+    try {
+      const ipLocation = await this.fetchHelper(3, "");
+
+      const ipData = ipLocation?.[0];
+
+      // Second, we use the city name that came from the IP look up to get the normalized merino response
+      // For context, the IP lookup response does not have the complete response data we need
+      const locationData = await this.merino.fetch({
+        query: ipData.city_name,
+        providers: MERINO_PROVIDER,
+        timeoutMs: 7000,
+        otherParams: {
+          request_type: "location",
+          source: "newtab",
+        },
+      });
+
+      const response = locationData?.[0]?.locations?.[0];
+      return response;
+      // return response
+    } catch (err) {
+      console.error("WeatherFeed failed to look up IP");
+      return null;
+    }
+  }
+
   async onPrefChangedAction(action) {
     switch (action.data.name) {
       case PREF_WEATHER_QUERY:
@@ -223,9 +275,18 @@ export class WeatherFeed {
     }
   }
 
+  async checkOptInRegion() {
+    const currentRegion = await lazy.Region.home;
+    const optIn =
+      this.isEnabled() && WEATHER_OPTIN_REGIONS.includes(currentRegion);
+    this.store.dispatch(ac.SetPref("system.showWeatherOptIn", optIn));
+    return optIn;
+  }
+
   async onAction(action) {
     switch (action.type) {
       case at.INIT:
+        await this.checkOptInRegion();
         if (this.isEnabled()) {
           await this.init();
         }
@@ -240,12 +301,15 @@ export class WeatherFeed {
         }
         break;
       case at.PREF_CHANGED:
+        if (action.data.name === "system.showWeather") {
+          await this.checkOptInRegion();
+        }
         await this.onPrefChangedAction(action);
         break;
       case at.WEATHER_LOCATION_SEARCH_UPDATE:
         await this.fetchLocationAutocomplete();
         break;
-      case at.WEATHER_LOCATION_DATA_UPDATE:
+      case at.WEATHER_LOCATION_DATA_UPDATE: {
         // check that data is formatted correctly before adding to cache
         if (action.data.city) {
           await this.cache.set("locationData", {
@@ -255,7 +319,40 @@ export class WeatherFeed {
           });
           this.locationData = action.data;
         }
+
+        // Remove static weather data once location has been set
+        this.store.dispatch(ac.SetPref("weather.staticData.enabled", false));
         break;
+      }
+      case at.WEATHER_USER_OPT_IN_LOCATION: {
+        this.store.dispatch(ac.SetPref("weather.optInAccepted", true));
+        this.store.dispatch(ac.SetPref("weather.optInDisplayed", false));
+
+        const detectedLocation = await this.fetchLocationByIP();
+
+        if (detectedLocation) {
+          // Build the payload exactly like manual search does
+
+          this.store.dispatch(
+            ac.BroadcastToContent({
+              type: at.WEATHER_LOCATION_DATA_UPDATE,
+              data: {
+                city: detectedLocation.localized_name,
+                adminName: detectedLocation.administrative_area,
+                country: detectedLocation.country,
+              },
+            })
+          );
+
+          // Use the AccuWeather key (canonical ID)
+          if (detectedLocation.key) {
+            this.store.dispatch(
+              ac.SetPref("weather.query", detectedLocation.key)
+            );
+          }
+        }
+        break;
+      }
     }
   }
 }

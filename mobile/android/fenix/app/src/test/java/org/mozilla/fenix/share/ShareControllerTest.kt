@@ -21,6 +21,7 @@ import io.mockk.spyk
 import io.mockk.verify
 import io.mockk.verifyOrder
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.concept.sync.Device
@@ -97,6 +98,7 @@ class ShareControllerTest {
         verify { dismiss(ShareController.Result.DISMISSED) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `handleShareToApp should start a new sharing activity and close this`() = runTestOnMain {
         assertNull(Events.shareToApp.testGetValue())

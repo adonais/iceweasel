@@ -6,17 +6,22 @@
 
 use base64::prelude::*;
 use neqo_bin::server::{HttpServer, Runner};
-use neqo_common::{event::Provider, qdebug, qtrace, Datagram, Header};
+use neqo_common::{event::Provider, qdebug, qinfo, qtrace, Datagram, Header};
 use neqo_crypto::{generate_ech_keys, init_db, AllowZeroRtt, AntiReplay};
 use neqo_http3::{
-    Error, Http3OrWebTransportStream, Http3Parameters, Http3Server, Http3ServerEvent,
-    WebTransportRequest, WebTransportServerEvent, WebTransportSessionAcceptAction,
+    ConnectUdpRequest, ConnectUdpServerEvent, Error, Http3OrWebTransportStream, Http3Parameters,
+    Http3Server, Http3ServerEvent, SessionAcceptAction, StreamId, WebTransportRequest,
+    WebTransportServerEvent,
 };
 use neqo_transport::server::ConnectionRef;
 use neqo_transport::{
     ConnectionEvent, ConnectionParameters, OutputBatch, RandomConnectionIdGenerator, StreamType,
 };
 use std::env;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+use tokio::io::AsyncWriteExt;
+use tokio::io::ReadBuf;
 use tokio::task::LocalSet;
 
 use std::cell::RefCell;
@@ -41,8 +46,8 @@ cfg_if! {
 
 use std::cmp::min;
 use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
 use std::collections::HashSet;
+use std::collections::{HashMap, VecDeque};
 use std::hash::{Hash, Hasher};
 use std::net::SocketAddr;
 
@@ -105,7 +110,7 @@ impl Http3TestServer {
                 if sent < data.len() {
                     self.responses.insert(stream, data.split_off(sent));
                 } else {
-                    stream.stream_close_send().unwrap();
+                    let _ = stream.stream_close_send();
                 }
             }
             Err(e) => {
@@ -330,6 +335,7 @@ impl HttpServer for Http3TestServer {
                                     }
                                 }
                             } else if path == "/no_body" {
+                                qdebug!("Request for no_body");
                                 stream
                                     .send_headers(&[
                                         Header::new(":status", "200"),
@@ -549,12 +555,10 @@ impl HttpServer for Http3TestServer {
                             let path = ph.value();
                             qtrace!("Serve request {}", path);
                             if path == "/success" {
-                                session
-                                    .response(&WebTransportSessionAcceptAction::Accept)
-                                    .unwrap();
+                                session.response(&SessionAcceptAction::Accept).unwrap();
                             } else if path == "/redirect" {
                                 session
-                                    .response(&WebTransportSessionAcceptAction::Reject(
+                                    .response(&SessionAcceptAction::Reject(
                                         [
                                             Header::new(":status", "302"),
                                             Header::new("location", "/"),
@@ -564,22 +568,18 @@ impl HttpServer for Http3TestServer {
                                     .unwrap();
                             } else if path == "/reject" {
                                 session
-                                    .response(&WebTransportSessionAcceptAction::Reject(
+                                    .response(&SessionAcceptAction::Reject(
                                         [Header::new(":status", "404")].to_vec(),
                                     ))
                                     .unwrap();
                             } else if path == "/closeafter0ms" {
-                                session
-                                    .response(&WebTransportSessionAcceptAction::Accept)
-                                    .unwrap();
+                                session.response(&SessionAcceptAction::Accept).unwrap();
                                 if !self.sessions_to_close.contains_key(&now) {
                                     self.sessions_to_close.insert(now, Vec::new());
                                 }
                                 self.sessions_to_close.get_mut(&now).unwrap().push(session);
                             } else if path == "/closeafter100ms" {
-                                session
-                                    .response(&WebTransportSessionAcceptAction::Accept)
-                                    .unwrap();
+                                session.response(&SessionAcceptAction::Accept).unwrap();
                                 let expires = Instant::now() + Duration::from_millis(100);
                                 if !self.sessions_to_close.contains_key(&expires) {
                                     self.sessions_to_close.insert(expires, Vec::new());
@@ -589,27 +589,21 @@ impl HttpServer for Http3TestServer {
                                     .unwrap()
                                     .push(session);
                             } else if path == "/create_unidi_stream" {
-                                session
-                                    .response(&WebTransportSessionAcceptAction::Accept)
-                                    .unwrap();
+                                session.response(&SessionAcceptAction::Accept).unwrap();
                                 self.sessions_to_create_stream.push((
                                     session,
                                     StreamType::UniDi,
                                     None,
                                 ));
                             } else if path == "/create_unidi_stream_and_hello" {
-                                session
-                                    .response(&WebTransportSessionAcceptAction::Accept)
-                                    .unwrap();
+                                session.response(&SessionAcceptAction::Accept).unwrap();
                                 self.sessions_to_create_stream.push((
                                     session,
                                     StreamType::UniDi,
                                     Some(Vec::from("qwerty")),
                                 ));
                             } else if path == "/create_bidi_stream" {
-                                session
-                                    .response(&WebTransportSessionAcceptAction::Accept)
-                                    .unwrap();
+                                session.response(&SessionAcceptAction::Accept).unwrap();
                                 self.sessions_to_create_stream.push((
                                     session,
                                     StreamType::BiDi,
@@ -617,9 +611,7 @@ impl HttpServer for Http3TestServer {
                                 ));
                             } else if path == "/create_bidi_stream_and_hello" {
                                 self.webtransport_bidi_stream.clear();
-                                session
-                                    .response(&WebTransportSessionAcceptAction::Accept)
-                                    .unwrap();
+                                session.response(&SessionAcceptAction::Accept).unwrap();
                                 self.sessions_to_create_stream.push((
                                     session,
                                     StreamType::BiDi,
@@ -628,23 +620,19 @@ impl HttpServer for Http3TestServer {
                             } else if path == "/create_bidi_stream_and_large_data" {
                                 self.webtransport_bidi_stream.clear();
                                 let data: Vec<u8> = vec![1u8; 32 * 1024 * 1024];
-                                session
-                                    .response(&WebTransportSessionAcceptAction::Accept)
-                                    .unwrap();
+                                session.response(&SessionAcceptAction::Accept).unwrap();
                                 self.sessions_to_create_stream.push((
                                     session,
                                     StreamType::BiDi,
                                     Some(data),
                                 ));
                             } else {
-                                session
-                                    .response(&WebTransportSessionAcceptAction::Accept)
-                                    .unwrap();
+                                session.response(&SessionAcceptAction::Accept).unwrap();
                             }
                         }
                         _ => {
                             session
-                                .response(&WebTransportSessionAcceptAction::Reject(
+                                .response(&SessionAcceptAction::Reject(
                                     [Header::new(":status", "404")].to_vec(),
                                 ))
                                 .unwrap();
@@ -689,6 +677,9 @@ impl HttpServer for Http3TestServer {
                         datagram
                     );
                     self.received_datagram = Some(datagram);
+                }
+                Http3ServerEvent::ConnectUdp(_) => {
+                    unimplemented!()
                 }
             }
         }
@@ -745,7 +736,7 @@ impl HttpServer for Server {
     }
 }
 
-struct Http3ProxyServer {
+struct Http3ReverseProxyServer {
     server: Http3Server,
     responses: HashMap<Http3OrWebTransportStream, Vec<u8>>,
     server_port: i32,
@@ -754,13 +745,13 @@ struct Http3ProxyServer {
     response_to_send: HashMap<Http3OrWebTransportStream, Receiver<(Vec<Header>, Vec<u8>)>>,
 }
 
-impl ::std::fmt::Display for Http3ProxyServer {
+impl ::std::fmt::Display for Http3ReverseProxyServer {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         write!(f, "{}", self.server)
     }
 }
 
-impl Http3ProxyServer {
+impl Http3ReverseProxyServer {
     pub fn new(server: Http3Server, server_port: i32) -> Self {
         Self {
             server,
@@ -948,7 +939,7 @@ impl Http3ProxyServer {
     }
 }
 
-impl HttpServer for Http3ProxyServer {
+impl HttpServer for Http3ReverseProxyServer {
     fn process_multiple<'a>(
         &mut self,
         dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
@@ -1064,6 +1055,7 @@ impl HttpServer for Http3ProxyServer {
                     );
                 }
                 Http3ServerEvent::WebTransport(_) => {}
+                Http3ServerEvent::ConnectUdp(_) => {}
             }
         }
     }
@@ -1071,6 +1063,348 @@ impl HttpServer for Http3ProxyServer {
     fn has_events(&self) -> bool {
         self.server.has_events()
     }
+}
+
+struct Http3ConnectProxyServer {
+    server: Http3Server,
+    tcp_streams: HashMap<StreamId, TcpStream>,
+    udp_sockets: HashMap<StreamId, UdpSocket>,
+}
+
+impl ::std::fmt::Display for Http3ConnectProxyServer {
+    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+        write!(f, "{}", self.server)
+    }
+}
+
+impl Http3ConnectProxyServer {
+    pub fn new(server: Http3Server) -> Self {
+        Self {
+            server,
+            tcp_streams: HashMap::new(),
+            udp_sockets: HashMap::new(),
+        }
+    }
+}
+
+impl HttpServer for Http3ConnectProxyServer {
+    fn process_multiple<'a>(
+        &mut self,
+        dgrams: impl IntoIterator<Item = Datagram<&'a mut [u8]>>,
+        now: Instant,
+        max_datagrams: NonZeroUsize,
+    ) -> OutputBatch {
+        self.server.process_multiple(dgrams, now, max_datagrams)
+    }
+
+    fn process_events(&mut self, _now: Instant) {
+        while let Some(event) = self.server.next_event() {
+            qtrace!("Event: {:?}", event);
+            match event {
+                Http3ServerEvent::Headers {
+                    stream,
+                    headers,
+                    fin: _,
+                } => {
+                    qtrace!("Headers {:?}", headers);
+                    let method_hdr = headers.iter().find(|&h| h.name() == ":method").unwrap();
+                    assert_eq!(
+                        method_hdr.value(),
+                        "CONNECT",
+                        "{} not supported",
+                        method_hdr.value()
+                    );
+                    let host_hdr = headers.iter().find(|&h| h.name() == ":authority").unwrap();
+
+                    // Check if we should fallback to 127.0.0.1 before attempting connection
+                    let host_without_port = if let Some(colon_pos) = host_hdr.value().rfind(':') {
+                        &host_hdr.value()[..colon_pos]
+                    } else {
+                        host_hdr.value()
+                    };
+
+                    let should_fallback = matches!(
+                        host_without_port,
+                        "foo.example.com" | "alt1.example.com" | "alt2.example.com"
+                    );
+
+                    let target = if should_fallback {
+                        if let Some(port_start) = host_hdr.value().rfind(':') {
+                            format!("127.0.0.1:{}", &host_hdr.value()[port_start + 1..])
+                        } else {
+                            // No port specified, assume default HTTP port 80
+                            "127.0.0.1:80".to_string()
+                        }
+                    } else {
+                        host_hdr.value().to_string()
+                    };
+
+                    let tcp_stream = match std::net::TcpStream::connect(&target) {
+                        Ok(c) => c,
+                        Err(_) => {
+                            stream
+                                .send_headers(&[
+                                    Header::new(":status", "502"),
+                                    Header::new("cache-control", "no-cache"),
+                                ])
+                                .unwrap();
+                            stream.stream_close_send().unwrap();
+                            return;
+                        }
+                    };
+
+                    tcp_stream.set_nonblocking(true).unwrap();
+                    qtrace!("tcp_stream to {:?} created", host_hdr);
+                    stream
+                        .send_headers(&[
+                            Header::new(":status", "200"),
+                            Header::new("cache-control", "no-cache"),
+                        ])
+                        .unwrap();
+                    self.tcp_streams.insert(
+                        stream.stream_id(),
+                        TcpStream {
+                            send_buffer: VecDeque::new(),
+                            recv_buffer: VecDeque::new(),
+                            stream: tokio::net::TcpStream::from_std(tcp_stream).unwrap(),
+                            send_fin: false,
+                            received_fin: false,
+                            session: stream,
+                        },
+                    );
+                }
+                Http3ServerEvent::Data { stream, data, fin } => {
+                    qtrace!("tcp_stream send to server len={}", data.len());
+                    let tcp_stream = self.tcp_streams.get_mut(&stream.stream_id()).unwrap();
+                    // TODO: extend() effectively breaks backpressure.
+                    tcp_stream.send_buffer.extend(data);
+                    tcp_stream.send_fin |= fin;
+                }
+                Http3ServerEvent::DataWritable { stream } => {
+                    qtrace!(
+                        "Http3ServerEvent::DataWritable streamid={}",
+                        stream.stream_id()
+                    );
+                    let tcp_stream = self.tcp_streams.get_mut(&stream.stream_id()).unwrap();
+                    while !tcp_stream.recv_buffer.is_empty() {
+                        let sent = stream
+                            .send_data(&tcp_stream.recv_buffer.make_contiguous())
+                            .unwrap();
+                        qtrace!("tcp_stream send to client sent={}", sent);
+                        if sent == 0 {
+                            break;
+                        }
+                        tcp_stream.recv_buffer.drain(0..sent);
+                    }
+                }
+                Http3ServerEvent::ConnectUdp(ConnectUdpServerEvent::NewSession {
+                    session,
+                    headers,
+                }) => {
+                    session.response(&SessionAcceptAction::Accept).unwrap();
+
+                    let host_hdr = headers.iter().find(|&h| h.name() == ":path").unwrap();
+                    let path_parts: Vec<&str> = host_hdr.value().split('/').collect();
+
+                    // Format is /.well-known/masque/udp/{target_host}/{target_port}/
+                    if path_parts.len() < 6 {
+                        panic!("{}", host_hdr.value())
+                    }
+
+                    let target_host = path_parts[4];
+                    let target_port = match path_parts[5].trim_end_matches('/').parse::<u16>() {
+                        Ok(port) => port,
+                        Err(_) => {
+                            panic!("{}", host_hdr.value())
+                        }
+                    };
+
+                    // Replace target_host with 127.0.0.1 for specific hosts
+                    let actual_host = match target_host {
+                        "foo.example.com" | "alt1.example.com" | "alt2.example.com" => "127.0.0.1",
+                        _ => target_host,
+                    };
+
+                    let host_port = format!("{}:{}", actual_host, target_port);
+                    qdebug!("CONNECT-UDP to {}", host_port);
+
+                    let socket = {
+                        let s =
+                            socket2::Socket::new(socket2::Domain::IPV4, socket2::Type::DGRAM, None)
+                                .unwrap();
+                        s.bind(&"0.0.0.0:0".parse::<SocketAddr>().unwrap().into())
+                            .unwrap();
+                        let s: std::net::UdpSocket = s.into();
+                        s.connect((actual_host, target_port)).unwrap();
+                        s.set_nonblocking(true).unwrap();
+                        s.into()
+                    };
+
+                    self.udp_sockets.insert(
+                        session.stream_id(),
+                        UdpSocket {
+                            session,
+                            send_buffer: VecDeque::new(),
+                            socket: tokio::net::UdpSocket::from_std(socket).unwrap(),
+                        },
+                    );
+                }
+                Http3ServerEvent::ConnectUdp(ConnectUdpServerEvent::Datagram {
+                    session,
+                    datagram,
+                }) => {
+                    let udp_socket = self.udp_sockets.get_mut(&session.stream_id()).unwrap();
+                    // TODO: effectively breaks backpressure.
+                    udp_socket.send_buffer.push_back(datagram);
+                }
+                Http3ServerEvent::StateChange { .. } | Http3ServerEvent::PriorityUpdate { .. } => {}
+                Http3ServerEvent::StreamReset { stream, error } => {
+                    qtrace!("Http3ServerEvent::StreamReset {:?} {:?}", stream, error);
+                }
+                Http3ServerEvent::StreamStopSending { stream, error } => {
+                    qtrace!(
+                        "Http3ServerEvent::StreamStopSending {:?} {:?}",
+                        stream,
+                        error
+                    );
+                }
+                Http3ServerEvent::WebTransport(_) => {}
+                Http3ServerEvent::ConnectUdp(_) => {}
+            }
+        }
+    }
+
+    fn has_events(&self) -> bool {
+        self.server.has_events()
+    }
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+        let mut progressed = false;
+
+        for (_sessionid, stream) in &mut self.tcp_streams {
+            if let Poll::Ready(Ok(())) = stream.stream.poll_read_ready(cx) {
+                loop {
+                    let mut buf = vec![0; 1024];
+                    match stream.stream.try_read(&mut buf) {
+                        Ok(0) => {
+                            qdebug!("TCP: Received 0 bytes -FIN");
+                            stream.received_fin = true;
+                            // TODO: Reset CONNECT stream.
+                            break;
+                        }
+                        Ok(n) => {
+                            qdebug!("TCP: Received {} bytes from origin", n);
+                            // TODO: extend() effectively breaks backpressure.
+                            stream.recv_buffer.extend(&buf[0..n]);
+                            while !stream.recv_buffer.is_empty() {
+                                let sent = stream
+                                    .session
+                                    .send_data(&stream.recv_buffer.make_contiguous())
+                                    .unwrap();
+                                qdebug!("TCP: stream send to client sent={}", sent);
+                                if sent == 0 {
+                                    break;
+                                }
+                                stream.recv_buffer.drain(0..sent);
+                            }
+                            progressed = true;
+                        }
+                        Err(e) => {
+                            qdebug!("TCP read error: {e:?}");
+                            stream.received_fin = true;
+                            // TODO: Handle the error
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if let Poll::Ready(Ok(())) = stream.stream.poll_write_ready(cx) {
+                while !stream.send_buffer.is_empty() {
+                    match stream
+                        .stream
+                        .try_write(&stream.send_buffer.make_contiguous())
+                    {
+                        Ok(0) => break,
+                        Ok(n) => {
+                            qdebug!("TCP: Sent {} bytes to origin", n);
+                            stream.send_buffer.drain(0..n);
+                            progressed = true;
+                        }
+                        Err(e) => {
+                            qdebug!("TCP write error: {e:?}");
+                            stream.received_fin = true;
+                            // TODO: Handle the error
+                            break;
+                        }
+                    }
+                }
+            }
+            if stream.send_fin {
+                let _ = stream.stream.shutdown();
+            }
+        }
+
+        for (_, socket) in &mut self.udp_sockets {
+            loop {
+                let mut buf = vec![0u8; u16::MAX as usize];
+                let mut read_buf = ReadBuf::new(buf.as_mut());
+                match socket.socket.poll_recv(cx, &mut read_buf) {
+                    Poll::Ready(Ok(())) => {
+                        let len = read_buf.filled().len();
+                        qinfo!("Received {} bytes from origin", len);
+                        buf.resize(len, 0);
+                        // TODO: Might overflow our current datagram buffer of 10
+                        // https://github.com/mozilla/neqo/issues/2852
+                        socket.session.send_datagram(buf.as_slice(), None).unwrap();
+                        progressed = true;
+                    }
+                    Poll::Ready(Err(e)) => {
+                        panic!("Error receiving UDP datagram: {}", e);
+                    }
+                    Poll::Pending => break,
+                }
+            }
+
+            while let Some(datagram) = socket.send_buffer.pop_front() {
+                match socket.socket.poll_send(cx, datagram.as_slice()) {
+                    Poll::Ready(Ok(0)) | Poll::Pending => {
+                        socket.send_buffer.push_front(datagram);
+                        break;
+                    }
+                    Poll::Ready(Ok(n)) => {
+                        assert_eq!(n, datagram.len());
+                        qinfo!("Sent {}/{} bytes to origin", n, datagram.as_slice().len());
+                        progressed = true;
+                    }
+                    Poll::Ready(Err(e)) => {
+                        panic!("Error sending UDP datagram: {} {:?}", e, socket.socket);
+                    }
+                }
+            }
+        }
+
+        if progressed {
+            return Poll::Ready(());
+        }
+
+        Poll::Pending
+    }
+}
+
+struct TcpStream {
+    send_buffer: VecDeque<u8>,
+    recv_buffer: VecDeque<u8>,
+    stream: tokio::net::TcpStream,
+    send_fin: bool,
+    received_fin: bool,
+    session: Http3OrWebTransportStream,
+}
+
+struct UdpSocket {
+    session: ConnectUdpRequest,
+    send_buffer: VecDeque<Vec<u8>>,
+    socket: tokio::net::UdpSocket,
 }
 
 #[derive(Default)]
@@ -1099,7 +1433,7 @@ impl HttpServer for NonRespondingServer {
     }
 }
 
-fn spawn_server<S: HttpServer + 'static>(
+fn spawn_server<S: HttpServer + Unpin + 'static>(
     server: S,
     port: u16,
     task_set: &LocalSet,
@@ -1250,13 +1584,13 @@ async fn main() -> Result<(), io::Error> {
             } else {
                 (" HTTP2 Test Cert", -1)
             };
-            let server = Http3ProxyServer::new(
+            let server = Http3ReverseProxyServer::new(
                 Http3Server::new(
                     Instant::now(),
                     &[server_config.0],
                     PROTOCOLS,
                     anti_replay(),
-                    cid_mgr,
+                    cid_mgr.clone(),
                     Http3Parameters::default()
                         .max_table_size_encoder(MAX_TABLE_SIZE)
                         .max_table_size_decoder(MAX_TABLE_SIZE)
@@ -1277,15 +1611,45 @@ async fn main() -> Result<(), io::Error> {
 
     spawn_server(NonRespondingServer::default(), 0, &local, &mut hosts)?;
 
+    spawn_server(
+        Http3ConnectProxyServer::new(
+            Http3Server::new(
+                Instant::now(),
+                &[" HTTP2 Test Cert"],
+                PROTOCOLS,
+                anti_replay(),
+                cid_mgr,
+                Http3Parameters::default()
+                    .max_table_size_encoder(MAX_TABLE_SIZE)
+                    .connection_parameters(
+                        ConnectionParameters::default()
+                            // TODO: Restrict in size.
+                            .datagram_size(u16::MAX as u64)
+                            .pmtud(true),
+                    )
+                    .max_table_size_decoder(MAX_TABLE_SIZE)
+                    .max_blocked_streams(MAX_BLOCKED_STREAMS)
+                    .connect(true)
+                    .http3_datagram(true),
+                None,
+            )
+            .expect("We cannot make a server!"),
+        ),
+        0,
+        &local,
+        &mut hosts,
+    )?;
+
     // Note this is parsed by test runner.
     // https://searchfox.org/mozilla-central/rev/e69f323af80c357d287fb6314745e75c62eab92a/testing/mozbase/mozserve/mozserve/servers.py#116-121
     println!(
-        "HTTP3 server listening on ports {}, {}, {}, {} and {}. EchConfig is @{}@",
+        "HTTP3 server listening on ports {}, {}, {}, {}, {} and {}. EchConfig is @{}@",
         hosts[0].port(),
         hosts[1].port(),
         hosts[2].port(),
         hosts[3].port(),
         hosts[4].port(),
+        hosts[5].port(),
         BASE64_STANDARD.encode(ech_config)
     );
 

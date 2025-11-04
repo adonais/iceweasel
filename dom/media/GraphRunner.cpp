@@ -62,15 +62,14 @@ void GraphRunner::Shutdown() {
   mThread->Shutdown();
 }
 
-auto GraphRunner::OneIteration(GraphTime aStateTime, GraphTime aIterationEnd,
+auto GraphRunner::OneIteration(GraphTime aStateTime,
                                MixerCallbackReceiver* aMixerReceiver)
     -> IterationResult {
   TRACE("GraphRunner::OneIteration");
 
   MonitorAutoLock lock(mMonitor);
   MOZ_ASSERT(mThreadState == ThreadState::Wait);
-  mIterationState =
-      Some(IterationState(aStateTime, aIterationEnd, aMixerReceiver));
+  mIterationState = Some(IterationState(aStateTime, aMixerReceiver));
 
 #ifdef DEBUG
   if (const auto* audioDriver =
@@ -142,8 +141,7 @@ NS_IMETHODIMP GraphRunner::Run() {
     MOZ_DIAGNOSTIC_ASSERT(mIterationState.isSome());
     TRACE("GraphRunner::Run");
     mIterationResult = mGraph->OneIterationImpl(
-        mIterationState->StateTime(), mIterationState->IterationEnd(),
-        mIterationState->MixerReceiver());
+        mIterationState->StateTime(), mIterationState->MixerReceiver());
     // Signal that mIterationResult was updated
     mThreadState = ThreadState::Wait;
     mMonitor.Notify();

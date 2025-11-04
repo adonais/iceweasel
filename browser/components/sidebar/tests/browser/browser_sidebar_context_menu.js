@@ -330,16 +330,22 @@ add_task(async function test_tool_context_menu() {
       contextMenu.querySelector("menuseparator").hidden,
       "menuseparator is hidden"
     );
-
-    const toolMenuItems = [
-      ...contextMenu.querySelectorAll("[customized-tool='true']"),
-    ];
-    Assert.equal(
-      !!toolMenuItems.length && toolMenuItems.every(item => !item.hidden),
-      true,
-      "Tool menuitems are visible"
-    );
   });
+
+  // The submenu is populated asynchronously.
+  await BrowserTestUtils.waitForMutationCondition(
+    contextMenu,
+    { childList: true, subtree: true, attributes: true },
+    () => {
+      const toolMenuItems = [
+        ...contextMenu.querySelectorAll("[customized-tool='true']"),
+      ];
+      return (
+        !!toolMenuItems.length && toolMenuItems.every(item => !item.hidden)
+      );
+    }
+  );
+  Assert.ok(true, "Tool menuitems are visible");
 
   contextMenu.hidePopup();
 

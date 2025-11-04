@@ -288,13 +288,22 @@ class Environment(TryConfig):
                 "help": "Get a screen recording of the tests where possible.",
             },
         ],
+        [
+            ["--profiler"],
+            {
+                "action": "store_true",
+                "help": "Enable the profiler by setting MOZ_PROFILER_STARTUP=1.",
+            },
+        ],
     ]
 
-    def try_config(self, env, record, **kwargs):
+    def try_config(self, env, record, profiler, **kwargs):
         if env is None:
             env = []
         if record:
             env.append("MOZ_RECORD_TEST=1")
+        if profiler:
+            env.append("MOZ_PROFILER_STARTUP=1")
         if not env:
             return
         return {

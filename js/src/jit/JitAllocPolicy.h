@@ -9,8 +9,8 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/CheckedArithmetic.h"
 #include "mozilla/Likely.h"
-#include "mozilla/MulOverflowMask.h"
 #include "mozilla/OperatorNewExtensions.h"
 
 #include <algorithm>
@@ -103,8 +103,11 @@ class JitAllocPolicy {
     if (MOZ_UNLIKELY(!n)) {
       return n;
     }
-    MOZ_ASSERT(!(oldSize & mozilla::MulOverflowMask<sizeof(T)>()));
-    memcpy(n, p, std::min(oldSize * sizeof(T), newSize * sizeof(T)));
+    size_t oldLength;
+    [[maybe_unused]] bool nooverflow =
+        mozilla::SafeMul(oldSize, sizeof(T), &oldLength);
+    MOZ_ASSERT(nooverflow);
+    memcpy(n, p, std::min(oldLength, newSize * sizeof(T)));
     return n;
   }
   template <typename T>

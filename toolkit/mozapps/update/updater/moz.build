@@ -61,6 +61,7 @@ elif CONFIG["MOZ_UPDATE_CHANNEL"] in (
     "aurora",
     "nightly-elm",
     "nightly-pine",
+    "nightly-cypress",
     "nightly-profiling",
     "nightly-oak",
     "nightly-ux",

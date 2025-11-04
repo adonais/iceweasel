@@ -22,12 +22,14 @@ import org.mozilla.fenix.R
  * @property enteredUrl The URL that is being reported as broken.
  * @property reason Specifies the reason that [enteredUrl] is broken.
  * @property problemDescription Description of the encountered problem.
+ * @property includeEtpBlockedUrls Checks if the user wants to include ETP-blocked URLs in the report.
  */
 data class WebCompatReporterState(
     val tabUrl: String = "",
     val enteredUrl: String = "",
     val reason: BrokenSiteReason? = null,
     val problemDescription: String = "",
+    val includeEtpBlockedUrls: Boolean = false,
 ) : State {
 
     /**
@@ -114,6 +116,13 @@ sealed class WebCompatReporterAction : Action {
     data class ReasonChanged(val newReason: WebCompatReporterState.BrokenSiteReason) : WebCompatReporterAction()
 
     /**
+     * Dispatched when the ETP checkbox is toggled.
+     *
+     * @property include The value of the checkbox being toggled or not.
+     */
+    data class IncludeEtpBlockedUrlsChanged(val include: Boolean) : WebCompatReporterAction()
+
+    /**
      * Dispatched when the problem description is updated.
      *
      * @property newProblemDescription The updated problem description.
@@ -178,9 +187,10 @@ private fun reduce(
     WebCompatReporterAction.Initialized -> state
     is WebCompatReporterAction.StateRestored -> action.restoredState
     is WebCompatReporterAction.NavigationAction -> state
-    is WebCompatReporterAction.SendReportClicked -> state
+    WebCompatReporterAction.SendReportClicked -> state
     WebCompatReporterAction.SendMoreInfoClicked -> state
     WebCompatReporterAction.LearnMoreClicked -> state
+    is WebCompatReporterAction.IncludeEtpBlockedUrlsChanged -> state.copy(includeEtpBlockedUrls = action.include)
 }
 
 /**

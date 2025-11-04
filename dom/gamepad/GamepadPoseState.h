@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <cstring>
+
 #include "mozilla/TypedEnumBits.h"
 
 namespace mozilla::dom {

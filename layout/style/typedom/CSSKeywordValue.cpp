@@ -14,8 +14,9 @@
 
 namespace mozilla::dom {
 
-CSSKeywordValue::CSSKeywordValue(nsCOMPtr<nsISupports> aParent)
-    : CSSStyleValue(std::move(aParent)) {}
+CSSKeywordValue::CSSKeywordValue(nsCOMPtr<nsISupports> aParent,
+                                 const nsACString& aValue)
+    : CSSStyleValue(std::move(aParent), ValueType::Keyword), mValue(aValue) {}
 
 JSObject* CSSKeywordValue::WrapObject(JSContext* aCx,
                                       JS::Handle<JSObject*> aGivenProto) {
@@ -27,15 +28,39 @@ JSObject* CSSKeywordValue::WrapObject(JSContext* aCx,
 // static
 already_AddRefed<CSSKeywordValue> CSSKeywordValue::Constructor(
     const GlobalObject& aGlobal, const nsACString& aValue, ErrorResult& aRv) {
-  return MakeAndAddRef<CSSKeywordValue>(aGlobal.GetAsSupports());
+  // Step 1.
+
+  if (aValue.IsEmpty()) {
+    aRv.ThrowTypeError("CSSKeywordValue does not support empty strings");
+    return nullptr;
+  }
+
+  // Step 2.
+
+  return MakeAndAddRef<CSSKeywordValue>(aGlobal.GetAsSupports(), aValue);
 }
 
-void CSSKeywordValue::GetValue(nsCString& aRetVal) const {}
+void CSSKeywordValue::GetValue(nsCString& aRetVal) const { aRetVal = mValue; }
 
 void CSSKeywordValue::SetValue(const nsACString& aArg, ErrorResult& aRv) {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  // Step 1.
+
+  if (aArg.IsEmpty()) {
+    aRv.ThrowTypeError("CSSKeywordValue does not support empty strings");
+    return;
+  }
+
+  // Step 2.
+
+  mValue = aArg;
 }
 
 // end of CSSKeywordValue Web IDL implementation
+
+CSSKeywordValue& CSSStyleValue::GetAsCSSKeywordValue() {
+  MOZ_DIAGNOSTIC_ASSERT(mValueType == ValueType::Keyword);
+
+  return *static_cast<CSSKeywordValue*>(this);
+}
 
 }  // namespace mozilla::dom

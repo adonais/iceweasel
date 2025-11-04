@@ -492,7 +492,7 @@ bool gfxWindowsPlatform::HandleDeviceReset() {
 
   imgLoader::NormalLoader()->ClearCache(Nothing());
   imgLoader::PrivateBrowsingLoader()->ClearCache(Nothing());
-  gfxAlphaBoxBlur::ShutdownBlurCache();
+  gfxGaussianBlur::ShutdownBlurCache();
 
   gfxConfig::Reset(Feature::D3D11_COMPOSITING);
   gfxConfig::Reset(Feature::D3D11_HW_ANGLE);

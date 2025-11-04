@@ -17,11 +17,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
 import "chrome://global/content/elements/moz-button.mjs";
 
 // eslint-disable-next-line import/no-unassigned-import
-import "chrome://global/content/megalist/components/password-card/password-card.mjs";
+import { PasswordCard } from "chrome://global/content/megalist/components/password-card/password-card.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/megalist/components/login-form/login-form.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/megalist/components/notification-message-bar/notification-message-bar.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://global/content/megalist/components/virtual-passwords-list/virtual-passwords-list.mjs";
+
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/sidebar/sidebar-panel-header.mjs";
 
@@ -53,6 +56,9 @@ export class MegalistAlpha extends MozLitElement {
     this.selectedRecord = null;
     this.sidebarHiding = false;
     this.shouldShowPrimaryPasswordAuth = false;
+
+    // This is used to force re-rendering the virtual list after receiving snapshot
+    this.listVersion = 0;
 
     window.addEventListener("MessageFromViewModel", ev =>
       this.#onMessageFromViewModel(ev)
@@ -261,6 +267,8 @@ export class MegalistAlpha extends MozLitElement {
     const field = snapshot.field;
     this.records[recordIndex][field] = snapshot;
     this.requestUpdate();
+
+    this.listVersion += 1;
   }
 
   receiveSetNotification(notification) {
@@ -373,8 +381,10 @@ export class MegalistAlpha extends MozLitElement {
     }
   }
 
-  // TODO: This should be passed to virtualized list with an explicit height.
-  renderListItem({ origin: displayOrigin, username, password }, index) {
+  heightCalculator = items =>
+    items.reduce((sum, item) => sum + PasswordCard.getItemHeight(item), 0);
+
+  itemTemplate = ({ origin: displayOrigin, username, password }, index) => {
     return html` <password-card
       @keydown=${e => {
         if (e.shiftKey && e.key === "Tab") {
@@ -407,35 +417,55 @@ export class MegalistAlpha extends MozLitElement {
       }}
     >
     </password-card>`;
-  }
+  };
 
-  // TODO: Temporary. Should be rendered by the virtualized list.
   renderList() {
     return this.records.length
       ? html`
-          <div
+          <virtual-passwords-list
             class="passwords-list"
             role="listbox"
             tabindex="0"
             data-l10n-id="contextual-manager-passwords-list-label"
             @keydown=${e => {
-              if (e.key === "ArrowDown") {
-                const active = this.shadowRoot.activeElement;
-                const passwordsList = e.currentTarget;
+              // Handle up/down arrow key navigation between password cards.
+              if (e.key !== "ArrowUp" && e.key !== "ArrowDown") {
+                return;
+              }
 
-                if (active === passwordsList) {
-                  e.preventDefault();
-                  this.shadowRoot
-                    .querySelector("password-card")
-                    .originLine.focus();
+              const passwordsList = e.currentTarget;
+
+              let active = this.shadowRoot.activeElement;
+              let cardToFocus;
+              if (active === passwordsList) {
+                if (e.key === "ArrowDown") {
+                  cardToFocus = passwordsList.querySelector("password-card");
                 }
+              } else {
+                const cards = Array.from(
+                  passwordsList.querySelectorAll("password-card")
+                );
+                const currentIndex = cards.findIndex(card => card === active);
+                let nextIndex =
+                  e.key === "ArrowUp" ? currentIndex - 1 : currentIndex + 1;
+                if (nextIndex < 0 || nextIndex >= cards.length) {
+                  return;
+                }
+                cardToFocus = cards[nextIndex];
+              }
+
+              if (cardToFocus) {
+                e.preventDefault();
+                cardToFocus.focusByKeyEvent(e);
               }
             }}
+            .items=${this.records}
+            .version=${this.listVersion}
+            .itemHeightEstimate=${PasswordCard.DEFAULT_PASSWORD_CARD_HEIGHT}
+            .heightCalculator=${this.heightCalculator}
+            .template=${this.itemTemplate}
           >
-            ${this.records.map((record, index) =>
-              this.renderListItem(record, index)
-            )}
-          </div>
+          </virtual-passwords-list>
         `
       : this.renderEmptyState();
   }
@@ -805,15 +835,40 @@ export class MegalistAlpha extends MozLitElement {
   }
 
   async #scrollPasswordCardIntoView(guid) {
+    this.viewMode = VIEW_MODES.LIST;
+
     const matchingRecordIndex = this.records.findIndex(
       record => record.origin.guid === guid
     );
-    this.viewMode = VIEW_MODES.LIST;
-    await this.getUpdateComplete();
-    const passwordCard =
-      this.shadowRoot.querySelectorAll("password-card")[matchingRecordIndex];
-    passwordCard.scrollIntoView({ block: "center" });
-    passwordCard.originLine.focus();
+    if (matchingRecordIndex === -1) {
+      return;
+    }
+
+    const scroll = async () => {
+      // Virtual list is ready at this point, but the password card might not be render
+      // because it is not in the viewport. So we need to update the activeIndex so that
+      // the password card is created.
+      const virtualList = this.shadowRoot.querySelector(
+        "virtual-passwords-list"
+      );
+      virtualList.activeIndex = matchingRecordIndex;
+      await virtualList.updateComplete;
+
+      const passwordCard = virtualList.getItem(matchingRecordIndex);
+      await passwordCard.updateComplete;
+      passwordCard.scrollIntoView({ block: "center" });
+      passwordCard.originLine.focus();
+    };
+
+    const virtualList = this.shadowRoot.querySelector("virtual-passwords-list");
+    let sublist = virtualList?.getSubListForItem(matchingRecordIndex);
+    if (!sublist) {
+      this.addEventListener("virtual-list-ready", () => scroll(), {
+        once: true,
+      });
+    } else {
+      scroll();
+    }
   }
 
   renderNotification() {
@@ -883,8 +938,7 @@ export class MegalistAlpha extends MozLitElement {
 
   render() {
     const showToolbar =
-      this.viewMode === VIEW_MODES.ALERTS ||
-      (this.viewMode === VIEW_MODES.LIST && this.header?.value?.total > 0);
+      this.viewMode === VIEW_MODES.LIST && this.header?.value?.total > 0;
 
     return html`
       <link

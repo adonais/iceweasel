@@ -25,12 +25,10 @@
 #include <google/protobuf/arenastring.h>
 #include <google/protobuf/generated_message_util.h>
 #include <google/protobuf/metadata_lite.h>
-#include <google/protobuf/generated_message_reflection.h>
-#include <google/protobuf/message.h>
+#include <google/protobuf/message_lite.h>
 #include <google/protobuf/repeated_field.h>  // IWYU pragma: export
 #include <google/protobuf/extension_set.h>  // IWYU pragma: export
-#include <google/protobuf/generated_enum_reflection.h>
-#include <google/protobuf/unknown_field_set.h>
+#include <google/protobuf/generated_enum_util.h>
 #include "opentelemetry/proto/common/v1/common.pb.h"
 #include "opentelemetry/proto/resource/v1/resource.pb.h"
 // @@protoc_insertion_point(includes)
@@ -46,7 +44,6 @@ PROTOBUF_NAMESPACE_CLOSE
 struct TableStruct_opentelemetry_2fproto_2ftrace_2fv1_2ftrace_2eproto {
   static const uint32_t offsets[];
 };
-extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_opentelemetry_2fproto_2ftrace_2fv1_2ftrace_2eproto;
 namespace opentelemetry {
 namespace proto {
 namespace trace {
@@ -105,20 +102,16 @@ constexpr Span_SpanKind Span_SpanKind_SpanKind_MIN = Span_SpanKind_SPAN_KIND_UNS
 constexpr Span_SpanKind Span_SpanKind_SpanKind_MAX = Span_SpanKind_SPAN_KIND_CONSUMER;
 constexpr int Span_SpanKind_SpanKind_ARRAYSIZE = Span_SpanKind_SpanKind_MAX + 1;
 
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* Span_SpanKind_descriptor();
+const std::string& Span_SpanKind_Name(Span_SpanKind value);
 template<typename T>
 inline const std::string& Span_SpanKind_Name(T enum_t_value) {
   static_assert(::std::is_same<T, Span_SpanKind>::value ||
     ::std::is_integral<T>::value,
     "Incorrect type passed to function Span_SpanKind_Name.");
-  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
-    Span_SpanKind_descriptor(), enum_t_value);
+  return Span_SpanKind_Name(static_cast<Span_SpanKind>(enum_t_value));
 }
-inline bool Span_SpanKind_Parse(
-    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, Span_SpanKind* value) {
-  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<Span_SpanKind>(
-    Span_SpanKind_descriptor(), name, value);
-}
+bool Span_SpanKind_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, Span_SpanKind* value);
 enum Status_StatusCode : int {
   Status_StatusCode_STATUS_CODE_UNSET = 0,
   Status_StatusCode_STATUS_CODE_OK = 1,
@@ -131,20 +124,16 @@ constexpr Status_StatusCode Status_StatusCode_StatusCode_MIN = Status_StatusCode
 constexpr Status_StatusCode Status_StatusCode_StatusCode_MAX = Status_StatusCode_STATUS_CODE_ERROR;
 constexpr int Status_StatusCode_StatusCode_ARRAYSIZE = Status_StatusCode_StatusCode_MAX + 1;
 
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* Status_StatusCode_descriptor();
+const std::string& Status_StatusCode_Name(Status_StatusCode value);
 template<typename T>
 inline const std::string& Status_StatusCode_Name(T enum_t_value) {
   static_assert(::std::is_same<T, Status_StatusCode>::value ||
     ::std::is_integral<T>::value,
     "Incorrect type passed to function Status_StatusCode_Name.");
-  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
-    Status_StatusCode_descriptor(), enum_t_value);
+  return Status_StatusCode_Name(static_cast<Status_StatusCode>(enum_t_value));
 }
-inline bool Status_StatusCode_Parse(
-    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, Status_StatusCode* value) {
-  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<Status_StatusCode>(
-    Status_StatusCode_descriptor(), name, value);
-}
+bool Status_StatusCode_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, Status_StatusCode* value);
 enum SpanFlags : int {
   SPAN_FLAGS_DO_NOT_USE = 0,
   SPAN_FLAGS_TRACE_FLAGS_MASK = 255,
@@ -158,24 +147,20 @@ constexpr SpanFlags SpanFlags_MIN = SPAN_FLAGS_DO_NOT_USE;
 constexpr SpanFlags SpanFlags_MAX = SPAN_FLAGS_CONTEXT_IS_REMOTE_MASK;
 constexpr int SpanFlags_ARRAYSIZE = SpanFlags_MAX + 1;
 
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* SpanFlags_descriptor();
+const std::string& SpanFlags_Name(SpanFlags value);
 template<typename T>
 inline const std::string& SpanFlags_Name(T enum_t_value) {
   static_assert(::std::is_same<T, SpanFlags>::value ||
     ::std::is_integral<T>::value,
     "Incorrect type passed to function SpanFlags_Name.");
-  return ::PROTOBUF_NAMESPACE_ID::internal::NameOfEnum(
-    SpanFlags_descriptor(), enum_t_value);
+  return SpanFlags_Name(static_cast<SpanFlags>(enum_t_value));
 }
-inline bool SpanFlags_Parse(
-    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, SpanFlags* value) {
-  return ::PROTOBUF_NAMESPACE_ID::internal::ParseNamedEnum<SpanFlags>(
-    SpanFlags_descriptor(), name, value);
-}
+bool SpanFlags_Parse(
+    ::PROTOBUF_NAMESPACE_ID::ConstStringParam name, SpanFlags* value);
 // ===================================================================
 
 class TracesData final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.TracesData) */ {
+    public ::PROTOBUF_NAMESPACE_ID::MessageLite /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.TracesData) */ {
  public:
   inline TracesData() : TracesData(nullptr) {}
   ~TracesData() override;
@@ -205,15 +190,6 @@ class TracesData final :
     return *this;
   }
 
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
   static const TracesData& default_instance() {
     return *internal_default_instance();
   }
@@ -251,15 +227,9 @@ class TracesData final :
   TracesData* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
     return CreateMaybeMessage<TracesData>(arena);
   }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CheckTypeAndMergeFrom(const ::PROTOBUF_NAMESPACE_ID::MessageLite& from)  final;
   void CopyFrom(const TracesData& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom( const TracesData& from) {
-    TracesData::MergeImpl(*this, from);
-  }
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
-  public:
+  void MergeFrom(const TracesData& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -272,7 +242,7 @@ class TracesData final :
   private:
   void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
   void SharedDtor();
-  void SetCachedSize(int size) const final;
+  void SetCachedSize(int size) const;
   void InternalSwap(TracesData* other);
 
   private:
@@ -285,10 +255,7 @@ class TracesData final :
                        bool is_message_owned = false);
   public:
 
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  std::string GetTypeName() const final;
 
   // nested types ----------------------------------------------------
 
@@ -332,7 +299,7 @@ class TracesData final :
 // -------------------------------------------------------------------
 
 class ResourceSpans final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.ResourceSpans) */ {
+    public ::PROTOBUF_NAMESPACE_ID::MessageLite /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.ResourceSpans) */ {
  public:
   inline ResourceSpans() : ResourceSpans(nullptr) {}
   ~ResourceSpans() override;
@@ -362,15 +329,6 @@ class ResourceSpans final :
     return *this;
   }
 
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
   static const ResourceSpans& default_instance() {
     return *internal_default_instance();
   }
@@ -408,15 +366,9 @@ class ResourceSpans final :
   ResourceSpans* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
     return CreateMaybeMessage<ResourceSpans>(arena);
   }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CheckTypeAndMergeFrom(const ::PROTOBUF_NAMESPACE_ID::MessageLite& from)  final;
   void CopyFrom(const ResourceSpans& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom( const ResourceSpans& from) {
-    ResourceSpans::MergeImpl(*this, from);
-  }
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
-  public:
+  void MergeFrom(const ResourceSpans& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -429,7 +381,7 @@ class ResourceSpans final :
   private:
   void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
   void SharedDtor();
-  void SetCachedSize(int size) const final;
+  void SetCachedSize(int size) const;
   void InternalSwap(ResourceSpans* other);
 
   private:
@@ -442,10 +394,7 @@ class ResourceSpans final :
                        bool is_message_owned = false);
   public:
 
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  std::string GetTypeName() const final;
 
   // nested types ----------------------------------------------------
 
@@ -525,7 +474,7 @@ class ResourceSpans final :
 // -------------------------------------------------------------------
 
 class ScopeSpans final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.ScopeSpans) */ {
+    public ::PROTOBUF_NAMESPACE_ID::MessageLite /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.ScopeSpans) */ {
  public:
   inline ScopeSpans() : ScopeSpans(nullptr) {}
   ~ScopeSpans() override;
@@ -555,15 +504,6 @@ class ScopeSpans final :
     return *this;
   }
 
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
   static const ScopeSpans& default_instance() {
     return *internal_default_instance();
   }
@@ -601,15 +541,9 @@ class ScopeSpans final :
   ScopeSpans* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
     return CreateMaybeMessage<ScopeSpans>(arena);
   }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CheckTypeAndMergeFrom(const ::PROTOBUF_NAMESPACE_ID::MessageLite& from)  final;
   void CopyFrom(const ScopeSpans& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom( const ScopeSpans& from) {
-    ScopeSpans::MergeImpl(*this, from);
-  }
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
-  public:
+  void MergeFrom(const ScopeSpans& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -622,7 +556,7 @@ class ScopeSpans final :
   private:
   void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
   void SharedDtor();
-  void SetCachedSize(int size) const final;
+  void SetCachedSize(int size) const;
   void InternalSwap(ScopeSpans* other);
 
   private:
@@ -635,10 +569,7 @@ class ScopeSpans final :
                        bool is_message_owned = false);
   public:
 
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  std::string GetTypeName() const final;
 
   // nested types ----------------------------------------------------
 
@@ -718,7 +649,7 @@ class ScopeSpans final :
 // -------------------------------------------------------------------
 
 class Span_Event final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.Span.Event) */ {
+    public ::PROTOBUF_NAMESPACE_ID::MessageLite /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.Span.Event) */ {
  public:
   inline Span_Event() : Span_Event(nullptr) {}
   ~Span_Event() override;
@@ -748,15 +679,6 @@ class Span_Event final :
     return *this;
   }
 
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
   static const Span_Event& default_instance() {
     return *internal_default_instance();
   }
@@ -794,15 +716,9 @@ class Span_Event final :
   Span_Event* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
     return CreateMaybeMessage<Span_Event>(arena);
   }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CheckTypeAndMergeFrom(const ::PROTOBUF_NAMESPACE_ID::MessageLite& from)  final;
   void CopyFrom(const Span_Event& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom( const Span_Event& from) {
-    Span_Event::MergeImpl(*this, from);
-  }
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
-  public:
+  void MergeFrom(const Span_Event& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -815,7 +731,7 @@ class Span_Event final :
   private:
   void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
   void SharedDtor();
-  void SetCachedSize(int size) const final;
+  void SetCachedSize(int size) const;
   void InternalSwap(Span_Event* other);
 
   private:
@@ -828,10 +744,7 @@ class Span_Event final :
                        bool is_message_owned = false);
   public:
 
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  std::string GetTypeName() const final;
 
   // nested types ----------------------------------------------------
 
@@ -913,7 +826,7 @@ class Span_Event final :
 // -------------------------------------------------------------------
 
 class Span_Link final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.Span.Link) */ {
+    public ::PROTOBUF_NAMESPACE_ID::MessageLite /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.Span.Link) */ {
  public:
   inline Span_Link() : Span_Link(nullptr) {}
   ~Span_Link() override;
@@ -943,15 +856,6 @@ class Span_Link final :
     return *this;
   }
 
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
   static const Span_Link& default_instance() {
     return *internal_default_instance();
   }
@@ -989,15 +893,9 @@ class Span_Link final :
   Span_Link* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
     return CreateMaybeMessage<Span_Link>(arena);
   }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CheckTypeAndMergeFrom(const ::PROTOBUF_NAMESPACE_ID::MessageLite& from)  final;
   void CopyFrom(const Span_Link& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom( const Span_Link& from) {
-    Span_Link::MergeImpl(*this, from);
-  }
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
-  public:
+  void MergeFrom(const Span_Link& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -1010,7 +908,7 @@ class Span_Link final :
   private:
   void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
   void SharedDtor();
-  void SetCachedSize(int size) const final;
+  void SetCachedSize(int size) const;
   void InternalSwap(Span_Link* other);
 
   private:
@@ -1023,10 +921,7 @@ class Span_Link final :
                        bool is_message_owned = false);
   public:
 
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  std::string GetTypeName() const final;
 
   // nested types ----------------------------------------------------
 
@@ -1140,7 +1035,7 @@ class Span_Link final :
 // -------------------------------------------------------------------
 
 class Span final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.Span) */ {
+    public ::PROTOBUF_NAMESPACE_ID::MessageLite /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.Span) */ {
  public:
   inline Span() : Span(nullptr) {}
   ~Span() override;
@@ -1170,15 +1065,6 @@ class Span final :
     return *this;
   }
 
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
   static const Span& default_instance() {
     return *internal_default_instance();
   }
@@ -1216,15 +1102,9 @@ class Span final :
   Span* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
     return CreateMaybeMessage<Span>(arena);
   }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CheckTypeAndMergeFrom(const ::PROTOBUF_NAMESPACE_ID::MessageLite& from)  final;
   void CopyFrom(const Span& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom( const Span& from) {
-    Span::MergeImpl(*this, from);
-  }
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
-  public:
+  void MergeFrom(const Span& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -1237,7 +1117,7 @@ class Span final :
   private:
   void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
   void SharedDtor();
-  void SetCachedSize(int size) const final;
+  void SetCachedSize(int size) const;
   void InternalSwap(Span* other);
 
   private:
@@ -1250,10 +1130,7 @@ class Span final :
                        bool is_message_owned = false);
   public:
 
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  std::string GetTypeName() const final;
 
   // nested types ----------------------------------------------------
 
@@ -1282,10 +1159,6 @@ class Span final :
     Span_SpanKind_SpanKind_MAX;
   static constexpr int SpanKind_ARRAYSIZE =
     Span_SpanKind_SpanKind_ARRAYSIZE;
-  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
-  SpanKind_descriptor() {
-    return Span_SpanKind_descriptor();
-  }
   template<typename T>
   static inline const std::string& SpanKind_Name(T enum_t_value) {
     static_assert(::std::is_same<T, SpanKind>::value ||
@@ -1555,7 +1428,7 @@ class Span final :
 // -------------------------------------------------------------------
 
 class Status final :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.Status) */ {
+    public ::PROTOBUF_NAMESPACE_ID::MessageLite /* @@protoc_insertion_point(class_definition:opentelemetry.proto.trace.v1.Status) */ {
  public:
   inline Status() : Status(nullptr) {}
   ~Status() override;
@@ -1585,15 +1458,6 @@ class Status final :
     return *this;
   }
 
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
-    return GetDescriptor();
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
-    return default_instance().GetMetadata().descriptor;
-  }
-  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
-    return default_instance().GetMetadata().reflection;
-  }
   static const Status& default_instance() {
     return *internal_default_instance();
   }
@@ -1631,15 +1495,9 @@ class Status final :
   Status* New(::PROTOBUF_NAMESPACE_ID::Arena* arena = nullptr) const final {
     return CreateMaybeMessage<Status>(arena);
   }
-  using ::PROTOBUF_NAMESPACE_ID::Message::CopyFrom;
+  void CheckTypeAndMergeFrom(const ::PROTOBUF_NAMESPACE_ID::MessageLite& from)  final;
   void CopyFrom(const Status& from);
-  using ::PROTOBUF_NAMESPACE_ID::Message::MergeFrom;
-  void MergeFrom( const Status& from) {
-    Status::MergeImpl(*this, from);
-  }
-  private:
-  static void MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg);
-  public:
+  void MergeFrom(const Status& from);
   PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
   bool IsInitialized() const final;
 
@@ -1652,7 +1510,7 @@ class Status final :
   private:
   void SharedCtor(::PROTOBUF_NAMESPACE_ID::Arena* arena, bool is_message_owned);
   void SharedDtor();
-  void SetCachedSize(int size) const final;
+  void SetCachedSize(int size) const;
   void InternalSwap(Status* other);
 
   private:
@@ -1665,10 +1523,7 @@ class Status final :
                        bool is_message_owned = false);
   public:
 
-  static const ClassData _class_data_;
-  const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*GetClassData() const final;
-
-  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  std::string GetTypeName() const final;
 
   // nested types ----------------------------------------------------
 
@@ -1688,10 +1543,6 @@ class Status final :
     Status_StatusCode_StatusCode_MAX;
   static constexpr int StatusCode_ARRAYSIZE =
     Status_StatusCode_StatusCode_ARRAYSIZE;
-  static inline const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
-  StatusCode_descriptor() {
-    return Status_StatusCode_descriptor();
-  }
   template<typename T>
   static inline const std::string& StatusCode_Name(T enum_t_value) {
     static_assert(::std::is_same<T, StatusCode>::value ||
@@ -3220,20 +3071,8 @@ inline void Status::set_code(::opentelemetry::proto::trace::v1::Status_StatusCod
 PROTOBUF_NAMESPACE_OPEN
 
 template <> struct is_proto_enum< ::opentelemetry::proto::trace::v1::Span_SpanKind> : ::std::true_type {};
-template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::opentelemetry::proto::trace::v1::Span_SpanKind>() {
-  return ::opentelemetry::proto::trace::v1::Span_SpanKind_descriptor();
-}
 template <> struct is_proto_enum< ::opentelemetry::proto::trace::v1::Status_StatusCode> : ::std::true_type {};
-template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::opentelemetry::proto::trace::v1::Status_StatusCode>() {
-  return ::opentelemetry::proto::trace::v1::Status_StatusCode_descriptor();
-}
 template <> struct is_proto_enum< ::opentelemetry::proto::trace::v1::SpanFlags> : ::std::true_type {};
-template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::opentelemetry::proto::trace::v1::SpanFlags>() {
-  return ::opentelemetry::proto::trace::v1::SpanFlags_descriptor();
-}
 
 PROTOBUF_NAMESPACE_CLOSE
 

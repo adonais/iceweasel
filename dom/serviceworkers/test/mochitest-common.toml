@@ -216,7 +216,7 @@ support-files = [
 ["test_abrupt_completion.html"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1615164
-  "os == 'android' && android_version == '34' && processor == 'x86_64'", # Bug 1776997
+  "os == 'android' && os_version == '14' && processor == 'x86_64'", # Bug 1776997
 ]
 
 ["test_async_waituntil.html"]
@@ -316,7 +316,7 @@ skip-if = [
 skip-if = ["xorigin"] # JavaScript error: http://mochi.xorigin-test:8888/tests/SimpleTest/TestRunner.js, line 157: SecurityError: Permission denied to access property "wrappedJSObject" on cross-origin object
 
 ["test_installation_simple.html"]
-skip-if = ["os == 'android' && android_version == '34' && processor == 'x86_64'"] # Bug 1816639
+skip-if = ["os == 'android' && os_version == '14' && processor == 'x86_64'"] # Bug 1816639
 
 
 ["test_match_all.html"]
@@ -428,7 +428,7 @@ support-files = [
   "test_serviceworker_interfaces.js",
   "!/dom/tests/mochitest/general/interface_exposure_checker.js",
 ]
-skip-if = ["os == 'android' && android_version == '34' && processor == 'x86_64'"] # Bug 1777011
+skip-if = ["os == 'android' && os_version == '14' && processor == 'x86_64'"] # Bug 1777011
 
 ["test_serviceworker_not_sharedworker.html"]
 skip-if = [

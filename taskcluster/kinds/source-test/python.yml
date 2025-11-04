@@ -10,7 +10,7 @@ task-defaults:
             default: true
     worker-type:
         by-platform:
-            linux2404-64.*: t-linux-docker
+            linux2404-64.*: t-linux-docker-amd
             macosx1470-64.*: t-osx-1400-r8
             windows11-64.*: win11-64-24h2-source
     worker:
@@ -18,6 +18,8 @@ task-defaults:
             linux2404-64.*:
                 docker-image: {in-tree: "lint"}
                 max-run-time: 3600
+                env:
+                    TASKGRAPH_SERIAL: "1"
             macosx.*:
                 max-run-time: 3600
                 env:
@@ -25,8 +27,11 @@ task-defaults:
                     # ensure we don't use internal pypi for these tasks
                     PIP_INDEX_URL: https://pypi.python.org/simple/
                     PIP_NO_INDEX: "0"
+                    TASKGRAPH_SERIAL: "1"
             default:
                 max-run-time: 3600
+                env:
+                    TASKGRAPH_SERIAL: "1"
     use-python: default
     treeherder:
         kind: test
@@ -139,9 +144,9 @@ mochitest-harness:
     fetches:
         build:
             - target.tar.xz
-            - artifact: target.common.tests.tar.gz
+            - artifact: target.common.tests.tar.zst
               dest: tests
-            - artifact: target.mochitest.tests.tar.gz
+            - artifact: target.mochitest.tests.tar.zst
               dest: tests
         toolchain:
             - linux64-fix-stacks
@@ -322,9 +327,9 @@ reftest-harness:
     fetches:
         build:
             - target.tar.xz
-            - artifact: target.common.tests.tar.gz
+            - artifact: target.common.tests.tar.zst
               dest: tests
-            - artifact: target.reftest.tests.tar.gz
+            - artifact: target.reftest.tests.tar.zst
               dest: tests
         toolchain:
             - linux64-fix-stacks
@@ -451,7 +456,7 @@ nimbus:
     fetches:
         build:
             - artifact: target.tar.xz
-            - artifact: target.common.tests.tar.gz
+            - artifact: target.common.tests.tar.zst
     worker:
         by-platform:
             linux2404-64.*:
@@ -492,7 +497,7 @@ fxms-schemas:
     fetches:
         build:
             - artifact: target.tar.xz
-            - artifact: target.common.tests.tar.gz
+            - artifact: target.common.tests.tar.zst
     worker:
         by-platform:
             linux2404-64.*:
@@ -591,9 +596,9 @@ telemetry-integration-tests:
     fetches:
         build:
             - target.tar.bz2
-            - artifact: target.common.tests.tar.gz
+            - artifact: target.common.tests.tar.zst
               dest: tests
-            - artifact: target.reftest.tests.tar.gz
+            - artifact: target.reftest.tests.tar.zst
               dest: tests
     when:
         files-changed:

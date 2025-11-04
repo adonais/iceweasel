@@ -738,13 +738,8 @@ export var TelemetrySendImpl = {
   _tooLateToSend: false,
   // Array of {url, path} awaiting flushPingSenderBatch().
   _pingSenderBatch: [],
-
-  OBSERVER_TOPICS: [
-    TOPIC_IDLE_DAILY,
-    TOPIC_QUIT_APPLICATION_GRANTED,
-    TOPIC_QUIT_APPLICATION_FORCED,
-    TOPIC_PROFILE_CHANGE_NET_TEARDOWN,
-  ],
+  _quitObserverRegistered: false,
+  _observerRegistered: false,
 
   OBSERVED_PREFERENCES: [
     TelemetryUtils.Preferences.TelemetryEnabled,
@@ -790,8 +785,11 @@ export var TelemetrySendImpl = {
 
     // Install the observer to detect OS shutdown early enough, so
     // that we catch this before the delayed setup happens.
-    Services.obs.addObserver(this, TOPIC_QUIT_APPLICATION_FORCED);
-    Services.obs.addObserver(this, TOPIC_QUIT_APPLICATION_GRANTED);
+    if (!this._quitObserverRegistered) {
+      Services.obs.addObserver(this, TOPIC_QUIT_APPLICATION_FORCED);
+      Services.obs.addObserver(this, TOPIC_QUIT_APPLICATION_GRANTED);
+      this._quitObserverRegistered = true;
+    }
   },
 
   QueryInterface: ChromeUtils.generateQI(["nsISupportsWeakReference"]),
@@ -801,8 +799,11 @@ export var TelemetrySendImpl = {
 
     this._testMode = testing;
 
-    Services.obs.addObserver(this, TOPIC_IDLE_DAILY);
-    Services.obs.addObserver(this, TOPIC_PROFILE_CHANGE_NET_TEARDOWN);
+    if (!this._observerRegistered) {
+      Services.obs.addObserver(this, TOPIC_IDLE_DAILY);
+      Services.obs.addObserver(this, TOPIC_PROFILE_CHANGE_NET_TEARDOWN);
+      this._observerRegistered = true;
+    }
 
     this._server = Services.prefs.getStringPref(
       TelemetryUtils.Preferences.Server,
@@ -910,15 +911,15 @@ export var TelemetrySendImpl = {
       Services.prefs.removeObserver(pref, this);
     }
 
-    for (let topic of this.OBSERVER_TOPICS) {
-      try {
-        Services.obs.removeObserver(this, topic);
-      } catch (ex) {
-        this._log.error(
-          "shutdown - failed to remove observer for " + topic,
-          ex
-        );
-      }
+    if (this._observerRegistered) {
+      Services.obs.removeObserver(this, TOPIC_IDLE_DAILY);
+      Services.obs.removeObserver(this, TOPIC_PROFILE_CHANGE_NET_TEARDOWN);
+      this._observerRegistered = false;
+    }
+    if (this._quitObserverRegistered) {
+      Services.obs.removeObserver(this, TOPIC_QUIT_APPLICATION_FORCED);
+      Services.obs.removeObserver(this, TOPIC_QUIT_APPLICATION_GRANTED);
+      this._quitObserverRegistered = false;
     }
 
     // We can't send anymore now.

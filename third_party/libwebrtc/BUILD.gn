@@ -318,6 +318,16 @@ config("common_config") {
   cflags_objc = []
   defines = []
 
+  # We should be able to remove this after c++20 is enabled
+  # across the Mozilla tree.
+  if (build_with_mozilla) {
+    if (is_win) {
+      cflags_cc += [ "-std:c++20" ]
+    } else {
+      cflags_cc += [ "-std=gnu++20" ]
+    }
+  }
+
   if (rtc_enable_protobuf) {
     defines += [ "WEBRTC_ENABLE_PROTOBUF=1" ]
   } else {
@@ -419,7 +429,7 @@ config("common_config") {
         # "-Wnested-externs",  (C/Obj-C only)
       ]
       cflags_objc += [ "-Wstrict-prototypes" ]
-      cflags_cc = [
+      cflags_cc += [
         "-Wnon-virtual-dtor",
 
         # This is enabled for clang; enable for gcc as well.
@@ -602,7 +612,6 @@ if (!build_with_chromium) {
         "api/video_codecs:video_encoder_factory_template_libvpx_vp9_adapter",
         "api/video_codecs:video_encoder_factory_template_open_h264_adapter",
         "logging:rtc_event_log_api",
-#        "p2p:rtc_p2p",
         "pc:libjingle_peerconnection",
         "pc:rtc_pc",
         "sdk",
@@ -618,6 +627,7 @@ if (!build_with_chromium) {
 
     if (build_with_mozilla) {
       deps += [
+        "api:frame_transformer_factory",
         "api/audio:builtin_audio_processing_builder",
         "api/environment:environment_factory",
         "api/video:video_frame",

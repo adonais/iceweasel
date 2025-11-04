@@ -47,7 +47,7 @@ import tarfile
 import tempfile
 import zipfile
 from contextlib import contextmanager
-from io import BufferedReader
+from io import BufferedReader, BytesIO
 from urllib.parse import urlparse
 
 import buildconfig
@@ -175,7 +175,7 @@ class ArtifactJob:
     # We can tell our input is a test archive by this suffix, which happens to
     # be the same across platforms.
     _test_zip_archive_suffix = ".common.tests.zip"
-    _test_tar_archive_suffix = ".common.tests.tar.gz"
+    _test_tar_archive_suffix = ".common.tests.tar.zst"
 
     # A map of extra archives to fetch and unpack.  An extra archive might
     # include optional build output to incorporate into the local artifact
@@ -225,7 +225,7 @@ class ArtifactJob:
         self._tests_re = None
         if download_tests:
             self._tests_re = re.compile(
-                r"public/build/(en-US/)?target\.common\.tests\.(zip|tar\.gz)$"
+                r"public/build/(en-US/)?target\.common\.tests\.(zip|tar\.zst)$"
             )
         self._maven_zip_re = None
         if download_maven_zip:
@@ -379,66 +379,75 @@ class ArtifactJob:
                 "matched an archive path."
             )
 
-    def process_tests_tar_artifact(self, filename, processed_filename):
+    def write_tests_tar_artifact(self, filename, stream, writer):
         from mozbuild.action.test_archive import OBJDIR_TEST_FILES
 
         added_entry = False
+        for filename, entry in TarFinder(filename, stream):
+            for (
+                pattern,
+                (src_prefix, dest_prefix),
+            ) in self.test_artifact_patterns:
+                if not mozpath.match(filename, pattern):
+                    continue
 
-        with self.get_writer(file=processed_filename, compress_level=5) as writer:
-            with tarfile.open(filename) as reader:
-                for filename, entry in TarFinder(filename, reader):
-                    for (
-                        pattern,
-                        (src_prefix, dest_prefix),
-                    ) in self.test_artifact_patterns:
-                        if not mozpath.match(filename, pattern):
-                            continue
+                destpath = mozpath.relpath(filename, src_prefix)
+                destpath = mozpath.join(dest_prefix, destpath)
+                self.log(
+                    logging.DEBUG,
+                    "artifact",
+                    {"destpath": destpath},
+                    "Adding {destpath} to processed archive",
+                )
+                mode = entry.mode
+                writer.add(destpath.encode("utf-8"), entry.open(), mode=mode)
+                added_entry = True
+                break
 
-                        destpath = mozpath.relpath(filename, src_prefix)
-                        destpath = mozpath.join(dest_prefix, destpath)
-                        self.log(
-                            logging.DEBUG,
-                            "artifact",
-                            {"destpath": destpath},
-                            "Adding {destpath} to processed archive",
-                        )
-                        mode = entry.mode
-                        writer.add(destpath.encode("utf-8"), entry.open(), mode=mode)
-                        added_entry = True
-                        break
+            if filename.endswith(".toml"):
+                # The artifact build writes test .toml files into the object
+                # directory; they don't come from the upstream test archive.
+                self.log(
+                    logging.DEBUG,
+                    "artifact",
+                    {"filename": filename},
+                    "Skipping test INI file {filename}",
+                )
+                continue
 
-                    if filename.endswith(".toml"):
-                        # The artifact build writes test .toml files into the object
-                        # directory; they don't come from the upstream test archive.
-                        self.log(
-                            logging.DEBUG,
-                            "artifact",
-                            {"filename": filename},
-                            "Skipping test INI file {filename}",
-                        )
-                        continue
-
-                    for files_entry in OBJDIR_TEST_FILES.values():
-                        origin_pattern = files_entry["pattern"]
-                        leaf_filename = filename
-                        if "dest" in files_entry:
-                            dest = files_entry["dest"]
-                            origin_pattern = mozpath.join(dest, origin_pattern)
-                            leaf_filename = filename[len(dest) + 1 :]
-                        if mozpath.match(filename, origin_pattern):
-                            destpath = mozpath.join(
-                                "..", files_entry["base"], leaf_filename
-                            )
-                            mode = entry.mode
-                            writer.add(
-                                destpath.encode("utf-8"), entry.open(), mode=mode
-                            )
+            for files_entry in OBJDIR_TEST_FILES.values():
+                origin_pattern = files_entry["pattern"]
+                leaf_filename = filename
+                if "dest" in files_entry:
+                    dest = files_entry["dest"]
+                    origin_pattern = mozpath.join(dest, origin_pattern)
+                    leaf_filename = filename[len(dest) + 1 :]
+                if mozpath.match(filename, origin_pattern):
+                    destpath = mozpath.join("..", files_entry["base"], leaf_filename)
+                    mode = entry.mode
+                    writer.add(destpath.encode("utf-8"), entry.open(), mode=mode)
 
         if not added_entry:
             raise ValueError(
                 f'Archive format changed! No pattern from "{LinuxArtifactJob.test_artifact_patterns}"'
                 "matched an archive path."
             )
+
+    def process_tests_tar_artifact(self, filename, processed_filename):
+        with self.get_writer(file=processed_filename, compress_level=5) as writer:
+            if filename.endswith(".zst"):
+                import zstandard
+
+                unzstd = zstandard.ZstdDecompressor()
+                with open(filename, mode="rb") as fd:
+                    out = BytesIO()
+                    unzstd.copy_stream(fd, out)
+                    out.seek(0)
+                    with tarfile.open(fileobj=out) as reader:
+                        self.write_tests_tar_artifact(filename, reader, writer)
+            else:
+                with tarfile.open(fileobj=filename) as reader:
+                    self.write_tests_tar_artifact(filename, reader, writer)
 
     def process_symbols_archive(
         self, filename, processed_filename, skip_compressed=False
@@ -1190,6 +1199,7 @@ class Artifacts:
         cache_dir=".",
         hg=None,
         git=None,
+        jj=None,
         skip_cache=False,
         topsrcdir=None,
         download_tests=True,
@@ -1212,11 +1222,16 @@ class Artifacts:
         self._tree = tree
         self._job = job or self._guess_artifact_job()
         self._log = log
+        self._topsrcdir = topsrcdir
         self._hg = hg
         self._git = git
+        self._jj = jj
+        if self._jj:
+            self._git_root = self.run_jj("git", "root").strip()
+        else:
+            self._git_root = None
         self._cache_dir = cache_dir
         self._skip_cache = skip_cache
-        self._topsrcdir = topsrcdir
         self._no_process = no_process
         self._unfiltered_project_package = unfiltered_project_package
 
@@ -1273,19 +1288,36 @@ class Artifacts:
         kwargs["universal_newlines"] = True
         return subprocess.check_output([self._hg] + list(args), **kwargs)
 
+    def run_jj(self, *args, **kwargs):
+        kwargs["universal_newlines"] = True
+        return subprocess.check_output(
+            [self._jj] + list(args), **kwargs, cwd=self._topsrcdir
+        )
+
+    def check_git_output(self, cmd, *args, **kwargs):
+        env = os.environ.copy()
+        if self._git_root:
+            env["GIT_DIR"] = self._git_root
+        kwargs["universal_newlines"] = True
+        return subprocess.check_output([self._git] + cmd, *args, **kwargs, env=env)
+
+    def call_git(self, cmd, *args, **kwargs):
+        env = os.environ.copy()
+        if self._git_root:
+            env["GIT_DIR"] = self._git_root
+        return subprocess.call([self._git] + cmd, *args, **kwargs, env=env)
+
     @property
     @functools.cache
     def _is_git_cinnabar(self):
         if self._git:
             try:
-                metadata = subprocess.check_output(
+                metadata = self.check_git_output(
                     [
-                        self._git,
                         "rev-parse",
                         "--revs-only",
                         "refs/cinnabar/metadata",
                     ],
-                    universal_newlines=True,
                     cwd=self._topsrcdir,
                 )
                 return bool(metadata.strip())
@@ -1303,9 +1335,8 @@ class Artifacts:
             ("pure-cinnabar", "028d2077b6267f634c161a8a68e2feeee0cfb663"),
         ):
             if (
-                subprocess.call(
+                self.call_git(
                     [
-                        self._git,
                         "cat-file",
                         "-e",
                         f"{commit}^{{commit}}",
@@ -1331,8 +1362,6 @@ class Artifacts:
         if self._substs.get("MOZ_BUILD_APP", "") == "mobile/android":
             if self._substs["ANDROID_CPU_ARCH"] == "x86_64":
                 return "android-x86_64" + target_suffix
-            if self._substs["ANDROID_CPU_ARCH"] == "x86":
-                return "android-x86" + target_suffix
             if self._substs["ANDROID_CPU_ARCH"] == "arm64-v8a":
                 return "android-aarch64" + target_suffix
             return "android-arm" + target_suffix
@@ -1408,23 +1437,20 @@ class Artifacts:
 
         return candidate_pushheads
 
-    def _get_revisions_from_git(self):
-        rev_list = subprocess.check_output(
+    def _get_revisions_from_git(self, rev="HEAD"):
+        rev_list = self.check_git_output(
             [
-                self._git,
                 "rev-list",
                 "--topo-order",
                 f"--max-count={NUM_REVISIONS_TO_QUERY}",
-                "HEAD",
+                rev,
             ],
-            universal_newlines=True,
             cwd=self._topsrcdir,
         )
 
         if self._is_git_cinnabar:
-            hash_list = subprocess.check_output(
-                [self._git, "cinnabar", "git2hg"] + rev_list.splitlines(),
-                universal_newlines=True,
+            hash_list = self.check_git_output(
+                ["cinnabar", "git2hg"] + rev_list.splitlines(),
                 cwd=self._topsrcdir,
             )
         elif self._git_repo_kind == "firefox":
@@ -1459,6 +1485,12 @@ class Artifacts:
 
         If we're using git, retrieves hg revisions from git-cinnabar.
         """
+
+        if self._jj:
+            workspace_rev = self.run_jj(
+                "log", "--revisions", "@", "--template", "commit_id", "--no-graph"
+            ).strip()
+            return self._get_revisions_from_git(workspace_rev)
         if self._git:
             return self._get_revisions_from_git()
 
@@ -1692,7 +1724,9 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
                         logging.DEBUG,
                         "artifact",
                         {"hg_hash": hg_hash, "tree": tree},
-                        "Trying to find artifacts for hg revision {hg_hash} on tree {tree}.",
+                        # XXXgijs this log is now correct (these are git revs);
+                        # Updating the variable naming is bug 1993477.
+                        "Trying to find artifacts for git revision {hg_hash} on tree {tree}.",
                     )
                     urls = self.find_pushhead_artifacts(
                         task_cache, self._job, tree, hg_hash
@@ -1723,10 +1757,9 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
                     "log", "--template", "{node}\n", "-r", revset, cwd=self._topsrcdir
                 ).strip()
             elif self._git:
-                revset = subprocess.check_output(
-                    [self._git, "rev-parse", "%s^{commit}" % revset],
+                revset = self.check_git_output(
+                    ["rev-parse", "%s^{commit}" % revset],
                     stderr=open(os.devnull, "w"),
-                    universal_newlines=True,
                     cwd=self._topsrcdir,
                 ).strip()
             else:
@@ -1742,9 +1775,8 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
 
         if revision is None and self._git:
             if self._is_git_cinnabar:
-                revision = subprocess.check_output(
-                    [self._git, "cinnabar", "git2hg", revset],
-                    universal_newlines=True,
+                revision = self.check_git_output(
+                    ["cinnabar", "git2hg", revset],
                     cwd=self._topsrcdir,
                 ).strip()
             elif self._git_repo_kind == "firefox":
@@ -1769,7 +1801,8 @@ https://firefox-source-docs.mozilla.org/contributing/vcs/mercurial_bundles.html
         # Include try in our search to allow pulling from a specific push.
         pushheads = [
             (
-                self._artifact_job.candidate_trees + [self._artifact_job.try_tree],
+                self._artifact_job.candidate_trees
+                + [self._artifact_job.job_configuration.try_tree],
                 revision,
             )
         ]

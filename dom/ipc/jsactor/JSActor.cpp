@@ -46,8 +46,7 @@ struct JSActorMessageMarker {
     schema.AddKeyLabelFormat("name", "Message Name", MS::Format::String,
                              MS::PayloadFlags::Searchable);
     schema.SetTooltipLabel("JSActor - {marker.name}");
-    schema.SetTableLabel(
-        "{marker.name} - [{marker.data.actor}] {marker.data.name}");
+    schema.SetTableLabel("[{marker.data.actor}] {marker.data.name}");
     return schema;
   }
 };

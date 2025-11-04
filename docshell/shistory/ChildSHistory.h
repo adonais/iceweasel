@@ -78,6 +78,7 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
                bool aUserActivation);
   void AsyncGo(const nsID& aKey, BrowsingContext* aNavigable,
                bool aRequireUserInteraction, bool aUserActivation,
+               bool aCheckForCancelation,
                std::function<void(nsresult)>&& aResolver);
 
   // aIndex is the new index, and aOffset is the offset between new and current.
@@ -87,6 +88,7 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
   MOZ_CAN_RUN_SCRIPT
   void GotoKey(const nsID& aKey, BrowsingContext* aNavigable,
                bool aRequireUserInteraction, bool aUserActivation,
+               bool aCheckForCancelation,
                const std::function<void(nsresult)>& aResolver,
                ErrorResult& aRv);
 
@@ -123,6 +125,7 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
                                   BrowsingContext* aBrowsingContext,
                                   bool aRequireUserInteraction,
                                   bool aUserActivation,
+                                  bool aCheckForCancelation,
                                   std::function<void(nsresult)>&& aResolver);
 
     MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override;
@@ -131,6 +134,7 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
     const RefPtr<ChildSHistory> mHistory;
     bool mRequireUserInteraction;
     bool mUserActivation;
+    bool mCheckForCancelation;
     int32_t mOffset;
     Maybe<nsID> mKey;
     RefPtr<BrowsingContext> mBrowsingContext;

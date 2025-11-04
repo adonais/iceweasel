@@ -9,7 +9,6 @@ import androidx.navigation.NavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.concept.storage.Login
 import mozilla.components.concept.storage.LoginsStorage
-import mozilla.components.lib.state.Store
 import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -35,7 +34,6 @@ class LoginsMiddlewareTest {
     private lateinit var exitLogins: () -> Unit
     private lateinit var openTab: (String, Boolean) -> Unit
     private lateinit var persistLoginsSortOrder: suspend (LoginsSortOrder) -> Unit
-    private var refreshLoginsList: Store<LoginsState, LoginsAction>.() -> Unit = {}
 
     private val loginList = List(5) {
         Login(
@@ -140,17 +138,6 @@ class LoginsMiddlewareTest {
         }
 
     @Test
-    fun `GIVEN logins in storage WHEN store is initialized THEN logins will be loaded as display format`() =
-        runTestOnMain {
-            `when`(loginsStorage.list()).thenReturn(loginList)
-            val middleware = buildMiddleware()
-            val store = middleware.makeStore()
-            store.waitUntilIdle()
-
-            assertEquals(5, store.state.loginItems.size)
-        }
-
-    @Test
     fun `GIVEN a logins store WHEN SortMenuItem is clicked THEN Save the new sort order`() =
         runTestOnMain {
             `when`(loginsStorage.list()).thenReturn(loginList)
@@ -194,7 +181,6 @@ class LoginsMiddlewareTest {
         ioDispatcher = coroutineRule.testDispatcher,
         persistLoginsSortOrder = persistLoginsSortOrder,
         clipboardManager = clipboardManager,
-        refreshLoginsList = refreshLoginsList,
     )
 
     private fun LoginsMiddleware.makeStore(

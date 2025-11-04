@@ -3,6 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 export const ERRORS = Object.freeze({
+  /** Error state to be used for error management */
+  NONE: 0,
   /** User is not authorized to restore a backup archive */
   UNAUTHORIZED: 1,
   /** Selected backup archive can't be restored because it is corrupt */

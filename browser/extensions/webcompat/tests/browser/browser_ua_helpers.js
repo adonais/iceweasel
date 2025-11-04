@@ -384,11 +384,29 @@ const TESTS = {
     UA = "Firefox/1.0";
     is(
       helper(),
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Firefox/1.0 AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15"
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15"
     );
     is(
       helper({ osVersion: "1.2", version: "VER", webkitVersion: "WKVER" }),
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 1_2) AppleWebKit/WKVER (KHTML, like Gecko) Version/VER Safari/WKVER"
+    );
+    is(
+      helper({
+        osVersion: "1.2",
+        version: "VER",
+        webkitVersion: "WKVER",
+        withFirefox: true,
+      }),
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 1_2) Firefox/1.0 AppleWebKit/WKVER (KHTML, like Gecko) Version/VER Safari/WKVER"
+    );
+    is(
+      helper({
+        osVersion: "1.2",
+        version: "VER",
+        webkitVersion: "WKVER",
+        withFxQuantum: true,
+      }),
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 1_2) FxQuantum/1.0 AppleWebKit/WKVER (KHTML, like Gecko) Version/VER Safari/WKVER"
     );
   },
   windows(helper) {

@@ -108,6 +108,8 @@ support-files = ["trendingSuggestionEngine.sjs"]
 
 ["browser_search_discovery.js"]
 
+["browser_search_lastused_pref.js"]
+
 ["browser_searchbar_addEngine.js"]
 
 ["browser_searchbar_context.js"]

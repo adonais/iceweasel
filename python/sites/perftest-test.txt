@@ -1,6 +1,7 @@
 requires-python:>=3.9
 pypi:coverage==5.1
-pypi:pytest==7.0.1
+pypi:pytest-asyncio==1.2.0
+pypi:pytest==8.4.2
 vendored:third_party/python/dlmanager
 vendored:third_party/python/esprima
 vendored:third_party/python/giturlparse

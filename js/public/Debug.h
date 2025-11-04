@@ -178,7 +178,11 @@ struct ValueSummary {
   // This value is written to the start of the value summaries buffer (see
   // TracedJSContext::valueBuffer), and should be bumped every time the format
   // is changed.
-  static const uint32_t VERSION = 1;
+  //
+  // Keep in mind to update
+  // js/src/jit-test/tests/debug/ExecutionTracer-traced-values.js
+  // VALUE_SUMMARY_VERSION value.
+  static const uint32_t VERSION = 2;
 
   // If the type is an int and flags != Flags::NUMBER_IS_OUT_OF_LINE_MAGIC,
   // the value is MIN_INLINE_INT + flags.
@@ -253,6 +257,14 @@ struct ValueSummary {
 //      externalSize field with the amount written.
 //      NOTE: it is the embedders' responsibility to manage the versioning of
 //      their format.
+//    Kind::Error ->
+//      shapeSummaryId:     uint32_t (summary will only contain class name)
+//      name:               SmallString
+//      message:            SmallString
+//      stack:              SmallString
+//      filename:           SmallString
+//      lineNumber:         uint32_t
+//      columnNumber        uint32_t
 //
 // WrappedPrimitiveObjects and GenericObjects make use of a PropertySummary
 // type, defined here:
@@ -279,6 +291,7 @@ struct ObjectSummary {
     GenericObject,
     ProxyObject,
     External,
+    Error,
   };
 
   Kind kind;

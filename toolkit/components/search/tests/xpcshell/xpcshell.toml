@@ -24,16 +24,13 @@ tags = "searchmain"
 ["test_appDefaultEngine.js"]
 
 ["test_appProvided_engine.js"]
-prefs = ["browser.search.newSearchConfig.enabled=true"]
 support-files = [
   "../../schema/search-config-v2-schema.json",
 ]
 
 ["test_appProvided_icons.js"]
-prefs = ["browser.search.newSearchConfig.enabled=true"]
 
 ["test_appProvided_icons_updates.js"]
-prefs = ["browser.search.newSearchConfig.enabled=true"]
 tags = "remote-settings"
 
 ["test_async.js"]
@@ -261,7 +258,6 @@ support-files = ["settings/v6-ids-upgrade.json"]
 support-files = ["settings/v7-loadPath-migration.json"]
 
 ["test_settings_migration_renames.js"]
-prefs = ["browser.search.newSearchConfig.enabled=true"]
 support-files = ["settings/v6-migration-renames.json"]
 
 ["test_settings_none.js"]

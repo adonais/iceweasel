@@ -125,6 +125,9 @@ class SearchSuggestionsFragment : Fragment(), CoroutineScope {
     }
 
     companion object {
+        /**
+         * Creates a new instance of [SearchSuggestionsFragment].
+         */
         fun create() = SearchSuggestionsFragment()
     }
 }

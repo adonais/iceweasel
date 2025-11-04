@@ -600,8 +600,8 @@ export class PageAction {
     }
 
     switch (content.layout) {
-      case "icon_and_message":
-        //Clearing content and styles that may have been set by a prior addon_recommendation CFR
+      case "icon_and_message": {
+        // Clearing content and styles that may have been set by a prior addon_recommendation CFR
         this._setAddonRating(this.window.document, content);
         author.appendChild(
           lazy.RemoteL10n.createElement(this.window.document, "span", {
@@ -639,7 +639,8 @@ export class PageAction {
           ...options,
         };
         break;
-      default:
+      }
+      default: {
         const authorText = await this.getStrings({
           string_id: "cfr-doorhanger-extension-author",
           args: { name: content.addon.author },
@@ -693,6 +694,7 @@ export class PageAction {
           });
           RecommendationMap.delete(browser);
         };
+      }
     }
 
     const primaryBtnStrings = await this.getStrings(primary.label);

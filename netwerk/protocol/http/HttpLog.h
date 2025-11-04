@@ -41,6 +41,7 @@ void LogCallingScriptLocation(void* instance,
                               const Maybe<nsCString>& aLogLocation);
 extern LazyLogModule gHttpLog;
 extern LazyLogModule gHttpIOLog;
+extern LazyLogModule gDictionaryLog;
 }  // namespace net
 }  // namespace mozilla
 
@@ -70,5 +71,8 @@ extern LazyLogModule gHttpIOLog;
 #define LOG5_ENABLED() \
   MOZ_LOG_TEST(mozilla::net::gHttpLog, mozilla::LogLevel::Verbose)
 #define LOG_ENABLED() LOG4_ENABLED()
+
+#define LOG_DICTIONARIES(args) \
+  MOZ_LOG(mozilla::net::gDictionaryLog, mozilla::LogLevel::Debug, args)
 
 #endif  // HttpLog_h__

@@ -119,26 +119,6 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
-  AboutTranslations: {
-    parent: {
-      esModuleURI: "resource://gre/actors/AboutTranslationsParent.sys.mjs",
-    },
-    child: {
-      esModuleURI: "resource://gre/actors/AboutTranslationsChild.sys.mjs",
-      events: {
-        // Run the actor before any content of the page appears to inject functions.
-        DOMDocElementInserted: {},
-        DOMContentLoaded: {},
-        // Used to show and hide the translations button.
-        pageshow: { mozSystemGroup: true },
-        pagehide: { mozSystemGroup: true },
-      },
-    },
-    matches: ["about:translations"],
-    remoteTypes: ["privilegedabout"],
-    enablePreference: "browser.translations.enable",
-  },
-
   AudioPlayback: {
     parent: {
       esModuleURI: "resource://gre/actors/AudioPlaybackParent.sys.mjs",
@@ -472,6 +452,26 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
+  PageExtractor: {
+    parent: {
+      esModuleURI: "resource://gre/actors/PageExtractorParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource://gre/actors/PageExtractorChild.sys.mjs",
+      events: {
+        DOMContentLoaded: { createActor: false },
+      },
+    },
+    matches: [
+      "http://*/*",
+      "https://*/*",
+      "file:///*",
+      "moz-extension://*",
+      "data:text/html,*",
+    ],
+    messageManagerGroups: ["browsers"],
+  },
+
   PopupAndRedirectBlocking: {
     parent: {
       esModuleURI:
@@ -596,16 +596,7 @@ let JSWINDOWACTORS = {
         DOMContentLoaded: {},
       },
     },
-    matches: [
-      "http://*/*",
-      "https://*/*",
-      "file:///*",
-      "moz-extension://*",
-
-      // The actor is explicitly loaded by this page,
-      // so it needs to be allowed for it.
-      "about:translations",
-    ],
+    matches: ["http://*/*", "https://*/*", "file:///*", "moz-extension://*"],
     messageManagerGroups: ["browsers"],
     enablePreference: "browser.translations.enable",
   },
@@ -738,6 +729,26 @@ if (AppConstants.platform != "android") {
     },
     messageManagerGroups: ["browsers"],
     allFrames: true,
+  };
+
+  JSWINDOWACTORS.AboutTranslations = {
+    parent: {
+      esModuleURI: "resource://gre/actors/AboutTranslationsParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource://gre/actors/AboutTranslationsChild.sys.mjs",
+      events: {
+        // Run the actor before any content of the page appears to inject functions.
+        DOMDocElementInserted: {},
+        DOMContentLoaded: {},
+        // Used to show and hide the translations button.
+        pageshow: { mozSystemGroup: true },
+        pagehide: { mozSystemGroup: true },
+      },
+    },
+    matches: ["about:translations"],
+    remoteTypes: ["privilegedabout"],
+    enablePreference: "browser.translations.enable",
   };
 }
 

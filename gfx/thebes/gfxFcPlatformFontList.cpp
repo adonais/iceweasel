@@ -17,6 +17,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_mathml.h"
 #include "mozilla/glean/GfxMetrics.h"
 #include "mozilla/TimeStamp.h"
 #include "nsGkAtoms.h"
@@ -2202,7 +2203,8 @@ void gfxFcPlatformFontList::GetFontList(nsAtom* aLangGroup,
   else if (aGenericFamily.LowerCaseEqualsLiteral("monospace"))
     monospace = true;
   else if (aGenericFamily.LowerCaseEqualsLiteral("cursive") ||
-           aGenericFamily.LowerCaseEqualsLiteral("fantasy"))
+           aGenericFamily.LowerCaseEqualsLiteral("fantasy") ||
+           aGenericFamily.LowerCaseEqualsLiteral("math"))
     serif = sansSerif = true;
   else
     MOZ_ASSERT_UNREACHABLE("unexpected CSS generic font family");
@@ -2529,6 +2531,14 @@ void gfxFcPlatformFontList::AddGenericFonts(
     FontVisibilityProvider* aFontVisibilityProvider,
     StyleGenericFontFamily aGenericType, nsAtom* aLanguage,
     nsTArray<FamilyAndGeneric>& aFamilyList) {
+  // TODO(eri): For now the math generic language uses the legacy
+  // "serif.x-math". See `gfxPlatformFontList::AddGenericFonts`.
+  if (StaticPrefs::mathml_font_family_math_enabled() &&
+      aGenericType == StyleGenericFontFamily::Math) {
+    aGenericType = StyleGenericFontFamily::Serif;
+    aLanguage = nsGkAtoms::x_math;
+  }
+
   const char* generic = GetGenericName(aGenericType);
   NS_ASSERTION(generic, "weird generic font type");
   if (!generic) {

@@ -8,8 +8,6 @@
 #include "nsIThreadShutdown.idl"
 
 %{C++
-#include "mozilla/AlreadyAddRefed.h"
-
 namespace mozilla {
 class TimeStamp;
 class TimeDurationValueCalculator;

@@ -11,6 +11,7 @@ transforms:
     - gecko_taskgraph.transforms.task:transforms
 
 kind-dependencies:
+    - build
     - build-signing
     - build-mac-signing
     - build-mac-notarization
@@ -44,13 +45,6 @@ task-defaults:
                 production: false
 
 tasks:
-    linux-shippable:
-        attributes:
-            build_platform: linux-shippable
-            build_type: opt
-            artifact_prefix: releng/partner
-            shippable: true
-
     linux64-shippable:
         attributes:
             build_platform: linux64-shippable

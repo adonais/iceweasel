@@ -19,19 +19,15 @@ from mozdevice import ADBDevice
 from mozperftest.profiler import ProfilingMediator
 
 """
-homeview:
-~0.39 error indicates 1 icon has not loaded yet, anything with < 0.1 error indicates a completed startup with all 4 icons
-newssite(cvne):
-~0.14 error indicates a completed image with refresh icon not loaded yet, < 0.1 error indicates completed startup
-shopify (cvne):
-~0.14 error indicates a completed image with refresh icon not loaded yet, < 0.1 error indicates completed startup
-tab-restore:
-~1.4 error indicates a completed image with a loading bar not fully loaded yet, < 0.4 error indicates startup has completed
+Homeview:
+An error of greater than 0.0002 indicates we have 1 icon, any less than this startup is done
+Else(newssite(cvne), shopify (cvne), tab-restore):
+An error of greater than 0.001 indicates we have the loading bar present, any less than this startup is done
 """
-ACCEPTABLE_ERROR = {
-    "homeview_startup": 0.1,
-    "cold_view_nav_end": 0.1,
-    "mobile_restore": 0.4,
+ACCEPTABLE_THRESHOLD_ERROR = {
+    "homeview_startup": 0.0002,
+    "cold_view_nav_end": 0.001,
+    "mobile_restore": 0.001,
 }
 BACKGROUND_TABS = [
     "https://www.google.com/search?q=toronto+weather",
@@ -39,7 +35,9 @@ BACKGROUND_TABS = [
     "https://www.temu.com",
     "https://www.espn.com/nfl/game/_/gameId/401671793/chiefs-falcons",
 ]
+ERROR_THRESHOLD = 8  # This is the lower bound for the high pass filter to remove noise
 ITERATIONS = 5
+MAX_STARTUP_TIME = 25000  # 25000ms = 25 seconds
 PROD_CHRM = "chrome-m"
 PROD_FENIX = "fenix"
 
@@ -49,7 +47,7 @@ class ImageAnalzer:
         self.video = None
         self.browser = browser
         self.test = test
-        self.acceptable_error = ACCEPTABLE_ERROR[test]
+        self.acceptable_error = ACCEPTABLE_THRESHOLD_ERROR[test]
         self.test_url = test_url
         self.width = 0
         self.height = 0
@@ -73,11 +71,11 @@ class ImageAnalzer:
             f"am start-activity -W -n {self.package_and_activity} -a "
             f"android.intent.action.VIEW"
         )
-
         self.device.shell("mkdir -p /sdcard/Download")
         self.device.shell("settings put global window_animation_scale 1")
         self.device.shell("settings put global transition_animation_scale 1")
         self.device.shell("settings put global animator_duration_scale 1")
+        self.device.disable_notifications("com.topjohnwu.magisk")
 
     def app_setup(self):
         if ON_TRY:
@@ -150,30 +148,33 @@ class ImageAnalzer:
         )
 
         time.sleep(4)
-        video_location = pathlib.Path(os.environ["TESTING_DIR"], self.video_name)
-
+        video_location = str(pathlib.Path(os.environ["TESTING_DIR"], self.video_name))
         self.video = cv2.VideoCapture(video_location)
         self.width = self.video.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.height = self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)
         self.device.shell(f"am force-stop {self.package_name}")
 
-    def get_image(self, frame_position, cropped=True):
+    def get_image(self, frame_position, cropped=True, bw=True):
         self.video.set(cv2.CAP_PROP_POS_FRAMES, frame_position)
         ret, frame = self.video.read()
+        if bw:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         if not ret:
             raise Exception("Frame not read")
         # We crop out the top 100 pixels in each image as when we have --bug-report in the
         # screen-recording command it displays a timestamp which interferes with the image comparisons
+        # We crop out the bottom 100 pixels to remove the fading in of the OS navigation controls
         # We crop out the right 20 pixels to remove the scroll bar as it interferes with startup accuracy
         if cropped:
-            return frame[100 : int(self.height), 0 : int(self.width) - 20]
+            return frame[100 : int(self.height) - 100, 0 : int(self.width) - 20]
         return frame
 
     def error(self, img1, img2):
         h = img1.shape[0]
         w = img1.shape[1]
         diff = cv2.absdiff(img1, img2)
-        err = np.sum(diff**2)
+        threshold_diff = cv2.threshold(diff, ERROR_THRESHOLD, 255, cv2.THRESH_BINARY)[1]
+        err = np.sum(threshold_diff**2)
         mse = err / (float(h * w))
         return mse
 
@@ -201,17 +202,23 @@ class ImageAnalzer:
         compare_to_end_frame += 1
         save_image_location = pathlib.Path(
             os.environ["TESTING_DIR"],
-            f"vid{iteration}_{self.browser}_startup_done.jpg",
+            f"iter_{iteration}_startup_done.png",
         )
         cv2.imwrite(
-            save_image_location, self.get_image(compare_to_end_frame, cropped=False)
+            save_image_location,
+            self.get_image(compare_to_end_frame, cropped=False, bw=False),
         )
         return compare_to_end_frame
 
     def get_time_from_frame_num(self, frame_num):
         self.video.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
         self.video.read()
-        return self.video.get(cv2.CAP_PROP_POS_MSEC)
+        video_timestamp = self.video.get(cv2.CAP_PROP_POS_MSEC)
+        if video_timestamp > MAX_STARTUP_TIME:
+            raise ValueError(
+                f"Startup time of {video_timestamp/1000}s exceeds max time of {MAX_STARTUP_TIME/1000}s"
+            )
+        return video_timestamp
 
     def load_page_to_test_startup(self):
         # Navigate to the page we want to use for testing startup

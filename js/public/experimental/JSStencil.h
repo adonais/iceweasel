@@ -257,6 +257,14 @@ extern JS_PUBLIC_API void AbortCollectingDelazifications(
 // This returns false if the stencil contains asm.js.
 extern JS_PUBLIC_API bool IsStencilCacheable(JS::Stencil* stencil);
 
+// ************************************************************************
+//   Script Source
+// ************************************************************************
+
+// Returns the uncompressed source text length of given stencil.
+// Returns 0 if the source is discarded or somehow not accessible.
+extern JS_PUBLIC_API size_t GetScriptSourceLength(JS::Stencil* stencil);
+
 }  // namespace JS
 
 #endif  // js_experimental_JSStencil_h

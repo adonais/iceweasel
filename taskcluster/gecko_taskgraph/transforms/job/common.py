@@ -8,6 +8,7 @@ consistency.
 """
 
 from taskgraph.transforms.run.common import CACHES, add_cache
+from taskgraph.util import json
 from taskgraph.util.keyed_by import evaluate_keyed_by
 from taskgraph.util.taskcluster import get_artifact_prefix
 
@@ -58,7 +59,7 @@ def get_cache_name(config, job):
     return cache_name
 
 
-def support_vcs_checkout(config, job, taskdesc):
+def support_vcs_checkout(config, job, taskdesc, repo_configs):
     """Update a job/task with parameters to enable a VCS checkout.
 
     This can only be used with ``run-task`` tasks, as the cache name is
@@ -94,12 +95,29 @@ def support_vcs_checkout(config, job, taskdesc):
     env = taskdesc["worker"].setdefault("env", {})
     env.update(
         {
-            "GECKO_BASE_REPOSITORY": config.params["base_repository"],
-            "GECKO_HEAD_REPOSITORY": config.params["head_repository"],
-            "GECKO_HEAD_REV": config.params["head_rev"],
             "HG_STORE_PATH": hgstore,
+            "REPOSITORIES": json.dumps(
+                {repo.prefix: repo.name for repo in repo_configs.values()}
+            ),
         }
     )
+    for repo_config in repo_configs.values():
+        env.update(
+            {
+                f"{repo_config.prefix.upper()}_{key}": value
+                for key, value in {
+                    "BASE_REPOSITORY": repo_config.base_repository,
+                    "HEAD_REPOSITORY": repo_config.head_repository,
+                    "HEAD_REV": repo_config.head_rev,
+                    "HEAD_REF": repo_config.head_ref,
+                    "REPOSITORY_TYPE": repo_config.type,
+                    "SSH_SECRET_NAME": repo_config.ssh_secret_name,
+                }.items()
+                if value is not None
+            }
+        )
+        if repo_config.ssh_secret_name:
+            taskdesc["scopes"].append(f"secrets:get:{repo_config.ssh_secret_name}")
 
     gecko_path = env.setdefault("GECKO_PATH", geckodir)
 
@@ -197,6 +215,6 @@ def get_expiration(config, policy="default"):
     expires = evaluate_keyed_by(
         config.graph_config["expiration-policy"],
         "artifact expiration",
-        {"project": config.params["project"]},
+        {"project": config.params["project"], "level": config.params["level"]},
     )[policy]
     return expires

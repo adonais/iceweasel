@@ -91,7 +91,9 @@ class ArenaChunk;
   _("systemPageSizeKB", JSGC_SYSTEM_PAGE_SIZE_KB, false)                    \
   _("semispaceNurseryEnabled", JSGC_SEMISPACE_NURSERY_ENABLED, true)        \
   _("generateMissingAllocSites", JSGC_GENERATE_MISSING_ALLOC_SITES, true)   \
-  _("highFrequencyMode", JSGC_HIGH_FREQUENCY_MODE, false)
+  _("highFrequencyMode", JSGC_HIGH_FREQUENCY_MODE, false)                   \
+  _("storeBufferEntries", JSGC_STORE_BUFFER_ENTRIES, true)                  \
+  _("storeBufferScaling", JSGC_STORE_BUFFER_SCALING, true)
 
 // Get the key and writability give a GC parameter name.
 extern bool GetGCParameterInfo(const char* name, JSGCParamKey* keyOut,

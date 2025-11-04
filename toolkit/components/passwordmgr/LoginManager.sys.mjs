@@ -64,11 +64,23 @@ LoginManager.prototype = {
     // Cache references to current |this| in utility objects
     this._observer._pwmgr = this;
 
-    Services.obs.addObserver(this._observer, "xpcom-shutdown");
-    Services.obs.addObserver(this._observer, "passwordmgr-storage-replace");
+    this._observer._init();
 
     // Initialize storage so that asynchronous data loading can start.
     this._initStorage();
+    this._initialized = true;
+  },
+
+  uninit() {
+    if (this._storage) {
+      this._storage.terminate();
+      this._storage = null;
+    }
+
+    this._observer._uninit();
+
+    this._observer._pwmgr = null;
+    this._initialized = false;
   },
 
   _initStorage() {
@@ -95,6 +107,25 @@ LoginManager.prototype = {
    */
   _observer: {
     _pwmgr: null,
+    _initialized: false,
+
+    _init() {
+      if (this._initialized) {
+        return;
+      }
+      Services.obs.addObserver(this, "passwordmgr-storage-replace");
+      Services.obs.addObserver(this, "xpcom-shutdown");
+      this._initialized = true;
+    },
+
+    _uninit() {
+      if (!this._initialized) {
+        return;
+      }
+      Services.obs.removeObserver(this, "passwordmgr-storage-replace");
+      Services.obs.removeObserver(this, "xpcom-shutdown");
+      this._initialized = false;
+    },
 
     QueryInterface: ChromeUtils.generateQI([
       "nsIObserver",
@@ -104,8 +135,7 @@ LoginManager.prototype = {
     // nsIObserver
     observe(subject, topic, _data) {
       if (topic == "xpcom-shutdown") {
-        delete this._pwmgr._storage;
-        this._pwmgr = null;
+        this._pwmgr.uninit();
       } else if (topic == "passwordmgr-storage-replace") {
         (async () => {
           await this._pwmgr._storage.terminate();

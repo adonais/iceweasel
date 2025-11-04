@@ -11,7 +11,11 @@ import {
   updateBreakpointsForNewPrettyPrintedSource,
 } from "../breakpoints/index";
 
-import { getPrettySourceURL, isJavaScript } from "../../utils/source";
+import {
+  getPrettySourceURL,
+  isJavaScript,
+  isMinified,
+} from "../../utils/source";
 import { isFulfilled, fulfilled } from "../../utils/async-value";
 import {
   getOriginalLocation,
@@ -31,6 +35,8 @@ import {
   getFirstSourceActorForGeneratedSource,
   getSource,
   getSelectedLocation,
+  canPrettyPrintSource,
+  getSourceTextContentForSource,
 } from "../../selectors/index";
 
 import { selectSource } from "./select";
@@ -188,8 +194,18 @@ async function prettyPrintHtmlFile({
       sourceInfo.sourceStartLine > 1
         ? allLineBreaks[sourceInfo.sourceStartLine - 2].index + 1
         : 0;
-    const startIndex =
+
+    // The `sourceStartColumn` refers to final unicode characters column (including 16-bits characters),
+    // not including any unicode characters encoded by surrogate pairs (two 16 bit code units)
+    // i.e outside of the Basic Multiligual Plane. So calculate and add those characters to the looked-up start index.
+    const startColumn =
       indexAfterPreviousLineBreakInHtml + sourceInfo.sourceStartColumn;
+    const htmlBeforeStr = htmlFileText.substring(0, startColumn);
+    const codeUnitLength = htmlBeforeStr.length,
+      codePointLength = [...htmlBeforeStr].length;
+    const extraCharsWithForStrTwoCodeUnits = codeUnitLength - codePointLength;
+
+    const startIndex = startColumn + extraCharsWithForStrTwoCodeUnits;
     const endIndex = startIndex + sourceInfo.sourceLength;
     const scriptText = htmlFileText.substring(startIndex, endIndex);
     DevToolsUtils.assert(
@@ -290,14 +306,20 @@ function selectPrettyLocation(prettySource) {
 
 /**
  * Toggle the pretty printing of a source's text.
- * Nothing will happen for non-javascript files.
+ * Nothing will happen for non-javascript, non-minified, or files that can't be pretty printed.
  *
  * @param Object source
  *        The source object for the minified/generated source.
+ * @param Boolean isAutoPrettyPrinting
+ *        Are we pretty printing this source because of auto-pretty printing preference?
  * @returns Promise
  *          A promise that resolves to the Pretty print/original source object.
  */
-export async function doPrettyPrintSource(source, thunkArgs) {
+export async function doPrettyPrintSource(
+  source,
+  isAutoPrettyPrinting,
+  thunkArgs
+) {
   const { dispatch, getState } = thunkArgs;
   recordEvent("pretty_print");
 
@@ -312,6 +334,25 @@ export async function doPrettyPrintSource(source, thunkArgs) {
   );
 
   await dispatch(loadGeneratedSourceText(sourceActor));
+
+  // Just after having retrieved the minimized text content,
+  // verify if the source can really be pretty printed.
+  // In case it can't, revert the pretty printed status on the minimized source.
+  // This is especially useful when automatic pretty printing is enabled.
+  if (
+    isAutoPrettyPrinting &&
+    (!canPrettyPrintSource(getState(), source, sourceActor) ||
+      !isMinified(
+        source,
+        getSourceTextContentForSource(getState(), source, sourceActor)
+      ))
+  ) {
+    dispatch({
+      type: "REMOVE_PRETTY_PRINTED_SOURCE",
+      source,
+    });
+    return null;
+  }
 
   const newPrettySource = await dispatch(
     createPrettySource(source, sourceActor)
@@ -341,13 +382,13 @@ export async function doPrettyPrintSource(source, thunkArgs) {
   // Otherwise we may use generated frames there.
   newPrettySource._loaded = true;
 
-  return newPrettySource;
+  return fulfilled(newPrettySource);
 }
 
 // Use memoization in order to allow calling this actions many times
 // while ensuring creating the pretty source only once.
 export const prettyPrintSource = memoizeableAction("prettyPrintSource", {
-  getValue: (source, { getState }) => {
+  getValue: ({ source }, { getState }) => {
     // Lookup for an already existing pretty source
     const url = getPrettyOriginalSourceURL(source);
     const id = generatedToOriginalId(source.id, url);
@@ -358,13 +399,14 @@ export const prettyPrintSource = memoizeableAction("prettyPrintSource", {
     }
     return fulfilled(s);
   },
-  createKey: source => source.id,
-  action: (source, thunkArgs) => doPrettyPrintSource(source, thunkArgs),
+  createKey: ({ source }) => source.id,
+  action: ({ source, isAutoPrettyPrinting = false }, thunkArgs) =>
+    doPrettyPrintSource(source, isAutoPrettyPrinting, thunkArgs),
 });
 
 export function prettyPrintAndSelectSource(source) {
   return async ({ dispatch }) => {
-    const prettySource = await dispatch(prettyPrintSource(source));
+    const prettySource = await dispatch(prettyPrintSource({ source }));
 
     // Select the pretty/original source based on the location we may
     // have had against the minified/generated source.
@@ -421,8 +463,8 @@ export function removePrettyPrintedSource(source) {
     // Otherwise fallback to selectSource in order to select the first line instead of the current line within the pretty version.
     if (location.source == generatedSource) {
       await dispatch(selectSpecificLocation(location));
+    } else {
+      await dispatch(selectSource(generatedSource));
     }
-
-    await dispatch(selectSource(generatedSource));
   };
 }

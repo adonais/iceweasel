@@ -187,6 +187,12 @@ class DeclarationBlock final {
     return Servo_DeclarationBlock_GetPropertyIsImportant(mRaw, &aProperty);
   }
 
+  bool GetPropertyTypedValue(const nsACString& aProperty,
+                             StylePropertyTypedValueResult& aResult) const {
+    return Servo_DeclarationBlock_GetPropertyTypedValue(mRaw, &aProperty,
+                                                        &aResult);
+  }
+
   // Returns whether the property was removed.
   bool RemoveProperty(const nsACString& aProperty,
                       DeclarationBlockMutationClosure aClosure = {}) {

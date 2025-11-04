@@ -5,7 +5,7 @@
 package org.mozilla.fenix.library.history
 
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ToggleEditMode
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ExitEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.lib.state.Middleware
@@ -26,7 +26,7 @@ class BrowserToolbarSyncToHistoryMiddleware(
     ) {
         next(action)
 
-        if (action is ToggleEditMode && !action.editMode && historyStore.state.isSearching) {
+        if (action is ExitEditMode && historyStore.state.isSearching) {
             historyStore.dispatch(SearchDismissed)
         }
     }

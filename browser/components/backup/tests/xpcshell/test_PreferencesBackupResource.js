@@ -271,6 +271,39 @@ add_task(async function test_backup_private_browsing() {
 });
 
 /**
+ * Check that prefs.js has "browser.backup.profile-restoration-date".  Due to
+ * concerns over potential time skips in automation, we only check that the
+ * timestamp is not more than a week before/after now (we would expect the
+ * difference to be more like a few milliseconds).
+ *
+ * @param {string} prefsJsPath
+ */
+async function checkPrefsJsHasValidRecoveryTime(prefsJsPath) {
+  Assert.equal(
+    Services.prefs.getPrefType("browser.backup.profile-restoration-date"),
+    Services.prefs.PREF_INVALID,
+    "Restoration pref not set since current profile was not restored"
+  );
+
+  // NB: The non-profile-restoration-date part of the prefs file is junk made
+  // by `createTestFiles`.  We don't care about that here.
+  const contents = await IOUtils.readUTF8(prefsJsPath);
+  const dateRegex =
+    /pref\("browser\.backup\.profile-restoration-date", (\d+)\);/;
+  let restoreDate = contents.match(dateRegex);
+  Assert.equal(restoreDate.length, 2, "found the restoration date");
+
+  const kOneWeekAgoInSec =
+    60 /* sec/min */ * 60 /* min/hr */ * 24 /* hr/day */ * 7; /* day/wk */
+  const nowInSeconds = Math.round(Date.now() / 1000);
+  Assert.lessOrEqual(
+    Math.abs(nowInSeconds - Number(restoreDate[1])),
+    kOneWeekAgoInSec,
+    "timestamp was within one week of now"
+  );
+}
+
+/**
  * Test that the recover method correctly copies items from the recovery
  * directory into the destination profile directory.
  */
@@ -368,6 +401,9 @@ add_task(async function test_recover() {
   );
 
   await assertFilesExist(destProfilePath, simpleCopyFiles);
+  await checkPrefsJsHasValidRecoveryTime(
+    PathUtils.join(destProfilePath, "prefs.js")
+  );
 
   // Now ensure that the verification was properly recomputed. We should
   // Have called getVerificationHash 6 times - twice each for:

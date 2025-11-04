@@ -10,6 +10,8 @@ prefs = [
 
 ["browser_IPPChannelFilter.js"]
 
+["browser_IPPProxyManager.js"]
+
 ["browser_IPProtectionService.js"]
 
 ["browser_guardian_client.js"]

@@ -1562,7 +1562,12 @@ class Client:
             """
            const s = document.createElement("style");
            s.textContent = arguments[0];
-           document.head.appendChild(s);
+           const timer = setInterval(() => {
+             if (document.head) {
+                document.head.appendChild(s);
+                clearInterval(timer);
+             }
+           }, 50);
         """,
             sheet,
         )

@@ -27,7 +27,6 @@
 #include "nsBidiUtils.h"
 #include "nsStyleConsts.h"
 #include "mozilla/AppUnits.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Preferences.h"

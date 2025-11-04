@@ -866,7 +866,7 @@ void WebRenderAPI::FlushSceneBuilder() {
   wr_api_flush_scene_builder(mDocHandle);
 }
 
-void WebRenderAPI::WaitFlushed() {
+void WebRenderAPI::WaitUntilPresentationFlushed() {
   class WaitFlushedEvent : public RendererEvent {
    public:
     explicit WaitFlushedEvent(layers::SynchronousTask* aTask) : mTask(aTask) {
@@ -876,6 +876,11 @@ void WebRenderAPI::WaitFlushed() {
     MOZ_COUNTED_DTOR_OVERRIDE(WaitFlushedEvent)
 
     void Run(RenderThread& aRenderThread, WindowId aWindowId) override {
+      if (RendererOGL* renderer = aRenderThread.GetRenderer(aWindowId)) {
+        if (RenderCompositor* compositor = renderer->GetCompositor()) {
+          compositor->WaitUntilPresentationFlushed();
+        }
+      }
       layers::AutoCompleteTask complete(mTask);
     }
 
@@ -885,7 +890,7 @@ void WebRenderAPI::WaitFlushed() {
     layers::SynchronousTask* mTask;
   };
 
-  layers::SynchronousTask task("WaitFlushed");
+  layers::SynchronousTask task("WaitUntilPresentationFlushed");
   auto event = MakeUnique<WaitFlushedEvent>(&task);
   // This event will be passed from wr_backend thread to renderer thread. That
   // implies that all frame data have been processed when the renderer runs this

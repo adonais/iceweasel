@@ -1547,6 +1547,11 @@ void RasterImage::DoError() {
 
   // Invalidate to get rid of any partially-drawn image content.
   auto dirtyRect = OrientedIntRect({0, 0}, mSize);
+  // Make sure to provide a non-empty rect so a FRAME_UPDATE notification goes
+  // out otherwise consumers might not get any kind of update whatsoever.
+  if (dirtyRect.IsEmpty()) {
+    dirtyRect.width = dirtyRect.height = 1;
+  }
   NotifyProgress(NoProgress, dirtyRect);
 
   MOZ_LOG(gImgLog, LogLevel::Error,

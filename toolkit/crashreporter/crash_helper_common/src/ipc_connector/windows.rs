@@ -303,10 +303,13 @@ impl IPCConnector {
         buffer.extend(handle.unwrap_or(INVALID_ANCILLARY_DATA).to_ne_bytes());
         buffer.extend(buff);
 
-        let overlapped =
-            OverlappedOperation::sched_send(self.handle
+        let overlapped = OverlappedOperation::sched_send(
+            self.handle
                 .try_clone()
-                .map_err(IPCError::CloneHandleFailed)?, self.event_raw_handle(), buffer)?;
+                .map_err(IPCError::CloneHandleFailed)?,
+            self.event_raw_handle(),
+            buffer,
+        )?;
         overlapped.complete_send(/* wait */ true)
     }
 

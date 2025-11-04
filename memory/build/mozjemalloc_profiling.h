@@ -20,7 +20,13 @@ struct PurgeStats {
   arena_id_t arena_id;
   const char* arena_label;
   const char* caller;
-  size_t pages = 0;
+
+  // The number of previously-dirty pages that are now clean.
+  size_t pages_dirty = 0;
+
+  // The total number of pages that were cleaned (includes previously an pages).
+  size_t pages_total = 0;
+
   size_t system_calls = 0;
   size_t chunks = 0;
 

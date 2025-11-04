@@ -29,6 +29,7 @@
 #include "nsView.h"
 #include "nsGkAtoms.h"
 
+#include "AnchorPositioningUtils.h"
 #include "nsComponentManagerUtils.h"
 
 #include "XULTreeElement.h"
@@ -673,4 +674,77 @@ bool nsCoreUtils::IsTrimmedWhitespaceBeforeHardLineBreak(nsIFrame* aFrame) {
       0, UINT32_MAX, nsIFrame::TextOffsetType::OffsetsInContentText,
       nsIFrame::TrailingWhitespace::Trim);
   return text.mString.IsEmpty();
+}
+
+nsIFrame* nsCoreUtils::GetAnchorForPositionedFrame(
+    const PresShell* aPresShell, const nsIFrame* aPositionedFrame) {
+  if (!aPositionedFrame ||
+      !aPositionedFrame->Style()->HasAnchorPosReference()) {
+    return nullptr;
+  }
+
+  const nsAtom* anchorName = nullptr;
+  AnchorPosReferenceData* referencedAnchors =
+      aPositionedFrame->GetProperty(nsIFrame::AnchorPosReferences());
+
+  if (!referencedAnchors) {
+    return nullptr;
+  }
+
+  for (auto& entry : *referencedAnchors) {
+    if (entry.GetData().isNothing()) {
+      continue;
+    }
+
+    if (anchorName && entry.GetKey() != anchorName) {
+      // Multiple anchors referenced.
+      return nullptr;
+    }
+
+    anchorName = entry.GetKey();
+  }
+
+  return anchorName
+             ? aPresShell->GetAnchorPosAnchor(anchorName, aPositionedFrame)
+             : nullptr;
+}
+
+nsIFrame* nsCoreUtils::GetPositionedFrameForAnchor(
+    const PresShell* aPresShell, const nsIFrame* aAnchorFrame) {
+  if (!aAnchorFrame) {
+    return nullptr;
+  }
+
+  nsIFrame* positionedFrame = nullptr;
+  const auto* styleDisp = aAnchorFrame->StyleDisplay();
+  if (styleDisp->HasAnchorName()) {
+    for (auto& name : styleDisp->mAnchorName.AsSpan()) {
+      for (nsIFrame* frame : aPresShell->GetAnchorPosPositioned()) {
+        // Bug 1990069: We need to iterate over all positioned frames in doc and
+        // check their referenced anchors because we don't store reverse mapping
+        // from anchor to positioned frame.
+        const auto* referencedAnchors =
+            frame->GetProperty(nsIFrame::AnchorPosReferences());
+        if (!referencedAnchors) {
+          // Depending on where we are in the reflow, this property may or may
+          // not be set. If it isn't set, a future reflow will set it, so we can
+          // just skip this frame for now.
+          continue;
+        }
+        const auto* data = referencedAnchors->Lookup(name.AsAtom());
+        if (data && *data && data->ref().mOrigin) {
+          if (aAnchorFrame ==
+              aPresShell->GetAnchorPosAnchor(name.AsAtom(), frame)) {
+            if (positionedFrame) {
+              // Multiple positioned frames reference this anchor.
+              return nullptr;
+            }
+            positionedFrame = frame;
+          }
+        }
+      }
+    }
+  }
+
+  return positionedFrame;
 }

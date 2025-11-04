@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env mozilla/remote-page */
-
 import { normalizeToKebabCase } from "./components/utils.mjs";
 import {
   parse,
@@ -460,13 +458,13 @@ const buildChain = async chain => {
       if (certs.length === 0) {
         return Promise.reject();
       }
+      let adjustedCerts = certs.map(cert => adjustCertInformation(cert));
       let certTitle = document.querySelector("#certTitle");
-      let firstCertCommonName = certs[0].subject.cn;
+      let firstCertLabel = adjustedCerts[0].tabName;
       document.l10n.setAttributes(certTitle, "certificate-viewer-tab-title", {
-        firstCertName: firstCertCommonName,
+        firstCertName: firstCertLabel,
       });
 
-      let adjustedCerts = certs.map(cert => adjustCertInformation(cert));
       return render(adjustedCerts, false);
     })
     .catch(() => {

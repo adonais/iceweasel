@@ -10864,6 +10864,7 @@ bool wasm::IonDumpFunction(const CompilerEnvironment& compilerEnv,
   MIRGenerator& mirGen = rootCompiler.mirGen();
   GraphSpewer graphSpewer(out, &codeMeta);
 
+  graphSpewer.begin();
   mirGen.setGraphSpewer(&graphSpewer);
   mirGen.spewBeginWasmFunction(func.index);
 
@@ -10873,6 +10874,7 @@ bool wasm::IonDumpFunction(const CompilerEnvironment& compilerEnv,
   }
 
   mirGen.spewEndFunction();
+  graphSpewer.end();
 
 #else
   out.printf("cannot dump Ion without --enable-jitspew");

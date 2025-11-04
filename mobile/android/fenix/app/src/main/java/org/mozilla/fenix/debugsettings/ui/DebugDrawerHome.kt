@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -27,7 +28,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.utils.inComposePreview
 import mozilla.components.support.ktx.android.content.appName
@@ -89,7 +89,7 @@ fun DebugDrawerHome(
                 )
             }
 
-            Divider()
+            HorizontalDivider()
         }
 
         items(
@@ -103,7 +103,7 @@ fun DebugDrawerHome(
                 onClick = destination.onClick,
             )
 
-            Divider()
+            HorizontalDivider()
         }
     }
 }

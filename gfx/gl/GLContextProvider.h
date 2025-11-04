@@ -6,7 +6,7 @@
 #ifndef GLCONTEXTPROVIDER_H_
 #define GLCONTEXTPROVIDER_H_
 
-#include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/AlreadyAddRefed.h"  // Used in GLContextProviderImpl.h
 
 #include "GLContextTypes.h"
 #include "SurfaceTypes.h"

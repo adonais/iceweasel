@@ -12,16 +12,15 @@ NativeLayerCommandQueue::NativeLayerCommandQueue()
     : mQueue("NativeLayerCommandQueue") {}
 
 void NativeLayerCommandQueue::AppendCommand(
-    const mozilla::layers::NativeLayerCommand& aCommand) {
+    mozilla::layers::NativeLayerCommand&& aCommand) {
   auto q = mQueue.Lock();
-  q->AppendElement(aCommand);
+  q->AppendElement(std::move(aCommand));
 }
 
 void NativeLayerCommandQueue::FlushToArray(
     nsTArray<mozilla::layers::NativeLayerCommand>& aQueue) {
   auto q = mQueue.Lock();
-  aQueue.AppendElements(*q);
-  q->Clear();
+  aQueue.AppendElements(std::move(*q));
 }
 
 }  // namespace layers

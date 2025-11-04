@@ -151,7 +151,7 @@ async function perform_inference(queries, type) {
 
 const runInference2 = async () => {
   ChromeUtils.defineESModuleGetters(this, {
-    MLSuggest: "resource:///modules/urlbar/private/MLSuggest.sys.mjs",
+    MLSuggest: "moz-src:///browser/components/urlbar/private/MLSuggest.sys.mjs",
   });
 
   // Override INTENT and NER options within MLSuggest

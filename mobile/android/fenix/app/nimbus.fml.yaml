@@ -808,18 +808,13 @@ features:
       certificateTransparencyMode:
         description: >
           What mode Certificate Transparency is in (0=disable, 1=telemetry only, 2=enforce).
-        type: Int
-        default: 0
-    defaults:
-      - channel: nightly
-        value:
-          certificateTransparencyMode: 2
-      - channel: developer
-        value:
-          certificateTransparencyMode: 2
-      - channel: beta
-        value:
-          certificateTransparencyMode: 2
+        type: Option<Int>
+        default: null
+      crliteChannel:
+        description: >
+          The channel from which CRLite filters will be installed.
+        type: Option<String>
+        default: null
 
   pqcrypto:
     description: Control the use of post-quantum key exchange mechanisms in TLS and HTTP/3.
@@ -921,6 +916,15 @@ features:
         value:
           enabled: true
 
+  settings-search:
+      description: Feature to allow users to search for settings.
+      variables:
+        enabled:
+          description: >
+            Enables the user to search for settings.
+          type: Boolean
+          default: false
+
   toolbar-redesign-option:
     description: Control the visibility of toolbar redesign option in settings.
     variables:
@@ -1019,6 +1023,26 @@ features:
         description: Whether or not to enable the custom review prompt.
         type: Boolean
         default: false
+
+  default-browser-prompt:
+    description: Feature that controls when the default browser prompt is shown.
+    variables:
+      enabled:
+        description: Whether or not to enable the default browser prompt.
+        type: Boolean
+        default: true
+      daysBetweenPrompts:
+        description: The minimum number of days between showing the prompt.
+        type: Option<Int>
+        default: 14
+      maxPromptsShown:
+        description: The maximum number of times the prompt can shown to the user.
+        type: Option<Int>
+        default: 3
+      coldStartsBetweenPrompts:
+        description: The minimum number of cold starts between showing the prompt.
+        type: Option<Int>
+        default: 4
 
 types:
   objects:

@@ -34,8 +34,16 @@
           <hbox>
             <image id="trustpanel-graphic-image"></image>
             <vbox id="trustpanel-graphic-section-text">
-              <label id="trustpanel-header" class="trustpanel-header"></label>
-              <label id="trustpanel-description"></label>
+              <label when-connection="secure secure-ev secure-cert-user-overridden chrome"
+                     id="trustpanel-header"
+                     class="trustpanel-header"></label>
+              <label when-connection="not-secure cert-error-page net-error-page https-only-error-page"
+                     class="trustpanel-header"
+                     data-l10n-id="trustpanel-header-enabled-insecure"></label>
+              <label when-connection="secure secure-ev secure-cert-user-overridden chrome"
+                     id="trustpanel-description"></label>
+              <label when-connection="not-secure cert-error-page net-error-page https-only-error-page"
+                     data-l10n-id="trustpanel-description-enabled-insecure"></label>
             </vbox>
           </hbox>
           <vbox id="trustpanel-blocker-section" class="trustpanel-graphic-inner">

@@ -353,6 +353,11 @@ scheme = "https"
 
 ["test_transferable.html"]
 
+["test_warning_reporter.html"]
+support-files = [
+  "warning_reporter_worker.js",
+]
+
 ["test_worker_in_background.html"]
 skip-if = ["os == 'android'"] # since geckoview does not support multiple tabs
 

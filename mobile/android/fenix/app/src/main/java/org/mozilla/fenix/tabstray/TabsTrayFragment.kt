@@ -19,6 +19,7 @@ import androidx.annotation.UiThread
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatDialogFragment
 import androidx.biometric.BiometricManager
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -38,6 +39,7 @@ import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.feature.accounts.push.CloseTabsUseCases
 import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
 import mozilla.components.feature.tabs.tabstray.TabsFeature
+import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.Config
@@ -63,11 +65,8 @@ import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.HomeScreenViewModel
 import org.mozilla.fenix.navigation.DefaultNavControllerProvider
 import org.mozilla.fenix.navigation.NavControllerProvider
-import org.mozilla.fenix.pbmlock.NavigationOrigin
-import org.mozilla.fenix.pbmlock.observePrivateModeLock
 import org.mozilla.fenix.pbmlock.registerForVerification
 import org.mozilla.fenix.pbmlock.verifyUser
-import org.mozilla.fenix.settings.biometric.BiometricUtils
 import org.mozilla.fenix.settings.biometric.DefaultBiometricUtils
 import org.mozilla.fenix.settings.biometric.ext.isAuthenticatorAvailable
 import org.mozilla.fenix.settings.biometric.ext.isHardwareAvailable
@@ -255,6 +254,10 @@ class TabsTrayFragment : AppCompatDialogFragment() {
         tabsTrayComposeBinding.root
             .setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         tabsTrayComposeBinding.root.setContent {
+            val isPbmLocked by requireComponents.appStore.observeAsState(
+                initialValue = requireComponents.appStore.state.isPrivateScreenLocked,
+            ) { it.isPrivateScreenLocked }
+
             FirefoxTheme(theme = Theme.getTheme(allowPrivateTheme = false)) {
                 TabsTray(
                     tabsTrayStore = tabsTrayStore,
@@ -273,11 +276,11 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                     ),
                     shouldShowInactiveTabsAutoCloseDialog =
                         requireContext().settings()::shouldShowInactiveTabsAutoCloseDialog,
+                    isPbmLocked = isPbmLocked,
                     onTabPageClick = { page ->
                         onTabPageClick(
                             tabsTrayInteractor = tabsTrayInteractor,
                             page = page,
-                            isPrivateScreenLocked = requireComponents.appStore.state.isPrivateScreenLocked,
                         )
                     },
                     onTabClose = { tab ->
@@ -391,6 +394,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                         requireContext().settings().lastCfrShownTimeInMillis = System.currentTimeMillis()
                         TabsTray.inactiveTabsCfrDismissed.record(NoExtras())
                     },
+                    onUnlockPbmClick = { verifyUser(fallbackVerification = verificationResultLauncher) },
                 )
             }
         }
@@ -398,10 +402,15 @@ class TabsTrayFragment : AppCompatDialogFragment() {
         fabButtonComposeBinding.root
             .setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         fabButtonComposeBinding.root.setContent {
+            val isPbmLocked by requireComponents.appStore.observeAsState(
+                initialValue = requireComponents.appStore.state.isPrivateScreenLocked,
+            ) { it.isPrivateScreenLocked }
+
             FirefoxTheme(theme = Theme.getTheme(allowPrivateTheme = false)) {
                 TabsTrayFab(
                     tabsTrayStore = tabsTrayStore,
                     isSignedIn = requireContext().settings().signedInFxaAccount,
+                    isPbmLocked = isPbmLocked,
                     onNormalTabsFabClicked = tabsTrayInteractor::onNormalTabsFabClicked,
                     onPrivateTabsFabClicked = tabsTrayInteractor::onPrivateTabsFabClicked,
                     onSyncedTabsFabClicked = tabsTrayInteractor::onSyncedTabsFabClicked,
@@ -520,14 +529,6 @@ class TabsTrayFragment : AppCompatDialogFragment() {
 
         setFragmentResultListener(ShareFragment.RESULT_KEY) { _, _ ->
             dismissTabsTray()
-        }
-
-        observePrivateModeLock(lockNormalMode = true) {
-            if (tabsTrayStore.state.selectedPage == Page.PrivateTabs) {
-                findNavController().navigate(
-                    NavGraphDirections.actionGlobalUnlockPrivateTabsFragment(NavigationOrigin.TABS_TRAY),
-                )
-            }
         }
     }
 
@@ -699,7 +700,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
     ) {
         val messageResId = when {
             isNewCollection -> R.string.create_collection_tabs_saved_new_collection_2
-            tabSize == 1 -> R.string.create_collection_tab_saved
+            tabSize == 1 -> R.string.create_collection_tab_saved_2
             else -> return // Don't show snackbar for multiple tabs
         }
 
@@ -815,20 +816,10 @@ class TabsTrayFragment : AppCompatDialogFragment() {
 
     @VisibleForTesting
     internal fun onTabPageClick(
-        biometricUtils: BiometricUtils = DefaultBiometricUtils,
         tabsTrayInteractor: TabsTrayInteractor,
         page: Page,
-        isPrivateScreenLocked: Boolean,
     ) {
-        if (page == Page.PrivateTabs && isPrivateScreenLocked) {
-            verifyUser(
-                biometricUtils = biometricUtils,
-                fallbackVerification = verificationResultLauncher,
-                onVerified = ::openPrivateTabsPage,
-            )
-        } else {
-            tabsTrayInteractor.onTabPageClicked(page)
-        }
+        tabsTrayInteractor.onTabPageClicked(page)
     }
 
     private fun openPrivateTabsPage() {

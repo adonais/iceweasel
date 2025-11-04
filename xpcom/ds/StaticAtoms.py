@@ -246,6 +246,7 @@ STATIC_ATOMS = [
     Atom("classid", "classid"),
     Atom("clear", "clear"),
     Atom("click", "click"),
+    Atom("clickToPlay", "clickToPlay"),
     Atom("clickcount", "clickcount"),
     Atom("movetoclick", "movetoclick"),
     Atom("clip", "clip"),
@@ -289,6 +290,7 @@ STATIC_ATOMS = [
     Atom("context", "context"),
     Atom("contextmenu", "contextmenu"),
     Atom("control", "control"),
+    Atom("controlBar", "controlBar"),
     Atom("controls", "controls"),
     Atom("coords", "coords"),
     Atom("copy", "copy"),
@@ -2239,6 +2241,7 @@ STATIC_ATOMS = [
     Atom("ga", "ga"),
     # Atom("lt", "lt"),  # "lt" is present above (atom name "lt_")
     Atom("nl", "nl"),
+    # TODO(1788937): Remove with mathml.font-family-math.enabled
     # mathematical language, used for MathML
     Atom("x_math", "x-math"),
     # other languages mentioned in :lang() rules in UA style sheets
@@ -2280,6 +2283,7 @@ STATIC_ATOMS = [
     Atom("_moz_windows_mica", "-moz-windows-mica"),
     Atom("_moz_windows_mica_popups", "-moz-windows-mica-popups"),
     Atom("_moz_mac_big_sur_theme", "-moz-mac-big-sur-theme"),
+    Atom("_moz_mac_tahoe_theme", "-moz-mac-tahoe-theme"),
     Atom("_moz_mac_rtl", "-moz-mac-rtl"),
     Atom("_moz_mac_titlebar_height", "-moz-mac-titlebar-height"),
     Atom("_moz_platform", "-moz-platform"),
@@ -2437,6 +2441,7 @@ STATIC_ATOMS = [
     Atom("onsupportedkeyschange", "onsupportedkeyschange"),
     # Media query prefs for UA sheets.
     Atom("mathml_legacy_mathvariant_attribute_disabled", "mathml.legacy_mathvariant_attribute.disabled"),
+    Atom("mathml_font_family_math_enabled", "mathml.font_family_math.enabled"),
     Atom("layout_css_always_underline_links", "layout.css.always_underline_links"),
     Atom("layout_css_android_pip_enabled", "layout.css.android-pip.enabled"),
     Atom("layout_css_cached_scrollbar_styles_enabled", "layout.css.cached-scrollbar-styles.enabled"),

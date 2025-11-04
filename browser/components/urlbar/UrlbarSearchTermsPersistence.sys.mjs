@@ -4,7 +4,7 @@
 
 const lazy = {};
 
-import { UrlbarUtils } from "resource:///modules/UrlbarUtils.sys.mjs";
+import { UrlbarUtils } from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 ChromeUtils.defineESModuleGetters(lazy, {
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
@@ -17,9 +17,13 @@ ChromeUtils.defineESModuleGetters(lazy, {
 /**
  * @typedef {object} PersistedTermsProviderInfo
  * @property {string} providerId
+ *   The search engine provider id associated with the persisted terms.
  * @property {RegExp} [searchPageRegexp]
+ *   The regular expression for determining if the search page URL matches.
  * @property {{key: string, values: string[], canBeMissing: boolean}[]} includeParams
+ *   The parameters that should be included in determining if the search page URL matches.
  * @property {{key: string, values: string[]}[]} excludeParams
+ *   The parameters that should be excluded in determining if the search page URL matches.
  */
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>

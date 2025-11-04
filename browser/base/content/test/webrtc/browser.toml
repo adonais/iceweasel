@@ -43,6 +43,9 @@ https_first_disabled = true
 
 ["browser_devices_get_user_media_by_device_id.js"]
 https_first_disabled = true
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # bug 1985528
+]
 
 ["browser_devices_get_user_media_camera_preview.js"]
 

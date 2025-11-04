@@ -18,7 +18,7 @@
   max-width: 50em;
   margin: 4em auto;
   border: 1px solid var(--in-content-box-border-color);
-  border-radius: 10px;
+  border-radius: var(--border-radius-medium);
   padding: 3em;
   background-color: var(--background-color-box);
   text-align: center;

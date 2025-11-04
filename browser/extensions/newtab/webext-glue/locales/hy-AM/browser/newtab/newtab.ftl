@@ -320,6 +320,10 @@ newtab-custom-widget-lists-toggle =
 newtab-custom-widget-timer-toggle =
     .label = ժամաչափ
 newtab-custom-widget-section-title = Վիջեթներ
+# Tooltip for close button
+newtab-custom-close-menu-button =
+    .title = Փակել
+    .aria-label = Փակել ցանկը
 newtab-custom-close-button = Փակել
 newtab-custom-settings = Կառավարել լրացուցիչ կարգավորումները
 
@@ -329,6 +333,7 @@ newtab-wallpaper-title = Պաստառներ
 newtab-wallpaper-reset = Վերակայել սկզբնադիրը
 newtab-wallpaper-upload-image = Վերբեռնել պատկեր
 newtab-wallpaper-custom-color = Ընտրել գույն
+newtab-wallpaper-error-upload-file-type = Մենք չկարողացանք վերբեռնել ձեր ֆայլը։ Խնդրում ենք կրկին փորձել պատկերի ֆայլով։
 newtab-wallpaper-light-red-panda = Կարմիր պանդա
 newtab-wallpaper-light-mountain = Սպիտակ լեռ
 newtab-wallpaper-light-sky = Երկինք մանուշակագույն և վարդագույն ամպերով
@@ -373,6 +378,7 @@ newtab-wallpaper-abstract-orange = Նարնջագույն ձևեր
 newtab-wallpaper-gradient-orange = Գրադիենտ նարնջագույն և վարդագույն
 newtab-wallpaper-abstract-blue-purple = Կապույտ և մանուշակագույն ձևեր
 newtab-wallpaper-abstract-white-curves = Սպիտակ՝ ստվերագծված կորերով
+newtab-wallpaper-abstract-purple-green = Մանուշակագույն և կանաչ լույսի գրադիենտ
 
 ## Celestial
 
@@ -397,6 +403,19 @@ feature-highlight-dismiss-button =
 feature-highlight-wallpaper =
     .title = { -newtab-wallpaper-feature-highlight-header }
     .aria-label = { -newtab-wallpaper-feature-highlight-content }
+
+## Celestial
+
+# “Celestial” referring to astronomy; positioned in or relating to the sky,
+# or outer space as observed in astronomy.
+# Not to be confused with religious definition of the word.
+newtab-wallpaper-category-title-celestial = Երկնային
+newtab-wallpaper-celestial-lunar-eclipse = Լուսնի խավարում
+newtab-wallpaper-celestial-earth-night = Գիշերային լուսանկար Երկրի ցածր ուղեծրից
+newtab-wallpaper-celestial-starry-sky = Աստղազարդ երկինք
+newtab-wallpaper-celestial-eclipse-time-lapse = Լուսնի խավարման ժամանակի լապս
+newtab-wallpaper-celestial-black-hole = Սև խոռոչի գալակտիկայի նկարազարդում
+newtab-wallpaper-celestial-river = Գետի արբանյակային պատկեր
 
 ## New Tab Weather
 
@@ -498,8 +517,18 @@ newtab-section-mangage-topics-followed-topics = Հետևված
 newtab-section-mangage-topics-blocked-topics = Արգելափակված
 newtab-custom-wallpaper-cta = Փորձել
 
+## Strings for new user activation custom wallpaper highlight
+
+newtab-new-user-custom-wallpaper-cta = Փորձել հիմա
+
+## Strings for shortcuts highlight
+
+newtab-shortcuts-highlight-title = Ձեր սիրելիները՝ ձեր մատների ծայրերին
+
 ## Strings for reporting ads and content
 
+newtab-report-ads-reason-not-interested =
+    .label = Ես հետաքրքրված չեմ
 newtab-report-ads-reason-inappropriate =
     .label = Անպատշաճ է
 newtab-report-ads-reason-seen-it-too-many-times =
@@ -566,6 +595,9 @@ newtab-widget-lists-name-placeholder-new =
 ## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
 
 newtab-widget-timer-notification-title = ժամաչափ
+newtab-widget-timer-notification-warning = Ծանուցումներն անջատված են
+newtab-widget-timer-mode-focus =
+    .label = Կենտրոնացում
 newtab-widget-timer-mode-break =
     .label = Ընդմիջում
 newtab-widget-timer-play =
@@ -584,3 +616,6 @@ newtab-widget-timer-menu-hide = Թաքցնել ժամաչափը
 newtab-widget-timer-menu-learn-more = Իմանալ ավելին
 newtab-promo-card-title = Աջակցել { -brand-product-name }-ին
 newtab-promo-card-cta = Իմանալ ավելին
+newtab-promo-card-dismiss-button =
+    .title = Բաց թողնել
+    .aria-label = Բաց թողնել

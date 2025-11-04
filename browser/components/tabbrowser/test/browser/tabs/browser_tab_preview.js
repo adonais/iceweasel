@@ -109,8 +109,8 @@ async function resetState() {
     await hiddenEvent;
   }
 
-  let openPanels = getOpenPanels();
-  Assert.ok(!openPanels.length, `sanity check: no panels open`);
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
 }
 
 function createFakePanel(win = window) {
@@ -129,8 +129,6 @@ add_setup(async function () {
       ["browser.tabs.hoverPreview.enabled", true],
       ["browser.tabs.hoverPreview.showThumbnails", false],
       ["browser.tabs.tooltipsShowPidAndActiveness", false],
-      ["sidebar.revamp", false],
-      ["sidebar.verticalTabs", false],
       ["test.wait300msAfterTabSwitch", true],
       ["ui.tooltip.delay_ms", 0],
     ],
@@ -467,6 +465,7 @@ add_task(async function tabUrlBarInputTests() {
  * the tab strip is overflowing.
  */
 add_task(async function tabWheelTests() {
+  let initialTab = gBrowser.tabs[0];
   const previewPanel = document.getElementById(TAB_PREVIEW_PANEL_ID);
   const tab1 = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -482,7 +481,7 @@ add_task(async function tabWheelTests() {
     gBrowser.tabContainer.arrowScrollbox,
     "overflow"
   );
-  BrowserTestUtils.overflowTabs(registerCleanupFunction, window, {
+  await BrowserTestUtils.overflowTabs(registerCleanupFunction, window, {
     overflowAtStart: false,
   });
   await scrollOverflowEvent;
@@ -494,10 +493,8 @@ add_task(async function tabWheelTests() {
     "Panel has rolluponmousewheel=true when tabs overflow"
   );
 
-  // Clean up extra tabs
-  while (gBrowser.tabs.length > 1) {
-    BrowserTestUtils.removeTab(gBrowser.tabs[0]);
-  }
+  await closeTabPreviews();
+  gBrowser.removeAllTabsBut(initialTab);
   await resetState();
 });
 
@@ -521,6 +518,7 @@ add_task(async function tabContentChangeTests() {
   const tabUrl =
     "data:text/html,<html><head><title>Original Tab Title</title></head><body>Hello</body></html>";
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, tabUrl);
+  const newTitle = "New Tab Title";
 
   await openTabPreview(tab);
   Assert.equal(
@@ -529,18 +527,19 @@ add_task(async function tabContentChangeTests() {
     "Preview of tab shows original tab title"
   );
 
-  tab.setAttribute("label", "New Tab Title");
-
-  await BrowserTestUtils.waitForCondition(() => {
-    return (
-      previewPanel.querySelector(".tab-preview-title").innerText ===
-      "New Tab Title"
-    );
-  });
+  let tabRenameEvent = BrowserTestUtils.waitForEvent(tab, "TabAttrModified");
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [newTitle],
+    async newTitleInContentProcess => {
+      content.document.title = newTitleInContentProcess;
+    }
+  );
+  await tabRenameEvent;
 
   Assert.equal(
     previewPanel.querySelector(".tab-preview-title").innerText,
-    "New Tab Title",
+    newTitle,
     "Preview of tab shows new tab title"
   );
 
@@ -571,40 +570,41 @@ add_task(async function tabGroupPanelAppearsOnTabGroupHover() {
   const previewPanel = window.document.getElementById(
     TAB_GROUP_PREVIEW_PANEL_ID
   );
+  const panelContent = previewPanel.querySelector("#tabgroup-panel-content");
 
   Assert.equal(
-    previewPanel.children.length,
+    panelContent.children.length,
     2,
-    "Preview panel has one menuitem for each tab in the group"
+    "Preview panel has one toolbarbutton for each tab in the group"
   );
   Assert.equal(
-    previewPanel.children[0].tagName,
-    "menuitem",
-    "First child is a menuitem"
+    panelContent.children[0].tagName,
+    "toolbarbutton",
+    "First child is a toolbarbutton"
   );
   Assert.equal(
-    previewPanel.children[0].label,
+    panelContent.children[0].label,
     tab1.label,
     "First child has correct label"
   );
   Assert.equal(
-    previewPanel.children[0].getAttribute("tooltiptext"),
-    previewPanel.children[0].label,
+    panelContent.children[0].getAttribute("tooltiptext"),
+    panelContent.children[0].label,
     "First child has a tooltip that is identical to the label"
   );
   Assert.equal(
-    previewPanel.children[1].tagName,
-    "menuitem",
-    "Second child is a menuitem"
+    panelContent.children[1].tagName,
+    "toolbarbutton",
+    "Second child is a toolbarbutton"
   );
   Assert.equal(
-    previewPanel.children[1].label,
+    panelContent.children[1].label,
     tab2.label,
     "Second child has correct label"
   );
   Assert.equal(
-    previewPanel.children[1].getAttribute("tooltiptext"),
-    previewPanel.children[1].label,
+    panelContent.children[1].getAttribute("tooltiptext"),
+    panelContent.children[1].label,
     "Second child has a tooltip that is identical to the label"
   );
 
@@ -701,49 +701,43 @@ add_task(async function tabGroupPanelExpandDismissesPanel() {
   await resetState();
 });
 
-add_task(
-  {
-    skip_if: () => AppConstants.platform == "macosx", // bug1982893
-  },
-  async function tabGroupPanelClickElementSwitchesTabs() {
-    const tabs = [
-      BrowserTestUtils.addTab(gBrowser, "about:robots"),
-      BrowserTestUtils.addTab(gBrowser, "about:mozilla"),
-    ];
-    const group = gBrowser.addTabGroup(tabs);
-    group.collapsed = true;
+add_task(async function tabGroupPanelClickElementSwitchesTabs() {
+  const tabs = [
+    BrowserTestUtils.addTab(gBrowser, "about:robots"),
+    BrowserTestUtils.addTab(gBrowser, "about:mozilla"),
+  ];
+  const group = gBrowser.addTabGroup(tabs);
+  group.collapsed = true;
 
-    Assert.equal(
-      gBrowser.selectedTab,
-      gBrowser.tabs[0],
-      "Selected tab is first tab on tab strip before clicking the panel item"
-    );
+  Assert.equal(
+    gBrowser.selectedTab,
+    gBrowser.tabs[0],
+    "Selected tab is first tab on tab strip before clicking the panel item"
+  );
 
-    await openGroupPreview(group);
-    const previewPanel = window.document.getElementById(
-      TAB_GROUP_PREVIEW_PANEL_ID
-    );
+  await openGroupPreview(group);
+  const previewPanel = window.document.getElementById(
+    TAB_GROUP_PREVIEW_PANEL_ID
+  );
+  const panelContent = previewPanel.querySelector("#tabgroup-panel-content");
 
-    EventUtils.synthesizeMouseAtCenter(previewPanel.children[1], {}, window);
+  let tabSelectEvent = BrowserTestUtils.waitForEvent(group, "TabSelect");
+  panelContent.children[1].click();
+  await tabSelectEvent;
 
-    await BrowserTestUtils.waitForCondition(() => {
-      return gBrowser.selectedTab != gBrowser.tabs[0];
-    }, "Waiting for selected tab to change");
-    Assert.equal(previewPanel.state, "closed");
-    Assert.equal(
-      gBrowser.selectedTab,
-      gBrowser.tabs[2],
-      "Selected tab is second tab within the tab group after clicking panel item"
-    );
-    Assert.ok(
-      group.collapsed,
-      "Group is still in collapsed state even though it has the active tab"
-    );
+  Assert.equal(
+    gBrowser.selectedTab,
+    gBrowser.tabs[2],
+    "Selected tab is second tab within the tab group after clicking panel item"
+  );
+  Assert.ok(
+    group.collapsed,
+    "Group is still in collapsed state even though it has the active tab"
+  );
 
-    await removeTabGroup(group);
-    await resetState();
-  }
-);
+  await removeTabGroup(group);
+  await resetState();
+});
 
 // bug1983054: The panel moves correctly when moving between two adjacent tab groups
 add_task(async function moveBetweenTabGroupsTests() {
@@ -783,6 +777,145 @@ add_task(async function moveBetweenTabGroupsTests() {
 
   await removeTabGroup(group1);
   await removeTabGroup(group2);
+  await resetState();
+});
+
+add_task(async function tabGroupPanelUpdatesTests() {
+  const groupedTab = await addTabTo(gBrowser, "about:robots");
+  const group = gBrowser.addTabGroup([groupedTab]);
+  group.collapsed = true;
+
+  const previewPanel = window.document.getElementById(
+    TAB_GROUP_PREVIEW_PANEL_ID
+  );
+  const panelContent = previewPanel.querySelector("#tabgroup-panel-content");
+
+  await openGroupPreview(group);
+  Assert.equal(panelContent.children.length, 1, "Panel has one tab");
+  Assert.equal(
+    panelContent.children[0].tab,
+    groupedTab,
+    "toolbarbutton is associated with the correct tab"
+  );
+
+  info(
+    "Test that changes to the document title cause the panel tab's title to change"
+  );
+  let tabRenameEvent = BrowserTestUtils.waitForEvent(
+    groupedTab,
+    "TabAttrModified"
+  );
+  let newTitle = "Extremely cool and good website title";
+  await SpecialPowers.spawn(
+    groupedTab.linkedBrowser,
+    [newTitle],
+    async newTitleInContentProcess => {
+      content.document.title = newTitleInContentProcess;
+    }
+  );
+  await tabRenameEvent;
+  Assert.equal(
+    panelContent.children[0].label,
+    newTitle,
+    "Panel toolbarbutton has updated label"
+  );
+
+  info("Test that adding a tab to the group adds the tab to the group's panel");
+  let TabOpenEvent = BrowserTestUtils.waitForEvent(group, "TabOpen");
+  let newTab = await addTabTo(gBrowser, "about:robots", { tabGroup: group });
+  await TabOpenEvent;
+
+  Assert.equal(
+    panelContent.children.length,
+    2,
+    "Panel has two tabs after tab open"
+  );
+  Assert.equal(
+    panelContent.children[1].tab,
+    newTab,
+    "New toolbarbutton is associated with the new tab"
+  );
+
+  info(
+    "Test that closing a tab within the group removes the tab from the group's panel"
+  );
+  let TabCloseEvent = BrowserTestUtils.waitForEvent(group, "TabClose");
+  BrowserTestUtils.removeTab(newTab);
+  await TabCloseEvent;
+
+  Assert.equal(
+    panelContent.children.length,
+    1,
+    "Panel has one tab after tab close"
+  );
+  Assert.equal(
+    panelContent.children[0].tab,
+    groupedTab,
+    "toolbarbutton is associated with the original tab"
+  );
+
+  info(
+    "Test that moving a tab into the group adds the tab to the group's panel"
+  );
+  newTab = await addTabTo(gBrowser, "about:robots");
+
+  let tabGroupedEvent = BrowserTestUtils.waitForEvent(group, "TabGrouped");
+  gBrowser.moveTabToGroup(newTab, group);
+  await tabGroupedEvent;
+
+  Assert.equal(panelContent.children.length, 2, "Panel has two tabs");
+  Assert.equal(
+    panelContent.children[1].tab,
+    newTab,
+    "Newly grouped tab is associated with the second toolbarbutton"
+  );
+
+  info("Test that moving tabs within the group updates the panel");
+  let tabMoveEvent = BrowserTestUtils.waitForEvent(group, "TabMove");
+  let tabToMove = group.tabs[1];
+  gBrowser.moveTabTo(tabToMove, { tabIndex: tabToMove._tPos - 1 });
+  await tabMoveEvent;
+
+  Assert.equal(
+    panelContent.children[0].tab,
+    newTab,
+    "New tab has moved to first position in the preview panel"
+  );
+  Assert.equal(
+    panelContent.children[1].tab,
+    groupedTab,
+    "Original tab has moved to second position in the preview panel"
+  );
+
+  info(
+    "Test that selecting a tab within the tab group updates the active tab in the group's panel"
+  );
+  let tabToSelect = group.tabs[1];
+  let tabSelectEvent = BrowserTestUtils.waitForEvent(tabToSelect, "TabSelect");
+  gBrowser.selectedTab = tabToSelect;
+  await tabSelectEvent;
+
+  Assert.ok(
+    panelContent.children[1].classList.contains("active-tab"),
+    "Selected tab has the active tab class set"
+  );
+
+  info(
+    "Test that removing a tab from the group removes the tab from the group's panel"
+  );
+  let tabUngroupedEvent = BrowserTestUtils.waitForEvent(group, "TabUngrouped");
+  gBrowser.ungroupTab(newTab);
+  await tabUngroupedEvent;
+
+  Assert.equal(panelContent.children.length, 1, "Panel has one tab");
+  Assert.equal(
+    panelContent.children[0].tab,
+    groupedTab,
+    "Tab in the panel is the original tab"
+  );
+
+  BrowserTestUtils.removeTab(newTab);
+  await removeTabGroup(group);
   await resetState();
 });
 
@@ -903,7 +1036,7 @@ add_task(async function delayTests() {
     "Delay is not reset when moving between tabs"
   );
 
-  EventUtils.synthesizeMouseAtCenter(document.getElementById("reload-button"), {
+  EventUtils.synthesizeMouseAtCenter(document.getElementById("back-button"), {
     type: "mousemove",
   });
 
@@ -1477,4 +1610,52 @@ add_task(async function testTabAndTabGroupsWorkTogether() {
   BrowserTestUtils.removeTab(tabToLeft);
   BrowserTestUtils.removeTab(tabToRight);
   await removeTabGroup(group);
+});
+
+add_task(async function testTabGroupHoverPreviewTelemetry() {
+  const previewPanel = window.document.getElementById(
+    TAB_GROUP_PREVIEW_PANEL_ID
+  );
+  let tabGroups = [];
+
+  for (let i = 0; i < 5; i++) {
+    const tab = await addTabTo(gBrowser, `data:text/plain,tab${i + 1}`);
+    const tabGroup = gBrowser.addTabGroup([tab], { label: `group${i + 1}` });
+    await TabGroupTestUtils.toggleCollapsed(tabGroup, true);
+    tabGroups.push(tabGroup);
+  }
+
+  Assert.ok(
+    !Glean.tabgroup.groupInteractions.hover_preview.testGetValue(),
+    "hover preview interaction count should start out not set"
+  );
+
+  let interactionCount = 1;
+
+  for (const tabGroup of tabGroups) {
+    await openGroupPreview(tabGroup);
+    await BrowserTestUtils.waitForCondition(
+      () => previewPanel.anchorNode?.parentElement == tabGroup,
+      "panel re-anchored to the next tab group"
+    );
+    await BrowserTestUtils.waitForCondition(
+      () =>
+        Glean.tabgroup.groupInteractions.hover_preview.testGetValue() ==
+        interactionCount,
+      `hover preview interaction count incremented`
+    );
+    Assert.equal(
+      Glean.tabgroup.groupInteractions.hover_preview.testGetValue(),
+      interactionCount,
+      `hover preview interaction count should be ${interactionCount}`
+    );
+    interactionCount++;
+  }
+
+  await Promise.all(
+    tabGroups.map(tabGroup => TabGroupTestUtils.removeTabGroup(tabGroup))
+  );
+
+  TabGroupTestUtils.forgetSavedTabGroups();
+  await resetState();
 });

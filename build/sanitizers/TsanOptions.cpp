@@ -79,6 +79,7 @@ extern "C" MOZ_EXPORT const char* __tsan_default_suppressions() {
          "called_from_lib:libgvfscommon\n"
          "called_from_lib:libgvfsdbus\n"
          "called_from_lib:libibus-1\n"
+         "called_from_lib:libnvidia-egl-wayland\n"
          "called_from_lib:libnvidia-eglcore\n"
          "called_from_lib:libnvidia-glsi\n"
          "called_from_lib:libogg.so\n"

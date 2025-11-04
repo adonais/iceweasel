@@ -477,8 +477,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = ਫਾਹਰਨਹੀ�
 newtab-weather-menu-change-temperature-units-celsius = ਸੈਲਸੀਅ ਵਿੱਚ ਬਦਲੋ
 newtab-weather-menu-hide-weather = ਨਵੀਂ ਟੈਬ ਉੱਤੇ ਮੌਸਮ ਨੂੰ ਲੁਕਾਓ
 newtab-weather-menu-learn-more = ਹੋਰ ਜਾਣੋ
+newtab-weather-menu-detect-my-location = ਮੇਰੇ ਟਿਕਾਣੇ ਨੂੰ ਖੋਜੋ
 # This message is shown if user is working offline
 newtab-weather-error-not-available = ਮੌਸਮ ਦਾ ਡਾਟਾ ਹਾਲੇ ਮੌਜੂਦ ਨਹੀਂ ਹੈ।
+newtab-weather-opt-in-see-weather = ਕੀ ਤੁਸੀਂ ਆਪਣੇ ਟਿਕਾਣੇ ਲਈ ਮੌਸਮ ਵੇਖਣਾ ਚਾਹੋਗੇ?
+newtab-weather-opt-in-not-now =
+    .label = ਹੁਣੇ ਨਹੀਂ
+newtab-weather-opt-in-yes =
+    .label = ਹਾਂ
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = ਅੰਮ੍ਰਿਤਸਰ
 
 ## Topic Labels
 
@@ -645,6 +653,9 @@ newtab-widget-lists-input-menu-move-up = ਉੱਤੇ ਭੇਜੋ
 newtab-widget-lists-input-menu-move-down = ਹੇਠਾਂ ਭੇਜੋ
 newtab-widget-lists-input-menu-delete = ਹਟਾਓ
 newtab-widget-lists-input-menu-edit = ਸੋਧੋ
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + ਨਵੀਂ ਸੂਚੀ ਬਣਾਓ
 newtab-widget-lists-name-label-default =
     .label = ਕੰਮ ਸੂਚੀ
 newtab-widget-lists-name-placeholder-default =

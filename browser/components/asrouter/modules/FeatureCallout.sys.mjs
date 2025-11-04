@@ -481,10 +481,11 @@ export class FeatureCallout {
       case "popupshowing":
         // If another panel is showing, close the tour.
         if (
+          event.target.ownerGlobal === this.win &&
           event.target !== this._container &&
           event.target.localName === "panel" &&
           event.target.id !== "ctrlTab-panel" &&
-          event.target.ownerGlobal === this.win
+          event.target.getAttribute("noautohide") !== "true"
         ) {
           this.endTour();
         }

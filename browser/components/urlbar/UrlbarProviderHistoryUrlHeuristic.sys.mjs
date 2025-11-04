@@ -11,13 +11,13 @@
 import {
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
 });
 
 /**
@@ -109,17 +109,15 @@ export class UrlbarProviderHistoryUrlHeuristic extends UrlbarProvider {
       return null;
     }
 
-    return Object.assign(
-      new lazy.UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
-          url: [inputedURL, UrlbarUtils.HIGHLIGHT.TYPED],
-          title: [title, UrlbarUtils.HIGHLIGHT.NONE],
-          icon: UrlbarUtils.getIconForUrl(resultSet[0].getResultByName("url")),
-        })
-      ),
-      { heuristic: true }
-    );
+    return new lazy.UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      heuristic: true,
+      ...lazy.UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, {
+        url: [inputedURL, UrlbarUtils.HIGHLIGHT.TYPED],
+        title: [title, UrlbarUtils.HIGHLIGHT.NONE],
+        icon: UrlbarUtils.getIconForUrl(resultSet[0].getResultByName("url")),
+      }),
+    });
   }
 }

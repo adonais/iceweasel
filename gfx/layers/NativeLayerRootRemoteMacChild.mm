@@ -51,8 +51,8 @@ void NativeLayerRootRemoteMacChild::SetLayers(
     const nsTArray<RefPtr<NativeLayer>>& aLayers) {
   // We don't create a command for this, because we don't care
   // about the layers until CommitToScreen().
-  nsTArray<RefPtr<NativeLayer>> layers(aLayers.Length());
-  for (auto& layer : aLayers) {
+  nsTArray<RefPtr<NativeLayerRemoteMac>> layers(aLayers.Length());
+  for (const auto& layer : aLayers) {
     RefPtr<NativeLayerRemoteMac> layerRemoteMac =
         layer->AsNativeLayerRemoteMac();
     MOZ_ASSERT(layerRemoteMac);
@@ -65,8 +65,32 @@ void NativeLayerRootRemoteMacChild::SetLayers(
   }
 
   mNativeLayersChanged = true;
+  mNativeLayersChangedForSnapshot = true;
   mNativeLayers.Clear();
   mNativeLayers.AppendElements(layers);
+}
+
+UniquePtr<NativeLayerRootSnapshotter>
+NativeLayerRootRemoteMacChild::CreateSnapshotter() {
+#ifdef XP_MACOSX
+  MOZ_RELEASE_ASSERT(!mWeakSnapshotter,
+                     "No NativeLayerRootSnapshotter for this NativeLayerRoot "
+                     "should exist when this is called");
+  auto cr = NativeLayerRootSnapshotterCA::Create(
+      MakeUnique<SnapshotterDelegate>(this));
+  if (cr) {
+    mWeakSnapshotter = cr.get();
+  }
+  return cr;
+#else
+  return nullptr;
+#endif
+}
+
+void NativeLayerRootRemoteMacChild::OnNativeLayerRootSnapshotterDestroyed(
+    NativeLayerRootSnapshotterCA* aNativeLayerRootSnapshotter) {
+  MOZ_RELEASE_ASSERT(mWeakSnapshotter == aNativeLayerRootSnapshotter);
+  mWeakSnapshotter = nullptr;
 }
 
 void NativeLayerRootRemoteMacChild::PrepareForCommit() {
@@ -82,11 +106,8 @@ bool NativeLayerRootRemoteMacChild::CommitToScreen() {
 
   // Iterate our layers to get the LayerInfo and ChangedSurface commands
   // into our shared command queue.
-  for (auto layer : mNativeLayers) {
-    RefPtr<NativeLayerRemoteMac> layerRemoteMac(
-        layer->AsNativeLayerRemoteMac());
-    MOZ_ASSERT(layerRemoteMac);
-    layerRemoteMac->FlushDirtyLayerInfoToCommandQueue();
+  for (const auto& layer : mNativeLayers) {
+    layer->FlushDirtyLayerInfoToCommandQueue();
   }
 
   if (mNativeLayersChanged) {
@@ -94,7 +115,7 @@ bool NativeLayerRootRemoteMacChild::CommitToScreen() {
     // command of this array filled with the IDs of everything
     // in mNativeLayers.
     nsTArray<uint64_t> setLayerIDs;
-    for (auto layer : mNativeLayers) {
+    for (const auto& layer : mNativeLayers) {
       auto ID = reinterpret_cast<uint64_t>(layer.get());
       setLayerIDs.AppendElement(ID);
     }
@@ -111,8 +132,58 @@ bool NativeLayerRootRemoteMacChild::CommitToScreen() {
   if (!commands.IsEmpty()) {
     // Send all the queued commands, including the ones we just added.
     MOZ_ASSERT(mRemoteChild);
-    mRemoteChild->SendCommitNativeLayerCommands(commands);
+    mRemoteChild->SendCommitNativeLayerCommands(std::move(commands));
   }
+  return true;
+}
+
+void NativeLayerRootRemoteMacChild::WaitUntilCommitToScreenHasBeenProcessed() {
+  mRemoteChild->SendFlush();
+}
+
+void NativeLayerRootRemoteMacChild::CommitForSnapshot(CALayer* aRootCALayer) {
+  [CATransaction begin];
+  [CATransaction setDisableActions:YES];  // disable cross-fade
+
+  NSMutableArray<CALayer*>* sublayers =
+      [NSMutableArray arrayWithCapacity:mNativeLayers.Length()];
+  for (const auto& layer : mNativeLayers) {
+    layer->UpdateSnapshotLayer();
+    if (CALayer* caLayer = layer->CALayerForSnapshot()) {
+      [sublayers addObject:caLayer];
+    }
+  }
+
+  aRootCALayer.sublayers = sublayers;
+  [CATransaction commit];
+
+  mNativeLayersChangedForSnapshot = false;
+}
+
+bool NativeLayerRootRemoteMacChild::ReadbackPixelsFromParent(
+    const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat,
+    const Range<uint8_t>& aBuffer) {
+  // In this process we only have the pixels of the individual layers,
+  // but here we're asked to return the result of compositing all the
+  // layers together. Computing the composited result is currently
+  // only implemented in NativeLayerRootCA, which runs in the parent
+  // process, so we send a sync IPC message to the parent to ask for
+  // the composited result.
+  if (aFormat != gfx::SurfaceFormat::B8G8R8A8) {
+    return false;
+  }
+
+  ipc::Shmem pixels;
+  if (!mRemoteChild->SendRequestReadback(aSize, &pixels)) {
+    return false;
+  }
+
+  // Copy pixels into aBuffer.
+  // TODO: Figure out a more idiomatic way to do this.
+  auto byteCount = pixels.Size<uint8_t>();
+  MOZ_RELEASE_ASSERT(aBuffer.length() >= byteCount);
+  PodCopy(aBuffer.begin().get(), pixels.get<uint8_t>(), byteCount);
+
   return true;
 }
 
@@ -121,6 +192,12 @@ NativeLayerRootRemoteMacChild::NativeLayerRootRemoteMacChild()
       mCommandQueue(MakeRefPtr<NativeLayerCommandQueue>()) {}
 
 NativeLayerRootRemoteMacChild::~NativeLayerRootRemoteMacChild() {}
+
+NativeLayerRootRemoteMacChild::SnapshotterDelegate::SnapshotterDelegate(
+    NativeLayerRootRemoteMacChild* aLayerRoot)
+    : mLayerRoot(aLayerRoot) {}
+NativeLayerRootRemoteMacChild::SnapshotterDelegate::~SnapshotterDelegate() =
+    default;
 
 }  // namespace layers
 }  // namespace mozilla

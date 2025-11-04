@@ -278,6 +278,7 @@ export const presets = {
       "samplingallthreads",
       "stackwalk",
       "unregisteredthreads",
+      "flows",
     ],
     threads: ["*"],
     duration: 0,

@@ -311,8 +311,6 @@
   <string name="bookmark_menu_open_in_private_tab_button">Oscail i gcluaisín príobháideach</string>
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Scrios</string>
-  <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Sábháil</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -322,24 +320,16 @@
   <string name="edit_bookmark_fragment_title">Cuir an leabharmharc in eagar</string>
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Cuir an fillteán in eagar</string>
-  <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Logáil isteach chun leabharmharcanna sioncronaithe a fheiceáil</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">URL</string>
   <!-- Bookmark FOLDER editing field label -->
   <string name="bookmark_folder_label">FILLTEÁN</string>
   <!-- Bookmark NAME editing field label -->
   <string name="bookmark_name_label">AINM</string>
-  <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Fillteán nua</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Roghnaigh fillteán</string>
-  <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Ní mór teideal a bheith ann</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">URL neamhbhailí</string>
-  <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Níl aon leabharmharc anseo</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
@@ -483,10 +473,8 @@
   <!--
     Snackbar
 
-    Text shown in snackbar when user deletes a collection
+    Text shown in snackbar when user closes a tab
   -->
-  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Scriosadh an bailiúchán</string>
-  <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Dúnadh an cluaisín</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">Dúnadh na cluaisíní</string>
@@ -507,8 +495,6 @@
   <string name="qr_scanner_dialog_negative">DIÚLTAIGH</string>
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">An bhfuil tú cinnte gur mhaith leat %1$s a scriosadh?</string>
-  <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Scrios</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Is téacs samplach é seo. Feicfidh tú an chuma atá air tar éis duit an chlómhéid a athrú leis an socrú seo.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -735,8 +721,6 @@
   <string name="confirm_clear_permission_site">An bhfuil tú cinnte gur mhaith leat an cead seo a ghlanadh ar an suíomh seo?</string>
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Gan eisceachtaí suímh</string>
-  <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">An bhfuil tú cinnte gur mhaith leat an leabharmharc seo a scriosadh?</string>
   <!--
     text shown before the issuer name to indicate who its verified by, %1$s is the name of
     the certificate authority that verified the ticket

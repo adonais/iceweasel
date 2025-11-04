@@ -393,7 +393,7 @@ async function hitKey(browser, char) {
 async function write(browser, text) {
   info(`Write: ${text}`);
   for (const char of text.split("")) {
-    hitKey(browser, char);
+    await hitKey(browser, char);
   }
 }
 

@@ -248,7 +248,7 @@ skip-if = [
 support-files = ["!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js"]
 skip-if = [
   "os == 'android'",
-  "display == 'wayland' && os_version == '22.04'", # Bug 1857078
+  "os == 'linux' && os_version == '22.04' && display == 'wayland'", # Bug 1857078
 ]
 
 ["test_scroll_position_iframe.html"]
@@ -256,7 +256,7 @@ support-files = ["file_scroll_position_iframe.html"]
 
 ["test_scroll_position_restore.html"]
 support-files = ["file_scroll_position_restore.html"]
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857246
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857246
 
 ["test_scroll_position_restore_after_stop.html"]
 skip-if = ["os == 'android'"]

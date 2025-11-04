@@ -191,6 +191,9 @@ add_task(async function test_plaintext() {
     true,
     "---",
     null,
+    ...askChatMenu,
+    "---",
+    null,
     "context-viewsource",
     true,
   ]);
@@ -377,6 +380,8 @@ add_task(async function test_linkpreviewcommand_not_on_text() {
       "---",
       null,
       ...askChatMenu,
+      "---",
+      null,
       "context-viewsource",
       true,
     ],
@@ -468,6 +473,11 @@ add_task(async function test_image() {
         ...getTextRecognitionItems(),
         ...(Services.prefs.getBoolPref("browser.menu.showViewImageInfo", false)
           ? ["context-viewimageinfo", true]
+          : []),
+        ...// The visual-search menu item is not shown on SVGs.
+        (selector != "#test-svg-image" &&
+        Services.prefs.getBoolPref("browser.search.visualSearch.featureGate")
+          ? ["context-visual-search", true]
           : []),
         "---",
         null,
@@ -1306,6 +1316,9 @@ add_task(async function test_image_in_iframe() {
       ...(Services.prefs.getBoolPref("browser.menu.showViewImageInfo", false)
         ? ["context-viewimageinfo", true]
         : []),
+      ...(Services.prefs.getBoolPref("browser.search.visualSearch.featureGate")
+        ? ["context-visual-search", true]
+        : []),
       "---",
       null,
       "context-setDesktopBackground",
@@ -1603,6 +1616,8 @@ add_task(async function test_dom_full_screen() {
     "---",
     null,
     ...askChatMenu,
+    "---",
+    null,
     "context-viewsource",
     true,
   ]);
@@ -1698,6 +1713,8 @@ add_task(async function test_pagemenu2() {
       "---",
       null,
       ...askChatMenu,
+      "---",
+      null,
       "context-viewsource",
       true,
     ],
@@ -1916,6 +1933,9 @@ add_task(async function test_imagelink() {
       ...(Services.prefs.getBoolPref("browser.menu.showViewImageInfo", false)
         ? ["context-viewimageinfo", true]
         : []),
+      ...(Services.prefs.getBoolPref("browser.search.visualSearch.featureGate")
+        ? ["context-visual-search", true]
+        : []),
       "---",
       null,
       "context-setDesktopBackground",
@@ -2028,6 +2048,9 @@ add_task(async function test_longdesc() {
         : []),
       "context-viewimagedesc",
       true,
+      ...(Services.prefs.getBoolPref("browser.search.visualSearch.featureGate")
+        ? ["context-visual-search", true]
+        : []),
       "---",
       null,
       "context-setDesktopBackground",
@@ -2363,6 +2386,8 @@ add_task(async function test_background_image() {
     "---",
     null,
     ...askChatMenu,
+    "---",
+    null,
     "context-viewsource",
     true,
   ];

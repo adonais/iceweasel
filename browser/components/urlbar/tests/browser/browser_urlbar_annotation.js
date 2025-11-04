@@ -75,13 +75,13 @@ async function assertDatabase({ targetURL, expected }) {
 function registerProvider(payload) {
   const provider = new UrlbarTestUtils.TestProvider({
     results: [
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.SEARCH,
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
         ...UrlbarResult.payloadAndSimpleHighlights([], {
           ...payload,
-        })
-      ),
+        }),
+      }),
     ],
     priority: Infinity,
   });

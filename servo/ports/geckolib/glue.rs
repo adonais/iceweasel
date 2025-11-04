@@ -109,6 +109,7 @@ use style::invalidation::stylesheets::RuleChangeKind;
 use style::logical_geometry::{PhysicalAxis, PhysicalSide};
 use style::media_queries::MediaList;
 use style::parser::{Parse, ParserContext};
+use style::properties::declaration_block::PropertyTypedValue;
 #[cfg(feature = "gecko_debug")]
 use style::properties::LonghandIdSet;
 use style::properties::{
@@ -171,9 +172,10 @@ use style::values::resolved;
 use style::values::specified::intersection_observer::IntersectionObserverMargin;
 use style::values::specified::source_size_list::SourceSizeList;
 use style::values::specified::svg_path::PathCommand;
+use style::values::specified::position::DashedIdentAndOrTryTactic;
 use style::values::specified::{AbsoluteLength, NoCalcLength};
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
-use style_traits::{CssWriter, ParseError, ParsingMode, ToCss};
+use style_traits::{CssWriter, ParseError, ParsingMode, ToCss, TypedValue};
 use thin_vec::ThinVec as nsTArray;
 use to_shmem::SharedMemoryBuilder;
 
@@ -1521,7 +1523,7 @@ pub extern "C" fn Servo_Element_GetMaybeOutOfDatePseudoStyle(
 #[cfg(debug_assertions)]
 unsafe fn borrow_assert_main_thread<T>(
     cell: &atomic_refcell::AtomicRefCell<T>,
-) -> atomic_refcell::AtomicRef<T> {
+) -> atomic_refcell::AtomicRef<'_, T> {
     debug_assert!(is_main_thread());
     cell.borrow()
 }
@@ -4382,6 +4384,27 @@ pub unsafe extern "C" fn Servo_ComputedValues_GetForPageContent(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn Servo_ComputedValues_GetForPositionTry(
+    raw_data: &PerDocumentStyleData,
+    style: &ComputedValues,
+    element: &RawGeckoElement,
+    name_and_try_tactic: &DashedIdentAndOrTryTactic,
+) -> Strong<ComputedValues> {
+    let global_style_data = &*GLOBAL_STYLE_DATA;
+    let guard = global_style_data.shared_lock.read();
+    let guards = StylesheetGuards::same(&guard);
+    let element = GeckoElement(element);
+    let data = raw_data.borrow();
+    data.stylist.resolve_position_try(
+        style,
+        &guards,
+        element,
+        name_and_try_tactic
+    )
+    .into()
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn Servo_ComputedValues_GetForAnonymousBox(
     parent_style_or_null: Option<&ComputedValues>,
     pseudo: PseudoStyleType,
@@ -4712,6 +4735,7 @@ pub enum MatchingDeclarationBlockOrigin {
     User,
     Author,
     PresHints,
+    PositionFallback,
     Animations,
     Transitions,
     SMIL,
@@ -4757,6 +4781,7 @@ pub extern "C" fn Servo_ComputedValues_GetMatchingDeclarations(
             CascadeLevel::AuthorNormal { .. } | CascadeLevel::AuthorImportant { .. } => {
                 MatchingDeclarationBlockOrigin::Author
             },
+            CascadeLevel::PositionFallback => MatchingDeclarationBlockOrigin::PositionFallback,
             CascadeLevel::PresHints => MatchingDeclarationBlockOrigin::PresHints,
             CascadeLevel::Animations => MatchingDeclarationBlockOrigin::Animations,
             CascadeLevel::Transitions => MatchingDeclarationBlockOrigin::Transitions,
@@ -5298,6 +5323,60 @@ pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyIsImportant(
     read_locked_arc(declarations, |decls: &PropertyDeclarationBlock| {
         decls.property_priority(&property_id).important()
     })
+}
+
+/// A FFI-friendly counterpart to [`PropertyTypedValue`].
+///
+/// This type is returned across the Rust <-> C++ boundary. It mirrors
+/// [`PropertyTypedValue`], but with one important difference:
+///
+/// * Internally, [`PropertyTypedValue::Unsupported`] is just a marker.
+/// * Here, `PropertyTypedValueResult::Unsupported` carries a
+///   `Strong<LockedDeclarationBlock>`.
+/// This is mostly because `cbindgen` currently cannot generate right bindings
+/// for `Arc<Locked<PropertyDeclarationBlock>>` inside the Rust enum.
+#[repr(C)]
+pub enum PropertyTypedValueResult {
+    /// The property is not present in the declaration block.
+    None,
+
+    /// The property exists but cannot be expressed as a `TypedValue`.
+    ///
+    /// Used for shorthands and other unrepresentable cases. In this case, the
+    /// full declaration block is returned so that a corresponding
+    /// `CSSUnsupportedValue` object can be created and tied to the property.
+    Unsupported(Strong<LockedDeclarationBlock>),
+
+    /// The property was successfully reified into a `TypedValue`.
+    Typed(TypedValue),
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Servo_DeclarationBlock_GetPropertyTypedValue(
+    declarations: &LockedDeclarationBlock,
+    property: &nsACString,
+    result: *mut PropertyTypedValueResult,
+) -> bool {
+    let property_id = get_property_id_from_property!(property, false);
+
+    *result = read_locked_arc(declarations, |decls: &PropertyDeclarationBlock| {
+        let property_typed_value = decls.property_value_to_typed(&property_id);
+
+        match property_typed_value {
+            PropertyTypedValue::None => PropertyTypedValueResult::None,
+
+            PropertyTypedValue::Unsupported => {
+                let global_style_data = &*GLOBAL_STYLE_DATA;
+                PropertyTypedValueResult::Unsupported(
+                    Arc::new(global_style_data.shared_lock.wrap(decls.clone())).into(),
+                )
+            },
+
+            PropertyTypedValue::Typed(typed_value) => PropertyTypedValueResult::Typed(typed_value),
+        }
+    });
+
+    true
 }
 
 #[inline(always)]
@@ -6765,6 +6844,7 @@ pub extern "C" fn Servo_ReparentStyle(
             Some(parent_style),
             Some(layout_parent_style),
             FirstLineReparenting::Yes { style_to_reparent },
+            /* try_tactic = */ Default::default(),
             /* rule_cache = */ None,
             &mut RuleCacheConditions::default(),
         )
@@ -7201,7 +7281,7 @@ pub unsafe extern "C" fn Servo_StyleSet_GetKeyframesForName(
     let data = raw_data.borrow();
     let name = Atom::from_raw(name);
 
-    let animation = match data.stylist.get_animation(&name, element) {
+    let animation = match data.stylist.lookup_keyframes(&name, element) {
         Some(animation) => animation,
         None => return false,
     };
@@ -8322,6 +8402,63 @@ pub unsafe extern "C" fn Servo_GetResolvedValue(
     };
 
     computed_or_resolved_value(style, prop, Some(&context), value)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Servo_GetComputedTypedValue(
+    style: &ComputedValues,
+    property: &nsACString,
+    result: *mut PropertyTypedValueResult,
+) -> bool {
+    let property_id = get_property_id_from_property!(property, false);
+
+    let non_custom_property_id = match property_id.non_custom_id() {
+        Some(id) => id,
+        // XXX Handle custom properties here. Tracked in bug 1990426.
+        None => return false,
+    };
+
+    let property_typed_value = match non_custom_property_id.longhand_or_shorthand() {
+        Ok(longhand) => style
+            .computed_typed_value(longhand)
+            .map_or(PropertyTypedValue::Unsupported, PropertyTypedValue::Typed),
+        Err(_) => PropertyTypedValue::Unsupported,
+    };
+
+    *result = match property_typed_value {
+        PropertyTypedValue::None => PropertyTypedValueResult::None,
+
+        PropertyTypedValue::Unsupported => {
+            let global_style_data = &*GLOBAL_STYLE_DATA;
+
+            let mut block = PropertyDeclarationBlock::new();
+
+            match non_custom_property_id.longhand_or_shorthand() {
+                Ok(longhand) => {
+                    block.push(
+                        style.computed_or_resolved_declaration(longhand, None),
+                        Importance::Normal,
+                    );
+                },
+                Err(shorthand) => {
+                    for longhand in shorthand.longhands() {
+                        block.push(
+                            style.computed_or_resolved_declaration(longhand, None),
+                            Importance::Normal,
+                        );
+                    }
+                },
+            };
+
+            PropertyTypedValueResult::Unsupported(
+                Arc::new(global_style_data.shared_lock.wrap(block)).into(),
+            )
+        },
+
+        PropertyTypedValue::Typed(typed_value) => PropertyTypedValueResult::Typed(typed_value),
+    };
+
+    true
 }
 
 #[no_mangle]
@@ -9824,7 +9961,7 @@ impl PropDef {
                 .to_css(&mut CssWriter::new(&mut syntax))
                 .unwrap();
         };
-        let initial_value = property_registration.data.initial_value.to_css_nscstring();
+        let initial_value = property_registration.data.initial_value.to_css_cssstring();
         PropDef {
             name,
             syntax,
@@ -10567,7 +10704,8 @@ fn offset_params_from_base_params(
         mBaseParams: AnchorPosResolutionParams {
             mFrame: params.mFrame,
             mPosition: params.mPosition,
-            mReferencedAnchors: params.mReferencedAnchors,
+            mPositionArea: params.mPositionArea,
+            mAnchorPosReferenceData: params.mAnchorPosReferenceData,
         },
     }
 }

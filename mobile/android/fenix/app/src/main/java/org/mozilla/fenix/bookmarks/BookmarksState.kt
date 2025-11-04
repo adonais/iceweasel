@@ -212,6 +212,7 @@ internal fun BookmarksSnackbarState.addGuidsToDelete(guids: List<String>) = when
 internal data class BookmarksEditBookmarkState(
     val bookmark: BookmarkItem.Bookmark,
     val folder: BookmarkItem.Folder,
+    val edited: Boolean = false,
 )
 
 internal data class BookmarksAddFolderState(

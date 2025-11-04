@@ -2148,10 +2148,9 @@ PeerConnectionWrapper.prototype = {
       "Have at least " + nin + " inbound-rtp stat(s) *"
     );
 
-    is(
-      counters["outbound-rtp"] || 0,
-      nout,
-      "Have " + nout + " outbound-rtp stat(s)"
+    ok(
+      (counters["outbound-rtp"] || 0) >= nout,
+      "Have at least" + nout + " outbound-rtp stat(s)"
     );
 
     var numLocalCandidates = counters["local-candidate"] || 0;

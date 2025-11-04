@@ -38,7 +38,7 @@ add_task(async function click() {
   await doTest(async () => {
     await openPopup("stock");
     let { element } = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
-    let target = element.row.querySelector(".urlbarView-market-item");
+    let target = element.row.querySelector(".urlbarView-realtime-item");
     let onLocationChange = BrowserTestUtils.waitForLocationChange(gBrowser);
     EventUtils.synthesizeMouseAtCenter(target, {});
     await onLocationChange;

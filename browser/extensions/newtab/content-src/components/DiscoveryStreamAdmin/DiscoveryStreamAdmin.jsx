@@ -4,8 +4,7 @@
 
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import { connect } from "react-redux";
-import React from "react";
-import { SimpleHashRouter } from "./SimpleHashRouter";
+import React, { useEffect } from "react";
 
 // Pref Constants
 const PREF_AD_SIZE_MEDIUM_RECTANGLE = "newtabAdSize.mediumRectangle";
@@ -831,77 +830,44 @@ export class DiscoveryStreamAdminInner extends React.PureComponent {
   }
 }
 
-export class CollapseToggle extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    this.onCollapseToggle = this.onCollapseToggle.bind(this);
-    this.state = { collapsed: false };
-  }
+export function CollapseToggle(props) {
+  const { devtoolsCollapsed } = props;
+  const label = `${devtoolsCollapsed ? "Expand" : "Collapse"} devtools`;
 
-  get renderAdmin() {
-    const { props } = this;
-    return props.location.hash && props.location.hash.startsWith("#devtools");
-  }
-
-  onCollapseToggle(e) {
-    e.preventDefault();
-    this.setState(state => ({ collapsed: !state.collapsed }));
-  }
-
-  setBodyClass() {
-    if (this.renderAdmin && !this.state.collapsed) {
-      globalThis.document.body.classList.add("no-scroll");
-    } else {
+  useEffect(() => {
+    // Set or remove body class depending on devtoolsCollapsed state
+    if (devtoolsCollapsed) {
       globalThis.document.body.classList.remove("no-scroll");
+    } else {
+      globalThis.document.body.classList.add("no-scroll");
     }
-  }
 
-  componentDidMount() {
-    this.setBodyClass();
-  }
+    // Cleanup on unmount
+    return () => {
+      globalThis.document.body.classList.remove("no-scroll");
+    };
+  }, [devtoolsCollapsed]);
 
-  componentDidUpdate() {
-    this.setBodyClass();
-  }
-
-  componentWillUnmount() {
-    globalThis.document.body.classList.remove("no-scroll");
-  }
-
-  render() {
-    const { props } = this;
-    const { renderAdmin } = this;
-    const isCollapsed = this.state.collapsed || !renderAdmin;
-    const label = `${isCollapsed ? "Expand" : "Collapse"} devtools`;
-    return (
-      <React.Fragment>
-        <a
-          href="#devtools"
-          title={label}
-          aria-label={label}
-          className={`discoverystream-admin-toggle ${
-            isCollapsed ? "collapsed" : "expanded"
-          }`}
-          onClick={this.renderAdmin ? this.onCollapseToggle : null}
-        >
-          <span className="icon icon-devtools" />
-        </a>
-        {renderAdmin ? (
-          <DiscoveryStreamAdminInner
-            {...props}
-            collapsed={this.state.collapsed}
-          />
-        ) : null}
-      </React.Fragment>
-    );
-  }
+  return (
+    <>
+      <a
+        href={devtoolsCollapsed ? "#devtools" : "#"}
+        title={label}
+        aria-label={label}
+        className={`discoverystream-admin-toggle ${
+          devtoolsCollapsed ? "expanded" : "collapsed"
+        }`}
+      >
+        <span className="icon icon-devtools" />
+      </a>
+      {!devtoolsCollapsed ? (
+        <DiscoveryStreamAdminInner {...props} collapsed={devtoolsCollapsed} />
+      ) : null}
+    </>
+  );
 }
 
-const _DiscoveryStreamAdmin = props => (
-  <SimpleHashRouter>
-    <CollapseToggle {...props} />
-  </SimpleHashRouter>
-);
+const _DiscoveryStreamAdmin = props => <CollapseToggle {...props} />;
 
 export const DiscoveryStreamAdmin = connect(state => ({
   Sections: state.Sections,

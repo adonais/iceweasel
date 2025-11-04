@@ -176,9 +176,13 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   void emitApplyGeneric(T* apply);
   template <typename T>
   void emitCallInvokeFunction(T* apply);
-  void emitAllocateSpaceForApply(Register argcreg, Register scratch);
+  template <typename T>
+  void emitAllocateSpaceForApply(T* apply, Register calleeReg, Register argcreg,
+                                 Register scratch);
+  template <typename T>
   void emitAllocateSpaceForConstructAndPushNewTarget(
-      Register argcreg, Register newTargetAndScratch);
+      T* apply, Register calleeReg, Register argcreg,
+      Register newTargetAndScratch);
   void emitCopyValuesForApply(Register argvSrcBase, Register argvIndex,
                               Register copyreg, size_t argvSrcOffset,
                               size_t argvDstOffset);

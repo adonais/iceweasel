@@ -4,11 +4,11 @@
 "use strict";
 
 add_task(async function test_filtering_disable_only_source() {
-  let match = new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-    UrlbarUtils.RESULT_SOURCE.TABS,
-    { url: "http://mozilla.org/foo/" }
-  );
+  let match = new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    source: UrlbarUtils.RESULT_SOURCE.TABS,
+    payload: { url: "http://mozilla.org/foo/" },
+  });
   let provider = registerBasicTestProvider([match]);
   let context = createContext(undefined, { providers: [provider.name] });
   let controller = UrlbarTestUtils.newMockController();
@@ -27,16 +27,16 @@ add_task(async function test_filtering_disable_only_source() {
 
 add_task(async function test_filtering_disable_one_source() {
   let matches = [
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      UrlbarUtils.RESULT_SOURCE.TABS,
-      { url: "http://mozilla.org/foo/" }
-    ),
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
-      { url: "http://mozilla.org/foo/" }
-    ),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      payload: { url: "http://mozilla.org/foo/" },
+    }),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      payload: { url: "http://mozilla.org/foo/" },
+    }),
   ];
   let provider = registerBasicTestProvider(matches);
   let context = createContext(undefined, { providers: [provider.name] });
@@ -57,16 +57,16 @@ add_task(async function test_filtering_disable_one_source() {
 
 add_task(async function test_filtering_restriction_token() {
   let matches = [
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      UrlbarUtils.RESULT_SOURCE.TABS,
-      { url: "http://mozilla.org/foo/" }
-    ),
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
-      { url: "http://mozilla.org/foo/" }
-    ),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      payload: { url: "http://mozilla.org/foo/" },
+    }),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      payload: { url: "http://mozilla.org/foo/" },
+    }),
   ];
   let provider = registerBasicTestProvider(matches);
   let context = createContext(`foo ${UrlbarTokenizer.RESTRICT.OPENPAGE}`, {
@@ -86,16 +86,16 @@ add_task(async function test_filtering_restriction_token() {
 });
 
 add_task(async function test_filter_javascript() {
-  let match = new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-    UrlbarUtils.RESULT_SOURCE.TABS,
-    { url: "http://mozilla.org/foo/" }
-  );
-  let jsMatch = new UrlbarResult(
-    UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-    UrlbarUtils.RESULT_SOURCE.HISTORY,
-    { url: "javascript:foo" }
-  );
+  let match = new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    source: UrlbarUtils.RESULT_SOURCE.TABS,
+    payload: { url: "http://mozilla.org/foo/" },
+  });
+  let jsMatch = new UrlbarResult({
+    type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+    source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+    payload: { url: "javascript:foo" },
+  });
   let provider = registerBasicTestProvider([match, jsMatch]);
   let context = createContext(undefined, { providers: [provider.name] });
   let controller = UrlbarTestUtils.newMockController();
@@ -128,25 +128,25 @@ add_task(async function test_filter_javascript() {
 
 add_task(async function test_filter_isActive() {
   let goodMatches = [
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      UrlbarUtils.RESULT_SOURCE.TABS,
-      { url: "http://mozilla.org/foo/" }
-    ),
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.URL,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
-      { url: "http://mozilla.org/foo/" }
-    ),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      payload: { url: "http://mozilla.org/foo/" },
+    }),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      payload: { url: "http://mozilla.org/foo/" },
+    }),
   ];
   let provider = registerBasicTestProvider(goodMatches);
 
   let badMatches = [
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.URL,
-      UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
-      { url: "http://mozilla.org/foo/" }
-    ),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      payload: { url: "http://mozilla.org/foo/" },
+    }),
   ];
   /**
    * A test provider that should not be invoked.
@@ -230,18 +230,18 @@ add_task(async function test_nofilter_heuristic() {
   // it will still be invoked if it's of type heuristic, and only the heuristic
   // result is returned.
   let matches = [
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      UrlbarUtils.RESULT_SOURCE.TABS,
-      { url: "http://mozilla.org/foo/" }
-    ),
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      UrlbarUtils.RESULT_SOURCE.TABS,
-      { url: "http://mozilla.org/foo2/" }
-    ),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      heuristic: true,
+      payload: { url: "http://mozilla.org/foo/" },
+    }),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      payload: { url: "http://mozilla.org/foo2/" },
+    }),
   ];
-  matches[0].heuristic = true;
   let provider = registerBasicTestProvider(
     matches,
     undefined,
@@ -274,26 +274,26 @@ add_task(async function test_nofilter_restrict() {
   // Checks that even if a pref is disabled, we still return results on a
   // restriction token.
   let matches = [
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-      UrlbarUtils.RESULT_SOURCE.TABS,
-      { url: "http://mozilla.org/foo_tab/" }
-    ),
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.URL,
-      UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
-      { url: "http://mozilla.org/foo_bookmark/" }
-    ),
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.URL,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
-      { url: "http://mozilla.org/foo_history/" }
-    ),
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.SEARCH,
-      UrlbarUtils.RESULT_SOURCE.SEARCH,
-      { engine: "noengine" }
-    ),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+      source: UrlbarUtils.RESULT_SOURCE.TABS,
+      payload: { url: "http://mozilla.org/foo_tab/" },
+    }),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      source: UrlbarUtils.RESULT_SOURCE.BOOKMARKS,
+      payload: { url: "http://mozilla.org/foo_bookmark/" },
+    }),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      payload: { url: "http://mozilla.org/foo_history/" },
+    }),
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.SEARCH,
+      source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+      payload: { engine: "noengine" },
+    }),
   ];
 
   /**

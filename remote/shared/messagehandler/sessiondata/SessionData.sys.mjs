@@ -225,6 +225,63 @@ export class SessionData {
   }
 
   /**
+   * Generate session data item update (remove existing items and add new)
+   * for a given module, category, contextDescriptor and new value.
+   *
+   * @param {string} moduleName
+   *     The name of the module.
+   * @param {string} category
+   *     The session data category.
+   * @param {ContextDescriptor=} contextDescriptor
+   *     The context descriptor.
+   * @param {boolean} onlyRemove
+   *     If it's set to "true" do not add a new session data item.
+   * @param {(string|number|boolean)} newValue
+   *     The new value of the session data item.
+   *
+   * @returns {Array<SessionDataItemUpdate>} sessionDataItemUpdates
+   *     Array of session data item updates.
+   */
+  generateSessionDataItemUpdate(
+    moduleName,
+    category,
+    contextDescriptor,
+    onlyRemove,
+    newValue
+  ) {
+    const sessionDataUpdate = [];
+    const sessionData = this.getSessionData(
+      moduleName,
+      category,
+      contextDescriptor
+    );
+
+    if (sessionData.length) {
+      for (const item of sessionData) {
+        sessionDataUpdate.push({
+          category,
+          moduleName,
+          values: [item.value],
+          contextDescriptor,
+          method: SessionDataMethod.Remove,
+        });
+      }
+    }
+
+    if (!onlyRemove) {
+      sessionDataUpdate.push({
+        category,
+        moduleName,
+        values: [newValue],
+        contextDescriptor,
+        method: SessionDataMethod.Add,
+      });
+    }
+
+    return sessionDataUpdate;
+  }
+
+  /**
    * Retrieve the SessionDataItems for a given module and type.
    *
    * @param {string} moduleName
@@ -240,6 +297,32 @@ export class SessionData {
   getSessionData(moduleName, category, contextDescriptor) {
     return this.#data.filter(item =>
       this.#matchItem(item, moduleName, category, contextDescriptor)
+    );
+  }
+
+  /**
+   * Retrieve the SessionDataItems for a given module, type and
+   * with context descriptors which would match the provided
+   * browsing context.
+   *
+   * @param {string} moduleName
+   *     The name of the module.
+   * @param {string} category
+   *     The session data category.
+   * @param {BrowsingContext} context
+   *     The browsing context.
+   * @returns {Array<SessionDataItem>}
+   *     Array of SessionDataItems for the provided module, type
+   *     and browsing context.
+   */
+  getSessionDataForContext(moduleName, category, context) {
+    return this.#data.filter(
+      item =>
+        this.#matchItem(item, moduleName, category) &&
+        this.#messageHandler.contextMatchesDescriptor(
+          context,
+          item.contextDescriptor
+        )
     );
   }
 

@@ -119,7 +119,7 @@ impl From<ResolvedElementStyles> for ElementStyles {
     }
 }
 
-fn with_default_parent_styles<E, F, R>(element: E, f: F) -> R
+pub(crate) fn with_default_parent_styles<E, F, R>(element: E, f: F) -> R
 where
     E: TElement,
     F: FnOnce(Option<&ComputedValues>, Option<&ComputedValues>) -> R,
@@ -389,6 +389,7 @@ where
             parent_style,
             layout_parent_style,
             FirstLineReparenting::No,
+            /* try_tactic = */ Default::default(),
             Some(&self.context.thread_local.rule_cache),
             &mut conditions,
         );

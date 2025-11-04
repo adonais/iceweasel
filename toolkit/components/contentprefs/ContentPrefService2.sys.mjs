@@ -1242,14 +1242,16 @@ ContentPrefService2.prototype = {
       case "last-pb-context-exited":
         this._pbStore.removeAll();
         break;
-      case "test:reset":
+      case "test:reset": {
         let fn = subj.QueryInterface(Ci.xpcIJSWeakReference).get();
         this._reset(fn);
         break;
-      case "test:db":
+      }
+      case "test:db": {
         let obj = subj.QueryInterface(Ci.xpcIJSWeakReference).get();
         obj.value = this.conn;
         break;
+      }
     }
   },
 

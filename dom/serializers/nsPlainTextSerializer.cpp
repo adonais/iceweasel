@@ -32,6 +32,7 @@
 #include "nsContentUtils.h"
 #include "nsDebug.h"
 #include "nsGkAtoms.h"
+#include "nsIDocumentEncoder.h"
 #include "nsNameSpaceManager.h"
 #include "nsPrintfCString.h"
 #include "nsReadableUtils.h"
@@ -192,14 +193,14 @@ nsPlainTextSerializer::OutputManager::OutputManager(const int32_t aFlags,
 }
 
 void nsPlainTextSerializer::OutputManager::Append(
-    const CurrentLine& aCurrentLine,
+    const CurrentLine& aLine,
     const StripTrailingWhitespaces aStripTrailingWhitespaces) {
   if (IsAtFirstColumn()) {
     nsAutoString quotesAndIndent;
-    aCurrentLine.CreateQuotesAndIndent(quotesAndIndent);
+    aLine.CreateQuotesAndIndent(quotesAndIndent);
 
     if ((aStripTrailingWhitespaces == StripTrailingWhitespaces::kMaybe)) {
-      const bool stripTrailingSpaces = aCurrentLine.mContent.IsEmpty();
+      const bool stripTrailingSpaces = aLine.mContent.IsEmpty();
       if (stripTrailingSpaces) {
         quotesAndIndent.Trim(" ", false, true, false);
       }
@@ -208,7 +209,7 @@ void nsPlainTextSerializer::OutputManager::Append(
     Append(quotesAndIndent);
   }
 
-  Append(aCurrentLine.mContent);
+  Append(aLine.mContent);
 }
 
 void nsPlainTextSerializer::OutputManager::Append(const nsAString& aString) {
@@ -315,6 +316,29 @@ void nsPlainTextSerializer::Settings::Init(const int32_t aFlags,
   mWrapColumn = aWrapColumn;
 }
 
+void nsPlainTextSerializer::HardWrapString(nsAString& aString,
+                                           uint32_t aWrapColumn,
+                                           int32_t aFlags) {
+  MOZ_ASSERT(aFlags & nsIDocumentEncoder::OutputWrap, "Why?");
+  MOZ_ASSERT(aWrapColumn, "Why?");
+
+  Settings settings;
+  settings.Init(aFlags, aWrapColumn);
+
+  // Line breaker will do the right thing, no need to split manually.
+  CurrentLine line;
+  line.mContent.Assign(aString);
+
+  nsAutoString output;
+  {
+    OutputManager manager(aFlags, output);
+    PerformWrapAndOutputCompleteLines(settings, line, manager,
+                                      /* aUseLineBreaker = */ true, nullptr);
+    manager.Flush(line);
+  }
+  aString.Assign(output);
+}
+
 NS_IMETHODIMP
 nsPlainTextSerializer::Init(const uint32_t aFlags, uint32_t aWrapColumn,
                             const Encoding* aEncoding, bool aIsCopying,
@@ -405,7 +429,7 @@ static bool IsIgnorableScriptOrStyle(Element* aElement) {
 }
 
 NS_IMETHODIMP
-nsPlainTextSerializer::AppendText(nsIContent* aText, int32_t aStartOffset,
+nsPlainTextSerializer::AppendText(Text* aText, int32_t aStartOffset,
                                   int32_t aEndOffset) {
   if (mIgnoreAboveIndex != (uint32_t)kNotFound) {
     return NS_OK;
@@ -418,9 +442,8 @@ nsPlainTextSerializer::AppendText(nsIContent* aText, int32_t aStartOffset,
 
   nsresult rv = NS_OK;
 
-  nsIContent* content = aText;
   const CharacterDataBuffer* characterDataBuffer = nullptr;
-  if (!content || !(characterDataBuffer = content->GetCharacterDataBuffer())) {
+  if (!(characterDataBuffer = aText->GetCharacterDataBuffer())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -445,8 +468,8 @@ nsPlainTextSerializer::AppendText(nsIContent* aText, int32_t aStartOffset,
   }
 
   // Mask the text if the text node is in a password field.
-  if (content->HasFlag(NS_MAYBE_MASKED)) {
-    TextEditor::MaskString(textstr, *content->AsText(), 0, aStartOffset);
+  if (aText->HasFlag(NS_MAYBE_MASKED)) {
+    TextEditor::MaskString(textstr, *aText, 0, aStartOffset);
   }
 
   // We have to split the string across newlines
@@ -479,9 +502,11 @@ nsPlainTextSerializer::AppendText(nsIContent* aText, int32_t aStartOffset,
 }
 
 NS_IMETHODIMP
-nsPlainTextSerializer::AppendCDATASection(nsIContent* aCDATASection,
+nsPlainTextSerializer::AppendCDATASection(Text* aCDATASection,
                                           int32_t aStartOffset,
                                           int32_t aEndOffset) {
+  MOZ_ASSERT(!aCDATASection ||
+             aCDATASection->NodeType() == nsINode::CDATA_SECTION_NODE);
   return AppendText(aCDATASection, aStartOffset, aEndOffset);
 }
 
@@ -1199,25 +1224,25 @@ void nsPlainTextSerializer::EnsureVerticalSpace(const int32_t aNumberOfRows) {
   // it and it's not included in the count for empty lines so we don't
   // realize that we should start a new line.
   if (aNumberOfRows >= 0 && !mCurrentLine.mIndentation.mHeader.IsEmpty()) {
-    EndLine(false);
+    EndHardBreakLine();
     mInWhitespace = true;
   }
 
   while (mEmptyLines < aNumberOfRows) {
-    EndLine(false);
+    EndHardBreakLine();
     mInWhitespace = true;
   }
   mLineBreakDue = false;
   mFloatingLines = -1;
 }
 
-void nsPlainTextSerializer::OutputManager::Flush(CurrentLine& aCurrentLine) {
-  if (!aCurrentLine.mContent.IsEmpty()) {
-    aCurrentLine.MaybeReplaceNbspsInContent(mFlags);
+void nsPlainTextSerializer::OutputManager::Flush(CurrentLine& aLine) {
+  if (!aLine.mContent.IsEmpty()) {
+    aLine.MaybeReplaceNbspsInContent(mFlags);
 
-    Append(aCurrentLine, StripTrailingWhitespaces::kNo);
+    Append(aLine, StripTrailingWhitespaces::kNo);
 
-    aCurrentLine.ResetContentAndIndentationHeader();
+    aLine.ResetContentAndIndentationHeader();
   }
 }
 
@@ -1226,8 +1251,10 @@ static bool IsSpaceStuffable(const char16_t* s) {
           NS_strncmp(s, u"From ", 5) == 0);
 }
 
-void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
-  if (!mSettings.MayWrap()) {
+void nsPlainTextSerializer::PerformWrapAndOutputCompleteLines(
+    const Settings& aSettings, CurrentLine& aLine, OutputManager& aOutput,
+    bool aUseLineBreaker, nsPlainTextSerializer* aSerializer) {
+  if (!aSettings.MayWrap()) {
     return;
   }
 
@@ -1235,21 +1262,21 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
   // The "+4" is to avoid wrap lines that only would be a couple
   // of letters too long. We give this bonus only if the
   // wrapcolumn is more than 20.
-  const uint32_t wrapColumn = mSettings.GetWrapColumn();
+  const uint32_t wrapColumn = aSettings.GetWrapColumn();
   uint32_t bonuswidth = (wrapColumn > 20) ? 4 : 0;
-  while (!mCurrentLine.mContent.IsEmpty()) {
-    const uint32_t prefixwidth = mCurrentLine.DeterminePrefixWidth();
+  while (!aLine.mContent.IsEmpty()) {
+    const uint32_t prefixwidth = aLine.DeterminePrefixWidth();
     // The width of the line as it will appear on the screen (approx.).
     const uint32_t currentLineContentWidth =
-        GetUnicharStringWidth(mCurrentLine.mContent);
+        GetUnicharStringWidth(aLine.mContent);
     if (currentLineContentWidth + prefixwidth <= wrapColumn + bonuswidth) {
       break;
     }
 
     const int32_t goodSpace =
-        mCurrentLine.FindWrapIndexForContent(wrapColumn, mUseLineBreaker);
+        aLine.FindWrapIndexForContent(wrapColumn, aUseLineBreaker);
 
-    const int32_t contentLength = mCurrentLine.mContent.Length();
+    const int32_t contentLength = aLine.mContent.Length();
     if (goodSpace <= 0 || goodSpace >= contentLength) {
       // Nothing to do. Hopefully we get more data later to use for a place to
       // break line.
@@ -1259,26 +1286,55 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
     // -1 (trim a char at the break position) only if the line break was a
     // space.
     nsAutoString restOfContent;
-    if (nsCRT::IsAsciiSpace(mCurrentLine.mContent.CharAt(goodSpace))) {
-      mCurrentLine.mContent.Right(restOfContent, contentLength - goodSpace - 1);
+    if (nsCRT::IsAsciiSpace(aLine.mContent.CharAt(goodSpace))) {
+      aLine.mContent.Right(restOfContent, contentLength - goodSpace - 1);
     } else {
-      mCurrentLine.mContent.Right(restOfContent, contentLength - goodSpace);
+      aLine.mContent.Right(restOfContent, contentLength - goodSpace);
     }
     // if breaker was U+0020, it has to consider for delsp=yes support
-    const bool breakBySpace = mCurrentLine.mContent.CharAt(goodSpace) == ' ';
-    mCurrentLine.mContent.Truncate(goodSpace);
-    EndLine(true, breakBySpace);
-    mCurrentLine.mContent.Truncate();
-    // Space stuffing a la RFC 2646 (format=flowed)
-    if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
-      mCurrentLine.mSpaceStuffed = !restOfContent.IsEmpty() &&
-                                   IsSpaceStuffable(restOfContent.get()) &&
-                                   // We space-stuff quoted lines anyway
-                                   mCurrentLine.mCiteQuoteLevel == 0;
+    const bool breakBySpace = aLine.mContent.CharAt(goodSpace) == ' ';
+    aLine.mContent.Truncate(goodSpace);
+    // Append the line to the output.
+    if (!aLine.mContent.IsEmpty()) {
+      if (!aSettings.HasFlag(nsIDocumentEncoder::OutputPreformatted)) {
+        aLine.mContent.Trim(" ", false, true, false);
+      }
+      if (aSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed) &&
+          !aLine.mIndentation.mLength) {
+        // Add the soft part of the soft linebreak (RFC 2646 4.1)
+        // We only do this when there is no indentation since format=flowed
+        // lines and indentation doesn't work well together.
+
+        // If breaker character is ASCII space with RFC 3676 support
+        // (delsp=yes), add twice space.
+        if (aSettings.HasFlag(nsIDocumentEncoder::OutputFormatDelSp) &&
+            breakBySpace) {
+          aLine.mContent.AppendLiteral("  ");
+        } else {
+          aLine.mContent.Append(char16_t(' '));
+        }
+      }
+      AppendLineToOutput(aSettings, aLine, aOutput);
+      if (aSerializer) {
+        aSerializer->ResetStateAfterLine();
+        aSerializer->mEmptyLines = -1;
+      }
     }
-    mCurrentLine.mContent.Append(restOfContent);
-    mEmptyLines = -1;
+    aLine.mContent.Truncate();
+    // Space stuffing a la RFC 2646 (format=flowed)
+    if (aSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
+      aLine.mSpaceStuffed = !restOfContent.IsEmpty() &&
+                            IsSpaceStuffable(restOfContent.get()) &&
+                            // We space-stuff quoted lines anyway
+                            aLine.mCiteQuoteLevel == 0;
+    }
+    aLine.mContent.Append(restOfContent);
   }
+}
+
+void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
+  PerformWrapAndOutputCompleteLines(mSettings, mCurrentLine, *mOutputManager,
+                                    mUseLineBreaker, this);
 }
 
 /**
@@ -1322,17 +1378,24 @@ static bool IsSignatureSeparator(const nsAString& aString) {
          aString.EqualsLiteral(kDashEscapedSignatureSeparator);
 }
 
+void nsPlainTextSerializer::AppendLineToOutput(const Settings& aSettings,
+                                               CurrentLine& aLine,
+                                               OutputManager& aOutput) {
+  aLine.MaybeReplaceNbspsInContent(aSettings.GetFlags());
+  // If we don't have anything "real" to output we have to
+  // make sure the indent doesn't end in a space since that
+  // would trick a format=flowed-aware receiver.
+  aOutput.Append(aLine, OutputManager::StripTrailingWhitespaces::kMaybe);
+  aOutput.AppendLineBreak();
+  aLine.ResetContentAndIndentationHeader();
+}
+
 /**
  * Outputs the contents of mCurrentLine.mContent, and resets line
  * specific variables. Also adds an indentation and prefix if there is one
  * specified. Strips ending spaces from the line if it isn't preformatted.
  */
-void nsPlainTextSerializer::EndLine(bool aSoftLineBreak, bool aBreakBySpace) {
-  if (aSoftLineBreak && mCurrentLine.mContent.IsEmpty()) {
-    // No meaning
-    return;
-  }
-
+void nsPlainTextSerializer::EndHardBreakLine() {
   /* In non-preformatted mode, remove spaces from the end of the line for
    * format=flowed compatibility. Don't do this for these special cases:
    * "-- ", the signature separator (RFC 2646) shouldn't be touched and
@@ -1340,52 +1403,20 @@ void nsPlainTextSerializer::EndLine(bool aSoftLineBreak, bool aBreakBySpace) {
    * signed messages according to the OpenPGP standard (RFC 2440).
    */
   if (!mSettings.HasFlag(nsIDocumentEncoder::OutputPreformatted) &&
-      (aSoftLineBreak || !IsSignatureSeparator(mCurrentLine.mContent))) {
+      !IsSignatureSeparator(mCurrentLine.mContent)) {
     mCurrentLine.mContent.Trim(" ", false, true, false);
   }
 
-  if (aSoftLineBreak &&
-      mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed) &&
-      !mCurrentLine.mIndentation.mLength) {
-    // Add the soft part of the soft linebreak (RFC 2646 4.1)
-    // We only do this when there is no indentation since format=flowed
-    // lines and indentation doesn't work well together.
-
-    // If breaker character is ASCII space with RFC 3676 support (delsp=yes),
-    // add twice space.
-    if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatDelSp) &&
-        aBreakBySpace) {
-      mCurrentLine.mContent.AppendLiteral("  ");
-    } else {
-      mCurrentLine.mContent.Append(char16_t(' '));
-    }
-  }
-
-  if (aSoftLineBreak) {
+  // Hard break
+  if (mCurrentLine.HasContentOrIndentationHeader()) {
     mEmptyLines = 0;
   } else {
-    // Hard break
-    if (mCurrentLine.HasContentOrIndentationHeader()) {
-      mEmptyLines = 0;
-    } else {
-      mEmptyLines++;
-    }
+    mEmptyLines++;
   }
 
   MOZ_ASSERT(mOutputManager);
-
-  mCurrentLine.MaybeReplaceNbspsInContent(mSettings.GetFlags());
-
-  // If we don't have anything "real" to output we have to
-  // make sure the indent doesn't end in a space since that
-  // would trick a format=flowed-aware receiver.
-  mOutputManager->Append(mCurrentLine,
-                         OutputManager::StripTrailingWhitespaces::kMaybe);
-  mOutputManager->AppendLineBreak();
-  mCurrentLine.ResetContentAndIndentationHeader();
-  mInWhitespace = true;
-  mLineBreakDue = false;
-  mFloatingLines = -1;
+  AppendLineToOutput(mSettings, mCurrentLine, *mOutputManager);
+  ResetStateAfterLine();
 }
 
 /**
@@ -1535,8 +1566,9 @@ void nsPlainTextSerializer::ConvertToLinesAndOutput(const nsAString& aString) {
 
 /**
  * Write a string. This is the highlevel function to use to get text output.
- * By using AddToLine, Output, EndLine and other functions it handles quotation,
- * line wrapping, indentation, whitespace compression and other things.
+ * By using AddToLine, Output, EndHardBreakLine and other functions it handles
+ * quotation, line wrapping, indentation, whitespace compression and other
+ * things.
  */
 void nsPlainTextSerializer::Write(const nsAString& aStr) {
   // XXX Copy necessary to use nsString methods and gain

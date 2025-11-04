@@ -158,22 +158,26 @@ TooltipsOverlay.prototype = {
     }
     const { doc } = this.view.inspector.toolbox;
     switch (name) {
-      case "colorPicker":
+      case "colorPicker": {
         const SwatchColorPickerTooltip = require("resource://devtools/client/shared/widgets/tooltip/SwatchColorPickerTooltip.js");
         tooltip = new SwatchColorPickerTooltip(doc, this.view.inspector);
         break;
-      case "cubicBezier":
+      }
+      case "cubicBezier": {
         const SwatchCubicBezierTooltip = require("resource://devtools/client/shared/widgets/tooltip/SwatchCubicBezierTooltip.js");
         tooltip = new SwatchCubicBezierTooltip(doc);
         break;
-      case "linearEaseFunction":
+      }
+      case "linearEaseFunction": {
         const SwatchLinearEasingFunctionTooltip = require("devtools/client/shared/widgets/tooltip/SwatchLinearEasingFunctionTooltip");
         tooltip = new SwatchLinearEasingFunctionTooltip(doc);
         break;
-      case "filterEditor":
+      }
+      case "filterEditor": {
         const SwatchFilterTooltip = require("resource://devtools/client/shared/widgets/tooltip/SwatchFilterTooltip.js");
         tooltip = new SwatchFilterTooltip(doc);
         break;
+      }
       case "interactiveTooltip":
         tooltip = new HTMLTooltip(doc, {
           type: "doorhanger",

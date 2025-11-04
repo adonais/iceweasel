@@ -133,7 +133,6 @@ class ReaderViewControlsBar @JvmOverloads constructor(
         super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
     }
 
-    @Suppress("ComplexMethod")
     private fun bindViews() {
         fontGroup = applyCheckedListener(R.id.mozac_feature_readerview_font_group) { checkedId ->
             val fontType = when (checkedId) {

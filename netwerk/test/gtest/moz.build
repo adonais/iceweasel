@@ -14,8 +14,10 @@ UNIFIED_SOURCES += [
     "TestCommon.cpp",
     "TestCookie.cpp",
     "TestDNSPacket.cpp",
+    "TestEtcHostsParsing.cpp",
     "TestHeaders.cpp",
     "TestHttp2WebTransport.cpp",
+    "TestHttp3ConnectUDPStream.cpp",
     "TestHttpAtom.cpp",
     "TestHttpAuthUtils.cpp",
     "TestHttpChannel.cpp",
@@ -34,10 +36,12 @@ UNIFIED_SOURCES += [
     "TestSocketTransportService.cpp",
     "TestSSLTokensCache.cpp",
     "TestStandardURL.cpp",
+    "TestStorageAccessHeader.cpp",
     "TestUDPSocket.cpp",
     "TestURIMutator.cpp",
     "TestUriTemplate.cpp",
     "TestURLPatternGlue.cpp",
+    "TestUseAsDictionary.cpp",
     "TestWebTransportFlowControl.cpp",
 ]
 

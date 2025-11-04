@@ -14,7 +14,6 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Likely.h"
 #include "mozilla/LinkedList.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMString.h"
@@ -1244,6 +1243,9 @@ class nsINode : public mozilla::dom::EventTarget {
   /**
    * Get closest element node for the node.  Meaning that if the node is an
    * element node, returns itself.  Otherwise, returns parent element or null.
+   * Note that if the node is a non-element node and it's root of a shadow DOM,
+   * this returns nullptr.  If you want to get inclusive flattened tree ancestor
+   * in this case, use GetInclusiveFlattenedTreeAncestorElement().
    */
   inline mozilla::dom::Element* GetAsElementOrParentElement() const;
 

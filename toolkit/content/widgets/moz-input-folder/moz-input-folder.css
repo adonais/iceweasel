@@ -6,6 +6,7 @@
 
 :host {
   --input-folder-space-inline: var(--space-medium);
+  --input-text-icon-size: var(--icon-size);
   width: 100%;
 }
 

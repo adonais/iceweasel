@@ -43,36 +43,6 @@ task-defaults:
             - linux64-sccache
 
 tasks:
-    linux-shippable/opt:
-        description: "Linux Instrumented"
-        index:
-            product: firefox
-            job-name: instrumented-linux
-        shipping-product: firefox
-        treeherder:
-            platform: linux32-shippable/opt
-        worker-type: b-linux-amd
-        run:
-            config:
-                - builds/releng_base_firefox.py
-                - builds/releng_base_linux_32_builds.py
-            mozconfig-variant: profile-generate
-            tooltool-downloads: public
-        run-on-projects: ['release']
-        fetches:
-            toolchain:
-                - linux64-clang
-                - linux64-rust
-                - linux64-rust-size
-                - linux64-cbindgen
-                - linux64-dump_syms
-                - linux64-nasm
-                - linux64-node
-                - linux64-pkgconf
-                - sysroot-i686-linux-gnu
-                - sysroot-x86_64-linux-gnu
-                - sysroot-wasm32-wasi
-
     linux64-shippable/opt:
         description: "Linux64 Instrumented"
         index:
@@ -147,7 +117,7 @@ tasks:
             env:
                 PERFHERDER_EXTRA_OPTIONS: instrumented
             artifacts:
-                - name: public/build/security/browser.xml
+                - name: public/build/security/{browser_entitlement}.xml
                   path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/{browser_entitlement}.xml
                   type: file
                 - name: public/build/security/media-plugin-helper.xml
@@ -193,7 +163,7 @@ tasks:
             env:
                 PERFHERDER_EXTRA_OPTIONS: instrumented
             artifacts:
-                - name: public/build/security/browser.xml
+                - name: public/build/security/{browser_entitlement}.xml
                   path: checkouts/gecko/security/mac/hardenedruntime/{entitlement_directory}/{browser_entitlement}.xml
                   type: file
                 - name: public/build/security/media-plugin-helper.xml
@@ -226,61 +196,6 @@ tasks:
                 - linux64-nasm
                 - linux64-node
                 - macosx64-sdk
-                - sysroot-x86_64-linux-gnu
-                - sysroot-wasm32-wasi
-
-    android-x86-shippable/opt:
-        description: "Android 5.0 x86 PGO instrumented"
-        index:
-            product: mobile
-            job-name: instrumented-android-x86
-        shipping-product: fennec
-        treeherder:
-            platform: android-5-0-x86-shippable/opt
-        worker-type: b-linux-xlarge-amd
-        worker:
-            docker-image: {in-tree: android-build}
-            env:
-                GRADLE_USER_HOME: "/builds/worker/checkouts/gecko/mobile/android/gradle/dotgradle-offline"
-                TOOLTOOL_MANIFEST: "mobile/android/config/tooltool-manifests/android/releng.manifest"
-            artifacts:
-                - name: public/build
-                  path: /builds/worker/artifacts/
-                  type: directory
-                - name: public/build/geckoview-androidTest.apk
-                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/geckoview/outputs/apk/androidTest/debug/geckoview-debug-androidTest.apk
-                  type: file
-                - name: public/build/geckoview-test_runner.apk
-                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/test_runner/outputs/apk/debug/test_runner-debug.apk
-                  type: file
-                - name: public/build/geckoview-test_runner.aab
-                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/test_runner/outputs/bundle/debug/test_runner-debug.aab
-                  type: file
-                - name: public/build/geckoview_example.apk
-                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/geckoview_example/outputs/apk/debug/geckoview_example-debug.apk
-                  type: file
-                - name: public/build/geckoview_example.aab
-                  path: /builds/worker/workspace/obj-build/gradle/build/mobile/android/geckoview_example/outputs/bundle/debug/geckoview_example-debug.aab
-                  type: file
-        run:
-            config:
-                - builds/releng_base_android_64_builds.py
-            custom-build-variant-cfg: x86-profile-generate
-            tooltool-downloads: internal
-        run-on-projects: ['release']
-        fetches:
-            toolchain:
-                - android-gradle-dependencies
-                - android-ndk-linux
-                - android-sdk-linux
-                - linux64-jdk
-                - linux64-clang
-                - linux64-rust-android
-                - linux64-rust-size
-                - linux64-cbindgen
-                - linux64-dump_syms
-                - linux64-nasm
-                - linux64-node
                 - sysroot-x86_64-linux-gnu
                 - sysroot-wasm32-wasi
 
@@ -483,6 +398,7 @@ tasks:
                 - sysroot-x86_64-linux-gnu
                 - sysroot-wasm32-wasi
                 - vs
+                - winappsdk-x86-pc-windows-msvc
             fetch:
                 - upx-3.95-win
                 - windows-rs
@@ -524,6 +440,7 @@ tasks:
                 - sysroot-wasm32-wasi
                 - vs
                 - dxc-x86_64-pc-windows-msvc
+                - winappsdk-x86_64-pc-windows-msvc
             fetch:
                 - upx-3.95-win
                 - windows-rs
@@ -563,6 +480,7 @@ tasks:
                 - sysroot-wasm32-wasi
                 - vs
                 - dxc-x86_64-pc-windows-msvc
+                - winappsdk-x86_64-pc-windows-msvc
             fetch:
                 - upx-3.95-win
                 - windows-rs
@@ -602,6 +520,7 @@ tasks:
                 - sysroot-wasm32-wasi
                 - vs
                 - dxc-aarch64-pc-windows-msvc
+                - winappsdk-aarch64-pc-windows-msvc
             fetch:
                 - upx-3.95-win
                 - windows-rs

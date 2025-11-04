@@ -30,6 +30,7 @@
 #include "mozilla/a11y/Role.h"
 #include "RootAccessible.h"
 #include "States.h"
+#include "TextLeafAccessible.h"
 #include "TextLeafRange.h"
 #include "TextRange.h"
 #include "HTMLElementAccessibles.h"
@@ -1504,9 +1505,15 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     mDoc->QueueCacheUpdate(this, CacheDomain::Value);
   }
 
+  if (aAttribute == nsGkAtoms::aria_details) {
+    mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
+    // If an aria-details attribute is added or removed from an anchored
+    // accessible, it will change the validity of its anchor's relation.
+    mDoc->RefreshAnchorRelationCacheForTarget(this);
+  }
+
   if (aAttribute == nsGkAtoms::aria_controls ||
       aAttribute == nsGkAtoms::aria_flowto ||
-      aAttribute == nsGkAtoms::aria_details ||
       aAttribute == nsGkAtoms::aria_errormessage) {
     mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
   }
@@ -1826,216 +1833,6 @@ double LocalAccessible::CurValue() const {
 
 bool LocalAccessible::SetCurValue(double aValue) { return false; }
 
-role LocalAccessible::FindNextValidARIARole(
-    std::initializer_list<nsStaticAtom*> aRolesToSkip) const {
-  const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-  if (roleMapEntry && mContent && mContent->IsElement()) {
-    dom::Element* elem = mContent->AsElement();
-    if (!nsAccUtils::ARIAAttrValueIs(elem, nsGkAtoms::role,
-                                     roleMapEntry->roleAtom, eIgnoreCase)) {
-      // Get the next valid token that isn't in the list of roles to skip.
-      uint8_t roleMapIndex =
-          aria::GetFirstValidRoleMapIndexExcluding(elem, aRolesToSkip);
-      // If we don't find a valid token, fall back to the native role.
-      if (roleMapIndex == aria::NO_ROLE_MAP_ENTRY_INDEX ||
-          roleMapIndex == aria::LANDMARK_ROLE_MAP_ENTRY_INDEX) {
-        return NativeRole();
-      }
-      const nsRoleMapEntry* fallbackRoleMapEntry =
-          aria::GetRoleMapFromIndex(roleMapIndex);
-      if (!fallbackRoleMapEntry) {
-        return NativeRole();
-      }
-      // Return the next valid role, but validate that first, too.
-      return ARIATransformRole(fallbackRoleMapEntry->role);
-    }
-  }
-  // Fall back to the native role.
-  return NativeRole();
-}
-
-role LocalAccessible::ARIATransformRole(role aRole) const {
-  // Beginning with ARIA 1.1, user agents are expected to use the native host
-  // language role of the element when the form or region roles are used without
-  // a name. Says the spec, "the user agent MUST treat such elements as if no
-  // role had been provided."
-  // https://w3c.github.io/aria/#document-handling_author-errors_roles
-  //
-  // XXX: While the name computation algorithm can be non-trivial in the general
-  // case, it should not be especially bad here: If the author hasn't used the
-  // region role, this calculation won't occur. And the region role's name
-  // calculation rule excludes name from content. That said, this use case is
-  // another example of why we should consider caching the accessible name. See:
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=1378235.
-  if (aRole == roles::REGION || aRole == roles::FORM) {
-    if (NameIsEmpty()) {
-      // If we have a "form" or "region" role, but no accessible name, we need
-      // to search for the next valid role. First, we search through the role
-      // attribute value string - there might be a valid fallback there. Skip
-      // all "form" or "region" attributes; we know they're not valid since
-      // there's no accessible name. If we find a valid role that's not "form"
-      // or "region", fall back to it (but run it through ARIATransformRole
-      // first). Otherwise, fall back to the element's native role.
-      return FindNextValidARIARole({nsGkAtoms::region, nsGkAtoms::form});
-    }
-    return aRole;
-  }
-
-  // XXX: these unfortunate exceptions don't fit into the ARIA table. This is
-  // where the accessible role depends on both the role and ARIA state.
-  if (aRole == roles::PUSHBUTTON) {
-    if (nsAccUtils::HasDefinedARIAToken(mContent, nsGkAtoms::aria_pressed)) {
-      // For simplicity, any existing pressed attribute except "" or "undefined"
-      // indicates a toggle.
-      return roles::TOGGLE_BUTTON;
-    }
-
-    if (mContent->IsElement() &&
-        nsAccUtils::ARIAAttrValueIs(mContent->AsElement(),
-                                    nsGkAtoms::aria_haspopup, nsGkAtoms::_true,
-                                    eCaseMatters)) {
-      // For button with aria-haspopup="true".
-      return roles::BUTTONMENU;
-    }
-
-  } else if (aRole == roles::LISTBOX) {
-    // A listbox inside of a combobox needs a special role because of ATK
-    // mapping to menu.
-    if (mParent && mParent->IsCombobox()) {
-      return roles::COMBOBOX_LIST;
-    }
-
-  } else if (aRole == roles::OPTION) {
-    if (mParent && mParent->Role() == roles::COMBOBOX_LIST) {
-      return roles::COMBOBOX_OPTION;
-    }
-
-    // Orphaned option outside the context of a listbox.
-    const Accessible* listbox = FindAncestorIf([](const Accessible& aAcc) {
-      const role accRole = aAcc.Role();
-      return accRole == roles::LISTBOX    ? AncestorSearchOption::Found
-             : accRole == roles::GROUPING ? AncestorSearchOption::Continue
-                                          : AncestorSearchOption::NotFound;
-    });
-    if (!listbox) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::MENUITEM) {
-    // Menuitem has a submenu.
-    if (mContent->IsElement() &&
-        nsAccUtils::ARIAAttrValueIs(mContent->AsElement(),
-                                    nsGkAtoms::aria_haspopup, nsGkAtoms::_true,
-                                    eCaseMatters)) {
-      return roles::PARENT_MENUITEM;
-    }
-
-    // Orphaned menuitem outside the context of a menu/menubar.
-    const Accessible* menu = FindAncestorIf([](const Accessible& aAcc) {
-      const role accRole = aAcc.Role();
-      return (accRole == roles::MENUBAR || accRole == roles::MENUPOPUP)
-                 ? AncestorSearchOption::Found
-             : accRole == roles::GROUPING ? AncestorSearchOption::Continue
-                                          : AncestorSearchOption::NotFound;
-    });
-    if (!menu) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::RADIO_MENU_ITEM ||
-             aRole == roles::CHECK_MENU_ITEM) {
-    // Orphaned radio/checkbox menuitem outside the context of a menu/menubar.
-    const Accessible* menu = FindAncestorIf([](const Accessible& aAcc) {
-      const role accRole = aAcc.Role();
-      return (accRole == roles::MENUBAR || accRole == roles::MENUPOPUP)
-                 ? AncestorSearchOption::Found
-             : accRole == roles::GROUPING ? AncestorSearchOption::Continue
-                                          : AncestorSearchOption::NotFound;
-    });
-    if (!menu) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::CELL) {
-    // A cell inside an ancestor table element that has a grid role needs a
-    // gridcell role
-    // (https://www.w3.org/TR/html-aam-1.0/#html-element-role-mappings).
-    const LocalAccessible* table = nsAccUtils::TableFor(this);
-    if (table && table->IsARIARole(nsGkAtoms::grid)) {
-      return roles::GRID_CELL;
-    }
-  } else if (aRole == roles::ROW) {
-    // Orphaned rows outside the context of a table.
-    const LocalAccessible* table = nsAccUtils::TableFor(this);
-    if (!table) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::ROWGROUP) {
-    // Orphaned rowgroups outside the context of a table.
-    const Accessible* table = FindAncestorIf([](const Accessible& aAcc) {
-      return aAcc.IsTable() ? AncestorSearchOption::Found
-                            : AncestorSearchOption::NotFound;
-    });
-    if (!table) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::GRID_CELL || aRole == roles::ROWHEADER ||
-             aRole == roles::COLUMNHEADER) {
-    // Orphaned gridcell/rowheader/columnheader outside the context of a row.
-    const Accessible* row = FindAncestorIf([](const Accessible& aAcc) {
-      return aAcc.IsTableRow() ? AncestorSearchOption::Found
-                               : AncestorSearchOption::NotFound;
-    });
-    if (!row) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::LISTITEM) {
-    // doc-biblioentry and doc-endnote should not be treated as listitems.
-    const nsRoleMapEntry* roleMapEntry = ARIARoleMap();
-    if (!roleMapEntry || (roleMapEntry->roleAtom != nsGkAtoms::docBiblioentry &&
-                          roleMapEntry->roleAtom != nsGkAtoms::docEndnote)) {
-      // Orphaned listitem outside the context of a list.
-      const Accessible* list = FindAncestorIf([](const Accessible& aAcc) {
-        return aAcc.IsList() ? AncestorSearchOption::Found
-                             : AncestorSearchOption::Continue;
-      });
-      if (!list) {
-        return NativeRole();
-      }
-    }
-  } else if (aRole == roles::PAGETAB) {
-    // Orphaned tab outside the context of a tablist.
-    const Accessible* tablist = FindAncestorIf([](const Accessible& aAcc) {
-      return aAcc.Role() == roles::PAGETABLIST ? AncestorSearchOption::Found
-                                               : AncestorSearchOption::NotFound;
-    });
-    if (!tablist) {
-      return NativeRole();
-    }
-  } else if (aRole == roles::OUTLINEITEM) {
-    // Orphaned treeitem outside the context of a tree.
-    const Accessible* tree = FindAncestorIf([](const Accessible& aAcc) {
-      return aAcc.Role() == roles::OUTLINE ? AncestorSearchOption::Found
-                                           : AncestorSearchOption::Continue;
-    });
-    if (!tree) {
-      return NativeRole();
-    }
-  }
-
-  return aRole;
-}
-
-role LocalAccessible::GetMinimumRole(role aRole) const {
-  if (aRole != roles::TEXT && aRole != roles::TEXT_CONTAINER &&
-      aRole != roles::SECTION) {
-    // This isn't a generic role, so aRole is specific enough.
-    return aRole;
-  }
-  dom::Element* el = Elm();
-  if (el && el->IsHTMLElement() && el->HasAttr(nsGkAtoms::popover)) {
-    return roles::GROUPING;
-  }
-  return aRole;
-}
-
 role LocalAccessible::NativeRole() const { return roles::NOTHING; }
 
 uint8_t LocalAccessible::ActionCount() const {
@@ -2190,6 +1987,69 @@ LocalAccessible* LocalAccessible::GetPopoverTargetDetailsRelation() const {
   if (targetAcc->NextSibling() == this || targetAcc->PrevSibling() == this) {
     return nullptr;
   }
+  return targetAcc;
+}
+
+LocalAccessible* LocalAccessible::GetAnchorPositionTargetDetailsRelation()
+    const {
+  nsIFrame* positionedFrame = nsCoreUtils::GetPositionedFrameForAnchor(
+      mDoc->PresShellPtr(), GetFrame());
+  if (!positionedFrame) {
+    return nullptr;
+  }
+
+  if (!nsCoreUtils::GetAnchorForPositionedFrame(mDoc->PresShellPtr(),
+                                                positionedFrame)) {
+    // There is no reciprocal, 1:1, anchor for this positioned frame.
+    return nullptr;
+  }
+
+  LocalAccessible* targetAcc =
+      mDoc->GetAccessible(positionedFrame->GetContent());
+
+  if (!targetAcc) {
+    return nullptr;
+  }
+
+  if (targetAcc->Role() == roles::TOOLTIP) {
+    // A tooltip is never a valid target for details relation.
+    return nullptr;
+  }
+
+  AssociatedElementsIterator describedby(mDoc, GetContent(),
+                                         nsGkAtoms::aria_describedby);
+  while (LocalAccessible* target = describedby.Next()) {
+    if (target == targetAcc) {
+      // An explicit description relation exists, so we don't want to create a
+      // details relation.
+      return nullptr;
+    }
+  }
+
+  AssociatedElementsIterator labelledby(mDoc, GetContent(),
+                                        nsGkAtoms::aria_labelledby);
+  while (LocalAccessible* target = labelledby.Next()) {
+    if (target == targetAcc) {
+      // An explicit label relation exists, so we don't want to create a details
+      // relation.
+      return nullptr;
+    }
+  }
+
+  dom::Element* anchorEl = targetAcc->Elm();
+  if (anchorEl && anchorEl->HasAttr(nsGkAtoms::aria_details)) {
+    // If the anchor has an explicit aria-details attribute, then we don't want
+    // to create a details relation.
+    return nullptr;
+  }
+
+  dom::Element* targetEl = Elm();
+  if (targetEl && targetEl->HasAttr(nsGkAtoms::aria_details)) {
+    // If the target has an explicit aria-details attribute, then we don't want
+    // to create a details relation.
+    return nullptr;
+  }
+
   return targetAcc;
 }
 
@@ -2508,6 +2368,12 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
       if (LocalAccessible* target = GetPopoverTargetDetailsRelation()) {
         return Relation(target);
       }
+      if (LocalAccessible* target = GetAnchorPositionTargetDetailsRelation()) {
+        if (nsAccUtils::IsValidDetailsTargetForAnchor(target, this)) {
+          return Relation(target);
+        }
+      }
+
       return Relation();
     }
 
@@ -2538,6 +2404,21 @@ Relation LocalAccessible::RelationByType(RelationType aType) const {
           rel.AppendTarget(invoker);
         }
       }
+
+      // Check early if the accessible is a tooltip. If so, it can never be a
+      // valid target for an anchor's details relation.
+      if (Role() != roles::TOOLTIP) {
+        if (nsIFrame* anchorFrame = nsCoreUtils::GetAnchorForPositionedFrame(
+                mDoc->PresShellPtr(), GetFrame())) {
+          LocalAccessible* anchorAcc =
+              mDoc->GetAccessible(anchorFrame->GetContent());
+          if (anchorAcc->GetAnchorPositionTargetDetailsRelation() == this &&
+              nsAccUtils::IsValidDetailsTargetForAnchor(this, anchorAcc)) {
+            rel.AppendTarget(anchorAcc);
+          }
+        }
+      }
+
       return rel;
     }
 
@@ -2629,6 +2510,16 @@ void LocalAccessible::ScrollToPoint(uint32_t aCoordinateType, int32_t aX,
   while ((parentFrame = parentFrame->GetParent())) {
     nsCoreUtils::ScrollFrameToPoint(parentFrame, frame, coords);
   }
+}
+
+bool LocalAccessible::IsScrollable() const {
+  const auto [scrollPosition, scrollRange] = mDoc->ComputeScrollData(this);
+  return scrollRange.width > 0 || scrollRange.height > 0;
+}
+
+bool LocalAccessible::IsPopover() const {
+  dom::Element* el = Elm();
+  return el && el->IsHTMLElement() && el->HasAttr(nsGkAtoms::popover);
 }
 
 void LocalAccessible::AppendTextTo(nsAString& aText, uint32_t aStartOffset,
@@ -3919,7 +3810,17 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   }
 
   if (aCacheDomain & CacheDomain::ScrollPosition && frame) {
-    const auto [scrollPosition, scrollRange] = mDoc->ComputeScrollData(this);
+    // We request these values unscaled when caching because the scaled values
+    // have resolution multiplied in. We can encounter a race condition when
+    // using APZ where the resolution is not propogated back to content in time
+    // for it to be multipled into the scroll position calculation. Even if we
+    // end up with the correct resolution cached in parent, our final bounds
+    // will be incorrect. Instead of scaling here, we scale in parent with our
+    // cached resolution so any incorrectness will be consistent and dependent
+    // on a single cache update (Resolution) instead of two (Resolution and
+    // ScrollPosition).
+    const auto [scrollPosition, scrollRange] =
+        mDoc->ComputeScrollData(this, /* aShouldScaleByResolution */ false);
     if (scrollRange.width || scrollRange.height) {
       // If the scroll range is 0 by 0, this acc is not scrollable. We
       // can't simply check scrollPosition != 0, since it's valid for scrollable
@@ -4149,12 +4050,27 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
                 dom::HTMLLabelElement::FromNode(mContent)) {
           rel.AppendTarget(mDoc, labelEl->GetControl());
         }
-      } else if (data.mType == RelationType::DETAILS ||
-                 data.mType == RelationType::CONTROLLER_FOR) {
-        // We need to use RelationByType for details because it might include
-        // popovertarget. Nothing exposes an implicit reverse details
-        // relation, so using RelationByType here is fine.
-        //
+      } else if (data.mType == RelationType::DETAILS) {
+        if (relAtom == nsGkAtoms::aria_details) {
+          rel.AppendIter(
+              new AssociatedElementsIterator(mDoc, mContent, relAtom));
+        } else if (relAtom == nsGkAtoms::commandfor) {
+          if (LocalAccessible* target = GetCommandForDetailsRelation()) {
+            rel.AppendTarget(target);
+          }
+        } else if (relAtom == nsGkAtoms::popovertarget) {
+          if (LocalAccessible* target = GetPopoverTargetDetailsRelation()) {
+            rel.AppendTarget(target);
+          }
+        } else if (relAtom == nsGkAtoms::target) {
+          if (LocalAccessible* target =
+                  GetAnchorPositionTargetDetailsRelation()) {
+            rel.AppendTarget(target);
+          }
+        } else {
+          MOZ_ASSERT_UNREACHABLE("Unknown details relAtom");
+        }
+      } else if (data.mType == RelationType::CONTROLLER_FOR) {
         // We need to use RelationByType for controls because it might include
         // failed aria-owned relocations or it may be an output element.
         // Nothing exposes an implicit reverse controls relation, so using
@@ -4331,6 +4247,22 @@ void LocalAccessible::MaybeQueueCacheUpdateForStyleChanges() {
       // CacheDomain::Style covers both display and opacity, so if
       // either property has changed, send an update for the entire domain.
       mDoc->QueueCacheUpdate(this, CacheDomain::Style);
+    }
+
+    if (mOldComputedStyle->StyleDisplay()->mAnchorName !=
+        newStyle->StyleDisplay()->mAnchorName) {
+      // Anchor name changes can affect the result of
+      // details relations.
+      mDoc->QueueCacheUpdate(this, CacheDomain::Relations);
+    }
+
+    if (mOldComputedStyle->MaybeAnchorPosReferencesDiffer(newStyle)) {
+      // Refresh the cache for details on current target (ie. the old style)
+      mDoc->RefreshAnchorRelationCacheForTarget(this);
+      // Refresh the cache for details on new target asynchronously after the
+      // next layout tick for new style.
+      mDoc->Controller()->ScheduleNotification<DocAccessible>(
+          mDoc, &DocAccessible::RefreshAnchorRelationCacheForTarget, this);
     }
 
     nsAutoCString oldPosition, newPosition;
@@ -4535,4 +4467,18 @@ bool LocalAccessible::GetStringARIAAttr(nsAtom* aAttrName,
     return nsAccUtils::GetARIAAttr(elm, aAttrName, aAttrValue);
   }
   return false;
+}
+
+bool LocalAccessible::ARIAAttrValueIs(nsAtom* aAttrName,
+                                      nsAtom* aAttrValue) const {
+  if (dom::Element* elm = Elm()) {
+    return nsAccUtils::ARIAAttrValueIs(elm, aAttrName, aAttrValue,
+                                       eCaseMatters);
+  }
+  return false;
+}
+
+bool LocalAccessible::HasARIAAttr(nsAtom* aAttrName) const {
+  return mContent ? nsAccUtils::HasDefinedARIAToken(mContent, aAttrName)
+                  : false;
 }

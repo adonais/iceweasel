@@ -1,0 +1,58 @@
+From: Michael Froman <mjfroman@mac.com>
+Date: Wed, 6 Aug 2025 13:58:31 -0500
+Subject: Bug 1980479 - Cherry-pick upstream libwebrtc commit b65c6012cf
+
+Upstream commit: https://webrtc.googlesource.com/src/+/b65c6012cf0512e4713fe4c9c834cade2e08e631
+       Fix gn gen with rtc_include_internal_audio_device=false
+
+       Before the change the following command were failing:
+       ```
+       gn gen ../out/Temp --args='target_os="ios"
+       is_debug=true
+       target_environment="device"
+       target_cpu="arm64"
+       ios_deployment_target="14.0"
+       ios_enable_code_signing=false
+       is_component_build=false
+       rtc_include_tests=false
+       rtc_include_internal_audio_device=false'
+
+       ERROR Unresolved dependencies.
+       //:webrtc(//build/toolchain/ios:ios_clang_arm64)
+         needs //api/audio:create_audio_device_module(//build/toolchain/ios:ios_clang_arm64)
+       ```
+
+       Bug: webrtc:413413572
+       Change-Id: Ie34d8f64d363f8f3e2ffa99b04a6771d03e1f7e9
+       Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/397100
+       Reviewed-by: Danil Chapovalov <danilchap@webrtc.org>
+       Commit-Queue: Yury Yarashevich <yura.yaroshevich@gmail.com>
+       Reviewed-by: Mirko Bonadei <mbonadei@webrtc.org>
+       Cr-Commit-Position: refs/heads/main@{#44976}
+---
+ BUILD.gn | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index 0943236577..0571aa8936 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -550,7 +550,6 @@ if (!build_with_chromium) {
+       "api:libjingle_peerconnection_api",
+       "api:rtc_error",
+       "api:transport_api",
+-      "api/audio:create_audio_device_module",
+       "api/audio_codecs:opus_audio_decoder_factory",
+       "api/crypto",
+       "api/rtc_event_log:rtc_event_log_factory",
+@@ -643,6 +642,10 @@ if (!build_with_chromium) {
+     if (rtc_enable_protobuf) {
+       deps += [ "logging:rtc_event_log_proto" ]
+     }
++
++    if (rtc_include_internal_audio_device) {
++      deps += [ "api/audio:create_audio_device_module" ]
++    }
+   }
+ 
+   if (rtc_include_tests && !is_asan) {

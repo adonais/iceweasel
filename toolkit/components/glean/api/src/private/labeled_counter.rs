@@ -174,7 +174,10 @@ mod test {
 
         assert_eq!(
             1,
-            metric.get("a_label").test_get_value(Some("test-ping".to_string())).unwrap()
+            metric
+                .get("a_label")
+                .test_get_value(Some("test-ping".to_string()))
+                .unwrap()
         );
     }
 

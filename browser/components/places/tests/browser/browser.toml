@@ -11,13 +11,10 @@ support-files = [
   "sidebarpanels_click_test_page.html",
   "keyword_form.html",
 ]
-prefs = [
-  "sidebar.revamp=false",
-]
 
 ["browser_addBookmarkForFrame.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && opt && socketprocess_networking", # Bug 1775655
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && socketprocess_networking", # Bug 1775655
 ]
 
 ["browser_autoshow_bookmarks_toolbar.js"]
@@ -212,6 +209,8 @@ https_first_disabled = true
 ["browser_paste_into_tags.js"]
 
 ["browser_paste_resets_cut_highlights.js"]
+
+["browser_recursive_hierarchies.js"]
 
 ["browser_remove_bookmarks.js"]
 

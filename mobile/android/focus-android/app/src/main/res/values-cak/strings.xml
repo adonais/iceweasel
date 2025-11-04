@@ -697,7 +697,7 @@
     Tip displayed on home view explaining how to add sites to homescreen
     %1$s is replaced with a line break in the application.
   -->
-  <string name="tip_add_to_homescreen">\"Katok rik\'in jun chapoj pa ri taq ruxaq yalan ye\'awokisaj%1$s\nMolsamajib\'äl &gt; Titz\'aqatisäx pa Tikirib\'äl tzuwäch\"</string>
+  <string name="tip_add_to_homescreen">Katok rik\'in jun chapoj pa ri taq ruxaq yalan ye\'awokisaj%1$sMolsamajib\'äl &gt; Titz\'aqatisäx pa Tikirib\'äl tzuwäch</string>
   <!--
     Tip displayed on home view explaining how to make Focus the default browser
     %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").

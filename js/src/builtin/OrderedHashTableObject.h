@@ -44,7 +44,6 @@
  *     void makeEmpty(Key*);
  */
 
-#include "mozilla/CheckedInt.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Maybe.h"
@@ -504,18 +503,9 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     return !obj->getReservedSlot(Slots::DataSlot).isUndefined();
   }
 
-  static MOZ_ALWAYS_INLINE bool calcAllocSize(uint32_t dataCapacity,
-                                              uint32_t buckets,
-                                              size_t* numBytes) {
-    using CheckedSize = mozilla::CheckedInt<size_t>;
-    auto res = CheckedSize(dataCapacity) * sizeof(Data) +
-               CheckedSize(sizeof(HashCodeScrambler)) +
-               CheckedSize(buckets) * sizeof(Data*);
-    if (MOZ_UNLIKELY(!res.isValid())) {
-      return false;
-    }
-    *numBytes = res.value();
-    return true;
+  static constexpr size_t calcAllocSize(size_t dataCapacity, size_t buckets) {
+    return dataCapacity * sizeof(Data) + sizeof(HashCodeScrambler) +
+           buckets * sizeof(Data*);
   }
 
   // Allocate a single buffer that stores the data array followed by the hash
@@ -527,11 +517,11 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     MOZ_ASSERT(dataCapacity <= MaxDataCapacity);
     MOZ_ASSERT(buckets <= MaxHashBuckets);
 
-    size_t numBytes = 0;
-    if (MOZ_UNLIKELY(!calcAllocSize(dataCapacity, buckets, &numBytes))) {
-      ReportAllocationOverflow(cx);
-      return {};
-    }
+    // Ensure the maximum buffer size doesn't exceed INT32_MAX. Don't change
+    // this without auditing the buffer allocation code!
+    static_assert(calcAllocSize(MaxDataCapacity, MaxHashBuckets) <= INT32_MAX);
+
+    size_t numBytes = calcAllocSize(dataCapacity, buckets);
 
     void* buf = obj->allocateCellBuffer(cx, numBytes);
     if (!buf) {
@@ -644,8 +634,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
     uint32_t dataCapacity = getDataCapacity();
     uint32_t buckets = hashBuckets();
 
-    size_t numBytes = 0;
-    MOZ_ALWAYS_TRUE(calcAllocSize(dataCapacity, buckets, &numBytes));
+    size_t numBytes = calcAllocSize(dataCapacity, buckets);
 
     void* buf = oldData;
     Nursery::WasBufferMoved result =
@@ -1096,8 +1085,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
 
     destroyData(data, length);
 
-    size_t numBytes;
-    MOZ_ALWAYS_TRUE(calcAllocSize(capacity, hashBuckets, &numBytes));
+    size_t numBytes = calcAllocSize(capacity, hashBuckets);
 
     obj->freeCellBuffer(cx, data, numBytes);
   }

@@ -89,7 +89,7 @@ impl<MetricT: MetricMetadataGetter + MetricNamer + 'static> gecko_profiler::Prof
         schema.set_tooltip_label(
             "{marker.data.cat}.{marker.data.id} {marker.data.label} {marker.data.duration}{marker.data.sample}",
         );
-        schema.set_table_label("{marker.name} - {marker.data.cat}.{marker.data.id} {marker.data.label}: {marker.data.duration}{marker.data.sample}{marker.data.samples}");
+        schema.set_table_label("{marker.data.cat}.{marker.data.id} {marker.data.label}: {marker.data.duration}{marker.data.sample}{marker.data.samples}");
         schema.set_chart_label("{marker.data.cat}.{marker.data.id} {marker.data.label}");
         schema.add_key_label_format_with_flags(
             "cat",
@@ -855,7 +855,9 @@ mod test {
         metric.cancel(id);
 
         // We can't inspect the values yet.
-        assert!(metric.test_get_value(Some("test-ping".to_string())).is_none());
+        assert!(metric
+            .test_get_value(Some("test-ping".to_string()))
+            .is_none());
     }
 
     #[test]

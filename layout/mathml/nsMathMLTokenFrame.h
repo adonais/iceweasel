@@ -53,8 +53,8 @@ class nsMathMLTokenFrame : public nsMathMLContainerFrame {
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;
 
-  nsresult Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
-                 ReflowOutput& aDesiredSize) override;
+  void Place(DrawTarget* aDrawTarget, const PlaceFlags& aFlags,
+             ReflowOutput& aDesiredSize) override;
 
  protected:
   explicit nsMathMLTokenFrame(ComputedStyle* aStyle,

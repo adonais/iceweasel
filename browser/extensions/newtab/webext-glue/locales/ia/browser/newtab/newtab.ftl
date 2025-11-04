@@ -474,8 +474,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Passar a Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Passar a Celsius
 newtab-weather-menu-hide-weather = Celar meteo sur Nove scheda
 newtab-weather-menu-learn-more = Pro saper plus
+newtab-weather-menu-detect-my-location = Deteger mi position
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Datos meteo non es disponibile al momento.
+newtab-weather-opt-in-see-weather = Vole tu vider le meteo pro tu position?
+newtab-weather-opt-in-not-now =
+    .label = Non ora
+newtab-weather-opt-in-yes =
+    .label = Si
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York City
 
 ## Topic Labels
 
@@ -642,6 +650,9 @@ newtab-widget-lists-input-menu-move-up = Mover in alto
 newtab-widget-lists-input-menu-move-down = Mover in basso
 newtab-widget-lists-input-menu-delete = Deler
 newtab-widget-lists-input-menu-edit = Modificar
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Crear un nove lista
 newtab-widget-lists-name-label-default =
     .label = Agenda
 newtab-widget-lists-name-placeholder-default =

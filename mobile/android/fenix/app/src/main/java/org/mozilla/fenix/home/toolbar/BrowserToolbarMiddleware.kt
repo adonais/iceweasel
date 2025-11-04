@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.home.toolbar
 
-import android.content.Context
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.Lifecycle.State.RESUMED
 import androidx.lifecycle.lifecycleScope
@@ -32,8 +31,9 @@ import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAct
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageOriginUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchQueryUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.EnterEditMode
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ExitEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.Init
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ToggleEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent.Source
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.CombinedEventAndMenu
@@ -61,8 +61,11 @@ import org.mozilla.fenix.browser.browsingmode.BrowsingMode.Private
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.UseCases
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
+import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.toolbar.BrowserToolbarEnvironment
+import org.mozilla.fenix.ext.isTallWindow
+import org.mozilla.fenix.ext.isWideWindow
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.HomeFragmentDirections
@@ -80,8 +83,6 @@ import mozilla.components.lib.state.Action as MVIAction
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
 
-private const val TALL_SCREEN_HEIGHT_DP = 480
-
 @VisibleForTesting
 internal sealed class DisplayActions : BrowserToolbarEvent {
     data class MenuClicked(override val source: Source) : DisplayActions()
@@ -97,20 +98,6 @@ internal sealed class TabCounterInteractions : BrowserToolbarEvent {
 
 internal sealed class PageOriginInteractions : BrowserToolbarEvent {
     data object OriginClicked : PageOriginInteractions()
-}
-
-/**
- * Helper function to determine whether the app's current window height
- * is at least more than [TALL_SCREEN_HEIGHT_DP].
- *
- * This is useful when navigation bar should only be enabled on
- * taller screens (e.g., to avoid crowding content vertically).
- *
- * @return true if the window height size is more than [TALL_SCREEN_HEIGHT_DP].
- */
-@VisibleForTesting
-internal fun Context.isTallWindow(): Boolean {
-    return resources.configuration.screenHeightDp > TALL_SCREEN_HEIGHT_DP
 }
 
 /**
@@ -157,6 +144,7 @@ class BrowserToolbarMiddleware(
                 updateNavigationActions(context)
                 updateToolbarActionsBasedOnOrientation(context)
                 updateTabsCount(context)
+                updateMenuHighlight(context)
             }
 
             is EnvironmentCleared -> {
@@ -165,13 +153,16 @@ class BrowserToolbarMiddleware(
                 environment = null
             }
 
-            is ToggleEditMode -> {
+            is EnterEditMode -> {
                 next(action)
 
-                when (action.editMode) {
-                    true -> stopSearchStateUpdates()
-                    false -> observeSearchStateUpdates(context)
-                }
+                stopSearchStateUpdates()
+            }
+
+            is ExitEditMode -> {
+                next(action)
+
+                observeSearchStateUpdates(context)
             }
 
             is MenuClicked -> {
@@ -331,15 +322,18 @@ class BrowserToolbarMiddleware(
     }
 
     private fun buildEndBrowserActions(): List<Action> {
-        val environment = environment ?: return emptyList()
-        val isExpandedAndTallScreen = environment.context.settings().shouldUseExpandedToolbar &&
-                environment.context.isTallWindow()
+        val isWideWindow = environment?.fragment?.isWideWindow() == true
+        val isTallWindow = environment?.fragment?.isTallWindow() == true
+        val tabStripEnabled = environment?.context?.settings()?.isTabStripEnabled == true
+        val shouldUseExpandedToolbar = environment?.context?.settings()?.shouldUseExpandedToolbar == true
 
         return listOf(
             HomeToolbarActionConfig(HomeToolbarAction.TabCounter) {
-                !environment.context.settings().isTabStripEnabled && !isExpandedAndTallScreen
+                !tabStripEnabled && (!shouldUseExpandedToolbar || !isTallWindow || isWideWindow)
             },
-            HomeToolbarActionConfig(HomeToolbarAction.Menu) { !isExpandedAndTallScreen },
+            HomeToolbarActionConfig(HomeToolbarAction.Menu) {
+                !shouldUseExpandedToolbar || !isTallWindow || isWideWindow
+            },
         ).filter { config ->
             config.isVisible()
         }.map { config ->
@@ -355,17 +349,40 @@ class BrowserToolbarMiddleware(
         )
     }
 
+    /**
+     * - Devices taller than 480dp:
+     *   - The navigation bar is always shown (if the user enabled it).
+     *
+     * - Devices shorter than 480dp:
+     *   - The navigation bar is hidden (even if the user enabled it).
+     *   - The toolbar redesign customization option is also hidden.
+     *
+     *   Devices wider than 600dp:
+     *   - The navigation bar is hidden. (even If user enabled it)
+     *   - The toolbar redesign customization option is also hidden.
+     */
     private fun buildNavigationActions(): List<Action> {
         val environment = environment ?: return emptyList()
-        val isExpandedAndTallScreen = environment.context.settings().shouldUseExpandedToolbar &&
-                environment.context.isTallWindow()
+        val isWideWindow = environment.fragment.isWideWindow()
+        val isTallWindow = environment.fragment.isTallWindow()
+        val shouldUseExpandedToolbar = environment.context.settings().shouldUseExpandedToolbar
 
         return listOf(
-            HomeToolbarActionConfig(HomeToolbarAction.FakeBookmark) { isExpandedAndTallScreen },
-            HomeToolbarActionConfig(HomeToolbarAction.FakeShare) { isExpandedAndTallScreen },
-            HomeToolbarActionConfig(HomeToolbarAction.NewTab) { isExpandedAndTallScreen },
-            HomeToolbarActionConfig(HomeToolbarAction.TabCounter) { isExpandedAndTallScreen },
-            HomeToolbarActionConfig(HomeToolbarAction.Menu) { isExpandedAndTallScreen },
+            HomeToolbarActionConfig(HomeToolbarAction.FakeBookmark) {
+                shouldUseExpandedToolbar && isTallWindow && !isWideWindow
+            },
+            HomeToolbarActionConfig(HomeToolbarAction.FakeShare) {
+                shouldUseExpandedToolbar && isTallWindow && !isWideWindow
+            },
+            HomeToolbarActionConfig(HomeToolbarAction.NewTab) {
+                shouldUseExpandedToolbar && isTallWindow && !isWideWindow
+            },
+            HomeToolbarActionConfig(HomeToolbarAction.TabCounter) {
+                shouldUseExpandedToolbar && isTallWindow && !isWideWindow
+            },
+            HomeToolbarActionConfig(HomeToolbarAction.Menu) {
+                shouldUseExpandedToolbar && isTallWindow && !isWideWindow
+            },
         ).filter { config ->
             config.isVisible()
         }.map { config ->
@@ -423,9 +440,19 @@ class BrowserToolbarMiddleware(
         }
     }
 
+    private fun updateMenuHighlight(context: MiddlewareContext<BrowserToolbarState, BrowserToolbarAction>) {
+        appStore.observeWhileActive {
+            distinctUntilChangedBy { it.supportedMenuNotifications.isNotEmpty() }
+                .collect {
+                    updateEndBrowserActions(context)
+                    updateNavigationActions(context)
+                }
+        }
+    }
+
     private inline fun <S : State, A : MVIAction> Store<S, A>.observeWhileActive(
         crossinline observe: suspend (Flow<S>.() -> Unit),
-    ): Job? = environment?.viewLifecycleOwner?.run {
+    ): Job? = environment?.fragment?.viewLifecycleOwner?.run {
         lifecycleScope.launch {
             repeatOnLifecycle(RESUMED) {
                 flow().observe()
@@ -480,11 +507,16 @@ class BrowserToolbarMiddleware(
             )
         }
 
-        HomeToolbarAction.Menu -> ActionButtonRes(
-            drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
-            contentDescription = R.string.content_description_menu,
-            onClick = MenuClicked(source),
-        )
+        HomeToolbarAction.Menu -> {
+            val highlighted = appStore.state.supportedMenuNotifications
+                .any { it != SupportedMenuNotifications.OpenInApp }
+            ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
+                contentDescription = R.string.content_description_menu,
+                highlighted = highlighted,
+                onClick = MenuClicked(source),
+            )
+        }
 
         HomeToolbarAction.FakeBookmark -> ActionButtonRes(
             drawableResId = iconsR.drawable.mozac_ic_bookmark_24,

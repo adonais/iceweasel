@@ -60,7 +60,6 @@
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/Preferences.h"
@@ -70,6 +69,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/dom/AncestorIterator.h"
 #include "mozilla/dom/AudioTrack.h"
 #include "mozilla/dom/AudioTrackList.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
@@ -4556,18 +4556,27 @@ class HTMLMediaElement::TitleChangeObserver final : public nsIObserver {
   }
 
   void Subscribe() {
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    if (observerService) {
-      observerService->AddObserver(this, "document-title-changed", false);
+    if (!mIsSubscribed) {
+      nsCOMPtr<nsIObserverService> observerService =
+          mozilla::services::GetObserverService();
+      if (observerService) {
+        if (NS_WARN_IF(NS_FAILED(observerService->AddObserver(
+                this, "document-title-changed", false)))) {
+          return;
+        }
+        mIsSubscribed = true;
+      }
     }
   }
 
   void Unsubscribe() {
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    if (observerService) {
-      observerService->RemoveObserver(this, "document-title-changed");
+    if (mIsSubscribed) {
+      mIsSubscribed = false;
+      nsCOMPtr<nsIObserverService> observerService =
+          mozilla::services::GetObserverService();
+      if (observerService) {
+        observerService->RemoveObserver(this, "document-title-changed");
+      }
     }
   }
 
@@ -4575,6 +4584,7 @@ class HTMLMediaElement::TitleChangeObserver final : public nsIObserver {
   ~TitleChangeObserver() = default;
 
   WeakPtr<HTMLMediaElement> mElement;
+  bool mIsSubscribed{false};
 };
 
 NS_IMPL_ISUPPORTS(HTMLMediaElement::TitleChangeObserver, nsIObserver)
@@ -5083,7 +5093,40 @@ void HTMLMediaElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
     // content, since we always do that for touchstart.
     case eTouchMove:
     case eTouchEnd:
-    case eTouchStart:
+    case eTouchStart: {
+      // We stop the propagation (both at the capture and the bubbling phase)
+      // when the original target is the part of the ControlBar or the
+      // ClickToPlay button.
+      if (ShadowRoot* shadowRoot = GetShadowRoot()) {
+        nsINode* node =
+            nsINode::FromEventTargetOrNull(aVisitor.mEvent->mOriginalTarget);
+        const bool trap = [&] {
+          if (node->SubtreeRoot() != shadowRoot) {
+            return false;
+          }
+
+          for (auto* node : node->InclusiveAncestorsOfType<Element>()) {
+            auto* id = node->GetID();
+            if (!id) {
+              continue;
+            }
+            if (id == nsGkAtoms::clickToPlay || id == nsGkAtoms::controlBar) {
+              return true;
+            }
+          }
+          return false;
+        }();
+
+        if (trap) {
+          aVisitor.mCanHandle = false;
+        } else {
+          nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+        }
+        return;
+      }
+      nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+      return;
+    }
     case ePointerDown:
     case ePointerUp:
     case ePointerClick:

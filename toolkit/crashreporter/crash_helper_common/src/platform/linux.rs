@@ -11,9 +11,7 @@ use nix::{
     sys::socket::{socketpair, AddressFamily, SockFlag, SockType},
     Result,
 };
-use std::{
-    os::fd::{BorrowedFd, OwnedFd},
-};
+use std::os::fd::{BorrowedFd, OwnedFd};
 
 pub type ProcessHandle = ();
 

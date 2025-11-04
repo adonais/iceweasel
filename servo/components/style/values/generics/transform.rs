@@ -116,6 +116,7 @@ impl<T: Into<f64>> From<Matrix3D<T>> for Transform3D<f64> {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C)]
 pub struct GenericTransformOrigin<H, V, Depth> {
@@ -322,6 +323,7 @@ pub use self::GenericTransformOperation as TransformOperation;
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C)]
 /// A value of the `transform` property
@@ -681,6 +683,7 @@ pub fn get_normalized_vector_and_angle<T: Zero>(
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 /// A value of the `Rotate` property
@@ -737,9 +740,15 @@ where
                     // vector.
                     (None, angle)
                 } else if v.is_parallel_to(&DirectionVector::new(1., 0., 0.)) {
-                    (Some("x "), if v.0 < Number::zero() { -angle } else { angle })
+                    (
+                        Some("x "),
+                        if v.0 < Number::zero() { -angle } else { angle },
+                    )
                 } else if v.is_parallel_to(&DirectionVector::new(0., 1., 0.)) {
-                    (Some("y "), if v.1 < Number::zero() { -angle } else { angle })
+                    (
+                        Some("y "),
+                        if v.1 < Number::zero() { -angle } else { angle },
+                    )
                 } else if v.is_parallel_to(&DirectionVector::new(0., 0., 1.)) {
                     // When we're parallel to the z-axis, we can just serialize the angle.
                     let angle = if v.2 < Number::zero() { -angle } else { angle };
@@ -778,6 +787,7 @@ where
     ToComputedValue,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 /// A value of the `Scale` property
@@ -846,6 +856,7 @@ fn y_axis_and_z_axis_are_zero<LengthPercentage: Zero + ZeroNoPercent, Length: Ze
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 /// A value of the `translate` property
@@ -891,6 +902,7 @@ pub use self::GenericTranslate as Translate;
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum TransformStyle {

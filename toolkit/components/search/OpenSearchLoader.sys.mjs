@@ -95,10 +95,18 @@ const MOZSEARCH_LOCALNAME = "SearchPlugin";
  *   The uri from which to load the OpenSearch engine data.
  * @param {string} [lastModified]
  *   The UTC date when the engine was last updated, if any.
+ * @param {object} [originAttributes]
+ *   The origin attributes of the site loading the manifest. If none are
+ *   specified, the origin attributes will be formed of the first party domain
+ *   based on the domain of the manifest.
  * @returns {Promise<OpenSearchProperties>}
  *   The properties of the loaded OpenSearch engine.
  */
-export async function loadAndParseOpenSearchEngine(sourceURI, lastModified) {
+export async function loadAndParseOpenSearchEngine(
+  sourceURI,
+  lastModified,
+  originAttributes
+) {
   if (!sourceURI) {
     throw Components.Exception(
       "Must have URI when calling _install!",
@@ -114,7 +122,7 @@ export async function loadAndParseOpenSearchEngine(sourceURI, lastModified) {
 
   lazy.logConsole.debug("Downloading OpenSearch engine from:", sourceURI.spec);
 
-  let xmlData = await loadEngineXML(sourceURI, lastModified);
+  let xmlData = await loadEngineXML(sourceURI, lastModified, originAttributes);
   let xmlDocument = await parseXML(xmlData);
 
   lazy.logConsole.debug("Loading search plugin");
@@ -145,16 +153,19 @@ export async function loadAndParseOpenSearchEngine(sourceURI, lastModified) {
  *   The uri from which to load the OpenSearch engine data.
  * @param {string} [lastModified]
  *   The UTC date when the engine was last updated, if any.
+ * @param {object} [originAttributes]
+ *   The origin attributes to use to load the manifest.
  * @returns {Promise}
  *   A promise that is resolved with the data if the engine is successfully loaded
  *   and rejected otherwise.
  */
-function loadEngineXML(sourceURI, lastModified) {
+function loadEngineXML(sourceURI, lastModified, originAttributes = null) {
   var chan = lazy.SearchUtils.makeChannel(
     sourceURI,
     // OpenSearchEngine is loading a definition file for a search engine,
     // TYPE_DOCUMENT captures that load best.
-    Ci.nsIContentPolicy.TYPE_DOCUMENT
+    Ci.nsIContentPolicy.TYPE_DOCUMENT,
+    originAttributes
   );
 
   // we collect https telemetry for all top-level (document) loads.

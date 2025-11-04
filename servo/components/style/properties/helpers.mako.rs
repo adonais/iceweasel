@@ -148,7 +148,7 @@
             /// Making this type generic allows the compiler to figure out the
             /// animated value for us, instead of having to implement it
             /// manually for every type we care about.
-            #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToResolvedValue, ToCss)]
+            #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToAnimatedValue, ToResolvedValue, ToCss, ToTyped)]
             % if separator == "Comma":
             #[css(comma)]
             % endif
@@ -168,7 +168,7 @@
             % else:
             pub use self::ComputedList as List;
 
-            #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
+            #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss, ToTyped)]
             % if separator == "Comma":
             #[css(comma)]
             % endif
@@ -282,7 +282,7 @@
         }
 
         /// The specified value of ${name}.
-        #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
+        #[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem, ToTyped)]
         % if none_value:
         #[value_info(other_values = "none")]
         % endif
@@ -616,7 +616,7 @@
         pub use self::computed_value::T as SpecifiedValue;
         pub mod computed_value {
             #[cfg_attr(feature = "servo", derive(Deserialize, Hash, Serialize))]
-            #[derive(Clone, Copy, Debug, Eq, FromPrimitive, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss, ToResolvedValue, ToShmem)]
+            #[derive(Clone, Copy, Debug, Eq, FromPrimitive, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToAnimatedValue, ToComputedValue, ToCss, ToResolvedValue, ToShmem, ToTyped)]
             pub enum T {
             % for variant in keyword.values_for(engine):
             <%
@@ -804,7 +804,7 @@
         }
 
         /// Try to serialize a given shorthand to a string.
-        pub fn to_css(declarations: &[&PropertyDeclaration], dest: &mut crate::str::CssStringWriter) -> fmt::Result {
+        pub fn to_css(declarations: &[&PropertyDeclaration], dest: &mut style_traits::CssStringWriter) -> fmt::Result {
             match LonghandsToSerialize::from_iter(declarations.iter().cloned()) {
                 Ok(longhands) => longhands.to_css(&mut CssWriter::new(dest)),
                 Err(_) => Ok(())

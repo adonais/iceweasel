@@ -16,6 +16,7 @@
 #include "mozilla/Components.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/gfx/gfxVars.h"
+#include "mozilla/java/GeckoAppShellWrappers.h"
 #include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
 #include "nsIGfxInfo.h"
 #include "nsPromiseFlatString.h"
@@ -348,6 +349,12 @@ already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
   RefPtr<MediaDataDecoder> decoder =
       RemoteDataDecoder::CreateVideoDecoder(aParams, drmStubId, mProxy);
   return decoder.forget();
+}
+
+// static
+bool AndroidDecoderModule::IsJavaDecoderModuleAllowed() {
+  return StaticPrefs::media_android_media_codec_enabled() &&
+         !java::GeckoAppShell::IsIsolatedProcess();
 }
 
 already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateAudioDecoder(

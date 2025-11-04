@@ -89,6 +89,8 @@ DIRS += [
 TEST_HARNESS_FILES.testing.mochitest.tests.junit += [
     "geckoview/src/androidTest/assets/www/forms_iframe.html",
     "geckoview/src/androidTest/assets/www/forms_xorigin.html",
+    "geckoview/src/androidTest/assets/www/framebusting_child.html",
+    "geckoview/src/androidTest/assets/www/framebusting_parent.html",
     "geckoview/src/androidTest/assets/www/hello.html",
     "geckoview/src/androidTest/assets/www/hsts_header.sjs",
     "geckoview/src/androidTest/assets/www/iframe_http_only.html",

@@ -71,8 +71,8 @@ skip-if = [
   "os == 'linux' && display == 'x11' && debug && headless", # Linux-debug may not pass in the headless mode
   "os == 'linux' && asan", # Linux-asan may not pass in the any modes except the verify mode
   "os == 'linux' && ccov && !xorigin", # Linux-ccov passes only in the xorigin mode
-  "display == 'wayland' && opt && !xorigin", # Linux-Wayland-opt passes only in the xorigin mode
-  "display == 'wayland' && debug && !fission", # Linux-Wayland-debug may not pass in the non-fission mode
+  "os == 'linux' && os_version == '22.04' && display == 'wayland' && opt && !xorigin", # Linux-Wayland-opt passes only in the xorigin mode
+  "os == 'linux' && os_version == '22.04' && display == 'wayland' && debug && !fission", # Linux-Wayland-debug may not pass in the non-fission mode
   "os == 'win' && opt && fission && !xorigin && !verify", # Windows-opt may not pass in the normal mode
   "os == 'win' && ccov && fission && !xorigin", # Windows-CCov may not pass in the normal mode
 ]

@@ -19,10 +19,12 @@ void CoalescedMouseData::Coalesce(const WidgetMouseEvent& aEvent,
                                   const uint64_t& aInputBlockId) {
   if (IsEmpty()) {
     mCoalescedInputEvent = MakeUnique<WidgetMouseEvent>(aEvent);
+    mCoalescedInputEvent->mCallbackId = std::move(aEvent.mCallbackId);
     mGuid = aGuid;
     mInputBlockId = aInputBlockId;
     MOZ_ASSERT(!mCoalescedInputEvent->mCoalescedWidgetEvents);
   } else {
+    MOZ_ASSERT(aEvent.mCallbackId.isNothing());
     MOZ_ASSERT(mGuid == aGuid);
     MOZ_ASSERT(mInputBlockId == aInputBlockId);
     MOZ_ASSERT(mCoalescedInputEvent->mModifiers == aEvent.mModifiers);

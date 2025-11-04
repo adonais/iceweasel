@@ -320,6 +320,8 @@ function isHidden(aElement) {
  * actual node) . The "event" passed in to aEvent is just a JavaScript
  * object with the properties set that the real drag event object should
  * have. This includes the type of the drag event.
+ *
+ * @returns {boolean}
  */
 function sendDragEvent(aEvent, aTarget, aWindow = window) {
   if (
@@ -3385,7 +3387,7 @@ function createDragEventObject(
  *        Default is to match ``aWindow``.
  * @param {Object} [aDragEvent={}]
  *        Defaults to empty object. Overwrites an object passed to sendDragEvent.
- * @return {Array}
+ * @return {[boolean, DataTransfer]}
  *        A two element array, where the first element is the value returned
  *        from sendDragEvent for dragover event, and the second element is the
  *        dataTransfer for the current drag session.

@@ -16,10 +16,17 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
 /**
- * Responsible for starting or stopping up a [SessionNotificationService]
- * depending on whether a private tab is opened.
+ * Responsible for starting or stopping a [SessionNotificationService]
+ * depending on whether a private tab is open.
  *
- * @param browserStore Browser store reference used to observe the number of private tabs.
+ * This feature observes the number of private tabs in the [BrowserStore].
+ * When a private tab is opened, it starts the [SessionNotificationService].
+ * When all private tabs are closed, it stops the service.
+ *
+ * @param context The application context.
+ * @param browserStore The [BrowserStore] used to observe the number of private tabs.
+ * @param crashReporter The [CrashReporting] instance for error reporting.
+ * @param permissionRequestHandler A lambda function to handle permission requests for the notification service.
  */
 class PrivateNotificationFeature(
     context: Context,

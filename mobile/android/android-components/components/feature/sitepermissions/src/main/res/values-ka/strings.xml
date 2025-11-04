@@ -44,6 +44,12 @@
     this button will not give access to this permission
   -->
   <string name="mozac_feature_sitepermissions_block">აკრძალვა</string>
+  <!-- Message of a dialog offering more context about the app level notification permission request. %1$s will be replaced with the name of the app. -->
+  <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_message">შეტყობინების ნებართვას საჭიროებს თქვენგან %1$s ამ საიტიდან მისაღებად.</string>
+  <!-- Button label in a notification permission request dialog to dismiss the dialog. -->
+  <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_dismiss_label">გაუქმება</string>
+  <!-- Button label in a notification permission request dialog. It will let the user go to Android Settings to grant the permission. -->
+  <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_settings_label">პარამეტრებზე გადასვლა</string>
   <!-- Text for a checkbox in a permission request dialog, this will allow to not show again the prompt -->
   <string name="mozac_feature_sitepermissions_do_not_ask_again_on_this_site2">დამახსოვრება ამ საიტისთვის</string>
   <!-- Text for a checkbox in a permission request dialog, this will allow to not show again the prompt -->
@@ -57,7 +63,7 @@
   <!-- Title of a dialog to require to save data in persistent storage. %1$s will be replaced with the URL of the current page -->
   <string name="mozac_feature_sitepermissions_persistent_storage_title">ნებას რთავთ, რომ %1$s შეძლებს შეინახოს მონაცემები მუდმივ მეხსიერებაზე?</string>
   <!-- Title of a dialog to use EME. %1$s will be replaced with the URL of the current page -->
-  <string name="mozac_feature_sitepermissions_media_key_system_access_title">გსურთ, %1$s-მ გაუშვას DRM-დაქვემდებარებული შიგთავსი?</string>
+  <string name="mozac_feature_sitepermissions_media_key_system_access_title">ნებას რთავთ, რომ %1$s შეძლებს გაუშვას DRM-მასალა?</string>
   <!--
     Title of a dialog to use cross origin storage permission. %1$s is the name of the site URL (www.site1.example) trying to track the user's activity.
     %2$s is the name of the site URL (www.site2.example) that the user is visiting.  This is the same domain name displayed in the address bar

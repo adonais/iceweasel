@@ -10,7 +10,7 @@
 import {
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -20,8 +20,8 @@ const DYNAMIC_TYPE_NAME = "actions";
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ActionsProviderQuickActions:
-    "resource:///modules/ActionsProviderQuickActions.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
+    "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
 });
 
 /**
@@ -43,14 +43,14 @@ export class UrlbarProviderActionsSearchMode extends UrlbarProvider {
     let input = queryContext.trimmedLowerCaseSearchString;
     let results = await lazy.ActionsProviderQuickActions.getActions(input);
     results.forEach(resultKey => {
-      let result = new lazy.UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.DYNAMIC,
-        UrlbarUtils.RESULT_SOURCE.ACTIONS,
-        {
+      let result = new lazy.UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
+        source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
+        payload: {
           key: resultKey,
           dynamicType: DYNAMIC_TYPE_NAME,
-        }
-      );
+        },
+      });
       addCallback(this, result);
     });
   }

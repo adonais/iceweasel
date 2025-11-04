@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-@file:Suppress("TooManyFunctions")
-
 package org.mozilla.focus.state
 
 import androidx.annotation.VisibleForTesting
@@ -13,7 +11,6 @@ import mozilla.components.lib.state.Reducer
 /**
  * Reducer creating a new [AppState] for dispatched [AppAction]s.
  */
-@Suppress("ComplexMethod")
 object AppReducer : Reducer<AppState, AppAction> {
     override fun invoke(state: AppState, action: AppAction): AppState {
         return when (action) {
@@ -281,7 +278,7 @@ private fun updateIsPinningSupported(
     return state.copy(isPinningSupported = action.value)
 }
 
-@Suppress("ComplexMethod", "ReturnCount")
+@Suppress("CyclomaticComplexMethod", "ReturnCount")
 private fun navigateUp(state: AppState, action: AppAction.NavigateUp): AppState {
     if (state.screen is Screen.Browser) {
         val screen = if (action.tabId != null) {

@@ -20,6 +20,7 @@ import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
@@ -134,6 +135,7 @@ internal class DefaultCookieBannerDetailsControllerTest {
         }.answers { onComplete.captured.invoke(true) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `WHEN handleBackPressed is called THEN should call popBackStack and navigate`() = runTestOnMain {
         every { context.settings().shouldUseCookieBannerPrivateMode } returns false
@@ -147,6 +149,7 @@ internal class DefaultCookieBannerDetailsControllerTest {
         verify { navController.navigate(any<NavDirections>()) }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `GIVEN cookie banner is enabled WHEN handleTogglePressed THEN remove from the storage, send telemetry and reload the tab`() =
         runTestOnMain {
@@ -175,6 +178,7 @@ internal class DefaultCookieBannerDetailsControllerTest {
             assertNotNull(CookieBanners.exceptionRemoved.testGetValue())
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `GIVEN cookie banner is disabled WHEN handleTogglePressed THEN remove from the storage, send telemetry and reload the tab`() =
         runTestOnMain {
@@ -223,6 +227,7 @@ internal class DefaultCookieBannerDetailsControllerTest {
             }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `GIVEN cookie banner mode is site not supported WHEN handleRequestSiteSupportPressed THEN request report site domain`() =
         runTestOnMain {

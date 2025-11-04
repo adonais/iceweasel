@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuDefaults
@@ -46,8 +47,7 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.menu.MenuItem.FixedItem.Level
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.text.Text
@@ -178,7 +178,7 @@ private fun DropdownMenuContent(
                 },
             )
 
-            is MenuItem.Divider -> Divider()
+            is MenuItem.Divider -> HorizontalDivider()
         }
     }
 }
@@ -395,7 +395,7 @@ private fun DropdownMenuPreview() {
                     var expanded by remember { mutableStateOf(false) }
                     val text by remember { mutableStateOf(it.itemType.name.replace("_", " ")) }
 
-                    PrimaryButton(
+                    FilledButton(
                         text = text,
                         modifier = Modifier.fillMaxWidth(),
                     ) {

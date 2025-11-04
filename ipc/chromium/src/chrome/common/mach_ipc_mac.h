@@ -12,6 +12,7 @@
 #include <sys/types.h>
 
 #include "mozilla/Maybe.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/Result.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/ipc/LaunchError.h"
@@ -49,11 +50,12 @@ bool MachChildProcessCheckIn(
 //==============================================================================
 // Called by MacProcessLauncher to transfer ports to the child process, and
 // acquire the child process task port.
-mozilla::Result<mozilla::Ok, mozilla::ipc::LaunchError>
-MachHandleProcessCheckIn(
-    mach_port_t endpoint, pid_t child_pid, mach_msg_timeout_t timeout,
-    const std::vector<mozilla::UniqueMachSendRight>& send_rights,
-    task_t* child_task);
+using MachHandleProcessCheckInPromise =
+    mozilla::MozPromise<task_t, mozilla::ipc::LaunchError, true>;
+RefPtr<MachHandleProcessCheckInPromise> MachHandleProcessCheckIn(
+    mozilla::UniqueMachReceiveRight endpoint, pid_t child_pid,
+    mozilla::TimeDuration timeout,
+    std::vector<mozilla::UniqueMachSendRight> send_rights);
 #endif
 
 #endif  // BASE_MACH_IPC_MAC_H_

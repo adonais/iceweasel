@@ -388,7 +388,6 @@ class QrFragment : Fragment() {
      * @param width The width of available size for camera preview
      * @param height The height of available size for camera preview
      */
-    @Suppress("ComplexMethod")
     internal fun setUpCameraOutputs(width: Int, height: Int) {
         val displayRotation = getScreenRotation()
 
@@ -580,7 +579,6 @@ class QrFragment : Fragment() {
     /**
      * Creates a new [CameraCaptureSession] for camera preview.
      */
-    @Suppress("ComplexMethod")
     internal fun createCameraPreviewSession() {
         val texture = textureView.surfaceTexture
 
@@ -748,7 +746,7 @@ class QrFragment : Fragment() {
          * @param aspectRatio The aspect ratio
          * @return The optimal `Size`, or an arbitrary one if none were big enough.
          */
-        @Suppress("ComplexMethod")
+
         internal fun chooseOptimalSize(
             choices: Array<Size>,
             textureViewWidth: Int,

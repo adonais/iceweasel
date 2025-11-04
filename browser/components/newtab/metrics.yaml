@@ -534,6 +534,46 @@ newtab:
       send_in_pings:
         - newtab
 
+  weather_opt_in_selection:
+      type: event
+      description: >
+        Recorded when a user answers the location opt-in prompt
+      bugs:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1989875
+      data_reviews:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1989875
+      data_sensitivity:
+        - interaction
+      notification_emails:
+        - rhamoui@mozilla.com
+      expires: never
+      extra_keys:
+        user_selection:
+          description: >
+           User's selection when interacting with weather opt-in.
+          type: string
+        newtab_visit_id: *newtab_visit_id
+      send_in_pings:
+        - newtab
+
+  weather_detect_location:
+      type: event
+      description: >
+        Recorded when a user selects 'detect my location' from weather context menu
+      bugs:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1992647
+      data_reviews:
+        - https://bugzilla.mozilla.org/show_bug.cgi?id=1992647
+      data_sensitivity:
+        - interaction
+      notification_emails:
+        - rhamoui@mozilla.com
+      expires: never
+      extra_keys:
+        newtab_visit_id: *newtab_visit_id
+      send_in_pings:
+        - newtab
+
   fakespot_dismiss:
     type: event
     description: >
@@ -1399,7 +1439,6 @@ newtab.handoff_preference:
     notification_emails:
       - fx-search-telemetry@mozilla.com
 
-
 topsites:
   enabled:
     lifetime: application
@@ -2082,6 +2121,10 @@ pocket:
           If click belongs in a section, the numeric position of the section
         type: string
       is_section_followed: *is_section_followed
+      content_redacted:
+        description: >
+          Are content details sent separately in the newtab_content ping
+        type: boolean
     send_in_pings:
       - newtab
 
@@ -2264,6 +2307,7 @@ pocket:
       recommendation_id: *recommendation_id
       tile_id: *pocket_tile_id
       format: *format
+      position: *pocket_position
       thumbs_up:
         description: >
           If the user clicked thumbs up.
@@ -2660,6 +2704,7 @@ newtab_content:
       recommendation_id: *recommendation_id
       tile_id: *pocket_tile_id
       format: *format
+      position: *pocket_position
       thumbs_up:
         description: >
           If the user clicked thumbs up.

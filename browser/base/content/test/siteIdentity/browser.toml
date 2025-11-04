@@ -4,6 +4,9 @@ support-files = [
   "dummy_page.html",
   "!/image/test/mochitest/blue.png",
 ]
+prefs = [
+  "security.certerrors.felt-privacy-v1=true"
+]
 
 ["browser_about_blank_same_document_tabswitch.js"]
 https_first_disabled = true
@@ -112,6 +115,7 @@ support-files = [
 
 ["browser_mixed_content_cert_override.js"]
 tags = "mcb"
+
 support-files = ["test-mixedcontent-securityerrors.html"]
 
 ["browser_mixed_content_with_navigation.js"]

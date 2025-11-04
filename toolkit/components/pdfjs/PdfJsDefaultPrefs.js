@@ -21,6 +21,7 @@ pref("pdfjs.altTextLearnMoreUrl", "https://support.mozilla.org/1/firefox/%VERSIO
 pref("pdfjs.annotationEditorMode", 0);
 pref("pdfjs.annotationMode", 2);
 pref("pdfjs.capCanvasAreaFactor", 200);
+pref("pdfjs.commentLearnMoreUrl", "https://support.mozilla.org/%LOCALE%/kb/view-pdf-files-firefox-or-choose-another-viewer#w_add-a-comment-to-a-pdf");
 pref("pdfjs.cursorToolOnLoad", 0);
 pref("pdfjs.defaultZoomDelay", 400);
 pref("pdfjs.defaultZoomValue", "");

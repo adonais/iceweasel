@@ -1215,16 +1215,20 @@ impl RenderBackend {
                         return RenderBackendStatus::Continue;
                     }
                     #[cfg(feature = "debugger")]
-                    DebugCommand::Query(query) => {
+                    DebugCommand::Query(ref query) => {
                         match query.kind {
                             DebugQueryKind::SpatialTree { .. } => {
                                 if let Some(doc) = self.documents.values().next() {
                                     let result = doc.spatial_tree.print_to_string();
                                     query.result.send(result).ok();
                                 }
+                                return RenderBackendStatus::Continue;
+                            }
+                            DebugQueryKind::CompositorView { .. } |
+                            DebugQueryKind::CompositorConfig { .. } => {
+                                ResultMsg::DebugCommand(option)
                             }
                         }
-                        return RenderBackendStatus::Continue;
                     }
                     DebugCommand::ClearCaches(mask) => {
                         self.resource_cache.clear(mask);

@@ -15,13 +15,15 @@
 
 #include "debugger/Frame.h"  // DebuggerFrameType
 
-#include "vm/BooleanObject.h"     // BooleanObject
+#include "vm/BooleanObject.h"  // BooleanObject
+#include "vm/ErrorObject.h"
 #include "vm/NumberObject.h"      // NumberObject
 #include "vm/ObjectOperations.h"  // DefineDataElement
 #include "vm/StringObject.h"      // StringObject
 #include "vm/Time.h"
 
 #include "debugger/Debugger-inl.h"
+#include "vm/ErrorObject-inl.h"  // ErrorObject.fileName,lineNumber,...
 #include "vm/Stack-inl.h"
 
 using namespace js;
@@ -169,6 +171,7 @@ bool ExecutionTracer::writeFunctionFrame(JSContext* cx,
     inlineData_.write(uint32_t(0));  // line number
     inlineData_.write(uint32_t(0));  // column
     inlineData_.write(uint32_t(0));  // script source id
+    inlineData_.write(uint64_t(0));  // realm id
   }
 
   JS::Rooted<JSAtom*> functionName(cx);
@@ -738,6 +741,68 @@ bool ValueSummaries::writeShapeSummary(JSContext* cx,
   return true;
 }
 
+bool ValueSummaries::writeErrorObjectSummary(JSContext* cx,
+                                             JS::Handle<JSObject*> obj,
+                                             JS::Handle<ErrorObject*> error,
+                                             IsNested nested) {
+  writeObjectHeader(JS::ObjectSummary::Kind::Error, 0);
+
+  JS::Rooted<Shape*> shape(cx, obj->shape());
+  if (!writeMinimalShapeSummary(cx, shape)) {
+    return false;
+  }
+
+  JS::Rooted<JS::Value> nameVal(cx);
+  JS::Rooted<JSString*> name(cx);
+  if (!GetProperty(cx, obj, obj, cx->names().name, &nameVal) ||
+      !(name = ToString<CanGC>(cx, nameVal))) {
+    valueData_->writeEmptySmallString();
+  } else {
+    if (!valueData_->writeSmallString(cx, name)) {
+      return false;
+    }
+  }
+
+  JS::Rooted<JSString*> message(cx, error->getMessage());
+  if (message) {
+    if (!valueData_->writeSmallString(cx, message)) {
+      return false;
+    }
+  } else {
+    valueData_->writeEmptySmallString();
+  }
+
+  JS::Rooted<JSObject*> stack(cx, error->stack());
+  if (stack) {
+    JSPrincipals* principals =
+        JS::GetRealmPrincipals(js::GetNonCCWObjectRealm(stack));
+    JS::Rooted<JSString*> formattedStack(cx);
+    if (!JS::BuildStackString(cx, principals, stack, &formattedStack)) {
+      return false;
+    }
+    if (!valueData_->writeSmallString(cx, formattedStack)) {
+      return false;
+    }
+  } else {
+    valueData_->writeEmptySmallString();
+  }
+
+  JS::Rooted<JSString*> filename(cx, error->fileName(cx));
+  if (filename) {
+    if (!valueData_->writeSmallString(cx, filename)) {
+      return false;
+    }
+  } else {
+    valueData_->writeEmptySmallString();
+  }
+
+  valueData_->write((uint32_t)error->lineNumber());
+
+  valueData_->write((uint32_t)error->columnNumber().oneOriginValue());
+
+  return true;
+}
+
 bool ValueSummaries::writeMinimalShapeSummary(JSContext* cx,
                                               JS::Handle<Shape*> shape) {
   TracingCaches& caches = cx->caches().tracingCaches;
@@ -1106,6 +1171,11 @@ bool ValueSummaries::writeObject(JSContext* cx, JS::Handle<JSObject*> obj,
   } else if (obj->is<MapObject>()) {
     JS::Rooted<MapObject*> typed(cx, &obj->as<MapObject>());
     if (!writeMapObjectSummary(cx, typed, nested)) {
+      return false;
+    }
+  } else if (obj->is<ErrorObject>()) {
+    JS::Rooted<ErrorObject*> typed(cx, &obj->as<ErrorObject>());
+    if (!writeErrorObjectSummary(cx, obj, typed, nested)) {
       return false;
     }
   } else if (obj->is<NativeObject>()) {

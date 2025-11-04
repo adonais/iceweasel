@@ -4,7 +4,6 @@
 
 package org.mozilla.focus.fragment.about
 
-import android.os.Build
 import android.os.Bundle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -163,7 +162,7 @@ class AboutFragment : BaseComposeFragment() {
             Text(
                 text = aboutVersion,
                 color = focusColors.aboutPageText,
-                style = focusTypography.body1.copy(
+                style = focusTypography.bodyLarge.copy(
                     // Use LTR in all cases since the version is not translatable.
                     textDirection = TextDirection.Ltr,
                 ),
@@ -178,7 +177,7 @@ class AboutFragment : BaseComposeFragment() {
         Text(
             text = content,
             color = focusColors.aboutPageText,
-            style = focusTypography.body1,
+            style = focusTypography.bodyLarge,
             modifier = Modifier
                 .padding(10.dp),
         )

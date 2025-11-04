@@ -722,8 +722,16 @@ class ScriptMixin(PlatformMixin):
             mode (str): string of the form 'filemode[:compression]' (e.g. 'r:gz' or 'r:bz2')
             extract_to (str, optional): where to extract the compressed file.
         """
-        with tarfile.open(fileobj=compressed_file, mode=mode) as t:
-            _safe_extract(t, path=extract_to)
+        if mode == "r|zst":
+            import zstandard
+
+            unzstd = zstandard.ZstdDecompressor()
+            with unzstd.stream_reader(compressed_file) as stream:
+                with tarfile.open(mode="r|", fileobj=stream) as t:
+                    _safe_extract(t, path=extract_to)
+        else:
+            with tarfile.open(fileobj=compressed_file, mode=mode) as t:
+                _safe_extract(t, path=extract_to)
 
     def download_unpack(self, url, extract_to=".", extract_dirs="*", verbose=False):
         """Generic method to download and extract a compressed file without writing it
@@ -744,6 +752,7 @@ class ScriptMixin(PlatformMixin):
             EXTENSION_TO_MIMETYPE = {
                 "bz2": "application/x-bzip2",
                 "xz": "application/x-xz",
+                "zst": "application/zstd",
                 "gz": "application/x-gzip",
                 "tar": "application/x-tar",
                 "zip": "application/zip",
@@ -752,6 +761,10 @@ class ScriptMixin(PlatformMixin):
                 "application/x-xz": {
                     "function": self.deflate,
                     "kwargs": {"mode": "r:xz"},
+                },
+                "application/zstd": {
+                    "function": self.deflate,
+                    "kwargs": {"mode": "r|zst"},
                 },
                 "application/x-bzip2": {
                     "function": self.deflate,

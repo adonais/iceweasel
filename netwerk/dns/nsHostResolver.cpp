@@ -111,7 +111,7 @@ struct HostResolverMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
-    schema.SetTableLabel("{marker.name} - {marker.data.host}");
+    schema.SetTableLabel("{marker.data.host}");
     schema.AddKeyFormat("host", MS::Format::SanitizedString,
                         MS::PayloadFlags::Searchable);
     schema.AddKeyFormat("originSuffix", MS::Format::SanitizedString,

@@ -16,7 +16,6 @@ const TEST_URI = `
     scrollbar-color: gold;
     user-modify: read-only;
     object-view-box: inset(0% 19% -33% 57%);
-    overflow-clip-box: padding-box;
   }
   div {
     overflow-anchor: auto;
@@ -51,14 +50,7 @@ const TEST_DATA_SELECTED = [
     deprecated: false,
     experimental: true,
   },
-  // TODO: Re-enable it when we have another property with no MDN url nor spec url Bug 1840910
-  /*{
-    // No MDN url nor spec url
-    type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
-    property: "overflow-clip-box",
-    deprecated: false,
-    experimental: false,
-  },*/
+  // TODO: Write a test for it when we have a property with no MDN url nor spec url Bug 1840910
 ];
 
 const TEST_DATA_ALL = [

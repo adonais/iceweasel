@@ -31,7 +31,7 @@ class TrustPanelNavigationMiddleware(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
 ) : Middleware<TrustPanelState, TrustPanelAction> {
 
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
+    @Suppress("CyclomaticComplexMethod")
     override fun invoke(
         context: MiddlewareContext<TrustPanelState, TrustPanelAction>,
         next: (TrustPanelAction) -> Unit,

@@ -20,7 +20,6 @@ import mozilla.components.lib.state.MiddlewareContext
 class ThumbnailsMiddleware(
     private val thumbnailStorage: ThumbnailStorage,
 ) : Middleware<BrowserState, BrowserAction> {
-    @Suppress("ComplexMethod")
     override fun invoke(
         context: MiddlewareContext<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,

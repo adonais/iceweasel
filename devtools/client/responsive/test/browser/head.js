@@ -874,7 +874,7 @@ async function setTouchAndMetaViewportSupport(ui, value) {
   await promiseContentReflow(ui);
 }
 
-// This function checks that zoom, layout viewport width and height
+// This function checks that zoom, the initial containing block width and height
 // are all as expected.
 async function testViewportZoomWidthAndHeight(msg, ui, zoom, width, height) {
   if (typeof zoom !== "undefined") {
@@ -887,8 +887,8 @@ async function testViewportZoomWidthAndHeight(msg, ui, zoom, width, height) {
   if (typeof width !== "undefined" || typeof height !== "undefined") {
     const innerSize = await spawnViewportTask(ui, {}, function () {
       return {
-        width: content.innerWidth,
-        height: content.innerHeight,
+        width: content.document.documentElement.clientWidth,
+        height: content.document.documentElement.clientHeight,
       };
     });
     if (typeof width !== "undefined") {

@@ -1,24 +1,73 @@
 "use strict";
 
-const CHECK_DEFAULT_INITIAL = Services.prefs.getBoolPref(
-  "browser.shell.checkDefaultBrowser"
-);
-
-add_task(async function clicking_make_default_checks_alwaysCheck_checkbox() {
+/**
+ * Sets up initial prefs and opens about:preferences page.
+ * @returns {Promise<void>}
+ */
+async function setup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shell.checkDefaultBrowser", false]],
+  });
   await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:preferences");
+}
 
-  await test_with_mock_shellservice({ isDefault: false }, async function () {
+/**
+ * Closes out the about:preferences tab and clears out
+ * any prefs that could have potentially been manipulated.
+ *
+ * @returns {void}
+ */
+function teardown() {
+  Services.prefs.unlockPref("browser.shell.checkDefaultBrowser");
+  gBrowser.removeCurrentTab();
+}
+
+/**
+ * Sets up the 'Make default' mock service to mimic
+ * whether the user has set the browser as default already or not.
+ *
+ * @param {{isDefault: boolean}} options
+ */
+async function setupInitialBrowserDefaultSetting(options) {
+  const win = gBrowser.selectedBrowser.contentWindow;
+  win.oldShellService = win.getShellService();
+  const { isDefault } = options;
+
+  const mockShellService = {
+    _isDefault: isDefault,
+    isDefaultBrowser() {
+      return this._isDefault;
+    },
+    async setDefaultBrowser() {
+      this._isDefault = true;
+    },
+  };
+  win.getShellService = function () {
+    return mockShellService;
+  };
+}
+
+add_task(
+  /**
+   * Tests when clicking 'Make default' button, setting browser
+   * to default, and the side effects of the 'Always check' checkbox.
+   */
+  async function clicking_make_default_checks_alwaysCheck_checkbox() {
+    await setup();
+    await setupInitialBrowserDefaultSetting({ isDefault: false });
+
     let checkDefaultBrowserState = isDefault => {
       let isDefaultPane = content.document.getElementById("isDefaultPane");
       let isNotDefaultPane =
         content.document.getElementById("isNotDefaultPane");
+
       Assert.equal(
-        ContentTaskUtils.isHidden(isDefaultPane),
+        BrowserTestUtils.isHidden(isDefaultPane.control),
         !isDefault,
         "The 'browser is default' pane should be hidden when browser is not default"
       );
       Assert.equal(
-        ContentTaskUtils.isHidden(isNotDefaultPane),
+        BrowserTestUtils.isHidden(isNotDefaultPane.control),
         isDefault,
         "The 'make default' pane should be hidden when browser is default"
       );
@@ -26,18 +75,25 @@ add_task(async function clicking_make_default_checks_alwaysCheck_checkbox() {
 
     checkDefaultBrowserState(false);
 
-    let alwaysCheck = content.document.getElementById("alwaysCheckDefault");
+    const alwaysCheck = content.document.getElementById("alwaysCheckDefault");
+
     Assert.ok(!alwaysCheck.checked, "Always Check is unchecked by default");
+
     Assert.ok(
       !Services.prefs.getBoolPref("browser.shell.checkDefaultBrowser"),
       "alwaysCheck pref should be false by default in test runs"
     );
 
-    let setDefaultButton = content.document.getElementById("setDefaultButton");
+    const setDefaultButton =
+      content.document.getElementById("setDefaultButton");
+    /**
+     * Click 'Make default' button to trigger shell service that sets the browser to default.
+     */
     setDefaultButton.click();
-    content.window.gMainPane.updateSetDefaultBrowser();
-
-    await ContentTaskUtils.waitForCondition(
+    /**
+     * Deem complete when 'Always Check' checkbox is checked.
+     */
+    await TestUtils.waitForCondition(
       () => alwaysCheck.checked,
       "'Always Check' checkbox should get checked after clicking the 'Set Default' button"
     );
@@ -59,30 +115,43 @@ add_task(async function clicking_make_default_checks_alwaysCheck_checkbox() {
       Services.prefs.getBoolPref("browser.shell.checkDefaultBrowser"),
       "checkDefaultBrowser pref is now enabled"
     );
-  });
+    teardown();
+  }
+);
 
-  gBrowser.removeCurrentTab();
-  Services.prefs.clearUserPref("browser.shell.checkDefaultBrowser");
-});
+add_task(
+  /**
+   * Tests when clicking 'Make default' button, setting browser
+   * to default, and the side effects of the 'Always check' checkbox
+   * when browser.shell.checkDefaultBrowser pref is locked
+   */
+  async function clicking_make_default_checks_alwaysCheck_checkbox_when_locked() {
+    await setup();
 
-add_task(async function clicking_make_default_checks_alwaysCheck_checkbox() {
-  Services.prefs.lockPref("browser.shell.checkDefaultBrowser");
-  await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:preferences");
+    Services.prefs.lockPref("browser.shell.checkDefaultBrowser");
 
-  await test_with_mock_shellservice({ isDefault: false }, async function () {
+    const isDefault = false;
+    await setupInitialBrowserDefaultSetting({ isDefault });
+
     let isDefaultPane = content.document.getElementById("isDefaultPane");
     let isNotDefaultPane = content.document.getElementById("isNotDefaultPane");
+
+    is(isDefaultPane.localName, "moz-promo", "Pane is a moz-promo");
+
     Assert.ok(
-      ContentTaskUtils.isHidden(isDefaultPane),
+      BrowserTestUtils.isHidden(isDefaultPane.control),
       "The 'browser is default' pane should be hidden when not default"
     );
+
     Assert.ok(
-      ContentTaskUtils.isVisible(isNotDefaultPane),
-      "The 'make default' pane should be visible when not default"
+      !BrowserTestUtils.isHidden(isNotDefaultPane.control),
+      "The 'is not default' pane should be visible when not default"
     );
 
     let alwaysCheck = content.document.getElementById("alwaysCheckDefault");
+
     Assert.ok(alwaysCheck.disabled, "Always Check is disabled when locked");
+
     Assert.ok(
       alwaysCheck.checked,
       "Always Check is checked because defaultPref is true and pref is locked"
@@ -91,14 +160,32 @@ add_task(async function clicking_make_default_checks_alwaysCheck_checkbox() {
       Services.prefs.getBoolPref("browser.shell.checkDefaultBrowser"),
       "alwaysCheck pref should ship with 'true' by default"
     );
-
-    let setDefaultButton = content.document.getElementById("setDefaultButton");
+    const setDefaultButton =
+      content.document.getElementById("setDefaultButton");
+    /**
+     * Click 'Make default' button to trigger shell service that sets the browser to default.
+     */
     setDefaultButton.click();
-    content.window.gMainPane.updateSetDefaultBrowser();
 
-    await ContentTaskUtils.waitForCondition(
-      () => ContentTaskUtils.isVisible(isDefaultPane),
-      "Browser is now default"
+    const { TelemetryTestUtils } = ChromeUtils.importESModule(
+      "resource://testing-common/TelemetryTestUtils.sys.mjs"
+    );
+    let snapshot = TelemetryTestUtils.getProcessScalars("parent", true, true);
+    TelemetryTestUtils.assertKeyedScalar(
+      snapshot,
+      "browser.ui.interaction.preferences_paneGeneral",
+      "setDefaultButton",
+      2 // button clicked
+    );
+
+    Assert.ok(
+      !BrowserTestUtils.isHidden(isNotDefaultPane.control),
+      "Browser default pane still shows after click because pref is locked"
+    );
+
+    Assert.ok(
+      BrowserTestUtils.isHidden(isDefaultPane.control),
+      "Browser is not default pane is NOT showing"
     );
 
     Assert.ok(
@@ -113,73 +200,37 @@ add_task(async function clicking_make_default_checks_alwaysCheck_checkbox() {
       Services.prefs.getBoolPref("browser.shell.checkDefaultBrowser"),
       "The pref is locked and so doesn't get changed"
     );
-  });
+    teardown();
+  }
+);
 
-  Services.prefs.unlockPref("browser.shell.checkDefaultBrowser");
-  gBrowser.removeCurrentTab();
-});
+add_task(
+  /**
+   * Testcase with Firefox initially set as the default browser
+   */
+  async function make_default_after_browser_set_as_default() {
+    await setup();
 
-add_task(async function make_default_disabled_until_prefs_are_loaded() {
-  // Testcase with Firefox not set as the default browser
-  await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:preferences");
-  await test_with_mock_shellservice({ isDefault: false }, async function () {
-    let alwaysCheck = content.document.getElementById("alwaysCheckDefault");
+    await setupInitialBrowserDefaultSetting({ isDefault: true });
+
+    const alwaysCheck = content.document.getElementById("alwaysCheckDefault");
+
+    is(alwaysCheck.localName, "moz-checkbox", "Checkbox is a moz-checkbox.");
+
     Assert.ok(
-      !alwaysCheck.disabled,
-      "'Always Check' is enabled after default browser updated"
+      !BrowserTestUtils.isHidden(alwaysCheck.control),
+      "Control element is visible by default"
     );
-  });
-  gBrowser.removeCurrentTab();
 
-  // Testcase with Firefox set as the default browser
-  await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:preferences");
-  await test_with_mock_shellservice({ isDefault: true }, async function () {
-    let alwaysCheck = content.document.getElementById("alwaysCheckDefault");
-    Assert.ok(
-      alwaysCheck.disabled,
-      "'Always Check' is still disabled after default browser updated"
+    Assert.ok(!alwaysCheck.disabled, "'Always Check' is NOT disabled");
+
+    Assert.ok(!alwaysCheck.checked, "Checkbox is NOT checked initially");
+
+    is(
+      content.document.l10n.getAttributes(alwaysCheck).id,
+      "always-check-default",
+      `Checkbox has the correct data-l10n-id attribute`
     );
-  });
-  gBrowser.removeCurrentTab();
-});
-
-registerCleanupFunction(function () {
-  Services.prefs.unlockPref("browser.shell.checkDefaultBrowser");
-  Services.prefs.setBoolPref(
-    "browser.shell.checkDefaultBrowser",
-    CHECK_DEFAULT_INITIAL
-  );
-});
-
-async function test_with_mock_shellservice(options, testFn) {
-  await SpecialPowers.spawn(
-    gBrowser.selectedBrowser,
-    [options],
-    async function (contentOptions) {
-      let doc = content.document;
-      let win = doc.defaultView;
-      win.oldShellService = win.getShellService();
-      let mockShellService = {
-        _isDefault: false,
-        isDefaultBrowser() {
-          return this._isDefault;
-        },
-        async setDefaultBrowser() {
-          this._isDefault = true;
-        },
-      };
-      win.getShellService = function () {
-        return mockShellService;
-      };
-      mockShellService._isDefault = contentOptions.isDefault;
-      win.gMainPane.updateSetDefaultBrowser();
-    }
-  );
-
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], testFn);
-
-  Services.prefs.setBoolPref(
-    "browser.shell.checkDefaultBrowser",
-    CHECK_DEFAULT_INITIAL
-  );
-}
+    teardown();
+  }
+);

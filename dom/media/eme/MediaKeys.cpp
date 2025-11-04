@@ -30,6 +30,7 @@
 #include "nsServiceManagerUtils.h"
 
 #ifdef MOZ_WIDGET_ANDROID
+#  include "AndroidDecoderModule.h"
 #  include "mozilla/MediaDrmCDMProxy.h"
 #  include "mozilla/RemoteCDMChild.h"
 #  include "mozilla/RemoteMediaManagerChild.h"
@@ -438,7 +439,7 @@ already_AddRefed<CDMProxy> MediaKeys::CreateCDMProxy() {
   RefPtr<CDMProxy> proxy;
 #ifdef MOZ_WIDGET_ANDROID
   if (IsWidevineKeySystem(mKeySystem)) {
-    if (StaticPrefs::media_android_media_codec_enabled()) {
+    if (AndroidDecoderModule::IsJavaDecoderModuleAllowed()) {
       proxy = new MediaDrmCDMProxy(
           this, mKeySystem,
           mConfig.mDistinctiveIdentifier == MediaKeysRequirement::Required,

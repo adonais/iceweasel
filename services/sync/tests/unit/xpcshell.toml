@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head = "head_appinfo.js ../../../common/tests/unit/head_helpers.js head_helpers.js head_http_server.js head_errorhandler_common.js"
 firefox-appdir = "browser"
 prefs = ["identity.fxaccounts.enabled=true"]
@@ -24,11 +25,11 @@ support-files = [
 ["test_412.js"]
 
 ["test_addon_utils.js"]
-run-sequentially = "Restarts server, can't change pref."
+run-sequentially = ["true"] # Restarts server, can't change pref.
 tags = "addons"
 
 ["test_addons_engine.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 tags = "addons"
 
 ["test_addons_reconciler.js"]
@@ -36,7 +37,7 @@ skip-if = ["appname == 'thunderbird'"]
 tags = "addons"
 
 ["test_addons_store.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 tags = "addons"
 
 ["test_addons_tracker.js"]
@@ -73,7 +74,7 @@ requesttimeoutfactor = 4
 ["test_bridged_engine.js"]
 
 ["test_clients_engine.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 
 ["test_clients_escape.js"]
 
@@ -98,22 +99,22 @@ skip-if = ["appname == 'thunderbird'"]
 ["test_enginemanager.js"]
 
 ["test_errorhandler_1.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 skip-if = ["os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt"] # Bug 1864117
 
 ["test_errorhandler_2.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 
 ["test_errorhandler_filelog.js"]
 
 ["test_errorhandler_sync_checkServerError.js"]
 
 ["test_extension_storage_engine.js"]
-run-sequentially = "extension-storage migration happens only once, and must be tested first."
+run-sequentially = ["true"] # extension-storage migration happens only once, and must be tested first.
 skip-if = ["appname == 'thunderbird'"]
 
 ["test_extension_storage_engine_kinto.js"]
-run-sequentially = "extension-storage migration happens only once, and must be tested first."
+run-sequentially = ["true"] # extension-storage migration happens only once, and must be tested first.
 skip-if = ["appname == 'thunderbird'"]
 
 ["test_extension_storage_tracker_kinto.js"]
@@ -129,7 +130,7 @@ skip-if = ["appname == 'thunderbird'"]
 skip-if = ["appname == 'thunderbird'"]
 
 ["test_fxa_node_reassignment.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 
 ["test_fxa_service_cluster.js"]
 # Finally, we test each engine.
@@ -160,7 +161,7 @@ skip-if = ["appname == 'thunderbird'"]
 # util contains a bunch of functionality used throughout.
 
 ["test_node_reassignment.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 
 ["test_password_engine.js"]
 
@@ -215,12 +216,12 @@ skip-if = ["appname == 'thunderbird'"]
 ["test_service_sync_locked.js"]
 
 ["test_service_sync_remoteSetup.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 
 ["test_service_sync_specified.js"]
 
 ["test_service_sync_updateEnabledEngines.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 
 ["test_service_verifyLogin.js"]
 
@@ -241,10 +242,10 @@ run-sequentially = "Frequent timeouts, bug 1395148"
 ["test_syncengine.js"]
 
 ["test_syncengine_sync.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 
 ["test_syncscheduler.js"]
-run-sequentially = "Frequent timeouts, bug 1395148"
+run-sequentially = ["true"] # Frequent timeouts, bug 1395148
 # Firefox Accounts specific tests
 
 ["test_tab_engine.js"]
@@ -284,7 +285,7 @@ requesttimeoutfactor = 4
 ["test_utils_lock.js"]
 
 ["test_utils_makeGUID.js"]
-run-sequentially = "Disproportionately slows down full test run, bug 1450316"
+run-sequentially = ["true"] # Disproportionately slows down full test run, bug 1450316
 
 ["test_utils_notify.js"]
 

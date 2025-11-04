@@ -9,7 +9,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Compiler.h"
-#include "mozilla/FloatingPoint.h"
 #if JS_HAS_INTL_API
 #  include "mozilla/intl/String.h"
 #endif

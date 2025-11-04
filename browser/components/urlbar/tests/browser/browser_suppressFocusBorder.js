@@ -8,11 +8,11 @@
  * Urlbar but before we decide we're opening the view.
  */
 
-let TEST_RESULT = new UrlbarResult(
-  UrlbarUtils.RESULT_TYPE.URL,
-  UrlbarUtils.RESULT_SOURCE.HISTORY,
-  { url: "http://mozilla.org/" }
-);
+let TEST_RESULT = new UrlbarResult({
+  type: UrlbarUtils.RESULT_TYPE.URL,
+  source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+  payload: { url: "http://mozilla.org/" },
+});
 
 /**
  * A test provider that awaits a promise before returning results.

@@ -9,8 +9,12 @@ const { IPProtection, IPProtectionWidget } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPProtection.sys.mjs"
 );
 
-const { IPProtectionService } = ChromeUtils.importESModule(
+const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPProtectionService.sys.mjs"
+);
+
+const { IPPSignInWatcher } = ChromeUtils.importESModule(
+  "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs"
 );
 
 const { HttpServer, HTTP_403 } = ChromeUtils.importESModule(
@@ -23,7 +27,6 @@ const { NimbusTestUtils } = ChromeUtils.importESModule(
 
 ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
-  UIState: "resource://services-sync/UIState.sys.mjs",
   ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
@@ -82,13 +85,12 @@ async function openPanel(state, win = window) {
     panel.setState(state);
   }
 
-  IPProtection.openPanel(win);
-
   let panelShownPromise = waitForPanelEvent(win.document, "popupshown");
   let panelInitPromise = BrowserTestUtils.waitForEvent(
     win.document,
     "IPProtection:Init"
   );
+  await panel.open(win);
   await Promise.all([panelShownPromise, panelInitPromise]);
 
   let panelView = PanelMultiView.getViewNode(
@@ -237,7 +239,6 @@ let DEFAULT_SERVICE_STATUS = {
 /* exported DEFAULT_SERVICE_STATUS */
 
 let STUBS = {
-  UIState: undefined,
   isLinkedToGuardian: undefined,
   enroll: undefined,
   fetchUserInfo: undefined,
@@ -252,7 +253,7 @@ add_setup(async function setupVPN() {
   setupService();
 
   await putServerInRemoteSettings(DEFAULT_SERVICE_STATUS.serverList);
-  IPProtectionService.init();
+  await IPProtectionService.init();
 
   if (DEFAULT_EXPERIMENT) {
     await setupExperiment();
@@ -268,7 +269,7 @@ add_setup(async function setupVPN() {
 });
 
 function setupStubs(stubs = STUBS) {
-  stubs.UIState = setupSandbox.stub(UIState, "get");
+  stubs.isSignedIn = setupSandbox.stub(IPPSignInWatcher, "isSignedIn");
   stubs.isLinkedToGuardian = setupSandbox.stub(
     IPProtectionService.guardian,
     "isLinkedToGuardian"
@@ -296,11 +297,7 @@ function setupService(
   stubs = STUBS
 ) {
   if (typeof isSignedIn != "undefined") {
-    stubs.UIState.returns({
-      status: isSignedIn
-        ? UIState.STATUS_SIGNED_IN
-        : UIState.STATUS_NOT_CONFIGURED,
-    });
+    stubs.isSignedIn.get(() => isSignedIn);
   }
 
   if (typeof isEnrolled != "undefined") {

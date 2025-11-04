@@ -243,7 +243,7 @@ html|input.tree-input {
   appearance: none;
   flex: 1;
   border: 0;
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   outline: var(--focus-outline);
   margin-block: -1px 0;
   margin-inline: -2px 0;

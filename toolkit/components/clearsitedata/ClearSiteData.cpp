@@ -23,8 +23,13 @@
 #include "nsIScriptError.h"
 #include "nsIScriptSecurityManager.h"
 #include "nsNetUtil.h"
+#include "mozilla/Logging.h"
 
 using namespace mozilla;
+
+LazyLogModule gClearSiteDataLog("ClearSiteData");
+
+#define LOG(args) MOZ_LOG(gClearSiteDataLog, mozilla::LogLevel::Debug, args)
 
 namespace {
 
@@ -204,6 +209,8 @@ void ClearSiteData::ClearDataFromChannel(nsIHttpChannel* aChannel) {
   // in a different principal.
   int32_t cleanNetworkFlags = 0;
 
+  LOG(("ClearSiteData: %s, %x", uri->GetSpecOrDefault().get(), flags));
+
   if (StaticPrefs::privacy_clearSiteDataHeader_cache_enabled() &&
       (flags & eCache)) {
     LogOpToConsole(aChannel, uri, eCache);
@@ -224,6 +231,8 @@ void ClearSiteData::ClearDataFromChannel(nsIHttpChannel* aChannel) {
                   nsIClearDataService::CLEAR_FINGERPRINTING_PROTECTION_STATE;
   }
 
+  LOG(("ClearSiteData: cleanFlags=%x, cleanNetworkFlags=%x", cleanFlags,
+       cleanNetworkFlags));
   // for each `DeleteDataFromPrincipal` we need to wait for one callback.
   // cleanFlags elicits once callback.
   uint32_t numClearCalls = (cleanFlags != 0) + (cleanNetworkFlags != 0);

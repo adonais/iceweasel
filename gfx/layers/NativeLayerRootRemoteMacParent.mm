@@ -4,6 +4,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "mozilla/layers/NativeLayerRootRemoteMacParent.h"
+#include "xpcpublic.h"
 
 namespace mozilla {
 namespace layers {
@@ -66,7 +67,8 @@ NativeLayerRootRemoteMacParent::RecvCommitNativeLayerCommands(
 
       case NativeLayerCommand::TCommandChangedSurface: {
         auto& changedSurface = command.get_CommandChangedSurface();
-        HandleChangedSurface(changedSurface.ID(), changedSurface.SurfaceID(),
+        HandleChangedSurface(changedSurface.ID(),
+                             std::move(changedSurface.Surface()),
                              changedSurface.IsDRM(), changedSurface.IsHDR(),
                              changedSurface.Size());
         break;
@@ -81,6 +83,45 @@ NativeLayerRootRemoteMacParent::RecvCommitNativeLayerCommands(
 
   mRealNativeLayerRoot->CommitToScreen();
 
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult NativeLayerRootRemoteMacParent::RecvRequestReadback(
+    IntSize aSize, Shmem* const aPixels) {
+  if (!xpc::IsInAutomation()) {
+    return IPC_FAIL(this, "Should only be called from automation.");
+  }
+
+  // Actually do a snapshot on mRealNativeLayerRoot.
+  // TODO: we'll probably have to handle higher bit depth formats at some point
+  // with the upcoming HDR work, but for now assume B8G8R8A8.
+  auto readbackFormat = gfx::SurfaceFormat::B8G8R8A8;
+  size_t readbackSize =
+      aSize.width * aSize.height * gfx::BytesPerPixel(readbackFormat);
+  Shmem buffer;
+  if (!AllocShmem(readbackSize, &buffer)) {
+    return IPC_FAIL(this, "Can't allocate shmem.");
+  }
+
+  if (!mSnapshotter) {
+    mSnapshotter = mRealNativeLayerRoot->CreateSnapshotter();
+    if (!mSnapshotter) {
+      return IPC_FAIL(this, "Can't create parent-side snapshotter.");
+    }
+  }
+
+  if (!mSnapshotter->ReadbackPixels(aSize, readbackFormat,
+                                    buffer.Range<uint8_t>())) {
+    return IPC_FAIL(this, "Failed readback.");
+  }
+
+  *aPixels = buffer;
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult NativeLayerRootRemoteMacParent::RecvFlush() {
+  // No-op message; when this returns, the other side knows that any
+  // preceding messages have finished processing.
   return IPC_OK();
 }
 
@@ -148,11 +189,9 @@ void NativeLayerRootRemoteMacParent::HandleLayerInfo(
   layer->SetSurfaceIsFlipped(aSurfaceIsFlipped);
 }
 
-void NativeLayerRootRemoteMacParent::HandleChangedSurface(uint64_t aID,
-                                                          uint32_t aSurfaceID,
-                                                          bool aIsDRM,
-                                                          bool aIsHDR,
-                                                          IntSize aSize) {
+void NativeLayerRootRemoteMacParent::HandleChangedSurface(
+    uint64_t aID, IOSurfacePort aSurfacePort, bool aIsDRM, bool aIsHDR,
+    IntSize aSize) {
   auto entry = mKnownLayers.MaybeGet(aID);
   if (!entry) {
     gfxWarning() << "Got a ChangedSurface for an unknown layer.";
@@ -162,14 +201,7 @@ void NativeLayerRootRemoteMacParent::HandleChangedSurface(uint64_t aID,
   RefPtr<NativeLayerCA> layer = (*entry)->AsNativeLayerCA();
   MOZ_ASSERT(layer, "All of our known layers should be NativeLayerCA.");
 
-  // Set the surface of this layer.
-  auto surfaceRef = IOSurfaceLookup(aSurfaceID);
-  if (surfaceRef) {
-    // The call to IOSurfaceLookup leaves us with a retain count of 1.
-    // The CFTypeRefPtr will take care of it when it falls out of scope,
-    // since we declare it with create rule semantics.
-    CFTypeRefPtr<IOSurfaceRef> surface =
-        CFTypeRefPtr<IOSurfaceRef>::WrapUnderCreateRule(surfaceRef);
+  if (auto surface = aSurfacePort.GetSurface()) {
     layer->SetSurfaceToPresent(surface, aSize, aIsDRM, aIsHDR);
   }
 }

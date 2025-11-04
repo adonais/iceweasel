@@ -478,8 +478,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Wikselje nei Fahrenhei
 newtab-weather-menu-change-temperature-units-celsius = Wikselje nei Celsius
 newtab-weather-menu-hide-weather = It waar op nij ljepblêd ferstopje
 newtab-weather-menu-learn-more = Mear ynfo
+newtab-weather-menu-detect-my-location = Myn lokaasje detektearje
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Waargegevens binne op dit stuit net beskikber.
+newtab-weather-opt-in-see-weather = Wolle jo it waar foar jo lokaasje sjen?
+newtab-weather-opt-in-not-now =
+    .label = No net
+newtab-weather-opt-in-yes =
+    .label = Ja
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York
 
 ## Topic Labels
 
@@ -646,6 +654,9 @@ newtab-widget-lists-input-menu-move-up = Omheech ferpleatse
 newtab-widget-lists-input-menu-move-down = Omleech ferpleatse
 newtab-widget-lists-input-menu-delete = Fuortsmite
 newtab-widget-lists-input-menu-edit = Bewurkje
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + In nije list oanmeitsje
 newtab-widget-lists-name-label-default =
     .label = Takelist
 newtab-widget-lists-name-placeholder-default =

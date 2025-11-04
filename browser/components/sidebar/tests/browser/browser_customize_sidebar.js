@@ -58,8 +58,8 @@ add_task(async function test_customize_sidebar_actions() {
   );
   is(
     customizeComponent.toolInputs.length,
-    4,
-    "Four default tools are shown in the customize menu"
+    5,
+    "Five default tools are shown in the customize menu"
   );
 
   for (const toolInput of customizeComponent.toolInputs) {

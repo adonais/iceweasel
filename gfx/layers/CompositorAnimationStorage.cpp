@@ -42,7 +42,7 @@ struct CompositorAnimationMarker {
     schema.AddKeyLabelFormat("id", "Animation Id", MS::Format::Integer);
     schema.AddKeyLabelFormat("property", "Animated Property",
                              MS::Format::String);
-    schema.SetTableLabel("{marker.name} - {marker.data.property}");
+    schema.SetTableLabel("{marker.data.property}");
     return schema;
   }
 };

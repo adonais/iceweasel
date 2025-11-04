@@ -612,7 +612,25 @@
         await TestUtils.waitForTick();
 
         verifyEvents([
+          {
+            type: "click",
+            value: "second",
+            localName: "moz-radio",
+            checked: true,
+          },
+          {
+            type: "input",
+            value: "second",
+            localName: "moz-radio",
+            checked: true,
+          },
           { type: "input", value: "second", localName: "moz-radio-group" },
+          {
+            type: "change",
+            value: "second",
+            localName: "moz-radio",
+            checked: true,
+          },
           { type: "change", value: "second", localName: "moz-radio-group" },
         ]);
 

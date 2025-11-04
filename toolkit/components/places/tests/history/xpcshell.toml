@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head = "head_history.js"
 
 ["test_async_history_api.js"]

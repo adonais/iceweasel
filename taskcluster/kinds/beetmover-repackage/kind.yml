@@ -40,14 +40,12 @@ kind-dependencies:
     - upload-symbols-dummy
 
 only-for-build-platforms:
-    - linux-shippable/opt
     - linux64-shippable/opt
     - linux64-aarch64-shippable/opt
     - macosx64-shippable/opt
     - win32-shippable/opt
     - win64-shippable/opt
     - win64-aarch64-shippable/opt
-    - linux-devedition/opt
     - linux64-devedition/opt
     - linux64-aarch64-devedition/opt
     - macosx64-devedition/opt

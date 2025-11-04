@@ -400,13 +400,13 @@ nsresult nsAlertsIconListener::InitAlertAsync(nsIAlertNotification* aAlert,
   CopyUTF16toUTF8(text, mAlertText);
   if (gBodySupportsMarkup) {
     NS_ENSURE_TRUE(
-        mAlertText.ReplaceSubstring(u8"&"_ns, u8"&amp;"_ns, mozilla::fallible),
+        mAlertText.ReplaceSubstring("&"_ns, "&amp;"_ns, mozilla::fallible),
         NS_ERROR_FAILURE);
     NS_ENSURE_TRUE(
-        mAlertText.ReplaceSubstring(u8"<"_ns, u8"&lt;"_ns, mozilla::fallible),
+        mAlertText.ReplaceSubstring("<"_ns, "&lt;"_ns, mozilla::fallible),
         NS_ERROR_FAILURE);
     NS_ENSURE_TRUE(
-        mAlertText.ReplaceSubstring(u8">"_ns, u8"&gt;"_ns, mozilla::fallible),
+        mAlertText.ReplaceSubstring(">"_ns, "&gt;"_ns, mozilla::fallible),
         NS_ERROR_FAILURE);
   }
 

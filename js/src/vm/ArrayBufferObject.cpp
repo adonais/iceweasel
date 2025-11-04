@@ -546,6 +546,19 @@ bool ArrayBufferObject::maxByteLengthGetterImpl(JSContext* cx,
 
   auto* buffer = &args.thisv().toObject().as<ArrayBufferObject>();
 
+  // Special case for wasm with potentially 64-bits memory.
+  // Manually compute the maxByteLength to avoid an overflow on 32-bit machines.
+  if (buffer->isWasm() && buffer->isResizable()) {
+    Pages sourceMaxPages = buffer->wasmSourceMaxPages().value();
+    uint64_t sourceMaxBytes = sourceMaxPages.byteLength64();
+
+    MOZ_ASSERT(sourceMaxBytes <=
+               wasm::PageSize * wasm::MaxMemory64PagesValidation);
+    args.rval().setNumber(double(sourceMaxBytes));
+
+    return true;
+  }
+
   // Steps 4-6.
   size_t maxByteLength = buffer->maxByteLength();
   MOZ_ASSERT_IF(buffer->isDetached(), maxByteLength == 0);
@@ -2163,6 +2176,9 @@ static constexpr js::gc::AllocKind GetArrayBufferGCObjectKind(size_t numSlots) {
   if (numSlots <= 4) {
     return js::gc::AllocKind::ARRAYBUFFER4;
   }
+  if (numSlots <= 6) {
+    return js::gc::AllocKind::ARRAYBUFFER6;
+  }
   if (numSlots <= 8) {
     return js::gc::AllocKind::ARRAYBUFFER8;
   }
@@ -2176,6 +2192,7 @@ template <class ArrayBufferType>
 static ArrayBufferType* NewArrayBufferObject(JSContext* cx, HandleObject proto_,
                                              gc::AllocKind allocKind) {
   MOZ_ASSERT(allocKind == gc::AllocKind::ARRAYBUFFER4 ||
+             allocKind == gc::AllocKind::ARRAYBUFFER6 ||
              allocKind == gc::AllocKind::ARRAYBUFFER8 ||
              allocKind == gc::AllocKind::ARRAYBUFFER12 ||
              allocKind == gc::AllocKind::ARRAYBUFFER16);

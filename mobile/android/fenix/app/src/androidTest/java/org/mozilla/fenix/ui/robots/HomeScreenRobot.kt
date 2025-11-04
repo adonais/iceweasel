@@ -34,8 +34,6 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.click
-import androidx.test.espresso.assertion.PositionAssertions.isCompletelyAbove
-import androidx.test.espresso.assertion.PositionAssertions.isPartiallyAbove
 import androidx.test.espresso.assertion.PositionAssertions.isPartiallyBelow
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers
@@ -83,6 +81,9 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_LOGO
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
 import org.mozilla.fenix.home.ui.HomepageTestTag.PRIVATE_BROWSING_HOMEPAGE_BUTTON
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.ui.util.PositionOnScreenMatcher.Position.BOTTOM
+import org.mozilla.fenix.ui.util.PositionOnScreenMatcher.Position.TOP
+import org.mozilla.fenix.ui.util.isAtPosition
 import mozilla.components.browser.menu.R as menuR
 import mozilla.components.ui.tabcounter.R as tabcounterR
 
@@ -474,9 +475,9 @@ class HomeScreenRobot {
         onView(withId(R.id.toolbarLayout))
             .check(
                 if (bottomPosition) {
-                    isPartiallyBelow(withId(R.id.homepageView))
+                    matches(isAtPosition(BOTTOM))
                 } else {
-                    isCompletelyAbove(withId(R.id.homeAppBar))
+                    matches(isAtPosition(TOP))
                 },
             )
         Log.i(TAG, "verifyAddressBarPosition: Verified toolbar position is set to top: $bottomPosition")
@@ -487,9 +488,9 @@ class HomeScreenRobot {
         onView(withId(R.id.composable_toolbar))
             .check(
                 if (bottomPosition) {
-                    isPartiallyBelow(withId(R.id.homepageView))
+                    matches(isAtPosition(BOTTOM))
                 } else {
-                    isPartiallyAbove(withId(R.id.homepageView))
+                    matches(isAtPosition(TOP))
                 },
             )
         Log.i(TAG, "verifyComposableToolbarPosition: Verified toolbar position is set to top: $bottomPosition")

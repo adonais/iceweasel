@@ -173,7 +173,7 @@ radio {
   animation: fade-out 0.5s ease-out 2s forwards;
   /* Show the border to spotlight the components in high-contrast mode. */
   border: 1px solid transparent;
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
 }
 
 @keyframes fade-out {
@@ -254,16 +254,6 @@ radio {
 
 /* General Pane */
 
-.is-default > #isNotDefaultPane,
-:not(.is-default) > #isDefaultPane {
-  visibility: hidden;
-}
-
-#isDefaultLabel,
-#isNotDefaultLabel {
-  font-weight: var(--font-weight-bold);
-}
-
 /* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.migrate.preferences-entrypoint.enabled") {
   #dataMigrationGroup {
@@ -333,28 +323,6 @@ radio {
 
 #activeLanguages > richlistitem {
   padding: 0.3em;
-}
-
-#saveWhere {
-  align-items: center;
-}
-
-#saveTo {
-  margin-inline-end: 1em;
-}
-
-#downloadFolder {
-  flex: 1;
-  margin-block: 4px;
-  margin-inline-start: 0;
-  padding-inline-start: 30px;
-  background-repeat: no-repeat;
-  background-size: 16px;
-  background-position: center left 8px;
-}
-
-#downloadFolder:-moz-locale-dir(rtl) {
-  background-position-x: right 8px;
 }
 
 #updateBox {
@@ -922,6 +890,7 @@ dialog > .sync-engines-list + hbox {
 
 .fxaMobilePromo {
   margin-top: 2px !important;
+  margin-bottom: var(--space-xxlarge);
 }
 
 .androidIcon,
@@ -1032,6 +1001,11 @@ dialog > .sync-engines-list + hbox {
   max-width: var(--page-main-content-width);
 }
 
+#search-tooltip-container {
+  position: relative;
+  top: 0;
+}
+
 .search-tooltip {
   max-width: 10em;
   font-size: 1rem;
@@ -1042,6 +1016,7 @@ dialog > .sync-engines-list + hbox {
   border: 1px solid #d7b600;
   margin-top: -18px;
   opacity: 0.85;
+  z-index: 1;
 }
 
 .search-tooltip:hover {
@@ -1386,74 +1361,27 @@ richlistitem .text-link:hover {
   }
 }
 
-#websiteAppearanceGroup {
-  display: block;
+#webAppearanceGroup .description-deemphasized {
+  margin-block-end: var(--space-large);
 }
 
-#web-appearance-chooser {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-large);
-}
+/** SRD web-appearance-chooser control START **/
+.appearance-chooser-item {
+  flex: 1;
 
-#web-appearance-chooser,
-#web-appearance-override-warning,
-#text-zoom-override-warning {
-  margin: var(--space-medium) 0;
-}
-
-#web-appearance-override-warning:not([hidden]) {
-  display: flex;
-}
-
-.web-appearance-choice {
-  width: 100%;
-  border: 1px solid var(--in-content-box-border-color);
-  background-color: var(--background-color-box);
-  color: var(--text-color);
-  border-radius: var(--border-radius-small);
-  overflow: clip;
-}
-
-.web-appearance-choice-image-container {
-  background-color: var(--button-background-color);
-  padding: var(--space-medium) 0;
-
-  .web-appearance-choice:hover > & {
-    background-color: var(--button-background-color-hover);
+  &::part(image) {
+    width: 54px;
+    box-shadow: var(--box-shadow-card);
+    margin-block: var(--space-medium);
+    border: var(--border-width) solid var(--border-color);
+    border-radius: var(--border-radius-small);
   }
 
-  .web-appearance-choice:hover:active > & {
-    background-color: var(--button-background-color-active);
+  &:dir(rtl)::part(image) {
+    transform: scaleX(-1);
   }
 }
-
-.web-appearance-choice img {
-  display: block;
-  margin: 0 auto;
-
-  border: 1px solid var(--in-content-box-border-color);
-  border-radius: var(--border-radius-small);
-  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.2);
-
-  transform: scaleX(1);
-  content: url("chrome://browser/content/preferences/web-appearance-light.svg");
-}
-
-.web-appearance-choice.dark img {
-  content: url("chrome://browser/content/preferences/web-appearance-dark.svg");
-}
-
-.web-appearance-choice img:-moz-locale-dir(rtl) {
-  transform: scaleX(-1);
-}
-
-.web-appearance-choice-footer {
-  border-top: 1px solid var(--in-content-box-border-color);
-  padding: 4px 8px;
-  overflow-wrap: anywhere;
-  display: flex;
-}
+/** SRD web-appearance-chooser control END **/
 
 #translations-manage-install-list {
   height: 220px;
@@ -1554,3 +1482,22 @@ richlistitem .text-link:hover {
     font-size: var(--font-size-small);
   }
 }
+
+/* START SRD temp page header styles (bug 1948415) */
+.page-header {
+  gap: var(--space-small);
+  align-items: center;
+
+  &:not([hidden]) {
+    display: flex;
+  }
+
+  > h2 {
+    margin: 0;
+  }
+
+  > moz-button:first-of-type:dir(rtl) {
+    scale: -1 1;
+  }
+}
+/* END SRD temp page header styles (bug 1948415) */

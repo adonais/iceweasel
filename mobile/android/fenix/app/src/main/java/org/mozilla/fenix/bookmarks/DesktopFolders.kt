@@ -59,10 +59,11 @@ class DesktopFolders(
         ).toInt()
     }
 
-    private suspend fun virtualDesktopFolder(): BookmarkNode? {
-        val rootNode = bookmarksStorage.getTree(BookmarkRoot.Root.id, recursive = false) ?: return null
-        return rootNode.copy(title = rootTitles[rootNode.title])
-    }
+    private suspend fun virtualDesktopFolder(): BookmarkNode? = bookmarksStorage
+        .getTree(BookmarkRoot.Root.id, recursive = false)
+        .getOrNull()?.let {
+            it.copy(title = rootTitles[it.title])
+        }
 
     /**
      * Removes 'mobile' root (to avoid a cyclical bookmarks tree in the UI) and renames other roots to friendly titles.

@@ -514,10 +514,6 @@ class JS::Realm : public JS::shadow::Realm {
     behaviors_.setReduceTimerPrecisionCallerType(type);
   }
 
-  void setLocaleOverride(const char* locale) {
-    behaviors_.setLocaleOverride(locale);
-  }
-
   /* Whether to preserve JIT code on non-shrinking GCs. */
   bool preserveJitCode() { return creationOptions_.preserveJitCode(); }
 
@@ -809,13 +805,19 @@ class JS::Realm : public JS::shadow::Realm {
   // Returns the locale for this realm. (Pointer must NOT be freed!)
   const char* getLocale() const;
 
+  // Set the locale for this realm. Reset to the system default locale when the
+  // input is |nullptr|.
+  void setLocaleOverride(const char* locale) {
+    behaviors_.setLocaleOverride(locale);
+  }
+
   // Returns the date-time info for this realm. Returns nullptr unless a time
   // zone override was specified in the realm creation options.
   js::DateTimeInfo* getDateTimeInfo();
 
   // Set the time zone for this realm. Reset to the system default time zone
   // when the input is |nullptr|.
-  void setTimeZone(const char* timeZone);
+  void setTimeZoneOverride(const char* timeZone);
 
   // Initializes randomNumberGenerator if needed.
   mozilla::non_crypto::XorShift128PlusRNG& getOrCreateRandomNumberGenerator();

@@ -126,8 +126,23 @@ function initVisibilityChanges(aWindow, aElement) {
   // Filled in at the end; memoized to avoid performance failures.
   let isTaskbarTabsEnabled = false;
 
-  const shouldHide = aLocation =>
-    !(aLocation.scheme.startsWith("http") && isTaskbarTabsEnabled);
+  const shouldHide = aLocation => {
+    if (!isTaskbarTabsEnabled) {
+      return true;
+    }
+
+    // Forcefully initialize Taskbar Tabs. At some point, this will also affect
+    // the page action; in the meantime, ensures that telemetry info is
+    // prepared whenever the pref is enabled.
+    //
+    // This is a promise, but we don't care when it finishes. It's a no-op if
+    // TaskbarTabs already initialized.
+    lazy.TaskbarTabs.waitUntilReady();
+
+    return (
+      !(aLocation instanceof Ci.nsIURL) && !aLocation.scheme.startsWith("http")
+    );
+  };
 
   aWindow.gBrowser.addProgressListener({
     onLocationChange(aWebProgress, aRequest, aLocation) {

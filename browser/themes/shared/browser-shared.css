@@ -99,14 +99,15 @@ body {
   /* on macOS the animation of the toolbox in fullscreen needs the toolbox to be higher */
   --browser-area-z-index-toolbox-while-animating: 4;
 
-  --toolbarbutton-border-radius: 4px;
+  --toolbarbutton-border-radius: var(--button-border-radius);
   --identity-box-margin-inline: 4px;
   --urlbar-min-height: max(32px, 1.4em);
   --urlbar-icon-padding: calc((var(--urlbar-min-height) - 2px /* border */ - 2px /* padding */ - 16px /* icon */) / 2);
 
-  /* This should be used for icons and chiclets inside the input field. It makes
-     the gap around them more uniform when they are close to the field edges */
-  --urlbar-icon-border-radius: calc(var(--toolbarbutton-border-radius) - 1px);
+  /* This should be used for icons and chiclets inside the input field, as well
+     as result rows. It makes the gap around them more uniform when they are
+     close to the field edges. */
+  --urlbar-inner-border-radius: calc(var(--toolbarbutton-border-radius) - 1px);
   --urlbar-searchmodeswitcher-inline-padding: 6px;
   --urlbar-searchmodeswitcher-margin-inline-end: 0.45em;
 
@@ -799,7 +800,7 @@ menupopup::part(drop-indicator) {
 
   &:hover {
     background-color: hsla(0, 0%, 70%, 0.2);
-    border-radius: 2px;
+    border-radius: var(--border-radius-xsmall);
   }
 }
 
@@ -884,7 +885,7 @@ menupopup::part(drop-indicator) {
       background-color: rgba(216, 216, 216, 0.2);
       color: white;
       border: none;
-      border-radius: 2px;
+      border-radius: var(--border-radius-xsmall);
       margin: 4px;
       padding: 3px 12px;
       flex: 1;
@@ -914,7 +915,7 @@ menupopup::part(drop-indicator) {
     .popup-notification-secondary-button {
       margin: 3px;
       border: none;
-      border-radius: 2px;
+      border-radius: var(--border-radius-xsmall);
       background-image: url(chrome://global/skin/icons/close.svg);
       background-color: transparent;
       background-repeat: no-repeat;
@@ -1069,7 +1070,7 @@ menupopup::part(drop-indicator) {
   margin: 0;
   background-color: rgb(0, 96, 223);
   color: rgb(255, 255, 255);
-  border-radius: 5px;
+  border-radius: var(--border-radius-small);
   padding: 10px;
   margin-top: 15px;
   margin-bottom: 10px;

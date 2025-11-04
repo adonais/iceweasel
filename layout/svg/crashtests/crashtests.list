@@ -239,6 +239,7 @@ load 1504072.html
 load 1072758.html
 load 1424031.html
 load 1426575.html
+load 1467887-1.html
 load 1536892.html
 load 1539318-1.svg
 load 1548985-1.html
@@ -272,3 +273,4 @@ load 1882921-1.html
 asserts(5-20) load 1941838.html
 load 1953296.html
 load 1982067-1.html
+skip-if(isDebugBuild) load 1993379-1.html # bug 1467887

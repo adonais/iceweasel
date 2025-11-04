@@ -15,7 +15,6 @@ import org.mozilla.focus.R
 import org.mozilla.focus.settings.permissions.AutoplayOption
 import org.mozilla.focus.settings.permissions.SitePermissionOption
 
-@Suppress("TooManyFunctions")
 class SitePermissionOptionsStorage(private val context: Context) {
 
     /**

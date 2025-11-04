@@ -34,6 +34,7 @@ from ..backend import get_backend_class
 from ..base import MozbuildObject
 from ..compilation.warnings import WarningsCollector, WarningsDatabase
 from ..dirutils import mkdir
+from ..logging import read_serialized_record
 from ..telemetry import get_cpu_brand
 from ..testing import install_test_files
 from ..util import FileAvoidWrite, resolve_target_to_make
@@ -258,7 +259,7 @@ class BuildMonitor(MozbuildObject):
         query this instance for the current state in order to update UI, etc.
 
         message is either None, or the content of a message to be
-        displayed to the user.
+        displayed to the user (as a str or a logging.LogRecord).
         """
         message = None
 
@@ -317,6 +318,9 @@ class BuildMonitor(MozbuildObject):
             cargo_timings = plain_line[len("Timing report saved to ") :]
             record_cargo_timings(self.resources, cargo_timings)
             return BuildOutputResult(None, False, None)
+
+        if log_record := read_serialized_record(line):
+            return BuildOutputResult(None, False, log_record)
 
         warning = None
         message = line
@@ -691,7 +695,10 @@ class BuildOutputManager(OutputManager):
         warning, state_changed, message = self.monitor.on_line(line)
 
         if message:
-            self.log(logging.INFO, "build_output", {"line": message}, "{line}")
+            if isinstance(message, logging.LogRecord):
+                self.log_record("build_output", message)
+            else:
+                self.log(logging.INFO, "build_output", {"line": message}, "{line}")
         elif state_changed:
             have_handler = hasattr(self, "_handler")
             if have_handler:

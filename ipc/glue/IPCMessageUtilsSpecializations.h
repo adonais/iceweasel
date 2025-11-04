@@ -54,7 +54,6 @@
 // to the cpp file.
 #include "base/string_util.h"    // for StringPrintf
 #include "mozilla/ArrayUtils.h"  // for ArrayLength
-#include "mozilla/CheckedInt.h"
 
 #ifdef _MSC_VER
 #  pragma warning(disable : 4800)

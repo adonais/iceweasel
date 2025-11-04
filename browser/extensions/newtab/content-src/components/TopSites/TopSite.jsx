@@ -445,6 +445,7 @@ export class TopSiteLink extends React.PureComponent {
                 dispatch={this.props.dispatch}
                 feature="FEATURE_SHORTCUT_HIGHLIGHT"
                 position="inset-block-end inset-inline-start"
+                messageData={this.props.Messages?.messageData}
               />
             </MessageWrapper>
           )}

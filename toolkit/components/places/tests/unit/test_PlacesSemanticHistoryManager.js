@@ -10,8 +10,9 @@ ChromeUtils.defineESModuleGetters(this, {
     "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs",
 });
 
-// Must be divisible by 8.
-const EMBEDDING_SIZE = 16;
+// Must be supported, and a multiple of 8. see EmbeddingsGenerator.sys.mjs for
+// a list of supported values.
+const EMBEDDING_SIZE = 32;
 
 function approxEqual(a, b, tolerance = 1e-6) {
   return Math.abs(a - b) < tolerance;
@@ -30,11 +31,12 @@ function createPlacesSemanticHistoryManager(options = {}) {
   );
 }
 
+/**
+ * Mock engine that simulates an ML embedding engine.
+ */
 class MockMLEngine {
   #entries;
   /**
-   * Mock engine that simulates an ML embedding engine.
-   *
    * @param {Array} entries - Array of entries with title and vector properties.
    */
   constructor(entries = []) {
@@ -42,7 +44,7 @@ class MockMLEngine {
   }
 
   async run(request) {
-    const texts = request.args[0];
+    const texts = request.args;
     return texts.map(text => {
       if (typeof text !== "string" || text.trim() === "") {
         throw new Error("Invalid input: text must be a non-empty string");

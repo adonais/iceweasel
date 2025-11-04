@@ -7,7 +7,6 @@ package org.mozilla.focus.searchsuggestions.ui
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.material.ContentAlpha
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.remember
@@ -120,7 +119,7 @@ private fun SearchSuggestions(
                 background = focusColors.surface,
                 title = focusColors.onBackground,
                 description = focusColors.onBackground.copy(
-                    alpha = ContentAlpha.medium,
+                    alpha = 0.6f,
                 ),
                 autocompleteIcon = focusColors.onSurface,
                 groupTitle = focusColors.onBackground,

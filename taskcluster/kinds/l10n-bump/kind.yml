@@ -48,8 +48,6 @@ task-defaults:
                                     - macosx64
                                     - macosx64-devedition
                                 ja-JP-mac:
-                                    - linux
-                                    - linux-devedition
                                     - linux64
                                     - linux64-devedition
                                     - linux64-aarch64-devedition
@@ -65,8 +63,6 @@ task-defaults:
                                     {
                                         "platforms":
                                             [
-                                                "linux",
-                                                "linux-devedition",
                                                 "linux64",
                                                 "linux64-aarch64",
                                                 "linux64-devedition",
@@ -110,8 +106,6 @@ task-defaults:
                                     - macosx64
                                     - macosx64-devedition
                                 ja-JP-mac:
-                                    - linux
-                                    - linux-devedition
                                     - linux64
                                     - linux64-aarch64
                                     - linux64-devedition
@@ -127,8 +121,6 @@ task-defaults:
                                     {
                                         "platforms":
                                             [
-                                                "linux",
-                                                "linux-devedition",
                                                 "linux64",
                                                 "linux64-aarch64",
                                                 "linux64-devedition",

@@ -1232,6 +1232,13 @@ class MediaTrackGraph {
    * reverse stream might drift from the clock for this MediaTrackGraph.
    * Graph thread only. */
   bool OutputForAECMightDrift();
+  /* Return whether the audio output device used for the aec reverse stream
+   * corresponds to the primary output device, explicitly or implicitly,
+   * implicitly meaning when the primary output device is the system default
+   * output device, and the output device used for the aec reverse stream is
+   * explicit and matches the current system default output device.
+   * Graph thread only. */
+  bool OutputForAECIsPrimary();
 
   void RegisterCaptureTrackForWindow(uint64_t aWindowId,
                                      ProcessedMediaTrack* aCaptureTrack);

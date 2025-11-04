@@ -12,7 +12,7 @@
 #include "nsDocShell.h"
 #include "nsGlobalWindowInner.h"
 
-extern mozilla::LazyLogModule gNavigationLog;
+extern mozilla::LazyLogModule gNavigationAPILog;
 
 namespace mozilla::dom {
 
@@ -124,10 +124,7 @@ void NavigationHistoryEntry::GetState(JSContext* aCx,
 }
 
 void NavigationHistoryEntry::SetState(nsStructuredCloneContainer* aState) {
-  if (RefPtr<nsStructuredCloneContainer> state =
-          mSHInfo->GetNavigationState()) {
-    state->Copy(*aState);
-  }
+  mSHInfo->SetNavigationState(aState);
 }
 
 bool NavigationHistoryEntry::IsSameEntry(

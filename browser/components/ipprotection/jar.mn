@@ -15,3 +15,4 @@ browser.jar:
     content/browser/ipprotection/ipprotection-flag.mjs (content/ipprotection-flag.mjs)
     content/browser/ipprotection/ipprotection-message-bar.mjs (content/ipprotection-message-bar.mjs)
     content/browser/ipprotection/ipprotection-signedout.mjs (content/ipprotection-signedout.mjs)
+    content/browser/ipprotection/ipprotection-timer.mjs (content/ipprotection-timer.mjs)

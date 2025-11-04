@@ -8,7 +8,7 @@ pypi:fluent.pygments==1.0
 pypi:livereload==2.6.3
 pypi:mots==0.13.1
 pypi:myst-parser==2.0
-pypi:pytest==7.2.1
+pypi:pytest==8.4.2
 pypi:pywatchman==1.4.1
 pypi:sphinx-copybutton==0.5.2
 pypi:sphinx-design==0.5.0

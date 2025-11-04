@@ -1379,7 +1379,7 @@ template <typename Wrapper>
 class HeapOperations<JS::Value, Wrapper>
     : public MutableWrappedPtrOperations<JS::Value, Wrapper> {};
 
-MOZ_HAVE_NORETURN MOZ_COLD MOZ_NEVER_INLINE void ReportBadValueTypeAndCrash(
+[[noreturn]] MOZ_COLD MOZ_NEVER_INLINE void ReportBadValueTypeAndCrash(
     const JS::Value& val);
 
 // If the Value is a GC pointer type, call |f| with the pointer cast to that

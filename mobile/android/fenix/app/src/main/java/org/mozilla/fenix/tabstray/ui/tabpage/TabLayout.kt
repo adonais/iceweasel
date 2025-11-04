@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -51,7 +52,6 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.support.utils.ext.isLandscape
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwipeToDismissState2
@@ -86,9 +86,11 @@ private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_1 = 3
 private const val NUM_COLUMNS_TAB_GRID_LANDSCAPE_THRESHOLD_2 = 4
 private val TabListPadding = 16.dp
 private val TabListItemCornerRadius = 12.dp
-private val TabListFirstItemShape = RoundedCornerShape(
+private val TabListCornerShape = RoundedCornerShape(
     topStart = TabListItemCornerRadius,
     topEnd = TabListItemCornerRadius,
+    bottomStart = TabListItemCornerRadius,
+    bottomEnd = TabListItemCornerRadius,
 )
 private val TabListLastItemShape = RoundedCornerShape(
     bottomStart = TabListItemCornerRadius,
@@ -330,18 +332,22 @@ private fun TabList(
         LazyColumn(
             modifier = modifier
                 .width(FirefoxTheme.layout.size.containerMaxWidth)
+                .padding(
+                    start = TabListPadding,
+                    end = TabListPadding,
+                    top = TabListPadding,
+                )
+                .clip(TabListCornerShape)
+                .background(MaterialTheme.colorScheme.surface)
                 .detectListPressAndDrag(
                     listState = state,
                     reorderState = reorderState,
                     shouldLongPressToDrag = shouldLongPress,
                 ),
-        state = state,
-        contentPadding = PaddingValues(
-            start = TabListPadding,
-            end = TabListPadding,
-            top = TabListPadding,
-            bottom = tabListBottomPadding,
-        ),
+            state = state,
+            contentPadding = PaddingValues(
+                bottom = tabListBottomPadding,
+            ),
         ) {
             header?.let {
                 item(key = HEADER_ITEM_KEY) {
@@ -360,17 +366,11 @@ private fun TabList(
                 ) {
                     TabListItem(
                         tab = tab,
-                        modifier = Modifier
-                            .thenConditional(
-                                // Add top rounded corners to the first item
-                                modifier = Modifier.clip(TabListFirstItemShape),
-                                predicate = { index == 0 },
-                            )
-                            .thenConditional(
-                                // Add bottom rounded corners to the final item
-                                modifier = Modifier.clip(TabListLastItemShape),
-                                predicate = { index == tabs.size - 1 },
-                            ),
+                        modifier = if (index == tabs.size - 1) {
+                            Modifier.clip(TabListLastItemShape)
+                        } else {
+                           Modifier
+                        },
                         isSelected = tab.id == selectedTabId,
                         multiSelectionEnabled = isInMultiSelectMode,
                         multiSelectionSelected = selectionMode.selectedTabs.any { it.id == tab.id },

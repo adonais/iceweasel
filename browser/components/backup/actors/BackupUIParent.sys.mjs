@@ -74,6 +74,23 @@ export class BackupUIParent extends JSWindowActorParent {
   }
 
   /**
+   * Trigger a createBackup call.
+   *
+   * @param {...any} args
+   *   Arguments to pass through to createBackup.
+   * @returns {object} Result of the backup attempt.
+   */
+  async #triggerCreateBackup(...args) {
+    try {
+      await this.#bs.createBackup(...args);
+      return { success: true };
+    } catch (e) {
+      lazy.logConsole.error(`Failed to retrigger backup`, e);
+      return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
+    }
+  }
+
+  /**
    * Handles messages sent by BackupUIChild.
    *
    * @param {ReceiveMessageArgument} message
@@ -89,12 +106,7 @@ export class BackupUIParent extends JSWindowActorParent {
     if (message.name == "RequestState") {
       this.sendState();
     } else if (message.name == "TriggerCreateBackup") {
-      try {
-        await this.#bs.createBackup();
-      } catch (e) {
-        return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
-      }
-      return { success: true };
+      return await this.#triggerCreateBackup({ reason: "manual" });
     } else if (message.name == "EnableScheduledBackups") {
       try {
         let { parentDirPath, password } = message.data;
@@ -135,7 +147,7 @@ export class BackupUIParent extends JSWindowActorParent {
       let mode = filter
         ? Ci.nsIFilePicker.modeOpen
         : Ci.nsIFilePicker.modeGetFolder;
-      fp.init(win, "", mode);
+      fp.init(win || this.browsingContext, "", mode);
 
       if (filter) {
         fp.appendFilters(Ci.nsIFilePicker[filter]);
@@ -189,6 +201,7 @@ export class BackupUIParent extends JSWindowActorParent {
         );
       } catch (e) {
         lazy.logConsole.error(`Failed to restore file: ${backupFile}`, e);
+        this.#bs.setRecoveryError(e.cause || lazy.ERRORS.UNKNOWN);
         return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
       }
       return { success: true };
@@ -200,11 +213,8 @@ export class BackupUIParent extends JSWindowActorParent {
         lazy.logConsole.error(`Failed to enable encryption`, e);
         return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
       }
-      /**
-       * TODO: (Bug 1901640) after enabling encryption, recreate the backup,
-       * this time with sensitive data.
-       */
-      return { success: true };
+
+      return await this.#triggerCreateBackup({ reason: "encryption" });
     } else if (message.name == "DisableEncryption") {
       try {
         await this.#bs.disableEncryption();
@@ -213,11 +223,8 @@ export class BackupUIParent extends JSWindowActorParent {
         lazy.logConsole.error(`Failed to disable encryption`, e);
         return { success: false, errorCode: e.cause || lazy.ERRORS.UNKNOWN };
       }
-      /**
-       * TODO: (Bug 1901640) after disabling encryption, recreate the backup,
-       * this time without sensitive data.
-       */
-      return { success: true };
+
+      return await this.#triggerCreateBackup({ reason: "encryption" });
     } else if (message.name == "RerunEncryption") {
       try {
         let { password } = message.data;
@@ -234,13 +241,31 @@ export class BackupUIParent extends JSWindowActorParent {
        * this time with the new password.
        */
       return { success: true };
-    } else if (message.name == "FindIfABackupFileExists") {
-      this.#bs.findIfABackupFileExists();
     } else if (message.name == "ShowBackupLocation") {
       this.#bs.showBackupLocation();
     } else if (message.name == "EditBackupLocation") {
       const window = this.browsingContext.topChromeWindow;
       this.#bs.editBackupLocation(window);
+    } else if (message.name == "QuitCurrentProfile") {
+      // Notify windows that a quit has been requested.
+      let cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
+        Ci.nsISupportsPRBool
+      );
+      Services.obs.notifyObservers(cancelQuit, "quit-application-requested");
+      if (cancelQuit.data) {
+        // Something blocked our attempt to quit.
+        return null;
+      }
+
+      try {
+        Services.startup.quit(Services.startup.eAttemptQuit);
+      } catch (e) {
+        // let's silently resolve this error
+        lazy.logConsole.error(
+          `There was a problem while quitting the current profile: `,
+          e
+        );
+      }
     }
 
     return null;
@@ -251,6 +276,8 @@ export class BackupUIParent extends JSWindowActorParent {
    * recent state object from BackupService.
    */
   sendState() {
-    this.sendAsyncMessage("StateUpdate", { state: this.#bs.state });
+    this.sendAsyncMessage("StateUpdate", {
+      state: this.#bs.state,
+    });
   }
 }

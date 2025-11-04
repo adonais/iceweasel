@@ -1009,10 +1009,10 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   UniquePtr<uint8_t[]> GetImageBuffer(
       mozilla::CanvasUtils::ImageExtraction aExtractionBehavior,
       int32_t* out_format, gfx::IntSize* out_imageSize) override;
-  NS_IMETHOD GetInputStream(const char* mimeType,
-                            const nsAString& encoderOptions,
-                            mozilla::CanvasUtils::ImageExtraction spoofing,
-                            nsIInputStream** out_stream) override;
+  NS_IMETHOD GetInputStream(
+      const char* mimeType, const nsAString& encoderOptions,
+      mozilla::CanvasUtils::ImageExtraction extractionBehavior,
+      const nsACString& randomizationKey, nsIInputStream** out_stream) override;
 
   already_AddRefed<mozilla::gfx::SourceSurface> GetSurfaceSnapshot(
       gfxAlphaType* out_alphaType) override;

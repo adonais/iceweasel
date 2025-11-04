@@ -6,6 +6,7 @@
 
 #include "jit/IonAnalysis.h"
 
+#include "mozilla/CheckedArithmetic.h"
 #include "mozilla/HashFunctions.h"
 
 #include <algorithm>
@@ -16,7 +17,6 @@
 #include "jit/DominatorTree.h"
 #include "jit/MIRGenerator.h"
 #include "jit/MIRGraph.h"
-#include "util/CheckedArithmetic.h"
 
 #include "vm/BytecodeUtil-inl.h"
 
@@ -3751,7 +3751,7 @@ SimpleLinearSum jit::ExtractLinearSum(MDefinition* ins, MathSpace space,
     int32_t constant;
     if (space == MathSpace::Modulo) {
       constant = uint32_t(lsum.constant) + uint32_t(rsum.constant);
-    } else if (!SafeAdd(lsum.constant, rsum.constant, &constant) ||
+    } else if (!mozilla::SafeAdd(lsum.constant, rsum.constant, &constant) ||
                !MonotoneAdd(lsum.constant, rsum.constant)) {
       return SimpleLinearSum(ins, 0);
     }
@@ -3764,7 +3764,7 @@ SimpleLinearSum jit::ExtractLinearSum(MDefinition* ins, MathSpace space,
     int32_t constant;
     if (space == MathSpace::Modulo) {
       constant = uint32_t(lsum.constant) - uint32_t(rsum.constant);
-    } else if (!SafeSub(lsum.constant, rsum.constant, &constant) ||
+    } else if (!mozilla::SafeSub(lsum.constant, rsum.constant, &constant) ||
                !MonotoneSub(lsum.constant, rsum.constant)) {
       return SimpleLinearSum(ins, 0);
     }
@@ -3805,7 +3805,7 @@ bool jit::ExtractLinearInequality(const MTest* test, BranchDirection direction,
   SimpleLinearSum lsum = ExtractLinearSum(lhs);
   SimpleLinearSum rsum = ExtractLinearSum(rhs);
 
-  if (!SafeSub(lsum.constant, rsum.constant, &lsum.constant)) {
+  if (!mozilla::SafeSub(lsum.constant, rsum.constant, &lsum.constant)) {
     return false;
   }
 
@@ -3816,7 +3816,7 @@ bool jit::ExtractLinearInequality(const MTest* test, BranchDirection direction,
       break;
     case JSOp::Lt:
       /* x < y ==> x + 1 <= y */
-      if (!SafeAdd(lsum.constant, 1, &lsum.constant)) {
+      if (!mozilla::SafeAdd(lsum.constant, 1, &lsum.constant)) {
         return false;
       }
       *plessEqual = true;
@@ -3826,7 +3826,7 @@ bool jit::ExtractLinearInequality(const MTest* test, BranchDirection direction,
       break;
     case JSOp::Gt:
       /* x > y ==> x - 1 >= y */
-      if (!SafeSub(lsum.constant, 1, &lsum.constant)) {
+      if (!mozilla::SafeSub(lsum.constant, 1, &lsum.constant)) {
         return false;
       }
       *plessEqual = false;
@@ -3890,18 +3890,20 @@ static bool TryEliminateBoundsCheck(BoundsCheckMap& checks, size_t blockIndex,
 
   // Normalize the ranges according to the constant offsets in the two indexes.
   int32_t minimumA, maximumA, minimumB, maximumB;
-  if (!SafeAdd(sumA.constant, dominating->minimum(), &minimumA) ||
-      !SafeAdd(sumA.constant, dominating->maximum(), &maximumA) ||
-      !SafeAdd(sumB.constant, dominated->minimum(), &minimumB) ||
-      !SafeAdd(sumB.constant, dominated->maximum(), &maximumB)) {
+  if (!mozilla::SafeAdd(sumA.constant, dominating->minimum(), &minimumA) ||
+      !mozilla::SafeAdd(sumA.constant, dominating->maximum(), &maximumA) ||
+      !mozilla::SafeAdd(sumB.constant, dominated->minimum(), &minimumB) ||
+      !mozilla::SafeAdd(sumB.constant, dominated->maximum(), &maximumB)) {
     return false;
   }
 
   // Update the dominating check to cover both ranges, denormalizing the
   // result per the constant offset in the index.
   int32_t newMinimum, newMaximum;
-  if (!SafeSub(std::min(minimumA, minimumB), sumA.constant, &newMinimum) ||
-      !SafeSub(std::max(maximumA, maximumB), sumA.constant, &newMaximum)) {
+  if (!mozilla::SafeSub(std::min(minimumA, minimumB), sumA.constant,
+                        &newMinimum) ||
+      !mozilla::SafeSub(std::max(maximumA, maximumB), sumA.constant,
+                        &newMaximum)) {
     return false;
   }
 
@@ -4407,40 +4409,39 @@ static bool NeedsKeepAlive(MInstruction* slotsOrElements, MInstruction* use) {
     return true;
   }
 
-  // Allocating a BigInt can GC, so we have to keep the object alive.
-  if (use->type() == MIRType::BigInt) {
-    return true;
-  }
-  if (use->isLoadTypedArrayElementHole() &&
-      Scalar::isBigIntType(use->toLoadTypedArrayElementHole()->arrayType())) {
-    return true;
-  }
-
   MBasicBlock* block = use->block();
   MInstructionIterator iter(block->begin(slotsOrElements));
   MOZ_ASSERT(*iter == slotsOrElements);
   ++iter;
 
   while (true) {
-    if (*iter == use) {
-      return false;
-    }
-
-    switch (iter->op()) {
+    MInstruction* ins = *iter;
+    switch (ins->op()) {
       case MDefinition::Opcode::Nop:
       case MDefinition::Opcode::Constant:
       case MDefinition::Opcode::KeepAliveObject:
       case MDefinition::Opcode::Unbox:
       case MDefinition::Opcode::LoadDynamicSlot:
+      case MDefinition::Opcode::LoadDynamicSlotAndUnbox:
       case MDefinition::Opcode::StoreDynamicSlot:
       case MDefinition::Opcode::LoadFixedSlot:
+      case MDefinition::Opcode::LoadFixedSlotAndUnbox:
       case MDefinition::Opcode::StoreFixedSlot:
       case MDefinition::Opcode::LoadElement:
       case MDefinition::Opcode::LoadElementAndUnbox:
       case MDefinition::Opcode::LoadElementHole:
       case MDefinition::Opcode::StoreElement:
       case MDefinition::Opcode::StoreHoleValueElement:
+      case MDefinition::Opcode::LoadUnboxedScalar:
+      case MDefinition::Opcode::StoreUnboxedScalar:
+      case MDefinition::Opcode::StoreTypedArrayElementHole:
+      case MDefinition::Opcode::LoadDataViewElement:
+      case MDefinition::Opcode::StoreDataViewElement:
+      case MDefinition::Opcode::AtomicTypedArrayElementBinop:
+      case MDefinition::Opcode::AtomicExchangeTypedArrayElement:
+      case MDefinition::Opcode::CompareExchangeTypedArrayElement:
       case MDefinition::Opcode::InitializedLength:
+      case MDefinition::Opcode::SetInitializedLength:
       case MDefinition::Opcode::ArrayLength:
       case MDefinition::Opcode::BoundsCheck:
       case MDefinition::Opcode::GuardElementNotHole:
@@ -4449,11 +4450,25 @@ static bool NeedsKeepAlive(MInstruction* slotsOrElements, MInstruction* use) {
       case MDefinition::Opcode::SpectreMaskIndex:
       case MDefinition::Opcode::DebugEnterGCUnsafeRegion:
       case MDefinition::Opcode::DebugLeaveGCUnsafeRegion:
-        iter++;
         break;
+      case MDefinition::Opcode::LoadTypedArrayElementHole: {
+        // Allocating a BigInt can GC, so we have to keep the object alive.
+        auto* loadIns = ins->toLoadTypedArrayElementHole();
+        if (Scalar::isBigIntType(loadIns->arrayType())) {
+          return true;
+        }
+        break;
+      }
       default:
         return true;
     }
+
+    if (ins == use) {
+      // We didn't find any instructions in range [slotsOrElements, use] that
+      // can GC.
+      return false;
+    }
+    iter++;
   }
 
   MOZ_CRASH("Unreachable");
@@ -4512,13 +4527,6 @@ bool jit::AddKeepAliveInstructions(MIRGraph& graph) {
 
         if (!NeedsKeepAlive(ins, use)) {
 #ifdef DEBUG
-          // These two instructions don't start a GC unsafe region, because they
-          // overwrite their elements register at the very start. This ensures
-          // there's no invalidated elements value kept on the stack.
-          if (use->isApplyArray() || use->isConstructArray()) {
-            continue;
-          }
-
           if (!graph.alloc().ensureBallast()) {
             return false;
           }
@@ -4549,11 +4557,11 @@ bool jit::AddKeepAliveInstructions(MIRGraph& graph) {
 
 bool LinearSum::multiply(int32_t scale) {
   for (size_t i = 0; i < terms_.length(); i++) {
-    if (!SafeMul(scale, terms_[i].scale, &terms_[i].scale)) {
+    if (!mozilla::SafeMul(scale, terms_[i].scale, &terms_[i].scale)) {
       return false;
     }
   }
-  return SafeMul(scale, constant_, &constant_);
+  return mozilla::SafeMul(scale, constant_, &constant_);
 }
 
 bool LinearSum::divide(uint32_t scale) {
@@ -4579,7 +4587,7 @@ bool LinearSum::divide(uint32_t scale) {
 bool LinearSum::add(const LinearSum& other, int32_t scale /* = 1 */) {
   for (size_t i = 0; i < other.terms_.length(); i++) {
     int32_t newScale = scale;
-    if (!SafeMul(scale, other.terms_[i].scale, &newScale)) {
+    if (!mozilla::SafeMul(scale, other.terms_[i].scale, &newScale)) {
       return false;
     }
     if (!add(other.terms_[i].term, newScale)) {
@@ -4587,7 +4595,7 @@ bool LinearSum::add(const LinearSum& other, int32_t scale /* = 1 */) {
     }
   }
   int32_t newConstant = scale;
-  if (!SafeMul(scale, other.constant_, &newConstant)) {
+  if (!mozilla::SafeMul(scale, other.constant_, &newConstant)) {
     return false;
   }
   return add(newConstant);
@@ -4599,7 +4607,7 @@ bool LinearSum::add(SimpleLinearSum other, int32_t scale) {
   }
 
   int32_t constant;
-  if (!SafeMul(other.constant, scale, &constant)) {
+  if (!mozilla::SafeMul(other.constant, scale, &constant)) {
     return false;
   }
 
@@ -4615,7 +4623,7 @@ bool LinearSum::add(MDefinition* term, int32_t scale) {
 
   if (MConstant* termConst = term->maybeConstantValue()) {
     int32_t constant = termConst->toInt32();
-    if (!SafeMul(constant, scale, &constant)) {
+    if (!mozilla::SafeMul(constant, scale, &constant)) {
       return false;
     }
     return add(constant);
@@ -4623,7 +4631,7 @@ bool LinearSum::add(MDefinition* term, int32_t scale) {
 
   for (size_t i = 0; i < terms_.length(); i++) {
     if (term == terms_[i].term) {
-      if (!SafeAdd(scale, terms_[i].scale, &terms_[i].scale)) {
+      if (!mozilla::SafeAdd(scale, terms_[i].scale, &terms_[i].scale)) {
         return false;
       }
       if (terms_[i].scale == 0) {
@@ -4643,7 +4651,7 @@ bool LinearSum::add(MDefinition* term, int32_t scale) {
 }
 
 bool LinearSum::add(int32_t constant) {
-  return SafeAdd(constant, constant_, &constant_);
+  return mozilla::SafeAdd(constant, constant_, &constant_);
 }
 
 void LinearSum::dump(GenericPrinter& out) const {
@@ -4869,7 +4877,7 @@ bool jit::FoldLoadsWithUnbox(const MIRGenerator* mir, MIRGraph& graph) {
 
       // We're only interested in loads producing a Value.
       if (!ins->isLoadFixedSlot() && !ins->isLoadDynamicSlot() &&
-          !ins->isLoadElement()) {
+          !ins->isLoadElement() && !ins->isSuperFunction()) {
         continue;
       }
       if (ins->type() != MIRType::Value) {
@@ -4915,6 +4923,16 @@ bool jit::FoldLoadsWithUnbox(const MIRGenerator* mir, MIRGraph& graph) {
         continue;
       }
 
+      // If this is a SuperFunction, we only support folding the load when the
+      // unbox is fallible and its type is Object.
+      //
+      // SuperFunction is currently only used for `super()` constructor calls
+      // in classes, which always use fallible unbox to Object.
+      if (load->isSuperFunction() &&
+          !(unbox->type() == MIRType::Object && unbox->fallible())) {
+        continue;
+      }
+
       // Combine the load and unbox into a single MIR instruction.
       if (!graph.alloc().ensureBallast()) {
         return false;
@@ -4954,6 +4972,14 @@ bool jit::FoldLoadsWithUnbox(const MIRGenerator* mir, MIRGraph& graph) {
               !optimizedElements.append(loadIns->elements()->toInstruction())) {
             return false;
           }
+          break;
+        }
+        case MDefinition::Opcode::SuperFunction: {
+          auto* loadIns = load->toSuperFunction();
+          MOZ_ASSERT(unbox->fallible());
+          MOZ_ASSERT(unbox->type() == MIRType::Object);
+          replacement =
+              MSuperFunctionAndUnbox::New(graph.alloc(), loadIns->callee());
           break;
         }
         default:

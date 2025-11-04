@@ -63,7 +63,7 @@ async function testWithWindowState(state) {
       const windowId = (await newWindowPromise).id;
 
       switch (state) {
-        case "inactive":
+        case "inactive": {
           const focusChangePromise = new Promise(resolve => {
             browser.windows.onFocusChanged.addListener((focusedWindowId) => {
               if (focusedWindowId === originalWindow.id) {
@@ -74,6 +74,7 @@ async function testWithWindowState(state) {
           await browser.windows.update(originalWindow.id, { focused: true });
           await focusChangePromise;
           break;
+        }
         case "minimized":
           await browser.windows.update(windowId, { state: "minimized" });
           break;

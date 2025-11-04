@@ -110,7 +110,7 @@ class OnboardingFragment : Fragment() {
         DefaultBrowserPromptManager(
             storage = defaultBrowserPromptStorage,
             promptToSetAsDefaultBrowser = {
-                requireContext().components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+                requireContext().components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
                     promptToSetAsDefaultBrowser()
                 }
             },

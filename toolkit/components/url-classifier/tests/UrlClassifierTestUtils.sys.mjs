@@ -25,6 +25,11 @@ const ANTIFRAUD_ANNOTATION_TABLE_NAME = "mochitest7-track-simple";
 const ANTIFRAUD_ANNOTATION_TABLE_PREF =
   "urlclassifier.features.antifraud.annotate.blocklistTables";
 
+const PROVIDER_V5_LISTS_PREF = "browser.safebrowsing.provider.google5.lists";
+const MALWARE_TABLE_PREF = "urlclassifier.malwareTable";
+const MALWARE_V5_TABLE_NAME = "test-google5-malware-proto";
+const MALWARE_HOST = "malware.example.com/";
+
 let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
 
 export var UrlClassifierTestUtils = {
@@ -257,6 +262,66 @@ export var UrlClassifierTestUtils = {
     Services.prefs.clearUserPref(SOCIAL_TRACKING_TABLE_PREF);
     Services.prefs.clearUserPref(EMAIL_TRACKING_TABLE_PREF);
     Services.prefs.clearUserPref(ENTITYLIST_TABLE_PREF);
+  },
+
+  addTestV5Entry() {
+    let urlClassifierTestUtils = Cc[
+      "@mozilla.org/url-classifier/test-utils;1"
+    ].getService(Ci.nsIUrlClassifierTestUtils);
+    let lookupHash = urlClassifierTestUtils.generateLookupHash(MALWARE_HOST);
+
+    let updateData = urlClassifierTestUtils.makeUpdateResponseV5(
+      "test",
+      lookupHash
+    );
+
+    Services.prefs.setCharPref(PROVIDER_V5_LISTS_PREF, MALWARE_V5_TABLE_NAME);
+    Services.prefs.setCharPref(MALWARE_TABLE_PREF, MALWARE_V5_TABLE_NAME);
+
+    return new Promise((resolve, reject) => {
+      let dbService = Cc["@mozilla.org/url-classifier/dbservice;1"].getService(
+        Ci.nsIUrlClassifierDBService
+      );
+      let listener = {
+        QueryInterface: iid => {
+          if (
+            iid.equals(Ci.nsISupports) ||
+            iid.equals(Ci.nsIUrlClassifierUpdateObserver)
+          ) {
+            return listener;
+          }
+
+          throw Components.Exception("", Cr.NS_ERROR_NO_INTERFACE);
+        },
+        updateUrlRequested: () => {},
+        streamFinished: () => {},
+        updateError: () => {
+          reject("Got updateError when updating test-google5-malware-proto");
+        },
+        updateSuccess: () => {
+          resolve();
+        },
+      };
+
+      try {
+        dbService.beginUpdate(
+          listener,
+          "test-google5-malware-proto",
+          "google5"
+        );
+        dbService.beginStream("", "");
+        dbService.updateStream(updateData);
+        dbService.finishStream();
+        dbService.finishUpdate();
+      } catch (e) {
+        reject("Failed to do a V5 update with dbService.");
+      }
+    });
+  },
+
+  cleanupTestV5Entry() {
+    Services.prefs.clearUserPref(PROVIDER_V5_LISTS_PREF);
+    Services.prefs.clearUserPref(MALWARE_TABLE_PREF);
   },
 
   /**

@@ -1,0 +1,42 @@
+From: Michael Froman <mjfroman@mac.com>
+Date: Tue, 16 Sep 2025 09:26:22 -0500
+Subject: Bug 1985396 - Cherry-pick upstream libwebrtc commit 73898ac18b
+
+Upstream commit: https://webrtc.googlesource.com/src/+/73898ac18b498c3322f71b9543a2b77f465a47af
+       APM data dumpers: add missing include
+
+       Currently, audioproc_f fails to build with apm_debug_dump enabled.
+
+       Bug: webrtc:442745059
+       Change-Id: I349468891d798341abdaea32042cbe23c4722f75
+       Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/407641
+       Commit-Queue: Sam Zackrisson <saza@webrtc.org>
+       Commit-Queue: Lionel Koenig <lionelk@webrtc.org>
+       Reviewed-by: Lionel Koenig <lionelk@webrtc.org>
+       Cr-Commit-Position: refs/heads/main@{#45547}
+---
+ modules/audio_processing/logging/apm_data_dumper.cc | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/modules/audio_processing/logging/apm_data_dumper.cc b/modules/audio_processing/logging/apm_data_dumper.cc
+index b26d90fbc8..d86d8d8d3b 100644
+--- a/modules/audio_processing/logging/apm_data_dumper.cc
++++ b/modules/audio_processing/logging/apm_data_dumper.cc
+@@ -10,13 +10,16 @@
+ 
+ #include "modules/audio_processing/logging/apm_data_dumper.h"
+ 
+-
+ // Check to verify that the define is properly set.
+ #if !defined(WEBRTC_APM_DEBUG_DUMP) || \
+     (WEBRTC_APM_DEBUG_DUMP != 0 && WEBRTC_APM_DEBUG_DUMP != 1)
+ #error "Set WEBRTC_APM_DEBUG_DUMP to either 0 or 1"
+ #endif
+ 
++#if WEBRTC_APM_DEBUG_DUMP == 1
++#include "rtc_base/strings/string_builder.h"
++#endif
++
+ namespace webrtc {
+ namespace {
+ 

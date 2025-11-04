@@ -7,6 +7,7 @@
 #ifndef __AboutThirdParty_h__
 #define __AboutThirdParty_h__
 
+#include "mozilla/CompactPair.h"
 #include "mozilla/MozPromise.h"
 #include "nsIAboutThirdParty.h"
 #include "nsInterfaceHashtable.h"

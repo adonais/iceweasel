@@ -17,6 +17,7 @@ import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import org.hamcrest.Matchers.allOf
@@ -96,11 +97,28 @@ class ShareOverlayRobot {
         mDevice.waitNotNull(Until.findObject(By.res("android:id/resolver_list")))
     }
 
-    fun expandAndroidShareLayout() {
-        Log.i(TAG, "verifySharingWithSelectedApp: Trying to expand the Android share layout")
-        itemWithResId("android:id/resolver_list").swipeUp(3)
-        Log.i(TAG, "verifySharingWithSelectedApp: Expanded the Android share layout")
-        waitForAppWindowToBeUpdated()
+    fun expandAndroidShareLayout(appName: String) {
+        for (i in 1..RETRY_COUNT) {
+            Log.i(TAG, "expandAndroidShareLayout: Started try #$i")
+            try {
+                assertUIObjectExists(itemWithResId("android:id/chooser_header"))
+                Log.i(TAG, "expandAndroidShareLayout: Trying to expand the Android share layout")
+                mDevice.findObject(By.res("android:id/chooser_header")).swipe(Direction.UP, 1.0f, 500)
+                Log.i(TAG, "expandAndroidShareLayout: Expanded the Android share layout")
+                assertUIObjectExists(itemContainingText(appName))
+
+                break
+            } catch (e: AssertionError) {
+                Log.i(TAG, "expandAndroidShareLayout: AssertionError caught, executing fallback methods")
+                if (i == RETRY_COUNT) {
+                    throw e
+                } else {
+                    Log.i(TAG, "expandAndroidShareLayout: Waiting for $waitingTime for device to be idle")
+                    mDevice.waitForIdle(waitingTime)
+                    Log.i(TAG, "expandAndroidShareLayout: Waited for $waitingTime for device to be idle")
+                }
+            }
+        }
     }
 
     fun verifySharingWithSelectedApp(appName: String, content: String, subject: String) {
@@ -157,26 +175,12 @@ class ShareOverlayRobot {
     }
 
     fun clickSharingApp(appName: String, appPackageName: String) {
-        for (i in 1..RETRY_COUNT) {
-            Log.i(TAG, "clickSharingApp: Started try #$i")
             val sharingApp = itemContainingText(appName)
             if (isPackageInstalled(appPackageName)) {
-                try {
-                    assertUIObjectExists(sharingApp)
-                    Log.i(TAG, "clickSharingApp: Trying to click sharing app: $appName and wait for a new window")
-                    sharingApp.clickAndWaitForNewWindow()
-                    Log.i(TAG, "clickSharingApp: Clicked sharing app: $appName and waited for a new window")
-
-                    break
-                } catch (e: AssertionError) {
-                    Log.i(TAG, "clickSharingApp: AssertionError caught, executing fallback methods")
-                    if (i == RETRY_COUNT) {
-                        throw e
-                    } else {
-                        expandAndroidShareLayout()
-                    }
-                }
-            }
+                assertUIObjectExists(sharingApp)
+                Log.i(TAG, "clickSharingApp: Trying to click sharing app: $appName and wait for a new window")
+                sharingApp.clickAndWaitForNewWindow()
+                Log.i(TAG, "clickSharingApp: Clicked sharing app: $appName and waited for a new window")
         }
     }
 

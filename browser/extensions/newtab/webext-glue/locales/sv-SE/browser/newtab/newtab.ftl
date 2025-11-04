@@ -478,8 +478,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Byt till Fahrenheit
 newtab-weather-menu-change-temperature-units-celsius = Byt till Celsius
 newtab-weather-menu-hide-weather = Dölj väder på ny flik
 newtab-weather-menu-learn-more = Läs mer
+newtab-weather-menu-detect-my-location = Identifiera min plats
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Väderdata är inte tillgänglig just nu.
+newtab-weather-opt-in-see-weather = Vill du se vädret för din plats?
+newtab-weather-opt-in-not-now =
+    .label = Inte nu
+newtab-weather-opt-in-yes =
+    .label = Ja
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York
 
 ## Topic Labels
 
@@ -646,6 +654,9 @@ newtab-widget-lists-input-menu-move-up = Flytta upp
 newtab-widget-lists-input-menu-move-down = Flytta ned
 newtab-widget-lists-input-menu-delete = Ta bort
 newtab-widget-lists-input-menu-edit = Redigera
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Skapa en ny lista
 newtab-widget-lists-name-label-default =
     .label = Uppgiftslista
 newtab-widget-lists-name-placeholder-default =

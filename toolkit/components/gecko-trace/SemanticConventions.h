@@ -7,7 +7,7 @@
 
 namespace mozilla::gecko_trace::semantic_conventions {
 
-static constexpr const char* kProcessID = "gecko.process.id";
+static constexpr const char* kProcessID = "gecko.process.internal_id";
 static constexpr const char* kProcessType = "gecko.process.type";
 
 }  // namespace mozilla::gecko_trace::semantic_conventions

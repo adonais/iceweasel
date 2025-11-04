@@ -11,6 +11,7 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.createTab
@@ -146,6 +147,7 @@ class DefaultCollectionCreationControllerTest {
         assertTrue(dismissed)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `GIVEN collection WHEN renameCollection is called THEN collection should be renamed`() = runTestOnMain {
         val collection = mockk<TabCollection>()

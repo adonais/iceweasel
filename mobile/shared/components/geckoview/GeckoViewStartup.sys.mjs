@@ -68,6 +68,7 @@ const JSWINDOWACTORS = {
         "mozshowdropdown-sourcetouch": {},
         MozOpenDateTimePicker: {},
         DOMPopupBlocked: { capture: false, mozSystemGroup: true },
+        DOMRedirectBlocked: { capture: false, mozSystemGroup: true },
       },
     },
     allFrames: true,
@@ -358,7 +359,7 @@ export class GeckoViewStartup {
         }
         break;
       }
-      case "GeckoView:SetLocale":
+      case "GeckoView:SetLocale": {
         if (aData.requestedLocales) {
           Services.locale.requestedLocales = aData.requestedLocales;
         }
@@ -372,6 +373,7 @@ export class GeckoViewStartup {
           pls
         );
         break;
+      }
 
       case "GeckoView:StorageDelegate:Attached":
         InitLater(() => {

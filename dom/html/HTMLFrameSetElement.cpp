@@ -7,7 +7,6 @@
 #include "HTMLFrameSetElement.h"
 
 #include "mozilla/Try.h"
-#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/EventHandlerBinding.h"
 #include "mozilla/dom/HTMLFrameSetElementBinding.h"
@@ -45,17 +44,17 @@ void HTMLFrameSetElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
   if (aNamespaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::rows) {
       if (aValue) {
-        int32_t oldRows = mNumRows;
-        ParseRowCol(*aValue, mNumRows, &mRowSpecs);
-        if (mNumRows != oldRows) {
+        size_t oldNumRows = mRowSpecs.Length();
+        ParseRowCol(*aValue, mRowSpecs);
+        if (mRowSpecs.Length() != oldNumRows) {
           mCurrentRowColHint = nsChangeHint_ReconstructFrame;
         }
       }
     } else if (aName == nsGkAtoms::cols) {
       if (aValue) {
-        int32_t oldCols = mNumCols;
-        ParseRowCol(*aValue, mNumCols, &mColSpecs);
-        if (mNumCols != oldCols) {
+        size_t oldNumCols = mColSpecs.Length();
+        ParseRowCol(*aValue, mColSpecs);
+        if (mColSpecs.Length() != oldNumCols) {
           mCurrentRowColHint = nsChangeHint_ReconstructFrame;
         }
       }
@@ -66,54 +65,42 @@ void HTMLFrameSetElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                              aNotify);
 }
 
-nsresult HTMLFrameSetElement::GetRowSpec(int32_t* aNumValues,
-                                         const nsFramesetSpec** aSpecs) {
-  MOZ_ASSERT(aNumValues, "Must have a pointer to an integer here!");
-  MOZ_ASSERT(aSpecs, "Must have a pointer to an array of nsFramesetSpecs");
-  *aNumValues = 0;
-  *aSpecs = nullptr;
-
-  if (!mRowSpecs) {
+Span<const nsFramesetSpec> HTMLFrameSetElement::GetRowSpec() {
+  if (mRowSpecs.IsEmpty()) {
     if (const nsAttrValue* value = GetParsedAttr(nsGkAtoms::rows)) {
-      MOZ_TRY(ParseRowCol(*value, mNumRows, &mRowSpecs));
+      if (NS_FAILED(ParseRowCol(*value, mRowSpecs))) {
+        return {};
+      }
     }
 
-    if (!mRowSpecs) {  // we may not have had an attr or had an empty attr
-      mRowSpecs = MakeUnique<nsFramesetSpec[]>(1);
-      mNumRows = 1;
+    if (mRowSpecs.IsEmpty()) {
+      // We may not have had an attr or had an empty attr.
+      mRowSpecs.SetLength(1);
       mRowSpecs[0].mUnit = eFramesetUnit_Relative;
       mRowSpecs[0].mValue = 1;
     }
   }
 
-  *aSpecs = mRowSpecs.get();
-  *aNumValues = mNumRows;
-  return NS_OK;
+  return Span(mRowSpecs);
 }
 
-nsresult HTMLFrameSetElement::GetColSpec(int32_t* aNumValues,
-                                         const nsFramesetSpec** aSpecs) {
-  MOZ_ASSERT(aNumValues, "Must have a pointer to an integer here!");
-  MOZ_ASSERT(aSpecs, "Must have a pointer to an array of nsFramesetSpecs");
-  *aNumValues = 0;
-  *aSpecs = nullptr;
-
-  if (!mColSpecs) {
+Span<const nsFramesetSpec> HTMLFrameSetElement::GetColSpec() {
+  if (mColSpecs.IsEmpty()) {
     if (const nsAttrValue* value = GetParsedAttr(nsGkAtoms::cols)) {
-      MOZ_TRY(ParseRowCol(*value, mNumCols, &mColSpecs));
+      if (NS_FAILED(ParseRowCol(*value, mColSpecs))) {
+        return {};
+      }
     }
 
-    if (!mColSpecs) {  // we may not have had an attr or had an empty attr
-      mColSpecs = MakeUnique<nsFramesetSpec[]>(1);
-      mNumCols = 1;
+    if (mColSpecs.IsEmpty()) {
+      // We may not have had an attr or had an empty attr.
+      mColSpecs.SetLength(1);
       mColSpecs[0].mUnit = eFramesetUnit_Relative;
       mColSpecs[0].mValue = 1;
     }
   }
 
-  *aSpecs = mColSpecs.get();
-  *aNumValues = mNumCols;
-  return NS_OK;
+  return Span(mColSpecs);
 }
 
 bool HTMLFrameSetElement::ParseAttribute(int32_t aNamespaceID,
@@ -151,11 +138,9 @@ nsChangeHint HTMLFrameSetElement::GetAttributeChangeHint(
  * Translate a "rows" or "cols" spec into an array of nsFramesetSpecs
  */
 nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
-                                          int32_t& aNumSpecs,
-                                          UniquePtr<nsFramesetSpec[]>* aSpecs) {
+                                          nsTArray<nsFramesetSpec>& aSpecs) {
   if (aValue.IsEmptyString()) {
-    aNumSpecs = 0;
-    *aSpecs = nullptr;
+    aSpecs.Clear();
     return NS_OK;
   }
 
@@ -175,16 +160,15 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
   static_assert(NS_MAX_FRAMESET_SPEC_COUNT * sizeof(nsFramesetSpec) < (1 << 30),
                 "Too many frameset specs allowed to allocate");
   int32_t commaX = spec.FindChar(sComma);
-  int32_t count = 1;
+  size_t count = 1;
   while (commaX != kNotFound && count < NS_MAX_FRAMESET_SPEC_COUNT) {
     count++;
     commaX = spec.FindChar(sComma, commaX + 1);
   }
 
-  auto specs = MakeUniqueFallible<nsFramesetSpec[]>(count);
-  if (!specs) {
-    *aSpecs = nullptr;
-    aNumSpecs = 0;
+  nsTArray<nsFramesetSpec> specs;
+  if (!specs.SetLength(count, fallible)) {
+    aSpecs.Clear();
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
@@ -193,15 +177,15 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
 
   // Parse each comma separated token
 
-  int32_t start = 0;
-  int32_t specLen = spec.Length();
+  size_t start = 0;
+  size_t specLen = spec.Length();
 
-  for (int32_t i = 0; i < count; i++) {
+  for (size_t i = 0; i < count; i++) {
     // Find our comma
     commaX = spec.FindChar(sComma, start);
-    NS_ASSERTION(i == count - 1 || commaX != kNotFound,
-                 "Failed to find comma, somehow");
-    int32_t end = (commaX == kNotFound) ? specLen : commaX;
+    MOZ_ASSERT(i == count - 1 || commaX != kNotFound,
+               "Failed to find comma, somehow");
+    size_t end = (commaX == kNotFound) ? specLen : commaX;
 
     // Note: If end == start then it means that the token has no
     // data in it other than a terminating comma (or the end of the spec).
@@ -209,7 +193,7 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
     specs[i].mUnit = eFramesetUnit_Fixed;
     specs[i].mValue = 0;
     if (end > start) {
-      int32_t numberEnd = end;
+      size_t numberEnd = end;
       char16_t ch = spec.CharAt(numberEnd - 1);
       if (sAster == ch) {
         specs[i].mUnit = eFramesetUnit_Relative;
@@ -251,18 +235,6 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
         }
       }
 
-      // Catch zero and negative frame sizes for Nav compatibility
-      // Nav resized absolute and relative frames to "1" and
-      // percent frames to an even percentage of the width
-      //
-      // if (isInQuirks && (specs[i].mValue <= 0)) {
-      //  if (eFramesetUnit_Percent == specs[i].mUnit) {
-      //    specs[i].mValue = 100 / count;
-      //  } else {
-      //    specs[i].mValue = 1;
-      //  }
-      //} else {
-
       // In standards mode, just set negative sizes to zero
       if (specs[i].mValue < 0) {
         specs[i].mValue = 0;
@@ -271,9 +243,7 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
     }
   }
 
-  aNumSpecs = count;
-  // Transfer ownership to caller here
-  *aSpecs = std::move(specs);
+  aSpecs = std::move(specs);
 
   return NS_OK;
 }

@@ -12,7 +12,6 @@ const {
 const {
   InspectorCSSParserWrapper,
 } = require("resource://devtools/shared/css/lexer.js");
-const TrackChangeEmitter = require("resource://devtools/server/actors/utils/track-change-emitter.js");
 const {
   getRuleText,
   getTextAtLineColumn,
@@ -407,7 +406,7 @@ class StyleRuleActor extends Actor {
         form.selectors = [];
         form.selectorsSpecificity = [];
         break;
-      case "CSSStyleRule":
+      case "CSSStyleRule": {
         form.selectors = [];
         form.selectorsSpecificity = [];
 
@@ -427,7 +426,8 @@ class StyleRuleActor extends Actor {
           form.selectorWarnings = selectorWarnings;
         }
         break;
-      case ELEMENT_STYLE:
+      }
+      case ELEMENT_STYLE: {
         // Elements don't have a parent stylesheet, and therefore
         // don't have an associated URI.  Provide a URI for
         // those.
@@ -435,6 +435,7 @@ class StyleRuleActor extends Actor {
         form.href = doc.location ? doc.location.href : "";
         form.authoredText = this.rawNode.getAttribute("style");
         break;
+      }
       case PRES_HINTS:
         form.href = "";
         break;
@@ -1211,7 +1212,7 @@ class StyleRuleActor extends Actor {
     const data = this.metadata;
 
     switch (change.type) {
-      case "set":
+      case "set": {
         data.type = prevValue ? "declaration-add" : "declaration-update";
         // If `change.newName` is defined, use it because the property is being renamed.
         // Otherwise, a new declaration is being created or the value of an existing
@@ -1249,6 +1250,7 @@ class StyleRuleActor extends Actor {
         }
 
         break;
+      }
 
       case "remove":
         data.type = "declaration-remove";
@@ -1263,7 +1265,7 @@ class StyleRuleActor extends Actor {
         break;
     }
 
-    TrackChangeEmitter.trackChange(data);
+    this.pageStyle.inspector.targetActor.emit("track-css-change", data);
   }
 
   /**
@@ -1276,7 +1278,7 @@ class StyleRuleActor extends Actor {
    *        This rule's new selector.
    */
   logSelectorChange(oldSelector, newSelector) {
-    TrackChangeEmitter.trackChange({
+    this.pageStyle.inspector.targetActor.emit("track-css-change", {
       ...this.metadata,
       type: "selector-remove",
       add: null,
@@ -1284,7 +1286,7 @@ class StyleRuleActor extends Actor {
       selector: oldSelector,
     });
 
-    TrackChangeEmitter.trackChange({
+    this.pageStyle.inspector.targetActor.emit("track-css-change", {
       ...this.metadata,
       type: "selector-add",
       add: null,

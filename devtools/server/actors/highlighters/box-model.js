@@ -29,6 +29,7 @@ const nodeConstants = require("resource://devtools/shared/dom-node-constants.js"
 loader.lazyGetter(this, "HighlightersBundle", () => {
   return new Localization(["devtools/shared/highlighters.ftl"], true);
 });
+loader.lazyRequireGetter(this, "flags", "resource://devtools/shared/flags.js");
 
 // Note that the order of items in this array is important because it is used
 // for drawing the BoxModelHighlighter's path elements correctly.
@@ -369,17 +370,24 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     setIgnoreLayoutChanges(true);
 
     if (this._updateBoxModel()) {
+      const isElementOrTextNode =
+        node.nodeType === node.ELEMENT_NODE || node.nodeType === node.TEXT_NODE;
       // Show the infobar only if configured to do so and the node is an element or a text
       // node.
-      if (
-        !this.options.hideInfoBar &&
-        (node.nodeType === node.ELEMENT_NODE ||
-          node.nodeType === node.TEXT_NODE)
-      ) {
-        this._showInfobar();
+      if (isElementOrTextNode) {
+        if (!this.options.hideInfoBar) {
+          this._showInfobar();
+        } else if (flags.testing) {
+          // Even if we don't want to show the info bar, update the infobar data (tag, id,
+          // classes, …) anyway so it's easier to debug/test
+          this._updateInfobarNodeData();
+        } else {
+          this._hideInfobar();
+        }
       } else {
         this._hideInfobar();
       }
+
       this._updateSimpleHighlighters();
       this._showBoxModel();
 
@@ -807,7 +815,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
     const gridLayoutTextType = this._getLayoutTextType("gridtype", gridType);
     const flexLayoutTextType = this._getLayoutTextType("flextype", flexType);
 
-    // Update the tag, id, classes, pseudo-classes and dimensions
+    // Update the tag, id, classes, pseudo-classes
     this._updateInfobarNodeData();
     this.getElement("box-model-infobar-dimensions").setTextContent(dim);
     this.getElement("box-model-infobar-grid-type").setTextContent(

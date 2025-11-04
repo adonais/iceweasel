@@ -9,12 +9,13 @@
 
 #include "vm/Interpreter.h"
 
+#include "mozilla/CheckedArithmetic.h"
+
 #include "jslibmath.h"
 #include "jsmath.h"
 #include "jsnum.h"
 
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
-#include "util/CheckedArithmetic.h"
 #include "vm/BigIntType.h"
 #include "vm/BytecodeUtil.h"  // JSDVG_SEARCH_STACK
 #include "vm/JSAtomUtils.h"   // AtomizeString
@@ -613,7 +614,7 @@ static MOZ_ALWAYS_INLINE bool AddOperation(JSContext* cx,
   if (lhs.isInt32() && rhs.isInt32()) {
     int32_t l = lhs.toInt32(), r = rhs.toInt32();
     int32_t t;
-    if (MOZ_LIKELY(SafeAdd(l, r, &t))) {
+    if (MOZ_LIKELY(mozilla::SafeAdd(l, r, &t))) {
       res.setInt32(t);
       return true;
     }

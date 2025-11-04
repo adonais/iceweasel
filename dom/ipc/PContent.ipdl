@@ -122,6 +122,7 @@ using mozilla::Telemetry::ScalarAction from "mozilla/TelemetryComms.h";
 using mozilla::Telemetry::KeyedScalarAction from "mozilla/TelemetryComms.h";
 using mozilla::Telemetry::DynamicScalarDefinition from "mozilla/TelemetryComms.h";
 using mozilla::Telemetry::ChildEventData from "mozilla/TelemetryComms.h";
+using mozilla::TimeStamp from "mozilla/TimeStamp.h";
 using mozilla::dom::geolocation::SystemGeolocationPermissionBehavior from "mozilla/dom/GeolocationIPCUtils.h";
 using mozilla::dom::geolocation::GeolocationPermissionStatus from "mozilla/dom/GeolocationIPCUtils.h";
 
@@ -1581,7 +1582,7 @@ parent:
     /**
      * Messages for communicating child Glean data to the parent process
      */
-    async RecordPageLoadEvent(PageloadEventData event);
+    async RecordPageLoadEvent(PageloadEventData event, TimeStamp navigationStartTime, uint64_t aAndroidAppLinkLoadIdentifier);
 
     /**
      * Messages for communicating child Telemetry to the parent process
@@ -1780,10 +1781,12 @@ parent:
 
     async HistoryGo(MaybeDiscardedBrowsingContext aContext, int32_t aOffset,
                     uint64_t aHistoryEpoch, bool aRequireUserInteraction,
-                    bool aUserActivation) returns(int32_t? requestedIndex);
+                    bool aUserActivation, bool aCheckForCancelation)
+      returns(int32_t? requestedIndex);
 
     async NavigationTraverse(MaybeDiscardedBrowsingContext aContext, nsID aKey,
-                           uint64_t aHistoryEpoch, bool aUserActivation)
+                             uint64_t aHistoryEpoch, bool aUserActivation, 
+                             bool aCheckForCancelation)
       returns(nsresult result);
 
     async BlobURLDataRequest(nsCString aBlobURL,
@@ -1940,6 +1943,9 @@ parent:
     // Sent from time-to-time to limit the amount of data vulnerable to loss.
     // Buffer contains bincoded Rust structs.
     async FOGData(ByteBuf buf);
+
+parent:
+    async GeckoTraceExport(ByteBuf aBuf);
 
 child:
     // Temporary (bug 1641989) conduit for Glean data in content processes.

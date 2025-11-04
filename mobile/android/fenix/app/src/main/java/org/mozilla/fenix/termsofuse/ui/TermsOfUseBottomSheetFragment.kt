@@ -46,7 +46,6 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         super.onCreateDialog(savedInstanceState).apply {
-            window?.setDimAmount(0f)
             setOnShowListener {
                 val bottomSheet = findViewById<View?>(materialR.id.design_bottom_sheet)
                 bottomSheet?.setBackgroundResource(android.R.color.transparent)
@@ -80,18 +79,27 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
                         )
                     },
                     onTermsOfUseClicked = {
+                        termsOfUsePromptStore.dispatch(
+                            TermsOfUsePromptAction.OnTermsOfUseClicked(args.surface),
+                        )
                         SupportUtils.launchSandboxCustomTab(
                             context,
                             SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.TERMS_OF_SERVICE),
                         )
                     },
                     onPrivacyNoticeClicked = {
+                        termsOfUsePromptStore.dispatch(
+                            TermsOfUsePromptAction.OnPrivacyNoticeClicked(args.surface),
+                        )
                         SupportUtils.launchSandboxCustomTab(
                             context,
                             SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVATE_NOTICE),
                         )
                     },
                     onLearnMoreClicked = {
+                        termsOfUsePromptStore.dispatch(
+                            TermsOfUsePromptAction.OnLearnMoreClicked(args.surface),
+                        )
                         SupportUtils.launchSandboxCustomTab(
                             context,
                             SupportUtils.getSumoURLForTopic(

@@ -37,14 +37,14 @@ add_task(async function test() {
   // Create a test provider that returns a result with a blob icon.
   let provider = new UrlbarTestUtils.TestProvider({
     results: [
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-        {
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+        payload: {
           url: "https://example.com/",
           iconBlob: TEST_ICON_BLOB,
-        }
-      ),
+        },
+      }),
     ],
   });
   UrlbarProvidersManager.registerProvider(provider);

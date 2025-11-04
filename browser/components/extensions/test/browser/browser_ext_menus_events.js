@@ -82,7 +82,7 @@ async function testShowHideEvent({
 
     browser.test.onMessage.addListener(async msg => {
       switch (msg) {
-        case "register-menu":
+        case "register-menu": {
           let menuId;
           await new Promise(resolve => {
             menuId = browser.menus.create(menu_create_params, resolve);
@@ -99,6 +99,7 @@ async function testShowHideEvent({
           );
           browser.test.sendMessage("menu-registered", menuId);
           break;
+        }
         case "assert-menu-shown":
           browser.test.assertEq(1, shownEvents.length, "expected onShown");
           browser.test.assertEq(

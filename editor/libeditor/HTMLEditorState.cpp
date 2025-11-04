@@ -415,7 +415,7 @@ AlignStateAtSelection::AlignStateAtSelection(HTMLEditor& aHTMLEditor,
       }
     }
 
-    if (!HTMLEditUtils::SupportsAlignAttr(*containerElement)) {
+    if (!HTMLEditUtils::IsAlignAttrSupported(*containerElement)) {
       continue;
     }
 
@@ -682,7 +682,7 @@ nsresult ParagraphStateAtSelection::CollectEditableFormatNodesInSelection(
 
   // Pre-process our list of nodes
   for (size_t index : Reversed(IntegerRange(aArrayOfContents.Length()))) {
-    OwningNonNull<nsIContent> content = aArrayOfContents[index];
+    const OwningNonNull<nsIContent> content = aArrayOfContents[index];
 
     // Remove all non-editable nodes.  Leave them be.
     if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
@@ -693,9 +693,9 @@ nsresult ParagraphStateAtSelection::CollectEditableFormatNodesInSelection(
     // Scan for table elements.  If we find table elements other than table,
     // replace it with a list of any editable non-table content.  Ditto for
     // list elements.
-    if (HTMLEditUtils::IsAnyTableElement(content) ||
-        HTMLEditUtils::IsAnyListElement(content) ||
-        HTMLEditUtils::IsListItem(content)) {
+    if (HTMLEditUtils::IsAnyTableElementExceptColumnElement(content) ||
+        HTMLEditUtils::IsListElement(*content) ||
+        HTMLEditUtils::IsListItemElement(*content)) {
       aArrayOfContents.RemoveElementAt(index);
       HTMLEditUtils::CollectChildren(
           content, aArrayOfContents, index,

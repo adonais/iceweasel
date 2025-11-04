@@ -277,7 +277,15 @@ bool WindowContext::CanSet(FieldIndex<IDX_IsThirdPartyTrackingResourceWindow>,
 bool WindowContext::CanSet(FieldIndex<IDX_UsingStorageAccess>,
                            const bool& aUsingStorageAccess,
                            ContentParent* aSource) {
-  return CheckOnlyOwningProcessCanSet(aSource);
+  return XRE_IsParentProcess() || CheckOnlyOwningProcessCanSet(aSource);
+}
+
+void WindowContext::DidSet(FieldIndex<IDX_UsingStorageAccess>, bool aOldValue) {
+  if (!aOldValue && GetUsingStorageAccess() && XRE_IsContentProcess()) {
+    if (nsGlobalWindowInner* windowInner = GetInnerWindow()) {
+      windowInner->StorageAccessPermissionChanged(true);
+    }
+  }
 }
 
 bool WindowContext::CanSet(FieldIndex<IDX_ShouldResistFingerprinting>,
@@ -617,9 +625,10 @@ bool WindowContext::HasValidTransientUserGestureActivation() {
 // https://html.spec.whatwg.org/#consume-user-activation
 bool WindowContext::ConsumeTransientUserGestureActivation() {
   MOZ_ASSERT(IsInProcess());
-  MOZ_ASSERT(IsCurrent());
-
   // 1. If W's navigable is null, then return.
+  if (!IsCurrent()) {
+    return false;
+  }
 
   if (!HasValidTransientUserGestureActivation()) {
     return false;

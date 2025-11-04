@@ -74,7 +74,7 @@ let getExtension = () => {
               });
             }
             break;
-          case "test profile as array buffer":
+          case "test profile as array buffer": {
             let arrayBuffer =
               await browser.geckoProfiler.getProfileAsArrayBuffer();
             browser.test.assertTrue(
@@ -101,6 +101,7 @@ let getExtension = () => {
             );
             browser.test.sendMessage("tested profile as array buffer");
             break;
+          }
           case "remove runningListener":
             browser.geckoProfiler.onRunning.removeListener(runningListener);
             browser.test.sendMessage("removed runningListener");

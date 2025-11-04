@@ -337,13 +337,11 @@ void nsAppShell::OnRunLoopActivityChanged(CFRunLoopActivity aActivity) {
           profilingStack.pushLabelFrame("Native event loop idle", nullptr,
                                         &variableOnStack,
                                         JS::ProfilingCategoryPair::IDLE, 0);
-          profiler_thread_sleep();
         });
   } else {
     if (mProfilingStackWhileWaiting) {
       mProfilingStackWhileWaiting->pop();
       mProfilingStackWhileWaiting = nullptr;
-      profiler_thread_wake();
     }
   }
 }

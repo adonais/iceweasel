@@ -33,6 +33,22 @@ TASK_CONFIG_TESTS = {
             ["--env", "foo=bar", "--env", "num=10"],
             {"try_task_config": {"env": {"foo": "bar", "num": "10"}}},
         ),
+        (
+            ["--profiler"],
+            {"try_task_config": {"env": {"MOZ_PROFILER_STARTUP": "1"}}},
+        ),
+        (
+            ["--record"],
+            {"try_task_config": {"env": {"MOZ_RECORD_TEST": "1"}}},
+        ),
+        (
+            ["--profiler", "--record"],
+            {
+                "try_task_config": {
+                    "env": {"MOZ_PROFILER_STARTUP": "1", "MOZ_RECORD_TEST": "1"}
+                }
+            },
+        ),
     ],
     "path": [
         ([], None),

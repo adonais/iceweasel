@@ -9,6 +9,7 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
   MerinoTestUtils: "resource://testing-common/MerinoTestUtils.sys.mjs",
   WeatherFeed: "resource://newtab/lib/WeatherFeed.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
 });
 
 const { WEATHER_SUGGESTION } = MerinoTestUtils;
@@ -41,6 +42,64 @@ add_task(async function test_construction() {
     null,
     "fetchTimer is initialized as null"
   );
+  sandbox.restore();
+});
+
+add_task(async function test_checkOptInRegion() {
+  let sandbox = sinon.createSandbox();
+
+  sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({
+    set: () => {},
+    get: () => {},
+  });
+
+  let feed = new WeatherFeed();
+
+  feed.store = {
+    dispatch: sinon.spy(),
+    getState() {
+      return { Prefs: { values: {} } };
+    },
+  };
+
+  sandbox.stub(feed, "isEnabled").returns(true);
+
+  // First case: If home region is in the opt-in list, showWeatherOptIn should be true
+  // Region._setHomeRegion() is the supported way to control region in tests:
+  // https://firefox-source-docs.mozilla.org/toolkit/modules/toolkit_modules/Region.html#testing
+  // We used false here because that second argument is a change observer that will fire an event.
+  // So keeping it false silently sets the region for our test
+  Region._setHomeRegion("FR", false);
+  let resultTrue = await feed.checkOptInRegion();
+
+  Assert.strictEqual(
+    resultTrue,
+    true,
+    "Returns true for region in opt-in list"
+  );
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.SetPref("system.showWeatherOptIn", true)
+    ),
+    "Dispatch sets system.showWeatherOptIn to true when region is in opt-in list"
+  );
+
+  // Second case: If home region is not in the opt-in list, showWeatherOptIn should be false
+  Region._setHomeRegion("ZZ", false);
+  let resultFalse = await feed.checkOptInRegion();
+
+  Assert.strictEqual(
+    resultFalse,
+    false,
+    "Returns false for region not found in opt-in list"
+  );
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.SetPref("system.showWeatherOptIn", false)
+    ),
+    "Dispatch sets system.showWeatherOptIn to false when region is not in opt-in list"
+  );
+
   sandbox.restore();
 });
 
@@ -94,7 +153,7 @@ add_task(async function test_onAction_INIT() {
     type: actionTypes.INIT,
   });
 
-  Assert.ok(feed.store.dispatch.calledOnce);
+  Assert.equal(feed.store.dispatch.callCount, 2);
   Assert.ok(
     feed.store.dispatch.calledWith(
       actionCreators.BroadcastToContent({
@@ -108,5 +167,123 @@ add_task(async function test_onAction_INIT() {
     )
   );
   Services.prefs.clearUserPref(WEATHER_ENABLED);
+  sandbox.restore();
+});
+
+// Test if location lookup was successful
+add_task(async function test_onAction_opt_in_location_success() {
+  let sandbox = sinon.createSandbox();
+
+  sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({
+    set: () => {},
+    get: () => {},
+  });
+
+  let feed = new WeatherFeed();
+
+  feed.store = {
+    dispatch: sinon.spy(),
+    getState() {
+      return { Prefs: { values: {} } };
+    },
+  };
+
+  // Stub fetchLocationByIP() to simulate a successful lookup
+  sandbox.stub(feed, "fetchLocationByIP").resolves({
+    localized_name: "Testville",
+    administrative_area: "Paris",
+    country: "FR",
+    key: "12345",
+  });
+
+  await feed.onAction({ type: actionTypes.WEATHER_USER_OPT_IN_LOCATION });
+
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.SetPref("weather.optInAccepted", true)
+    )
+  );
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.SetPref("weather.optInDisplayed", false)
+    )
+  );
+
+  // Assert location data broadcasted to content
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.BroadcastToContent({
+        type: actionTypes.WEATHER_LOCATION_DATA_UPDATE,
+        data: {
+          city: "Testville",
+          adminName: "Paris",
+          country: "FR",
+        },
+      })
+    ),
+    "Broadcasts WEATHER_LOCATION_DATA_UPDATE with normalized location data"
+  );
+
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.SetPref("weather.query", "12345")
+    ),
+    "Sets weather.query pref from location key"
+  );
+
+  sandbox.restore();
+});
+
+// Test if no location was found
+add_task(async function test_onAction_opt_in_no_location_found() {
+  let sandbox = sinon.createSandbox();
+
+  sandbox.stub(WeatherFeed.prototype, "PersistentCache").returns({
+    set: () => {},
+    get: () => {},
+  });
+
+  let feed = new WeatherFeed();
+
+  feed.store = {
+    dispatch: sinon.spy(),
+    getState() {
+      return { Prefs: { values: {} } };
+    },
+  };
+
+  // Test that fetchLocationByIP doesn't return a location
+  sandbox.stub(feed, "fetchLocationByIP").resolves(null);
+
+  await feed.onAction({ type: actionTypes.WEATHER_USER_OPT_IN_LOCATION });
+
+  // Ensure the pref flips always happens so user won’t see the opt-in again
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.SetPref("weather.optInAccepted", true)
+    )
+  );
+  Assert.ok(
+    feed.store.dispatch.calledWith(
+      actionCreators.SetPref("weather.optInDisplayed", false)
+    )
+  );
+
+  Assert.ok(
+    !feed.store.dispatch.calledWithMatch(
+      actionCreators.BroadcastToContent({
+        type: actionTypes.WEATHER_LOCATION_DATA_UPDATE,
+      })
+    ),
+    "Doesn't broadcast location data if location not found"
+  );
+
+  Assert.ok(
+    !feed.store.dispatch.calledWith(
+      actionCreators.SetPref("weather.query", sinon.match.any)
+    ),
+    "Does not set weather.query if no detected location"
+  );
+
   sandbox.restore();
 });

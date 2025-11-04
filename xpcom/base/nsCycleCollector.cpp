@@ -3611,6 +3611,7 @@ void nsCycleCollector::ShutdownCollect() {
     // clear them out before we run the CC again or finish shutting down.
     ccJSContext->PerformMicroTaskCheckPoint(true);
     ccJSContext->ProcessStableStateQueue();
+    ccJSContext->ClearUncaughtRejectionObservers();
   }
 
   // This warning would happen very frequently, so don't do it unless we're

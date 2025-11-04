@@ -17,6 +17,7 @@ skip-if = [
 
 ["test_basic_creditcard_autocomplete_form.html"]
 scheme = "https"
+tags = "os_integration"
 
 ["test_clear_form.html"]
 scheme = "https"

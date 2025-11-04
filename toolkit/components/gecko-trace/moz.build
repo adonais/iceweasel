@@ -12,10 +12,18 @@ GeneratedFile(
     entry_point="generate_cpp_events",
 )
 
+GeneratedFile(
+    "src/generated/glean_adapter.rs",
+    script="scripts/codegen.py",
+    entry_point="generate_glean_adapter",
+)
+
 EXPORTS.mozilla += ["!GeckoTraceEvents.h", "GeckoTrace.h"]
 EXPORTS.mozilla.gecko_trace += ["SpanEvent.h"]
 
 if CONFIG["GECKO_TRACE_ENABLE"]:
+    include("/ipc/chromium/chromium-config.mozbuild")
+
     DIRS += [
         "/third_party/opentelemetry-cpp",
     ]

@@ -731,11 +731,12 @@ XMLPropertyListReader.prototype = {
       }
       case "date":
         return new Date(aDOMElt.textContent);
-      case "data":
+      case "data": {
         // Strip spaces and new lines.
         let base64str = aDOMElt.textContent.replace(/\s*/g, "");
         let decoded = atob(base64str);
         return new Uint8Array(Array.from(decoded, c => c.charCodeAt(0)));
+      }
       case "dict":
         return this._wrapDictionary(aDOMElt);
       case "array":

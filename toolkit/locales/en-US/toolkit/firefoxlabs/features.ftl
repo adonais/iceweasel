@@ -81,3 +81,8 @@ experimental-features-newtab-widget-timer-description = Set a timer to keep you 
 experimental-features-newtab-widget-lists-and-timer =
     .label = Lists and timer on { -firefox-home-brand-name }
 experimental-features-newtab-widget-lists-and-timer-description = Keep your to-do list top-of-mind when you open a new tab. From packing lists to shopping lists, make your plans in { -brand-product-name }. Set a timer to keep you focused, nudge you to stay on track, or remind you to recharge. <a data-l10n-name="connect">Share feedback</a>
+
+# Semantic History Search
+experimental-features-semantic-history-search =
+    .label = Semantic History Search
+experimental-features-semantic-history-search-description = Use a local Machine Learning model to suggest entries from history that are related to your searches based on natural language understanding in the { -brand-product-name } address bar. <a data-l10n-name="connect">Share feedback</a>

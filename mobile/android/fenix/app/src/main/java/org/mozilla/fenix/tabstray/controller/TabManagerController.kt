@@ -439,11 +439,12 @@ class DefaultTabManagerController(
             Result.runCatching {
                 val parentGuid = bookmarksStorage
                     .getRecentBookmarks(1)
+                    .getOrDefault(listOf())
                     .firstOrNull()
                     ?.parentGuid
                     ?: BookmarkRoot.Mobile.id
 
-                val parentNode = bookmarksStorage.getBookmark(parentGuid)
+                val parentNode = bookmarksStorage.getBookmark(parentGuid).getOrNull()
 
                 tabs.forEach { tab ->
                     bookmarksStorage.addItem(

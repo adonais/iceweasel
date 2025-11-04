@@ -66,7 +66,7 @@ add_task(async function testButtons() {
   let promiseSubDialogLoaded = promiseLoadSubDialog(
     "chrome://browser/content/preferences/dialogs/permissions.xhtml"
   );
-  exceptionButton.doCommand();
+  exceptionButton.click();
 
   let win = await promiseSubDialogLoaded;
 
@@ -277,6 +277,7 @@ add_task(async function checkDialogFunctionality() {
     }
   );
 
+  SpecialPowers.clearUserPref("dom.security.https_only_mode_ever_enabled_pbm");
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
@@ -317,7 +318,7 @@ async function runTest(preferencesDoc, test, observancesFn) {
   let promiseSubDialogLoaded = promiseLoadSubDialog(
     "chrome://browser/content/preferences/dialogs/permissions.xhtml"
   );
-  preferencesDoc.getElementById("httpsOnlyExceptionButton").doCommand();
+  preferencesDoc.getElementById("httpsOnlyExceptionButton").click();
 
   let win = await promiseSubDialogLoaded;
 

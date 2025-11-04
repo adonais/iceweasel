@@ -129,7 +129,7 @@ fun TopSites(
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
  */
 @Composable
-@Suppress("LongParameterList", "LongMethod")
+@Suppress("LongParameterList")
 fun TopSites(
     topSites: List<TopSite>,
     topSiteColors: TopSiteColors = TopSiteColors.colors(),

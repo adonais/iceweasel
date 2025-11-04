@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 firefox-appdir = "browser"
 head = "../../../../extensions/newtab/test/xpcshell/head.js"
 prefs = [
@@ -14,6 +15,9 @@ prefs = ["browser.newtabpage.disableNewTabAsAddon=true"]
 
 ["test_nimbus_newtabTrainhopAddon.js"]
 head = "../../../../extensions/newtab/test/xpcshell/head.js head_nimbus_trainhop.js"
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan" # Bug 1989373
+]
 
 ["test_nimbus_newtabTrainhopAddon_onBrowserReady.js"]
 head = "../../../../extensions/newtab/test/xpcshell/head.js head_nimbus_trainhop.js"

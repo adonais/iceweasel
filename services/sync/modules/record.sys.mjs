@@ -73,12 +73,19 @@ WBORecord.prototype = {
   // Take a base URI string, with trailing slash, and return the URI of this
   // WBO based on collection and ID.
   uri(base) {
-    if (this.collection && this.id) {
-      let url = CommonUtils.makeURI(base + this.collection + "/" + this.id);
-      url.QueryInterface(Ci.nsIURL);
-      return url;
+    if (!this.collection || !this.id) {
+      return null;
     }
-    return null;
+    let url = CommonUtils.makeURI(base + this.collection + "/" + this.id);
+
+    // Bug 1985401: Prevent QueryInterface error when makeURI returns null
+    if (!url) {
+      throw new Error(
+        `WBORecord.uri(): makeURI returned null for base='${base}', collection='${this.collection}', id='${this.id}'`
+      );
+    }
+    url.QueryInterface(Ci.nsIURL);
+    return url;
   },
 
   deserialize: function deserialize(json) {
@@ -747,6 +754,15 @@ export function Collection(uri, recordObj, service) {
 
   Resource.call(this, uri);
 
+  // Bug 1985401: Log when Resource constructor results in null uri
+  // We don't throw here to preserve existing functionality
+  if (!this.uri) {
+    this._log.error(
+      `Collection constructor: Resource.call() resulted in null uri`,
+      { originalUri: uri, recordObj: recordObj?.name || "unknown" }
+    );
+  }
+
   // This is a bit hacky, but gets the job done.
   let res = service.resource(uri);
   this.authenticator = res.authenticator;
@@ -772,6 +788,10 @@ Collection.prototype = {
   _logName: "Sync.Collection",
 
   _rebuildURL: function Coll__rebuildURL() {
+    // Bug 1985401: Prevent QueryInterface usage on null uri
+    if (!this.uri) {
+      throw new Error("_rebuildURL called with null uri");
+    }
     // XXX should consider what happens if it's not a URL...
     this.uri.QueryInterface(Ci.nsIURL);
 

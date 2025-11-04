@@ -145,8 +145,7 @@ def filter_args(command, argv, topsrcdir, topobjdir, cwd=None):
 
 def get_distro_and_version():
     if sys.platform.startswith("linux"):
-        dist, version, _ = distro.linux_distribution(full_distribution_name=False)
-        return dist, version
+        return distro.id(), distro.version()
     elif sys.platform.startswith("darwin"):
         return "macos", platform.mac_ver()[0]
     elif sys.platform.startswith("win32") or sys.platform.startswith("msys"):

@@ -71,7 +71,7 @@ def test_os_version():
     test_settings["platform"]["os"]["name"] = "android"
     test_settings["platform"]["os"]["version"] = "14.0"
     platform_info = PlatformInfo(test_settings)
-    assert platform_info.os_version == "34"
+    assert platform_info.os_version == "14"
 
     # Windows version stays as is
     test_settings["platform"]["os"]["name"] = "windows"

@@ -9,8 +9,8 @@ origin:
   description: "WebM demuxer"
   url: https://github.com/mozilla/nestegg
   license: ISC
-  release: 0e61363256ada3bea965682e483c0885351ca328 (2025-09-03T20:10:23Z).
-  revision: 0e61363256ada3bea965682e483c0885351ca328
+  release: a507ba123da6cdca81538e15e127c13b682152a5 (2025-09-08T22:48:30Z).
+  revision: a507ba123da6cdca81538e15e127c13b682152a5
 
 vendoring:
   url: https://github.com/mozilla/nestegg

@@ -98,6 +98,7 @@
   MACRO_(currency, "currency")                                                 \
   MACRO_(currencyDisplay, "currencyDisplay")                                   \
   MACRO_(currencySign, "currencySign")                                         \
+  MACRO_(css, "css")                                                           \
   MACRO_(date, "date")                                                         \
   MACRO_(dateStyle, "dateStyle")                                               \
   MACRO_(day, "day")                                                           \

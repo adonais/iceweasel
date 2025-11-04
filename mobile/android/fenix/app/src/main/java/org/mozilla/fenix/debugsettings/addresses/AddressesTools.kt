@@ -27,7 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.concept.storage.Address
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import org.mozilla.fenix.R
@@ -177,13 +177,13 @@ private fun AddressesManagementSection(
 
         Spacer(Modifier.height(8.dp))
 
-        PrimaryButton(
+        FilledButton(
             text = stringResource(R.string.debug_drawer_add_new_address),
             modifier = Modifier.fillMaxWidth(),
             onClick = { onAddAddressClick(selectedLocaleLangTagForAddingAddress) },
         )
 
-        PrimaryButton(
+        FilledButton(
             text = stringResource(R.string.debug_drawer_delete_all_addresses),
             modifier = Modifier.fillMaxWidth(),
             onClick = onDeleteAllAddressesClick,

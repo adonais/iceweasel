@@ -63,8 +63,8 @@ class SwatchBasedEditorTooltip {
       event.preventDefault();
     });
 
-    // All target swatches are kept in a map, indexed by swatch DOM elements
-    this.swatches = new Map();
+    // All target swatches are kept in a WeakMap, indexed by swatch DOM elements
+    this.swatches = new WeakMap();
 
     // When a swatch is clicked, and for as long as the tooltip is shown, the
     // activeSwatch property will hold the reference to the swatch DOM element
@@ -259,7 +259,6 @@ class SwatchBasedEditorTooltip {
   }
 
   destroy() {
-    this.swatches.clear();
     this.activeSwatch = null;
     this.tooltip.off("keydown", this._onTooltipKeydown);
     this.tooltip.destroy();

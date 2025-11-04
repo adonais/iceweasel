@@ -774,7 +774,16 @@ class PresShell final : public nsStubDocumentObserver,
   }
 
   inline void RemoveAnchorPosPositioned(nsIFrame* aFrame) {
+#ifdef ACCESSIBILITY
+    if (nsAccessibilityService* accService = GetAccService()) {
+      accService->NotifyAnchorPositionedRemoved(this, aFrame);
+    }
+#endif
     mAnchorPosPositioned.RemoveElement(aFrame);
+  }
+
+  const nsTArray<nsIFrame*>& GetAnchorPosPositioned() const {
+    return mAnchorPosPositioned;
   }
 
 #ifdef MOZ_REFLOW_PERF
@@ -1263,6 +1272,10 @@ class PresShell final : public nsStubDocumentObserver,
 
   nsPoint GetLayoutViewportOffset() const;
   nsSize GetLayoutViewportSize() const;
+
+  // Returns the size used for window.inner{Height,Width}. Unlike the above
+  // layout viewport size, this size includes the scrollbar gutters.
+  nsSize GetInnerSize() const;
 
   /**
    * Documents belonging to an invisible DocShell must not be painted ever.

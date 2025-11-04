@@ -388,6 +388,11 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
     return true;
   }
 
+  // Skip if pushing arguments would require stack probes.
+  if (importCallable->as<JSFunction>().nargs() > JIT_ARGS_LENGTH_MAX) {
+    return true;
+  }
+
   // Skip if the function does not have a signature that allows for a JIT exit.
   if (!funcType.canHaveJitExit()) {
     return true;
@@ -2371,8 +2376,6 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
     : realm_(cx->realm()),
       onSuspendableStack_(false),
       allocSites_(nullptr),
-      jsJitArgsRectifier_(
-          cx->runtime()->jitRuntime()->getArgumentsRectifier().value),
       jsJitExceptionHandler_(
           cx->runtime()->jitRuntime()->getExceptionTail().value),
       preBarrierCode_(

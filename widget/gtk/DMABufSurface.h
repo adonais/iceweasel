@@ -469,6 +469,10 @@ class DMABufSurfaceYUV final : public DMABufSurface {
            (mTransferFunction == mozilla::gfx::TransferFunction::PQ ||
             mTransferFunction == mozilla::gfx::TransferFunction::HLG);
   }
+  void SetWPChromaLocation(uint32_t aWPChromaLocation) {
+    mWPChromaLocation = aWPChromaLocation;
+  }
+  uint32_t GetWPChromaLocation() { return mWPChromaLocation; }
 
   DMABufSurfaceYUV();
 
@@ -528,6 +532,9 @@ class DMABufSurfaceYUV final : public DMABufSurface {
       mozilla::gfx::ColorSpace2::UNKNOWN;
   mozilla::gfx::TransferFunction mTransferFunction =
       mozilla::gfx::TransferFunction::Default;
+  // Chroma location in wp_color_representation_surface_v1_chroma_location
+  // format.
+  uint32_t mWPChromaLocation = 0;
 };
 
 #endif

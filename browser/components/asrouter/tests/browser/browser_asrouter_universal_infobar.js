@@ -28,9 +28,15 @@ const UNIVERSAL_MESSAGE = {
   },
 };
 
+// TODO: It might be cleaner to have a testing version of
+// removeUniversalInfobars defined on InfoBar that does this cleanup?
 const cleanupInfobars = () => {
   InfoBar._universalInfobars = [];
   InfoBar._activeInfobar = null;
+  if (InfoBar._observingWindowOpened) {
+    InfoBar._observingWindowOpened = false;
+    Services.obs.removeObserver(InfoBar, "domwindowopened");
+  }
 };
 
 const makeFakeWin = ({
@@ -303,8 +309,9 @@ add_task(async function removeObserver_on_removeUniversalInfobars() {
     "removeObserver was invoked for domwindowopened"
   );
 
-  // Cleanup
+  // Cleanup. Make sure we remove the observer that removeSpy left behind.
   Services.obs = origObs;
+  InfoBar._observingWindowOpened = true;
   cleanupInfobars();
   sandbox.restore();
 });

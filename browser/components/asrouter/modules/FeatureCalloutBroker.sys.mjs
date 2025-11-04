@@ -194,12 +194,13 @@ export class _FeatureCalloutBroker {
 
   handleFeatureCalloutCallback(win, event) {
     switch (event) {
-      case "end":
+      case "end": {
         const item = this.#calloutMap.get(win);
         if (item) {
           item.showing = false;
         }
         break;
+      }
     }
   }
 

@@ -106,13 +106,13 @@ add_setup(async () => {
 
 add_task(async function test_defaultPrivateEngine() {
   Assert.equal(
-    Services.search.defaultPrivateEngine.identifier,
-    appPrivateDefault.identifier,
+    Services.search.defaultPrivateEngine.id,
+    appPrivateDefault.id,
     "Should have the app private default as the default private engine"
   );
   Assert.equal(
-    Services.search.defaultEngine.identifier,
-    appDefault.identifier,
+    Services.search.defaultEngine.id,
+    appDefault.id,
     "Should have the app default as the default engine"
   );
 

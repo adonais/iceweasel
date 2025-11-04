@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.AppCompatEditText
 import androidx.compose.material3.Text
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
@@ -67,7 +66,7 @@ import androidx.cardview.R as cardViewR
 import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.ui.icons.R as iconsR
 
-@Suppress("LongParameterList", "LargeClass", "TooManyFunctions")
+@Suppress("LongParameterList", "LargeClass")
 class BrowserToolbarIntegration(
     private val store: BrowserStore,
     private val toolbar: BrowserToolbar,
@@ -349,9 +348,7 @@ class BrowserToolbarIntegration(
     internal fun observeCookieBannerCfr() {
         cookieBannerCfrScope =
             fragment.components?.appStore?.flowScoped(
-                coroutineScope = CoroutineScope(
-                    coroutineDispatcher + SupervisorJob(),
-                ),
+                coroutineScope = CoroutineScope(coroutineDispatcher + SupervisorJob()),
             ) { flow ->
                 flow.mapNotNull { state -> state.showCookieBannerCfr }
                     .distinctUntilChanged()
@@ -383,20 +380,18 @@ class BrowserToolbarIntegration(
                                 ),
                                 onDismiss = { onDismissCookieBannerCfr() },
                                 text = {
+                                    val appName = stringResource(R.string.onboarding_short_app_name)
+                                    val linkText = stringResource(R.string.cfr_cookie_banner_link)
                                     val textCookieBannerCfr = stringResource(
                                         id = R.string.cfr_cookie_banner,
-                                        LocalContext.current.getString(R.string.onboarding_short_app_name),
-                                        LocalContext.current.getString(R.string.cfr_cookie_banner_link),
+                                        appName,
+                                        linkText,
                                     )
                                     ClickableSubstringLink(
                                         text = textCookieBannerCfr,
                                         style = focusTypography.cfrCookieBannerTextStyle,
                                         linkTextDecoration = TextDecoration.Underline,
-                                        clickableStartIndex = textCookieBannerCfr.indexOf(
-                                            LocalContext.current.getString(
-                                                R.string.cfr_cookie_banner_link,
-                                            ),
-                                        ),
+                                        clickableStartIndex = textCookieBannerCfr.indexOf(linkText),
                                         clickableEndIndex = textCookieBannerCfr.length,
                                         onClick = {
                                             fragment.requireComponents.appStore.dispatch(

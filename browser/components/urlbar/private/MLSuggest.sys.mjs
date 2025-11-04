@@ -10,7 +10,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   createEngine: "chrome://global/content/ml/EngineProcess.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
 });
 
 /**
@@ -70,10 +70,12 @@ class _MLSuggest {
   /**
    * Helper to wrap createEngine for testing purposes.
    *
+   * @param {object} options
+   *   Configuration options for the ML engine.
    * @returns {MLEngine}
    */
-  createEngine(args) {
-    return lazy.createEngine(args);
+  createEngine(options) {
+    return lazy.createEngine(options);
   }
 
   /**

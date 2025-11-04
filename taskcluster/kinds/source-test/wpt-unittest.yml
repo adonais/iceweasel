@@ -7,7 +7,7 @@ task-defaults:
     treeherder:
         kind: test
         tier: 1
-    worker-type: t-linux-docker
+    worker-type: t-linux-docker-amd
     worker:
         docker-image: {in-tree: "lint"}
         max-run-time: 1800

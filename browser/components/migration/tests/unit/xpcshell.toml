@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head = "head_migration.js"
 tags = "condprof os_integration"
 firefox-appdir = "browser"
@@ -29,6 +30,7 @@ run-if = ["os == 'linux'"]
 ["test_Chrome_bookmarks.js"]
 
 ["test_Chrome_corrupt_history.js"]
+run-sequentially = ["true"] # fails more than 50% of the time in parallel
 
 ["test_Chrome_credit_cards.js"]
 run-if = [
@@ -39,6 +41,7 @@ run-if = [
 ["test_Chrome_extensions.js"]
 
 ["test_Chrome_formdata.js"]
+run-sequentially = ["true"] # fails more than 50% of the time in parallel
 
 ["test_Chrome_history.js"]
 run-if = ["os == 'mac'"] # Relies on ULibDir
@@ -81,9 +84,11 @@ skip-if = [
 run-if = ["os == 'mac'"]
 
 ["test_Safari_history.js"]
+run-sequentially = ["true"] # almost perma fail in parallel
 run-if = ["os == 'mac'"]
 
 ["test_Safari_history_strange_entries.js"]
+run-sequentially = ["true"] # frequent fail in parallel
 run-if = ["os == 'mac'"]
 
 ["test_Safari_permissions.js"]

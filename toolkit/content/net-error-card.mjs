@@ -3,7 +3,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /* eslint-disable import/no-unassigned-import */
-/* eslint-env mozilla/remote-page */
 
 import {
   getCSSClass,
@@ -149,7 +148,7 @@ export class NetErrorCard extends MozLitElement {
         break;
       }
       case "SSL_ERROR_BAD_CERT_DOMAIN": {
-        if (!this.domainMismatchNames) {
+        if (this.domainMismatchNames === null) {
           this.getDomainMismatchNames();
           return null;
         }

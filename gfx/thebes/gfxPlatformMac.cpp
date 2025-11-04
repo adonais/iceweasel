@@ -745,6 +745,12 @@ class OSXVsyncSource final : public VsyncSource {
     }
 
     CreateDisplayLink();
+    auto displayLink = mDisplayLink.Lock();
+    if (!*displayLink) {
+      gfxWarning()
+          << "Could not create a display link during construction. This is "
+             "unrecoverable. We'll fallback to software vsync.";
+    }
   }
 
   virtual ~OSXVsyncSource() {
@@ -755,19 +761,13 @@ class OSXVsyncSource final : public VsyncSource {
     DestroyDisplayLink();
   }
 
-  static void RetryCreateDisplayLink(nsITimer* aTimer, void* aOsxVsyncSource) {
+  static void RetryCreateDisplayLinkAndEnableVsync(nsITimer* aTimer,
+                                                   void* aOsxVsyncSource) {
     MOZ_ASSERT(NS_IsMainThread());
     OSXVsyncSource* osxVsyncSource =
         static_cast<OSXVsyncSource*>(aOsxVsyncSource);
     MOZ_ASSERT(osxVsyncSource);
     osxVsyncSource->CreateDisplayLink();
-  }
-
-  static void RetryEnableVsync(nsITimer* aTimer, void* aOsxVsyncSource) {
-    MOZ_ASSERT(NS_IsMainThread());
-    OSXVsyncSource* osxVsyncSource =
-        static_cast<OSXVsyncSource*>(aOsxVsyncSource);
-    MOZ_ASSERT(osxVsyncSource);
     osxVsyncSource->EnableVsync();
   }
 
@@ -782,6 +782,11 @@ class OSXVsyncSource final : public VsyncSource {
     // with all displays running on the computer But if we have different
     // monitors at different display rates, we may hit issues.
     CVReturn retval = CVDisplayLinkCreateWithActiveCGDisplays(&*displayLink);
+    if (!*displayLink) {
+      gfxWarning()
+          << "Could not create a display link with all active displays.";
+      return;
+    }
 
     // Workaround for bug 1201401: CVDisplayLinkCreateWithCGDisplays()
     // (called by CVDisplayLinkCreateWithActiveCGDisplays()) sometimes
@@ -797,37 +802,18 @@ class OSXVsyncSource final : public VsyncSource {
       retval = kCVReturnInvalidDisplay;
     }
 
-    if (!*displayLink || (retval != kCVReturnSuccess)) {
+    if (retval != kCVReturnSuccess) {
       gfxWarning()
-          << "Could not create a display link with all active displays. "
-             "Retrying";
-      if (*displayLink) {
-        CVDisplayLinkRelease(*displayLink);
-        *displayLink = nullptr;
-      }
-
-      // bug 1142708 - When coming back from sleep,
-      // or when changing displays, active displays may not be ready yet,
-      // even if listening for the kIOMessageSystemHasPoweredOn event
-      // from OS X sleep notifications.
-      // Active displays are those that are drawable.
-      // bug 1144638 - When changing display configurations and getting
-      // notifications from CGDisplayReconfigurationCallBack, the
-      // callback gets called twice for each active display
-      // so it's difficult to know when all displays are active.
-      // Instead, try again soon. The delay is arbitrary. 100ms chosen
-      // because on a late 2013 15" retina, it takes about that
-      // long to come back up from sleep.
-      uint32_t delay = 100;
-      mTimer->InitWithNamedFuncCallback(RetryCreateDisplayLink, this, delay,
-                                        nsITimer::TYPE_ONE_SHOT,
-                                        "RetryCreateDisplayLink"_ns);
+          << "Display link was created, but is malformed; destroying it.";
+      CVDisplayLinkRelease(*displayLink);
+      *displayLink = nullptr;
       return;
     }
 
     if (CVDisplayLinkSetOutputCallback(*displayLink, &VsyncCallback, this) !=
         kCVReturnSuccess) {
-      gfxWarning() << "Could not set displaylink output callback";
+      gfxWarning()
+          << "Could not set display link output callback; destroying it.";
       CVDisplayLinkRelease(*displayLink);
       *displayLink = nullptr;
     }
@@ -850,13 +836,13 @@ class OSXVsyncSource final : public VsyncSource {
 
     auto displayLink = mDisplayLink.Lock();
     if (!*displayLink) {
-      gfxWarning() << "No display link available when starting vsync";
+      gfxWarning() << "No display link available when starting vsync.";
       return;
     }
 
     mPreviousTimestamp = TimeStamp::Now();
     if (CVDisplayLinkStart(*displayLink) != kCVReturnSuccess) {
-      gfxWarning() << "Could not activate the display link";
+      gfxWarning() << "Could not activate the display link.";
       return;
     }
 
@@ -958,10 +944,12 @@ class OSXVsyncSource final : public VsyncSource {
       // Check if we actually succeeded in enabling vsync, and if we didn't,
       // retry one time.
       if (!IsVsyncEnabled()) {
+        gfxWarning()
+            << "Display reconfiguration vsync has failed; retrying one time.";
         uint32_t delay = 100;
-        mTimer->InitWithNamedFuncCallback(RetryCreateDisplayLink, this, delay,
-                                          nsITimer::TYPE_ONE_SHOT,
-                                          "RetryEnableVsync"_ns);
+        mTimer->InitWithNamedFuncCallback(
+            RetryCreateDisplayLinkAndEnableVsync, this, delay,
+            nsITimer::TYPE_ONE_SHOT, "RetryCreateDisplayLinkAndEnableVsync"_ns);
       }
     }
   }

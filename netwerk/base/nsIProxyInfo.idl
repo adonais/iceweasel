@@ -30,6 +30,8 @@ interface nsIProxyInfo : nsISupports
    *   "https"    HTTP proxying over TLS connection to proxy
    *   "socks"    SOCKS v5 proxy
    *   "socks4"   SOCKS v4 proxy
+   *   "masque"   Similar to an HTTPS proxy, but supports
+  *               "connect-udp" and/or "connect-tcp" with pathTemplate
    *   "direct"   no proxy
    *   "unknown"  unknown proxy (see nsIProtocolProxyService::resolve)
    *
@@ -90,6 +92,11 @@ interface nsIProxyInfo : nsISupports
    * An optional key used for additional isolation of this proxy connection.
    */
   readonly attribute ACString connectionIsolationKey;
+
+  /**
+   * Used when the type is "masque"
+   */
+  attribute AUTF8String pathTemplate;
 
   /**
    * The following two constants can be used to compare against

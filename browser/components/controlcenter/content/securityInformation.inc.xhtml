@@ -9,6 +9,17 @@
                        when-connection="not-secure secure-cert-user-overridden cert-error-page net-error-page https-only-error-page" data-l10n-id="identity-connection-not-secure-security-view"></description>
           <description class="identity-popup-connection-secure security-view"
                        when-connection="secure secure-ev" data-l10n-id="identity-connection-verified"></description>
+          <!-- These descriptions are shown on a seperate subview when trustpanel is disabled and
+               are only visible here under the trustpanel -->
+          <box class="only-trustpanel">
+            <description when-connection="chrome" data-l10n-id="identity-connection-internal"></description>
+            <description when-connection="file" data-l10n-id="identity-connection-file"></description>
+            <description when-connection="associated" data-l10n-id="identity-connection-associated"></description>
+            <description when-connection="extension" data-l10n-id="identity-extension-page"></description >
+            <description class="identity-popup-connection-secure upgraded"
+                         when-httpsonlystatus="upgraded failed-sub"
+                         data-l10n-id="identity-https-only-connection-upgraded"></description>
+          </box>
         </hbox>
 
         <vbox id="identity-popup-securityView-extended-info" class="identity-popup-section">
@@ -76,5 +87,24 @@
             <html:a is="moz-support-link" when-mixedcontent="active-loaded"
                        and-when-loginforms="secure" class="identity-popup-mcb-learn-more" support-page="mixed-content"/>
           </hbox>
+
+          <!-- This section is only shown here when the trustpanel is active, otherwise it
+               is shown in a seperate subview inside the identityPanel -->
+          <vbox id="trustpanel-popup-security-httpsonlymode" when-httpsonlystatus="exception upgraded failed-top failed-sub" class="only-trustpanel">
+            <label flex="1" data-l10n-id="identity-https-only-label2"></label>
+            <menulist id="trustpanel-popup-security-httpsonlymode-menulist" sizetopopup="none">
+              <menupopup>
+                <menuitem value="0" data-l10n-id="identity-https-only-dropdown-on" />
+                <menuitem value="1" data-l10n-id="identity-https-only-dropdown-off"
+                          id="trustpanel-popup-security-menulist-off-item" />
+                <menuitem value="2" data-l10n-id="identity-https-only-dropdown-off-temporarily" />
+              </menupopup>
+            </menulist>
+            <vbox id="trustpanel-popup-security-httpsonlymode-info">
+              <description when-httpsonlystatus="exception" flex="1" data-l10n-id="identity-https-only-info-turn-on3"></description>
+              <description when-httpsonlystatus="failed-sub" flex="1" data-l10n-id="identity-https-only-info-turn-off3"></description>
+              <description when-httpsonlystatus="failed-top" flex="1" data-l10n-id="identity-https-only-info-no-upgrade"></description>
+            </vbox>
+          </vbox>
         </vbox>
       </vbox>

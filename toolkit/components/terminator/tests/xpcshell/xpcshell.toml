@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head = ""
 
 ["test_terminator_advance_phases.js"]

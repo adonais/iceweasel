@@ -139,7 +139,7 @@ async function triggerPictureInPicture(browser, videoID, triggerFn) {
       let event = new content.CustomEvent("MozTogglePictureInPicture", {
         bubbles: true,
       });
-      video.dispatchEvent(event);
+      content.windowUtils.dispatchEventToChromeOnly(video, event);
       await ContentTaskUtils.waitForCondition(() => {
         return video.isCloningElementVisually;
       }, "Video is being cloned visually.");

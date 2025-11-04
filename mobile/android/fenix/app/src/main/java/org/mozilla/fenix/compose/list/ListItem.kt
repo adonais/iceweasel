@@ -25,6 +25,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -53,7 +56,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.compose.Favicon
@@ -254,7 +256,7 @@ fun FaviconListItem(
             if (showDivider) {
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .padding(vertical = DIVIDER_VERTICAL_PADDING)
                         .fillMaxHeight()
@@ -302,6 +304,7 @@ fun FaviconListItem(
  * @param beforeIconPainter [Painter] used to display an [Icon] before the list item.
  * @param beforeIconDescription Content description of the icon.
  * @param beforeIconTint Tint applied to [beforeIconPainter].
+ * @param isBeforeIconHighlighted Whether or not the item should be highlighted with a notification icon.
  * @param showDivider Whether or not to display a vertical divider line before the [IconButton]
  * at the end.
  * @param afterIconPainter [Painter] used to display an icon after the list item.
@@ -328,12 +331,13 @@ fun IconListItem(
     beforeIconPainter: Painter,
     beforeIconDescription: String? = null,
     beforeIconTint: Color = FirefoxTheme.colors.iconPrimary,
+    isBeforeIconHighlighted: Boolean = false,
     showDivider: Boolean = false,
     afterIconPainter: Painter? = null,
     afterIconDescription: String? = null,
     afterIconTint: Color = FirefoxTheme.colors.iconPrimary,
     onAfterIconClick: (() -> Unit)? = null,
-    afterListAction: (@Composable RowScope.() -> Unit)? = null,
+    afterListAction: (@Composable () -> Unit)? = null,
 ) {
     ListItem(
         label = label,
@@ -349,65 +353,107 @@ fun IconListItem(
         onClick = onClick,
         onLongClick = onLongClick,
         beforeListItemAction = {
-            Icon(
+            IconListItemBeforeIcon(
+                isHighlighted = isBeforeIconHighlighted,
                 painter = beforeIconPainter,
-                contentDescription = beforeIconDescription,
+                description = beforeIconDescription,
                 tint = if (enabled) beforeIconTint else FirefoxTheme.colors.iconDisabled,
             )
-
-            Spacer(modifier = Modifier.width(16.dp))
         },
         afterListItemAction = {
-            afterListAction?.let {
-                it()
-                return@ListItem
-            }
-
-            if (afterIconPainter == null) {
-                return@ListItem
-            }
-
-            val tint = if (enabled) afterIconTint else FirefoxTheme.colors.iconDisabled
-
-            if (showDivider) {
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Divider(
-                    modifier = Modifier
-                        .padding(vertical = DIVIDER_VERTICAL_PADDING)
-                        .fillMaxHeight()
-                        .width(1.dp),
-                    color = FirefoxTheme.colors.borderSecondary,
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            if (onAfterIconClick == null) {
-                Icon(
-                    painter = afterIconPainter,
-                    contentDescription = afterIconDescription,
-                    tint = tint,
-                )
-            } else {
-                IconButton(
-                    onClick = onAfterIconClick,
-                    modifier = Modifier
-                        .size(ICON_SIZE)
-                        .semantics {
-                            this.role = Role.Button
-                        },
-                    enabled = enabled,
-                ) {
-                    Icon(
-                        painter = afterIconPainter,
-                        contentDescription = afterIconDescription,
-                        tint = tint,
-                    )
-                }
-            }
+            IconListItemAfterIcon(
+                showDivider = showDivider,
+                enabled = enabled,
+                painter = afterIconPainter,
+                description = afterIconDescription,
+                tint = if (enabled) afterIconTint else FirefoxTheme.colors.iconDisabled,
+                onClick = onAfterIconClick,
+                listAction = afterListAction,
+            )
         },
     )
+}
+
+@Composable
+private fun IconListItemBeforeIcon(
+    isHighlighted: Boolean,
+    painter: Painter,
+    description: String?,
+    tint: Color,
+) {
+    BadgedBox(
+        badge = {
+            if (isHighlighted) {
+                Badge(containerColor = FirefoxTheme.colors.actionInformation)
+            }
+        },
+    ) {
+        Icon(
+            painter = painter,
+            contentDescription = description,
+            tint = tint,
+        )
+    }
+
+    Spacer(modifier = Modifier.width(16.dp))
+}
+
+@Composable
+private fun IconListItemAfterIcon(
+    showDivider: Boolean,
+    enabled: Boolean,
+    painter: Painter?,
+    description: String?,
+    tint: Color,
+    onClick: (() -> Unit)?,
+    listAction: (@Composable () -> Unit)?,
+) {
+    listAction?.let {
+        it()
+        return
+    }
+
+    if (painter == null) {
+        return
+    }
+
+    if (showDivider) {
+        Spacer(modifier = Modifier.width(8.dp))
+
+        HorizontalDivider(
+            modifier = Modifier
+                .padding(vertical = DIVIDER_VERTICAL_PADDING)
+                .fillMaxHeight()
+                .width(1.dp),
+            color = FirefoxTheme.colors.borderSecondary,
+        )
+    }
+
+    Spacer(modifier = Modifier.width(16.dp))
+
+    if (onClick == null) {
+        Icon(
+            painter = painter,
+            contentDescription = description,
+            tint = tint,
+        )
+    } else {
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier
+                .size(ICON_SIZE)
+                .semantics {
+                    this.role = Role.Button
+                },
+            enabled = enabled,
+        ) {
+            Icon(
+                painter = painter,
+                contentDescription = description,
+                tint = tint,
+            )
+        }
+    }
 }
 
 /**
@@ -527,7 +573,7 @@ fun SelectableFaviconListItem(
             if (showDivider) {
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .padding(vertical = DIVIDER_VERTICAL_PADDING)
                         .fillMaxHeight()
@@ -647,7 +693,7 @@ fun SelectableIconListItem(
             if (showDivider) {
                 Spacer(modifier = Modifier.width(8.dp))
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .padding(vertical = DIVIDER_VERTICAL_PADDING)
                         .fillMaxHeight()

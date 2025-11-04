@@ -6,8 +6,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-#ifndef GECKO_TRACE_EVENTS_H
-#define GECKO_TRACE_EVENTS_H
+#ifndef GECKO_TRACE_GENERATED_EVENTS_{{ input_hash }}_H
+#define GECKO_TRACE_GENERATED_EVENTS_{{ input_hash }}_H
 
 #include "mozilla/Maybe.h"
 
@@ -21,7 +21,7 @@
   {%- elif attr.type == 'string' -%}
     std::string_view
   {%- elif attr.type == 'array' -%}
-    mozilla::Span<{{ cpp_type({'type': attr.items}) }}>
+    mozilla::Span<const {{ cpp_type({'type': attr["items"].type}) }}>
   {%- else -%}
    {% raise "Unsupported attribute type: %s" % attr.type %}
   {%- endif -%}
@@ -58,11 +58,11 @@ namespace events {
  * Generated from: {{ event.__definition_site__ }}
  *
  * Usage:
- *   SpanEvent::{{ event_name | camelize }}()
+ *   mozilla::gecko_trace::events::{{ event_name | camelize }}()
        {% for attr_key, attr in event.attributes.items() %}
  *     .With{{ attr_key | camelize }}({{ attr_key }})
-       {{- ";" if loop.last }}
        {% endfor %}
+ *	   .Emit();
  *
 {% if event.inherits_from %}
  * Inherits from:
@@ -183,9 +183,10 @@ class {{ class_name(event_name) }} : public
  * configured with attributes and then emitted.
  *
  * Example usage:
- *   SpanEvent::SomeEvent()
+ *   mozilla::gecko_trace::events::SomeEvent()
  *     .WithAttribute1(value1)
- *     .WithAttribute2(value2);
+ *     .WithAttribute2(value2)
+ *     .Emit();
  */
 namespace event {
 
@@ -207,4 +208,4 @@ inline events::{{ class_name(event_name) }} {{ event_name | camelize }}() {
 
 }  // namespace mozilla::gecko_trace
 
-#endif  // GECKO_TRACE_EVENTS_H
+#endif  // GECKO_TRACE_GENERATED_EVENTS_{{ input_hash }}_H

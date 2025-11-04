@@ -19,6 +19,7 @@
     <dimen name="library_item_icon_margin_horizontal">16dp</dimen>
     <dimen name="history_favicon_width_height">48dp</dimen>
     <dimen name="tab_corner_radius">8dp</dimen>
+    <dimen name="material_dialog_corner_radius">28dp</dimen>"
     <dimen name="preference_icon_drawable_size">24dp</dimen>
     <dimen name="search_bar_search_engine_icon_padding">12dp</dimen>
     <dimen name="search_engine_engine_icon_margin">12dp</dimen>
@@ -65,8 +66,10 @@
 
     <!-- Browser Toolbar -->
     <dimen name="composable_browser_toolbar_height">64dp</dimen>
+    <dimen name="composable_browser_toolbar_height_small">56dp</dimen>
     <dimen name="browser_toolbar_height">56dp</dimen>
     <dimen name="browser_navbar_height">60dp</dimen>
+    <dimen name="browser_navbar_height_small">48dp</dimen>
     <dimen name="tab_strip_height">56dp</dimen>
     <dimen name="browser_microsurvey_height">131dp</dimen>
 

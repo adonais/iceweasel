@@ -117,6 +117,7 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
             is BookmarksListMenuAction.Folder.DeleteClicked,
             CloseClicked,
             AddFolderClicked,
+            is SelectFolderAction.SortMenu,
             is BookmarkLongClicked,
             is BookmarksListMenuAction.Bookmark.DeleteClicked,
             is BookmarksListMenuAction.Bookmark.EditClicked,

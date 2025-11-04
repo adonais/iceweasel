@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env mozilla/remote-page */
-
 /**
  * Determines whether a given value is a fluent id or plain text and adds it to an element
  * @param {Array<[HTMLElement, string]>} items An array of [element, value] where value is

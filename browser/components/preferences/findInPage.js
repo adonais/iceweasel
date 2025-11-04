@@ -50,6 +50,9 @@ var gSearchResultsPane = {
     }
     this.inited = true;
     this.searchInput = document.getElementById("searchInput");
+    this.searchTooltipContainer = document.getElementById(
+      "search-tooltip-container"
+    );
 
     window.addEventListener("resize", () => {
       this._recomputeTooltipPositions();
@@ -492,7 +495,8 @@ var gSearchResultsPane = {
       // Creating tooltips for buttons
       if (
         keywordsResult &&
-        (nodeObject.localName === "button" ||
+        (nodeObject instanceof HTMLElement ||
+          nodeObject.localName === "button" ||
           nodeObject.localName == "menulist")
       ) {
         this.listSearchTooltips.add(nodeObject);
@@ -679,7 +683,7 @@ var gSearchResultsPane = {
     // Set tooltipNode property to track corresponded tooltip node.
     anchorNode.tooltipNode = searchTooltip;
     anchorNode.parentElement.classList.add("search-tooltip-parent");
-    anchorNode.parentElement.appendChild(searchTooltip);
+    this.searchTooltipContainer.append(searchTooltip);
 
     this._applyTooltipPosition(
       searchTooltip,
@@ -713,15 +717,24 @@ var gSearchResultsPane = {
     // menulists don't use XUL layout we can remove this and use plain CSS to
     // position them, see bug 1363730.
     let anchorRect = anchorNode.getBoundingClientRect();
-    let containerRect = anchorNode.parentElement.getBoundingClientRect();
+    let tooltipContainerRect =
+      this.searchTooltipContainer.getBoundingClientRect();
     let tooltipRect = searchTooltip.getBoundingClientRect();
 
-    let left =
-      anchorRect.left -
-      containerRect.left +
-      anchorRect.width / 2 -
-      tooltipRect.width / 2;
-    let top = anchorRect.top - containerRect.top;
+    let top = anchorRect.top - tooltipContainerRect.top;
+
+    let left;
+    if (anchorRect.left <= tooltipContainerRect.left + 20) {
+      // Left align on anchors that are close to the side of the main content
+      left = 8;
+    } else {
+      // Center tooltips if their anchor is floating off somewhere else
+      left =
+        anchorRect.left -
+        tooltipContainerRect.left +
+        anchorRect.width / 2 -
+        tooltipRect.width / 2;
+    }
     return { left, top };
   },
 

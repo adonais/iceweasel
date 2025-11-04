@@ -22,10 +22,19 @@ add_task(async function test_supported_mkv_sources() {
     v.src = test.name;
     v.preload = "auto";
     info(`Starting to play ${test.name}`);
+
+    // Mime type check
+    let canPlay = v.canPlayType(test.type);
+    is(canPlay, "probably", `canPlayType(${canPlay}) should be 'probably' for ${test.type}`);
+    let legacyType = test.type.replace(/^(audio|video)\//, "$1/x-");
+    canPlay = v.canPlayType(legacyType);
+    is(canPlay, "probably", `canPlayType(${canPlay}) should be 'probably' for ${legacyType}`);
+
+    // Playback check
     let endPromise = once(v, "ended");
-    ok(await v.play().then(_ => true, _ => false), "media failed to play");
+    ok(await v.play().then(_ => true, _ => false), "media started playing successfully");
     await endPromise;
-    ok(`${test.name} played to the end`);
+    ok(true, `${test.name} played to the end`);
     removeNodeAndSource(v);
   }
 });

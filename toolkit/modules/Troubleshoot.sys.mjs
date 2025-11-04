@@ -41,6 +41,7 @@ const PREFS_FOR_DISPLAY = [
   "browser.places.",
   "browser.privatebrowsing.",
   "browser.search.context.loadInBackground",
+  "browser.search.lastEngineIgnored",
   "browser.search.lastSettingsCorruptTime",
   "browser.search.log",
   "browser.search.openintab",

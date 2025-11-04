@@ -386,10 +386,6 @@ void JSJitFrameIter::dump() const {
       fprintf(stderr, " Baseline Interpreter Entry frame\n");
       fprintf(stderr, "  Caller frame ptr: %p\n", current()->callerFramePtr());
       break;
-    case FrameType::Rectifier:
-      fprintf(stderr, " Rectifier frame\n");
-      fprintf(stderr, "  Caller frame ptr: %p\n", current()->callerFramePtr());
-      break;
     case FrameType::TrampolineNative:
       fprintf(stderr, " TrampolineNative frame\n");
       fprintf(stderr, "  Caller frame ptr: %p\n", current()->callerFramePtr());
@@ -643,8 +639,6 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
    * |
    * ^--- Entry Frame (BaselineInterpreter) (unwrapped)
    * |
-   * ^--- Arguments Rectifier (unwrapped)
-   * |
    * ^--- Trampoline Native (unwrapped)
    * |
    * ^--- Entry Frame (CppToJSJit)
@@ -659,23 +653,11 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
       continue;
     }
 
-    // Unwrap rectifier frames.
-    if (frame->prevType() == FrameType::Rectifier) {
-      frame = GetPreviousRawFrame<RectifierFrameLayout*>(frame);
-      MOZ_ASSERT(frame->prevType() == FrameType::IonJS ||
-                 frame->prevType() == FrameType::BaselineStub ||
-                 frame->prevType() == FrameType::TrampolineNative ||
-                 frame->prevType() == FrameType::WasmToJSJit ||
-                 frame->prevType() == FrameType::CppToJSJit);
-      continue;
-    }
-
     // Unwrap TrampolineNative frames.
     if (frame->prevType() == FrameType::TrampolineNative) {
       frame = GetPreviousRawFrame<TrampolineNativeFrameLayout*>(frame);
       MOZ_ASSERT(frame->prevType() == FrameType::IonJS ||
                  frame->prevType() == FrameType::BaselineStub ||
-                 frame->prevType() == FrameType::Rectifier ||
                  frame->prevType() == FrameType::WasmToJSJit ||
                  frame->prevType() == FrameType::CppToJSJit);
       continue;
@@ -730,12 +712,11 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
       return;
 
     case FrameType::BaselineInterpreterEntry:
-    case FrameType::Rectifier:
     case FrameType::TrampolineNative:
     case FrameType::Exit:
     case FrameType::Bailout:
-      // Rectifier and Baseline Interpreter entry frames are handled before
-      // this switch. The other frame types can't call JS functions directly.
+      // Baseline Interpreter entry frames are handled before this switch. The
+      // other frame types can't call JS functions directly.
       break;
   }
 

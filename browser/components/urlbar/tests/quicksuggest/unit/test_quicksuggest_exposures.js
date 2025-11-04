@@ -322,11 +322,11 @@ add_task(async function maxResults_exposuresHistory() {
       makeExpectedResult({ rsSuggestionType: "test-exposure-maxresults-" + i })
     );
     historyResults.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: "http://example.com/history/" + i }
-      )
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: "http://example.com/history/" + i },
+      })
     );
   }
 
@@ -376,11 +376,11 @@ add_task(async function maxResults_exposuresHistoryAmp() {
       makeExpectedResult({ rsSuggestionType: "test-exposure-maxresults-" + i })
     );
     historyResults.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: "http://example.com/history/" + i }
-      )
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: "http://example.com/history/" + i },
+      })
     );
   }
 
@@ -415,11 +415,11 @@ async function doMaxResultsTest({
   if (includeHistory) {
     for (let i = 0; i < maxResults; i++) {
       historyResults.push(
-        new UrlbarResult(
-          UrlbarUtils.RESULT_TYPE.URL,
-          UrlbarUtils.RESULT_SOURCE.HISTORY,
-          { url: "http://example.com/history/" + i }
-        )
+        new UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.URL,
+          source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+          payload: { url: "http://example.com/history/" + i },
+        })
       );
     }
     historyProvider = new UrlbarTestUtils.TestProvider({

@@ -15,7 +15,6 @@
 #include "ConnectionEntry.h"
 #include "HttpConnectionUDP.h"
 #include "nsQueryObject.h"
-#include "mozilla/ChaosMode.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "nsHttpHandler.h"
 #include "mozilla/net/neqo_glue_ffi_generated.h"
@@ -428,6 +427,7 @@ nsresult ConnectionEntry::RemoveActiveConnection(HttpConnectionBase* conn) {
   if (!mActiveConns.RemoveElement(conn)) {
     return NS_ERROR_UNEXPECTED;
   }
+  conn->SetOwner(nullptr);
   gHttpHandler->ConnMgr()->DecrementActiveConnCount(conn);
 
   return NS_OK;
@@ -532,12 +532,14 @@ void ConnectionEntry::VerifyTraffic() {
             StaticPrefs::
                 network_http_move_to_pending_list_after_network_change()) {
           mActiveConns.RemoveElementAt(index);
+          conn->SetOwner(nullptr);
           MakeConnectionPendingAndDontReuse(conn);
         }
       } else if (connUDP &&
                  StaticPrefs::
                      network_http_move_to_pending_list_after_network_change()) {
         mActiveConns.RemoveElementAt(index);
+        connUDP->SetOwner(nullptr);
         MakeConnectionPendingAndDontReuse(connUDP);
       }
     }
@@ -569,6 +571,7 @@ bool ConnectionEntry::IsInActiveConns(HttpConnectionBase* conn) {
 
 void ConnectionEntry::InsertIntoActiveConns(HttpConnectionBase* conn) {
   mActiveConns.AppendElement(conn);
+  conn->SetOwner(this);
   gHttpHandler->ConnMgr()->IncrementActiveConnCount();
 }
 
@@ -718,6 +721,7 @@ void ConnectionEntry::CloseActiveConnections() {
   while (mActiveConns.Length()) {
     RefPtr<HttpConnectionBase> conn(mActiveConns[0]);
     mActiveConns.RemoveElementAt(0);
+    conn->SetOwner(nullptr);
     gHttpHandler->ConnMgr()->DecrementActiveConnCount(conn);
 
     // Since HttpConnectionBase::Close doesn't break the bond with
@@ -767,6 +771,7 @@ void ConnectionEntry::PruneNoTraffic() {
       RefPtr<nsHttpConnection> conn = do_QueryObject(mActiveConns[index]);
       if (conn && conn->NoTraffic()) {
         mActiveConns.RemoveElementAt(index);
+        conn->SetOwner(nullptr);
         gHttpHandler->ConnMgr()->DecrementActiveConnCount(conn);
         conn->Close(NS_ERROR_ABORT);
         LOG(
@@ -842,6 +847,7 @@ void ConnectionEntry::MoveConnection(HttpConnectionBase* proxyConn,
   RefPtr<HttpConnectionBase> deleteProtector(proxyConn);
   if (mActiveConns.RemoveElement(proxyConn)) {
     otherEnt->mActiveConns.AppendElement(proxyConn);
+    proxyConn->SetOwner(otherEnt);
     return;
   }
 
@@ -927,42 +933,14 @@ Http3ConnectionStatsParams ConnectionEntry::GetHttp3ConnectionStatsData() {
 }
 
 void ConnectionEntry::LogConnections() {
-  if (!mConnInfo->IsHttp3()) {
-    LOG(("active urgent conns ["));
-    for (HttpConnectionBase* conn : mActiveConns) {
-      RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
-      MOZ_ASSERT(connTCP);
-      if (connTCP->IsUrgentStartPreferred()) {
-        LOG(("  %p", conn));
-      }
-    }
-    LOG(("] active regular conns ["));
-    for (HttpConnectionBase* conn : mActiveConns) {
-      RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
-      MOZ_ASSERT(connTCP);
-      if (!connTCP->IsUrgentStartPreferred()) {
-        LOG(("  %p", conn));
-      }
-    }
+  LOG(("active conns ["));
+  for (HttpConnectionBase* conn : mActiveConns) {
+    LOG(("  %p", conn));
+  }
 
-    LOG(("] idle urgent conns ["));
-    for (nsHttpConnection* conn : mIdleConns) {
-      if (conn->IsUrgentStartPreferred()) {
-        LOG(("  %p", conn));
-      }
-    }
-    LOG(("] idle regular conns ["));
-    for (nsHttpConnection* conn : mIdleConns) {
-      if (!conn->IsUrgentStartPreferred()) {
-        LOG(("  %p", conn));
-      }
-    }
-  } else {
-    LOG(("active conns ["));
-    for (HttpConnectionBase* conn : mActiveConns) {
-      LOG(("  %p", conn));
-    }
-    MOZ_ASSERT(mIdleConns.Length() == 0);
+  LOG(("] idle conns ["));
+  for (nsHttpConnection* conn : mIdleConns) {
+    LOG(("  %p", conn));
   }
   LOG(("]"));
 }
@@ -1105,7 +1083,7 @@ bool ConnectionEntry::AllowToRetryDifferentIPFamilyForHttp3(nsresult aError) {
       ("ConnectionEntry::AllowToRetryDifferentIPFamilyForHttp3 %p "
        "error=%" PRIx32,
        this, static_cast<uint32_t>(aError)));
-  if (!IsHttp3()) {
+  if (!mConnInfo->IsHttp3() && !mConnInfo->IsHttp3ProxyConnection()) {
     MOZ_ASSERT(false, "Should not be called for non Http/3 connection");
     return false;
   }

@@ -17,6 +17,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -155,7 +156,7 @@ class CreditCardEditorFragment :
     }
 
     private fun showDeleteDialog(onPositiveClickListener: DialogInterface.OnClickListener) {
-        deleteDialog = AlertDialog.Builder(requireContext()).apply {
+        deleteDialog = MaterialAlertDialogBuilder(requireContext()).apply {
             setMessage(R.string.credit_cards_delete_dialog_confirmation_2)
             setNegativeButton(R.string.credit_cards_cancel_button) { dialog: DialogInterface, _ ->
                 dialog.cancel()

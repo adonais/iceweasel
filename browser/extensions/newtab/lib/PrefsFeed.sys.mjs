@@ -216,9 +216,7 @@ export class PrefsFeed {
    * Handler for when OHTTP images experiment data updates.
    */
   onOhttpImagesUpdated() {
-    // newtabOhttpImages was introduced in 143.
-    const value =
-      lazy.NimbusFeatures.newtabOhttpImages?.getAllVariables() || {};
+    const value = lazy.NimbusFeatures.newtabOhttpImages.getAllVariables() || {};
     this.store.dispatch(
       ac.BroadcastToContent({
         type: at.PREF_CHANGED,
@@ -244,11 +242,7 @@ export class PrefsFeed {
       this.onInferredPersonalizationExperimentUpdated
     );
     lazy.NimbusFeatures.newtabWidgets.onUpdate(this.onWidgetsUpdated);
-
-    // newtabOhttpImages was introduced in 143.
-    if (lazy.NimbusFeatures.newtabOhttpImages) {
-      lazy.NimbusFeatures.newtabOhttpImages.onUpdate(this.onOhttpImagesUpdated);
-    }
+    lazy.NimbusFeatures.newtabOhttpImages.onUpdate(this.onOhttpImagesUpdated);
 
     // Get the initial value of each activity stream pref
     const values = {};
@@ -365,13 +359,7 @@ export class PrefsFeed {
       this.onInferredPersonalizationExperimentUpdated
     );
     lazy.NimbusFeatures.newtabWidgets.offUpdate(this.onWidgetsUpdated);
-
-    // newtabOhttpImages was introduced in 143.
-    if (lazy.NimbusFeatures.newtabOhttpImages) {
-      lazy.NimbusFeatures.newtabOhttpImages.offUpdate(
-        this.onOhttpImagesUpdated
-      );
-    }
+    lazy.NimbusFeatures.newtabOhttpImages.offUpdate(this.onOhttpImagesUpdated);
 
     if (this.geo === "") {
       Services.obs.removeObserver(this, lazy.Region.REGION_TOPIC);

@@ -10,10 +10,10 @@ import {
   span,
 } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-import { wrapRender } from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
-import { cleanFunctionName } from "resource://devtools/client/shared/components/reps/reps/function.mjs";
-import { isLongString } from "resource://devtools/client/shared/components/reps/reps/string.mjs";
-import { MODE } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
+import { wrapRender } from "./rep-utils.mjs";
+import { cleanFunctionName } from "./function.mjs";
+import { isLongString } from "./string.mjs";
+import { MODE } from "./constants.mjs";
 
 const IGNORED_SOURCE_URLS = ["debugger eval code"];
 

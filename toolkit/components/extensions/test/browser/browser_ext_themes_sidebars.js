@@ -2,6 +2,13 @@
 
 // This test checks whether the sidebar color properties work.
 
+registerCleanupFunction(async function () {
+  // Ensure sidebar is hidden after each test:
+  if (!document.getElementById("sidebar-box").hidden) {
+    SidebarController.hide({ dismissPanel: true });
+  }
+});
+
 /**
  * Test whether the selected browser has the sidebar theme applied
  *

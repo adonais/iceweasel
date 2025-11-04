@@ -51,15 +51,16 @@
       DriverVendor::All, devices, feature, featureStatus, driverComparator,  \
       driverVersion, ruleId)
 
-#define APPEND_TO_DRIVER_BLOCKLIST_REFRESH_RATE(                           \
-    os, devices, feature, featureStatus, refreshRateStatus,                \
-    minRefreshRateComparator, minRefreshRate, minRefreshRateMax,           \
-    maxRefreshRateComparator, maxRefreshRate, maxRefreshRateMax, ruleId,   \
-    suggestedVersion)                                                      \
-  sDriverInfo->AppendElement(MakeAndAddRef<GfxDriverInfo>(                 \
-      os, GfxDriverInfo::GetDeviceFamily(devices), feature, featureStatus, \
-      refreshRateStatus, minRefreshRateComparator, minRefreshRate,         \
-      minRefreshRateMax, maxRefreshRateComparator, maxRefreshRate,         \
+#define APPEND_TO_DRIVER_BLOCKLIST_REFRESH_RATE(                         \
+    os, devices, feature, featureStatus, refreshRateStatus,              \
+    minRefreshRateComparator, minRefreshRate, minRefreshRateMax,         \
+    maxRefreshRateComparator, maxRefreshRate, maxRefreshRateMax, ruleId, \
+    suggestedVersion)                                                    \
+  sDriverInfo->AppendElement(MakeAndAddRef<GfxDriverInfo>(               \
+      os, (nsAString&)GfxDriverInfo::GetDeviceVendor(devices),           \
+      GfxDriverInfo::GetDeviceFamily(devices), feature, featureStatus,   \
+      refreshRateStatus, minRefreshRateComparator, minRefreshRate,       \
+      minRefreshRateMax, maxRefreshRateComparator, maxRefreshRate,       \
       maxRefreshRateMax, ruleId, suggestedVersion))
 
 #define APPEND_TO_DRIVER_BLOCKLIST_RANGE_EXT(                                 \
@@ -352,7 +353,7 @@ class GfxDriverInfo final {
                 bool gpu2 = false);
 
   // For blocking on refresh rates rather than driver versions.
-  GfxDriverInfo(OperatingSystem os,
+  GfxDriverInfo(OperatingSystem os, const nsAString& vendor,
                 already_AddRefed<const GfxDeviceFamily> devices,
                 int32_t feature, int32_t featureStatus,
                 RefreshRateStatus refreshRateStatus,

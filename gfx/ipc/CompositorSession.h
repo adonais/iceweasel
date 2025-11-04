@@ -73,8 +73,8 @@ class CompositorSession {
   // Set the UiCompositorControllerChild after Session creation so the Session
   // constructor doesn't get mucked up for other platforms.
   void SetUiCompositorControllerChild(
-      RefPtr<UiCompositorControllerChild> aUiController) {
-    mUiCompositorControllerChild = aUiController;
+      RefPtr<UiCompositorControllerChild>&& aUiController) {
+    mUiCompositorControllerChild = std::move(aUiController);
   }
 
   RefPtr<UiCompositorControllerChild> GetUiCompositorControllerChild() {

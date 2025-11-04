@@ -76,7 +76,7 @@ void FlushICache(void* code, size_t size) {
 #if defined(JS_SIMULATOR)
   js::jit::SimulatorProcess::FlushICache(code, size);
 
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__OpenBSD__)
 #  if defined(__GNUC__)
   intptr_t end = reinterpret_cast<intptr_t>(code) + size;
   __builtin___clear_cache(reinterpret_cast<char*>(code),

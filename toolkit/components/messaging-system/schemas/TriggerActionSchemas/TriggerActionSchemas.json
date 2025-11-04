@@ -447,6 +447,7 @@
                 "searchSource": {
                   "type": "string",
                   "enum": [
+                    "searchbar",
                     "urlbar-handoff",
                     "urlbar-searchmode",
                     "urlbar-persisted",

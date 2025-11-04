@@ -23,9 +23,11 @@ import mozilla.components.browser.state.action.ContentAction.UpdateProgressActio
 import mozilla.components.browser.state.action.ContentAction.UpdateSecurityInfoAction
 import mozilla.components.browser.state.action.ContentAction.UpdateTitleAction
 import mozilla.components.browser.state.action.ContentAction.UpdateUrlAction
+import mozilla.components.browser.state.action.TrackingProtectionAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.state.state.SecurityInfoState
+import mozilla.components.browser.state.state.TrackingProtectionState
 import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
@@ -260,6 +262,8 @@ class CustomTabBrowserToolbarMiddlewareTest {
     @Test
     fun `GIVEN the website is secure WHEN initializing the toolbar THEN add an appropriate security indicator`() {
         every { customTab.content.securityInfo.secure } returns true
+        every { customTab.trackingProtection.enabled } returns true
+        every { customTab.trackingProtection.ignoredOnTrackingProtection } returns false
         val expectedSecurityIndicator = ActionButtonRes(
             drawableResId = iconsR.drawable.mozac_ic_shield_checkmark_24,
             contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
@@ -305,7 +309,14 @@ class CustomTabBrowserToolbarMiddlewareTest {
 
     @Test
     fun `GIVEN the website is insecure WHEN the conection becomes secure THEN update appropriate security indicator`() = runTest {
-        val customTab = createCustomTab(url = "URL", id = customTabId)
+        val customTab = createCustomTab(
+            url = "URL",
+            id = customTabId,
+            trackingProtection = TrackingProtectionState(
+                enabled = true,
+                ignoredOnTrackingProtection = false,
+            ),
+        )
         val browserStore = BrowserStore(
             BrowserState(customTabs = listOf(customTab)),
         )
@@ -333,6 +344,114 @@ class CustomTabBrowserToolbarMiddlewareTest {
         assertEquals(1, toolbarPageActions.size)
         securityIndicator = toolbarPageActions[0]
         assertEquals(expectedSecureIndicator, securityIndicator)
+    }
+
+    @Test
+    fun `GIVEN the custom tab has tracking protection disabled THEN show appropriate security indicator`() = runTest {
+        val customTab = createCustomTab(
+            url = "URL",
+            id = customTabId,
+            trackingProtection = TrackingProtectionState(
+                enabled = false,
+                ignoredOnTrackingProtection = false,
+            ),
+        )
+        val browserStore = BrowserStore(
+            BrowserState(customTabs = listOf(customTab)),
+        )
+        val middleware = buildMiddleware(browserStore)
+        val expectedInsecureIndicator = ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_shield_slash_24,
+            contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
+            onClick = SiteInfoClicked,
+        )
+        val toolbarStore = buildStore(middleware)
+        browserStore.dispatch(UpdateSecurityInfoAction(customTabId, SecurityInfoState(true))).joinBlocking()
+        mainLooperRule.idle()
+        val toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        val securityIndicator = toolbarPageActions[0]
+        assertEquals(expectedInsecureIndicator, securityIndicator)
+    }
+
+    @Test
+    fun `GIVEN the custom tab has tracking protection disabled WHEN tracking protection is enabled THEN show appropriate security indicator`() = runTest {
+        val customTab = createCustomTab(
+            url = "URL",
+            id = customTabId,
+            trackingProtection = TrackingProtectionState(
+                enabled = false,
+                ignoredOnTrackingProtection = false,
+            ),
+        )
+        val browserStore = BrowserStore(
+            BrowserState(customTabs = listOf(customTab)),
+        )
+        val middleware = buildMiddleware(browserStore)
+        val expectedInsecureIndicator = ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_shield_slash_24,
+            contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
+            onClick = SiteInfoClicked,
+        )
+        val expectedSecureIndicator = ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_shield_checkmark_24,
+            contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
+            onClick = SiteInfoClicked,
+        )
+        val toolbarStore = buildStore(middleware)
+        browserStore.dispatch(UpdateSecurityInfoAction(customTabId, SecurityInfoState(true))).joinBlocking()
+        mainLooperRule.idle()
+        var toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        var securityIndicator = toolbarPageActions[0]
+        assertEquals(expectedInsecureIndicator, securityIndicator)
+        browserStore.dispatch(TrackingProtectionAction.ToggleAction(tabId = customTabId, enabled = true))
+            .joinBlocking()
+        mainLooperRule.idle()
+        toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        securityIndicator = toolbarPageActions[0]
+        assertEquals(expectedSecureIndicator, securityIndicator)
+    }
+
+    @Test
+    fun `GIVEN the custom tab has tracking protection enabled WHEN tracking protection is disabled THEN show appropriate security indicator`() = runTest {
+        val customTab = createCustomTab(
+            url = "URL",
+            id = customTabId,
+            trackingProtection = TrackingProtectionState(
+                enabled = true,
+                ignoredOnTrackingProtection = false,
+            ),
+        )
+        val browserStore = BrowserStore(
+            BrowserState(customTabs = listOf(customTab)),
+        )
+        val middleware = buildMiddleware(browserStore)
+        val expectedInsecureIndicator = ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_shield_slash_24,
+            contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
+            onClick = SiteInfoClicked,
+        )
+        val expectedSecureIndicator = ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_shield_checkmark_24,
+            contentDescription = toolbarR.string.mozac_browser_toolbar_content_description_site_info,
+            onClick = SiteInfoClicked,
+        )
+        val toolbarStore = buildStore(middleware)
+        browserStore.dispatch(UpdateSecurityInfoAction(customTabId, SecurityInfoState(true))).joinBlocking()
+        mainLooperRule.idle()
+        var toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        var securityIndicator = toolbarPageActions[0]
+        assertEquals(expectedSecureIndicator, securityIndicator)
+        browserStore.dispatch(TrackingProtectionAction.ToggleAction(tabId = customTabId, enabled = false))
+            .joinBlocking()
+        mainLooperRule.idle()
+        toolbarPageActions = toolbarStore.state.displayState.pageActionsStart
+        assertEquals(1, toolbarPageActions.size)
+        securityIndicator = toolbarPageActions[0]
+        assertEquals(expectedInsecureIndicator, securityIndicator)
     }
 
     @Test

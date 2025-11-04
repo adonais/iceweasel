@@ -82,9 +82,10 @@ using JS::SliceBudget;
  */
 
 static constexpr AllocKinds ForegroundObjectFinalizePhase = {
-    AllocKind::OBJECT0_FOREGROUND,  AllocKind::OBJECT2_FOREGROUND,
-    AllocKind::OBJECT4_FOREGROUND,  AllocKind::OBJECT8_FOREGROUND,
-    AllocKind::OBJECT12_FOREGROUND, AllocKind::OBJECT16_FOREGROUND};
+    AllocKind::OBJECT0_FOREGROUND, AllocKind::OBJECT2_FOREGROUND,
+    AllocKind::OBJECT4_FOREGROUND, AllocKind::OBJECT6_FOREGROUND,
+    AllocKind::OBJECT8_FOREGROUND, AllocKind::OBJECT12_FOREGROUND,
+    AllocKind::OBJECT16_FOREGROUND};
 
 static constexpr AllocKinds ForegroundNonObjectFinalizePhase = {
     AllocKind::SCRIPT, AllocKind::JITCODE};
@@ -92,34 +93,24 @@ static constexpr AllocKinds ForegroundNonObjectFinalizePhase = {
 static constexpr AllocKinds BackgroundObjectFinalizePhase = {
     AllocKind::OBJECT0_BACKGROUND, AllocKind::OBJECT2_BACKGROUND,
     AllocKind::ARRAYBUFFER4,       AllocKind::OBJECT4_BACKGROUND,
+    AllocKind::ARRAYBUFFER6,       AllocKind::OBJECT6_BACKGROUND,
     AllocKind::ARRAYBUFFER8,       AllocKind::OBJECT8_BACKGROUND,
     AllocKind::ARRAYBUFFER12,      AllocKind::OBJECT12_BACKGROUND,
     AllocKind::ARRAYBUFFER16,      AllocKind::OBJECT16_BACKGROUND};
 
 static constexpr AllocKinds BackgroundTrivialFinalizePhase = {
-    AllocKind::FUNCTION,
-    AllocKind::FUNCTION_EXTENDED,
-    AllocKind::OBJECT0,
-    AllocKind::OBJECT2,
-    AllocKind::OBJECT4,
-    AllocKind::OBJECT8,
-    AllocKind::OBJECT12,
-    AllocKind::OBJECT16,
-    AllocKind::SCOPE,
-    AllocKind::REGEXP_SHARED,
-    AllocKind::FAT_INLINE_STRING,
-    AllocKind::STRING,
-    AllocKind::EXTERNAL_STRING,
-    AllocKind::FAT_INLINE_ATOM,
-    AllocKind::ATOM,
-    AllocKind::SYMBOL,
-    AllocKind::BIGINT,
-    AllocKind::SHAPE,
-    AllocKind::BASE_SHAPE,
-    AllocKind::GETTER_SETTER,
-    AllocKind::COMPACT_PROP_MAP,
-    AllocKind::NORMAL_PROP_MAP,
-    AllocKind::DICT_PROP_MAP};
+    AllocKind::FUNCTION,        AllocKind::FUNCTION_EXTENDED,
+    AllocKind::OBJECT0,         AllocKind::OBJECT2,
+    AllocKind::OBJECT4,         AllocKind::OBJECT6,
+    AllocKind::OBJECT8,         AllocKind::OBJECT12,
+    AllocKind::OBJECT16,        AllocKind::SCOPE,
+    AllocKind::REGEXP_SHARED,   AllocKind::FAT_INLINE_STRING,
+    AllocKind::STRING,          AllocKind::EXTERNAL_STRING,
+    AllocKind::FAT_INLINE_ATOM, AllocKind::ATOM,
+    AllocKind::SYMBOL,          AllocKind::BIGINT,
+    AllocKind::SHAPE,           AllocKind::BASE_SHAPE,
+    AllocKind::GETTER_SETTER,   AllocKind::COMPACT_PROP_MAP,
+    AllocKind::NORMAL_PROP_MAP, AllocKind::DICT_PROP_MAP};
 
 static constexpr AllocKinds AllBackgroundSweptKinds =
     BackgroundObjectFinalizePhase + BackgroundTrivialFinalizePhase;

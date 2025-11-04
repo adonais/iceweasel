@@ -24,8 +24,6 @@ PLATFORM_RENAMES = {
 }
 
 BALROG_PLATFORM_MAP = {
-    "linux": ["Linux_x86-gcc3"],
-    "linux32": ["Linux_x86-gcc3"],
     "linux64": ["Linux_x86_64-gcc3"],
     "linux64-aarch64": ["Linux_aarch64-gcc3"],
     "linux64-asan-reporter": ["Linux_x86_64-gcc3-asan"],
@@ -50,7 +48,6 @@ FTP_PLATFORM_MAP = {
     "Darwin_x86_64-gcc3": "mac",
     "Darwin_x86_64-gcc3-u-i386-x86_64": "mac",
     "Darwin_aarch64-gcc3": "mac",
-    "Linux_x86-gcc3": "linux-i686",
     "Linux_x86_64-gcc3": "linux-x86_64",
     "Linux_aarch64-gcc3": "linux-aarch64",
     "Linux_x86_64-gcc3-asan": "linux-x86_64-asan-reporter",
@@ -286,6 +283,9 @@ def _populate_release_history(product, branch, partial_updates):
         url_pattern = history["fileUrls"][localtest]["completes"]["*"]
 
         for platform in history["platforms"]:
+            if platform not in FTP_PLATFORM_MAP:
+                # skip EOL platforms
+                continue
             if "alias" in history["platforms"][platform]:
                 continue
             if platform not in builds:

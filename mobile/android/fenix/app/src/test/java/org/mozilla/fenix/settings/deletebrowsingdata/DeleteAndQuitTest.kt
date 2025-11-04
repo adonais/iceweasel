@@ -36,7 +36,6 @@ import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitTyp
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType.TABS
 import org.mozilla.fenix.utils.Settings
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class DeleteAndQuitTest {
 
     @get:Rule
@@ -67,6 +66,7 @@ class DeleteAndQuitTest {
     }
 
     @Ignore("Failing test; need more investigation.")
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `delete only tabs and quit`() = runTestOnMain {
         // When
@@ -101,6 +101,7 @@ class DeleteAndQuitTest {
     }
 
     @Ignore("Failing test; need more investigation.")
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `delete everything and quit`() = runTestOnMain {
         // When

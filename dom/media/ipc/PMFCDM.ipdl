@@ -59,7 +59,6 @@ struct MFCDMCapabilitiesIPDL {
   SessionType[] sessionTypes;
   Requirement distinctiveID;
   Requirement persistentState;
-  bool? isHDCP22Compatible;
   bool isHardwareDecryption;
 };
 

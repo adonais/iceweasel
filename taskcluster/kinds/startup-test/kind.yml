@@ -39,25 +39,6 @@ task-defaults:
     use-python: default
 
 tasks:
-    linux32:
-        dependencies:
-            build-signing: build-signing-linux-shippable/opt
-        run:
-            using: run-task
-            cwd: "{checkout}"
-        extra-config:
-            upstream_kind: build-signing
-            upstream_artifact: target.tar.xz
-            binary: firefox
-        worker-type: t-linux-docker
-        worker:
-            docker-image: {in-tree: ubuntu2404-test}
-        shipping-product: firefox
-        attributes:
-            build_platform: linux-shippable
-        treeherder:
-            platform: linux-shippable/opt
-
     linux64:
         dependencies:
             build-signing: build-signing-linux64-shippable/opt
@@ -68,7 +49,7 @@ tasks:
             upstream_kind: build-signing
             upstream_artifact: target.tar.xz
             binary: firefox
-        worker-type: t-linux-docker
+        worker-type: t-linux-docker-amd
         worker:
             docker-image: {in-tree: ubuntu2404-test}
         shipping-product: firefox

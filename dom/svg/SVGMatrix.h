@@ -45,6 +45,8 @@
 
 namespace mozilla::dom {
 
+struct DOMMatrix2DInit;
+
 /**
  * DOM wrapper for an SVG matrix.
  */
@@ -83,7 +85,8 @@ class SVGMatrix final : public nsWrapperCache {
   void SetE(float aE, ErrorResult& aRv);
   float F() const { return static_cast<float>(GetMatrix()._32); }
   void SetF(float aF, ErrorResult& aRv);
-  already_AddRefed<SVGMatrix> Multiply(SVGMatrix& aMatrix);
+  already_AddRefed<SVGMatrix> Multiply(const DOMMatrix2DInit& aMatrix,
+                                       ErrorResult& aRv);
   already_AddRefed<SVGMatrix> Inverse(ErrorResult& aRv);
   already_AddRefed<SVGMatrix> Translate(float x, float y);
   already_AddRefed<SVGMatrix> Scale(float scaleFactor);

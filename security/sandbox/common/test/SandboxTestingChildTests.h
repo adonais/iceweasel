@@ -56,6 +56,7 @@
 namespace ApplicationServices {
 #  include <ApplicationServices/ApplicationServices.h>
 }
+extern "C" int sandbox_check(pid_t pid, const char* operation, int type, ...);
 #endif
 
 #ifdef XP_WIN
@@ -1086,8 +1087,23 @@ void RunTestsGPU(SandboxTestingChild* child) {
            u"shader-cache\\sandboxTest.txt"_ns,
            FILE_GENERIC_READ | FILE_GENERIC_WRITE, true, child);
 
+#elif defined(XP_MACOSX)
+
+  // Check if the GPU process sandbox has been started
+  bool isSandboxStarted = sandbox_check(getpid(), NULL, 0) == 1;
+  nsCString gpuSandboxCheckMessage;
+  if (isSandboxStarted) {
+    gpuSandboxCheckMessage.AppendLiteral(
+        "sandbox_check() indicates GPU process sandbox is running");
+  } else {
+    gpuSandboxCheckMessage.AppendLiteral(
+        "sandbox_check() indicates GPU process sandbox is not running");
+  }
+  child->SendReportTestResults("sandbox_check()"_ns, isSandboxStarted,
+                               gpuSandboxCheckMessage);
+
 #else   // defined(XP_WIN)
-  child->ReportNoTests();
+    child->ReportNoTests();
 #endif  // defined(XP_WIN)
 }
 

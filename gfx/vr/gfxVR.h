@@ -14,7 +14,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/EnumeratedArray.h"
 #include "mozilla/TiedFields.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/TypedEnumBits.h"

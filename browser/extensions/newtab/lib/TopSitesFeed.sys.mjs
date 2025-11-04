@@ -1486,7 +1486,8 @@ export class TopSitesFeed {
       sampledSites = await this.ranker.rankTopSites(
         checkedAdult,
         prefValues,
-        isStartup
+        isStartup,
+        dedupedSponsored.length
       );
     } else {
       sampledSites = checkedAdult;

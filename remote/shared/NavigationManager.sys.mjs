@@ -44,6 +44,7 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () => lazy.Log.get());
  * @enum {string}
  */
 export const NAVIGATION_EVENTS = {
+  DownloadEnd: "download-end",
   DownloadStarted: "download-started",
   FragmentNavigated: "fragment-navigated",
   HistoryUpdated: "history-updated",
@@ -97,6 +98,7 @@ export const NavigationState = {
 class NavigationRegistry extends EventEmitter {
   #contextListener;
   #downloadListener;
+  #downloadNavigations;
   #managers;
   #navigations;
   #promptListener;
@@ -111,6 +113,10 @@ class NavigationRegistry extends EventEmitter {
     // Maps navigable id to NavigationInfo.
     this.#navigations = new Map();
 
+    // Keep track of ongoing download navigations, from Download object to
+    // navigation id.
+    this.#downloadNavigations = new WeakMap();
+
     this.#webProgressListener = new lazy.ParentWebProgressListener();
 
     this.#contextListener = new lazy.BrowsingContextListener();
@@ -119,6 +125,7 @@ class NavigationRegistry extends EventEmitter {
 
     this.#downloadListener = new lazy.DownloadListener();
     this.#downloadListener.on("download-started", this.#onDownloadStarted);
+    this.#downloadListener.on("download-stopped", this.#onDownloadStopped);
 
     this.#promptListener = new lazy.PromptListener();
     this.#promptListener.on("closed", this.#onPromptClosed);
@@ -745,7 +752,7 @@ class NavigationRegistry extends EventEmitter {
   };
 
   #onDownloadStarted = (eventName, data) => {
-    const { download, navigationId } = data;
+    const { download } = data;
 
     const contextId = download.source.browsingContextId;
     const browsingContext = lazy.TabManager.getBrowsingContextById(contextId);
@@ -757,15 +764,54 @@ class NavigationRegistry extends EventEmitter {
       lazy.TabManager.getIdForBrowsingContext(browsingContext);
     const url = download.source.url;
 
-    // Generating the download navigationId and tracking navigations is
-    // delegated to the DownloadListener. It is exposed via the DownloadManager
-    // for consistency and also to enforce having a singleton and consistent
-    // navigation ids across sessions.
+    const navigation = this.#navigations.get(navigableId);
+    let navigationId = null;
+    if (navigation && navigation.state === NavigationState.Started) {
+      // navigationId is optional and should only be set if there is an ongoing
+      // navigation.
+      navigationId = navigation.navigationId;
+      // Track the navigation id for this download object, for the upcoming
+      // NAVIGATION_EVENTS.DownloadEnd event.
+      this.#downloadNavigations.set(download, navigationId);
+    }
+
+    // Tracking navigations is delegated to the DownloadListener. It is exposed
+    // via the DownloadManager for consistency and also to enforce having a
+    // singleton and consistent navigation ids across sessions.
     this.emit(NAVIGATION_EVENTS.DownloadStarted, {
       navigationId,
       navigableId,
       suggestedFilename: PathUtils.filename(download.target.path),
       timestamp: download.startTime.getTime(),
+      url,
+    });
+  };
+
+  #onDownloadStopped = (eventName, data) => {
+    const { download } = data;
+
+    const contextId = download.source.browsingContextId;
+    const browsingContext = lazy.TabManager.getBrowsingContextById(contextId);
+    if (!browsingContext) {
+      return;
+    }
+
+    const navigableId =
+      lazy.TabManager.getIdForBrowsingContext(browsingContext);
+    const url = download.source.url;
+
+    let navigationId = null;
+    if (this.#downloadNavigations.has(download)) {
+      navigationId = this.#downloadNavigations.get(download);
+    }
+
+    const canceled = download.canceled || download.error;
+    this.emit(NAVIGATION_EVENTS.DownloadEnd, {
+      canceled,
+      filepath: download.target.path,
+      navigableId,
+      navigationId,
+      timestamp: download.endTime,
       url,
     });
   };

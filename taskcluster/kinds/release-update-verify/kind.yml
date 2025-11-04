@@ -51,12 +51,6 @@ tasks:
         attributes:
             build_platform: linux64-shippable
 
-    firefox-linux:
-        description: linux update verify
-        shipping-product: firefox
-        attributes:
-            build_platform: linux-shippable
-
     firefox-win64:
         description: win64 update verify
         shipping-product: firefox
@@ -97,12 +91,6 @@ tasks:
         shipping-product: devedition
         attributes:
             build_platform: linux64-devedition
-
-    devedition-linux:
-        description: linux update verify
-        shipping-product: devedition
-        attributes:
-            build_platform: linux-devedition
 
     devedition-win64:
         description: win64 update verify

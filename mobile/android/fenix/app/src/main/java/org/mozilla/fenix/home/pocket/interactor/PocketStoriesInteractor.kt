@@ -49,6 +49,11 @@ interface PocketStoriesInteractor {
      * Callback when an user clicks on the "Discover more" nutton for stories on the homepage.
      */
     fun onDiscoverMoreClicked()
+
+    /**
+     * Sends telemetry related to the "Discover more" screen being viewed.
+     */
+    fun onDiscoverMoreScreenViewed()
 }
 
 /**
@@ -75,5 +80,9 @@ class DefaultPocketStoriesInteractor(
 
     override fun onDiscoverMoreClicked() {
         controller.handleDiscoverMoreClicked()
+    }
+
+    override fun onDiscoverMoreScreenViewed() {
+        controller.handleDiscoverMoreScreenViewed()
     }
 }

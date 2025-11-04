@@ -29,9 +29,11 @@ uint8_t* RemoteArrayOfByteBuffer::BuffersStartAddress() const {
 }
 
 bool RemoteArrayOfByteBuffer::Check(size_t aOffset, size_t aSizeInBytes) const {
-  return mBuffers && mBuffers->IsReadable() &&
-         detail::IsAddValid(aOffset, aSizeInBytes) &&
-         aOffset + aSizeInBytes <= mBuffers->Size<uint8_t>();
+  if (!mBuffers || !mBuffers->IsReadable()) {
+    return false;
+  }
+  auto size = CheckedInt<size_t>(aOffset) + aSizeInBytes;
+  return size.isValid() && size.value() <= mBuffers->Size<uint8_t>();
 }
 
 void RemoteArrayOfByteBuffer::Write(size_t aOffset, const void* aSourceAddr,
@@ -152,9 +154,12 @@ bool ArrayOfRemoteMediaRawData::Fill(
             ? Some(CryptoInfo{
                   entry->mCrypto.mCryptoScheme,
                   entry->mCrypto.mIV,
+                  entry->mCrypto.mConstantIV,
                   entry->mCrypto.mKeyId,
                   entry->mCrypto.mPlainSizes,
                   entry->mCrypto.mEncryptedSizes,
+                  entry->mCrypto.mCryptByteBlock,
+                  entry->mCrypto.mSkipByteBlock,
               })
             : Nothing()});
   }
@@ -217,10 +222,13 @@ already_AddRefed<MediaRawData> ArrayOfRemoteMediaRawData::ElementAt(
     CryptoSample& cypto = rawData->GetWritableCrypto();
     cypto.mCryptoScheme = sample.mCryptoConfig->mEncryptionScheme();
     cypto.mIV = std::move(sample.mCryptoConfig->mIV());
+    cypto.mConstantIV = std::move(sample.mCryptoConfig->mConstantIV());
     cypto.mIVSize = cypto.mIV.Length();
     cypto.mKeyId = std::move(sample.mCryptoConfig->mKeyId());
     cypto.mPlainSizes = std::move(sample.mCryptoConfig->mClearBytes());
     cypto.mEncryptedSizes = std::move(sample.mCryptoConfig->mCipherBytes());
+    cypto.mCryptByteBlock = sample.mCryptoConfig->mCryptByteBlock();
+    cypto.mSkipByteBlock = sample.mCryptoConfig->mSkipByteBlock();
   }
   perfRecorder.Record();
   return rawData.forget();

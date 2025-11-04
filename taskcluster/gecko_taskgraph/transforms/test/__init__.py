@@ -108,7 +108,9 @@ test_description_schema = Schema(
         # Custom 'test_manifest_loader' to use, overriding the one configured in the
         # parameters. When 'null', no test chunking will be performed. Can also
         # be used to disable "manifest scheduling".
-        Optional("test-manifest-loader"): Any(None, *list(manifest_loaders)),
+        Optional("test-manifest-loader"): optionally_keyed_by(
+            "test-platform", Any(None, *list(manifest_loaders))
+        ),
         # the time (with unit) after which this task is deleted; default depends on
         # the branch (see below)
         Optional("expires-after"): str,
@@ -123,6 +125,7 @@ test_description_schema = Schema(
             "variant",
             Any(
                 "default",
+                "large-legacy",
                 "large",
                 "large-noscratch",
                 "xlarge",
@@ -402,6 +405,7 @@ def resolve_keys(config, tasks):
         "run-without-variant",
         "suite",
         "suite.name",
+        "test-manifest-loader",
         "use-caches",
     )
     for task in tasks:

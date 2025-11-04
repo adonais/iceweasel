@@ -140,7 +140,7 @@ class SystemEngineView @JvmOverloads constructor(
         return webView
     }
 
-    @Suppress("ComplexMethod", "NestedBlockDepth")
+    @Suppress("NestedBlockDepth")
     private fun createWebViewClient() = object : WebViewClient() {
         override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
             // TODO private browsing not supported for SystemEngine
@@ -358,7 +358,6 @@ class SystemEngineView @JvmOverloads constructor(
         }
     }
 
-    @Suppress("ComplexMethod")
     private fun createWebChromeClient() = object : WebChromeClient() {
         override fun getVisitedHistory(callback: ValueCallback<Array<String>>) {
             // TODO private browsing not supported for SystemEngine

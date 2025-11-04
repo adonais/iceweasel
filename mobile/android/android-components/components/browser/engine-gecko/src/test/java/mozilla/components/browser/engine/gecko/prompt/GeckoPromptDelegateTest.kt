@@ -1524,6 +1524,46 @@ class GeckoPromptDelegateTest {
     }
 
     @Test
+    fun `onRedirectRequest must provide a Redirect PromptRequest`() {
+        val mockSession = GeckoEngineSession(runtime)
+        var request: PromptRequest.Redirect? = null
+
+        val promptDelegate = GeckoPromptDelegate(mockSession)
+
+        mockSession.register(
+            object : EngineSession.Observer {
+                override fun onPromptRequest(promptRequest: PromptRequest) {
+                    request = promptRequest as PromptRequest.Redirect
+                }
+            },
+        )
+
+        var geckoPrompt = geckoRedirectPrompt(targetUri = "www.framebustingtest.com/")
+        promptDelegate.onRedirectPrompt(mock(), geckoPrompt)
+
+        with(request!!) {
+            assertEquals(targetUri, "www.framebustingtest.com/")
+
+            onAllow()
+            verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.ALLOW))
+            whenever(geckoPrompt.isComplete).thenReturn(true)
+
+            onAllow()
+            verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.ALLOW))
+        }
+
+        geckoPrompt = geckoRedirectPrompt()
+        promptDelegate.onRedirectPrompt(mock(), geckoPrompt)
+
+        request!!.onDeny()
+        verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.DENY))
+        whenever(geckoPrompt.isComplete).thenReturn(true)
+
+        request!!.onDeny()
+        verify(geckoPrompt, times(1)).confirm(eq(AllowOrDeny.DENY))
+    }
+
+    @Test
     fun `onBeforeUnloadPrompt must provide a BeforeUnload PromptRequest`() {
         val mockSession = GeckoEngineSession(runtime)
         var request: PromptRequest.BeforeUnload? = null
@@ -2130,6 +2170,14 @@ class GeckoPromptDelegateTest {
         targetUri: String = "targetUri",
     ): GeckoSession.PromptDelegate.PopupPrompt {
         val prompt: GeckoSession.PromptDelegate.PopupPrompt = mock()
+        ReflectionUtils.setField(prompt, "targetUri", targetUri)
+        return prompt
+    }
+
+    private fun geckoRedirectPrompt(
+        targetUri: String = "targetUri",
+    ): GeckoSession.PromptDelegate.RedirectPrompt {
+        val prompt: GeckoSession.PromptDelegate.RedirectPrompt = mock()
         ReflectionUtils.setField(prompt, "targetUri", targetUri)
         return prompt
     }

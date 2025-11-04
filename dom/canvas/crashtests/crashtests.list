@@ -65,6 +65,7 @@ load 1757755.html
 load 1769878.html
 load 1771007-1.html
 pref(dom.webgpu.enabled,true) load 1816140.html
+load 1829910-1.html
 load 1849704-1.html
 load 1857986.html
 load 1873790.html
@@ -75,3 +76,4 @@ load 1982056-1.html
 load 1982066-1.html
 load 1982335-1.html
 load 1983680-1.html
+load 1989383-1.html

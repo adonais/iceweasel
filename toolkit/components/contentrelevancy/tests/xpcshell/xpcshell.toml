@@ -15,4 +15,4 @@ skip-if = ["os == 'android'"] # bug 1886601
 
 ["test_Telemetry.js"]
 skip-if = ["os == 'android'"] # bug 1886601
-run-sequentially = "concurrent runs would interfere with each other"
+run-sequentially = ["true"] # concurrent runs would interfere with each other

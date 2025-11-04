@@ -287,18 +287,14 @@ void nsMathMLmpaddedFrame::UpdateValue(const Attribute& aAttribute,
 }
 
 /* virtual */
-nsresult nsMathMLmpaddedFrame::Place(DrawTarget* aDrawTarget,
-                                     const PlaceFlags& aFlags,
-                                     ReflowOutput& aDesiredSize) {
+void nsMathMLmpaddedFrame::Place(DrawTarget* aDrawTarget,
+                                 const PlaceFlags& aFlags,
+                                 ReflowOutput& aDesiredSize) {
   // First perform normal row layout without border/padding.
   PlaceFlags flags = aFlags + PlaceFlag::MeasureOnly +
                      PlaceFlag::IgnoreBorderPadding +
                      PlaceFlag::DoNotAdjustForWidthAndHeight;
-  nsresult rv = nsMathMLContainerFrame::Place(aDrawTarget, flags, aDesiredSize);
-  if (NS_FAILED(rv)) {
-    DidReflowChildren(PrincipalChildList().FirstChild());
-    return rv;
-  }
+  nsMathMLContainerFrame::Place(aDrawTarget, flags, aDesiredSize);
 
   nscoord height = aDesiredSize.BlockStartAscent();
   nscoord depth = aDesiredSize.Height() - aDesiredSize.BlockStartAscent();
@@ -412,6 +408,4 @@ nsresult nsMathMLmpaddedFrame::Place(DrawTarget* aDrawTarget,
     // Finish reflowing child frames, positioning their origins.
     PositionRowChildFrames(dx, aDesiredSize.BlockStartAscent() - voffset);
   }
-
-  return NS_OK;
 }

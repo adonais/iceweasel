@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use sdl3::{video, event, gpu, pixels, keyboard};
-use webrender_api::DebugFlags;
-use webrender_api::debugger::{DebuggerMessage, ProfileCounterId};
+use webrender_api::{ColorF, DebugFlags};
+use webrender_api::debugger::{DebuggerMessage, ProfileCounterId, CompositorDebugInfo};
 use crate::{command, net};
 use std::mem;
 use std::collections::{HashMap, VecDeque};
@@ -75,6 +75,9 @@ impl Graph {
 enum DocumentKind {
     Text {
         content: String,
+    },
+    Compositor {
+        info: CompositorDebugInfo,
     },
 }
 
@@ -291,6 +294,30 @@ impl Gui {
                                             kind: DocumentKind::Text {
                                                 content,
                                             }
+                                        }
+                                    );
+                                }
+                                command::CommandOutput::SerdeDocument { kind, ref content } => {
+                                    let title = format!("Compositor [id {}]", self.doc_id);
+                                    self.doc_id += 1;
+                                    self.data_model.preview_doc_index = self.data_model.documents.len();
+
+                                    let kind = match kind.as_str() {
+                                        "composite-view" => {
+                                            let info = serde_json::from_str(content).unwrap();
+                                            DocumentKind::Compositor {
+                                                info,
+                                            }
+                                        }
+                                        _ => {
+                                            unreachable!("unknown content");
+                                        }
+                                    };
+
+                                    self.data_model.documents.push(
+                                        Document {
+                                            title,
+                                            kind,
                                         }
                                     );
                                 }
@@ -596,20 +623,25 @@ fn do_preview_ui(
     ui: &mut imgui::Ui,
     ctx: &mut Context,
 ) {
-    ui.window("Preview")
-        .build(|| {
-            if ctx.data_model.preview_doc_index < ctx.data_model.documents.len() {
-                let doc = &ctx.data_model.documents[ctx.data_model.preview_doc_index];
+    if ctx.data_model.preview_doc_index < ctx.data_model.documents.len() {
+        let doc = &mut ctx.data_model.documents[ctx.data_model.preview_doc_index];
 
-                match doc.kind {
-                    DocumentKind::Text { ref content } => {
-                        let font_token = ui.push_font(ctx.font_mono_id);
-                        ui.text(content);
-                        font_token.pop();
-                    }
-                }
+        match doc.kind {
+            DocumentKind::Text { ref content } => {
+                ui.window("Preview").build(|| {
+                    let font_token = ui.push_font(ctx.font_mono_id);
+                    ui.text(content);
+                    font_token.pop();
+                });
             }
-        });
+            DocumentKind::Compositor { ref mut info } => {
+                do_compositor_debug_ui(
+                    ui,
+                    info,
+                );
+            }
+        }
+    }
 }
 
 fn do_main_ui(
@@ -726,4 +758,113 @@ impl<'a> imgui::InputTextCallbackHandler for CommandCompletion<'a> {
         data.clear();
         data.push_str(&self.cmd_history[*self.cmd_history_index]);
     }
+}
+
+fn do_compositor_debug_ui(
+    ui: &mut imgui::Ui,
+    info: &mut CompositorDebugInfo,
+) {
+    ui.window("Preview").build(|| {
+        let mut valid_z_layers = 0;
+        for tile in &info.tiles {
+            valid_z_layers |= 1 << tile.z_id;
+        }
+
+        let colors = [
+            ColorF::new(1.0, 1.0, 1.0, 1.0),
+            ColorF::new(1.0, 0.0, 0.0, 1.0),
+            ColorF::new(0.0, 1.0, 0.0, 1.0),
+            ColorF::new(0.7, 0.7, 1.0, 1.0),
+            ColorF::new(1.0, 1.0, 0.0, 1.0),
+            ColorF::new(0.0, 1.0, 1.0, 1.0),
+            ColorF::new(1.0, 0.0, 1.0, 1.0),
+        ];
+
+        for i in 0 .. 32 {
+            if valid_z_layers & 1 << i != 0 {
+                let color = colors[i % colors.len()];
+                ui.same_line();
+                let style = ui.push_style_color(imgui::StyleColor::Text, color.to_array());
+                ui.checkbox_flags(format!("z_id {}", i), &mut info.enabled_z_layers, 1 << i);
+                style.end();
+            }
+        }
+
+        let avail_region = ui.content_region_avail();
+        ui.invisible_button("overlay", avail_region);
+
+        let draw_list = ui.get_window_draw_list();
+        let p0 = ui.item_rect_min();
+        let p1 = ui.item_rect_max();
+
+        draw_list
+            .add_rect(p0, p1, [0.3, 0.3, 0.3, 1.0])
+            .filled(true)
+            .build();
+
+        let mut x_max = -f32::INFINITY;
+        let mut x_min =  f32::INFINITY;
+        let mut y_max = -f32::INFINITY;
+        let mut y_min =  f32::INFINITY;
+
+        for tile in &info.tiles {
+            x_min = x_min.min(tile.device_rect.min.x);
+            x_max = x_max.max(tile.device_rect.max.x);
+            y_min = y_min.min(tile.device_rect.min.y);
+            y_max = y_max.max(tile.device_rect.max.y);
+        }
+
+        let src_width = x_max - x_min;
+        let src_height = y_max - y_min;
+
+        let dest_width  = p1[0] - p0[0];
+        let dest_height = p1[1] - p0[1];
+
+        let scale_x = dest_width / src_width;
+        let scale_y = dest_height / src_height;
+        let scale = scale_x.min(scale_y);
+
+        let scaled_width = src_width * scale;
+        let scaled_height = src_height * scale;
+
+        let offset_x = 0.5 * (dest_width - scaled_width);
+        let offset_y = 0.5 * (dest_height - scaled_height);
+
+        let sx0 = p0[0] + (x_min - x_min) * scale + offset_x;
+        let sx1 = p0[0] + (x_max - x_min) * scale + offset_x;
+        let sy0 = p0[1] + (y_min - y_min) * scale + offset_y;
+        let sy1 = p0[1] + (y_max - y_min) * scale + offset_y;
+
+        draw_list
+            .add_rect([sx0, sy0], [sx1, sy1], [1.0, 1.0, 1.0, 1.0])
+            .filled(false)
+            .build();
+
+        for tile in &info.tiles {
+            if info.enabled_z_layers & (1 << tile.z_id) == 0 {
+                continue;
+            }
+
+            let rect = tile.device_rect.intersection(&tile.clip_rect);
+
+            if let Some(rect) = rect {
+                let x0 = p0[0] + (rect.min.x - x_min) * scale + offset_x;
+                let x1 = p0[0] + (rect.max.x - x_min) * scale + offset_x;
+                let y0 = p0[1] + (rect.min.y - y_min) * scale + offset_y;
+                let y1 = p0[1] + (rect.max.y - y_min) * scale + offset_y;
+
+                let color = colors[tile.z_id as usize % colors.len()];
+
+                draw_list
+                    .add_rect([x0, y0], [x1, y1], color.scale_alpha(0.3).to_array())
+                    .filled(true)
+                    .build();
+
+                draw_list
+                    .add_rect([x0, y0], [x1, y1], color.to_array())
+                    .filled(false)
+                    .build();
+            }
+        }
+    });
 }

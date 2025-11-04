@@ -788,8 +788,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning", false);
   /* package */ final Pref<Boolean> mCookieBehaviorOptInPartitioningPBM =
       new Pref<Boolean>("network.cookie.cookieBehavior.optInPartitioning.pbmode", false);
-  /* package */ final Pref<Integer> mCertificateTransparencyMode =
-      new Pref<Integer>("security.pki.certificate_transparency.mode", 1);
+  /* package */ final PrefWithoutDefault<Integer> mCertificateTransparencyMode =
+      new PrefWithoutDefault<Integer>("security.pki.certificate_transparency.mode");
   /* package */ final PrefWithoutDefault<Boolean> mPostQuantumKeyExchangeTLSEnabled =
       new PrefWithoutDefault<Boolean>("security.tls.enable_kyber");
   /* package */ final PrefWithoutDefault<Boolean> mPostQuantumKeyExchangeHttp3Enabled =
@@ -805,6 +805,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<String>("network.security.ports.banned", "");
   /* package */ final PrefWithoutDefault<Boolean> mRemoteSettingCrashPullNeverShowAgain =
       new PrefWithoutDefault<Boolean>("browser.crashReports.requestedNeverShowAgain");
+  /* package */ final PrefWithoutDefault<String> mCrliteChannel =
+      new PrefWithoutDefault<String>("security.pki.crlite_channel");
 
   /* package */ int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -1235,7 +1237,9 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    * @return What certificate transparency mode has been set.
    */
   public @NonNull int getCertificateTransparencyMode() {
-    return mCertificateTransparencyMode.get();
+    final Integer MODE_ENFORCE = 2;
+    final Integer certificateTransparencyMode = mCertificateTransparencyMode.get();
+    return certificateTransparencyMode != null ? certificateTransparencyMode : MODE_ENFORCE;
   }
 
   /**
@@ -2289,6 +2293,27 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    */
   public @NonNull String getBannedPorts() {
     return mBannedPorts.get();
+  }
+
+  /**
+   * Set the preference that controls the channel from which CRLite certificate blocklists are
+   * downloaded.
+   *
+   * @param channel The name of the CRLite channel
+   * @return This GeckoRuntimeSettings instance
+   */
+  public @NonNull GeckoRuntimeSettings setCrliteChannel(final @NonNull String channel) {
+    mCrliteChannel.commit(channel);
+    return this;
+  }
+
+  /**
+   * Get the channel from which CRLite certificate blocklists are downloaded.
+   *
+   * @return a String containing the name of the CRLite channel
+   */
+  public @NonNull String getCrliteChannel() {
+    return mCrliteChannel.get();
   }
 
   // For internal use only

@@ -6,7 +6,7 @@
 ChromeUtils.defineESModuleGetters(this, {
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   UrlbarSearchTermsPersistence:
-    "resource:///modules/UrlbarSearchTermsPersistence.sys.mjs",
+    "moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs",
 });
 
 const TEST_PROVIDER_INFO = [

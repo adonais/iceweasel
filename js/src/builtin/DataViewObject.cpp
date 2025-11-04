@@ -6,7 +6,6 @@
 
 #include "builtin/DataViewObject.h"
 
-#include "mozilla/Casting.h"
 #include "mozilla/EndianUtils.h"
 #include "mozilla/IntegerTypeTraits.h"
 #include "mozilla/WrappingOperations.h"

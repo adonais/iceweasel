@@ -21,7 +21,7 @@ namespace gfx {
 
 class GPUProcessHost;
 
-class GPUChild final : public ipc::CrashReporterHelper<GPUChild>,
+class GPUChild final : public mozilla::ipc::CrashReporterHelper<GPUChild>,
                        public PGPUChild,
                        public gfxVarReceiver {
   typedef mozilla::dom::MemoryReportRequestHost MemoryReportRequestHost;
@@ -34,6 +34,8 @@ class GPUChild final : public ipc::CrashReporterHelper<GPUChild>,
   explicit GPUChild(GPUProcessHost* aHost);
 
   void Init();
+
+  bool IsGPUReady() const { return mGPUReady && !mWaitForVarUpdate; }
 
   bool EnsureGPUReady();
   void MarkWaitForVarUpdate() { mWaitForVarUpdate = true; }

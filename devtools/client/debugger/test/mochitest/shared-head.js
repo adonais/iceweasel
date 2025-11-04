@@ -1917,6 +1917,8 @@ const selectors = {
   sourceTreeThreads: '.sources-list .tree-node[aria-level="1"]',
   sourceTreeGroups: '.sources-list .tree-node[aria-level="2"]',
   sourceTreeFiles: ".sources-list .tree-node[data-expandable=false]",
+  sourceTreeFilesElement: i =>
+    `.sources-list .tree-node[data-expandable=false]:nth-child(${i})`,
   threadSourceTree: i => `.threads-list .sources-pane:nth-child(${i})`,
   sourceDirectoryLabel: i => `.sources-list .tree-node:nth-child(${i}) .label`,
   resultItems: ".result-list .result-item",
@@ -1935,6 +1937,7 @@ const selectors = {
   conditionalBreakpointInSecPane: ".breakpoint.is-conditional",
   logPointPanel: ".conditional-breakpoint-panel.log-point",
   logPointInSecPane: ".breakpoint.is-log",
+  tracePanel: ".trace-panel",
   searchField: ".search-field",
   blackbox: ".action.black-box",
   projectSearchSearchInput: ".project-text-search .search-field input",
@@ -2342,16 +2345,31 @@ function getCodeMirrorInstance(dbg, panelName = null) {
   return dbg.win.codeMirrorSourceEditorTestInstance.codeMirror;
 }
 
+async function waitForCursorPosition(dbg, expectedLine) {
+  return waitFor(() => {
+    const cursorPosition = findElementWithSelector(dbg, ".cursor-position");
+    if (!cursorPosition) {
+      return false;
+    }
+    const { innerText } = cursorPosition;
+    // Cursor position text has the following shape: (L, C)
+    // where L is the line number, and C the column number
+    const line = innerText.substring(1, innerText.indexOf(","));
+    return parseInt(line, 10) == expectedLine;
+  });
+}
+
 /**
  * Set the cursor  at a specific location in the editor
  * @param {*} dbg
  * @param {Number} line
  * @param {Number} column
- * @returns
+ * @returns {Promise}
  */
-function setEditorCursorAt(dbg, line, column) {
-  scrollEditorIntoView(dbg, line, 0);
-  return getCMEditor(dbg).setCursorAt(line, column);
+async function setEditorCursorAt(dbg, line, column) {
+  const cursorSet = waitForCursorPosition(dbg, line);
+  await getCMEditor(dbg).setCursorAt(line, column);
+  return cursorSet;
 }
 
 /**

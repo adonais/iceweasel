@@ -11,7 +11,6 @@
 #include "js/StructuredClone.h"
 #include "mozilla/AppUnits.h"
 #include "mozilla/Casting.h"
-#include "mozilla/MacroForEach.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMRectBinding.h"
 #include "mozilla/dom/DOMRectListBinding.h"

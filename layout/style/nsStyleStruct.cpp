@@ -285,39 +285,6 @@ static StyleRect<T> StyleRectWithAllSides(const T& aSide) {
   return {aSide, aSide, aSide, aSide};
 }
 
-AnchorPosReferencedAnchors::Result AnchorPosReferencedAnchors::InsertOrModify(
-    const nsAtom* aAnchorName, bool aNeedOffset) {
-  bool exists = true;
-  auto* result = &mMap.LookupOrInsertWith(aAnchorName, [&exists]() {
-    exists = false;
-    return Nothing{};
-  });
-
-  if (!exists) {
-    return {false, result};
-  }
-
-  // We tried to resolve before.
-  if (result->isNothing()) {
-    // We know this reference is invalid.
-    return {true, result};
-  }
-  // Previous resolution found a valid anchor.
-  if (!aNeedOffset) {
-    // Size is guaranteed to be populated on resolution.
-    return {true, result};
-  }
-
-  // Previous resolution may have been for size only, in which case another
-  // anchor resolution is still required.
-  return {result->ref().mOrigin.isSome(), result};
-}
-
-const AnchorPosReferencedAnchors::Value* AnchorPosReferencedAnchors::Lookup(
-    const nsAtom* aAnchorName) const {
-  return mMap.Lookup(aAnchorName).DataPtrOrNull();
-}
-
 AnchorResolvedMargin AnchorResolvedMarginHelper::ResolveAnchor(
     const StyleMargin& aValue, StylePhysicalAxis aAxis,
     const AnchorPosResolutionParams& aParams) {
@@ -585,7 +552,7 @@ nsChangeHint nsStyleBorder::CalcDifference(
 
 nsStyleOutline::nsStyleOutline()
     : mOutlineWidth(kMediumBorderWidth),
-      mOutlineOffset({0.0f}),
+      mOutlineOffset(0),
       mOutlineColor(StyleColor::CurrentColor()),
       mOutlineStyle(StyleOutlineStyle::BorderStyle(StyleBorderStyle::None)),
       mActualOutlineWidth(0) {
@@ -629,8 +596,7 @@ nsChangeHint nsStyleOutline::CalcDifference(
 }
 
 nsSize nsStyleOutline::EffectiveOffsetFor(const nsRect& aRect) const {
-  const nscoord offset = mOutlineOffset.ToAppUnits();
-
+  const nscoord offset = mOutlineOffset;
   if (offset >= 0) {
     // Fast path for non-negative offset values
     return nsSize(offset, offset);
@@ -2242,8 +2208,6 @@ nsStyleDisplay::nsStyleDisplay()
       mBreakAfter(StyleBreakBetween::Auto),
       mOverflowX(StyleOverflow::Visible),
       mOverflowY(StyleOverflow::Visible),
-      mOverflowClipBoxBlock(StyleOverflowClipBox::PaddingBox),
-      mOverflowClipBoxInline(StyleOverflowClipBox::PaddingBox),
       mScrollbarGutter(StyleScrollbarGutter::AUTO),
       mResize(StyleResize::None),
       mOrient(StyleOrient::Inline),
@@ -2303,8 +2267,6 @@ nsStyleDisplay::nsStyleDisplay(const nsStyleDisplay& aSource)
       mBreakAfter(aSource.mBreakAfter),
       mOverflowX(aSource.mOverflowX),
       mOverflowY(aSource.mOverflowY),
-      mOverflowClipBoxBlock(aSource.mOverflowClipBoxBlock),
-      mOverflowClipBoxInline(aSource.mOverflowClipBoxInline),
       mScrollbarGutter(aSource.mScrollbarGutter),
       mResize(aSource.mResize),
       mOrient(aSource.mOrient),
@@ -2597,9 +2559,7 @@ nsChangeHint nsStyleDisplay::CalcDifference(
       mBreakAfter != aNewData.mBreakAfter ||
       mAppearance != aNewData.mAppearance ||
       mDefaultAppearance != aNewData.mDefaultAppearance ||
-      mOrient != aNewData.mOrient ||
-      mOverflowClipBoxBlock != aNewData.mOverflowClipBoxBlock ||
-      mOverflowClipBoxInline != aNewData.mOverflowClipBoxInline) {
+      mOrient != aNewData.mOrient) {
     hint |= nsChangeHint_AllReflowHints | nsChangeHint_RepaintFrame;
   }
 

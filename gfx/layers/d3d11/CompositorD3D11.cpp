@@ -24,7 +24,6 @@
 #include "mozilla/gfx/StackArray.h"
 #include "mozilla/widget/WinCompositorWidget.h"
 
-#include "mozilla/EnumeratedArray.h"
 #include "mozilla/ProfilerState.h"
 #include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/StaticPrefs_layers.h"

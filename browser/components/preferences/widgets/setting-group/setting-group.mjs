@@ -5,13 +5,36 @@
 import { html, ifDefined } from "chrome://global/content/vendor/lit.all.mjs";
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 
-const CLICK_HANDLERS = ["moz-box-link"];
+/** @import { SettingControl } from "../setting-control/setting-control.mjs"; */
+/** @import {PreferencesSettingsConfig, Preferences} from "chrome://global/content/preferences/Preferences.mjs" */
+
+const CLICK_HANDLERS = new Set([
+  "dialog-button",
+  "moz-box-button",
+  "moz-box-item",
+  "moz-box-link",
+  "moz-button",
+  "moz-box-group",
+]);
 
 export class SettingGroup extends MozLitElement {
+  constructor() {
+    super();
+
+    /**
+     * @type {Preferences['getSetting'] | undefined}
+     */
+    this.getSetting = undefined;
+
+    /**
+     * @type {PreferencesSettingsConfig | undefined}
+     */
+    this.config = undefined;
+  }
+
   static properties = {
     config: { type: Object },
     groupId: { type: String },
-    // getSetting should be Preferences.getSetting from preferencesBindings.js
     getSetting: { type: Function },
   };
 
@@ -21,6 +44,30 @@ export class SettingGroup extends MozLitElement {
 
   createRenderRoot() {
     return this;
+  }
+
+  async handleVisibilityChange() {
+    await this.updateComplete;
+    let visibleControls = [...this.controlEls].filter(el => !el.hidden);
+    if (!visibleControls.length) {
+      this.hidden = true;
+    } else {
+      this.hidden = false;
+    }
+    // FIXME: We need to replace this.closest() once the SettingGroup
+    // provides its own card wrapper/groupbox replacement element.
+    let closestGroupbox = this.closest("groupbox");
+    if (!closestGroupbox) {
+      return;
+    }
+    if (this.hidden) {
+      // Can't rely on .hidden for the toplevel groupbox because
+      // of the pane hiding/showing code potentially changing the
+      // hidden attribute.
+      closestGroupbox.style.display = "none";
+    } else {
+      closestGroupbox.style.display = "";
+    }
   }
 
   async getUpdateComplete() {
@@ -41,7 +88,7 @@ export class SettingGroup extends MozLitElement {
   }
 
   onClick(e) {
-    if (!CLICK_HANDLERS.includes(e.target.localName)) {
+    if (!CLICK_HANDLERS.has(e.target.localName)) {
       return;
     }
     let inputEl = e.target;
@@ -49,6 +96,9 @@ export class SettingGroup extends MozLitElement {
     control?.onClick(e);
   }
 
+  /**
+   * @param {PreferencesSettingsConfig} item
+   */
   itemTemplate(item) {
     let setting = this.getSetting(item.id);
     return html`<setting-control
@@ -64,8 +114,11 @@ export class SettingGroup extends MozLitElement {
     }
     return html`<moz-fieldset
       data-l10n-id=${ifDefined(this.config.l10nId)}
+      .headingLevel=${this.config.headingLevel}
+      .supportPage=${ifDefined(this.config.supportPage)}
       @change=${this.onChange}
       @click=${this.onClick}
+      @visibility-change=${this.handleVisibilityChange}
       >${this.config.items.map(item => this.itemTemplate(item))}</moz-fieldset
     >`;
   }

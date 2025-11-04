@@ -21,6 +21,10 @@ task-defaults:
                             SHELL: /bin/bash
                             JSSHELL: d8/release/d8
                 max-run-time: 3600
+                artifacts:
+                    - type: file
+                      name: public/build/perfherder-data-jsshell.json
+                      path: artifacts/perfherder-data-jsshell.json
     treeherder:
         kind: test
         tier: 2

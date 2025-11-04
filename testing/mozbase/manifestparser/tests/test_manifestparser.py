@@ -39,7 +39,7 @@ class TestManifestParser(unittest.TestCase):
         )
 
         # Ensure that capitalization and order aren't an issue:
-        lines = ['["%s"]' % test["name"] for test in tests]
+        lines = [f"[\"{test['name']}\"]" for test in tests]
         self.assertEqual(lines, open(mozmill_example).read().strip().splitlines())
 
         # Show how you select subsets of tests:
@@ -350,7 +350,7 @@ yellow = submarine
             parser,
             parser.tests[3],
             parser.tests[2],
-            "%s%s" % (include_output, included_output),
+            include_output + included_output,
             True,
         )
 
@@ -377,7 +377,7 @@ yellow = submarine
             parser,
             parser.tests[0],
             parser.tests[3],
-            "%s%s" % (included_output, include_output),
+            included_output + include_output,
             True,
         )
 
@@ -610,6 +610,13 @@ yellow = submarine
         condition = "apple_catalina"
         bug = "Bug 200"
         manifestparser.toml.add_skip_if(manifest, filename, condition, bug)
+        condition = "os == 'android' && os_version == '14' && debug"
+        bug = "Bug 99999"
+        (additional_comment, carryover) = manifestparser.toml.add_skip_if(
+            manifest, filename, condition, bug, None, True
+        )
+        assert not additional_comment
+        assert carryover
 
         filename = "bug_3.js"
         assert filename in manifest

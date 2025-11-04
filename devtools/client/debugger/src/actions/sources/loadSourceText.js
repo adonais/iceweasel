@@ -2,9 +2,11 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-import { PROMISE } from "../utils/middleware/promise";
+const {
+  PROMISE,
+} = require("resource://devtools/client/shared/redux/middleware/promise.js");
 import {
-  getSourceTextContent,
+  getSourceTextContentForSource,
   getSettledSourceTextContent,
   getSourcesEpoch,
   getBreakpointsForSource,
@@ -173,12 +175,10 @@ export const loadGeneratedSourceText = memoizeableAction(
         return null;
       }
 
-      const sourceTextContent = getSourceTextContent(
+      const sourceTextContent = getSourceTextContentForSource(
         getState(),
-        createLocation({
-          source: sourceActor.sourceObject,
-          sourceActor,
-        })
+        sourceActor.sourceObject,
+        sourceActor
       );
 
       if (!sourceTextContent || sourceTextContent.state === "pending") {
@@ -212,11 +212,9 @@ export const loadOriginalSourceText = memoizeableAction(
         return null;
       }
 
-      const sourceTextContent = getSourceTextContent(
+      const sourceTextContent = getSourceTextContentForSource(
         getState(),
-        createLocation({
-          source,
-        })
+        source
       );
       if (!sourceTextContent || sourceTextContent.state === "pending") {
         return sourceTextContent;

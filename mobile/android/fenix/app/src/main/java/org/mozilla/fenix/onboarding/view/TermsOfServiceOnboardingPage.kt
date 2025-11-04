@@ -29,7 +29,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
@@ -107,7 +107,7 @@ fun TermsOfServiceOnboardingPage(
 
                     Spacer(Modifier.height(24.dp))
 
-                    PrimaryButton(
+                    FilledButton(
                         text = primaryButton.text,
                         modifier = Modifier
                             .width(width = FirefoxTheme.layout.size.maxWidth.small)

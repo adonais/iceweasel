@@ -128,7 +128,7 @@ export const MultiStageAboutWelcome = props => {
   }, [transition]);
 
   // Transition to next screen, opening about:home on last screen button CTA
-  const handleTransition = () => {
+  const handleTransition = goBack => {
     // Only handle transitioning out from a screen once.
     if (transition === "out") {
       return;
@@ -140,7 +140,10 @@ export const MultiStageAboutWelcome = props => {
     // Actually move forwards after all transitions finish.
     setTimeout(
       () => {
-        if (index < screens.length - 1) {
+        if (goBack) {
+          setTransition(props.transitions ? "in" : "");
+          setScreenIndex(prevState => prevState - 1);
+        } else if (index < screens.length - 1) {
           setTransition(props.transitions ? "in" : "");
           setScreenIndex(prevState => prevState + 1);
         } else {
@@ -384,26 +387,22 @@ const renderSingleSecondaryCTAButton = ({
     className += " split-button-container";
   }
 
-  const isDisabled = React.useCallback(
-    disabledValue => {
-      if (disabledValue === "hasActiveMultiSelect") {
-        if (!activeMultiSelect) {
-          return true;
-        }
-
-        for (const key in activeMultiSelect) {
-          if (activeMultiSelect[key]?.length > 0) {
-            return false;
-          }
-        }
-
+  const computeDisabled = disabledValue => {
+    if (disabledValue === "hasActiveMultiSelect") {
+      if (!activeMultiSelect) {
         return true;
       }
 
-      return disabledValue;
-    },
-    [activeMultiSelect]
-  );
+      for (const key in activeMultiSelect) {
+        if (activeMultiSelect[key]?.length > 0) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+    return disabledValue;
+  };
 
   if (isTextLink) {
     buttonStyling += " text-link";
@@ -435,7 +434,7 @@ const renderSingleSecondaryCTAButton = ({
           id={buttonId}
           className={buttonStyling}
           value={targetElement}
-          disabled={isDisabled(button?.disabled)}
+          disabled={computeDisabled(button?.disabled)}
           onClick={shimmedHandleAction}
         />
       </Localized>
@@ -458,14 +457,46 @@ export const SecondaryCTA = props => {
     return null;
   }
 
-  if (Array.isArray(buttonData)) {
-    if (buttonData.length === 0) {
-      return null;
-    }
+  const buttons = React.useMemo(
+    () => (Array.isArray(buttonData) ? buttonData : [buttonData]),
+    [buttonData]
+  );
 
+  const [visibleButtons, setVisibleButtons] = React.useState([]);
+
+  React.useEffect(() => {
+    (async () => {
+      const filteredButtons = [];
+      for (const button of buttons) {
+        // No targeting, show by default for backwards compatibility
+        if (!button?.targeting) {
+          filteredButtons.push(button);
+          continue;
+        }
+
+        try {
+          const shouldShowButton = await window.AWEvaluateAttributeTargeting(
+            button.targeting
+          );
+          if (shouldShowButton) {
+            filteredButtons.push(button);
+          }
+        } catch (e) {
+          console.error("SecondaryCTA targeting failed:", button.targeting, e);
+        }
+      }
+      setVisibleButtons(filteredButtons);
+    })();
+  }, [buttons]);
+
+  if (!visibleButtons.length) {
+    return null;
+  }
+
+  if (Array.isArray(buttonData)) {
     return (
       <div className="secondary-buttons-top-container">
-        {buttonData.map((button, index) =>
+        {visibleButtons.map((button, index) =>
           renderSingleSecondaryCTAButton({
             content,
             button,
@@ -483,7 +514,7 @@ export const SecondaryCTA = props => {
 
   return renderSingleSecondaryCTAButton({
     content,
-    button: buttonData,
+    button: visibleButtons[0],
     targetElement,
     position,
     handleAction: props.handleAction,
@@ -615,7 +646,10 @@ export class WelcomeScreen extends React.PureComponent {
   }
 
   resolveActionFromContent(value, event, props) {
-    if (value === "submenu_button" && event.action) {
+    if (
+      (value === "submenu_button" || value === "tile_button") &&
+      event.action
+    ) {
       return event.action;
     }
 
@@ -706,7 +740,7 @@ export class WelcomeScreen extends React.PureComponent {
       this.props.setInitialTheme(this.props.activeTheme);
     }
 
-    // `navigate` and `dismiss` can be true/false/undefined, or they can be a
+    // `navigate`, `goBack` and `dismiss` can be true/false/undefined, or they can be a
     // string "actionResult" in which case we should use the actionResult
     // (boolean resolved by handleUserAction)
     const shouldDoBehavior = behavior => {
@@ -725,7 +759,7 @@ export class WelcomeScreen extends React.PureComponent {
     };
 
     if (shouldDoBehavior(action.navigate)) {
-      props.navigate();
+      props.navigate(action.goBack);
     }
 
     // Used by FeatureCallout to advance screens by re-rendering the whole

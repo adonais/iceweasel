@@ -1,7 +1,7 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head = "head_psm.js"
 tags = "psm"
-skip-if = ["os == 'android'"]
 support-files = [
   "bad_certs/**",
   "tlsserver/**",
@@ -18,7 +18,7 @@ skip-if = [
 ["test_pkcs11_moduleDB.js"]
 
 ["test_pkcs11_module_client_auth.js"]
-run-sequentially = "hardcoded ports"
+run-sequentially = ["true"] # hardcoded ports
 skip-if = ["msix"] # Bug 1809477
 prefs = [
   "security.pki.certificate_transparency.mode=1",

@@ -4,22 +4,18 @@
 
 package org.mozilla.fenix.startupCrash
 
-import android.content.Intent
-import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.os.Bundle
+import android.os.Process
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.mozilla.fenix.FenixApplication
-import org.mozilla.fenix.HomeActivity
+import mozilla.components.lib.crash.CrashReporter
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.components
 import org.mozilla.fenix.crashes.StartupCrashCanary
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -41,8 +37,8 @@ class StartupCrashActivity : AppCompatActivity() {
                         middleware = listOf(
                             StartupCrashMiddleware(
                                 settings = LocalContext.current.settings(),
-                                crashReporter = components.analytics.crashReporter,
-                                reinitializeHandler = ::initializeAndRestartFenix,
+                                crashReporter = installCrashReporter(),
+                                restartHandler = ::restartFenix,
                                 startupCrashCanaryCache =
                                     StartupCrashCanary.build(applicationContext),
                             ),
@@ -58,12 +54,15 @@ class StartupCrashActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun initializeAndRestartFenix() = withContext(Dispatchers.Main) {
-        val fenixApplication = applicationContext as FenixApplication
-        fenixApplication.initialize()
-        val homeActivityIntent = Intent(applicationContext, HomeActivity::class.java)
-        homeActivityIntent.flags = FLAG_ACTIVITY_NEW_TASK
-        applicationContext.startActivity(homeActivityIntent)
-        finish()
+    private fun installCrashReporter(): CrashReporter =
+        components.analytics.crashReporter.also {
+            it.install(applicationContext)
+        }
+
+    private fun restartFenix() {
+        val restartIntent = packageManager.getLaunchIntentForPackage(packageName)
+        startActivity(restartIntent)
+        // Kill the existing process to ensure we get a clean start of the application
+        Process.killProcess(Process.myPid())
     }
 }

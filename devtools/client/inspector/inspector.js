@@ -11,6 +11,9 @@ const { Toolbox } = require("resource://devtools/client/framework/toolbox.js");
 const createStore = require("resource://devtools/client/inspector/store.js");
 const InspectorStyleChangeTracker = require("resource://devtools/client/inspector/shared/style-change-tracker.js");
 const { PrefObserver } = require("resource://devtools/client/shared/prefs.js");
+const {
+  START_IGNORE_ACTION,
+} = require("resource://devtools/client/shared/redux/middleware/ignore.js");
 
 // Use privileged promise in panel documents to prevent having them to freeze
 // during toolbox destruction. See bug 1402779.
@@ -1215,54 +1218,62 @@ class Inspector extends EventEmitter {
 
     let panel;
     switch (id) {
-      case "animationinspector":
+      case "animationinspector": {
         const AnimationInspector = this.browserRequire(
           "devtools/client/inspector/animation/animation"
         );
         panel = new AnimationInspector(this, this.panelWin);
         break;
-      case "boxmodel":
+      }
+      case "boxmodel": {
         // box-model isn't a panel on its own, it used to, now it is being used by
         // the layout view which retrieves an instance via getPanel.
         const BoxModel = require("resource://devtools/client/inspector/boxmodel/box-model.js");
         panel = new BoxModel(this, this.panelWin);
         break;
-      case "changesview":
+      }
+      case "changesview": {
         const ChangesView = this.browserRequire(
           "devtools/client/inspector/changes/ChangesView"
         );
         panel = new ChangesView(this, this.panelWin);
         break;
-      case "compatibilityview":
+      }
+      case "compatibilityview": {
         const CompatibilityView = this.browserRequire(
           "devtools/client/inspector/compatibility/CompatibilityView"
         );
         panel = new CompatibilityView(this, this.panelWin);
         break;
-      case "computedview":
+      }
+      case "computedview": {
         const { ComputedViewTool } = this.browserRequire(
           "devtools/client/inspector/computed/computed"
         );
         panel = new ComputedViewTool(this, this.panelWin);
         break;
-      case "fontinspector":
+      }
+      case "fontinspector": {
         const FontInspector = this.browserRequire(
           "devtools/client/inspector/fonts/fonts"
         );
         panel = new FontInspector(this, this.panelWin);
         break;
-      case "layoutview":
+      }
+      case "layoutview": {
         const LayoutView = this.browserRequire(
           "devtools/client/inspector/layout/layout"
         );
         panel = new LayoutView(this, this.panelWin);
         break;
-      case "ruleview":
+      }
+      case "ruleview": {
         const {
           RuleViewTool,
         } = require("resource://devtools/client/inspector/rules/rules.js");
         panel = new RuleViewTool(this, this.panelWin);
         break;
+      }
       default:
         // This is a custom panel or a non lazy-loaded one.
         return null;
@@ -1293,11 +1304,11 @@ class Inspector extends EventEmitter {
       },
     };
 
-    this.sidebar = new ToolSidebar(sidebar, this, "inspector", options);
+    this.sidebar = new ToolSidebar(sidebar, this, options);
     this.sidebar.on("select", this.onSidebarSelect);
 
     const ruleSideBar = this.panelDoc.getElementById("inspector-rules-sidebar");
-    this.ruleViewSideBar = new ToolSidebar(ruleSideBar, this, "inspector", {
+    this.ruleViewSideBar = new ToolSidebar(ruleSideBar, this, {
       hideTabstripe: true,
     });
 
@@ -1752,6 +1763,9 @@ class Inspector extends EventEmitter {
       return;
     }
     this.#destroyed = true;
+
+    // Prevents any further action from being dispatched
+    this.store.dispatch(START_IGNORE_ACTION);
 
     this.#cancelUpdate();
 

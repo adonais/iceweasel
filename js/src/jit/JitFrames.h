@@ -324,11 +324,6 @@ class BaselineInterpreterEntryFrameLayout : public JitFrameLayout {
   }
 };
 
-class RectifierFrameLayout : public JitFrameLayout {
- public:
-  static inline size_t Size() { return sizeof(RectifierFrameLayout); }
-};
-
 class TrampolineNativeFrameLayout : public JitFrameLayout {
  public:
   static inline size_t Size() { return sizeof(TrampolineNativeFrameLayout); }

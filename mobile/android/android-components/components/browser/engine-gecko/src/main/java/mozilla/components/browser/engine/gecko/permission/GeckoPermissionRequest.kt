@@ -224,7 +224,7 @@ sealed class GeckoPermissionRequest constructor(
                 else -> Permission.Generic(mediaSource.id, mediaSource.name)
             }
 
-            @Suppress("ComplexMethod", "SwitchIntDef")
+            @Suppress("SwitchIntDef")
             private fun mapVideoPermission(mediaSource: MediaSource) = when (mediaSource.source) {
                 SOURCE_CAMERA -> Permission.ContentVideoCamera(mediaSource.id, mediaSource.name)
                 SOURCE_SCREEN -> Permission.ContentVideoScreen(mediaSource.id, mediaSource.name)

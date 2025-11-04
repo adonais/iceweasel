@@ -477,8 +477,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = ფარენჰა�
 newtab-weather-menu-change-temperature-units-celsius = ცელსიუსზე გადართვა
 newtab-weather-menu-hide-weather = ამინდის დამალვა ახალ ჩანართში
 newtab-weather-menu-learn-more = ვრცლად
+newtab-weather-menu-detect-my-location = ჩემი მდებარეობის დადგენა
 # This message is shown if user is working offline
 newtab-weather-error-not-available = ამინდის მონაცემები მიუწვდომელია ახლა.
+newtab-weather-opt-in-see-weather = გსურთ ამინდის ნახვა თქვენი ადგილმდებარეობის მიხედვით?
+newtab-weather-opt-in-not-now =
+    .label = ახლა არა
+newtab-weather-opt-in-yes =
+    .label = დიახ
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = ნიუ-იორკი
 
 ## Topic Labels
 
@@ -645,6 +653,9 @@ newtab-widget-lists-input-menu-move-up = აწევა
 newtab-widget-lists-input-menu-move-down = ჩამოწევა
 newtab-widget-lists-input-menu-delete = წაშლა
 newtab-widget-lists-input-menu-edit = ჩასწორება
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + ახალი სიის შექმნა
 newtab-widget-lists-name-label-default =
     .label = დავალებების სია
 newtab-widget-lists-name-placeholder-default =

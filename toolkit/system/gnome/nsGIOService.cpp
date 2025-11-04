@@ -23,6 +23,7 @@
 #include "prenv.h"
 
 #include <gio/gio.h>
+#include <glib.h>
 #include <gtk/gtk.h>
 #include <gio/gdesktopappinfo.h>
 #ifdef MOZ_ENABLE_DBUS
@@ -66,8 +67,31 @@ typedef struct {
 typedef struct {
   GAppLaunchContextClass parent_class;
 } MozAppLaunchContextClass;
+
+// GLib's G_DEFINE_TYPE triggers warnings about volatile types. These warnings
+// were fixed in GLib 2.67.1: https://gitlab.gnome.org/GNOME/glib/-/issues/600
+// We can remove the diagnostic pragmas below after our minimum supported GLib
+// version is >= 2.67.1.
+#if !GLIB_CHECK_VERSION(2, 67, 1)
+#  if defined(__clang__)
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wdeprecated-volatile"
+#  elif defined(__GNUC__)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wvolatile"
+#  endif
+#endif
+
 G_DEFINE_TYPE(MozAppLaunchContext, moz_app_launch_context,
               G_TYPE_APP_LAUNCH_CONTEXT)
+
+#if !GLIB_CHECK_VERSION(2, 67, 1)
+#  if defined(__clang__)
+#    pragma clang diagnostic pop
+#  elif defined(__GNUC__)
+#    pragma GCC diagnostic pop
+#  endif
+#endif
 
 static char* moz_app_launch_context_get_startup_notify_id(
     GAppLaunchContext* context, GAppInfo* info, GList* files) {

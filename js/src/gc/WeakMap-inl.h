@@ -370,7 +370,6 @@ bool WeakMap<K, V>::findSweepGroupEdges(Zone* atomsZone) {
   }
 #endif
 
-#ifdef NIGHTLY_BUILD
   if (mayHaveSymbolKeys) {
     MOZ_ASSERT(JS::Prefs::experimental_symbols_as_weakmap_keys());
     if (atomsZone->isGCMarking()) {
@@ -379,7 +378,6 @@ bool WeakMap<K, V>::findSweepGroupEdges(Zone* atomsZone) {
       }
     }
   }
-#endif
 
   if (mayHaveKeyDelegates) {
     for (Range r = all(); !r.empty(); r.popFront()) {
@@ -468,7 +466,6 @@ static MOZ_ALWAYS_INLINE bool CanBeHeldWeakly(Value value) {
     return true;
   }
 
-#ifdef NIGHTLY_BUILD
   bool symbolsAsWeakMapKeysEnabled =
       JS::Prefs::experimental_symbols_as_weakmap_keys();
 
@@ -477,7 +474,6 @@ static MOZ_ALWAYS_INLINE bool CanBeHeldWeakly(Value value) {
       value.toSymbol()->code() != JS::SymbolCode::InSymbolRegistry) {
     return true;
   }
-#endif
 
   // 3. Return false.
   return false;

@@ -715,7 +715,6 @@ struct hb_ot_apply_context_t :
   const hb_ot_layout_lookup_accelerator_t *lookup_accel = nullptr;
   const ItemVariationStore &var_store;
   hb_scalar_cache_t *var_store_cache;
-  hb_set_digest_t digest;
 
   hb_direction_t direction;
   hb_mask_t lookup_mask = 1;
@@ -764,7 +763,6 @@ struct hb_ot_apply_context_t :
 			has_glyph_classes (gdef.has_glyph_classes ())
   {
     init_iters ();
-    buffer->collect_codepoints (digest);
     match_positions.set_storage (stack_match_positions);
   }
 
@@ -837,7 +835,7 @@ struct hb_ot_apply_context_t :
 			  bool ligature = false,
 			  bool component = false)
   {
-    digest.add (glyph_index);
+    buffer->digest.add (glyph_index);
 
     if (new_syllables != (unsigned) -1)
       buffer->cur().syllable() = new_syllables;
@@ -1361,7 +1359,7 @@ static bool match_input (hb_ot_apply_context_t *c,
     }
 
     if (unlikely (i + 1 > c->match_positions.length &&
-		  !c->match_positions.resize (i + 1, false)))
+		  !c->match_positions.resize_dirty  (i + 1)))
       return_trace (false);
     c->match_positions.arrayZ[i] = skippy_iter.idx;
 
@@ -1850,7 +1848,7 @@ static inline void apply_lookup (hb_ot_apply_context_t *c,
       if (unlikely (delta + count > HB_MAX_CONTEXT_LENGTH))
 	break;
       if (unlikely (count + delta > c->match_positions.length &&
-		    !c->match_positions.resize (count + delta, false)))
+		    !c->match_positions.resize_dirty  (count + delta)))
         return;
     }
     else
@@ -3463,7 +3461,7 @@ struct ChainRuleSet
       const auto &input = StructAfter<decltype (r.inputX)> (r.backtrack);
       const auto &lookahead = StructAfter<decltype (r.lookaheadX)> (input);
 
-      unsigned lenP1 = hb_max ((unsigned) input.lenP1, 1u);
+      unsigned lenP1 = input.lenP1;
       if (lenP1 > 1 ?
 	   (!match_input ||
 	    match_input (*first, input.arrayZ[0], input_data))
@@ -3471,6 +3469,7 @@ struct ChainRuleSet
 	   (!lookahead.len || !match_lookahead ||
 	    match_lookahead (*first, lookahead.arrayZ[0], lookahead_data)))
       {
+	lenP1 = hb_max (lenP1, 1u);
         if (!second ||
 	    (lenP1 > 2 ?
 	     (!match_input ||

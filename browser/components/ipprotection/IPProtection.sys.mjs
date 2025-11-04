@@ -15,20 +15,14 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "resource:///modules/ipprotection/IPProtectionPanel.sys.mjs",
   IPProtectionService:
     "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+  IPProtectionStates:
+    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
   requestIdleCallback: "resource://gre/modules/Timer.sys.mjs",
   cancelIdleCallback: "resource://gre/modules/Timer.sys.mjs",
 });
 
 const FXA_WIDGET_ID = "fxa-toolbar-menu-button";
 const EXT_WIDGET_ID = "unified-extensions-button";
-
-const REGISTERED_EVENTS = [
-  "IPProtectionService:Started",
-  "IPProtectionService:Stopped",
-  "IPProtectionService:Error",
-  "IPProtectionService:SignedIn",
-  "IPProtectionService:SignedOut",
-];
 
 /**
  * IPProtectionWidget is the class for the singleton IPProtection.
@@ -47,7 +41,7 @@ class IPProtectionWidget {
   static VARIANT_PREF = "browser.ipProtection.variant";
 
   #inited = false;
-  #created = false;
+  created = false;
   #panels = new WeakMap();
 
   constructor() {
@@ -62,14 +56,13 @@ class IPProtectionWidget {
     if (this.#inited) {
       return;
     }
+    this.#inited = true;
 
-    if (!this.#created) {
+    if (!this.created) {
       this.#createWidget();
     }
 
     lazy.CustomizableUI.addListener(this);
-
-    this.#inited = true;
   }
 
   /**
@@ -92,22 +85,6 @@ class IPProtectionWidget {
    */
   get isInitialized() {
     return this.#inited;
-  }
-
-  /**
-   * Opens the panel in the given window.
-   *
-   * @param {Window} window - which window to open the panel in.
-   * @returns {Promise<void>}
-   */
-  async openPanel(window) {
-    if (!this.#created || !window?.PanelUI) {
-      return;
-    }
-
-    let widget = lazy.CustomizableUI.getWidget(IPProtectionWidget.WIDGET_ID);
-    let anchor = widget.forWindow(window).anchor;
-    await window.PanelUI.showSubView(IPProtectionWidget.PANEL_ID, anchor);
   }
 
   /**
@@ -158,7 +135,7 @@ class IPProtectionWidget {
 
     this.#placeWidget();
 
-    this.#created = true;
+    this.created = true;
   }
 
   /**
@@ -193,12 +170,12 @@ class IPProtectionWidget {
    * can be recreated later.
    */
   #destroyWidget() {
-    if (!this.#created) {
+    if (!this.created) {
       return;
     }
     this.#destroyPanels();
     lazy.CustomizableUI.destroyWidget(IPProtectionWidget.WIDGET_ID);
-    this.#created = false;
+    this.created = false;
     if (this.readyTriggerIdleCallback) {
       lazy.cancelIdleCallback(this.readyTriggerIdleCallback);
     }
@@ -211,7 +188,7 @@ class IPProtectionWidget {
    * @returns {IPProtectionPanel}
    */
   getPanel(window) {
-    if (!this.#created || !window?.PanelUI) {
+    if (!this.created || !window?.PanelUI) {
       return null;
     }
 
@@ -290,9 +267,10 @@ class IPProtectionWidget {
    * @param {XULElement} toolbaritem - the widget toolbaritem.
    */
   #onCreated(toolbaritem) {
-    let isActive = lazy.IPProtectionService.isActive;
+    let state = lazy.IPProtectionService.state;
+    let isActive = state === lazy.IPProtectionStates.ACTIVE;
     let isError =
-      lazy.IPProtectionService.hasError &&
+      state === lazy.IPProtectionStates.ERROR &&
       lazy.IPProtectionService.errors.includes(ERRORS.GENERIC);
     this.updateIconStatus(toolbaritem, {
       isActive,
@@ -303,15 +281,17 @@ class IPProtectionWidget {
       this.sendReadyTrigger
     );
 
-    for (const evt of REGISTERED_EVENTS) {
-      lazy.IPProtectionService.addEventListener(evt, this.handleEvent);
-    }
+    lazy.IPProtectionService.addEventListener(
+      "IPProtectionService:StateChanged",
+      this.handleEvent
+    );
   }
 
   #onDestroyed() {
-    for (const evt of REGISTERED_EVENTS) {
-      lazy.IPProtectionService.removeEventListener(evt, this.handleEvent);
-    }
+    lazy.IPProtectionService.removeEventListener(
+      "IPProtectionService:StateChanged",
+      this.handleEvent
+    );
   }
 
   async onWidgetRemoved(widgetId) {
@@ -339,19 +319,12 @@ class IPProtectionWidget {
   }
 
   #handleEvent(event) {
-    if (
-      event.type == "IPProtectionService:Started" ||
-      event.type == "IPProtectionService:Stopped" ||
-      event.type == "IPProtectionService:Error" ||
-      event.type == "IPProtectionService:SignedIn" ||
-      event.type == "IPProtectionService:SignedOut"
-    ) {
+    if (event.type == "IPProtectionService:StateChanged") {
+      let state = lazy.IPProtectionService.state;
       let status = {
-        isActive:
-          lazy.IPProtectionService.isSignedIn &&
-          lazy.IPProtectionService.isActive,
+        isActive: state === lazy.IPProtectionStates.ACTIVE,
         isError:
-          lazy.IPProtectionService.hasError &&
+          state === lazy.IPProtectionStates.ERROR &&
           lazy.IPProtectionService.errors.includes(ERRORS.GENERIC),
       };
 

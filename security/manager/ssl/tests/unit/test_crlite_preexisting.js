@@ -10,7 +10,12 @@
 
 const CHECK_AT_TIME = new Date("2020-01-01T00:00:00Z").getTime() / 1000;
 
-async function test_crlite_preexisting() {
+async function test_crlite_preexisting(ctMode) {
+  Services.prefs.setIntPref(
+    "security.pki.certificate_transparency.mode",
+    ctMode
+  );
+
   let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
     Ci.nsIX509CertDB
   );
@@ -90,7 +95,9 @@ async function test_crlite_preexisting() {
   await checkCertErrorGenericAtTime(
     certdb,
     revokedNoSctCert,
-    SEC_ERROR_REVOKED_CERTIFICATE,
+    ctMode == CT_MODE_DISABLE
+      ? PRErrorCodeSuccess
+      : SEC_ERROR_REVOKED_CERTIFICATE,
     Ci.nsIX509CertDB.verifyUsageTLSServer,
     CHECK_AT_TIME,
     false,
@@ -143,16 +150,12 @@ add_task(async function () {
     });
   });
 
-  info(`disabling CT`);
-  Services.prefs.setIntPref(
-    "security.pki.certificate_transparency.mode",
-    CT_MODE_DISABLE
-  );
-  await test_crlite_preexisting();
-  info(`enabling CT`);
-  Services.prefs.setIntPref(
-    "security.pki.certificate_transparency.mode",
-    CT_MODE_ENFORCE
-  );
-  await test_crlite_preexisting();
+  info(`testing with CT disabled`);
+  await test_crlite_preexisting(CT_MODE_DISABLE);
+
+  info(`testing with CT in telemetry only mode`);
+  await test_crlite_preexisting(CT_MODE_COLLECT_TELEMETRY);
+
+  info(`testing with CT enabled`);
+  await test_crlite_preexisting(CT_MODE_ENFORCE);
 });

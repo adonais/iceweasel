@@ -8,7 +8,6 @@
 #define DOM_SVG_SVGPOINT_H_
 
 #include "gfxPoint.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/gfx/Point.h"
 #include "nsDebug.h"
 

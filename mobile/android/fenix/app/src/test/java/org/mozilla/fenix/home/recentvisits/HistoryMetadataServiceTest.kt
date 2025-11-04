@@ -7,6 +7,7 @@ package org.mozilla.fenix.home.recentvisits
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.concept.storage.DocumentType
@@ -22,6 +23,7 @@ import org.junit.Test
 import org.mozilla.fenix.historymetadata.DefaultHistoryMetadataService
 import org.mozilla.fenix.historymetadata.HistoryMetadataService
 
+@OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
 class HistoryMetadataServiceTest {
 
     private lateinit var service: HistoryMetadataService

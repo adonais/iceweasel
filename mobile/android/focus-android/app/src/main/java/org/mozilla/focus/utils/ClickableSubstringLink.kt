@@ -37,7 +37,7 @@ fun ClickableSubstringLink(
     text: String,
     textColor: Color = colorResource(R.color.cfr_text_color),
     linkTextColor: Color = colorResource(R.color.cfr_text_color),
-    style: TextStyle = focusTypography.body1,
+    style: TextStyle = focusTypography.bodyLarge,
     linkTextDecoration: TextDecoration? = null,
     clickableStartIndex: Int,
     clickableEndIndex: Int,

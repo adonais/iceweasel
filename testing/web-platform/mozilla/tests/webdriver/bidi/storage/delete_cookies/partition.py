@@ -20,7 +20,7 @@ async def test_partition_context(
     new_tab,
     test_page,
     domain_value,
-    add_cookie,
+    add_document_cookie,
     set_cookie,
     with_document_cookie,
 ):
@@ -33,7 +33,7 @@ async def test_partition_context(
     source_origin = get_origin_from_url(test_page)
     partition = BrowsingContextPartitionDescriptor(new_tab["context"])
     if with_document_cookie:
-        await add_cookie(new_tab["context"], cookie_name, cookie_value)
+        await add_document_cookie(new_tab["context"], cookie_name, cookie_value)
     else:
         await set_cookie(
             cookie=PartialCookie(
@@ -92,7 +92,7 @@ async def test_partition_context_same_origin_iframe_with_document_cookie(
     bidi_session,
     new_tab,
     inline,
-    add_cookie,
+    add_document_cookie,
 ):
     iframe_url = inline("<div id='in-iframe'>foo</div>")
     page_url = inline(f"<iframe src='{iframe_url}'></iframe>")
@@ -107,7 +107,7 @@ async def test_partition_context_same_origin_iframe_with_document_cookie(
     cookie_name = "foo"
     cookie_value = "bar"
     frame_partition = BrowsingContextPartitionDescriptor(iframe_context["context"])
-    await add_cookie(iframe_context["context"], cookie_name, cookie_value)
+    await add_document_cookie(iframe_context["context"], cookie_name, cookie_value)
 
     result = await bidi_session.storage.delete_cookies(partition=frame_partition)
     recursive_compare({"partitionKey": {"sourceOrigin": source_origin}}, result)

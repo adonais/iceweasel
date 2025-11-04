@@ -36,6 +36,10 @@ skip-if = [
 ["browser_opentabs_cards.js"]
 
 ["browser_opentabs_changes.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1879026
+  "os == 'win' && os_version == '11.26100' && processor == 'x86'", # Bug 1879026
+]
 
 ["browser_opentabs_firefoxview.js"]
 

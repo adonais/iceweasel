@@ -25,6 +25,7 @@ import mozilla.components.ui.icons.R as iconsR
  *
  * @param tabsTrayStore [TabsTrayStore] used to listen for changes to [TabsTrayState].
  * @param isSignedIn Used to know when to show the SYNC FAB when [Page.SyncedTabs] is displayed.
+ * @param isPbmLocked Whether the private browsing mode is currently locked.
  * @param onNormalTabsFabClicked Invoked when the fab is clicked in [Page.NormalTabs].
  * @param onPrivateTabsFabClicked Invoked when the fab is clicked in [Page.PrivateTabs].
  * @param onSyncedTabsFabClicked Invoked when the fab is clicked in [Page.SyncedTabs].
@@ -33,6 +34,7 @@ import mozilla.components.ui.icons.R as iconsR
 fun TabsTrayFab(
     tabsTrayStore: TabsTrayStore,
     isSignedIn: Boolean,
+    isPbmLocked: Boolean = false,
     onNormalTabsFabClicked: () -> Unit,
     onPrivateTabsFabClicked: () -> Unit,
     onSyncedTabsFabClicked: () -> Unit,
@@ -46,6 +48,10 @@ fun TabsTrayFab(
     val isInNormalMode by tabsTrayStore.observeAsState(
         initialValue = tabsTrayStore.state.mode == TabsTrayState.Mode.Normal,
     ) { state -> state.mode == TabsTrayState.Mode.Normal }
+
+    val shouldDisplayFloatingActionButton = shouldDisplayFloatingActionButton(
+        isPbmLocked, currentPage, isInNormalMode, isSignedIn,
+    )
 
     val icon: Painter
     val contentDescription: String
@@ -79,7 +85,7 @@ fun TabsTrayFab(
         }
     }
 
-    if (isInNormalMode && !(currentPage == Page.SyncedTabs && !isSignedIn)) {
+    if (shouldDisplayFloatingActionButton) {
         FloatingActionButton(
             icon = icon,
             modifier = Modifier
@@ -90,6 +96,18 @@ fun TabsTrayFab(
             onClick = onClick,
         )
     }
+}
+
+private fun shouldDisplayFloatingActionButton(
+    isPbmLocked: Boolean,
+    currentPage: Page,
+    isInNormalMode: Boolean,
+    isSignedIn: Boolean,
+): Boolean {
+    val privateTabsLocked = isPbmLocked && currentPage == Page.PrivateTabs
+    val shouldDisplayFloatingActionButton =
+        isInNormalMode && !(currentPage == Page.SyncedTabs && !isSignedIn) && !privateTabsLocked
+    return shouldDisplayFloatingActionButton
 }
 
 @PreviewLightDark

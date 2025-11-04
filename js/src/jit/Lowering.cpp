@@ -368,18 +368,7 @@ void LIRGenerator::visitCreateInlinedArgumentsObject(
 }
 
 void LIRGenerator::visitGetInlinedArgument(MGetInlinedArgument* ins) {
-#if defined(JS_PUNBOX64)
-  // On 64-bit architectures, we don't support boxing a typed register
-  // in-place without using a scratch register, so the result register
-  // can't be the same as any of the inputs. Fortunately, those
-  // architectures have registers to spare.
-  const bool useAtStart = false;
-#else
-  const bool useAtStart = true;
-#endif
-
-  LAllocation index =
-      useAtStart ? useRegisterAtStart(ins->index()) : useRegister(ins->index());
+  LAllocation index = useRegisterAtStart(ins->index());
   uint32_t numActuals = ins->numActuals();
   uint32_t numOperands =
       numActuals * BOX_PIECES + LGetInlinedArgument::NumNonArgumentOperands;
@@ -394,26 +383,15 @@ void LIRGenerator::visitGetInlinedArgument(MGetInlinedArgument* ins) {
   for (uint32_t i = 0; i < numActuals; i++) {
     MDefinition* arg = ins->getArg(i);
     uint32_t index = LGetInlinedArgument::ArgIndex(i);
-    lir->setBoxOperand(
-        index, useBoxOrTypedOrConstant(arg,
-                                       /*useConstant = */ true, useAtStart));
+    lir->setBoxOperand(index, useBoxOrTypedOrConstant(arg,
+                                                      /*useConstant = */ true,
+                                                      /*useAtStart = */ true));
   }
   defineBox(lir, ins);
 }
 
 void LIRGenerator::visitGetInlinedArgumentHole(MGetInlinedArgumentHole* ins) {
-#if defined(JS_PUNBOX64)
-  // On 64-bit architectures, we don't support boxing a typed register
-  // in-place without using a scratch register, so the result register
-  // can't be the same as any of the inputs. Fortunately, those
-  // architectures have registers to spare.
-  const bool useAtStart = false;
-#else
-  const bool useAtStart = true;
-#endif
-
-  LAllocation index =
-      useAtStart ? useRegisterAtStart(ins->index()) : useRegister(ins->index());
+  LAllocation index = useRegisterAtStart(ins->index());
   uint32_t numActuals = ins->numActuals();
   uint32_t numOperands =
       numActuals * BOX_PIECES + LGetInlinedArgumentHole::NumNonArgumentOperands;
@@ -428,9 +406,9 @@ void LIRGenerator::visitGetInlinedArgumentHole(MGetInlinedArgumentHole* ins) {
   for (uint32_t i = 0; i < numActuals; i++) {
     MDefinition* arg = ins->getArg(i);
     uint32_t index = LGetInlinedArgumentHole::ArgIndex(i);
-    lir->setBoxOperand(
-        index, useBoxOrTypedOrConstant(arg,
-                                       /*useConstant = */ true, useAtStart));
+    lir->setBoxOperand(index, useBoxOrTypedOrConstant(arg,
+                                                      /*useConstant = */ true,
+                                                      /*useAtStart = */ true));
   }
   assignSnapshot(lir, ins->bailoutKind());
   defineBox(lir, ins);
@@ -4256,33 +4234,24 @@ void LIRGenerator::visitStoreDynamicSlot(MStoreDynamicSlot* ins) {
   }
 }
 
-// Returns true iff |def| is a constant that's either not a GC thing or is not
-// allocated in the nursery.
-static bool IsNonNurseryConstant(MDefinition* def) {
-  if (!def->isConstant()) {
-    return false;
-  }
-  Value v = def->toConstant()->toJSValue();
-  return !v.isGCThing() || !IsInsideNursery(v.toGCThing());
-}
-
 void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
 
-  // LPostWriteBarrier assumes that if it has a constant object then that
-  // object is tenured, and does not need to be tested for being in the
-  // nursery. Ensure that assumption holds by lowering constant nursery
-  // objects to a register.
-  bool useConstantObject = IsNonNurseryConstant(ins->object());
+  // We need a barrier if the value might be allocated in the nursery. If the
+  // value is a constant, it must be tenured because MIR can't contain nursery
+  // pointers.
+  MConstant* constValue = ins->value()->maybeConstantValue();
+  if (constValue) {
+    MOZ_ASSERT(JS::GCPolicy<Value>::isTenured(constValue->toJSValue()));
+    return;
+  }
 
   switch (ins->value()->type()) {
     case MIRType::Object: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
-      LPostWriteBarrierO* lir = new (alloc())
-          LPostWriteBarrierO(useConstantObject ? useOrConstant(ins->object())
-                                               : useRegister(ins->object()),
-                             useRegister(ins->value()), tmp);
+      LPostWriteBarrierO* lir = new (alloc()) LPostWriteBarrierO(
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4290,10 +4259,8 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
     case MIRType::String: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
-      LPostWriteBarrierS* lir = new (alloc())
-          LPostWriteBarrierS(useConstantObject ? useOrConstant(ins->object())
-                                               : useRegister(ins->object()),
-                             useRegister(ins->value()), tmp);
+      LPostWriteBarrierS* lir = new (alloc()) LPostWriteBarrierS(
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4301,10 +4268,8 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
     case MIRType::BigInt: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
-      auto* lir = new (alloc())
-          LPostWriteBarrierBI(useConstantObject ? useOrConstant(ins->object())
-                                                : useRegister(ins->object()),
-                              useRegister(ins->value()), tmp);
+      auto* lir = new (alloc()) LPostWriteBarrierBI(
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4312,17 +4277,16 @@ void LIRGenerator::visitPostWriteBarrier(MPostWriteBarrier* ins) {
     case MIRType::Value: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
-      LPostWriteBarrierV* lir = new (alloc())
-          LPostWriteBarrierV(useConstantObject ? useOrConstant(ins->object())
-                                               : useRegister(ins->object()),
-                             useBox(ins->value()), tmp);
+      LPostWriteBarrierV* lir = new (alloc()) LPostWriteBarrierV(
+          useRegisterOrConstant(ins->object()), useBox(ins->value()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
     }
     default:
-      // Currently, only objects and strings can be in the nursery. Other
-      // instruction types cannot hold nursery pointers.
+      // Currently, only objects, strings, and bigints can be in the nursery.
+      // Other instruction types cannot hold nursery pointers.
+      MOZ_ASSERT(!NeedsPostBarrier(ins->value()->type()));
       break;
   }
 }
@@ -4331,22 +4295,22 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   MOZ_ASSERT(ins->index()->type() == MIRType::Int32);
 
-  // LPostWriteElementBarrier assumes that if it has a constant object then that
-  // object is tenured, and does not need to be tested for being in the
-  // nursery. Ensure that assumption holds by lowering constant nursery
-  // objects to a register.
-  bool useConstantObject =
-      ins->object()->isConstant() &&
-      !IsInsideNursery(&ins->object()->toConstant()->toObject());
+  // We need a barrier if the value might be allocated in the nursery. If the
+  // value is a constant, it must be tenured because MIR can't contain nursery
+  // pointers.
+  MConstant* constValue = ins->value()->maybeConstantValue();
+  if (constValue) {
+    MOZ_ASSERT(JS::GCPolicy<Value>::isTenured(constValue->toJSValue()));
+    return;
+  }
 
   switch (ins->value()->type()) {
     case MIRType::Object: {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
       LPostWriteElementBarrierO* lir = new (alloc()) LPostWriteElementBarrierO(
-          useConstantObject ? useOrConstant(ins->object())
-                            : useRegister(ins->object()),
-          useRegister(ins->value()), useRegister(ins->index()), tmp);
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()),
+          useRegister(ins->index()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4355,9 +4319,8 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
       LPostWriteElementBarrierS* lir = new (alloc()) LPostWriteElementBarrierS(
-          useConstantObject ? useOrConstant(ins->object())
-                            : useRegister(ins->object()),
-          useRegister(ins->value()), useRegister(ins->index()), tmp);
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()),
+          useRegister(ins->index()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4366,9 +4329,8 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
       auto* lir = new (alloc()) LPostWriteElementBarrierBI(
-          useConstantObject ? useOrConstant(ins->object())
-                            : useRegister(ins->object()),
-          useRegister(ins->value()), useRegister(ins->index()), tmp);
+          useRegisterOrConstant(ins->object()), useRegister(ins->value()),
+          useRegister(ins->index()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4377,9 +4339,8 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
       LDefinition tmp =
           needTempForPostBarrier() ? temp() : LDefinition::BogusTemp();
       LPostWriteElementBarrierV* lir = new (alloc()) LPostWriteElementBarrierV(
-          useConstantObject ? useOrConstant(ins->object())
-                            : useRegister(ins->object()),
-          useRegister(ins->index()), useBox(ins->value()), tmp);
+          useRegisterOrConstant(ins->object()), useRegister(ins->index()),
+          useBox(ins->value()), tmp);
       add(lir, ins);
       assignSafepoint(lir, ins);
       break;
@@ -4387,6 +4348,7 @@ void LIRGenerator::visitPostWriteElementBarrier(MPostWriteElementBarrier* ins) {
     default:
       // Currently, only objects, strings, and bigints can be in the nursery.
       // Other instruction types cannot hold nursery pointers.
+      MOZ_ASSERT(!NeedsPostBarrier(ins->value()->type()));
       break;
   }
 }
@@ -5487,8 +5449,12 @@ void LIRGenerator::visitLoadFixedSlotAndUnbox(MLoadFixedSlotAndUnbox* ins) {
     define(lir, ins);
     assignSafepoint(lir, ins);
   } else {
+    LInt64Definition temp0 = ins->type() == MIRType::Double
+                                 ? tempInt64()
+                                 : LInt64Definition::BogusTemp();
+
     LLoadFixedSlotAndUnbox* lir =
-        new (alloc()) LLoadFixedSlotAndUnbox(useRegisterAtStart(obj));
+        new (alloc()) LLoadFixedSlotAndUnbox(useRegisterAtStart(obj), temp0);
     if (ins->fallible()) {
       assignSnapshot(lir, ins->bailoutKind());
     }
@@ -5509,8 +5475,11 @@ void LIRGenerator::visitLoadDynamicSlotAndUnbox(MLoadDynamicSlotAndUnbox* ins) {
     define(lir, ins);
     assignSafepoint(lir, ins);
   } else {
-    auto* lir =
-        new (alloc()) LLoadDynamicSlotAndUnbox(useRegisterAtStart(slots));
+    LInt64Definition temp0 = ins->type() == MIRType::Double
+                                 ? tempInt64()
+                                 : LInt64Definition::BogusTemp();
+    auto* lir = new (alloc())
+        LLoadDynamicSlotAndUnbox(useRegisterAtStart(slots), temp0);
     if (ins->fallible()) {
       assignSnapshot(lir, ins->bailoutKind());
     }
@@ -5524,8 +5493,12 @@ void LIRGenerator::visitLoadElementAndUnbox(MLoadElementAndUnbox* ins) {
   MOZ_ASSERT(elements->type() == MIRType::Elements);
   MOZ_ASSERT(index->type() == MIRType::Int32);
 
-  auto* lir = new (alloc())
-      LLoadElementAndUnbox(useRegister(elements), useRegisterOrConstant(index));
+  LInt64Definition temp0 = ins->type() == MIRType::Double
+                               ? tempInt64()
+                               : LInt64Definition::BogusTemp();
+
+  auto* lir = new (alloc()) LLoadElementAndUnbox(
+      useRegister(elements), useRegisterOrConstant(index), temp0);
   if (ins->fallible()) {
     assignSnapshot(lir, ins->bailoutKind());
   }
@@ -6252,7 +6225,7 @@ void LIRGenerator::visitSetPropertyCache(MSetPropertyCache* ins) {
   // constant to reduce register allocation pressure.
   bool useConstId =
       id->type() == MIRType::String || id->type() == MIRType::Symbol;
-  bool useConstValue = IsNonNurseryConstant(ins->value());
+  bool useConstValue = ins->value()->isConstant();
 
   // Emit an overrecursed check: this is necessary because the cache can
   // attach a scripted setter stub that calls this script recursively.
@@ -6773,6 +6746,8 @@ void LIRGenerator::visitWasmBoundsCheck(MWasmBoundsCheck* ins) {
         add(lir, ins);
       }
     }
+
+    return;
   }
 
   if (index->type() == MIRType::Int64) {
@@ -7626,8 +7601,17 @@ void LIRGenerator::visitSuperFunction(MSuperFunction* ins) {
   MOZ_ASSERT(ins->callee()->type() == MIRType::Object);
   MOZ_ASSERT(ins->type() == MIRType::Value);
 
-  auto* lir = new (alloc()) LSuperFunction(useRegister(ins->callee()), temp());
+  auto* lir = new (alloc()) LSuperFunction(useRegister(ins->callee()));
   defineBox(lir, ins);
+}
+
+void LIRGenerator::visitSuperFunctionAndUnbox(MSuperFunctionAndUnbox* ins) {
+  MOZ_ASSERT(ins->callee()->type() == MIRType::Object);
+  MOZ_ASSERT(ins->type() == MIRType::Object);
+
+  auto* lir = new (alloc()) LSuperFunctionAndUnbox(useRegister(ins->callee()));
+  assignSnapshot(lir, ins->bailoutKind());
+  define(lir, ins);
 }
 
 void LIRGenerator::visitInitHomeObject(MInitHomeObject* ins) {

@@ -15,6 +15,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import android.os.StrictMode
 import android.text.format.DateUtils
 import android.util.AttributeSet
@@ -43,13 +44,14 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.action.MediaSessionAction
 import mozilla.components.browser.state.action.SearchAction
@@ -90,6 +92,7 @@ import org.mozilla.fenix.GleanMetrics.SplashScreen
 import org.mozilla.fenix.GleanMetrics.StartOnHome
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledBackgroundController
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledForegroundController
+import org.mozilla.fenix.bindings.ExternalAppLinkStatusBinding
 import org.mozilla.fenix.bookmarks.DesktopFolders
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
@@ -242,6 +245,15 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         )
     }
 
+    private val externalAppLinkStatusBinding by lazy {
+        ExternalAppLinkStatusBinding(
+            settings = settings(),
+            appLinksUseCases = components.useCases.appLinksUseCases,
+            browserStore = components.core.store,
+            appStore = components.appStore,
+        )
+    }
+
     private val extensionsProcessDisabledForegroundController by lazy {
         ExtensionsProcessDisabledForegroundController(this@HomeActivity)
     }
@@ -345,9 +357,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
                     applicationContext,
                     StartupCrashActivity::class.java,
                 )
-            startupCrashIntent.flags = FLAG_ACTIVITY_NEW_TASK
+            startupCrashIntent.flags = FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
             startActivity(startupCrashIntent)
-            finish()
+            // We kill the process, because `finish` will cause `onDestroy` to run which would end up
+            // causing several components to be initialized and potentially cause the startup crash.
+            Process.killProcess(Process.myPid())
         } else {
             initialize(savedInstanceState)
         }
@@ -367,7 +381,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         MarkersFragmentLifecycleCallbacks.register(supportFragmentManager, components.core.engine)
 
         // There is disk read violations on some devices such as samsung and pixel for android 9/10
-        components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+        components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
             // Browsing mode & theme setup should always be called before super.onCreate.
             browsingModeManager = createBrowsingModeManager(intent)
             setupTheme()
@@ -542,6 +556,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
             ),
             downloadSnackbar,
             privateBrowsingLockFeature,
+            externalAppLinkStatusBinding,
         )
 
         if (!isCustomTabIntent(intent)) {
@@ -612,13 +627,13 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
 
     @VisibleForTesting
     internal fun maybeShowSetAsDefaultBrowserPrompt(
-        shouldShowSetAsDefaultPrompt: Boolean = settings().shouldShowSetAsDefaultPrompt,
+        shouldShowSetAsDefaultPrompt: Boolean = settings().shouldShowSetAsDefaultPrompt(),
         isDefaultBrowser: Boolean = BrowsersCache.all(applicationContext).isDefaultBrowser,
         isTheCorrectBuildVersion: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
     ) {
         if (shouldShowSetAsDefaultPrompt && !isDefaultBrowser && isTheCorrectBuildVersion) {
             // This is to avoid disk read violations on some devices such as samsung and pixel for android 9/10
-            components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+            components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
                 components.appStore.dispatch(AppAction.UpdateWasNativeDefaultBrowserPromptShown(true))
                 showSetDefaultBrowserPrompt()
                 Metrics.setAsDefaultBrowserNativePromptShown.record()
@@ -1280,7 +1295,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
     }
 
     final override fun attachBaseContext(base: Context) {
-        base.components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+        base.components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
             super.attachBaseContext(base)
         }
     }
@@ -1343,20 +1358,23 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
         isVisuallyComplete = true
     }
 
-    private fun captureSnapshotTelemetryMetrics() = CoroutineScope(IO).launch {
-        // PWA
-        val recentlyUsedPwaCount = components.core.webAppShortcutManager.recentlyUsedWebAppsCount(
-            activeThresholdMs = PWA_RECENTLY_USED_THRESHOLD,
-        )
-        if (recentlyUsedPwaCount == 0) {
-            Metrics.hasRecentPwas.set(false)
-        } else {
-            Metrics.hasRecentPwas.set(true)
-            // This metric's lifecycle is set to 'application', meaning that it gets reset upon
-            // application restart. Combined with the behaviour of the metric type itself (a growing counter),
-            // it's important that this metric is only set once per application's lifetime.
-            // Otherwise, we're going to over-count.
-            Metrics.recentlyUsedPwaCount.add(recentlyUsedPwaCount)
+    private fun captureSnapshotTelemetryMetrics() {
+        lifecycleScope.launch {
+            val recentlyUsedPwaCount = withContext(Dispatchers.IO) {
+                components.core.webAppShortcutManager.recentlyUsedWebAppsCount(
+                    activeThresholdMs = PWA_RECENTLY_USED_THRESHOLD,
+                )
+            }
+            if (recentlyUsedPwaCount == 0) {
+                Metrics.hasRecentPwas.set(false)
+            } else {
+                Metrics.hasRecentPwas.set(true)
+                // This metric's lifecycle is set to 'application', meaning that it gets reset upon
+                // application restart. Combined with the behaviour of the metric type itself (a growing counter),
+                // it's important that this metric is only set once per application's lifetime.
+                // Otherwise, we're going to over-count.
+                Metrics.recentlyUsedPwaCount.add(recentlyUsedPwaCount)
+            }
         }
     }
 
@@ -1376,7 +1394,7 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity {
      */
     @VisibleForTesting
     internal fun shouldStartOnHome(intent: Intent? = this.intent): Boolean {
-        return components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+        return components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
             // We only want to open on home when users tap the app,
             // we want to ignore other cases when the app gets open by users clicking on links.
             getSettings().shouldStartOnHome() && intent?.action == ACTION_MAIN

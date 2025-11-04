@@ -215,7 +215,7 @@
   background-color: var(--urlbar-box-focus-bgcolor);
   padding: 0.61em 0.61em 0.84em;
   margin-inline-end: 0.92em;
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   text-align: center;
 
   .urlbarView-row[dynamicType="weather"]:is([selected], :hover) > .urlbarView-row-inner > & {

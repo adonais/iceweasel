@@ -49,8 +49,9 @@ GfxDriverInfo::GfxDriverInfo(
       mGpu2(gpu2) {}
 
 GfxDriverInfo::GfxDriverInfo(
-    OperatingSystem os, already_AddRefed<const GfxDeviceFamily> devices,
-    int32_t feature, int32_t featureStatus, RefreshRateStatus refreshRateStatus,
+    OperatingSystem os, const nsAString& vendor,
+    already_AddRefed<const GfxDeviceFamily> devices, int32_t feature,
+    int32_t featureStatus, RefreshRateStatus refreshRateStatus,
     VersionComparisonOp minRefreshRateOp, uint32_t minRefreshRate,
     uint32_t minRefreshRateMax, VersionComparisonOp maxRefreshRateOp,
     uint32_t maxRefreshRate, uint32_t maxRefreshRateMax, const char* ruleId,
@@ -63,6 +64,7 @@ GfxDriverInfo::GfxDriverInfo(
       mMaxRefreshRateMax(maxRefreshRateMax),
       mMaxRefreshRateComparisonOp(maxRefreshRateOp),
       mRefreshRateStatus(refreshRateStatus),
+      mAdapterVendor(vendor),
       mDevices(devices),
       mFeature(feature),
       mFeatureStatus(featureStatus),

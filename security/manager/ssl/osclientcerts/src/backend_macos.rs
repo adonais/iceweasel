@@ -14,6 +14,7 @@ use core_foundation::error::*;
 use core_foundation::number::*;
 use core_foundation::string::*;
 use libloading::{Library, Symbol};
+use log::error;
 use pkcs11_bindings::*;
 use rsclientcerts::error::{Error, ErrorType};
 use rsclientcerts::manager::{ClientCertsBackend, CryptokiObject, Sign};

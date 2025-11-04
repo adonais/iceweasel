@@ -42,7 +42,7 @@ pub struct ProgrammableStageDescriptor<'a> {
 }
 
 impl ProgrammableStageDescriptor<'_> {
-    fn to_wgpu(&self) -> wgc::pipeline::ProgrammableStageDescriptor {
+    fn to_wgpu(&self) -> wgc::pipeline::ProgrammableStageDescriptor<'_> {
         let constants = unsafe { self.constants.as_slice() }
             .iter()
             .map(|ce| {
@@ -85,7 +85,7 @@ pub struct VertexState<'a> {
 }
 
 impl VertexState<'_> {
-    fn to_wgpu(&self) -> wgc::pipeline::VertexState {
+    fn to_wgpu(&self) -> wgc::pipeline::VertexState<'_> {
         let buffer_layouts = unsafe { self.buffers.as_slice() }
             .iter()
             .map(|vb| wgc::pipeline::VertexBufferLayout {
@@ -115,7 +115,7 @@ pub struct FragmentState<'a> {
 }
 
 impl FragmentState<'_> {
-    fn to_wgpu(&self) -> wgc::pipeline::FragmentState {
+    fn to_wgpu(&self) -> wgc::pipeline::FragmentState<'_> {
         let color_targets = unsafe { self.targets.as_slice() }
             .iter()
             .map(|ct| {

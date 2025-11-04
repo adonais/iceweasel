@@ -2,10 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import {
-  ContextDescriptorType,
-  MessageHandler,
-} from "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs";
+import { MessageHandler } from "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs";
 
 const lazy = {};
 
@@ -248,13 +245,7 @@ export class WindowGlobalMessageHandler extends MessageHandler {
    *     false otherwise.
    */
   matchesContext(contextDescriptor) {
-    return (
-      contextDescriptor.type === ContextDescriptorType.All ||
-      (contextDescriptor.type === ContextDescriptorType.TopBrowsingContext &&
-        contextDescriptor.id === this.context.browserId) ||
-      (contextDescriptor.type === ContextDescriptorType.UserContext &&
-        contextDescriptor.id === this.context.originAttributes.userContextId)
-    );
+    return this.contextMatchesDescriptor(this.context, contextDescriptor);
   }
 
   /**

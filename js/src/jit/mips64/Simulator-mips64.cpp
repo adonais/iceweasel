@@ -30,7 +30,6 @@
 #include "jit/mips64/Simulator-mips64.h"
 
 #include "mozilla/Casting.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"

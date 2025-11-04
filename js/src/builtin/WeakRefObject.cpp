@@ -235,7 +235,10 @@ bool WeakRefObject::deref(JSContext* cx, unsigned argc, Value* vp) {
     return true;
   }
 
-  if (!target.toGCThing()->zone()->addToKeptObjects(target)) {
+  bool isPermanent =
+      target.isSymbol() && target.toSymbol()->isPermanentAndMayBeShared();
+  if (!isPermanent && !target.toGCThing()->zone()->addToKeptObjects(target)) {
+    ReportOutOfMemory(cx);
     return false;
   }
 

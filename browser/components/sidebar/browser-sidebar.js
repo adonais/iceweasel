@@ -15,12 +15,12 @@ const { DeferredTask } = ChromeUtils.importESModule(
 const toolsNameMap = {
   viewGenaiChatSidebar: "aichat",
   viewGenaiPageAssistSidebar: "aipageassist",
+  viewGenaiSmartAssistSidebar: "aismartassist",
   viewTabsSidebar: "syncedtabs",
   viewHistorySidebar: "history",
   viewBookmarksSidebar: "bookmarks",
   viewCPMSidebar: "passwords",
 };
-const EXPAND_ON_HOVER_DEBOUNCE_RATE_MS = 200;
 const EXPAND_ON_HOVER_DEBOUNCE_TIMEOUT_MS = 1000;
 const LAUNCHER_SPLITTER_WIDTH = 4;
 
@@ -198,6 +198,20 @@ var SidebarController = {
         menuL10nId: "menu-view-genai-page-assist",
         revampL10nId: "sidebar-menu-genai-page-assist-label",
         iconUrl: "chrome://browser/skin/reader-mode.svg",
+      }
+    );
+
+    this.registerPrefSidebar(
+      "browser.ml.smartAssist.enabled",
+      "viewGenaiSmartAssistSidebar",
+      {
+        name: "aismartassist",
+        elementId: "sidebar-switcher-genai-smart-assist",
+        url: "chrome://browser/content/genai/smartAssist.html",
+        menuId: "menu_genaiSmartAssistSidebar",
+        menuL10nId: "menu-view-genai-smart-assist",
+        revampL10nId: "sidebar-menu-genai-smart-assist-label",
+        iconUrl: "chrome://browser/skin/trending.svg",
       }
     );
 
@@ -1399,13 +1413,7 @@ var SidebarController = {
 
   async _removeHoverStateBlocker() {
     if (this._hoverBlockerCount == 1) {
-      // Manually check mouse position
-      let isHovered;
-      MousePosTracker._callListener({
-        onMouseEnter: () => (isHovered = true),
-        onMouseLeave: () => (isHovered = false),
-        getMouseTargetRect: () => this.getMouseTargetRect(),
-      });
+      let isHovered = this._checkIsHoveredOverLauncher();
 
       // Collapse sidebar if needed
       if (this._state.launcherExpanded && !isHovered) {
@@ -2092,6 +2100,20 @@ var SidebarController = {
   },
 
   /**
+   * Use MousePosTracker to manually check for hover state over launcher
+   */
+  _checkIsHoveredOverLauncher() {
+    // Manually check mouse position
+    let isHovered;
+    MousePosTracker._callListener({
+      onMouseEnter: () => (isHovered = true),
+      onMouseLeave: () => (isHovered = false),
+      getMouseTargetRect: () => this.getMouseTargetRect(),
+    });
+    return isHovered;
+  },
+
+  /**
    * Record to Glean when any of the sidebar icons are clicked.
    *
    * @param {string} commandID - Command ID of the icon.
@@ -2217,9 +2239,14 @@ var SidebarController = {
     this._mouseEnterDeferred = Promise.withResolvers();
     this.mouseEnterTask = new DeferredTask(
       () => {
-        this.debouncedMouseEnter();
+        let isHovered = this._checkIsHoveredOverLauncher();
+
+        // Only expand sidebar if mouse is still hovering over sidebar launcher
+        if (isHovered) {
+          this.debouncedMouseEnter();
+        }
       },
-      EXPAND_ON_HOVER_DEBOUNCE_RATE_MS,
+      this._animationExpandOnHoverDelayDurationMs,
       EXPAND_ON_HOVER_DEBOUNCE_TIMEOUT_MS
     );
     this.mouseEnterTask?.arm();
@@ -2267,12 +2294,18 @@ var SidebarController = {
     switch (e.type) {
       case "popupshown":
         /* Temporarily remove MousePosTracker listener when a context menu is open */
-        if (e.composedTarget.id !== "tab-preview-panel") {
+        if (
+          e.composedTarget.id !== "tab-preview-panel" &&
+          e.composedTarget.tagName !== "tooltip"
+        ) {
           this._addHoverStateBlocker();
         }
         break;
       case "popuphidden":
-        if (e.composedTarget.id !== "tab-preview-panel") {
+        if (
+          e.composedTarget.id !== "tab-preview-panel" &&
+          e.composedTarget.tagName !== "tooltip"
+        ) {
           await this._removeHoverStateBlocker();
         }
         break;
@@ -2408,6 +2441,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "_animationExpandOnHoverDurationMs",
   "sidebar.animation.expand-on-hover.duration-ms",
   400
+);
+XPCOMUtils.defineLazyPreferenceGetter(
+  SidebarController,
+  "_animationExpandOnHoverDelayDurationMs",
+  "sidebar.animation.expand-on-hover.delay-duration-ms",
+  200
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   SidebarController,

@@ -383,7 +383,17 @@ ImageExtraction ImageExtractionResult(dom::HTMLCanvasElement* aCanvasElement,
     return ImageExtraction::Placeholder;
   }
 
-  if (ownerDoc->ShouldResistFingerprinting(RFPTarget::CanvasRandomization)) {
+  if (ownerDoc->ShouldResistFingerprinting(
+          RFPTarget::EfficientCanvasRandomization) &&
+      GetCanvasExtractDataPermission(aPrincipal) !=
+          nsIPermissionManager::ALLOW_ACTION) {
+    return ImageExtraction::EfficientRandomize;
+  }
+
+  if ((ownerDoc->ShouldResistFingerprinting(RFPTarget::CanvasRandomization) ||
+       ownerDoc->ShouldResistFingerprinting(RFPTarget::WebGLRandomization)) &&
+      GetCanvasExtractDataPermission(aPrincipal) !=
+          nsIPermissionManager::ALLOW_ACTION) {
     return ImageExtraction::Randomize;
   }
 
@@ -459,7 +469,8 @@ bool IsImageExtractionAllowed(dom::OffscreenCanvas* aOffscreenCanvas,
 
     if (!XRE_IsContentProcess()) {
       MOZ_ASSERT_UNREACHABLE(
-          "Who's calling this from the parent process without a chrome window "
+          "Who's calling this from the parent process without a chrome "
+          "window "
           "(it would have been exempt from the RFP targets)?");
       return;
     }
@@ -537,7 +548,9 @@ ImageExtraction ImageExtractionResult(dom::OffscreenCanvas* aOffscreenCanvas,
   }
 
   if (aOffscreenCanvas->ShouldResistFingerprinting(
-          RFPTarget::CanvasRandomization)) {
+          RFPTarget::CanvasRandomization) ||
+      aOffscreenCanvas->ShouldResistFingerprinting(
+          RFPTarget::WebGLRandomization)) {
     if (GetCanvasExtractDataPermission(aPrincipal) ==
         nsIPermissionManager::ALLOW_ACTION) {
       return ImageExtraction::Unrestricted;
@@ -583,11 +596,11 @@ bool GetCanvasContextType(const nsAString& str,
 }
 
 /**
- * This security check utility might be called from an source that never taints
- * others. For example, while painting a CanvasPattern, which is created from an
- * ImageBitmap, onto a canvas. In this case, the caller could set the CORSUsed
- * true in order to pass this check and leave the aPrincipal to be a nullptr
- * since the aPrincipal is not going to be used.
+ * This security check utility might be called from an source that never
+ * taints others. For example, while painting a CanvasPattern, which is
+ * created from an ImageBitmap, onto a canvas. In this case, the caller could
+ * set the CORSUsed true in order to pass this check and leave the aPrincipal
+ * to be a nullptr since the aPrincipal is not going to be used.
  */
 void DoDrawImageSecurityCheck(dom::HTMLCanvasElement* aCanvasElement,
                               nsIPrincipal* aPrincipal, bool forceWriteOnly,
@@ -645,11 +658,11 @@ void DoDrawImageSecurityCheck(dom::HTMLCanvasElement* aCanvasElement,
 }
 
 /**
- * This security check utility might be called from an source that never taints
- * others. For example, while painting a CanvasPattern, which is created from an
- * ImageBitmap, onto a canvas. In this case, the caller could set the aCORSUsed
- * true in order to pass this check and leave the aPrincipal to be a nullptr
- * since the aPrincipal is not going to be used.
+ * This security check utility might be called from an source that never
+ * taints others. For example, while painting a CanvasPattern, which is
+ * created from an ImageBitmap, onto a canvas. In this case, the caller could
+ * set the aCORSUsed true in order to pass this check and leave the aPrincipal
+ * to be a nullptr since the aPrincipal is not going to be used.
  */
 void DoDrawImageSecurityCheck(dom::OffscreenCanvas* aOffscreenCanvas,
                               nsIPrincipal* aPrincipal, bool aForceWriteOnly,

@@ -542,7 +542,7 @@ prefs = [
         kwargs["shuffle"] = shuffle
         kwargs["verbose"] = verbose
         kwargs["headless"] = headless
-        kwargs["sequential"] = True
+        kwargs["selfTest"] = True  # Prevent singleFile from forcing sequential=True
         kwargs["testingModulesDir"] = self.testing_modules
         kwargs["utility_path"] = self.utility_path
         kwargs["repeat"] = 0

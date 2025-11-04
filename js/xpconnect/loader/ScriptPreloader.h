@@ -7,7 +7,6 @@
 #define ScriptPreloader_h
 
 #include "mozilla/Atomics.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/EventTargetAndLockCapability.h"
 #include "mozilla/LinkedList.h"

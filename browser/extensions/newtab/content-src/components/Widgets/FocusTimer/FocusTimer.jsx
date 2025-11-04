@@ -207,6 +207,15 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
 
     setTimeLeft(newTime);
 
+    // Set progress for paused timers (handles page load and timer type toggling)
+    if (!isRunning && duration < initialDuration) {
+      // Show previously elapsed time
+      setProgress((initialDuration - duration) / initialDuration);
+    } else if (!isRunning) {
+      // Reset progress for fresh timers
+      setProgress(0);
+    }
+
     return () => clearInterval(interval);
   }, [
     isRunning,
@@ -222,9 +231,14 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
   // Update the clip-path of the gradient circle to match the current progress value
   useEffect(() => {
     if (arcRef?.current) {
-      arcRef.current.style.clipPath = getClipPath(progress);
+      // Only set clip-path if current timer has been started or is running
+      if (progress > 0 || isRunning) {
+        arcRef.current.style.clipPath = getClipPath(progress);
+      } else {
+        arcRef.current.style.clipPath = "";
+      }
     }
-  }, [progress, timerType]);
+  }, [progress, isRunning]);
 
   // set timer function
   const setTimerDuration = () => {

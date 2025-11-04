@@ -25,6 +25,7 @@ import mozilla.components.browser.state.search.RegionState
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
+import org.mozilla.fenix.components.metrics.MarketingAttributionService
 import org.mozilla.fenix.distributions.DefaultDistributionProviderChecker
 import org.mozilla.fenix.distributions.LegacyDistributionProviderChecker
 import org.mozilla.fenix.ext.showToolbar
@@ -66,6 +67,7 @@ private fun SecretDebugSettingsScreen() {
     val playInstallReferrer: String by remember {
         mutableStateOf(
             """
+                rawValue: ${MarketingAttributionService.response}
                 utmTerm: ${settings.utmTerm}
                 utmMedium: ${settings.utmMedium}
                 utmSource: ${settings.utmSource}

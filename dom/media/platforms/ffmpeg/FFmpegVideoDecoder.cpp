@@ -1580,6 +1580,30 @@ gfx::SurfaceFormat FFmpegVideoDecoder<LIBAV_VER>::GetSurfaceFormat() const {
   }
 }
 
+#if defined(MOZ_WIDGET_GTK) && defined(MOZ_USE_HWDECODE)
+// Convert AVChromaLocation to
+// wp_color_representation_surface_v1_chroma_location
+static uint32_t AVChromaLocationToWPChromaLocation(uint32_t aAVChromaLocation) {
+  switch (aAVChromaLocation) {
+    case AVCHROMA_LOC_UNSPECIFIED:
+    default:
+      return 0;  // No chroma location specified
+    case AVCHROMA_LOC_LEFT:
+      return 1;
+    case AVCHROMA_LOC_CENTER:
+      return 2;
+    case AVCHROMA_LOC_TOPLEFT:
+      return 3;
+    case AVCHROMA_LOC_TOP:
+      return 4;
+    case AVCHROMA_LOC_BOTTOMLEFT:
+      return 5;
+    case AVCHROMA_LOC_BOTTOM:
+      return 6;
+  }
+}
+#endif
+
 MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
     int64_t aOffset, int64_t aPts, int64_t aDuration,
     MediaDataDecoder::DecodedData& aResults) {
@@ -1695,6 +1719,8 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
         if (mInfo.mTransferFunction) {
           surface->SetTransferFunction(mInfo.mTransferFunction.value());
         }
+        surface->SetWPChromaLocation(
+            AVChromaLocationToWPChromaLocation(mFrame->chroma_location));
         FFMPEG_LOGV(
             "Uploaded frame DMABuf surface UID %d HDR %d color space %s/%s "
             "transfer %s",
@@ -2269,6 +2295,20 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageD3D11(
     return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR, msg);
   }
 
+  D3D11_TEXTURE2D_DESC desc;
+  texture->GetDesc(&desc);
+
+  auto format = [&]() {
+    if (desc.Format == DXGI_FORMAT_P010) {
+      return gfx::SurfaceFormat::P010;
+    }
+    if (desc.Format == DXGI_FORMAT_P016) {
+      return gfx::SurfaceFormat::P016;
+    }
+    MOZ_ASSERT(desc.Format == DXGI_FORMAT_NV12);
+    return gfx::SurfaceFormat::NV12;
+  }();
+
   RefPtr<Image> image;
   gfx::IntRect pictureRegion =
       mInfo.ScaledImageRect(mFrame->width, mFrame->height);
@@ -2280,7 +2320,7 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImageD3D11(
                 mNumOfHWTexturesInUse.load());
     hr = mDXVA2Manager->WrapTextureWithImage(
         new D3D11TextureWrapper(
-            mFrame, mLib, texture, index,
+            mFrame, mLib, texture, format, index,
             [self = RefPtr<FFmpegVideoDecoder>(this), this]() {
               MOZ_ASSERT(mNumOfHWTexturesInUse > 0);
               mNumOfHWTexturesInUse--;

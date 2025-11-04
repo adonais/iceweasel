@@ -12,6 +12,8 @@ EXPORTS.mozilla += [
     "PerfStats.h",
 ]
 
+DEFINES["MOZ_APP_VERSION_DISPLAY"] = CONFIG["MOZ_APP_VERSION_DISPLAY"]
+
 include("/ipc/chromium/chromium-config.mozbuild")
 
 if CONFIG["MOZ_PERFETTO"]:

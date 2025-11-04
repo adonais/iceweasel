@@ -365,9 +365,9 @@ i.e.,:
 */
 
 /* virtual */
-nsresult nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
-                                        const PlaceFlags& aFlags,
-                                        ReflowOutput& aDesiredSize) {
+void nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
+                                    const PlaceFlags& aFlags,
+                                    ReflowOutput& aDesiredSize) {
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
   if (NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(mEmbellishData.flags) &&
       StyleFont()->mMathStyle == StyleMathStyle::Compact) {
@@ -732,7 +732,6 @@ nsresult nsMathMLmunderoverFrame::Place(DrawTarget* aDrawTarget,
                         dy, ReflowChildFlags::Default);
     }
   }
-  return NS_OK;
 }
 
 bool nsMathMLmunderoverFrame::IsMathContentBoxHorizontallyCentered() const {

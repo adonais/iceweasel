@@ -149,7 +149,7 @@
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
   -->
-  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s надає вам контроль.</p> <p>Використовуйте його як приватний браузер: <ul> <li>Шукайте і переглядайте безпосередньо в програмі</li> <li>Блокуйте стеження (або змініть налаштування, щоб дозволити його)</li> <li>Видаляйте файли cookie, а також історію пошуку та перегляду</li> </ul> </p> <p>%1$s створено в Mozilla. Наша місія – розвивати здоровий та відкритий Інтернет.<br/> <a href=\"%2$s\">Докладніше</a></p>]]></string>
+  <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s надає вам контроль.</p>\n<p>Використовуйте його як приватний браузер:\n<ul>\n<li>Шукайте і переглядайте безпосередньо в програмі</li>\n<li>Блокуйте стеження (або змініть налаштування, щоб дозволити його)</li>\n<li>Видаляйте файли cookie, а також історію пошуку та перегляду</li>\n</ul> </p>\n<p>%1$s створено в Mozilla. Наша місія – розвивати здоровий та відкритий Інтернет.<br/>\n<a href=\"%2$s\">Докладніше</a></p>]]></string>
   <!-- A link to SUMO at the bottom of About Focus screen. -->
   <string name="about_screen_learn_more">Докладніше</string>
   <!-- Header for the Privacy and Security settings menu -->
@@ -390,7 +390,7 @@
     Content description (not visible, for screen readers etc.): Lock icon showed in the URL bar for
     https pages..
   -->
-  <string name="content_description_lock">Безпечне з\'єднання</string>
+  <string name="content_description_lock">Захищене з’єднання</string>
   <!--
     This text is not visible. Instead it will be read by the accessibility service once we start
     loading a website
@@ -561,7 +561,7 @@
   -->
   <string name="download_firefox" tools:ignore="BrandUsage">Завантажити Firefox</string>
   <!-- Text shown in prompts for GeckoView -->
-  <string name="gv_prompt_username_hint">Ім\'я користувача</string>
+  <string name="gv_prompt_username_hint">Ім’я користувача</string>
   <string name="gv_prompt_password_hint">Пароль</string>
   <string name="gv_prompt_clear">Очистити</string>
   <!--
@@ -569,7 +569,7 @@
 
     Text to denote secure or insecure connection
   -->
-  <string name="security_popup_secure_connection">Захищене з\'єднання</string>
+  <string name="security_popup_secure_connection">Захищене з’єднання</string>
   <string name="security_popup_insecure_connection">Незахищене з’єднання</string>
   <!-- %1$s will be replaced with organization that granted the SSL certificate -->
   <string name="security_popup_security_verified">Засвідчено: %1$s</string>
@@ -875,7 +875,7 @@
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Це може бути проблема з конфігурацією сервера, або, можливо, хтось намагається імітувати той сервер. <br/><br/> Якщо ви раніше отримували доступ до цього сервера, то це може бути тимчасова помилка.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Хтось може намагатися видати себе за сайт. Подальший перехід може бути ризикованим.</label> <br><br> <label>%1$s не довіряє <b>%2$s</b>, тому що видавець його сертифіката невідомий, сертифікат самопідписаний, або сервер не надсилає правильні посередницькі сертифікати</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Хтось може намагатися видати себе за сайт. Подальший перехід може бути ризикованим.</label> <br><br>\n<label>%1$s не довіряє <b>%2$s</b>, тому що видавець його сертифіката невідомий, сертифікат самопідписаний, або сервер не надсилає правильні посередницькі сертифікати</label>]]></string>
   <!--
     Sessions List
 

@@ -8,7 +8,7 @@ const { AddonTestUtils } = ChromeUtils.importESModule(
 );
 
 const { ActionsProviderQuickActions } = ChromeUtils.importESModule(
-  "resource:///modules/ActionsProviderQuickActions.sys.mjs"
+  "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs"
 );
 
 const CONFIG = [

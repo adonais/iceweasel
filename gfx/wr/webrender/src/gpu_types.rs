@@ -16,7 +16,7 @@ use crate::renderer::{ShaderColorMode, GpuBufferAddress};
 use std::i32;
 use crate::util::{MatrixHelpers, TransformedRectKind};
 use glyph_rasterizer::SubpixelDirection;
-use crate::util::{ScaleOffset, pack_as_float};
+use crate::util::pack_as_float;
 
 
 // Contains type that must exactly match the same structures declared in GLSL.
@@ -280,27 +280,6 @@ const UV_TYPE_NORMALIZED: u32 = 0;
 /// Specifies that an RGB CompositeInstance or ScalingInstance's UV coordinates are not normalized.
 const UV_TYPE_UNNORMALIZED: u32 = 1;
 
-/// A GPU-friendly representation of the `ScaleOffset` type
-#[derive(Clone, Debug)]
-#[repr(C)]
-pub struct CompositorTransform {
-    pub sx: f32,
-    pub sy: f32,
-    pub tx: f32,
-    pub ty: f32,
-}
-
-impl From<ScaleOffset> for CompositorTransform {
-    fn from(scale_offset: ScaleOffset) -> Self {
-        CompositorTransform {
-            sx: scale_offset.scale.x,
-            sy: scale_offset.scale.y,
-            tx: scale_offset.offset.x,
-            ty: scale_offset.offset.y,
-        }
-    }
-}
-
 /// Vertex format for picture cache composite shader.
 /// When editing the members, update desc::COMPOSITE
 /// so its list of instance_attributes matches:
@@ -514,9 +493,6 @@ impl PrimitiveHeaders {
     pub fn push(
         &mut self,
         prim_header: &PrimitiveHeader,
-        z: ZBufferId,
-        render_task_address: RenderTaskAddress,
-        user_data: [i32; 4],
     ) -> PrimitiveHeaderIndex {
         debug_assert_eq!(self.headers_int.len(), self.headers_float.len());
         let id = self.headers_float.len();
@@ -527,11 +503,11 @@ impl PrimitiveHeaders {
         });
 
         self.headers_int.push(PrimitiveHeaderI {
-            z,
-            render_task_address,
+            z: prim_header.z,
+            render_task_address: prim_header.render_task_address,
             specific_prim_address: prim_header.specific_prim_address.as_int(),
             transform_id: prim_header.transform_id,
-            user_data,
+            user_data: prim_header.user_data,
         });
 
         PrimitiveHeaderIndex(id as i32)
@@ -546,6 +522,9 @@ pub struct PrimitiveHeader {
     pub local_clip_rect: LayoutRect,
     pub specific_prim_address: GpuCacheAddress,
     pub transform_id: TransformPaletteId,
+    pub z: ZBufferId,
+    pub render_task_address: RenderTaskAddress,
+    pub user_data: [i32; 4],
 }
 
 // f32 parts of a primitive header

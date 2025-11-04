@@ -302,12 +302,18 @@ Result<Ok, ErrorResult> TextDirectiveCreator::CollectPrefixContextTerm() {
   mPrefixContent =
       MOZ_TRY(TextDirectiveUtil::RangeContentAsString(prefixRange));
   if (mPrefixContent.Length() > kMaxContextTermLength) {
+    // cut off the prefix content at a word boundary near the max context term
+    // length to make sure the term does not start with whitespace.
+    auto [wordBegin, wordEnd] = intl::WordBreaker::FindWord(
+        mPrefixContent, mPrefixContent.Length() - kMaxContextTermLength);
+    while (nsContentUtils::IsHTMLWhitespace(mPrefixContent.CharAt(wordBegin))) {
+      ++wordBegin;
+    }
     TEXT_FRAGMENT_LOG(
         "Prefix term seems very long ({} chars), "
         "only considering the last {} chars.",
-        mPrefixContent.Length(), kMaxContextTermLength);
-    mPrefixContent = Substring(mPrefixContent,
-                               mPrefixContent.Length() - kMaxContextTermLength);
+        mPrefixContent.Length(), wordBegin);
+    mPrefixContent = Substring(mPrefixContent, wordBegin);
   }
   mPrefixFoldCaseContent = mPrefixContent;
   ToFoldedCase(mPrefixFoldCaseContent);
@@ -332,11 +338,19 @@ Result<Ok, ErrorResult> TextDirectiveCreator::CollectSuffixContextTerm() {
   mSuffixContent =
       MOZ_TRY(TextDirectiveUtil::RangeContentAsString(suffixRange));
   if (mSuffixContent.Length() > kMaxContextTermLength) {
+    // cut off the suffix content at a word boundary near the max context term
+    // length to make sure the term does not end with whitespace.
+    auto [wordBegin, wordEnd] =
+        intl::WordBreaker::FindWord(mSuffixContent, kMaxContextTermLength);
+    while (
+        nsContentUtils::IsHTMLWhitespace(mSuffixContent.CharAt(wordEnd - 1))) {
+      --wordEnd;
+    }
     TEXT_FRAGMENT_LOG(
         "Suffix term seems very long ({} chars), "
         "only considering the first {} chars.",
-        mSuffixContent.Length(), kMaxContextTermLength);
-    mSuffixContent = Substring(mSuffixContent, 0, kMaxContextTermLength);
+        mSuffixContent.Length(), wordEnd + 1);
+    mSuffixContent = Substring(mSuffixContent, 0, wordEnd + 1);
   }
   mSuffixFoldCaseContent = mSuffixContent;
   ToFoldedCase(mSuffixFoldCaseContent);

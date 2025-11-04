@@ -29,8 +29,8 @@ use crate::values::computed::TimingFunction;
 use crate::values::generics::easing::BeforeFlag;
 use crate::values::specified::TransitionBehavior;
 use crate::Atom;
-use rustc_hash::FxHashMap;
 use parking_lot::RwLock;
+use rustc_hash::FxHashMap;
 use servo_arc::Arc;
 use std::fmt;
 
@@ -1495,7 +1495,7 @@ pub fn maybe_start_animations<E>(
             continue;
         }
 
-        let keyframe_animation = match context.stylist.get_animation(name, element) {
+        let keyframe_animation = match context.stylist.lookup_keyframes(name, element) {
             Some(animation) => animation,
             None => continue,
         };

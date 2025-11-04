@@ -2391,53 +2391,62 @@ static bool IsDoctypeOrHasFollowingDoctype(nsINode* aNode) {
 
 // https://dom.spec.whatwg.org/#dom-parentnode-movebefore
 void nsINode::MoveBefore(nsINode& aNode, nsINode* aChild, ErrorResult& aRv) {
-  nsINode* referenceChild = aChild;
-  if (referenceChild == &aNode) {
-    referenceChild = aNode.GetNextSibling();
-  }
+  const auto ComputeReferenceChild = [&]() -> nsINode* {
+    return &aNode == aChild ? aNode.GetNextSibling() : aChild;
+  };
+  nsINode* referenceChild = ComputeReferenceChild();
 
   // Move algorithm
   // https://dom.spec.whatwg.org/#move
-  // Step 1.
   nsINode& newParent = *this;
-  GetRootNodeOptions options;
-  options.mComposed = true;
-  if (newParent.GetRootNode(options) != aNode.GetRootNode(options)) {
-    aRv.ThrowHierarchyRequestError("Different root node.");
-    return;
-  }
+  const auto EnsureValidMoveRequest = [&newParent](nsINode& aNode,
+                                                   nsINode* aReferenceChild,
+                                                   ErrorResult& aRv) -> void {
+    // Step 1.
+    GetRootNodeOptions options;
+    options.mComposed = true;
+    if (newParent.GetRootNode(options) != aNode.GetRootNode(options)) {
+      aRv.ThrowHierarchyRequestError("Different root node.");
+      return;
+    }
 
-  // Step 2.
-  if (nsContentUtils::ContentIsHostIncludingDescendantOf(&newParent, &aNode)) {
-    aRv.ThrowHierarchyRequestError("Node is an ancestor of the new parent.");
-    return;
-  }
+    // Step 2.
+    if (nsContentUtils::ContentIsHostIncludingDescendantOf(&newParent,
+                                                           &aNode)) {
+      aRv.ThrowHierarchyRequestError("Node is an ancestor of the new parent.");
+      return;
+    }
 
-  // Step 3.
-  if (referenceChild && referenceChild->GetParentNode() != &newParent) {
-    aRv.ThrowNotFoundError("Wrong reference child.");
-    return;
-  }
+    // Step 3.
+    if (aReferenceChild && aReferenceChild->GetParentNode() != &newParent) {
+      aRv.ThrowNotFoundError("Wrong reference child.");
+      return;
+    }
 
-  // Step 4.
-  if (!aNode.IsElement() && !aNode.IsCharacterData()) {
-    aRv.ThrowHierarchyRequestError("Wrong type of node.");
-    return;
-  }
+    // Step 4.
+    if (!aNode.IsElement() && !aNode.IsCharacterData()) {
+      aRv.ThrowHierarchyRequestError("Wrong type of node.");
+      return;
+    }
 
-  // Step 5.
-  if (aNode.IsText() && newParent.IsDocument()) {
-    aRv.ThrowHierarchyRequestError(
-        "Can't move a text node to be a child of a document.");
-    return;
-  }
+    // Step 5.
+    if (aNode.IsText() && newParent.IsDocument()) {
+      aRv.ThrowHierarchyRequestError(
+          "Can't move a text node to be a child of a document.");
+      return;
+    }
 
-  // Step 6.
-  if (newParent.IsDocument() && aNode.IsElement() &&
-      (newParent.AsDocument()->GetRootElement() ||
-       IsDoctypeOrHasFollowingDoctype(referenceChild))) {
-    aRv.ThrowHierarchyRequestError(
-        "Can't move an element to be a child of the document.");
+    // Step 6.
+    if (newParent.IsDocument() && aNode.IsElement() &&
+        (newParent.AsDocument()->GetRootElement() ||
+         IsDoctypeOrHasFollowingDoctype(aReferenceChild))) {
+      aRv.ThrowHierarchyRequestError(
+          "Can't move an element to be a child of the document.");
+      return;
+    }
+  };
+  EnsureValidMoveRequest(aNode, referenceChild, aRv);
+  if (MOZ_UNLIKELY(aRv.Failed())) {
     return;
   }
 
@@ -2446,6 +2455,27 @@ void nsINode::MoveBefore(nsINode& aNode, nsINode* aChild, ErrorResult& aRv) {
 
   // Step 8.
   MOZ_ASSERT(oldParent);
+
+  // For consistency with ReplaceOrInsertBefore(), we should allow DevTools to
+  // break on the removal of aNode.
+  if (MOZ_UNLIKELY(
+          aNode.MaybeNeedsToNotifyDevToolsOfNodeRemovalsInOwnerDoc())) {
+    nsMutationGuard guard;
+    nsContentUtils::NotifyDevToolsOfNodeRemoval(aNode);
+    // If the user modifies the DOM tree, let's check same things again.
+    if (MOZ_UNLIKELY(guard.Mutated(0))) {
+      referenceChild = ComputeReferenceChild();
+      // Step 1-6.
+      EnsureValidMoveRequest(aNode, referenceChild, aRv);
+      if (aRv.Failed()) {
+        return;
+      }
+      // Step 7.
+      oldParent = aNode.GetParentNode();
+      // Step 8.
+      MOZ_ASSERT(oldParent);
+    }
+  }
 
   // Steps 9-12 happen implicitly in when triggering
   // nsIMutationObserver notifications.

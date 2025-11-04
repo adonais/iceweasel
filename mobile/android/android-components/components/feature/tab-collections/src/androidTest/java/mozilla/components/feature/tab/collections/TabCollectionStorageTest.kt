@@ -218,7 +218,6 @@ class TabCollectionStorageTest {
     }
 
     @Test
-    @Suppress("ComplexMethod")
     fun testGettingCollections() = runTest {
         storage.createCollection(
             "Articles",
@@ -300,7 +299,6 @@ class TabCollectionStorageTest {
     }
 
     @Test
-    @Suppress("ComplexMethod")
     fun testGettingCollectionsList() = runTest {
         storage.createCollection(
             "Articles",

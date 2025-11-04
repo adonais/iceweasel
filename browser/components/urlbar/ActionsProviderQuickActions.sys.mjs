@@ -5,13 +5,13 @@
 import {
   ActionsProvider,
   ActionsResult,
-} from "resource:///modules/ActionsProvider.sys.mjs";
+} from "moz-src:///browser/components/urlbar/ActionsProvider.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   QuickActionsLoaderDefault:
-    "resource:///modules/QuickActionsLoaderDefault.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
+    "moz-src:///browser/components/urlbar/QuickActionsLoaderDefault.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
 });
 
 // These prefs are relative to the `browser.urlbar` branch.
@@ -43,8 +43,9 @@ class ProviderQuickActions extends ActionsProvider {
     return "ActionsProviderQuickActions";
   }
 
-  isActive(queryContext) {
+  isActive(queryContext, controller) {
     return (
+      controller?.input.isAddressbar &&
       lazy.UrlbarPrefs.get(ENABLED_PREF) &&
       !queryContext.searchMode &&
       queryContext.trimmedSearchString.length < 50 &&

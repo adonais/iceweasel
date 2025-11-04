@@ -12,6 +12,8 @@ use euclid::approxeq::ApproxEq;
 use euclid::{point2, vec2, size2};
 use api::{ExtendMode, GradientStop, LineOrientation, PremultipliedColorF, ColorF, ColorU};
 use api::units::*;
+use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState, PatternKind, PatternShaderInput, PatternTextureInput};
+use crate::prim_store::gradient::{gpu_gradient_stops_blocks, write_gpu_gradient_stops_tree, GradientKind};
 use crate::scene_building::IsVisible;
 use crate::frame_builder::FrameBuildingState;
 use crate::intern::{Internable, InternDebug, Handle as InternHandle};
@@ -24,7 +26,7 @@ use crate::prim_store::{NinePatchDescriptor, PointKey, SizeKey, InternablePrimit
 use crate::render_task::{RenderTask, RenderTaskKind};
 use crate::render_task_graph::RenderTaskId;
 use crate::render_task_cache::{RenderTaskCacheKeyKind, RenderTaskCacheKey, RenderTaskParent};
-use crate::renderer::GpuBufferAddress;
+use crate::renderer::{GpuBufferAddress, GpuBufferBuilder};
 use crate::segment::EdgeAaSegmentMask;
 use crate::util::pack_as_float;
 use super::{stops_and_min_alpha, GradientStopKey, GradientGpuBlockBuilder, apply_gradient_local_clip};
@@ -95,6 +97,42 @@ pub struct LinearGradientTemplate {
     pub is_fast_path: bool,
     pub cached: bool,
     pub src_color: Option<RenderTaskId>,
+}
+
+impl PatternBuilder for LinearGradientTemplate {
+    fn build(
+        &self,
+        _sub_rect: Option<DeviceRect>,
+        ctx: &PatternBuilderContext,
+        state: &mut PatternBuilderState,
+    ) -> Pattern {
+        let (start, end) = if self.reverse_stops {
+            (self.end_point, self.start_point)
+        } else {
+            (self.start_point, self.end_point)
+        };
+        linear_gradient_pattern(
+            start,
+            end,
+            self.extend_mode,
+            &self.stops,
+            ctx.fb_config.is_software,
+            state.frame_gpu_data,
+        )
+    }
+
+    fn get_base_color(
+        &self,
+        _ctx: &PatternBuilderContext,
+    ) -> ColorF {
+        ColorF::WHITE
+    }
+
+    fn use_shared_pattern(
+        &self,
+    ) -> bool {
+        true
+    }
 }
 
 impl Deref for LinearGradientTemplate {
@@ -632,6 +670,7 @@ impl InternablePrimitive for LinearGradient {
             PrimitiveInstanceKind::LinearGradient {
                 data_handle,
                 visible_tiles_range: GradientTileRange::empty(),
+                use_legacy_path: true,
             }
         }
     }
@@ -748,4 +787,42 @@ pub struct LinearGradientCacheKey {
     pub extend_mode: ExtendMode,
     pub stops: Vec<GradientStopKey>,
     pub reversed_stops: bool,
+}
+
+pub fn linear_gradient_pattern(
+    start: DevicePoint,
+    end: DevicePoint,
+    extend_mode: ExtendMode,
+    stops: &[GradientStop],
+    _is_software: bool,
+    gpu_buffer_builder: &mut GpuBufferBuilder
+) -> Pattern {
+    let num_blocks = 2 + gpu_gradient_stops_blocks(stops.len(), true);
+    let mut writer = gpu_buffer_builder.f32.write_blocks(num_blocks);
+    writer.push_one([
+        start.x,
+        start.y,
+        end.x,
+        end.y,
+    ]);
+    writer.push_one([
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ]);
+
+    let is_opaque = write_gpu_gradient_stops_tree(stops, GradientKind::Linear, extend_mode, &mut writer);
+    let gradient_address = writer.finish();
+
+    Pattern {
+        kind: PatternKind::Gradient,
+        shader_input: PatternShaderInput(
+            gradient_address.as_int(),
+            0,
+        ),
+        texture_input: PatternTextureInput::default(),
+        base_color: ColorF::WHITE,
+        is_opaque,
+    }
 }

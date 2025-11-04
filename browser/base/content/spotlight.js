@@ -89,6 +89,7 @@ function renderMultistage(ready) {
   dialog?.classList.add("spotlight");
   // Prevent SubDialog methods from manually setting dialog size.
   box.setAttribute("sizeto", "available");
+  box.setAttribute("fixedsize", "false");
   addEventListener("pagehide", () => {
     box.classList.remove("spotlightBox");
     dialog?.classList.remove("spotlight");

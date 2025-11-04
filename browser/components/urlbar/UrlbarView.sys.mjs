@@ -15,17 +15,21 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   ContextualIdentityService:
     "resource://gre/modules/ContextualIdentityService.sys.mjs",
-  L10nCache: "resource:///modules/UrlbarUtils.sys.mjs",
+  L10nCache: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
-  UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
+  UrlbarProviderOpenTabs:
+    "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderQuickSuggest:
-    "resource:///modules/UrlbarProviderQuickSuggest.sys.mjs",
-  UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
-  UrlbarSearchOneOffs: "resource:///modules/UrlbarSearchOneOffs.sys.mjs",
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+    "moz-src:///browser/components/urlbar/UrlbarProviderQuickSuggest.sys.mjs",
+  UrlbarProviderTopSites:
+    "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarSearchOneOffs:
+    "moz-src:///browser/components/urlbar/UrlbarSearchOneOffs.sys.mjs",
+  UrlbarTokenizer:
+    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -477,23 +481,19 @@ export class UrlbarView {
     this.#setRowSelectable(row, false);
 
     // Replace the row with a dismissal acknowledgment tip.
-    let tip = Object.assign(
-      new lazy.UrlbarResult(
-        lazy.UrlbarUtils.RESULT_TYPE.TIP,
-        lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-        {
-          type: "dismissalAcknowledgment",
-          titleL10n,
-          buttons: [{ l10n: { id: "urlbar-search-tips-confirm-short" } }],
-          icon: "chrome://branding/content/icon32.png",
-        }
-      ),
-      {
-        rowLabel: !result.hideRowLabel && this.#rowLabel(row),
-        hideRowLabel: result.hideRowLabel,
-        richSuggestionIconSize: 32,
-      }
-    );
+    let tip = new lazy.UrlbarResult({
+      type: lazy.UrlbarUtils.RESULT_TYPE.TIP,
+      source: lazy.UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      payload: {
+        type: "dismissalAcknowledgment",
+        titleL10n,
+        buttons: [{ l10n: { id: "urlbar-search-tips-confirm-short" } }],
+        icon: "chrome://branding/content/icon32.png",
+      },
+      rowLabel: !result.hideRowLabel && this.#rowLabel(row),
+      hideRowLabel: result.hideRowLabel,
+      richSuggestionIconSize: 32,
+    });
     this.#updateRow(row, tip);
     this.#updateIndices();
 
@@ -1509,10 +1509,12 @@ export class UrlbarView {
    *     An array of CSS classes to set on the element. If this is defined, the
    *     element's previous classes will be cleared first!
    *
+   * @param {Element} item
+   *   The row element.
    * @param {UrlbarResult} result
    *   The UrlbarResult displayed to the node. This is optional.
    */
-  #updateElementForDynamicType(element, update, result = null) {
+  #updateElementForDynamicType(element, update, item, result = null) {
     if (update.attributes) {
       for (let [name, value] of Object.entries(update.attributes)) {
         if (name == "id") {
@@ -1555,7 +1557,11 @@ export class UrlbarView {
     }
 
     if (update.classList) {
-      element.classList = "";
+      if (element == item._content) {
+        element.className = "urlbarView-row-inner";
+      } else {
+        element.className = "";
+      }
       element.classList.add(...update.classList);
     }
   }
@@ -1574,7 +1580,8 @@ export class UrlbarView {
       dynamicType,
       item._content,
       item._elements,
-      viewTemplate
+      viewTemplate,
+      item
     );
     item.toggleAttribute("has-url", classes.has("urlbarView-url"));
     item.toggleAttribute("has-action", classes.has("urlbarView-action"));
@@ -1594,6 +1601,8 @@ export class UrlbarView {
    * @param {object} template
    *   The template object being recursed into. Pass the top-level template
    *   object to start with.
+   * @param {Element} item
+   *   The row element.
    * @param {Set} classes
    *   The CSS class names of all elements in the row's subtree are recursively
    *   collected in this set. Don't pass anything to start with so that the
@@ -1607,9 +1616,10 @@ export class UrlbarView {
     parentNode,
     elementsByName,
     template,
+    item,
     classes = new Set()
   ) {
-    this.#updateElementForDynamicType(parentNode, template);
+    this.#updateElementForDynamicType(parentNode, template, item);
 
     if (template.classList) {
       for (let c of template.classList) {
@@ -1635,6 +1645,7 @@ export class UrlbarView {
         child,
         elementsByName,
         childTemplate,
+        item,
         classes
       );
     }
@@ -1757,23 +1768,27 @@ export class UrlbarView {
     }
   ) {
     let button = this.#createElement("span");
-    this.#updateElementForDynamicType(button, {
-      attributes: {
-        ...attributes,
-        role: "button",
+    this.#updateElementForDynamicType(
+      button,
+      {
+        attributes: {
+          ...attributes,
+          role: "button",
+        },
+        classList: [
+          ...classList,
+          "urlbarView-button",
+          "urlbarView-button-" + name,
+        ],
+        dataset: {
+          name,
+          command,
+          url,
+          input,
+        },
       },
-      classList: [
-        ...classList,
-        "urlbarView-button",
-        "urlbarView-button-" + name,
-      ],
-      dataset: {
-        name,
-        command,
-        url,
-        input,
-      },
-    });
+      item
+    );
 
     button.id = `${item.id}-button-${name}`;
     if (l10n) {
@@ -2310,7 +2325,7 @@ export class UrlbarView {
         continue;
       }
       let node = item.querySelector(`#${item.id}-${nodeName}`);
-      this.#updateElementForDynamicType(node, update, result);
+      this.#updateElementForDynamicType(node, update, item, result);
       if (update.style) {
         for (let [styleName, value] of Object.entries(update.style)) {
           node.style[styleName] = value;
@@ -2480,9 +2495,11 @@ export class UrlbarView {
       isItemVisible &&
       // Show the search suggestions label only if there are other visible
       // results before this one that aren't the heuristic or suggestions.
-      (item.result.type != lazy.UrlbarUtils.RESULT_TYPE.SEARCH ||
-        !item.result.payload.suggestion ||
-        !seenOnlyHeuristicOrSearchSuggestions)
+      !(
+        item.result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH &&
+        item.result.payload.suggestion &&
+        seenOnlyHeuristicOrSearchSuggestions
+      )
     ) {
       label = this.#rowLabel(item);
     }

@@ -32,31 +32,31 @@ run-if = ["false"] # Only used for recreating somedata_profile.zip
 
 ["test_databaseShadowing1.js"]
 prefs = ["dom.storage.shadow_writes=true"]
-run-sequentially = "test_databaseShadowing2.js depends on a file produced by this test"
+run-sequentially = ["true"] # test_databaseShadowing2.js depends on a file produced by this test
 
 ["test_databaseShadowing2.js"]
-run-sequentially = "this test depends on a file produced by test_databaseShadowing1.js"
+run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing1.js
 
 ["test_databaseShadowing_clearOrigin1.js"]
 prefs = ["dom.storage.shadow_writes=true"]
-run-sequentially = "test_databaseShadowing_clearOrigin2.js depends on a file produced by this test"
+run-sequentially = ["true"] # test_databaseShadowing_clearOrigin2.js depends on a file produced by this test
 
 ["test_databaseShadowing_clearOrigin2.js"]
-run-sequentially = "this test depends on a file produced by test_databaseShadowing_clearOrigin1.js"
+run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing_clearOrigin1.js
 
 ["test_databaseShadowing_clearOriginsByPattern1.js"]
 prefs = ["dom.storage.shadow_writes=true"]
-run-sequentially = "test_databaseShadowing_clearOriginsByPattern2.js depends on a file produced by this test"
+run-sequentially = ["true"] # test_databaseShadowing_clearOriginsByPattern2.js depends on a file produced by this test
 
 ["test_databaseShadowing_clearOriginsByPattern2.js"]
-run-sequentially = "this test depends on a file produced by test_databaseShadowing_clearOriginsByPattern1.js"
+run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing_clearOriginsByPattern1.js
 
 ["test_databaseShadowing_clearOriginsByPrefix1.js"]
 prefs = ["dom.storage.shadow_writes=true"]
-run-sequentially = "test_databaseShadowing_clearOriginsByPrefix2.js depends on a file produced by this test"
+run-sequentially = ["true"] # test_databaseShadowing_clearOriginsByPrefix2.js depends on a file produced by this test
 
 ["test_databaseShadowing_clearOriginsByPrefix2.js"]
-run-sequentially = "this test depends on a file produced by test_databaseShadowing_clearOriginsByPrefix1.js"
+run-sequentially = ["true"] # this test depends on a file produced by test_databaseShadowing_clearOriginsByPrefix1.js
 
 ["test_databaseWorkStarted.js"]
 

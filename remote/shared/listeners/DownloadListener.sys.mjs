@@ -7,8 +7,6 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   Downloads: "resource://gre/modules/Downloads.sys.mjs",
   EventEmitter: "resource://gre/modules/EventEmitter.sys.mjs",
-
-  generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
 });
 
 /**
@@ -28,7 +26,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * ```
  *
  * @fires download-started
- *    The DownloadListener emits "download-started" events when a download begins,
+ *    The DownloadListener emits the following events:
+ *    - "download-started" when a download begins,
+ *    - "download-stopped" when a download is stopped
  *    with the following object as payload:
  *      - {Download} download
  *            The Download object that started.
@@ -127,7 +127,6 @@ export class DownloadListener {
   #getDownloadState(download) {
     if (!this.#trackedDownloads.has(download)) {
       this.#trackedDownloads.set(download, {
-        navigationId: lazy.generateUUID(),
         started: false,
       });
     }
@@ -140,7 +139,6 @@ export class DownloadListener {
       state.started = true;
       this.emit("download-started", {
         download,
-        navigationId: state.navigationId,
       });
     }
   }
@@ -167,6 +165,15 @@ export class DownloadListener {
   #onDownloadChanged = download => {
     const state = this.#getDownloadState(download);
     this.#maybeEmitDownloadStarted(state, download);
+
+    // canceled + hasPartialData corresponds to a paused download.
+    const paused = download.canceled && download.hasPartialData;
+    if (!state.stopped && download.stopped && !paused) {
+      state.stopped = true;
+      this.emit("download-stopped", {
+        download,
+      });
+    }
   };
 
   /**

@@ -24,6 +24,7 @@
   "browser.uiCustomization.horizontalTabsBackup",
   "browser.uiCustomization.navBarWhenVerticalTabs",
   "browser.uiCustomization.state",
+  "browser.urlbar.lastUrlbarSearchSeconds",
   "browser.urlbar.placeholderName",
   "browser.urlbar.placeholderName.private",
   "browser.urlbar.recentsearches.lastDefaultChanged",

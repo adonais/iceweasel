@@ -43,7 +43,7 @@ tasks:
             job-name: linux64-st-autotest-debug
         treeherder:
             platform: linux64/debug
-        worker-type: t-linux-docker
+        worker-type: t-linux-docker-amd
         worker:
             docker-image: {in-tree: static-analysis-build}
             env:
@@ -100,5 +100,6 @@ tasks:
                 - win64-winchecksec
                 - vs
                 - sysroot-wasm32-wasi
+                - winappsdk-x86_64-pc-windows-msvc
             fetch:
                 - windows-rs

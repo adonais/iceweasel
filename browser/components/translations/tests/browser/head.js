@@ -251,29 +251,6 @@ function maybeGetByL10nId(l10nId, doc = document) {
 }
 
 /**
- * Provide a uniform way to log actions. This abuses the Error stack to get the callers
- * of the action. This should help in test debugging.
- */
-function logAction(...params) {
-  const error = new Error();
-  const stackLines = error.stack.split("\n");
-  const actionName = stackLines[1]?.split("@")[0] ?? "";
-  const taskFileLocation = stackLines[2]?.split("@")[1] ?? "";
-  if (taskFileLocation.includes("head.js")) {
-    // Only log actions that were done at the test level.
-    return;
-  }
-
-  info(`Action: ${actionName}(${params.join(", ")})`);
-  info(
-    `Source: ${taskFileLocation.replace(
-      "chrome://mochitests/content/browser/",
-      ""
-    )}`
-  );
-}
-
-/**
  * Returns true if Full-Page Translations is currently active, otherwise false.
  *
  * @returns {boolean}
@@ -523,10 +500,10 @@ class TranslationsBencher {
    * @type {Record<string, {pageLanguage: string, tokenCount: number, wordCount: number}>}
    */
   static #PAGE_DATA = {
-    [SPANISH_BENCHMARK_PAGE_URL]: {
-      pageLanguage: "es",
-      tokenCount: 10966,
-      wordCount: 6944,
+    [ENGLISH_BENCHMARK_PAGE_URL]: {
+      pageLanguage: "en",
+      tokenCount: 12955,
+      wordCount: 9575,
     },
   };
 
@@ -706,6 +683,7 @@ class TranslationsBencher {
    * @param {string} options.page - The URL of the page to test.
    * @param {string} options.sourceLanguage - The BCP-47 language tag for the source language.
    * @param {string} options.targetLanguage - The BCP-47 language tag for the target language.
+   * @param {("tiny"|"base-memory"|"base")} options.architecture - The architecture of the model.
    * @param {number} options.speedBenchCount - The number of speed-sampling runs to perform.
    * @param {number} options.memoryBenchCount - The number of memory-sampling runs to perform.
    * @param {number} [options.memorySampleInterval] - The interval in milliseconds between memory usage samples.
@@ -716,6 +694,7 @@ class TranslationsBencher {
     page,
     sourceLanguage,
     targetLanguage,
+    architecture,
     speedBenchCount,
     memoryBenchCount,
     memorySampleInterval = 10,
@@ -766,6 +745,7 @@ class TranslationsBencher {
       journal,
       sourceLanguage,
       targetLanguage,
+      architecture,
       memoryBenchCount,
       memorySampleInterval,
     });
@@ -775,6 +755,7 @@ class TranslationsBencher {
       journal,
       sourceLanguage,
       targetLanguage,
+      architecture,
       wordCount,
       tokenCount,
       speedBenchCount,
@@ -792,6 +773,7 @@ class TranslationsBencher {
    * @param {TranslationsBencher.Journal} options.journal - The shared metrics journal.
    * @param {string} options.sourceLanguage - The BCP-47 language tag for the source language.
    * @param {string} options.targetLanguage - The BCP-47 language tag for the target language.
+   * @param {("tiny"|"base-memory"|"base")} options.architecture - The architecture of the model.
    * @param {number} options.memoryBenchCount - The number of runs to perform for memory sampling.
    * @param {number} options.memorySampleInterval - The interval in milliseconds between memory samples.
    *
@@ -802,6 +784,7 @@ class TranslationsBencher {
     journal,
     sourceLanguage,
     targetLanguage,
+    architecture,
     memoryBenchCount,
     memorySampleInterval,
   }) {
@@ -813,6 +796,7 @@ class TranslationsBencher {
           { fromLang: sourceLanguage, toLang: "en" },
           { fromLang: "en", toLang: targetLanguage },
         ],
+        architecture,
         prefs: [["browser.translations.logLevel", "Error"]],
         contentEagerMode: true,
       });
@@ -826,12 +810,8 @@ class TranslationsBencher {
         runInPage
       );
 
-      await FullPageTranslationsTestUtils.assertTranslationsButton(
-        { button: true, circleArrows: false, locale: false, icon: true },
-        "The button is available."
-      );
-
       await FullPageTranslationsTestUtils.openPanel({
+        openFromAppMenu: true,
         onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewIntro,
       });
 
@@ -917,6 +897,7 @@ class TranslationsBencher {
    * @param {TranslationsBencher.Journal} options.journal - The shared metrics journal.
    * @param {string} options.sourceLanguage - The BCP-47 language tag for the source language.
    * @param {string} options.targetLanguage - The BCP-47 language tag for the target language.
+   * @param {("tiny"|"base-memory"|"base")} options.architecture - The architecture of the model.
    * @param {number} options.wordCount - The total word count of the page.
    * @param {number} options.tokenCount - The total token count of the page.
    * @param {number} options.speedBenchCount - The number of runs to perform for speed sampling.
@@ -928,6 +909,7 @@ class TranslationsBencher {
     journal,
     sourceLanguage,
     targetLanguage,
+    architecture,
     wordCount,
     tokenCount,
     speedBenchCount,
@@ -940,6 +922,7 @@ class TranslationsBencher {
           { fromLang: sourceLanguage, toLang: "en" },
           { fromLang: "en", toLang: targetLanguage },
         ],
+        architecture,
         prefs: [["browser.translations.logLevel", "Error"]],
         contentEagerMode: true,
       });
@@ -948,12 +931,8 @@ class TranslationsBencher {
         runInPage
       );
 
-      await FullPageTranslationsTestUtils.assertTranslationsButton(
-        { button: true, circleArrows: false, locale: false, icon: true },
-        "The button is available."
-      );
-
       await FullPageTranslationsTestUtils.openPanel({
+        openFromAppMenu: true,
         onOpenPanel: FullPageTranslationsTestUtils.assertPanelViewIntro,
       });
 

@@ -46,22 +46,24 @@ add_task(async function test_TabGroupA11y() {
   );
 
   tabGroup.label = "test";
-  tabGroup.collapsed = true;
   await BrowserTestUtils.waitForCondition(
     () => tabGroup.labelElement.getAttribute("aria-label") == "test",
     "Tab group label was updated"
   );
+  await flushL10n();
+
   Assert.equal(
     tabGroup.labelElement.getAttribute("aria-label"),
     "test",
     "tab group label aria-label should equal the name of the tab group"
   );
-
   Assert.equal(
     tabGroup.labelElement.getAttribute("aria-description"),
     "test — Tab Group",
     "tab group label aria-description should provide the name of the tab group plus more context"
   );
+
+  await TabGroupTestUtils.toggleCollapsed(tabGroup, true);
 
   Assert.equal(
     tabGroup.labelElement.getAttribute("aria-expanded"),
@@ -165,12 +167,7 @@ add_task(async function test_collapsedTabGroupTooltips() {
   info(
     "Collapse the group to confirm tooltip state when tab group hover preview is enabled"
   );
-  let collapseFinished = BrowserTestUtils.waitForEvent(
-    group,
-    "TabGroupCollapse"
-  );
-  group.collapsed = true;
-  await collapseFinished;
+  await TabGroupTestUtils.toggleCollapsed(group, true);
   await flushL10n();
 
   Assert.equal(
@@ -192,10 +189,8 @@ add_task(async function test_collapsedTabGroupTooltips() {
   info(
     "Un-collapse and re-collapse group to ensure group picks up new pref setting"
   );
-  group.collapsed = false;
-  collapseFinished = BrowserTestUtils.waitForEvent(group, "TabGroupCollapse");
-  group.collapsed = true;
-  await collapseFinished;
+  await TabGroupTestUtils.toggleCollapsed(group, false);
+  await TabGroupTestUtils.toggleCollapsed(group, true);
   await flushL10n();
 
   Assert.equal(
@@ -226,4 +221,79 @@ add_task(async function test_collapsedTabGroupTooltips() {
   );
 
   await removeTabGroup(group);
+});
+
+add_task(async function test_tabGroupPreviewA11y() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.groups.hoverPreview.enabled", true]],
+  });
+
+  const tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  const group = gBrowser.addTabGroup([tab]);
+
+  Assert.ok(
+    !group.labelElement.getAttribute("aria-haspopup"),
+    "Group label does not have aria-haspopup attribute"
+  );
+
+  await TabGroupTestUtils.toggleCollapsed(group, true);
+
+  Assert.equal(
+    group.labelElement.getAttribute("aria-haspopup"),
+    "menu",
+    'Group label has aria-haspopup="menu"'
+  );
+
+  info("opening collapsed group preview");
+  let groupPreview = document.getElementById("tabgroup-preview-panel");
+  let groupPreviewShown = BrowserTestUtils.waitForPopupEvent(
+    groupPreview,
+    "shown"
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    group.labelElement,
+    {
+      type: "mouseover",
+    },
+    window
+  );
+  await groupPreviewShown;
+  await flushL10n();
+
+  Assert.equal(
+    groupPreview.getAttribute("aria-label"),
+    "Tabs in a collapsed group",
+    "Group preview panel has correct label"
+  );
+  Assert.equal(
+    group.labelElement.getAttribute("aria-description"),
+    "Tabs list open",
+    "Group label has a description indicating the preview is open"
+  );
+  Assert.equal(
+    groupPreview.querySelector("toolbarbutton").getAttribute("role"),
+    "button",
+    "Group menu items have correct role"
+  );
+
+  info("dismissing group preview");
+  let groupPreviewHidden = BrowserTestUtils.waitForPopupEvent(
+    groupPreview,
+    "hidden"
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    document.body,
+    { type: "mouseover" },
+    window
+  );
+  await groupPreviewHidden;
+
+  Assert.equal(
+    group.labelElement.getAttribute("aria-description"),
+    "Tabs list closed",
+    "Group label has a description indicating the preview is closed"
+  );
+
+  await TabGroupTestUtils.removeTabGroup(group);
+  await SpecialPowers.popPrefEnv();
 });

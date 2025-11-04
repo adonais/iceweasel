@@ -16,7 +16,7 @@ async def is_cookie_banner_onscreen(client):
         setInterval(() => {
           // wait for the animation to complete of the cookie bar sliding up.
           if (cookies.style.transform === "translate3d(0px, 0%, 0px)") {
-            done(button.getBoundingClientRect().bottom <= window.innerHeight);
+            done(button.getBoundingClientRect().bottom <= screen.height);
           }
         }, 100);
       """,

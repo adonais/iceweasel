@@ -516,6 +516,10 @@ class MochitestServer:
             self._httpdPath = SCRIPT_DIR
         self._httpdPath = os.path.abspath(self._httpdPath)
 
+        self._trainHop = "browser.newtabpage.trainhopAddon.version=any" in options.get(
+            "extraPrefs", []
+        )
+
         MochitestServer.instance_count += 1
 
     def start(self):
@@ -528,6 +532,11 @@ class MochitestServer:
             env["LD_LIBRARY_PATH"] = self._xrePath
         else:
             env["LD_LIBRARY_PATH"] = ":".join([self._xrePath, env["LD_LIBRARY_PATH"]])
+
+        if self._trainHop:
+            env["LD_LIBRARY_PATH"] = ":".join(
+                [os.path.join(os.path.dirname(here), "bin"), env["LD_LIBRARY_PATH"]]
+            )
 
         # When running with an ASan build, our xpcshell server will also be ASan-enabled,
         # thus consuming too much resources when running together with the browser on
@@ -996,6 +1005,7 @@ class MochitestDesktop:
         self.extraEnv = {}
         self.extraTestsDirs = []
         self.conditioned_profile_dir = None
+        self.perfherder_data = []
 
         if logger_options.get("log"):
             self.log = logger_options["log"]
@@ -2183,6 +2193,8 @@ toolbar#nav-bar {
         certutil = os.path.join(options.utilityPath, "certutil" + bin_suffix)
         pk12util = os.path.join(options.utilityPath, "pk12util" + bin_suffix)
         toolsEnv = env
+        if "browser.newtabpage.trainhopAddon.version=any" in options.extraPrefs:
+            toolsEnv["LD_LIBRARY_PATH"] = os.path.join(os.path.dirname(here), "bin")
         if mozinfo.info["asan"]:
             # Disable leak checking when running these tools
             toolsEnv["ASAN_OPTIONS"] = "detect_leaks=0"
@@ -3540,7 +3552,6 @@ toolbar#nav-bar {
                 "xorigin": options.xOriginTests,
                 "condprof": options.conditionedProfile,
                 "msix": "WindowsApps" in options.app,
-                "android_version": mozinfo.info.get("android_version", -1),
                 "android": mozinfo.info.get("android", False),
                 "is_emulator": mozinfo.info.get("is_emulator", False),
                 "coverage": mozinfo.info.get("coverage", False),
@@ -3678,6 +3689,13 @@ toolbar#nav-bar {
             print("3 INFO Todo:    %s" % self.counttodo)
             print("4 INFO Mode:    %s" % e10s_mode)
             print("5 INFO SimpleTest FINISHED")
+
+        if os.getenv("MOZ_AUTOMATION") and self.perfherder_data:
+            upload_dir = Path(os.getenv("MOZ_UPLOAD_DIR"))
+            for i, data in enumerate(self.perfherder_data):
+                out_path = upload_dir / f"perfherder-data-mochitest-{i}.json"
+                with out_path.open("w", encoding="utf-8") as f:
+                    f.write(json.dumps(data))
 
         self.handleShutdownProfile(options)
 
@@ -3894,7 +3912,7 @@ toolbar#nav-bar {
                         mozinfo.info.get("socketprocess_e10s", False)
                     )
                 )
-                self.log.info("runtests.py | Running tests: start.\n")
+                self.log.info(f"runtests.py | Running {scheme} tests: start.\n")
                 ret, _ = self.runApp(
                     testURL,
                     self.browserEnv,
@@ -3917,6 +3935,9 @@ toolbar#nav-bar {
                     runFailures=options.runFailures,
                     crashAsPass=options.crashAsPass,
                     currentManifest=manifestToFilter,
+                )
+                self.log.info(
+                    f"runtests.py | Running {scheme} tests: end. status: {ret}"
                 )
                 status = ret or status
         except KeyboardInterrupt:
@@ -3965,8 +3986,6 @@ toolbar#nav-bar {
                 stack_fixer=get_stack_fixer_function(utilityPath, options.symbolsPath),
                 scope=manifestToFilter,
             )
-
-        self.log.info("runtests.py | Running tests: end.")
 
         if self.manifest is not None:
             self.cleanup(options, False)
@@ -4169,6 +4188,7 @@ toolbar#nav-bar {
 
                 # Processing the message by the logger
                 self.harness.message_logger.process_message(msg)
+                self.parse_perfherder_data(msg)
 
         __call__ = processOutputLine
 
@@ -4320,6 +4340,13 @@ toolbar#nav-bar {
             if self.shutdownLeaks:
                 self.shutdownLeaks.log(message)
             return message
+
+        def parse_perfherder_data(self, message):
+            PERFHERDER_MATCHER = re.compile(r"PERFHERDER_DATA:\s*(\{.*\})\s*$")
+            match = PERFHERDER_MATCHER.search(message.get("message", ""))
+            if match:
+                data = json.loads(match.group(1))
+                self.harness.perfherder_data.append(data)
 
 
 def view_gecko_profile_from_mochitest(profile_path, options, profiler_logger):

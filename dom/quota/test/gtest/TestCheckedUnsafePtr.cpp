@@ -8,7 +8,6 @@
 
 #include "gtest/gtest.h"
 #include "mozilla/dom/quota/CheckedUnsafePtr.h"
-#include "mozilla/fallible.h"
 
 using namespace mozilla;
 

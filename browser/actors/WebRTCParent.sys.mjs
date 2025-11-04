@@ -493,6 +493,7 @@ function prompt(aActor, aBrowser, aRequest) {
     sharingScreen,
     sharingAudio,
     requestTypes,
+    isHandlingUserInput,
   } = aRequest;
 
   let principal =
@@ -801,6 +802,14 @@ function prompt(aActor, aBrowser, aRequest) {
         focusElement.focus();
       }
 
+      const isRequestingCamera = reqVideoInput === "Camera";
+
+      if (aTopic == "shown") {
+        if (!notification.wasDismissed && isRequestingCamera) {
+          onCameraPromptShown(doc, isHandlingUserInput);
+        }
+      }
+
       if (aTopic != "showing") {
         return false;
       }
@@ -1064,7 +1073,6 @@ function prompt(aActor, aBrowser, aRequest) {
         return item;
       }
 
-      let isRequestingCamera = reqVideoInput === "Camera";
       doc.getElementById("webRTC-selectCamera").hidden = !isRequestingCamera;
       doc.getElementById("webRTC-selectWindowOrScreen").hidden =
         reqVideoInput !== "Screen";
@@ -1606,6 +1614,42 @@ function getOrCreateWebRTCPreviewEl(chromeDoc) {
     previewSection.insertBefore(previewEl, previewSection.firstChild);
   }
   return previewEl;
+}
+
+/**
+ * On prompt "shown", if a camera permission request was made as the result of
+ * user interaction start the camera preview automatically.
+ * While websites don't have access to the camera preview, giving websites the
+ * ability to turn on the users camera without any user interaction can be
+ * scary. If there is no user input we offer the user to start the preview
+ * manually.
+ *
+ * @param {Document} doc - The chrome document containing the prompt.
+ * @param {boolean} isHandlingUserInput - Whether the prompt is shown as a
+ * result of user interaction.
+ */
+function onCameraPromptShown(doc, isHandlingUserInput) {
+  // Skip if the request was made without user input.
+  if (!isHandlingUserInput) {
+    return;
+  }
+
+  // Skip if the entire preview section is hidden.
+  if (doc.getElementById("webRTC-preview-section").hidden) {
+    return;
+  }
+
+  // Skip if no device is selected.
+  let cameraMenuPopup = doc.getElementById("webRTC-selectCamera-menupopup");
+  let deviceId = cameraMenuPopup?.querySelector("[selected]")?.deviceId;
+  if (!deviceId) {
+    return;
+  }
+
+  let webrtcPreview = doc.getElementById("webRTC-preview");
+  // Pass deviceId and mediaSource to make sure they're up to date,
+  // matching the user selection.
+  webrtcPreview?.startPreview({ deviceId, mediaSource: "camera" });
 }
 
 function isSidebar(browser) {

@@ -43,7 +43,7 @@ CommonSocketControl::CommonSocketControl(const nsCString& aHostName,
       mServerCert(nullptr),
       mCertificateTransparencyStatus(0),
       mMadeOCSPRequests(false),
-      mUsedPrivateDNS(false),
+      mUsedPrivateDNS(aProviderFlags & nsISocketProvider::USED_PRIVATE_DNS),
       mNPNCompleted(false),
       mResumed(false),
       mIsBuiltCertChainRootBuiltInRoot(false) {

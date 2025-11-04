@@ -25,6 +25,7 @@ use std::os::fd::{FromRawFd, IntoRawFd, OwnedFd, RawFd};
 use std::os::raw::c_char;
 use std::ptr;
 use std::sync::atomic::{AtomicU32, Ordering};
+use std::time::Duration;
 
 #[allow(unused_imports)]
 use std::ffi::CString;
@@ -197,7 +198,10 @@ pub extern "C" fn wgpu_server_device_poll(
     force_wait: bool,
 ) {
     let maintain = if force_wait {
-        wgt::PollType::Wait
+        wgt::PollType::Wait {
+            submission_index: None,
+            timeout: Some(Duration::from_secs(60)),
+        }
     } else {
         wgt::PollType::Poll
     };

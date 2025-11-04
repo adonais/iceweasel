@@ -67,14 +67,6 @@ tasks:
             platform: linux-aarch64
             last-watershed: "140.0esr"
 
-    firefox-next-linux:
-        shipping-product: firefox
-        treeherder:
-            platform: linux32-shippable/opt
-        attributes:
-            build_platform: linux-shippable
-        extra:
-            platform: linux-i686
     firefox-next-linux64:
         shipping-product: firefox
         treeherder:

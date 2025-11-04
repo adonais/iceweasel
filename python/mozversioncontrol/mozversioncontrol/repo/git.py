@@ -116,7 +116,11 @@ class GitRepository(Repository):
             )
 
         for line in remotes:
-            name, url, action = line.split()
+            parts = line.split()
+            if len(parts) < 3:
+                continue
+
+            name, url, action, *_ = parts
 
             # Only consider fetch sources.
             if action != "(fetch)":

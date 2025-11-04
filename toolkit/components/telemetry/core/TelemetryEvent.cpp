@@ -85,7 +85,7 @@ struct EventMarker {
         "{marker.data.cat}.{marker.data.met}#{marker.data.obj} "
         "{marker.data.val}");
     schema.SetTableLabel(
-        "{marker.name} - {marker.data.cat}.{marker.data.met}#"
+        "{marker.data.cat}.{marker.data.met}#"
         "{marker.data.obj} {marker.data.val}");
     return schema;
   }

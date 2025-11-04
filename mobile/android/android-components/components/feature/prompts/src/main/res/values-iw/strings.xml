@@ -52,6 +52,8 @@
   <string name="mozac_feature_prompts_deny">לדחות</string>
   <!-- Text of the title of a dialog when a page is requesting to open a new window. -->
   <string name="mozac_feature_prompts_popup_dialog_title">לאפשר לאתר זה להיפתח?</string>
+  <!-- Text of the title of a dialog when a third-party redirect is blocked. -->
+  <string name="mozac_feature_prompts_redirect_dialog_title">לאפשר הפניה לאתר זה?</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_title">להמשיך?</string>
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->

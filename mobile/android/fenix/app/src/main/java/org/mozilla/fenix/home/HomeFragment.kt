@@ -18,10 +18,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -32,6 +35,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat.getColor
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Observer
@@ -40,7 +44,6 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.appbar.AppBarLayout
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
@@ -49,7 +52,6 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.compose.base.Divider
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.cfr.CFRPopup
 import mozilla.components.compose.cfr.CFRPopupProperties
@@ -86,16 +88,21 @@ import org.mozilla.fenix.components.appstate.AppAction.ContentRecommendationsAct
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction
 import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.MicrosurveyAction
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction.CheckIfEligibleForReviewPrompt
-import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction.ReviewPromptShown
-import org.mozilla.fenix.components.appstate.AppState
+import org.mozilla.fenix.components.appstate.OrientationMode
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.components.toolbar.BottomToolbarContainerView
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
+import org.mozilla.fenix.compose.utils.KeyboardState
+import org.mozilla.fenix.compose.utils.keyboardAsState
 import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.getBottomToolbarHeight
+import org.mozilla.fenix.ext.getTopToolbarHeight
 import org.mozilla.fenix.ext.hideToolbar
+import org.mozilla.fenix.ext.isTallWindow
 import org.mozilla.fenix.ext.isToolbarAtBottom
+import org.mozilla.fenix.ext.isWideWindow
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.recordEventInNimbus
 import org.mozilla.fenix.ext.requireComponents
@@ -149,8 +156,7 @@ import org.mozilla.fenix.pbmlock.NavigationOrigin
 import org.mozilla.fenix.pbmlock.observePrivateModeLock
 import org.mozilla.fenix.perf.MarkersFragmentLifecycleCallbacks
 import org.mozilla.fenix.perf.StartupTimeline
-import org.mozilla.fenix.reviewprompt.ReviewPromptState
-import org.mozilla.fenix.reviewprompt.ReviewPromptState.Eligible.Type
+import org.mozilla.fenix.reviewprompt.ShowPlayStoreReviewPrompt
 import org.mozilla.fenix.search.SearchDialogFragment
 import org.mozilla.fenix.search.awesomebar.AwesomeBarComposable
 import org.mozilla.fenix.search.toolbar.DefaultSearchSelectorController
@@ -206,7 +212,7 @@ class HomeFragment : Fragment() {
                     Snackbar.make(
                         snackBarParentView = binding.dynamicSnackbarContainer,
                         snackbarState = SnackbarState(
-                            message = it.context.getString(R.string.create_collection_tab_saved),
+                            message = it.context.getString(R.string.create_collection_tab_saved_2),
                             duration = SnackbarState.Duration.Preset.Long,
                         ),
                     ).show()
@@ -250,24 +256,19 @@ class HomeFragment : Fragment() {
     private val searchSelectorBinding = ViewBoundFeatureWrapper<SearchSelectorBinding>()
     private val searchSelectorMenuBinding = ViewBoundFeatureWrapper<SearchSelectorMenuBinding>()
     private val thumbnailsFeature = ViewBoundFeatureWrapper<HomepageThumbnailIntegration>()
-
-    private val voiceSearchFeature by lazy(LazyThreadSafetyMode.NONE) {
-        ViewBoundFeatureWrapper<VoiceSearchFeature>()
-    }
-
-    private val qrScanFenixFeature by lazy(LazyThreadSafetyMode.NONE) {
+    private var qrScanFenixFeature: ViewBoundFeatureWrapper<QrScanFenixFeature>? =
         ViewBoundFeatureWrapper<QrScanFenixFeature>()
-    }
-
-    private val voiceSearchLauncher: ActivityResultLauncher<Intent> =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            voiceSearchFeature.get()?.handleVoiceSearchResult(result.resultCode, result.data)
-        }
-
     private val qrScanLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            qrScanFenixFeature.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
+            qrScanFenixFeature?.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
         }
+    private var voiceSearchFeature: ViewBoundFeatureWrapper<VoiceSearchFeature>? =
+        ViewBoundFeatureWrapper<VoiceSearchFeature>()
+    private val voiceSearchLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            voiceSearchFeature?.get()?.handleVoiceSearchResult(result.resultCode, result.data)
+        }
+    private val showPlayStoreReviewPrompt = ViewBoundFeatureWrapper<ShowPlayStoreReviewPrompt>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // DO NOT ADD ANYTHING ABOVE THIS getProfilerTime CALL!
@@ -610,16 +611,6 @@ class HomeFragment : Fragment() {
                     hideWhenKeyboardShown = true,
                 )
 
-                voiceSearchFeature.set(
-                    feature = VoiceSearchFeature(
-                        context = activity,
-                        appStore = activity.components.appStore,
-                        voiceSearchLauncher = voiceSearchLauncher,
-                    ),
-                    owner = viewLifecycleOwner,
-                    view = binding.root,
-                )
-
                 HomeToolbarComposable(
                     context = activity,
                     homeBinding = binding,
@@ -653,7 +644,7 @@ class HomeFragment : Fragment() {
 
     private fun buildToolbarStore(activity: HomeActivity) = HomeToolbarStoreBuilder.build(
         context = activity,
-        lifecycleOwner = this,
+        fragment = this,
         navController = findNavController(),
         appStore = requireContext().components.appStore,
         browserStore = requireContext().components.core.store,
@@ -756,7 +747,7 @@ class HomeFragment : Fragment() {
                                         updateToolbarViewUIForMicrosurveyPrompt()
                                     }
 
-                                    Divider()
+                                    HorizontalDivider()
 
                                     MicrosurveyRequestPrompt(
                                         microsurvey = it,
@@ -855,7 +846,7 @@ class HomeFragment : Fragment() {
         binding.homeAppBar.setExpanded(true)
     }
 
-    @Suppress("LongMethod", "ComplexMethod")
+    @Suppress("LongMethod")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         // DO NOT ADD ANYTHING ABOVE THIS getProfilerTime CALL!
         val profilerStartTime = requireComponents.core.engine.profiler?.getProfilerTime()
@@ -916,15 +907,8 @@ class HomeFragment : Fragment() {
         }
 
         if (requireContext().settings().shouldUseComposableToolbar) {
-            qrScanFenixFeature.set(
-                feature = QrScanFenixFeature(
-                    context = requireContext(),
-                    appStore = requireContext().components.appStore,
-                    qrScanActivityLauncher = qrScanLauncher,
-                ),
-                owner = viewLifecycleOwner,
-                view = binding.root,
-            )
+            qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
+            voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
         }
 
         (toolbarView as? HomeToolbarView)?.let {
@@ -951,7 +935,17 @@ class HomeFragment : Fragment() {
             view = view,
         )
 
-        observeReviewPromptState()
+        showPlayStoreReviewPrompt.set(
+            feature = ShowPlayStoreReviewPrompt(
+                appStore = requireComponents.appStore,
+                promptController = requireComponents.playStoreReviewPromptController,
+                activityRef = WeakReference(activity),
+                uiScope = viewLifecycleOwner.lifecycleScope,
+                navigationDirection = { findNavController().navigate(it) },
+            ),
+            owner = viewLifecycleOwner,
+            view = view,
+        )
 
         // DO NOT MOVE ANYTHING BELOW THIS addMarker CALL!
         requireComponents.core.engine.profiler?.addMarker(
@@ -978,6 +972,19 @@ class HomeFragment : Fragment() {
                             // Without this, transient states can cause visual glitches (e.g., incorrect theme/frame)
                             flow().distinctUntilChanged { old, new -> old.mode != new.mode }
                         }.collectAsState(state)
+                    }
+                    val isInPortrait by remember {
+                        derivedStateOf {
+                            appState.value.orientation == OrientationMode.Portrait
+                        }
+                    }
+                    val keyboardState by keyboardAsState()
+
+                    LaunchedEffect(isInPortrait, keyboardState) {
+                        updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                            topMargin = getTopToolbarHeight()
+                            bottomMargin = getBottomToolbarHeight(keyboardState == KeyboardState.Closed)
+                        }
                     }
 
                     if (settings.enableHomepageSearchBar) {
@@ -1061,7 +1068,9 @@ class HomeFragment : Fragment() {
         FirefoxTheme {
             TabStrip(
                 isSelectDisabled = isSelectDisabled,
-                showActionButtons = context?.settings()?.shouldUseExpandedToolbar != true,
+                // Show action buttons only if the navigation bar (which has the same buttons) is not showing.
+                showActionButtons =
+                    context?.settings()?.shouldUseExpandedToolbar == false || !isTallWindow() || isWideWindow(),
                 onAddTabClick = {
                     if (requireContext().settings().enableHomepageAsNewTab) {
                         requireComponents.useCases.fenixBrowserUseCases.addNewHomepageTab(
@@ -1386,49 +1395,6 @@ class HomeFragment : Fragment() {
         ).also {
             awesomeBarComposable = it
         }
-    }
-
-    private fun observeReviewPromptState() {
-        consumeFlow(requireComponents.appStore) { appStates ->
-            val components = context?.components ?: return@consumeFlow
-            val activity = activity ?: return@consumeFlow
-
-            observeReviewPromptState(
-                appStates = appStates,
-                dispatchAction = components.appStore::dispatch,
-                tryShowPlayStorePrompt = { components.playStoreReviewPromptController.tryPromptReview(activity) },
-                showCustomPrompt = {
-                    findNavController().navigate(
-                        NavGraphDirections.actionGlobalCustomReviewPromptDialogFragment(),
-                    )
-                },
-            )
-        }
-    }
-
-    @VisibleForTesting
-    internal suspend fun observeReviewPromptState(
-        appStates: Flow<AppState>,
-        dispatchAction: (AppAction) -> Unit,
-        tryShowPlayStorePrompt: suspend () -> Unit,
-        showCustomPrompt: () -> Unit,
-    ) {
-        appStates
-            .map { it.reviewPrompt }
-            .distinctUntilChanged()
-            .collect {
-                when (it) {
-                    ReviewPromptState.Unknown, ReviewPromptState.NotEligible -> {}
-
-                    is ReviewPromptState.Eligible -> {
-                        when (it.type) {
-                            Type.PlayStore -> tryShowPlayStorePrompt()
-                            Type.Custom -> showCustomPrompt()
-                        }
-                        dispatchAction(ReviewPromptShown)
-                    }
-                }
-            }
     }
 
     companion object {

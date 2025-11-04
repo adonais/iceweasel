@@ -69,6 +69,7 @@ enum class PlainObjectSlotsKind {
   Slots0,
   Slots2,
   Slots4,
+  Slots6,
   Slots8,
   Slots12,
   Slots16,
@@ -84,6 +85,8 @@ static PlainObjectSlotsKind PlainObjectSlotsKindFromAllocKind(
       return PlainObjectSlotsKind::Slots2;
     case gc::AllocKind::OBJECT4:
       return PlainObjectSlotsKind::Slots4;
+    case gc::AllocKind::OBJECT6:
+      return PlainObjectSlotsKind::Slots6;
     case gc::AllocKind::OBJECT8:
       return PlainObjectSlotsKind::Slots8;
     case gc::AllocKind::OBJECT12:

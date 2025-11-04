@@ -225,6 +225,7 @@
   movable: true
   congruent_to: if_operands_equal
   alias_set: none
+  can_recover: true
   generate_lir: true
 
 - name: IsConstructing
@@ -1921,18 +1922,7 @@
 
 # Inlined TypedArray.prototype.subarray
 - name: TypedArraySubarray
-  operands:
-    object: Object
-    start: IntPtr
-    length: IntPtr
-  arguments:
-    templateObject: JSObject*
-    initialHeap: gc::Heap
-  result_type: Object
-  alias_set: none
-  can_recover: true
-  possibly_calls: true
-  generate_lir: true
+  gen_boilerplate: false
 
 - name: ToIntegerIndex
   operands:
@@ -2674,6 +2664,7 @@
   folds_to: custom
   # A function's environment is fixed.
   alias_set: none
+  can_recover: true
   generate_lir: true
 
 # Allocate a new BlockLexicalEnvironmentObject.
@@ -3326,7 +3317,16 @@
   congruent_to: if_operands_equal
   alias_set: custom
   generate_lir: true
-  lir_temps: 1
+
+- name: SuperFunctionAndUnbox
+  operands:
+    callee: Object
+  result_type: Object
+  movable: true
+  guard: true
+  congruent_to: if_operands_equal
+  alias_set: custom
+  generate_lir: true
 
 - name: InitHomeObject
   operands:
@@ -3946,6 +3946,8 @@
   type_policy: none
   generate_lir: true
   lir_temps: 1
+  alias_set: none
+  guard: true
 
 - name: WasmExtendU32Index
   operands:

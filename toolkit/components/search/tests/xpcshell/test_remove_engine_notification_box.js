@@ -69,13 +69,13 @@ add_setup(async function () {
 add_task(async function test_initial_config_correct() {
   const installedEngines = await Services.search.getAppProvidedEngines();
   Assert.deepEqual(
-    installedEngines.map(e => e.identifier),
+    installedEngines.map(e => e.id),
     ["engine_to_remove", "engine_to_keep"],
     "Should have the correct list of engines installed."
   );
 
   Assert.equal(
-    (await Services.search.getDefault()).identifier,
+    (await Services.search.getDefault()).id,
     "engine_to_remove",
     "Should have loaded the expected default engine"
   );

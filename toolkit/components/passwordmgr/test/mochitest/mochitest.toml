@@ -67,7 +67,7 @@ scheme = "https"
 run-if = ["os != 'android'"] # autocomplete
 skip-if = [
   "xorigin", # Bug 1716412 - New fission platform triage
-  "display == 'wayland' && os_version == '22.04'", # Bug 1857071
+  "os == 'linux' && os_version == '22.04' && display == 'wayland'", # Bug 1857071
 ]
 scheme = "https"
 

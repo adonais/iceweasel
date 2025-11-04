@@ -405,35 +405,27 @@ add_task(async function test() {
       },
       otherResults: [
         // heuristic
-        Object.assign(
-          new UrlbarResult(
-            UrlbarUtils.RESULT_TYPE.SEARCH,
-            UrlbarUtils.RESULT_SOURCE.SEARCH,
-            {
-              engine: "test",
-              suggestion: "foo",
-              lowerCaseSuggestion: "foo",
-            }
-          ),
-          {
-            heuristic: true,
-            group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
-          }
-        ),
+        new UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.SEARCH,
+          source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+          heuristic: true,
+          group: UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST,
+          payload: {
+            engine: "test",
+            suggestion: "foo",
+            lowerCaseSuggestion: "foo",
+          },
+        }),
         // global suggestedIndex with resultSpan = 2
-        Object.assign(
-          new UrlbarResult(
-            UrlbarUtils.RESULT_TYPE.SEARCH,
-            UrlbarUtils.RESULT_SOURCE.SEARCH,
-            {
-              engine: "test",
-            }
-          ),
-          {
-            suggestedIndex: 1,
-            resultSpan: 2,
-          }
-        ),
+        new UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.SEARCH,
+          source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+          suggestedIndex: 1,
+          resultSpan: 2,
+          payload: {
+            engine: "test",
+          },
+        }),
         // remote suggestions
         ...makeRemoteSuggestionResults(),
       ],
@@ -571,11 +563,11 @@ function makeHistoryResults(count = MAX_RESULTS) {
   let results = [];
   for (let i = 0; i < count; i++) {
     results.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        { url: "http://example.com/" + i }
-      )
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: { url: "http://example.com/" + i },
+      })
     );
   }
   return results;
@@ -585,16 +577,16 @@ function makeRemoteSuggestionResults(count = MAX_RESULTS) {
   let results = [];
   for (let i = 0; i < count; i++) {
     results.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.SEARCH,
-        UrlbarUtils.RESULT_SOURCE.SEARCH,
-        {
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.SEARCH,
+        source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        payload: {
           engine: "test",
           query: "test",
           suggestion: "test " + i,
           lowerCaseSuggestion: "test " + i,
-        }
-      )
+        },
+      })
     );
   }
   return results;
@@ -604,15 +596,15 @@ function makeFormHistoryResults(count = MAX_RESULTS) {
   let results = [];
   for (let i = 0; i < count; i++) {
     results.push(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.SEARCH,
-        UrlbarUtils.RESULT_SOURCE.HISTORY,
-        {
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.SEARCH,
+        source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+        payload: {
           engine: "test",
           suggestion: "test " + i,
           lowerCaseSuggestion: "test " + i,
-        }
-      )
+        },
+      })
     );
   }
   return results;
@@ -621,18 +613,16 @@ function makeFormHistoryResults(count = MAX_RESULTS) {
 function makeSuggestedIndexResults(objects) {
   return objects.map(({ suggestedIndex, group }) =>
     Object.assign(
-      new UrlbarResult(
-        UrlbarUtils.RESULT_TYPE.URL,
-        UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-        {
-          url: "http://example.com/si " + suggestedIndex,
-        }
-      ),
-      {
+      new UrlbarResult({
+        type: UrlbarUtils.RESULT_TYPE.URL,
+        source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         group,
         suggestedIndex,
         isSuggestedIndexRelativeToGroup: true,
-      }
+        payload: {
+          url: "http://example.com/si " + suggestedIndex,
+        },
+      })
     )
   );
 }

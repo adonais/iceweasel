@@ -788,6 +788,14 @@ public class GeckoAppShell {
   private static native void notifyAlertListener(
       String name, String topic, String action, String origin);
 
+  /** Called by the NotificationListener to notify Gecko that a notification has shown. */
+  public static void onNotificationShow(
+      final String name, final String cookie, @NotNull final String origin) {
+    if (GeckoThread.isRunning()) {
+      notifyAlertListener(name, "alertshow", cookie, origin);
+    }
+  }
+
   /**
    * Called by the NotificationListener to notify Gecko that a previously shown notification has
    * been closed.
@@ -1762,6 +1770,18 @@ public class GeckoAppShell {
   }
 
   @WrapForJNI
+  private static void crashByUncaughtException() {
+    final Thread crashThread =
+        new Thread("UncaughtExceptionThread") {
+          @Override
+          public void run() {
+            throw new IllegalStateException();
+          }
+        };
+    crashThread.start();
+  }
+
+  @WrapForJNI
   public static native boolean isParentProcess();
 
   @WrapForJNI
@@ -1783,4 +1803,7 @@ public class GeckoAppShell {
 
   @WrapForJNI(dispatchTo = "gecko")
   public static native void onTimezoneChanged();
+
+  @WrapForJNI
+  public static native void logGpuProcessLaunchFailure(String aMessage);
 }

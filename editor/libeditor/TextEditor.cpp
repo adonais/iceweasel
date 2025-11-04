@@ -372,6 +372,22 @@ NS_IMETHODIMP TextEditor::InsertLineBreak() {
   return EditorBase::ToGenericNSResult(rv);
 }
 
+nsresult TextEditor::ComputeTextValue(nsAString& aString) const {
+  Element* anonymousDivElement = GetRoot();
+  if (NS_WARN_IF(!anonymousDivElement)) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  auto* text = Text::FromNodeOrNull(anonymousDivElement->GetFirstChild());
+  if (MOZ_UNLIKELY(!text)) {
+    MOZ_ASSERT_UNREACHABLE("how?");
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  text->GetData(aString);
+  return NS_OK;
+}
+
 nsresult TextEditor::InsertLineBreakAsAction(nsIPrincipal* aPrincipal) {
   AutoEditActionDataSetter editActionData(*this, EditAction::eInsertLineBreak,
                                           aPrincipal);

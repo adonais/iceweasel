@@ -7,14 +7,10 @@
 import PropTypes from "resource://devtools/client/shared/vendor/react-prop-types.mjs";
 import { span } from "resource://devtools/client/shared/vendor/react-dom-factories.mjs";
 
-import { lengthBubble } from "resource://devtools/client/shared/components/reps/shared/grip-length-bubble.mjs";
-import {
-  interleave,
-  wrapRender,
-  ellipsisElement,
-} from "resource://devtools/client/shared/components/reps/reps/rep-utils.mjs";
-import PropRep from "resource://devtools/client/shared/components/reps/reps/prop-rep.mjs";
-import { MODE } from "resource://devtools/client/shared/components/reps/reps/constants.mjs";
+import { lengthBubble } from "../shared/grip-length-bubble.mjs";
+import { interleave, wrapRender, ellipsisElement } from "./rep-utils.mjs";
+import PropRep from "./prop-rep.mjs";
+import { MODE } from "./constants.mjs";
 
 /**
  * Renders an map. A map is represented by a list of its

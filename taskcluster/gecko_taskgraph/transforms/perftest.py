@@ -273,6 +273,7 @@ def create_duplicate_simpleperf_jobs(config, jobs):
         ):
             new_job = deepcopy(job)
             new_job["run-on-projects"] = []
+            new_job["attributes"] = {"cron": False}
             new_job["dependencies"] = {
                 "android-aarch64-shippable": "build-android-aarch64-shippable/opt"
             }
@@ -286,14 +287,17 @@ def create_duplicate_simpleperf_jobs(config, jobs):
             new_job["treeherder"]["symbol"] = str(
                 new_job["treeherder"]["symbol"]
             ).replace(")", "-profile)")
-            new_job["fetches"]["toolchain"].append(
-                "linux64-android-simpleperf-linux-repack"
+            new_job["fetches"]["toolchain"].extend(
+                [
+                    "linux64-android-simpleperf-linux-repack",
+                    "linux64-samply",
+                    "symbolicator-cli",
+                ]
             )
-            new_job["fetches"]["toolchain"].append("linux64-samply")
             new_job["fetches"]["android-aarch64-shippable"] = [
                 {
                     "artifact": "target.crashreporter-symbols.zip",
-                    "extract": True,
+                    "extract": False,
                 }
             ]
             yield new_job

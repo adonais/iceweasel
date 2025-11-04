@@ -207,7 +207,7 @@ nsresult nsHtml5Parser::Parse(const nsAString& aSourceBuffer, void* aKey,
       return NS_OK;
     }
     mDocumentClosed = true;
-    if (!mBlocked && !mInDocumentWrite) {
+    if (!mBlocked && !mInDocumentWrite && !executor->IsFlushing()) {
       return ParseUntilBlocked();
     }
     return NS_OK;

@@ -236,6 +236,8 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 
   const char* name() const { return StringFromIPCMessageType(type()); }
 
+  bool has_any_attachments() const;
+
   uint32_t num_handles() const;
 
   bool is_relay() const { return header()->flags.IsRelay(); }

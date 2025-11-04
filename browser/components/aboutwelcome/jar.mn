@@ -40,3 +40,5 @@ browser.jar:
   content/activity-stream/data/content/assets/tabs-side-zap-transparent.svg                 (./assets/tabs-side-zap-transparent.svg)
   content/activity-stream/data/content/assets/tabs-top-zap-transparent.svg                  (./assets/tabs-top-zap-transparent.svg)
   content/activity-stream/data/content/assets/nuo-taborientation.svg                        (./assets/nuo-taborientation.svg)
+  content/activity-stream/data/content/assets/fox-doodle-backup.svg                         (./assets/fox-doodle-backup.svg)
+    content/activity-stream/data/content/assets/fox-doodle-backup-restore.svg                         (./assets/fox-doodle-backup-restore.svg)

@@ -85,7 +85,7 @@ add_task(async function () {
   info("Open the response panel and wait for initial chunk of the data");
   const waitForResponsePanel = waitForDOM(
     document,
-    "#response-panel .CodeMirror-code"
+    "#response-panel .cm-content"
   );
   store.dispatch(Actions.toggleNetworkDetails());
   clickOnSidebarTab(document, "response");

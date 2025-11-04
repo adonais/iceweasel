@@ -464,11 +464,9 @@ Here's how you'd set it up in a spec:
 
 Here's how the implementation would look:
 
-    const EventEmitter = require("devtools/shared/event-emitter");
-
     // In your Actor class:
     giveGoodNews(news) {
-      EventEmitter.emit(this, "good-news", news);
+      this.emit("good-news", news);
     }
 
 Now you can listen to events on a front:

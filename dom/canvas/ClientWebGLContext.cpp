@@ -26,6 +26,7 @@
 #include "mozilla/StaticPrefs_webgl.h"
 #include "mozilla/dom/BufferSourceBinding.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/GeneratePlaceholderCanvasData.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/dom/WebGLContextEvent.h"
@@ -1357,8 +1358,8 @@ UniquePtr<uint8_t[]> ClientWebGLContext::GetImageBuffer(
 NS_IMETHODIMP
 ClientWebGLContext::GetInputStream(
     const char* mimeType, const nsAString& encoderOptions,
-    mozilla::CanvasUtils::ImageExtraction spoofing,
-    nsIInputStream** out_stream) {
+    mozilla::CanvasUtils::ImageExtraction extractionBehavior,
+    const nsACString& randomizationKey, nsIInputStream** out_stream) {
   // Use GetSurfaceSnapshot() to make sure that appropriate y-flip gets applied
   gfxAlphaType any;
   RefPtr<gfx::SourceSurface> snapshot = GetSurfaceSnapshot(&any);
@@ -3476,6 +3477,26 @@ static inline size_t SizeOfViewElem(const dom::ArrayBufferView& view) {
   return js::Scalar::byteSize(elemType);
 }
 
+CanvasUtils::ImageExtraction ImageExtractionResult(
+    dom::HTMLCanvasElement* aCanvasElement,
+    dom::OffscreenCanvas* aOffscreenCanvas) {
+  if (aCanvasElement) {
+    return CanvasUtils::ImageExtractionResult(
+        aCanvasElement, nsContentUtils::GetCurrentJSContext(),
+        aCanvasElement->NodePrincipal());
+  }
+  if (aOffscreenCanvas) {
+    return CanvasUtils::ImageExtractionResult(
+        aOffscreenCanvas, nsContentUtils::GetCurrentJSContext(),
+        aOffscreenCanvas->GetOwnerGlobal()->PrincipalOrNull());
+  }
+
+  MOZ_ASSERT_UNREACHABLE(
+      "Who called ReadPixels or GetBufferSubData without a canvas and how?");
+
+  return CanvasUtils::ImageExtraction::Unrestricted;
+}
+
 void ClientWebGLContext::GetBufferSubData(GLenum target, GLintptr srcByteOffset,
                                           const dom::ArrayBufferView& dstData,
                                           GLuint dstElemOffset,
@@ -3494,6 +3515,29 @@ void ClientWebGLContext::GetBufferSubData(GLenum target, GLintptr srcByteOffset,
     if (!destView) {
       return;
     }
+
+    RefPtr<ClientWebGLContext> self(this);
+    auto randomizeOnExit = MakeScopeExit([&, self] {
+      CanvasUtils::ImageExtraction extraction =
+          ImageExtractionResult(self->mCanvasElement, self->mOffscreenCanvas);
+
+      if (extraction == CanvasUtils::ImageExtraction::Placeholder) {
+        dom::GeneratePlaceholderCanvasData(destView->size_bytes(),
+                                           destView->Elements());
+      } else if (extraction == CanvasUtils::ImageExtraction::Randomize) {
+        // We have no idea what's in the buffer. So, we randomize it as if each
+        // elemSize bytes is a single element.
+        uint8_t elementsPerGroup = 1,
+                bytesPerElement = static_cast<uint8_t>(elemSize),
+                elementOffset = 0;
+        bool skipLastElement = false;
+
+        nsRFPService::RandomizeElements(
+            GetCookieJarSettings(), PrincipalOrNull(), destView->data(),
+            destView->size_bytes(), elementsPerGroup, bytesPerElement,
+            elementOffset, skipLastElement);
+      }
+    });
 
     const auto& inProcessContext = notLost->inProcess;
     if (inProcessContext) {
@@ -5211,7 +5255,35 @@ void ClientWebGLContext::ReadPixels(GLint x, GLint y, GLsizei width,
                                             *uvec2::From(width, height),
                                             {format, type},
                                             state.mPixelPackState};
-    (void)DoReadPixels(desc, *range);
+    bool succeeded = DoReadPixels(desc, *range);
+    if (succeeded) {
+      CanvasUtils::ImageExtraction extraction =
+          ImageExtractionResult(mCanvasElement, mOffscreenCanvas);
+
+      if (extraction == CanvasUtils::ImageExtraction::Placeholder) {
+        dom::GeneratePlaceholderCanvasData(range->size(), range->Elements());
+      } else if (extraction == CanvasUtils::ImageExtraction::Randomize) {
+        const auto pii = webgl::PackingInfoInfo::For(desc.pi);
+        // DoReadPixels() requres pii to be Some().
+        MOZ_ASSERT(pii.isSome());
+
+        // With WebGL, the alpha channel is always the last element (if it
+        // exists) in the pixel. With nsRFPService::RandomizeElements, we do
+        // random % (pii->elementsPerPixel - 1) + offset to get the channel
+        // we want to randomize. With the offset being 0, we avoid the last
+        // element, which is the alpha channel.
+        // If WebGL had ARGB or some other format where the alpha channel
+        // was not the last element, we would need to adjust the offset.
+        constexpr uint8_t alphaChannelOffset = 0;
+        bool hasAlphaChannel =
+            format == LOCAL_GL_SRGB_ALPHA || format == LOCAL_GL_RGBA ||
+            format == LOCAL_GL_BGRA || format == LOCAL_GL_LUMINANCE_ALPHA;
+        nsRFPService::RandomizeElements(
+            GetCookieJarSettings(), PrincipalOrNull(), range->data(),
+            range->size_bytes(), pii->elementsPerPixel, pii->bytesPerElement,
+            alphaChannelOffset, hasAlphaChannel);
+      }
+    }
   });
 }
 

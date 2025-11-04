@@ -22,7 +22,7 @@ from mozbuild.util import cpu_count
     description="Generate a project and launch an IDE.",
     virtualenv_name="ide",
 )
-@CommandArgument("ide", choices=["eclipse", "visualstudio", "vscode"])
+@CommandArgument("ide", choices=["eclipse", "visualstudio", "vscode", "vscodium"])
 @CommandArgument(
     "--no-interactive",
     default=False,
@@ -75,7 +75,7 @@ def run(command_context, ide, no_interactive, args):
         backend = "CppEclipse"
     elif ide == "visualstudio":
         backend = "VisualStudio"
-    elif ide == "vscode":
+    elif ide == "vscode" or ide == "vscodium":
         if not command_context.config_environment.is_artifact_build:
             backend = "Clangd"
 
@@ -93,8 +93,8 @@ def run(command_context, ide, no_interactive, args):
     elif ide == "visualstudio":
         visual_studio_workspace_dir = get_visualstudio_workspace_path(command_context)
         subprocess.call(["explorer.exe", visual_studio_workspace_dir])
-    elif ide == "vscode":
-        return setup_vscode(command_context, interactive)
+    elif ide == "vscode" or ide == "vscodium":
+        return setup_vscode_or_vscodium(ide, command_context, interactive)
 
 
 def get_eclipse_workspace_path(command_context):
@@ -111,12 +111,12 @@ def get_visualstudio_workspace_path(command_context):
     )
 
 
-def setup_vscode(command_context, interactive):
-    from mozbuild.backend.clangd import find_vscode_cmd
+def setup_vscode_or_vscodium(ide, command_context, interactive):
+    from mozbuild.backend.clangd import find_vscode_or_vscodium_cmd
 
     # Check if platform has VSCode installed
     if interactive:
-        vscode_cmd = find_vscode_cmd()
+        vscode_cmd = find_vscode_or_vscodium_cmd(ide)
         if vscode_cmd is None:
             choice = prompt_bool(
                 "VSCode cannot be found, and may not be installed. Proceed?"

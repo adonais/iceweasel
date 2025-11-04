@@ -21,7 +21,7 @@ import {
   unreachable,
 } from '../common/util/util.js';
 
-import { kLimits, kQueryTypeInfo, WGSLLanguageFeature } from './capability_info.js';
+import { kPossibleLimits, kQueryTypeInfo, WGSLLanguageFeature } from './capability_info.js';
 import { InterpolationType, InterpolationSampling } from './constants.js';
 import {
   resolvePerAspectFormat,
@@ -39,6 +39,7 @@ import {
   textureViewDimensionAndFormatCompatibleForDevice,
   textureDimensionAndFormatCompatibleForDevice,
   isTextureFormatUsableWithStorageAccessMode,
+  isTextureFormatUsableWithCopyExternalImageToTexture,
 } from './format_info.js';
 import { checkElementsEqual, checkElementsBetween } from './util/check_contents.js';
 import { CommandBufferMaker, EncoderType } from './util/command_buffer_maker.js';
@@ -351,7 +352,7 @@ export class GPUTestBase extends Fixture<GPUTestSubcaseBatchState> {
     return globalTestConfig.compatibility;
   }
 
-  makeLimitVariant(limit: (typeof kLimits)[number], variant: ValueTestVariant) {
+  makeLimitVariant(limit: (typeof kPossibleLimits)[number], variant: ValueTestVariant) {
     return makeValueTestVariant(this.device.limits[limit]!, variant);
   }
 
@@ -641,6 +642,13 @@ export class GPUTestBase extends Fixture<GPUTestSubcaseBatchState> {
     this.skipIf(
       !this.canCallCopyTextureToBufferWithTextureFormat(format),
       `can not use copyTextureToBuffer with ${format}`
+    );
+  }
+
+  skipIfTextureFormatPossiblyNotUsableWithCopyExternalImageToTexture(format: GPUTextureFormat) {
+    this.skipIf(
+      !isTextureFormatUsableWithCopyExternalImageToTexture(this.device, format),
+      `can not use copyExternalImageToTexture with ${format}`
     );
   }
 

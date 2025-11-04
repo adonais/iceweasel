@@ -35,7 +35,6 @@ import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.kotlin.isContentUrl
 import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.AddressToolbar
 import org.mozilla.fenix.GleanMetrics.ReaderMode
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ReaderModeStatusUpdated
@@ -60,9 +59,12 @@ import org.mozilla.fenix.home.HomeFragment
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.quicksettings.protections.cookiebanners.getCookieBannerUIMode
 import org.mozilla.fenix.shortcut.PwaOnboardingObserver
+import org.mozilla.fenix.telemetry.ACTION_SHARE_CLICKED
+import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.termsofuse.store.Surface
 import org.mozilla.fenix.theme.ThemeManager
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.GleanMetrics.Toolbar as GleanMetricsToolbar
 
 /**
  * Fragment used for browsing the web within the main app.
@@ -74,21 +76,17 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private val translationsBinding = ViewBoundFeatureWrapper<TranslationsBinding>()
     private val translationsBannerIntegration = ViewBoundFeatureWrapper<TranslationsBannerIntegration>()
 
-    private val qrScanFenixFeature by lazy(LazyThreadSafetyMode.NONE) {
+    private var qrScanFenixFeature: ViewBoundFeatureWrapper<QrScanFenixFeature>? =
         ViewBoundFeatureWrapper<QrScanFenixFeature>()
-    }
-
     private val qrScanLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            qrScanFenixFeature.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
+            qrScanFenixFeature?.get()?.handleToolbarQrScanResults(result.resultCode, result.data)
         }
-
-    private val voiceSearchFeature by lazy(LazyThreadSafetyMode.NONE) {
+    private var voiceSearchFeature: ViewBoundFeatureWrapper<VoiceSearchFeature>? =
         ViewBoundFeatureWrapper<VoiceSearchFeature>()
-    }
     private val voiceSearchLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            voiceSearchFeature.get()?.handleVoiceSearchResult(result.resultCode, result.data)
+            voiceSearchFeature?.get()?.handleVoiceSearchResult(result.resultCode, result.data)
         }
 
     private var readerModeAvailable = false
@@ -103,7 +101,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private var refreshAction: BrowserToolbar.TwoStateButton? = null
     private var isTablet: Boolean = false
 
-    @Suppress("LongMethod")
     override fun initializeUI(view: View, tab: SessionState) {
         super.initializeUI(view, tab)
 
@@ -181,8 +178,8 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
 
     private fun initBrowserToolbarComposableUpdates(rootView: View) {
         initReaderModeUpdates(rootView.context, rootView)
-        initQrScannerSupport(rootView.context)
-        initVoiceSearchSupport(rootView.context)
+        qrScanFenixFeature = QrScanFenixFeature.register(this, qrScanLauncher)
+        voiceSearchFeature = VoiceSearchFeature.register(this, voiceSearchLauncher)
     }
 
     private fun initSharePageAction(context: Context) {
@@ -191,7 +188,12 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             val sharePageAction = BrowserToolbar.createShareBrowserAction(
                 context = context,
             ) {
-                AddressToolbar.shareTapped.record((NoExtras()))
+                GleanMetricsToolbar.buttonTapped.record(
+                    GleanMetricsToolbar.ButtonTappedExtra(
+                        source = SOURCE_ADDRESS_BAR,
+                        item = ACTION_SHARE_CLICKED,
+                    ),
+                )
                 browserToolbarInteractor.onShareActionClicked()
             }
 
@@ -266,7 +268,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
 
     private fun initReaderModeUpdates(context: Context, view: View) {
         readerViewFeature.set(
-            feature = context.components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+            feature = context.components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
                 ReaderViewFeature(
                     context = context,
                     engine = context.components.core.engine,
@@ -317,30 +319,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
         }
     }
 
-    private fun initVoiceSearchSupport(context: Context) {
-        voiceSearchFeature.set(
-            feature = VoiceSearchFeature(
-                context = context,
-                appStore = context.components.appStore,
-                voiceSearchLauncher = voiceSearchLauncher,
-            ),
-            owner = viewLifecycleOwner,
-            view = binding.root,
-        )
-    }
-
-    private fun initQrScannerSupport(context: Context) {
-        qrScanFenixFeature.set(
-            feature = QrScanFenixFeature(
-                context = context,
-                appStore = context.components.appStore,
-                qrScanActivityLauncher = qrScanLauncher,
-            ),
-            owner = viewLifecycleOwner,
-            view = binding.root,
-        )
-    }
-
     private fun initReaderMode(context: Context, view: View) {
         val readerModeAction = BrowserToolbar.ToggleButton(
             image = AppCompatResources.getDrawable(
@@ -367,7 +345,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
         (browserToolbarView as BrowserToolbarView).toolbar.addPageAction(readerModeAction)
 
         readerViewFeature.set(
-            feature = context.components.strictMode.resetAfter(StrictMode.allowThreadDiskReads()) {
+            feature = context.components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
                 ReaderViewFeature(
                     context = context,
                     engine = context.components.core.engine,
@@ -706,7 +684,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
         ) {
             val messageResId = when {
                 isNewCollection -> R.string.create_collection_tabs_saved_new_collection_2
-                tabSize == 1 -> R.string.create_collection_tab_saved
+                tabSize == 1 -> R.string.create_collection_tab_saved_2
                 else -> return // Don't show snackbar for multiple tabs
             }
 

@@ -3,13 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #[cfg(any(target_os = "android", target_os = "linux"))]
-use crate::platform::linux::{
-    set_socket_cloexec, set_socket_default_flags,
-};
+use crate::platform::linux::{set_socket_cloexec, set_socket_default_flags};
 #[cfg(target_os = "macos")]
-use crate::platform::macos::{
-    set_socket_cloexec, set_socket_default_flags,
-};
+use crate::platform::macos::{set_socket_cloexec, set_socket_default_flags};
 use crate::{ignore_eintr, ProcessHandle, IO_TIMEOUT};
 
 use nix::{

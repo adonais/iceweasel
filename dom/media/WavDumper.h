@@ -9,6 +9,7 @@
 #  include <ByteWriter.h>
 #  include <mozilla/Atomics.h>
 #  include <mozilla/DebugOnly.h>
+#  include <mozilla/EndianUtils.h>
 #  include <mozilla/Sprintf.h>
 #  include <mozilla/Unused.h>
 #  include <nsString.h>

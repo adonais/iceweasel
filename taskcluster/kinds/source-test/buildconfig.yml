@@ -8,7 +8,7 @@ task-defaults:
     run:
         using: run-task
         cwd: '{checkout}'
-    worker-type: t-linux-docker
+    worker-type: t-linux-docker-amd
     worker:
         artifacts:
             - type: directory

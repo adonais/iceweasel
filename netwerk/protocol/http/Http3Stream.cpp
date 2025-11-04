@@ -24,7 +24,7 @@ namespace mozilla {
 namespace net {
 
 Http3StreamBase::Http3StreamBase(nsAHttpTransaction* trans,
-                                 Http3Session* session)
+                                 Http3SessionBase* session)
     : mTransaction(trans), mSession(session) {}
 
 Http3StreamBase::~Http3StreamBase() = default;

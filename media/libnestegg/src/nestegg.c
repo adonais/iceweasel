@@ -136,6 +136,11 @@
 #define ID_LUMINANCE_MAX              0x55d9
 #define ID_LUMINANCE_MIN              0x55da
 
+/* Other Elements */
+#define ID_CHAPTERS                   0x1043a770
+#define ID_ATTACHMENTS                0x1941a469
+#define ID_TAGS                       0x1254c367
+
 /* EBML Types */
 enum ebml_type_enum {
   TYPE_UNKNOWN,
@@ -3457,4 +3462,270 @@ int nestegg_sniff_webm(unsigned char const* buffer, size_t length)
 int nestegg_sniff_mkv(unsigned char const* buffer, size_t length)
 {
   return ne_sniff(buffer, length, DOCTYPE_MKV);
+}
+
+/* Count frames in a Block/SimpleBlock from its lacing header, then skip the
+   remaining payload. Sets frames_out on success; returns 1 on success, <0 on error. */
+static int
+ne_read_block_lacing(nestegg * ctx, uint64_t block_size, uint64_t* frames_out)
+{
+  int r;
+  int64_t timecode;
+  uint64_t track_number, length, flags, frames, header_bytes, remaining;
+  unsigned int lacing;
+
+  if (block_size > LIMIT_BLOCK)
+    return -1;
+
+  r = ne_read_vint(ctx->io, &track_number, &length);
+  if (r != 1)
+    return r;
+
+  if (track_number == 0)
+    return -1;
+
+  r = ne_read_int(ctx->io, &timecode, 2);
+  if (r != 1)
+    return r;
+
+  r = ne_read_uint(ctx->io, &flags, 1);
+  if (r != 1)
+    return r;
+
+  frames = 0;
+  lacing = (flags & BLOCK_FLAGS_LACING) >> 1;
+
+  switch (lacing) {
+  case LACING_NONE:
+    frames = 1;
+    break;
+  case LACING_XIPH:
+  case LACING_FIXED:
+  case LACING_EBML:
+    r = ne_read_uint(ctx->io, &frames, 1);
+    if (r != 1)
+      return r;
+    frames += 1;
+    break;
+  default:
+    assert(0);
+    return -1;
+  }
+
+  if (frames > 256)
+    return -1;
+
+   /* Skip the remainder of the block payload. */
+  header_bytes = length + 2 + 1 + (lacing == LACING_NONE ? 0 : 1);
+  if (block_size < header_bytes)
+    return -1;
+  remaining = block_size - header_bytes;
+  if (remaining) {
+    r = ne_io_read_skip(ctx->io, remaining);
+    if (r != 1)
+      return r;
+  }
+
+  *frames_out = frames;
+  return 1;
+}
+
+/* Consume the payload of a SimpleBlock or BlockGroup:
+   - If block-like, count frames via lacing and add to frames_out.
+   - If not, skip the payload.
+   Always advances I/O to the end of the element.
+   Returns 1 on success, <0 on error. */
+static int
+ne_sum_block_or_group(nestegg * ctx, uint64_t id, uint64_t size, uint64_t * frames_out)
+{
+  int r;
+
+  if (id == ID_SIMPLE_BLOCK) {
+    uint64_t frames;
+    frames = 0;
+    r = ne_read_block_lacing(ctx, size, &frames);
+    if (r != 1)
+      return r;
+    *frames_out += frames;
+    return 1;
+  }
+
+  if (id == ID_BLOCK_GROUP) {
+    int64_t group_end;
+    group_end = ne_io_tell(ctx->io) + (int64_t) size;
+    while (ne_io_tell(ctx->io) < group_end) {
+      uint64_t gid, gsize;
+      r = ne_read_element(ctx, &gid, &gsize);
+      if (r != 1)
+        return r;
+
+      if (gid == ID_BLOCK) {
+        uint64_t frames;
+        frames = 0;
+        r = ne_read_block_lacing(ctx, gsize, &frames);
+        if (r != 1)
+          return r;
+        *frames_out += frames;
+      } else {
+        r = ne_io_read_skip(ctx->io, gsize);
+        if (r != 1)
+          return r;
+      }
+    }
+    return 1;
+  }
+
+  /* Not a block-like element: skip its payload. */
+  r = ne_io_read_skip(ctx->io, size);
+  if (r != 1)
+    return r;
+
+  return 1;
+}
+
+/* Returns non-zero if 'size' equals the EBML unknown-size pattern for any VINT
+   length. Patterns (data bits all 1): 0x7F, 0x3FFF, 0x1FFFFF, 0x0FFFFFFF,
+   0x07FFFFFFFF, 0x03FFFFFFFFFF, 0x01FFFFFFFFFFFF, 0x00FFFFFFFFFFFFFF. */
+static int
+ne_size_is_unknown(uint64_t size)
+{
+  int len;
+  for (len = 1; len <= 8; ++len) {
+    uint64_t mask;
+    if (len == 8)
+      mask = 0x00FFFFFFFFFFFFFFULL;  /* 56 data bits = all ones */
+    else
+      mask = (1ULL << (7 * len)) - 1ULL; /* 7 data bits per byte */
+    if (size == mask)
+      return 1;
+  }
+  return 0;
+}
+
+/* Read ONE Cluster and return the sum of frames of ALL SimpleBlock/Block in it.
+   Returns 1 on success (Cluster found), 0 on clean EOS before any Cluster,
+   <0 on error. */
+static int
+ne_read_cluster_frames_count(nestegg * ctx, uint64_t * frames_out)
+{
+  int r;
+  uint64_t id, size;
+  int64_t cluster_end;
+  uint64_t totalFrames;
+
+  assert(ctx->ancestor == NULL);
+
+  /* Find the next Cluster at the top level. */
+  for (;;) {
+    r = ne_read_element(ctx, &id, &size);
+    if (r == 0)
+      return 0; /* EOS before any Cluster */
+    if (r != 1)
+      return r;
+
+    if (id != ID_CLUSTER) {
+      /* Not a Cluster: consume and keep scanning. */
+      r = ne_io_read_skip(ctx->io, size);
+      if (r != 1)
+        return r;
+      continue;
+    }
+
+    totalFrames = 0;
+
+    if (ne_size_is_unknown(size)) {
+      for (;;) {
+        uint64_t nid, nsize;
+
+        r = ne_peek_element(ctx, &nid, &nsize);
+        if (r == 0)
+          break; /* EOS ends the unknown-sized Cluster */
+        if (r != 1)
+          return r;
+
+        /* Stop at next top-level element without consuming it. */
+        if (nid == ID_EBML        ||
+            nid == ID_SEGMENT     ||
+            nid == ID_SEEK_HEAD   ||
+            nid == ID_INFO        ||
+            nid == ID_TRACKS      ||
+            nid == ID_CHAPTERS    ||
+            nid == ID_CLUSTER     ||
+            nid == ID_CUES        ||
+            nid == ID_ATTACHMENTS ||
+            nid == ID_TAGS) {
+          break;
+        }
+
+        r = ne_read_element(ctx, &nid, &nsize);
+        if (r != 1)
+          return r;
+
+        /* Sum frames for blocks; skip other children. */
+        r = ne_sum_block_or_group(ctx, nid, nsize, &totalFrames);
+        if (r != 1)
+          return r;
+      }
+
+      *frames_out = totalFrames;
+      ctx->log(ctx, NESTEGG_LOG_DEBUG,
+               "ne_read_cluster_frames_count: totalFrames=%llu (unknown-sized Cluster)",
+               totalFrames);
+      return 1;
+    }
+
+    /* Known-sized Cluster: read until cluster_end. */
+    cluster_end = ne_io_tell(ctx->io) + (int64_t) size;
+
+    while (ne_io_tell(ctx->io) < cluster_end) {
+      uint64_t cid, csize;
+      r = ne_read_element(ctx, &cid, &csize);
+      if (r != 1)
+        return r;
+
+      /* Sum frames for blocks; skip other children. */
+      r = ne_sum_block_or_group(ctx, cid, csize, &totalFrames);
+      if (r != 1)
+        return r;
+    }
+
+    *frames_out = totalFrames;
+    ctx->log(ctx, NESTEGG_LOG_DEBUG,
+             "ne_read_cluster_frames_count: totalFrames=%llu", totalFrames);
+    return 1;
+  }
+}
+
+int
+nestegg_read_total_frames_count(nestegg * context, uint64_t * frames_out)
+{
+  struct saved_state saved;
+  uint64_t totalFrames;
+  int r;
+
+  if (!context || !frames_out)
+    return -1;
+
+  ne_ctx_save(context, &saved);
+
+  totalFrames = 0;
+  for (;;) {
+    uint64_t clusterFrames;
+    clusterFrames = 0;
+    r = ne_read_cluster_frames_count(context, &clusterFrames);
+    if (r == 0) {
+      /* EOS */
+      break;
+    }
+    if (r < 0) {
+      ne_ctx_restore(context, &saved);
+      return -1;
+    }
+    totalFrames += clusterFrames;
+  }
+
+  ne_ctx_restore(context, &saved);
+
+  *frames_out = totalFrames;
+  return 0;
 }

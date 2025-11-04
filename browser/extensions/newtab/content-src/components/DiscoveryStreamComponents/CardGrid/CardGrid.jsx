@@ -114,6 +114,7 @@ export class _CardGrid extends React.PureComponent {
       const rec = recs[index];
       cards.push(
         topicsLoading ||
+          this.props.placeholder ||
           !rec ||
           rec.placeholder ||
           (rec.flight_id &&

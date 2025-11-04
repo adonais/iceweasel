@@ -7,7 +7,7 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  MLSuggest: "resource:///modules/urlbar/private/MLSuggest.sys.mjs",
+  MLSuggest: "moz-src:///browser/components/urlbar/private/MLSuggest.sys.mjs",
 });
 
 Services.scriptloader.loadSubScript(

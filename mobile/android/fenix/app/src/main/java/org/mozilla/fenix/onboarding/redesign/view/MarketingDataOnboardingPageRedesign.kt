@@ -6,12 +6,11 @@ package org.mozilla.fenix.onboarding.redesign.view
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -20,10 +19,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,9 +38,10 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
@@ -64,124 +66,126 @@ fun MarketingDataOnboardingPageRedesign(
     onMarketingOptInToggle: (optIn: Boolean) -> Unit,
     onMarketingDataContinueClick: (allowMarketingDataCollection: Boolean) -> Unit,
 ) {
-    Card {
-        BoxWithConstraints(
+    Card(
+        modifier = Modifier.padding(bottom = 60.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+    ) {
+        Column(
             modifier = Modifier
                 .background(FirefoxTheme.colors.layer1)
-                .padding(bottom = 24.dp),
+                .padding(horizontal = 36.dp, vertical = 24.dp)
+                .fillMaxHeight()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            val boxWithConstraintsScope = this
+            Spacer(modifier = Modifier.weight(TITLE_TOP_SPACER_WEIGHT))
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
-                var checkboxChecked by remember { mutableStateOf(true) }
+            Text(
+                text = state.title,
+                color = FirefoxTheme.colors.textPrimary,
+                textAlign = TextAlign.Start,
+                style = FirefoxTheme.typography.headline5,
+            )
 
-                Spacer(Modifier)
+            Spacer(modifier = Modifier.height(40.dp))
 
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Image(
-                        painter = painterResource(id = state.imageRes),
-                        contentDescription = null,
-                        modifier = Modifier.height(imageHeight(boxWithConstraintsScope)),
-                    )
+            Image(
+                painter = painterResource(id = state.imageRes),
+                contentDescription = null,
+                modifier = Modifier,
+            )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-                    Text(
-                        text = state.title,
-                        color = FirefoxTheme.colors.textPrimary,
-                        textAlign = TextAlign.Center,
-                        style = FirefoxTheme.typography.headline5,
-                    )
+            var checkboxChecked by remember { mutableStateOf(true) }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                        text = state.description,
-                        color = FirefoxTheme.colors.textSecondary,
-                        textAlign = TextAlign.Center,
-                        style = FirefoxTheme.typography.body2,
-                    )
-                }
-
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                ) {
-                    state.marketingData?.let { marketingData ->
-                        Row(
-                            Modifier.toggleable(
-                                value = checkboxChecked,
-                                role = Role.Checkbox,
-                                onValueChange = { checkboxChecked = !checkboxChecked },
-                            ),
-                        ) {
-                            Checkbox(
-                                modifier = Modifier
-                                    .align(Alignment.Top)
-                                    .offset(y = (-12).dp, x = (-12).dp)
-                                    .clearAndSetSemantics {},
-                                checked = checkboxChecked,
-                                onCheckedChange = {
-                                    checkboxChecked = !checkboxChecked
-                                    onMarketingOptInToggle.invoke(checkboxChecked)
-                                },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = FirefoxTheme.colors.formSelected,
-                                    uncheckedColor = FirefoxTheme.colors.formDefault,
-                                ),
-                            )
-
-                            Text(
-                                text = marketingData.bodyTwoText,
-                                color = FirefoxTheme.colors.textPrimary,
-                                style = FirefoxTheme.typography.body2,
-                                textAlign = TextAlign.Start,
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                        ) {
-                            LinkText(
-                                text = marketingData.bodyOneText,
-                                linkTextStates = listOf(
-                                    LinkTextState(
-                                        text = marketingData.bodyOneLinkText,
-                                        url = "",
-                                        onClick = { onMarketingDataLearnMoreClick() },
-                                    ),
-                                ),
-                                textAlign = TextAlign.Center,
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    PrimaryButton(
-                        modifier = Modifier
-                            .width(width = FirefoxTheme.layout.size.maxWidth.small)
-                            .semantics {
-                                testTag = state.title + "onboarding_card.positive_button"
-                            },
-                        text = state.primaryButton.text,
-                        onClick = { onMarketingDataContinueClick(checkboxChecked) },
-                    )
-                }
+            state.marketingData?.let {
+                MarketingDataView(
+                    marketingData = it,
+                    checkboxChecked = checkboxChecked,
+                    onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
+                    onMarketingOptInToggle = { isChecked ->
+                        checkboxChecked = isChecked
+                        onMarketingOptInToggle(isChecked)
+                    },
+                )
             }
+
+            Spacer(modifier = Modifier.weight(BODY_BUTTON_SPACER_WEIGHT))
+
+            FilledButton(
+                text = state.primaryButton.text,
+                modifier = Modifier
+                    .width(width = FirefoxTheme.layout.size.maxWidth.small)
+                    .semantics {
+                        testTag = state.title + "onboarding_card_redesign.positive_button"
+                    },
+                onClick = { onMarketingDataContinueClick(checkboxChecked) },
+            )
         }
     }
+
+    LaunchedEffect(state) {
+        state.onRecordImpressionEvent()
+    }
+}
+
+@Composable
+private fun MarketingDataView(
+    marketingData: OnboardingMarketingData,
+    checkboxChecked: Boolean,
+    onMarketingDataLearnMoreClick: () -> Unit,
+    onMarketingOptInToggle: (optIn: Boolean) -> Unit,
+) {
+    Column {
+        Row(
+            Modifier.toggleable(
+                value = checkboxChecked,
+                role = Role.Checkbox,
+                onValueChange = {
+                    onMarketingOptInToggle.invoke(!checkboxChecked)
+                },
+            ),
+        ) {
+            Checkbox(
+                modifier = Modifier
+                    .align(Alignment.Top)
+                    .offset(y = (-12).dp, x = (-12).dp)
+                    .clearAndSetSemantics {},
+                checked = checkboxChecked,
+                onCheckedChange = {
+                    onMarketingOptInToggle.invoke(!checkboxChecked)
+                },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = FirefoxTheme.colors.formSelected,
+                    uncheckedColor = FirefoxTheme.colors.formDefault,
+                ),
+            )
+
+            Text(
+                text = marketingData.bodyTwoText,
+                color = FirefoxTheme.colors.textPrimary,
+                style = FirefoxTheme.typography.body2,
+                textAlign = TextAlign.Start,
+            )
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Box(modifier = Modifier.padding(start = 48.dp)) {
+            LinkText(
+                text = marketingData.bodyOneText,
+                linkTextStates = listOf(
+                    LinkTextState(
+                        text = marketingData.bodyOneLinkText,
+                        url = "",
+                        onClick = { onMarketingDataLearnMoreClick() },
+                    ),
+                ),
+                linkTextDecoration = TextDecoration.Underline,
+            )
+        }
+   }
 }
 
 @FlexibleWindowLightDarkPreview
@@ -190,17 +194,17 @@ private fun MarketingDataOnboardingPagePreview() {
     FirefoxTheme {
         MarketingDataOnboardingPageRedesign(
             state = OnboardingPageState(
-                imageRes = R.drawable.ic_onboarding_welcome,
-                title = stringResource(id = R.string.onboarding_marketing_title),
-                description = stringResource(id = R.string.onboarding_marketing_body),
+                imageRes = R.drawable.ic_onboarding_marketing_redesign,
+                title = stringResource(id = R.string.onboarding_marketing_redesign_title),
+                description = "", // NB: not used in the redesign
                 primaryButton = Action(
-                    text = stringResource(id = R.string.onboarding_marketing_positive_button),
+                    text = stringResource(id = R.string.onboarding_marketing_redesign_positive_button),
                     onClick = {},
                 ),
                 marketingData = OnboardingMarketingData(
-                    bodyOneText = stringResource(id = R.string.onboarding_marketing_learn_more),
-                    bodyOneLinkText = stringResource(id = R.string.onboarding_marketing_learn_more),
-                    bodyTwoText = stringResource(id = R.string.onboarding_marketing_opt_out_checkbox),
+                    bodyOneText = stringResource(id = R.string.onboarding_marketing_redesign_learn_more),
+                    bodyOneLinkText = stringResource(id = R.string.onboarding_marketing_redesign_learn_more),
+                    bodyTwoText = stringResource(id = R.string.onboarding_marketing_redesign_opt_out_checkbox),
                 ),
             ),
             onMarketingDataLearnMoreClick = {},

@@ -27,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import mozilla.telemetry.glean.private.NoExtras
@@ -277,7 +278,7 @@ class LoginDetailFragment : SecureFragment(R.layout.fragment_login_detail), Menu
 
     private fun displayDeleteLoginDialog() {
         activity?.let { activity ->
-            deleteDialog = AlertDialog.Builder(activity).apply {
+            deleteDialog = MaterialAlertDialogBuilder(activity).apply {
                 setMessage(R.string.login_deletion_confirmation_2)
                 setNegativeButton(R.string.dialog_delete_negative) { dialog: DialogInterface, _ ->
                     dialog.cancel()

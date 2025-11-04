@@ -6,9 +6,25 @@ base="$(realpath "$(dirname "$0")")"
 export PATH="$PATH:$base:${MOZ_FETCHES_DIR}/dmg"
 
 cd /builds/worker
+mkdir -p /opt/data-reposado artifacts
 
-if test "$PROCESSED_PACKAGES_INDEX" && test "$PROCESSED_PACKAGES_PATH" && test "$TASKCLUSTER_ROOT_URL"; then
-  PROCESSED_PACKAGES="$TASKCLUSTER_ROOT_URL/api/index/v1/task/$PROCESSED_PACKAGES_INDEX/artifacts/$PROCESSED_PACKAGES_PATH"
+ROUTE=$(curl -sSL "${TASKCLUSTER_ROOT_URL}/api/queue/v1/task/${TASK_ID}" | jq -r '.routes[] | select(contains("latest")) | select(contains("pushdate") | not)' | sed -e 's/^index\.//')
+if test "$ROUTE" && test "$REPOSADO_METADATA_PATH" && test "$TASKCLUSTER_ROOT_URL"; then
+  REPOSADO_METADATA_URL="$TASKCLUSTER_ROOT_URL/api/index/v1/task/$ROUTE/artifacts/$REPOSADO_METADATA_PATH"
+  rm -f reposado-metadata.tar.gz
+  if test `curl --output /dev/null --silent --head --location "$REPOSADO_METADATA_URL" -w "%{http_code}"` = 200; then
+    curl -L "$REPOSADO_METADATA_URL" -o reposado-metadata.tar.gz
+    tar -zxf reposado-metadata.tar.gz -C /opt/data-reposado
+  fi
+fi
+
+if [ ! -d /opt/data-reposado/html ] || [ ! -d /opt/data-reposado/metadata ]; then
+  mkdir -p /opt/data-reposado/html /opt/data-reposado/metadata
+fi
+
+# Restore processed-packages list
+if test "$ROUTE" && test "$PROCESSED_PACKAGES_PATH" && test "$TASKCLUSTER_ROOT_URL"; then
+  PROCESSED_PACKAGES="$TASKCLUSTER_ROOT_URL/api/index/v1/task/$ROUTE/artifacts/$PROCESSED_PACKAGES_PATH"
 fi
 
 if test "$PROCESSED_PACKAGES"; then
@@ -28,10 +44,11 @@ if test "$PROCESSED_PACKAGES"; then
   fi
 fi
 
-mkdir -p /opt/data-reposado/html /opt/data-reposado/metadata artifacts
-
 # First, just fetch all the update info.
 python3 /usr/local/bin/repo_sync --no-download
+
+# Save the update catalog metadata for reuse in future runs
+tar -czf artifacts/reposado-metadata.tar.gz -C /opt/data-reposado html metadata
 
 # Next, fetch just the update packages we're interested in.
 packages=$(python3 "${base}/list-packages.py")

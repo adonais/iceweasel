@@ -6,7 +6,6 @@
 
 #include "jit/x86/CodeGenerator-x86.h"
 
-#include "mozilla/Casting.h"
 #include "mozilla/DebugOnly.h"
 
 #include <iterator>
@@ -31,7 +30,6 @@ using namespace js;
 using namespace js::jit;
 
 using JS::GenericNaN;
-using mozilla::BitwiseCast;
 using mozilla::DebugOnly;
 using mozilla::FloatingPoint;
 

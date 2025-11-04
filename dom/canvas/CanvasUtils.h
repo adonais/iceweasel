@@ -11,7 +11,6 @@
 #include "js/PropertyAndElement.h"  // JS_GetElement
 #include "jsapi.h"
 #include "mozilla/CheckedInt.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/ToJSValue.h"
 
 class nsIPrincipal;
@@ -75,6 +74,7 @@ enum class ImageExtraction {
   Unrestricted,
   Placeholder,
   Randomize,
+  EfficientRandomize,
 };
 
 // Returns whether the result of an image extraction should be replaced

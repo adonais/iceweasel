@@ -106,6 +106,14 @@ class StructuredOutputParser(OutputParser):
             SystemResourceMonitor.begin_test(data)
         elif action == "test_end":
             SystemResourceMonitor.end_test(data)
+        elif action == "test_status":
+            SystemResourceMonitor.test_status(data)
+        elif action == "log":
+            SystemResourceMonitor.test_status(data)
+        elif action == "process_output":
+            SystemResourceMonitor.test_status(data)
+        elif action == "crash":
+            SystemResourceMonitor.crash(data)
         elif action == "suite_start":
             SystemResourceMonitor.begin_marker("suite", data["source"])
         elif action == "suite_end":
@@ -114,8 +122,6 @@ class StructuredOutputParser(OutputParser):
             SystemResourceMonitor.begin_marker("test", data["name"])
         elif action == "group_end":
             SystemResourceMonitor.end_marker("test", data["name"])
-        if line.startswith("TEST-UNEXPECTED-FAIL"):
-            SystemResourceMonitor.record_event(line)
 
         if action in ("log", "process_output"):
             if action == "log":

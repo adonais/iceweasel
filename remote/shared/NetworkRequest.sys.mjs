@@ -104,10 +104,6 @@ export class NetworkRequest {
   }
 
   get destination() {
-    if (this.#isTopLevelDocumentLoad()) {
-      return "";
-    }
-
     return this.#channel.loadInfo?.fetchDestination;
   }
 

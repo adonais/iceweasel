@@ -9,7 +9,6 @@
 
 #include "DOMSVGAnimatedNumber.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCycleCollectionParticipant.h"

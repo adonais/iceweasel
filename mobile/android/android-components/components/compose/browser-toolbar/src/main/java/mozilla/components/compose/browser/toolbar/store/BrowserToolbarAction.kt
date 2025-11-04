@@ -15,11 +15,14 @@ import mozilla.components.compose.browser.toolbar.concept.Action as ToolbarActio
  */
 sealed interface BrowserToolbarAction : Action {
     /**
-     * Updates whether the toolbar is in "display" or "edit" mode.
-     *
-     * @property editMode Whether or not the toolbar is in "edit" mode.
+     * Allow typing a search term or URL.
      */
-    data class ToggleEditMode(val editMode: Boolean) : BrowserToolbarAction
+    object EnterEditMode : BrowserToolbarAction
+
+    /**
+     * Show the current URL.
+     */
+    object ExitEditMode : BrowserToolbarAction
 
     /**
      * The toolbar was moved to a different position on screen.

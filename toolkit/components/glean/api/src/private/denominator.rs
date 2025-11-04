@@ -142,7 +142,12 @@ mod test {
         let metric = &metrics::test_only_ipc::an_external_denominator;
         metric.add(1);
 
-        assert_eq!(1, metric.test_get_value(Some("test-ping".to_string())).unwrap());
+        assert_eq!(
+            1,
+            metric
+                .test_get_value(Some("test-ping".to_string()))
+                .unwrap()
+        );
     }
 
     #[test]
@@ -178,7 +183,9 @@ mod test {
 
         assert_eq!(
             45,
-            parent_metric.test_get_value(Some("test-ping".to_string())).unwrap(),
+            parent_metric
+                .test_get_value(Some("test-ping".to_string()))
+                .unwrap(),
             "Values from the 'processes' should be summed"
         );
     }

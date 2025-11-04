@@ -51,10 +51,6 @@ skip-if = ["os != 'win'"]
 
 ["browser_caching_position.js"]
 
-["browser_caching_relations.js"]
-
-["browser_caching_relations_002.js"]
-
 ["browser_caching_states.js"]
 
 ["browser_caching_table.js"]

@@ -856,7 +856,7 @@
         case "mouseleave":
           this.submenuPanel.toggle(e);
           break;
-        case "keydown":
+        case "keydown": {
           let [arrowOpenKey, arrowCloseKey] = this.setArrowKeyRTL();
           if (e.key === arrowOpenKey) {
             this.submenuPanel.show(e, e.target);
@@ -867,6 +867,7 @@
             e.stopPropagation();
           }
           break;
+        }
       }
     }
   }

@@ -411,11 +411,12 @@ def get_generated_file_s3_path(filename, rel_path, bucket):
         return f"s3:{bucket}:{path}:"
 
 
-def GetPlatformSpecificDumper(**kwargs):
+def GetPlatformSpecificDumper(platform=None, **kwargs):
     """This function simply returns a instance of a subclass of Dumper
     that is appropriate for the current platform."""
+    platform = platform or buildconfig.substs["OS_ARCH"]
     return {"WINNT": Dumper_Win32, "Linux": Dumper_Linux, "Darwin": Dumper_Mac}[
-        buildconfig.substs["OS_ARCH"]
+        platform
     ](**kwargs)
 
 
@@ -485,6 +486,8 @@ class Dumper:
         srcsrv=False,
         s3_bucket=None,
         file_mapping=None,
+        include_moz_extra_info=True,
+        map_rust_sources=True,
     ):
         # popen likes absolute paths, at least on windows
         self.dump_syms = os.path.abspath(dump_syms)
@@ -501,14 +504,16 @@ class Dumper:
         self.srcsrv = srcsrv
         self.s3_bucket = s3_bucket
         self.file_mapping = file_mapping or {}
-        # Add a static mapping for Rust sources. Since Rust 1.30 official Rust builds map
-        # source paths to start with "/rustc/<sha>/".
-        rust_sha = buildconfig.substs["RUSTC_COMMIT"]
-        rust_srcdir = "/rustc/" + rust_sha
-        self.srcdirs.append(rust_srcdir)
-        Dumper.srcdirRepoInfo[rust_srcdir] = GitRepoInfo(
-            rust_srcdir, rust_sha, "https://github.com/rust-lang/rust/"
-        )
+        self.include_moz_extra_info = include_moz_extra_info
+        if map_rust_sources:
+            # Add a static mapping for Rust sources. Since Rust 1.30 official Rust builds map
+            # source paths to start with "/rustc/<sha>/".
+            rust_sha = buildconfig.substs["RUSTC_COMMIT"]
+            rust_srcdir = "/rustc/" + rust_sha
+            self.srcdirs.append(rust_srcdir)
+            Dumper.srcdirRepoInfo[rust_srcdir] = GitRepoInfo(
+                rust_srcdir, rust_sha, "https://github.com/rust-lang/rust/"
+            )
 
     # subclasses override this
     def ShouldProcess(self, file):
@@ -557,7 +562,8 @@ class Dumper:
             "--inlines",
         ]
 
-        cmdline.extend(self.dump_syms_extra_info())
+        if self.include_moz_extra_info:
+            cmdline.extend(self.dump_syms_extra_info())
         cmdline.append(file)
 
         return cmdline
@@ -777,6 +783,12 @@ class Dumper:
                 print(
                     "PERFHERDER_DATA: %s" % json.dumps(perfherder_data), file=sys.stderr
                 )
+                if "MOZ_AUTOMATION" in os.environ:
+                    upload_dir = Path(os.environ.get("UPLOAD_DIR"))
+                    upload_dir.mkdir(parents=True, exist_ok=True)
+                    upload_path = upload_dir / "perfherder-data-compiler-metrics.json"
+                    with upload_path.open("w", encoding="utf-8") as f:
+                        json.dump(perfherder_data, f)
 
         elapsed = time.time() - t_start
         print("Finished processing %s in %.2fs" % (file, elapsed), file=sys.stderr)
@@ -963,7 +975,8 @@ class Dumper_Mac(Dumper):
                 ]
             )
 
-            cmdline.extend(self.dump_syms_extra_info())
+            if self.include_moz_extra_info:
+                cmdline.extend(self.dump_syms_extra_info())
             cmdline.extend([dsymbundle, file])
 
             return cmdline
@@ -1117,6 +1130,33 @@ to canonical locations in the source repository. Specify
         default=False,
         help="Count static initializers",
     )
+    parser.add_option(
+        "--platform",
+        action="store",
+        dest="platform",
+        default=None,
+        help="Force a specific platform for processing symbols. "
+        + "Valid values: `WINNT`, `Linux`, `Darwin`. "
+        + "Useful for processing cross-compiled symbols. If unset, require `OS_ARCH` to be set "
+        + "either through build config. or through environment variables.",
+    )
+    parser.add_option(
+        "--no-moz-extra-info",
+        action="store_true",
+        dest="no_moz_extra_info",
+        default=True,
+        help="Whether to include Mozilla-specific application build metadata. "
+        + "If unset, require `MOZ_UPDATE_CHANNEL` and `MOZ_APP_VERSION` to be set "
+        + "either through build config. or through environment variables.",
+    )
+    parser.add_option(
+        "--no-rust",
+        action="store_true",
+        dest="no_rust",
+        default=False,
+        help="Whether to map Rust sources. If unset, require `RUSTC_COMMIT` to be set "
+        + "either through build config. or through environment variables",
+    )
     (options, args) = parser.parse_args()
 
     # check to see if the pdbstr.exe exists
@@ -1146,6 +1186,9 @@ to canonical locations in the source repository. Specify
         srcsrv=options.srcsrv,
         s3_bucket=bucket,
         file_mapping=file_mapping,
+        platform=options.platform,
+        include_moz_extra_info=not options.no_moz_extra_info,
+        map_rust_sources=not options.no_rust,
     )
 
     dumper.Process(args[2], options.count_ctors)

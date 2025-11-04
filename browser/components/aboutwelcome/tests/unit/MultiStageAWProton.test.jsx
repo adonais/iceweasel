@@ -864,7 +864,11 @@ describe("MultiStageAboutWelcomeProton module", () => {
         );
     });
     it("should have a multi action primary button by default", async () => {
-      const data = await prepConfig({}, ["AW_WELCOME_BACK", "RETURN_TO_AMO"]);
+      const data = await prepConfig({}, [
+        "AW_WELCOME_BACK",
+        "RETURN_TO_AMO",
+        "AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND",
+      ]);
       assert.propertyVal(
         data.screens[0].content.primary_button.action,
         "type",
@@ -872,7 +876,10 @@ describe("MultiStageAboutWelcomeProton module", () => {
       );
     });
     it("should have a FxA button", async () => {
-      const data = await prepConfig({}, ["AW_WELCOME_BACK"]);
+      const data = await prepConfig({}, [
+        "AW_WELCOME_BACK",
+        "AW_BACKUP_RESTORE_EMBEDDED_BACKUP_FOUND",
+      ]);
 
       assert.notProperty(data, "skipFxA");
       assert.property(data.screens[0].content, "secondary_button_top");

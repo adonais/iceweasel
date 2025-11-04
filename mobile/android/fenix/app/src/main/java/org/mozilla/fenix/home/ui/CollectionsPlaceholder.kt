@@ -25,7 +25,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.button.PrimaryButton
+import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.PlaceholderCard
 import org.mozilla.fenix.home.collections.CollectionColors
@@ -98,16 +98,15 @@ internal fun CollectionsPlaceholder(
             if (showAddTabsToCollection) {
                 Spacer(modifier = Modifier.height(16.dp))
 
-                PrimaryButton(
+                FilledButton(
                     text = stringResource(R.string.tabs_menu_save_to_collection1),
                     modifier = Modifier
                         .fillMaxWidth()
                         .wrapContentHeight(),
                     icon = painterResource(R.drawable.ic_tab_collection),
                     onClick = interactor::onAddTabsToCollectionTapped,
-                    textColor = buttonTextColor,
-                    backgroundColor = buttonBackgroundColor,
-                    iconTint = buttonTextColor,
+                    contentColor = buttonTextColor,
+                    containerColor = buttonBackgroundColor,
                 )
             }
         },

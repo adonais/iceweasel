@@ -7,7 +7,6 @@
 #ifndef gc_Tenuring_h
 #define gc_Tenuring_h
 
-#include "mozilla/EnumeratedArray.h"
 #include "mozilla/HashTable.h"
 #include "mozilla/Maybe.h"
 

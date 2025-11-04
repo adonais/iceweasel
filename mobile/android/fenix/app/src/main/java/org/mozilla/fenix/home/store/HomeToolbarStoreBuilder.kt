@@ -32,7 +32,7 @@ object HomeToolbarStoreBuilder {
      * Build the [BrowserToolbarStore] used in the home screen.
      *
      * @param context [Context] used for various system interactions.
-     * @param lifecycleOwner [Fragment] as a [LifecycleOwner] to used to organize lifecycle dependent operations.
+     * @param fragment [Fragment] as a [LifecycleOwner] to used to organize lifecycle dependent operations.
      * @param navController [NavController] to use for navigating to other in-app destinations.
      * @param appStore [AppStore] to sync from.
      * @param browserStore [BrowserStore] to sync from.
@@ -40,12 +40,12 @@ object HomeToolbarStoreBuilder {
      */
     fun build(
         context: Context,
-        lifecycleOwner: Fragment,
+        fragment: Fragment,
         navController: NavController,
         appStore: AppStore,
         browserStore: BrowserStore,
         browsingModeManager: BrowsingModeManager,
-    ) = StoreProvider.get(lifecycleOwner) {
+    ) = StoreProvider.get(fragment) {
         BrowserToolbarStore(
             initialState = BrowserToolbarState(),
             middleware = listOf(
@@ -70,14 +70,14 @@ object HomeToolbarStoreBuilder {
             EnvironmentRehydrated(
                 BrowserToolbarEnvironment(
                     context = context,
-                    viewLifecycleOwner = lifecycleOwner.viewLifecycleOwner,
+                    fragment = fragment,
                     navController = navController,
                     browsingModeManager = browsingModeManager,
                 ),
             ),
         )
 
-        lifecycleOwner.viewLifecycleOwner.lifecycle.addObserver(
+        fragment.viewLifecycleOwner.lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 override fun onDestroy(owner: LifecycleOwner) {
                     it.dispatch(EnvironmentCleared)

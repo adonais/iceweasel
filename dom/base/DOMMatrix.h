@@ -12,7 +12,6 @@
 
 #include "js/RootingAPI.h"
 #include "mozilla/AlreadyAddRefed.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/TypedArray.h"
 #include "mozilla/gfx/Matrix.h"

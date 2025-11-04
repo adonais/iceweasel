@@ -75,7 +75,7 @@ struct UrlMarker {
   static MarkerSchema MarkerTypeDisplay() {
     using MS = MarkerSchema;
     MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
-    schema.SetTableLabel("{marker.name} - {marker.data.url}");
+    schema.SetTableLabel("{marker.data.url}");
     schema.AddKeyFormat("url", MS::Format::Url, MS::PayloadFlags::Searchable);
     schema.AddKeyLabelFormat("duration", "Duration", MS::Format::Duration);
     return schema;
@@ -1226,7 +1226,7 @@ bool nsHttpConnectionMgr::AtActiveConnectionLimit(ConnectionEntry* ent,
   nsHttpConnectionInfo* ci = ent->mConnInfo;
   uint32_t totalCount = ent->TotalActiveConnections();
 
-  if (ci->IsHttp3()) {
+  if (ci->IsHttp3() || ci->IsHttp3ProxyConnection()) {
     if (ci->GetWebTransport()) {
       // TODO: implement this properly in bug 1815735.
       return false;
@@ -1630,7 +1630,7 @@ nsresult nsHttpConnectionMgr::TryDispatchExtendedCONNECTransaction(
 
     // No limit for number of websockets, dispatch transaction to the
     // tunnel
-    RefPtr<nsHttpConnection> connToTunnel;
+    RefPtr<HttpConnectionBase> connToTunnel;
     nsresult rv =
         aConn->CreateTunnelStream(aTrans, getter_AddRefs(connToTunnel), true);
     if (rv == NS_ERROR_WEBTRANSPORT_SESSION_LIMIT_EXCEEDED) {
@@ -1641,7 +1641,7 @@ nsresult nsHttpConnectionMgr::TryDispatchExtendedCONNECTransaction(
     }
     aEnt->InsertIntoExtendedCONNECTConns(connToTunnel);
     aTrans->SetConnection(nullptr);
-    connToTunnel->SetInSpdyTunnel();  // tells conn it is already in tunnel
+    connToTunnel->SetInTunnel();  // tells conn it is already in tunnel
     if (aTrans->IsWebsocketUpgrade()) {
       aTrans->SetIsHttp2Websocket(true);
     }
@@ -1848,12 +1848,17 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
     trans->SetConnection(nullptr);
     rv = DispatchTransaction(ent, trans, conn);
   } else if (isWildcard) {
-    // We have a HTTP/2 session to the proxy, create a new tunneled
-    // connection.
-    RefPtr<HttpConnectionBase> conn = GetH2orH3ActiveConn(ent, false, true);
-    RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+    // Determine which connections we want to use.
+    // - If this is an HTTP/3 proxy connection (`isHttp3Proxy == true`), we only
+    //   want to consider existing HTTP/3 connections, so we set aNoHttp2 = true
+    //   and aNoHttp3 = false.
+    // - Otherwise (`isHttp3Proxy == false`), we are looking for a regular
+    //   HTTP/2 connection, so we set aNoHttp2 = false and aNoHttp3 = true.
+    bool isHttp3Proxy = ci->IsHttp3ProxyConnection();
+    RefPtr<HttpConnectionBase> conn =
+        GetH2orH3ActiveConn(ent, isHttp3Proxy, !isHttp3Proxy);
     if (ci->UsingHttpsProxy() && ci->UsingConnect()) {
-      LOG(("About to create new tunnel conn from [%p]", connTCP.get()));
+      LOG(("About to create new tunnel conn from [%p]", conn.get()));
       ConnectionEntry* specificEnt = mCT.GetWeak(ci->HashKey());
 
       if (!specificEnt) {
@@ -1867,18 +1872,18 @@ nsresult nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction* trans) {
       if (atLimit) {
         rv = NS_ERROR_NOT_AVAILABLE;
       } else {
-        RefPtr<nsHttpConnection> newTunnel;
-        connTCP->CreateTunnelStream(trans, getter_AddRefs(newTunnel));
+        RefPtr<HttpConnectionBase> newTunnel;
+        conn->CreateTunnelStream(trans, getter_AddRefs(newTunnel));
 
         ent->InsertIntoActiveConns(newTunnel);
         trans->SetConnection(nullptr);
-        newTunnel->SetInSpdyTunnel();
+        newTunnel->SetInTunnel();
         rv = DispatchTransaction(ent, trans, newTunnel);
         // need to undo the bypass for transaction reset for proxy
         trans->MakeNonRestartable();
       }
     } else {
-      rv = DispatchTransaction(ent, trans, connTCP);
+      rv = DispatchTransaction(ent, trans, conn);
     }
   } else {
     if (!ent->AllowHttp2()) {
@@ -2057,9 +2062,10 @@ HttpConnectionBase* nsHttpConnectionMgr::GetH2orH3ActiveConn(
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(ent);
 
+  bool isHttp3 = ent->IsHttp3() || ent->IsHttp3ProxyConnection();
   // First look at ent. If protocol that ent provides is no forbidden,
   // i.e. ent use HTTP3 and !aNoHttp3 or en uses HTTP over TCP and !aNoHttp2.
-  if ((!aNoHttp3 && ent->IsHttp3()) || (!aNoHttp2 && !ent->IsHttp3())) {
+  if ((!aNoHttp3 && isHttp3) || (!aNoHttp2 && !isHttp3)) {
     HttpConnectionBase* conn = ent->GetH2orH3ActiveConn();
     if (conn) {
       return conn;
@@ -2542,25 +2548,18 @@ void nsHttpConnectionMgr::OnMsgReclaimConnection(HttpConnectionBase* conn) {
 
   if (NS_SUCCEEDED(ent->RemoveActiveConnection(conn)) ||
       NS_SUCCEEDED(ent->RemovePendingConnection(conn))) {
-  } else if (!connTCP || connTCP->EverUsedSpdy()) {
-    LOG(("HttpConnectionBase %p not found in its connection entry, try ^anon",
+  } else {
+    LOG(
+        ("HttpConnectionBase %p not found in its connection entry, try "
+         "OwnerEntry",
          conn));
-    // repeat for flipped anon flag as we share connection entries for spdy
-    // connections.
-    RefPtr<nsHttpConnectionInfo> anonInvertedCI(ci->Clone());
-    anonInvertedCI->SetAnonymous(!ci->GetAnonymous());
-
-    ConnectionEntry* ent = mCT.GetWeak(anonInvertedCI->HashKey());
-    if (ent) {
-      if (NS_SUCCEEDED(ent->RemoveActiveConnection(conn))) {
-      } else {
-        LOG(
-            ("HttpConnectionBase %p could not be removed from its entry's "
-             "active list",
-             conn));
-      }
+    RefPtr<ConnectionEntry> entry = conn->OwnerEntry();
+    if (entry) {
+      entry->RemoveActiveConnection(conn);
     }
   }
+
+  MOZ_ASSERT(conn->OwnerEntry() == nullptr);
 
   if (connTCP && connTCP->CanReuse()) {
     LOG(("  adding connection to idle list\n"));
@@ -3429,6 +3428,7 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   *aIsWildcard = false;
 
   // step 1
+  LOG(("GetOrCreateConnectionEntry step 1"));
   ConnectionEntry* specificEnt = mCT.GetWeak(specificCI->HashKey());
   if (specificEnt && specificEnt->AvailableForDispatchNow()) {
     if (aAvailableForDispatchNow) {
@@ -3465,7 +3465,9 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   }
 
   // step 2
-  if (!prohibitWildCard && aNoHttp3) {
+  LOG(("GetOrCreateConnectionEntry step 2 prohibitWildCard=%d, aNoHttp3=%d",
+       prohibitWildCard, aNoHttp3));
+  if (!prohibitWildCard) {
     RefPtr<nsHttpConnectionInfo> wildCardProxyCI;
     DebugOnly<nsresult> rv =
         specificCI->CreateWildCard(getter_AddRefs(wildCardProxyCI));
@@ -3481,6 +3483,7 @@ ConnectionEntry* nsHttpConnectionMgr::GetOrCreateConnectionEntry(
   }
 
   // step 3
+  LOG(("GetOrCreateConnectionEntry step 3"));
   if (!specificEnt) {
     RefPtr<nsHttpConnectionInfo> clone(specificCI->Clone());
     specificEnt = new ConnectionEntry(clone);
@@ -3721,10 +3724,11 @@ void nsHttpConnectionMgr::MoveToWildCardConnEntry(
   ConnectionEntry* ent = mCT.GetWeak(specificCI->HashKey());
   LOG(
       ("nsHttpConnectionMgr::MakeConnEntryWildCard conn %p using ent %p (spdy "
-       "%d)\n",
-       proxyConn, ent, ent ? ent->mUsingSpdy : 0));
+       "%d, h3=%d)\n",
+       proxyConn, ent, ent ? ent->mUsingSpdy : 0,
+       ent ? ent->IsHttp3ProxyConnection() : 0));
 
-  if (!ent || !ent->mUsingSpdy) {
+  if (!ent || (!ent->mUsingSpdy && !ent->IsHttp3ProxyConnection())) {
     return;
   }
 
@@ -3733,9 +3737,14 @@ void nsHttpConnectionMgr::MoveToWildCardConnEntry(
       GetOrCreateConnectionEntry(wildCardCI, true, false, false, &isWildcard);
   if (wcEnt == ent) {
     // nothing to do!
+    LOG(("nothing to do "));
     return;
   }
-  wcEnt->mUsingSpdy = true;
+  if (ent->mUsingSpdy) {
+    wcEnt->mUsingSpdy = true;
+  } else {
+    MOZ_ASSERT(wcEnt->IsHttp3ProxyConnection());
+  }
 
   LOG(
       ("nsHttpConnectionMgr::MakeConnEntryWildCard ent %p "
@@ -3750,6 +3759,8 @@ void nsHttpConnectionMgr::MoveToWildCardConnEntry(
        wcEnt->DnsAndConnectSocketsLength(), wcEnt->PendingQueueLength()));
 
   ent->MoveConnection(proxyConn, wcEnt);
+  // Ensure other wildcard connections are closed gracefully.
+  wcEnt->MakeAllDontReuseExcept(proxyConn);
 }
 
 bool nsHttpConnectionMgr::RemoveTransFromConnEntry(nsHttpTransaction* aTrans,

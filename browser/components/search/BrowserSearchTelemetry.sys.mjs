@@ -10,7 +10,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   SearchSERPTelemetry:
     "moz-src:///browser/components/search/SearchSERPTelemetry.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
-  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
+  UrlbarSearchUtils:
+    "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
 });
 
 /**
@@ -160,6 +161,13 @@ class BrowserSearchTelemetryHandler {
       if (!this.KNOWN_SEARCH_SOURCES.has(source)) {
         console.error("Unknown source for search: ", source);
         return;
+      }
+
+      if (source.startsWith("urlbar")) {
+        Services.prefs.setIntPref(
+          "browser.urlbar.lastUrlbarSearchSeconds",
+          Math.round(Date.now() / 1000)
+        );
       }
 
       if (source != "contextmenu_visual") {

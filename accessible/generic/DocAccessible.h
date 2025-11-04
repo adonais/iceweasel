@@ -401,9 +401,11 @@ class DocAccessible : public HyperTextAccessible,
    * and returns its scroll position and scroll range. If the given
    * accessible is `this`, return the scroll position and range of
    * the root scroll frame. Return values have been scaled by the
-   * PresShell's resolution.
+   * PresShell's resolution when aShouldScaleByResolution is explicitly
+   * true or unspecified.
    */
-  std::pair<nsPoint, nsRect> ComputeScrollData(LocalAccessible* aAcc);
+  std::pair<nsPoint, nsRect> ComputeScrollData(
+      const LocalAccessible* aAcc, bool aShouldScaleByResolution = true);
 
   /**
    * Only works in content process documents.
@@ -414,6 +416,12 @@ class DocAccessible : public HyperTextAccessible,
 
   void AttrElementWillChange(dom::Element* aElement, nsAtom* aAttr);
   void AttrElementChanged(dom::Element* aElement, nsAtom* aAttr);
+
+  /**
+   * Given an accessible, check if it is anchored to other frames, and
+   * refresh the cache on each of those frames' accessibles.
+   */
+  void RefreshAnchorRelationCacheForTarget(LocalAccessible* aTarget);
 
  protected:
   virtual ~DocAccessible();

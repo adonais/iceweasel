@@ -19,6 +19,13 @@ const FXA_LOGIN_FAILED = 2;
 const SYNC_DISCONNECTED = 0;
 const SYNC_CONNECTED = 1;
 
+const BACKUP_ARCHIVE_ENABLED_PREF_NAME = "browser.backup.archive.enabled";
+const BACKUP_RESTORE_ENABLED_PREF_NAME = "browser.backup.restore.enabled";
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
+});
+
 var gSyncPane = {
   get page() {
     return document.getElementById("weavePrefsDeck").selectedIndex;
@@ -37,6 +44,8 @@ var gSyncPane = {
       .getElementById("weavePrefsDeck")
       .removeAttribute("data-hidden-from-search");
 
+    this.updateBackupUIVisibility();
+
     // If the Service hasn't finished initializing, wait for it.
     let xps = Cc["@mozilla.org/weave/service;1"].getService(
       Ci.nsISupports
@@ -46,6 +55,8 @@ var gSyncPane = {
       this._init();
       return;
     }
+
+    this._addPrefObservers();
 
     // it may take some time before all the promises we care about resolve, so
     // pre-load what we can from synchronous sources.
@@ -284,6 +295,44 @@ var gSyncPane = {
       syncConfiguredEl.hidden = true;
       syncNotConfiguredEl.hidden = false;
     }
+  },
+
+  updateBackupUIVisibility() {
+    let bs = lazy.BackupService.get();
+    let isBackupUIEnabled =
+      bs.archiveEnabledStatus.enabled || bs.restoreEnabledStatus.enabled;
+
+    let dataBackupSectionEl = document.getElementById("dataBackupSection");
+
+    dataBackupSectionEl.toggleAttribute(
+      "data-hidden-from-search",
+      !isBackupUIEnabled
+    );
+
+    let dataBackupGroupEl = document.getElementById("dataBackupGroup");
+    let backupGroupHeaderEl = document.getElementById("backupCategory");
+
+    dataBackupSectionEl.hidden = !isBackupUIEnabled;
+    dataBackupGroupEl.hidden = !isBackupUIEnabled;
+    backupGroupHeaderEl.hidden = !isBackupUIEnabled;
+  },
+
+  _addPrefObservers() {
+    Services.obs.addObserver(
+      this.updateBackupUIVisibility,
+      "backup-service-status-updated"
+    );
+
+    window.addEventListener(
+      "unload",
+      () => {
+        Services.obs.removeObserver(
+          this.updateBackupUIVisibility,
+          "backup-service-status-updated"
+        );
+      },
+      { once: true }
+    );
   },
 
   async _chooseWhatToSync(isSyncConfigured, why = null) {

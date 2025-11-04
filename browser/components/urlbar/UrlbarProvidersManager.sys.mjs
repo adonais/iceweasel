@@ -17,13 +17,15 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  SkippableTimer: "resource:///modules/UrlbarUtils.sys.mjs",
-  UrlbarMuxer: "resource:///modules/UrlbarUtils.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarProvider: "resource:///modules/UrlbarUtils.sys.mjs",
-  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
-  UrlbarUtils: "resource:///modules/UrlbarUtils.sys.mjs",
+  SkippableTimer: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarMuxer: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarProvider: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
+  UrlbarSearchUtils:
+    "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
+  UrlbarTokenizer:
+    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
@@ -36,151 +38,177 @@ ChromeUtils.defineLazyGetter(lazy, "logger", () =>
 var localProviderModules = [
   {
     name: "UrlbarProviderAboutPages",
-    module: "resource:///modules/UrlbarProviderAboutPages.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderAboutPages.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderActionsSearchMode",
-    module: "resource:///modules/UrlbarProviderActionsSearchMode.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderActionsSearchMode.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderGlobalActions",
-    module: "resource:///modules/UrlbarProviderGlobalActions.sys.mjs",
-    supportedInputTypes: ["urlbar"],
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderGlobalActions.sys.mjs",
+    supportedInputTypes: ["urlbar", "searchbar"],
   },
   {
     name: "UrlbarProviderAliasEngines",
-    module: "resource:///modules/UrlbarProviderAliasEngines.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderAliasEngines.sys.mjs",
     supportedInputTypes: ["urlbar", "searchbar"],
   },
   {
     name: "UrlbarProviderAutofill",
-    module: "resource:///modules/UrlbarProviderAutofill.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderAutofill.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderBookmarkKeywords",
-    module: "resource:///modules/UrlbarProviderBookmarkKeywords.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderBookmarkKeywords.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderCalculator",
-    module: "resource:///modules/UrlbarProviderCalculator.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderCalculator.sys.mjs",
     supportedInputTypes: ["urlbar", "searchbar"],
   },
   {
     name: "UrlbarProviderClipboard",
-    module: "resource:///modules/UrlbarProviderClipboard.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderClipboard.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderHeuristicFallback",
-    module: "resource:///modules/UrlbarProviderHeuristicFallback.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderHeuristicFallback.sys.mjs",
     supportedInputTypes: ["urlbar", "searchbar"],
   },
   {
     name: "UrlbarProviderHistoryUrlHeuristic",
-    module: "resource:///modules/UrlbarProviderHistoryUrlHeuristic.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderHistoryUrlHeuristic.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderInputHistory",
-    module: "resource:///modules/UrlbarProviderInputHistory.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderInputHistory.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderInterventions",
-    module: "resource:///modules/UrlbarProviderInterventions.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderInterventions.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderOmnibox",
-    module: "resource:///modules/UrlbarProviderOmnibox.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderOmnibox.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderPlaces",
-    module: "resource:///modules/UrlbarProviderPlaces.sys.mjs",
+    module: "moz-src:///browser/components/urlbar/UrlbarProviderPlaces.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderPrivateSearch",
-    module: "resource:///modules/UrlbarProviderPrivateSearch.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderPrivateSearch.sys.mjs",
     supportedInputTypes: ["urlbar", "searchbar"],
   },
   {
     name: "UrlbarProviderQuickSuggest",
-    module: "resource:///modules/UrlbarProviderQuickSuggest.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderQuickSuggest.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderQuickSuggestContextualOptIn",
     module:
-      "resource:///modules/UrlbarProviderQuickSuggestContextualOptIn.sys.mjs",
+      "moz-src:///browser/components/urlbar/UrlbarProviderQuickSuggestContextualOptIn.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderRecentSearches",
-    module: "resource:///modules/UrlbarProviderRecentSearches.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderRecentSearches.sys.mjs",
     supportedInputTypes: ["urlbar", "searchbar"],
   },
   {
     name: "UrlbarProviderRemoteTabs",
-    module: "resource:///modules/UrlbarProviderRemoteTabs.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderRemoteTabs.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderRestrictKeywords",
-    module: "resource:///modules/UrlbarProviderRestrictKeywords.sys.mjs",
-    supportedInputTypes: ["urlbar", "searchbar"],
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderRestrictKeywords.sys.mjs",
+    supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderRestrictKeywordsAutofill",
     module:
-      "resource:///modules/UrlbarProviderRestrictKeywordsAutofill.sys.mjs",
-    supportedInputTypes: ["urlbar", "searchbar"],
+      "moz-src:///browser/components/urlbar/UrlbarProviderRestrictKeywordsAutofill.sys.mjs",
+    supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderSearchTips",
-    module: "resource:///modules/UrlbarProviderSearchTips.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderSearchSuggestions",
-    module: "resource:///modules/UrlbarProviderSearchSuggestions.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderSearchSuggestions.sys.mjs",
     supportedInputTypes: ["urlbar", "searchbar"],
   },
   {
     name: "UrlbarProviderSemanticHistorySearch",
-    module: "resource:///modules/UrlbarProviderSemanticHistorySearch.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderTabToSearch",
-    module: "resource:///modules/UrlbarProviderTabToSearch.sys.mjs",
-    supportedInputTypes: ["urlbar"],
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderTabToSearch.sys.mjs",
+    supportedInputTypes: ["urlbar", "searchbar"],
   },
   {
     name: "UrlbarProviderTokenAliasEngines",
-    module: "resource:///modules/UrlbarProviderTokenAliasEngines.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderTokenAliasEngines.sys.mjs",
     supportedInputTypes: ["urlbar", "searchbar"],
   },
   {
     name: "UrlbarProviderTopSites",
-    module: "resource:///modules/UrlbarProviderTopSites.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
     supportedInputTypes: ["urlbar"],
   },
   {
     name: "UrlbarProviderUnitConversion",
-    module: "resource:///modules/UrlbarProviderUnitConversion.sys.mjs",
+    module:
+      "moz-src:///browser/components/urlbar/UrlbarProviderUnitConversion.sys.mjs",
     supportedInputTypes: ["urlbar", "searchbar"],
   },
 ];
 
 // List of available local muxers, each is implemented in its own jsm module.
 var localMuxerModules = {
-  UrlbarMuxerStandard: "resource:///modules/UrlbarMuxerStandard.sys.mjs",
+  UrlbarMuxerStandard:
+    "moz-src:///browser/components/urlbar/UrlbarMuxerStandard.sys.mjs",
 };
 
 const DEFAULT_MUXER = "UnifiedComplete";

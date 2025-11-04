@@ -50,9 +50,10 @@ const TestingUIService = {
         this.showPayment(requestId, name, email, phone);
         break;
       }
-      default:
+      default: {
         const msg = `Expect details.error value: '${error}'`;
         sendAsyncMessage("test-fail", msg);
+      }
     }
   },
   completePayment(requestId) {

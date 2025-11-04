@@ -8,6 +8,7 @@ import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +37,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param headerTextStyle The text style of the header.
  * @param headerTextColor The [Color] of the [headerText].
  * @param iconTint The [Color] of the expand/collapse icon.
+ * @param contentPadding The [PaddingValues] of the header.
  * @param expanded Indicates whether the section of content is expanded. If null, the Icon will be hidden.
  * @param expandActionContentDescription The content description for expanding the section.
  * @param collapseActionContentDescription The content description for collapsing the section.
@@ -48,6 +50,7 @@ fun ExpandableListHeader(
     headerTextStyle: TextStyle = FirefoxTheme.typography.headline8,
     headerTextColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
     iconTint: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
     expanded: Boolean? = null,
     expandActionContentDescription: String? = null,
     collapseActionContentDescription: String? = null,
@@ -66,7 +69,7 @@ fun ExpandableListHeader(
         Row(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(contentPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(

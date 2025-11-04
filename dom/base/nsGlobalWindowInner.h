@@ -56,7 +56,6 @@ class nsIArray;
 class nsIBaseWindow;
 class nsIContent;
 class nsICookieJarSettings;
-class nsICSSDeclaration;
 class nsIDocShellTreeOwner;
 class nsIDOMWindowUtils;
 class nsIControllers;
@@ -754,7 +753,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   mozilla::dom::Selection* GetSelection(mozilla::ErrorResult& aError);
   mozilla::dom::IDBFactory* GetIndexedDB(JSContext* aCx,
                                          mozilla::ErrorResult& aError);
-  already_AddRefed<nsICSSDeclaration> GetComputedStyle(
+  already_AddRefed<nsDOMCSSDeclaration> GetComputedStyle(
       mozilla::dom::Element& aElt, const nsAString& aPseudoElt,
       mozilla::ErrorResult& aError) override;
   mozilla::dom::VisualViewport* VisualViewport();
@@ -847,7 +846,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   mozilla::glean::Glean* Glean();
   mozilla::glean::GleanPings* GleanPings();
 
-  already_AddRefed<nsICSSDeclaration> GetDefaultComputedStyle(
+  already_AddRefed<nsDOMCSSDeclaration> GetDefaultComputedStyle(
       mozilla::dom::Element& aElt, const nsAString& aPseudoElt,
       mozilla::ErrorResult& aError);
   void SizeToContent(const mozilla::dom::SizeToContentConstraints&,
@@ -992,12 +991,12 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
                         JS::Handle<JS::Value> aValue,
                         mozilla::ErrorResult& aError);
 
-  nsresult GetInnerWidth(double* aWidth) override;
-  nsresult GetInnerHeight(double* aHeight) override;
+  MOZ_CAN_RUN_SCRIPT nsresult GetInnerWidth(double* aWidth) override;
+  MOZ_CAN_RUN_SCRIPT nsresult GetInnerHeight(double* aHeight) override;
 
  public:
-  double GetInnerWidth(mozilla::ErrorResult& aError);
-  double GetInnerHeight(mozilla::ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT double GetInnerWidth(mozilla::ErrorResult& aError);
+  MOZ_CAN_RUN_SCRIPT double GetInnerHeight(mozilla::ErrorResult& aError);
   int32_t GetScreenX(mozilla::dom::CallerType aCallerType,
                      mozilla::ErrorResult& aError);
   int32_t GetScreenY(mozilla::dom::CallerType aCallerType,
@@ -1160,7 +1159,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
       mozilla::ErrorResult& aRv);
 
  protected:
-  already_AddRefed<nsICSSDeclaration> GetComputedStyleHelper(
+  already_AddRefed<nsDOMCSSDeclaration> GetComputedStyleHelper(
       mozilla::dom::Element& aElt, const nsAString& aPseudoElt,
       bool aDefaultStylesOnly, mozilla::ErrorResult& aError);
 

@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 firefox-appdir = "browser"
 head = "head.js"
 support-files = [
@@ -33,6 +34,7 @@ support-files = [
 ["test_extensionsettings.js"]
 
 ["test_import_enterprise_roots.js"]
+["test_local_network_access.js"]
 
 ["test_macosparser_unflatten.js"]
 run-if = ["os == 'mac'"]

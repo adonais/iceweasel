@@ -10,7 +10,6 @@
 #include "MLSFallback.h"
 #include "WindowsLocationParent.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/Logging.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
 #include "mozilla/dom/WindowsUtilsParent.h"

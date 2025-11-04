@@ -22,22 +22,6 @@
 #include "wasm/WasmTypeDef.h"
 #include "wasm/WasmValType.h"
 
-namespace js::wasm {
-
-// For trailer blocks whose owning Wasm{Struct,Array}Objects make it into the
-// tenured heap, we have to tell the tenured heap how big those trailers are
-// in order to get major GCs to happen sufficiently frequently.  In an attempt
-// to make the numbers more accurate, for each block we overstate the size by
-// the following amount, on the assumption that:
-//
-// * mozjemalloc has an overhead of at least one word per block
-//
-// * the malloc-cache mechanism rounds up small block sizes to the nearest 16;
-//   hence the average increase is 16 / 2.
-static const size_t TrailerBlockOverhead = (16 / 2) + (1 * sizeof(void*));
-
-}  // namespace js::wasm
-
 namespace js {
 
 //=========================================================================
@@ -176,6 +160,13 @@ class WasmArrayObject : public WasmGcObject,
     return offsetToPointer<uint8_t>(offsetOfInlineStorage());
   }
 
+  // Actual array data that follows DataHeader. The array data is a part of the
+  // `inlineStorage`.
+  template <typename T>
+  T* inlineArrayElements() {
+    return offsetToPointer<T>(offsetOfInlineArrayData());
+  }
+
   // AllocKind for object creation
   static inline gc::AllocKind allocKindForOOL();
   static inline gc::AllocKind allocKindForIL(uint32_t storageBytes);
@@ -214,10 +205,7 @@ class WasmArrayObject : public WasmGcObject,
   static inline constexpr uint32_t maxInlineElementsForElemSize(
       uint32_t elemSize);
 
-  static void addSizeOfExcludingThis(JSObject* obj,
-                                     mozilla::MallocSizeOf mallocSizeOf,
-                                     JS::ClassInfo* info,
-                                     JS::RuntimeSizes* runtimeSizes);
+  size_t sizeOfExcludingThis() const;
 
   using DataHeader = uintptr_t;
   static const DataHeader DataIsIL = 0;
@@ -357,10 +345,7 @@ class WasmStructObject : public WasmGcObject,
     return n;
   }
 
-  static void addSizeOfExcludingThis(JSObject* obj,
-                                     mozilla::MallocSizeOf mallocSizeOf,
-                                     JS::ClassInfo* info,
-                                     JS::RuntimeSizes* runtimeSizes);
+  size_t sizeOfExcludingThis() const;
 
   static const JSClass* classForTypeDef(const wasm::TypeDef* typeDef);
   static js::gc::AllocKind allocKindForTypeDef(const wasm::TypeDef* typeDef);
@@ -529,9 +514,8 @@ class MOZ_RAII StableWasmArrayObjectElements {
         // elements.
         MOZ_CRASH();
       }
-      std::copy(array->inlineStorage(),
-                array->inlineStorage() + array->numElements_ * sizeof(T),
-                ownElements_->begin());
+      const T* src = array->inlineArrayElements<T>();
+      std::copy(src, src + array->numElements_, ownElements_->begin());
       elements_ = ownElements_->begin();
     } else {
       elements_ = reinterpret_cast<T*>(array->data_);

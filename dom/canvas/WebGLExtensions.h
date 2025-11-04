@@ -8,7 +8,6 @@
 
 #include "WebGLObjectModel.h"
 #include "WebGLTypes.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsWrapperCache.h"

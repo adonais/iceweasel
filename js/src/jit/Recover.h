@@ -142,6 +142,8 @@ namespace jit {
   _(NewCallObject)                \
   _(Lambda)                       \
   _(FunctionWithProto)            \
+  _(Callee)                       \
+  _(FunctionEnvironment)          \
   _(ObjectKeys)                   \
   _(ObjectState)                  \
   _(ArrayState)                   \
@@ -966,6 +968,22 @@ class RLambda final : public RInstruction {
 class RFunctionWithProto final : public RInstruction {
  public:
   RINSTRUCTION_HEADER_NUM_OP_(FunctionWithProto, 3)
+
+  [[nodiscard]] bool recover(JSContext* cx,
+                             SnapshotIterator& iter) const override;
+};
+
+class RCallee final : public RInstruction {
+ public:
+  RINSTRUCTION_HEADER_NUM_OP_(Callee, 0)
+
+  [[nodiscard]] bool recover(JSContext* cx,
+                             SnapshotIterator& iter) const override;
+};
+
+class RFunctionEnvironment final : public RInstruction {
+ public:
+  RINSTRUCTION_HEADER_NUM_OP_(FunctionEnvironment, 1)
 
   [[nodiscard]] bool recover(JSContext* cx,
                              SnapshotIterator& iter) const override;

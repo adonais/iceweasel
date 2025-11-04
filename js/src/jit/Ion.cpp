@@ -177,24 +177,6 @@ bool JitRuntime::generateTrampolines(JSContext* cx) {
   generateInvalidator(masm, &bailoutTail);
   rangeRecorder.recordOffset("Trampoline: Invalidator");
 
-  // The arguments rectifier has to use the same frame layout as the function
-  // frames it rectifies.
-  static_assert(std::is_base_of_v<JitFrameLayout, RectifierFrameLayout>,
-                "a rectifier frame can be used with jit frame");
-  static_assert(std::is_base_of_v<JitFrameLayout, WasmToJSJitFrameLayout>,
-                "wasm frames simply are jit frames");
-  static_assert(sizeof(JitFrameLayout) == sizeof(WasmToJSJitFrameLayout),
-                "thus a rectifier frame can be used with a wasm frame");
-
-  JitSpew(JitSpew_Codegen, "# Emitting arguments rectifier");
-  generateArgumentsRectifier(masm, ArgumentsRectifierKind::Normal);
-  rangeRecorder.recordOffset("Trampoline: Arguments Rectifier");
-
-  JitSpew(JitSpew_Codegen, "# Emitting trial inlining arguments rectifier");
-  generateArgumentsRectifier(masm, ArgumentsRectifierKind::TrialInlining);
-  rangeRecorder.recordOffset(
-      "Trampoline: Arguments Rectifier (Trial Inlining)");
-
   JitSpew(JitSpew_Codegen, "# Emitting EnterJIT sequence");
   generateEnterJIT(cx, masm);
   rangeRecorder.recordOffset("Trampoline: EnterJIT");
@@ -2459,10 +2441,6 @@ static void InvalidateActivation(JS::GCContext* gcx,
       case FrameType::BaselineInterpreterEntry:
         JitSpew(JitSpew_IonInvalidate,
                 "#%zu baseline interpreter entry frame @ %p", frameno,
-                frame.fp());
-        break;
-      case FrameType::Rectifier:
-        JitSpew(JitSpew_IonInvalidate, "#%zu rectifier frame @ %p", frameno,
                 frame.fp());
         break;
       case FrameType::TrampolineNative:

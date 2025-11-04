@@ -565,9 +565,12 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
         contextTainted,
         "Context has been data-reviewed for telemetry transmission."));
 
+    mozilla::gecko_trace::events::DomQuotaTryEvent try_event;
+
 #    ifdef QM_ERROR_STACKS_ENABLED
     if (!frameIdString.IsEmpty()) {
       extra.frameId = Some(frameIdString);
+      try_event.WithFrameId(frameIdString);
     }
 
     if (!processIdString.IsEmpty()) {
@@ -577,6 +580,7 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
 
     if (!rvName.IsEmpty()) {
       extra.result = Some(rvName);
+      try_event.WithResult(rvName);
     }
 
     // Here, we are generating thread local sequence number and thread Id
@@ -601,10 +605,13 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
     sSequenceNumber.set(newSeqNum);
 
     extra.severity = Some(severityString);
+    try_event.WithSeverity(severityString);
 
     extra.sourceFile = Some(sourceFileRelativePath);
+    try_event.WithSourceFile(sourceFileRelativePath);
 
     extra.sourceLine = Some(aSourceFileLine);
+    try_event.WithSourceLine(aSourceFileLine);
 
 #    ifdef QM_ERROR_STACKS_ENABLED
     if (!stackIdString.IsEmpty()) {
@@ -613,6 +620,7 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
 #    endif
 
     glean::dom_quota_try::error_step.Record(Some(extra));
+    try_event.Emit();
   }
 #  endif
 }

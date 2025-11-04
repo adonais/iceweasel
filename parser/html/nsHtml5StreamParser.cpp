@@ -24,7 +24,6 @@
 #include "mozilla/StaticPrefs_html5.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/TextUtils.h"
-#include "mozilla/glean/NetwerkMetrics.h"
 
 #include "mozilla/Unused.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -172,7 +171,11 @@ class nsHtml5LoadFlusher : public Runnable {
   explicit nsHtml5LoadFlusher(nsHtml5TreeOpExecutor* aExecutor)
       : Runnable("nsHtml5LoadFlusher"), mExecutor(aExecutor) {}
   NS_IMETHOD Run() override {
-    mExecutor->FlushSpeculativeLoads();
+    // If we're in sync XHR, do nothing. We'll flush the speculative loads
+    // after the flush ends.
+    if (!mExecutor->IsFlushing()) {
+      mExecutor->FlushSpeculativeLoads();
+    }
     return NS_OK;
   }
 };
@@ -1398,14 +1401,10 @@ nsresult nsHtml5StreamParser::OnStopRequest(
   if (mOnStopCalled) {
     // OnStopRequest already executed (probably OMT).
     MOZ_ASSERT(NS_IsMainThread(), "Expected to run on main thread");
-    if (mOnDataFinishedTime) {
-      mOnStopRequestTime = TimeStamp::Now();
-    }
   } else {
     mOnStopCalled = true;
 
     if (MOZ_UNLIKELY(NS_IsMainThread())) {
-      MOZ_ASSERT(mOnDataFinishedTime.IsNull(), "stale mOnDataFinishedTime");
       nsCOMPtr<nsIRunnable> stopper = new nsHtml5RequestStopper(this);
       if (NS_FAILED(
               mEventTarget->Dispatch(stopper, nsIThread::DISPATCH_NORMAL))) {
@@ -1414,7 +1413,6 @@ nsresult nsHtml5StreamParser::OnStopRequest(
     } else {
       if (StaticPrefs::network_send_OnDataFinished_html5parser()) {
         MOZ_ASSERT(IsParserThread(), "Wrong thread!");
-        mOnDataFinishedTime = TimeStamp::Now();
         mozilla::MutexAutoLock autoLock(mTokenizerMutex);
         DoStopRequest();
         PostLoadFlusher();
@@ -1427,21 +1425,6 @@ nsresult nsHtml5StreamParser::OnStopRequest(
         return NS_OK;
       }
     }
-  }
-  if (!mOnStopRequestTime.IsNull() && !mOnDataFinishedTime.IsNull()) {
-    TimeDuration delta = (mOnStopRequestTime - mOnDataFinishedTime);
-    MOZ_ASSERT((delta.ToMilliseconds() >= 0),
-               "OnDataFinished after OnStopRequest");
-    glean::networking::http_content_html5parser_ondatafinished_to_onstop_delay
-        .AccumulateRawDuration(delta);
-    // GLAM EXPERIMENT
-    // This metric is temporary, disabled by default, and will be enabled only
-    // for the purpose of experimenting with client-side sampling of data for
-    // GLAM use. See Bug 1947604 for more information.
-    glean::glam_experiment::
-        http_content_html5parser_ondatafinished_to_onstop_delay
-            .AccumulateRawDuration(delta);
-    // END GLAM EXPERIMENT
   }
   return NS_OK;
 }

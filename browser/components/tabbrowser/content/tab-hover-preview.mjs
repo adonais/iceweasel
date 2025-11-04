@@ -42,16 +42,10 @@ export default class TabHoverPanelSet {
       "ui.popup.disable_autohide",
       false
     );
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_prefPreviewDelay",
-      "ui.tooltip.delay_ms"
-    );
 
     this.#win = win;
 
     this.panelOpener = new TabPreviewPanelTimedFunction(
-      this._prefPreviewDelay,
       ZERO_DELAY_ACTIVATION_TIME,
       this.#win
     );
@@ -192,9 +186,6 @@ class TabPanel extends Panel {
   /** @type {DOMElement|null} */
   #thumbnailElement;
 
-  /** @type {MutationObserver} */
-  #tabObserver;
-
   constructor(panel, panelSet) {
     super();
 
@@ -223,24 +214,15 @@ class TabPanel extends Panel {
 
     this.#tab = null;
     this.#thumbnailElement = null;
-
-    // Observe changes to this tab's DOM, and
-    // update the preview if the tab title changes
-    this.#tabObserver = new this.win.MutationObserver(
-      (mutationList, _observer) => {
-        for (const mutation of mutationList) {
-          if (mutation.attributeName === "label") {
-            this.#updatePreview();
-          }
-        }
-      }
-    );
   }
 
   handleEvent(e) {
     switch (e.type) {
       case "popupshowing":
         this.#updatePreview();
+        break;
+      case "TabAttrModified":
+        this.#updatePreview(e.target);
         break;
       case "TabSelect":
         this.deactivate();
@@ -250,9 +232,6 @@ class TabPanel extends Panel {
 
   activate(tab) {
     this.#tab = tab;
-    this.#tabObserver.observe(this.#tab, {
-      attributes: true,
-    });
 
     // Calling `moveToAnchor` in advance of the call to `openPopup` ensures
     // that race conditions can be avoided in cases where the user hovers
@@ -280,6 +259,7 @@ class TabPanel extends Panel {
     });
     this.win.addEventListener("TabSelect", this);
     this.panelElement.addEventListener("popupshowing", this);
+    this.#tab.addEventListener("TabAttrModified", this);
   }
 
   deactivate(leavingTab = null) {
@@ -294,8 +274,8 @@ class TabPanel extends Panel {
       });
       return;
     }
+    this.#tab?.removeEventListener("TabAttrModified", this);
     this.#tab = null;
-    this.#tabObserver.disconnect();
     this.#thumbnailElement = null;
     this.panelElement.removeEventListener("popupshowing", this);
     this.win.removeEventListener("TabSelect", this);
@@ -406,7 +386,11 @@ class TabPanel extends Panel {
       : "";
   }
 
-  #updatePreview() {
+  #updatePreview(tab = null) {
+    if (tab) {
+      this.#tab = tab;
+    }
+
     this.panelElement.querySelector(".tab-preview-title").textContent =
       this.#displayTitle;
     this.panelElement.querySelector(".tab-preview-uri").textContent =
@@ -491,10 +475,21 @@ class TabGroupPanel extends Panel {
   /** @type {number | null} */
   #deactivateTimer;
 
+  static PANEL_UPDATE_EVENTS = [
+    "TabAttrModified",
+    "TabClose",
+    "TabGrouped",
+    "TabMove",
+    "TabOpen",
+    "TabSelect",
+    "TabUngrouped",
+  ];
+
   constructor(panel, panelSet) {
     super();
 
     this.panelElement = panel;
+    this.panelContent = panel.querySelector("#tabgroup-panel-content");
     this.win = this.panelElement.ownerGlobal;
 
     this.#panelSet = panelSet;
@@ -508,7 +503,7 @@ class TabGroupPanel extends Panel {
 
     this.#group = group;
     this.#movePanel();
-    this.#updatePanelContents();
+    this.#updatePanelContent();
 
     this.#panelSet.panelOpener.execute(() => {
       if (!this.#panelSet.shouldActivate() || !this.#group.collapsed) {
@@ -516,6 +511,16 @@ class TabGroupPanel extends Panel {
       }
       this.#doOpenPanel();
     });
+  }
+
+  /**
+   * Move keyboard focus into the group preview panel.
+   *
+   * @param {-1|1} [dir] Whether to focus the beginning or end of the list.
+   */
+  focusPanel(dir = 1) {
+    let childIndex = dir > 0 ? 0 : this.panelContent.children.length - 1;
+    this.panelContent.children[childIndex].focus();
   }
 
   deactivate({ force = false } = {}) {
@@ -545,6 +550,10 @@ class TabGroupPanel extends Panel {
 
     if (this.#group) {
       this.#group.hoverPreviewPanelActive = false;
+
+      for (let event of TabGroupPanel.PANEL_UPDATE_EVENTS) {
+        this.#group.removeEventListener(event, this);
+      }
     }
 
     this.panelElement.hidePopup();
@@ -564,36 +573,50 @@ class TabGroupPanel extends Panel {
 
     this.#group.hoverPreviewPanelActive = true;
 
+    for (let event of TabGroupPanel.PANEL_UPDATE_EVENTS) {
+      this.#group.addEventListener(event, this);
+    }
+
     this.panelElement.openPopup(this.#popupTarget, this.popupOptions);
+
+    Glean.tabgroup.groupInteractions.hover_preview.add();
   }
 
-  #updatePanelContents() {
+  #updatePanelContent() {
     const fragment = this.win.document.createDocumentFragment();
     for (let tab of this.#group.tabs) {
-      let menuitem = this.win.document.createXULElement("menuitem");
-      menuitem.setAttribute("label", tab.label);
-      menuitem.setAttribute(
+      let tabbutton = this.win.document.createXULElement("toolbarbutton");
+      tabbutton.setAttribute("role", "button");
+      tabbutton.setAttribute("keyNav", false);
+      tabbutton.setAttribute("tabindex", 0);
+      tabbutton.setAttribute("label", tab.label);
+      tabbutton.setAttribute(
         "image",
         "page-icon:" + tab.linkedBrowser.currentURI.spec
       );
-      menuitem.setAttribute("tooltiptext", tab.label);
-      menuitem.classList.add("menuitem-iconic", "menuitem-with-favicon");
+      tabbutton.setAttribute("tooltiptext", tab.label);
+      tabbutton.classList.add(
+        "subviewbutton",
+        "subviewbutton-iconic",
+        "group-preview-button"
+      );
       if (tab == this.win.gBrowser.selectedTab) {
-        menuitem.classList.add("active-tab");
+        tabbutton.classList.add("active-tab");
       }
-      menuitem.tab = tab;
-      fragment.appendChild(menuitem);
+      tabbutton.tab = tab;
+      fragment.appendChild(tabbutton);
     }
-    this.panelElement.replaceChildren(fragment);
+    this.panelContent.replaceChildren(fragment);
   }
 
   handleEvent(event) {
     if (event.type == "command") {
       this.win.gBrowser.selectedTab = event.target.tab;
-    }
-
-    if (event.type == "mouseout" && event.target == this.panelElement) {
+      this.deactivate({ force: true });
+    } else if (event.type == "mouseout" && event.target == this.panelElement) {
       this.deactivate();
+    } else if (TabGroupPanel.PANEL_UPDATE_EVENTS.includes(event.type)) {
+      this.#updatePanelContent();
     }
   }
 
@@ -642,9 +665,6 @@ class TabGroupPanel extends Panel {
  */
 class TabPreviewPanelTimedFunction {
   /** @type {number} */
-  #delay;
-
-  /** @type {number} */
   #zeroDelayTime;
 
   /** @type {Window} */
@@ -656,8 +676,13 @@ class TabPreviewPanelTimedFunction {
   /** @type {boolean} */
   #useZeroDelay;
 
-  constructor(delay, zeroDelayTime, win) {
-    this.#delay = delay;
+  constructor(zeroDelayTime, win) {
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "_prefPreviewDelay",
+      "ui.tooltip.delay_ms"
+    );
+
     this.#zeroDelayTime = zeroDelayTime;
     this.#win = win;
 
@@ -678,7 +703,7 @@ class TabPreviewPanelTimedFunction {
         this.#timer = null;
         target();
       },
-      this.#useZeroDelay ? 0 : this.#delay
+      this.#useZeroDelay ? 0 : this._prefPreviewDelay
     );
   }
 

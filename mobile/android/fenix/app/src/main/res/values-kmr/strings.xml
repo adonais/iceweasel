@@ -258,9 +258,9 @@
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Şîfre</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button">Alîkarî</string>
+  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Alîkarî</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button">Eyar</string>
+  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">Eyar</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
   <string name="browser_extensions_menu_handlebar_content_description">Menuya pêvekan bigire</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
@@ -371,15 +371,15 @@
     Title for set firefox as default browser screen used by Nimbus experiments.
     Note: The word "Firefox" should NOT be translated
   -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources">Bizane ka çima bi mîlyonan kes ji Firefoxê hez dikin</string>
+  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">Bizane ka çima bi mîlyonan kes ji Firefoxê hez dikin</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources">Bi vebijarkên zêdetir di ewlehiyê de bigere</string>
+  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Bi vebijarkên zêdetir di ewlehiyê de bigere</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">Geroka me ya ne ji bo qezenckirina pereyan rê li şirketan digire ku li ser webê bi dizî we bişopînin.</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources">Zêdetirî 100 milyon kes nepeniya xwe bi hilbijartina gerokeke nebazirganî diparêzin.</string>
+  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">Zêdetirî 100 milyon kes nepeniya xwe bi hilbijartina gerokeke nebazirganî diparêzin.</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources">Kodên şopandinê? Otomatîk hatin astengkirin. Her 700`an bi kar bîne. Lê PDF? Readera me ya têdeyî rêveberiya PDF`an hêsan dike.</string>
+  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">Kodên şopandinê? Otomatîk hatin astengkirin. Her 700`an bi kar bîne. Lê PDF? Readera me ya têdeyî rêveberiya PDF`an hêsan dike.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">Bike geroka sereke</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -1231,13 +1231,9 @@
   <!--
     Bookmarks
 
-    Confirmation message for a dialog confirming if the user wants to delete the selected folder
+    Confirmation message for a dialog confirming if the user wants to delete multiple items.
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">Tu bi rastî jî dixwazî vê peldankê jê bibî?</string>
-  <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
   <string name="bookmark_delete_folders_confirmation_dialog">Tu ji dil dixwazî hêmayên nîşankirî jê bibî?</string>
-  <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s ew ê hêmanên bijartî jê bibe.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">Betal</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1264,8 +1260,6 @@
   <string name="bookmark_menu_open_all_in_private_tabs_button">Gişî di hilpekînên veşartî de veke</string>
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">Jê bibe</string>
-  <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">Tomar bike</string>
   <!--
     Bookmark multi select title in app bar
     %1$d is the number of bookmarks selected
@@ -1275,8 +1269,6 @@
   <string name="edit_bookmark_fragment_title">Favoriyan sererast bike</string>
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">Peldankê sererast bike</string>
-  <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">Ji bo favoriyên senkronêzekirî bibînî, têkeve</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">NAVNÎŞAN</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1287,33 +1279,21 @@
   <string name="bookmark_name_label">NAV</string>
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">Nav</string>
-  <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">Peldankê tevlî bike</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">Peldankê hilbijêre</string>
-  <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">Sernav hewce ye</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">URL’ya nederbasdar</string>
-  <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">Hîç favorî nîn in</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s hate jêbirin</string>
-  <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">Favorî hat jêbirin</string>
-  <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">Peldankên hilbijartî tên jêbirin</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">VEGERÎNE</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
   <string name="bookmark_delete_single_item">%s hat jêbirin</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">Hêmanan jêbirî: %s</string>
-  <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">Peyva lêgerînê binivîse</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">Paşve here</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -1571,10 +1551,8 @@
   <!--
     Snackbar
 
-    Text shown in snackbar when user deletes a collection
+    Text shown in snackbar when user closes a tab
   -->
-  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">Koleksiyon hate jêbirin</string>
-  <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">Hilpekîn hate girtin</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">Hilpekîn hatin girtin</string>
@@ -1603,8 +1581,6 @@
   <string name="qr_scanner_dialog_invalid_ok">BAŞ E</string>
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">Tu bi rastî jî dixwazî koleksiyana %1$s’ê were jêbirin?</string>
-  <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">Jê bibe</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">Ev, nivîsa nimûne ye. Dema ku tu bi vê eyarê mezinbûnê biguherînî dê çawaniya nivîsê li vir xuya bibe.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2084,8 +2060,6 @@
   <string name="confirm_clear_permission_site">Tu ji dil dixwazî vê destûrê ji bo vê malperê jê bibî?</string>
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">Istisnayên malperê tune</string>
-  <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">Tu ji dil dixwazî vê favoriyê jê bibî?</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">Li bijareyan zêde bike</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -2201,8 +2175,6 @@
   <string name="radio_preference_info_content_description">Ji bo agahiyên zêdetir, bitikîne</string>
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">Jorê</string>
-  <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">Bigire</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">Sponsorkirî</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->

@@ -109,7 +109,7 @@ class NetworkEventActor extends Actor {
     };
 
     if (isDataChannel(channel) || isFileChannel(channel)) {
-      this._innerWindowId = null;
+      this._innerWindowId = lazy.NetworkUtils.getChannelInnerWindowId(channel);
       this._isNavigationRequest = false;
 
       this._request = {

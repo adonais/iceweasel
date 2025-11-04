@@ -4,10 +4,15 @@
 
 package org.mozilla.fenix.search
 
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import kotlinx.coroutines.test.runTest
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ToggleEditMode
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.EnterEditMode
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ExitEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.EnvironmentCleared
 import mozilla.components.compose.browser.toolbar.store.EnvironmentRehydrated
@@ -19,6 +24,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,6 +42,14 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
     val mainLooperRule = MainLooperTestRule()
 
     private val appStore = AppStore()
+    private val lifecycleOwner: LifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
+    private lateinit var fragment: Fragment
+
+    @Before
+    fun setup() {
+        fragment = spyk(Fragment())
+        every { fragment.getViewLifecycleOwner() } returns lifecycleOwner
+    }
 
     @Test
     fun `GIVEN an environment was already set WHEN it is cleared THEN reset it to null`() {
@@ -59,7 +73,7 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
         assertTrue(appStore.state.searchState.isSearchActive)
         assertTrue(toolbarStore.state.isEditMode())
 
-        toolbarStore.dispatch(ToggleEditMode(false)).joinBlocking()
+        toolbarStore.dispatch(ExitEditMode).joinBlocking()
         appStore.waitUntilIdle()
         mainLooperRule.idle()
         assertFalse(appStore.state.searchState.isSearchActive)
@@ -72,7 +86,7 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
         assertFalse(toolbarStore.state.isEditMode())
         assertFalse(appStore.state.searchState.isSearchActive)
 
-        toolbarStore.dispatch(ToggleEditMode(true)).joinBlocking()
+        toolbarStore.dispatch(EnterEditMode).joinBlocking()
         mainLooperRule.idle()
 
         assertFalse(appStore.state.searchState.isSearchActive)
@@ -115,7 +129,7 @@ class BrowserToolbarSearchStatusSyncMiddlewareTest {
                     BrowserToolbarEnvironment(
                         context = testContext,
                         navController = mockk(),
-                        viewLifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED),
+                        fragment = fragment,
                         browsingModeManager = mockk(),
                     ),
                 ),

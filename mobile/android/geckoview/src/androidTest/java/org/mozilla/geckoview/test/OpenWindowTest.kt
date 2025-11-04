@@ -60,6 +60,7 @@ class OpenWindowTest : BaseSessionTest() {
             @GeckoSessionTestRule.AssertCalled
             override fun onShowNotification(notification: WebNotification) {
                 notificationShown = notification
+                notification.show()
                 notificationResult.complete(null)
             }
         })

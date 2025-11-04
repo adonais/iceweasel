@@ -608,6 +608,14 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolveStartingStyle(
       .Consume();
 }
 
+already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePositionTry(
+    dom::Element& aElement, ComputedStyle& aStyle,
+    const StyleDashedIdentAndOrTryTactic& aFallback) {
+  return Servo_ComputedValues_GetForPositionTry(mRawData.get(), &aStyle,
+                                                &aElement, &aFallback)
+      .Consume();
+}
+
 // manage the set of style sheets in the style set
 void ServoStyleSet::AppendStyleSheet(StyleSheet& aSheet) {
   MOZ_ASSERT(aSheet.IsApplicable());

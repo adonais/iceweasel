@@ -1,6 +1,6 @@
 [DEFAULT]
 head = "head.js"
-run-sequentially = "Bug 912235 - Intermittent failures"
+run-sequentially = ["true"] # Bug 912235 - Intermittent failures
 firefox-appdir = "browser"
 tags = "os_integration"
 

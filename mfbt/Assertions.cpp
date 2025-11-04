@@ -72,7 +72,7 @@ const char* CrashFmtImpl(const char* format, Args&&... args) {
 
 #endif
 
-MFBT_API MOZ_NORETURN MOZ_COLD void mozilla::detail::InvalidArrayIndex_CRASH(
+[[noreturn]] MFBT_API MOZ_COLD void mozilla::detail::InvalidArrayIndex_CRASH(
     size_t aIndex, size_t aLength) {
   MOZ_CRASH_UNSAFE_PRINTF("ElementAt(aIndex = %zu, aLength = %zu)", aIndex,
                           aLength);

@@ -641,22 +641,6 @@ UniqueChars Statistics::renderNurseryJson() const {
   return printer.release();
 }
 
-#ifdef DEBUG
-void Statistics::log(const char* fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  if (gcDebugFile) {
-    TimeDuration sinceStart =
-        TimeBetween(TimeStamp::FirstTimeStamp(), TimeStamp::Now());
-    fprintf(gcDebugFile, "%12.3f: ", sinceStart.ToMicroseconds());
-    vfprintf(gcDebugFile, fmt, args);
-    fprintf(gcDebugFile, "\n");
-    fflush(gcDebugFile);
-  }
-  va_end(args);
-}
-#endif
-
 UniqueChars Statistics::renderJsonMessage() const {
   /*
    * The format of the JSON message is specified by the GCMajorMarkerPayload
@@ -790,7 +774,6 @@ void Statistics::formatJsonPhaseTimes(const PhaseTimes& phaseTimes,
 Statistics::Statistics(GCRuntime* gc)
     : gc(gc),
       gcTimerFile(nullptr),
-      gcDebugFile(nullptr),
       nonincrementalReason_(GCAbortReason::None),
       creationTime_(TimeStamp::Now()),
       tenuredAllocsSinceMinorGC(0),
@@ -831,7 +814,6 @@ Statistics::Statistics(GCRuntime* gc)
   MOZ_ALWAYS_TRUE(suspendedPhases.reserve(MAX_SUSPENDED_PHASES));
 
   gcTimerFile = MaybeOpenFileFromEnv("MOZ_GCTIMER");
-  gcDebugFile = MaybeOpenFileFromEnv("JS_GC_DEBUG");
   gcProfileFile = MaybeOpenFileFromEnv("JS_GC_PROFILE_FILE", stderr);
 
   gc::ReadProfileEnv("JS_GC_PROFILE",
@@ -846,9 +828,6 @@ Statistics::Statistics(GCRuntime* gc)
 Statistics::~Statistics() {
   if (gcTimerFile && gcTimerFile != stdout && gcTimerFile != stderr) {
     fclose(gcTimerFile);
-  }
-  if (gcDebugFile && gcDebugFile != stdout && gcDebugFile != stderr) {
-    fclose(gcDebugFile);
   }
 }
 
@@ -1250,8 +1229,6 @@ void Statistics::beginSlice(const ZoneGCStats& zoneStats, JS::GCOptions options,
     }
     (*sliceCallback)(cx, JS::GC_SLICE_BEGIN, desc);
   }
-
-  log("begin slice");
 }
 
 void Statistics::endSlice() {
@@ -1263,8 +1240,6 @@ void Statistics::endSlice() {
     slice.end = TimeStamp::Now();
     slice.endFaults = GetPageFaultCount();
     slice.finalState = gc->state();
-
-    log("end slice");
 
     sendSliceTelemetry(slice);
 
@@ -1483,7 +1458,6 @@ void Statistics::recordPhaseBegin(Phase phase) {
 
   phaseStack.infallibleAppend(phase);
   phaseStartTimes[phase] = now;
-  log("begin: %s", phases[phase].path);
 }
 
 void Statistics::recordPhaseEnd(Phase phase) {
@@ -1539,7 +1513,6 @@ void Statistics::recordPhaseEnd(Phase phase) {
 
 #ifdef DEBUG
   phaseEndTimes[phase] = now;
-  log("end: %s", phases[phase].path);
 #endif
 }
 

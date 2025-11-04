@@ -540,6 +540,9 @@ function clearWarningMessage() {
  * @param {number} length context length for a request
  */
 async function showSummarizeWarning(length) {
+  // if previous request showed the message clear previous message
+  clearWarningMessage();
+
   const messageContainer = document.getElementById("message-container");
   const warningEl = lazy.GenAI.createWarningEl(document, null, true);
 

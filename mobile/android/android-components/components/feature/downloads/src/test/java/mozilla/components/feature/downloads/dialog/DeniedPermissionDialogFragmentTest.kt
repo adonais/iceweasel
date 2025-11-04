@@ -12,6 +12,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.support.test.ext.appCompatContext
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.doNothing
@@ -23,6 +24,11 @@ import mozilla.components.support.base.R as supportBaseR
 
 @RunWith(AndroidJUnit4::class)
 class DeniedPermissionDialogFragmentTest {
+
+    @Before
+    fun setup() {
+        testContext.setTheme(com.google.android.material.R.style.Theme_MaterialComponents_Light)
+    }
 
     @Test
     fun `WHEN showing the dialog THEN it has the provided message`() {

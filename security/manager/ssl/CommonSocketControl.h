@@ -63,10 +63,6 @@ class CommonSocketControl : public nsITLSSocketControl {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     return mMadeOCSPRequests;
   }
-  void SetUsedPrivateDNS(bool aUsedPrivateDNS) {
-    COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
-    mUsedPrivateDNS = aUsedPrivateDNS;
-  }
   bool GetUsedPrivateDNS() {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     return mUsedPrivateDNS;

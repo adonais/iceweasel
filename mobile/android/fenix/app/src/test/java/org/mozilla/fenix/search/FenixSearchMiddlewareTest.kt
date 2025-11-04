@@ -50,7 +50,7 @@ import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.fenix.GleanMetrics.BookmarksManagement
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.History
-import org.mozilla.fenix.GleanMetrics.UnifiedSearch
+import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
@@ -78,6 +78,8 @@ import org.mozilla.fenix.search.SearchFragmentAction.SuggestionSelected
 import org.mozilla.fenix.search.SearchFragmentStore.Environment
 import org.mozilla.fenix.search.awesomebar.SearchSuggestionsProvidersBuilder
 import org.mozilla.fenix.search.fixtures.EMPTY_SEARCH_FRAGMENT_STATE
+import org.mozilla.fenix.telemetry.ACTION_SEARCH_ENGINE_SELECTED
+import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -165,9 +167,7 @@ class FenixSearchMiddlewareTest {
             ),
         )
 
-        val telemetry = UnifiedSearch.engineSelected.testGetValue()
-        assertEquals("engine_selected", telemetry?.get(0)?.name)
-        assertEquals(preselectedSearchEngine.telemetryName(), telemetry?.get(0)?.extra?.get("engine"))
+        assertSearchEngineSelectedTelemetryRecorded(preselectedSearchEngine.telemetryName())
     }
 
     @Test
@@ -185,7 +185,7 @@ class FenixSearchMiddlewareTest {
             ),
         )
 
-        assertNull(UnifiedSearch.engineSelected.testGetValue())
+        assertNull(Toolbar.buttonTapped.testGetValue())
     }
 
     @Test
@@ -195,7 +195,7 @@ class FenixSearchMiddlewareTest {
 
         store.dispatch(SearchStarted(null, false, false, false))
 
-        assertNull(UnifiedSearch.engineSelected.testGetValue())
+        assertNull(Toolbar.buttonTapped.testGetValue())
     }
 
     @Test
@@ -361,9 +361,7 @@ class FenixSearchMiddlewareTest {
             assertFalse(it.browsingMode.isPrivate)
             assertEquals(settings, it.settings)
         }
-        val telemetry = UnifiedSearch.engineSelected.testGetValue()
-        assertEquals("engine_selected", telemetry?.get(0)?.name)
-        assertEquals(newSearchEngineSelection.telemetryName(), telemetry?.get(0)?.extra?.get("engine"))
+        assertSearchEngineSelectedTelemetryRecorded(newSearchEngineSelection.telemetryName())
     }
 
     @Test
@@ -466,9 +464,7 @@ class FenixSearchMiddlewareTest {
         assertNotNull(store.state.defaultEngine)
         assertEquals(defaultSearchEngine?.id, store.state.defaultEngine?.id)
         browserActionsCaptor.assertNotDispatched(EngagementFinished::class)
-        val telemetry = UnifiedSearch.engineSelected.testGetValue()?.firstOrNull()
-        assertEquals("engine_selected", telemetry?.name)
-        assertEquals("bookmarks", telemetry?.extra?.get("engine"))
+        assertSearchEngineSelectedTelemetryRecorded("bookmarks")
     }
 
     @Test
@@ -669,4 +665,15 @@ class FenixSearchMiddlewareTest {
         userSelectedSearchEngineId = null,
         userSelectedSearchEngineName = null,
     )
+
+    private fun assertSearchEngineSelectedTelemetryRecorded(
+        extra: String,
+    ) {
+        val values = Toolbar.buttonTapped.testGetValue()
+        assertNotNull(values)
+        val last = values!!.last()
+        assertEquals(ACTION_SEARCH_ENGINE_SELECTED, last.extra?.get("item"))
+        assertEquals(SOURCE_ADDRESS_BAR, last.extra?.get("source"))
+        assertEquals(extra, last.extra?.get("extra"))
+    }
 }

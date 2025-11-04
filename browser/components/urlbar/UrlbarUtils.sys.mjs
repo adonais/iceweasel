@@ -25,14 +25,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderInterventions:
-    "resource:///modules/UrlbarProviderInterventions.sys.mjs",
-  UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
+    "moz-src:///browser/components/urlbar/UrlbarProviderInterventions.sys.mjs",
+  UrlbarProviderOpenTabs:
+    "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarProviderSearchTips:
-    "resource:///modules/UrlbarProviderSearchTips.sys.mjs",
-  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.sys.mjs",
+    "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
+  UrlbarSearchUtils:
+    "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
+  UrlbarTokenizer:
+    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
 });
 
@@ -732,33 +735,6 @@ export var UrlbarUtils = {
       return "page-icon:" + url.href;
     }
     return this.ICON.DEFAULT;
-  },
-
-  /**
-   * Returns a search mode object if a token should enter search mode when
-   * typed. This does not handle engine aliases.
-   *
-   * @param {Values<typeof lazy.UrlbarTokenizer.RESTRICT>} token
-   *   A restriction token to convert to search mode.
-   * @returns {object}
-   *   A search mode object. Null if search mode should not be entered. See
-   *   setSearchMode documentation for details.
-   */
-  searchModeForToken(token) {
-    if (token == lazy.UrlbarTokenizer.RESTRICT.SEARCH) {
-      return {
-        engineName: lazy.UrlbarSearchUtils.getDefaultEngine(this.isPrivate)
-          ?.name,
-      };
-    }
-
-    let mode = this.LOCAL_SEARCH_MODES.find(m => m.restrict == token);
-    if (!mode) {
-      return null;
-    }
-
-    // Return a copy so callers don't modify the object in LOCAL_SEARCH_MODES.
-    return { ...mode };
   },
 
   /**

@@ -149,6 +149,8 @@ static uint32_t ToLinkMask(const nsAString& aLink) {
     mask = LinkStyle::ePRELOAD;
   } else if (aLink.EqualsLiteral("modulepreload")) {
     mask = LinkStyle::eMODULE_PRELOAD;
+  } else if (aLink.EqualsLiteral("compression-dictionary")) {
+    mask = LinkStyle::eCOMPRESSION_DICTIONARY;
   }
 
   return mask;

@@ -11,6 +11,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ContextDescriptorType:
     "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
+  Log: "chrome://remote/content/shared/Log.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
   SessionDataMethod:
     "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
@@ -20,6 +21,10 @@ ChromeUtils.defineESModuleGetters(lazy, {
   WindowGlobalMessageHandler:
     "chrome://remote/content/shared/messagehandler/WindowGlobalMessageHandler.sys.mjs",
 });
+
+ChromeUtils.defineLazyGetter(lazy, "logger", () =>
+  lazy.Log.get(lazy.Log.TYPES.WEBDRIVER_BIDI)
+);
 
 /**
  * Enum of possible natural orientations supported by the
@@ -848,6 +853,202 @@ class EmulationModule extends RootBiDiModule {
   }
 
   /**
+   * Set the user agent override to the list of top-level navigables
+   * or user contexts.
+   *
+   * @param {object=} options
+   * @param {Array<string>=} options.contexts
+   *     Optional list of browsing context ids.
+   * @param {(string|null)} options.userAgent
+   *     User agent string which has to override
+   *     the browser user agent.
+   *     Null value resets the override.
+   * @param {Array<string>=} options.userContexts
+   *     Optional list of user context ids.
+   *
+   * @throws {InvalidArgumentError}
+   *     Raised if an argument is of an invalid type or value.
+   * @throws {NoSuchFrameError}
+   *     If the browsing context cannot be found.
+   * @throws {NoSuchUserContextError}
+   *     Raised if the user context id could not be found.
+   */
+  async setUserAgentOverride(options = {}) {
+    const { contexts: contextIds, userContexts: userContextIds } = options;
+    let { userAgent } = options;
+
+    if (userAgent === null) {
+      // The API requires an empty string to reset the override.
+      userAgent = "";
+    } else {
+      lazy.assert.string(
+        userAgent,
+        lazy.pprint`Expected "userAgent" to be a string, got ${userAgent}`
+      );
+
+      if (userAgent === "") {
+        throw new lazy.error.UnsupportedOperationError(
+          `Overriding "userAgent" to an empty string is not supported`
+        );
+      }
+    }
+
+    if (contextIds !== undefined && userContextIds !== undefined) {
+      throw new lazy.error.InvalidArgumentError(
+        `Providing both "contexts" and "userContexts" arguments is not supported`
+      );
+    }
+
+    const navigables = new Set();
+    const userContexts = new Set();
+    if (contextIds !== undefined) {
+      lazy.assert.isNonEmptyArray(
+        contextIds,
+        lazy.pprint`Expected "contexts" to be a non-empty array, got ${contextIds}`
+      );
+
+      for (const contextId of contextIds) {
+        lazy.assert.string(
+          contextId,
+          lazy.pprint`Expected elements of "contexts" to be a string, got ${contextId}`
+        );
+
+        const context = this.#getBrowsingContext(contextId);
+
+        lazy.assert.topLevel(
+          context,
+          `Browsing context with id ${contextId} is not top-level`
+        );
+
+        navigables.add(context);
+      }
+    } else if (userContextIds !== undefined) {
+      lazy.assert.isNonEmptyArray(
+        userContextIds,
+        lazy.pprint`Expected "userContexts" to be a non-empty array, got ${userContextIds}`
+      );
+
+      for (const userContextId of userContextIds) {
+        lazy.assert.string(
+          userContextId,
+          lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
+        );
+
+        const internalId =
+          lazy.UserContextManager.getInternalIdById(userContextId);
+
+        if (internalId === null) {
+          throw new lazy.error.NoSuchUserContextError(
+            `User context with id: ${userContextId} doesn't exist`
+          );
+        }
+
+        userContexts.add(internalId);
+
+        // Prepare the list of navigables to update.
+        lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
+          tab => {
+            const contentBrowser = lazy.TabManager.getBrowserForTab(tab);
+            navigables.add(contentBrowser.browsingContext);
+          }
+        );
+      }
+    } else {
+      lazy.TabManager.getBrowsers().forEach(browser =>
+        navigables.add(browser.browsingContext)
+      );
+    }
+
+    const sessionDataItems = [];
+    // In case of resetting the override, remove existing session data items
+    // for the required context descriptors.
+    const onlyRemoveSessionDataItem = userAgent === "";
+
+    if (userContextIds !== undefined) {
+      for (const userContext of userContexts) {
+        sessionDataItems.push(
+          ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
+            "_configuration",
+            "user-agent-override",
+            {
+              type: lazy.ContextDescriptorType.UserContext,
+              id: userContext,
+            },
+            onlyRemoveSessionDataItem,
+            userAgent
+          )
+        );
+      }
+    } else if (contextIds !== undefined) {
+      for (const navigable of navigables) {
+        sessionDataItems.push(
+          ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
+            "_configuration",
+            "user-agent-override",
+            {
+              type: lazy.ContextDescriptorType.TopBrowsingContext,
+              id: navigable.browserId,
+            },
+            onlyRemoveSessionDataItem,
+            userAgent
+          )
+        );
+      }
+    } else {
+      sessionDataItems.push(
+        ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
+          "_configuration",
+          "user-agent-override",
+          {
+            type: lazy.ContextDescriptorType.All,
+          },
+          onlyRemoveSessionDataItem,
+          userAgent
+        )
+      );
+    }
+
+    if (sessionDataItems.length) {
+      // TODO: Bug 1953079. Saving the user agent override in the session data works fine
+      // with one session, but when we start supporting multiple BiDi session, we will
+      // have to rethink this approach.
+      await this.messageHandler.updateSessionData(sessionDataItems);
+    }
+
+    for (const navigable of navigables) {
+      const [overridePerContext, overridePerUserContext, overrideGlobal] =
+        this.#findExistingOverrideForContext("user-agent-override", navigable);
+
+      if (contextIds) {
+        if (userAgent === "") {
+          // In case of resetting an override for navigable,
+          // if there is an existing override for user context or global,
+          // we should apply it to browsing context.
+          userAgent = overridePerUserContext || overrideGlobal || "";
+        }
+      } else if (userContextIds) {
+        // No need to do anything if there is an override
+        // for the browsing context.
+        if (overridePerContext) {
+          continue;
+        }
+
+        // In case of resetting an override for user context,
+        // apply a global override if it exists
+        if (userAgent === "" && overrideGlobal) {
+          userAgent = overrideGlobal;
+        }
+      } else if (overridePerContext || overridePerUserContext) {
+        // No need to do anything if there is an override
+        // for the browsing or user context.
+        continue;
+      }
+
+      this._setUserAgentOverride({ context: navigable, userAgent });
+    }
+  }
+
+  /**
    * Set the screen orientation override to the top-level browsing context.
    *
    * @param {object} options
@@ -933,6 +1134,72 @@ class EmulationModule extends RootBiDiModule {
         timezone,
       },
     });
+  }
+
+  /**
+   * Set the user agent override to the top-level browsing context.
+   *
+   * @param {object} options
+   * @param {BrowsingContext} options.context
+   *     Top-level browsing context object which is a target
+   *     for the locale override.
+   * @param {string} options.userAgent
+   *     User agent string which has to override
+   *     the browser user agent.
+   */
+  _setUserAgentOverride(options) {
+    const { context, userAgent } = options;
+
+    try {
+      context.customUserAgent = userAgent;
+    } catch (e) {
+      const contextId = lazy.TabManager.getIdForBrowsingContext(context);
+
+      lazy.logger.warn(
+        `Failed to override user agent for context with id: ${contextId} (${e.message})`
+      );
+    }
+  }
+
+  /**
+   * Find the existing overrides for a given category and context.
+   *
+   * @param {string} category
+   *     The session data category.
+   * @param {BrowsingContext} context
+   *     The browsing context.
+   *
+   * @returns {Array<string>}
+   *     Return the list of existing values.
+   */
+  #findExistingOverrideForContext(category, context) {
+    let overrideGlobal, overridePerUserContext, overridePerContext;
+
+    const sessionDataItems =
+      this.messageHandler.sessionData.getSessionDataForContext(
+        "_configuration",
+        category,
+        context
+      );
+
+    sessionDataItems.forEach(item => {
+      switch (item.contextDescriptor.type) {
+        case lazy.ContextDescriptorType.All: {
+          overrideGlobal = item.value;
+          break;
+        }
+        case lazy.ContextDescriptorType.UserContext: {
+          overridePerUserContext = item.value;
+          break;
+        }
+        case lazy.ContextDescriptorType.TopBrowsingContext: {
+          overridePerContext = item.value;
+          break;
+        }
+      }
+    });
+
+    return [overridePerContext, overridePerUserContext, overrideGlobal];
   }
 
   #getBrowsingContext(contextId) {

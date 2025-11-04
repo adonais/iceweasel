@@ -912,11 +912,12 @@ this.VideoControlsImplWidget = class {
               case this.controlsSpacer:
                 this.clickToPlayClickHandler(aEvent);
                 break;
-              case this.textTrackList:
+              case this.textTrackList: {
                 const index = +aEvent.originalTarget.getAttribute("index");
                 this.changeTextTrack(index);
                 this.closedCaptionButton.focus();
                 break;
+              }
               case this.videocontrols:
                 // Prevent any click event within media controls from dispatching through to video.
                 aEvent.stopPropagation();
@@ -926,7 +927,7 @@ this.VideoControlsImplWidget = class {
           case "dblclick":
             this.toggleFullscreen();
             break;
-          case "resizevideocontrols":
+          case "resizevideocontrols": {
             // Since this event come from the layout, this is the only place
             // we are sure of that probing into layout won't trigger or force
             // reflow.
@@ -951,6 +952,7 @@ this.VideoControlsImplWidget = class {
             }
             this.updatePictureInPictureToggleDisplay();
             break;
+          }
           case "fullscreenchange":
             this.onFullscreenChange();
             break;

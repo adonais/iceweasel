@@ -19,6 +19,15 @@ for (const pref of devtoolsPreferences.getChildList("")) {
   }
 }
 
+{
+  const { PromiseTestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/PromiseTestUtils.sys.mjs"
+  );
+  PromiseTestUtils.allowMatchingRejectionsGlobally(
+    /REDUX_MIDDLEWARE_IGNORED_REDUX_ACTION/
+  );
+}
+
 async function resetPreferencesModifiedDuringTest() {
   if (!isXpcshell) {
     await SpecialPowers.flushPrefEnv();
@@ -2601,4 +2610,93 @@ async function waitForConsoleMessageLink(toolbox, messageText, linkText) {
 
     return linkEl;
   });
+}
+
+/**
+ * Click on a Frame component link and ensure it opens the debugger on the expected location
+ *
+ * @param {Toolbox} toolbox
+ * @param {DOMElement} frameLinkNode
+ * @param {Object] options
+ * @param {String|null} options.url
+ * @param {Number|null} options.line
+ * @param {Number|null} options.column
+ * @param {String|undefined} logPointExpr
+ */
+async function clickAndAssertFrameLinkNode(
+  toolbox,
+  frameLinkNode,
+  { url, line, column },
+  logPointExpr
+) {
+  info("checking click on node location");
+
+  // If the debugger hasn't fully loaded yet and breakpoints are still being
+  // added when we click on the logpoint link, the logpoint panel might not
+  // render. Work around this for now, see bug 1592854.
+  if (logPointExpr) {
+    await waitForTime(1000);
+  }
+
+  const onSourceOpened = toolbox.once("source-opened-in-debugger");
+
+  EventUtils.sendMouseEvent(
+    { type: "click" },
+    // The frame DOM Element may be coming from a Debugger Frame component, or a shared compoentn Frame component
+    // and the link would be at a distinct selector.
+    frameLinkNode.querySelector(".frame-link-filename") ||
+      frameLinkNode.querySelector(".location")
+  );
+
+  // Wait for the source to finish loading, if it is pending.
+  await onSourceOpened;
+
+  // Wait for the debugger to have fully processed the opened source
+  const dbg = toolbox.getPanel("jsdebugger");
+
+  const selectedLocation = await waitFor(() =>
+    dbg._selectors.getSelectedLocation(dbg._getState())
+  );
+
+  if (typeof url == "string") {
+    const frameUrl = frameLinkNode.getAttribute("data-url");
+    is(frameUrl, url, "Frame link url is correct");
+
+    is(selectedLocation.source.url, url, "debugger opened url is correct");
+  }
+  if (typeof line == "number") {
+    const frameLine = frameLinkNode.getAttribute("data-line");
+    is(parseInt(frameLine, 10), line, "Frame link line is correct");
+
+    is(selectedLocation.line, line, "debugger opened line is correct");
+  }
+  if (typeof column == "number") {
+    // Note that debugger's Frame component doesn't show the column
+    const frameColumn = frameLinkNode.getAttribute("data-column");
+    is(parseInt(frameColumn, 10), column, "Frame link column is correct");
+
+    // Redux location object uses 0-based column, while we display a 1-based one.
+    is(
+      selectedLocation.column + 1,
+      column,
+      "debugger opened column is correct"
+    );
+  }
+
+  if (logPointExpr !== undefined && logPointExpr !== "") {
+    const inputEl = dbg.panelWin.document.activeElement;
+
+    const isPanelFocused =
+      inputEl.classList.contains("cm-content") &&
+      inputEl.closest(".conditional-breakpoint-panel.log-point");
+
+    ok(isPanelFocused, "The textarea of logpoint panel is focused");
+
+    const inputValue = inputEl.parentElement.parentElement.innerText.trim();
+    is(
+      inputValue,
+      logPointExpr,
+      "The input in the open logpoint panel matches the logpoint expression"
+    );
+  }
 }

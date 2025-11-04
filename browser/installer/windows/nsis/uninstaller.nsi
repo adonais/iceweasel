@@ -449,6 +449,18 @@ Section "Uninstall"
     ClearErrors
   ${EndIf}
 
+  ReadRegDWORD $R4 HKCU "Software\Mozilla\${BrandFullNameInternal}" DesktopLauncherAppInstalled
+  ${IfNot} ${Errors}
+  ${AndIf} $R4 == "1"
+    ; The current user had a desktop launcher at some point, so remove it.
+    SetShellVarContext current
+    Delete "$DESKTOP\${BrandShortName}.exe"
+    ${IfNot} ${Errors}
+      DeleteRegValue HKCU "Software\Mozilla\${BrandFullNameInternal}" DesktopLauncherAppInstalled
+    ${EndIf}
+  ${EndIf}
+  ClearErrors
+
   SetShellVarContext current  ; Set SHCTX to HKCU
   ${un.RegCleanMain} "Software\Mozilla"
   ${un.RegCleanPrefs} "Software\Mozilla\${AppName}"

@@ -46,102 +46,6 @@ registerCleanupFunction(() => {
 });
 
 /**
- * Helper function for `_loadAllIntegrationTests`.
- *
- * Implements this as a global method in order to please eslint.
- * This will be used by modules loaded from "integration-tests" folder
- * in order to register a new integration task, ran when executing `runAllIntegrationTests`.
- */
-const integrationTasks = [];
-function addIntegrationTask(fun) {
-  integrationTasks.push(fun);
-}
-
-/**
- * Helper function for `runAllIntegrationTests`.
- *
- * Loads all the modules from "integration-tests" folder and return
- * all the task they implemented and registered by calling `addIntegrationTask`.
- */
-function _loadAllIntegrationTests() {
-  const testsDir = getChromeDir(getResolvedURI(gTestPath));
-  testsDir.append("integration-tests");
-  const entries = testsDir.directoryEntries;
-  const urls = [];
-  while (entries.hasMoreElements()) {
-    const file = entries.nextFile;
-    const url = Services.io.newFileURI(file).spec;
-    if (url.endsWith(".js")) {
-      urls.push(url);
-    }
-  }
-
-  // We need to sort in order to run the test in a reliable order
-  urls.sort();
-
-  for (const url of urls) {
-    Services.scriptloader.loadSubScript(url, this);
-  }
-  return integrationTasks;
-}
-
-/**
- * Method to be called by each integration tests which will
- * run all the "integration tasks" implemented in files from the "integration-tests" folder.
- * These files should call the `addIntegrationTask()` method to register something to run.
- *
- * @param {String} testFolder
- *        Define what folder in "examples" folder to load before opening the debugger.
- *        This is meant to be a versionized test folder with v1, v2, v3 folders.
- *        (See createVersionizedHttpTestServer())
- * @param {Object} env
- *        Environment object passed down to each task to better know
- *        which particular integration test is being run.
- */
-async function runAllIntegrationTests(testFolder, env) {
-  const tasks = _loadAllIntegrationTests();
-
-  const testServer = createVersionizedHttpTestServer("examples/" + testFolder);
-  const testUrl = testServer.urlFor("index.html");
-
-  for (const task of tasks) {
-    info(` ==> Running integration task '${task.name}'`);
-    await task(testServer, testUrl, env);
-  }
-}
-
-const INTEGRATION_TEST_PAGE_SOURCES = [
-  "index.html",
-  "iframe.html",
-  "script.js",
-  "onload.js",
-  "test-functions.js",
-  "query.js?x=1",
-  "query.js?x=2",
-  "query2.js?y=3",
-  "bundle.js",
-  "original.js",
-  "bundle-with-another-original.js",
-  "original-with-no-update.js",
-  "replaced-bundle.js",
-  "removed-original.js",
-  "named-eval.js",
-  "react-component-module.js",
-  // This is the JS file with encoded characters and custom protocol
-  "文字コード.js",
-  // Webpack generated some extra sources:
-  "bootstrap 3b1a221408fdde86aa49",
-  "bootstrap a1ecee2f86e1d0ea3fb5",
-  "bootstrap d343aa81956b90d9f67e",
-  // There is 3 occurences, one per target (main thread, worker and iframe).
-  // But there is even more source actors (named evals and duplicated script tags).
-  "same-url.sjs",
-  "same-url.sjs",
-  "log-worker.js",
-  "same-url.sjs",
-];
-
-/**
  * Install a Web Extension which will run a content script against any test page
  * served from https://example.com
  *
@@ -286,23 +190,71 @@ function assertCursorPosition(dbg, expectedLine, expectedColumn, message) {
   is(cursor.from.ch + 1, expectedColumn, message + " (actual cursor column)");
 }
 
-async function waitForCursorPosition(dbg, expectedLine) {
-  return waitFor(() => {
-    const cursorPosition = findElementWithSelector(dbg, ".cursor-position");
-    if (!cursorPosition) {
-      return false;
-    }
-    const { innerText } = cursorPosition;
-    // Cursor position text has the following shape: (L, C)
-    // where L is the line number, and C the column number
-    const line = innerText.substring(1, innerText.indexOf(","));
-    return parseInt(line, 10) == expectedLine;
-  });
-}
-
 /**
  * @see selectDebuggerContextMenuItem in debugger/test/mochitest/shared-head.js
  */
 function selectContextMenuItem(dbg, selector) {
   return selectDebuggerContextMenuItem(dbg, selector);
+}
+
+function getEventListenersPanel(dbg) {
+  return findElementWithSelector(dbg, ".event-listeners-pane .event-listeners");
+}
+
+async function toggleEventBreakpoint(
+  dbg,
+  eventBreakpointGroup,
+  eventBreakpointName
+) {
+  const eventCheckbox = await getEventBreakpointCheckbox(
+    dbg,
+    eventBreakpointGroup,
+    eventBreakpointName
+  );
+  eventCheckbox.scrollIntoView();
+  info(`Toggle ${eventBreakpointName} breakpoint`);
+  const onEventListenersUpdate = waitForDispatch(
+    dbg.store,
+    "UPDATE_EVENT_LISTENERS"
+  );
+  const checked = eventCheckbox.checked;
+  eventCheckbox.click();
+  await onEventListenersUpdate;
+
+  info("Wait for the event breakpoint checkbox to be toggled");
+  // Wait for he UI to be toggled, otherwise, the reducer may not be fully updated
+  await waitFor(() => {
+    return eventCheckbox.checked == !checked;
+  });
+}
+
+async function getEventBreakpointCheckbox(
+  dbg,
+  eventBreakpointGroup,
+  eventBreakpointName
+) {
+  if (!getEventListenersPanel(dbg)) {
+    // Event listeners panel is collapsed, expand it
+    findElementWithSelector(
+      dbg,
+      `.event-listeners-pane ._header .header-label`
+    ).click();
+    await waitFor(() => getEventListenersPanel(dbg));
+  }
+
+  const groupCheckbox = findElementWithSelector(
+    dbg,
+    `input[value="${eventBreakpointGroup}"]`
+  );
+  const groupEl = groupCheckbox.closest(".event-listener-group");
+  let groupEventsUl = groupEl.querySelector("ul");
+  if (!groupEventsUl) {
+    info(
+      `Expand ${eventBreakpointGroup} and wait for the sub list to be displayed`
+    );
+    groupEl.querySelector(".event-listener-expand").click();
+    groupEventsUl = await waitFor(() => groupEl.querySelector("ul"));
+  }
+
+  return findElementWithSelector(dbg, `input[value="${eventBreakpointName}"]`);
 }

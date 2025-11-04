@@ -27,7 +27,7 @@
   width: 100%;
   align-items: center;
   cursor: pointer;
-  border-radius: 1px;
+  border-radius: var(--border-radius-xsmall);
   outline-offset: 4px;
   padding: 6px;
   padding-inline-end: 0;
@@ -51,7 +51,7 @@
   color: var(--fxview-primary-action-background);
   float: inline-end;
   outline-offset: 6px;
-  border-radius: 1px;
+  border-radius: var(--border-radius-xsmall);
   width: 12%;
   text-align: end;
   padding: 6px;
@@ -146,7 +146,7 @@
   text-decoration: underline;
   display: inline-block;
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   margin-block: 0.5rem;
 }
 

@@ -18,7 +18,6 @@ import androidx.core.view.isVisible
 import androidx.navigation.findNavController
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -56,7 +55,6 @@ class RadioSearchEngineListPreference @JvmOverloads constructor(
         )
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     private fun subscribeToSearchEngineUpdates(store: BrowserStore, view: View) = view.toScope().launch {
         store.flow()
             .map { state -> state.search }

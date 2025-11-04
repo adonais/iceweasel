@@ -6,19 +6,17 @@ package mozilla.components.feature.top.sites
 
 import androidx.core.net.toUri
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.concept.storage.FrecencyThresholdOption
 import mozilla.components.concept.storage.TopFrecentSiteInfo
 import mozilla.components.feature.top.sites.ext.toTopSite
 import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import mozilla.components.support.test.whenever
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.anyInt
@@ -28,15 +26,12 @@ import org.mockito.Mockito.verify
 @RunWith(AndroidJUnit4::class)
 class DefaultTopSitesStorageTest {
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
-
     private val pinnedSitesStorage: PinnedSiteStorage = mock()
     private val historyStorage: PlacesHistoryStorage = mock()
     private val topSitesProvider: TopSitesProvider = mock()
 
     @Test
-    fun `default top sites are added to pinned site storage on init`() = runTestOnMain {
+    fun `default top sites are added to pinned site storage on init`() = runTest {
         val defaultTopSites = listOf(
             Pair("Mozilla", "https://mozilla.com"),
             Pair("Firefox", "https://firefox.com"),
@@ -48,12 +43,13 @@ class DefaultTopSitesStorageTest {
             defaultTopSites = defaultTopSites,
             coroutineContext = coroutineContext,
         )
+        testScheduler.advanceUntilIdle()
 
         verify(pinnedSitesStorage).addAllPinnedSites(defaultTopSites, isDefault = true)
     }
 
     @Test
-    fun `addPinnedSite`() = runTestOnMain {
+    fun addPinnedSite() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -62,6 +58,7 @@ class DefaultTopSitesStorageTest {
         )
 
         defaultTopSitesStorage.addTopSite("Mozilla", "https://mozilla.com", isDefault = false)
+        testScheduler.advanceUntilIdle()
 
         verify(pinnedSitesStorage).addPinnedSite(
             "Mozilla",
@@ -71,7 +68,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `removeTopSite`() = runTestOnMain {
+    fun removeTopSite() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -87,6 +84,7 @@ class DefaultTopSitesStorageTest {
         )
 
         defaultTopSitesStorage.removeTopSite(frecentSite)
+        testScheduler.advanceUntilIdle()
 
         verify(historyStorage).deleteVisitsFor(frecentSite.url)
 
@@ -98,6 +96,7 @@ class DefaultTopSitesStorageTest {
         )
 
         defaultTopSitesStorage.removeTopSite(pinnedSite)
+        testScheduler.advanceUntilIdle()
 
         verify(pinnedSitesStorage).removePinnedSite(pinnedSite)
         verify(historyStorage).deleteVisitsFor(pinnedSite.url)
@@ -110,13 +109,14 @@ class DefaultTopSitesStorageTest {
         )
 
         defaultTopSitesStorage.removeTopSite(defaultSite)
+        testScheduler.advanceUntilIdle()
 
         verify(pinnedSitesStorage).removePinnedSite(defaultSite)
         verify(historyStorage).deleteVisitsFor(defaultSite.url)
     }
 
     @Test
-    fun `updateTopSite`() = runTestOnMain {
+    fun updateTopSite() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -132,6 +132,7 @@ class DefaultTopSitesStorageTest {
         )
 
         defaultTopSitesStorage.updateTopSite(defaultSite, "Mozilla Firefox", "https://mozilla.com")
+        testScheduler.advanceUntilIdle()
 
         verify(pinnedSitesStorage).updatePinnedSite(defaultSite, "Mozilla Firefox", "https://mozilla.com")
 
@@ -143,6 +144,7 @@ class DefaultTopSitesStorageTest {
         )
 
         defaultTopSitesStorage.updateTopSite(pinnedSite, "Wiki", "https://en.wikipedia.org/wiki/Wiki")
+        testScheduler.advanceUntilIdle()
 
         verify(pinnedSitesStorage).updatePinnedSite(pinnedSite, "Wiki", "https://en.wikipedia.org/wiki/Wiki")
 
@@ -154,12 +156,13 @@ class DefaultTopSitesStorageTest {
         )
 
         defaultTopSitesStorage.updateTopSite(frecentSite, "Moz", "")
+        testScheduler.advanceUntilIdle()
 
         verify(pinnedSitesStorage, never()).updatePinnedSite(frecentSite, "Moz", "")
     }
 
     @Test
-    fun `GIVEN frecencyConfig and providerConfig are null WHEN getTopSites is called THEN only default and pinned sites are returned`() = runTestOnMain {
+    fun `GIVEN frecencyConfig and providerConfig are null WHEN getTopSites is called THEN only default and pinned sites are returned`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -215,7 +218,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `GIVEN providerConfig is specified WHEN getTopSites is called THEN default, pinned and provided top sites are returned`() = runTestOnMain {
+    fun `GIVEN providerConfig is specified WHEN getTopSites is called THEN default, pinned and provided top sites are returned`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -336,7 +339,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `GIVEN providerConfig with maxThreshold is specified WHEN getTopSites is called THEN the correct number of provided top sites are returned`() = runTestOnMain {
+    fun `GIVEN providerConfig with maxThreshold is specified WHEN getTopSites is called THEN the correct number of provided top sites are returned`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -478,7 +481,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `GIVEN providerConfig with maxThreshold and limit specified WHEN getTopSites is called THEN the correct number of provided top sites are returned`() = runTestOnMain {
+    fun `GIVEN providerConfig with maxThreshold and limit specified WHEN getTopSites is called THEN the correct number of provided top sites are returned`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -619,7 +622,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `GIVEN frecencyConfig and providerConfig are specified WHEN getTopSites is called THEN default, pinned, provided and frecent top sites are returned`() = runTestOnMain {
+    fun `GIVEN frecencyConfig and providerConfig are specified WHEN getTopSites is called THEN default, pinned, provided and frecent top sites are returned`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -737,7 +740,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `getTopSites returns pinned and frecent sites when frecencyConfig is specified`() = runTestOnMain {
+    fun `getTopSites returns pinned and frecent sites when frecencyConfig is specified`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -866,7 +869,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `getTopSites filters out frecent sites that already exist in pinned sites`() = runTestOnMain {
+    fun `getTopSites filters out frecent sites that already exist in pinned sites`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -936,7 +939,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `GIVEN providerFilter is set WHEN getTopSites is called THEN the provided top sites are filtered`() = runTestOnMain {
+    fun `GIVEN providerFilter is set WHEN getTopSites is called THEN the provided top sites are filtered`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -1024,7 +1027,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `GIVEN frecent top sites exist as a pinned or provided site WHEN top sites are retrieved THEN filters out frecent sites that already exist in pinned or provided sites`() = runTestOnMain {
+    fun `GIVEN frecent top sites exist as a pinned or provided site WHEN top sites are retrieved THEN filters out frecent sites that already exist in pinned or provided sites`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -1111,7 +1114,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `GIVEN frecencyFilter is set WHEN getTopSites is called THEN the frecent top sites are filtered`() = runTestOnMain {
+    fun `GIVEN frecencyFilter is set WHEN getTopSites is called THEN the frecent top sites are filtered`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,
@@ -1210,7 +1213,7 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
-    fun `GIVEN frecent top sites host exist as a provided site WHEN top sites are retrieved THEN filters out frecent sites with host that already exist in provided sites`() = runTestOnMain {
+    fun `GIVEN frecent top sites host exist as a provided site WHEN top sites are retrieved THEN filters out frecent sites with host that already exist in provided sites`() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,
             historyStorage = historyStorage,

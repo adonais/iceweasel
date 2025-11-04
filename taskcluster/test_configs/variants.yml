@@ -78,14 +78,6 @@ aab:
         fetches:
             toolchain:
                 by-test-platform:
-                    android-em-7.*:
-                        - android-system-image-x86_64-linux
-                        - android-avd-x86_64-linux
-                        - android-emulator-linux
-                        - linux64-minidump-stackwalk
-                        - linux64-fix-stacks
-                        - linux64-jdk
-                        - linux64-hostutils
                     android-em-14.*:
                         - android34-system-image-x86_64-linux
                         - android34-avd-x86_64-linux
@@ -411,6 +403,7 @@ no-gpu-process:
                     "windows" in task["test-platform"]
                     || "android" in task["test-platform"]
                     || "linux" in task["test-platform"]
+                    || "macosx" in task["test-platform"]
                 '
     replace:
         virtualization: virtual

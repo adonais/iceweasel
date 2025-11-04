@@ -65,8 +65,7 @@ struct SHEntrySharedState {
         mPrincipalToInherit(aPrincipalToInherit),
         mPartitionedPrincipalToInherit(aPartitionedPrincipalToInherit),
         mPolicyContainer(aPolicyContainer),
-        mContentType(aContentType),
-        mNavigationState(MakeRefPtr<nsStructuredCloneContainer>()) {}
+        mContentType(aContentType) {}
 
   // These members aren't copied by SHEntrySharedParentState::CopyFrom() because
   // they're specific to a particular content viewer.

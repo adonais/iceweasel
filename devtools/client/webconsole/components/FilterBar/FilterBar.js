@@ -35,6 +35,7 @@ const {
   l10n,
 } = require("resource://devtools/client/webconsole/utils/messages.js");
 const { PluralForm } = require("resource://devtools/shared/plural-form.js");
+const KeyShortcuts = require("resource://devtools/client/shared/key-shortcuts.js");
 
 // Constants
 const {
@@ -206,7 +207,14 @@ class FilterBar extends Component {
   renderClearButton() {
     return dom.button({
       className: "devtools-button devtools-clear-icon",
-      title: l10n.getStr("webconsole.clearButton.tooltip"),
+      title: l10n.getFormatStr("webconsole.clearButton.tooltipWithHotkeyHint", [
+        this.props.webConsoleUI
+          .getClearKeyShortcuts()
+          .map(electronKey =>
+            KeyShortcuts.stringifyFromElectronKey(electronKey)
+          )
+          .join(", "),
+      ]),
       onClick: () => this.props.dispatch(actions.messagesClear()),
     });
   }

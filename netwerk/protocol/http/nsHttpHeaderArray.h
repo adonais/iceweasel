@@ -46,7 +46,8 @@ class nsHttpHeaderArray {
     // Used only for response header.
     eVarietyResponseNetOriginalAndResponse,
     eVarietyResponseNetOriginal,
-    eVarietyResponse
+    eVarietyResponse,
+    eVarietyResponseOverride,
   };
 
   // Used by internal setters: to set header from network use SetHeaderFromNet

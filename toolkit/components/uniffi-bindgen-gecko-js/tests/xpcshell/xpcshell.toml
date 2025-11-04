@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 
 ["test_callback_interfaces.js"]
 

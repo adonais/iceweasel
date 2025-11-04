@@ -68,6 +68,10 @@ import org.mozilla.geckoview.ContentBlocking
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.GeckoSession.APP_LINK_LAUNCH_TYPE_COLD
+import org.mozilla.geckoview.GeckoSession.APP_LINK_LAUNCH_TYPE_HOT
+import org.mozilla.geckoview.GeckoSession.APP_LINK_LAUNCH_TYPE_UNKNOWN
+import org.mozilla.geckoview.GeckoSession.APP_LINK_LAUNCH_TYPE_WARM
 import org.mozilla.geckoview.GeckoSession.NavigationDelegate
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
 import org.mozilla.geckoview.GeckoSessionSettings
@@ -193,6 +197,7 @@ class GeckoEngineSession(
             .flags(flags.getGeckoFlags())
             .originalInput(originalInput)
             .textDirectiveUserActivation(textDirectiveUserActivation)
+            .appLinkLaunchType(flags.toGeckoLaunchType())
 
         if (additionalHeaders != null) {
             val headerFilter = if (flags.contains(ALLOW_ADDITIONAL_HEADERS)) {
@@ -865,7 +870,6 @@ class GeckoEngineSession(
     /**
      * NavigationDelegate implementation for forwarding callbacks to observers of the session.
      */
-    @Suppress("ComplexMethod")
     private fun createNavigationDelegate() = object : GeckoSession.NavigationDelegate {
         override fun onLocationChange(
             session: GeckoSession,
@@ -1128,7 +1132,6 @@ class GeckoEngineSession(
         }
     }
 
-    @Suppress("ComplexMethod")
     internal fun createHistoryDelegate() = object : GeckoSession.HistoryDelegate {
         @SuppressWarnings("ReturnCount")
         override fun onVisited(
@@ -1231,7 +1234,7 @@ class GeckoEngineSession(
         }
     }
 
-    @Suppress("ComplexMethod", "NestedBlockDepth")
+    @Suppress("NestedBlockDepth")
     internal fun createContentDelegate() = object : GeckoSession.ContentDelegate {
         override fun onCookieBannerDetected(session: GeckoSession) {
             notifyObservers { onCookieBannerChange(CookieBannerHandlingStatus.DETECTED) }
@@ -1513,7 +1516,6 @@ class GeckoEngineSession(
         }
     }
 
-    @Suppress("ComplexMethod")
     fun handleLongClick(elementSrc: String?, elementType: Int, uri: String? = null, title: String? = null): HitResult? {
         return when (elementType) {
             GeckoSession.ContentDelegate.ContextElement.TYPE_AUDIO ->
@@ -1593,7 +1595,6 @@ class GeckoEngineSession(
         /**
          * Provides an ErrorType corresponding to the error code provided.
          */
-        @Suppress("ComplexMethod")
         internal fun geckoErrorToErrorType(errorCode: Int) =
             when (errorCode) {
                 WebRequestError.ERROR_UNKNOWN -> ErrorType.UNKNOWN
@@ -1627,6 +1628,36 @@ class GeckoEngineSession(
                 else -> ErrorType.UNKNOWN
             }
     }
+}
+
+/**
+ * Provides all gecko app link intent launch types ignoring the types that only exists on AC.
+ * Ensures AC app-link launch types map to GeckoView.
+ **/
+private fun EngineSession.LoadUrlFlags.toGeckoLaunchType(): Int {
+    return when (getGeckoAppLinkLaunchType()) {
+        EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_COLD ->
+            APP_LINK_LAUNCH_TYPE_COLD
+
+        EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_WARM ->
+            APP_LINK_LAUNCH_TYPE_WARM
+
+        EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_HOT ->
+            APP_LINK_LAUNCH_TYPE_HOT
+
+        else -> APP_LINK_LAUNCH_TYPE_UNKNOWN
+    }
+}
+
+private fun EngineSession.LoadUrlFlags.getGeckoAppLinkLaunchType(): Int {
+    val launchTypes = listOf(
+        EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_COLD,
+        EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_WARM,
+        EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_HOT,
+    )
+
+    return launchTypes.firstOrNull { contains(it) }
+        ?: EngineSession.LoadUrlFlags.APP_LINK_LAUNCH_TYPE_UNKNOWN
 }
 
 /**

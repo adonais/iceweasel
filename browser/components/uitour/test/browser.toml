@@ -26,8 +26,6 @@ fail-if = ["a11y_checks"] # Bug 1854526 clicked UITourTooltipClose may not be fo
 
 ["browser_UITour_availableTargets.js"]
 
-["browser_UITour_colorway.js"]
-
 ["browser_UITour_defaultBrowser.js"]
 
 ["browser_UITour_detach_tab.js"]

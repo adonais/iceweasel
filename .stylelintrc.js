@@ -271,6 +271,9 @@ module.exports = {
     ],
     "stylelint-plugin-mozilla/no-base-design-tokens": true,
     "stylelint-plugin-mozilla/use-border-radius-tokens": true,
+    "stylelint-plugin-mozilla/use-border-color-tokens": true,
+    "stylelint-plugin-mozilla/use-font-size-tokens": true,
+    "stylelint-plugin-mozilla/use-font-weight-tokens": true,
   },
 
   overrides: [
@@ -393,9 +396,28 @@ module.exports = {
         // Stylelint does not support negating the file glob within an overrides section,
         // so these rules get re-enabled for some devtools files in the section below
         "devtools/**",
+        // FXR is no longer maintained and is not expected to use design tokens
+        "browser/fxr/**",
+        // Android does not use design tokens
+        "mobile/android/**",
+        // Docs do not use design tokens
+        "docs/**",
+        // UA Widgets should not use design tokens
+        "toolkit/themes/shared/media/pipToggle.css",
+        "toolkit/themes/shared/media/videocontrols.css",
+        "toolkit/content/widgets/datetimebox.css",
+        "toolkit/content/widgets/marquee.css",
+        "toolkit/themes/shared/media/textrecognition.css",
+        // The contents of backup/content/archive.css are injected as inline CSS
+        // into the HTML backup archive files that exist on a user's file system
+        // and can be opened in any browser.
+        "browser/components/backup/content/archive.css",
       ],
       rules: {
         "stylelint-plugin-mozilla/use-border-radius-tokens": false,
+        "stylelint-plugin-mozilla/use-border-color-tokens": false,
+        "stylelint-plugin-mozilla/use-font-size-tokens": false,
+        "stylelint-plugin-mozilla/use-font-weight-tokens": false,
       },
     },
     {
@@ -406,6 +428,7 @@ module.exports = {
       ],
       rules: {
         "stylelint-plugin-mozilla/use-border-radius-tokens": true,
+        "stylelint-plugin-mozilla/use-border-color-tokens": false,
       },
     },
   ],

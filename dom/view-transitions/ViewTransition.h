@@ -100,6 +100,8 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   // Get ::view-transition pseudo element, which is the view transition tree
   // root. We find the pseudo element of this tree from this node.
   Element* GetViewTransitionTreeRoot() const;
+  // Get all currently captured element frames if accessible.
+  void GetCapturedFrames(nsTArray<nsIFrame*>& aCapturedFrames) const;
 
   Maybe<nsRect> GetOldInkOverflowRect(nsAtom* aName) const;
   Maybe<nsRect> GetNewInkOverflowRect(nsAtom* aName) const;
@@ -188,6 +190,11 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   // also keeps the strong reference to the view-transition-name which may be
   // auto-generated for this view transition.
   AutoTArray<RefPtr<nsAtom>, 8> mNames;
+
+  using OldCaptureFramesArray =
+      AutoTArray<std::pair<nsIFrame*, RefPtr<nsAtom>>, 32>;
+  // Short lived array pointer used to mark old captures for DL building.
+  OldCaptureFramesArray* mOldCaptureElements = nullptr;
 
   // The element identifier for the elements which need the auto-generated
   // view-transition-name. The lifetime of those element identifiers is

@@ -224,6 +224,7 @@ skip-if = [
 ["browser_tableWidget_keyboard_interaction.js"]
 
 ["browser_tableWidget_mouse_interaction.js"]
+skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt"] # Bug 1118592
 
 ["browser_telemetry_button_responsive.js"]
 

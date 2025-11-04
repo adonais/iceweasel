@@ -16,6 +16,9 @@ It supports various types (`default`, `primary`, `destructive`, `icon`, `icon gh
               tooltiptext="Icon Ghost" type="ghost">
   </moz-button>
   <moz-button type="ghost" label="Ghost"></moz-button>
+  <moz-button type="split"
+              label="Split">
+</moz-button>
 </div>
 ```
 
@@ -197,6 +200,36 @@ For now, you can't associate other types of menu with `moz-button` using `menuId
 <moz-button iconsrc="chrome://global/skin/icons/more.svg"
             title="More options"
             aria-label="More options"
+            menuid="panel-list">
+</moz-button>
+<div>
+  <panel-list id="panel-list" stay-open open>
+    <panel-item>Option One</panel-item>
+    <panel-item>Option Two</panel-item>
+    <panel-item>Option Three</panel-item>
+  </panel-list>
+</div>
+```
+
+#### Split Button
+
+Split Button is an action button combined with an adjacent menu button offering additional options. To create a split button, set the `type` to `split` and provide a `menuId` that links to a `panel-list` element. Split Button renders "More options" menu button with chevron icon and default `l10nId`.
+
+```html
+<moz-button type="split"
+            label="Split Button"
+            menuid="panel-list">
+</moz-button>
+<panel-list id="panel-list">
+  <panel-item>Option One</panel-item>
+  <panel-item>Option Two</panel-item>
+  <panel-item>Option Three</panel-item>
+</panel-list>
+```
+
+```html story
+<moz-button type="split"
+            label="Split Button"
             menuid="panel-list">
 </moz-button>
 <div>

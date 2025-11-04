@@ -7,6 +7,7 @@
 #ifndef nsThreadPool_h__
 #define nsThreadPool_h__
 
+#include "nsITargetShutdownTask.h"
 #include "nsIThread.h"
 #include "nsIThreadPool.h"
 #include "nsIRunnable.h"
@@ -19,6 +20,7 @@
 #include "mozilla/EventQueue.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/TargetShutdownTaskSet.h"
 
 class nsIThread;
 
@@ -64,6 +66,7 @@ class nsThreadPool final : public mozilla::Runnable, public nsIThreadPool {
   uint32_t mStackSize MOZ_GUARDED_BY(mMutex);
   nsCOMPtr<nsIThreadPoolListener> mListener MOZ_GUARDED_BY(mMutex);
   bool mShutdown MOZ_GUARDED_BY(mMutex);
+  TargetShutdownTaskSet mShutdownTasks MOZ_GUARDED_BY(mMutex);
   mozilla::Atomic<bool, mozilla::Relaxed> mIsAPoolThreadFree;
   // set once before we start threads
   nsCString mName MOZ_GUARDED_BY(mMutex);

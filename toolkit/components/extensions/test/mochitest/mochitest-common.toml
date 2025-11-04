@@ -105,7 +105,7 @@ skip-if = [
 skip-if = [
   "os == 'android'", # Bug 1845607
   "tsan", # Bug 1612707: times out on TSan
-  "display == 'wayland' && os_version == '22.04'", #  Bug 1857067
+  "os == 'linux' && os_version == '22.04' && display == 'wayland'", #  Bug 1857067
 ]
 
 ["test_ext_background_canvas.html"]

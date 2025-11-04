@@ -29,11 +29,25 @@ class AboutHomeMiddleware(
         if (action is ContentAction.UpdateTitleAction &&
             context.state.findTab(tabId = action.sessionId)?.content?.url == ABOUT_HOME_URL
         ) {
-            // Override the title of the homepage tab with the provided [homepageTitle].
+             // Override the title of the homepage tab with the provided [homepageTitle] that will
+             // appear in the [ContentState].
             next(
-                ContentAction.UpdateTitleAction(
-                    sessionId = action.sessionId,
+                action.copy(
                     title = homepageTitle,
+                ),
+            )
+        } else if (action is ContentAction.UpdateHistoryStateAction) {
+            // Override the title of the homepage tab with the provided [homepageTitle] in the
+            // [ContentState.history].
+            next(
+                action.copy(
+                    historyList = action.historyList.map { historyItem ->
+                        if (historyItem.uri == ABOUT_HOME_URL) {
+                            historyItem.copy(title = homepageTitle)
+                        } else {
+                            historyItem
+                        }
+                    },
                 ),
             )
         } else {

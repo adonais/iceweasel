@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.82.0"
 name = "wgpu-hal"
-version = "26.0.0"
+version = "27.0.0"
 authors = ["gfx-rs developers"]
 build = "build.rs"
 autolib = false
@@ -60,6 +60,7 @@ dx12 = [
     "dep:libloading",
     "dep:log",
     "dep:ordered-float",
+    "dep:once_cell",
     "dep:parking_lot",
     "dep:profiling",
     "dep:range-alloc",
@@ -189,7 +190,7 @@ version = "0.16"
 optional = true
 
 [dependencies.hashbrown]
-version = "0.15"
+version = "0.16"
 features = [
     "default-hasher",
     "inline-more",
@@ -202,7 +203,7 @@ version = "0.4.21"
 optional = true
 
 [dependencies.naga]
-version = "26.0.0"
+version = "27.0.0"
 path = "../naga"
 
 [dependencies.ordered-float]
@@ -233,7 +234,7 @@ version = "2.0.12"
 default-features = false
 
 [dependencies.wgpu-types]
-version = "26.0.0"
+version = "27.0.0"
 path = "../wgpu-types"
 default-features = false
 
@@ -242,10 +243,10 @@ version = "0.11"
 default-features = false
 
 [dev-dependencies.glam]
-version = "0.30"
+version = "0.30.7"
 
 [dev-dependencies.naga]
-version = "26.0.0"
+version = "27.0.0"
 path = "../naga"
 features = [
     "wgsl-in",
@@ -346,7 +347,7 @@ version = "1"
 optional = true
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies.smallvec]
-version = "1.13.1"
+version = "1.14"
 features = ["union"]
 optional = true
 
@@ -392,7 +393,7 @@ version = "0.2.5"
 optional = true
 
 [target."cfg(unix)".dependencies.libc]
-version = "0.2.168"
+version = "0.2.171"
 optional = true
 default-features = false
 
@@ -407,6 +408,11 @@ optional = true
 
 [target."cfg(windows)".dependencies.gpu-allocator]
 version = "0.27"
+optional = true
+default-features = false
+
+[target."cfg(windows)".dependencies.once_cell]
+version = "1.21"
 optional = true
 default-features = false
 

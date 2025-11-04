@@ -3,7 +3,7 @@ import pytest
 URL = "https://is-sets.com/"
 
 SUCCESS_CSS = "#root"
-BLOCKED_TEXT = "404 Not Found"
+BLOCKED_TEXT = "403 Forbidden"
 
 
 @pytest.mark.skip_platforms("android")

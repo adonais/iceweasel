@@ -243,10 +243,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
    */
   void AddSourceSurface(gfx::ReferencePtr aRefPtr,
                         gfx::SourceSurface* aSurface) final {
-    if (mMappedSurface == aRefPtr) {
-      mPreparedMap = nullptr;
-      mMappedSurface = nullptr;
-    }
     RemoveDataSurface(aRefPtr);
     InlineTranslator::AddSourceSurface(aRefPtr, aSurface);
   }
@@ -258,10 +254,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
    * @param aRefPtr the key to the objects to remove
    */
   void RemoveSourceSurface(gfx::ReferencePtr aRefPtr) final {
-    if (mMappedSurface == aRefPtr) {
-      mPreparedMap = nullptr;
-      mMappedSurface = nullptr;
-    }
     RemoveDataSurface(aRefPtr);
     InlineTranslator::RemoveSourceSurface(aRefPtr);
   }
@@ -300,24 +292,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
    * @returns the DataSourceSurface or nullptr if not found
    */
   void RemoveDataSurface(gfx::ReferencePtr aRefPtr);
-
-  /**
-   * Sets a ScopedMap, to be used in a later event.
-   *
-   * @param aSurface the associated surface in the other process
-   * @param aMap the ScopedMap to store
-   */
-  void SetPreparedMap(gfx::ReferencePtr aSurface,
-                      UniquePtr<gfx::DataSourceSurface::ScopedMap> aMap);
-
-  /**
-   * Gets the ScopedMap stored using SetPreparedMap.
-   *
-   * @param aSurface must match the surface from the SetPreparedMap call
-   * @returns the ScopedMap if aSurface matches otherwise nullptr
-   */
-  UniquePtr<gfx::DataSourceSurface::ScopedMap> GetPreparedMap(
-      gfx::ReferencePtr aSurface);
 
   void PrepareShmem(const RemoteTextureOwnerId aTextureOwnerId);
 
@@ -600,8 +574,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   void RemoveTextureKeepAlive(const RemoteTextureOwnerId& aId);
 
   nsRefPtrHashtable<nsPtrHashKey<void>, gfx::DataSourceSurface> mDataSurfaces;
-  gfx::ReferencePtr mMappedSurface;
-  UniquePtr<gfx::DataSourceSurface::ScopedMap> mPreparedMap;
   Atomic<bool> mDeactivated{false};
   Atomic<bool> mBlocked{false};
   Atomic<bool> mIPDLClosed{false};

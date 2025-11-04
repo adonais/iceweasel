@@ -366,10 +366,10 @@ HRESULT MFMediaEngineStream::CreateInputSample(IMFSample** aSample) {
   MOZ_ASSERT(mRawDataQueueForFeedingEngine.GetSize() != 0);
   RefPtr<MediaRawData> data = mRawDataQueueForFeedingEngine.PopFront();
   SLOGV("CreateInputSample, pop data [%" PRId64 ", %" PRId64
-        "] (duration=%" PRId64 ", kf=%d), queue size=%zu",
+        "] (duration=%" PRId64 ", kf=%d, encrypted=%d), queue size=%zu",
         data->mTime.ToMicroseconds(), data->GetEndTime().ToMicroseconds(),
         data->mDuration.ToMicroseconds(), data->mKeyframe,
-        mRawDataQueueForFeedingEngine.GetSize());
+        data->mCrypto.IsEncrypted(), mRawDataQueueForFeedingEngine.GetSize());
   PROFILER_MARKER(
       nsPrintfCString(
           "pop %s (stream=%" PRIu64 ")",
@@ -414,12 +414,26 @@ HRESULT MFMediaEngineStream::AddEncryptAttributes(
   // Scheme
   MFSampleEncryptionProtectionScheme protectionScheme;
   if (aCryptoConfig.mCryptoScheme == CryptoScheme::Cenc) {
+    SLOG("Set CENC encryption");
     protectionScheme = MFSampleEncryptionProtectionScheme::
         MF_SAMPLE_ENCRYPTION_PROTECTION_SCHEME_AES_CTR;
   } else if (aCryptoConfig.mCryptoScheme == CryptoScheme::Cbcs ||
              aCryptoConfig.mCryptoScheme == CryptoScheme::Cbcs_1_9) {
     protectionScheme = MFSampleEncryptionProtectionScheme::
         MF_SAMPLE_ENCRYPTION_PROTECTION_SCHEME_AES_CBC;
+    SLOG("Set CBC pattern encryption, crypt=%u, skip=%u",
+         aCryptoConfig.mCryptByteBlock, aCryptoConfig.mSkipByteBlock);
+    // Only need to set them when they are non-zero. See
+    // https://learn.microsoft.com/en-us/windows/win32/medfound/mfsampleextension-encryption-cryptbyteblock
+    // https://learn.microsoft.com/en-us/windows/win32/medfound/mfsampleextension-encryption-skipbyteblock
+    if (aCryptoConfig.mCryptByteBlock > 0 && aCryptoConfig.mSkipByteBlock > 0) {
+      RETURN_IF_FAILED(
+          aSample->SetUINT32(MFSampleExtension_Encryption_CryptByteBlock,
+                             aCryptoConfig.mCryptByteBlock));
+      RETURN_IF_FAILED(
+          aSample->SetUINT32(MFSampleExtension_Encryption_SkipByteBlock,
+                             aCryptoConfig.mSkipByteBlock));
+    }
   } else {
     SLOG("Unexpected encryption scheme");
     return MF_E_UNEXPECTED;
@@ -439,10 +453,22 @@ HRESULT MFMediaEngineStream::AddEncryptAttributes(
   // to store last key id and set it in CDM to refresh the decryptor.
 
   // IV
-  RETURN_IF_FAILED(aSample->SetBlob(
-      MFSampleExtension_Encryption_SampleID,
-      reinterpret_cast<const uint8_t*>(aCryptoConfig.mIV.Elements()),
-      aCryptoConfig.mIVSize));
+  if (aCryptoConfig.mIVSize != 0) {
+    // Per-sample IV, usually seen in CENC.
+    SLOG("Use sample IV for decryption, IV size=%u", aCryptoConfig.mIVSize);
+    RETURN_IF_FAILED(aSample->SetBlob(
+        MFSampleExtension_Encryption_SampleID,
+        reinterpret_cast<const uint8_t*>(aCryptoConfig.mIV.Elements()),
+        aCryptoConfig.mIVSize));
+  } else {
+    // A constant IV for all samples, usually seen in CBCS.
+    SLOG("Use constant IV for decryption, constantIV length=%zu",
+         aCryptoConfig.mConstantIV.Length());
+    RETURN_IF_FAILED(aSample->SetBlob(
+        MFSampleExtension_Encryption_SampleID,
+        reinterpret_cast<const uint8_t*>(aCryptoConfig.mConstantIV.Elements()),
+        aCryptoConfig.mConstantIV.Length()));
+  }
 
   // Subsample entries.
   MOZ_ASSERT(aCryptoConfig.mEncryptedSizes.Length() ==

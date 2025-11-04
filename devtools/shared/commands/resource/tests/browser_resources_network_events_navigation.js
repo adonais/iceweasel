@@ -10,6 +10,14 @@ const JS_URI = TEST_URI.replace(
   "network_document_navigation.html",
   "network_navigation.js"
 );
+const IFRAME_URI = TEST_URI.replace(
+  "network_document_navigation.html",
+  "iframe_request.html"
+);
+const IFRAME_JS_URI = TEST_URI.replace(
+  "network_document_navigation.html",
+  "iframe_request.js"
+);
 
 add_task(async () => {
   const tab = await addTab(TEST_URI);
@@ -38,6 +46,12 @@ add_task(async () => {
     }
   };
 
+  // Ensure listening for DOCUMENT_EVENT so that requests are properly cleared on the backend side
+  // (this generates the will-navigate used to clear requests)
+  await resourceCommand.watchResources([resourceCommand.TYPES.DOCUMENT_EVENT], {
+    onAvailable() {},
+  });
+
   await resourceCommand.watchResources([resourceCommand.TYPES.NETWORK_EVENT], {
     ignoreExistingResources: true,
     onAvailable,
@@ -46,7 +60,12 @@ add_task(async () => {
 
   await reloadBrowser();
 
-  await waitFor(() => receivedResources.length == 2);
+  await waitFor(() => receivedResources.length == 4);
+
+  info("Remove the iframe, to ensure its request is still inspectable");
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    content.document.querySelector("iframe").remove();
+  });
 
   const navigationRequest = receivedResources[0];
   is(
@@ -57,6 +76,20 @@ add_task(async () => {
 
   const jsRequest = receivedResources[1];
   is(jsRequest.url, JS_URI, "The second resource is for the javascript file");
+
+  const iframeRequest = receivedResources[2];
+  is(
+    iframeRequest.url,
+    IFRAME_URI,
+    "The third resource is for the html request"
+  );
+
+  const iframeJsRequest = receivedResources[3];
+  is(
+    iframeJsRequest.url,
+    IFRAME_JS_URI,
+    "The 4th resource is for the js file from the iframe"
+  );
 
   async function getResponseContent(networkEvent) {
     const packet = {
@@ -69,15 +102,21 @@ add_task(async () => {
 
   const HTML_CONTENT = await (await fetch(TEST_URI)).text();
   const JS_CONTENT = await (await fetch(JS_URI)).text();
+  const IFRAME_CONTENT = await (await fetch(IFRAME_URI)).text();
+  const IFRAME_JS_CONTENT = await (await fetch(IFRAME_JS_URI)).text();
 
   const htmlContent = await getResponseContent(navigationRequest);
   is(htmlContent, HTML_CONTENT);
   const jsContent = await getResponseContent(jsRequest);
   is(jsContent, JS_CONTENT);
+  const iframeContent = await getResponseContent(iframeRequest);
+  is(iframeContent, IFRAME_CONTENT);
+  const iframeJsContent = await getResponseContent(iframeJsRequest);
+  is(iframeJsContent, IFRAME_JS_CONTENT);
 
   await reloadBrowser();
 
-  await waitFor(() => receivedResources.length == 4);
+  await waitFor(() => receivedResources.length == 8);
 
   try {
     await getResponseContent(navigationRequest);
@@ -101,13 +140,19 @@ add_task(async () => {
     );
   }
 
-  const navigationRequest2 = receivedResources[2];
-  const jsRequest2 = receivedResources[3];
+  const navigationRequest2 = receivedResources[4];
+  const jsRequest2 = receivedResources[5];
+  const iframeRequest2 = receivedResources[6];
+  const iframeJsRequest2 = receivedResources[7];
   info("But we can fetch data for the last/new document");
   const htmlContent2 = await getResponseContent(navigationRequest2);
   is(htmlContent2, HTML_CONTENT);
   const jsContent2 = await getResponseContent(jsRequest2);
   is(jsContent2, JS_CONTENT);
+  const iframeContent2 = await getResponseContent(iframeRequest2);
+  is(iframeContent2, IFRAME_CONTENT);
+  const iframeJsContent2 = await getResponseContent(iframeJsRequest2);
+  is(iframeJsContent2, IFRAME_JS_CONTENT);
 
   info("Enable persist");
   const networkParentFront =
@@ -116,13 +161,17 @@ add_task(async () => {
 
   await reloadBrowser();
 
-  await waitFor(() => receivedResources.length == 6);
+  await waitFor(() => receivedResources.length == 12);
 
   info("With persist, we can fetch previous document network data");
   const htmlContent3 = await getResponseContent(navigationRequest2);
   is(htmlContent3, HTML_CONTENT);
   const jsContent3 = await getResponseContent(jsRequest2);
   is(jsContent3, JS_CONTENT);
+  const iframeContent3 = await getResponseContent(iframeRequest2);
+  is(iframeContent3, IFRAME_CONTENT);
+  const iframeJsContent3 = await getResponseContent(iframeJsRequest2);
+  is(iframeJsContent3, IFRAME_JS_CONTENT);
 
   await resourceCommand.unwatchResources(
     [resourceCommand.TYPES.NETWORK_EVENT],

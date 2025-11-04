@@ -103,7 +103,6 @@ class HomeMenu(
         }
     }
 
-    @Suppress("ComplexMethod")
     private fun coreMenuItems(): List<BrowserMenuItem> {
         val settings = context.components.settings
 

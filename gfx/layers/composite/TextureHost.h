@@ -801,9 +801,9 @@ class BufferTextureHost : public TextureHost {
 
   virtual ~BufferTextureHost();
 
-  virtual uint8_t* GetBuffer() = 0;
+  virtual uint8_t* GetBuffer() const = 0;
 
-  virtual size_t GetBufferSize() = 0;
+  virtual size_t GetBufferSize() const = 0;
 
   void UnbindTextureSource() override;
 
@@ -893,9 +893,9 @@ class ShmemTextureHost : public BufferTextureHost {
 
   void ForgetSharedData() override;
 
-  uint8_t* GetBuffer() override;
+  uint8_t* GetBuffer() const override;
 
-  size_t GetBufferSize() override;
+  size_t GetBufferSize() const override;
 
   const char* Name() override { return "ShmemTextureHost"; }
 
@@ -927,9 +927,9 @@ class MemoryTextureHost : public BufferTextureHost {
 
   void ForgetSharedData() override;
 
-  uint8_t* GetBuffer() override;
+  uint8_t* GetBuffer() const override;
 
-  size_t GetBufferSize() override;
+  size_t GetBufferSize() const override;
 
   const char* Name() override { return "MemoryTextureHost"; }
 

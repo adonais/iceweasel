@@ -108,6 +108,8 @@ class MOZ_RAII nsHtml5AutoFlush final {
     }
     mExecutor->EndFlush();
     mExecutor->RemoveFromStartOfOpQueue(mOpsToRemove);
+    // We might have missed a speculative load flush due to sync XHR
+    mExecutor->FlushSpeculativeLoads();
   }
   void SetNumberOfOpsToRemove(size_t aOpsToRemove) {
     MOZ_ASSERT(aOpsToRemove < mOpsToRemove,
@@ -826,6 +828,7 @@ void nsHtml5TreeOpExecutor::CommitToInternalEncoding() {
   }
   mStreamParser->ContinueAfterScriptsOrEncodingCommitment(nullptr, nullptr,
                                                           false);
+  ContinueInterruptedParsingAsync();
 }
 
 [[nodiscard]] bool nsHtml5TreeOpExecutor::TakeOpsFromStage() {

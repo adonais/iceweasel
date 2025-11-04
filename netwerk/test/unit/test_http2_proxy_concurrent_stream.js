@@ -7,11 +7,18 @@
 /* import-globals-from head_cache.js */
 /* import-globals-from head_cookies.js */
 /* import-globals-from head_channels.js */
-/* import-globals-from head_servers.js */
 
-var { setTimeout } = ChromeUtils.importESModule(
+const { setTimeout } = ChromeUtils.importESModule(
   "resource://gre/modules/Timer.sys.mjs"
 );
+
+const {
+  NodeHTTPServer,
+  NodeHTTPSServer,
+  NodeHTTP2Server,
+  NodeHTTP2ProxyServer,
+  with_node_servers,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 add_setup(async function () {
   Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);
@@ -44,7 +51,7 @@ function channelOpenPromise(chan, flags) {
   });
 }
 
-function regiisterServerNamePathHandler(server, path) {
+function registerServerNamePathHandler(server, path) {
   return server.registerPathHandler(path, (req, resp) => {
     // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
     setTimeout(() => {
@@ -54,7 +61,11 @@ function regiisterServerNamePathHandler(server, path) {
   });
 }
 
-async function run_http2_proxy_test(maxConcurrentStreams, maxStreamId) {
+async function run_http2_proxy_test(
+  maxConcurrentStreams,
+  maxStreamId,
+  testId = ""
+) {
   Services.obs.notifyObservers(null, "net:prune-all-connections");
   // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -73,7 +84,7 @@ async function run_http2_proxy_test(maxConcurrentStreams, maxStreamId) {
       await server.execute(
         `global.server_name = "${server.constructor.name}";`
       );
-      await regiisterServerNamePathHandler(server, "/test");
+      await registerServerNamePathHandler(server, "/test");
 
       await channelOpenPromise(
         makeChan(`${server.origin()}/test`),
@@ -87,7 +98,7 @@ async function run_http2_proxy_test(maxConcurrentStreams, maxStreamId) {
       let promises = [];
       for (let i = 0; i < 20; i++) {
         let promise = channelOpenPromise(
-          makeChan(`${server.origin()}/test`),
+          makeChan(`${server.origin()}/test?test=${testId}&id=${i}`),
           CL_ALLOW_UNKNOWN_CL
         );
 
@@ -109,20 +120,20 @@ async function run_http2_proxy_test(maxConcurrentStreams, maxStreamId) {
 
 // Test case 1: High concurrency, high stream ID limit
 add_task(async function test_high_concurrency_high_stream_id() {
-  await run_http2_proxy_test(100, 0x7800000);
+  await run_http2_proxy_test(100, 0x7800000, "t1");
 });
 
 // Test case 2: Low concurrency, high stream ID limit
 add_task(async function test_low_concurrency_high_stream_id() {
-  await run_http2_proxy_test(3, 0x7800000);
+  await run_http2_proxy_test(3, 0x7800000, "t2");
 });
 
 // Test case 3: High concurrency, low stream ID limit
 add_task(async function test_high_concurrency_low_stream_id() {
-  await run_http2_proxy_test(100, 10);
+  await run_http2_proxy_test(100, 10, "t3");
 });
 
 // Test case 4: Low concurrency, low stream ID limit
 add_task(async function test_low_concurrency_low_stream_id() {
-  await run_http2_proxy_test(3, 10);
+  await run_http2_proxy_test(3, 10, "t4");
 });

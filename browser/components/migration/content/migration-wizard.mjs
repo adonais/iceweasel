@@ -484,6 +484,16 @@ export class MigrationWizard extends HTMLElement {
    */
   #onBrowserProfileSelectionChanged(panelItem) {
     this.#browserProfileSelector.selectedPanelItem = panelItem;
+    if (this.#browserProfileSelectorList.selectedPanelItem) {
+      this.#browserProfileSelectorList.selectedPanelItem.classList.remove(
+        "selected"
+      );
+    }
+    this.#browserProfileSelectorList.selectedPanelItem = panelItem;
+    this.#browserProfileSelectorList.selectedPanelItem.classList.add(
+      "selected"
+    );
+
     this.#browserProfileSelector.querySelector("#migrator-name").textContent =
       panelItem.displayName;
     this.#browserProfileSelector.querySelector("#profile-name").textContent =

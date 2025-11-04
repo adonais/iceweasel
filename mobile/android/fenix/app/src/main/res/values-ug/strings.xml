@@ -84,6 +84,11 @@
   -->
   <string name="felt_privacy_info_card_subtitle_2">بارلىق شەخسىيەت بەتكۈچلەر تاقالغاندا %1$s سىزنىڭ cookies، تارىخ ۋە تور بېكەت سانلىق مەلۇماتلىرىڭىزنى ئۆچۈرىدۇ. %2$s</string>
   <!--
+    Description of private browsing mode displayed to users on the homepage when they enable private mode.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="felt_privacy_info_card_subtitle_3">بارلىق شەخسىيەت بەتكۈچلىرىڭىز تاقالغاندا، %1$s ساقلانما، تارىخ ۋە تور بېكەت سانلىق مەلۇماتلىرىڭىزنى ئۆچۈرىدۇ.</string>
+  <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
@@ -244,6 +249,8 @@
   <string name="browser_menu_save_to_collection_2">يىغقۇچقا ساقلا</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">ھەمبەھىرلەش</string>
+  <!-- Browser menu button that goes to the homepage screen -->
+  <string name="browser_menu_homepage">باش بەت</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -294,9 +301,9 @@
   <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
   <string name="browser_main_menu_content_description_navigation_header">يولباشچى</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
-  <string name="browser_main_menu_content_description_help_button">ياردەم</string>
+  <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">ياردەم</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
-  <string name="browser_main_menu_content_description_settings_button">تەڭشەك</string>
+  <string name="browser_main_menu_content_description_settings_button" tools:ignore="UnusedResources" moz:removedIn="146">تەڭشەك</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
   <string name="browser_extensions_menu_handlebar_content_description">كېڭەيتىلمە تىزىملىك جەدۋىلىنى تاقايدۇ</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
@@ -331,8 +338,6 @@
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="browser_menu_default_banner_title">%1$s نى كۆڭۈلدىكى توركۆرگۈگە تەڭشەيدۇ</string>
-  <!-- Label text within the set as default banner -->
-  <string name="browser_menu_default_banner_subtitle" moz:removedIn="143" tools:ignore="UnusedResources">بىر قانچە سېكۇنت كېتىدۇ. خالىغان ۋاقىتتا ئۆزگەرتكىلى بولىدۇ.</string>
   <!-- Label text within the set as default banner -->
   <string name="browser_menu_default_banner_subtitle_2">تېز، شەخسىي ۋە سىز ئۈچۈن ياسالغان.</string>
   <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
@@ -444,15 +449,15 @@
     Title for set firefox as default browser screen used by Nimbus experiments.
     Note: The word "Firefox" should NOT be translated
   -->
-  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources">مىليونلىغان كىشىنىڭ نېمىشقا Firefox نى ياقتۇرىدىغانلىقىنى تېپىڭ</string>
+  <string name="juno_onboarding_default_browser_title_nimbus_3" tools:ignore="BrandUsage,UnusedResources" moz:removedIn="146">مىليونلىغان كىشىنىڭ نېمىشقا Firefox نى ياقتۇرىدىغانلىقىنى تېپىڭ</string>
   <!-- Title for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources">بىخەتەر تور زىيارىتىنىڭ تېخىمۇ كۆپ تاللىشى</string>
+  <string name="juno_onboarding_default_browser_title_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">بىخەتەر تور زىيارىتىنىڭ تېخىمۇ كۆپ تاللىشى</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
   <string name="juno_onboarding_default_browser_description_nimbus_3">پايدا تاپمايدىغان توركۆرگۈمىز شىركەتلەرنىڭ سىزگە تور بېكەتلەردە مەخپىي ھالدا ئەگىشىشىنى توسىدۇ.</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources">100 مىليوندىن ئارتۇق كىشى پايدا تاپمايدىغان ئورگان قوللىغان توركۆرگۈنى تاللاپ ئىشلىتىپ ئۆزلىرىنىڭ شەخسىيىتىنى قوغداۋاتىدۇ.</string>
+  <string name="juno_onboarding_default_browser_description_nimbus_4" tools:ignore="UnusedResources" moz:removedIn="146">100 مىليوندىن ئارتۇق كىشى پايدا تاپمايدىغان ئورگان قوللىغان توركۆرگۈنى تاللاپ ئىشلىتىپ ئۆزلىرىنىڭ شەخسىيىتىنى قوغداۋاتىدۇ.</string>
   <!-- Description for set firefox as default browser screen used by Nimbus experiments. -->
-  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources">بىلىنگەن ئىزلىغۇچ؟ ئۆزلۈكىدىن توسۇلىدۇ. كېڭەيتمە؟ 700 دىن ئارتۇقنى سىناڭ. PDF نى ئاچامدۇ؟ توركۆرگۈ ئىچىدىكى ئوقۇغۇچ ئۇلارنى باشقۇرۇشنى قۇلايلاشتۇرىدۇ.</string>
+  <string name="juno_onboarding_default_browser_description_nimbus_5" tools:ignore="UnusedResources" moz:removedIn="146">بىلىنگەن ئىزلىغۇچ؟ ئۆزلۈكىدىن توسۇلىدۇ. كېڭەيتمە؟ 700 دىن ئارتۇقنى سىناڭ. PDF نى ئاچامدۇ؟ توركۆرگۈ ئىچىدىكى ئوقۇغۇچ ئۇلارنى باشقۇرۇشنى قۇلايلاشتۇرىدۇ.</string>
   <!-- Text for the button to set firefox as default browser on the device -->
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">كۆڭۈلدىكى توركۆرگۈ قىلىپ تەڭشە</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -600,8 +605,6 @@
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Firefox نى زورايتىشىمىزغا ياردەملىشىڭ</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">سىز Firefox نى قانداق بايقىغانلىقىڭىز ۋە ئۇنى ئىشلىتىشنى ھەمبەھىرلىسىڭىز، توركۆرگۈنى تېخىمۇ كۆپ كىشىلەرگە تونۇشتۇرۇشىمىزغا ياردەم بېرەلەيسىز.</string>
-  <!-- Marketing onboarding page opt-in checkbox. 'Mozilla' is intentionally hardcoded. -->
-  <string name="onboarding_marketing_opt_in_checkbox" moz:removedIn="143" tools:ignore="UnusedResources">Mozilla نىڭ تېخنىكا ھەمكارلاشقۇچىلىرى بىلەن ئەڭ ئاز سانلىق مەلۇماتنى ھەمبەھىرلەيدۇ. بۇ سانلىق مەلۇماتلار ھەرگىز سېتىلمايدۇ ياكى سىزگە ئېلان كۆرسىتىش ئۈچۈن ئىشلىتىلمەيدۇ.</string>
   <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
   <string name="onboarding_marketing_opt_out_checkbox">Mozilla نىڭ تېخنىكا ھەمكارلاشقۇچىلىرى بىلەن سانلىق مەلۇماتنى ھەمبەھىرلەيدۇ. بۇ سانلىق مەلۇماتلار ھەرگىز سېتىلمايدۇ ياكى سىزگە ئېلان كۆرسىتىش ئۈچۈن ئىشلىتىلمەيدۇ.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
@@ -805,6 +808,10 @@
   <string name="preferences_app_icon">ئەپ سىنبەلگىسى</string>
   <!-- Preference for showing the tab strip -->
   <string name="preferences_tab_strip">بەتكۈچ بالداق كۆرسىتىش</string>
+  <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_shortcut">قورال بالداق تېزلەتمىسى</string>
+  <!-- Preference for gestures based actions -->
+  <string name="preferences_toolbar_select_shortcut">تېزلەتمە تاللىنىدۇ</string>
   <!-- Preference for gestures based actions -->
   <string name="preferences_gestures">قول ئىشارىسى</string>
   <!-- Preference for settings related to visual options -->
@@ -1241,6 +1248,18 @@
   <string name="preference_expanded_toolbar">يېيىلدى</string>
   <!-- Preference description indicating the toolbar location preference is disabled when the tab strip is enabled -->
   <string name="preference_toolbar_pref_disabled_explanation">بەتكۈچ بالداق كۆرسىتىلگەندە ئادرېس بالداق چوقۇم چوققىدا بولۇشى كېرەك.</string>
+  <!-- New tab shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_new_tab">يېڭى بەتكۈچ ئاچ</string>
+  <!-- Share shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_share">ھەمبەھىر</string>
+  <!-- Add bookmark shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_add_bookmark">خەتكۈچكە قوش</string>
+  <!-- Translate shortcut in toolbar customization. "Translate" is a verb -->
+  <string name="toolbar_customize_shortcut_translate">تەرجىمە</string>
+  <!-- Homepage shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_homepage">باش بەت</string>
+  <!-- Back shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_back">قايت</string>
   <!--
     App icon Preferences
 
@@ -1482,6 +1501,8 @@
   <string name="tab_tray_multiselect_menu_content_description">تاللانغان بەتكۈچ تىزىملىكى</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">باش بەت</string>
+  <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
+  <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">%s باش بەت</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">بەتكۈچنى يىغقۇچتىن چىقىرىۋەت</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1690,8 +1711,6 @@
     The title of the Web Compat Reporter feature. This is displayed in the top app bar.
   -->
   <string name="webcompat_reporter_screen_title">بۇزۇلغان بېكەتنى دوكلات قىلىدۇ</string>
-  <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox"). -->
-  <string name="webcompat_reporter_description_2" moz:removedIn="143" tools:ignore="UnusedResources">دوكلاتىڭىز بىزنىڭ %1$s دىكى مەسىلىنى چۈشىنىپ ۋە ئوڭشىشىمىزغا ياردەم قىلىپ ئۇنى ھەممەيلەن ئۈچۈن تېخىمۇ ياخشىلايدۇ. تەپسىلاتى</string>
   <!-- The description of the Web Compat Reporter feature, which has a "learn more" button text for navigating to a SUMO link to learn more about reporting a broken site. %1$s is the name of the app (for example "Firefox") and %2$s is the learn more button. -->
   <string name="webcompat_reporter_description_3">دوكلاتىڭىز %1$s دىكى مەسىلىنى چۈشىنىپ ۋە ئوڭشىشىمىزغا ياردەم قىلىپ ئۇنى ھەممەيلەن ئۈچۈن تېخىمۇ ياخشىلايدۇ. %2$s</string>
   <!-- The button text for navigating to the SUMO link to learn more about reporting a broken site. -->
@@ -1724,6 +1743,10 @@
   <string name="webcompat_reporter_dismiss_success_snackbar_text" moz:removedIn="144" tools:ignore="UnusedResources">تاقا</string>
   <!-- Placeholder text for the description field to prompt the user on what they should type. -->
   <string name="webcompat_reporter_problem_description_placeholder_text">نېمە ئىش بولدى؟ نېمە ئىش بولۇشى كېرەك ئىدى؟</string>
+  <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
+  <string name="webcompat_reporter_etp_checkbox_text">ئىزلاشتىن قوغداشتا توسۇلغان تور ئادرېسىنى يوللايدۇ</string>
+  <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page. -->
+  <string name="webcompat_reporter_etp_checkbox_description">كۈچەيتىلگەن ئىزلاشتىن قوغداش ئىقتىدارى بەزى تور بېكەتنىڭ ئادەتتىكىدەك ئىجرا قىلىنىشىغا زۆرۈر بولغان ئىزلىغۇچ ۋە قوليازما كودىنىمۇ توسىدۇ.</string>
   <!--
     These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site.
 
@@ -1784,13 +1807,9 @@
   <!--
     Bookmarks
 
-    Confirmation message for a dialog confirming if the user wants to delete the selected folder
+    Confirmation message for a dialog confirming if the user wants to delete multiple items.
   -->
-  <string name="bookmark_delete_folder_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">بۇ قىسقۇچنى راستىنلا ئۆچۈرەمسىز؟</string>
-  <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items. -->
   <string name="bookmark_delete_folders_confirmation_dialog">تاللىغان تۈرنى راستتىنلا ئۆچۈرەمسىز؟</string>
-  <!-- Confirmation message for a dialog confirming if the user wants to delete multiple items including folders. %s is the name of the app (for example "Firefox"). -->
-  <string name="bookmark_delete_multiple_folders_confirmation_dialog" tools:ignore="UnusedResources" moz:removedIn="143">%s تاللانغان تۈرلەرنى ئۆچۈرۈۋېتىدۇ.</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">ۋاز كەچ</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -1827,8 +1846,6 @@
   <string name="bookmark_menu_open_all_in_private_tabs_button">ھەممىنى شەخسىي بەتكۈچتە ئاچ</string>
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">ئۆچۈرۈش</string>
-  <!-- Bookmark overflow menu save button -->
-  <string name="bookmark_menu_save_button" tools:ignore="UnusedResources" moz:removedIn="143">ساقلاش</string>
   <!-- Accessibility label for sorting options -->
   <string name="bookmark_sort_menu_content_desc">تەرتىپلەش تاللانمىسى</string>
   <!-- Label for button to sort bookmarks by user-defined sort order in the bookmark sorting overflow menu. -->
@@ -1850,8 +1867,6 @@
   <string name="edit_bookmark_fragment_title">خەتكۈچ تەھرىر</string>
   <!-- Bookmark folder editing screen title -->
   <string name="edit_bookmark_folder_fragment_title">قىسقۇچ تەھرىر</string>
-  <!-- Bookmark sign in button message -->
-  <string name="bookmark_sign_in_button" tools:ignore="UnusedResources" moz:removedIn="143">قەدەمداش خەتكۈچنى كۆرۈشتە تىزىمغا كىرىڭ</string>
   <!-- Bookmark URL editing field label -->
   <string name="bookmark_url_label">تور ئادرېسى</string>
   <!-- Bookmark FOLDER editing field label -->
@@ -1862,33 +1877,21 @@
   <string name="bookmark_name_label">ئىسىم</string>
   <!-- Label for a text input field for a bookmark or folder name -->
   <string name="bookmark_name_label_normal_case">ئىسمى</string>
-  <!-- Bookmark add folder screen title -->
-  <string name="bookmark_add_folder_fragment_label" tools:ignore="UnusedResources" moz:removedIn="143">قىسقۇچ قوش</string>
   <!-- Bookmark select folder screen title -->
   <string name="bookmark_select_folder_fragment_label">قىسقۇچ تاللا</string>
-  <!-- Bookmark editing error missing title -->
-  <string name="bookmark_empty_title_error" tools:ignore="UnusedResources" moz:removedIn="143">ماۋزۇ بولۇشى كېرەك</string>
   <!-- Bookmark editing error missing or improper URL -->
   <string name="bookmark_invalid_url_error">ئىناۋەتسىز تور ئادرېسى</string>
-  <!-- Bookmark screen message for empty bookmarks folder -->
-  <string name="bookmarks_empty_message" tools:ignore="UnusedResources" moz:removedIn="143">ھېچقانداق خەتكۈچ يوق</string>
   <!--
     Bookmark snackbar message on deletion
     %1$s is the host part of the URL of the bookmark deleted, if any
   -->
   <string name="bookmark_deletion_snackbar_message">%1$s ئۆچۈرۈلدى</string>
-  <!-- Bookmark snackbar message on deleting multiple bookmarks not including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_2" tools:ignore="UnusedResources" moz:removedIn="143">خەتكۈچ ئۆچۈرۈلدى</string>
-  <!-- Bookmark snackbar message on deleting multiple bookmarks including folders -->
-  <string name="bookmark_deletion_multiple_snackbar_message_3" tools:ignore="UnusedResources" moz:removedIn="143">تاللانغان قىسقۇچنى ئۆچۈرۈۋاتىدۇ</string>
   <!-- Bookmark undo button for deletion snackbar action -->
   <string name="bookmark_undo_deletion">يېنىۋال</string>
   <!-- Bookmark snackbar message for deleting a single item. %s is the title of the item being deleted -->
   <string name="bookmark_delete_single_item">%s ئۆچۈرۈلدى</string>
   <!-- Bookmark snackbar message for deleting multiple items. %s is the number of items being deleted -->
   <string name="bookmark_delete_multiple_items">ئۆچۈرۈلگەن تۈر: %s</string>
-  <!-- Text for the button to search all bookmarks -->
-  <string name="bookmark_search" tools:ignore="UnusedResources" moz:removedIn="143">ئىزدەيدىغان ئاتالغۇ كىرگۈزۈلىدۇ</string>
   <!-- Content description for the bookmark navigation bar back button -->
   <string name="bookmark_navigate_back_button_content_description">كەينىگە قايت</string>
   <!-- Content description for the bookmark list new folder navigation bar button -->
@@ -2187,10 +2190,8 @@
   <!--
     Snackbar
 
-    Text shown in snackbar when user deletes a collection
+    Text shown in snackbar when user closes a tab
   -->
-  <string name="snackbar_collection_deleted" tools:ignore="UnusedResources" moz:removedIn="143">يىغقۇچ ئۆچۈرۈلدى</string>
-  <!-- Text shown in snackbar when user closes a tab -->
   <string name="snackbar_tab_closed">بەتكۈچ تاقالدى</string>
   <!-- Text shown in snackbar when user closes all tabs -->
   <string name="snackbar_tabs_closed">بەتكۈچ تاقالدى</string>
@@ -2225,8 +2226,6 @@
   <string name="qr_scanner_dialog_invalid_ok">جەزملە</string>
   <!-- Tab collection deletion prompt dialog message. %1$s is the collection name. -->
   <string name="tab_collection_dialog_message">بۇ %1$s نى راستىنلا ئۆچۈرەمسىز؟</string>
-  <!-- Tab collection deletion prompt dialog option to delete the collection -->
-  <string name="tab_collection_dialog_positive" tools:ignore="UnusedResources" moz:removedIn="143">ئۆچۈر</string>
   <!-- Sample text for accessibility font size -->
   <string name="accessibility_text_size_sample_text_1">بۇ ئۈلگە تېكىست. بۇ تەڭشەك بىلەن تېكىستنى چوڭايتقاندا ياكى كىچىكلەتكەندە تېكىستنىڭ قانداق كۆرۈلىدىغانلىقىنى كۆرسىتىپ بېرىدۇ.</string>
   <!-- Summary for Accessibility Text Size Scaling Preference -->
@@ -2818,6 +2817,8 @@
   <string name="addresses_manage_addresses">ئادرېس باشقۇرۇش</string>
   <!-- The header for the name of an address. Name represents a person's full name, typically made up of a first, middle and last name, e.g. John Joe Doe. -->
   <string name="addresses_name">ئىسمى</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The organization's name related to the address helps in distinguishing addresses used for business or personal purposes. -->
+  <string name="addresses_organization" tools:ignore="UnusedResources">تەشكىلات</string>
   <!-- The header for the street address of an address -->
   <string name="addresses_street_address">كوچا ئادرېسى</string>
   <!-- The header for the city of an address -->
@@ -2834,6 +2835,44 @@
   <string name="addresses_phone">تېلېفون</string>
   <!-- The header for the email of an address -->
   <string name="addresses_email">ئېلخەت</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used for addresses in Iran, Mexico. -->
+  <string name="addresses_neighborhood" tools:ignore="UnusedResources">مەھەللە</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Village or Township field, specific to Malaysia is crucial for addresses in rural areas. -->
+  <string name="addresses_village_township" tools:ignore="UnusedResources">يېزا ياكى بازار</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Island field, used in places like the Cayman Islands and the Bahamas if an address is located on a specific island. -->
+  <string name="addresses_island" tools:ignore="UnusedResources">ئارال</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Townland field, specific to Ireland is a specific type of land division used in rural areas. -->
+  <string name="addresses_townland" tools:ignore="UnusedResources">بازار</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used as secondary address information (below the country level, e.g. county) in Honk Kong, Sudan, Syria, Türkiye, and as sublocality (civil entity below a locality, e.g. district) in Korea. -->
+  <string name="addresses_district" tools:ignore="UnusedResources">ئالاھىدە رايون</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Used in the United Kingdom, Norway and Sweden -->
+  <string name="addresses_post_town" tools:ignore="UnusedResources">پوچتا بازار</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used as a tertiary address information (below the state level, e.g. Tasmania in Australia -->
+  <string name="addresses_suburb" tools:ignore="UnusedResources">شەھەر ئەتراپى</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is crucial for addressing in regions where county lines play a key role in postal services. -->
+  <string name="addresses_county" tools:ignore="UnusedResources">ناھىيە</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Significant in places where parishes are used for local administration and addressing. Ensures users can specify parish details for better autofill accuracy. Used in Barbados and Jamaica. -->
+  <string name="addresses_parish" tools:ignore="UnusedResources">تەۋەلىك</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Essential for addresses in countries like Japan where prefectures are a major administrative division. -->
+  <string name="addresses_prefecture" tools:ignore="UnusedResources">ۋىلايەت</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Allowing users to specify a particular area within a city or region. Used in Hong Kong -->
+  <string name="addresses_area" tools:ignore="UnusedResources">رايون</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The header for the Do/Si of the address. Do/Si refers to provincial level divisions, pertinent to addresses in South Korea. -->
+  <string name="addresses_do_si" tools:ignore="UnusedResources">شەھەر</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Used in countries like Nicaragua and Colombia where departments are a key administrative division. -->
+  <string name="addresses_department" tools:ignore="UnusedResources">ئۆلكە</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Essential for addresses in the United Arab Emirates. -->
+  <string name="addresses_emirate" tools:ignore="UnusedResources">ئەمىرلىكى</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Relevant for addresses in countries like Russia and Ukraine. -->
+  <string name="addresses_oblast" tools:ignore="UnusedResources">ئوبلاست</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The PIN (Postal Index Number) field, used in India is a code representing a specific area. -->
+  <string name="addresses_pin" tools:ignore="UnusedResources">مىخلا</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The postal code field is universally used in address forms to specify the area code for mail sorting. -->
+  <string name="addresses_postal_code" tools:ignore="UnusedResources">پوچتا نومۇرى</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. the Eircode field, specific to Ireland is a unique postal code system that helps in precise location identification. -->
+  <string name="addresses_eircode" tools:ignore="UnusedResources">پوچتا نومۇرى</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Used in cases we want to only display the word "Country" over "Country or Region". -->
+  <string name="addresses_country_only" tools:ignore="UnusedResources">دۆلەت</string>
   <!-- The text for the "Save" button for saving an address -->
   <string name="addresses_save_button">ساقلا</string>
   <!-- The text for the "Cancel" button for cancelling adding, updating or deleting an address -->
@@ -2912,8 +2951,6 @@
   <string name="confirm_clear_permission_site">بۇ تور بېكەتتىكى مەزكۇر ئىجازەتنى راستىنلا ئۆچۈرەمسىز؟</string>
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">تور بېكەت مۇستەسنا يوق</string>
-  <!-- Bookmark deletion confirmation -->
-  <string name="bookmark_deletion_confirmation" tools:ignore="UnusedResources" moz:removedIn="143">بۇ خەتكۈچنى راستىنلا ئۆچۈرەمسىز؟</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
   <string name="browser_menu_add_to_shortcuts">تېزلەتمىگە قوش</string>
   <!-- Browser menu button that removes a shortcut from the home fragment -->
@@ -3092,8 +3129,6 @@
   <string name="radio_preference_info_content_description">تەپسىلات ئۈچۈن چېكىڭ</string>
   <!-- Content description for the action bar "up" button -->
   <string name="action_bar_up_description">ئۈستىگە يول باشلا</string>
-  <!-- Content description for privacy content close button -->
-  <string name="privacy_content_close_button_content_description" tools:ignore="UnusedResources" moz:removedIn="143">تاقاش</string>
   <!--
     Pocket recommended stories
 
@@ -3781,8 +3816,6 @@
   <string name="setup_checklist_task_toolbar_selection">قورال بالداق ئورۇن بەلگىسى تاللىنىدۇ</string>
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">كېڭەيتىلمە بايقاش</string>
-  <!-- The title of the search widget task for the setup checklist -->
-  <string name="setup_checklist_task_search_widget" moz:removedIn="143" tools:ignore="UnusedResources">ئىزدەش ئەپچە ئورنىتىدۇ</string>
   <!-- The title of the search widget task for the setup checklist -->
   <string name="setup_checklist_task_search_widget_2">ئىزدەش ئەپچىنى تەكشۈرىدۇ</string>
   <!--

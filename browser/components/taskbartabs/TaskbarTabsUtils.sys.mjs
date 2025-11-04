@@ -148,6 +148,9 @@ function scaleImage(aImgContainer) {
   return aImgContainer;
 }
 
+/**
+ * A channel listener to aid with receiving image data.
+ */
 class ChannelListener {
   #request = null;
   #imageListener = null;

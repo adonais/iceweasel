@@ -318,8 +318,9 @@ class GridActor extends Actor {
     this.gridFragments = getStringifiableFragments(gridFragments);
 
     // Record writing mode and text direction for use by the grid outline.
-    const { direction, gridTemplateColumns, gridTemplateRows, writingMode } =
-      CssLogic.getComputedStyle(this.containerEl);
+    const { direction, writingMode } = CssLogic.getComputedStyle(
+      this.containerEl
+    );
 
     const form = {
       actor: this.actorID,
@@ -335,9 +336,12 @@ class GridActor extends Actor {
       form.containerNodeActorID = this.walker.getNode(this.containerEl).actorID;
     }
 
+    const gridContainerType = InspectorUtils.getGridContainerType(
+      this.containerEl
+    );
     form.isSubgrid =
-      gridTemplateRows.startsWith("subgrid") ||
-      gridTemplateColumns.startsWith("subgrid");
+      gridContainerType &
+      (InspectorUtils.GRID_SUBGRID_COL | InspectorUtils.GRID_SUBGRID_ROW);
 
     return form;
   }

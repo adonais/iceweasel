@@ -25,11 +25,13 @@ import mozilla.components.ui.icons.R as iconsR
 internal fun MoreSettingsSubmenu(
     isPinned: Boolean,
     isInstallable: Boolean,
+    isAddToHomeScreenSupported: Boolean,
     hasExternalApp: Boolean,
     externalAppName: String,
     isReaderViewActive: Boolean,
     isWebCompatReporterSupported: Boolean,
     isWebCompatEnabled: Boolean,
+    isOpenInAppMenuHighlighted: Boolean,
     translationInfo: TranslationInfo,
     showShortcuts: Boolean,
     onWebCompatReporterClick: () -> Unit,
@@ -66,15 +68,17 @@ internal fun MoreSettingsSubmenu(
             )
         }
 
-        MenuItem(
-            label = if (isInstallable) {
-                stringResource(id = R.string.browser_menu_add_app_to_homescreen)
-            } else {
-                stringResource(id = R.string.browser_menu_add_to_homescreen)
-            },
-            beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_add_to_homescreen_24),
-            onClick = onAddToHomeScreenMenuClick,
-        )
+        if (isAddToHomeScreenSupported) {
+            MenuItem(
+                label = if (isInstallable) {
+                    stringResource(id = R.string.browser_menu_add_app_to_homescreen)
+                } else {
+                    stringResource(id = R.string.browser_menu_add_to_homescreen)
+                },
+                beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_add_to_homescreen_24),
+                onClick = onAddToHomeScreenMenuClick,
+            )
+        }
 
         MenuItem(
             label = stringResource(id = R.string.browser_menu_save_to_collection_2),
@@ -90,6 +94,7 @@ internal fun MoreSettingsSubmenu(
                     stringResource(id = R.string.browser_menu_open_app_link)
                 },
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_more_grid_24),
+                isBeforeIconHighlighted = isOpenInAppMenuHighlighted,
                 state = MenuItemState.ENABLED,
                 onClick = onOpenInAppMenuClick,
             )
@@ -180,11 +185,13 @@ private fun MoreSettingsSubmenuPreview() {
                 MoreSettingsSubmenu(
                     isPinned = true,
                     isInstallable = true,
+                    isAddToHomeScreenSupported = true,
                     hasExternalApp = true,
                     externalAppName = "Pocket",
                     isReaderViewActive = false,
                     isWebCompatReporterSupported = true,
                     isWebCompatEnabled = true,
+                    isOpenInAppMenuHighlighted = false,
                     translationInfo = TranslationInfo(
                         isTranslationSupported = true,
                         isPdf = false,
@@ -217,11 +224,13 @@ private fun MoreSettingsSubmenuPrivatePreview() {
                 MoreSettingsSubmenu(
                     isPinned = false,
                     isInstallable = true,
+                    isAddToHomeScreenSupported = false,
                     hasExternalApp = false,
                     externalAppName = "Pocket",
                     isReaderViewActive = false,
                     isWebCompatReporterSupported = true,
                     isWebCompatEnabled = true,
+                    isOpenInAppMenuHighlighted = true,
                     translationInfo = TranslationInfo(
                         isTranslationSupported = true,
                         isPdf = false,

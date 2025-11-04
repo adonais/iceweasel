@@ -66,12 +66,12 @@ function Memory(parent, frameCache = new StackFrameCache()) {
   this._emitAllocations = this._emitAllocations.bind(this);
   this._onWindowReady = this._onWindowReady.bind(this);
 
-  EventEmitter.on(this.parent, "window-ready", this._onWindowReady);
+  this.parent.on("window-ready", this._onWindowReady);
 }
 
 Memory.prototype = {
   destroy() {
-    EventEmitter.off(this.parent, "window-ready", this._onWindowReady);
+    this.parent.off("window-ready", this._onWindowReady);
 
     this._mgr = null;
     if (this.state === "attached") {

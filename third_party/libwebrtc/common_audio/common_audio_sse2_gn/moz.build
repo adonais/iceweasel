@@ -52,6 +52,10 @@ if CONFIG["MOZ_DEBUG"] == "1":
 
 if CONFIG["OS_TARGET"] == "Android":
 
+    CXXFLAGS += [
+        "-std=gnu++20"
+    ]
+
     DEFINES["ANDROID"] = True
     DEFINES["ANDROID_NDK_VERSION_ROLL"] = "r27_1"
     DEFINES["HAVE_SYS_UIO_H"] = True
@@ -71,7 +75,8 @@ if CONFIG["OS_TARGET"] == "Android":
 if CONFIG["OS_TARGET"] == "Darwin":
 
     CXXFLAGS += [
-        "-msse2"
+        "-msse2",
+        "-std=gnu++20"
     ]
 
     DEFINES["WEBRTC_MAC"] = True
@@ -80,6 +85,10 @@ if CONFIG["OS_TARGET"] == "Darwin":
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
 if CONFIG["OS_TARGET"] == "Linux":
+
+    CXXFLAGS += [
+        "-std=gnu++20"
+    ]
 
     DEFINES["USE_AURA"] = "1"
     DEFINES["USE_GLIB"] = "1"
@@ -95,14 +104,11 @@ if CONFIG["OS_TARGET"] == "Linux":
     DEFINES["__STDC_CONSTANT_MACROS"] = True
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
-    OS_LIBS += [
-        "rt"
-    ]
-
 if CONFIG["OS_TARGET"] == "OpenBSD":
 
     CXXFLAGS += [
-        "-msse2"
+        "-msse2",
+        "-std=gnu++20"
     ]
 
     DEFINES["USE_GLIB"] = "1"
@@ -116,6 +122,10 @@ if CONFIG["OS_TARGET"] == "OpenBSD":
     DEFINES["__STDC_FORMAT_MACROS"] = True
 
 if CONFIG["OS_TARGET"] == "WINNT":
+
+    CXXFLAGS += [
+        "-std:c++20"
+    ]
 
     DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
     DEFINES["NOMINMAX"] = True

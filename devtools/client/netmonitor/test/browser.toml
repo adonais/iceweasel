@@ -65,16 +65,11 @@ support-files = [
   "html_curl-utils.html",
   "html_open-request-in-tab.html",
   "html_worker-test-page.html",
-  "html_websocket-test-page.html",
-  "html_ws-early-connection-page.html",
-  "html_ws-test-page.html",
-  "html_ws-sse-test-page.html",
   "html_image-cache.html",
   "html_script-cache.html",
   "html_stylesheet-cache.html",
   "js_worker-test.js",
   "js_worker-test2.js",
-  "js_websocket-worker-test.js",
   "network-overrides-test-helpers.js",
   "sjs_content-type-test-server.sjs",
   "sjs_cors-test-server.sjs",
@@ -112,9 +107,6 @@ support-files = [
   "!/devtools/client/shared/test/telemetry-test-helpers.js",
   "!/devtools/client/webconsole/test/browser/shared-head.js",
 ]
-
-["browser_net-ws-filter-freetext.js"]
-skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt"] # Bug 1767662
 
 ["browser_net_accessibility-01.js"]
 
@@ -248,33 +240,9 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_net_earlyhints.js"]
 
-["browser_net_edit_resend_cancel.js"]
-
-["browser_net_edit_resend_caret.js"]
-
-["browser_net_edit_resend_with_filtering.js"]
-
-["browser_net_edit_resend_xhr.js"]
-
 ["browser_net_error-boundary-01.js"]
 
 ["browser_net_file_uri.js"]
-
-["browser_net_filter-01.js"]
-
-["browser_net_filter-02.js"]
-
-["browser_net_filter-03.js"]
-
-["browser_net_filter-04.js"]
-
-["browser_net_filter-autocomplete.js"]
-
-["browser_net_filter-flags.js"]
-
-["browser_net_filter-sts-search.js"]
-
-["browser_net_filter-value-preserved.js"]
 
 ["browser_net_fission_switch_target.js"]
 
@@ -353,25 +321,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_net_leak_on_tab_close.js"]
 
-["browser_net_new_request_panel.js"]
-
-["browser_net_new_request_panel_clear_button.js"]
-
-["browser_net_new_request_panel_content-length.js"]
-
-["browser_net_new_request_panel_context_menu.js"]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bug 1858037 to investigate intermittent a11y_checks results
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858037
-]
-
-["browser_net_new_request_panel_persisted_content.js"]
-
-["browser_net_new_request_panel_send_request.js"]
-
-["browser_net_new_request_panel_sync_url_params.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
 ["browser_net_offline_mode.js"]
 
 ["browser_net_open_in_debugger.js"]
@@ -422,18 +371,6 @@ skip-if = [
 ["browser_net_req-resp-bodies.js"]
 
 ["browser_net_requests_with_empty_response.js"]
-
-["browser_net_resend.js"]
-
-["browser_net_resend_cors.js"]
-
-["browser_net_resend_csp.js"]
-
-["browser_net_resend_headers.js"]
-
-["browser_net_resend_hidden_headers.js"]
-
-["browser_net_resend_xhr.js"]
 
 ["browser_net_response_CORS_blocked.js"]
 
@@ -576,42 +513,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_waterfall-resize.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
-["browser_net_websocket_stacks.js"]
-
 ["browser_net_worker_stacks.js"]
-
-["browser_net_ws-basic.js"]
-
-["browser_net_ws-clear.js"]
-
-["browser_net_ws-connection-closed.js"]
-
-["browser_net_ws-copy-binary-message.js"]
-
-["browser_net_ws-early-connection.js"]
-
-["browser_net_ws-filter-dropdown.js"]
-
-["browser_net_ws-filter-regex.js"]
-
-["browser_net_ws-json-action-cable-payload.js"]
-
-["browser_net_ws-json-payload.js"]
-
-["browser_net_ws-json-stomp-payload.js"]
-
-["browser_net_ws-keep-future-frames.js"]
-
-["browser_net_ws-limit-frames.js"]
-
-["browser_net_ws-limit-payload.js"]
-
-["browser_net_ws-messages-navigation.js"]
-
-["browser_net_ws-sockjs-stomp-payload.js"]
-
-["browser_net_ws-sse-persist-columns.js"]
-
-["browser_net_ws-stomp-payload.js"]
 
 ["browser_net_zstd.js"]

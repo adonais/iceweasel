@@ -155,7 +155,7 @@ def yield_all_platform_jobs(config, jobs):
     # The linux64 and mac specific ja-JP-mac are beetmoved along with the signing beetmover
     # So while the dependent jobs are linux here, we only yield jobs for other platforms
     for job in jobs:
-        platforms = ("linux", "linux64-aarch64", "macosx64", "win32", "win64")
+        platforms = ("linux64-aarch64", "macosx64", "win32", "win64")
         if "devedition" in job["attributes"]["build_platform"]:
             platforms = (f"{plat}-devedition" for plat in platforms)
         for platform in platforms:
@@ -220,14 +220,12 @@ def _change_platform_data(config, platform_job, platform):
     # amend artifactMap entries as well
     platform_mapping = {
         "linux64": "linux-x86_64",
-        "linux": "linux-i686",
         "linux64-aarch64": "linux-aarch64",
         "macosx64": "mac",
         "win32": "win32",
         "win64": "win64",
         "linux64-devedition": "linux-x86_64",
         "linux64-aarch64-devedition": "linux-aarch64",
-        "linux-devedition": "linux-i686",
         "macosx64-devedition": "mac",
         "win32-devedition": "win32",
         "win64-devedition": "win64",

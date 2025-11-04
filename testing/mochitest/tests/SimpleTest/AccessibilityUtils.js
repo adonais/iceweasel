@@ -379,6 +379,48 @@ this.AccessibilityUtils = (function () {
   }
 
   /**
+   * Determine if an accessible is a button that is excluded from a focus
+   * order, because its adjacent sibling is a focusable spinner. Controls with
+   * role="spinbutton" are often placed between two buttons that could
+   * increase ("^") or decrease ("v") the value of this spinner. Those buttons
+   * are not expected to be focusable, because their functionality for keyboard
+   * users is redundant to the spinner. But they are exposed to assistive
+   * technology for touch, mouse, switch, and speech-to-text users. Thus, we
+   * need to special case the focusable check for these buttons adjacent to
+   * a spinner.
+   */
+  function isKeyboardFocusableSpinbuttonSibling(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+
+    // The control itself is a button:
+    if (accessible.role != Ci.nsIAccessibleRole.ROLE_PUSHBUTTON) {
+      return false;
+    }
+
+    // At least one sibling is a keyboard-focusable spinbutton:
+    for (const sibling of [
+      node.previousElementSibling,
+      node.nextElementSibling,
+    ]) {
+      if (!sibling) {
+        continue;
+      }
+      const siblingAcc = getAccessible(sibling);
+      if (
+        siblingAcc &&
+        siblingAcc.role == Ci.nsIAccessibleRole.ROLE_SPINBUTTON &&
+        matchState(siblingAcc, STATE_FOCUSABLE)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Determine if an accessible is a keyboard focusable tab within a tablist.
    * Per the ARIA design pattern, these controls aren't keyboard focusable in
    * the usual way. Instead, focus is managed by JS code which sets tabindex on
@@ -709,7 +751,8 @@ this.AccessibilityUtils = (function () {
       isKeyboardFocusableUrlbarButton(accessible) ||
       isKeyboardFocusableXULTab(accessible) ||
       isKeyboardFocusableTabInTablist(accessible) ||
-      isKeyboardFocusableFxviewControlInApplication(accessible)
+      isKeyboardFocusableFxviewControlInApplication(accessible) ||
+      isKeyboardFocusableSpinbuttonSibling(accessible)
     ) {
       return true;
     }
@@ -730,9 +773,11 @@ this.AccessibilityUtils = (function () {
         ((role == Ci.nsIAccessibleRole.ROLE_PUSHBUTTON ||
           role == Ci.nsIAccessibleRole.ROLE_TOGGLE_BUTTON) &&
           node.closest('[role="toolbar"]')) ||
-        // <moz-radio-group> also uses a roving tabindex.
+        // <moz-radio-group> and <moz-visual-picker> also use a roving tabindex.
         (role === Ci.nsIAccessibleRole.ROLE_RADIOBUTTON &&
           node.getRootNode().host?.localName === "moz-radio") ||
+        (role === Ci.nsIAccessibleRole.ROLE_RADIOBUTTON &&
+          node.getRootNode().host?.localName === "moz-visual-picker-item") ||
         shouldIgnoreTabIndex(node))
     );
   }

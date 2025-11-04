@@ -64,7 +64,7 @@ def _download_protoc_binary(revision):
                 if not isinstance(member, ZipInfo):
                     member = self.getinfo(member)
 
-                targetpath = super(ZipFile, self)._extract_member(member, targetpath, pwd)
+                targetpath = ZipFile._extract_member(self, member, targetpath, pwd)
 
                 attr = member.external_attr >> 16
                 if attr != 0:

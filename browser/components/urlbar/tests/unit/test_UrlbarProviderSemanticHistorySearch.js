@@ -12,7 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const { UrlbarProviderSemanticHistorySearch } = ChromeUtils.importESModule(
-  "resource:///modules/UrlbarProviderSemanticHistorySearch.sys.mjs"
+  "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs"
 );
 const { getPlacesSemanticHistoryManager } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs"

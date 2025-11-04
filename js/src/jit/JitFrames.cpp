@@ -1389,15 +1389,6 @@ static void TraceBaselineInterpreterEntryFrame(JSTracer* trc,
   TraceThisAndArguments(trc, frame, layout);
 }
 
-static void TraceRectifierFrame(JSTracer* trc, const JSJitFrameIter& frame) {
-  // Trace thisv.
-  //
-  // Baseline JIT code generated as part of the ICCall_Fallback stub may use
-  // it if we're calling a constructor that returns a primitive value.
-  RectifierFrameLayout* layout = (RectifierFrameLayout*)frame.fp();
-  TraceRoot(trc, &layout->thisv(), "rectifier-thisv");
-}
-
 static void TraceTrampolineNativeFrame(JSTracer* trc,
                                        const JSJitFrameIter& frame) {
   auto* layout = (TrampolineNativeFrameLayout*)frame.fp();
@@ -1453,9 +1444,6 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
           break;
         case FrameType::BaselineInterpreterEntry:
           TraceBaselineInterpreterEntryFrame(trc, jitFrame);
-          break;
-        case FrameType::Rectifier:
-          TraceRectifierFrame(trc, jitFrame);
           break;
         case FrameType::TrampolineNative:
           TraceTrampolineNativeFrame(trc, jitFrame);
@@ -2712,11 +2700,10 @@ void AssertJitStackInvariants(JSContext* cx) {
         frameSize = callerFp - calleeFp;
 
         if (frames.isScripted() &&
-            (frames.prevType() == FrameType::Rectifier ||
-             frames.prevType() == FrameType::BaselineInterpreterEntry)) {
+            frames.prevType() == FrameType::BaselineInterpreterEntry) {
           MOZ_RELEASE_ASSERT(
               frameSize % JitStackAlignment == 0,
-              "The rectifier and bli entry frame should keep the alignment");
+              "The blinterp entry frame should keep the alignment");
 
           size_t expectedFrameSize =
               sizeof(Value) *
@@ -2759,8 +2746,7 @@ void AssertJitStackInvariants(JSContext* cx) {
                              "The baseline stub restores the stack alignment");
         }
 
-        isScriptedCallee =
-            frames.isScripted() || frames.type() == FrameType::Rectifier;
+        isScriptedCallee = frames.isScripted();
       }
 
       MOZ_RELEASE_ASSERT(

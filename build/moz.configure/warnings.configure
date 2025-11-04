@@ -103,7 +103,12 @@ check_and_add_warning("-Wvolatile", cxx_compiler)
 # Disable some C++20 errors to be fixed in bugs 1791958, 1791955, and 1775161.
 check_and_add_warning("-Wno-deprecated-anon-enum-enum-conversion", cxx_compiler)
 check_and_add_warning("-Wno-deprecated-enum-enum-conversion", cxx_compiler)
+
+# Suppress C++20 warnings about implicit capture of `this` until they are fixed
+# in bug 1775161. gcc doesn't have a -Wdeprecated-this-capture flag like clang,
+# so temporarily downgrade all gcc -Wdeprecated errors to warnings.
 check_and_add_warning("-Wno-deprecated-this-capture", cxx_compiler)
+check_and_add_warning("-Wno-error=deprecated", when=building_with_gcc)
 
 # catches possible misuse of the comma operator
 check_and_add_warning("-Wcomma", cxx_compiler)

@@ -319,6 +319,8 @@ newtab-custom-pocket-subtitle = Contido excepcional patrocinado por { -pocket-br
 newtab-custom-stories-toggle =
     .label = Historias recomendadas
     .description = Contido excepcional seleccionado pola familia de { -brand-product-name }
+newtab-custom-stories-personalized-toggle =
+    .label = Historias
 newtab-custom-pocket-sponsored = Historias patrocinadas
 newtab-custom-pocket-show-recent-saves = Mostrar o gardado recentemente
 newtab-custom-recent-title = Actividade recente
@@ -329,6 +331,15 @@ newtab-custom-weather-toggle =
 newtab-custom-trending-search-toggle =
     .label = Tendencias de busca
     .description = Temas populares e buscados con frecuencia
+newtab-custom-widget-weather-toggle =
+    .label = Tempo
+newtab-custom-widget-trending-search-toggle =
+    .label = Tendencias de busca
+newtab-custom-widget-lists-toggle =
+    .label = Listas
+newtab-custom-widget-timer-toggle =
+    .label = Temporizador
+newtab-custom-widget-section-title = Widgets
 newtab-custom-close-button = Pechar
 newtab-custom-settings = Xestionar máis axustes
 
@@ -600,3 +611,40 @@ newtab-trending-searches-learn-more = Máis información
 newtab-trending-searches-dismiss = Ocultar buscas en tendencia
 # "Trending searches refers to popular searches from search engines
 newtab-trending-searches-title = Tendencias de busca
+
+## Strings for task / to-do list productivity widget
+
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Novo
+newtab-widget-lists-label-beta =
+    .label = Beta
+newtab-widget-task-list-menu-copy = Copiar
+newtab-widget-lists-menu-edit = Editar o nome da lista
+newtab-widget-lists-menu-create = Crea unha nova lista
+newtab-widget-lists-menu-delete = Eliminar esta lista
+newtab-widget-lists-menu-copy = Copiar a lista no portapapeis
+newtab-widget-lists-menu-hide = Ocultar todas as listas
+newtab-widget-lists-menu-learn-more = Máis información
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Engadir un elemento
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-label-play =
+    .label = Reproducir
+newtab-widget-timer-label-pause =
+    .label = Pausar
+newtab-widget-timer-menu-notifications-on = Activar as notificacións
+newtab-widget-timer-menu-hide = Ocultar o temporizador
+newtab-widget-timer-menu-learn-more = Máis información
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Desprázate para ver máis
+newtab-widget-message-title = Mantente concentrado con listas e un temporizador incorporado
+newtab-promo-card-title = Apoiar a { -brand-product-name }
+newtab-promo-card-body = Os nosos patrocinadores apoian a nosa misión de construír unha web mellor
+newtab-promo-card-cta = Máis información
+newtab-promo-card-dismiss-button =
+    .title = Rexeitar
+    .aria-label = Rexeitar

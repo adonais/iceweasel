@@ -21,7 +21,7 @@ namespace detail {
 
 template <typename InlineEntry, typename Entry, typename Table,
           typename HashPolicy, typename AllocPolicy, size_t InlineEntries>
-class InlineTable : private AllocPolicy {
+class MOZ_STANDALONE_DEBUG InlineTable : private AllocPolicy {
  private:
   using TablePtr = typename Table::Ptr;
   using TableAddPtr = typename Table::AddPtr;
@@ -432,7 +432,7 @@ class InlineTable : private AllocPolicy {
 template <typename Key, typename Value, size_t InlineEntries,
           typename HashPolicy = DefaultHasher<Key>,
           typename AllocPolicy = TempAllocPolicy>
-class InlineMap {
+class MOZ_STANDALONE_DEBUG InlineMap {
   using Map = HashMap<Key, Value, HashPolicy, AllocPolicy>;
 
   struct InlineEntry {

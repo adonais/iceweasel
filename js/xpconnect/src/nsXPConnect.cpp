@@ -499,22 +499,18 @@ void InitGlobalObjectOptions(JS::RealmOptions& aOptions,
 
   if (aForceUTC) {
     nsCString timeZone = nsRFPService::GetSpoofedJSTimeZone();
-    aOptions.behaviors().setTimeZoneCopyZ(timeZone.get());
+    aOptions.behaviors().setTimeZoneOverride(timeZone.get());
+  } else if (!aTimezoneOverride.IsEmpty()) {
+    aOptions.behaviors().setTimeZoneOverride(
+        NS_ConvertUTF16toUTF8(aTimezoneOverride).get());
   }
   aOptions.creationOptions().setAlwaysUseFdlibm(aAlwaysUseFdlibm);
   if (aLocaleEnUS) {
     nsCString locale = nsRFPService::GetSpoofedJSLocale();
-    aOptions.creationOptions().setLocaleCopyZ(locale.get());
-  }
-
-  if (!aLanguageOverride.IsEmpty()) {
+    aOptions.behaviors().setLocaleOverride(locale.get());
+  } else if (!aLanguageOverride.IsEmpty()) {
     aOptions.behaviors().setLocaleOverride(
         PromiseFlatCString(aLanguageOverride).get());
-  }
-
-  if (!aTimezoneOverride.IsEmpty()) {
-    aOptions.behaviors().setTimeZoneCopyZ(
-        NS_ConvertUTF16toUTF8(aTimezoneOverride).get());
   }
 }
 

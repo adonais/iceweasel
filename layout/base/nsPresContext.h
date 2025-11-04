@@ -470,6 +470,12 @@ class nsPresContext : public nsISupports,
    */
   bool HasPaginatedScrolling() const { return mCanPaginatedScroll; }
 
+  uint32_t LastScrollGeneration() { return mLastScrollGeneration; }
+  void UpdateLastScrollGeneration() { mLastScrollGeneration += 1; }
+  bool HasBeenScrolledSince(const uint32_t& mPreviousScrollGeneration) const {
+    return mPreviousScrollGeneration < mLastScrollGeneration;
+  }
+
   /**
    * Get/set the size of a page
    */
@@ -1286,6 +1292,11 @@ class nsPresContext : public nsISupports,
   mozilla::TimeStamp mFirstKeyTime;
   mozilla::TimeStamp mFirstMouseMoveTime;
   mozilla::TimeStamp mFirstScrollTime;
+
+  // incremented each time the root scroller scrolls, helpful to determine if
+  // it has scrolled between the start and end of some deferred work (such as a
+  // navigation intercept).
+  uint32_t mLastScrollGeneration;
 
   // last time we did a full style flush
   mozilla::TimeStamp mLastStyleUpdateForAllAnimations;

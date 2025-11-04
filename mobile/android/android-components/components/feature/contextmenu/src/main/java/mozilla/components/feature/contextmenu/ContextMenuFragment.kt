@@ -14,12 +14,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.text.HtmlCompat
 import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import mozilla.components.browser.state.state.SessionState
 
@@ -60,7 +60,7 @@ class ContextMenuFragment : DialogFragment() {
         @SuppressLint("UseGetLayoutInflater")
         val inflater = LayoutInflater.from(requireContext())
 
-        val builder = AlertDialog.Builder(requireContext())
+        val builder = MaterialAlertDialogBuilder(requireContext())
             .setCustomTitle(createDialogTitleView(inflater))
             .setView(createDialogContentView(inflater))
 

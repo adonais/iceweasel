@@ -342,7 +342,7 @@ export var SelectParentHelper = {
 
   handleEvent(event) {
     switch (event.type) {
-      case "mouseup":
+      case "mouseup": {
         function inRect(rect, x, y) {
           return (
             x >= rect.left &&
@@ -360,6 +360,7 @@ export var SelectParentHelper = {
           this._currentMenulist.menupopup.state == "open";
         this._actor.sendAsyncMessage("Forms:MouseUp", { onAnchor });
         break;
+      }
 
       case "mouseover":
         if (
@@ -401,7 +402,7 @@ export var SelectParentHelper = {
         }
         break;
 
-      case "popuphidden":
+      case "popuphidden": {
         this._actor.sendAsyncMessage("Forms:DismissedDropDown", {});
         let popup = event.target;
         this._unregisterListeners(popup);
@@ -415,6 +416,7 @@ export var SelectParentHelper = {
         this._currentZoom = 1;
         this._actor = null;
         break;
+      }
     }
   },
 

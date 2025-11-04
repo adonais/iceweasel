@@ -6,6 +6,9 @@
 
 :host {
   --status-card-connected-background-color: var(--color-violet-90);
+  --connection-globe-icon-size: 48px;
+  --connection-rings-extra-space-x: 23px;
+  --connection-rings-extra-space-y: 23px;
   --connection-shield-color: var(--panel-background);
   --connection-shield-off-background-color: var(--icon-color-critical);
   --connection-shield-on-background-color: var(--color-accent-primary);
@@ -42,8 +45,10 @@ hr {
 
 #status-card {
   --shield-bgcolor: var(--connection-shield-off-background-color);
+  --box-icon-size: var(--connection-globe-icon-size);
   --box-icon-fill: var(--connection-shield-color);
   --box-icon-stroke: var(--shield-bgcolor);
+  --box-label-font-weight: var(--font-weight-bold);
   -moz-context-properties: fill, stroke;
   /**
    * moz-box-group changes the border of items based on its position in the group.
@@ -60,13 +65,10 @@ hr {
 }
 
 #connection-toggle {
-  margin-inline-end: var(--space-small);
-}
-
-#connection-toggle {
   --toggle-width: var(--size-item-xlarge);
   --toggle-height: var(--size-item-medium);
   --toggle-dot-margin: 2px;
+  margin-inline-end: var(--space-small);
 }
 
 #status-card-animation {
@@ -90,14 +92,15 @@ hr {
    * Additional px gap is merely for alignment and not tied to any element.
    * TODO: (Bug 1981251) See if we can better calculate the center coords.
    */
-  background-position-x: calc(-100px + var(--icon-size-xlarge) + var(--space-large) - 15px);
-  background-position-y: calc(-100px + var(--icon-size-xlarge) + var(--space-large) - 13px);
+  background-position-x: calc(-100px + var(--connection-globe-icon-size) + var(--space-large) - var(--connection-rings-extra-space-x));
+  background-position-y: calc(-100px + var(--connection-globe-icon-size) + var(--space-large) - var(--connection-rings-extra-space-y));
   background-image: url("chrome://browser/content/ipprotection/assets/rings.svg");
   background-repeat: no-repeat;
 
   &:dir(rtl) {
+    --connection-rings-extra-space-x: 4.5px;
     /* Shift by approximately 100% of the element's width to move the rings to the opposite side. */
-    background-position-x: calc(100% + var(--icon-size-xlarge) + var(--space-large) + 28px);
+    background-position-x: calc(100% + var(--connection-globe-icon-size) + var(--space-large) + var(--connection-rings-extra-space-x));
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -107,6 +110,7 @@ hr {
 
 #location-wrapper {
   --box-icon-fill: currentColor;
+  --box-label-font-weight: var(--font-weight-bold);
 }
 
 .vpn-bottom-content {

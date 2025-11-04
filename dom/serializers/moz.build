@@ -31,6 +31,10 @@ UNIFIED_SOURCES += [
     "nsXMLContentSerializer.cpp",
 ]
 
+TEST_DIRS += [
+    "gtest",
+]
+
 FINAL_LIBRARY = "xul"
 
 CRASHTEST_MANIFESTS += ["crashtests/crashtests.list"]

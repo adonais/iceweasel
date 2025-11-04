@@ -478,11 +478,6 @@ void nsTableCellFrame::AlignChildWithinCell(
     // Invalidate new overflow rect.
     inner->InvalidateFrameSubtree();
   }
-  if (HasView()) {
-    nsContainerFrame::SyncFrameViewAfterReflow(PresContext(), this, GetView(),
-                                               reflowOutput.InkOverflow(),
-                                               ReflowChildFlags::Default);
-  }
 }
 
 bool nsTableCellFrame::ComputeCustomOverflow(OverflowAreas& aOverflowAreas) {
@@ -1160,6 +1155,9 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   // the 'empty-cells' property has no effect on 'outline'
   DisplayOutline(aBuilder, aLists);
+  if (HidesContent()) {
+    return;
+  }
 
   // The child's background will go in our BorderBackground() list.
   // This isn't a problem since it won't have a real background except for

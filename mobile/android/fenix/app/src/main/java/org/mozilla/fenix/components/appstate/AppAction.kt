@@ -18,6 +18,7 @@ import mozilla.components.service.nimbus.messaging.MessageSurfaceId
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
+import org.mozilla.fenix.bookmarks.BookmarksGlobalResultReport
 import org.mozilla.fenix.browser.StandardSnackbarError
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
@@ -358,6 +359,16 @@ sealed class AppAction : Action {
          * @property title The title of the bookmark that was removed.
          */
         data class BookmarkDeleted(val title: String?) : BookmarkAction()
+
+        /**
+         * [BookmarkAction] dispatched when a bookmark operation has a result that must be
+         * reported even if the bookmark feature goes out of scope.
+         *
+         * @property globalResultReport The specific result to report.
+         */
+        data class BookmarkOperationResultReported(
+            val globalResultReport: BookmarksGlobalResultReport,
+        ) : BookmarkAction()
     }
 
     /**

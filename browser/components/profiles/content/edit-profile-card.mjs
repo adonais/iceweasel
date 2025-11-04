@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env mozilla/remote-page */
-
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { html, ifDefined } from "chrome://global/content/vendor/lit.all.mjs";
 
@@ -136,24 +134,12 @@ export class EditProfileCard extends MozLitElement {
       this.updateNameDebouncer.timeout = 50;
     }
 
-    this.profile = currentProfile;
+    this.setProfile(currentProfile);
     this.profiles = profiles;
     this.themes = themes;
-
-    if (this.profile.hasCustomAvatar) {
-      this.createAvatarURL();
-    }
-
-    this.setFavicon();
   }
 
   createAvatarURL() {
-    if (this.profile.avatarURLs.url16) {
-      URL.revokeObjectURL(this.profile.avatarURLs.url16);
-      delete this.profile.avatarURLs.url16;
-      delete this.profile.avatarURLs.url80;
-    }
-
     if (this.profile.avatarFiles?.file16) {
       const objURL = URL.createObjectURL(this.profile.avatarFiles.file16);
       this.profile.avatarURLs.url16 = objURL;
@@ -173,9 +159,40 @@ export class EditProfileCard extends MozLitElement {
     return result;
   }
 
+  setProfile(newProfile) {
+    if (this.profile?.hasCustomAvatar && this.profile?.avatarURLs.url16) {
+      URL.revokeObjectURL(this.profile.avatarURLs.url16);
+      delete this.profile.avatarURLs.url16;
+      delete this.profile.avatarURLs.url80;
+    }
+
+    if (this.profile?.favicon) {
+      URL.revokeObjectURL(this.profile.favicon);
+    }
+
+    this.profile = newProfile;
+
+    if (this.profile.hasCustomAvatar) {
+      this.createAvatarURL();
+    }
+
+    this.setFavicon();
+  }
+
   setFavicon() {
-    let favicon = document.getElementById("favicon");
-    favicon.href = this.profile.avatarURLs.url16;
+    const favicon = document.getElementById("favicon");
+
+    if (this.profile.hasCustomAvatar) {
+      favicon.href = this.profile.avatarURLs.url16;
+      return;
+    }
+
+    const faviconBlob = new Blob([this.profile.faviconSVGText], {
+      type: "image/svg+xml",
+    });
+    const faviconObjURL = URL.createObjectURL(faviconBlob);
+    this.profile.favicon = faviconObjURL;
+    favicon.href = faviconObjURL;
   }
 
   handleEvent(event) {
@@ -237,11 +254,12 @@ export class EditProfileCard extends MozLitElement {
       return;
     }
 
-    let theme = await RPMSendQuery("Profiles:UpdateProfileTheme", newThemeId);
-    this.profile.themeId = theme.themeId;
-    this.profile.themeFg = theme.themeFg;
-    this.profile.themeBg = theme.themeBg;
+    let updatedProfile = await RPMSendQuery(
+      "Profiles:UpdateProfileTheme",
+      newThemeId
+    );
 
+    this.setProfile(updatedProfile);
     this.requestUpdate();
   }
 
@@ -254,14 +272,8 @@ export class EditProfileCard extends MozLitElement {
       avatarOrFile: newAvatar,
     });
 
-    this.profile = updatedProfile;
-
-    if (this.profile.hasCustomAvatar) {
-      this.createAvatarURL();
-    }
-
+    this.setProfile(updatedProfile);
     this.requestUpdate();
-    this.setFavicon();
   }
 
   isDuplicateName(newName) {

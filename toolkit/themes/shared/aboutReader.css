@@ -218,7 +218,7 @@ body.loaded {
 }
 
 a {
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
 }
 
 a::selection {
@@ -329,7 +329,7 @@ blockquote {
 .toolbar {
   padding-block: 16px;
   border: 1px solid var(--toolbar-border);
-  border-radius: 6px;
+  border-radius: var(--border-radius-small);
   box-shadow: 0 2px 8px var(--toolbar-box-shadow);
 
   width: 32px; /* basic width, without padding/border */
@@ -454,7 +454,7 @@ button:disabled {
   color: var(--tooltip-foreground);
   padding: 4px 8px;
   border: 1px solid var(--tooltip-border);
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   visibility: hidden;
   pointer-events: none;
   /* Put above .dropdown .dropdown-popup, which has z-index: 1000. */
@@ -590,7 +590,7 @@ body.hcm .color-scheme-buttons {
   justify-content: center;
   /* We want 10px between items, but there's no margin collapsing in flexbox. */
   margin: 10px 5px;
-  border-radius: 2px;
+  border-radius: var(--border-radius-xsmall);
   border-color: var(--popup-border);
 }
 
@@ -1056,7 +1056,7 @@ pre {
 .moz-reader-content .wp-caption {
   margin: -10px -10px calc(8px + var(--line-height) * 0.4);
   padding: 10px;
-  border-radius: 5px;
+  border-radius: var(--border-radius-small);
 }
 
 .moz-reader-content li {

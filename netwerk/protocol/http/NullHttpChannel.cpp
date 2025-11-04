@@ -276,6 +276,16 @@ NullHttpChannel::GetEncodedBodySize(uint64_t* aEncodedBodySize) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+NS_IMETHODIMP
+NullHttpChannel::GetIsUserAgentHeaderOutdated(bool* aValue) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::SetIsUserAgentHeaderOutdated(bool aValue) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 void NullHttpChannel::SetSource(
     mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> aSource) {}
 
@@ -834,6 +844,19 @@ NullHttpChannel::SetRenderBlocking(bool aRenderBlocking) {
 NS_IMETHODIMP
 NullHttpChannel::GetRenderBlocking(bool* aRenderBlocking) {
   return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::GetDecompressDictionary(
+    mozilla::net::DictionaryCacheEntry** aDictionary) {
+  *aDictionary = nullptr;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+NullHttpChannel::SetDecompressDictionary(
+    mozilla::net::DictionaryCacheEntry* aDictionary) {
+  return NS_OK;
 }
 
 #define IMPL_TIMING_ATTR(name)                                           \

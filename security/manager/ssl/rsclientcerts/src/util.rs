@@ -15,20 +15,6 @@ use crate::error::{Error, ErrorType};
 use crate::error_here;
 use crate::manager::CryptokiObject;
 
-/// Accessing fields of packed structs is unsafe (it may be undefined behavior if the field isn't
-/// aligned). Since we're implementing a PKCS#11 module, we already have to trust the caller not to
-/// give us bad data, so normally we would deal with this by adding an unsafe block. If we do that,
-/// though, the compiler complains that the unsafe block is unnecessary. Thus, we use this macro to
-/// annotate the unsafe block to silence the compiler.
-#[macro_export]
-macro_rules! unsafe_packed_field_access {
-    ($e:expr) => {{
-        #[allow(unused_unsafe)]
-        let tmp = unsafe { $e };
-        tmp
-    }};
-}
-
 // The following ENCODED_OID_BYTES_* consist of the encoded bytes of an ASN.1
 // OBJECT IDENTIFIER specifying the indicated OID (in other words, the full
 // tag, length, and value).

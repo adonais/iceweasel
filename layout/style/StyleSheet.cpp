@@ -97,52 +97,8 @@ already_AddRefed<StyleSheet> StyleSheet::Constructor(
     return nullptr;
   }
 
-  // 1. Construct a sheet and set its properties (see spec).
-  auto sheet =
-      MakeRefPtr<StyleSheet>(css::SheetParsingMode::eAuthorSheetFeatures,
-                             CORSMode::CORS_NONE, dom::SRIMetadata());
-
-  // baseURL not yet in the spec. Implemented based on the following discussion:
-  // https://github.com/WICG/construct-stylesheets/issues/95#issuecomment-594217180
-  RefPtr<nsIURI> baseURI;
-  if (!aOptions.mBaseURL.WasPassed()) {
-    baseURI = constructorDocument->GetBaseURI();
-  } else {
-    nsresult rv = NS_NewURI(getter_AddRefs(baseURI), aOptions.mBaseURL.Value(),
-                            nullptr, constructorDocument->GetBaseURI());
-    if (NS_FAILED(rv)) {
-      aRv.ThrowNotAllowedError(
-          "Constructed style sheets must have a valid base URL");
-      return nullptr;
-    }
-  }
-
-  nsIURI* sheetURI = constructorDocument->GetDocumentURI();
-  nsIURI* originalURI = nullptr;
-  sheet->SetURIs(sheetURI, originalURI, baseURI);
-
-  sheet->SetPrincipal(constructorDocument->NodePrincipal());
-  auto referrerInfo = MakeRefPtr<ReferrerInfo>(*constructorDocument);
-  sheet->SetReferrerInfo(referrerInfo);
-  sheet->mConstructorDocument = constructorDocument;
-
-  // 2. Set the sheet's media according to aOptions.
-  if (aOptions.mMedia.IsUTF8String()) {
-    sheet->SetMedia(MediaList::Create(aOptions.mMedia.GetAsUTF8String()));
-  } else {
-    sheet->SetMedia(aOptions.mMedia.GetAsMediaList()->Clone());
-  }
-
-  // 3. Set the sheet's disabled flag according to aOptions.
-  sheet->SetDisabled(aOptions.mDisabled);
-  sheet->SetURLExtraData();
-  sheet->SetComplete();
-
-  sheet->ReplaceSync(""_ns, aRv);
-  MOZ_ASSERT(!aRv.Failed());
-
-  // 4. Return sheet.
-  return sheet.forget();
+  return CreateConstructedSheet(
+      *constructorDocument, constructorDocument->GetBaseURI(), aOptions, aRv);
 }
 
 StyleSheet::~StyleSheet() {
@@ -1194,6 +1150,59 @@ void StyleSheet::FixUpAfterInnerClone() {
     }
 #endif
   }
+}
+
+/* static */
+// https://wicg.github.io/construct-stylesheets/#dom-cssstylesheet-cssstylesheet
+already_AddRefed<StyleSheet> StyleSheet::CreateConstructedSheet(
+    dom::Document& aConstructorDocument, nsIURI* aBaseURI,
+    const dom::CSSStyleSheetInit& aOptions, ErrorResult& aRv) {
+  // 1. Construct a sheet and set its properties (see spec).
+  auto sheet =
+      MakeRefPtr<StyleSheet>(css::SheetParsingMode::eAuthorSheetFeatures,
+                             CORSMode::CORS_NONE, dom::SRIMetadata());
+
+  // baseURL not yet in the spec. Implemented based on the following discussion:
+  // https://github.com/WICG/construct-stylesheets/issues/95#issuecomment-594217180
+  RefPtr<nsIURI> baseURI;
+  if (!aOptions.mBaseURL.WasPassed()) {
+    baseURI = aBaseURI;
+  } else {
+    nsresult rv = NS_NewURI(getter_AddRefs(baseURI), aOptions.mBaseURL.Value(),
+                            nullptr, aConstructorDocument.GetBaseURI());
+    if (NS_FAILED(rv)) {
+      aRv.ThrowNotAllowedError(
+          "Constructed style sheets must have a valid base URL");
+      return nullptr;
+    }
+  }
+
+  nsIURI* sheetURI = aConstructorDocument.GetDocumentURI();
+  nsIURI* originalURI = nullptr;
+  sheet->SetURIs(sheetURI, originalURI, baseURI);
+
+  sheet->SetPrincipal(aConstructorDocument.NodePrincipal());
+  auto referrerInfo = MakeRefPtr<ReferrerInfo>(aConstructorDocument);
+  sheet->SetReferrerInfo(referrerInfo);
+  sheet->mConstructorDocument = &aConstructorDocument;
+
+  // 2. Set the sheet's media according to aOptions.
+  if (aOptions.mMedia.IsUTF8String()) {
+    sheet->SetMedia(MediaList::Create(aOptions.mMedia.GetAsUTF8String()));
+  } else {
+    sheet->SetMedia(aOptions.mMedia.GetAsMediaList()->Clone());
+  }
+
+  // 3. Set the sheet's disabled flag according to aOptions.
+  sheet->SetDisabled(aOptions.mDisabled);
+  sheet->SetURLExtraData();
+  sheet->SetComplete();
+
+  sheet->ReplaceSync(""_ns, aRv);
+  MOZ_ASSERT(!aRv.Failed());
+
+  // 4. Return sheet.
+  return sheet.forget();
 }
 
 already_AddRefed<StyleSheet> StyleSheet::CreateEmptyChildSheet(

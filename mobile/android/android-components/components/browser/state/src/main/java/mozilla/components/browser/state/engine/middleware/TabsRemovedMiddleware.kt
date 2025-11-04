@@ -27,7 +27,6 @@ import mozilla.components.lib.state.MiddlewareContext
 internal class TabsRemovedMiddleware(
     private val scope: CoroutineScope,
 ) : Middleware<BrowserState, BrowserAction> {
-    @Suppress("ComplexMethod")
     override fun invoke(
         context: MiddlewareContext<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,

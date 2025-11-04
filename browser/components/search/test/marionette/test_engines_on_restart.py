@@ -25,7 +25,7 @@ class TestEnginesOnRestart(MarionetteTestCase):
                 "@mozilla.org/browser/search-service;1"]
             .getService(Components.interfaces.nsISearchService);
         return searchService.init().then(function () {
-          resolve(searchService.defaultEngine.identifier);
+          resolve(searchService.defaultEngine.id);
         });
         """
 
@@ -33,7 +33,7 @@ class TestEnginesOnRestart(MarionetteTestCase):
             return self.marionette.execute_async_script(textwrap.dedent(script))
 
     def test_engines(self):
-        self.assertTrue(self.get_default_search_engine().startswith("google"))
+        self.assertEqual(self.get_default_search_engine(), "google")
         self.marionette.set_pref("intl.locale.requested", "kk_KZ")
         self.marionette.restart(clean=False, in_app=True)
-        self.assertTrue(self.get_default_search_engine().startswith("google"))
+        self.assertEqual(self.get_default_search_engine(), "google")

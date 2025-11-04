@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -24,7 +25,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
 import mozilla.components.service.fxa.manager.AccountState
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.service.fxa.store.Account
@@ -58,7 +58,7 @@ internal fun MenuHeader(
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        Divider(modifier = Modifier.size(width = 2.dp, height = 32.dp))
+        HorizontalDivider(modifier = Modifier.size(width = 2.dp, height = 32.dp))
 
         Spacer(modifier = Modifier.width(4.dp))
 

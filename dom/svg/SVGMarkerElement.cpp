@@ -10,7 +10,6 @@
 #include "SVGAnimatedPreserveAspectRatio.h"
 #include "SVGContentUtils.h"
 #include "mozilla/ArrayUtils.h"
-#include "mozilla/FloatingPoint.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGLengthBinding.h"

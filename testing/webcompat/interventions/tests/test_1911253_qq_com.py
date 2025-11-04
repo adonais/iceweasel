@@ -3,7 +3,7 @@ import pytest
 URL = "https://www.qq.com/"
 
 LOGIN_CSS = "#qqcom-login .login-button"
-CHECKBOX_CSS = ".qqcom-modal-content #web-choose"
+CHECKBOX_CSS = "[dt-eid=em_login_wx] + div svg#defaultbutton"
 QQ_BUTTON_CSS = "#QQ-face"
 IFRAME_CSS = "iframe[src*=login_qq_news_web]"
 WAIT_LOG_MSG = "load event end at"
@@ -12,6 +12,7 @@ REPLACED_CSS = ".accredit_info_op li input[type=checkbox]"
 
 async def does_checkmark_appear(client):
     await client.navigate(URL, wait="none")
+    client.hide_elements("#download-btn-wrapid")
     client.await_css(LOGIN_CSS, is_displayed=True).click()
     client.await_css(CHECKBOX_CSS, is_displayed=True).click()
     client.await_css(QQ_BUTTON_CSS, is_displayed=True).click()

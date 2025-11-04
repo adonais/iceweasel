@@ -15,7 +15,7 @@ type = "benchmark"
 unit = "score"
 support_class = "jetstream3.py"
 repository = "https://github.com/webkit/jetstream"
-repository_revision = "6947a460f6b55ef5613c36263049ecf74c5ec1cd"
+repository_revision = "b03c3933691122168a8fff49cf835200bf76696a"
 test_script = "jetstream3.js"
 
 ["jetstream3"]

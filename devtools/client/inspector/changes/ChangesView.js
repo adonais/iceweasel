@@ -268,8 +268,6 @@ class ChangesView {
       { onAvailable: this.onResourceAvailable }
     );
 
-    this.store.dispatch(resetChanges());
-
     this.document = null;
     this.inspector = null;
     this.store = null;

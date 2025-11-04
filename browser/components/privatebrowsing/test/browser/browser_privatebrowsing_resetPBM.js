@@ -32,25 +32,15 @@ const SELECTOR_PANEL_COMPLETION_TOAST = "#confirmation-hint";
 async function waitForConfirmPanelShow(win) {
   // Check for the panel, if it's not present yet wait for it to be inserted.
   let panelview = win.document.querySelector(SELECTOR_PANELVIEW);
-  if (!panelview) {
-    let navToolbox = win.document.getElementById("navigator-toolbox");
-    await BrowserTestUtils.waitForMutationCondition(
-      navToolbox,
-      { childList: true, subtree: true },
-      () => {
-        panelview = win.document.querySelector(SELECTOR_PANELVIEW);
-        return !!panelview;
-      }
-    );
-  }
-
   // Panel already visible, we can exit early.
-  if (BrowserTestUtils.isVisible(panelview)) {
+  if (panelview && BrowserTestUtils.isVisible(panelview)) {
     return;
   }
 
   // Wait for panel shown event.
-  await BrowserTestUtils.waitForEvent(panelview.closest("panel"), "popupshown");
+  await BrowserTestUtils.waitForEvent(win, "popupshown", event => {
+    return event.target.querySelector(SELECTOR_PANELVIEW);
+  });
 }
 
 /**

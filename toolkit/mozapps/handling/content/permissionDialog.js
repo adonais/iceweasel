@@ -5,6 +5,20 @@
 const { EnableDelayHelper } = ChromeUtils.importESModule(
   "resource://gre/modules/PromptUtils.sys.mjs"
 );
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+// These schemes are for digital identitity documents.
+// We show a warning card for them in the permission dialog,
+// so the user is made aware the site may be requesting a real
+// identity.
+const lazy = {};
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "walletSchemes",
+  "privacy.wallet_schemes"
+);
 
 let dialog = {
   /**
@@ -145,6 +159,26 @@ let dialog = {
   },
 
   /**
+   * Determines the l10n ID to use for the dangerous scheme warning,
+   * depending on the triggering principal and the preferred application
+   * handler.
+   */
+  get walletWarningL10nId() {
+    if (this.shouldShowPrincipal() && this.userReadablePrincipal) {
+      if (this._preferredHandlerName) {
+        return "wallet-custom-scheme-warning-host-app";
+      }
+      return "wallet-custom-scheme-warning-host";
+    }
+
+    if (this._preferredHandlerName) {
+      return "wallet-custom-scheme-warning-app";
+    }
+
+    return "wallet-custom-scheme-warning";
+  },
+
+  /**
    * Computes text to show in the prompt that is a user-understandable
    * version of what is asking to open the external protocol.
    * It's usually the prePath of the site that wants to navigate to
@@ -213,6 +247,23 @@ let dialog = {
         host,
         scheme,
       });
+    }
+
+    let walletSchemeList = lazy.walletSchemes.split(",");
+    if (walletSchemeList.includes(scheme)) {
+      let warning = document.getElementById("warning-bar");
+      document.l10n.setAttributes(
+        warning,
+        "wallet-custom-scheme-warning-heading"
+      );
+      warning.messageL10nId = this.walletWarningL10nId;
+      warning.messageL10nArgs = {
+        host,
+        scheme,
+        appName: this._preferredHandlerName,
+      };
+      warning.hidden = false;
+      description.hidden = true;
     }
   },
 

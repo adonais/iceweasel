@@ -220,6 +220,8 @@ struct EmbedderColorSchemes {
   FIELD(OverrideDPPX, float)                                                  \
   /* The current in-progress load. */                                         \
   FIELD(CurrentLoadIdentifier, Maybe<uint64_t>)                               \
+  /* The android load identifier. Used to map to applink type */              \
+  FIELD(AndroidAppLinkLoadIdentifier, Maybe<uint64_t>)                        \
   /* See nsIRequest for possible flags. */                                    \
   FIELD(DefaultLoadFlags, uint32_t)                                           \
   /* Signals that session history is enabled for this browsing context tree.  \
@@ -965,14 +967,20 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   std::tuple<nsCOMPtr<nsIPrincipal>, nsCOMPtr<nsIPrincipal>>
   GetTriggeringAndInheritPrincipalsForCurrentLoad();
 
+  // HistoryGo is a content process entry point for #apply-the-history-step
   MOZ_CAN_RUN_SCRIPT
   void HistoryGo(int32_t aOffset, uint64_t aHistoryEpoch,
                  bool aRequireUserInteraction, bool aUserActivation,
                  std::function<void(Maybe<int32_t>&&)>&& aResolver);
 
+  // NavigationTraverse is a content process entry point for
+  // #apply-the-history-step. It differs mainly in that it's using a
+  // navigation entry key for navigation, and that it's possible to
+  // pass `aCheckForCancelation`, which controls if we should run
+  // the onbeforeunload and traversable onnavigate checks.
   MOZ_CAN_RUN_SCRIPT
   void NavigationTraverse(const nsID& aKey, uint64_t aHistoryEpoch,
-                          bool aUserActivation,
+                          bool aUserActivation, bool aCheckForCancelation,
                           std::function<void(nsresult)>&& aResolver);
 
   bool ShouldUpdateSessionHistory(uint32_t aLoadType);

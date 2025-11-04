@@ -240,9 +240,6 @@ void UtilityMediaServiceChild::GetKeySystemCapabilities(
           info->mCapabilities = config.GetDebugInfo();
           info->mClearlead =
               DoesKeySystemSupportClearLead(info->mKeySystemName);
-          if (capabilities.isHDCP22Compatible()) {
-            info->mIsHDCP22Compatible = *capabilities.isHDCP22Compatible();
-          }
           if (capabilities.isHardwareDecryption()) {
             info->mIsHardwareDecryption = true;
           }

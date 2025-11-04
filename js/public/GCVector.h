@@ -136,7 +136,7 @@ class GCVector {
   template <typename T2, size_t MinInlineCapacity2, typename AllocPolicy2>
   [[nodiscard]] bool appendAll(
       GCVector<T2, MinInlineCapacity2, AllocPolicy2>&& aU) {
-    return vector.appendAll(aU.begin(), aU.end());
+    return vector.appendAll(std::move(aU.vector));
   }
 
   [[nodiscard]] bool appendN(const T& val, size_t count) {
@@ -154,6 +154,12 @@ class GCVector {
 
   void popBack() { return vector.popBack(); }
   T popCopy() { return vector.popCopy(); }
+
+  void swap(GCVector& other) {
+    // Note, this only will work for MinInlineCapacity of zero.
+    // See Bug 1987683.
+    vector.swap(other.vector);
+  }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return vector.sizeOfExcludingThis(mallocSizeOf);

@@ -3832,7 +3832,8 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
       std::tuple<RTCRtpTransceiver*, RefPtr<RTCStatsPromise::AllPromiseType>>>
       transceiverStatsPromises;
   for (const auto& transceiver : mTransceivers) {
-    const bool sendSelected = transceiver->Sender()->HasTrack(aSelector);
+    const bool sendSelected = transceiver->Sender()->HasTrack(aSelector) ||
+                              (!aSelector && transceiver->HasBeenUsedToSend());
     const bool recvSelected = transceiver->Receiver()->HasTrack(aSelector);
     if (!sendSelected && !recvSelected) {
       continue;

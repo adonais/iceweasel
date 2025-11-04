@@ -13,28 +13,11 @@ apply plugin: 'com.android.library'
 apply plugin: 'kotlin-parcelize'
 
 android {
-
-    defaultConfig {
-        minSdkVersion = config.minSdkVersion
-        compileSdk = config.compileSdkVersion
-        targetSdkVersion = config.targetSdkVersion
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled = false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-
     buildFeatures {
         compose = true
     }
 
     namespace = 'mozilla.components.browser.state'
-
 }
 
 dependencies {
@@ -70,6 +53,6 @@ dependencies {
     androidTestImplementation libs.androidx.test.junit
 }
 
-apply from: '../../../android-lint.gradle'
+apply from: '../../../common-config.gradle'
 apply from: '../../../publish.gradle'
 ext.configurePublish(config.componentsGroupId, project.name, project.ext.description)

@@ -1,11 +1,15 @@
 [DEFAULT]
 support-files = [
   "head.js",
-  "dummy.html"]
+  "dummy.html",
+  "empty.html"]
 
 ["browser_BrowserTestUtils.js"]
 
 ["browser_EventUtils.js"]
+skip-if = [
+  "opt", # Bug 1993222
+]
 
 ["browser_SpecialPowersForProcessSpawn.js"]
 support-files = ["../Harness_sanity/file_xorigin_frames.html"]

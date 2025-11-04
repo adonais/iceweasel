@@ -477,8 +477,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = 화씨로 전환
 newtab-weather-menu-change-temperature-units-celsius = 섭씨로 전환
 newtab-weather-menu-hide-weather = 새 탭에서 날씨 숨기기
 newtab-weather-menu-learn-more = 더 알아보기
+newtab-weather-menu-detect-my-location = 내 위치 감지
 # This message is shown if user is working offline
 newtab-weather-error-not-available = 지금은 날씨 데이터를 사용할 수 없습니다.
+newtab-weather-opt-in-see-weather = 현재 위치의 날씨를 보시겠습니까?
+newtab-weather-opt-in-not-now =
+    .label = 나중에
+newtab-weather-opt-in-yes =
+    .label = 예
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = 뉴욕
 
 ## Topic Labels
 
@@ -645,6 +653,9 @@ newtab-widget-lists-input-menu-move-up = 위로 이동
 newtab-widget-lists-input-menu-move-down = 아래로 이동
 newtab-widget-lists-input-menu-delete = 삭제
 newtab-widget-lists-input-menu-edit = 편집
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + 새 목록 만들기
 newtab-widget-lists-name-label-default =
     .label = 작업 목록
 newtab-widget-lists-name-placeholder-default =
@@ -684,7 +695,7 @@ newtab-widget-message-title = 목록과 내장 타이머로 집중하기
 # to-dos stands for "things to do".
 newtab-widget-message-copy = 빠른 알림부터 매일 할 일 목록, 집중 세션부터 스트레칭 휴식까지 — 업무에 집중하고 시간을 준수하세요.
 newtab-promo-card-title = { -brand-product-name } 지원
-newtab-promo-card-body = 스폰서는 더 나은 웹을 만들려는 우리의 사명을 지원합니다
+newtab-promo-card-body = 스폰서는 더 나은 웹을 만들려는 저희를 지원합니다
 newtab-promo-card-cta = 더 알아보기
 newtab-promo-card-dismiss-button =
     .title = 닫기

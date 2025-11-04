@@ -400,6 +400,11 @@ class TestAsyncPanZoomController : public AsyncPanZoomController {
     EXPECT_TRUE(InScrollAnimation(ScrollAnimationKind::Wheel));
   }
 
+  void AssertInKeyboardScroll() {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    EXPECT_TRUE(InScrollAnimation(ScrollAnimationKind::Keyboard));
+  }
+
   void AssertStateIsAutoscroll() {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
     EXPECT_EQ(AUTOSCROLL, mState);

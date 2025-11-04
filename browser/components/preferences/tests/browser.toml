@@ -86,6 +86,8 @@ run-if = ["os == 'win'"]
 
 ["browser_dns_over_https_exceptions_subdialog.js"]
 
+["browser_downloads.js"]
+
 ["browser_ensure_prefs_bindings_initted.js"]
 
 ["browser_etp_exceptions_dialog.js"]
@@ -93,6 +95,12 @@ run-if = ["os == 'win'"]
 ["browser_experimental_features.js"]
 
 ["browser_experimental_features_filter.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64'", # Bug 1969933
+  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt", # Bug 1969933
+  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1969933
+  "os == 'win' && os_version == '11.26100' && processor == 'x86'", # Bug 1969933
+]
 
 ["browser_experimental_features_hidden_when_not_public.js"]
 
@@ -155,8 +163,6 @@ support-files = ["empty_pdf_file.pdf"]
 
 ["browser_performance.js"]
 
-["browser_performance_content_process_limit.js"]
-
 ["browser_performance_e10srollout.js"]
 
 ["browser_performance_non_e10s.js"]
@@ -177,9 +183,9 @@ skip-if = ["true"]
 ["browser_privacy_allowListPreference.js"]
 skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan"] # Bug 1984525
 
-["browser_privacy_allowListPreference_reload.js"]
-
 ["browser_privacy_allowListPreference_dialog.js"]
+
+["browser_privacy_allowListPreference_reload.js"]
 
 ["browser_privacy_allowListPreference_telemetry.js"]
 
@@ -196,6 +202,8 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && t
 ["browser_privacy_relayIntegration.js"]
 
 ["browser_privacy_segmentation_pref.js"]
+
+["browser_privacy_status_card.js"]
 
 ["browser_privacy_syncDataClearing.js"]
 
@@ -274,11 +282,15 @@ skip-if = ["tsan"] # Bug 1678829
 
 ["browser_security-3.js"]
 
+["browser_setting_group_in_progress.js"]
+
 ["browser_site_login_exceptions.js"]
 
 ["browser_site_login_exceptions_policy.js"]
 
 ["browser_spotlight.js"]
+
+["browser_startup_browser_restore_session.js"]
 
 ["browser_statePartitioning_PBM_strings.js"]
 
@@ -295,6 +307,8 @@ support-files = [
 ["browser_sync_disabled.js"]
 
 ["browser_sync_pairing.js"]
+
+["browser_tabs_open_external_next_to_active_tab.js"]
 
 ["browser_trendingsuggestions.js"]
 

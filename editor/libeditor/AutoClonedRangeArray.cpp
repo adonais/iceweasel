@@ -911,8 +911,8 @@ nsresult AutoClonedRangeArray::CollectEditTargetNodes(
       if (aEditSubAction == EditSubAction::eCreateOrRemoveBlock) {
         for (const size_t index :
              Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
-          OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
-          if (HTMLEditUtils::IsListItem(content)) {
+          const OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
+          if (HTMLEditUtils::IsListItemElement(*content)) {
             aOutArrayOfContents.RemoveElementAt(index);
             HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, index,
                                            options);
@@ -928,8 +928,8 @@ nsresult AutoClonedRangeArray::CollectEditTargetNodes(
             HTMLEditUtils::IsFormatTagForFormatBlockCommand(*nsGkAtoms::dd));
         for (const size_t index :
              Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
-          OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
-          MOZ_ASSERT_IF(HTMLEditUtils::IsListItem(content),
+          const OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
+          MOZ_ASSERT_IF(HTMLEditUtils::IsListItemElement(*content),
                         content->IsAnyOfHTMLElements(
                             nsGkAtoms::dd, nsGkAtoms::dt, nsGkAtoms::li));
           if (content->IsHTMLElement(nsGkAtoms::li)) {
@@ -962,8 +962,9 @@ nsresult AutoClonedRangeArray::CollectEditTargetNodes(
         // because if a selection range starts from end in a table-cell and
         // ends at or starts from outside the `<table>`, we need to make
         // lists in each selected table-cells.
-        OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
-        if (HTMLEditUtils::IsAnyTableElementButNotTable(content)) {
+        const OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
+        if (HTMLEditUtils::IsAnyTableElementExceptTableElementAndColumElement(
+                content)) {
           aOutArrayOfContents.RemoveElementAt(index);
           HTMLEditUtils::CollectChildren(content, aOutArrayOfContents, index,
                                          options);
@@ -1010,8 +1011,9 @@ nsresult AutoClonedRangeArray::CollectEditTargetNodes(
       }
       for (const size_t index :
            Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
-        OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
-        if (HTMLEditUtils::IsAnyTableElementButNotTable(content)) {
+        const OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
+        if (HTMLEditUtils::IsAnyTableElementExceptTableElementAndColumElement(
+                content)) {
           aOutArrayOfContents.RemoveElementAt(index);
           HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, index,
                                          options);
@@ -1052,7 +1054,7 @@ Element* AutoClonedRangeArray::GetClosestAncestorAnyListElementOfRange() const {
     }
     for (Element* const element :
          commonAncestorNode->InclusiveAncestorsOfType<Element>()) {
-      if (HTMLEditUtils::IsAnyListElement(element)) {
+      if (HTMLEditUtils::IsListElement(*element)) {
         return element;
       }
     }

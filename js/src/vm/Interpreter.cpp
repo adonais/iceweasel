@@ -269,17 +269,6 @@ static inline bool GetLengthProperty(const Value& lval, MutableHandleValue vp) {
   return false;
 }
 
-static inline bool GetPropertyOperation(JSContext* cx,
-                                        Handle<PropertyName*> name,
-                                        HandleValue lval,
-                                        MutableHandleValue vp) {
-  if (name == cx->names().length && ::GetLengthProperty(lval, vp)) {
-    return true;
-  }
-
-  return GetProperty(cx, lval, name, vp);
-}
-
 static inline bool GetNameOperation(JSContext* cx, HandleObject envChain,
                                     Handle<PropertyName*> name, JSOp nextOp,
                                     MutableHandleValue vp) {
@@ -2939,7 +2928,7 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       ReservedRooted<Value> lval(&rootValue0, REGS.sp[-1]);
       MutableHandleValue res = REGS.stackHandleAt(-1);
       ReservedRooted<PropertyName*> name(&rootName0, script->getName(REGS.pc));
-      if (!GetPropertyOperation(cx, name, lval, res)) {
+      if (!GetProperty(cx, lval, name, res)) {
         goto error;
       }
       cx->debugOnlyCheck(res);

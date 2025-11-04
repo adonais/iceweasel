@@ -480,8 +480,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Fahrenheit wužiwać
 newtab-weather-menu-change-temperature-units-celsius = Celsius wužiwać
 newtab-weather-menu-hide-weather = Wjedro na nowym rajtarku schować
 newtab-weather-menu-learn-more = Dalše informacije
+newtab-weather-menu-detect-my-location = Moje stejnišćo namakać
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Wjedrowe daty tuchwilu k dispoziciji njejsu.
+newtab-weather-opt-in-see-weather = Chceće wjedro za swoje stejnišćo widźeć?
+newtab-weather-opt-in-not-now =
+    .label = Nic nětko
+newtab-weather-opt-in-yes =
+    .label = Haj
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = New York City
 
 ## Topic Labels
 
@@ -648,6 +656,9 @@ newtab-widget-lists-input-menu-move-up = Horje
 newtab-widget-lists-input-menu-move-down = Dele
 newtab-widget-lists-input-menu-delete = Zhašeć
 newtab-widget-lists-input-menu-edit = Wobdźěłać
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Nowu lisćinu wutworić
 newtab-widget-lists-name-label-default =
     .label = Lisćiny nadawkow
 newtab-widget-lists-name-placeholder-default =

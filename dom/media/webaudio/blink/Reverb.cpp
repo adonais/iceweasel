@@ -32,7 +32,6 @@
 
 #include "ReverbConvolver.h"
 #include "ReverbConvolverStage.h"
-#include "mozilla/FloatingPoint.h"
 
 using namespace mozilla;
 

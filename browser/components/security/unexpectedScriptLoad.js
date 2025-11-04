@@ -178,6 +178,8 @@ var UnexpectedScriptLoadPanel = new (class {
 
   /**
    * Hide the pop up (for event handlers).
+   *
+   * @param {boolean} userDismissed
    */
   close(userDismissed) {
     this.console?.log("UnexpectedScriptLoadPanel is closing");

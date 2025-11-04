@@ -70,13 +70,17 @@ export class ExtensionStorageSync {
     } catch (ex) {
       // The only "public" exception here is for quota failure - all others
       // are sanitized.
-      let sanitized =
-        ex instanceof lazy.QuotaError
-          ? // The same message as the local IDB implementation
-            "QuotaExceededError: storage.sync API call exceeded its quota limitations."
-          : // The standard, generic extension error.
-            "An unexpected error occurred";
-      throw new lazy.ExtensionUtils.ExtensionError(sanitized);
+      if (ex instanceof lazy.QuotaError) {
+        // The same message as the local IDB implementation
+        throw new lazy.ExtensionUtils.ExtensionError(
+          "QuotaExceededError: storage.sync API call exceeded its quota limitations."
+        );
+      }
+      Cu.reportError(ex);
+      // The standard, generic extension error.
+      throw new lazy.ExtensionUtils.ExtensionError(
+        "An unexpected error occurred"
+      );
     }
   }
 

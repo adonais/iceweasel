@@ -211,9 +211,6 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
-  RefPtr<LocaleString> locale() const { return locale_; }
-  RealmCreationOptions& setLocaleCopyZ(const char* locale);
-
   // Always use the fdlibm implementation of math functions instead of the
   // platform native libc implementations. Useful for fingerprinting protection
   // and cross-platform consistency.
@@ -237,7 +234,6 @@ class JS_PUBLIC_API RealmCreationOptions {
     Zone* zone_;
   };
   uint64_t profilerRealmID_ = 0;
-  RefPtr<LocaleString> locale_;
   bool invisibleToDebugger_ = false;
   bool preserveJitCode_ = false;
   bool sharedMemoryAndAtomics_ = false;
@@ -298,38 +294,29 @@ class JS_PUBLIC_API RealmBehaviors {
     return *this;
   }
 
+  // Change the realm's current locale to a different value than the system
+  // default locale. The locale must be a valid BCP-47 locale identifier which
+  // is supported by ICU otherwise this option will be ignored and the
+  // last-ditch locale "en-GB" will be used!
+  //
+  // Any Unicode extension sequences are ignored.
+  //
+  // https://w3c.github.io/webdriver-bidi/#command-emulation-setLocaleOverride
   RefPtr<LocaleString> localeOverride() const { return localeOverride_; }
-  RealmBehaviors& setLocaleOverride(const char* locale) {
-    if (locale) {
-      const size_t size = strlen(locale) + 1;
-
-      js::AutoEnterOOMUnsafeRegion oomUnsafe;
-      char* memoryPtr = js_pod_malloc<char>(sizeof(LocaleString) + size);
-      if (!memoryPtr) {
-        oomUnsafe.crash("RealmBehaviors::setLocaleOverride");
-      }
-
-      char* localePtr = memoryPtr + sizeof(LocaleString);
-      memcpy(localePtr, locale, size);
-
-      localeOverride_ = new (memoryPtr) LocaleString(localePtr);
-    } else {
-      localeOverride_ = nullptr;
-    }
-
-    return *this;
-  };
+  RealmBehaviors& setLocaleOverride(const char* locale);
 
   // Change the realm's current time zone to a different value than the system
   // default time zone. The time zone must be a valid IANA time zone identifier,
   // otherwise this option will be ignored and the system default time zone will
   // be used!
-  RefPtr<TimeZoneString> timeZone() const { return timeZone_; }
-  RealmBehaviors& setTimeZoneCopyZ(const char* timeZone);
+  //
+  // https://w3c.github.io/webdriver-bidi/#command-emulation-setTimezoneOverride
+  RefPtr<TimeZoneString> timeZoneOverride() const { return timeZoneOverride_; }
+  RealmBehaviors& setTimeZoneOverride(const char* timeZone);
 
  private:
   RefPtr<LocaleString> localeOverride_;
-  RefPtr<TimeZoneString> timeZone_;
+  RefPtr<TimeZoneString> timeZoneOverride_;
   mozilla::Maybe<RTPCallerTypeToken> rtpCallerType;
   bool discardSource_ = false;
   bool clampAndJitterTime_ = true;

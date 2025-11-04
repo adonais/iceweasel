@@ -363,7 +363,7 @@ class nsWindow final : public nsBaseWidget {
 
   bool HasTaskbarIconBeenCreated() { return mHasTaskbarIconBeenCreated; }
   // Called when either the nsWindow or an nsITaskbarTabPreview receives the
-  // noticiation that this window has its icon placed on the taskbar.
+  // notification that this window has its icon placed on the taskbar.
   void SetHasTaskbarIconBeenCreated(bool created = true) {
     mHasTaskbarIconBeenCreated = created;
   }

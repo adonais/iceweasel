@@ -125,8 +125,8 @@ class DOMLocalization : public intl::Localization {
   void DisconnectMutations();
   void DisconnectRoots();
   void ReportL10nOverlaysErrors(nsTArray<L10nOverlaysError>& aErrors);
-  void ConvertStringToL10nArgs(const nsString& aInput, intl::L10nArgs& aRetVal,
-                               ErrorResult& aRv);
+  void ConvertStringToL10nArgs(const nsCString& aL10nId, const nsString& aInput,
+                               intl::L10nArgs& aRetVal, ErrorResult& aRv);
 
   RefPtr<L10nMutations> mMutations;
   nsTHashSet<RefPtr<nsINode>> mRoots;

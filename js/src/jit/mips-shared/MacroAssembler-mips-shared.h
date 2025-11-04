@@ -26,7 +26,7 @@ enum JumpKind { LongJump = 0, ShortJump = 1 };
 
 enum DelaySlotFill { DontFillDelaySlot = 0, FillDelaySlot = 1 };
 
-static Register CallReg = t9;
+static constexpr Register CallReg = t9;
 
 class MacroAssemblerMIPSShared : public Assembler {
  protected:
@@ -168,9 +168,11 @@ class MacroAssemblerMIPSShared : public Assembler {
             JumpKind jumpKind = LongJump);
   void ma_b(Register lhs, ImmGCPtr imm, Label* l, Condition c,
             JumpKind jumpKind = LongJump) {
-    MOZ_ASSERT(lhs != ScratchRegister);
-    ma_li(ScratchRegister, imm);
-    ma_b(lhs, ScratchRegister, l, c, jumpKind);
+    UseScratchRegisterScope temps(*this);
+    Register scratch = temps.Acquire();
+    MOZ_ASSERT(lhs != scratch);
+    ma_li(scratch, imm);
+    ma_b(lhs, scratch, l, c, jumpKind);
   }
 
   void ma_b(Label* l, JumpKind jumpKind = LongJump);

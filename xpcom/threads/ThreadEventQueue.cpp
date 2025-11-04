@@ -286,9 +286,7 @@ nsresult ThreadEventQueue::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
   if (mEventsAreDoomed || mShutdownTasksRun) {
     return NS_ERROR_UNEXPECTED;
   }
-  MOZ_ASSERT(!mShutdownTasks.Contains(aTask));
-  mShutdownTasks.AppendElement(aTask);
-  return NS_OK;
+  return mShutdownTasks.AddTask(aTask);
 }
 
 nsresult ThreadEventQueue::UnregisterShutdownTask(
@@ -298,18 +296,17 @@ nsresult ThreadEventQueue::UnregisterShutdownTask(
   if (mEventsAreDoomed || mShutdownTasksRun) {
     return NS_ERROR_UNEXPECTED;
   }
-  return mShutdownTasks.RemoveElement(aTask) ? NS_OK : NS_ERROR_UNEXPECTED;
+  return mShutdownTasks.RemoveTask(aTask);
 }
 
 void ThreadEventQueue::RunShutdownTasks() {
-  nsTArray<nsCOMPtr<nsITargetShutdownTask>> shutdownTasks;
+  TargetShutdownTaskSet::TasksArray shutdownTasks;
   {
     MutexAutoLock lock(mLock);
-    shutdownTasks = std::move(mShutdownTasks);
-    mShutdownTasks.Clear();
+    shutdownTasks = mShutdownTasks.Extract();
     mShutdownTasksRun = true;
   }
-  for (auto& task : shutdownTasks) {
+  for (const auto& task : shutdownTasks) {
     task->TargetShutdown();
   }
 }

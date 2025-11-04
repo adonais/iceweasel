@@ -4,7 +4,8 @@
 
 package org.mozilla.fenix.bookmarks
 
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ToggleEditMode
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.EnterEditMode
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ExitEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.Mode
@@ -30,7 +31,7 @@ class BrowserToolbarSyncToBookmarksMiddlewareTest {
             middleware = listOf(middleware),
         )
 
-        toolbarStore.dispatch(ToggleEditMode(false))
+        toolbarStore.dispatch(ExitEditMode)
 
         assertFalse(bookmarksStore.state.isSearching)
     }
@@ -44,7 +45,7 @@ class BrowserToolbarSyncToBookmarksMiddlewareTest {
             middleware = listOf(middleware),
         )
 
-        toolbarStore.dispatch(ToggleEditMode(false))
+        toolbarStore.dispatch(ExitEditMode)
 
         assertFalse(bookmarksStore.state.isSearching)
     }
@@ -58,7 +59,7 @@ class BrowserToolbarSyncToBookmarksMiddlewareTest {
             middleware = listOf(middleware),
         )
 
-        toolbarStore.dispatch(ToggleEditMode(true))
+        toolbarStore.dispatch(EnterEditMode)
 
         assertFalse(bookmarksStore.state.isSearching)
     }

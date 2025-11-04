@@ -7,7 +7,8 @@
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
-  AmpSuggestions: "resource:///modules/urlbar/private/AmpSuggestions.sys.mjs",
+  AmpSuggestions:
+    "moz-src:///browser/components/urlbar/private/AmpSuggestions.sys.mjs",
 });
 
 // relative to `browser.urlbar`

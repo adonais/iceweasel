@@ -11,6 +11,7 @@
 #include "mozStorageCID.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/GeckoTrace.h"
 #include "mozilla/dom/cache/Connection.h"
 #include "mozilla/dom/cache/DBSchema.h"
 #include "mozilla/dom/cache/FileUtils.h"
@@ -145,6 +146,8 @@ void SyncDBAction::RunWithDBOnTarget(
 Result<nsCOMPtr<mozIStorageConnection>, nsresult> OpenDBConnection(
     const CacheDirectoryMetadata& aDirectoryMetadata, nsIFile& aDBFile,
     const Maybe<CipherKey>& aMaybeCipherKey) {
+  GECKO_TRACE_SCOPE("dom::cache", "OpenDBConnection");
+
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(aDirectoryMetadata.mDirectoryLockId >= -1);
   MOZ_DIAGNOSTIC_ASSERT_IF(aDirectoryMetadata.mIsPrivate, aMaybeCipherKey);

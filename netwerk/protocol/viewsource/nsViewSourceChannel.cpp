@@ -1017,6 +1017,18 @@ nsViewSourceChannel::SetRequestContextID(uint64_t rcid) {
 }
 
 NS_IMETHODIMP
+nsViewSourceChannel::GetIsUserAgentHeaderOutdated(bool* aValue) {
+  return !mHttpChannel ? NS_ERROR_NULL_POINTER
+                       : mHttpChannel->GetIsUserAgentHeaderOutdated(aValue);
+}
+
+NS_IMETHODIMP
+nsViewSourceChannel::SetIsUserAgentHeaderOutdated(bool aValue) {
+  return !mHttpChannel ? NS_ERROR_NULL_POINTER
+                       : mHttpChannel->SetIsUserAgentHeaderOutdated(aValue);
+}
+
+NS_IMETHODIMP
 nsViewSourceChannel::GetIsMainDocumentChannel(bool* aValue) {
   return !mHttpChannel ? NS_ERROR_NULL_POINTER
                        : mHttpChannel->GetIsMainDocumentChannel(aValue);
@@ -1209,6 +1221,19 @@ nsViewSourceChannel::AsyncOnChannelRedirect(
   }
 
   callback->OnRedirectVerifyCallback(NS_OK);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsViewSourceChannel::GetDecompressDictionary(
+    mozilla::net::DictionaryCacheEntry** aDictionary) {
+  *aDictionary = nullptr;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsViewSourceChannel::SetDecompressDictionary(
+    mozilla::net::DictionaryCacheEntry* aDictionary) {
   return NS_OK;
 }
 

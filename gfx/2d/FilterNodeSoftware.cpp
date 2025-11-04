@@ -1950,7 +1950,7 @@ void FilterNodeTableTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
 }
 
 void FilterNodeTableTransferSoftware::FillLookupTableImpl(
-    std::vector<Float>& aTableValues, uint8_t aTable[256]) {
+    const std::vector<Float>& aTableValues, uint8_t aTable[256]) {
   uint32_t tvLength = aTableValues.size();
   if (tvLength < 2) {
     return;
@@ -1962,9 +1962,7 @@ void FilterNodeTableTransferSoftware::FillLookupTableImpl(
     Float v2 = aTableValues[std::min(k + 1, tvLength - 1)];
     int32_t val = int32_t(255 * (v1 + (i / 255.0f - k / float(tvLength - 1)) *
                                           (tvLength - 1) * (v2 - v1)));
-    val = std::min(255, val);
-    val = std::max(0, val);
-    aTable[i] = val;
+    aTable[i] = std::clamp(val, 0, 255);
   }
 }
 
@@ -2013,7 +2011,7 @@ void FilterNodeDiscreteTransferSoftware::FillLookupTable(ptrdiff_t aComponent,
 }
 
 void FilterNodeDiscreteTransferSoftware::FillLookupTableImpl(
-    std::vector<Float>& aTableValues, uint8_t aTable[256]) {
+    const std::vector<Float>& aTableValues, uint8_t aTable[256]) {
   uint32_t tvLength = aTableValues.size();
   if (tvLength < 1) {
     return;
@@ -2024,9 +2022,7 @@ void FilterNodeDiscreteTransferSoftware::FillLookupTableImpl(
     k = std::min(k, tvLength - 1);
     Float v = aTableValues[k];
     int32_t val = NS_lround(255 * v);
-    val = std::min(255, val);
-    val = std::max(0, val);
-    aTable[i] = val;
+    aTable[i] = std::clamp(val, 0, 255);
   }
 }
 
@@ -2098,9 +2094,7 @@ void FilterNodeLinearTransferSoftware::FillLookupTableImpl(
     Float aSlope, Float aIntercept, uint8_t aTable[256]) {
   for (size_t i = 0; i < 256; i++) {
     int32_t val = NS_lround(aSlope * i + 255 * aIntercept);
-    val = std::min(255, val);
-    val = std::max(0, val);
-    aTable[i] = val;
+    aTable[i] = std::clamp(val, 0, 255);
   }
 }
 
@@ -2191,9 +2185,7 @@ void FilterNodeGammaTransferSoftware::FillLookupTableImpl(Float aAmplitude,
   for (size_t i = 0; i < 256; i++) {
     int32_t val =
         NS_lround(255 * (aAmplitude * pow(i / 255.0f, aExponent) + aOffset));
-    val = std::min(255, val);
-    val = std::max(0, val);
-    aTable[i] = val;
+    aTable[i] = std::clamp(val, 0, 255);
   }
 }
 
@@ -2996,7 +2988,7 @@ already_AddRefed<DataSourceSurface> FilterNodeBlurXYSoftware::Render(
     const IntRect& aRect) {
   Size sigmaXY = StdDeviationXY();
   IntSize d =
-      AlphaBoxBlur::CalculateBlurRadius(Point(sigmaXY.width, sigmaXY.height));
+      GaussianBlur::CalculateBlurRadius(Point(sigmaXY.width, sigmaXY.height));
 
   if (d.width == 0 && d.height == 0) {
     return GetInputDataSourceSurface(IN_GAUSSIAN_BLUR_IN, aRect);
@@ -3009,55 +3001,20 @@ already_AddRefed<DataSourceSurface> FilterNodeBlurXYSoftware::Render(
     return nullptr;
   }
 
-  RefPtr<DataSourceSurface> target;
-  Rect r(0, 0, srcRect.Width(), srcRect.Height());
-
-  if (input->GetFormat() == SurfaceFormat::A8) {
-    target =
-        Factory::CreateDataSourceSurface(srcRect.Size(), SurfaceFormat::A8);
-    if (MOZ2D_WARN_IF(!target)) {
-      return nullptr;
-    }
-    CopyRect(input, target, IntRect(IntPoint(), input->GetSize()), IntPoint());
-
-    DataSourceSurface::ScopedMap targetMap(target,
-                                           DataSourceSurface::READ_WRITE);
-    if (MOZ2D_WARN_IF(!targetMap.IsMapped())) {
-      return nullptr;
-    }
-    AlphaBoxBlur blur(r, targetMap.GetStride(), sigmaXY.width, sigmaXY.height);
-    blur.Blur(targetMap.GetData());
-  } else {
-    RefPtr<DataSourceSurface> channel0, channel1, channel2, channel3;
-    FilterProcessing::SeparateColorChannels(input, channel0, channel1, channel2,
-                                            channel3);
-    if (MOZ2D_WARN_IF(!(channel0 && channel1 && channel2 && channel3))) {
-      return nullptr;
-    }
-    {
-      DataSourceSurface::ScopedMap channel0Map(channel0,
-                                               DataSourceSurface::READ_WRITE);
-      DataSourceSurface::ScopedMap channel1Map(channel1,
-                                               DataSourceSurface::READ_WRITE);
-      DataSourceSurface::ScopedMap channel2Map(channel2,
-                                               DataSourceSurface::READ_WRITE);
-      DataSourceSurface::ScopedMap channel3Map(channel3,
-                                               DataSourceSurface::READ_WRITE);
-      if (MOZ2D_WARN_IF(!(channel0Map.IsMapped() && channel1Map.IsMapped() &&
-                          channel2Map.IsMapped() && channel3Map.IsMapped()))) {
-        return nullptr;
-      }
-
-      AlphaBoxBlur blur(r, channel0Map.GetStride(), sigmaXY.width,
-                        sigmaXY.height);
-      blur.Blur(channel0Map.GetData());
-      blur.Blur(channel1Map.GetData());
-      blur.Blur(channel2Map.GetData());
-      blur.Blur(channel3Map.GetData());
-    }
-    target = FilterProcessing::CombineColorChannels(channel0, channel1,
-                                                    channel2, channel3);
+  RefPtr<DataSourceSurface> target =
+      Factory::CreateDataSourceSurface(srcRect.Size(), input->GetFormat());
+  if (MOZ2D_WARN_IF(!target)) {
+    return nullptr;
   }
+  CopyRect(input, target, IntRect(IntPoint(), input->GetSize()), IntPoint());
+
+  DataSourceSurface::ScopedMap targetMap(target, DataSourceSurface::READ_WRITE);
+  if (MOZ2D_WARN_IF(!targetMap.IsMapped())) {
+    return nullptr;
+  }
+  GaussianBlur blur(Point(sigmaXY.width, sigmaXY.height));
+  blur.Blur(targetMap.GetData(), targetMap.GetStride(), target->GetSize(),
+            target->GetFormat());
 
   return GetDataSurfaceInRect(target, srcRect, aRect, EDGE_MODE_NONE);
 }
@@ -3077,7 +3034,7 @@ IntRect FilterNodeBlurXYSoftware::InflatedSourceOrDestRect(
     const IntRect& aDestRect) {
   Size sigmaXY = StdDeviationXY();
   IntSize d =
-      AlphaBoxBlur::CalculateBlurRadius(Point(sigmaXY.width, sigmaXY.height));
+      GaussianBlur::CalculateBlurRadius(Point(sigmaXY.width, sigmaXY.height));
   IntRect srcRect = aDestRect;
   srcRect.Inflate(d);
   return srcRect;

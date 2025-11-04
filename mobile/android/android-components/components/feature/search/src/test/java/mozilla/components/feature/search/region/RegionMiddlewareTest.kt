@@ -136,6 +136,7 @@ class RegionMiddlewareTest {
         middleware.regionManager = regionManager
 
         locationService.region = LocationService.Region("FR", "France")
+        regionManager.update()
 
         val store = BrowserStore(
             middleware = listOf(middleware),

@@ -177,6 +177,16 @@ function update(state = initialSourcesState(), action) {
       };
     }
 
+    case "SET_GENERATED_SELECTED_LOCATION": {
+      if (action.location != state.selectedLocation) {
+        return state;
+      }
+      return {
+        ...state,
+        selectedGeneratedLocation: action.generatedLocation,
+      };
+    }
+
     case "SET_DEFAULT_SELECTED_LOCATION": {
       if (
         state.shouldSelectOriginalLocation ==

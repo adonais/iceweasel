@@ -11,6 +11,7 @@
 #define SBEntries_h__
 
 #include "mozilla/crypto_hash_sha2.h"
+#include "mozilla/Base64.h"
 #include "nsTArray.h"
 #include "nsString.h"
 #include "nsNetUtil.h"
@@ -18,7 +19,6 @@
 #include "nsClassHashtable.h"
 #include "nsComponentManagerUtils.h"
 #include "nsTHashMap.h"
-#include "plbase64.h"
 
 namespace mozilla {
 namespace safebrowsing {
@@ -70,12 +70,8 @@ struct SafebrowsingHash {
   }
 
   void ToString(nsACString& aStr) const {
-    // Base64 represents 6-bits data as 8-bits output.
-    uint32_t len = ((sHashSize + 2) / 3) * 4;
-
-    aStr.SetLength(len);
-    PL_Base64Encode((char*)buf, sHashSize, aStr.BeginWriting());
-    MOZ_ASSERT(aStr.BeginReading()[len] == '\0');
+    [[maybe_unused]] nsresult nr = Base64Encode((char*)buf, sHashSize, aStr);
+    MOZ_ASSERT(NS_SUCCEEDED(nr));
   }
 
   nsCString ToString() const {

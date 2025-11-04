@@ -7,7 +7,6 @@
 /* import-globals-from head_cache.js */
 /* import-globals-from head_cookies.js */
 /* import-globals-from head_channels.js */
-/* import-globals-from head_servers.js */
 
 // We don't normally allow localhost channels to be proxied, but this
 // is easier than updating all the certs and/or domains.
@@ -19,6 +18,15 @@ registerCleanupFunction(() => {
 const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );
+const {
+  NodeHTTPServer,
+  NodeHTTPSServer,
+  NodeHTTP2Server,
+  NodeHTTPProxyServer,
+  NodeHTTPSProxyServer,
+  NodeHTTP2ProxyServer,
+  with_node_servers,
+} = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 function makeChan(uri) {
   let chan = NetUtil.newChannel({
@@ -97,11 +105,6 @@ add_task(async function test_http() {
 });
 
 add_task(async function test_https() {
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
-
   let server = new NodeHTTPSServer();
   await server.start();
   registerCleanupFunction(async () => {
@@ -126,11 +129,6 @@ add_task(async function test_https() {
 });
 
 add_task(async function test_http2() {
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
-
   let server = new NodeHTTP2Server();
   await server.start();
   registerCleanupFunction(async () => {
@@ -155,11 +153,6 @@ add_task(async function test_http2() {
 });
 
 add_task(async function test_http1_proxy() {
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
-
   let proxy = new NodeHTTPProxyServer();
   await proxy.start();
   registerCleanupFunction(async () => {
@@ -200,12 +193,6 @@ add_task(async function test_http1_proxy() {
 });
 
 add_task(async function test_https_proxy() {
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
-  addCertFromFile(certdb, "proxy-ca.pem", "CTu,u,u");
-
   let proxy = new NodeHTTPSProxyServer();
   await proxy.start();
   registerCleanupFunction(async () => {
@@ -241,12 +228,6 @@ add_task(async function test_https_proxy() {
 });
 
 add_task(async function test_http2_proxy() {
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
-  addCertFromFile(certdb, "proxy-ca.pem", "CTu,u,u");
-
   let proxy = new NodeHTTP2ProxyServer();
   await proxy.start();
   registerCleanupFunction(async () => {
@@ -281,11 +262,6 @@ add_task(async function test_http2_proxy() {
 });
 
 add_task(async function test_proxy_with_redirects() {
-  let certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
-
   let proxies = [
     NodeHTTPProxyServer,
     NodeHTTPSProxyServer,

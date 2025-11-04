@@ -687,6 +687,7 @@ class WebCompatReporterSubmissionMiddlewareTest {
                     hasMixedDisplayContentBlocked = false,
                     hasTrackingContentBlocked = false,
                     isPrivateBrowsing = false,
+                    blockedOrigins = listOf("https://exampleBlockedURLByETP.com"),
                 ),
                 browser = WebCompatInfoDto.WebCompatBrowserDto(
                     addons = listOf(

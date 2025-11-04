@@ -13,7 +13,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.launch
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ToggleEditMode
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.EnterEditMode
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ExitEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.EnvironmentCleared
@@ -56,7 +57,7 @@ class BrowserToolbarSearchStatusSyncMiddleware(
             environment = null
         }
 
-        if (action is ToggleEditMode && !action.editMode) {
+        if (action is ExitEditMode) {
             // Only support the toolbar triggering exiting search mode in the application.
             // Entering search mode in the application needs more parameters and so
             // this must happen through a specifically configured action, not through an automated one.
@@ -68,14 +69,18 @@ class BrowserToolbarSearchStatusSyncMiddleware(
         syncSearchActiveJob = appStore.observeWhileActive {
             distinctUntilChangedBy { it.searchState.isSearchActive }
                 .collect {
-                    context.dispatch(ToggleEditMode(it.searchState.isSearchActive))
+                    if (it.searchState.isSearchActive) {
+                        context.dispatch(EnterEditMode)
+                    } else {
+                        context.dispatch(ExitEditMode)
+                    }
                 }
         }
     }
 
     private inline fun <S : State, A : MVIAction> Store<S, A>.observeWhileActive(
         crossinline observe: suspend (Flow<S>.() -> Unit),
-    ): Job? = environment?.viewLifecycleOwner?.run {
+    ): Job? = environment?.fragment?.viewLifecycleOwner?.run {
         lifecycleScope.launch {
             repeatOnLifecycle(RESUMED) {
                 flow().observe()

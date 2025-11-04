@@ -357,11 +357,16 @@ class SitePermissionsFeature(
     internal fun onContentPermissionGranted(
         permissionRequest: PermissionRequest,
         shouldStore: Boolean,
+        onCheckSystemNotificationPermission: () -> Unit = {},
     ) {
         permissionRequest.grant()
         if (shouldStore) {
             getCurrentContentState()?.let { contentState ->
                 storeSitePermissions(contentState, permissionRequest, ALLOWED)
+            }
+            val requestedPermission = permissionRequest.permissions[0]
+            if (requestedPermission is ContentNotification) {
+                onCheckSystemNotificationPermission()
             }
         } else {
             storage.saveTemporary(permissionRequest)
@@ -372,10 +377,13 @@ class SitePermissionsFeature(
         permissionId: String,
         sessionId: String,
         shouldStore: Boolean,
+        onCheckSystemNotificationPermission: () -> Unit = {},
     ) {
         findRequestedPermission(permissionId)?.let { permissionRequest ->
             consumePermissionRequest(permissionRequest, sessionId)
-            onContentPermissionGranted(permissionRequest, shouldStore)
+            onContentPermissionGranted(permissionRequest, shouldStore) {
+                onCheckSystemNotificationPermission()
+            }
 
             if (!permissionRequest.containsVideoAndAudioSources()) {
                 emitPermissionAllowed(permissionRequest.permissions.first())

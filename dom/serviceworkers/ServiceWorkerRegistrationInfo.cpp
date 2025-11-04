@@ -338,6 +338,7 @@ void ServiceWorkerRegistrationInfo::TryToActivate(
     ServiceWorkerLifetimeExtension&& aLifetimeExtension,
     TryToActivateCallback&& aCallback) {
   MOZ_ASSERT(NS_IsMainThread());
+  ++mNumberOfAttemptedActivations;
   bool controlling = IsControllingClients();
   bool skipWaiting = mWaitingWorker && mWaitingWorker->SkipWaitingFlag();
   bool idle = IsIdle();

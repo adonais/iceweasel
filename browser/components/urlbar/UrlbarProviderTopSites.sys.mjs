@@ -11,7 +11,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import {
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -21,10 +21,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   TopSites: "resource:///modules/topsites/TopSites.sys.mjs",
   TOP_SITES_DEFAULT_ROWS: "resource:///modules/topsites/constants.mjs",
   TOP_SITES_MAX_SITES_PER_ROW: "resource:///modules/topsites/constants.mjs",
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
-  UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarProviderOpenTabs:
+    "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarSearchUtils:
+    "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
 });
 
 // These prefs must be true for the provider to return results. They are assumed
@@ -245,14 +247,14 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
                   continue;
                 }
                 payload.userContextId = userContextId;
-                let result = new lazy.UrlbarResult(
-                  UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-                  UrlbarUtils.RESULT_SOURCE.TABS,
+                let result = new lazy.UrlbarResult({
+                  type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+                  source: UrlbarUtils.RESULT_SOURCE.TABS,
                   ...lazy.UrlbarResult.payloadAndSimpleHighlights(
                     queryContext.tokens,
                     payload
-                  )
-                );
+                  ),
+                });
                 addCallback(this, result);
                 switchToTabResultAdded = true;
               }
@@ -284,14 +286,14 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
             }
           }
 
-          let result = new lazy.UrlbarResult(
-            UrlbarUtils.RESULT_TYPE.URL,
-            resultSource,
+          let result = new lazy.UrlbarResult({
+            type: UrlbarUtils.RESULT_TYPE.URL,
+            source: resultSource,
             ...lazy.UrlbarResult.payloadAndSimpleHighlights(
               queryContext.tokens,
               payload
-            )
-          );
+            ),
+          });
           addCallback(this, result);
           break;
         }
@@ -317,9 +319,9 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
             break;
           }
 
-          let result = new lazy.UrlbarResult(
-            UrlbarUtils.RESULT_TYPE.SEARCH,
-            UrlbarUtils.RESULT_SOURCE.SEARCH,
+          let result = new lazy.UrlbarResult({
+            type: UrlbarUtils.RESULT_TYPE.SEARCH,
+            source: UrlbarUtils.RESULT_SOURCE.SEARCH,
             ...lazy.UrlbarResult.payloadAndSimpleHighlights(
               queryContext.tokens,
               {
@@ -330,8 +332,8 @@ export class UrlbarProviderTopSites extends UrlbarProvider {
                 icon: site.favicon,
                 isPinned: site.isPinned,
               }
-            )
-          );
+            ),
+          });
           addCallback(this, result);
           break;
         }

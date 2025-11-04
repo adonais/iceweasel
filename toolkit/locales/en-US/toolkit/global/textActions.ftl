@@ -92,9 +92,9 @@ text-action-search-text-box-clear =
 text-action-highlight-selection =
     .label = Highlight Selection
 
-# Comment is a verb. This adds a comment to selected text within the PDF viewer.
-text-action-comment-selection =
-    .label = Comment Selection
+# This adds a comment to selected text within the PDF viewer.
+text-action-comment-selection-1 =
+    .label = Add Comment to Selection
 
 # "Copy Link to Highlight" creates a permanent 'Text Fragment' link
 # to the current selection, and copies it into the user's clipboard.

@@ -4,12 +4,25 @@
 
 package mozilla.components.feature.downloads
 
+import java.time.LocalDate
+import java.time.ZoneId
+
 /**
  * Interface for providing date and time information. This is useful for separating the
  * implementation of getting date and time from the rest of the code, making it easier to test
  * the code that uses date and time.
  */
 interface DateTimeProvider {
+
+    /**
+     * Get the current local date.
+     */
+    fun currentLocalDate(): LocalDate
+
+    /**
+     * Get the current time zone.
+     */
+    fun currentZoneId(): ZoneId
 
     /**
      * Get the current time in milliseconds.
@@ -21,6 +34,15 @@ interface DateTimeProvider {
  * The default implementation of [DateTimeProvider].
  */
 class DefaultDateTimeProvider : DateTimeProvider {
+
+    override fun currentLocalDate(): LocalDate {
+        return LocalDate.now()
+    }
+
+    override fun currentZoneId(): ZoneId {
+        return ZoneId.systemDefault()
+    }
+
     override fun currentTimeMillis(): Long {
         return System.currentTimeMillis()
     }

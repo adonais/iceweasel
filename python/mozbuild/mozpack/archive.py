@@ -118,6 +118,22 @@ def create_tar_gz_from_files(fp, files, filename=None, compresslevel=9):
         create_tar_from_files(gf, files)
 
 
+def create_tar_zst_from_files(fp, files, filename=None, compresslevel=9, threads=1):
+    """Create a tar.zst file deterministically from files.
+
+    This is a glorified wrapper around ``create_tar_from_files`` that
+    adds zstandard compression.
+
+    The passed file handle should be opened for writing in binary mode.
+    When the function returns, all data has been written to the handle.
+    """
+    import zstandard
+
+    cctx = zstandard.ZstdCompressor(level=compresslevel, threads=threads)
+    with cctx.stream_writer(writer=fp) as compressor:
+        create_tar_from_files(compressor, files)
+
+
 class _BZ2Proxy:
     """File object that proxies writes to a bz2 compressor."""
 

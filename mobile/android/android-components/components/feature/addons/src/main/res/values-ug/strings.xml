@@ -235,7 +235,7 @@
   <!-- A link that points to the detail page of the extension. -->
   <string name="mozac_feature_addons_more_info_link_2">كېڭەيتمە ھەققىدىكى تەپسىلات</string>
   <!-- The settings of the add-on. -->
-  <string name="mozac_feature_addons_settings">تەڭشەكلەر</string>
+  <string name="mozac_feature_addons_settings">تەڭشەك</string>
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_settings_on">ئوچۇق</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
@@ -259,9 +259,9 @@
   <!-- Displays a page with all the details of an add-on. -->
   <string name="mozac_feature_addons_details">تەپسىلاتى</string>
   <!-- Displays a page with all the permissions of an add-on. -->
-  <string name="mozac_feature_addons_permissions">ئىجازەتلەر</string>
+  <string name="mozac_feature_addons_permissions">ئىجازەت</string>
   <!-- This is a button to remove (i.e. uninstall) an add-on. -->
-  <string name="mozac_feature_addons_remove">چىقىرىۋىتىش</string>
+  <string name="mozac_feature_addons_remove">چىقىرىۋەت</string>
   <!-- This is a button to report an add-on. -->
   <string name="mozac_feature_addons_report">پاش قىلىش</string>
   <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
@@ -281,7 +281,7 @@
   <!-- Heading for the data collection permissions section in the optional permissions request dialog. -->
   <string name="mozac_feature_addons_permissions_dialog_heading_optional_data_collection">يېڭى سانلىق مەلۇمات توپلاش:</string>
   <!-- This is a button to add (install) an add-on . -->
-  <string name="mozac_feature_addons_permissions_dialog_add">قوشۇش</string>
+  <string name="mozac_feature_addons_permissions_dialog_add">قوش</string>
   <!-- This is a button to allow the optional permissions requested by an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_allow">يول قوي</string>
   <!-- This is a button to deny the optional permissions requested by an add-on . -->
@@ -301,7 +301,7 @@
   <!-- Accessibility content description for the amount of stars that add-on has, where %1$.02f will be the amount of stars. -->
   <string name="mozac_feature_addons_rating_content_description_2">باھالاش: %1$.02f (تولۇق 5 نومۇر)</string>
   <!-- This is the title of page where all the add-ons are listed -->
-  <string name="mozac_feature_addons_addons">قىستۇرمىلار</string>
+  <string name="mozac_feature_addons_addons">قىستۇرما</string>
   <!-- Label for add-ons sub menu item for add-ons manager -->
   <string name="mozac_feature_addons_addons_manager">قىستۇرما باشقۇرغۇچ</string>
   <!-- The title of the "crash" notification in the extensions manager -->

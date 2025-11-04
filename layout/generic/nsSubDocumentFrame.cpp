@@ -213,7 +213,7 @@ void nsSubDocumentFrame::ShowViewer() {
 }
 
 void nsSubDocumentFrame::CreateView() {
-  MOZ_ASSERT(!HasView());
+  MOZ_ASSERT(!GetView());
 
   nsView* parentView = GetParent()->GetClosestView();
   MOZ_ASSERT(parentView, "no parent with view");
@@ -230,16 +230,6 @@ void nsSubDocumentFrame::CreateView() {
   // beginning in document order
   viewManager->InsertChild(parentView, view, insertBefore,
                            insertBefore != nullptr);
-
-  // REVIEW: Don't create a widget for fixed-pos elements anymore.
-  // ComputeRepaintRegionForCopy will calculate the right area to repaint
-  // when we scroll.
-  // Reparent views on any child frames (or their descendants) to this
-  // view. We can just call ReparentFrameViewTo on this frame because
-  // we know this frame has no view, so it will crawl the children. Also,
-  // we know that any descendants with views must have 'parentView' as their
-  // parent view.
-  ReparentFrameViewTo(viewManager, view);
 
   // Remember our view
   SetView(view);

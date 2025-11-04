@@ -786,11 +786,11 @@ var setSearchFilter = async function (view, searchValue) {
   const searchField = view.searchField;
   searchField.focus();
 
+  const onRuleviewFiltered = view.inspector.once("ruleview-filtered");
   for (const key of searchValue.split("")) {
     EventUtils.synthesizeKey(key, {}, view.styleWindow);
   }
-
-  await view.inspector.once("ruleview-filtered");
+  await onRuleviewFiltered;
 };
 
 /**

@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.81.0"
 name = "neqo-crypto"
-version = "0.15.0"
+version = "0.16.1"
 authors = ["The Neqo Authors <necko@mozilla.com>"]
 build = "build.rs"
 autolib = false
@@ -38,6 +38,15 @@ categories = [
 ]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/mozilla/neqo/"
+
+[package.metadata.cargo-machete]
+ignored = [
+    "bindgen",
+    "semver",
+    "serde",
+    "serde_derive",
+    "toml",
+]
 
 [features]
 bench = []
@@ -96,6 +105,10 @@ path = "../neqo-common"
 [dependencies.strum]
 version = "0.27"
 features = ["derive"]
+default-features = false
+
+[dependencies.thiserror]
+version = "2.0.12"
 default-features = false
 
 [dev-dependencies.test-fixture]

@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 head =  ''
 firefox-appdir = "browser"
 tags = "os_integration"

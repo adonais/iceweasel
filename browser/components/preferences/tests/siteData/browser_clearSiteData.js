@@ -52,8 +52,10 @@ async function testClearData(clearSiteData, clearCache) {
     gBrowser.selectedBrowser,
     [],
     async function () {
-      let sizeLabel = content.document.getElementById("totalSiteDataSize");
-      return sizeLabel.textContent;
+      let siteDataSizeItem = content.document.getElementById("siteDataSize");
+      // The <strong> element contains the data size.
+      let usage = siteDataSizeItem.querySelector("strong");
+      return usage.textContent;
     }
   );
 
@@ -62,7 +64,12 @@ async function testClearData(clearSiteData, clearCache) {
 
   let url = "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml";
   let dialogOpened = promiseLoadSubDialog(url);
-  clearSiteDataButton.doCommand();
+  clearSiteDataButton.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(
+    clearSiteDataButton.buttonEl,
+    {},
+    doc.ownerGlobal
+  );
   let dialogWin = await dialogOpened;
 
   // Convert the usage numbers in the same way the UI does it to assert
@@ -176,11 +183,12 @@ async function testClearData(clearSiteData, clearCache) {
       gBrowser.selectedBrowser,
       [{ initialSizeLabelValue }],
       async function (opts) {
-        let sizeLabel = content.document.getElementById("totalSiteDataSize");
-        await ContentTaskUtils.waitForCondition(
-          () => sizeLabel.textContent != opts.initialSizeLabelValue,
-          "Site data size label should have updated."
-        );
+        let siteDataSizeItem = content.document.getElementById("siteDataSize");
+        let usage = siteDataSizeItem.querySelector("strong");
+        let siteDataSizeText = usage.textContent;
+        await ContentTaskUtils.waitForCondition(() => {
+          return siteDataSizeText != opts.initialSizeLabelValue;
+        }, "Site data size label should have updated.");
       }
     );
   }

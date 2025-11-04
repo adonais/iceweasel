@@ -40,6 +40,7 @@ pub enum InlineBaseDirection {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(u8)]
 pub enum WritingModeProperty {
@@ -304,6 +305,25 @@ impl WritingMode {
             (true, true) => PhysicalSide::Right,
             (true, false) => PhysicalSide::Left,
         }
+    }
+
+    /// Given a physical side, flips the start on that axis, and returns the corresponding
+    /// physical side.
+    #[inline]
+    pub fn flipped_start_side(&self, side: PhysicalSide) -> PhysicalSide {
+        let bs = self.block_start_physical_side();
+        if side == bs {
+            return self.inline_start_physical_side();
+        }
+        let be = self.block_end_physical_side();
+        if side == be {
+            return self.inline_end_physical_side();
+        }
+        if side == self.inline_start_physical_side() {
+            return bs;
+        }
+        debug_assert_eq!(side, self.inline_end_physical_side());
+        be
     }
 
     #[inline]

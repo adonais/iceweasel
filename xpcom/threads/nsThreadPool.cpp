@@ -152,7 +152,9 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
   // if NS_DISPATCH_FALLIBLE is not specified.
   nsCOMPtr<nsIRunnable> event(aEvent);
 
-  if (NS_WARN_IF(mShutdown)) {
+  // We allow dispatching events during ThreadPool shutdown until all threads
+  // have exited, although new threads will not be started.
+  if (NS_WARN_IF(mShutdown && mThreads.IsEmpty())) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -165,6 +167,7 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
 
   // We've added the event to the queue, make sure a thread
   // will wake up to handle it.
+
   if (aFlags & NS_DISPATCH_AT_END) {
     // If NS_DISPATCH_AT_END is set, this thread is about to
     // become free to process the event, so we don't need to
@@ -191,9 +194,12 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
          mruThread));
     return NS_OK;
   }
-  if (mThreads.Count() >= (int32_t)mThreadLimit) {
+
+  if (mThreads.Count() >= (int32_t)mThreadLimit || mShutdown) {
     // If we have no thread available, just leave the event in the queue
     // ready for the next thread about to become idle and pick it up.
+    MOZ_ASSERT(!mThreads.IsEmpty(),
+               "There must be a thread which will handle this dispatch");
     LOG(("THRD-P(%p) put [%zd %d %d]: No idle or new thread available.\n", this,
          mMRUIdleThreads.length(), mThreads.Count(), mThreadLimit));
     return NS_OK;
@@ -379,10 +385,19 @@ nsThreadPool::Run() {
             idleEntry.remove();
           }
 
-          shutdownThreadOnExit = mThreads.RemoveObject(current);
+          // If we're not currently in pool shutdown, we need to dispatch a
+          // task to shut down the thread ourselves.
+          shutdownThreadOnExit = !mShutdown;
 
-          // keep track if there are threads available to start
-          mIsAPoolThreadFree = (mThreads.Count() < (int32_t)mThreadLimit);
+          // Remove the thread from our threads list.
+          // We may fail to find it only if the thread pool shutdown timed out.
+          DebugOnly<bool> found = mThreads.RemoveObject(current);
+          MOZ_ASSERT(found || (mShutdown && mThreads.IsEmpty()));
+
+          // Keep track if there are threads available to start. If we are
+          // shutting down, no new threads can start.
+          mIsAPoolThreadFree =
+              !mShutdown && (mThreads.Count() < (int32_t)mThreadLimit);
         } else {
           current->SetRunningEventDelay(TimeDuration(), TimeStamp());
 
@@ -479,13 +494,23 @@ nsThreadPool::DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) {
 }
 
 NS_IMETHODIMP
-nsThreadPool::RegisterShutdownTask(nsITargetShutdownTask*) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+nsThreadPool::RegisterShutdownTask(nsITargetShutdownTask* aTask) {
+  NS_ENSURE_ARG(aTask);
+  MutexAutoLock lock(mMutex);
+  if (mShutdown) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  return mShutdownTasks.AddTask(aTask);
 }
 
 NS_IMETHODIMP
-nsThreadPool::UnregisterShutdownTask(nsITargetShutdownTask*) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+nsThreadPool::UnregisterShutdownTask(nsITargetShutdownTask* aTask) {
+  NS_ENSURE_ARG(aTask);
+  MutexAutoLock lock(mMutex);
+  if (mShutdown) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  return mShutdownTasks.RemoveTask(aTask);
 }
 
 NS_IMETHODIMP_(bool)
@@ -496,7 +521,7 @@ nsThreadPool::IsOnCurrentThreadInfallible() {
 NS_IMETHODIMP
 nsThreadPool::IsOnCurrentThread(bool* aResult) {
   MutexAutoLock lock(mMutex);
-  if (NS_WARN_IF(mShutdown)) {
+  if (NS_WARN_IF(mShutdown && mThreads.IsEmpty())) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -510,24 +535,43 @@ nsThreadPool::Shutdown() { return ShutdownWithTimeout(-1); }
 NS_IMETHODIMP
 nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
   nsCOMArray<nsIThread> threads;
-  nsCOMPtr<nsIThreadPoolListener> listener;
   nsCString name;
   {
     MutexAutoLock lock(mMutex);
     if (mShutdown) {
       return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
     }
+
+    // If we have any shutdown tasks, queue a task to ensure they're triggered
+    // before we block new thread creation.
+    if (!mShutdownTasks.IsEmpty()) {
+      PutEvent(
+          NS_NewRunnableFunction("nsThreadPool ShutdownTasks",
+                                 [tasks = mShutdownTasks.Extract()] {
+                                   for (nsITargetShutdownTask* task : tasks) {
+                                     task->TargetShutdown();
+                                   }
+                                 }),
+          NS_DISPATCH_NORMAL, lock);
+    }
+
+    // NOTE: We do this after adding ShutdownTasks, as no new threads can be
+    // started after `mShutdown` is set.
+    //
+    // FIXME: It might make sense to avoid changing thread creation and shutdown
+    // behaviour until all threads have gone idle, and we are no longer
+    // accepting events. This would unfortunately be fiddly without changing
+    // nsThreadPool to use bare PRThreads instead of nsThread due to the need to
+    // join each thread.
     name = mName;
     mShutdown = true;
+    mIsAPoolThreadFree = false;
     NotifyChangeToAllIdleThreads();
 
+    // From now on we do not allow the creation of new threads, and threads
+    // will no longer shut themselves down. mThreads continues to track threads
+    // within Run().
     threads.AppendObjects(mThreads);
-    mThreads.Clear();
-
-    // Swap in a null listener so that we release the listener at the end of
-    // this method. The listener will be kept alive as long as the other threads
-    // that were created when it was set.
-    mListener.swap(listener);
   }
 
   nsTArray<nsCOMPtr<nsIThreadShutdown>> contexts;
@@ -545,6 +589,11 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
     NS_NewTimerWithCallback(
         getter_AddRefs(timer),
         [&](nsITimer*) {
+          {
+            // Clear `mThreads` to stop accepting events on timeout.
+            MutexAutoLock lock(mMutex);
+            mThreads.Clear();
+          }
           for (auto& context : contexts) {
             context->StopWaitingAndLeakThread();
           }
@@ -570,6 +619,14 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
     timer->Cancel();
   }
   onCompletion->Cancel();
+
+  nsCOMPtr<nsIThreadPoolListener> listener;
+  {
+    MutexAutoLock lock(mMutex);
+    MOZ_RELEASE_ASSERT(mThreads.IsEmpty(),
+                       "Thread wasn't removed from mThreads");
+    listener = mListener.forget();
+  }
 
   return NS_OK;
 }

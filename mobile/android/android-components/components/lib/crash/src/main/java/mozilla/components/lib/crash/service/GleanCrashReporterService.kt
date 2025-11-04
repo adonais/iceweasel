@@ -457,7 +457,6 @@ class GleanCrashReporterService(
      * could happen, for instance, if the application crashed again before the file could be
      * processed.
      */
-    @Suppress("ComplexMethod")
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun parseCrashFile() {
         try {
@@ -525,6 +524,9 @@ class GleanCrashReporterService(
 
     override fun record(crash: Crash.UncaughtExceptionCrash) {
         recordCrashAction(GleanCrashAction.Count(UNCAUGHT_EXCEPTION_KEY))
+
+        val appVersion = crash.versionName.takeIf { it != "N/A" } ?: appVersion
+        val appBuildId = crash.buildId.takeIf { it != "N/A" } ?: appBuildId
 
         recordCrashAction(
             GleanCrashAction.Ping(

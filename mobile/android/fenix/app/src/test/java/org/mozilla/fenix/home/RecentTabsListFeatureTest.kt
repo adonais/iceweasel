@@ -5,7 +5,6 @@
 package org.mozilla.fenix.home
 
 import io.mockk.mockk
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mozilla.components.browser.state.action.ContentAction.UpdateIconAction
 import mozilla.components.browser.state.action.ContentAction.UpdateTitleAction
 import mozilla.components.browser.state.action.MediaSessionAction
@@ -40,7 +39,6 @@ class RecentTabsListFeatureTest {
     private lateinit var appStore: AppStore
     private lateinit var middleware: CaptureActionsMiddleware<AppState, AppAction>
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     @get:Rule
     val coroutinesTestRule = MainCoroutineRule()
 

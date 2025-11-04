@@ -183,25 +183,9 @@ class TextEditor final : public EditorBase,
   InsertLineBreakAsAction(nsIPrincipal* aPrincipal = nullptr) final;
 
   /**
-   * ComputeTextValue() computes plaintext value of this editor.  This may be
-   * too expensive if it's in hot path.
-   *
-   * @param aDocumentEncoderFlags   Flags of nsIDocumentEncoder.
-   * @param aCharset                Encoding of the document.
+   * ComputeTextValue() computes plaintext value of this editor.
    */
-  nsresult ComputeTextValue(uint32_t aDocumentEncoderFlags,
-                            nsAString& aOutputString) const {
-    AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
-    if (NS_WARN_IF(!editActionData.CanHandle())) {
-      return NS_ERROR_NOT_INITIALIZED;
-    }
-    nsresult rv = ComputeValueInternal(u"text/plain"_ns, aDocumentEncoderFlags,
-                                       aOutputString);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return EditorBase::ToGenericNSResult(rv);
-    }
-    return NS_OK;
-  }
+  nsresult ComputeTextValue(nsAString&) const;
 
   /**
    * The following methods are available only when the instance is a password

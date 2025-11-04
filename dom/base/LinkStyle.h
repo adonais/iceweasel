@@ -117,7 +117,8 @@ class LinkStyle {
     ePRECONNECT = 0x00000020,
     // NOTE: 0x40 is unused
     ePRELOAD = 0x00000080,
-    eMODULE_PRELOAD = 0x00000100
+    eMODULE_PRELOAD = 0x00000100,
+    eCOMPRESSION_DICTIONARY = 0x00000200
   };
 
   // The return value is a bitwise or of 0 or more RelValues.

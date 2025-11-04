@@ -10288,9 +10288,8 @@ bool BaseCompiler::emitVectorShiftRightI64x2() {
   return true;
 }
 #  endif
-#endif  // ENABLE_WASM_SIMD
 
-#ifdef ENABLE_WASM_RELAXED_SIMD
+#  ifdef ENABLE_WASM_RELAXED_SIMD
 bool BaseCompiler::emitVectorLaneSelect() {
   Nothing unused_a, unused_b, unused_c;
 
@@ -10302,7 +10301,7 @@ bool BaseCompiler::emitVectorLaneSelect() {
     return true;
   }
 
-#  if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+#    if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
   RegV128 mask = popV128(RegV128(vmm0));
   RegV128 rhsDest = popV128();
   RegV128 lhs = popV128();
@@ -10310,7 +10309,7 @@ bool BaseCompiler::emitVectorLaneSelect() {
   freeV128(lhs);
   freeV128(mask);
   pushV128(rhsDest);
-#  elif defined(JS_CODEGEN_ARM64)
+#    elif defined(JS_CODEGEN_ARM64)
   RegV128 maskDest = popV128();
   RegV128 rhs = popV128();
   RegV128 lhs = popV128();
@@ -10318,11 +10317,12 @@ bool BaseCompiler::emitVectorLaneSelect() {
   freeV128(lhs);
   freeV128(rhs);
   pushV128(maskDest);
-#  endif
+#    endif
 
   return true;
 }
-#endif  // ENABLE_WASM_RELAXED_SIMD
+#  endif  // ENABLE_WASM_RELAXED_SIMD
+#endif    // ENABLE_WASM_SIMD
 
 //////////////////////////////////////////////////////////////////////////////
 //

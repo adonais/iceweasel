@@ -32,8 +32,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.PrimaryButton
-import mozilla.components.compose.base.button.SecondaryButton
+import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.button.OutlinedButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -151,7 +151,7 @@ fun OnboardingPage(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(horizontal = 16.dp),
             ) {
-                PrimaryButton(
+                FilledButton(
                     modifier = Modifier
                         .width(width = FirefoxTheme.layout.size.maxWidth.small)
                         .semantics {
@@ -163,7 +163,7 @@ fun OnboardingPage(
 
                 if (pageState.secondaryButton != null) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    SecondaryButton(
+                    OutlinedButton(
                         modifier = Modifier
                             .width(width = FirefoxTheme.layout.size.maxWidth.small)
                             .semantics {

@@ -15,11 +15,13 @@ import {
   isTopFrameSelected,
   getIsCurrentThreadPaused,
 } from "../../selectors/index";
-import { formatKeyShortcut } from "../../utils/text";
 import actions from "../../actions/index";
 import { debugBtn } from "../shared/Button/CommandBarButton";
 import AccessibleImage from "../shared/AccessibleImage";
 
+const {
+  stringifyFromElectronKey,
+} = require("resource://devtools/client/shared/key-shortcuts.js");
 const classnames = require("resource://devtools/client/shared/classnames.js");
 const MenuButton = require("resource://devtools/client/shared/components/menu/MenuButton.js");
 const MenuItem = require("resource://devtools/client/shared/components/menu/MenuItem.js");
@@ -74,10 +76,10 @@ function formatKey(action) {
     const winKey =
       getKeyForOS("WINNT", `${action}Display`) || getKeyForOS("WINNT", action);
     if (key != winKey) {
-      return formatKeyShortcut([key, winKey].join(" "));
+      return stringifyFromElectronKey([key, winKey].join(" "));
     }
   }
-  return formatKeyShortcut(key);
+  return stringifyFromElectronKey(key);
 }
 
 class CommandBar extends Component {

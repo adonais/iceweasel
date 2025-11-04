@@ -258,6 +258,7 @@ def repackage_flatpak(
                 "--require-version=0.11.1",
                 "--persist=.mozilla",
                 "--env=DICPATH=/usr/share/hunspell",
+                "--filesystem=xdg-config/gtk-3.0:ro",
                 "--filesystem=xdg-download:rw",
                 "--filesystem=/run/.heim_org.h5l.kcm-socket",
                 "--filesystem=xdg-run/speech-dispatcher:ro",

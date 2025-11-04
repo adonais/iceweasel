@@ -260,6 +260,16 @@ tab-group-editor-color-selector2-red = Red
 tab-group-description = { $tabGroupName } — Tab Group
 tab-group-label-tooltip-collapsed = { $tabGroupName } — Collapsed
 tab-group-label-tooltip-expanded = { $tabGroupName } — Expanded
+tab-group-preview-name =
+  .aria-label = Tabs in a collapsed group
+
+## When collapsed, the tab group label's aria-description will indicate
+## whether the hover menu is open or closed.
+
+tab-group-preview-open-description = Tabs list open
+tab-group-preview-closed-description = Tabs list closed
+
+##
 
 tab-context-unnamed-group =
     .label = Unnamed group
@@ -355,3 +365,11 @@ tab-group-context-open-saved-group-in-this-window =
 # open the tab group in that window.
 tab-group-context-open-saved-group-in-new-window =
     .label = Open Group in New Window
+
+## Split View
+
+# Split view tabs display their respective contents side by side
+# Displayed within the tooltip on tabs inside of a tab split view
+tabbrowser-tab-label-tab-split-view = Split view
+
+##

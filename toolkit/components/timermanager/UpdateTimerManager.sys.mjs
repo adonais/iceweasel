@@ -82,7 +82,7 @@ TimerManager.prototype = {
         minInterval = 500;
         minFirstInterval = 500;
       // fall through
-      case "profile-after-change":
+      case "profile-after-change": {
         this._timerMinimumDelay = Math.max(
           1000 *
             Services.prefs.getIntPref(PREF_APP_UPDATE_TIMERMINIMUMDELAY, 120),
@@ -104,6 +104,7 @@ TimerManager.prototype = {
         this._canEnsureTimer = true;
         this._ensureTimer(firstInterval);
         break;
+      }
       case "profile-before-change":
         Services.obs.removeObserver(this, "profile-before-change");
 

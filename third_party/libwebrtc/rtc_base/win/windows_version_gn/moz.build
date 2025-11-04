@@ -9,6 +9,10 @@
 COMPILE_FLAGS["OS_INCLUDES"] = []
 AllowCompilerWarnings()
 
+CXXFLAGS += [
+    "-std:c++20"
+]
+
 DEFINES["ABSL_ALLOCATOR_NOTHROW"] = "1"
 DEFINES["CERT_CHAIN_PARA_HAS_EXTRA_FIELDS"] = True
 DEFINES["NOMINMAX"] = True

@@ -70,6 +70,9 @@ class ServiceWorkerRegistrationInfo final
   bool mCorrupt;
 
   IPCNavigationPreloadState mNavigationPreloadState;
+  int64_t mNumberOfAttemptedActivations{0};
+  bool mIsBroken{false};
+  int64_t mCacheAPIId{-1};
 
  public:
   NS_DECL_ISUPPORTS
@@ -81,6 +84,14 @@ class ServiceWorkerRegistrationInfo final
       const nsACString& aScope, nsIPrincipal* aPrincipal,
       ServiceWorkerUpdateViaCache aUpdateViaCache,
       IPCNavigationPreloadState&& aNavigationPreloadState);
+
+  int64_t GetNumberOfAttemptedActivations() const {
+    return mNumberOfAttemptedActivations;
+  }
+
+  bool IsBroken() const { return mIsBroken; }
+
+  int64_t GetCacheAPIId() const { return mCacheAPIId; }
 
   void AddInstance(ServiceWorkerRegistrationListener* aInstance,
                    const ServiceWorkerRegistrationDescriptor& aDescriptor);

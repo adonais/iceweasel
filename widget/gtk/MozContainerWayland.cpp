@@ -232,13 +232,9 @@ static bool moz_container_wayland_ensure_surface(MozContainer* container,
   nsWindow* window = moz_container_get_nsWindow(container);
   MOZ_RELEASE_ASSERT(window);
 
-  // Try to guess subsurface offset to avoid potential flickering.
   gfx::IntPoint subsurfacePosition;
   if (aPosition) {
     subsurfacePosition = *aPosition;
-  } else {
-    auto gdkPoint = window->GetCsdOffsetInGdkCoords();
-    subsurfacePosition = gfx::IntPoint(gdkPoint.x, gdkPoint.y);
   }
 
   if (!surface->MapLocked(lock, parentSurface, subsurfacePosition)) {

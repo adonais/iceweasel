@@ -168,7 +168,9 @@ mod test {
 
         assert_eq!(
             "test_text_value",
-            metric.test_get_value(Some("test-ping".to_string())).unwrap()
+            metric
+                .test_get_value(Some("test-ping".to_string()))
+                .unwrap()
         );
     }
 
@@ -196,7 +198,10 @@ mod test {
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
         assert!(
-            "test_parent_value" == parent_metric.test_get_value(Some("test-ping".to_string())).unwrap(),
+            "test_parent_value"
+                == parent_metric
+                    .test_get_value(Some("test-ping".to_string()))
+                    .unwrap(),
             "Text metrics should only work in the parent process"
         );
     }

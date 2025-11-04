@@ -195,7 +195,9 @@ mod test {
         let metric = &metrics::test_only_ipc::a_bool;
         metric.set(true);
 
-        assert!(metric.test_get_value(Some("test-ping".to_string())).unwrap());
+        assert!(metric
+            .test_get_value(Some("test-ping".to_string()))
+            .unwrap());
     }
 
     #[test]
@@ -223,7 +225,10 @@ mod test {
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
         assert!(
-            false == parent_metric.test_get_value(Some("test-ping".to_string())).unwrap(),
+            false
+                == parent_metric
+                    .test_get_value(Some("test-ping".to_string()))
+                    .unwrap(),
             "Boolean metrics should only work in the parent process"
         );
     }
@@ -249,7 +254,9 @@ mod test {
         assert!(ipc::replay_from_buf(&ipc::take_buf().unwrap()).is_ok());
 
         assert!(
-            !parent_metric.test_get_value(Some("test-ping".to_string())).unwrap(),
+            !parent_metric
+                .test_get_value(Some("test-ping".to_string()))
+                .unwrap(),
             "Boolean metrics can unsafely work in child processes"
         );
     }

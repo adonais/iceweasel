@@ -31,8 +31,8 @@ class UnboundedMPSCQueue {
     T data;
   };
 
-  // Creates a new UnboundedMPSCQueue. Initially, the queue has a single sentinel node,
-  // pointed to by both mHead and mTail.
+  // Creates a new UnboundedMPSCQueue. Initially, the queue has a single
+  // sentinel node, pointed to by both mHead and mTail.
   UnboundedMPSCQueue()
       // At construction, the initial message points to nullptr (it has no
       // successor). It is a sentinel node, that does not contain meaningful

@@ -173,10 +173,11 @@ async function runCodeMirrorTest(uri) {
   const donePromise = new Promise(resolve => {
     CodeMirrorTestParent.setCallback((name, data) => {
       switch (name) {
-        case "setStatus":
+        case "setStatus": {
           const { statusMsg, type, customMsg } = data;
           codemirrorSetStatus(statusMsg, type, customMsg);
           break;
+        }
         case "done":
           resolve(!data.failed);
           break;

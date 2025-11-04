@@ -7,6 +7,7 @@
 #include "nsTextPaintStyle.h"
 
 #include "mozilla/LookAndFeel.h"
+#include "mozilla/RelativeLuminanceUtils.h"
 #include "nsCSSColorUtils.h"
 #include "nsCSSRendering.h"
 #include "nsFrameSelection.h"
@@ -217,6 +218,7 @@ void nsTextPaintStyle::GetTargetTextColors(nscolor* aForeColor,
                                            nscolor* aBackColor) {
   NS_ASSERTION(aForeColor, "aForeColor is null");
   NS_ASSERTION(aBackColor, "aBackColor is null");
+  InitCommonColors();
   const RefPtr<const ComputedStyle> targetTextStyle =
       mFrame->ComputeTargetTextStyle();
   if (targetTextStyle) {
@@ -226,15 +228,28 @@ void nsTextPaintStyle::GetTargetTextColors(nscolor* aForeColor,
         &nsStyleBackground::mBackgroundColor);
     return;
   }
-  if (PresContext()->ForcingColors()) {
-    *aBackColor = LookAndFeel::Color(LookAndFeel::ColorID::Mark, mFrame);
-    *aForeColor = LookAndFeel::Color(LookAndFeel::ColorID::Marktext, mFrame);
-  } else {
-    *aBackColor =
-        LookAndFeel::Color(LookAndFeel::ColorID::TargetTextBackground, mFrame);
-    *aForeColor =
-        LookAndFeel::Color(LookAndFeel::ColorID::TargetTextForeground, mFrame);
-  }
+
+  const auto darkSchemeBackground = LookAndFeel::Color(
+      LookAndFeel::ColorID::TargetTextBackground,
+      LookAndFeel::ColorScheme::Dark, LookAndFeel::UseStandins::No);
+  const auto lightSchemeBackground = LookAndFeel::Color(
+      LookAndFeel::ColorID::TargetTextBackground,
+      LookAndFeel::ColorScheme::Light, LookAndFeel::UseStandins::No);
+  const auto lightSchemeForeground = LookAndFeel::Color(
+      LookAndFeel::ColorID::TargetTextForeground,
+      LookAndFeel::ColorScheme::Light, LookAndFeel::UseStandins::No);
+  const auto darkSchemeForeground = LookAndFeel::Color(
+      LookAndFeel::ColorID::TargetTextForeground,
+      LookAndFeel::ColorScheme::Dark, LookAndFeel::UseStandins::No);
+  const float ratioLightScheme = RelativeLuminanceUtils::ContrastRatio(
+      lightSchemeBackground, mFrameBackgroundColor);
+  const float ratioDarkScheme = RelativeLuminanceUtils::ContrastRatio(
+      darkSchemeBackground, mFrameBackgroundColor);
+
+  *aBackColor = ratioLightScheme > ratioDarkScheme ? lightSchemeBackground
+                                                   : darkSchemeBackground;
+  *aForeColor = ratioLightScheme > ratioDarkScheme ? lightSchemeForeground
+                                                   : darkSchemeForeground;
 }
 
 bool nsTextPaintStyle::GetCustomHighlightTextColor(nsAtom* aHighlightName,

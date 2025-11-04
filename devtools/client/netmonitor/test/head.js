@@ -66,10 +66,10 @@ const HTTPS_EXAMPLE_ORG_URL =
 so we must sepecify the port explicitly */
 const WS_URL = "ws://127.0.0.1:8888/browser/devtools/client/netmonitor/test/";
 const WS_HTTP_URL =
-  "http://127.0.0.1:8888/browser/devtools/client/netmonitor/test/";
+  "http://127.0.0.1:8888/browser/devtools/client/netmonitor/test/websockets/";
 
 const WS_BASE_URL =
-  "http://mochi.test:8888/browser/devtools/client/netmonitor/test/";
+  "http://mochi.test:8888/browser/devtools/client/netmonitor/test/websockets/";
 const WS_PAGE_URL = WS_BASE_URL + "html_ws-test-page.html";
 const WS_PAGE_EARLY_CONNECTION_URL =
   WS_BASE_URL + "html_ws-early-connection-page.html";
@@ -1157,9 +1157,9 @@ async function selectIndexAndWaitForSourceEditor(monitor, index) {
     document.querySelectorAll(".request-list-item")[index]
   );
   // We may already be on the ResponseTab, so only select it if needed.
-  const editor = document.querySelector("#response-panel .CodeMirror-code");
+  const editor = document.querySelector("#response-panel .cm-content");
   if (!editor) {
-    const waitDOM = waitForDOM(document, "#response-panel .CodeMirror-code");
+    const waitDOM = waitForDOM(document, "#response-panel .cm-content");
     document.querySelector("#response-tab").click();
     await waitDOM;
   }
@@ -1181,12 +1181,25 @@ async function performRequests(monitor, tab, count) {
   await wait;
 }
 
+function getCMEditor(monitor) {
+  return monitor.panelWin.codeMirrorSourceEditorTestInstance;
+}
+
 /**
- * Helper function for retrieving `.CodeMirror` content
+ * Helper function for retrieving the editor content
  */
 function getCodeMirrorValue(monitor) {
-  const { document } = monitor.panelWin;
-  return document.querySelector(".CodeMirror")?.CodeMirror.getValue();
+  return getCMEditor(monitor).getText();
+}
+
+/**
+ * Waits for the currently triggered editor scroll to complete
+ *
+ * @param {*} monitor
+ * @returns {Promise}
+ */
+async function waitForEditorScrolling(monitor) {
+  return getCMEditor(monitor).once("cm-editor-scrolled");
 }
 
 /**

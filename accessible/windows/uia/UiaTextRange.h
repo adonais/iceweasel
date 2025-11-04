@@ -9,7 +9,6 @@
 
 #include "IUnknownImpl.h"
 #include "MsaaAccessible.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "nsDirection.h"
 #include "objbase.h"

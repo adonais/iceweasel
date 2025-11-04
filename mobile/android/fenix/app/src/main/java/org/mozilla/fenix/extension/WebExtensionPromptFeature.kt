@@ -14,6 +14,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.FragmentManager
 import androidx.navigation.NavController
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -52,13 +53,6 @@ class WebExtensionPromptFeature(
     private val navController: NavController,
     private val addonManager: AddonManager = context.components.addonManager,
 ) : LifecycleAwareFeature {
-
-    /**
-     * (optional) callback invoked when an add-on was updated due to an interaction with a
-     * [WebExtensionPromptRequest].
-     * Won't be needed after https://bugzilla.mozilla.org/show_bug.cgi?id=1858484.
-     */
-    var onAddonChanged: (Addon) -> Unit = {}
 
     /**
      * Whether or not an add-on installation is in progress.
@@ -501,7 +495,7 @@ class WebExtensionPromptFeature(
                 }
             }
 
-            dialog = AlertDialog.Builder(it)
+            dialog = MaterialAlertDialogBuilder(it)
                 .setTitle(title)
                 .setPositiveButton(android.R.string.ok) { _, _ -> }
                 .setCancelable(false)

@@ -142,9 +142,9 @@ function test_dependent_elements(win) {
   check_independents(false);
 }
 
-function test_dependent_cookie_elements(win) {
+async function test_dependent_cookie_elements(win) {
   let deleteOnCloseCheckbox = win.document.getElementById("deleteOnClose");
-  let deleteOnCloseNote = win.document.getElementById("deleteOnCloseNote");
+  let deleteOnCloseNote = win.document.getElementById("deleteOnCloseInfo");
   let blockCookiesMenu = win.document.getElementById("blockCookiesMenu");
 
   let controls = [blockCookiesMenu, deleteOnCloseCheckbox];
@@ -171,10 +171,12 @@ function test_dependent_cookie_elements(win) {
 
   blockCookiesCheckbox.checked = true;
   controlChanged(blockCookiesCheckbox);
+  await new Promise(resolve => requestAnimationFrame(resolve));
   expect_disabled(false);
 
   blockCookiesCheckbox.checked = false;
   controlChanged(blockCookiesCheckbox);
+  await new Promise(resolve => requestAnimationFrame(resolve));
   expect_disabled(true, [blockCookiesMenu]);
   expect_disabled(false, [deleteOnCloseCheckbox]);
   is_element_hidden(
@@ -184,6 +186,7 @@ function test_dependent_cookie_elements(win) {
 
   blockCookiesMenu.value = "always";
   controlChanged(blockCookiesMenu);
+  await new Promise(resolve => requestAnimationFrame(resolve));
   expect_disabled(true, [deleteOnCloseCheckbox]);
   expect_disabled(false, [blockCookiesMenu]);
   is_element_hidden(
@@ -197,6 +200,7 @@ function test_dependent_cookie_elements(win) {
     blockCookiesMenu.value = "unvisited";
   }
   controlChanged(blockCookiesMenu);
+  await new Promise(resolve => requestAnimationFrame(resolve));
   expect_disabled(false);
 
   let historymode = win.document.getElementById("historyMode");
@@ -205,6 +209,7 @@ function test_dependent_cookie_elements(win) {
   // disable the "keep cookies until..." menu.
   historymode.value = "dontremember";
   controlChanged(historymode);
+  await new Promise(resolve => requestAnimationFrame(resolve));
   expect_disabled(true, [deleteOnCloseCheckbox]);
   is_element_visible(
     deleteOnCloseNote,
@@ -214,6 +219,7 @@ function test_dependent_cookie_elements(win) {
 
   historymode.value = "remember";
   controlChanged(historymode);
+  await new Promise(resolve => requestAnimationFrame(resolve));
   expect_disabled(false);
   is_element_hidden(
     deleteOnCloseNote,

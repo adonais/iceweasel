@@ -208,7 +208,11 @@ def main():
 
     perf_metrics = []
     base_measures = {}
-    for i, measurement_time in enumerate(("start", "10%", "50%", "end")):
+    measuring_intervals = ("start", "10%", "50%", "end")
+    if binary == "com.android.chrome":
+        measuring_intervals = ("start", "10%", "50%")
+
+    for i, measurement_time in enumerate(measuring_intervals):
         cpu_measures = parse_cpu_usage(cpu_info_files[i], binary)
         mem_measures = parse_memory_usage(mem_info_files[i], binary)
 

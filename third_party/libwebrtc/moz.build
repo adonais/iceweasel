@@ -46,8 +46,10 @@ DIRS += [
     "/third_party/libwebrtc/api/environment/environment_factory_gn",
     "/third_party/libwebrtc/api/environment/environment_gn",
     "/third_party/libwebrtc/api/fec_controller_api_gn",
+    "/third_party/libwebrtc/api/field_trials_gn",
     "/third_party/libwebrtc/api/field_trials_registry_gn",
     "/third_party/libwebrtc/api/field_trials_view_gn",
+    "/third_party/libwebrtc/api/frame_transformer_factory_gn",
     "/third_party/libwebrtc/api/frame_transformer_interface_gn",
     "/third_party/libwebrtc/api/function_view_gn",
     "/third_party/libwebrtc/api/libjingle_logging_api_gn",
@@ -283,7 +285,6 @@ DIRS += [
     "/third_party/libwebrtc/modules/congestion_controller/goog_cc/estimators_gn",
     "/third_party/libwebrtc/modules/congestion_controller/goog_cc/goog_cc_gn",
     "/third_party/libwebrtc/modules/congestion_controller/goog_cc/link_capacity_estimator_gn",
-    "/third_party/libwebrtc/modules/congestion_controller/goog_cc/loss_based_bwe_v1_gn",
     "/third_party/libwebrtc/modules/congestion_controller/goog_cc/loss_based_bwe_v2_gn",
     "/third_party/libwebrtc/modules/congestion_controller/goog_cc/probe_controller_gn",
     "/third_party/libwebrtc/modules/congestion_controller/goog_cc/pushback_controller_gn",
@@ -410,7 +411,6 @@ DIRS += [
     "/third_party/libwebrtc/rtc_base/experiments/quality_scaler_settings_gn",
     "/third_party/libwebrtc/rtc_base/experiments/quality_scaling_experiment_gn",
     "/third_party/libwebrtc/rtc_base/experiments/rate_control_settings_gn",
-    "/third_party/libwebrtc/rtc_base/experiments/stable_target_rate_experiment_gn",
     "/third_party/libwebrtc/rtc_base/frequency_tracker_gn",
     "/third_party/libwebrtc/rtc_base/gtest_prod_gn",
     "/third_party/libwebrtc/rtc_base/histogram_percentile_counter_gn",
@@ -519,7 +519,8 @@ DIRS += [
 if CONFIG["OS_TARGET"] == "Android":
 
     DIRS += [
-        "/third_party/libwebrtc/rtc_base/ifaddrs_android_gn"
+        "/third_party/libwebrtc/rtc_base/ifaddrs_android_gn",
+        "/third_party/libwebrtc/third_party/cpu_features/ndk_compat_gn"
     ]
 
 if CONFIG["OS_TARGET"] == "Darwin":

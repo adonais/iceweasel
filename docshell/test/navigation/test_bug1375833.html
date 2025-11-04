@@ -63,7 +63,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1375833
 
           testWin.location.reload();
           break;
-        case 1:
+        case 1: {
           ok(e.data.endsWith("file_bug1375833-frame2.html"), "check location");
           is(shistory.count, 4, "check history length");
           is(shistory.index, 3, "check history index");
@@ -86,6 +86,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1375833
 
           webNav.goBack();
           break;
+        }
         case 2:
           ok(e.data.endsWith("file_bug1375833-frame1.html"), "check location");
           is(shistory.count, 4, "check history length");

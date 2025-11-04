@@ -254,6 +254,7 @@ fn prepare_prim_for_render(
                 let prim_data = &data_stores.linear_grad[*data_handle];
                 !prim_data.brush_segments.is_empty() ||
                     may_need_repetition(prim_data.stretch_size, prim_data.common.prim_rect)
+                    || !frame_context.fb_config.precise_linear_gradients
             }
             PrimitiveInstanceKind::RadialGradient { data_handle, .. } => {
                 let prim_data = &data_stores.radial_grad[*data_handle];
@@ -274,18 +275,19 @@ fn prepare_prim_for_render(
         // then use by other primitives. In the new quad rendering path, we'll still want
         // to skip the entry point to `update_clip_task` as that does old-style segmenting
         // and mask generation.
-        let should_update_clip_task = match prim_instance.kind {
-            PrimitiveInstanceKind::Rectangle { use_legacy_path: ref mut no_quads, .. }
-            | PrimitiveInstanceKind::RadialGradient { cached: ref mut no_quads, .. }
-            | PrimitiveInstanceKind::ConicGradient { cached: ref mut no_quads, .. }
+        let should_update_clip_task = match &mut prim_instance.kind {
+            PrimitiveInstanceKind::Rectangle { use_legacy_path, .. }
+            | PrimitiveInstanceKind::RadialGradient { use_legacy_path, .. }
+            | PrimitiveInstanceKind::ConicGradient { use_legacy_path, .. }
+            | PrimitiveInstanceKind::LinearGradient { use_legacy_path, .. }
             => {
-                *no_quads = disable_quad_path || !can_use_clip_chain_for_quad_path(
+                *use_legacy_path = disable_quad_path || !can_use_clip_chain_for_quad_path(
                     &prim_instance.vis.clip_chain,
                     frame_state.clip_store,
                     data_stores,
                 );
 
-                *no_quads
+                *use_legacy_path
             }
             PrimitiveInstanceKind::BoxShadow { .. } |
             PrimitiveInstanceKind::Picture { .. } => false,
@@ -760,9 +762,29 @@ fn prepare_interned_prim_for_render(
                 },
             );
         }
-        PrimitiveInstanceKind::LinearGradient { data_handle, ref mut visible_tiles_range, .. } => {
+        PrimitiveInstanceKind::LinearGradient { data_handle, ref mut visible_tiles_range, use_legacy_path: cached, .. } => {
             profile_scope!("LinearGradient");
             let prim_data = &mut data_stores.linear_grad[*data_handle];
+
+            if !*cached {
+                quad::prepare_quad(
+                    prim_data,
+                    &prim_data.common.prim_rect,
+                    prim_instance_index,
+                    prim_spatial_node_index,
+                    &prim_instance.vis.clip_chain,
+                    device_pixel_scale,
+                    frame_context,
+                    pic_context,
+                    targets,
+                    &data_stores.clip,
+                    frame_state,
+                    pic_state,
+                    scratch,
+                );
+
+                return;
+            }
 
             // Update the template this instane references, which may refresh the GPU
             // cache with any shared template data.
@@ -854,7 +876,7 @@ fn prepare_interned_prim_for_render(
                 }
             }
         }
-        PrimitiveInstanceKind::RadialGradient { data_handle, ref mut visible_tiles_range, cached, .. } => {
+        PrimitiveInstanceKind::RadialGradient { data_handle, ref mut visible_tiles_range, use_legacy_path: cached, .. } => {
             profile_scope!("RadialGradient");
             let prim_data = &mut data_stores.radial_grad[*data_handle];
 
@@ -905,7 +927,7 @@ fn prepare_interned_prim_for_render(
                 }
             }
         }
-        PrimitiveInstanceKind::ConicGradient { data_handle, ref mut visible_tiles_range, cached, .. } => {
+        PrimitiveInstanceKind::ConicGradient { data_handle, ref mut visible_tiles_range, use_legacy_path: cached, .. } => {
             profile_scope!("ConicGradient");
             let prim_data = &mut data_stores.conic_grad[*data_handle];
 

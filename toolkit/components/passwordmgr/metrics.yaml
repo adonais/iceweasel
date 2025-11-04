@@ -838,6 +838,127 @@ pwmgr:
     no_lint:
       - UNIT_IN_NAME
 
+  rust_mirror_status:
+    type: event
+    description: >
+      Records the outcome of each operation mirrored into the Rust password store.
+      Each record contains the operation type and whether it
+      succeeded or failed.
+    bugs:
+      - https://bugzil.la/1981812
+    data_reviews:
+      - https://bugzil.la/1981812
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      run_id:
+        type: string
+        description: Unique identifier for the login change event
+      operation:
+        description: >
+          The type of operation that failed (e.g. "add", "modify", "remove", "remove-all", "migration", etc.).
+        type: string
+      status:
+        description: >
+          The result of the operation ("success" or "failure").
+        type: string
+      error_message:
+        description: >
+          The error message or exception string from the failure.
+        type: string
+      poisoned:
+        description: >
+          Whether there was a previous error, meaning that this event must be viewed with caution.
+        type: boolean
+
+  rust_migration_failure:
+    type: event
+    description: >
+      Records errors during a migration run.
+    bugs:
+      - https://bugzil.la/1991676
+    data_reviews:
+      - https://bugzil.la/1991676
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      run_id:
+        type: string
+        description: Unique identifier for the migration run.
+      error_message:
+        type: string
+        description: The error message from the failed login entry.
+
+  rust_incompatible_login_format:
+    type: event
+    description: >
+      Records whenever a login format is incompatible with the Rust password
+      store. Includes which field was affected and during which operation.
+    bugs:
+      - https://bugzil.la/1981814
+    data_reviews:
+      - https://bugzil.la/1981814
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      run_id:
+        type: string
+        description: Unique identifier for the login change event
+      issue:
+        description: >
+          Which kind of incompatible format (dotOrigin, nonAsciiOrigin,
+          nonAsciiFormAction, usernameLineBreak).
+        type: string
+      operation:
+        description: >
+          The operation being performed when the incompatible format was found
+          (e.g. addLogin, modifyLogin, removeLogin).
+        type: string
+
+  rust_migration_status:
+    type: event
+    description: >
+      One record per rolling migration run, recording duration, total number
+      of logins migrated and whether there have been errors.
+    bugs:
+      - https://bugzil.la/1985800
+    data_reviews:
+      - https://bugzil.la/1985800
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - passwords-dev@mozilla.org
+    expires: never
+    extra_keys:
+      run_id:
+        type: string
+        description: Unique identifier for the migration run.
+      number_of_logins_to_migrate:
+        description: >
+          Total number of logins to be migrated during this run.
+        type: quantity
+      number_of_logins_migrated:
+        description: >
+          Number of logins migrated during this run.
+        type: quantity
+      duration_ms:
+        description: >
+          Duration of the migration in milliseconds.
+        type: quantity
+      had_errors:
+        description: >
+          Whether the migration had errors.
+        type: boolean
+
   saving_enabled:
     type: boolean
     lifetime: application
@@ -1217,7 +1338,10 @@ relay_integration:
   clicked_fill_username:
     type: event
     description: >
-      Firefox relay integration autocomplete popup
+      Firefox relay integration autocomplete popup.
+      Note: this event does NOT fire when a user places an email mask
+        during their first Relay opt-in flow.
+        So, we also fire `placed_email_mask`, defined below.
       This event was generated to correspond to the Legacy Telemetry event
       relay_integration.clicked#fill_username.
     bugs: *relay_integration_shown_bugs
@@ -1226,6 +1350,17 @@ relay_integration:
     expires: never
     extra_keys: *relay_integration_fill_username
     telemetry_mirror: Relay_integration_Clicked_FillUsername
+
+  placed_email_mask:
+    type: event
+    description: >
+        Recorded when a Firefox Relay mask is placed (filled) in a
+        form field, e.g., when the user selects a Relay-provided mask fromautocompleteautocomplete, or after successful opt-in.
+    bugs: *relay_integration_shown_bugs
+    data_reviews: *relay_integration_shown_data_reviews
+    notification_emails: *relay_integration_shown_emails
+    expires: never
+    extra_keys: *relay_integration_fill_username
 
   shown_reuse_panel:
     type: event

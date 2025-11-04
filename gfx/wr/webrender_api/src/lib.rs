@@ -19,6 +19,8 @@
     clippy::new_without_default,
     clippy::empty_docs,
     clippy::manual_range_contains,
+    unknown_lints,
+    mismatched_lifetime_syntaxes,
 )]
 
 
@@ -118,6 +120,10 @@ impl Epoch {
 #[derive(Clone, Copy, Debug, Default, Eq, MallocSizeOf, PartialEq, Hash, Ord, PartialOrd, PeekPoke)]
 #[derive(Deserialize, Serialize)]
 pub struct IdNamespace(pub u32);
+
+impl IdNamespace {
+    pub const DEBUGGER: IdNamespace = IdNamespace(!0);
+}
 
 /// A key uniquely identifying a WebRender document.
 ///

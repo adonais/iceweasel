@@ -44,31 +44,80 @@ ChromeUtils.defineLazyGetter(lazy, "console", () => {
 const REQUIRED_MEMORY_BYTES = 7 * 1024 * 1024 * 1024;
 const REQUIRED_CPU_CORES = 2;
 
+const staticEmbeddingsOptions = {
+  // See https://huggingface.co/Mozilla/static-embeddings/blob/main/models/minishlab/potion-retrieval-32M/README.md
+  subfolder: "models/minishlab/potion-retrieval-32M",
+  // Available: fp32, fp16, fp8_e5m2, fp8_e4m3
+  dtype: "fp16",
+  // Avalable dimsensions: 32, 64, 128, 256, 512
+  dimensions: 256,
+  // Use zstd compression, probably set it to true.
+  compression: true,
+};
+
 /**
  *
  */
 export class EmbeddingsGenerator {
   #engine = undefined;
   #promiseEngine;
-  #embeddingSize = 384;
-  options = {
-    taskName: "feature-extraction",
-    featureId: "simple-text-embedder",
-    timeoutMS: -1,
-    numThreads: 2,
-    backend: "onnx-native",
-  };
-  // wasm as fallback
-  optionsFallback = {
-    taskName: "feature-extraction",
-    featureId: "simple-text-embedder",
-    timeoutMS: -1,
-    numThreads: 2,
-    backend: "onnx",
-  };
+  #embeddingSize;
+  options;
+  #optionsByEngine = new Map([
+    [
+      "onnx-native",
+      {
+        taskName: "feature-extraction",
+        featureId: "simple-text-embedder",
+        timeoutMS: -1,
+        numThreads: 2,
+        backend: "onnx-native",
 
-  constructor(embeddingSize = 384) {
+        supportedDimensions: [384],
+        fallbackEngine: "onnx-wasm",
+      },
+    ],
+    [
+      "onnx-wasm",
+      {
+        taskName: "feature-extraction",
+        featureId: "simple-text-embedder",
+        timeoutMS: -1,
+        numThreads: 2,
+        backend: "onnx",
+
+        supportedDimensions: [384],
+      },
+    ],
+    [
+      "static-embeddings",
+      {
+        featureId: "simple-text-embedder",
+        modelId: "mozilla/static-embeddings",
+        modelRevision: "v1.0.0",
+        taskName: "static-embeddings",
+        modelHub: "mozilla",
+        backend: "static-embeddings",
+        staticEmbeddingsOptions,
+
+        supportedDimensions: [32, 64, 128, 256, 512],
+        setDimensions(embeddingSize) {
+          this.staticEmbeddingsOptions.dimensions = embeddingSize;
+        },
+      },
+    ],
+  ]);
+
+  constructor({ backend = "static-embeddings", embeddingSize = 256 } = {}) {
     this.#embeddingSize = embeddingSize;
+    this.options = this.#optionsByEngine.get(backend);
+    if (!this.options) {
+      throw new TypeError("Unsupported embedding engine");
+    }
+    if (!this.options.supportedDimensions.includes(embeddingSize)) {
+      throw new TypeError("Unsupported embedding size");
+    }
+    this.options.setDimensions?.(embeddingSize);
   }
 
   /**
@@ -130,19 +179,23 @@ export class EmbeddingsGenerator {
         this.#engine = await lazy.createEngine(this.options);
       } catch (ex) {
         lazy.console.warn(
-          "Native engine init failed. Falling back to wasm. Error:" + ex
+          `Engine ${this.options.backend} init failed. Falling back to wasm. Error:` +
+            ex
         );
 
-        // Fallback to wasm
-        if (this.optionsFallback) {
+        // Use a fallback engine if available.
+        if (this.options.fallbackEngine) {
+          let options = this.#optionsByEngine.get(this.options.fallbackEngine);
+          options.setDimensions?.(this.#embeddingSize);
           try {
-            this.#engine = await lazy.createEngine(this.optionsFallback);
+            this.#engine = await lazy.createEngine(options);
           } catch (fallbackEx) {
             lazy.console.error(
-              "Fallback engine also failed. Error:" + fallbackEx
+              `Fallback engine ${options.backend} also failed. Error:` +
+                fallbackEx
             );
             throw new Error(
-              "Unable to initialize the ML engine (including fallback wasm).",
+              "Unable to initialize the ML engine (including fallback).",
               { cause: fallbackEx }
             );
           }
@@ -221,7 +274,7 @@ export class EmbeddingsGenerator {
 
     // call the engine once with the batch of texts.
     let batchTensors = await this.engineRun({
-      args: [texts],
+      args: this.options.backend == "static-embeddings" ? texts : [texts],
       options: { pooling: "mean", normalize: true, max_length: 100 },
     });
 

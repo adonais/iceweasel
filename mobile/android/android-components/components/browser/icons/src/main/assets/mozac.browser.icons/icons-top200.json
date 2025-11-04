@@ -1414,5 +1414,11 @@
         "domains": [
             "zoom.us"
         ]
+    },
+    {
+        "image_url": "https://www.perplexity.ai/favicon.ico",
+        "domains": [
+            "perplexity.ai"
+        ]
     }
 ]

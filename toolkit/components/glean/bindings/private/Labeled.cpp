@@ -12,6 +12,9 @@
 #include "mozilla/glean/bindings/MetricTypes.h"
 #include "mozilla/glean/bindings/ScalarGIFFTMap.h"
 #include "nsString.h"
+#include "nsXULAppAPI.h"
+#include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/RemoteType.h"
 
 namespace mozilla::glean {
 
@@ -51,5 +54,30 @@ bool GleanLabeled::NameIsEnumerable(const nsAString& aName) { return false; }
 void GleanLabeled::GetSupportedNames(nsTArray<nsString>& aNames) {
   // We really don't know, so don't do anything.
 }
+
+namespace impl {
+
+// Helper function to get the current process type string for telemetry labeling
+nsCString GetProcessTypeForTelemetry() {
+  nsCString processType(XRE_GetProcessTypeString());
+
+  // For content processes, check the specific remote type
+  if (processType.EqualsLiteral("tab")) {
+    auto* cc = mozilla::dom::ContentChild::GetSingleton();
+    if (cc) {
+      const nsACString& remoteType = cc->GetRemoteType();
+      if (remoteType == EXTENSION_REMOTE_TYPE) {
+        processType.AssignLiteral("extension");
+      } else if (remoteType == INFERENCE_REMOTE_TYPE) {
+        processType.AssignLiteral("inference");
+      }
+      // Otherwise keep "tab" for regular content processes
+    }
+  }
+
+  return processType;
+}
+
+}  // namespace impl
 
 }  // namespace mozilla::glean

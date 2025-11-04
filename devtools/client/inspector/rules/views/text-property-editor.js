@@ -1443,29 +1443,14 @@ class TextPropertyEditor {
    *        The move focus direction number.
    */
   remove(direction) {
-    if (this.#colorSwatchSpans && this.#colorSwatchSpans.length) {
-      for (const span of this.#colorSwatchSpans) {
-        this.ruleView.tooltips.getTooltip("colorPicker").removeSwatch(span);
-      }
-    }
-
-    if (this.angleSwatchSpans && this.angleSwatchSpans.length) {
-      for (const span of this.angleSwatchSpans) {
-        span.removeEventListener("unit-change", this.#onSwatchCommit);
-      }
-    }
-
-    if (this.abortController) {
-      this.abortController.abort();
-      this.abortController = null;
-    }
-
-    this.element.remove();
     this.ruleEditor.rule.editClosestTextProperty(this.prop, direction);
+
+    this.prop.remove();
     this.nameSpan.textProperty = null;
     this.valueSpan.textProperty = null;
-    this.#elementsWithPendingClicks.delete(this.valueSpan);
-    this.prop.remove();
+    this.element.remove();
+
+    this.destroy();
   }
 
   /**
@@ -1921,6 +1906,42 @@ class TextPropertyEditor {
           `\n${quoteSymbolsUsed[i]}` + line.join(" ") + quoteSymbolsUsed[i]
       )
       .join(" ");
+  }
+
+  destroy() {
+    if (this.#colorSwatchSpans && this.#colorSwatchSpans.length) {
+      for (const span of this.#colorSwatchSpans) {
+        this.ruleView.tooltips.getTooltip("colorPicker").removeSwatch(span);
+      }
+    }
+
+    if (this.angleSwatchSpans && this.angleSwatchSpans.length) {
+      for (const span of this.angleSwatchSpans) {
+        span.removeEventListener("unit-change", this.#onSwatchCommit);
+        this.ruleView.tooltips.getTooltip("filterEditor").removeSwatch(span);
+      }
+    }
+
+    if (this.#bezierSwatchSpans && this.#bezierSwatchSpans.length) {
+      for (const span of this.#bezierSwatchSpans) {
+        this.ruleView.tooltips.getTooltip("cubicBezier").removeSwatch(span);
+      }
+    }
+
+    if (this.#linearEasingSwatchSpans && this.#linearEasingSwatchSpans.length) {
+      for (const span of this.#linearEasingSwatchSpans) {
+        this.ruleView.tooltips
+          .getTooltip("linearEaseFunction")
+          .removeSwatch(span);
+      }
+    }
+
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
+
+    this.#elementsWithPendingClicks.delete(this.valueSpan);
   }
 }
 

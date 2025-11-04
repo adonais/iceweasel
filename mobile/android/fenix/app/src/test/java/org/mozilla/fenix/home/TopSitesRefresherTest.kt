@@ -6,6 +6,7 @@ package org.mozilla.fenix.home
 
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -45,6 +46,7 @@ class TopSitesRefresherTest {
         )
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `WHEN lifecycle resumes AND we want to show contile feature THEN top sites are refreshed`() =
         runTest(context = testScheduler) {
@@ -56,6 +58,7 @@ class TopSitesRefresherTest {
             assertTrue(topSitesProvider.cacheRefreshed)
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `WHEN lifecycle resumes AND we DO NOT want to show contile feature THEN top sites are NOT refreshed`() =
         runTest(context = testScheduler) {

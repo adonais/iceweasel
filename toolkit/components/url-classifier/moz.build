@@ -17,6 +17,7 @@ XPIDL_SOURCES += [
     "nsIUrlClassifierPrefixSet.idl",
     "nsIUrlClassifierRemoteSettingsService.idl",
     "nsIUrlClassifierStreamUpdater.idl",
+    "nsIUrlClassifierTestUtils.idl",
     "nsIUrlClassifierUtils.idl",
     "nsIUrlListManager.idl",
 ]
@@ -37,6 +38,7 @@ UNIFIED_SOURCES += [
     "nsUrlClassifierDBService.cpp",
     "nsUrlClassifierInfo.cpp",
     "nsUrlClassifierProxies.cpp",
+    "nsUrlClassifierTestUtils.cpp",
     "nsUrlClassifierUtils.cpp",
     "ProtocolParser.cpp",
     "RiceDeltaDecoder.cpp",

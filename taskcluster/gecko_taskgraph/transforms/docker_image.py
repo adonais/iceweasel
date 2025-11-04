@@ -29,9 +29,9 @@ CONTEXTS_DIR = "docker-contexts"
 DIGEST_RE = re.compile("^[0-9a-f]{64}$")
 
 IMAGE_BUILDER_IMAGE = (
-    "mozillareleases/image_builder:5.0.0"
+    "mozillareleases/image_builder:6.0.0"
     "@sha256:"
-    "e510a9a9b80385f71c112d61b2f2053da625aff2b6d430411ac42e424c58953f"
+    "734c03809c83c716c1460ed3e00519d79b14d117343d3c556cbd9218a2e7f094"
 )
 
 transforms = TransformSequence()
@@ -148,7 +148,7 @@ def fill_template(config, tasks):
                 "artifacts": [
                     {
                         "type": "file",
-                        "path": "/workspace/image.tar.zst",
+                        "path": "/workspace/out/image.tar.zst",
                         "name": "public/image.tar.zst",
                     }
                 ],

@@ -299,6 +299,8 @@ newtab-custom-pocket-subtitle = { -brand-product-name } familiakide den { -pocke
 newtab-custom-stories-toggle =
     .label = Gomendatutako istorioak
     .description = { -brand-product-name } familiak aukeratutako eduki aparta
+newtab-custom-stories-personalized-toggle =
+    .label = Istorioak
 newtab-custom-pocket-sponsored = Babesleen istorioak
 newtab-custom-pocket-show-recent-saves = Erakutsi gordetako azkenak
 newtab-custom-recent-title = Azken jarduera
@@ -306,6 +308,9 @@ newtab-custom-recent-subtitle = Azken gune eta edukien hautapena
 newtab-custom-weather-toggle =
     .label = Eguraldia
     .description = Gaurko eguraldi-iragarpena
+newtab-custom-trending-search-toggle =
+    .label = Bilaketa-joerak
+    .description = Ezagunak diren eta askotan bilatutako gaiak
 newtab-custom-widget-weather-toggle =
     .label = Eguraldia
 newtab-custom-widget-trending-search-toggle =
@@ -493,3 +498,63 @@ newtab-report-cancel = Utzi
 newtab-report-submit = Bidali
 newtab-toast-thanks-for-reporting =
     .message = Eskerrik asko hau jakinarazteagatik.
+
+## Strings for task / to-do list productivity widget
+
+# A simple label next to the default list name letting users know this is a new / beta feature
+newtab-widget-lists-label-new =
+    .label = Berria
+newtab-widget-lists-label-beta =
+    .label = Beta
+newtab-widget-task-list-menu-copy = Kopiatu
+newtab-widget-lists-menu-edit = Editatu zerrendaren izena
+newtab-widget-lists-menu-create = Sortu zerrenda berria
+newtab-widget-lists-menu-delete = Ezabatu zerrenda hau
+newtab-widget-lists-menu-copy = Kopiatu zerrenda arbelean
+newtab-widget-lists-menu-hide = Ezkutatu zerrenda guztiak
+newtab-widget-lists-menu-learn-more = Argibide gehiago
+newtab-widget-lists-input-add-an-item =
+    .placeholder = Gehitu elementua
+newtab-widget-lists-input-error = Idatzi testua elementua gehitu ahal izateko.
+newtab-widget-lists-input-menu-open-link = Ireki lotura
+newtab-widget-lists-input-menu-move-up = Eraman gora
+newtab-widget-lists-input-menu-move-down = Eraman behera
+newtab-widget-lists-input-menu-delete = Ezabatu
+newtab-widget-lists-input-menu-edit = Editatu
+newtab-widget-lists-name-label-default =
+    .label = Zereginen zerrenda
+newtab-widget-lists-name-placeholder-default =
+    .placeholder = Zereginen zerrenda
+# The placeholder value of the name field for a newly created list
+newtab-widget-lists-name-placeholder-new =
+    .placeholder = Zerrenda berria
+
+## Strings for timer productivity widget
+## When the timer ends, a system notification may be shown. Depending on which mode the timer is in, that message would be shown
+
+newtab-widget-timer-notification-title = Tenporizadorea
+newtab-widget-timer-notification-focus = Kontzentratzeko denbora amaitu da. Ondo egina. Atsedena behar duzu?
+newtab-widget-timer-notification-break = Atsedena amaitu da. Kontzentratzeko prest?
+newtab-widget-timer-notification-warning = Jakinarazpenak desaktibatuta daude
+newtab-widget-timer-mode-focus =
+    .label = Kontzentratzeko denbora
+newtab-widget-timer-mode-break =
+    .label = Atsedena
+newtab-widget-timer-play =
+    .title = Erreproduzitu
+newtab-widget-timer-pause =
+    .title = Pausatu
+newtab-widget-timer-label-play =
+    .label = Erreproduzitu
+newtab-widget-timer-label-pause =
+    .label = Pausatu
+newtab-widget-timer-reset =
+    .title = Berrezarri
+newtab-widget-timer-menu-notifications = Desaktibatu jakinarazpenak
+newtab-widget-timer-menu-notifications-on = Aktibatu jakinarazpenak
+newtab-widget-timer-menu-hide = Ezkutatu tenporizadorea
+newtab-widget-timer-menu-learn-more = Argibide gehiago
+# Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
+newtab-widget-keep-scrolling = Korritu gehiagorako
+newtab-widget-message-title = Mantendu kontzentratuta zerrendekin eta tenporizadorearekin
+newtab-promo-card-cta = Argibide gehiago

@@ -1893,6 +1893,12 @@ class NetworkModule extends RootBiDiModule {
   }
 
   #getNetworkIntercepts(event, request, topContextId) {
+    if (!request.supportsInterception) {
+      // For requests which do not support interception (such as data URIs or
+      // cached resources), do not attempt to match intercepts.
+      return [];
+    }
+
     const intercepts = [];
 
     let phase;
@@ -2371,9 +2377,7 @@ class NetworkModule extends RootBiDiModule {
       protocolEventName,
       beforeRequestSentEvent
     );
-    if (beforeRequestSentEvent.isBlocked && request.supportsInterception) {
-      // TODO: Requests suspended in beforeRequestSent still reach the server at
-      // the moment. https://bugzilla.mozilla.org/show_bug.cgi?id=1849686
+    if (beforeRequestSentEvent.isBlocked) {
       request.wrappedChannel.suspend(
         this.#getSuspendMarkerText(request, "beforeRequestSent")
       );

@@ -18,7 +18,7 @@ class NativeLayerCommandQueue {
 
   NativeLayerCommandQueue();
 
-  void AppendCommand(const mozilla::layers::NativeLayerCommand& aCommand);
+  void AppendCommand(mozilla::layers::NativeLayerCommand&& aCommand);
   void FlushToArray(nsTArray<mozilla::layers::NativeLayerCommand>& aQueue);
 
  protected:

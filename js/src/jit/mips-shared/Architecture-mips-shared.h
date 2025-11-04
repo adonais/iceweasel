@@ -164,7 +164,8 @@ class Registers {
       (1 << Registers::a1) | (1 << Registers::a2) | (1 << Registers::a3) |
       (1 << Registers::t0) | (1 << Registers::t1) | (1 << Registers::t2) |
       (1 << Registers::t3) | (1 << Registers::ta0) | (1 << Registers::ta1) |
-      (1 << Registers::ta2) | (1 << Registers::ta3);
+      (1 << Registers::ta2) | (1 << Registers::ta3) | (1 << Registers::t8) |
+      (1 << Registers::t9);
 
   // We use this constant to save registers when entering functions. This
   // is why $ra is added here even though it is not "Non Volatile".
@@ -181,7 +182,7 @@ class Registers {
   static const SetType NonAllocatableMask =
       (1 << Registers::zero) | (1 << Registers::at) |  // at = scratch
       (1 << Registers::t8) |                           // t8 = scratch
-      (1 << Registers::t9) |                           // t9 = scratch
+      (1 << Registers::t9) |                           // t9 = scratch or call
       (1 << Registers::k0) | (1 << Registers::k1) | (1 << Registers::gp) |
       (1 << Registers::sp) | (1 << Registers::ra) | (1 << Registers::fp);
 

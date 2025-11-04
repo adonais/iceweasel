@@ -6,8 +6,7 @@ package org.mozilla.focus.telemetry
 
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.support.ktx.kotlin.crossProduct
 import mozilla.components.support.test.any
@@ -43,7 +42,6 @@ private val validTelemetryLabels = run {
 
 private val activityClass = MainActivity::class.java
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class StartupTypeTelemetryTest {
 
@@ -87,7 +85,8 @@ class StartupTypeTelemetryTest {
             doReturn(state).`when`(stateProvider).getStartupStateForStartedActivity(activityClass)
             doReturn(path).`when`(pathProvider).startupPathForActivity
 
-            telemetry.recordStartupTelemetry(lifecycleOwner, UnconfinedTestDispatcher(this.testScheduler))
+            telemetry.recordStartupTelemetry(lifecycleOwner, StandardTestDispatcher(this.testScheduler))
+            testScheduler.advanceUntilIdle()
         }
 
         validTelemetryLabels.forEach { label ->
@@ -107,7 +106,7 @@ class StartupTypeTelemetryTest {
         doReturn(StartupState.COLD).`when`(stateProvider).getStartupStateForStartedActivity(activityClass)
         doReturn(StartupPath.MAIN).`when`(pathProvider).startupPathForActivity
 
-        telemetry.recordStartupTelemetry(lifecycleOwner, UnconfinedTestDispatcher(this.testScheduler))
+        telemetry.recordStartupTelemetry(lifecycleOwner, StandardTestDispatcher(this.testScheduler))
         testScheduler.advanceUntilIdle()
 
         assertEquals(1, PerfStartup.startupType["cold_main"].testGetValue())

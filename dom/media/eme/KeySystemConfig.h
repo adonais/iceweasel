@@ -236,7 +236,6 @@ struct KeySystemConfig {
   nsTArray<nsString> mAudioRobustness;
   ContainerSupport mMP4;
   ContainerSupport mWebM;
-  bool mIsHDCP22Compatible = false;
 
  private:
   static void CreateClearKeyKeySystemConfigs(

@@ -195,7 +195,11 @@ export var SearchUIUtils = {
    */
   async addOpenSearchEngine(locationURL, image, browsingContext) {
     try {
-      await Services.search.addOpenSearchEngine(locationURL, image);
+      await Services.search.addOpenSearchEngine(
+        locationURL,
+        image,
+        browsingContext?.embedderElement?.contentPrincipal?.originAttributes
+      );
     } catch (ex) {
       let titleMsgName;
       let descMsgName;

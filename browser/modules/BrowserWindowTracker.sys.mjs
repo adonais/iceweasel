@@ -23,6 +23,12 @@ ChromeUtils.defineESModuleGetters(lazy, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "gPreferWindowsOnCurrentVirtualDesktop",
+  "widget.prefer_windows_on_current_virtual_desktop"
+);
+
 // Constants
 const TAB_EVENTS = ["TabBrowserInserted", "TabSelect"];
 const WINDOW_EVENTS = ["activate", "unload"];
@@ -209,7 +215,7 @@ export const BrowserWindowTracker = {
       ) {
         // On Windows, windows on a different virtual desktop (what Windows calls
         // workspaces) are cloaked.
-        if (win.isCloaked) {
+        if (win.isCloaked && lazy.gPreferWindowsOnCurrentVirtualDesktop) {
           // Even if we allow from an inactive workspace, prefer windows that
           // are not cloaked, so that we don't switch workspaces unnecessarily.
           if (!cloakedWin && options.allowFromInactiveWorkspace) {

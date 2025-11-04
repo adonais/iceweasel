@@ -3,9 +3,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// This file is loaded into the browser window scope.
-/* eslint-env mozilla/browser-window */
-
 var { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
@@ -13,6 +10,7 @@ var { XPCOMUtils } = ChromeUtils.importESModule(
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   AMBrowserExtensionsImport: "resource://gre/modules/AddonManager.sys.mjs",
   AbuseReporter: "resource://gre/modules/AbuseReporter.sys.mjs",
   ExtensionCommon: "resource://gre/modules/ExtensionCommon.sys.mjs",
@@ -1112,7 +1110,7 @@ var gXPInstallObserver = {
         case "removed":
           cancelInstallation();
           break;
-        case "shown":
+        case "shown": {
           let addonList = document.getElementById(
             "addon-install-confirmation-content"
           );
@@ -1147,6 +1145,7 @@ var gXPInstallObserver = {
             addonList.appendChild(container);
           }
           break;
+        }
       }
     };
 
@@ -2235,34 +2234,39 @@ var gUnifiedExtensions = {
 
   /**
    * Gets a list of active WebExtensionPolicy instances of type "extension",
-   * sorted alphabetically based on add-on's names. Optionally, filter out
-   * extensions with browser action.
+   * excluding hidden extensions, available to this window.
    *
-   * @param {bool} all When set to true (the default), return the list of all
-   *                   active policies, including the ones that have a
-   *                   browser action. Otherwise, extensions with browser
-   *                   action are filtered out.
+   * @param {boolean} skipPBMCheck When false (the default), the result
+   *                  excludes extensions that cannot access the current window
+   *                  due to the window being a private browsing window that
+   *                  the extension is not allowed to access.
    * @returns {Array<WebExtensionPolicy>} An array of active policies.
    */
-  getActivePolicies(all = true) {
+  getActivePolicies(skipPBMCheck = false) {
     let policies = WebExtensionPolicy.getActiveExtensions();
     policies = policies.filter(policy => {
       let { extension } = policy;
-      if (!policy.active || extension?.type !== "extension") {
+      if (extension?.type !== "extension") {
+        // extension can only be null due to bugs (bug 1642012).
+        // Exclude non-extension types such as themes, dictionaries, etc.
         return false;
       }
 
       // Ignore hidden and extensions that cannot access the current window
       // (because of PB mode when we are in a private window), since users
       // cannot do anything with those extensions anyway.
-      if (extension.isHidden || !policy.canAccessWindow(window)) {
+      if (
+        extension.isHidden ||
+        // NOTE: policy.canAccessWindow() sounds generic, but it really only
+        // enforces private browsing access.
+        (!skipPBMCheck && !policy.canAccessWindow(window))
+      ) {
         return false;
       }
 
-      return all || !extension.hasBrowserActionUI;
+      return true;
     });
 
-    policies.sort((a, b) => a.name.localeCompare(b.name));
     return policies;
   },
 
@@ -2271,20 +2275,68 @@ var gUnifiedExtensions = {
    * extensions panel, and false otherwise (e.g. when extensions are pinned in
    * the toolbar OR there are 0 active extensions).
    *
+   * @param {Array<WebExtensionPolicy> [policies] The list of extensions to
+   *   evaluate. Defaults to the active extensions with access to this window
+   *   (see getActivePolicies).
    * @returns {boolean} Whether there are extensions listed in the panel.
    */
-  hasExtensionsInPanel() {
-    const policies = this.getActivePolicies();
+  hasExtensionsInPanel(policies = this.getActivePolicies()) {
+    return policies.some(policy => {
+      let widget = this.browserActionFor(policy)?.widget;
+      return (
+        !widget ||
+        widget.areaType !== CustomizableUI.TYPE_TOOLBAR ||
+        widget.forWindow(window).overflowed
+      );
+    });
+  },
 
-    return !!policies
-      .map(policy => this.browserActionFor(policy)?.widget)
-      .filter(widget => {
-        return (
-          !widget ||
-          widget?.areaType !== CustomizableUI.TYPE_TOOLBAR ||
-          widget?.forWindow(window).overflowed
-        );
-      }).length;
+  isPrivateWindowMissingExtensionsWithoutPBMAccess() {
+    if (!PrivateBrowsingUtils.isWindowPrivate(window)) {
+      return false;
+    }
+    const policies = this.getActivePolicies(/* skipPBMCheck */ true);
+    return policies.some(p => !p.privateBrowsingAllowed);
+  },
+
+  /**
+   * Returns whether there is any active extension without private browsing
+   * access, for which the user can toggle the "Run in Private Windows" option.
+   * This complements the isPrivateWindowMissingExtensionsWithoutPBMAccess()
+   * method, by distinguishing cases where the user can enable any extension
+   * in the private window, vs cases where the user cannot.
+   *
+   * @returns {Promise<boolean>} Whether there is any "Run in Private Windows"
+   *                             option that is Off and can be set to On.
+   */
+  async isAtLeastOneExtensionWithPBMOptIn() {
+    const addons = await AddonManager.getAddonsByTypes(["extension"]);
+    return addons.some(addon => {
+      if (
+        // We only care about extensions shown in the panel and about:addons.
+        addon.hidden ||
+        // We only care about extensions whose PBM access can be toggled.
+        !(
+          addon.permissions &
+          lazy.AddonManager.PERM_CAN_CHANGE_PRIVATEBROWSING_ACCESS
+        )
+      ) {
+        return false;
+      }
+      const policy = WebExtensionPolicy.getByID(addon.id);
+      // policy can be null if the extension is not active.
+      return policy && !policy.privateBrowsingAllowed;
+    });
+  },
+
+  async getDisabledExtensionsInfo() {
+    let addons = await AddonManager.getAddonsByTypes(["extension"]);
+    addons = addons.filter(a => !a.hidden && !a.isActive);
+    const isAnyDisabled = !!addons.length;
+    const isAnyEnableable = addons.some(
+      a => a.permissions & lazy.AddonManager.PERM_CAN_ENABLE
+    );
+    return { isAnyDisabled, isAnyEnableable };
   },
 
   handleEvent(event) {
@@ -2345,14 +2397,88 @@ var gUnifiedExtensions = {
   },
 
   onPanelViewShowing(panelview) {
-    const list = panelview.querySelector(".unified-extensions-list");
+    const policies = this.getActivePolicies();
+
     // Only add extensions that do not have a browser action in this list since
     // the extensions with browser action have CUI widgets and will appear in
     // the panel (or toolbar) via the CUI mechanism.
-    for (const policy of this.getActivePolicies(/* all */ false)) {
+    const policiesForList = policies.filter(
+      p => !p.extension.hasBrowserActionUI
+    );
+    policiesForList.sort((a, b) => a.name.localeCompare(b.name));
+
+    const list = panelview.querySelector(".unified-extensions-list");
+    for (const policy of policiesForList) {
       const item = document.createElement("unified-extensions-item");
       item.setExtension(policy.extension);
       list.appendChild(item);
+    }
+
+    const emptyStateBox = panelview.querySelector(
+      "#unified-extensions-empty-state"
+    );
+    if (this.hasExtensionsInPanel(policies)) {
+      // Any of the extension lists are non-empty.
+      emptyStateBox.hidden = true;
+    } else if (this.isPrivateWindowMissingExtensionsWithoutPBMAccess()) {
+      document.l10n.setAttributes(
+        emptyStateBox.querySelector("h2"),
+        "unified-extensions-empty-reason-private-browsing-not-allowed"
+      );
+      document.l10n.setAttributes(
+        emptyStateBox.querySelector("description"),
+        "unified-extensions-empty-content-explain-enable2"
+      );
+      emptyStateBox.hidden = false;
+      this.isAtLeastOneExtensionWithPBMOptIn().then(result => {
+        // The "enable" message is somewhat misleading when the user cannot
+        // enable the extension, show a generic message instead (bug 1992179).
+        if (!result) {
+          document.l10n.setAttributes(
+            emptyStateBox.querySelector("description"),
+            "unified-extensions-empty-content-explain-manage2"
+          );
+        }
+      });
+    } else {
+      emptyStateBox.hidden = true;
+      this.getDisabledExtensionsInfo().then(disabledExtensionsInfo => {
+        if (disabledExtensionsInfo.isAnyDisabled) {
+          document.l10n.setAttributes(
+            emptyStateBox.querySelector("h2"),
+            "unified-extensions-empty-reason-extension-not-enabled"
+          );
+          document.l10n.setAttributes(
+            emptyStateBox.querySelector("description"),
+            disabledExtensionsInfo.isAnyEnableable
+              ? "unified-extensions-empty-content-explain-enable2"
+              : "unified-extensions-empty-content-explain-manage2"
+          );
+          emptyStateBox.hidden = false;
+        } else if (!policies.length) {
+          document.l10n.setAttributes(
+            emptyStateBox.querySelector("h2"),
+            "unified-extensions-empty-reason-zero-extensions-onboarding"
+          );
+          document.l10n.setAttributes(
+            emptyStateBox.querySelector("description"),
+            "unified-extensions-empty-content-explain-extensions-onboarding"
+          );
+          emptyStateBox.hidden = false;
+
+          // Replace the "Manage Extensions" button with "Discover Extensions".
+          // We add the "Discover Extensions" button, and "Manage Extensions"
+          // button (#unified-extensions-manage-extensions) is hidden by CSS.
+          const discoverButton = this._createDiscoverButton(panelview);
+
+          const manageExtensionsButton = panelview.querySelector(
+            "#unified-extensions-manage-extensions"
+          );
+          // Insert before toolbarseparator, to make it easier to hide the
+          // toolbarseparator and manageExtensionsButton with CSS.
+          manageExtensionsButton.previousElementSibling.before(discoverButton);
+        }
+      });
     }
 
     const container = panelview.querySelector(
@@ -2402,6 +2528,10 @@ var gUnifiedExtensions = {
     while (list.lastChild) {
       list.lastChild.remove();
     }
+    panelview
+      .querySelector("#unified-extensions-discover-extensions")
+      ?.remove();
+
     // If temporary access was granted, (maybe) clear attention indicator.
     requestAnimationFrame(() => this.updateAttention());
   },
@@ -2569,20 +2699,18 @@ var gUnifiedExtensions = {
         }
 
         // The button should directly open `about:addons` when the user does not
-        // have any active extensions listed in the unified extensions panel.
-        if (!this.hasExtensionsInPanel()) {
-          let viewID;
-          if (
-            Services.prefs.getBoolPref("extensions.getAddons.showPane", true) &&
-            // Unconditionally show the list of extensions if the blocklist
-            // attention flag has been shown on the extension panel button.
-            !AddonManager.shouldShowBlocklistAttention()
-          ) {
-            viewID = "addons://discover/";
-          } else {
-            viewID = "addons://list/extension";
-          }
-          await BrowserAddonUI.openAddonsMgr(viewID);
+        // have any active extensions listed in the unified extensions panel,
+        // and no alternative content is available for display in the panel.
+        const policies = this.getActivePolicies();
+        if (
+          policies.length &&
+          !this.hasExtensionsInPanel(policies) &&
+          !this.isPrivateWindowMissingExtensionsWithoutPBMAccess() &&
+          !(await this.getDisabledExtensionsInfo()).isAnyDisabled
+        ) {
+          // This may happen if the user has pinned all of their extensions.
+          // In that case, the extensions panel is empty.
+          await BrowserAddonUI.openAddonsMgr("addons://list/extension");
           return;
         }
       }
@@ -3056,6 +3184,36 @@ var gUnifiedExtensions = {
     }
 
     return messageBar;
+  },
+
+  _createDiscoverButton() {
+    const discoverButton = document.createElement("moz-button");
+    discoverButton.id = "unified-extensions-discover-extensions";
+    discoverButton.type = "primary";
+    discoverButton.className = "subviewbutton panel-subview-footer-button";
+    document.l10n.setAttributes(
+      discoverButton,
+      "unified-extensions-discover-extensions"
+    );
+
+    discoverButton.addEventListener("click", () => {
+      if (
+        // The "Discover Extensions" button is only shown if the user has not
+        // installed any extension. In that case, we direct to the discopane
+        // in about:addons. If the discopane is disabled, open the default
+        // view (Extensions list) instead. This view shows a link to AMO when
+        // the user does not have any extensions installed.
+        Services.prefs.getBoolPref("extensions.getAddons.showPane", true)
+      ) {
+        BrowserAddonUI.openAddonsMgr("addons://list/discover");
+      } else {
+        BrowserAddonUI.openAddonsMgr("addons://list/extension");
+      }
+      // Close panel.
+      this.togglePanel();
+    });
+
+    return discoverButton;
   },
 
   _shouldShowQuarantinedNotification() {

@@ -18,6 +18,7 @@ support-files = [
   "fission_document_workers.html",
   "fission_iframe.html",
   "fission_iframe_workers.html",
+  "iframe_request.html",
   "service-worker-sources.js",
   "sources.html",
   "sources.js",

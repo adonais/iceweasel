@@ -15,7 +15,6 @@ const {
   parentAccessibilitySpec,
   simulatorSpec,
 } = require("resource://devtools/shared/specs/accessibility.js");
-const events = require("resource://devtools/shared/event-emitter.js");
 
 class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
   constructor(client, targetFront, parentFront) {
@@ -102,7 +101,7 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
     // accessibility walker as the point of interaction for UI.
     const accessibilityWalkerFront = this.getParent();
     if (accessibilityWalkerFront) {
-      events.emit(accessibilityWalkerFront, "name-change", this, parent);
+      accessibilityWalkerFront.emit("name-change", this, parent);
     }
   }
 
@@ -124,7 +123,7 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
     // accessibility walker as the point of interaction for UI.
     const accessibilityWalkerFront = this.getParent();
     if (accessibilityWalkerFront) {
-      events.emit(accessibilityWalkerFront, "reorder", this);
+      accessibilityWalkerFront.emit("reorder", this);
     }
   }
 
@@ -133,7 +132,7 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
     // accessibility walker as the point of interaction for UI.
     const accessibilityWalkerFront = this.getParent();
     if (accessibilityWalkerFront) {
-      events.emit(accessibilityWalkerFront, "text-change", this);
+      accessibilityWalkerFront.emit("text-change", this);
     }
   }
 

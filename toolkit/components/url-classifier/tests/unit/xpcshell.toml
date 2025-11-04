@@ -18,7 +18,6 @@ support-files = ["data/**"]
 skip-if = ["condprof"]  # Bug 1769828
 
 ["test_digest256.js"]
-run-sequentially = "very high failure rate in parallel"
 
 ["test_exceptionListService.js"]
 tags = "remote-settings"
@@ -30,7 +29,7 @@ tags = "remote-settings"
 ["test_hashcompleter_v4.js"]
 
 ["test_listmanager.js"]
-run-sequentially = "very high failure rate in parallel"
+run-sequentially = ["true"] # fails 85% of the time in parallel
 
 ["test_malwaretable_pref.js"]
 

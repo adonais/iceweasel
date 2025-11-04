@@ -36,6 +36,8 @@ namespace mozilla {
                                           nsAString& aBase64);
 
 [[nodiscard]] nsresult Base64Encode(const char* aBinary, uint32_t aBinaryLen,
+                                    Span<char> aBase64);
+[[nodiscard]] nsresult Base64Encode(const char* aBinary, uint32_t aBinaryLen,
                                     char** aBase64);
 [[nodiscard]] nsresult Base64Encode(const char* aBinary, uint32_t aBinaryLen,
                                     nsACString& aBase64);

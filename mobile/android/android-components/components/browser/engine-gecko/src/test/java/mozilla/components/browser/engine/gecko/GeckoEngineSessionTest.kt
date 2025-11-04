@@ -11,6 +11,7 @@ import android.os.Looper.getMainLooper
 import android.os.Message
 import android.view.WindowManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.engine.gecko.ext.geckoTrackingProtectionPermission
 import mozilla.components.browser.engine.gecko.ext.isExcludedForTrackingProtection
 import mozilla.components.browser.engine.gecko.permission.geckoContentPermission
@@ -48,8 +49,6 @@ import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
 import mozilla.components.support.test.expectException
 import mozilla.components.support.test.mock
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import mozilla.components.support.test.whenever
 import mozilla.components.support.utils.DownloadUtils.RESPONSE_CODE_SUCCESS
 import mozilla.components.support.utils.ThreadUtils
@@ -62,7 +61,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
@@ -113,9 +111,6 @@ typealias GeckoCookieBehavior = ContentBlocking.CookieBehavior
 
 @RunWith(AndroidJUnit4::class)
 class GeckoEngineSessionTest {
-
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
 
     private lateinit var runtime: GeckoRuntime
     private lateinit var geckoSession: GeckoSession
@@ -659,6 +654,16 @@ class GeckoEngineSessionTest {
         verify(geckoSession).load(
             GeckoSession.Loader().uri("http://mozilla.org").textDirectiveUserActivation(true),
         )
+
+        engineSession.loadUrl("https://example.com")
+        verify(geckoSession).load(
+            GeckoSession.Loader().uri("https://example.com").appLinkLaunchType(LoadUrlFlags.APP_LINK_LAUNCH_TYPE_UNKNOWN),
+        )
+
+        engineSession.loadUrl("http://mozilla.org")
+        verify(geckoSession).load(
+            GeckoSession.Loader().uri("https://example.com").appLinkLaunchType(LoadUrlFlags.APP_LINK_LAUNCH_TYPE_COLD),
+        )
     }
 
     @Test
@@ -1014,7 +1019,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `notifies configured history delegate of title changes`() = runTestOnMain {
+    fun `notifies configured history delegate of title changes`() = runTest {
         val engineSession = GeckoEngineSession(
             runtime,
             geckoSessionProvider = geckoSessionProvider,
@@ -1026,23 +1031,28 @@ class GeckoEngineSessionTest {
 
         // Nothing breaks if history delegate isn't configured.
         contentDelegate.value.onTitleChange(geckoSession, "Hello World!")
+        testScheduler.advanceUntilIdle()
 
         engineSession.settings.historyTrackingDelegate = historyTrackingDelegate
         whenever(historyTrackingDelegate.shouldStoreUri(eq("https://www.mozilla.com"))).thenReturn(true)
 
         contentDelegate.value.onTitleChange(geckoSession, "Hello World!")
+        testScheduler.advanceUntilIdle()
+
         verify(historyTrackingDelegate, never()).onTitleChanged(anyString(), anyString())
 
         // This sets the currentUrl.
         navigationDelegate.value.onLocationChange(geckoSession, "https://www.mozilla.com", emptyList(), false)
 
         contentDelegate.value.onTitleChange(geckoSession, "Hello World!")
+        testScheduler.advanceUntilIdle()
+
         verify(historyTrackingDelegate).onTitleChanged(eq("https://www.mozilla.com"), eq("Hello World!"))
         verify(historyTrackingDelegate).shouldStoreUri(eq("https://www.mozilla.com"))
     }
 
     @Test
-    fun `does not notify configured history delegate of title changes for private sessions`() = runTestOnMain {
+    fun `does not notify configured history delegate of title changes for private sessions`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1074,7 +1084,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `GIVEN an app initiated request WHEN the user swipe back or launches the browser THEN the tab should display the correct page`() = runTestOnMain {
+    fun `GIVEN an app initiated request WHEN the user swipe back or launches the browser THEN the tab should display the correct page`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1142,7 +1152,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `GIVEN an app initiated request AND initial load WHEN user swipe back THEN the tab should display the loaded page`() = runTestOnMain {
+    fun `GIVEN an app initiated request AND initial load WHEN user swipe back THEN the tab should display the loaded page`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1169,7 +1179,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `notifies configured history delegate of preview image URL changes`() = runTestOnMain {
+    fun `notifies configured history delegate of preview image URL changes`() = runTest {
         val engineSession = GeckoEngineSession(
             runtime,
             geckoSessionProvider = geckoSessionProvider,
@@ -1185,23 +1195,28 @@ class GeckoEngineSessionTest {
 
         // Nothing breaks if history delegate isn't configured.
         contentDelegate.value.onPreviewImage(geckoSession, previewImageUrl)
+        testScheduler.advanceUntilIdle()
 
         engineSession.settings.historyTrackingDelegate = historyTrackingDelegate
         whenever(historyTrackingDelegate.shouldStoreUri(eq("https://www.mozilla.com"))).thenReturn(true)
 
         contentDelegate.value.onPreviewImage(geckoSession, previewImageUrl)
+        testScheduler.advanceUntilIdle()
+
         verify(historyTrackingDelegate, never()).onPreviewImageChange(anyString(), anyString())
 
         // This sets the currentUrl.
         navigationDelegate.value.onLocationChange(geckoSession, "https://www.mozilla.com", emptyList(), false)
 
         contentDelegate.value.onPreviewImage(geckoSession, previewImageUrl)
+        testScheduler.advanceUntilIdle()
+
         verify(historyTrackingDelegate).onPreviewImageChange(eq("https://www.mozilla.com"), eq(previewImageUrl))
         verify(historyTrackingDelegate).shouldStoreUri(eq("https://www.mozilla.com"))
     }
 
     @Test
-    fun `does not notify configured history delegate of preview image URL changes for private sessions`() = runTestOnMain {
+    fun `does not notify configured history delegate of preview image URL changes for private sessions`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1214,6 +1229,7 @@ class GeckoEngineSessionTest {
 
         // Nothing breaks if history delegate isn't configured.
         contentDelegate.value.onPreviewImage(geckoSession, "https://test.com/og-image-url")
+        testScheduler.advanceUntilIdle()
 
         engineSession.settings.historyTrackingDelegate = historyTrackingDelegate
 
@@ -1221,6 +1237,8 @@ class GeckoEngineSessionTest {
         engineSession.register(observer)
 
         contentDelegate.value.onPreviewImage(geckoSession, "https://test.com/og-image-url")
+        testScheduler.advanceUntilIdle()
+
         verify(historyTrackingDelegate, never()).onPreviewImageChange(anyString(), anyString())
         verify(observer).onPreviewImageChange("https://test.com/og-image-url")
 
@@ -1228,12 +1246,14 @@ class GeckoEngineSessionTest {
         progressDelegate.value.onPageStart(geckoSession, "https://www.mozilla.com")
 
         contentDelegate.value.onPreviewImage(geckoSession, "https://test.com/og-image.jpg")
+        testScheduler.advanceUntilIdle()
+
         verify(historyTrackingDelegate, never()).onPreviewImageChange(anyString(), anyString())
         verify(observer).onPreviewImageChange("https://test.com/og-image.jpg")
     }
 
     @Test
-    fun `does not notify configured history delegate for top-level visits to error pages`() = runTestOnMain {
+    fun `does not notify configured history delegate for top-level visits to error pages`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1258,7 +1278,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `notifies configured history delegate of visits`() = runTestOnMain {
+    fun `notifies configured history delegate of visits`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1277,7 +1297,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `notifies configured history delegate of reloads`() = runTestOnMain {
+    fun `notifies configured history delegate of reloads`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1296,7 +1316,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `checks with the delegate before trying to record a visit`() = runTestOnMain {
+    fun `checks with the delegate before trying to record a visit`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1324,7 +1344,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `correctly processes redirect visit flags`() = runTestOnMain {
+    fun `correctly processes redirect visit flags`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1386,7 +1406,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `does not notify configured history delegate of visits for private sessions`() = runTestOnMain {
+    fun `does not notify configured history delegate of visits for private sessions`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1405,7 +1425,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `requests visited URLs from configured history delegate`() = runTestOnMain {
+    fun `requests visited URLs from configured history delegate`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1427,7 +1447,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `does not request visited URLs from configured history delegate in private sessions`() = runTestOnMain {
+    fun `does not request visited URLs from configured history delegate in private sessions`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,
@@ -1446,7 +1466,7 @@ class GeckoEngineSessionTest {
     }
 
     @Test
-    fun `notifies configured history delegate of state changes`() = runTestOnMain {
+    fun `notifies configured history delegate of state changes`() = runTest {
         val engineSession = GeckoEngineSession(
             mock(),
             geckoSessionProvider = geckoSessionProvider,

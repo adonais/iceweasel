@@ -47,7 +47,7 @@ FfiConverterString.checkType(target);
 FfiConverterTypeTracingLevel.checkType(level);
 FfiConverterTypeEventSink.checkType(sink);
 const result = UniFFIScaffolding.callSync(
-    89, // uniffi_tracing_support_fn_func_register_event_sink
+    134, // uniffi_tracing_support_fn_func_register_event_sink
     FfiConverterString.lower(target),
     FfiConverterTypeTracingLevel.lower(level),
     FfiConverterTypeEventSink.lower(sink),
@@ -71,7 +71,7 @@ export function registerMinLevelEventSink(
 FfiConverterTypeTracingLevel.checkType(level);
 FfiConverterTypeEventSink.checkType(sink);
 const result = UniFFIScaffolding.callSync(
-    90, // uniffi_tracing_support_fn_func_register_min_level_event_sink
+    135, // uniffi_tracing_support_fn_func_register_min_level_event_sink
     FfiConverterTypeTracingLevel.lower(level),
     FfiConverterTypeEventSink.lower(sink),
 )
@@ -91,7 +91,7 @@ export function unregisterEventSink(
    
 FfiConverterString.checkType(target);
 const result = UniFFIScaffolding.callSync(
-    91, // uniffi_tracing_support_fn_func_unregister_event_sink
+    136, // uniffi_tracing_support_fn_func_unregister_event_sink
     FfiConverterString.lower(target),
 )
 return handleRustResult(
@@ -107,7 +107,7 @@ return handleRustResult(
 export function unregisterMinLevelEventSink() {
    
 const result = UniFFIScaffolding.callSync(
-    92, // uniffi_tracing_support_fn_func_unregister_min_level_event_sink
+    137, // uniffi_tracing_support_fn_func_unregister_min_level_event_sink
 )
 return handleRustResult(
     result,
@@ -444,7 +444,7 @@ export class FfiConverterTypeEventSink extends FfiConverter {
 }
 const uniffiCallbackHandlerTracingEventSink = new UniFFICallbackHandler(
     "EventSink",
-    2,
+    5,
     [
         new UniFFICallbackMethodHandler(
             "onEvent",

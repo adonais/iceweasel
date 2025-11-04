@@ -44,6 +44,23 @@ const EnrollmentSource = Object.freeze({
   FORCE_ENROLLMENT: "force-enrollment",
 });
 
+const RemoteSettingsSyncErrorReason = Object.freeze({
+  BACKWARDS_SYNC: "backwards-sync",
+  EMPTY: "empty",
+  GET_EXCEPTION: "get-exception",
+  INVALID_DATA: "invalid-data",
+  INVALID_LAST_MODIFIED: "invalid-last-modified",
+  LAST_MODIFIED_EXCEPTION: "last-modified-exception",
+  NULL_LAST_MODIFIED: "null-last-modified",
+});
+
+/**
+ * @typedef {T[keyof T]} EnumValuesOf
+ * @template {type} T
+ */
+
+/** @typedef {EnumValuesOf<typeof RemoteSettingsSyncErrorReason>} RemoteSettingsSyncErrorReason */
+
 const UnenrollmentFailureReason = Object.freeze({
   ALREADY_UNENROLLED: "already-unenrolled",
   DOES_NOT_EXIST: "does-not-exist",
@@ -88,6 +105,7 @@ export const NimbusTelemetry = {
   EnrollmentSource,
   EnrollmentStatus,
   EnrollmentStatusReason,
+  RemoteSettingsSyncErrorReason,
   UnenrollReason,
   UnenrollmentFailureReason,
   ValidationFailureReason,
@@ -176,31 +194,31 @@ export const NimbusTelemetry = {
     );
   },
 
-  recordRemoteSettingsSync(forceSync, experiments, secureExperiments, trigger) {
-    // Do not record when all collections succeed and experiments isn't empty.
-    if (
-      secureExperiments !== null &&
-      experiments !== null &&
-      experiments.length !== 0
-    ) {
-      return;
-    }
-
+  /**
+   * Record an error that occurred during
+   *
+   * @param {string} collection The name of the collection.
+   * @param {RemoteSettingsSyncErrorReason} reason The reason why the sync failed.
+   * @param {object} options
+   * @param {boolean} options.forceSync Whether or not the sync was forced.
+   * @param {string | undefined} options.trigger What event triggered the sync.
+   */
+  recordRemoteSettingsSyncError(
+    collection,
+    reason,
+    { forceSync = false, trigger } = {}
+  ) {
     const event = {
       force_sync: forceSync,
-      experiments_success: experiments !== null,
-      secure_experiments_success: secureExperiments !== null,
+      collection,
+      reason,
     };
-    if (experiments !== null) {
-      event.experiments_empty = experiments.length === 0;
-    }
-    if (secureExperiments !== null) {
-      event.secure_experiments_empty = secureExperiments.length === 0;
-    }
-    if (trigger != null) {
+
+    if (typeof trigger === "string") {
       event.trigger = trigger;
     }
-    Glean.nimbusEvents.remoteSettingsSync.record(event);
+
+    Glean.nimbusEvents.remoteSettingsSyncError.record(event);
   },
 
   recordUnenrollment(enrollment, cause) {

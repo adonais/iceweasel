@@ -313,6 +313,9 @@ newtab-custom-pocket-subtitle = { -brand-product-name } ファミリーを構成
 newtab-custom-stories-toggle =
     .label = おすすめのストーリー
     .description = { -brand-product-name } ファミリーに選ばれた優良コンテンツです
+newtab-custom-stories-personalized-toggle =
+    .label = ストーリー
+newtab-custom-stories-personalized-checkbox-label = ユーザーのアクティビティに基づいて選ばれたストーリー
 newtab-custom-pocket-sponsored = 広告記事
 newtab-custom-pocket-show-recent-saves = 最近保存したものを表示
 newtab-custom-recent-title = 最近のアクティビティ
@@ -348,6 +351,7 @@ newtab-wallpaper-custom-color = カラーを選択
 # Variables
 #   $file_size (number) - The number of the maximum image file size (in MB) that may be uploaded
 newtab-wallpaper-error-max-file-size = 画像がファイルサイズの上限を超えています。{ $file_size } MB より小さなファイルをアップロードしてください。
+newtab-wallpaper-error-upload-file-type = ファイルをアップロードできませんでした。画像ファイルで再度試してください。
 newtab-wallpaper-error-file-type = ファイルをアップロードできませんでした。別のファイル形式で再度試してください。
 newtab-wallpaper-light-red-panda = レッサーパンダ
 newtab-wallpaper-light-mountain = 白い雪山
@@ -623,19 +627,22 @@ newtab-widget-lists-label-beta =
 newtab-widget-lists-completed-list = 完了 ({ $number })
 newtab-widget-task-list-menu-copy = コピー
 newtab-widget-lists-menu-edit = リスト名を編集
-newtab-widget-lists-menu-create = 新規を作成
+newtab-widget-lists-menu-create = 新規リストを作成
 newtab-widget-lists-menu-delete = このリストを削除
 newtab-widget-lists-menu-copy = リストをクリップボードにコピー
 newtab-widget-lists-menu-hide = すべてのリストを隠す
 newtab-widget-lists-menu-learn-more = 詳細情報
 newtab-widget-lists-input-add-an-item =
-    .placeholder = アイテムを追加してください
+    .placeholder = アイテムを追加します
 newtab-widget-lists-input-error = 追加するアイテムにテキストを含めてください
 newtab-widget-lists-input-menu-open-link = リンクを開く
 newtab-widget-lists-input-menu-move-up = 上へ移動
 newtab-widget-lists-input-menu-move-down = 下へ移動
 newtab-widget-lists-input-menu-delete = 削除
 newtab-widget-lists-input-menu-edit = 編集
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + 新規リストを作成
 newtab-widget-lists-name-label-default =
     .label = ToDo リスト
 newtab-widget-lists-name-placeholder-default =
@@ -671,6 +678,9 @@ newtab-widget-timer-menu-hide = タイマーを隠す
 newtab-widget-timer-menu-learn-more = 詳細情報
 # Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
 newtab-widget-keep-scrolling = 続きはスクロールしてください
+newtab-widget-message-title = リストへの集中と組み込みタイマー
+# to-dos stands for "things to do".
+newtab-widget-message-copy = クイック通知から毎日の ToDo リストまで、時間内によく集中して休憩を取れるように、あなたの作業を支援します。
 newtab-promo-card-title = { -brand-product-name } を支援
 newtab-promo-card-body = 私たちのスポンサーはより良いウェブを作り上げるという私たちの使命を支援します
 newtab-promo-card-cta = 詳細情報

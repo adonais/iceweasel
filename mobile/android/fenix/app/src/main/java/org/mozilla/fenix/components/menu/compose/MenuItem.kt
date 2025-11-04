@@ -11,7 +11,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
@@ -20,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -40,13 +40,10 @@ import androidx.compose.ui.semantics.collectionItemInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.Divider
-import mozilla.components.compose.base.modifier.optionalClickable
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.WEB_EXTENSION_ITEM
 import org.mozilla.fenix.compose.list.IconListItem
@@ -71,6 +68,7 @@ private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(4.dp)
  * @param modifier [Modifier] to be applied to the layout.
  * @param labelModifier [Modifier] to be applied to the label.
  * @param beforeIconDescription Content description of the icon.
+ * @param isBeforeIconHighlighted Whether or not the menu item should be highlighted with a notification icon.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
  * @param stateDescription Extra content description about state to be added after the label
@@ -94,6 +92,7 @@ internal fun MenuItem(
     modifier: Modifier = Modifier,
     labelModifier: Modifier = Modifier,
     beforeIconDescription: String? = null,
+    isBeforeIconHighlighted: Boolean = false,
     description: String? = null,
     maxDescriptionLines: Int = 2,
     stateDescription: String = "",
@@ -105,7 +104,7 @@ internal fun MenuItem(
     afterIconDescription: String? = null,
     collectionItemInfo: CollectionItemInfo? = null,
     onAfterIconClick: (() -> Unit)? = null,
-    afterContent: (@Composable RowScope.() -> Unit)? = null,
+    afterContent: (@Composable () -> Unit)? = null,
 ) {
     val labelTextColor = getLabelTextColor(state = state)
     val descriptionTextColor = getDescriptionTextColor(state = descriptionState)
@@ -125,10 +124,6 @@ internal fun MenuItem(
     IconListItem(
         label = label,
         modifier = modifier
-            .optionalClickable(
-                enabled = enabled,
-                onClick = onClick,
-            )
             .clearAndSetSemantics {
                 if (onClick != null || state == MenuItemState.DISABLED) {
                     role = Role.Button
@@ -162,6 +157,7 @@ internal fun MenuItem(
         beforeIconPainter = beforeIconPainter,
         beforeIconDescription = beforeIconDescription,
         beforeIconTint = iconTint,
+        isBeforeIconHighlighted = isBeforeIconHighlighted,
         showDivider = showDivider,
         afterIconPainter = afterIconPainter,
         afterIconDescription = afterIconDescription,
@@ -212,6 +208,7 @@ internal fun MenuTextItem(
  *
  * @param label The label in the list item.
  * @param iconPainter [Painter] used to display an [Icon] before the list item.
+ * @param iconTint Tint color to be applied on the [Icon].
  * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
  * be clickable.
  * @param badgeText WebExtension badge text.
@@ -223,6 +220,7 @@ internal fun MenuTextItem(
 internal fun WebExtensionMenuItem(
     label: String,
     iconPainter: Painter,
+    iconTint: Color? = null,
     enabled: Boolean?,
     badgeText: String?,
     index: Int = 0,
@@ -233,12 +231,9 @@ internal fun WebExtensionMenuItem(
         label = label,
         iconPainter = iconPainter,
         enabled = enabled == true,
+        iconTint = iconTint,
         onClick = onClick,
         modifier = Modifier
-            .optionalClickable(
-                enabled = enabled == true,
-                onClick = onClick,
-            )
             .testTag(WEB_EXTENSION_ITEM)
             .clearAndSetSemantics {
                 onClick?.let { role = Role.Button }
@@ -270,7 +265,7 @@ internal fun WebExtensionMenuItem(
                     )
                 }
 
-                Divider(
+                HorizontalDivider(
                     modifier = Modifier
                         .padding(vertical = 6.dp)
                         .fillMaxHeight()
@@ -309,7 +304,7 @@ internal fun MenuBadgeItem(
         badgeBackgroundColor = FirefoxTheme.colors.badgeActive
         state = MenuItemState.ACTIVE
     } else {
-        badgeBackgroundColor = FirefoxTheme.colors.layerSearch
+        badgeBackgroundColor = FirefoxTheme.colors.layer2
         state = MenuItemState.DISABLED
     }
 
@@ -480,7 +475,7 @@ private fun MenuItemPreview() {
                         onClick = {},
                     )
 
-                    Divider(color = FirefoxTheme.colors.borderSecondary)
+                    HorizontalDivider(color = FirefoxTheme.colors.borderSecondary)
                 }
 
                 for (state in MenuItemState.entries) {
@@ -492,7 +487,7 @@ private fun MenuItemPreview() {
                         afterIconPainter = painterResource(id = iconsR.drawable.mozac_ic_chevron_right_24),
                     )
 
-                    Divider(color = FirefoxTheme.colors.borderSecondary)
+                    HorizontalDivider(color = FirefoxTheme.colors.borderSecondary)
                 }
 
                 for (state in MenuItemState.entries) {
@@ -506,7 +501,7 @@ private fun MenuItemPreview() {
                         onAfterIconClick = {},
                     )
 
-                    Divider(color = FirefoxTheme.colors.borderSecondary)
+                    HorizontalDivider(color = FirefoxTheme.colors.borderSecondary)
                 }
             }
         }

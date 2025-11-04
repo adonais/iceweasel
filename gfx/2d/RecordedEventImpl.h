@@ -21,6 +21,7 @@
 #include "mozilla/IntegerRange.h"
 #include "mozilla/layers/BuildConstants.h"
 #include "mozilla/layers/LayersSurfaces.h"
+#include "mozilla/ipc/SerializeToBytesUtil.h"
 
 namespace mozilla {
 namespace gfx {
@@ -3318,28 +3319,46 @@ struct ElementStreamFormat<S, layers::SurfaceDescriptor> {
       MOZ_CRASH("Invalid surface descriptor for write");
     }
     MOZ_RELEASE_ASSERT(valid && *valid == t);
-    if (kIsDebug) {
-      // We better be able to memcpy and destroy this if we're going to send it
-      // over IPC!
-      constexpr int A_COUPLE_TIMES = 3;
-      for (const auto i : IntegerRange(A_COUPLE_TIMES)) {
-        (void)i;
-        auto copy = T{};
-        memcpy(&copy, &t, sizeof(T));
-      }
+
+    nsTArray<char> buffer;
+    mozilla::ipc::SerializeToBytesUtil(*valid, buffer);
+
+    uint32_t size = buffer.Length();
+    s.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    if (size > 0) {
+      s.write(buffer.Elements(), size);
     }
-    const auto& tValid = *valid;
-    s.write(reinterpret_cast<const char*>(&tValid), sizeof(T));
   }
+
   static void Read(S& s, T& t) {
-    char buf[sizeof(T)];
-    s.read(buf, sizeof(T));
-    const auto& sd = *reinterpret_cast<const layers::SurfaceDescriptor*>(buf);
-    if (dom::ValidSurfaceDescriptorForRemoteCanvas2d(sd)) {
-      t = sd;
-      MOZ_RELEASE_ASSERT(sd == t);
-    } else {
+    uint32_t size = 0;
+    s.read(reinterpret_cast<char*>(&size), sizeof(size));
+
+    if (!s.good() || size == 0 || size > 1024 * 16) {
       s.SetIsBad();
+      return;
+    }
+
+    // TODO: We should revise/extend the API to avoid copying here.
+    nsTArray<char> buffer;
+    buffer.SetLength(size);
+    s.read(buffer.Elements(), size);
+
+    if (!s.good()) {
+      return;
+    }
+
+    auto result = mozilla::ipc::DeserializeFromBytesUtil<T>(buffer);
+    if (!result) {
+      s.SetIsBad();
+      return;
+    }
+
+    t = std::move(*result);
+
+    if (!dom::ValidSurfaceDescriptorForRemoteCanvas2d(t)) {
+      s.SetIsBad();
+      return;
     }
   }
 };

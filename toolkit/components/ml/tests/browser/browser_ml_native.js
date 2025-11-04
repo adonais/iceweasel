@@ -130,9 +130,30 @@ async function llama_works() {
       },
     ];
 
+    const samplers = [
+      {
+        type: "top-k",
+        topK: 3,
+      },
+      {
+        type: "top-p",
+        topP: 0.95,
+      },
+
+      {
+        type: "logit-bias",
+        logitBias: [{ token: 5, bias: -1000 }],
+      },
+
+      {
+        type: "dist",
+      },
+    ];
+
     info("Calling runWithGenerator for normal run");
     for await (const val of engine.runWithGenerator({
       prompt,
+      samplers,
     })) {
       info(val.text);
     }
@@ -146,6 +167,79 @@ async function llama_works() {
     await cleanup();
   }
 }
+
+async function llama_fails_with_wrong_samplers() {
+  await EngineProcess.destroyMLEngine();
+  await IndexedDBCache.init({ reset: true });
+
+  const { cleanup } = await setup();
+  try {
+    info("Create the engine for a normal run");
+    const engine = await createEngine({
+      taskName: "text-classification",
+      modelId: "Mozilla/test-llama",
+      modelFile: "TinyStories-656K.Q8_0.gguf",
+      kvCacheDtype: "q8_0",
+      modelRevision: "main",
+      backend: "llama.cpp",
+      logLevel: "Debug",
+    });
+
+    const prompt = [
+      { role: "system", content: "blah" },
+      {
+        role: "user",
+        content: "This is a test that works",
+      },
+    ];
+
+    const samplers = [
+      {
+        type: "top-k",
+        topK: 3,
+      },
+      {
+        type: "top-p",
+        topP: 0.95,
+      },
+
+      {
+        type: "logit-bias",
+        logitBias: [{ token: 5, bias: -1000 }],
+      },
+
+      {
+        type: "dist-invalid",
+      },
+    ];
+
+    info("Calling runWithGenerator for normal run with expected failure");
+    const runEngine = async () => {
+      await engine.run({ prompt, samplers });
+    };
+
+    await Assert.rejects(
+      runEngine(),
+      err =>
+        String(err?.message ?? err).includes(
+          "LlamaRunner.createGenerationStream: 'dist-invalid'"
+        ),
+      "The call should be rejected because it used an invalid sampler"
+    );
+  } finally {
+    info("Destroy the engine");
+    await EngineProcess.destroyMLEngine();
+    await IndexedDBCache.init({ reset: true });
+    await cleanup();
+  }
+}
+
+/**
+ * Runs a full end-to-end test on the llama.cpp backend with samplers and expected failure.
+ */
+add_task(async function test_ml_smoke_test_llama_fails() {
+  await llama_fails_with_wrong_samplers();
+});
 
 /**
  * Runs a full end-to-end test on the llama.cpp backend with a model that loads in llama but crashes during inference.

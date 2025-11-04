@@ -113,7 +113,7 @@ nsresult nsStyledElement::SetInlineStyleDeclaration(
 // ---------------------------------------------------------------
 // Others and helpers
 
-nsICSSDeclaration* nsStyledElement::Style() {
+nsDOMCSSDeclaration* nsStyledElement::Style() {
   Element::nsDOMSlots* slots = DOMSlots();
 
   if (!slots->mStyle) {
@@ -131,7 +131,8 @@ StylePropertyMap* nsStyledElement::AttributeStyleMap() {
   nsDOMSlots* slots = DOMSlots();
 
   if (!slots->mAttributeStyleMap) {
-    slots->mAttributeStyleMap = MakeRefPtr<StylePropertyMap>(this);
+    slots->mAttributeStyleMap =
+        MakeRefPtr<StylePropertyMap>(this, /* aComputed */ false);
   }
 
   return slots->mAttributeStyleMap;
@@ -161,7 +162,7 @@ nsresult nsStyledElement::ReparseStyleAttribute(bool aForceInDataDoc) {
   return NS_OK;
 }
 
-nsICSSDeclaration* nsStyledElement::GetExistingStyle() {
+nsDOMCSSDeclaration* nsStyledElement::GetExistingStyle() {
   Element::nsDOMSlots* slots = GetExistingDOMSlots();
   if (!slots) {
     return nullptr;

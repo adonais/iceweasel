@@ -15,7 +15,6 @@ kind-dependencies:
     - release-partner-repack-repackage-signing
 
 only-for-build-platforms:
-    - linux-shippable/opt
     - linux64-shippable/opt
     - macosx64-shippable/opt
     - win32-shippable/opt

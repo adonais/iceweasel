@@ -1313,7 +1313,7 @@ nsresult xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp,
       const nsAString& timezoneOverride =
           window->GetBrowsingContext()->Top()->GetTimezoneOverride();
       if (!timezoneOverride.IsEmpty()) {
-        realmOptions.behaviors().setTimeZoneCopyZ(
+        realmOptions.behaviors().setTimeZoneOverride(
             NS_ConvertUTF16toUTF8(timezoneOverride).get());
       }
     }

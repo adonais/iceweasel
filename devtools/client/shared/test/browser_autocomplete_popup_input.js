@@ -237,7 +237,7 @@ function checkPopupSelectedItem(popup, input, expectedSelectedItem, info) {
 function checkActiveDescendant(popup, input) {
   const activeElement = input.ownerDocument.activeElement;
   const descendantId = activeElement.getAttribute("aria-activedescendant");
-  const popupItem = popup._tooltip.panel.querySelector(`#${descendantId}`);
+  const popupItem = popup.tooltip.panel.querySelector(`#${descendantId}`);
   const cloneItem = input.ownerDocument.querySelector(`#${descendantId}`);
 
   ok(popupItem, "Active descendant is found in the popup list");

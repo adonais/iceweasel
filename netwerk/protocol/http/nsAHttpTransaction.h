@@ -234,6 +234,9 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
   virtual bool IsForWebTransport() { return false; }
   virtual bool IsResettingForTunnelConn() { return false; }
   virtual void SetResettingForTunnelConn(bool aValue) {}
+
+  virtual void InvokeCallback() {}
+  virtual bool IsForFallback() { return false; }
 };
 
 #define NS_DECL_NSAHTTPTRANSACTION                                             \

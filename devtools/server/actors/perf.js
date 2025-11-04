@@ -146,17 +146,6 @@ exports.PerfActor = class PerfActor extends Actor {
     return [Array.from(addr), Array.from(index), Array.from(buffer)];
   }
 
-  /* @backward-compat { version 140 }
-   * Version 140 introduced getProfileAndStopProfilerBulk below, a more
-   * efficient version of getProfileAndStopProfiler. getProfileAndStopProfiler
-   * needs to stay in the spec to support older versions of Firefox, so it's
-   * also present here. */
-  async getProfileAndStopProfiler() {
-    throw new Error(
-      "Unexpected getProfileAndStopProfiler function called in Firefox v140+. Most likely you're using an older version of Firefox to debug this application. Please use at least Firefox v140."
-    );
-  }
-
   async startCaptureAndStopProfiler() {
     if (!IS_SUPPORTED_PLATFORM) {
       throw new Error("Profiling is not supported on this platform.");

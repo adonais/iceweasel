@@ -477,8 +477,16 @@ newtab-weather-menu-change-temperature-units-fahrenheit = Eva Fahrenheit ndive
 newtab-weather-menu-change-temperature-units-celsius = Eva Celsius ndive
 newtab-weather-menu-hide-weather = Eñomi arareko Tendayke Pyahúpe
 newtab-weather-menu-learn-more = Eikuaave
+newtab-weather-menu-detect-my-location = Ehecha che rendaite
 # This message is shown if user is working offline
 newtab-weather-error-not-available = Marandu ára rehegua ndaipóri ko’ag̃aite.
+newtab-weather-opt-in-see-weather = ¿Ehechasépa ne rendaitepegua arareko?
+newtab-weather-opt-in-not-now =
+    .label = Ani ko’ág̃a
+newtab-weather-opt-in-yes =
+    .label = Héẽ
+# We'll be showing static (fake) weather data if the user has not opted in to using their location
+newtab-weather-static-city = Táva Nueva York
 
 ## Topic Labels
 
@@ -565,6 +573,7 @@ newtab-custom-wallpaper-cta = Eha’ãjey
 ## Strings for new user activation custom wallpaper highlight
 
 newtab-new-user-custom-wallpaper-title = Eiporavo mba’erechaha rugua ejapo hag̃ua { -brand-product-name } nemba’erã.
+newtab-new-user-custom-wallpaper-subtitle = Pe tendayke pyahu toñeñandu porã mba’erechaha rugua ha sa’y eipotáva ndive.
 newtab-new-user-custom-wallpaper-cta = Eiporu ko’ág̃a
 
 ## Strings for download mobile highlight
@@ -644,6 +653,9 @@ newtab-widget-lists-input-menu-move-up = Jehupi
 newtab-widget-lists-input-menu-move-down = Emongu’e yvy gotyo
 newtab-widget-lists-input-menu-delete = Mboguete
 newtab-widget-lists-input-menu-edit = Mbosako’i
+# the + symbol emphasises the functionality of adding a new list
+newtab-widget-lists-dropdown-create =
+    .label = + Emoheñói tysýi pyahu
 newtab-widget-lists-name-label-default =
     .label = Tembiaporã rysýi
 newtab-widget-lists-name-placeholder-default =
@@ -680,6 +692,8 @@ newtab-widget-timer-menu-learn-more = Kuaave
 # Message that appears when widgets are full-height. This reminds users that there is more New Tab content to see if they scroll
 newtab-widget-keep-scrolling = Emongu’e ehechave hag̃ua
 newtab-widget-message-title = Epyta umi tysýi ndive ha aravopapaha reheve
+# to-dos stands for "things to do".
+newtab-widget-message-copy = Mandu’arã guive tembiaporã peve, ñamindu’u ha jepytu’u jehetetirarã, ema’ẽ ne rembiapo ha aravo rehe.
 newtab-promo-card-title = Eipytyvõ { -brand-product-name }
 newtab-promo-card-body = Ore ykekohára oipytyvõ romombareteve hag̃ua ñanduti rogue
 newtab-promo-card-cta = Eikuaave

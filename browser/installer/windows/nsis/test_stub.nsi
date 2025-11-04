@@ -33,7 +33,7 @@ Var TestBreakpointNumber
 !include "TextFunc.nsh"
 !include "WinVer.nsh"
 !include "WordFunc.nsh"
-
+!include "control_utils.nsh"
 
 Function ExitProcess
 FunctionEnd
@@ -75,17 +75,26 @@ FunctionEnd
   StrCmp `${_v}` 'true' `${_t}` `${_f}`
 !macroend
 
+; Fail a unit test. Prints the message and location of the failure.
+!macro Fail _message
+    StrCpy $FailureMessage "At Line ${__LINE__}: ${_message}"
+    SetErrors
+    Return
+!macroend
+!define Fail "!insertmacro Fail"
+
 ; A helpful macro for testing that a variable is equal to a value.
 ; Provide the variable name (bare, without $ prefix) and the expected value.
 ; For example, to test that $MyVariable is equal to "hello there", you would write:
 ; !insertmacro AssertEqual MyVariable "hello there"
 !macro AssertEqual _variableName _expectedValue
     ${If} "$${_variableName}" != "${_expectedValue}" ; quoted to prevent numeric coercion (01 != 1)
-        StrCpy $FailureMessage "At Line ${__LINE__}: Expected ${_variableName} of ${_expectedValue} , got $${_variableName}"
+        ${Fail} "Expected ${_variableName} to have value `${_expectedValue}` , actual value was `$${_variableName}`"
         SetErrors
         Return
     ${EndIf}
 !macroend
+!define AssertEqual "!insertmacro AssertEqual"
 
 Var TestFailureCount
 
@@ -96,6 +105,7 @@ Var TestFailureCount
     FileWrite $Stdout "FAILURE: $FailureMessage; "
     ClearErrors
 !macroend
+!define UnitTest "!insertmacro UnitTest"
 
 ; Redefine ElevateUAC as a no-op in this test exectuable
 !define /redef ElevateUAC ``
@@ -108,21 +118,34 @@ Function .onInit
     Call AttachConsole
     Pop $Stdout
     IntOp $TestFailureCount 0 + 0
-    !insertmacro UnitTest TestDontInstallOnOldWindows
+    ${UnitTest} TestDontInstallOnOldWindows
 
-    !insertmacro UnitTest TestDontInstallOnNewWindowsWithoutSSE
+    ${UnitTest} TestDontInstallOnNewWindowsWithoutSSE
 
-    !insertmacro UnitTest TestDontInstallOnOldWindowsWithoutSSE
+    ${UnitTest} TestDontInstallOnOldWindowsWithoutSSE
 
-    !insertmacro UnitTest TestGetArchToInstall
+    ${UnitTest} TestGetArchToInstall
 
-    !insertmacro UnitTest TestMaintServiceCfg
+    ${UnitTest} TestMaintServiceCfg
 
-    !insertmacro UnitTest TestCanWriteToDirSuccess
+    ${UnitTest} TestCanWriteToDirSuccess
 
-    !insertmacro UnitTest TestCanWriteToDirFail
+    ${UnitTest} TestCanWriteToDirFail
 
-    !insertmacro UnitTest TestUninstallRegKey
+    ${UnitTest} TestUninstallRegKey
+
+    ${UnitTest} TestSwapShellVarContext
+
+    ${UnitTest} TestGetInstallationTypeAbsent
+    ${UnitTest} TestGetInstallationTypeEmpty
+    ${UnitTest} TestGetInstallationTypeInvalid_ACP
+    ${UnitTest} TestGetInstallationTypeStub_ACP
+    ${UnitTest} TestGetInstallationTypeFull_ACP
+    ${UnitTest} TestGetInstallationTypeOther_ACP
+    ${UnitTest} TestGetInstallationTypeInvalid_UTF16
+    ${UnitTest} TestGetInstallationTypeStub_UTF16
+    ${UnitTest} TestGetInstallationTypeFull_UTF16
+    ${UnitTest} TestGetInstallationTypeOther_UTF16
 
     ${If} $TestFailureCount = 0
         ; On success, write the success metric and jump to the end
@@ -433,6 +456,121 @@ Function TestUninstallRegKey
     Pop $INSTDIR
     Pop $R0
 FunctionEnd
+
+Function TestSwapShellVarContext
+    Push $0
+    StrCpy $0 ""
+    SetShellVarContext current
+
+    ; Swap from current to all
+    ${SwapShellVarContext} all $0
+    ${AssertEqual} 0 "current"
+    ${IfNot} ${ShellVarContextAll}
+        ${Fail} "Expected shell var context to have value 'all', but it was 'current'"
+    ${EndIf}
+
+    ; Swap from all to all
+    ${SwapShellVarContext} all $0
+    ${AssertEqual} 0 "all"
+    ${IfNot} ${ShellVarContextAll}
+        ${Fail} "Expected shell var context to have value 'all', but it was 'current'"
+    ${EndIf}
+
+    ; Swap from all to current
+    ${SwapShellVarContext} current $0
+    ${AssertEqual} 0 "all"
+    ${If} ${ShellVarContextAll}
+        ${Fail} "Expected shell var context to have value 'current', but it was 'all'"
+    ${EndIf}
+
+    ; Swap from current to current
+    ${SwapShellVarContext} current $0
+    ${AssertEqual} 0 "current"
+    ${If} ${ShellVarContextAll}
+        ${Fail} "Expected shell var context to have value 'current', but it was 'all'"
+    ${EndIf}
+
+    ; Leave context and register in expected start state
+    SetShellVarContext current
+    Pop $0
+FunctionEnd
+
+Function TestGetInstallationTypeAbsent
+    GetTempFileName $1
+    Delete "$1"
+    Push $1
+    Call GetInstallationType
+    Pop $0
+    ${AssertEqual} 0 "unknown"
+FunctionEnd
+
+Function TestGetInstallationTypeEmpty
+    GetTempFileName $1
+    FileOpen $0 "$1" w
+    FileClose $0
+
+    Push $1
+    Call GetInstallationType
+    Pop $0
+    ${AssertEqual} 0 "unknown"
+    Delete $1
+FunctionEnd
+
+!macro GetInstallationTypeTests _WRITEFUNC _ENCODING
+Function TestGetInstallationTypeInvalid_${_ENCODING}
+    GetTempFileName $1
+    FileOpen $0 "$1" w
+    ${_WRITEFUNC} $0 "{$\"installer_type$\":[1, 2, 3]}"
+    FileClose $0
+
+    Push $1
+    Call GetInstallationType
+    Pop $0
+    Delete $1
+    ${AssertEqual} 0 "unknown"
+FunctionEnd
+
+Function TestGetInstallationTypeStub_${_ENCODING}
+    GetTempFileName $1
+    FileOpen $0 "$1" w
+    ${_WRITEFUNC} $0 "{$\"installer_type$\":$\"stub$\"}"
+    FileClose $0
+
+    Push $1
+    Call GetInstallationType
+    Pop $0
+    Delete $1
+    ${AssertEqual} 0 "stub"
+FunctionEnd
+
+Function TestGetInstallationTypeFull_${_ENCODING}
+    GetTempFileName $1
+    FileOpen $0 "$1" w
+    ${_WRITEFUNC} $0 "{$\"installer_type$\":$\"full$\"}"
+    FileClose $0
+
+    Push $1
+    Call GetInstallationType
+    Pop $0
+    Delete $1
+    ${AssertEqual} 0 "full"
+FunctionEnd
+
+Function TestGetInstallationTypeOther_${_ENCODING}
+    GetTempFileName $1
+    FileOpen $0 "$1" w
+    ${_WRITEFUNC} $0 "{$\"installer_type$\":$\"abc$\"}"
+    FileClose $0
+
+    Push $1
+    Call GetInstallationType
+    Pop $0
+    Delete $1
+    ${AssertEqual} 0 "abc"
+FunctionEnd
+!macroend
+!insertmacro GetInstallationTypeTests FileWrite ACP
+!insertmacro GetInstallationTypeTests FileWriteUTF16LE UTF16
 
 Section
 SectionEnd

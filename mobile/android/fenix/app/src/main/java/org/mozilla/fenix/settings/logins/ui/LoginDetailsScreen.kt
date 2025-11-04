@@ -85,33 +85,26 @@ internal fun LoginDetailsScreen(store: LoginsStore) {
             )
         },
     ) { paddingValues ->
-
-        if (state.biometricAuthenticationDialogState.shouldShow) {
-            BiometricAuthenticationDialog(store = store)
-        }
-
-        if (state.biometricAuthenticationState == BiometricAuthenticationState.Authorized) {
-            Column(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
-                LoginDetailsUrl(store = store, url = detailState.login.url)
-                Spacer(modifier = Modifier.height(8.dp))
-                LoginDetailsUsername(
-                    store = store,
-                    snackbarHostState = snackbarHostState,
-                    username = detailState.login.username,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LoginDetailsPassword(
-                    store = store,
-                    snackbarHostState = snackbarHostState,
-                    password = detailState.login.password,
-                )
-            }
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+            LoginDetailsUrl(store = store, url = detailState.login.url)
+            Spacer(modifier = Modifier.height(8.dp))
+            LoginDetailsUsername(
+                store = store,
+                snackbarHostState = snackbarHostState,
+                username = detailState.login.username,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LoginDetailsPassword(
+                store = store,
+                snackbarHostState = snackbarHostState,
+                password = detailState.login.password,
+            )
         }
     }
 }
@@ -385,7 +378,7 @@ private fun LoginDeletionDialog(
                 onClick = onDeleteTapped,
             ) {
                 Text(
-                    text = stringResource(R.string.bookmark_menu_delete_button).uppercase(),
+                    text = stringResource(R.string.bookmark_menu_delete_button),
                 )
             }
         },
@@ -394,7 +387,7 @@ private fun LoginDeletionDialog(
                 onClick = onCancelTapped,
             ) {
                 Text(
-                    text = stringResource(R.string.bookmark_delete_negative).uppercase(),
+                    text = stringResource(R.string.bookmark_delete_negative),
                 )
             }
         },

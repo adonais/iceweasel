@@ -6,10 +6,10 @@ task-defaults:
     worker-type: win11-64-24h2-hw-ref
     fetches:
         build:
-            - artifact: target.condprof.tests.tar.gz
-            - artifact: target.common.tests.tar.gz
-            - artifact: target.mochitest.tests.tar.gz
-            - artifact: target.perftests.tests.tar.gz
+            - artifact: target.condprof.tests.tar.zst
+            - artifact: target.common.tests.tar.zst
+            - artifact: target.mochitest.tests.tar.zst
+            - artifact: target.perftests.tests.tar.zst
             - artifact: target.zip
         toolchain:
             - win64-node
@@ -85,7 +85,7 @@ ml-llama-summarizer-perf:
     attributes:
         batch: false
         cron: false
-    run-on-projects: []
+    run-on-projects: [autoland, mozilla-central]
     run:
         command: >-
             mkdir -p $MOZ_FETCHES_DIR/../artifacts &&

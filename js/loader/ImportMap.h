@@ -11,7 +11,6 @@
 #include <map>
 
 #include "js/SourceText.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Logging.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"

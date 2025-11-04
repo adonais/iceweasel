@@ -29,6 +29,7 @@
 
 #include "jit/loong64/Simulator-loong64.h"
 
+#include <cinttypes>
 #include <float.h>
 #include <limits>
 
@@ -2149,7 +2150,7 @@ bool Simulator::overRecursedWithExtra(uint32_t extra) const {
 
 // Unsupported instructions use format to print an error and stop execution.
 void Simulator::format(SimInstruction* instr, const char* format) {
-  printf("Simulator found unsupported instruction:\n 0x%016lx: %s\n",
+  printf("Simulator found unsupported instruction:\n 0x%016" PRIxPTR ": %s\n",
          reinterpret_cast<intptr_t>(instr), format);
   MOZ_CRASH();
 }

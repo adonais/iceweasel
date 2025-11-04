@@ -129,6 +129,7 @@ class NavigateEvent final : public Event {
   JS::Heap<JS::Value> mInfo;
   bool mHasUAVisualTransition = false;
   RefPtr<Element> mSourceElement;
+  uint32_t mLastScrollGeneration;
 
   // https://html.spec.whatwg.org/multipage/nav-history-apis.html#the-navigateevent-interface:navigateevent-2
   enum InterceptionState mInterceptionState = InterceptionState::None;

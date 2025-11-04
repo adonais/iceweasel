@@ -1268,7 +1268,6 @@ newtabPrivatePing:
         pref: browser.newtabpage.activity-stream.telemetry.privatePing.maxSubmissionDelayMs
       description: >-
         The maximum range for the random delay from scheduling the newtab-content ping to actually sending it. The minimum is 1000 by default. This is in milliseconds.
-
 newtabPublisherFavicons:
   description: Enabled publihser favicons on cards in newtab
   owner: nbarrett@mozilla.com
@@ -1424,10 +1423,10 @@ newtabInferredPersonalization:
       type: int
       description: >-
         Time to refresh interest vector in hours
-    iv_unary_dp_in_request:
-      type: boolean
+    history_cull_days:
+      type: int
       description: >-
-        Whether to use Unary encoding with differential privacy in the interest vector. If false or not set, we default to laplace noise with real values
+        Number of days local inferred feature history to preserve
     normalized_time_zone_offset:
       type: boolean
       description: >-
@@ -2048,42 +2047,6 @@ pocketNewtab:
         pref: browser.newtabpage.activity-stream.discoverystream.thumbsUpDown.searchTopsitesCompact
       description: >-
         Change the layout of the sections to be more compact to account for the added card height with the thumbs up/down enabled.
-
-saveToPocket:
-  description: The save to Pocket feature
-  owner: sdowne@mozilla.com
-  hasExposure: false
-  variables:
-    enabled:
-      type: boolean
-      setPref:
-        branch: user
-        pref: extensions.pocket.enabled
-      description: Enabled save to Pocket feature.
-    emailButton:
-      type: boolean
-      setPref:
-        branch: user
-        pref: extensions.pocket.refresh.emailButton.enabled
-      description: Just for the new Pocket panels, enables the email signup button.
-    bffRecentSaves:
-      type: boolean
-      setPref:
-        branch: user
-        pref: extensions.pocket.bffRecentSaves
-      description: Use the new BFF Proxy Service instead of the legacy Pocket Service for Recent Saves
-    bffApi:
-      type: string
-      setPref:
-        branch: user
-        pref: extensions.pocket.bffApi
-      description: BFF Proxy Service domain
-    oAuthConsumerKeyBff:
-      type: string
-      setPref:
-        branch: user
-        pref: extensions.pocket.oAuthConsumerKeyBff
-      description: BFF Proxy Service OAuth Consumer Key
 
 sessionRestore:
   description: Session restore feature
@@ -3696,6 +3659,18 @@ thirdPartyTrackerCookieBlocking:
         branch: default
         pref: "network.cookie.cookieBehavior.trackerCookieBlocking"
 
+googleSafeBrowsingV5:
+  description: Control Google Safe Browsing V5 protocol
+  owner: tihuang@mozilla.com
+  hasExposure: false
+  variables:
+    enabled:
+      description: Whether to enable Google Safe Browsing V5 protocol.
+      type: boolean
+      setPref:
+        branch: default
+        pref: "browser.safebrowsing.provider.google5.enabled"
+
 fxaButtonVisibility:
   description: Prefs to control the visibility of the Firefox Accounts toolbar button when not signed in.
   owner: mconley@mozilla.com
@@ -4330,7 +4305,7 @@ scriptloader:
       type: boolean
       setPref:
         branch: user
-        pref: "dom.script_loader.navigation_cache"
+        pref: "dom.script_loader.experimental.navigation_cache"
 
 raceCacheWithNetwork:
   description: Prefs to toggle the race cache with network.
@@ -4626,23 +4601,47 @@ phc:
         branch: user
         pref: memory.phc.min_ram_mb
     phcAvgDelayFirst:
-      description: The delay before the first PHC allocation
+      description: The delay before the first PHC allocation in the parent process
       type: int
       setPref:
         branch: user
         pref: memory.phc.avg_delay.first
     phcAvgDelayNormal:
-      description: The delay between PHC allocations
+      description: The delay between PHC allocations in the parent process
       type: int
       setPref:
         branch: user
         pref: memory.phc.avg_delay.normal
     phcAvgDelayPageReuse:
-      description: The delay before reusing a PHC page
+      description: The delay before reusing a PHC page in the parent process
       type: int
       setPref:
         branch: user
         pref: memory.phc.avg_delay.page_reuse
+    phcAvgDelayContentFirst:
+      description: The delay before the first PHC allocation in the content process
+      type: int
+      setPref:
+        branch: user
+        pref: memory.phc.avg_delay.content.first
+    phcAvgDelayContentNormal:
+      description: The delay between PHC allocations in the content process
+      type: int
+      setPref:
+        branch: user
+        pref: memory.phc.avg_delay.content.normal
+    phcAvgDelayContentPageReuse:
+      description: The delay before reusing a PHC page in the content process
+      type: int
+      setPref:
+        branch: user
+        pref: memory.phc.avg_delay.content.page_reuse
+    phcMaxSize:
+      description: The maximum amount of memory used for the PHC
+      type: int
+      setPref:
+        branch: user
+        pref: memory.phc.size_kb
 
 mailto:
   description: Prefs to control aspects of the mailto handler
@@ -4797,14 +4796,6 @@ backupService:
       description: >-
         When true, the profile backup service will be initialized soon after
         startup.
-    prefsUIEnabled:
-      type: boolean
-      setPref:
-        branch: default
-        pref: browser.backup.preferences.ui.enabled
-      description: >-
-        When true, the section in about:preferences to control the backup
-        feature is visible.
     sqlitePagesPerStep:
       description: >-
         The number of database pages to backup per step when backing up an
@@ -4836,6 +4827,16 @@ backupService:
       setPref:
         branch: user
         pref: browser.backup.scheduled.minimum-time-between-backups-seconds
+    archiveKillswitch:
+      type: boolean
+      default: false
+      description: >-
+        Disables backup archiving, overrides all other configs when true.
+    restoreKillswitch:
+      type: boolean
+      default: false
+      description: >-
+        Disables backup restoration, overrides all other configs when true.
 
 pqcrypto:
   description: Prefs that control the use of post-quantum cryptography.
@@ -4867,7 +4868,7 @@ pqcrypto:
       type: boolean
       setPref:
         branch: default
-        pref: media.webrtc.enable_pq_dtls
+        pref: media.webrtc.enable_pq_hybrid_kex
       description: >-
         Whether to enable mlkem768x25519 for DTLS in WebRTC.
 
@@ -5174,6 +5175,30 @@ smartTabGroups:
         branch: user
         pref: browser.tabs.groups.smart.searchTopicEnabled
       description: For single tab groupings, use the search query as the topic rather than use ML
+
+externalLinkHandling:
+  description: Controls how externally-opened URLs will be handled by Firefox.
+  owner: sthompson@mozilla.com
+  hasExposure: true
+  exposureDescription: >-
+    Exposure is recorded when a user clicks on a link outside of Firefox and
+    that link is opened by Firefox.
+  variables:
+    openBehavior:
+      description: >-
+        Control how external links from another application should be opened in Firefox.
+        See the nsIBrowserDOMWindow `OPEN_*` constants for what the values can do.
+        The default value for the backing pref is `-1`. When that pref has the default
+        value, the code will fall back to the value of the general pref that handles
+        opening links, i.e. `browser.link.open_newwindow`, which defaults to `3`.
+      type: int
+      enum:
+        - -1 # use default browser behavior
+        - 2 # `OPEN_NEWWINDOW` open external links in a new window
+        - 3 # `OPEN_NEWTAB` open in a new tab in the topmost window at the end of the tab strip
+        - 6 # `OPEN_NEWTAB_FOREGROUND` open in a new tab in the topmost window at the end of the tab strip and select it
+        - 7 # `OPEN_NEWTAB_AFTER_CURRENT` open in a new tab in the topmost window next to the active tab
+      fallbackPref: browser.link.open_newwindow.override.external
 
 smartblockEmbeds:
   description: Pref to control Smartblock Embeds
@@ -5647,3 +5672,16 @@ image:
       setPref:
         branch: user
         pref: "image.mem.decode_bytes_at_a_time"
+
+walletCustomSchemes:
+  description: Defines which custom schemes are treated as digital identity requests
+  owner: bvandersloot@mozilla.com
+  hasExposure: false
+  variables:
+    enabledSchemes:
+      type: string
+      setPref:
+        branch: user
+        pref: privacy.wallet_schemes
+      description: >-
+        Comma separated lists of schemes

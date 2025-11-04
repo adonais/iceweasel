@@ -161,12 +161,12 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
 
   MOZ_CAN_RUN_SCRIPT
   static void LoadURIs(
-      nsTArray<LoadEntryResult>& aLoadResults,
+      const nsTArray<LoadEntryResult>& aLoadResults, bool aCheckForCancelation,
       const std::function<void(nsresult)>& aResolver = [](auto) {},
       mozilla::dom::BrowsingContext* aTraversable = nullptr);
 
   MOZ_CAN_RUN_SCRIPT
-  static void LoadURIOrBFCache(LoadEntryResult& aLoadEntry);
+  static void LoadURIOrBFCache(const LoadEntryResult& aLoadEntry);
 
   // If this doesn't return an error then either aLoadResult is set to nothing,
   // in which case the caller should ignore the load, or it returns a valid
@@ -217,6 +217,9 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
 
   void LogHistory();
 
+  mozilla::dom::SessionHistoryEntry* FindAdjacentContiguousEntryFor(
+      mozilla::dom::SessionHistoryEntry* aEntry, int32_t aSearchDirection);
+
  protected:
   virtual ~nsSHistory();
 
@@ -225,12 +228,11 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
  private:
   friend class nsSHistoryObserver;
 
-  bool LoadDifferingEntries(nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
-                            mozilla::dom::BrowsingContext* aParent,
-                            long aLoadType,
-                            nsTArray<LoadEntryResult>& aLoadResults,
-                            bool aLoadCurrentEntry, bool aUserActivation,
-                            int32_t aOffset);
+  bool ForEachDifferingEntry(
+      nsISHEntry* aPrevEntry, nsISHEntry* aNextEntry,
+      mozilla::dom::BrowsingContext* aParent,
+      const std::function<void(nsISHEntry*, mozilla::dom::BrowsingContext*)>&
+          aCallback);
   void InitiateLoad(nsISHEntry* aFrameEntry,
                     mozilla::dom::BrowsingContext* aFrameBC, long aLoadType,
                     nsTArray<LoadEntryResult>& aLoadResult,

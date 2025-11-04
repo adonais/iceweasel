@@ -13,6 +13,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.preference.PreferenceManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.CustomTabListAction
 import mozilla.components.browser.state.state.CustomTabSessionState
@@ -132,7 +133,7 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
                                 getString(downloadsR.string.mozac_feature_downloads_dialog_title_with_unknown_size)
                             }
 
-                            downloadDialog = AlertDialog.Builder(requireContext())
+                            downloadDialog = MaterialAlertDialogBuilder(requireContext())
                                 .setTitle(title)
                                 .setMessage(filename.value)
                                 .setPositiveButton(

@@ -7742,6 +7742,10 @@ AliasSet MSuperFunction::getAliasSet() const {
   return AliasSet::Load(AliasSet::ObjectFields);
 }
 
+AliasSet MSuperFunctionAndUnbox::getAliasSet() const {
+  return AliasSet::Load(AliasSet::ObjectFields);
+}
+
 AliasSet MInitHomeObject::getAliasSet() const {
   return AliasSet::Store(AliasSet::ObjectFields);
 }
@@ -8319,4 +8323,60 @@ bool MInt32ToStringWithBase::congruentTo(const MDefinition* ins) const {
     return false;
   }
   return congruentIfOperandsEqual(ins);
+}
+
+// Returns `false` if it can be proven that (1) both `mtyA` and `mtyB` are
+// struct types and (2) they are not related by inheritance.  Returns `true` in
+// all other cases.  `true` is the safe-but-possibly-suboptimal return value.
+static bool StructTypesMightBeRelatedByInheritance(wasm::MaybeRefType mtyA,
+                                                   wasm::MaybeRefType mtyB) {
+  if (!mtyA.isSome() || !mtyB.isSome()) {
+    // The "Track Wasm ref types" pass couldn't establish that both `mtyA` and
+    // `mtyB` are ref types.  Give up.
+    return true;
+  }
+
+  wasm::RefType tyA = mtyA.value();
+  wasm::RefType tyB = mtyB.value();
+  if (!tyA.isTypeRef() || !tyA.typeDef()->isStructType() || !tyB.isTypeRef() ||
+      !tyB.typeDef()->isStructType()) {
+    // They aren't both struct types.  Give up.
+    return true;
+  }
+
+  // They are both struct types.  So they are related by inheritance if one is
+  // a subtype of the other.  (Which is also the case if they are the same
+  // type.)
+  return wasm::RefType::valuesMightAlias(tyA, tyB);
+}
+
+MDefinition::AliasType MWasmLoadField::mightAlias(
+    const MDefinition* ins) const {
+  if (!(getAliasSet().flags() & ins->getAliasSet().flags())) {
+    return AliasType::NoAlias;
+  }
+  MOZ_ASSERT(!isEffectful() && ins->isEffectful());
+
+  // Pick off cases where we can easily prove non-aliasing.  The idea is that
+  // two struct field accesses can't alias if either they are at different
+  // offsets, or the struct types are unrelated (which implies that the struct
+  // base pointer for one of the accesses could not validly be handed to the
+  // other access).
+  if (ins->isWasmStoreField()) {
+    const MWasmStoreField* store = ins->toWasmStoreField();
+    if (offset() != store->offset() ||
+        !StructTypesMightBeRelatedByInheritance(base()->wasmRefType(),
+                                                store->base()->wasmRefType())) {
+      return AliasType::NoAlias;
+    }
+  } else if (ins->isWasmStoreFieldRef()) {
+    const MWasmStoreFieldRef* store = ins->toWasmStoreFieldRef();
+    if (offset() != store->offset() ||
+        !StructTypesMightBeRelatedByInheritance(base()->wasmRefType(),
+                                                store->base()->wasmRefType())) {
+      return AliasType::NoAlias;
+    }
+  }
+
+  return AliasType::MayAlias;
 }

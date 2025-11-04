@@ -90,14 +90,25 @@ struct CacheIndexRecord {
    *    0000 1000 0000 0000 0000 0000 0000 0000 : fresh
    *    0000 0100 0000 0000 0000 0000 0000 0000 : pinned
    *    0000 0010 0000 0000 0000 0000 0000 0000 : has cached alt data
-   *    0000 0001 0000 0000 0000 0000 0000 0000 : reserved
+   *    0000 0001 0000 0000 0000 0000 0000 0000 : is a dictionary
    *    0000 0000 1111 1111 1111 1111 1111 1111 : file size (in kB)
+   *    Max file size is 16GiB
    */
   uint32_t mFlags{0};
 
   CacheIndexRecord() = default;
 };
 #pragma pack(pop)
+
+// For Compression Dictionaries, we make special entries in the cache for
+// each origin with a dictionary.  In the data or metadata for each of
+// these entries, we store the hashes of the dictionary, the match value
+// (required), the match-dest value (optional), the id (optional) and the
+// type (optional).
+
+// We mark an entry if it's a dictionary (use-as-dictionary); if it is,
+// when the entry is removed, we remove it from the origin's dictionary
+// entry.  If the origin's dictionary list is empty, we remove the origin.
 
 static_assert(sizeof(CacheIndexRecord::mHash) +
                       sizeof(CacheIndexRecord::mFrecency) +
@@ -378,9 +389,11 @@ class CacheIndexEntry : public PLDHashEntryHdr {
 
   // Indicates there is cached alternative data in the entry.
   static const uint32_t kHasAltDataMask = 0x02000000;
-  static const uint32_t kReservedMask = 0x01000000;
 
-  // FileSize in kilobytes
+  // Indicates that this entry is a dictionary
+  static const uint32_t kDictionaryMask = 0x01000000;
+
+  // FileSize in kilobytes (max 16GB)
   static const uint32_t kFileSizeMask = 0x00FFFFFF;
 
   RefPtr<CacheIndexRecordWrapper> mRec;
@@ -734,7 +747,9 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
                             bool aPinned);
 
   // Remove entry from index. The entry should be present in index.
-  static nsresult RemoveEntry(const SHA1Sum::Hash* aHash);
+  static nsresult RemoveEntry(const SHA1Sum::Hash* aHash,
+                              const nsACString& aKey,
+                              bool aClearDictionary = true);
 
   // Update some information in entry. The entry MUST be present in index and
   // MUST be initialized. Call to AddEntry() or EnsureEntryExists() and to
@@ -747,6 +762,11 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
                               const uint16_t* aOnStopTime,
                               const uint8_t* aContentType,
                               const uint32_t* aSize);
+
+  // Mark entries so we won't find them.  Used to implement synchronous
+  // clearing for Clear-Site-Data: cache for Compression Dictionaries
+  static void EvictByContext(const nsAString& aOrigin,
+                             const nsAString& aBaseDomain);
 
   // Remove all entries from the index. Called when clearing the whole cache.
   static nsresult RemoveAll();

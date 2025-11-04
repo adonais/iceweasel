@@ -1021,8 +1021,7 @@ bool nsTypeAheadFind::IsRangeVisible(nsRange* aRange, bool aMustBeInViewPort,
   // Detect if we are _inside_ a text control, or something else with its own
   // selection controller.
   if (aUsesIndependentSelection) {
-    *aUsesIndependentSelection =
-        frame->HasAnyStateBits(NS_FRAME_INDEPENDENT_SELECTION);
+    *aUsesIndependentSelection = frame->IsInsideTextControl();
   }
 
   return aMustBeInViewPort ? IsRangeRendered(aRange) : true;

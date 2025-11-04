@@ -13,16 +13,16 @@ const LEARN_MORE_URL =
 
 add_task(async function tipIsSecondResult() {
   let results = [
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.URL,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
-      {
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      payload: {
         url: "http://mozilla.org/a",
         helpUrl: "http://example.com/",
         isBlockable: true,
         blockL10n: { id: "urlbar-result-menu-remove-from-history" },
-      }
-    ),
+      },
+    }),
     makeTipResult({
       buttonUrl: TIP_URL,
       helpUrl: HELP_URL,
@@ -241,16 +241,16 @@ add_task(async function tipIsOnlyResult() {
 
 add_task(async function tipHasNoResultMenuButton() {
   let results = [
-    new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.URL,
-      UrlbarUtils.RESULT_SOURCE.HISTORY,
-      {
+    new UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.URL,
+      source: UrlbarUtils.RESULT_SOURCE.HISTORY,
+      payload: {
         url: "http://mozilla.org/a",
         helpUrl: "http://example.com/",
         isBlockable: true,
         blockL10n: { id: "urlbar-result-menu-remove-from-history" },
-      }
-    ),
+      },
+    }),
 
     // No `helpUrl` means no result-menu button.
     makeTipResult({

@@ -79,6 +79,7 @@
 #include "vm/BigIntType.h"
 
 #include "mozilla/Casting.h"
+#include "mozilla/CheckedArithmetic.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/HashFunctions.h"
@@ -106,7 +107,6 @@
 #include "js/Printer.h"               // js::GenericPrinter
 #include "js/StableStringChars.h"
 #include "js/Utility.h"
-#include "util/CheckedArithmetic.h"
 #include "util/DifferentialTesting.h"
 #include "vm/JSONPrinter.h"  // js::JSONPrinter
 #include "vm/StaticStrings.h"
@@ -1929,7 +1929,7 @@ BigInt* BigInt::mul(JSContext* cx, HandleBigInt x, HandleBigInt y) {
     uint64_t rhs = y->uint64FromAbsNonZero();
 
     uint64_t res;
-    if (js::SafeMul(lhs, rhs, &res)) {
+    if (mozilla::SafeMul(lhs, rhs, &res)) {
       MOZ_ASSERT(res != 0);
       return createFromNonZeroRawUint64(cx, res, resultNegative);
     }
@@ -2238,13 +2238,13 @@ BigInt* BigInt::pow(JSContext* cx, HandleBigInt x, HandleBigInt y) {
     while (true) {
       uint64_t runningSquareStart = runningSquareInt;
       uint64_t r;
-      if (!js::SafeMul(runningSquareInt, runningSquareInt, &r)) {
+      if (!mozilla::SafeMul(runningSquareInt, runningSquareInt, &r)) {
         break;
       }
       runningSquareInt = r;
 
       if (n & 1) {
-        if (!js::SafeMul(resultInt, runningSquareInt, &r)) {
+        if (!mozilla::SafeMul(resultInt, runningSquareInt, &r)) {
           // Recover |runningSquare| before we restart the loop.
           runningSquareInt = runningSquareStart;
           break;

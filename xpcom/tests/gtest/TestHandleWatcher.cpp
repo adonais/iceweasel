@@ -16,6 +16,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/TargetShutdownTaskSet.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/WinHandleWatcher.h"
@@ -424,18 +425,16 @@ class MockEventTarget final : public nsIEventTarget {
   NS_DECL_THREADSAFE_ISUPPORTS
 
  private:
-  // Map from registered shutdown tasks to whether or not they have been (or are
-  // being) executed. (This should probably guarantee some deterministic order,
-  // and also be mutex-protected; but that doesn't matter here.)
-  nsTHashMap<RefPtr<nsITargetShutdownTask>, bool> mShutdownTasks;
+  // List of registered shutdown tasks.
+  TargetShutdownTaskSet mShutdownTasks;
   // Out-of band task to be run last at destruction time, regardless of anything
   // else.
   std::function<void(void)> mDeathAction;
 
   ~MockEventTarget() {
-    for (auto& task : mShutdownTasks) {
-      task.SetData(true);
-      task.GetKey()->TargetShutdown();
+    auto shutdownTasks = mShutdownTasks.Extract();
+    for (const auto& task : shutdownTasks) {
+      task->TargetShutdown();
     }
     if (mDeathAction) {
       mDeathAction();
@@ -445,23 +444,10 @@ class MockEventTarget final : public nsIEventTarget {
  public:
   // shutdown task handling
   NS_IMETHOD RegisterShutdownTask(nsITargetShutdownTask* task) override {
-    mShutdownTasks.WithEntryHandle(task, [&](auto entry) {
-      if (entry.HasEntry()) {
-        MOZ_CRASH("attempted to double-register shutdown task");
-      }
-      entry.Insert(false);
-    });
-    return NS_OK;
+    return mShutdownTasks.AddTask(task);
   }
   NS_IMETHOD UnregisterShutdownTask(nsITargetShutdownTask* task) override {
-    mozilla::Maybe<bool> res = mShutdownTasks.Extract(task);
-    if (!res.isSome()) {
-      MOZ_CRASH("attempted to unregister non-registered task");
-    }
-    if (res.value()) {
-      MOZ_CRASH("attempted to unregister already-executed shutdown task");
-    }
-    return NS_OK;
+    return mShutdownTasks.RemoveTask(task);
   }
   void RegisterDeathAction(std::function<void(void)>&& f) {
     mDeathAction = std::move(f);

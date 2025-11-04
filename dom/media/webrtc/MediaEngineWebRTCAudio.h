@@ -131,7 +131,10 @@ class AudioInputProcessing : public AudioDataListener {
            mPlatformProcessingSetParams != CUBEB_INPUT_PROCESSING_PARAM_NONE;
   }
 
+  // Start processing data. Note that ApplySettings must be called prior to
+  // Start().
   void Start(MediaTrackGraph* aGraph);
+  // Stop processing data and reset mAudioProcessing state.
   void Stop(MediaTrackGraph* aGraph);
 
   void DeviceChanged(MediaTrackGraph* aGraph) override;
@@ -179,7 +182,8 @@ class AudioInputProcessing : public AudioDataListener {
                      const MediaEnginePrefs& aSettings);
 
   // The config currently applied to the audio processing module.
-  webrtc::AudioProcessing::Config AppliedConfig(MediaTrackGraph* aGraph) const;
+  const webrtc::AudioProcessing::Config& AppliedConfig(
+      MediaTrackGraph* aGraph) const;
 
   void End();
 
@@ -201,7 +205,7 @@ class AudioInputProcessing : public AudioDataListener {
  private:
   ~AudioInputProcessing() = default;
   webrtc::AudioProcessing::Config ConfigForPrefs(
-      const MediaEnginePrefs& aPrefs) const;
+      MediaTrackGraph* aGraph, const MediaEnginePrefs& aPrefs) const;
   void PassThroughChanged(MediaTrackGraph* aGraph);
   void RequestedInputChannelCountChanged(MediaTrackGraph* aGraph,
                                          CubebUtils::AudioDeviceID aDeviceId);
@@ -226,6 +230,14 @@ class AudioInputProcessing : public AudioDataListener {
   // The current settings from about:config preferences and content-provided
   // constraints.
   MediaEnginePrefs mSettings;
+  // The currently applied audio processing config. Set even if mAudioProcessing
+  // is not. This is needed because ConfigForPrefs(mSettings) is not static --
+  // it relies on mPlatformProcessingSetParams and MTG::OutputForAECIsPrimary(),
+  // which can change between calls to ApplySettingsInternal -- and an
+  // AudioProcessing::Config is available from mAudioProcessing only when that
+  // exists. Initialized as needed -- it is up to the owner to call
+  // ApplySettings prior to Start.
+  webrtc::AudioProcessing::Config mAppliedConfig;
   // When false, RequestedInputProcessingParams() returns no params, resulting
   // in platform processing getting disabled in the platform.
   bool mPlatformProcessingEnabled = false;

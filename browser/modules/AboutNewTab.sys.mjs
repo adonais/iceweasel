@@ -46,6 +46,10 @@ export const AboutNewTab = {
    * init - Initializes an instance of Activity Stream if one doesn't exist already.
    */
   init() {
+    if (this.initialized) {
+      return;
+    }
+
     Services.obs.addObserver(this, TOPIC_APP_QUIT);
     if (!AppConstants.RELEASE_OR_BETA) {
       XPCOMUtils.defineLazyPreferenceGetter(
@@ -234,6 +238,11 @@ export const AboutNewTab = {
       this.activityStream.uninit();
       this.activityStream = null;
     }
+    Services.obs.removeObserver(this, TOPIC_APP_QUIT);
+    Services.obs.removeObserver(
+      this,
+      lazy.TelemetryReportingPolicy.TELEMETRY_TOU_ACCEPTED_OR_INELIGIBLE
+    );
 
     this.initialized = false;
   },

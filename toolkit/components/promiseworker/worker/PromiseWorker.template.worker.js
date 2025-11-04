@@ -36,20 +36,6 @@ importScripts("resource://gre/modules/workers/require.js");
 // #END_SCRIPT_ONLY
 
 /**
- * Built-in JavaScript exceptions that may be serialized without
- * loss of information.
- */
-const EXCEPTION_NAMES = {
-  EvalError: "EvalError",
-  InternalError: "InternalError",
-  RangeError: "RangeError",
-  ReferenceError: "ReferenceError",
-  SyntaxError: "SyntaxError",
-  TypeError: "TypeError",
-  URIError: "URIError",
-};
-
-/**
  * A constructor used to return data to the caller thread while
  * also executing some specific treatment (e.g. shutting down
  * the current thread, transmitting data instead of copying it).
@@ -104,6 +90,17 @@ function AbstractWorker(agent) {
   this._agent = agent;
   this._deferredJobs = new Map();
   this._deferredJobId = 0;
+  // Built-in JavaScript exceptions that may be serialized without
+  // loss of information.
+  this._exceptionNames = {
+    EvalError: "EvalError",
+    InternalError: "InternalError",
+    RangeError: "RangeError",
+    ReferenceError: "ReferenceError",
+    SyntaxError: "SyntaxError",
+    TypeError: "TypeError",
+    URIError: "URIError",
+  };
 }
 
 AbstractWorker.prototype = {
@@ -225,7 +222,7 @@ AbstractWorker.prototype = {
         message: exn.message,
       };
       this.postMessage({ fail: error, id, durationMs });
-    } else if (exn.constructor.name in EXCEPTION_NAMES) {
+    } else if (exn.constructor.name in this._exceptionNames) {
       // Rather than letting the DOM mechanism [de]serialize built-in
       // JS errors, which loses lots of information (in particular,
       // the constructor name, the moduleName and the moduleStack),

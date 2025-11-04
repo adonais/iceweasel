@@ -464,13 +464,9 @@ class InfoBarNotification {
    */
   removeUniversalInfobars() {
     // Remove the new window observer
-    try {
+    if (InfoBar._observingWindowOpened) {
+      InfoBar._observingWindowOpened = false;
       Services.obs.removeObserver(InfoBar, "domwindowopened");
-    } catch (error) {
-      console.error(
-        "Error removing domwindowopened observer on InfoBar: ",
-        error
-      );
     }
     // Remove the universal infobar
     InfoBar._universalInfobars.forEach(({ box, notification }) => {
@@ -504,6 +500,7 @@ class InfoBarNotification {
 export const InfoBar = {
   _activeInfobar: null,
   _universalInfobars: [],
+  _observingWindowOpened: false,
 
   maybeLoadCustomElement(win) {
     if (!win.customElements.get("remote-text")) {
@@ -624,7 +621,17 @@ export const InfoBar = {
 
     if (isFirstUniversal) {
       await this.showNotificationAllWindows(notification);
-      Services.obs.addObserver(this, "domwindowopened");
+      if (!this._observingWindowOpened) {
+        this._observingWindowOpened = true;
+        Services.obs.addObserver(this, "domwindowopened");
+      } else {
+        // TODO: At least during testing it seems that we can get here more
+        // than once without passing through removeUniversalInfobars(). Is
+        // this expected?
+        console.warn(
+          "InfoBar: Already observing new windows for universal infobar."
+        );
+      }
     } else {
       await notification.showNotification(browser);
     }

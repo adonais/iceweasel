@@ -77,7 +77,7 @@ skip-if = ["true"]
 support-files = [
   "basicvtt-server.sjs",
 ]
-run-sequentially = "An extension having the same id is installed/uninstalled in different tests"
+run-sequentially = ["true"] # An extension having the same id is installed/uninstalled in different tests
 
 ["test_webvtt_seeking.html"]
 

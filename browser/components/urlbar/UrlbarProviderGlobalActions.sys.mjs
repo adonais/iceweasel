@@ -10,7 +10,7 @@
 import {
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
@@ -32,13 +32,13 @@ const TIMES_TO_SHOW_PREF = "quickactions.timesToShowOnboardingLabel";
 const TIMES_SHOWN_PREF = "quickactions.timesShownOnboardingLabel";
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  UrlbarPrefs: "resource:///modules/UrlbarPrefs.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
+  UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
 });
 
-import { ActionsProviderQuickActions } from "resource:///modules/ActionsProviderQuickActions.sys.mjs";
-import { ActionsProviderContextualSearch } from "resource:///modules/ActionsProviderContextualSearch.sys.mjs";
-import { ActionsProviderTabGroups } from "resource:///modules/ActionsProviderTabGroups.sys.mjs";
+import { ActionsProviderQuickActions } from "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs";
+import { ActionsProviderContextualSearch } from "moz-src:///browser/components/urlbar/ActionsProviderContextualSearch.sys.mjs";
+import { ActionsProviderTabGroups } from "moz-src:///browser/components/urlbar/ActionsProviderTabGroups.sys.mjs";
 
 let globalActionsProviders = [
   ActionsProviderContextualSearch,
@@ -57,12 +57,16 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
     return UrlbarUtils.PROVIDER_TYPE.PROFILE;
   }
 
-  async isActive() {
-    return (
+  #controller;
+  async isActive(_queryContext, controller) {
+    let isActive =
       (lazy.UrlbarPrefs.get(SCOTCH_BONNET_PREF) ||
         lazy.UrlbarPrefs.get(ACTIONS_PREF)) &&
-      lazy.UrlbarPrefs.get(QUICK_ACTIONS_PREF)
-    );
+      lazy.UrlbarPrefs.get(QUICK_ACTIONS_PREF);
+    if (isActive && controller) {
+      this.#controller = controller;
+    }
+    return isActive;
   }
 
   async startQuery(queryContext, addCallback) {
@@ -70,7 +74,7 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
     let searchModeEngine = "";
 
     for (let provider of globalActionsProviders) {
-      if (provider.isActive(queryContext)) {
+      if (provider.isActive(queryContext, this.#controller)) {
         for (let action of (await provider.queryActions(queryContext)) || []) {
           if (action.engine && !searchModeEngine) {
             searchModeEngine = action.engine;
@@ -83,6 +87,7 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
         }
       }
     }
+    this.#controller = null;
 
     if (!actionsResults.length) {
       return;
@@ -114,15 +119,15 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
       payload.engine = searchModeEngine;
     }
 
-    let result = new lazy.UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.DYNAMIC,
-      UrlbarUtils.RESULT_SOURCE.ACTIONS,
-      payload
-    );
-    result.suggestedIndex =
-      queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.TABS
-        ? SUGGESTED_INDEX_TABS_MODE
-        : SUGGESTED_INDEX;
+    let result = new lazy.UrlbarResult({
+      type: UrlbarUtils.RESULT_TYPE.DYNAMIC,
+      source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
+      suggestedIndex:
+        queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.TABS
+          ? SUGGESTED_INDEX_TABS_MODE
+          : SUGGESTED_INDEX,
+      payload,
+    });
     addCallback(this, result);
   }
 

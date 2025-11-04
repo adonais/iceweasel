@@ -23,6 +23,7 @@ if CONFIG["MOZ_DEBUG"]:
 XPIDL_MODULE = "layout_base"
 
 EXPORTS += [
+    "AnchorPositioningUtils.h",
     "FrameProperties.h",
     "LayoutConstants.h",
     "LayoutLogging.h",

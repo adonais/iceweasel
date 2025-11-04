@@ -280,6 +280,12 @@ class ScrollContainerFrame : public nsContainerFrame,
   }
 
   /**
+   * Get the size used for window.innerWidth or innerHeight.
+   * This works only for the root scroll container.
+   */
+  nsSize GetSizeForWindowInnerSize() const;
+
+  /**
    * GetScrolledRect is designed to encapsulate deciding which
    * directions of overflow should be reachable by scrolling and which
    * should not.  Callers should NOT depend on it having any particular
@@ -1324,6 +1330,11 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   nsTArray<ScrollPositionUpdate> mScrollUpdates;
 
+  // The minimum-scale size, this is specific to mobile environments where the
+  // initial-scale can be less than 1.0.
+  // See
+  // https://github.com/bokand/bokand.github.io/blob/master/web_viewports_explainer.md#minimum-scale
+  // for details.
   nsSize mMinimumScaleSize;
 
   // Stores the ICB size for the root document if this frame is using the

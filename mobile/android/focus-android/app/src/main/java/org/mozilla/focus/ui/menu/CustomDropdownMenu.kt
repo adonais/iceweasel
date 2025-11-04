@@ -5,8 +5,8 @@
 package org.mozilla.focus.ui.menu
 
 import androidx.compose.foundation.background
-import androidx.compose.material.DropdownMenu
-import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -32,16 +32,17 @@ fun CustomDropdownMenu(
     ) {
         for (item in menuItems) {
             DropdownMenuItem(
+                text = {
+                    Text(
+                        text = item.title,
+                        color = focusColors.menuText,
+                    )
+                },
                 onClick = {
                     item.onClick()
                     onDismissClicked.invoke()
                 },
-            ) {
-                Text(
-                    text = item.title,
-                    color = focusColors.menuText,
-                )
-            }
+            )
         }
     }
 }

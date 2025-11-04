@@ -134,7 +134,7 @@ class Browser:
             """
             )
 
-    def get_default_search_engine(self):
+    def get_default_search_engine_telemetry_id(self):
         """Retrieve the identifier of the default search engine.
 
         We found that it's required to initialize the search service before
@@ -149,7 +149,7 @@ class Browser:
                 "@mozilla.org/browser/search-service;1"]
             .getService(Components.interfaces.nsISearchService);
         return searchService.init().then(function () {
-          resolve(searchService.defaultEngine.identifier);
+          resolve(searchService.defaultEngine.telemetryId);
         });
         """
 

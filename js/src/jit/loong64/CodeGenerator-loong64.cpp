@@ -192,16 +192,17 @@ void CodeGeneratorLOONG64::emitTableSwitchDispatch(MTableSwitch* mir,
 template <typename T>
 void CodeGeneratorLOONG64::emitWasmLoad(T* lir) {
   const MWasmLoad* mir = lir->mir();
-  SecondScratchRegisterScope scratch2(masm);
+  UseScratchRegisterScope temps(masm);
+  Register scratch = temps.Acquire();
 
   Register memoryBase = ToRegister(lir->memoryBase());
   Register ptr = ToRegister(lir->ptr());
   Register ptrScratch = ToTempRegisterOrInvalid(lir->temp0());
 
   if (mir->base()->type() == MIRType::Int32) {
-    masm.move32To64ZeroExtend(ptr, Register64(scratch2));
-    ptr = scratch2;
-    ptrScratch = ptrScratch != InvalidReg ? scratch2 : InvalidReg;
+    masm.move32To64ZeroExtend(ptr, Register64(scratch));
+    ptr = scratch;
+    ptrScratch = ptrScratch != InvalidReg ? scratch : InvalidReg;
   }
 
   // ptr is a GPR and is either a 32-bit value zero-extended to 64-bit, or a
@@ -213,16 +214,17 @@ void CodeGeneratorLOONG64::emitWasmLoad(T* lir) {
 template <typename T>
 void CodeGeneratorLOONG64::emitWasmStore(T* lir) {
   const MWasmStore* mir = lir->mir();
-  SecondScratchRegisterScope scratch2(masm);
+  UseScratchRegisterScope temps(masm);
+  Register scratch = temps.Acquire();
 
   Register memoryBase = ToRegister(lir->memoryBase());
   Register ptr = ToRegister(lir->ptr());
   Register ptrScratch = ToTempRegisterOrInvalid(lir->temp0());
 
   if (mir->base()->type() == MIRType::Int32) {
-    masm.move32To64ZeroExtend(ptr, Register64(scratch2));
-    ptr = scratch2;
-    ptrScratch = ptrScratch != InvalidReg ? scratch2 : InvalidReg;
+    masm.move32To64ZeroExtend(ptr, Register64(scratch));
+    ptr = scratch;
+    ptrScratch = ptrScratch != InvalidReg ? scratch : InvalidReg;
   }
 
   // ptr is a GPR and is either a 32-bit value zero-extended to 64-bit, or a
@@ -842,7 +844,8 @@ void CodeGenerator::visitMulI(LMulI* ins) {
           // power of 2.
 
           if ((1 << shift) == constant) {
-            ScratchRegisterScope scratch(masm);
+            UseScratchRegisterScope temps(masm);
+            Register scratch = temps.Acquire();
             // dest = lhs * pow(2, shift)
             masm.as_slli_w(dest, src, shift % 32);
             // At runtime, check (lhs == dest >> shift), if this does
@@ -883,7 +886,8 @@ void CodeGenerator::visitMulI(LMulI* ins) {
 
       // Result is -0 if lhs or rhs is negative.
       // In that case result must be double value so bailout
-      Register scratch = SecondScratchReg;
+      UseScratchRegisterScope temps(masm);
+      Register scratch = temps.Acquire();
       masm.as_or(scratch, ToRegister(lhs), ToRegister(rhs));
       bailoutCmp32(Assembler::Signed, scratch, scratch, ins->snapshot());
 
@@ -952,7 +956,8 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
       default:
         if (constant > 0) {
           if (mozilla::IsPowerOfTwo(static_cast<uint64_t>(constant + 1))) {
-            ScratchRegisterScope scratch(masm);
+            UseScratchRegisterScope temps(masm);
+            Register scratch = temps.Acquire();
             masm.movePtr(ToRegister64(lhs).reg, scratch);
             masm.as_slli_d(output.reg, ToRegister64(lhs).reg,
                            FloorLog2(constant + 1));
@@ -965,7 +970,8 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
               masm.as_alsl_d(output.reg, ToRegister64(lhs).reg,
                              ToRegister64(lhs).reg, shift - 1);
             } else {
-              ScratchRegisterScope scratch(masm);
+              UseScratchRegisterScope temps(masm);
+              Register scratch = temps.Acquire();
               masm.movePtr(ToRegister64(lhs).reg, scratch);
               masm.as_slli_d(output.reg, ToRegister64(lhs).reg, shift);
               masm.add64(scratch, output);
@@ -1775,31 +1781,32 @@ void CodeGenerator::visitAsmJSLoadHeap(LAsmJSLoadHeap* ins) {
   }
 
   // TODO(loong64): zero-extend index in asm.js?
-  SecondScratchRegisterScope scratch2(masm);
-  masm.move32To64ZeroExtend(ptrReg, Register64(scratch2));
+  UseScratchRegisterScope temps(masm);
+  Register scratch = temps.Acquire();
+  masm.move32To64ZeroExtend(ptrReg, Register64(scratch));
 
   switch (accessType) {
     case Scalar::Int8:
-      masm.as_ldx_b(ToRegister(output), HeapReg, scratch2);
+      masm.as_ldx_b(ToRegister(output), HeapReg, scratch);
       break;
     case Scalar::Uint8:
-      masm.as_ldx_bu(ToRegister(output), HeapReg, scratch2);
+      masm.as_ldx_bu(ToRegister(output), HeapReg, scratch);
       break;
     case Scalar::Int16:
-      masm.as_ldx_h(ToRegister(output), HeapReg, scratch2);
+      masm.as_ldx_h(ToRegister(output), HeapReg, scratch);
       break;
     case Scalar::Uint16:
-      masm.as_ldx_hu(ToRegister(output), HeapReg, scratch2);
+      masm.as_ldx_hu(ToRegister(output), HeapReg, scratch);
       break;
     case Scalar::Int32:
     case Scalar::Uint32:
-      masm.as_ldx_w(ToRegister(output), HeapReg, scratch2);
+      masm.as_ldx_w(ToRegister(output), HeapReg, scratch);
       break;
     case Scalar::Float64:
-      masm.as_fldx_d(ToFloatRegister(output), HeapReg, scratch2);
+      masm.as_fldx_d(ToFloatRegister(output), HeapReg, scratch);
       break;
     case Scalar::Float32:
-      masm.as_fldx_s(ToFloatRegister(output), HeapReg, scratch2);
+      masm.as_fldx_s(ToFloatRegister(output), HeapReg, scratch);
       break;
     default:
       MOZ_CRASH("unexpected array type");
@@ -1828,27 +1835,28 @@ void CodeGenerator::visitAsmJSStoreHeap(LAsmJSStoreHeap* ins) {
   }
 
   // TODO(loong64): zero-extend index in asm.js?
-  SecondScratchRegisterScope scratch2(masm);
-  masm.move32To64ZeroExtend(ptrReg, Register64(scratch2));
+  UseScratchRegisterScope temps(masm);
+  Register scratch = temps.Acquire();
+  masm.move32To64ZeroExtend(ptrReg, Register64(scratch));
 
   switch (mir->accessType()) {
     case Scalar::Int8:
     case Scalar::Uint8:
-      masm.as_stx_b(ToRegister(value), HeapReg, scratch2);
+      masm.as_stx_b(ToRegister(value), HeapReg, scratch);
       break;
     case Scalar::Int16:
     case Scalar::Uint16:
-      masm.as_stx_h(ToRegister(value), HeapReg, scratch2);
+      masm.as_stx_h(ToRegister(value), HeapReg, scratch);
       break;
     case Scalar::Int32:
     case Scalar::Uint32:
-      masm.as_stx_w(ToRegister(value), HeapReg, scratch2);
+      masm.as_stx_w(ToRegister(value), HeapReg, scratch);
       break;
     case Scalar::Float64:
-      masm.as_fstx_d(ToFloatRegister(value), HeapReg, scratch2);
+      masm.as_fstx_d(ToFloatRegister(value), HeapReg, scratch);
       break;
     case Scalar::Float32:
-      masm.as_fstx_s(ToFloatRegister(value), HeapReg, scratch2);
+      masm.as_fstx_s(ToFloatRegister(value), HeapReg, scratch);
       break;
     default:
       MOZ_CRASH("unexpected array type");

@@ -173,7 +173,11 @@ static bool URIUsesDocChannel(nsIURI* aURI) {
   }
 
   nsCString spec = aURI->GetSpecOrDefault();
-  return !spec.EqualsLiteral("about:crashcontent");
+  return
+#ifdef MOZ_WIDGET_ANDROID
+      !spec.EqualsLiteral("about:crashcontentjava") &&
+#endif
+      !spec.EqualsLiteral("about:crashcontent");
 }
 
 bool DocumentChannel::CanUseDocumentChannel(nsIURI* aURI) {

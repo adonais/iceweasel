@@ -13,7 +13,7 @@ $tags:
   - "Toolkit :: Gecko Trace"
 
 gecko_trace:
-  traces:
+  traces_data:
     type: object
     description: >
       Represents the telemetry traces data collected during browser operation. This data
@@ -32,10 +32,13 @@ gecko_trace:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1930954
     expires: never
-    version: 0.1
+    # This is currently not transmitted over telemetry and thus useless for us
+    # version: 0.1
     structure:
       type: object
       properties:
+        version:
+          type: string
         resource_spans:
           type: array
           items:
@@ -57,7 +60,7 @@ gecko_trace:
                   attributes:
                     type: object
                     properties:
-                      gecko.process.id:
+                      gecko.process.internal_id:
                         type: number
                       gecko.process.type:
                         type: string
@@ -69,8 +72,6 @@ gecko_trace:
                         type: string
                       telemetry.sdk.version:
                         type: string
-                  dropped_attributes_count:
-                    type: number
               scope_spans:
                 type: array
                 items:
@@ -145,7 +146,10 @@ gecko_trace:
                                       type: string
                                     source.line:
                                       type: number
-                                dropped_attributes_count:
-                                  type: number
-                          dropped_events_count:
-                            type: number
+                                    # Generated from: dom/quota/gecko-trace.yaml:3:4
+                                    frame_id:
+                                      type: string
+                                    result:
+                                      type: string
+                                    severity:
+                                      type: string

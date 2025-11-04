@@ -350,6 +350,8 @@ SelectorWarningKind ToWebIDLSelectorWarningKind(
   switch (aKind) {
     case StyleSelectorWarningKind::UnconstraintedRelativeSelector:
       return SelectorWarningKind::UnconstrainedHas;
+    case StyleSelectorWarningKind::SiblingCombinatorAfterScopeSelector:
+      return SelectorWarningKind::SiblingCombinatorAfterScope;
   }
   MOZ_ASSERT_UNREACHABLE("Unhandled selector warning kind");
   // Return something for assert-disabled builds.
@@ -389,7 +391,7 @@ already_AddRefed<nsINodeList> CSSStyleRule::QuerySelectorAll(nsINode& aRoot) {
 
 StylePropertyMap* CSSStyleRule::StyleMap() {
   if (!mStyleMap) {
-    mStyleMap = MakeRefPtr<StylePropertyMap>(this);
+    mStyleMap = MakeRefPtr<StylePropertyMap>(this, /* aComputed */ false);
   }
 
   return mStyleMap;

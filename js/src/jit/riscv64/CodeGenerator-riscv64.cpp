@@ -860,7 +860,8 @@ void CodeGenerator::visitMulI(LMulI* ins) {
           // power of 2.
 
           if ((1 << shift) == constant) {
-            ScratchRegisterScope scratch(masm);
+            UseScratchRegisterScope temps(&masm);
+            Register scratch = temps.Acquire();
             // dest = lhs * pow(2, shift)
             masm.slliw(dest, src, shift % 32);
             // At runtime, check (lhs == dest >> shift), if this does
@@ -942,7 +943,8 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
           masm.slli(dest, lhs, FloorLog2(constant + 1));
           masm.sub(dest, dest, lhs);
         } else {
-          ScratchRegisterScope scratch(masm);
+          UseScratchRegisterScope temps(&masm);
+          Register scratch = temps.Acquire();
           masm.mv(scratch, lhs);
           masm.slli(dest, lhs, FloorLog2(constant + 1));
           masm.sub(dest, dest, scratch);
@@ -954,7 +956,8 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
           masm.slli(dest, lhs, FloorLog2(constant - 1));
           masm.add(dest, dest, lhs);
         } else {
-          ScratchRegisterScope scratch(masm);
+          UseScratchRegisterScope temps(&masm);
+          Register scratch = temps.Acquire();
           masm.mv(scratch, lhs);
           masm.slli(dest, lhs, FloorLog2(constant - 1));
           masm.add(dest, dest, scratch);
@@ -969,7 +972,8 @@ void CodeGenerator::visitMulIntPtr(LMulIntPtr* ins) {
       }
     }
 
-    ScratchRegisterScope scratch(masm);
+    UseScratchRegisterScope temps(&masm);
+    Register scratch = temps.Acquire();
     masm.ma_li(scratch, Imm64(constant));
     masm.mul(dest, lhs, scratch);
   } else {
@@ -1000,7 +1004,8 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
       default:
         if (constant > 0) {
           if (mozilla::IsPowerOfTwo(static_cast<uint64_t>(constant + 1))) {
-            ScratchRegisterScope scratch(masm);
+            UseScratchRegisterScope temps(&masm);
+            Register scratch = temps.Acquire();
             masm.movePtr(ToRegister64(lhs).reg, scratch);
             masm.slli(output.reg, ToRegister64(lhs).reg,
                       FloorLog2(constant + 1));
@@ -1009,7 +1014,8 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
           } else if (mozilla::IsPowerOfTwo(
                          static_cast<uint64_t>(constant - 1))) {
             int32_t shift = mozilla::FloorLog2(constant - 1);
-            ScratchRegisterScope scratch(masm);
+            UseScratchRegisterScope temps(&masm);
+            Register scratch = temps.Acquire();
             masm.movePtr(ToRegister64(lhs).reg, scratch);
             masm.slli(output.reg, ToRegister64(lhs).reg, shift);
             masm.add64(scratch, output);

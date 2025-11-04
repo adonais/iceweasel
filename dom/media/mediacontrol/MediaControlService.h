@@ -8,7 +8,6 @@
 #include "AudioFocusManager.h"
 #include "MediaControlKeyManager.h"
 #include "MediaController.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/MediaControllerBinding.h"
 #include "nsIObserver.h"
 #include "nsTArray.h"

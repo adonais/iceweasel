@@ -32,6 +32,7 @@ tasks-from:
     - clang-tidy.yml
     - clang.yml
     - compiler-rt.yml
+    - dxc.yml
     - dump-syms.yml
     - fix-stacks.yml
     - gcc.yml

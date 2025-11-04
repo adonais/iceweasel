@@ -24,6 +24,11 @@
 using namespace js;
 
 void js::InvalidatingRealmFuse::popFuse(JSContext* cx, RealmFuses& realmFuses) {
+  // Return early if the fuse is already popped.
+  if (!intact()) {
+    return;
+  }
+
   InvalidatingFuse::popFuse(cx);
 
   for (auto& fd : realmFuses.fuseDependencies) {

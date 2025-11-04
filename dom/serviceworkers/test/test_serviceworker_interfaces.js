@@ -448,6 +448,24 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "TransformStreamDefaultController",
   // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "TrustedHTML", earlyBetaOrEarlier: true, insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "TrustedScript", earlyBetaOrEarlier: true, insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "TrustedScriptURL", earlyBetaOrEarlier: true, insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  {
+    name: "TrustedTypePolicy",
+    earlyBetaOrEarlier: true,
+    insecureContext: true,
+  },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  {
+    name: "TrustedTypePolicyFactory",
+    earlyBetaOrEarlier: true,
+    insecureContext: true,
+  },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
   "URL",
   // IMPORTANT: Do not change this list without review from a DOM peer!
   "URLPattern",

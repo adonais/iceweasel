@@ -15,11 +15,11 @@ run-if = ["os != 'android'"] # wheel events not supported on mobile
 
 ["test_bug1253683.html"]
 run-if = ["os != 'android'"] # mouse events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_bug1277814.html"]
 run-if = ["os != 'android'"] # mouse events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_bug1304689-2.html"]
 
@@ -68,7 +68,7 @@ run-if = ["os != 'android'"] # mouse events not supported on mobile
 skip-if = [
   "os == 'win' && os_version == '11.26100' && processor == 'x86'", # win11 24H2
   "os == 'linux' && asan", # stack is not large enough for the test
-  "display == 'wayland' && os_version == '22.04'", # Bug 1857059
+  "os == 'linux' && os_version == '22.04' && display == 'wayland'", # Bug 1857059
   "http3",
   "http2",
 ]
@@ -95,20 +95,20 @@ run-if = ["os == 'android'"]
 
 ["test_group_mouseevents.html"]
 run-if = ["os != 'android'"] # mouse events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_group_overrides.html"]
 run-if = ["os != 'android'"] # wheel events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_group_overscroll.html"]
 run-if = ["os != 'android'"] # wheel events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_group_overscroll_handoff.html"]
 run-if = ["os != 'android'"] # wheel events not supported on mobile
 skip-if = [
-  "display == 'wayland' && os_version == '22.04'", # Bug 1857059
+  "os == 'linux' && os_version == '22.04' && display == 'wayland'", # Bug 1857059
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1966348
   "http3",
   "http2",
@@ -139,14 +139,14 @@ skip-if = [
 
 ["test_group_scroll_snap.html"]
 run-if = ["os != 'android'"] # wheel events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_group_scrollend.html"]
 run-if = ["os != 'android'"] # wheel events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_group_scrollframe_activation.html"]
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_group_touchevents-2.html"]
 
@@ -156,7 +156,7 @@ skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
 
 ["test_group_touchevents-5.html"]
 skip-if = [
-  "display == 'wayland' && os_version == '22.04'", # Bug 1857059
+  "os == 'linux' && os_version == '22.04' && display == 'wayland'", # Bug 1857059
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1776965
 ]
 
@@ -167,7 +167,7 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 
 ["test_group_wheelevents.html"]
 run-if = ["os != 'android'"] # mouse events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_group_zoom-2.html"]
 skip-if = ["os == 'win'"] # see bug 1495580 for Windows
@@ -187,24 +187,24 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 run-if = ["os != 'android'"] # mouse events not supported on mobile
 skip-if = [
   "os == 'linux' && fission && headless", # Bug 1722907
-  "display == 'wayland' && os_version == '22.04'", # Bug 1857059
+  "os == 'linux' && os_version == '22.04' && display == 'wayland'", # Bug 1857059
 ]
 
 ["test_relative_update.html"]
 run-if = ["os != 'android'"] # mouse events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_scroll_inactive_bug1190112.html"]
 run-if = ["os != 'android'"] # mouse events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_scroll_inactive_flattened_frame.html"]
 run-if = ["os != 'android'"] # mouse events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_scroll_subframe_scrollbar.html"]
 run-if = ["os != 'android'"] # mouse events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_smoothness.html"]
 # hardware vsync only on win/mac
@@ -217,12 +217,12 @@ skip-if = ["true"] # Don't run in CI yet, see bug 1657477
 
 ["test_touch_listeners_impacting_wheel.html"]
 run-if = ["os != 'android' && os != 'mac'"] # mouse events not supported on mobile, synthesized wheel smooth-scrolling not supported on OS X
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_wheel_scroll.html"]
 run-if = ["os != 'android'"] # mouse events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059
 
 ["test_wheel_transactions.html"]
 run-if = ["os != 'android'"] # mouse events not supported on mobile
-skip-if = ["display == 'wayland' && os_version == '22.04'"] # Bug 1857059
+skip-if = ["os == 'linux' && os_version == '22.04' && display == 'wayland'"] # Bug 1857059

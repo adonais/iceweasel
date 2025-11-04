@@ -9,7 +9,8 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  UrlbarProviderTopSites: "resource:///modules/UrlbarProviderTopSites.sys.mjs",
+  UrlbarProviderTopSites:
+    "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
 });
 
 const TEST_URLS = [];
@@ -196,16 +197,14 @@ add_task(async function topSites_nonTopSitesResults() {
     let provider = new UrlbarTestUtils.TestProvider({
       priority: lazy.UrlbarProviderTopSites.PRIORITY,
       results: [
-        Object.assign(
-          new UrlbarResult(
-            UrlbarUtils.RESULT_TYPE.URL,
-            UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
-            {
-              url: suggestedIndexURL,
-            }
-          ),
-          { suggestedIndex: 0 }
-        ),
+        new UrlbarResult({
+          type: UrlbarUtils.RESULT_TYPE.URL,
+          source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          suggestedIndex: 0,
+          payload: {
+            url: suggestedIndexURL,
+          },
+        }),
       ],
     });
     UrlbarProvidersManager.registerProvider(provider);

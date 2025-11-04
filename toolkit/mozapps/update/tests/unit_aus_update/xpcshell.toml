@@ -1,4 +1,5 @@
 [DEFAULT]
+run-if = ["os != 'android'"]
 tags = "appupdate"
 head = "head_update.js"
 skip-if = [
@@ -17,6 +18,10 @@ support-files = [
   "testConstants.js",
   "../data/simple.mar",
 ]
+
+["accessAndLockout.js"]
+run-if = ["os == 'win'"]
+reason = "Testing mechanism is Windows-only as it relies on CreateFileW"
 
 ["ausReadStrings.js"]
 

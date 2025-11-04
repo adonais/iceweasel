@@ -8,7 +8,7 @@
 
 ChromeUtils.defineESModuleGetters(this, {
   UrlbarProviderSearchSuggestions:
-    "resource:///modules/UrlbarProviderSearchSuggestions.sys.mjs",
+    "moz-src:///browser/components/urlbar/UrlbarProviderSearchSuggestions.sys.mjs",
 });
 
 const { GEOLOCATION } = MerinoTestUtils;

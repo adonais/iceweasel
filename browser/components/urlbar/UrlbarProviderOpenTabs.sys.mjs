@@ -10,14 +10,15 @@
 import {
   UrlbarProvider,
   UrlbarUtils,
-} from "resource:///modules/UrlbarUtils.sys.mjs";
+} from "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs";
 
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
-  ProvidersManager: "resource:///modules/UrlbarProvidersManager.sys.mjs",
-  UrlbarResult: "resource:///modules/UrlbarResult.sys.mjs",
+  ProvidersManager:
+    "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
+  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
@@ -341,15 +342,15 @@ export class UrlbarProviderOpenTabs extends UrlbarProvider {
         }
         addCallback(
           this,
-          new lazy.UrlbarResult(
-            UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
-            UrlbarUtils.RESULT_SOURCE.TABS,
-            {
+          new lazy.UrlbarResult({
+            type: UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+            source: UrlbarUtils.RESULT_SOURCE.TABS,
+            payload: {
               url: row.getResultByName("url"),
               userContextId: row.getResultByName("userContextId"),
               tabGroup: row.getResultByName("groupId"),
-            }
-          )
+            },
+          })
         );
       }
     );

@@ -27,6 +27,11 @@ class NativeLayerRootRemoteMacParent final : public NativeLayerRemoteParent {
   mozilla::ipc::IPCResult RecvCommitNativeLayerCommands(
       nsTArray<NativeLayerCommand>&& aCommands) override;
 
+  mozilla::ipc::IPCResult RecvRequestReadback(IntSize aSize,
+                                              Shmem* const aPixels) override;
+
+  mozilla::ipc::IPCResult RecvFlush() override;
+
  protected:
   ~NativeLayerRootRemoteMacParent() = default;
 
@@ -40,10 +45,11 @@ class NativeLayerRootRemoteMacParent final : public NativeLayerRemoteParent {
                        Maybe<RoundedRect> aRoundedClipRect,
                        Matrix4x4 aTransform, int8_t aSamplingFilter,
                        bool aSurfaceIsFlipped);
-  void HandleChangedSurface(uint64_t aID, uint32_t aSurfaceID, bool aIsDRM,
-                            bool aIsHDR, IntSize aSize);
+  void HandleChangedSurface(uint64_t aID, IOSurfacePort aSurfacePort,
+                            bool aIsDRM, bool aIsHDR, IntSize aSize);
 
   RefPtr<NativeLayerRootCA> mRealNativeLayerRoot;
+  UniquePtr<NativeLayerRootSnapshotter> mSnapshotter;
   nsTHashMap<uint64_t, RefPtr<NativeLayer>> mKnownLayers;
 };
 

@@ -184,6 +184,10 @@ export default class FrameComponent extends Component {
           role: "option",
           id: frame.id,
           "aria-selected": isSelected ? "true" : "false",
+          // used by test helpers
+          "data-url": location.source.url,
+          "data-line": location.line,
+          "data-column": location.column + 1,
         },
         this.isSelectable &&
           React.createElement(FrameIndent, {

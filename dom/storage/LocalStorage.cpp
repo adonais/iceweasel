@@ -9,7 +9,6 @@
 #include "LocalStorageCache.h"
 #include "LocalStorageManager.h"
 #include "StorageUtils.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/StorageBinding.h"

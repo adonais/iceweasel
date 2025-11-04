@@ -51,12 +51,6 @@ tasks:
         attributes:
             build_platform: linux64-aarch64-shippable
 
-    firefox-secondary-linux:
-        description: linux secondary channel update verify
-        shipping-product: firefox
-        attributes:
-            build_platform: linux-shippable
-
     firefox-secondary-win64:
         description: win64 secondary channel update verify
         shipping-product: firefox

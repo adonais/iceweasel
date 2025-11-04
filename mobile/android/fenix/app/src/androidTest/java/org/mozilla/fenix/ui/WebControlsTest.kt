@@ -136,7 +136,7 @@ class WebControlsTest : TestSetup() {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(itemContainingText("Email link"))
             waitForAppWindowToBeUpdated()
-            clickPageObject(itemWithResIdAndText("android:id/button1", "OPEN"))
+            clickPageObject(itemWithResIdAndText("android:id/button1", "Open"))
             assertNativeAppOpens(Constants.PackageName.GMAIL_APP, emailLink)
         }
     }
@@ -150,7 +150,7 @@ class WebControlsTest : TestSetup() {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(itemContainingText("Telephone link"))
             waitForAppWindowToBeUpdated()
-            clickPageObject(itemWithResIdAndText("android:id/button1", "OPEN"))
+            clickPageObject(itemWithResIdAndText("android:id/button1", "Open"))
             assertNativeAppOpens(Constants.PackageName.PHONE_APP, phoneLink)
         }
     }

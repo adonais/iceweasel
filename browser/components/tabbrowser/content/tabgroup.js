@@ -121,7 +121,6 @@
       });
 
       this.#updateLabelAriaAttributes();
-      this.#updateCollapsedAriaAttributes();
 
       this.overflowContainer = this.querySelector(
         ".tab-group-overflow-count-container"
@@ -332,7 +331,7 @@
         }
       }
       this.toggleAttribute("collapsed", val);
-      this.#updateCollapsedAriaAttributes();
+      this.#updateLabelAriaAttributes();
       this.#updateTooltip();
       for (const tab of this.tabs) {
         this.#updateTabAriaHidden(tab);
@@ -367,20 +366,28 @@
     async #updateLabelAriaAttributes() {
       let tabGroupName = this.#label || this.defaultGroupName;
 
+      this.#labelElement?.setAttribute("aria-label", tabGroupName);
+      this.#labelElement?.setAttribute("aria-level", 1);
+
+      let tabGroupDescriptionL10nID;
+      if (this.collapsed) {
+        this.#labelElement?.setAttribute("aria-haspopup", "menu");
+        this.#labelElement?.setAttribute("aria-expanded", "false");
+        tabGroupDescriptionL10nID = this.hasAttribute("previewpanelactive")
+          ? "tab-group-preview-open-description"
+          : "tab-group-preview-closed-description";
+      } else {
+        this.#labelElement?.removeAttribute("aria-haspopup");
+        this.#labelElement?.setAttribute("aria-expanded", "true");
+        tabGroupDescriptionL10nID = "tab-group-description";
+      }
       let tabGroupDescription = await gBrowser.tabLocalization.formatValue(
-        "tab-group-description",
+        tabGroupDescriptionL10nID,
         {
           tabGroupName,
         }
       );
-      this.#labelElement?.setAttribute("aria-label", tabGroupName);
       this.#labelElement?.setAttribute("aria-description", tabGroupDescription);
-      this.#labelElement?.setAttribute("aria-level", 1);
-    }
-
-    #updateCollapsedAriaAttributes() {
-      const ariaExpanded = this.collapsed ? "false" : "true";
-      this.#labelElement?.setAttribute("aria-expanded", ariaExpanded);
     }
 
     async #updateTooltip() {
@@ -429,7 +436,7 @@
       if (this.isBeingDragged) {
         return false;
       }
-      if (this.collapsed && !tab.selected) {
+      if (this.collapsed && !tab.selected && !tab.multiselected) {
         return false;
       }
       return true;
@@ -486,6 +493,7 @@
      */
     set hoverPreviewPanelActive(val) {
       this.toggleAttribute("previewpanelactive", val);
+      this.#updateLabelAriaAttributes();
     }
 
     /**

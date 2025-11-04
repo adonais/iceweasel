@@ -56,6 +56,7 @@ job_description_schema = Schema(
         Optional("extra"): task_description_schema["extra"],
         Optional("treeherder"): task_description_schema["treeherder"],
         Optional("index"): task_description_schema["index"],
+        Optional("run-on-repo-type"): task_description_schema["run-on-repo-type"],
         Optional("run-on-projects"): task_description_schema["run-on-projects"],
         Optional("shipping-phase"): task_description_schema["shipping-phase"],
         Optional("shipping-product"): task_description_schema["shipping-product"],

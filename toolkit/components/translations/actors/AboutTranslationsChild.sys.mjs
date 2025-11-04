@@ -139,7 +139,9 @@ export class AboutTranslationsChild extends JSWindowActorChild {
       "AT_isHtmlTranslation",
       "AT_createTranslationsPort",
       "AT_identifyLanguage",
+      "AT_getDisplayName",
       "AT_getScriptDirection",
+      "AT_openSupportPage",
       "AT_telemetry",
     ];
     for (const name of fns) {
@@ -175,6 +177,13 @@ export class AboutTranslationsChild extends JSWindowActorChild {
   }
 
   /**
+   * Opens the trusted link to the official Translations support page.
+   */
+  AT_openSupportPage() {
+    this.sendAsyncMessage("AboutTranslations:OpenSupportPage");
+  }
+
+  /**
    * Wire this function to the TranslationsChild.
    *
    * @returns {Promise<SupportedLanguages>}
@@ -183,6 +192,19 @@ export class AboutTranslationsChild extends JSWindowActorChild {
     return this.#convertToContentPromise(
       this.sendQuery("AboutTranslations:GetSupportedLanguages").then(data =>
         Cu.cloneInto(data, this.contentWindow)
+      )
+    );
+  }
+
+  /**
+   * Returns the display name of the given BCP-47 language tag.
+   *
+   * @param {string} language
+   */
+  AT_getDisplayName(language) {
+    return this.#convertToContentPromise(
+      this.sendQuery("AboutTranslations:GetDisplayName", { language }).then(
+        data => Cu.cloneInto(data, this.contentWindow)
       )
     );
   }
@@ -227,17 +249,12 @@ export class AboutTranslationsChild extends JSWindowActorChild {
    * Attempts to identify the human language in which the message is written.
    *
    * @param {string} message
-   * @returns {Promise<{ langTag: string, confidence: number }>}
+   * @returns {Promise<{ language: string, confident: boolean }>}
    */
   AT_identifyLanguage(message) {
     return this.#convertToContentPromise(
       lazy.LanguageDetector.detectLanguage(message).then(data =>
-        Cu.cloneInto(
-          // This language detector reports confidence as a boolean instead of
-          // a percentage, so we need to map the confidence to 0.0 or 1.0.
-          { langTag: data.language, confidence: data.confident ? 1.0 : 0.0 },
-          this.contentWindow
-        )
+        Cu.cloneInto(data, this.contentWindow)
       )
     );
   }

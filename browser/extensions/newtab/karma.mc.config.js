@@ -304,10 +304,13 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
-            /**
-             * Weather.jsx is tested via an xpcshell test
-             */
-            "content-src/components/Weather/*.jsx": {
+            "content-src/components/Weather/Weather.jsx": {
+              statements: 51.1,
+              lines: 52.38,
+              functions: 31.2,
+              branches: 31.2,
+            },
+            "content-src/components/Weather/LocationSearch.jsx": {
               statements: 0,
               lines: 0,
               functions: 0,

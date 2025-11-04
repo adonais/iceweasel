@@ -52,14 +52,18 @@
     --button-background-color-destructive-hover: light-dark(var(--color-red-70), var(--color-red-20));
     --button-background-color-destructive-active: light-dark(var(--color-red-80), var(--color-red-10));
     --button-background-color-destructive-disabled: var(--button-background-color-destructive);
+    --button-background-color-destructive-selected: var(--button-background-color-destructive-active);
     --button-background-color-ghost: transparent;
     --button-background-color-ghost-hover: var(--button-background-color-hover);
     --button-background-color-ghost-active: var(--button-background-color-active);
     --button-background-color-ghost-disabled: var(--button-background-color-ghost);
+    --button-background-color-ghost-selected: var(--button-background-color-ghost-active);
     --button-background-color-primary: var(--color-accent-primary);
     --button-background-color-primary-hover: var(--color-accent-primary-hover);
     --button-background-color-primary-active: var(--color-accent-primary-active);
     --button-background-color-primary-disabled: var(--button-background-color-primary);
+    --button-background-color-primary-selected: var(--button-background-color-primary-active);
+    --button-background-color-selected: var(--button-background-color-active);
     --button-border: var(--border-width) solid var(--button-border-color);
     --button-border-color: transparent;
     --button-border-color-hover: var(--button-border-color);
@@ -69,15 +73,19 @@
     --button-border-color-destructive-hover: var(--button-border-color-destructive);
     --button-border-color-destructive-active: var(--button-border-color-destructive);
     --button-border-color-destructive-disabled: var(--button-border-color-destructive);
+    --button-border-color-destructive-selected: var(--button-border-color-destructive-active);
     --button-border-color-ghost: var(--button-border-color);
     --button-border-color-ghost-hover: var(--button-border-color-hover);
     --button-border-color-ghost-active: var(--button-border-color-active);
     --button-border-color-ghost-disabled: var(--button-border-color-disabled);
+    --button-border-color-ghost-selected: var(--button-border-color-ghost-active);
     --button-border-color-primary: transparent;
     --button-border-color-primary-hover: var(--button-border-color-primary);
     --button-border-color-primary-active: var(--button-border-color-primary);
     --button-border-color-primary-disabled: var(--button-border-color-primary);
-    --button-border-radius: var(--border-radius-small);
+    --button-border-color-primary-selected: var(--button-border-color-primary-active);
+    --button-border-color-selected: var(--button-border-color-active);
+    --button-border-radius: var(--border-radius-medium);
     --button-font-size: var(--font-size-root);
     --button-font-size-small: var(--font-size-small);
     --button-font-weight: var(--font-weight-bold);
@@ -97,13 +105,17 @@
     --button-text-color-destructive-hover: var(--button-text-color-destructive);
     --button-text-color-destructive-active: var(--button-text-color-destructive);
     --button-text-color-destructive-disabled: var(--button-text-color-destructive);
+    --button-text-color-destructive-selected: var(--button-text-color-destructive-active);
     --button-text-color-ghost: inherit;
     --button-text-color-ghost-hover: inherit;
     --button-text-color-ghost-active: inherit;
     --button-text-color-ghost-disabled: inherit;
+    --button-text-color-ghost-selected: var(--button-text-color-ghost-active);
     --button-text-color-primary-hover: var(--button-text-color-primary);
     --button-text-color-primary-active: var(--button-text-color-primary-hover);
     --button-text-color-primary-disabled: var(--button-text-color-primary);
+    --button-text-color-primary-selected: var(--button-text-color-primary-active);
+    --button-text-color-selected: var(--button-text-color-active);
 
     /** Checkbox **/
     --checkbox-margin-inline: var(--space-small);

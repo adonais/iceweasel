@@ -1,0 +1,9 @@
+[DEFAULT]
+prefs = [
+  "browser.ml.logLevel=Info",
+]
+support-files = [
+  "head.js",
+]
+
+["browser_dom_extractor.js"]

@@ -7,7 +7,6 @@
 #include <regex>
 #include <string>
 
-#include "mozilla/IntegerRange.h"
 #include "mozilla/gfx/Logging.h"
 
 namespace mozilla {

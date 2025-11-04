@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env mozilla/browser-window */
-
 document.addEventListener(
   "DOMContentLoaded",
   () => {
@@ -320,7 +318,7 @@ document.addEventListener(
           // attempts to generate the text fragment directive of selected text
           // Note: This is kicking off an async operation that might update
           // the context menu while it's open (enables an entry).
-          if (gContextMenu.textDirectiveTarget) {
+          if (gContextMenu.isContentSelected || gContextMenu.hasTextFragments) {
             gContextMenu.getTextDirective();
           }
           break;

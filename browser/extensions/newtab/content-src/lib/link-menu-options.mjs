@@ -331,6 +331,13 @@ export const LinkMenuOptions = {
       data: true,
     }),
   }),
+  DetectLocation: () => ({
+    id: "newtab-weather-menu-detect-my-location",
+    action: ac.AlsoToMain({
+      type: at.WEATHER_USER_OPT_IN_LOCATION,
+    }),
+    userEvent: "WEATHER_DETECT_LOCATION",
+  }),
   ChangeWeatherDisplaySimple: () => ({
     id: "newtab-weather-menu-change-weather-display-simple",
     action: ac.OnlyToMain({
@@ -472,7 +479,7 @@ export const LinkMenuOptions = {
     id: "newtab-menu-section-unfollow",
     action: ac.AlsoToMain({
       type: at.SECTION_PERSONALIZATION_SET,
-      data: (({ sectionKey: _sectionKey, ...remaining }) => remaining)(
+      data: (({ [sectionKey]: _sectionKey, ...remaining }) => remaining)(
         sectionPersonalization
       ),
     }),

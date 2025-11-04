@@ -118,7 +118,7 @@ class LZ4 {
    */
   static inline size_t maxCompressedSize(size_t aInputSize) {
     size_t max = (aInputSize + (aInputSize / 255) + 16);
-    MOZ_ASSERT(max > aInputSize);
+    MOZ_RELEASE_ASSERT(max > aInputSize);
     return max;
   }
 };

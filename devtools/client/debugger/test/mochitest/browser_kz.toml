@@ -3,7 +3,6 @@ tags = "devtools"
 subsuite = "devtools"
 support-files = [
   "examples/*",
-  "integration-tests/*",
   "head.js",
   "shared-head.js",
   "!/devtools/client/framework/browser-toolbox/test/helpers-browser-toolbox.js",
@@ -56,10 +55,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_dbg-no-duplicate-breakpoints-on-frame-reload.js"]
 
 ["browser_dbg-old-breakpoint.js"]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan",  # Bug 1904034
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1904034
-]
 
 ["browser_dbg-outline-filter.js"]
 
@@ -90,6 +85,9 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_dbg-paused-overlay-loading.js"]
 
 ["browser_dbg-paused-overlay.js"]
+
+["browser_dbg-pretty-print-auto.js"]
+fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_dbg-pretty-print-breakpoints-columns.js"]
 fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
@@ -217,49 +215,6 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_dbg-source-pragma.js"]
 
 ["browser_dbg-sourceURL-breakpoint.js"]
-
-["browser_dbg-sourcemapped-breakpoint-console.js"]
-
-["browser_dbg-sourcemapped-preview.js"]
-
-["browser_dbg-sourcemapped-scopes.js"]
-# Bug 1441545, 1536253 - very slow on debug
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && opt && a11y_checks", # Bugs 1858041 and 1849028 intermittent results (fails on Try, passes on Autoland)
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent results (fails on Try, passes on Autoland)
-]
-
-["browser_dbg-sourcemapped-stepping.js"]
-run-if = ["false"] # original stepping is currently disabled
-
-["browser_dbg-sourcemapped-toggle.js"]
-
-["browser_dbg-sourcemaps-bogus.js"]
-
-["browser_dbg-sourcemaps-breakpoints.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_dbg-sourcemaps-credentials.js"]
-
-["browser_dbg-sourcemaps-disabled.js"]
-
-["browser_dbg-sourcemaps-ignorelist.js"]
-
-["browser_dbg-sourcemaps-indexed.js"]
-
-["browser_dbg-sourcemaps-redirect.js"]
-
-["browser_dbg-sourcemaps-reloading-quickly.js"]
-
-["browser_dbg-sourcemaps-reloading.js"]
-
-["browser_dbg-sourcemaps.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
-
-["browser_dbg-sourcemaps2.js"]
-
-["browser_dbg-sourcemaps3.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
 
 ["browser_dbg-sources-project-search.js"]
 

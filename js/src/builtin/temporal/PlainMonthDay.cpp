@@ -7,7 +7,6 @@
 #include "builtin/temporal/PlainMonthDay.h"
 
 #include "mozilla/Assertions.h"
-#include "mozilla/EnumSet.h"
 
 #include <utility>
 

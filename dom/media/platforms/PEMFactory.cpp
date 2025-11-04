@@ -13,6 +13,7 @@
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
+#  include "AndroidDecoderModule.h"
 #  include "AndroidEncoderModule.h"
 #endif
 
@@ -233,7 +234,7 @@ void PEMFactory::InitContentPEMs() {
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-    if (StaticPrefs::media_android_media_codec_enabled()) {
+    if (AndroidDecoderModule::IsJavaDecoderModuleAllowed()) {
       mCurrentPEMs.AppendElement(new AndroidEncoderModule());
     }
 #endif
@@ -294,7 +295,7 @@ void PEMFactory::InitDefaultPEMs() {
 #endif
 
 #ifdef MOZ_WIDGET_ANDROID
-  if (StaticPrefs::media_android_media_codec_enabled()) {
+  if (AndroidDecoderModule::IsJavaDecoderModuleAllowed()) {
     mCurrentPEMs.AppendElement(new AndroidEncoderModule());
   }
 #endif

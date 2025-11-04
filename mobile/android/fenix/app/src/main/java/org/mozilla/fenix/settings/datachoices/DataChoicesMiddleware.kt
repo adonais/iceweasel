@@ -104,12 +104,16 @@ internal class DataChoicesMiddleware(
             if (!settings.hasUserDisabledExperimentation) {
                 settings.isExperimentationEnabled = true
             }
-            nimbusSdk.globalUserParticipation = true
+            // Use separate participation flags for experiments and rollouts
+            nimbusSdk.experimentParticipation = true
+            nimbusSdk.rolloutParticipation = true
             engine.notifyTelemetryPrefChanged(true)
         } else {
             metrics.stop(MetricServiceType.Data)
             settings.isExperimentationEnabled = false
-            nimbusSdk.globalUserParticipation = false
+            // Use separate participation flags for experiments and rollouts
+            nimbusSdk.experimentParticipation = false
+            nimbusSdk.rolloutParticipation = false
             engine.notifyTelemetryPrefChanged(false)
         }
         // Reset experiment identifiers on both opt-in and opt-out; it's likely

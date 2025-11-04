@@ -16,10 +16,15 @@
 #endif
 
 #include <algorithm>
+#include <cstddef>
+#include <string>
+#include <vector>
 
 #include "absl/strings/string_view.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/synchronization/mutex.h"
 
 namespace webrtc {
 

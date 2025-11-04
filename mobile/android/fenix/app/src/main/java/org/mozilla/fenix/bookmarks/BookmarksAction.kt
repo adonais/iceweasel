@@ -92,51 +92,61 @@ internal data object PrivateBrowsingAuthorized : BookmarksAction
 /**
  * Actions specific to the Add Folder screen.
  */
-internal sealed class AddFolderAction {
-    data class TitleChanged(val updatedText: String) : BookmarksAction
-    data object ParentFolderClicked : BookmarksAction
-    data class FolderCreated(val folder: BookmarkItem.Folder) : BookmarksAction
+internal sealed class AddFolderAction : BookmarksAction {
+    data class TitleChanged(val updatedText: String) : AddFolderAction()
+    data object ParentFolderClicked : AddFolderAction()
+    data class FolderCreated(val folder: BookmarkItem.Folder) : AddFolderAction()
 }
 
 /**
  * Actions specific to the Edit Folder screen.
  */
 internal sealed class EditFolderAction : BookmarksAction {
-    data class TitleChanged(val updatedText: String) : BookmarksAction
-    data object ParentFolderClicked : BookmarksAction
+    data class TitleChanged(val updatedText: String) : EditFolderAction()
+    data object ParentFolderClicked : EditFolderAction()
     data object DeleteClicked : EditFolderAction()
 }
 
-internal sealed class EditBookmarkAction {
-    data class TitleChanged(val title: String) : BookmarksAction
-    data class URLChanged(val url: String) : BookmarksAction
-    data object FolderClicked : BookmarksAction
-    data object DeleteClicked : BookmarksAction
+internal sealed class EditBookmarkAction : BookmarksAction {
+    data class TitleChanged(val title: String) : EditBookmarkAction()
+    data class URLChanged(val url: String) : EditBookmarkAction()
+    data object FolderClicked : EditBookmarkAction()
+    data object DeleteClicked : EditBookmarkAction()
 }
 
-internal sealed class SelectFolderAction {
-    data object ViewAppeared : BookmarksAction
-    data class FoldersLoaded(val folders: List<SelectFolderItem>) : BookmarksAction
-    data class ItemClicked(val folder: SelectFolderItem) : BookmarksAction
+internal sealed class SelectFolderAction : BookmarksAction {
+    data object ViewAppeared : SelectFolderAction()
+    data class FoldersLoaded(val folders: List<SelectFolderItem>) : SelectFolderAction()
+    data class ItemClicked(val folder: SelectFolderItem) : SelectFolderAction()
+
+    internal sealed class SortMenu : SelectFolderAction() {
+        data object SortMenuButtonClicked : SortMenu()
+        data object SortMenuDismissed : SortMenu()
+        data object CustomSortClicked : SortMenu()
+        data object NewestClicked : SortMenu()
+        data object OldestClicked : SortMenu()
+        data object AtoZClicked : SortMenu()
+        data object ZtoAClicked : SortMenu()
+    }
 }
 
-internal sealed class OpenTabsConfirmationDialogAction {
+internal sealed class OpenTabsConfirmationDialogAction : BookmarksAction {
     data class Present(
         val guid: String,
         val count: Int,
         val isPrivate: Boolean,
-    ) : BookmarksAction
-    data object ConfirmTapped : BookmarksAction
-    data object CancelTapped : BookmarksAction
+    ) : OpenTabsConfirmationDialogAction()
+    data object ConfirmTapped : OpenTabsConfirmationDialogAction()
+    data object CancelTapped : OpenTabsConfirmationDialogAction()
 }
 
-internal sealed class DeletionDialogAction {
-    data class CountLoaded(val count: Int) : BookmarksAction
-    data object CancelTapped : BookmarksAction
-    data object DeleteTapped : BookmarksAction
+internal sealed class DeletionDialogAction : BookmarksAction {
+    data class CountLoaded(val count: Int) : DeletionDialogAction()
+    data object CancelTapped : DeletionDialogAction()
+    data object DeleteTapped : DeletionDialogAction()
 }
 
-internal sealed class SnackbarAction {
-    data object Undo : BookmarksAction
-    data object Dismissed : BookmarksAction
+internal sealed class SnackbarAction : BookmarksAction {
+    data object Undo : SnackbarAction()
+    data object Dismissed : SnackbarAction()
 }

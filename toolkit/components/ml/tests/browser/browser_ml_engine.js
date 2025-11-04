@@ -35,6 +35,28 @@ async function checkForRemoteType(remoteType) {
   return false;
 }
 
+const SHARED_TOOLS = [
+  {
+    type: "function",
+    function: {
+      name: "search_open_tabs",
+      description: "Search open tabs by type.",
+      parameters: {
+        type: "object",
+        properties: { type: { type: "string" } },
+        required: ["type"],
+      },
+    },
+  },
+];
+
+const BASE_ENGINE_OPTIONS = {
+  featureId: "about-inference",
+  taskName: "text-generation",
+  modelId: "qwen3:0.6b",
+  modelRevision: "main",
+};
+
 /**
  * End to End test that the engine is indeed initialized with wllama when it is the
  * best-llama.
@@ -43,8 +65,6 @@ add_task(async function test_e2e_choose_backend_best_wllama() {
   // Allow any url
   Services.env.set("MOZ_ALLOW_EXTERNAL_ML_HUB", "true");
 
-  const originalWorkerConfig = MLEngineParent.getWorkerConfig();
-
   const backendData = new Uint8Array([10, 20, 30]);
 
   const expectedBackendData = JSON.stringify(backendData);
@@ -52,9 +72,9 @@ add_task(async function test_e2e_choose_backend_best_wllama() {
   // Mocking function used in the workers or child doesn't work.
   // So we are stubbing the code run by the worker.
   const workerCode = `
-  // Import the original worker code
+  // Inject the MLEngine.worker.mjs code
 
-  importScripts("${originalWorkerConfig.url}");
+  ${await getMLEngineWorkerCode()}
 
   // Stub
   ChromeUtils.defineESModuleGetters(
@@ -103,7 +123,7 @@ add_task(async function test_e2e_choose_backend_best_wllama() {
   let promiseStub = sinon
     .stub(MLEngineParent, "getWorkerConfig")
     .callsFake(function () {
-      return { url: blobURL, options: {} };
+      return { url: blobURL, options: { type: "module" } };
     });
 
   let wasmBufferStub = sinon
@@ -143,8 +163,6 @@ add_task(async function test_e2e_choose_backend_can_detect_failure() {
   // Allow any url
   Services.env.set("MOZ_ALLOW_EXTERNAL_ML_HUB", "true");
 
-  const originalWorkerConfig = MLEngineParent.getWorkerConfig();
-
   const backendData = new Uint8Array([10, 20, 30]);
 
   const expectedBackendData = JSON.stringify("data so no matches");
@@ -152,9 +170,9 @@ add_task(async function test_e2e_choose_backend_can_detect_failure() {
   // Mocking function used in the workers or child doesn't work.
   // So we are stubbing the code run by the worker.
   const workerCode = `
-  // Import the original worker code
+  // Inject the MLEngine.worker.mjs code
 
-  importScripts("${originalWorkerConfig.url}");
+  ${await getMLEngineWorkerCode()}
 
   // Stub
   ChromeUtils.defineESModuleGetters(
@@ -203,7 +221,7 @@ add_task(async function test_e2e_choose_backend_can_detect_failure() {
   let promiseStub = sinon
     .stub(MLEngineParent, "getWorkerConfig")
     .callsFake(function () {
-      return { url: blobURL, options: {} };
+      return { url: blobURL, options: { type: "module" } };
     });
 
   let wasmBufferStub = sinon
@@ -248,8 +266,6 @@ add_task(async function test_e2e_choose_backend_best_llamma_cpp() {
   // Allow any url
   Services.env.set("MOZ_ALLOW_EXTERNAL_ML_HUB", "true");
 
-  const originalWorkerConfig = MLEngineParent.getWorkerConfig();
-
   const backendData = new Uint8Array([10, 20, 30]);
 
   const expectedBackendData = JSON.stringify(null);
@@ -257,9 +273,9 @@ add_task(async function test_e2e_choose_backend_best_llamma_cpp() {
   // Mocking function used in the workers or child doesn't work.
   // So we are stubbing the code run by the worker.
   const workerCode = `
-  // Import the original worker code
+  // Inject the MLEngine.worker.mjs code
 
-  importScripts("${originalWorkerConfig.url}");
+  ${await getMLEngineWorkerCode()}
 
   // Stub
   ChromeUtils.defineESModuleGetters(
@@ -308,7 +324,7 @@ add_task(async function test_e2e_choose_backend_best_llamma_cpp() {
   let promiseStub = sinon
     .stub(MLEngineParent, "getWorkerConfig")
     .callsFake(function () {
-      return { url: blobURL, options: {} };
+      return { url: blobURL, options: { type: "module" } };
     });
 
   let wasmBufferStub = sinon
@@ -348,16 +364,14 @@ add_task(async function test_e2e_engine_can_be_cancelled() {
   // Allow any url
   Services.env.set("MOZ_ALLOW_EXTERNAL_ML_HUB", "true");
 
-  const originalWorkerConfig = MLEngineParent.getWorkerConfig();
-
   const backendData = new Uint8Array([10, 20, 30]);
 
   // Mocking function used in the workers or child doesn't work.
   // So we are stubbing the code run by the worker.
   const workerCode = `
-  // Import the original worker code
+  // Inject the MLEngine.worker.mjs code
 
-  importScripts("${originalWorkerConfig.url}");
+  ${await getMLEngineWorkerCode()}
 
   // Stub
   ChromeUtils.defineESModuleGetters(
@@ -410,7 +424,7 @@ add_task(async function test_e2e_engine_can_be_cancelled() {
   let promiseStub = sinon
     .stub(MLEngineParent, "getWorkerConfig")
     .callsFake(function () {
-      return { url: blobURL, options: {} };
+      return { url: blobURL, options: { type: "module" } };
     });
 
   let wasmBufferStub = sinon
@@ -459,16 +473,14 @@ add_task(async function test_e2e_engine_can_be_cancelled_after_fetch() {
   // Allow any url
   Services.env.set("MOZ_ALLOW_EXTERNAL_ML_HUB", "true");
 
-  const originalWorkerConfig = MLEngineParent.getWorkerConfig();
-
   const backendData = new Uint8Array([10, 20, 30]);
 
   // Mocking function used in the workers or child doesn't work.
   // So we are stubbing the code run by the worker.
   const workerCode = `
-  // Import the original worker code
+  // Inject the MLEngine.worker.mjs code
 
-  importScripts("${originalWorkerConfig.url}");
+  ${await getMLEngineWorkerCode()}
 
   // Stub
   ChromeUtils.defineESModuleGetters(
@@ -521,7 +533,7 @@ add_task(async function test_e2e_engine_can_be_cancelled_after_fetch() {
   let promiseStub = sinon
     .stub(MLEngineParent, "getWorkerConfig")
     .callsFake(function () {
-      return { url: blobURL, options: {} };
+      return { url: blobURL, options: { type: "module" } };
     });
 
   let wasmBufferStub = sinon
@@ -1193,6 +1205,7 @@ add_task(async function test_ml_engine_get_status() {
         processorRevision: "main",
         logLevel: "All",
         runtimeFilename: "ort-wasm-simd-threaded.jsep.wasm",
+        staticEmbeddingsOptions: null,
         device: null,
         dtype: "q8",
         numThreads: "NOT_COMPARED",
@@ -1208,6 +1221,8 @@ add_task(async function test_ml_engine_get_status() {
         modelFile: null,
         backend: null,
         modelHub: null,
+        baseURL: null,
+        apiKey: null,
       },
       engineId: "default-engine",
     },
@@ -1920,4 +1935,228 @@ add_task(async function test_hub_by_default() {
 
   await EngineProcess.destroyMLEngine();
   await cleanup();
+});
+
+add_task(async function test_openai_client() {
+  const records = [
+    {
+      featureId: "about-inference",
+      taskName: "text-generation",
+      modelId: "qwen3:0.6b",
+      modelRevision: "main",
+      id: "74a71cfd-1734-44e6-85c0-69cf3e874138",
+    },
+  ];
+  const { cleanup } = await setup({ records });
+  const { server: mockServer, port } = startMockOpenAI({
+    echo: "This gets echoed.",
+  });
+
+  const engineInstance = await createEngine({
+    featureId: "about-inference",
+    task: "text-generation",
+    modelId: "qwen3:0.6b",
+    modelRevision: "main",
+    apiKey: "ollama",
+    baseURL: `http://localhost:${port}/v1`,
+    backend: "openai",
+  });
+
+  const request = {
+    args: [
+      {
+        role: "system",
+        content:
+          "You are a helpful assistant that summarizes text clearly and concisely.",
+      },
+      {
+        role: "user",
+        content: `Please summarize the following text:\n\n blah bla`,
+      },
+    ],
+  };
+
+  try {
+    info("Run the inference");
+    const inferencePromise = engineInstance.run(request);
+
+    const result = await inferencePromise;
+
+    Assert.equal(
+      result.finalOutput,
+      "This is a mock summary for testing end-to-end flow."
+    );
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+    await stopMockOpenAI(mockServer);
+  }
+});
+
+add_task(async function test_openai_client_tools_non_streaming() {
+  const records = [
+    {
+      ...BASE_ENGINE_OPTIONS,
+      id: "74a71cfd-1734-44e6-85c0-69cf3e874138",
+    },
+  ];
+  const { cleanup } = await setup({ records });
+  const { server: mockServer, port } = startMockOpenAI();
+
+  const engineInstance = await createEngine({
+    ...BASE_ENGINE_OPTIONS,
+    apiKey: "ollama",
+    baseURL: `http://localhost:${port}/v1`,
+    backend: "openai",
+  });
+
+  // First request: ask with tools; server responds with tool_calls
+  const requestWithTools = {
+    args: [
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: "Find my open news tabs." },
+    ],
+    tools: SHARED_TOOLS,
+  };
+
+  try {
+    info("Run request that triggers tool calls");
+    const result1 = await engineInstance.run(requestWithTools);
+
+    // The pipeline should surface toolCalls from the OpenAI message
+    Assert.ok(result1.toolCalls, "toolCalls should exist on the result");
+    Assert.equal(result1.toolCalls.length, 1, "Exactly one tool call");
+    Assert.equal(
+      result1.toolCalls[0].function.name,
+      "search_open_tabs",
+      "Tool name should match"
+    );
+
+    // Second request: append assistant tool_calls + our tool result
+    const assistantToolCallsMsg = {
+      role: "assistant",
+      tool_calls: result1.toolCalls.map(tc => ({
+        id: tc.id,
+        type: "function",
+        function: {
+          name: tc.function.name,
+          arguments: tc.function.arguments,
+        },
+      })),
+    };
+
+    const toolResultMsg = {
+      role: "tool",
+      tool_call_id: result1.toolCalls[0].id,
+      content: JSON.stringify({ query: "news", allTabs: [] }),
+    };
+
+    const followup = await engineInstance.run({
+      args: [...requestWithTools.args, assistantToolCallsMsg, toolResultMsg],
+      tools: requestWithTools.tools, // still valid to include
+    });
+
+    Assert.equal(
+      followup.finalOutput,
+      "Here are the tabs I found for you.",
+      "Should get assistant follow-up after tool result"
+    );
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+    await stopMockOpenAI(mockServer);
+  }
+});
+
+add_task(async function test_openai_client_tools_streaming() {
+  const records = [
+    {
+      ...BASE_ENGINE_OPTIONS,
+      id: "b3b2b661-daa6-4b7f-8d3c-7db0df0dbeef",
+    },
+  ];
+  const { cleanup } = await setup({ records });
+  const { server: mockServer, port } = startMockOpenAI();
+
+  const engineInstance = await createEngine({
+    ...BASE_ENGINE_OPTIONS,
+    apiKey: "ollama",
+    baseURL: `http://localhost:${port}/v1`,
+    backend: "openai",
+  });
+
+  const starter = {
+    args: [
+      { role: "system", content: "You are a helpful assistant." },
+      { role: "user", content: "Find my open news tabs." },
+    ],
+    tools: SHARED_TOOLS,
+    streamOptions: { enabled: true },
+  };
+
+  try {
+    // --- First turn: expect tool_calls via streaming ---
+    const gen = engineInstance.runWithGenerator(starter);
+
+    let toolCalls = null;
+    for await (const chunk of gen) {
+      // Your MLEngineParent + OpenAIPipeline put toolCalls onto the yielded chunk
+      if (chunk.toolCalls && chunk.toolCalls.length) {
+        toolCalls = chunk.toolCalls;
+        break; // we end the turn when model asks for tools
+      }
+      // (Optional) you could accumulate chunk.text here; expected empty in this turn
+    }
+
+    Assert.ok(toolCalls, "Should receive toolCalls via streaming");
+    Assert.equal(toolCalls.length, 1, "One tool call");
+    Assert.equal(
+      toolCalls[0].function.name,
+      "search_open_tabs",
+      "Tool name should match"
+    );
+
+    // --- Second turn: send tool result, stream final answer ---
+    const assistantToolCallsMsg = {
+      role: "assistant",
+      tool_calls: toolCalls.map(tc => ({
+        id: tc.id,
+        type: "function",
+        function: {
+          name: tc.function.name,
+          arguments: tc.function.arguments,
+        },
+      })),
+    };
+
+    const toolResultMsg = {
+      role: "tool",
+      tool_call_id: toolCalls[0].id,
+      content: JSON.stringify({ query: "news", allTabs: [] }),
+    };
+
+    const gen2 = engineInstance.runWithGenerator({
+      args: [...starter.args, assistantToolCallsMsg, toolResultMsg],
+      tools: SHARED_TOOLS,
+      streamOptions: { enabled: true },
+    });
+
+    let final = "";
+    for await (const chunk of gen2) {
+      if (chunk.text) {
+        final += chunk.text;
+      }
+    }
+
+    Assert.ok(final.length, "Should stream some final content");
+    Assert.equal(
+      final,
+      "Here are the tabs I found for you.",
+      "Should stream the expected assistant follow-up"
+    );
+  } finally {
+    await EngineProcess.destroyMLEngine();
+    await cleanup();
+    await stopMockOpenAI(mockServer);
+  }
 });

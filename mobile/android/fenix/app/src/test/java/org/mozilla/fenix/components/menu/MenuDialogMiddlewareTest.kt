@@ -4,9 +4,10 @@
 
 package org.mozilla.fenix.components.menu
 
-import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.Intent
+import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.runBlocking
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.state.ReaderState
@@ -75,7 +76,7 @@ class MenuDialogMiddlewareTest {
     private val addonManager: AddonManager = mock()
     private val onDeleteAndQuit: () -> Unit = mock()
 
-    private lateinit var alertDialogBuilder: AlertDialog.Builder
+    private lateinit var alertDialogBuilder: MaterialAlertDialogBuilder
     private lateinit var pinnedSiteStorage: PinnedSiteStorage
     private lateinit var addPinnedSiteUseCase: TopSitesUseCases.AddPinnedSiteUseCase
     private lateinit var removePinnedSiteUseCase: TopSitesUseCases.RemoveTopSiteUseCase
@@ -142,7 +143,7 @@ class MenuDialogMiddlewareTest {
             ),
         )
 
-        assertEquals(guid, store.state.browserMenuState!!.bookmarkState.guid)
+        assertEquals(guid.getOrNull()!!, store.state.browserMenuState!!.bookmarkState.guid)
         assertTrue(store.state.browserMenuState!!.bookmarkState.isBookmarked)
     }
 
@@ -369,7 +370,7 @@ class MenuDialogMiddlewareTest {
             onDismiss = { dismissWasCalled = true },
         )
 
-        assertEquals(guid, store.state.browserMenuState!!.bookmarkState.guid)
+        assertEquals(guid.getOrNull()!!, store.state.browserMenuState!!.bookmarkState.guid)
         assertTrue(store.state.browserMenuState!!.bookmarkState.isBookmarked)
 
         store.dispatch(MenuAction.AddBookmark)
@@ -1054,7 +1055,7 @@ class MenuDialogMiddlewareTest {
                 removePinnedSitesUseCase = removePinnedSiteUseCase,
                 requestDesktopSiteUseCase = requestDesktopSiteUseCase,
                 tabsUseCases = tabsUseCases,
-                alertDialogBuilder = alertDialogBuilder,
+                materialAlertDialogBuilder = alertDialogBuilder,
                 topSitesMaxLimit = TOP_SITES_MAX_COUNT,
                 onDeleteAndQuit = onDeleteAndQuit,
                 onDismiss = onDismiss,

@@ -106,16 +106,18 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942#TDB
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_sensitivity:
       - technical
     notification_emails:
       - necko@mozilla.com
       - edgul@mozilla.com
-    expires: 146
+    expires: 157
 
   cookie_count_partitioned:
     type: custom_distribution
@@ -130,16 +132,18 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942#TDB
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_sensitivity:
       - technical
     notification_emails:
       - necko@mozilla.com
       - edgul@mozilla.com
-    expires: 146
+    expires: 157
 
   cookie_count_unpartitioned:
     type: custom_distribution
@@ -154,16 +158,18 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942#TDB
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_sensitivity:
       - technical
     notification_emails:
       - necko@mozilla.com
       - edgul@mozilla.com
-    expires: 146
+    expires: 157
 
   cookie_count_part_by_key:
     type: custom_distribution
@@ -179,16 +185,18 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942#TDB
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_sensitivity:
       - technical
     notification_emails:
       - necko@mozilla.com
       - edgul@mozilla.com
-    expires: 146
+    expires: 157
 
   cookie_count_unpart_by_key:
     type: custom_distribution
@@ -204,46 +212,18 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942#TDB
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_sensitivity:
       - technical
     notification_emails:
       - necko@mozilla.com
       - edgul@mozilla.com
-    expires: 146
-
-  cookie_count_invalid_first_party_partitioned_in_db:
-    type: counter
-    description: >
-      This counts the number of invalid first-party partitioned cookies that
-      don't have the partitioned cookie attribution(CHIPS).
-    bugs:
-      - https://bugzilla.mozilla.org/1922193
-    data_reviews:
-      - https://bugzilla.mozilla.org/1922193
-    notification_emails:
-      - bvandersloot@mozilla.com
-      - tihuang@mozilla.com
-      - edgul@mozilla.com
-    expires: 146
-
-  set_invalid_first_party_partitioned_cookie:
-    type: counter
-    description: >
-      This counts the number of times we set an invalid first-party partitioned
-      cookie.
-    bugs:
-      - https://bugzilla.mozilla.org/1922193
-    data_reviews:
-      - https://bugzilla.mozilla.org/1922193
-    notification_emails:
-      - bvandersloot@mozilla.com
-      - tihuang@mozilla.com
-      - edgul@mozilla.com
-    expires: 146
+    expires: 157
 
   cookie_purge_max:
     type: custom_distribution
@@ -260,16 +240,18 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942#TDB
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_sensitivity:
       - technical
     notification_emails:
       - necko@mozilla.com
       - edgul@mozilla.com
-    expires: 146
+    expires: 157
 
   cookie_purge_entry_max:
     type: custom_distribution
@@ -286,16 +268,18 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1828942#TDB
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1892158
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_sensitivity:
       - technical
     notification_emails:
       - necko@mozilla.com
       - edgul@mozilla.com
-    expires: 146
+    expires: 157
 
   cookie_chips_partition_limit_overflow:
     type: custom_distribution
@@ -309,15 +293,17 @@ networking:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1878391
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1878391
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1922606
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989180
     data_sensitivity:
       - technical
     notification_emails:
       - necko@mozilla.com
       - edgul@mozilla.com
-    expires: 146
+    expires: 157
 
   cookie_db_validation:
     type: labeled_counter
@@ -694,165 +680,6 @@ networking:
       - private
       - https_regular
       - https_private
-
-  fetch_keepalive_discard_count:
-    type: labeled_counter
-    description: >
-      Counts how many fetch keepalive requests are dropped due to configured
-      resource limits.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1873551
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1873551
-    notification_emails:
-      - smayya@mozilla.com
-    expires: 146
-    labels:
-      - total_keepalive_limit
-      - per_origin_limit
-
-  fetch_keepalive_request_count:
-    type: labeled_counter
-    description: >
-      Counts how many fetch keepalive requests are made. This counter helps us to
-      understand the adoption of fetch keepalive for firefox.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1873551
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1873551
-    notification_emails:
-      - smayya@mozilla.com
-    expires: 146
-    labels:
-      - worker
-      - main
-
-  http_content_onstart_delay:
-    type: timing_distribution
-    time_unit: millisecond
-    description: >
-      The time between dispatching OnStartRequest from the socket thread and processing it on the main thread (content process).
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857926
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857926#c
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - necko@mozilla.com
-      - rjesup@mozilla.com
-    expires: 146
-
-  http_content_onstop_delay:
-    type: timing_distribution
-    time_unit: millisecond
-    description: >
-      The time between dispatching OnStopRequest from the socket thread and processing it on the main thread (content process).
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857926
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857926#c
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - necko@mozilla.com
-      - rjesup@mozilla.com
-    expires: 146
-
-  http_content_ondatafinished_delay:
-    type: timing_distribution
-    time_unit: millisecond
-    description: >
-      The time between dispatching OnDataFinished from the socket thread and processing
-      it on main/background thread.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857615
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857615#c
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - necko@mozilla.com
-      - rjesup@mozilla.com
-    expires: 146
-
-  http_content_ondatafinished_delay_2:
-    type: timing_distribution
-    time_unit: millisecond
-    description: >
-      The time between dispatching OnDataFinished from the socket thread and processing it
-      on the background thread.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857615
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1913140
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857615#c
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - necko@mozilla.com
-      - jesup@mozilla.com
-    expires: 146
-
-  http_content_ondatafinished_to_onstop_delay:
-    type: timing_distribution
-    time_unit: millisecond
-    description: >
-      The time between processing OnDataFinished and processing OnStopRequest (if OnDataFinished comes first)
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857615
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857615#c
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - necko@mozilla.com
-      - rjesup@mozilla.com
-    expires: 146
-
-  http_content_html5parser_ondatafinished_to_onstop_delay:
-    type: timing_distribution
-    time_unit: millisecond
-    description: >
-      The time between processing OnDataFinished and processing OnStopRequest (if OnDataFinished comes first)
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857926
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857926
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - necko@mozilla.com
-      - rjesup@mozilla.com
-    expires: 146
-
-  http_content_cssloader_ondatafinished_to_onstop_delay:
-    type: timing_distribution
-    time_unit: millisecond
-    description: >
-      The time between processing OnDataFinished and processing OnStopRequest for CSSLoader in the content process
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1883391
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902186
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1883391
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - necko@mozilla.com
-    expires: 146
 
 
 
@@ -1516,7 +1343,7 @@ networking:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1848542
     notification_emails:
       - vgosu@mozilla.com
-    expires: 146
+    expires: 156
 
   residual_cache_folder_removal:
     type: labeled_counter
@@ -1525,29 +1352,16 @@ networking:
       that wasn't purged at shutdown
     bugs:
       - https://bugzilla.mozilla.org/1848542
+      - https://bugzilla.mozilla.org/1989190
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1848542
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989190
     notification_emails:
       - vgosu@mozilla.com
-    expires: 146
+    expires: 156
     labels:
       - success
       - failure
-
-  cache_purge_due_to_memory_limit:
-    type: labeled_counter
-    description: >
-      Counts how often we purge cache entries from memory due to memory limits.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1941935
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1941935
-    notification_emails:
-      - necko@mozilla.com
-    expires: 146
-    labels:
-      - meta_data_file_size_limit
-      - cache_memory_limit
 
   trr_request_count:
     type: labeled_counter
@@ -3169,50 +2983,6 @@ predictor:
       - necko@mozilla.com
     expires: never
     telemetry_mirror: PREDICTOR_PREFETCH_IGNORE_REASON
-
-glam_experiment:
-  http_content_html5parser_ondatafinished_to_onstop_delay:
-    type: timing_distribution
-    disabled: true
-    time_unit: millisecond
-    description: >
-      Duplicate of:
-      `networking.http_content_html5parser_ondatafinished_to_onstop_delay`
-
-      Intended for the purpose of testing client side sampling of data. This
-      metric is disabled by default and will be enabled only for the purpose
-      of the experiment. See Bug 1947604 for more information.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1947604
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1857926
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1902188
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - tlong@mozilla.com
-      - efilho@mozilla.com
-    expires: 146
-  os_socket_limit_reached:
-    type: counter
-    disabled: true
-    description: >
-      Duplicate of:
-      `networking.os_socket_limit_reached`
-
-      Intended for the purpose of testing client side sampling of data. This
-      metric is disabled by default and will be enabled only for the purpose
-      of the experiment. See Bug 1947604 for more information.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1947604
-    data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1901855#c1
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - tlong@mozilla.com
-      - efilho@mozilla.com
-    expires: 146
 
 network.cookies:
   sqlite_open_readahead:

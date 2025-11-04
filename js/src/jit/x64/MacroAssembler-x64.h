@@ -185,15 +185,7 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
   void loadUnalignedValue(const Address& src, ValueOperand dest) {
     loadValue(src, dest);
   }
-  void tagValue(JSValueType type, Register payload, ValueOperand dest) {
-    ScratchRegisterScope scratch(asMasm());
-    MOZ_ASSERT(dest.valueReg() != scratch);
-    if (payload != dest.valueReg()) {
-      movq(payload, dest.valueReg());
-    }
-    mov(ImmShiftedTag(type), scratch);
-    orq(scratch, dest.valueReg());
-  }
+  void tagValue(JSValueType type, Register payload, ValueOperand dest);
   void pushValue(ValueOperand val) { push(val.valueReg()); }
   void popValue(ValueOperand val) { pop(val.valueReg()); }
   void pushValue(const Value& val) {
@@ -765,11 +757,9 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
     vmovq(src, dest.valueReg());
   }
   void boxNonDouble(JSValueType type, Register src, const ValueOperand& dest) {
-    MOZ_ASSERT(src != dest.valueReg());
     boxValue(type, src, dest.valueReg());
   }
   void boxNonDouble(Register type, Register src, const ValueOperand& dest) {
-    MOZ_ASSERT(src != dest.valueReg());
     boxValue(type, src, dest.valueReg());
   }
 

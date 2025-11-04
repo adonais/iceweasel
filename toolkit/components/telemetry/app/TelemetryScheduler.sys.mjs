@@ -85,6 +85,7 @@ export var TelemetryScheduler = {
   _schedulerInterval: 0,
   _shuttingDown: true,
   _isUserIdle: false,
+  _observerRegistered: false,
 
   /**
    * Initialises the scheduler and schedules the first daily/aborted session pings.
@@ -107,7 +108,10 @@ export var TelemetryScheduler = {
     this._rescheduleTimeout();
 
     lazy.idleService.addIdleObserver(this, IDLE_TIMEOUT_SECONDS);
-    Services.obs.addObserver(this, "wake_notification");
+    if (!this._observerRegistered) {
+      Services.obs.addObserver(this, "wake_notification");
+      this._observerRegistered = true;
+    }
   },
 
   /**
@@ -130,7 +134,10 @@ export var TelemetryScheduler = {
     }
 
     lazy.idleService.removeIdleObserver(this, IDLE_TIMEOUT_SECONDS);
-    Services.obs.removeObserver(this, "wake_notification");
+    if (this._observerRegistered) {
+      Services.obs.removeObserver(this, "wake_notification");
+      this._observerRegistered = false;
+    }
 
     this._shuttingDown = true;
   },

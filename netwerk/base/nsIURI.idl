@@ -324,3 +324,9 @@ interface nsIURI : nsISupports
     }
     %}
 };
+
+%{C++
+// fmt support
+template <>
+struct fmt::formatter<nsIURI> : ostream_formatter {};
+%}

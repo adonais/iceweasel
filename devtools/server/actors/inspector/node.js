@@ -373,10 +373,10 @@ class NodeActor extends Actor {
       // Fails for <scrollbar> elements.
     }
 
+    const gridContainerType = InspectorUtils.getGridContainerType(this.rawNode);
     if (
-      (display === "grid" || display === "inline-grid") &&
-      (style.gridTemplateRows.startsWith("subgrid") ||
-        style.gridTemplateColumns.startsWith("subgrid"))
+      gridContainerType &
+      (InspectorUtils.GRID_SUBGRID_COL | InspectorUtils.GRID_SUBGRID_ROW)
     ) {
       display = "subgrid";
     }

@@ -21,7 +21,7 @@ let TestObserver = {
         Assert.ok(subject instanceof Ci.nsILoginMetaInfo);
         Assert.ok(expectedData.equals(subject)); // nsILoginInfo.equals()
         break;
-      case "modifyLogin":
+      case "modifyLogin": {
         Assert.ok(subject instanceof Ci.nsIArray);
         Assert.equal(subject.length, 2);
         let oldLogin = subject.queryElementAt(0, Ci.nsILoginInfo);
@@ -29,6 +29,7 @@ let TestObserver = {
         Assert.ok(expectedData[0].equals(oldLogin)); // nsILoginInfo.equals()
         Assert.ok(expectedData[1].equals(newLogin));
         break;
+      }
       case "removeLogin":
         Assert.ok(subject instanceof Ci.nsILoginInfo);
         Assert.ok(subject instanceof Ci.nsILoginMetaInfo);

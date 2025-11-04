@@ -35,6 +35,8 @@ class MOZ_RAII AutoProfilerMessageMarker {
 
   ~AutoProfilerMessageMarker();
 
+  WPARAM WParam() const { return mWParam; }
+
  protected:
   Maybe<MarkerOptions> mOptions;
   Span<const char> mMsgLoopName;

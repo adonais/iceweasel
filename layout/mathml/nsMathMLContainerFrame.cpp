@@ -392,11 +392,7 @@ nsMathMLContainerFrame::Stretch(DrawTarget* aDrawTarget,
 
         // re-position all our children
         PlaceFlags flags;
-        nsresult rv = Place(aDrawTarget, flags, aDesiredStretchSize);
-        if (NS_FAILED(rv)) {
-          // Make sure the child frames get their DidReflow() calls.
-          DidReflowChildren(mFrames.FirstChild());
-        }
+        Place(aDrawTarget, flags, aDesiredStretchSize);
 
         // If our parent is not embellished, it means we are the outermost
         // embellished container and so we put the spacing, otherwise we don't
@@ -478,19 +474,7 @@ nsresult nsMathMLContainerFrame::FinalizeReflow(DrawTarget* aDrawTarget,
   if (!placeOrigin) {
     flags += PlaceFlag::MeasureOnly;
   }
-  nsresult rv = Place(aDrawTarget, flags, aDesiredSize);
-
-  // Place() will call FinishReflowChild() when placeOrigin is true but if
-  // it returns before reaching FinishReflowChild() due to errors we need
-  // to fulfill the reflow protocol by calling DidReflow for the child frames
-  // that still needs it here (or we may crash - bug 366012).
-  // If placeOrigin is false we should reach Place() with
-  // PlaceFlag::MeasureOnly unset through Stretch() eventually.
-  if (NS_FAILED(rv)) {
-    GatherAndStoreOverflow(&aDesiredSize);
-    DidReflowChildren(PrincipalChildList().FirstChild());
-    return rv;
-  }
+  Place(aDrawTarget, flags, aDesiredSize);
 
   bool parentWillFireStretch = false;
   if (!placeOrigin) {
@@ -567,6 +551,7 @@ nsresult nsMathMLContainerFrame::FinalizeReflow(DrawTarget* aDrawTarget,
     GatherAndStoreOverflow(&aDesiredSize);
   }
 
+  mPresentationData.flags &= ~NS_MATHML_STRETCH_DONE;
   return NS_OK;
 }
 
@@ -989,10 +974,7 @@ void nsMathMLContainerFrame::GetIntrinsicISizeMetrics(
 
   // Measure
   PlaceFlags flags(PlaceFlag::IntrinsicSize, PlaceFlag::MeasureOnly);
-  nsresult rv = Place(aRenderingContext->GetDrawTarget(), flags, aDesiredSize);
-  if (NS_FAILED(rv)) {
-    PlaceAsMrow(aRenderingContext->GetDrawTarget(), flags, aDesiredSize);
-  }
+  Place(aRenderingContext->GetDrawTarget(), flags, aDesiredSize);
 
   ClearSavedChildMetrics();
 }
@@ -1210,9 +1192,9 @@ class nsMathMLContainerFrame::RowChildFrameIterator {
 };
 
 /* virtual */
-nsresult nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
-                                       const PlaceFlags& aFlags,
-                                       ReflowOutput& aDesiredSize) {
+void nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
+                                   const PlaceFlags& aFlags,
+                                   ReflowOutput& aDesiredSize) {
   // This is needed in case this frame is empty (i.e., no child frames)
   mBoundingMetrics = nsBoundingMetrics();
 
@@ -1266,14 +1248,12 @@ nsresult nsMathMLContainerFrame::Place(DrawTarget* aDrawTarget,
   if (!aFlags.contains(PlaceFlag::MeasureOnly)) {
     PositionRowChildFrames(shiftX, aDesiredSize.BlockStartAscent());
   }
-
-  return NS_OK;
 }
 
-nsresult nsMathMLContainerFrame::PlaceAsMrow(DrawTarget* aDrawTarget,
-                                             const PlaceFlags& aFlags,
-                                             ReflowOutput& aDesiredSize) {
-  return nsMathMLContainerFrame::Place(aDrawTarget, aFlags, aDesiredSize);
+void nsMathMLContainerFrame::PlaceAsMrow(DrawTarget* aDrawTarget,
+                                         const PlaceFlags& aFlags,
+                                         ReflowOutput& aDesiredSize) {
+  nsMathMLContainerFrame::Place(aDrawTarget, aFlags, aDesiredSize);
 }
 
 void nsMathMLContainerFrame::PositionRowChildFrames(nscoord aOffsetX,
@@ -1367,20 +1347,6 @@ nscoord nsMathMLContainerFrame::FixInterFrameSpacing(
     }
   }
   return gap;
-}
-
-/* static */
-void nsMathMLContainerFrame::DidReflowChildren(nsIFrame* aFirst) {
-  for (nsIFrame* frame = aFirst; frame; frame = frame->GetNextSibling()) {
-    if (!frame->HasAnyStateBits(NS_FRAME_IN_REFLOW)) {
-      continue;
-    }
-    if (nsIFrame* grandchild = frame->PrincipalChildList().FirstChild()) {
-      // Finish off principal descendants, too
-      DidReflowChildren(grandchild);
-    }
-    frame->DidReflow(frame->PresContext(), nullptr);
-  }
 }
 
 // helper used by mstyle, mphantom, mpadded and mrow in their implementations

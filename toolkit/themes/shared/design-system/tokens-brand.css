@@ -42,6 +42,7 @@
     --font-size-large: 1.133rem; /* 17px */
     --font-size-xlarge: 1.467rem; /* 22px */
     --font-size-xxlarge: 1.6rem; /* 24px */
+    --font-size-xxxlarge: 2.2rem; /* 33px */
 
     /** Link **/
     --link-color: var(--color-accent-primary);

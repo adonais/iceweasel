@@ -97,9 +97,9 @@ nsMathMLmmultiscriptsFrame::TransmitAutomaticData() {
 }
 
 /* virtual */
-nsresult nsMathMLmmultiscriptsFrame::Place(DrawTarget* aDrawTarget,
-                                           const PlaceFlags& aFlags,
-                                           ReflowOutput& aDesiredSize) {
+void nsMathMLmmultiscriptsFrame::Place(DrawTarget* aDrawTarget,
+                                       const PlaceFlags& aFlags,
+                                       ReflowOutput& aDesiredSize) {
   nscoord subScriptShift = 0;
   nscoord supScriptShift = 0;
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
@@ -111,7 +111,7 @@ nsresult nsMathMLmmultiscriptsFrame::Place(DrawTarget* aDrawTarget,
 
 // exported routine that both munderover and mmultiscripts share.
 // munderover uses this when movablelimits is set.
-nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
+void nsMathMLmmultiscriptsFrame::PlaceMultiScript(
     nsPresContext* aPresContext, DrawTarget* aDrawTarget,
     const PlaceFlags& aFlags, ReflowOutput& aDesiredSize,
     nsMathMLContainerFrame* aFrame, nscoord aUserSubScriptShift,
@@ -705,6 +705,4 @@ nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
       childFrame = childFrame->GetNextSibling();
     } while (prescriptsFrame != childFrame);
   }
-
-  return NS_OK;
 }

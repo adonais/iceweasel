@@ -59,9 +59,9 @@ To use it locally, add the parameter `--profiler` to your test command:
 ./mach test <path to test> --profiler
 ```
 
-To do it in a try build it's possible to use the environment variables:
+To do it in a try build it's possible to use the `--profiler` flag:
 ```
-./mach try fuzzy --env MOZ_PROFILER_STARTUP=1 <test directory>
+./mach try fuzzy --profiler <test directory>
 ```
 
 This will automatically upload profiles of failing tests.
@@ -69,7 +69,7 @@ This will automatically upload profiles of failing tests.
 :::{hint}
 If you want to see a profile of a test that doesn’t fail (eg. to compare it with
 the profile of a failing run), an easy way to make it happen is to add a failure
-near the end of the test, eg. `ok(false, “force profile upload”);`.
+near the end of the test, eg. `ok(false, "force profile upload");`.
 :::
 
 Some test types do not support running the profiler with a parameter (such as

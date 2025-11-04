@@ -5,8 +5,6 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  ContextDescriptorType:
-    "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   SessionDataCategory:
     "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
@@ -228,26 +226,11 @@ export class EventsDispatcher {
   }
 
   #matchesContext(contextInfo, contextDescriptor) {
-    if (contextDescriptor.type === lazy.ContextDescriptorType.All) {
-      return true;
-    }
-
-    if (
-      contextDescriptor.type === lazy.ContextDescriptorType.TopBrowsingContext
-    ) {
-      const eventBrowsingContext = BrowsingContext.get(contextInfo.contextId);
-      return eventBrowsingContext?.browserId === contextDescriptor.id;
-    }
-
-    if (contextDescriptor.type === lazy.ContextDescriptorType.UserContext) {
-      const eventBrowsingContext = BrowsingContext.get(contextInfo.contextId);
-      return (
-        eventBrowsingContext?.originAttributes.userContextId ===
-        contextDescriptor.id
-      );
-    }
-
-    return false;
+    const eventBrowsingContext = BrowsingContext.get(contextInfo.contextId);
+    return this.#messageHandler.contextMatchesDescriptor(
+      eventBrowsingContext,
+      contextDescriptor
+    );
   }
 
   #onMessageHandlerEvent = (name, event, contextInfo) => {

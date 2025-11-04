@@ -146,7 +146,7 @@
   #viewButton {
     margin: 0;
     margin-inline-start: 4px;
-    border-radius: 2px;
+    border-radius: var(--border-radius-xsmall);
   }
 }
 

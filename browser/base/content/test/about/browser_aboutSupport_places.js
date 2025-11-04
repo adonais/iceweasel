@@ -19,19 +19,19 @@ add_task(async function test_places_db_stats_table() {
             "place-database-stats-tbody"
           );
           await ContentTaskUtils.waitForCondition(
-            () => table.style.display === "none",
+            () => ContentTaskUtils.isHidden(table),
             "Stats table is hidden initially"
           );
           toggleTexts.push(getToggleText());
           toggleButton.click();
           await ContentTaskUtils.waitForCondition(
-            () => table.style.display === "",
+            () => ContentTaskUtils.isVisible(table),
             "Stats table is shown after first toggle"
           );
           toggleTexts.push(getToggleText());
           toggleButton.click();
           await ContentTaskUtils.waitForCondition(
-            () => table.style.display === "none",
+            () => ContentTaskUtils.isHidden(table),
             "Stats table is hidden after second toggle"
           );
           toggleTexts.push(getToggleText());

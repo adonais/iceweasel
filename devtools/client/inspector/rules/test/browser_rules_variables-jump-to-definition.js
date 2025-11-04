@@ -278,6 +278,11 @@ add_task(async function () {
 });
 
 add_task(async function checkClearSearch() {
+  const fillerDeclarations = Array.from({ length: 50 }, (_, i) => ({
+    name: `--x-${i}`,
+    value: i.toString(),
+  }));
+
   await addTab(
     "data:text/html;charset=utf-8," +
       encodeURIComponent(`
@@ -286,11 +291,21 @@ add_task(async function checkClearSearch() {
             --my-color-1: tomato;
           }
 
+          h1#title {
+            ${
+              // Add a lot of declaration so the --my-color-1
+              // declaration would be out of view
+              fillerDeclarations
+                .map(({ name, value }) => `${name}: ${value};`)
+                .join("")
+            }
+          }
+
           h1 {
             --my-unique-var: var(--my-color-1);
           }
         </style>
-        <h1>Filter</h1>
+        <h1 id="title">Filter</h1>
   `)
   );
 
@@ -324,6 +339,7 @@ add_task(async function checkClearSearch() {
   // check that the rule view is no longer filtered
   await checkRuleViewContent(view, [
     { selector: "element", declarations: [] },
+    { selector: "h1#title", declarations: fillerDeclarations },
     {
       selector: "h1",
       declarations: [{ name: "--my-unique-var", value: "var(--my-color-1)" }],
@@ -366,6 +382,7 @@ async function highlightProperty(
   expectedPropertyName,
   expectedPropertyValue
 ) {
+  info(`Highlight "${expectedPropertyName}: ${expectedPropertyValue}"`);
   const onHighlightProperty = view.once("element-highlighted");
   jumpToDefinitionButton.click();
   const highlightedElement = await onHighlightProperty;
@@ -378,5 +395,21 @@ async function highlightProperty(
     highlightedElement.querySelector(".ruleview-propertyvalue").innerText,
     expectedPropertyValue,
     "The expected element was highlighted"
+  );
+
+  // check that the declaration we jumped to is into view
+  ok(
+    isInViewport(highlightedElement, view.styleWindow),
+    `Highlighted element is in view`
+  );
+}
+
+function isInViewport(element, win) {
+  const { top, left, bottom, right } = element.getBoundingClientRect();
+  return (
+    top >= 0 &&
+    bottom <= win.innerHeight &&
+    left >= 0 &&
+    right <= win.innerWidth
   );
 }

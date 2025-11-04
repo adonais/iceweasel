@@ -172,6 +172,9 @@ user_pref("network.sntp.pools", "{server}");
 // relatively long time which may cause unnecessary intermittents and slow down
 // tests. This, like many things, will stop working correctly in 2038.
 user_pref("places.database.lastMaintenance", 2147483647);
+// Turn off semantic history search as it triggers network connections to
+// download ML models.
+user_pref("places.semanticHistory.featureGate", false);
 user_pref("privacy.trackingprotection.introURL", "http://{server}/trackingprotection/tour");
 // Disable all recommended Remote Protocol preferences for Gecko tests.
 // The prefs recommended by Remote Protocol are typically geared towards

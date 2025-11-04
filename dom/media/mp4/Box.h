@@ -12,7 +12,6 @@
 #include "AtomType.h"
 #include "BufferReader.h"
 #include "MediaResource.h"
-#include "mozilla/EndianUtils.h"
 #include "nsTArray.h"
 
 namespace mozilla {

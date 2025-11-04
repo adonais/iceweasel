@@ -5,12 +5,13 @@
 diff:
     description: Generates diffs of CI changes
     platform: linux
-    worker-type: t-linux-docker
+    worker-type: t-linux-docker-amd
     worker:
         docker-image: {in-tree: "lint"}
         max-run-time: 2400
+        env:
+            TASKGRAPH_SERIAL: "1"
         # Uncomment to upload logs of the generations as artifacts.
-        # env:
         #     XDG_CACHE_HOME: "/builds/worker/artifacts/cache"
         artifacts:
             - type: directory

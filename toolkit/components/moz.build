@@ -57,6 +57,7 @@ DIRS += [
     "ml",
     "mozintl",
     "mozprotocol",
+    "pageextractor",
     "parentalcontrols",
     "passwordmgr",
     "pdfjs",

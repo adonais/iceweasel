@@ -967,6 +967,9 @@ void Zone::traceKeptObjects(JSTracer* trc) { keptAliveSet.ref().trace(trc); }
 
 bool Zone::addToKeptObjects(HandleValue target) {
   MOZ_ASSERT(CanBeHeldWeakly(target));
+  MOZ_ASSERT_IF(target.isSymbol(),
+                !target.toSymbol()->isPermanentAndMayBeShared());
+
   return keptAliveSet.ref().put(target);
 }
 

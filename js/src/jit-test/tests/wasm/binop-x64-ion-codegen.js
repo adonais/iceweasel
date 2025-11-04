@@ -13,7 +13,7 @@ let neg32 =
 codegenTestX64_adhoc(
     neg32,
     'f',
-    'f7 d8  neg %eax', {no_prefix:true});
+    'neg %eax', {no_prefix:true});
 assertEq(wasmEvalText(neg32).exports.f(-37), 37)
 assertEq(wasmEvalText(neg32).exports.f(42), -42)
 
@@ -24,7 +24,7 @@ let neg64 =
 codegenTestX64_adhoc(
     neg64,
     'f',
-    '48 f7 d8  neg %rax', {no_prefix:true});
+    'neg %rax', {no_prefix:true});
 assertEq(wasmEvalText(neg64).exports.f(-37000000000n), 37000000000n)
 assertEq(wasmEvalText(neg64).exports.f(42000000000n), -42000000000n)
 
@@ -37,7 +37,7 @@ let zero32 =
 codegenTestX64_adhoc(
     zero32,
     'f',
-    '33 c0 xor %eax, %eax', {no_prefix:true});
+    'xor %eax, %eax', {no_prefix:true});
 assertEq(wasmEvalText(zero32).exports.f(-37), 0)
 assertEq(wasmEvalText(zero32).exports.f(42), 0)
 
@@ -47,7 +47,7 @@ let zero64 = `(module
 codegenTestX64_adhoc(
     zero64,
     'f',
-    '48 33 c0 xor %rax, %rax', {no_prefix:true});
+    'xor %rax, %rax', {no_prefix:true});
 assertEq(wasmEvalText(zero64).exports.f(-37000000000n), 0n)
 assertEq(wasmEvalText(zero64).exports.f(42000000000n), 0n)
 
@@ -83,7 +83,7 @@ let double32 =
 codegenTestX64_adhoc(
     double32,
     'f',
-    '03 c0 add %eax, %eax', {no_prefix:true});
+    'add %eax, %eax', {no_prefix:true});
 assertEq(wasmEvalText(double32).exports.f(-37), -74)
 assertEq(wasmEvalText(double32).exports.f(42), 84)
 
@@ -93,7 +93,7 @@ let double64 = `(module
 codegenTestX64_adhoc(
     double64,
     'f',
-    '48 03 c0 add %rax, %rax', {no_prefix:true});
+    'add %rax, %rax', {no_prefix:true});
 assertEq(wasmEvalText(double64).exports.f(-37000000000n), -74000000000n)
 assertEq(wasmEvalText(double64).exports.f(42000000000n), 84000000000n)
 
@@ -106,7 +106,7 @@ let quad32 =
 codegenTestX64_adhoc(
     quad32,
     'f',
-    'c1 e0 02 shl \\$0x02, %eax', {no_prefix:true});
+    'shl \\$0x02, %eax', {no_prefix:true});
 assertEq(wasmEvalText(quad32).exports.f(-37), -148)
 assertEq(wasmEvalText(quad32).exports.f(42), 168)
 
@@ -116,7 +116,7 @@ let quad64 = `(module
 codegenTestX64_adhoc(
     quad64,
     'f',
-    '48 c1 e0 02 shl \\$0x02, %rax', {no_prefix:true});
+    'shl \\$0x02, %rax', {no_prefix:true});
 assertEq(wasmEvalText(quad64).exports.f(-37000000000n), -148000000000n)
 assertEq(wasmEvalText(quad64).exports.f(42000000000n), 168000000000n)
 
@@ -129,7 +129,7 @@ let quint32 =
 codegenTestX64_adhoc(
     quint32,
     'f',
-    '6b c0 05 imul \\$0x05, %eax, %eax', {no_prefix:true});
+    'imul \\$0x05, %eax, %eax', {no_prefix:true});
 assertEq(wasmEvalText(quint32).exports.f(-37), -37*5)
 assertEq(wasmEvalText(quint32).exports.f(42), 42*5)
 
@@ -139,7 +139,7 @@ let quint64 = `(module
 codegenTestX64_adhoc(
     quint64,
     'f',
-    `48 6b c0 05               imul \\$0x05, %rax, %rax`, {no_prefix:true})
+    `imul \\$0x05, %rax, %rax`, {no_prefix:true})
 assertEq(wasmEvalText(quint64).exports.f(-37000000000n), -37000000000n*5n)
 assertEq(wasmEvalText(quint64).exports.f(42000000000n), 42000000000n*5n)
 
@@ -152,7 +152,7 @@ let subneg32 =
 codegenTestX64_adhoc(
     subneg32,
     'f',
-    'f7 d8  neg %eax', {no_prefix:true});
+    'neg %eax', {no_prefix:true});
 assertEq(wasmEvalText(subneg32).exports.f(-37), 37)
 assertEq(wasmEvalText(subneg32).exports.f(42), -42)
 
@@ -163,7 +163,7 @@ let subneg64 =
 codegenTestX64_adhoc(
     subneg64,
     'f',
-    '48 f7 d8  neg %rax', {no_prefix:true});
+    'neg %rax', {no_prefix:true});
 assertEq(wasmEvalText(subneg64).exports.f(-37000000000n), 37000000000n)
 assertEq(wasmEvalText(subneg64).exports.f(42000000000n), -42000000000n)
 
@@ -172,8 +172,8 @@ assertEq(wasmEvalText(subneg64).exports.f(42000000000n), -42000000000n)
 // {OR,XOR}{32,64}.  This is for both arguments being non-constant.
 
 for ( [ty, expect_test] of
-      [['i32',   '85 ..     test %e.., %e..'],
-       ['i64',   '48 85 ..  test %r.., %r..']] ) {
+      [['i32',   'test %e.., %e..'],
+       ['i64',   'test %r.., %r..']] ) {
    codegenTestX64_adhoc(
     `(module
        (func (export "f") (param $p1 ${ty}) (param $p2 ${ty}) (result i32)
@@ -188,10 +188,10 @@ for ( [ty, expect_test] of
     )`,
     'f',
     `${expect_test}
-     0f 85 .. 00 00 00   jnz 0x00000000000000..
-     b8 d7 11 00 00      mov \\$0x11D7, %eax
-     e9 .. 00 00 00      jmp 0x00000000000000..
-     b8 d2 04 00 00      mov \\$0x4D2, %eax`
+     jnz 0x00000000000000..
+     mov \\$0x11D7, %eax
+     jmp 0x00000000000000..
+     mov \\$0x4D2, %eax`
    );
 }
 
@@ -201,16 +201,16 @@ for ( [ty, expect_test] of
 for ( [imm, expect1, expect2] of
       [ // in signed-32 range => imm in insn
         ['0x17654321',
-         'f7 c. 21 43 65 17   test \\$0x17654321, %e..', // edi or ecx
+         'test \\$0x17654321, %e..', // edi or ecx
          ''],
         // in unsigned-32 range => imm in reg via movl
         ['0x87654321',
-         '41 bb 21 43 65 87   mov \\$-0x789ABCDF, %r11d',
-         '4c 85 d.            test %r11, %r..'], // rdi or rcx
+         'mov \\$-0x789ABCDF, %r11d',
+         'test %r11, %r..'], // rdi or rcx
         // not in either range => imm in reg via mov(absq)
         ['0x187654321',
-         '49 bb 21 43 65 87 01 00 00 00   mov \\$0x187654321, %r11',
-         '4c 85 d.   test %r11, %r..']] // rdi or rcx
+         'mov \\$0x187654321, %r11',
+         'test %r11, %r..']] // rdi or rcx
       ) {
    codegenTestX64_adhoc(
     `(module
@@ -227,10 +227,10 @@ for ( [imm, expect1, expect2] of
     'f',
     `${expect1}
      ${expect2}
-     0f 85 .. 00 00 00   jnz 0x00000000000000..
-     b8 d7 11 00 00      mov \\$0x11D7, %eax
-     e9 .. 00 00 00      jmp 0x00000000000000..
-     b8 d2 04 00 00      mov \\$0x4D2, %eax`
+     jnz 0x00000000000000..
+     mov \\$0x11D7, %eax
+     jmp 0x00000000000000..
+     mov \\$0x4D2, %eax`
    );
 }
 
@@ -251,21 +251,21 @@ function cmpSel32vs64(cmpTy, cmpOp, selTy) {
 }
 if (getBuildConfiguration("windows")) {
     for ( [cmpTy, cmpOp, selTy, insn1, insn2, insn3] of
-          [ ['i32', 'le_s', 'i32',  '8b c3        mov %ebx, %eax',
-                                    '3b ca        cmp %edx, %ecx',
-                                    '41 0f 4f c1  cmovnle %r9d, %eax'],
-            ['i32', 'lt_u', 'i64',  '48 89 d8     mov %rbx, %rax',
-                                    '3b ca        cmp %edx, %ecx',
-                                    '49 0f 43 c1  cmovnb %r9, %rax'],
-            ['i64', 'le_s', 'i32',  '8b c3        mov %ebx, %eax',
-                                    '48 3b ca     cmp %rdx, %rcx',
-                                    '41 0f 4f c1  cmovnle %r9d, %eax'],
-            ['i64', 'lt_u', 'i64',  '48 89 d8     mov %rbx, %rax',
-                                    '48 3b ca     cmp %rdx, %rcx',
-                                    '49 0f 43 c1  cmovnb %r9, %rax']
+          [ ['i32', 'le_s', 'i32',  'mov %ebx, %eax',
+                                    'cmp %edx, %ecx',
+                                    'cmovnle %r9d, %eax'],
+            ['i32', 'lt_u', 'i64',  'mov %rbx, %rax',
+                                    'cmp %edx, %ecx',
+                                    'cmovnb %r9, %rax'],
+            ['i64', 'le_s', 'i32',  'mov %ebx, %eax',
+                                    'cmp %rdx, %rcx',
+                                    'cmovnle %r9d, %eax'],
+            ['i64', 'lt_u', 'i64',  'mov %rbx, %rax',
+                                    'cmp %rdx, %rcx',
+                                    'cmovnb %r9, %rax']
           ] ) {
         codegenTestX64_adhoc(cmpSel32vs64(cmpTy, cmpOp, selTy), 'f',
-          `4. (89 c3|8b d8)   mov %r8.*, %.bx
+          `mov %r8.*, %.bx
            ${insn1}
            ${insn2}
            ${insn3}`
@@ -273,18 +273,18 @@ if (getBuildConfiguration("windows")) {
     }
 } else {
     for ( [cmpTy, cmpOp, selTy, insn1, insn2, insn3] of
-          [ ['i32', 'le_s', 'i32',  '8b c2        mov %edx, %eax',
-                                    '3b fe        cmp %esi, %edi',
-                                    '0f 4f c1     cmovnle %ecx, %eax'],
-            ['i32', 'lt_u', 'i64',  '48 89 d0     mov %rdx, %rax',
-                                    '3b fe        cmp %esi, %edi',
-                                    '48 0f 43 c1  cmovnb %rcx, %rax'],
-            ['i64', 'le_s', 'i32',  '8b c2        mov %edx, %eax',
-                                    '48 3b fe     cmp %rsi, %rdi',
-                                    '0f 4f c1     cmovnle %ecx, %eax'],
-            ['i64', 'lt_u', 'i64',  '48 89 d0     mov %rdx, %rax',
-                                    '48 3b fe     cmp %rsi, %rdi',
-                                    '48 0f 43 c1  cmovnb %rcx, %rax']
+          [ ['i32', 'le_s', 'i32',  'mov %edx, %eax',
+                                    'cmp %esi, %edi',
+                                    'cmovnle %ecx, %eax'],
+            ['i32', 'lt_u', 'i64',  'mov %rdx, %rax',
+                                    'cmp %esi, %edi',
+                                    'cmovnb %rcx, %rax'],
+            ['i64', 'le_s', 'i32',  'mov %edx, %eax',
+                                    'cmp %rsi, %rdi',
+                                    'cmovnle %ecx, %eax'],
+            ['i64', 'lt_u', 'i64',  'mov %rdx, %rax',
+                                    'cmp %rsi, %rdi',
+                                    'cmovnb %rcx, %rax']
           ] ) {
         codegenTestX64_adhoc(cmpSel32vs64(cmpTy, cmpOp, selTy), 'f',
           `${insn1}
@@ -297,19 +297,19 @@ if (getBuildConfiguration("windows")) {
 // For integer comparison followed by select, check correct use of operands in
 // registers vs memory.  At least for the 64-bit-cmp/64-bit-sel case.
 
-for ( [pAnyCmp, pAnySel, cmpBytes, cmpArgL, cmovBytes, cmovArgL ] of
+for ( [pAnyCmp, pAnySel, cmpArgL, cmovArgL ] of
       [ // r, r
         ['$pReg1', '$pReg2',
-         '4. .. ..', '%r.+',  '4. .. .. ..', '%r.+'],
+         '%r.+', '%r.+'],
         // r, m
         ['$pReg1', '$pMem2',
-         '4. .. ..', '%r.+',  '4. .. .. .. ..', '0x..\\(%rbp\\)'],
+         '%r.+', '0x..\\(%rbp\\)'],
         // m, r
         ['$pMem1', '$pReg2',
-         '4. .. .. ..', '0x..\\(%rbp\\)', '4. .. .. ..', '%r.+'],
+         '0x..\\(%rbp\\)', '%r.+'],
         // m, m
         ['$pMem1', '$pMem2',
-         '4. .. .. ..', '0x..\\(%rbp\\)', '4. .. .. .. ..', '0x..\\(%rbp\\)']
+         '0x..\\(%rbp\\)', '0x..\\(%rbp\\)']
       ] ) {
    codegenTestX64_adhoc(
     `(module
@@ -328,8 +328,8 @@ for ( [pAnyCmp, pAnySel, cmpBytes, cmpArgL, cmovBytes, cmovArgL ] of
     // On Linux we have an extra move
     (getBuildConfiguration("windows") ? '' : '48 89 ..       mov %r.+, %r.+\n') +
     // 'q*' because the disassembler shows 'q' only for the memory cases
-    `48 89 ..       mov %r.+, %r.+
-     ${cmpBytes}    cmpq*    ${cmpArgL}, %r.+
-     ${cmovBytes}   cmovnzq* ${cmovArgL}, %r.+`
+    `mov %r.+, %r.+
+     cmpq*    ${cmpArgL}, %r.+
+     cmovnzq* ${cmovArgL}, %r.+`
    );
 }

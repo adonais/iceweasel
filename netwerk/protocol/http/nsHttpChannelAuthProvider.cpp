@@ -1761,7 +1761,7 @@ void nsHttpChannelAuthProvider::SetAuthorizationHeader(
     if (mProxyInfo) {
       nsAutoCString type;
       mProxyInfo->GetType(type);
-      if (type.EqualsLiteral("https")) {
+      if (type.EqualsLiteral("https") || type.EqualsLiteral("masque")) {
         // Let this be overriden by anything from the cache.
         auto const& pa = mProxyInfo->ProxyAuthorizationHeader();
         if (!pa.IsEmpty()) {

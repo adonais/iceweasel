@@ -115,7 +115,7 @@ AllocatableGeneralRegisterSet BaselineICAvailableGeneralRegs(size_t numInputs) {
   regs.take(BaselineSecondScratchReg);
 #elif defined(JS_CODEGEN_MIPS64)
   MOZ_ASSERT(!regs.has(ICTailCallReg));
-  MOZ_ASSERT(!regs.has(BaselineSecondScratchReg));
+  MOZ_ASSERT(!regs.has(CallReg));
 #elif defined(JS_CODEGEN_ARM64)
   MOZ_ASSERT(!regs.has(PseudoStackPointer));
   MOZ_ASSERT(!regs.has(RealStackPointer));

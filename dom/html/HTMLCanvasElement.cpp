@@ -18,7 +18,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
-#include "mozilla/CheckedInt.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Preferences.h"
@@ -903,12 +902,12 @@ already_AddRefed<CanvasCaptureMediaStream> HTMLCanvasElement::CaptureStream(
   // Check site-specific permission and display prompt if appropriate.
   // If no permission, arrange for the frame capture listener to return
   // all-white, opaque image data.
-  CanvasUtils::ImageExtraction spoofing =
+  CanvasUtils::ImageExtraction extractionBehaviour =
       CanvasUtils::ImageExtractionResult(this, nullptr, &aSubjectPrincipal);
 
   rv = RegisterFrameCaptureListener(
       stream->FrameCaptureListener(),
-      spoofing == CanvasUtils::ImageExtraction::Placeholder);
+      extractionBehaviour == CanvasUtils::ImageExtraction::Placeholder);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
     return nullptr;
@@ -924,10 +923,10 @@ nsresult HTMLCanvasElement::ExtractData(JSContext* aCx,
                                         nsIInputStream** aStream) {
   // Check site-specific permission and display prompt if appropriate.
   // If no permission, return all-white, opaque image data.
-  CanvasUtils::ImageExtraction spoofing =
+  CanvasUtils::ImageExtraction extractionBehaviour =
       CanvasUtils::ImageExtractionResult(this, aCx, &aSubjectPrincipal);
 
-  if (spoofing != CanvasUtils::ImageExtraction::Placeholder) {
+  if (extractionBehaviour != CanvasUtils::ImageExtraction::Placeholder) {
     auto size = GetWidthHeight();
     CanvasContextType type = GetCurrentContextType();
     CanvasFeatureUsage featureUsage = CanvasFeatureUsage::None;
@@ -942,7 +941,14 @@ nsresult HTMLCanvasElement::ExtractData(JSContext* aCx,
     OwnerDoc()->RecordCanvasUsage(usage);
   }
 
-  return ImageEncoder::ExtractData(aType, aOptions, GetSize(), spoofing,
+  nsCString randomizationKey = VoidCString();
+  if (extractionBehaviour == CanvasUtils::ImageExtraction::EfficientRandomize) {
+    nsRFPService::GetFingerprintingRandomizationKeyAsString(
+        GetCookieJarSettings(), randomizationKey);
+  }
+
+  return ImageEncoder::ExtractData(aType, aOptions, GetSize(),
+                                   extractionBehaviour, randomizationKey,
                                    mCurrentContext, mOffscreenDisplay, aStream);
 }
 
@@ -1037,7 +1043,7 @@ void HTMLCanvasElement::ToBlob(JSContext* aCx, BlobCallback& aCallback,
 
   // Check site-specific permission and display prompt if appropriate.
   // If no permission, return all-white, opaque image data.
-  CanvasUtils::ImageExtraction spoofing =
+  CanvasUtils::ImageExtraction extractionBehaviour =
       CanvasUtils::ImageExtractionResult(this, aCx, &aSubjectPrincipal);
 
   // Encoder callback when encoding is complete.
@@ -1091,8 +1097,8 @@ void HTMLCanvasElement::ToBlob(JSContext* aCx, BlobCallback& aCallback,
       global, &aCallback, recheckCanRead ? mOffscreenDisplay.get() : nullptr,
       recheckCanRead ? &aSubjectPrincipal : nullptr);
 
-  CanvasRenderingContextHelper::ToBlob(aCx, callback, aType, aParams, spoofing,
-                                       aRv);
+  CanvasRenderingContextHelper::ToBlob(aCx, callback, aType, aParams,
+                                       extractionBehaviour, aRv);
 }
 
 OffscreenCanvas* HTMLCanvasElement::TransferControlToOffscreen(

@@ -3393,6 +3393,7 @@ void SubarrayReplacer::visitTypedArraySubarray(MTypedArraySubarray* ins) {
   if (!isSubarrayOrGuard(ins->object())) {
     return;
   }
+  MOZ_ASSERT(!ins->isScalarReplaced());
 
   // Add both |start| operands to get the adjusted start index.
   auto* newStart =
@@ -3402,6 +3403,7 @@ void SubarrayReplacer::visitTypedArraySubarray(MTypedArraySubarray* ins) {
   auto* replacement = MTypedArraySubarray::New(
       alloc(), subarray()->object(), newStart, ins->length(),
       ins->templateObject(), ins->initialHeap());
+  replacement->stealResumePoint(ins);
   ins->block()->insertBefore(ins, replacement);
 
   // Replace the subarray.
@@ -3530,6 +3532,7 @@ bool SubarrayReplacer::run() {
 }
 
 void SubarrayReplacer::assertSuccess() const {
+  subarray()->setScalarReplaced();
   MOZ_ASSERT(subarray_->canRecoverOnBailout());
   MOZ_ASSERT(!subarray_->hasLiveDefUses());
 }

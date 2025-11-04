@@ -17,7 +17,6 @@
 #include "PlatformEncoderModule.h"
 #include "ipc/EnumSerializer.h"
 #include "mozilla/CDMProxy.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/ParamTraits_TiedFields.h"

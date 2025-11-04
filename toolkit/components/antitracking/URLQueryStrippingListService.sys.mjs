@@ -435,10 +435,11 @@ export class URLQueryStrippingListService {
       case "xpcom-shutdown":
         this.#shutdown();
         break;
-      case "nsPref:changed":
+      case "nsPref:changed": {
         let prefValue = Services.prefs.getStringPref(data, "");
         this._onPrefUpdate(data, prefValue);
         break;
+      }
       default:
         console.error(`Unexpected event ${topic}`);
     }

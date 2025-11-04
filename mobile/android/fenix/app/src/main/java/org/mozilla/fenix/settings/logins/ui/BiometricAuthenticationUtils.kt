@@ -13,7 +13,6 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
@@ -21,6 +20,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.fragment.app.FragmentActivity
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.secure
@@ -189,7 +189,7 @@ private fun showPinDialogWarning(
     activity: FragmentActivity,
     onIgnorePinWarning: () -> Unit,
 ) {
-    AlertDialog.Builder(activity).apply {
+    MaterialAlertDialogBuilder(activity).apply {
         setTitle(context.resources.getString(R.string.logins_warning_dialog_title_2))
         setMessage(
             context.resources.getString(R.string.logins_warning_dialog_message_2),

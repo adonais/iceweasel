@@ -153,15 +153,13 @@ interface nsISearchEngine : nsISupports
   readonly attribute AString id;
 
   /**
+   * @deprecated: This should not be used for new telemetry. It is a combined
+   * field that contains multiple values. Report separate
+   * id/partner_code/other fields instead.
+   *
    * The identifier to use for this engine when submitting to telemetry.
    */
   readonly attribute AString telemetryId;
-
-  /**
-   * An optional unique identifier for this search engine within the context of
-   * the distribution, as provided by the distributing entity.
-   */
-  readonly attribute AString identifier;
 
   /**
    * Anonymized path of where we initially loaded the engine from.
@@ -347,10 +345,14 @@ interface nsISearchService : nsISupports
    *        icon. This value may be overridden by an icon specified in the
    *        engine description file.
    *
+   * @param originAttributes [optional]
+            The origin attributes to use to load this manifest.
+   *
    * @throws NS_ERROR_FAILURE if the description file cannot be successfully
    *         loaded.
    */
-  Promise addOpenSearchEngine(in AString engineURL, in AString iconURL);
+  Promise addOpenSearchEngine(in AString engineURL, in AString iconURL,
+                              [optional] in jsval originAttributes);
 
   /**
    * Adds a new search engine defined by the user.

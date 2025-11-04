@@ -54,13 +54,6 @@ void WebTransportParent::Create(
                   ? "Low-Latency"
                   : "Default")));
 
-  if (!StaticPrefs::network_webtransport_enabled()) {
-    aResolver(ResolveType(
-        NS_ERROR_DOM_NOT_ALLOWED_ERR,
-        static_cast<uint8_t>(WebTransportReliabilityMode::Pending)));
-    return;
-  }
-
   if (!aParentEndpoint.IsValid()) {
     aResolver(ResolveType(
         NS_ERROR_INVALID_ARG,
