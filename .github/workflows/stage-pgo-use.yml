@@ -162,6 +162,7 @@ jobs:
         echo MY_BITS64=win64>>$GITHUB_ENV
         cd "$GITHUB_WORKSPACE/../obju64-release/dist"
         mv "${APP_NAME}-${MY_VER}.en-US.win64.7z" "$MOZ_FETCHES_DIR/${APP_NAME}-v${MY_VER}.l10n_win64_pgo.7z"
+        mv "$GITHUB_WORKSPACE/release_notes.md" "$MOZ_FETCHES_DIR/release_notes.md"
         ls -la "$MOZ_FETCHES_DIR"
       shell: bash
 
@@ -172,4 +173,5 @@ jobs:
         artifacts: ${{ env.MOZ_FETCHES_DIR }}/${{ env.APP_NAME }}-v${{ env.MY_VER }}.l10n_${{ env.MY_BITS64 }}_pgo.7z
         prerelease: false
         generateReleaseNotes: true
+        bodyFile: "${{ env.MOZ_FETCHES_DIR }}/release_notes.md"
         token: ${{ secrets.GITHUB_TOKEN }}
