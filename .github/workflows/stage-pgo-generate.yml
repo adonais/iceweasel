@@ -133,6 +133,12 @@ jobs:
           exit 255
         fi
         tar Jxf winsdk.tar.xz -C "$MOZ_FETCHES_DIR"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winappsdk-x64.tar.xz?viasf=1 -O winappsdk-x64.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download winappsdk-x64 failed
+          exit 255
+        fi
+        tar Jxf winappsdk-x64.tar.xz -C "$MOZ_FETCHES_DIR"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/upx.tar.xz?viasf=1 -O upx.tar.xz
         if [ $? -ne 0 ]; then
           echo Download upx failed
