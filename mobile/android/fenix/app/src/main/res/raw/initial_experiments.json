@@ -356,6 +356,120 @@
       "firefoxLabsDescriptionLinks": null,
       "firefoxLabsGroup": null,
       "requiresRestart": false
+    },
+    {
+      "schemaVersion": "1.12.0",
+      "slug": "simplify-homescreen-new-users-1451",
+      "id": "simplify-homescreen-new-users-1451",
+      "arguments": {},
+      "application": "org.mozilla.firefox",
+      "appName": "fenix",
+      "appId": "org.mozilla.firefox",
+      "channel": "release",
+      "userFacingName": "Simplify Homescreen New-users 145.1",
+      "userFacingDescription": "Simplify Homescreen",
+      "isEnrollmentPaused": false,
+      "isRollout": false,
+      "bucketConfig": {
+        "randomizationUnit": "nimbus_id",
+        "namespace": "fenix-homescreen-release-8",
+        "start": 0,
+        "count": 10000,
+        "total": 10000
+      },
+      "featureIds": [
+        "homescreen"
+      ],
+      "probeSets": [],
+      "outcomes": [
+        {
+          "slug": "awesomebar",
+          "priority": "primary"
+        },
+        {
+          "slug": "pocket",
+          "priority": "secondary"
+        },
+        {
+          "slug": "sponsored_tiles",
+          "priority": "secondary"
+        }
+      ],
+      "branches": [
+        {
+          "slug": "control",
+          "ratio": 1,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "homescreen",
+              "enabled": true,
+              "value": {
+                "sections-enabled": {
+                  "top-sites": true,
+                  "header": true,
+                  "jump-back-in": true,
+                  "bookmarks": true,
+                  "recent-explorations": true,
+                  "pocket": true,
+                  "synced-tabs": true,
+                  "pocket-sponsored-stories": true,
+                  "collections": true
+                }
+              }
+            }
+          ]
+        },
+        {
+          "slug": "treatment-a",
+          "ratio": 1,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "homescreen",
+              "enabled": true,
+              "value": {
+                "sections-enabled": {
+                  "top-sites": true,
+                  "header": false,
+                  "jump-back-in": false,
+                  "bookmarks": false,
+                  "recent-explorations": false,
+                  "pocket": true,
+                  "synced-tabs": false,
+                  "pocket-sponsored-stories": true,
+                  "collections": false
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "targeting": "((is_already_enrolled) || ((days_since_install < 7) && (app_version|versionCompare('145.!') >= 0)))",
+      "startDate": "2025-11-04",
+      "enrollmentEndDate": null,
+      "endDate": null,
+      "proposedDuration": 28,
+      "proposedEnrollment": 14,
+      "referenceBranch": "control",
+      "featureValidationOptOut": false,
+      "localizations": null,
+      "locales": null,
+      "publishedDate": "2025-11-04T17:20:37.914300Z",
+      "isFirefoxLabsOptIn": false,
+      "firefoxLabsTitle": "",
+      "firefoxLabsDescription": "",
+      "firefoxLabsDescriptionLinks": null,
+      "firefoxLabsGroup": "",
+      "requiresRestart": false
     }
   ]
 }

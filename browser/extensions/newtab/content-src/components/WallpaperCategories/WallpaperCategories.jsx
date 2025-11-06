@@ -280,6 +280,10 @@ export class _WallpaperCategories extends React.PureComponent {
         break;
       case "solid-colors":
         fluent_id = "newtab-wallpaper-category-title-colors";
+        break;
+      case "firefox":
+        fluent_id = "newtab-wallpaper-category-title-firefox";
+        break;
     }
 
     this.setState({ activeCategoryFluentID: fluent_id });
@@ -529,6 +533,10 @@ export class _WallpaperCategories extends React.PureComponent {
                   break;
                 case "solid-colors":
                   fluent_id = "newtab-wallpaper-category-title-colors";
+                  break;
+                case "firefox":
+                  fluent_id = "newtab-wallpaper-category-title-firefox";
+                  break;
               }
               let style = {};
               if (thumbnail?.wallpaperUrl) {

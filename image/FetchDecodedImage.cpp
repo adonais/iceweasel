@@ -43,6 +43,7 @@ class FetchDecodedImageHelper : public imgIContainerCallback,
     }
 
     mImage = aImage;
+    RequestDecode();
     return NS_OK;
   }
 
