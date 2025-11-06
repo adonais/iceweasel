@@ -418,6 +418,8 @@ export class nsUnknownContentTypeDialog {
               }
             }
           }
+          // Iceweasel downloadUpchek patch
+          Services.prefs.setBoolPref("userChromeJS.downloadPlus.shown", true);
           // Don't pop up the downloads panel redundantly.
           aLauncher.saveDestinationAvailable(result, true);
         });
