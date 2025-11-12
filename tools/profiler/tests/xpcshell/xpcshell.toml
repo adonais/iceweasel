@@ -82,6 +82,7 @@ skip-if = [
 skip-if = [
   "os == 'mac' && release_or_beta",
   "os == 'linux' && release_or_beta && !debug",
+  "os == 'android' && release_or_beta", #Bug 1992989
   "asan",
   "tsan",
 ]
@@ -92,6 +93,7 @@ skip-if = [
 skip-if = [
   "os == 'mac' && release_or_beta",
   "os == 'linux' && release_or_beta && !debug",
+  "os == 'android' && release_or_beta", #Bug 1992989
   "asan",
   "tsan",
 ]
