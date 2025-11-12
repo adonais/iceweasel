@@ -66,6 +66,29 @@
   </vbox>
 
   <hbox>
+    <checkbox id="iceweasel-ai-checkbox" data-l10n-id="iceweasel-ai-checkbox" preference="browser.ml.enable" flex="1" />
+    <html:label for="iceweasel-ai-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-ai-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-ai-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-ai-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="browser.ml.enable" label="browser.ml.enable" />
+      <checkbox preference="browser.ml.chat.enabled" label="browser.ml.chat.enabled" />
+      <checkbox preference="browser.ml.chat.page" label="browser.ml.chat.page" />
+      <checkbox preference="browser.ml.chat.page.footerBadge" label="browser.ml.chat.page.footerBadge" />
+      <checkbox preference="browser.ml.chat.page.menuBadge" label="browser.ml.chat.page.menuBadge" />
+      <checkbox preference="browser.ml.chat.menu" label="browser.ml.chat.menu" />
+      <checkbox preference="browser.ml.linkPreview.enabled" label="browser.ml.linkPreview.enabled" />
+      <checkbox preference="browser.ml.pageAssist.enabled" label="browser.ml.pageAssist.enabled" />
+      <checkbox preference="browser.tabs.groups.smart.enabled" label="browser.tabs.groups.smart.enabled" />
+      <checkbox preference="browser.tabs.groups.smart.userEnabled" label="browser.tabs.groups.smart.userEnabled" />
+      <checkbox preference="extensions.ml.enabled" label="extensions.ml.enabled" />
+    </vbox>
+  </vbox>
+
+  <hbox>
     <checkbox id="iceweasel-tabcompactmode-checkbox" data-l10n-id="iceweasel-tabcompactmode-checkbox" preference="browser.compactmode.show" flex="1" />
     <html:label for="iceweasel-tabcompactmode-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
   </hbox>

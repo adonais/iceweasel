@@ -16,6 +16,16 @@ Preferences.addAll([
   { id: "network.dns.disableIPv6", type: "bool" },
   // disable javascipt
   { id: "javascript.enabled", type: "bool" },
+  // disable ai
+  { id: "browser.ml.enable", type: "bool" },
+  { id: "browser.ml.chat.enabled", type: "bool" },
+  { id: "browser.ml.chat.page", type: "bool" },
+  { id: "browser.ml.chat.page.footerBadge", type: "bool" },
+  { id: "browser.ml.chat.page.menuBadge", type: "bool" },
+  { id: "browser.ml.chat.menu", type: "bool" },
+  { id: "browser.ml.pageAssist.enabled", type: "bool" },
+  { id: "browser.tabs.groups.smart.enabled", type: "bool" },
+  { id: "extensions.ml.enabled", type: "bool" },
   // compactmode
   { id: "browser.compactmode.show", type: "bool" },
   // lastclose
@@ -53,6 +63,11 @@ var gIceweaselPane = {
       "iceweasel-javascript-checkbox",
       ["javascript.enabled"     ],
       [false,                   ],
+    );
+    setBoolSyncListeners(
+      "iceweasel-ai-checkbox",
+      ["browser.ml.enable", "browser.ml.chat.enabled", "browser.ml.chat.page", "browser.ml.chat.page.footerBadge", "browser.ml.chat.page.menuBadge", "browser.ml.chat.menu", "browser.ml.pageAssist.enabled", "browser.tabs.groups.smart.enabled", "extensions.ml.enabled"],
+      [false,               false,                     false,                  false,                              false,                            false,                  false,                           false,                               false,                 ],
     );
     setBoolSyncListeners(
       "iceweasel-tabcompactmode-checkbox",
