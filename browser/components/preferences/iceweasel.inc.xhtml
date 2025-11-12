@@ -89,6 +89,32 @@
   </vbox>
 
   <hbox>
+    <checkbox id="iceweasel-searchhand-checkbox" data-l10n-id="iceweasel-searchhand-checkbox" preference="browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar" flex="1" />
+    <html:label for="iceweasel-searchhand-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-searchhand-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-searchhand-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-searchhand-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar" label="browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar" />
+    </vbox>
+  </vbox>
+
+  <hbox>
+    <checkbox id="iceweasel-taskbartabs-checkbox" data-l10n-id="iceweasel-taskbartabs-checkbox" preference="browser.taskbarTabs.enabled" flex="1" />
+    <html:label for="iceweasel-taskbartabs-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-taskbartabs-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-taskbartabs-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-taskbartabs-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="browser.taskbarTabs.enabled" label="browser.taskbarTabs.enabled" />
+    </vbox>
+  </vbox>
+
+  <hbox>
     <checkbox id="iceweasel-tabcompactmode-checkbox" data-l10n-id="iceweasel-tabcompactmode-checkbox" preference="browser.compactmode.show" flex="1" />
     <html:label for="iceweasel-tabcompactmode-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
   </hbox>
@@ -196,19 +222,6 @@
       <checkbox id="iceweasel-mouse-hover-new"     data-l10n-id="iceweasel-mouse-hover-new" />
       <checkbox id="iceweasel-right-click-close"   data-l10n-id="iceweasel-right-click-close" />
       <checkbox id="iceweasel-right-click-recover" data-l10n-id="iceweasel-right-click-recover" />
-    </vbox>
-  </vbox>
-
-  <hbox>
-    <checkbox id="iceweasel-searchhand-checkbox" data-l10n-id="iceweasel-searchhand-checkbox" preference="browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar" flex="1" />
-    <html:label for="iceweasel-searchhand-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
-  </hbox>
-  <vbox class="iceweasel-collapse indent">
-    <html:input type="checkbox" id="iceweasel-searchhand-collapse" />
-    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
-      <label data-l10n-id="iceweasel-searchhand-description" />
-      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-searchhand-warning1" class="iceweasel-warning" /> </html:div>
-      <checkbox preference="browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar" label="browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar" />
     </vbox>
   </vbox>
 

@@ -28,6 +28,8 @@ Preferences.addAll([
   { id: "extensions.ml.enabled", type: "bool" },
   // handoff to urlbar
   { id: "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", type: "bool" },
+  // Pin tabs to taskbar
+  { id: "browser.taskbarTabs.enabled", type: "bool" },
   // compactmode
   { id: "browser.compactmode.show", type: "bool" },
   // lastclose
@@ -75,6 +77,11 @@ var gIceweaselPane = {
       "iceweasel-searchhand-checkbox",
       ["browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar"],
       [true,                                ],
+    );
+    setBoolSyncListeners(
+      "iceweasel-taskbartabs-checkbox",
+      ["browser.taskbarTabs.enabled"],
+      [false,                               ],
     );
     setBoolSyncListeners(
       "iceweasel-tabcompactmode-checkbox",
