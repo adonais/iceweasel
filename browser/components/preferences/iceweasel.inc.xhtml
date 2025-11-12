@@ -200,6 +200,19 @@
   </vbox>
 
   <hbox>
+    <checkbox id="iceweasel-searchhand-checkbox" data-l10n-id="iceweasel-searchhand-checkbox" preference="browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar" flex="1" />
+    <html:label for="iceweasel-searchhand-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
+  </hbox>
+  <vbox class="iceweasel-collapse indent">
+    <html:input type="checkbox" id="iceweasel-searchhand-collapse" />
+    <vbox class="iceweasel-collapsed tracking-protection-ui content-blocking-category">
+      <label data-l10n-id="iceweasel-searchhand-description" />
+      <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-searchhand-warning1" class="iceweasel-warning" /> </html:div>
+      <checkbox preference="browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar" label="browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar" />
+    </vbox>
+  </vbox>
+
+  <hbox>
     <checkbox id="iceweasel-libportable-chrome-checkbox" data-l10n-id="iceweasel-libportable-chrome-checkbox" flex="1" />
     <html:div id="iceweasel-chrome-box" class="iceweasel-message-box"> <html:p data-l10n-id="iceweasel-libportable-chrome-pop" class="iceweasel-warning"/> </html:div>
     <html:label for="iceweasel-libportable-chrome-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>

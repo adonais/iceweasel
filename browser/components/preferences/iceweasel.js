@@ -26,6 +26,8 @@ Preferences.addAll([
   { id: "browser.ml.pageAssist.enabled", type: "bool" },
   { id: "browser.tabs.groups.smart.enabled", type: "bool" },
   { id: "extensions.ml.enabled", type: "bool" },
+  // handoff to urlbar
+  { id: "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", type: "bool" },
   // compactmode
   { id: "browser.compactmode.show", type: "bool" },
   // lastclose
@@ -68,6 +70,11 @@ var gIceweaselPane = {
       "iceweasel-ai-checkbox",
       ["browser.ml.enable", "browser.ml.chat.enabled", "browser.ml.chat.page", "browser.ml.chat.page.footerBadge", "browser.ml.chat.page.menuBadge", "browser.ml.chat.menu", "browser.ml.pageAssist.enabled", "browser.tabs.groups.smart.enabled", "extensions.ml.enabled"],
       [false,               false,                     false,                  false,                              false,                            false,                  false,                           false,                               false,                 ],
+    );
+    setBoolSyncListeners(
+      "iceweasel-searchhand-checkbox",
+      ["browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar"],
+      [true,                                ],
     );
     setBoolSyncListeners(
       "iceweasel-tabcompactmode-checkbox",
