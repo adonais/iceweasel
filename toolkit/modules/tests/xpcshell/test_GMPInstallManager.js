@@ -640,7 +640,7 @@ add_task(async function test_checkForAddons_contentSignatureFailure() {
     } else {
       Assert.equal(res.addons[0].id, "gmp-gmpopenh264");
       Assert.ok(
-        res.addons[0].URL.startsWith("http://ciscobinary.openh264.org")
+        res.addons[0].URL.startsWith("https://ciscobinary.openh264.org")
       );
       Assert.deepEqual(res.addons[0].mirrorURLs, []);
       Assert.equal(res.addons[1].id, "gmp-widevinecdm");
