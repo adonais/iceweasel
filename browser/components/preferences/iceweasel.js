@@ -26,10 +26,10 @@ Preferences.addAll([
   { id: "browser.ml.pageAssist.enabled", type: "bool" },
   { id: "browser.tabs.groups.smart.enabled", type: "bool" },
   { id: "extensions.ml.enabled", type: "bool" },
-  // handoff to urlbar
-  { id: "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", type: "bool" },
   // Pin tabs to taskbar
   { id: "browser.taskbarTabs.enabled", type: "bool" },
+  // handoff to urlbar
+  { id: "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", type: "bool" },
   // compactmode
   { id: "browser.compactmode.show", type: "bool" },
   // lastclose
@@ -74,14 +74,14 @@ var gIceweaselPane = {
       [false,               false,                     false,                  false,                              false,                            false,                  false,                           false,                               false,                 ],
     );
     setBoolSyncListeners(
-      "iceweasel-searchhand-checkbox",
-      ["browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar"],
-      [true,                                ],
-    );
-    setBoolSyncListeners(
       "iceweasel-taskbartabs-checkbox",
       ["browser.taskbarTabs.enabled"],
-      [false,                               ],
+      [false,                       ],
+    );
+    setBoolSyncListeners(
+      "iceweasel-searchhand-checkbox",
+      ["browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar"],
+      [true,                                                                 ],
     );
     setBoolSyncListeners(
       "iceweasel-tabcompactmode-checkbox",
