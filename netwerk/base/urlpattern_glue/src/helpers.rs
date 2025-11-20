@@ -353,8 +353,8 @@ impl From<Uq::InnerMatcher> for UrlpInnerMatcher {
                     inner_type: UrlpInnerMatcherType::SingleCapture,
                     literal: nsCString::from("").to_owned(),
                     allow_empty, // maybe should be an optional
-                    filter_exists: true,
-                    filter: filter.unwrap_or('x'.to_owned()),
+                    filter_exists: filter.is_some(),
+                    filter: filter.unwrap_or('\0'),
                     regexp: nsCString::from("").to_owned(),
                 }
             }

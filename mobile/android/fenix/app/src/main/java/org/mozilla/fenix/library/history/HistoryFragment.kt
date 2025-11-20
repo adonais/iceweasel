@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.library.history
 
-import android.R.id.undo
 import android.app.Dialog
 import android.content.DialogInterface
 import android.content.Intent
@@ -86,6 +85,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.EnvironmentCleared
 import mozilla.components.compose.browser.toolbar.store.EnvironmentRehydrated
 import mozilla.components.compose.browser.toolbar.store.Mode
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.flowScoped
@@ -568,7 +568,7 @@ class HistoryFragment : LibraryPageFragment<History>(), UserInteractionHandler, 
         }
         searchLayout?.isVisible = false
         requireComponents.appStore.dispatch(AppAction.SearchAction.SearchEnded)
-        toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(""))
+        toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(BrowserToolbarQuery("")))
         requireComponents.core.store.dispatch(EngagementFinished(abandoned = true))
     }
 

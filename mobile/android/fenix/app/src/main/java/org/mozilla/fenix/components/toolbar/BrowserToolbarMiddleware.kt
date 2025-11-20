@@ -56,6 +56,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.EnvironmentCleared
 import mozilla.components.compose.browser.toolbar.store.EnvironmentRehydrated
 import mozilla.components.compose.browser.toolbar.store.ProgressBarConfig
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.concept.engine.cookiehandling.CookieBannersStorage
 import mozilla.components.concept.engine.permission.SitePermissions
@@ -374,7 +375,7 @@ class BrowserToolbarMiddleware(
                         )
                     }
                 } else {
-                    context.dispatch(SearchQueryUpdated(searchTerms))
+                    context.dispatch(SearchQueryUpdated(BrowserToolbarQuery(searchTerms)))
                     appStore.dispatch(SearchStarted(selectedTab.id))
                 }
             }
@@ -394,7 +395,7 @@ class BrowserToolbarMiddleware(
                 }
             }
             is PasteFromClipboardClicked -> runWithinEnvironment {
-                context.dispatch(SearchQueryUpdated(clipboard.text.orEmpty()))
+                context.dispatch(SearchQueryUpdated(BrowserToolbarQuery(clipboard.text.orEmpty())))
                 appStore.dispatch(SearchStarted(browserStore.state.selectedTabId))
             }
             is LoadFromClipboardClicked -> {

@@ -230,6 +230,12 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         get() = FxNimbus.features.homescreen.value().sectionsEnabled[HomeScreenSection.COLLECTIONS] == true
 
     /**
+     * Indicates whether or not the Firefox Japan Guide default site should be shown.
+     */
+    val showFirefoxJpGuideDefaultSite: Boolean
+        get() = FxNimbus.features.firefoxJpGuideDefaultSite.value().enabled
+
+    /**
      * Indicates whether or not the homepage header should be shown.
      */
     var showHomepageHeader by lazyFeatureFlagPreference(

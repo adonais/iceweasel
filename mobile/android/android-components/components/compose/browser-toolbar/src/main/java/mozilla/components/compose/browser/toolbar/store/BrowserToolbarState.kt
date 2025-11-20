@@ -11,7 +11,8 @@ import mozilla.components.compose.browser.toolbar.R
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
-import mozilla.components.concept.toolbar.AutocompleteProvider
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
+import mozilla.components.concept.toolbar.AutocompleteResult
 import mozilla.components.lib.state.State
 
 /**
@@ -92,7 +93,7 @@ data class DisplayState(
 /**
  * Wrapper containing the toolbar edit state.
  *
- * @property query The text the user is editing in "edit" mode.
+ * @property query Information about the text the user is editing while in "edit" mode.
  * @property hint The hint to show in the edit toolbar.
  * @property isQueryPrefilled Whether [query] is prefilled and not user entered.
  * @property isQueryPrivate Whether queries should be done in private / incognito mode.
@@ -102,11 +103,11 @@ data class DisplayState(
  * the edit toolbar.
  */
 data class EditState(
-    val query: String = "",
+    val query: BrowserToolbarQuery = BrowserToolbarQuery(""),
     @param:StringRes val hint: Int = R.string.mozac_browser_toolbar_search_hint,
     val isQueryPrefilled: Boolean = false,
     val isQueryPrivate: Boolean = false,
-    val autocompleteProviders: List<AutocompleteProvider> = emptyList(),
+    val suggestion: AutocompleteResult? = null,
     val editActionsStart: List<Action> = emptyList(),
     val editActionsEnd: List<Action> = emptyList(),
 ) : State

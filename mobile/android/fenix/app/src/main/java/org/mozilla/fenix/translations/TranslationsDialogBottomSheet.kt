@@ -42,7 +42,6 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.concept.engine.translate.Language
 import mozilla.components.concept.engine.translate.TranslationError
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.BetaLabel
 import org.mozilla.fenix.compose.InfoCard
 import org.mozilla.fenix.compose.InfoType
 import org.mozilla.fenix.compose.LinkText
@@ -458,33 +457,29 @@ private fun TranslationsDialogHeader(
     showPageSettings: Boolean,
     onSettingClicked: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Column {
-            BetaLabel()
-        }
-        Column {
-            if (showPageSettings) {
-                IconButton(
-                    onClick = { onSettingClicked() },
-                    modifier = Modifier.size(24.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(id = iconsR.drawable.mozac_ic_settings_24),
-                        contentDescription = stringResource(
-                            id = R.string.translation_option_bottom_sheet_title_heading,
-                        ),
-                        tint = FirefoxTheme.colors.iconPrimary,
-                    )
-                }
+    if (showPageSettings) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            IconButton(
+                onClick = { onSettingClicked() },
+                modifier = Modifier.size(24.dp),
+            ) {
+                Icon(
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_settings_24),
+                    contentDescription = stringResource(
+                        id = R.string.translation_option_bottom_sheet_title_heading,
+                    ),
+                    tint = FirefoxTheme.colors.iconPrimary,
+                )
             }
         }
     }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(top = 12.dp),
+        modifier = Modifier.padding(top = if (showPageSettings) { 12.dp } else { 0.dp }),
     ) {
         Text(
             text = title,

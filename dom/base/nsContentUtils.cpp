@@ -486,6 +486,9 @@ bool nsContentUtils::sMayHaveFormRadioStateChangeListeners = false;
 mozilla::LazyLogModule nsContentUtils::gResistFingerprintingLog(
     "nsResistFingerprinting");
 mozilla::LazyLogModule nsContentUtils::sDOMDumpLog("Dump");
+// Log when "input" and "beforeinput" events are dispatched or enqueued with
+// InputEvent:3,sync.
+mozilla::LazyLogModule gInputEventLog("InputEvent");
 
 int32_t nsContentUtils::sInnerOrOuterWindowCount = 0;
 uint32_t nsContentUtils::sInnerOrOuterWindowSerialCounter = 0;
@@ -5535,6 +5538,11 @@ nsresult nsContentUtils::DispatchInputEvent(
     widgetEvent.mSpecifiedEventType = nsGkAtoms::oninput;
     widgetEvent.mFlags.mCancelable = false;
     widgetEvent.mFlags.mComposed = true;
+    MOZ_LOG(gInputEventLog, LogLevel::Info,
+            ("Dispatching %s, safe?=%s, aEditorBase=%p, aEventTargetElement=%s",
+             ToChar(widgetEvent.mMessage),
+             YesOrNo(nsContentUtils::IsSafeToRunScript()), aEditorBase,
+             ToString(RefPtr{aEventTargetElement}).c_str()));
     return AsyncEventDispatcher::RunDOMEventWhenSafe(*aEventTargetElement,
                                                      widgetEvent, aEventStatus);
   }
@@ -5644,6 +5652,13 @@ nsresult nsContentUtils::DispatchInputEvent(
         "Cancelable beforeinput event dispatcher should run when it's safe");
     inputEvent.mFlags.mCancelable = false;
   }
+  MOZ_LOG(gInputEventLog, LogLevel::Info,
+          ("Dispatching %s, safe?=%s, inputType=%s, aEditorBase=%p, "
+           "aEventTargetElement=%s",
+           ToChar(inputEvent.mMessage),
+           YesOrNo(nsContentUtils::IsSafeToRunScript()),
+           ToString(inputEvent.mInputType).c_str(), aEditorBase,
+           ToString(RefPtr{aEventTargetElement}).c_str()));
   return AsyncEventDispatcher::RunDOMEventWhenSafe(*aEventTargetElement,
                                                    inputEvent, aEventStatus);
 }

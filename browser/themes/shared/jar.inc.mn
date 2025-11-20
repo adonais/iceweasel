@@ -269,8 +269,6 @@
   skin/classic/browser/tabbrowser/tab-hover-preview.css        (../shared/tabbrowser/tab-hover-preview.css)
   skin/classic/browser/tabbrowser/tabs.css                     (../shared/tabbrowser/tabs.css)
 
-  skin/classic/browser/translations/beta.svg                   (../shared/translations/beta.svg)
-
   skin/classic/browser/update-badge.svg                        (../shared/update-badge.svg)
   skin/classic/browser/profiler-popup-backdrop.png             (../shared/profiler-popup-backdrop.png)
   skin/classic/browser/tab-crashed.svg                         (../shared/incontent-icons/tab-crashed.svg)

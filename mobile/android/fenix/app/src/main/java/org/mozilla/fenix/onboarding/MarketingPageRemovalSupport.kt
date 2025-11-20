@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.support.base.feature.LifecycleAwareFeature
-import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.onboarding.view.OnboardingPageUiData
 import org.mozilla.fenix.perf.runBlockingIncrement
 import org.mozilla.fenix.settings.OnSharedPreferenceChangeListener
@@ -29,7 +28,6 @@ import kotlin.coroutines.CoroutineContext
  *
  * @param prefKey the pref key identifier for the "should show marketing page" pref
  * @param pagesToDisplay the mutable list of onboarding pages we display
- * @param distributionIdManager the distribution ID manager
  * @param settings settings class that holds shared preferences
  * @param ioContext the coroutine context for IO
  * @param lifecycleOwner the lifecycle owner
@@ -37,7 +35,6 @@ import kotlin.coroutines.CoroutineContext
 class MarketingPageRemovalSupport(
     private val prefKey: String,
     private val pagesToDisplay: MutableList<OnboardingPageUiData>,
-    private val distributionIdManager: DistributionIdManager,
     private val settings: Settings,
     private val ioContext: CoroutineContext = Dispatchers.IO,
     private val lifecycleOwner: LifecycleOwner,
@@ -49,8 +46,6 @@ class MarketingPageRemovalSupport(
 
     override fun start() {
         job = lifecycleOwner.lifecycleScope.launch(ioContext) {
-            val isPartnership = distributionIdManager.isPartnershipDistribution()
-
             settings.preferences.flowScopedBooleanPreference(
                 lifecycleOwner,
                 prefKey,
@@ -58,7 +53,7 @@ class MarketingPageRemovalSupport(
             )
                 .distinctUntilChanged()
                 .collect { shouldShowMarketingOnboarding ->
-                    if (!shouldShowMarketingOnboarding && !isPartnership) {
+                    if (!shouldShowMarketingOnboarding) {
                         pagesToDisplay.removeIfPageNotReached(currentPageIndex)
                     }
                 }

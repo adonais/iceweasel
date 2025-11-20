@@ -639,6 +639,20 @@ features:
         type: Boolean
         default: false
 
+  firefox-jp-guide-default-site:
+    description: >
+      This feature is for managing the visibility of the Firefox Japanese Guide default suggested site shortcut
+    variables:
+      enabled:
+        description: >
+          Enables the feature.
+        type: Boolean
+        default: false
+    defaults:
+      - channel: developer
+        value:
+          enabled: true
+
   microsurveys:
     description: Feature for microsurveys.
     variables:
@@ -1017,10 +1031,10 @@ features:
         default: false
 
   custom-review-prompt:
-    description: Feature that controls the Play store in-app custom review prompt.
+    description: Feature that controls the Play store review prompt.
     variables:
       enabled:
-        description: Whether or not to enable the custom review prompt.
+        description: Whether or not to enable the new trigger criteria.
         type: Boolean
         default: false
 

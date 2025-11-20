@@ -50,7 +50,6 @@ import org.mozilla.fenix.helpers.TestHelper.clickSnackbarButton
 import org.mozilla.fenix.helpers.TestHelper.exitMenu
 import org.mozilla.fenix.helpers.TestHelper.verifyDarkThemeApplied
 import org.mozilla.fenix.helpers.TestHelper.verifyLightThemeApplied
-import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -263,11 +262,11 @@ class NavigationToolbarTestCompose : TestSetup() {
             }.openBookmarks(composeTestRule) {
             }.clickSearchButton {
                 // Search for a valid term
-                typeSearchWithComposableToolbar(firstWebPage.title)
+                typeSearchWithComposableToolbar(composeTestRule, firstWebPage.title)
                 verifySearchSuggestionsAreDisplayed(composeTestRule, firstWebPage.url.toString())
                 verifySuggestionsAreNotDisplayed(composeTestRule, secondWebPage.url.toString())
                 // Search for invalid term
-                typeSearchWithComposableToolbar("Android")
+                typeSearchWithComposableToolbar(composeTestRule, "Android")
                 verifySuggestionsAreNotDisplayed(composeTestRule, firstWebPage.url.toString())
                 verifySuggestionsAreNotDisplayed(composeTestRule, secondWebPage.url.toString())
             }
@@ -314,7 +313,7 @@ class NavigationToolbarTestCompose : TestSetup() {
                 // Bugzilla ticket: https://bugzilla.mozilla.org/show_bug.cgi?id=1813587
                 clickSearchSelectorButtonWithComposableToolbar(composeTestRule)
                 selectTemporarySearchMethodWithComposableToolbar(composeTestRule, "DuckDuckGo")
-                typeSearchWithComposableToolbar("mozilla ")
+                typeSearchWithComposableToolbar(composeTestRule, "mozilla ")
                 verifySearchSuggestionsAreDisplayed(composeTestRule, "mozilla firefox")
             }.dismissSearchBar {
             }.openThreeDotMenuWithComposableToolbar(composeTestRule) {
@@ -328,7 +327,7 @@ class NavigationToolbarTestCompose : TestSetup() {
                 // Bugzilla ticket: https://bugzilla.mozilla.org/show_bug.cgi?id=1813587
                 clickSearchSelectorButtonWithComposableToolbar(composeTestRule)
                 selectTemporarySearchMethodWithComposableToolbar(composeTestRule, "DuckDuckGo")
-                typeSearchWithComposableToolbar("mozilla")
+                typeSearchWithComposableToolbar(composeTestRule, "mozilla")
                 verifySuggestionsWithComposableToolbarAreNotDisplayed(composeTestRule)
             }
         }
@@ -404,10 +403,10 @@ class NavigationToolbarTestCompose : TestSetup() {
                     composeTestRule,
                     searchEngineName = "History",
                 )
-                typeSearchWithComposableToolbar(searchTerm = "Mozilla")
+                typeSearchWithComposableToolbar(composeTestRule, searchTerm = "Mozilla")
                 verifySuggestionsAreNotDisplayed(rule = composeTestRule, "Mozilla")
                 clickClearButtonWithComposableToolbar(composeTestRule)
-                typeSearchWithComposableToolbar(searchTerm = "generic")
+                typeSearchWithComposableToolbar(composeTestRule, searchTerm = "generic")
                 // verifyTypedToolbarText("generic", exists = true)
                 verifySearchSuggestionsAreDisplayed(
                     rule = composeTestRule,
@@ -438,7 +437,7 @@ class NavigationToolbarTestCompose : TestSetup() {
                     verifySearchShortcutListWithComposableToolbar(composeTestRule, it)
                     selectTemporarySearchMethodWithComposableToolbar(composeTestRule, it)
                     verifySearchEngineIconWithComposableToolbar(composeTestRule, it)
-                }.submitQueryWithComposableToolbar("mozilla ") {
+                }.submitQueryWithComposableToolbar(composeTestRule, "mozilla ") {
                     verifyUrlWithComposableToolbar(composeTestRule, "mozilla")
                 }.goToHomescreenWithComposableToolbar(composeTestRule) {
                 }
@@ -464,13 +463,13 @@ class NavigationToolbarTestCompose : TestSetup() {
 
             homeScreen {
             }.openSearchWithComposableToolbar(composeTestRule) {
-            }.submitQueryWithComposableToolbar("test page 1") {
+            }.submitQueryWithComposableToolbar(composeTestRule, "test page 1") {
             }.goToHomescreenWithComposableToolbar(composeTestRule) {
                 togglePrivateBrowsingModeOnOff(composeTestRule)
             }.openSearchWithComposableToolbar(composeTestRule) {
-            }.submitQueryWithComposableToolbar("test page 2") {
+            }.submitQueryWithComposableToolbar(composeTestRule, "test page 2") {
             }.openSearchWithComposableToolbar(composeTestRule) {
-                typeSearchWithComposableToolbar(searchTerm = "test page")
+                typeSearchWithComposableToolbar(composeTestRule, searchTerm = "test page")
                 verifyTheSuggestionsHeader(composeTestRule, firefoxSuggestHeader)
                 verifyTheSuggestionsHeader(composeTestRule, "TestSearchEngine search")
                 verifySearchSuggestionsAreDisplayed(
@@ -513,7 +512,7 @@ class NavigationToolbarTestCompose : TestSetup() {
             // Performs a search and opens 2 dummy search results links to create a search group
             homeScreen {
             }.openSearchWithComposableToolbar(composeTestRule) {
-            }.submitQueryWithComposableToolbar(queryString) {
+            }.submitQueryWithComposableToolbar(composeTestRule, queryString) {
                 longClickPageObject(itemWithText("Link 1"))
                 clickContextMenuItem("Open link in new tab")
                 clickSnackbarButton(composeTestRule, "SWITCH")
@@ -549,7 +548,7 @@ class NavigationToolbarTestCompose : TestSetup() {
             // Performs a search and opens 2 dummy search results links to create a search group
             homeScreen {
             }.openSearchWithComposableToolbar(composeTestRule) {
-            }.submitQueryWithComposableToolbar(queryString) {
+            }.submitQueryWithComposableToolbar(composeTestRule, queryString) {
                 longClickPageObject(itemWithText("Link 1"))
                 clickContextMenuItem("Open link in private tab")
                 longClickPageObject(itemWithText("Link 2"))
@@ -594,7 +593,7 @@ class NavigationToolbarTestCompose : TestSetup() {
             }.enterURLAndEnterToBrowserWithComposableToolbar(composeTestRule, firstWebPage.url) {
             }.openTabDrawerWithComposableToolbar(composeTestRule) {
             }.openNewTab {
-            }.submitQueryWithComposableToolbar(secondWebPage.url.toString()) {
+            }.submitQueryWithComposableToolbar(composeTestRule, secondWebPage.url.toString()) {
                 swipeNavBarRightWithComposableToolbar(composeTestRule, secondWebPage.url.toString())
                 verifyUrlWithComposableToolbar(composeTestRule, firstWebPage.url.toString())
                 swipeNavBarLeftWithComposableToolbar(composeTestRule, firstWebPage.url.toString())
@@ -666,10 +665,10 @@ class NavigationToolbarTestCompose : TestSetup() {
                 // If true it will use the hardcoded list of "top domain" suggestions for the address bar's autocomplete suggestions
                 homeScreen {
                 }.openSearchWithComposableToolbar(composeTestRule) {
-                    typeSearchWithComposableToolbar("mo")
-                    verifyTypedToolbarTextWithComposableToolbar("monster.com", exists = true)
-                    typeSearchWithComposableToolbar("moz")
-                    verifyTypedToolbarTextWithComposableToolbar("mozilla.org", exists = true)
+                    typeSearchWithComposableToolbar(composeTestRule, "mo")
+                    verifyTypedToolbarTextWithComposableToolbar(composeTestRule, "monster.com", exists = true)
+                    typeSearchWithComposableToolbar(composeTestRule, "moz")
+                    verifyTypedToolbarTextWithComposableToolbar(composeTestRule, "mozilla.org", exists = true)
                 }
             } else {
                 // The suggestions for the address bar's autocomplete will take use of the user's local browsing history and bookmarks
@@ -682,26 +681,29 @@ class NavigationToolbarTestCompose : TestSetup() {
 
                 homeScreen {
                 }.openSearchWithComposableToolbar(composeTestRule) {
-                    typeSearchWithComposableToolbar("moz")
+                    typeSearchWithComposableToolbar(composeTestRule, "moz")
                     // "Top domain" suggestions from the address bar's autocomplete are disabled, "moz" shouldn't autocomplete to mozilla.org
-                    verifyTypedToolbarTextWithComposableToolbar("mozilla.org", exists = false)
+                    verifyTypedToolbarTextWithComposableToolbar(composeTestRule, "mozilla.org", exists = false)
                     // The address bar's autocomplete should take use of the browsing history
                     // Autocomplete with the history items url
-                    typeSearchWithComposableToolbar("github.com/mozilla-mobile/f")
+                    typeSearchWithComposableToolbar(composeTestRule, "github.com/mozilla-mobile/f")
                     verifyTypedToolbarTextWithComposableToolbar(
+                        composeTestRule,
                         "github.com/mozilla-mobile/fenix",
                         exists = true,
                     )
                     // The address bar's autocomplete should also take use of the saved bookmarks
                     // Autocomplete with the bookmarked items url
-                    typeSearchWithComposableToolbar("github.com/mozilla-mobile/fo")
+                    typeSearchWithComposableToolbar(composeTestRule, "github.com/mozilla-mobile/fo")
                     verifyTypedToolbarTextWithComposableToolbar(
+                        composeTestRule,
                         "github.com/mozilla-mobile/focus-android",
                         exists = true,
                     )
                     // It should not autocomplete with links that are not part of browsing history or bookmarks
-                    typeSearchWithComposableToolbar("github.com/mozilla-mobile/fi")
+                    typeSearchWithComposableToolbar(composeTestRule, "github.com/mozilla-mobile/fi")
                     verifyTypedToolbarTextWithComposableToolbar(
+                        composeTestRule,
                         "github.com/mozilla-mobile/firefox-android",
                         exists = false,
                     )
@@ -731,7 +733,7 @@ class NavigationToolbarTestCompose : TestSetup() {
 
             homeScreen {
             }.openSearchWithComposableToolbar(composeTestRule) {
-                typeSearchWithComposableToolbar("test")
+                typeSearchWithComposableToolbar(composeTestRule, "test")
                 verifySuggestionsAreNotDisplayed(
                     composeTestRule,
                     "Firefox Suggest",
@@ -765,7 +767,7 @@ class NavigationToolbarTestCompose : TestSetup() {
 
             homeScreen {
             }.openSearchWithComposableToolbar(composeTestRule) {
-                typeSearchWithComposableToolbar("test")
+                typeSearchWithComposableToolbar(composeTestRule, "test")
                 verifySuggestionsAreNotDisplayed(
                     composeTestRule,
                     "Firefox Suggest",
@@ -812,7 +814,7 @@ class NavigationToolbarTestCompose : TestSetup() {
             homeScreen {
                 togglePrivateBrowsingModeOnOff(composeTestRule = composeTestRule)
             }.openSearchWithComposableToolbar(composeTestRule) {
-                typeSearchWithComposableToolbar("mozilla")
+                typeSearchWithComposableToolbar(composeTestRule, "mozilla")
                 verifyAllowSuggestionsInPrivateModeDialogWithComposableToolbar(composeTestRule)
                 denySuggestionsInPrivateMode()
                 verifySuggestionsAreNotDisplayed(composeTestRule, "mozilla firefox")
@@ -829,9 +831,9 @@ class NavigationToolbarTestCompose : TestSetup() {
         ) {
             homeScreen {
             }.openSearchWithComposableToolbar(composeTestRule) {
-                typeSearchWithComposableToolbar(queryString)
+                typeSearchWithComposableToolbar(composeTestRule, queryString)
                 clickClearButtonWithComposableToolbar(composeTestRule)
-                verifySearchBarPlaceholderWithComposableToolbar("Search or enter address")
+                verifySearchBarPlaceholderWithComposableToolbar(composeTestRule, "Search or enter address")
             }
         }
     }
@@ -855,12 +857,12 @@ class NavigationToolbarTestCompose : TestSetup() {
             }.openHistory {
             }.clickSearchButton {
                 // Search for a valid term
-                typeSearchWithComposableToolbar(firstWebPage.title)
+                typeSearchWithComposableToolbar(composeTestRule, firstWebPage.title)
                 verifySearchSuggestionsAreDisplayed(composeTestRule, firstWebPage.url.toString())
                 verifySuggestionsAreNotDisplayed(composeTestRule, secondWebPage.url.toString())
                 clickClearButtonWithComposableToolbar(composeTestRule)
                 // Search for invalid term
-                typeSearchWithComposableToolbar("Android")
+                typeSearchWithComposableToolbar(composeTestRule, "Android")
                 verifySuggestionsAreNotDisplayed(composeTestRule, firstWebPage.url.toString())
                 verifySuggestionsAreNotDisplayed(composeTestRule, secondWebPage.url.toString())
             }
@@ -878,10 +880,10 @@ class NavigationToolbarTestCompose : TestSetup() {
             }.openSearchWithComposableToolbar(composeTestRule) {
                 clickSearchSelectorButtonWithComposableToolbar(composeTestRule)
                 selectTemporarySearchMethodWithComposableToolbar(composeTestRule, "History")
-                typeSearchWithComposableToolbar(searchTerm = "Mozilla")
+                typeSearchWithComposableToolbar(composeTestRule, searchTerm = "Mozilla")
                 verifySuggestionsAreNotDisplayed(rule = composeTestRule, "Mozilla")
                 clickClearButtonWithComposableToolbar(composeTestRule)
-                verifySearchBarPlaceholderWithComposableToolbar("Search history")
+                verifySearchBarPlaceholderWithComposableToolbar(composeTestRule, "Search history")
             }
         }
     }
@@ -901,8 +903,8 @@ class NavigationToolbarTestCompose : TestSetup() {
                 verifyKeyboardVisibility(isExpectedToBeVisible = true)
                 verifyScanButtonWithComposableToolbar(composeTestRule, isDisplayed = true)
                 verifyVoiceSearchButtonVisibility(enabled = true)
-                verifySearchBarPlaceholderWithComposableToolbar("Search or enter address")
-                typeSearchWithComposableToolbar("mozilla ")
+                verifySearchBarPlaceholderWithComposableToolbar(composeTestRule, "Search or enter address")
+                typeSearchWithComposableToolbar(composeTestRule, "mozilla ")
                 verifyScanButtonWithComposableToolbar(composeTestRule, isDisplayed = false)
                 verifyVoiceSearchButtonVisibility(enabled = true)
             }
@@ -941,7 +943,7 @@ class NavigationToolbarTestCompose : TestSetup() {
                 clickSearchSelectorButtonWithComposableToolbar(composeTestRule)
                 selectTemporarySearchMethodWithComposableToolbar(composeTestRule, "Tabs")
                 verifyVoiceSearchButtonWithComposableToolbar(composeTestRule, isDisplayed = true)
-                verifySearchBarPlaceholderWithComposableToolbar("Search tabs")
+                verifySearchBarPlaceholderWithComposableToolbar(composeTestRule, "Search tabs")
                 verifyScanButtonWithComposableToolbar(composeTestRule, isDisplayed = false)
             }
         }
@@ -959,7 +961,7 @@ class NavigationToolbarTestCompose : TestSetup() {
                 clickSearchSelectorButtonWithComposableToolbar(composeTestRule)
                 selectTemporarySearchMethodWithComposableToolbar(composeTestRule, "History")
                 verifyVoiceSearchButtonWithComposableToolbar(composeTestRule, isDisplayed = true)
-                verifySearchBarPlaceholderWithComposableToolbar("Search history")
+                verifySearchBarPlaceholderWithComposableToolbar(composeTestRule, "Search history")
                 verifyScanButtonWithComposableToolbar(composeTestRule, isDisplayed = false)
             }
         }

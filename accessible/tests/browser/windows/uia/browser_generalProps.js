@@ -518,3 +518,29 @@ addUiaTask(
   },
   { uiaEnabled: true, uiaDisabled: true }
 );
+
+/**
+ * Test the IsPassword property.
+ */
+addUiaTask(
+  `
+<input type="text" id="text">
+<input type="password" id="password">
+  `,
+  async function testIsPassword() {
+    await definePyVar("doc", `getDocUia()`);
+    ok(
+      !(await runPython(`findUiaByDomId(doc, "text").CurrentIsPassword`)),
+      "text has correct IsPassword"
+    );
+    ok(
+      await runPython(`findUiaByDomId(doc, "password").CurrentIsPassword`),
+      "password has correct IsPassword"
+    );
+    ok(
+      !(await runPython(`doc.CurrentIsPassword`)),
+      "doc has correct IsPassword"
+    );
+  },
+  { uiaEnabled: true, uiaDisabled: true }
+);

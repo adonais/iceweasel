@@ -77,7 +77,7 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
                                 isUserSelected = true,
                                 inPrivateMode = environment?.browsingModeManager?.mode?.isPrivate == true,
                                 searchStartedForCurrentUrl = editState.isQueryPrefilled &&
-                                    browserStore?.state?.selectedTab?.content?.url == editState.query,
+                                    browserStore?.state?.selectedTab?.content?.url == editState.query.current,
                             ),
                         )
 
@@ -101,7 +101,7 @@ class BrowserToolbarToFenixSearchMapperMiddleware(
                         SearchFragmentAction.UpdateQuery(
                             when (isSearchStartedForCurrentUrl && isQueryPrefilled) {
                                 true -> "" // consider a prefilled query for the current URL as not entered by user
-                                false -> query
+                                false -> query.current
                             },
                         ),
                     )

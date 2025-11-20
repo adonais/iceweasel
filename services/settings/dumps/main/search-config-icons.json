@@ -1,6 +1,23 @@
 {
   "data": [
     {
+      "schema": 1762992360903,
+      "imageSize": 16,
+      "attachment": {
+        "hash": "69e0131f3e85657f827eb4ad3f01c25cf17540fe2db15c7e756f4dcfc1853dd2",
+        "size": 5733,
+        "filename": "perplexity-16.pdf",
+        "location": "main-workspace/search-config-icons/15ae2412-8d7e-4086-b94b-9fa9ea6934f5.pdf",
+        "mimetype": "application/pdf"
+      },
+      "engineIdentifiers": [
+        "perplexity"
+      ],
+      "filter_expression": "env.appinfo.OS == \"iOS\"",
+      "id": "f943d7bc-872e-4a81-810f-94d26465da69",
+      "last_modified": 1763049497744
+    },
+    {
       "schema": 1746437702969,
       "imageSize": 16,
       "attachment": {
@@ -1189,5 +1206,5 @@
       "last_modified": 1744118264825
     }
   ],
-  "timestamp": 1746562822691
+  "timestamp": 1763049497744
 }

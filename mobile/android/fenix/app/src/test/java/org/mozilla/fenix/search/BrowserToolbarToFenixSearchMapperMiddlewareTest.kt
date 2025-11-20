@@ -10,6 +10,7 @@ import io.mockk.mockk
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchQueryUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.EnterEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.Middleware
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
@@ -68,16 +69,16 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
 
         searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = false))
 
-        toolbarStore.dispatch(SearchQueryUpdated("t"))
+        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("t")))
         assertEquals("t", searchStore.state.query)
 
-        toolbarStore.dispatch(SearchQueryUpdated("te"))
+        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("te")))
         assertEquals("te", searchStore.state.query)
 
-        toolbarStore.dispatch(SearchQueryUpdated("tes"))
+        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("tes")))
         assertEquals("tes", searchStore.state.query)
 
-        toolbarStore.dispatch(SearchQueryUpdated("test"))
+        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("test")))
         assertEquals("test", searchStore.state.query)
     }
 
@@ -87,13 +88,15 @@ class BrowserToolbarToFenixSearchMapperMiddlewareTest {
         toolbarStore.dispatch(EnterEditMode)
 
         searchStore.dispatch(SearchStarted(mockk(), false, false, searchStartedForCurrentUrl = true))
-        toolbarStore.dispatch(SearchQueryUpdated("https://mozilla.org", isQueryPrefilled = true))
+        toolbarStore.dispatch(
+            SearchQueryUpdated(BrowserToolbarQuery("https://mozilla.org"), isQueryPrefilled = true),
+        )
         assertEquals("", searchStore.state.query)
 
-        toolbarStore.dispatch(SearchQueryUpdated("t"))
+        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("t")))
         assertEquals("t", searchStore.state.query)
 
-        toolbarStore.dispatch(SearchQueryUpdated("https://mozilla.org"))
+        toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("https://mozilla.org")))
         assertEquals("https://mozilla.org", searchStore.state.query)
     }
 

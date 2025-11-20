@@ -60,7 +60,7 @@ import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.C
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.PageOriginContextualMenuInteractions.CopyToClipboardClicked
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.PageOriginContextualMenuInteractions.LoadFromClipboardClicked
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.PageOriginContextualMenuInteractions.PasteFromClipboardClicked
-import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction
+import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchQueryUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent.Source
@@ -75,6 +75,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.EnvironmentCleared
 import mozilla.components.compose.browser.toolbar.store.EnvironmentRehydrated
 import mozilla.components.compose.browser.toolbar.store.ProgressBarConfig
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.concept.engine.cookiehandling.CookieBannersStorage
 import mozilla.components.concept.engine.permission.SitePermissionsStorage
@@ -715,7 +716,7 @@ class BrowserToolbarMiddlewareTest {
 
         verify(exactly = 0) { navController.navigate(any<NavDirections>()) }
         verify { appStore.dispatch(SearchStarted(currentTab.id)) }
-        assertEquals(currentTab.content.searchTerms, toolbarStore.state.editState.query)
+        assertEquals(currentTab.content.searchTerms, toolbarStore.state.editState.query.current)
     }
 
     @Test
@@ -850,7 +851,7 @@ class BrowserToolbarMiddlewareTest {
                 toolbarStore.dispatch(PasteFromClipboardClicked)
 
                 verify {
-                    toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(queryText))
+                    toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery(queryText)))
                     appStore.dispatch(SearchStarted(currentTab.id))
                 }
             }

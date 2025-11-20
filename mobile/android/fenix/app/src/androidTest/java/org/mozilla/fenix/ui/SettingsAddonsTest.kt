@@ -129,7 +129,7 @@ class SettingsAddonsTest : TestSetup() {
         }.goToHomescreen(activityTestRule) {
         }.openTopSiteTabWithTitle(
             activityTestRule,
-            getStringResource(R.string.default_top_site_wikipedia),
+            "Wikipedia",
         ) {
         }.openThreeDotMenu {
         }.openSettings {

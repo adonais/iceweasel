@@ -17,31 +17,6 @@
   padding-bottom: 0;
 }
 
-h1.translations-panel-header-wrapper {
-  flex-grow: 0;
-}
-
-.translations-panel-beta {
-  flex-shrink: 0;
-  flex-grow: 1;
-}
-
-.translations-panel-beta-icon {
-  list-style-image: url(chrome://browser/skin/translations/beta.svg);
-  width: 34px;
-  height: 20px;
-  -moz-context-properties: fill, stroke;
-  fill: currentColor;
-  stroke: currentColor;
-  margin: 2px 8px;
-}
-
-@media (prefers-contrast: no-preference) and (prefers-color-scheme: light) {
-  .translations-panel-beta-icon {
-    opacity: 0.8;
-  }
-}
-
 #full-page-translations-panel-intro {
   line-height: 1.6;
   margin-block-end: var(--arrowpanel-padding);
@@ -123,6 +98,7 @@ h1.translations-panel-header-wrapper {
 }
 
 #select-translations-panel-header-row {
+  text-align: start;
   padding-block: var(--space-small) 0;
 }
 

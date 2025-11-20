@@ -982,7 +982,10 @@ class HomeFragment : Fragment() {
 
                     LaunchedEffect(isInPortrait, keyboardState) {
                         updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                            topMargin = getTopToolbarHeight()
+                            topMargin = when (settings.shouldUseComposableToolbar) {
+                                true -> getTopToolbarHeight()
+                                else -> 0
+                            }
                             bottomMargin = getBottomToolbarHeight(keyboardState == KeyboardState.Closed)
                         }
                     }

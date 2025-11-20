@@ -38,6 +38,8 @@ class DefaultTopSitesStorage(
         }
     }
 
+    override fun addTopSites(topSites: List<Pair<String, String>>, isDefault: Boolean) = Unit
+
     override fun removeTopSite(topSite: TopSite) {
         scope.launch {
             pinnedSitesStorage.removePinnedSite(topSite)

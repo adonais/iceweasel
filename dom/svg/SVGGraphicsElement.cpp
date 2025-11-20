@@ -121,6 +121,9 @@ already_AddRefed<SVGMatrix> SVGGraphicsElement::GetCTM() {
     currentDoc->FlushPendingNotifications(FlushType::Layout);
   }
   gfx::Matrix m = SVGContentUtils::GetCTM(this);
+  if (m.IsSingular()) {
+    m = {};
+  }
   return do_AddRef(new SVGMatrix(ThebesMatrix(m)));
 }
 
@@ -130,6 +133,9 @@ already_AddRefed<SVGMatrix> SVGGraphicsElement::GetScreenCTM() {
     currentDoc->FlushPendingNotifications(FlushType::Layout);
   }
   gfx::Matrix m = SVGContentUtils::GetScreenCTM(this);
+  if (m.IsSingular()) {
+    m = {};
+  }
   return do_AddRef(new SVGMatrix(ThebesMatrix(m)));
 }
 

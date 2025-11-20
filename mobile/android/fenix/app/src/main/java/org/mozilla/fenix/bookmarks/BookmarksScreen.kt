@@ -110,6 +110,7 @@ import mozilla.components.compose.browser.awesomebar.AwesomeBarOrientation
 import mozilla.components.compose.browser.toolbar.BrowserToolbar
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.concept.base.profiler.Profiler
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.lib.state.ext.observeAsState
@@ -315,7 +316,7 @@ private fun BookmarksList(
             }
             false -> {
                 appStore.dispatch(AppAction.SearchAction.SearchEnded)
-                toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(""))
+                toolbarStore.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(BrowserToolbarQuery("")))
                 browserStore.dispatch(AwesomeBarAction.EngagementFinished(abandoned = true))
                 focusManager.clearFocus()
                 keyboardController?.hide()

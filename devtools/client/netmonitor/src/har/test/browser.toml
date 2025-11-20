@@ -21,6 +21,11 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
+["browser_net_har_copy_all_as_har_cached.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
+]
+
 ["browser_net_har_import.js"]
 skip-if = [
   "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && debug", # Bug 1767273

@@ -16,10 +16,6 @@
     <!-- GeckoView abbreviation used in AboutFragment -->
     <string name="gecko_view_abbreviation" translatable="false">GV</string>
 
-    <!-- Default title for pinned Wikipedia top site that links to Wikipedia home page -->
-    <string name="default_top_site_wikipedia" translatable="false">Wikipedia</string>
-    <!-- Default title for pinned Google top site that links to Google home page  -->
-    <string name="default_top_site_google" translatable="false">Google</string>
     <!-- Application Services abbreviation used in AboutFragment -->
     <string name="app_services_abbreviation" translatable="false">AS</string>
 
@@ -150,8 +146,6 @@
     <!-- Profiler settings -->
     <string name="preferences_start_profiler">Start Profiler</string>
     <string name="profiler_stop">Stop Profiler</string>
-
-
     <string name="profiler_active_notification" translatable="false">Profiler active</string>
     <string name="profiler_notification_text" translatable="false">Profiling is active. Tap to stop profiler</string>
     <string name="profiler_settings_title">Profiler Settings</string>
@@ -166,23 +160,17 @@
     <string name="profiler_filter_networking_explain">Preset for investigating networking bugs in Firefox</string>
     <string name="profiler_filter_debug">Debug</string>
     <string name="profiler_filter_debug_explain">Preset for debugging. High overhead, do not use for performance work but use for focusing on understanding browser behavior.</string>
-
     <string name="profiler_start_dialog_started">Profiler started</string>
-
     <string name="profiler_start_cancel">Cancel</string>
-
     <string name="profiler_gathering">Gathering the profile</string>
     <string name="profiler_stopping">Stopping the profiler</string>
     <string name="profiler_no_info">No information was gathered</string>
-
     <string name="profiler_waiting_start">Waiting for Profiler to start</string>
-
     <string name="profiler_url_warning">⚠️ Warning: Profile Upload</string>
     <string name="profiler_url_warning_explained">Performance profiles may contain sensitive information such as websites visited and screenshots of them. If you continue, your profile will be uploaded and made accessible to anyone with the link. Do you wish to continue?</string>
     <string name="profiler_as_url">Upload profile</string>
     <string name="profiler_error">Something went wrong with the profiler</string>
     <string name="profiler_io_error">Something went wrong contacting the Profiler server.</string>
-
     <string name="profiler_uploaded_url_to_clipboard">URL copied to clipboard successfully</string>
 
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
@@ -241,7 +229,6 @@
     <string name="glean_debug_tools_send_ping_button_text">Send Ping</string>
     <!-- The send pings toast message. The first parameter is the type of ping -->
     <string name="glean_debug_tools_send_ping_toast_message">Sent %1$s ping</string>
-
 
     <!-- The title of the debug drawer tab to help debug the crash reporter-->
     <string name="crash_debug_tools_title">Crash Debug Tools</string>

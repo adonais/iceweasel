@@ -6,7 +6,8 @@ package mozilla.components.compose.browser.toolbar.store
 
 import androidx.annotation.StringRes
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
-import mozilla.components.concept.toolbar.AutocompleteProvider
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
+import mozilla.components.concept.toolbar.AutocompleteResult
 import mozilla.components.lib.state.Action
 import mozilla.components.compose.browser.toolbar.concept.Action as ToolbarAction
 
@@ -121,11 +122,11 @@ sealed class BrowserEditToolbarAction : BrowserToolbarAction {
     /**
      * Updates the text of the toolbar that is currently being edited (in "edit" mode).
      *
-     * @property query The text in the toolbar that is being edited.
-     * @property isQueryPrefilled Whether [query] is prefilled and not user entered.
+     * @property query Information about the text in the toolbar that is being edited.
+     * @property isQueryPrefilled Whether the new text in [query] is prefilled and not user entered.
      */
     data class SearchQueryUpdated(
-        val query: String,
+        val query: BrowserToolbarQuery,
         val isQueryPrefilled: Boolean = false,
     ) : BrowserEditToolbarAction()
 
@@ -135,23 +136,12 @@ sealed class BrowserEditToolbarAction : BrowserToolbarAction {
     data class PrivateModeUpdated(val inPrivateMode: Boolean) : BrowserEditToolbarAction()
 
     /**
-     * Indicates that the user has aborted editing the URL/text.
-     * This callback works only up until Android API 33.
-     */
-    data object SearchAborted : BrowserEditToolbarAction()
-
-    /**
-     * Indicates that a new url suggestion has been autocompleted in the search toolbar.
-     */
-    data class UrlSuggestionAutocompleted(val url: String) : BrowserEditToolbarAction()
-
-    /**
-     * Indicates that a new list of toolbar autocomplete providers is available.
+     * Indicates that a new autocomplete suggestion is available or that the previous one is not valid anymore.
      *
-     * @property autocompleteProviders The new list of [AutocompleteProvider]s.
+     * @property autocompletedSuggestion The new autocomplete suggestion. `null` if none is available.
      */
-    data class AutocompleteProvidersUpdated(
-        val autocompleteProviders: List<AutocompleteProvider>,
+    data class AutocompleteSuggestionUpdated(
+        val autocompletedSuggestion: AutocompleteResult?,
     ) : BrowserEditToolbarAction()
 
     /**

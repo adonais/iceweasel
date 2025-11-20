@@ -711,6 +711,12 @@ uiaRawElmProvider::GetPropertyValue(PROPERTYID aPropertyId,
           (acc->State() & states::OFFSCREEN) ? VARIANT_TRUE : VARIANT_FALSE;
       return S_OK;
 
+    case UIA_IsPasswordPropertyId:
+      aPropertyValue->vt = VT_BOOL;
+      aPropertyValue->boolVal =
+          (acc->State() & states::PROTECTED) ? VARIANT_TRUE : VARIANT_FALSE;
+      return S_OK;
+
     case UIA_LabeledByPropertyId:
       if (Accessible* target = GetLabeledBy()) {
         aPropertyValue->vt = VT_UNKNOWN;

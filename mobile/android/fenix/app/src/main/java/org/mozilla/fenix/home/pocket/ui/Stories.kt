@@ -63,6 +63,7 @@ private const val URI_PARAM_UTM_KEY = "utm_source"
 private const val POCKET_STORIES_UTM_VALUE = "pocket-newtab-android"
 private const val DEFAULT_MAX_LINES = 3
 private const val SPONSORED_MAX_LINES = 2
+private const val ACCESSIBILITY_MAX_LINES_SCALE_FACTOR = 1.2f
 
 /**
  * Displays a single [PocketRecommendedStory].
@@ -430,7 +431,7 @@ fun Stories(
 @Suppress("MagicNumber")
 @Composable
 @Preview
-private fun StoriesPreview() {
+private fun StoriesWithCategoriesPreview() {
     FirefoxTheme {
         Box(
             Modifier
@@ -468,6 +469,36 @@ private fun StoriesPreview() {
     }
 }
 
+@Suppress("MagicNumber")
+@Composable
+@Preview
+private fun StoriesPreview() {
+    FirefoxTheme {
+        Box(
+            Modifier
+                .background(MaterialTheme.colorScheme.surface)
+                .systemBarsPadding()
+                .padding(top = 32.dp),
+        ) {
+            Stories(
+                stories = listOf(
+                    FakeHomepagePreview.pocketRecommendedStory(15),
+                    FakeHomepagePreview.pocketSponsoredStory(15),
+                    FakeHomepagePreview.contentRecommendation(15),
+                    FakeHomepagePreview.sponsoredContent(15),
+                    FakeHomepagePreview.pocketRecommendedStory(1),
+                    FakeHomepagePreview.pocketSponsoredStory(1),
+                    FakeHomepagePreview.contentRecommendation(1),
+                    FakeHomepagePreview.sponsoredContent(1),
+                ),
+                contentPadding = 0.dp,
+                onStoryShown = { _, _ -> },
+                onStoryClicked = { _, _ -> },
+            )
+        }
+    }
+}
+
 @Composable
 @ReadOnlyComposable
 private fun maxLines() = if (limitMaxLines()) DEFAULT_MAX_LINES else Int.MAX_VALUE
@@ -478,7 +509,7 @@ private fun maxSponsoredLines() = if (limitMaxLines()) SPONSORED_MAX_LINES else 
 
 @Composable
 @ReadOnlyComposable
-private fun limitMaxLines() = LocalConfiguration.current.fontScale <= 1.0f
+private fun limitMaxLines() = LocalConfiguration.current.fontScale <= ACCESSIBILITY_MAX_LINES_SCALE_FACTOR
 
 private class StoryProvider : PreviewParameterProvider<PocketStory> {
     override val values = FakeHomepagePreview.pocketStories(limit = 7).asSequence()

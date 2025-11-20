@@ -91,6 +91,7 @@ internal sealed class HomepageState {
      * @property buttonBackgroundColor Background [Color] for buttons.
      * @property buttonTextColor Text [Color] for buttons.
      * @property isSearchInProgress Whether search is currently active on the homepage.
+     * @property bottomPadding Amount of padding to display at the bottom of the homepage.
      */
     internal data class Normal(
         val nimbusMessage: NimbusMessageState?,
@@ -118,6 +119,7 @@ internal sealed class HomepageState {
         val buttonBackgroundColor: Color,
         val buttonTextColor: Color,
         override val isSearchInProgress: Boolean,
+        val bottomPadding: Int,
     ) : HomepageState()
 
     val browsingMode: BrowsingMode
@@ -126,7 +128,21 @@ internal sealed class HomepageState {
             is Private -> BrowsingMode.Private
         }
 
+    /**
+     * Returns whether the homepage is in the "Minimal Layout" state, where only the shortcuts and
+     * stories are visible (but both or either can be hidden). This is for the purpose of adding a
+     * weighted spacer in between so the stories are anchored to the bottom.
+     */
+    internal fun isMinimalLayout(): Boolean {
+        return (this as? Normal)?.run {
+            !showRecentTabs && !showRecentSyncedTab && !showBookmarks && !showRecentlyVisited &&
+                    (!showCollections || collectionsState == CollectionsState.Gone) && !showHeader
+        } ?: false
+    }
+
     companion object {
+        private const val BOTTOM_PADDING_TOP_TOOLBAR = 68
+        private const val BOTTOM_PADDING_BOTTOM_TOOLBAR = 32
 
         /**
          * Builds a new [HomepageState] from the current [AppState] and [Settings].
@@ -143,55 +159,96 @@ internal sealed class HomepageState {
         ): HomepageState {
             return with(appState) {
                 if (browsingModeManager.mode.isPrivate) {
-                    Private(
-                        showHeader = settings.showHomepageHeader,
-                        firstFrameDrawn = firstFrameDrawn,
-                        isSearchInProgress = searchState.isSearchActive,
-                        privateModeRedesignEnabled = settings.enablePrivateBrowsingModeRedesign,
+                    buildPrivateState(
+                        appState = appState,
+                        settings = settings,
                     )
                 } else {
-                    Normal(
-                        nimbusMessage = NimbusMessageState.build(appState),
-                        topSites = topSites,
-                        recentTabs = recentTabs,
-                        syncedTab = when (recentSyncedTabState) {
-                            RecentSyncedTabState.None,
-                            RecentSyncedTabState.Loading,
-                            -> null
-
-                            is RecentSyncedTabState.Success -> recentSyncedTabState.tabs.firstOrNull()
-                        },
-                        bookmarks = bookmarks,
-                        recentlyVisited = recentHistory,
-                        collectionsState = CollectionsState.build(
-                            appState = appState,
-                            browserState = components.core.store.state,
-                            browsingModeManager = browsingModeManager,
-                        ),
-                        pocketState = PocketState.build(appState = appState, settings = settings),
-                        showTopSites = settings.showTopSitesFeature && topSites.isNotEmpty(),
-                        showRecentTabs = shouldShowRecentTabs(settings),
-                        showBookmarks = settings.showBookmarksHomeFeature && bookmarks.isNotEmpty(),
-                        showRecentSyncedTab = shouldShowRecentSyncedTabs() && settings.showSyncedTabs,
-                        showRecentlyVisited = settings.historyMetadataUIFeature && recentHistory.isNotEmpty(),
-                        showPocketStories = settings.showPocketRecommendationsFeature &&
-                            recommendationState.pocketStories.isNotEmpty(),
-                        showCollections = settings.collections,
-                        showHeader = settings.showHomepageHeader,
-                        searchBarVisible = shouldShowSearchBar(appState = appState),
-                        searchBarEnabled = settings.enableHomepageSearchBar &&
-                            settings.toolbarPosition == ToolbarPosition.TOP &&
-                                LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT,
-                        firstFrameDrawn = firstFrameDrawn,
-                        setupChecklistState = setupChecklistState,
-                        topSiteColors = TopSiteColors.colors(wallpaperState = wallpaperState),
-                        cardBackgroundColor = wallpaperState.cardBackgroundColor,
-                        buttonBackgroundColor = wallpaperState.buttonBackgroundColor,
-                        buttonTextColor = wallpaperState.buttonTextColor,
-                        isSearchInProgress = searchState.isSearchActive,
+                    buildNormalState(
+                        appState = appState,
+                        browsingModeManager = browsingModeManager,
+                        settings = settings,
                     )
                 }
             }
+        }
+
+        /**
+         * Builds a new [HomepageState.Private] from the current [AppState] and [Settings].
+         *
+         * @param appState State to build the [HomepageState.Private] from.
+         * @param settings [Settings] corresponding to how the homepage should be displayed.
+         */
+        private fun buildPrivateState(
+            appState: AppState,
+            settings: Settings,
+        ) = with(appState) {
+            Private(
+                showHeader = settings.showHomepageHeader,
+                firstFrameDrawn = firstFrameDrawn,
+                isSearchInProgress = searchState.isSearchActive,
+                privateModeRedesignEnabled = settings.enablePrivateBrowsingModeRedesign,
+            )
+        }
+
+        /**
+         * Builds a new [HomepageState.Normal] from the current [AppState] and [Settings].
+         *
+         * @param appState State to build the [HomepageState.Normal] from.
+         * @param browsingModeManager Manager holding current state of whether the browser is in private mode or not.
+         * @param settings [Settings] corresponding to how the homepage should be displayed.
+         */
+        @Composable
+        private fun buildNormalState(
+            appState: AppState,
+            browsingModeManager: BrowsingModeManager,
+            settings: Settings,
+        ) = with(appState) {
+            Normal(
+                nimbusMessage = NimbusMessageState.build(appState),
+                topSites = topSites,
+                recentTabs = recentTabs,
+                syncedTab = when (recentSyncedTabState) {
+                    RecentSyncedTabState.None,
+                    RecentSyncedTabState.Loading,
+                        -> null
+
+                    is RecentSyncedTabState.Success -> recentSyncedTabState.tabs.firstOrNull()
+                },
+                bookmarks = bookmarks,
+                recentlyVisited = recentHistory,
+                collectionsState = CollectionsState.build(
+                    appState = appState,
+                    browserState = components.core.store.state,
+                    browsingModeManager = browsingModeManager,
+                ),
+                pocketState = PocketState.build(appState = appState, settings = settings),
+                showTopSites = settings.showTopSitesFeature && topSites.isNotEmpty(),
+                showRecentTabs = shouldShowRecentTabs(settings),
+                showBookmarks = settings.showBookmarksHomeFeature && bookmarks.isNotEmpty(),
+                showRecentSyncedTab = shouldShowRecentSyncedTabs() && settings.showSyncedTabs,
+                showRecentlyVisited = settings.historyMetadataUIFeature && recentHistory.isNotEmpty(),
+                showPocketStories = settings.showPocketRecommendationsFeature &&
+                        recommendationState.pocketStories.isNotEmpty(),
+                showCollections = settings.collections,
+                showHeader = settings.showHomepageHeader,
+                searchBarVisible = shouldShowSearchBar(appState = appState),
+                searchBarEnabled = settings.enableHomepageSearchBar &&
+                        settings.toolbarPosition == ToolbarPosition.TOP &&
+                        LocalConfiguration.current.orientation == Configuration.ORIENTATION_PORTRAIT,
+                firstFrameDrawn = firstFrameDrawn,
+                setupChecklistState = setupChecklistState,
+                topSiteColors = TopSiteColors.colors(wallpaperState = wallpaperState),
+                cardBackgroundColor = wallpaperState.cardBackgroundColor,
+                buttonBackgroundColor = wallpaperState.buttonBackgroundColor,
+                buttonTextColor = wallpaperState.buttonTextColor,
+                isSearchInProgress = searchState.isSearchActive,
+                bottomPadding = if (settings.toolbarPosition == ToolbarPosition.TOP) {
+                    BOTTOM_PADDING_TOP_TOOLBAR
+                } else {
+                    BOTTOM_PADDING_BOTTOM_TOOLBAR
+                },
+            )
         }
     }
 }

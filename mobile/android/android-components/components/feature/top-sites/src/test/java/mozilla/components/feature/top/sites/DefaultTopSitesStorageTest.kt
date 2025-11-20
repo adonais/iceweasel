@@ -68,6 +68,26 @@ class DefaultTopSitesStorageTest {
     }
 
     @Test
+    fun `GIVEN a list of top sites WHEN add top sites is invoked THEN add top sites to storage`() = runTest {
+        val defaultTopSitesStorage = DefaultTopSitesStorage(
+            pinnedSitesStorage = pinnedSitesStorage,
+            historyStorage = historyStorage,
+            defaultTopSites = listOf(),
+            coroutineContext = coroutineContext,
+        )
+        val topSites = listOf(
+            Pair("Mozilla", "https://mozilla.com"),
+            Pair("Firefox", "https://firefox.com"),
+        )
+        val isDefault = false
+
+        defaultTopSitesStorage.addTopSites(topSites = topSites, isDefault = isDefault)
+        testScheduler.advanceUntilIdle()
+
+        verify(pinnedSitesStorage).addAllPinnedSites(topSites = topSites, isDefault = isDefault)
+    }
+
+    @Test
     fun removeTopSite() = runTest {
         val defaultTopSitesStorage = DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSitesStorage,

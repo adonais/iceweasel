@@ -30,6 +30,7 @@ import mozilla.components.compose.browser.toolbar.BrowserToolbar
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.compose.engine.WebContent
 import mozilla.components.compose.tabstray.TabList
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -92,10 +93,10 @@ fun BrowserScreen(navController: NavController) {
                         Target.SelectedTab,
                     )
 
-                    val url = toolbarState.editState.query
-                    if (toolbarState.isEditMode() && url.isNotEmpty()) {
+                    val query = toolbarState.editState.query
+                    if (toolbarState.isEditMode() && query.current.isNotEmpty()) {
                         Suggestions(
-                            url,
+                            query.current,
                             onSuggestionClicked = { suggestion ->
                                 toolbarStore.dispatch(BrowserToolbarAction.ExitEditMode)
                                 suggestion.onSuggestionClicked?.invoke()
@@ -103,7 +104,7 @@ fun BrowserScreen(navController: NavController) {
                             onAutoComplete = { suggestion ->
                                 toolbarStore.dispatch(
                                     BrowserEditToolbarAction.SearchQueryUpdated(
-                                        suggestion.editSuggestion!!,
+                                        BrowserToolbarQuery(suggestion.editSuggestion!!),
                                     ),
                                 )
                             },

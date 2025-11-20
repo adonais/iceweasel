@@ -41,7 +41,7 @@ class LoginPasswordField extends MozLitElement {
   }
 
   get #password() {
-    return !this.newPassword && this.concealed
+    return !this.newPassword && this.concealed && this.value
       ? LoginPasswordField.CONCEALED_PASSWORD_TEXT
       : this.value;
   }

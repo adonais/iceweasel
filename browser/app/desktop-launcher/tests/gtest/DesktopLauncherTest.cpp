@@ -11,6 +11,7 @@
 #include "tempfile_name.h"
 #include "download_firefox.h"
 #include "data_sink.h"
+#include "file_sink.h"
 
 static std::optional<std::wstring> get_value_from_key(
     const wchar_t* key_path, const wchar_t* value_path) {
@@ -99,4 +100,43 @@ TEST_F(DesktopLauncherTest, TestGetObjectName) {
             objectName.value().find(L"https://download.mozilla.org/"));
   ASSERT_NE(std::wstring::npos, objectName.value().find(L"lang="));
   ASSERT_NE(std::wstring::npos, objectName.value().find(L"product="));
+}
+
+TEST_F(DesktopLauncherTest, TestTempFileNamesAreDifferent) {
+  std::wstring temp1 = get_tempfile_name().value();
+  std::wstring temp2 = get_tempfile_name().value();
+  ASSERT_NE(temp1, temp2);
+}
+
+TEST_F(DesktopLauncherTest, TestFileSinkFreeze) {
+  std::wstring path = get_tempfile_name().value();
+
+  auto delete_expecting_error = [](const wchar_t* path, DWORD expected) {
+    SetLastError(ERROR_SUCCESS);
+    BOOL result = DeleteFileW(path);
+    DWORD lastError = GetLastError();
+    ASSERT_EQ(result, expected == ERROR_SUCCESS);
+    ASSERT_EQ(lastError, expected);
+  };
+
+  char data[] = "important data";
+
+  {
+    FileSink sink;
+    delete_expecting_error(path.c_str(), ERROR_FILE_NOT_FOUND);
+    ASSERT_TRUE(sink.open(path));
+    delete_expecting_error(path.c_str(), ERROR_SHARING_VIOLATION);
+    ASSERT_TRUE(sink.accept(data, sizeof(data) - 1));
+    delete_expecting_error(path.c_str(), ERROR_SHARING_VIOLATION);
+    ASSERT_TRUE(sink.freeze());
+    delete_expecting_error(path.c_str(), ERROR_SHARING_VIOLATION);
+    ASSERT_FALSE(sink.accept(data, sizeof(data) - 1));
+
+    // TODO: Automatically test that the path can be run with ShellExecuteEx
+    // or similar.
+    //
+    // To test this manually, run the launcher without Firefox installed. You
+    // should see a prompt to install Firefox; if so, then it was executable.
+  }
+  delete_expecting_error(path.c_str(), ERROR_SUCCESS);
 }

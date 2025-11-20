@@ -224,14 +224,18 @@ internal class HomeToolbarView(
                     context.theme.resolveAttribute(R.attr.bottomBarBackgroundTop),
                 )
 
+                val topPadding = context.pixelSizeFor(R.dimen.home_fragment_top_toolbar_header_margin) +
+                    if (isTabletAndTabStripEnabled) {
+                        context.pixelSizeFor(R.dimen.tab_strip_height)
+                    } else {
+                        0
+                    }
+
                 homeBinding.homeAppBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                    topMargin =
-                        context.pixelSizeFor(R.dimen.home_fragment_top_toolbar_header_margin) +
-                        if (isTabletAndTabStripEnabled) {
-                            context.pixelSizeFor(R.dimen.tab_strip_height)
-                        } else {
-                            0
-                        }
+                    topMargin = topPadding
+                }
+                homeBinding.homepageView.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    bottomMargin = topPadding
                 }
             }
 

@@ -20,11 +20,12 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performTextReplacement
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.action.ViewActions.longClick
-import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.PositionAssertions.isCompletelyAbove
 import androidx.test.espresso.assertion.PositionAssertions.isPartiallyBelow
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -39,6 +40,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.By.textContains
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_SEARCH_BOX
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.Assert.assertTrue
@@ -69,7 +71,6 @@ import org.mozilla.fenix.helpers.matchers.hasItemsCount
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import mozilla.components.browser.menu.R as menuR
 import mozilla.components.browser.toolbar.R as toolbarR
-import mozilla.components.compose.browser.toolbar.R as composeToolbarR
 import mozilla.components.ui.tabcounter.R as tabcounterR
 
 /**
@@ -341,12 +342,12 @@ class NavigationToolbarRobot {
             Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Trying to click navigation toolbar")
             composeTestRule.onAllNodesWithTag(ADDRESSBAR_URL_BOX).onLast().performClick()
             Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Clicked navigation toolbar")
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Trying to set toolbar text to: $url")
-            onView(withId(composeToolbarR.id.mozac_addressbar_search_query_input)).perform(replaceText(url.toString()))
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Toolbar text was set to: $url")
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Trying to press device enter button")
-            mDevice.pressEnter()
-            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Pressed device enter button")
+            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Trying to set toolbar text to: $url and perform IME action")
+            composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).apply {
+                performTextReplacement(url.toString())
+                performImeAction()
+            }
+            Log.i(TAG, "enterURLAndEnterToBrowserWithComposableToolbar: Toolbar text was set to: $url and IME action performed")
 
             BrowserRobot().interact()
             return BrowserRobot.Transition()

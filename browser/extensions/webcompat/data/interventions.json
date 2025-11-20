@@ -5531,5 +5531,44 @@
         "ua_string": ["add_Chrome"]
       }
     ]
+  },
+  "1996823": {
+    "label": "rogers.com",
+    "bugs": {
+      "1996823": {
+        "issue": "page-fails-to-load",
+        "matches": ["*://www.rogers.com/bbapp/bbapi.js*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["all"],
+        "replace_string_in_request": [
+          {
+            "find": "window\\.location\\.href = link;",
+            "replace": "let url = new URL(window.location.href); url.hash = link; window.location.href = url.href;",
+            "urls": ["*://www.rogers.com/bbapp/bbapi.js*"]
+          }
+        ]
+      }
+    ]
+  },
+  "1997575": {
+    "label": "perplexity.ai",
+    "bugs": {
+      "1997575": {
+        "issue": "user-interface-frustration",
+        "matches": ["*://www.perplexity.ai/*"]
+      }
+    },
+    "interventions": [
+      {
+        "platforms": ["android"],
+        "content_scripts": {
+          "all_frames": true,
+          "js": ["1997575-perplexity.ai-covered-fixed-element.js"]
+        }
+      }
+    ]
   }
 }

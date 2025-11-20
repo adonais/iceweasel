@@ -26,6 +26,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.PrivateModeUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchQueryUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion
 import mozilla.components.concept.awesomebar.AwesomeBar.SuggestionProvider
 import mozilla.components.concept.engine.Engine
@@ -493,7 +494,7 @@ class FenixSearchMiddlewareTest {
         store.dispatch(SuggestionClicked(clickedSuggestion))
 
         assertTrue(wasSuggestionClickHandled)
-        verify { toolbarStore.dispatch(SearchQueryUpdated("")) }
+        verify { toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery(""))) }
         browserActionsCaptor.assertLastAction(AwesomeBarAction.SuggestionClicked::class) {
             assertEquals(clickedSuggestion, it.suggestion)
         }
@@ -530,7 +531,7 @@ class FenixSearchMiddlewareTest {
 
         store.dispatch(SuggestionSelected(selectedSuggestion))
 
-        verify { toolbarStore.dispatch(SearchQueryUpdated("test")) }
+        verify { toolbarStore.dispatch(SearchQueryUpdated(BrowserToolbarQuery("test"))) }
     }
 
     @Test

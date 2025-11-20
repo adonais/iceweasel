@@ -16,9 +16,12 @@ class FileSink : public DataSink {
   bool open(std::wstring& filename);
   // Send data to the download receiver
   bool accept(char* buf, int bytesToWrite) override;
+  // Make our handle read-only so we can run the file
+  bool freeze();
 
  private:
   nsAutoHandle fileHandle;
+  std::wstring mFilename;
 };
 
 #endif

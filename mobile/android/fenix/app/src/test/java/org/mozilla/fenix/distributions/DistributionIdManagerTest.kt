@@ -128,23 +128,6 @@ class DistributionIdManagerTest {
     }
 
     @Test
-    fun `WHEN the browser stores state already has a distribution Id assigned THEN that ID gets returned`() {
-        val subject = DistributionIdManager(
-            testContext,
-            testBrowserStoreProvider,
-            distributionProviderChecker = testDistributionProviderChecker,
-            legacyDistributionProviderChecker = testLegacyDistributionProviderChecker,
-            distributionSettings = testDistributionSettings,
-        )
-
-        storedId = "testId"
-
-        val distributionId = subject.getDistributionId()
-
-        assertEquals("testId", distributionId)
-    }
-
-    @Test
     fun `WHEN the provider is digital_tubrine AND the DT app is installed THEN the proper ID is returned`() {
         val subject = DistributionIdManager(
             testContext,
@@ -239,20 +222,58 @@ class DistributionIdManagerTest {
             distributionSettings = testDistributionSettings,
         )
 
-        testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.VIVO_001.id)
+        subject.setDistribution(DistributionIdManager.Distribution.DEFAULT)
+        assertEquals(false, subject.isPartnershipDistribution())
+
+        subject.setDistribution(DistributionIdManager.Distribution.VIVO_001)
         assertEquals(true, subject.isPartnershipDistribution())
 
-        testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.DT_001.id)
+        subject.setDistribution(DistributionIdManager.Distribution.DT_001)
         assertEquals(true, subject.isPartnershipDistribution())
 
-        testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.DT_002.id)
+        subject.setDistribution(DistributionIdManager.Distribution.DT_002)
         assertEquals(true, subject.isPartnershipDistribution())
 
-        testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.AURA_001.id)
+        subject.setDistribution(DistributionIdManager.Distribution.DT_003)
         assertEquals(true, subject.isPartnershipDistribution())
 
-        testBrowserStoreProvider.updateDistributionId(DistributionIdManager.Distribution.XIAOMI_001.id)
+        subject.setDistribution(DistributionIdManager.Distribution.AURA_001)
         assertEquals(true, subject.isPartnershipDistribution())
+
+        subject.setDistribution(DistributionIdManager.Distribution.XIAOMI_001)
+        assertEquals(true, subject.isPartnershipDistribution())
+    }
+
+    @Test
+    fun `WHEN the distribution is vivo THEN the marketing screen should be skipped`() {
+        val subject = DistributionIdManager(
+            testContext,
+            testBrowserStoreProvider,
+            distributionProviderChecker = testDistributionProviderChecker,
+            legacyDistributionProviderChecker = testLegacyDistributionProviderChecker,
+            distributionSettings = testDistributionSettings,
+        )
+
+        subject.setDistribution(DistributionIdManager.Distribution.DEFAULT)
+        assertEquals(false, subject.shouldSkipMarketingConsentScreen())
+
+        subject.setDistribution(DistributionIdManager.Distribution.VIVO_001)
+        assertEquals(true, subject.shouldSkipMarketingConsentScreen())
+
+        subject.setDistribution(DistributionIdManager.Distribution.DT_001)
+        assertEquals(false, subject.shouldSkipMarketingConsentScreen())
+
+        subject.setDistribution(DistributionIdManager.Distribution.DT_002)
+        assertEquals(false, subject.shouldSkipMarketingConsentScreen())
+
+        subject.setDistribution(DistributionIdManager.Distribution.DT_003)
+        assertEquals(false, subject.shouldSkipMarketingConsentScreen())
+
+        subject.setDistribution(DistributionIdManager.Distribution.AURA_001)
+        assertEquals(false, subject.shouldSkipMarketingConsentScreen())
+
+        subject.setDistribution(DistributionIdManager.Distribution.XIAOMI_001)
+        assertEquals(false, subject.shouldSkipMarketingConsentScreen())
     }
 
     @Test
@@ -624,7 +645,7 @@ class DistributionIdManagerTest {
             UTMParams(
                 source = "source",
                 medium = "medium",
-                campaign = "vivo-india-preinstall",
+                campaign = "adj_tracker%3D1234%26adj_campaign%3Dvivo-india-preinstall",
                 content = "content",
                 term = "term",
             ),
@@ -632,7 +653,7 @@ class DistributionIdManagerTest {
 
         val distributionId = subject.getDistributionId()
 
-        assertEquals("vivo-002", distributionId)
+        assertEquals("vivo-001", distributionId)
     }
 
     @Test
@@ -695,11 +716,11 @@ class DistributionIdManagerTest {
             distributionSettings = testDistributionSettings,
         )
 
-        testDistributionSettings.saveDistributionId("dist")
+        testDistributionSettings.saveDistributionId("vivo-001")
 
         val distributionId = subject.getDistributionId()
 
-        assertEquals("dist", distributionId)
+        assertEquals("vivo-001", distributionId)
     }
 
     @Test

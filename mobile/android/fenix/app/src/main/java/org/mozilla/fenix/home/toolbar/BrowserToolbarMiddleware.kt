@@ -45,6 +45,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.EnvironmentCleared
 import mozilla.components.compose.browser.toolbar.store.EnvironmentRehydrated
 import mozilla.components.compose.browser.toolbar.store.Mode
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.lib.state.State
@@ -246,7 +247,7 @@ class BrowserToolbarMiddleware(
     ) {
         runWithinEnvironment {
             browsingMode?.let { browsingModeManager.mode = it }
-            context.dispatch(SearchQueryUpdated(searchTerms ?: ""))
+            context.dispatch(SearchQueryUpdated(BrowserToolbarQuery(searchTerms ?: "")))
             appStore.dispatch(SearchStarted())
         }
     }

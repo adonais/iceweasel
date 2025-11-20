@@ -17,7 +17,7 @@ std::optional<std::wstring> get_tempfile_name() {
   wchar_t pathBuffer[BUFFER_LEN];
   wchar_t filenameBuffer[BUFFER_LEN];
   UUID uuid;
-  DWORD pathLen = GetTempPath2W(BUFFER_LEN, pathBuffer);
+  DWORD pathLen = GetTempPathW(BUFFER_LEN, pathBuffer);
   if (pathLen > BUFFER_LEN || pathLen == 0) {
     // Error getting path
     return std::nullopt;

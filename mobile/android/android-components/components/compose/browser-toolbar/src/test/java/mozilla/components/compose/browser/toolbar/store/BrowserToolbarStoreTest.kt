@@ -17,6 +17,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.Too
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
@@ -35,7 +36,7 @@ class BrowserToolbarStoreTest {
         store.dispatch(BrowserToolbarAction.EnterEditMode)
 
         assertEquals(Mode.EDIT, store.state.mode)
-        assertEquals("", store.state.editState.query)
+        assertEquals("", store.state.editState.query.current)
     }
 
     @Test
@@ -44,7 +45,7 @@ class BrowserToolbarStoreTest {
             initialState = BrowserToolbarState(
                 mode = Mode.EDIT,
                 editState = EditState(
-                    query = "Mozilla",
+                query = BrowserToolbarQuery("Mozilla"),
                 ),
             ),
         )
@@ -54,7 +55,7 @@ class BrowserToolbarStoreTest {
         store.dispatch(BrowserToolbarAction.ExitEditMode)
 
         assertEquals(Mode.DISPLAY, store.state.mode)
-        assertEquals("", store.state.editState.query)
+        assertEquals("", store.state.editState.query.current)
     }
 
     @Test
@@ -62,11 +63,11 @@ class BrowserToolbarStoreTest {
         val store = BrowserToolbarStore()
         val text = "Mozilla"
 
-        assertEquals("", store.state.editState.query)
+        assertEquals("", store.state.editState.query.current)
 
-        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = text))
+        store.dispatch(BrowserEditToolbarAction.SearchQueryUpdated(query = BrowserToolbarQuery(text)))
 
-        assertEquals(text, store.state.editState.query)
+        assertEquals(text, store.state.editState.query.current)
     }
 
     @Test

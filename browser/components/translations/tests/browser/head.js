@@ -3060,7 +3060,6 @@ class SelectTranslationsTestUtils {
     SharedTranslationsTestUtils._assertPanelElementVisibility(
       SelectTranslationsPanel.elements,
       {
-        betaIcon: false,
         cancelButton: false,
         copyButton: false,
         doneButtonPrimary: false,
@@ -3135,7 +3134,6 @@ class SelectTranslationsTestUtils {
     const isFullPageTranslationsRestrictedForPage =
       TranslationsParent.isFullPageTranslationsRestrictedForPage(gBrowser);
     SelectTranslationsTestUtils.#assertPanelElementVisibility({
-      betaIcon: true,
       copyButton: true,
       doneButtonPrimary: true,
       fromLabel: true,
@@ -3211,7 +3209,6 @@ class SelectTranslationsTestUtils {
     await SelectTranslationsTestUtils.waitForPanelState("init-failure");
     SelectTranslationsTestUtils.#assertPanelElementVisibility({
       header: true,
-      betaIcon: true,
       cancelButton: true,
       initFailureContent: true,
       initFailureMessageBar: true,
@@ -3245,7 +3242,6 @@ class SelectTranslationsTestUtils {
     await SelectTranslationsTestUtils.waitForPanelState("translation-failure");
     SelectTranslationsTestUtils.#assertPanelElementVisibility({
       header: true,
-      betaIcon: true,
       cancelButton: true,
       fromLabel: true,
       fromMenuList: true,
@@ -3307,7 +3303,6 @@ class SelectTranslationsTestUtils {
       unsupportedLanguageMessageBar,
     } = SelectTranslationsPanel.elements;
     SelectTranslationsTestUtils.#assertPanelElementVisibility({
-      betaIcon: true,
       doneButtonSecondary: true,
       header: true,
       settingsButton: true,
@@ -3399,7 +3394,6 @@ class SelectTranslationsTestUtils {
       "The textarea should have the translating class."
     );
     SelectTranslationsTestUtils.#assertPanelElementVisibility({
-      betaIcon: true,
       copyButton: true,
       doneButtonPrimary: true,
       fromLabel: true,

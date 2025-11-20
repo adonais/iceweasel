@@ -553,7 +553,7 @@ class BrowserToolbarMiddlewareTest {
         toolbarStore.dispatch((tabCounterMenuItems[0] as BrowserToolbarMenuButton).onClick!!)
 
         assertEquals(Private, browsingModeManager.mode)
-        assertEquals("", toolbarStore.state.editState.query)
+        assertEquals("", toolbarStore.state.editState.query.current)
         verify { appStore.dispatch(SearchStarted()) }
     }
 
@@ -574,7 +574,7 @@ class BrowserToolbarMiddlewareTest {
         toolbarStore.dispatch((tabCounterMenuItems[0] as BrowserToolbarMenuButton).onClick!!)
 
         assertEquals(Normal, browsingModeManager.mode)
-        assertEquals("", toolbarStore.state.editState.query)
+        assertEquals("", toolbarStore.state.editState.query.current)
         verify { appStore.dispatch(SearchStarted()) }
     }
 
@@ -625,7 +625,7 @@ class BrowserToolbarMiddlewareTest {
 
         toolbarStore.dispatch(PasteFromClipboardClicked)
 
-        assertEquals(clipboard.text, toolbarStore.state.editState.query)
+        assertEquals(clipboard.text, toolbarStore.state.editState.query.current)
         verify { appStore.dispatch(SearchStarted()) }
     }
 

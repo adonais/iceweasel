@@ -316,7 +316,7 @@ dependencies = [
 
 [[package]]
 name = "glean-core"
-version = "65.2.2"
+version = "65.2.3"
 dependencies = [
  "android_logger",
  "bincode",

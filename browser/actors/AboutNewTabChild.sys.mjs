@@ -58,7 +58,10 @@ export class AboutNewTabChild extends RemotePageChild {
       ];
 
       for (let script of scripts) {
-        Services.scriptloader.loadSubScript(script, this.contentWindow);
+        Services.scriptloader.loadSubScriptWithOptions(script, {
+          target: this.contentWindow,
+          ignoreCache: true,
+        });
       }
     } else if (event.type == "unload") {
       try {

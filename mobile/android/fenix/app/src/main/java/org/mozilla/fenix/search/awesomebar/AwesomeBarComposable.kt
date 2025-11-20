@@ -36,6 +36,7 @@ import mozilla.components.compose.browser.awesomebar.AwesomeBarDefaults
 import mozilla.components.compose.browser.awesomebar.AwesomeBarOrientation
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchQueryUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import org.mozilla.fenix.HomeActivity
@@ -143,7 +144,7 @@ class AwesomeBarComposable(
                 onClick = {
                     url?.let {
                         toolbarStore.dispatch(
-                            SearchQueryUpdated(query = url, isQueryPrefilled = false),
+                            SearchQueryUpdated(query = BrowserToolbarQuery(url), isQueryPrefilled = false),
                         )
                     }
                 },
@@ -245,7 +246,7 @@ class AwesomeBarComposable(
                 onClick = {
                     url?.let {
                         toolbarStore.dispatch(
-                            SearchQueryUpdated(query = url, isQueryPrefilled = false),
+                            SearchQueryUpdated(query = BrowserToolbarQuery(url), isQueryPrefilled = false),
                         )
                     }
                 },

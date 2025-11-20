@@ -11,6 +11,7 @@ import mozilla.components.compose.browser.toolbar.BrowserDisplayToolbar
 import mozilla.components.compose.browser.toolbar.BrowserEditToolbar
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.lib.state.ext.observeAsState
 
@@ -25,18 +26,17 @@ import mozilla.components.lib.state.ext.observeAsState
  * @param onTextCommit Invoked when the user has finished editing the URL and wants
  * to commit the entered text.
  */
-@Suppress("MagicNumber")
 @Composable
 fun BrowserToolbar(
     store: BrowserToolbarStore,
-    onTextEdit: (String) -> Unit,
+    onTextEdit: (BrowserToolbarQuery) -> Unit,
     onTextCommit: (String) -> Unit,
     url: String = "",
 ) {
     val uiState by store.observeAsState(initialValue = store.state) { it }
     val progressBarConfig = store.observeAsComposableState { it.displayState.progressBarConfig }.value
 
-    val input = when (val editText = uiState.editState.query) {
+    val input = when (val editText = uiState.editState.query.current) {
         "" -> url
         else -> editText
     }
@@ -49,7 +49,7 @@ fun BrowserToolbar(
             editActionsEnd = uiState.editState.editActionsEnd,
             hint = stringResource(uiState.editState.hint),
             onUrlCommitted = { text -> onTextCommit(text) },
-            onUrlEdit = { text -> onTextEdit(text) },
+            onUrlEdit = { query -> onTextEdit(query) },
             onInteraction = { store.dispatch(it) },
         )
     } else {

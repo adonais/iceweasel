@@ -261,7 +261,10 @@ support-files = ["browser_relay_utils.js"]
 support-files = ["browser_relay_utils.js"]
 
 ["browser_rust_mirror.js"]
-skip-if = ["os == 'android'"]
+skip-if = [
+  "os == 'android'",
+  "release_or_beta", # Bug 1993218
+]
 
 ["browser_telemetry_SignUpFormRuleset.js"]
 

@@ -34,6 +34,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.ktx.android.view.ImeInsetsSynchronizer
 import org.mozilla.fenix.R
@@ -204,7 +205,7 @@ internal class HomeToolbarComposable(
             browserStore.state.findTab(directToSearchConfig.sessionId)?.let {
                 toolbarStore.dispatch(
                     SearchQueryUpdated(
-                        query = it.getUrl() ?: "",
+                        query = BrowserToolbarQuery(it.getUrl() ?: ""),
                         isQueryPrefilled = true,
                     ),
                 )

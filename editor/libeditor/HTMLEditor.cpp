@@ -426,6 +426,7 @@ nsresult HTMLEditor::Init(Document& aDocument,
 
   MOZ_ASSERT(!mInitSucceeded, "HTMLEditor::Init() shouldn't be nested");
   mInitSucceeded = true;
+  editActionData.OnEditorInitialized();
   return NS_OK;
 }
 

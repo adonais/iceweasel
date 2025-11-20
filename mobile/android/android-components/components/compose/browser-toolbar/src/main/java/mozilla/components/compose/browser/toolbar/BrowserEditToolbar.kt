@@ -12,22 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
@@ -40,8 +32,9 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteractio
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
+import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.compose.browser.toolbar.ui.InlineAutocompleteTextField
-import mozilla.components.concept.toolbar.AutocompleteProvider
+import mozilla.components.concept.toolbar.AutocompleteResult
 import mozilla.components.ui.icons.R as iconsR
 
 private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(90.dp)
@@ -52,41 +45,32 @@ private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(90.dp)
  *
  * @param query The current query.
  * @param hint Hint to show in the absence of a query.
+ * @param suggestion [AutocompleteResult] to show as an inline autocomplete suggestion for the current [query].
  * @param isQueryPrefilled Whether [query] is prefilled and not user entered.
  * @param usePrivateModeQueries Whether queries should be done in private / incognito mode.
  * @param gravity [ToolbarGravity] for where the toolbar is being placed on the screen.
- * @param autocompleteProviders Optional list of [AutocompleteProvider]s to be used for
- * inline autocompleting the current query.
- * @param useComposeTextField Whether or not to use the Compose [TextField] or a view-based
- * inline autocomplete text field.
  * @param editActionsStart List of [Action]s to be displayed at the start of the URL of
  * the edit toolbar.
  * @param editActionsEnd List of [Action]s to be displayed at the end of the URL of
  * the edit toolbar.
  * @param onUrlEdit Will be called when the URL value changes. An updated text value comes as a
  * parameter of the callback.
- * @param onUrlEditAborted Will be called when the user has aborted editing the URL.
- * This callback works only up until Android API 33.
  * @param onUrlCommitted Will be called when the user has finished editing and wants to initiate
  * loading the entered URL. The committed text value comes as a parameter of the callback.
  * @param onInteraction Callback for handling [BrowserToolbarEvent]s on user interactions.
  */
 @Composable
-@Suppress("LongMethod")
 fun BrowserEditToolbar(
     query: String,
     hint: String,
+    suggestion: AutocompleteResult? = null,
     isQueryPrefilled: Boolean = false,
     usePrivateModeQueries: Boolean = false,
     gravity: ToolbarGravity = Top,
-    autocompleteProviders: List<AutocompleteProvider> = emptyList(),
-    useComposeTextField: Boolean = false,
     editActionsStart: List<Action> = emptyList(),
     editActionsEnd: List<Action> = emptyList(),
-    onUrlEdit: (String) -> Unit = {},
-    onUrlEditAborted: () -> Unit = {},
+    onUrlEdit: (BrowserToolbarQuery) -> Unit = {},
     onUrlCommitted: (String) -> Unit = {},
-    onUrlSuggestionAutocompleted: (String) -> Unit = {},
     onInteraction: (BrowserToolbarEvent) -> Unit,
 ) {
     Box(
@@ -104,79 +88,26 @@ fun BrowserEditToolbar(
                 .background(color = AcornTheme.colors.layer3),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (useComposeTextField) {
-                TextField(
-                    value = query,
-                    onValueChange = { value ->
-                        onUrlEdit(value)
-                    },
-                    placeholder = {
-                        Text(
-                            text = hint,
-                            color = AcornTheme.colors.textSecondary,
-                        )
-                    },
-                    colors = TextFieldDefaults.colors(
-                        focusedTextColor = AcornTheme.colors.textPrimary,
-                        unfocusedTextColor = AcornTheme.colors.textPrimary,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent,
-                        errorIndicatorColor = Color.Transparent,
-                        unfocusedContainerColor = AcornTheme.colors.layer3,
-                        focusedContainerColor = AcornTheme.colors.layer3,
-                        disabledContainerColor = AcornTheme.colors.layer3,
-                        errorContainerColor = AcornTheme.colors.layer3,
-                    ),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Uri,
-                        imeAction = ImeAction.Go,
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onGo = { onUrlCommitted(query) },
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = ROUNDED_CORNER_SHAPE,
-                    leadingIcon = {
-                        ActionContainer(
-                            actions = editActionsStart,
-                            onInteraction = onInteraction,
-                        )
-                    },
-                    trailingIcon = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            ActionContainer(
-                                actions = editActionsEnd,
-                                onInteraction = onInteraction,
-                            )
-                        }
-                    },
-                )
-            } else {
-                ActionContainer(
-                    actions = editActionsStart,
-                    onInteraction = onInteraction,
-                )
+            ActionContainer(
+                actions = editActionsStart,
+                onInteraction = onInteraction,
+            )
 
-                InlineAutocompleteTextField(
-                    query = query,
-                    hint = hint,
-                    showQueryAsPreselected = isQueryPrefilled,
-                    usePrivateModeQueries = usePrivateModeQueries,
-                    autocompleteProviders = autocompleteProviders,
-                    modifier = Modifier.weight(1f),
-                    onUrlEdit = onUrlEdit,
-                    onUrlCommitted = onUrlCommitted,
-                    onUrlEditAborted = onUrlEditAborted,
-                    onUrlSuggestionAutocompleted = onUrlSuggestionAutocompleted,
-                )
+            InlineAutocompleteTextField(
+                query = query,
+                hint = hint,
+                suggestion = suggestion,
+                showQueryAsPreselected = isQueryPrefilled,
+                usePrivateModeQueries = usePrivateModeQueries,
+                modifier = Modifier.weight(1f),
+                onUrlEdit = onUrlEdit,
+                onUrlCommitted = onUrlCommitted,
+            )
 
-                ActionContainer(
-                    actions = editActionsEnd,
-                    onInteraction = onInteraction,
-                )
-            }
+            ActionContainer(
+                actions = editActionsEnd,
+                onInteraction = onInteraction,
+            )
         }
 
         HorizontalDivider(
@@ -198,8 +129,7 @@ private fun BrowserEditToolbarPreview() {
             query = "http://www.mozilla.org",
             hint = "Search or enter address",
             gravity = Top,
-            autocompleteProviders = emptyList(),
-            useComposeTextField = true,
+            suggestion = null,
             editActionsStart = listOf(
                 SearchSelectorAction(
                     icon = DrawableIcon(

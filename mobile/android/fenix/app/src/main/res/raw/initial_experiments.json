@@ -150,7 +150,7 @@
       ],
       "targeting": "((is_already_enrolled) || ((user_accepted_tou == false && no_shortcuts_or_stories_opt_outs == true && days_since_install >= 28) && (app_version|versionCompare('144.!') >= 0) && (language in ['en']) && (region in ['CA', 'US']) && (('android-tou-any-users' in enrollments) == false)))",
       "startDate": "2025-11-06",
-      "enrollmentEndDate": null,
+      "enrollmentEndDate": "2025-11-10",
       "endDate": null,
       "proposedDuration": 28,
       "proposedEnrollment": 7,
