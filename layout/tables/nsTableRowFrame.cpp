@@ -3,6 +3,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "nsTableRowFrame.h"
 
 #include <algorithm>
@@ -528,7 +532,15 @@ void nsTableRowFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     return;
   }
 
-  for (nsIFrame* kid : mFrames) {
+  for (auto it = mFrames.begin(); it != mFrames.end();) {
+    auto kid = *it;
+    ++it;
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (it != mFrames.end()) {
+      _mm_prefetch((char *)*it, _MM_HINT_T0);
+      _mm_prefetch((char *)(*it) + 64, _MM_HINT_T0);
+    }
+#endif
     BuildDisplayListForChild(aBuilder, kid, aLists);
   }
 }
