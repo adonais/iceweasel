@@ -81,10 +81,7 @@ function runTest() {
   is((function() { try { return symbolRect.getCTM().f; } catch (e) { return e; } })(), 82, "symbolRect.getCTM().f");
   is((function() { try { return fO.getCTM().e; } catch (e) { return e; } })(), 2, "fO.getCTM().e");
   is((function() { try { return fO.getCTM().f; } catch (e) { return e; } })(), 3, "fO.getCTM().f");
-  let singular = root.createSVGMatrix();
-  singular.a = 0;
-  singular.d = 0;
-  isMatrix((function() { try { return g5.getCTM(); } catch (e) { return e; } })(), singular, "g5.getCTM()");
+  isMatrix((function() { try { return g5.getCTM(); } catch (e) { return e; } })(), identity, "g5.getCTM()");
 
   is((function() { try { return root.getScreenCTM().e; } catch (e) { return e; } })(), 11, "root.getScreenCTM().e");
   is((function() { try { return root.getScreenCTM().f; } catch (e) { return e; } })(), 22, "root.getScreenCTM().f");
@@ -103,9 +100,7 @@ function runTest() {
   is((function() { try { return symbolRect.getScreenCTM().f; } catch (e) { return e; } })(), 108, "symbolRect.getScreenCTM().f");
   is((function() { try { return fO.getScreenCTM().e; } catch (e) { return e; } })(), 16, "symbolRect.getScreenCTM().e");
   is((function() { try { return fO.getScreenCTM().f; } catch (e) { return e; } })(), 29, "symbolRect.getScreenCTM().f");
-  singular.e = 15;
-  singular.f = 28;
-  isMatrix((function() { try { return g5.getScreenCTM(); } catch (e) { return e; } })(), singular, "g5.getScreenCTM()");
+  isMatrix((function() { try { return g5.getScreenCTM(); } catch (e) { return e; } })(), identity, "g5.getScreenCTM()");
 
   SimpleTest.finish();
 }

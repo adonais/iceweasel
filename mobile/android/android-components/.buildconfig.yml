@@ -711,6 +711,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:support-appservices
     - components:support-base
     - components:support-images
     - components:support-ktx
@@ -776,6 +777,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:support-appservices
     - components:support-base
     - components:support-images
     - components:support-ktx
@@ -820,6 +822,7 @@ projects:
     - components:lib-state
     - components:service-digitalassetlinks
     - components:service-location
+    - components:support-appservices
     - components:support-base
     - components:support-images
     - components:support-ktx
@@ -897,6 +900,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-nimbus
+    - components:support-appservices
     - components:support-base
     - components:support-ktx
     - components:support-locale
@@ -934,6 +938,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:support-appservices
     - components:support-base
     - components:support-images
     - components:support-ktx
@@ -1112,6 +1117,7 @@ projects:
     - components:lib-state
     - components:service-digitalassetlinks
     - components:service-location
+    - components:support-appservices
     - components:support-base
     - components:support-images
     - components:support-ktx
@@ -1228,6 +1234,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:support-appservices
     - components:support-base
     - components:support-images
     - components:support-ktx
@@ -1600,6 +1607,7 @@ projects:
     - components:lib-publicsuffixlist
     - components:lib-state
     - components:service-location
+    - components:support-appservices
     - components:support-base
     - components:support-images
     - components:support-ktx
@@ -2248,6 +2256,7 @@ projects:
     - components:concept-base
     - components:concept-fetch
     - components:lib-publicsuffixlist
+    - components:support-appservices
     - components:support-base
     - components:support-ktx
     - components:support-test

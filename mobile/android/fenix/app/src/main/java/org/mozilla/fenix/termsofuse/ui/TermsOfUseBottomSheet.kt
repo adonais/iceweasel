@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -99,6 +100,9 @@ private fun BottomSheet(
         sheetMaxWidth = sheetMaxWidth,
         sheetState = sheetState,
         containerColor = FirefoxTheme.colors.layer2,
+        properties = ModalBottomSheetProperties(
+            shouldDismissOnClickOutside = false,
+        ),
     ) {
         BottomSheetContent(
             sheetState = sheetState,

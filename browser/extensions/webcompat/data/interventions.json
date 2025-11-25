@@ -4504,7 +4504,10 @@
     "interventions": [
       {
         "platforms": ["all"],
-        "ua_string": ["Chrome", "add_Firefox_as_Gecko"]
+        "content_scripts": {
+          "js": ["bug1950282-f1tv.formula1.com-unblock-firefox.js"]
+        },
+        "ua_string": ["Chrome"]
       },
       {
         "platforms": ["linux"],

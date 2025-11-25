@@ -120,11 +120,15 @@ EnterprisePoliciesManager.prototype = {
 
     // Because security.enterprise_roots.enabled is true by default, we can
     // ignore attempts by Antivirus to try to set it via policy.
+    // We have to explicitly check for true or 1 because this happens before
+    // policy is parsed against the schema, so the value could be coming
+    // from the registry.
     if (
       Object.keys(provider.policies).length === 1 &&
       provider.policies.Certificates &&
       Object.keys(provider.policies.Certificates).length === 1 &&
-      provider.policies.Certificates.ImportEnterpriseRoots === true
+      (provider.policies.Certificates.ImportEnterpriseRoots === true ||
+        provider.policies.Certificates.ImportEnterpriseRoots === 1)
     ) {
       this.status = Ci.nsIEnterprisePolicies.INACTIVE;
       return;
